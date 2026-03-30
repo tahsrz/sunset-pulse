@@ -4,7 +4,7 @@ import { Vector, Matrix } from '@/utils/sunset-pulse-engine/math';
 import { Renderer, Mesh3D } from '@/utils/sunset-pulse-engine/renderer';
 import { generatePropertyModel } from '@/utils/sunset-pulse-engine/generator';
 import { useTheme } from '@/context/ThemeProvider';
-import { FaSync, FaCrosshairs, FaWind, FaMap } from 'react-icons/fa';
+import { FaSync, FaCrosshairs, FaWind, FaMap, FaTrophy } from 'react-icons/fa';
 import { TbDrone } from 'react-icons/tb';
 
 const SunsetPulseViewer = ({ objUrl, property }) => {
@@ -15,7 +15,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
   const [isDroneMode, setDroneMode] = useState(false);
   
   const orbitState = useRef({ yaw: 0, pitch: -0.2 });
-  const heliState = useRef({
+  const droneState = useRef({
     pos: new Vector(0, 5, -40),
     vel: new Vector(0, 0, 0),
     rot: { yaw: 0, pitch: 0 },
@@ -37,14 +37,10 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
 
   useEffect(() => {
     let animationId;
-    // CRITICAL: The engine must wait for the canvas ref to be available
-    if (!canvasRef.current) {
-      console.log('[SP-RE_ENGINE] Waiting for canvas ref...');
-      return;
-    }
+    if (!canvasRef.current) return;
 
     const initEngine = async () => {
-      console.log('[SP-RE_ENGINE] Initializing tactical stream...');
+      setLoading(true);
       const canvas = canvasRef.current;
       const color = getBrandingColor();
       const renderer = new Renderer(canvas, { 
@@ -55,25 +51,25 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
 
       try {
         let mesh;
-        // Attempt remote load, fallback to procedural generation
-        if (objUrl) {
+        // In Drone Mode, we ALWAYS use procedural model to include the course
+        if (isDroneMode) {
+          const rawObj = generatePropertyModel(property, true); // true = include course
+          mesh = Mesh3D.loadFromRaw(rawObj, color);
+        } else if (objUrl) {
           try {
             mesh = await Mesh3D.loadFromObj(objUrl, color);
           } catch (e) {
-            console.warn('[SP-RE_ENGINE] Remote asset failed, generating procedural fallback.');
-            const rawObj = generatePropertyModel(property);
+            const rawObj = generatePropertyModel(property, false);
             mesh = Mesh3D.loadFromRaw(rawObj, color);
           }
         } else {
-          const rawObj = generatePropertyModel(property);
+          const rawObj = generatePropertyModel(property, false);
           mesh = Mesh3D.loadFromRaw(rawObj, color);
         }
         
-        if (mesh && mesh.triangles.length > 0) {
-          renderer.meshes = [mesh];
-        }
+        if (mesh) renderer.meshes = [mesh];
       } catch (error) {
-        console.error('[SP-RE_ENGINE] Critical Init Error:', error);
+        console.error('[SP-RE_ENGINE] Init Error:', error);
       } finally {
         setLoading(false);
       }
@@ -85,7 +81,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
             rendererRef.current.render(new Vector(0, 0, 0), rotMat, new Vector(0, -5, 60));
             if (!mouseRef.current.isDown) orbitState.current.yaw += 0.005;
           } else {
-            const state = heliState.current;
+            const state = droneState.current;
             state.rot.yaw += state.angVel.yaw;
             state.angVel.yaw *= 0.85;
             state.pos = state.pos.add(state.vel);
@@ -105,7 +101,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
       if (animationId) cancelAnimationFrame(animationId);
       rendererRef.current = null;
     };
-  }, [objUrl, property?._id, isDroneMode, canvasRef.current]); // Add canvasRef.current as dependency
+  }, [objUrl, property?._id, isDroneMode]);
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -123,9 +119,9 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
     if (!isDroneMode) {
       orbitState.current.yaw += deltaX * 0.01;
       orbitState.current.pitch += deltaY * 0.01;
-      orbitState.current.pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, orbitState.current.pitch));
+      orbitState.current.pitch = Math.max(-Math.PI/2, Math.min(Math.PI, orbitState.current.pitch));
     } else {
-      const state = heliState.current;
+      const state = droneState.current;
       if (mouseRef.current.button === 0) {
         state.angVel.yaw += deltaX * 0.001;
         state.vel.set(1, state.vel.y - (deltaY * 0.04));
@@ -148,7 +144,6 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
   return (
     <div className='relative w-full h-[400px] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-white/5' onContextMenu={(e) => e.preventDefault()}>
       
-      {/* Canvas is ALWAYS in the DOM, just hidden visually during loading */}
       <canvas
         ref={canvasRef}
         width={800}
@@ -166,7 +161,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
           style={{ color: branding.primaryColor }}
         >
           <FaSync className='animate-spin mb-4' size={24} />
-          [ INITIALIZING DRONE FEED V1.3.1... ]
+          [ INITIALIZING DRONE FEED V1.3.2... ]
         </div>
       )}
 
@@ -192,24 +187,32 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
           </div>
           
           {isDroneMode && (
+            <div className='absolute top-16 left-4 bg-orange-500/10 border border-orange-500/20 p-2 rounded-lg backdrop-blur-md'>
+              <div className='flex items-center gap-2 text-[9px] font-black text-orange-400 uppercase tracking-tighter'>
+                <FaTrophy /> Training Course Active
+              </div>
+            </div>
+          )}
+
+          {isDroneMode && (
             <div className='absolute top-16 right-4 text-right font-mono space-y-1 opacity-80 text-white'>
               <div className='flex items-center justify-end gap-2 text-[9px] text-slate-500'>
-                ALT: <span className='text-white'>{heliState.current.pos.y.toFixed(1)}m</span>
+                ALT: <span className='text-white'>{droneState.current.pos.y.toFixed(1)}m</span>
                 <FaWind className='text-blue-400' />
               </div>
               <div className='flex items-center justify-end gap-2 text-[9px] text-slate-500'>
-                VEL: <span className='text-white'>{(heliState.current.vel.magnitude() * 10).toFixed(1)}kn</span>
+                VEL: <span className='text-white'>{(droneState.current.vel.magnitude() * 10).toFixed(1)}kn</span>
                 <FaCrosshairs className='text-red-400' />
               </div>
               <div className='flex items-center justify-end gap-2 text-[9px] text-slate-500'>
-                HDG: <span className='text-white'>{Math.floor((heliState.current.rot.yaw * 180 / Math.PI) % 360)}°</span>
+                HDG: <span className='text-white'>{Math.floor((droneState.current.rot.yaw * 180 / Math.PI) % 360)}°</span>
                 <FaMap className='text-green-400' />
               </div>
             </div>
           )}
 
           <div className='absolute bottom-4 left-4 p-4 bg-black/40 backdrop-blur-md rounded-lg border border-white/10'>
-            <div className='text-[10px] font-mono text-slate-500 uppercase mb-1'>Intel Asset</div>
+            <div className='text-[10px] font-mono text-slate-500 uppercase mb-1'>Target Asset</div>
             <div className='text-xs font-bold text-white uppercase'>{property?.name || 'GENERIC_UNIT_01'}</div>
             <div className='h-0.5 mt-2 w-full bg-[var(--primary-color)]' />
           </div>

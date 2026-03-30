@@ -33,9 +33,11 @@ export class Mesh3D {
     this.triangles = triangles;
   }
 
-  static parseObj(text, color) {
+  static parseObj(text, defaultColor = { r: 255, g: 255, b: 255 }) {
     const vertices = [];
     const triangles = [];
+    let currentColor = { ...defaultColor };
+    
     const lines = text.split('\n');
     for (const line of lines) {
       const parts = line.trim().split(/\s+/).filter(Boolean);
@@ -48,16 +50,26 @@ export class Mesh3D {
         if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
           vertices.push(new Vector(x, y, z));
         }
-      } else if (parts[0] === 'f') {
+      } 
+      // Custom Directive: usecolor R G B
+      else if (parts[0] === 'usecolor') {
+        currentColor = {
+          r: parseInt(parts[1]) || defaultColor.r,
+          g: parseInt(parts[2]) || defaultColor.g,
+          b: parseInt(parts[3]) || defaultColor.b
+        };
+      }
+      else if (parts[0] === 'f') {
         const vIndices = parts.slice(1)
           .map(p => parseInt(p.split('/')[0]) - 1)
           .filter(idx => !isNaN(idx) && vertices[idx]);
 
         if (vIndices.length === 3) {
-          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]], color));
+          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]], currentColor));
         } else if (vIndices.length === 4) {
-          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]], color));
-          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[2]], vertices[vIndices[3]], color));
+          // Quad to Triangle conversion
+          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]], currentColor));
+          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[2]], vertices[vIndices[3]], currentColor));
         }
       }
     }
@@ -134,22 +146,16 @@ export class Renderer {
 
     for (const mesh of this.meshes) {
       for (const tri of mesh.triangles) {
-        // Use the provided meshPos for translation
         const transformedTri = this.transformTriangle(tri, Matrix.identityMatrix(3), meshPos);
-
         const norm = transformedTri.getSurfaceNormal();
         const camToTri = transformedTri.get(0).subtract(cameraPos);
 
-        // Simple back-face culling
         if (norm.dotProduct(camToTri) < 0) {
           let shading = norm.dotProduct(this.lightDir);
           shading = Math.max(0.2, Math.min(1, shading));
           transformedTri.setShading(shading);
 
-          // Transform to view space
           const viewTri = this.transformTriangle(transformedTri, viewMat, viewVec);
-          
-          // Clip against near plane
           const clipped = this.clipTriangleAgainstPlane(viewTri, nearPlane);
           for (const cTri of clipped) {
             const projTri = this.projectTriangle(cTri);
@@ -159,7 +165,6 @@ export class Renderer {
       }
     }
 
-    // Sort by depth (painter's algorithm)
     trianglesToRender.sort((a, b) => {
       const az = (a.get(0).z + a.get(1).z + a.get(2).z) / 3;
       const bz = (b.get(0).z + b.get(1).z + b.get(2).z) / 3;
@@ -175,17 +180,18 @@ export class Renderer {
     const v1 = tri.get(0).multiplyMatrix(matrix).add(translation);
     const v2 = tri.get(1).multiplyMatrix(matrix).add(translation);
     const v3 = tri.get(2).multiplyMatrix(matrix).add(translation);
-    return new Triangle3D(v1, v2, v3, tri.color);
+    const newTri = new Triangle3D(v1, v2, v3, tri.color);
+    newTri.setShading(tri.shading);
+    return newTri;
   }
 
   projectTriangle(tri) {
     const v = [tri.get(0), tri.get(1), tri.get(2)].map(curr => {
-      const z = Math.max(this.zNear, curr.z); // Prevent divide by zero
+      const z = Math.max(this.zNear, curr.z);
       const newZ = (z - this.zNear) * this.projMat.get(2, 2);
       let projected = curr.multiplyMatrix(this.projMat);
       projected.set(2, newZ);
       projected = projected.divideByScalar(z);
-
       const x = (projected.x + 1.0) * this.width / 2.0;
       const y = (-projected.y + 1.0) * this.height / 2.0;
       return new Vector(x, y, newZ);
@@ -224,16 +230,19 @@ export class Renderer {
       const v1 = inside[0];
       const v2 = plane.lineIntersectPlanePoint(v1, outside[0]);
       const v3 = plane.lineIntersectPlanePoint(v1, outside[1]);
-      return [new Triangle3D(v1, v2, v3, tri.color)];
+      const res = new Triangle3D(v1, v2, v3, tri.color);
+      res.setShading(tri.shading);
+      return [res];
     } else if (inside.length === 2) {
       const v1 = inside[0];
       const v2 = inside[1];
       const v3 = plane.lineIntersectPlanePoint(v1, outside[0]);
       const v4 = plane.lineIntersectPlanePoint(v2, outside[0]);
-      return [
-        new Triangle3D(v1, v2, v3, tri.color),
-        new Triangle3D(v3, v2, v4, tri.color)
-      ];
+      const res1 = new Triangle3D(v1, v2, v3, tri.color);
+      const res2 = new Triangle3D(v3, v2, v4, tri.color);
+      res1.setShading(tri.shading);
+      res2.setShading(tri.shading);
+      return [res1, res2];
     } else if (inside.length === 3) {
       return [tri];
     }
