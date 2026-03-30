@@ -1,41 +1,68 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// Define the shape of our branding for Type Safety
 interface Branding {
   primaryColor: string;
+  secondaryColor?: string;
   fontFamily: string;
-  siteName: string;
+  borderRadius: string;
+  navStyle?: string;
 }
 
-const ThemeContext = createContext<Branding | undefined>(undefined);
+interface ThemeContextType {
+  branding: Branding;
+  updateBranding: (newSettings: Partial<Branding>) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ 
-  branding, 
-  children 
+  children, 
+  initialBranding 
 }: { 
-  branding: Branding; 
   children: ReactNode; 
+  initialBranding: Branding; 
 }) {
+  const [branding, setBranding] = useState<Branding>(initialBranding);
+
+  // This is the "Magic Function" Jamie calls
+  const updateBranding = (newSettings: Partial<Branding>) => {
+    setBranding((prev) => ({
+      ...prev,
+      ...newSettings,
+    }));
+  };
+
+  // Sync state to CSS Variables in the DOM
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary-color', branding.primaryColor);
+    root.style.setProperty('--font-family', branding.fontFamily);
+    root.style.setProperty('--border-radius', branding.borderRadius);
+    
+    // Log for the developer (Taz) to see the ML working
+    console.log('🎨 Theme Updated via Jamie:', branding);
+  }, [branding]);
+
   return (
-    <ThemeContext.Provider value={branding}>
-      {/* This 'style' tag injects Jamie's chosen colors into CSS variables */}
-      <style jsx global>{`
-        :root {
-          --primary-color: ${branding.primaryColor};
-          --font-family: ${branding.fontFamily}, sans-serif;
-        }
-        body {
-          font-family: var(--font-family);
-        }
-      `}</style>
-      {children}
+    <ThemeContext.Provider value={{ branding, updateBranding }}>
+      <div 
+        style={{ 
+          '--primary-color': branding.primaryColor,
+          fontFamily: branding.fontFamily 
+        } as React.CSSProperties}
+        className="min-h-screen transition-colors duration-500"
+      >
+        {children}
+      </div>
     </ThemeContext.Provider>
   );
 }
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error('useTheme must be used within ThemeProvider');
+  if (!context) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 };

@@ -1,24 +1,26 @@
-import '@/assets/styles/globals.css';
+import '@/assets/styles/globals.css'; // Path must exist in root/assets/styles/
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthProvider from '@/components/AuthProvider';
 import { CartProvider } from '@/context/CartContext';
-import { ThemeProvider } from '@/context/ThemeProvider'; // New
-import JamieChat from '@/components/JamieChat'; // New
-import { SiteConfig } from '@/models/SiteConfig'; // New
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ThemeProvider } from '@/context/ThemeProvider';
+import JamieChat from '@/components/JamieChat';
+import { SiteConfig } from '@/models/SiteConfig';
+import connectDB from '@/config/db';
 
 export const metadata = {
-  title: 'Sunset Pulse | Real Estate & Grill',
-  description: 'Find your dream home in North Texas and order the best burgers in Montague County.',
-  keywords: 'rental, property, real estate, bowie tx, rhome tx, sunset grill, burgers',
+  title: 'Sunset Pulse | Real Estate & Intelligence',
+  description: 'Find your dream home in North Texas, powered by Jamie AI.',
+  keywords: 'rental, property, real estate, keller tx, rhome tx, investment',
 };
 
 const MainLayout = async ({ children }) => {
-  // Fetch the branding config for the current agent/user
-  // Jamie will update this document in MongoDB based on voice commands
+  // 1. Establish connection to the street (MongoDB)
+  await connectDB();
+
+  // 2. Intercept the branding config for the High Commander (agent)
   const config = await SiteConfig.findOne({ agentId: 'taz-realty-001' }); 
+  
   const branding = config?.branding || { 
     primaryColor: '#2563eb', 
     fontFamily: 'Inter', 
@@ -27,10 +29,10 @@ const MainLayout = async ({ children }) => {
 
   return (
     <html lang='en'>
-      <body>
+      <body className='bg-gray-50'>
         <AuthProvider>
           <CartProvider>
-            {/* ThemeProvider sits here to inject CSS variables based on Jamie's choices */}
+            {/* ThemeProvider injects the CSS variables Jamie edits */}
             <ThemeProvider branding={branding}>
               <div className='flex flex-col min-h-screen'>
                 <Navbar />
@@ -40,7 +42,7 @@ const MainLayout = async ({ children }) => {
                 <Footer />
               </div>
               
-              {/* Jamie floats on every page, ready to help or edit */}
+              {/* Jamie is live and ready for undercover recon */}
               <JamieChat />
               
               <ToastContainer />
