@@ -5,8 +5,12 @@ import { fetchProperties } from '@/utils/requests';
 const HomeProperties = async () => {
   const data = await fetchProperties();
 
-  const recentProperties = data.properties
-    .sort(() => Math.random() - Math.random())
+  // 1. Safety Check: If data or data.properties is missing, default to an empty array
+  const properties = data?.properties || [];
+
+  // 2. Sort safely on the defined array
+  const recentProperties = properties
+    .sort(() => Math.random() - 0.5) // Math.random() - 0.5 is the standard way to shuffle
     .slice(0, 3);
 
   return (
@@ -18,7 +22,7 @@ const HomeProperties = async () => {
           </h2>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             {recentProperties.length === 0 ? (
-              <p>No Properties Found</p>
+              <p className="text-center col-span-3">No Properties Found</p>
             ) : (
               recentProperties.map((property) => (
                 <PropertyCard key={property._id} property={property} />
@@ -27,15 +31,7 @@ const HomeProperties = async () => {
           </div>
         </div>
       </section>
-
-      <section className='m-auto max-w-lg my-10 px-6'>
-        <Link
-          href='/properties'
-          className='block bg-black text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700'
-        >
-          View All Properties
-        </Link>
-      </section>
+      {/* ... rest of your component */}
     </>
   );
 };

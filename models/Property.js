@@ -1,5 +1,5 @@
-import { Schema, model, models } from 'mongoose';
-
+import mongoose from 'mongoose';
+const { Schema, model, models } = mongoose;
 const PropertySchema = new Schema(
   {
     owner: {
@@ -87,5 +87,4 @@ const PropertySchema = new Schema(
 );
 
 const Property = models.Property || model('Property', PropertySchema);
-
 export default Property;

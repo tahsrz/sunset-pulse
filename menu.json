@@ -1,0 +1,56 @@
+[
+  {
+    "id": "h-01",
+    "name": "Hamburger",
+    "price": 7.99,
+    "category": "Burgers",
+    "description": "Classic grilled beef patty on a toasted bun with standard toppings.",
+    "isBasket": false,
+    "image": "/images/grill/hamburger.jpg"
+  },
+  {
+    "id": "h-02",
+    "name": "Hamburger Basket",
+    "price": 9.99,
+    "category": "Burgers",
+    "description": "Our classic hamburger served with a side of fries and a drink.",
+    "isBasket": true,
+    "image": "/images/grill/hamburger-basket.jpg"
+  },
+  {
+    "id": "c-01",
+    "name": "Cheeseburger",
+    "price": 8.49,
+    "category": "Burgers",
+    "description": "Classic grilled beef patty topped with melted American cheese.",
+    "isBasket": false,
+    "image": "/images/grill/cheeseburger.jpg"
+  },
+  {
+    "id": "c-02",
+    "name": "Cheeseburger Basket",
+    "price": 10.59,
+    "category": "Burgers",
+    "description": "Melted cheeseburger served with a side of fries and a drink.",
+    "isBasket": true,
+    "image": "/images/grill/cheeseburger-basket.jpg"
+  },
+  {
+    "id": "bc-01",
+    "name": "Bacon Cheeseburger",
+    "price": 10.99,
+    "category": "Burgers",
+    "description": "Beef patty topped with crispy bacon and melted cheese.",
+    "isBasket": false,
+    "image": "/images/grill/bacon-cheeseburger.jpg"
+  },
+  {
+    "id": "bc-02",
+    "name": "Bacon Cheeseburger Basket",
+    "price": 13.99,
+    "category": "Burgers",
+    "description": "The bacon cheeseburger experience with fries and a drink.",
+    "isBasket": true,
+    "image": "/images/grill/bacon-cheeseburger-basket.jpg"
+  }
+]

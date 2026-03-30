@@ -1,384 +1,168 @@
 [
   {
-    "_id": "1",
-    "owner": "1",
-    "name": "Boston Commons Retreat",
-    "type": "Apartment",
-    "description": "This is a beautiful apartment located near the commons. It is a 2 bedroom apartment with a full kitchen and bathroom. It is available for weekly or monthly rentals.",
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Bowie Highway Ranch Estate",
+    "type": "House",
+    "description": "Stunning ranch style home on 10 acres. Perfect for horse owners, featuring a 4-stall barn and perimeter fencing just outside Bowie city limits.",
     "location": {
-      "street": "120 Tremont Street",
-      "city": "Boston",
-      "state": "MA",
-      "zipcode": "02108"
-    },
-    "beds": 2,
-    "baths": 1,
-    "square_feet": 1500,
-    "amenities": [
-      "Wifi",
-      "Full kitchen",
-      "Washer & Dryer",
-      "Free Parking",
-      "Hot Tub",
-      "24/7 Security",
-      "Wheelchair Accessible",
-      "Elevator Access",
-      "Dishwasher",
-      "Gym/Fitness Center",
-      "Air Conditioning",
-      "Balcony/Patio",
-      "Smart TV",
-      "Coffee Maker"
-    ],
-    "rates": {
-      "weekly": 1100,
-      "monthly": 4200
-    },
-    "seller_info": {
-      "name": "John Doe",
-      "email": "john@gmail.com",
-      "phone": "617-555-5555"
-    },
-    "images": ["a1.jpg", "a2.jpg", "a3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  },
-  {
-    "_id": "2",
-    "owner": "1",
-    "name": "Cozy Downtown Loft",
-    "type": "Apartment",
-    "description": "A cozy downtown loft with great city views.",
-    "location": {
-      "street": "45 Main Street",
-      "city": "New York",
-      "state": "NY",
-      "zipcode": "10001"
-    },
-    "beds": 1,
-    "baths": 1,
-    "square_feet": 1800,
-    "amenities": [
-      "Wifi",
-      "Full kitchen",
-      "Washer & Dryer",
-      "Free Parking",
-      "Hot Tub",
-      "24/7 Security",
-      "Wheelchair Accessible",
-      "Elevator Access",
-      "Dishwasher",
-      "High-Speed Internet",
-      "Air Conditioning",
-      "Smart TV",
-      "Outdoor Grill/BBQ"
-    ],
-    "rates": {
-      "weekly": 1000,
-      "monthly": 4000
-    },
-    "seller_info": {
-      "name": "Jane Smith",
-      "email": "jane@gmail.com",
-      "phone": "212-555-5555"
-    },
-    "images": ["b1.jpg", "b2.jpg", "b3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-02T00:00:00.000Z",
-    "updatedAt": "2024-01-02T00:00:00.000Z"
-  },
-  {
-    "_id": "3",
-    "owner": "2",
-    "name": "Luxury Condo with a View",
-    "type": "Condo",
-    "description": "Experience luxury in this stunning condo with breathtaking views.",
-    "location": {
-      "street": "500 Lux Lane",
-      "city": "Los Angeles",
-      "state": "CA",
-      "zipcode": "90001"
-    },
-    "beds": 3,
-    "baths": 2,
-    "square_feet": 2200,
-    "amenities": [
-      "Wifi",
-      "Full kitchen",
-      "Washer & Dryer",
-      "Free Parking",
-      "Hot Tub",
-      "24/7 Security",
-      "Wheelchair Accessible",
-      "Elevator Access",
-      "Dishwasher",
-      "Swimming Pool",
-      "Gym/Fitness Center",
-      "Air Conditioning",
-      "Smart TV",
-      "Coffee Maker"
-    ],
-    "rates": {
-      "nightly": 200,
-      "weekly": 750,
-      "monthly": 3300
-    },
-    "seller_info": {
-      "name": "David Johnson",
-      "email": "david@gmail.com",
-      "phone": "213-555-5555"
-    },
-    "images": ["c1.jpg", "c2.jpg", "c3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-03T00:00:00.000Z",
-    "updatedAt": "2024-01-03T00:00:00.000Z"
-  },
-  {
-    "_id": "4",
-    "owner": "2",
-    "name": "Charming Cottage Getaway",
-    "type": "Cottage Or Cabin",
-    "description": "Escape to this charming cottage for a peaceful retreat.",
-    "location": {
-      "street": "123 Countryside Lane",
-      "city": "Austin",
+      "street": "1402 HWY 59 S",
+      "city": "Bowie",
       "state": "TX",
-      "zipcode": "78701"
-    },
-    "beds": 1,
-    "baths": 1,
-    "square_feet": 900,
-    "amenities": [
-      "Fireplace",
-      "Outdoor Grill/BBQ",
-      "Balcony/Patio",
-      "Coffee Maker"
-    ],
-    "rates": {
-      "weekly": 2000
-    },
-    "seller_info": {
-      "name": "Emily Davis",
-      "email": "emily@gmail.com",
-      "phone": "512-555-5555"
-    },
-    "images": ["d1.jpg", "d2.jpg", "d3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-04T00:00:00.000Z",
-    "updatedAt": "2024-01-04T00:00:00.000Z"
-  },
-  {
-    "_id": "5",
-    "owner": "3",
-    "name": "Modern Downtown Studio",
-    "type": "Studio",
-    "description": "Stay in style in this modern downtown studio apartment.",
-    "location": {
-      "street": "75 Urban Avenue",
-      "city": "Chicago",
-      "state": "IL",
-      "zipcode": "60601"
-    },
-    "beds": 1,
-    "baths": 1,
-    "square_feet": 900,
-    "amenities": [
-      "High-Speed Internet",
-      "Smart TV",
-      "Air Conditioning",
-      "Gym/Fitness Center",
-      "Outdoor Grill/BBQ"
-    ],
-    "rates": {
-      "weekly": 1100,
-      "monthly": 4200
-    },
-    "seller_info": {
-      "name": "Michael Brown",
-      "email": "michael@gmail.com",
-      "phone": "312-555-5555"
-    },
-    "images": ["e1.jpg", "e2.jpg", "e3.jpg"],
-    "is_featured": true,
-    "createdAt": "2024-01-05T00:00:00.000Z",
-    "updatedAt": "2024-01-05T00:00:00.000Z"
-  },
-  {
-    "_id": "6",
-    "owner": "3",
-    "name": "Seaside Retreat",
-    "type": "House",
-    "description": "Escape to this seaside house for a relaxing getaway.",
-    "location": {
-      "street": "456 Oceanfront Drive",
-      "city": "Miami",
-      "state": "FL",
-      "zipcode": "33101"
+      "zipcode": "76230"
     },
     "beds": 4,
     "baths": 3,
-    "square_feet": 2800,
+    "square_feet": 3200,
     "amenities": [
-      "Beach Access",
-      "Swimming Pool",
-      "Balcony/Patio",
-      "Smart TV",
-      "Outdoor Grill/BBQ"
+      "Horse Stalls",
+      "Acreage",
+      "Gated Entry",
+      "Workshop",
+      "Septic System",
+      "Well Water",
+      "Covered Patio"
     ],
     "rates": {
-      "nightly": 500,
-      "weekly": 2500
+      "monthly": 2500
     },
     "seller_info": {
-      "name": "Sarah Wilson",
-      "email": "sarah@gmail.com",
-      "phone": "305-555-5555"
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "940-555-0123"
     },
-    "images": ["f1.jpg", "f2.jpg", "f3.jpg"],
-    "is_featured": true,
-    "createdAt": "2024-01-06T00:00:00.000Z",
-    "updatedAt": "2024-01-06T00:00:00.000Z"
+    "images": ["/images/properties/ranch1.jpg"],
+    "is_featured": true
   },
-  {
-    "_id": "7",
-    "owner": "4",
-    "name": "Rustic Cabin in the Woods",
-    "type": "Cottage Or Cabin",
-    "description": "Experience nature in this cozy rustic cabin.",
-    "location": {
-      "street": "789 Forest Lane",
-      "city": "Denver",
-      "state": "CO",
-      "zipcode": "80201"
-    },
-    "beds": 2,
-    "baths": 1,
-    "square_feet": 1100,
-    "amenities": [
-      "Fireplace",
-      "Outdoor Grill/BBQ",
-      "Hiking Trails Access",
-      "Pet-Friendly"
-    ],
-    "rates": {
-      "nightly": 475,
-      "weekly": 2000
-    },
-    "seller_info": {
-      "name": "Robert Anderson",
-      "email": "robert@gmail.com",
-      "phone": "303-555-5555"
-    },
-    "images": ["g1.jpg", "g2.jpg", "g3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-07T00:00:00.000Z",
-    "updatedAt": "2024-01-07T00:00:00.000Z"
+  {"owner": "650c8e2b1f4e1a2b3c4d5e6f",
+  "name": "Holly Ridge Estates Rural Oasis",
+  "type": "House",
+  "description": "Enjoy life in this rural oasis located in the prestigious Holly Ridge Estates. This home offers a perfect taste of country living without the long drive. Features a master suite with a whirlpool tub, a large deck for entertaining, and a spacious living area perfect for relaxation.",
+  "location": {
+    "street": "244 E Ridge St",
+    "city": "Decatur",
+    "state": "TX",
+    "zipcode": "76234"
   },
+  "beds": 3,
+  "baths": 2,
+  "square_feet": 2203,
+  "amenities": [
+    "2.5 Acres",
+    "Whirlpool Tub",
+    "2-Car Attached Garage",
+    "Formal Dining Room",
+    "Wood Deck",
+    "Fireplace",
+    "Cul-De-Sac Lot",
+    "Septic System",
+    "Well Water"
+  ],
+  "rates": {
+    "monthly": 2200
+  },
+  "seller_info": {
+    "name": "Elite Leases & Property Management",
+    "email": "info@eliteleases.com",
+    "phone": "940-555-0199"
+  },
+  "images": ["/images/properties/244ridge1.jpg"],
+  "is_featured": true,
+  "createdAt": "2026-03-12T00:00:00.000Z"
+},
   {
-    "_id": "8",
-    "owner": "5",
-    "name": "Ski-In/Ski-Out Chalet",
-    "type": "Chalet",
-    "description": "Hit the slopes from this cozy ski-in/ski-out chalet.",
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Sunset Pulse Modern Barndominium",
+    "type": "Other",
+    "description": "The ultimate Texas living experience. High ceilings, spray-foam insulation, and a massive 2,000 sqft shop attached to the living quarters.",
     "location": {
-      "street": "321 Mountain Road",
-      "city": "Aspen",
-      "state": "CO",
-      "zipcode": "81611"
+      "street": "405 Main St",
+      "city": "Sunset",
+      "state": "TX",
+      "zipcode": "76270"
     },
     "beds": 3,
     "baths": 2,
-    "square_feet": 1800,
-    "amenities": [
-      "Ski Equipment Storage",
-      "Fireplace",
-      "Balcony/Patio",
-      "Smart TV"
-    ],
-    "rates": {
-      "nightly": 300,
-      "weekly": 1100
-    },
-    "seller_info": {
-      "name": "Jennifer Martin",
-      "email": "jennifer@gmail.com",
-      "phone": "970-555-5555"
-    },
-    "images": ["h1.jpg", "h2.jpg", "h3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-08T00:00:00.000Z",
-    "updatedAt": "2024-01-08T00:00:00.000Z"
-  },
-  {
-    "_id": "9",
-    "owner": "6",
-    "name": "Mountain View Retreat",
-    "type": "House",
-    "description": "Enjoy stunning mountain views from this spacious retreat.",
-    "location": {
-      "street": "600 Summit Drive",
-      "city": "Boulder",
-      "state": "CO",
-      "zipcode": "80301"
-    },
-    "beds": 4,
-    "baths": 3,
     "square_feet": 2400,
     "amenities": [
-      "Mountain View",
-      "Hiking Trails Access",
-      "Air Conditioning",
-      "Smart TV",
-      "Outdoor Grill/BBQ"
+      "Attached Workshop",
+      "High Ceilings",
+      "Energy Efficient",
+      "RV Hookup",
+      "Wifi",
+      "Smart Home Tech"
     ],
     "rates": {
-      "weekly": 1000,
-      "monthly": 3800
+      "monthly": 1800
     },
     "seller_info": {
-      "name": "Lisa Taylor",
-      "email": "lisa@gmail.com",
-      "phone": "303-555-5555"
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "940-555-0123"
     },
-    "images": ["i1.jpg", "i2.jpg", "i3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-09T00:00:00.000Z",
-    "updatedAt": "2024-01-09T00:00:00.000Z"
+    "images": ["/images/properties/barndo1.jpg"],
+    "is_featured": true
   },
   {
-    "_id": "10",
-    "owner": "7",
-    "name": "Historic Downtown Loft",
-    "type": "Apartment",
-    "description": "Step back in time with a stay in this historic downtown loft.",
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Rhome Commuter Cottage",
+    "type": "House",
+    "description": "Perfect for those working in Fort Worth but wanting the quiet of Rhome. Modern finishes with a large backyard and easy access to HWY 287.",
     "location": {
-      "street": "123 History Lane",
-      "city": "Philadelphia",
-      "state": "PA",
-      "zipcode": "19101"
+      "street": "210 Aurora St",
+      "city": "Rhome",
+      "state": "TX",
+      "zipcode": "76078"
     },
-    "beds": 2,
-    "baths": 1,
-    "square_feet": 1200,
+    "beds": 3,
+    "baths": 2,
+    "square_feet": 1850,
     "amenities": [
-      "High-Speed Internet",
-      "Air Conditioning",
-      "Smart TV",
-      "Coffee Maker"
+      "Fenced Backyard",
+      "Two-Car Garage",
+      "Modern Kitchen",
+      "Fast Internet",
+      "Dishwasher"
     ],
     "rates": {
-      "weekly": 550,
-      "monthly": 2100
+      "monthly": 1200
     },
     "seller_info": {
-      "name": "Matthew Harris",
-      "email": "matthew@gmail.com",
-      "phone": "215-555-5555"
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "817-555-0987"
     },
-    "images": ["j1.jpg", "j2.jpg", "j3.jpg"],
-    "is_featured": false,
-    "createdAt": "2024-01-10T00:00:00.000Z",
-    "updatedAt": "2024-01-10T00:00:00.000Z"
+    "images": ["/images/properties/rhome1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Alvord Rolling Hills Acreage",
+    "type": "Other",
+    "description": "Prime development land or private homesite. Features a small pond and several mature oak trees. Ready for your custom build.",
+    "location": {
+      "street": "980 E Franklin St",
+      "city": "Alvord",
+      "state": "TX",
+      "zipcode": "76225"
+    },
+    "beds": 0,
+    "baths": 0,
+    "square_feet": 0,
+    "amenities": [
+      "Pond",
+      "Mature Trees",
+      "Road Frontage",
+      "Agriculture Exempt Potential"
+    ],
+    "rates": {
+      "weekly": 500
+    },
+    "seller_info": {
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "940-555-0123"
+    },
+    "images": ["/images/properties/land1.jpg"],
+    "is_featured": false
   }
 ]

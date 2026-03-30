@@ -3,13 +3,13 @@ const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || null;
 // Fetch all properties
 async function fetchProperties({ showFeatured = false } = {}) {
   try {
-    // Handle the case where the domain is not available yet
     if (!apiDomain) {
       return [];
     }
 
+    // Fixed: Added /api/ before properties
     const res = await fetch(
-      `${apiDomain}/properties${showFeatured ? '/featured' : ''}`,
+      `${apiDomain}/api/properties${showFeatured ? '/featured' : ''}`,
       { cache: 'no-store' }
     );
 
@@ -27,12 +27,21 @@ async function fetchProperties({ showFeatured = false } = {}) {
 // Fetch single property
 async function fetchProperty(id) {
   try {
-    // Handle the case where the domain is not available yet
-    if (!apiDomain) {
+    // 1. Detect if we are in the browser
+    const isClient = typeof window !== 'undefined';
+    
+    // 2. Fix: Ensure we use /api/properties
+    // On client: use relative path to prevent "Double IP" bug
+    // On server: use absolute apiDomain
+    const fetchUrl = isClient 
+      ? `/api/properties/${id}` 
+      : `${apiDomain}/api/properties/${id}`;
+
+    if (!isClient && !apiDomain) {
       return null;
     }
 
-    const res = await fetch(`${apiDomain}/properties/${id}`);
+    const res = await fetch(fetchUrl);
 
     if (!res.ok) {
       throw new Error('Failed to fetch data');
