@@ -9,6 +9,11 @@ import {
 import PropertyMap from '@/components/PropertyMap';
 import SunsetPulseViewer from '@/components/SunsetPulseViewer';
 
+/**
+ * Renders detailed information about a specific property.
+ * @param {Object} props - Component properties.
+ * @param {Object} props.property - The property object to display.
+ */
 const PropertyDetails = ({ property }) => {
   return (
     <main>
@@ -72,7 +77,6 @@ const PropertyDetails = ({ property }) => {
             <span className='hidden sm:inline'>Baths</span>
           </p>
           <p>
-            <i className='fa-solid fa-ruler-combined'></i>
             <FaRulerCombined className='inline-block mr-2' />
             {property.square_feet}{' '}
             <span className='hidden sm:inline'>sqft</span>

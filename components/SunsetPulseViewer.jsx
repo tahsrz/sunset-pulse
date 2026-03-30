@@ -26,7 +26,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
           const rawObj = generatePropertyModel(property);
           mesh = Mesh3D.loadFromRaw(rawObj);
         } else {
-          mesh = Mesh3D.loadFromRaw("v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nf 1 2 3 4");
+          mesh = Mesh3D.loadFromRaw('v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nf 1 2 3 4');
         }
         renderer.meshes = [mesh];
         setLoading(false);
@@ -69,9 +69,9 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
   }, [objUrl, property]);
 
   return (
-    <div className="relative w-full h-[400px] bg-gradient-to-b from-gray-900 to-slate-900 rounded-xl overflow-hidden shadow-2xl border border-gray-800">
+    <div className='relative w-full h-[400px] bg-gradient-to-b from-gray-900 to-slate-900 rounded-xl overflow-hidden shadow-2xl border border-gray-800'>
       {loading ? (
-        <div className="absolute inset-0 flex items-center justify-center text-blue-400 font-mono text-sm animate-pulse">
+        <div className='absolute inset-0 flex items-center justify-center text-blue-400 font-mono text-sm animate-pulse'>
           [ INITIALIZING SUNSET PULSE V1.0.0... ]
         </div>
       ) : (
@@ -80,12 +80,12 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
             ref={canvasRef}
             width={800}
             height={400}
-            className="w-full h-full cursor-move"
+            className='w-full h-full cursor-move'
           />
-          <div className="absolute top-4 right-4 text-[10px] font-mono text-blue-500/50 tracking-widest uppercase pointer-events-none">
+          <div className='absolute top-4 right-4 text-[10px] font-mono text-blue-500/50 tracking-widest uppercase pointer-events-none'>
             SUNSET PULSE V1.0.0 // SYSTEM ACTIVE
           </div>
-          <div className="absolute bottom-4 left-4 text-[10px] font-mono text-gray-500/50 pointer-events-none">
+          <div className='absolute bottom-4 left-4 text-[10px] font-mono text-gray-500/50 pointer-events-none'>
             {property?.name || 'GENERIC_UNIT_01'}
           </div>
         </>

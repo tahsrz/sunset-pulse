@@ -1,0 +1,13 @@
+{
+  "rent": 2450,
+  "rentRangeLow": 2200,
+  "rentRangeHigh": 2700,
+  "confidenceScore": 85,
+  "comparables": [
+    {
+      "address": "123 Keller Pkwy",
+      "distance": 0.4,
+      "price": 2400
+    }
+  ]
+}
