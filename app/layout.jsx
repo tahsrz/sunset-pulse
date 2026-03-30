@@ -1,5 +1,6 @@
 import '@/assets/styles/globals.css'; // Path must exist in root/assets/styles/
 import Navbar from '@/components/Navbar';
+import GlobalMarketPulse from '@/components/GlobalMarketPulse';
 import Footer from '@/components/Footer';
 import AuthProvider from '@/components/AuthProvider';
 import { CartProvider } from '@/context/CartContext';

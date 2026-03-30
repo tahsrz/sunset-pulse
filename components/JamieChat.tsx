@@ -45,56 +45,87 @@ export default function JamieChat({ propertyData }) {
   });
 
   return (
-    <div className="fixed bottom-5 right-5 w-96 z-50 flex flex-col gap-4">
+    <div className="fixed bottom-5 right-5 w-96 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-10 duration-500">
       {/* Dev Mode Toggle */}
       <button 
         onClick={() => setDevMode(!isDevMode)}
-        className={`flex items-center justify-center gap-2 py-1 px-3 rounded-full text-[10px] font-bold uppercase tracking-tighter transition-all ${
-          isDevMode ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-400'
+        className={`group relative flex items-center justify-center gap-2 py-2 px-4 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 overflow-hidden ${
+          isDevMode 
+            ? 'bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)] scale-105' 
+            : 'bg-slate-900/80 text-slate-400 border border-white/10 backdrop-blur-md'
         }`}
       >
-        <FaTerminal /> {isDevMode ? 'Dev Mode: Active' : 'Dev Mode: Off'}
+        <div className={`absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500`} />
+        <FaTerminal className={isDevMode ? 'animate-pulse' : ''} /> 
+        <span className="relative">{isDevMode ? 'Dev Mode: Active' : 'Dev Mode: Off'}</span>
       </button>
 
       {localIntel && (
-        <IntelCard 
-          businessName="Sunset Grill" 
-          items={localIntel} 
-          onAction={() => alert('Order sent to the Station!')}
-        />
+        <div className="animate-in fade-in zoom-in duration-500">
+          <IntelCard 
+            businessName="Sunset Grill" 
+            items={localIntel} 
+            onAction={() => alert('Order sent to the Station!')}
+          />
+        </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col h-[500px] overflow-hidden">
-        <div className="bg-[var(--primary-color)] p-4 text-white flex justify-between items-center transition-colors duration-500">
-          <div className="flex items-center gap-2">
-            <FaRobot />
-            <h3 className="font-bold tracking-tighter uppercase">Jamie Agentic UI</h3>
+      <div className="bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/10 flex flex-col h-[550px] overflow-hidden transition-all duration-500 hover:border-blue-500/30">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-5 text-white flex justify-between items-center transition-all duration-500 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+              <FaRobot className="text-lg" />
+            </div>
+            <div>
+              <h3 className="font-black tracking-[0.1em] uppercase text-sm italic">Jamie Agentic UI</h3>
+              <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Protocol V4.2.0</p>
+            </div>
           </div>
-          <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
+          <div className="relative">
+            <div className="h-3 w-3 bg-green-400 rounded-full animate-ping absolute inset-0" />
+            <div className="h-3 w-3 bg-green-400 rounded-full relative shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
           {messages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-${m.role === 'user' ? 'right' : 'left'}-5 duration-300`}>
+              <div className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm shadow-xl transition-all duration-500 hover:scale-[1.02] ${
                 m.role === 'user' 
-                  ? 'bg-[var(--primary-color)] text-white rounded-tr-none' 
-                  : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-              } transition-colors duration-500`}>
-                {m.content.split('---')[0]}
+                  ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10 border border-white/10' 
+                  : 'bg-slate-800 text-slate-100 border border-white/5 rounded-tl-none shadow-black/20'
+              }`}>
+                <p className="leading-relaxed font-medium">{m.content.split('---')[0]}</p>
               </div>
             </div>
           ))}
-          {isLoading && <div className="text-xs text-gray-400 animate-pulse">Jamie is analyzing the grid...</div>}
+          {isLoading && (
+            <div className="flex items-center gap-3 text-[10px] font-black text-blue-400 uppercase tracking-widest animate-pulse">
+              <div className="flex gap-1">
+                <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" />
+                <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+              </div>
+              Jamie is analyzing the grid...
+            </div>
+          )}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-gray-100">
-          <input
-            className="w-full p-3 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
-            value={input}
-            placeholder={isDevMode ? "Tell Jamie to change the vibe..." : "Ask Jamie about properties..."}
-            onChange={handleInputChange}
-          />
+        <form onSubmit={handleSubmit} className="p-6 bg-slate-950/50 border-t border-white/5">
+          <div className="relative group/input">
+            <input
+              className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600"
+              value={input}
+              placeholder={isDevMode ? "EXECUTE_VIBE_CHANGE..." : "COMMAND_JAMIE_AI..."}
+              onChange={handleInputChange}
+            />
+            <button 
+              type="submit"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 transition-colors"
+            >
+              <FaCogs className={isLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </form>
       </div>
     </div>

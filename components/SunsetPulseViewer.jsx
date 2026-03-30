@@ -142,98 +142,159 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
   };
 
   return (
-    <div className='relative w-full h-[400px] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-white/5' onContextMenu={(e) => e.preventDefault()}>
+    <div className='relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 group' onContextMenu={(e) => e.preventDefault()}>
+      
+      {/* Scanline Effect Overlay */}
+      <div className='absolute inset-0 pointer-events-none z-10 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]' />
       
       <canvas
         ref={canvasRef}
         width={800}
-        height={400}
+        height={500}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`w-full h-full cursor-crosshair transition-opacity duration-1000 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        className={`w-full h-full cursor-crosshair transition-all duration-1000 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} ${isDroneMode ? 'brightness-125 contrast-125' : ''}`}
       />
 
       {loading && (
         <div 
-          className='absolute inset-0 flex flex-col items-center justify-center font-mono text-sm animate-pulse bg-slate-950'
+          className='absolute inset-0 flex flex-col items-center justify-center font-mono text-sm bg-slate-950 z-20'
           style={{ color: branding.primaryColor }}
         >
-          <FaSync className='animate-spin mb-4' size={24} />
-          [ INITIALIZING DRONE FEED V1.3.2... ]
+          <div className='relative'>
+            <FaSync className='animate-spin mb-4' size={40} />
+            <div className='absolute inset-0 blur-xl bg-current opacity-20 animate-pulse' />
+          </div>
+          <div className='tracking-[0.5em] animate-pulse uppercase'>[ INITIALIZING_NEURAL_LINK... ]</div>
         </div>
       )}
 
       {!loading && (
-        <div className='absolute inset-0 pointer-events-none'>
-          <div className='absolute top-4 left-4 flex gap-2'>
-            <button 
-              onClick={() => setDroneMode(!isDroneMode)}
-              className='pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2 transition-all hover:bg-white/10 active:scale-95'
-            >
-              {isDroneMode ? <TbDrone className='text-orange-500 animate-pulse' size={18} /> : <FaSync className='text-blue-500' />}
-              <span className='text-[10px] font-black uppercase tracking-widest text-white'>
-                {isDroneMode ? 'Drone Piloting' : 'Orbit Scan'}
-              </span>
-            </button>
-          </div>
+        <div className='absolute inset-0 pointer-events-none z-20 p-6'>
+          {/* Top Bar */}
+          <div className='flex justify-between items-start'>
+            <div className='flex flex-col gap-4'>
+              <button 
+                onClick={() => setDroneMode(!isDroneMode)}
+                className='pointer-events-auto group/btn relative bg-black/60 backdrop-blur-2xl border border-white/10 px-6 py-2.5 rounded-full flex items-center gap-3 transition-all hover:bg-white/10 hover:border-blue-500/50 active:scale-95 shadow-xl'
+              >
+                {isDroneMode ? (
+                  <TbDrone className='text-orange-500 animate-bounce' size={20} />
+                ) : (
+                  <FaSync className='text-blue-500 group-hover/btn:rotate-180 transition-transform duration-700' size={16} />
+                )}
+                <span className='text-[10px] font-black uppercase tracking-[0.3em] text-white italic'>
+                  {isDroneMode ? 'Link Active' : 'Orbit Ready'}
+                </span>
+                <div className='absolute inset-0 rounded-full bg-blue-500/10 blur-md opacity-0 group-hover/btn:opacity-100 transition-opacity' />
+              </button>
 
-          <div 
-            className='absolute top-4 right-4 text-[10px] font-mono tracking-widest uppercase opacity-50'
-            style={{ color: branding.primaryColor }}
-          >
-            {isDroneMode ? 'DRONE_RECON // ACTIVE' : 'ORBIT_SCAN // READY'}
+              {isDroneMode && (
+                <div className='bg-orange-500/10 border border-orange-500/20 px-4 py-2 rounded-xl backdrop-blur-md animate-in slide-in-from-left-4 duration-500'>
+                  <div className='flex items-center gap-3 text-[10px] font-black text-orange-400 uppercase tracking-widest'>
+                    <div className='w-2 h-2 bg-orange-500 rounded-full animate-ping' />
+                    <FaTrophy /> Training Course: Phase 1
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className='text-right font-mono'>
+              <div 
+                className='text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-2 italic'
+                style={{ color: branding.primaryColor }}
+              >
+                {isDroneMode ? 'SYS_RECON // LIVE_FEED' : 'SYS_ORBIT // STANDBY'}
+              </div>
+              <div className='text-[8px] text-slate-500 flex flex-col gap-1'>
+                <span>LAT: 34.0522 N</span>
+                <span>LNG: 118.2437 W</span>
+                <span>SIG: 100% STABLE</span>
+              </div>
+            </div>
           </div>
           
+          {/* Drone Stats Overlay */}
           {isDroneMode && (
-            <div className='absolute top-16 left-4 bg-orange-500/10 border border-orange-500/20 p-2 rounded-lg backdrop-blur-md'>
-              <div className='flex items-center gap-2 text-[9px] font-black text-orange-400 uppercase tracking-tighter'>
-                <FaTrophy /> Training Course Active
+            <div className='absolute top-1/2 -translate-y-1/2 right-6 space-y-4 animate-in slide-in-from-right-4 duration-500'>
+              <div className='bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-white/5 space-y-3'>
+                <div className='flex items-center justify-end gap-3'>
+                  <div className='text-right'>
+                    <div className='text-[8px] text-slate-500 font-bold uppercase'>Altitude</div>
+                    <div className='text-xs font-black text-white'>{droneState.current.pos.y.toFixed(1)}m</div>
+                  </div>
+                  <FaWind className='text-blue-400' />
+                </div>
+                <div className='flex items-center justify-end gap-3'>
+                  <div className='text-right'>
+                    <div className='text-[8px] text-slate-500 font-bold uppercase'>Velocity</div>
+                    <div className='text-xs font-black text-white'>{(droneState.current.vel.magnitude() * 10).toFixed(1)}kn</div>
+                  </div>
+                  <FaCrosshairs className='text-red-400' />
+                </div>
+                <div className='flex items-center justify-end gap-3'>
+                  <div className='text-right'>
+                    <div className='text-[8px] text-slate-500 font-bold uppercase'>Heading</div>
+                    <div className='text-xs font-black text-white'>{Math.floor((droneState.current.rot.yaw * 180 / Math.PI) % 360)}°</div>
+                  </div>
+                  <FaMap className='text-green-400' />
+                </div>
               </div>
             </div>
           )}
 
-          {isDroneMode && (
-            <div className='absolute top-16 right-4 text-right font-mono space-y-1 opacity-80 text-white'>
-              <div className='flex items-center justify-end gap-2 text-[9px] text-slate-500'>
-                ALT: <span className='text-white'>{droneState.current.pos.y.toFixed(1)}m</span>
-                <FaWind className='text-blue-400' />
-              </div>
-              <div className='flex items-center justify-end gap-2 text-[9px] text-slate-500'>
-                VEL: <span className='text-white'>{(droneState.current.vel.magnitude() * 10).toFixed(1)}kn</span>
-                <FaCrosshairs className='text-red-400' />
-              </div>
-              <div className='flex items-center justify-end gap-2 text-[9px] text-slate-500'>
-                HDG: <span className='text-white'>{Math.floor((droneState.current.rot.yaw * 180 / Math.PI) % 360)}°</span>
-                <FaMap className='text-green-400' />
+          {/* Bottom Info Panels */}
+          <div className='absolute bottom-6 inset-x-6 flex justify-between items-end'>
+            <div className='p-5 bg-black/60 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl transition-all group-hover:border-blue-500/30'>
+              <div className='text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2 italic opacity-70'>Asset Locked</div>
+              <div className='text-sm font-black text-white uppercase tracking-tighter'>{property?.name || 'GENERIC_UNIT_01'}</div>
+              <div className='h-1 mt-3 w-full bg-slate-800 rounded-full overflow-hidden'>
+                <div 
+                  className='h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]' 
+                  style={{ width: '65%' }}
+                />
               </div>
             </div>
+
+            <div className='text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 text-right bg-black/60 p-4 rounded-2xl border border-white/5 backdrop-blur-xl'>
+              {isDroneMode ? (
+                <div className='space-y-1'>
+                  <div><span className='text-blue-400'>[ LMB_DRAG ]</span> ROTATE_CHASSIS</div>
+                  <div><span className='text-blue-400'>[ RMB_DRAG ]</span> THRUST_VECTOR</div>
+                </div>
+              ) : (
+                'DRAG TO RE-POSITION ORBIT'
+              )}
+            </div>
+          </div>
+
+          {/* HUD Corner Elements */}
+          <div className='absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-white/20 rounded-tl-lg' />
+          <div className='absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-white/20 rounded-tr-lg' />
+          <div className='absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-white/20 rounded-bl-lg' />
+          <div className='absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-white/20 rounded-br-lg' />
+          
+          {/* Scanning Line */}
+          {isDroneMode && (
+            <div className='absolute left-0 right-0 h-[1px] bg-blue-400/30 shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-[scan_4s_linear_infinite]' />
           )}
-
-          <div className='absolute bottom-4 left-4 p-4 bg-black/40 backdrop-blur-md rounded-lg border border-white/10'>
-            <div className='text-[10px] font-mono text-slate-500 uppercase mb-1'>Target Asset</div>
-            <div className='text-xs font-bold text-white uppercase'>{property?.name || 'GENERIC_UNIT_01'}</div>
-            <div className='h-0.5 mt-2 w-full bg-[var(--primary-color)]' />
-          </div>
-
-          <div className='absolute bottom-4 right-4 text-[8px] font-bold uppercase tracking-tighter text-slate-500 text-right bg-black/40 p-3 rounded-xl border border-white/5 backdrop-blur-sm'>
-            {isDroneMode ? (
-              <>
-                <span className='text-blue-400'>L-DRAG:</span> YAW & ALTITUDE <br/>
-                <span className='text-blue-400'>R-DRAG:</span> PITCH & ROLL
-              </>
-            ) : (
-              'DRAG: MANUALLY ORBIT ASSET'
-            )}
-          </div>
-
-          <div className='absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-white/10' />
-          <div className='absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-white/10' />
-          <div className='absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-white/10' />
-          <div className='absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-white/10' />
         </div>
       )}
+
+      <style jsx global>{`
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 };

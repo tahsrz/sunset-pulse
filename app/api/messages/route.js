@@ -1,6 +1,7 @@
 import connectDB from '@/config/database';
 import Message from '@/models/Message';
 import { getSessionUser } from '@/utils/getSessionUser';
+import { MessageSchema } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export const GET = async () => {
     const { userId } = sessionUser;
 
     const readMessages = await Message.find({ recipient: userId, read: true })
-      .sort({ createdAt: -1 }) // Sort read messages in asc order
+      .sort({ createdAt: -1 })
       .populate('sender', 'username')
       .populate('property', 'name');
 
@@ -28,7 +29,7 @@ export const GET = async () => {
       recipient: userId,
       read: false,
     })
-      .sort({ createdAt: -1 }) // Sort read messages in asc order
+      .sort({ createdAt: -1 })
       .populate('sender', 'username')
       .populate('property', 'name');
 
@@ -36,7 +37,7 @@ export const GET = async () => {
 
     return new Response(JSON.stringify(messages), { status: 200 });
   } catch (error) {
-    console.log(error);
+    console.error('[API_MESSAGES_GET] Error:', error);
     return new Response('Something went wrong', { status: 500 });
   }
 };
@@ -46,8 +47,17 @@ export const POST = async (request) => {
   try {
     await connectDB();
 
-    const { name, email, phone, message, property, recipient } =
-      await request.json();
+    const body = await request.json();
+
+    // Validate the incoming data
+    const validation = MessageSchema.safeParse(body);
+
+    if (!validation.success) {
+      const errors = validation.error.flatten().fieldErrors;
+      return new Response(JSON.stringify({ message: 'Validation failed', errors }), { status: 400 });
+    }
+
+    const { name, email, phone, message, property, recipient } = validation.data;
 
     const sessionUser = await getSessionUser();
 
@@ -84,7 +94,7 @@ export const POST = async (request) => {
       status: 200,
     });
   } catch (error) {
-    console.log(error);
+    console.error('[API_MESSAGES_POST] Error:', error);
     return new Response('Something went wrong', { status: 500 });
   }
 };

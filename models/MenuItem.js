@@ -6,6 +6,7 @@ const MenuItemSchema = new Schema({
   price: { type: Number, required: true },
   description: { type: String },
   category: { type: String },
+  isAvailable: { type: Boolean, default: true },
 }, {
   timestamps: true
 });
