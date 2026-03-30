@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Define the shape of our branding for Type Safety
 interface Branding {
   primaryColor: string;
   secondaryColor?: string;
@@ -14,20 +13,28 @@ interface Branding {
 interface ThemeContextType {
   branding: Branding;
   updateBranding: (newSettings: Partial<Branding>) => void;
+  isDevMode: boolean;
+  setDevMode: (active: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const defaultBranding: Branding = {
+  primaryColor: '#2563eb',
+  fontFamily: 'Inter',
+  borderRadius: '8px'
+};
+
 export function ThemeProvider({ 
   children, 
-  initialBranding 
+  branding: initialBranding 
 }: { 
   children: ReactNode; 
-  initialBranding: Branding; 
+  branding: Branding; 
 }) {
-  const [branding, setBranding] = useState<Branding>(initialBranding);
+  const [branding, setBranding] = useState<Branding>(initialBranding || defaultBranding);
+  const [isDevMode, setDevMode] = useState(false);
 
-  // This is the "Magic Function" Jamie calls
   const updateBranding = (newSettings: Partial<Branding>) => {
     setBranding((prev) => ({
       ...prev,
@@ -35,25 +42,23 @@ export function ThemeProvider({
     }));
   };
 
-  // Sync state to CSS Variables in the DOM
   useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--primary-color', branding.primaryColor);
-    root.style.setProperty('--font-family', branding.fontFamily);
-    root.style.setProperty('--border-radius', branding.borderRadius);
-    
-    // Log for the developer (Taz) to see the ML working
-    console.log('🎨 Theme Updated via Jamie:', branding);
+    if (branding) {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-color', branding.primaryColor);
+      root.style.setProperty('--font-family', branding.fontFamily);
+      root.style.setProperty('--border-radius', branding.borderRadius);
+    }
   }, [branding]);
 
   return (
-    <ThemeContext.Provider value={{ branding, updateBranding }}>
+    <ThemeContext.Provider value={{ branding, updateBranding, isDevMode, setDevMode }}>
       <div 
         style={{ 
-          '--primary-color': branding.primaryColor,
-          fontFamily: branding.fontFamily 
+          '--primary-color': branding?.primaryColor || defaultBranding.primaryColor,
+          fontFamily: branding?.fontFamily || defaultBranding.fontFamily 
         } as React.CSSProperties}
-        className="min-h-screen transition-colors duration-500"
+        className="min-h-screen transition-all duration-500"
       >
         {children}
       </div>

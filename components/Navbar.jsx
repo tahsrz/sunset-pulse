@@ -8,7 +8,6 @@ import profileDefault from '@/assets/images/profile.png';
 import { FaGoogle, FaShoppingBasket } from 'react-icons/fa';
 import { useCart } from '@/context/CartContext';
 
-// 1. IMPORT AUTH HOOKS
 import { signIn, signOut, useSession, getProviders } from 'next-auth/react';
 
 const Navbar = () => {
@@ -23,7 +22,6 @@ const Navbar = () => {
   const { cart } = useCart();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // 2. FETCH PROVIDERS ON LOAD
   useEffect(() => {
     const setAuthProviders = async () => {
       const res = await getProviders();
@@ -33,7 +31,10 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className='bg-blue-700 border-b border-blue-500'>
+    <nav 
+      className='border-b transition-colors duration-300 ease-in-out'
+      style={{ backgroundColor: 'var(--primary-color)', borderBottomColor: 'var(--primary-color)', filter: 'brightness(1.1)' }}
+    >
       <div className='mx-auto max-w-7xl px-2 sm:px-6 lg:px-8'>
         <div className='relative flex h-20 items-center justify-between'>
           {/* ... Mobile Button remains same ... */}
@@ -59,7 +60,6 @@ const Navbar = () => {
           {/* Right Side Icons */}
           <div className='absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0'>
             
-            {/* 3. SHOW LOGIN BUTTON IF NOT LOGGED IN */}
             {!session && (
               <div className='hidden md:block md:ml-6'>
                 <div className='flex items-center'>

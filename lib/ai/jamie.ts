@@ -1,8 +1,7 @@
 import Groq from "groq-sdk";
-import { MenuItem } from "@/models/MenuItem"; 
+import { MenuItem } from "@/models/MenuItem";
 import { SiteConfig } from "@/models/SiteConfig"; // <--- Ensure this import exists
-import connectDB from "@/config/db";
-
+import connectDB from "@/config/database";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function getJamieResponse(userInput: string, propertyData?: any) {

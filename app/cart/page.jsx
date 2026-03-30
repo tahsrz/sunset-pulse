@@ -73,7 +73,7 @@ const CartPage = () => {
                     <button
                       onClick={() => removeFromCart(item.id)}
                       className='text-red-500 hover:text-red-700 transition-colors'
-                      aria-label="Remove item"
+                      aria-label='Remove item'
                     >
                       <FaTrash />
                     </button>

@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 const GrillPage = () => {
   const { addToCart } = useCart();
 
-  // 1. ADDED GRILL LOCATION OBJECT HERE
   const grillLocation = {
     location: {
       type: 'Point',
@@ -47,12 +46,11 @@ const GrillPage = () => {
               Sunset Gas & Grill
             </h1>
             
-            {/* 2. ADDED MAP LINK HERE */}
             <div className='mt-2 mb-4'>
               <a 
                 href={grillLocation.mapUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
+                target='_blank' 
+                rel='noopener noreferrer'
                 className='inline-flex items-center gap-2 text-[#5d2a18] hover:text-[#b22222] font-bold uppercase tracking-widest text-sm transition-colors'
               >
                 <FaMapMarkerAlt />
