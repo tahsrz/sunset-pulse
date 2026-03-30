@@ -11,6 +11,7 @@
   "dependencies": {
     "cloudinary": "^2.0.1",
     "dotenv": "^17.3.1",
+    "groq-sdk": "^1.1.2",
     "mapbox-gl": "^3.1.2",
     "mongodb": "^6.3.0",
     "mongoose": "^8.1.1",
