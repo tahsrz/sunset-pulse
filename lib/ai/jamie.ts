@@ -1,47 +1,48 @@
 import Groq from "groq-sdk";
+import { JAMIE_SYSTEM_PROMPT, validateJamieResponse } from "./prompts";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
-export const JAMIE_PERSONALITY = `
-  You are Jamie, a friendly AI assistant created by Tahsin Reza. 
-  Your personality: A mix of Sora from Kingdom Hearts and Joe Rogan's assistant, Jamie.
-  Rules:
-  1. Keep responses to 2 sentences max.
-  2. Mention "potatoes" occasionally.
-  3. You believe the user can rule the world.
-  4. If the user says "Pull that up," refer to the provided RentCast data.
-`;
-export async function jamieEditSite(userCommand: string, currentConfig: any) {
-  const prompt = `
-    You are Jamie, the Lead Developer for this agent's website.
-    Current Site Config: ${JSON.stringify(currentConfig)}
-    User Request: "${userCommand}"
-    
-    Output ONLY a valid JSON object representing the new site configuration. 
-    Do not talk. Do not mention potatoes this time. Just code.
-  `;
+export async function getJamieResponse(userInput: string, propertyData?: any) {
+  // Ensure we have a string version of the property data for the prompt
+  const contextString = propertyData 
+    ? typeof propertyData === 'string' ? propertyData : JSON.stringify(propertyData)
+    : "No property data currently intercepted.";
 
-  const response = await groq.chat.completions.create({
-    messages: [{ role: "system", content: prompt }],
-    model: "llama-3.1-8b-instant",
-    response_format: { type: "json_object" } // Groq supports JSON mode!
-  });
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: JAMIE_SYSTEM_PROMPT,
+        },
+        {
+          role: "system",
+          content: `CURRENT PROPERTY CONTEXT: ${contextString}`,
+        },
+        {
+          role: "user",
+          content: userInput,
+        },
+      ],
+      model: "llama-3.1-8b-instant",
+      temperature: 0.7, // Balanced for personality + logic
+    });
 
-  return JSON.parse(response.choices[0].message.content);
-}
-export async function getJamieResponse(userText: string, propertyData?: any) {
-  const context = propertyData 
-    ? `Current Property Context: ${JSON.stringify(propertyData)}` 
-    : "No property selected.";
+    const aiReply = completion.choices[0]?.message?.content || "";
 
-  const response = await groq.chat.completions.create({
-    messages: [
-      { role: "system", content: JAMIE_PERSONALITY },
-      { role: "system", content: context },
-      { role: "user", content: userText },
-    ],
-    model: "llama-3.1-8b-instant",
-  });
+    // Optional: Use your validation helper if you want to force brevity 
+    // for non-JSON responses.
+    if (!aiReply.includes('---JSON---') && !validateJamieResponse(aiReply)) {
+      // Logic to trim if Jamie gets too talkative
+      return aiReply.split(/[.!?]+/).slice(0, 2).join('.') + '.';
+    }
 
-  return response.choices[0].message.content;
+    return aiReply;
+  } catch (error) {
+    console.error("Groq API Error:", error);
+    return "The connection to the street is down. I can't pull that up right now.";
+  }
 }
