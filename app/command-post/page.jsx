@@ -16,7 +16,6 @@ const CommandPostPage = () => {
           const data = await res.json();
           setLeads(data);
         } else {
-          // If unauthorized or error, we'll use mock data for the demo
           setLeads(getMockLeads());
         }
       } catch (error) {
@@ -66,11 +65,9 @@ const CommandPostPage = () => {
     }
   ];
 
-  // Logic for Jamie's Top Priority
   const topPriority = leads.reduce((prev, current) => 
     (prev.probability > current.probability) ? prev : current, leads[0] || {});
 
-  // Group leads by property
   const groupedLeads = leads.reduce((acc, lead) => {
     const propId = lead.property?._id || 'unknown';
     if (!acc[propId]) {
@@ -87,151 +84,96 @@ const CommandPostPage = () => {
   if (loading) return <Spinner loading={loading} />;
 
   return (
-    <div className='min-h-screen bg-[#020617] text-slate-100 p-8 font-sans'>
-      <header className='mb-12 border-b border-slate-800/50 pb-6 flex justify-between items-end'>
-        <div>
-          <h1 
-            className='text-5xl font-black tracking-tighter uppercase italic'
-            style={{ color: 'var(--primary-color)' }}
-          >
+    <div className='min-h-screen grid grid-cols-1 md:grid-cols-2 grid-rows-2 transition-all duration-500'>
+      
+      {/* TOP LEFT QUADRANT (Strategic Overview) */}
+      <div className='p-8 border-r border-b border-white/5 bg-[var(--tl-bg)] text-[var(--tl-color)] transition-all duration-500 overflow-y-auto'>
+        <header className='mb-8'>
+          <h1 className='text-4xl font-black tracking-tighter uppercase italic text-[var(--primary-color)]'>
             Command Post
           </h1>
-          <p className='text-slate-500 font-mono text-xs mt-2 tracking-widest'>
-            [ SYSTEM STATUS: <span className='text-green-500 animate-pulse'>OPERATIONAL</span> // AGENT: JAMIE ]
-          </p>
-        </div>
-        <div className='text-right'>
-          <div className='text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-1 font-bold'>Total Leads Captured</div>
-          <div className='text-4xl font-mono text-white leading-none'>{leads.length}</div>
-        </div>
-      </header>
-
-      {/* JAMIE'S TOP PRIORITY */}
-      {topPriority && (
-        <section 
-          className='mb-12 rounded-3xl p-[1px] shadow-2xl transform hover:scale-[1.005] transition-transform duration-500'
-          style={{ background: 'linear-gradient(to right, var(--primary-color), transparent)' }}
-        >
-          <div className='bg-slate-950/90 backdrop-blur-xl rounded-[23px] p-8 relative overflow-hidden'>
-            <div className='absolute top-0 right-0 p-4 opacity-5'>
-              <FaCrosshairs size={150} />
-            </div>
-            
-            <div className='flex items-center gap-3 mb-8'>
-              <div 
-                className='p-2 rounded-lg shadow-lg'
-                style={{ backgroundColor: 'var(--primary-color)' }}
-              >
-                <FaExclamationCircle className='text-white' />
-              </div>
-              <h2 
-                className='text-sm font-bold uppercase tracking-[0.3em]'
-                style={{ color: 'var(--primary-color)' }}
-              >
-                Jamie's Top Priority
-              </h2>
-            </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10'>
-              <div>
-                <h3 className='text-5xl font-black mb-4 tracking-tight'>{topPriority.name}</h3>
-                <div className='flex flex-wrap gap-6 mb-8'>
-                  <span className='flex items-center gap-2 text-slate-400 text-xs font-mono'>
-                    <FaEnvelope className='text-slate-600' size={14} /> {topPriority.email}
-                  </span>
-                  <span className='flex items-center gap-2 text-slate-400 text-xs font-mono'>
-                    <FaPhone className='text-slate-600' size={14} /> {topPriority.phone}
-                  </span>
-                </div>
-                <div className='bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 italic font-serif text-lg text-slate-300'>
-                  "{topPriority.jamieNotes}"
-                </div>
-              </div>
-              
-              <div className='flex flex-col justify-center items-end'>
-                <div className='text-right mb-8'>
-                  <div className='text-[10px] uppercase text-slate-500 font-bold tracking-widest mb-2'>Probability to Close</div>
-                  <div className='text-8xl font-black text-green-400 drop-shadow-[0_0_15px_rgba(74,222,128,0.3)]'>{topPriority.probability}<span className='text-4xl'>%</span></div>
-                </div>
-                <button 
-                  className='hover:opacity-90 text-white px-10 py-4 rounded-full font-black uppercase tracking-[0.2em] shadow-2xl transition-all hover:translate-y-[-2px] active:translate-y-[0px]'
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                >
-                  Intercept Lead Now
-                </button>
-              </div>
-            </div>
+          <p className='opacity-50 font-mono text-xs mt-1'>[ STRATEGIC OVERVIEW ]</p>
+        </header>
+        
+        <div className='bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10'>
+          <div className='text-xs uppercase tracking-widest opacity-50 mb-4 font-bold'>Captured Intel Assets</div>
+          <div className='text-6xl font-mono'>{leads.length}</div>
+          <div className='mt-4 flex gap-2'>
+            <span className='bg-green-500/20 text-green-400 text-[10px] px-2 py-1 rounded-full font-bold uppercase'>Grid: Active</span>
+            <span className='bg-blue-500/20 text-blue-400 text-[10px] px-2 py-1 rounded-full font-bold uppercase'>Agent: Jamie</span>
           </div>
-        </section>
-      )}
-
-      {/* LEAD GRID BY PROPERTY */}
-      <div className='grid grid-cols-1 gap-12'>
-        {Object.values(groupedLeads).map((group, idx) => (
-          <div key={idx} className='bg-slate-900/40 rounded-[2rem] p-10 border border-slate-800/50 backdrop-blur-sm'>
-            <div className='flex justify-between items-center mb-10'>
-              <div className='flex items-center gap-5'>
-                <div className='bg-slate-800/80 p-4 rounded-2xl border border-slate-700/50'>
-                  <FaHome style={{ color: 'var(--primary-color)' }} size={28} />
-                </div>
-                <div>
-                  <h3 className='text-3xl font-bold text-white tracking-tight'>{group.name}</h3>
-                  <p className='text-slate-500 text-[10px] uppercase tracking-[0.2em] font-black mt-1'>Property Intelligence Cluster</p>
-                </div>
-              </div>
-              <div className='text-right'>
-                <div className='text-[10px] uppercase text-slate-500 font-bold mb-2 tracking-widest'>Projected Compensation</div>
-                <div className='text-3xl font-mono text-green-400 font-bold'>
-                  ${(group.monthlyRate * 0.1).toFixed(2)} <span className='text-xs text-slate-600 ml-1'>(10% FEE)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-              {group.leads.map((lead) => (
-                <div key={lead._id} className='glassmorphism-card p-8 rounded-3xl relative group hover:border-white/20 transition-all duration-300'>
-                  <div className='flex justify-between items-start mb-6'>
-                    <h4 className='text-xl font-bold tracking-tight'>{lead.name}</h4>
-                    {lead.idxViewed ? (
-                      <span className='bg-green-500/10 text-green-400 text-[9px] px-3 py-1 rounded-full font-black uppercase border border-green-500/20 tracking-tighter'>
-                        IDX Viewed
-                      </span>
-                    ) : (
-                      <span className='bg-slate-800 text-slate-500 text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-tighter'>
-                        New Recon
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className='space-y-3 mb-8'>
-                    <div className='text-xs text-slate-400 flex items-center gap-3 font-mono'>
-                      <FaEnvelope className='text-slate-600' /> {lead.email}
-                    </div>
-                    <div className='text-xs text-slate-400 flex items-center gap-3 font-mono'>
-                      <FaPhone className='text-slate-600' /> {lead.phone}
-                    </div>
-                  </div>
-
-                  <div className='w-full bg-slate-800/50 h-2 rounded-full overflow-hidden mb-3'>
-                    <div 
-                      className='h-full transition-all duration-1000 ease-out' 
-                      style={{ 
-                        width: `${lead.probability}%`,
-                        backgroundColor: 'var(--primary-color)',
-                        boxShadow: '0 0 10px var(--primary-color)'
-                      }}
-                    />
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-[9px] uppercase text-slate-500 font-black tracking-widest'>Conversion Odds</span>
-                    <span className='text-[10px] font-bold text-white'>{lead.probability}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+        </div>
       </div>
+
+      {/* TOP RIGHT QUADRANT (Jamie's Top Priority) */}
+      <div className='p-8 border-b border-white/5 bg-[var(--tr-bg)] text-[var(--tr-color)] transition-all duration-500 overflow-y-auto'>
+        <div className='flex items-center gap-2 mb-6'>
+          <FaExclamationCircle className='text-[var(--primary-color)]' />
+          <h2 className='text-xs font-black uppercase tracking-widest opacity-50'>Top Priority Intercept</h2>
+        </div>
+
+        {topPriority && (
+          <div className='space-y-4'>
+            <h3 className='text-3xl font-black leading-tight'>{topPriority.name}</h3>
+            <div className='flex gap-4 opacity-70'>
+              <span className='flex items-center gap-2 text-xs'><FaEnvelope size={10} /> {topPriority.email}</span>
+              <span className='flex items-center gap-2 text-xs'><FaPhone size={10} /> {topPriority.phone}</span>
+            </div>
+            <div className='bg-[var(--primary-color)] text-white p-4 rounded-xl shadow-lg'>
+              <p className='text-sm italic font-serif'>"{topPriority.jamieNotes}"</p>
+            </div>
+            <div className='pt-2'>
+              <div className='text-[10px] uppercase font-bold opacity-50 mb-1'>Closing Probability</div>
+              <div className='text-4xl font-black text-green-400'>{topPriority.probability}%</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* BOTTOM LEFT QUADRANT (Property Clusters) */}
+      <div className='p-8 border-r border-white/5 bg-[var(--bl-bg)] text-[var(--bl-color)] transition-all duration-500 overflow-y-auto'>
+        <div className='flex items-center gap-2 mb-6'>
+          <FaHome className='opacity-50' />
+          <h2 className='text-xs font-black uppercase tracking-widest opacity-50'>Intelligence Clusters</h2>
+        </div>
+        
+        <div className='space-y-6'>
+          {Object.values(groupedLeads).map((group, idx) => (
+            <div key={idx} className='group cursor-pointer'>
+              <div className='flex justify-between items-end mb-2'>
+                <h4 className='text-sm font-bold uppercase tracking-tight'>{group.name}</h4>
+                <span className='text-[10px] font-mono text-green-400'>${(group.monthlyRate * 0.1).toFixed(0)} PROJ. FEE</span>
+              </div>
+              <div className='w-full bg-white/5 h-1 rounded-full overflow-hidden'>
+                <div className='bg-[var(--primary-color)] h-full w-2/3 opacity-50 group-hover:opacity-100 transition-all' />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* BOTTOM RIGHT QUADRANT (Lead Recon Detail) */}
+      <div className='p-8 bg-[var(--br-bg)] text-[var(--br-color)] transition-all duration-500 overflow-y-auto'>
+        <div className='flex items-center gap-2 mb-6'>
+          <FaCrosshairs className='opacity-50' />
+          <h2 className='text-xs font-black uppercase tracking-widest opacity-50'>Lead Recon Feed</h2>
+        </div>
+
+        <div className='grid grid-cols-1 gap-4'>
+          {leads.map((lead) => (
+            <div key={lead._id} className='bg-white/5 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/10 transition-colors'>
+              <div>
+                <div className='text-sm font-bold'>{lead.name}</div>
+                <div className='text-[10px] opacity-50'>{lead.email}</div>
+              </div>
+              {lead.idxViewed && (
+                <span className='text-[8px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-black uppercase'>IDX</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 };

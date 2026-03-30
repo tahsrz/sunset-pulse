@@ -1,22 +1,23 @@
 'use client';
-import { useState, useEffect } from 'react'; // Added useEffect
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '@/assets/images/logo-white.png';
 import profileDefault from '@/assets/images/profile.png';
-import { FaGoogle, FaShoppingBasket } from 'react-icons/fa';
+import { FaGoogle, FaShoppingBasket, FaCode } from 'react-icons/fa';
 import { useCart } from '@/context/CartContext';
-
+import { useTheme } from '@/context/ThemeProvider';
 import { signIn, signOut, useSession, getProviders } from 'next-auth/react';
 
 const Navbar = () => {
-  const { data: session } = useSession(); // Get session data
-  const profileImage = session?.user?.image || profileDefault; // Use Google image if logged in
+  const { data: session } = useSession();
+  const { isDevMode } = useTheme();
+  const profileImage = session?.user?.image || profileDefault;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [providers, setProviders] = useState(null); // State for Google Providers
+  const [providers, setProviders] = useState(null);
   
   const pathname = usePathname();
   const { cart } = useCart();
@@ -31,35 +32,33 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav 
-      className='border-b transition-colors duration-300 ease-in-out'
-      style={{ backgroundColor: 'var(--primary-color)', borderBottomColor: 'var(--primary-color)', filter: 'brightness(1.1)' }}
-    >
+    <nav className='bg-[var(--nav-bg)] border-b border-white/10 transition-colors duration-500'>
       <div className='mx-auto max-w-7xl px-2 sm:px-6 lg:px-8'>
         <div className='relative flex h-20 items-center justify-between'>
-          {/* ... Mobile Button remains same ... */}
-
           <div className='flex flex-1 items-center justify-center md:items-stretch md:justify-start'>
-            {/* Logo */}
             <Link className='flex flex-shrink-0 items-center' href='/'>
               <Image className='h-10 w-auto' src={logo} alt='Sunset Pulse' />
               <span className='hidden md:block text-white text-2xl font-bold ml-2'>
                 Sunset Pulse
               </span>
             </Link>
-            {/* Desktop Menu */}
             <div className='hidden md:ml-6 md:block'>
               <div className='flex space-x-2'>
-                <Link href='/' className={`${pathname === '/' ? 'bg-black' : ''} text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2`}>Home</Link>
-                <Link href='/properties' className={`${pathname === '/properties' ? 'bg-black' : ''} text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2`}>Properties</Link>
-                <Link href='/grill' className={`${pathname === '/grill' ? 'bg-black' : ''} text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2`}>Grill</Link>
+                <Link href='/' className={`${pathname === '/' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Home</Link>
+                <Link href='/properties' className={`${pathname === '/properties' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Properties</Link>
+                <Link href='/grill' className={`${pathname === '/grill' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Grill</Link>
+                
+                {/* DEV MODE ONLY: ARCHITECTURE */}
+                {isDevMode && (
+                  <Link href='/architecture' className={`${pathname === '/architecture' ? 'bg-orange-500/20 text-orange-400' : 'text-slate-400'} hover:bg-white/10 flex items-center gap-2 rounded-md px-3 py-2 transition-all border border-transparent ${isDevMode ? 'border-orange-500/20' : ''}`}>
+                    <FaCode /> Architecture
+                  </Link>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Side Icons */}
           <div className='absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0'>
-            
             {!session && (
               <div className='hidden md:block md:ml-6'>
                 <div className='flex items-center'>
@@ -67,10 +66,9 @@ const Navbar = () => {
                     <button
                       key={index}
                       onClick={() => signIn(provider.id)}
-                      className='flex items-center text-white bg-gray-700 hover:bg-gray-900 rounded-md px-3 py-2'
+                      className='flex items-center text-white bg-white/10 hover:bg-white/20 rounded-md px-3 py-2 transition-colors'
                     >
-                      <FaGoogle className='text-white mr-2' />
-                      <span>Login or Register</span>
+                      <span>Login</span>
                     </button>
                   ))}
                 </div>
@@ -86,7 +84,6 @@ const Navbar = () => {
               )}
             </Link>
 
-            {/* Profile Dropdown - Only show if session exists */}
             {session && (
               <div className='relative ml-3'>
                 <button
@@ -97,9 +94,9 @@ const Navbar = () => {
                   <Image className='h-8 w-8 rounded-full' src={profileImage} alt='Profile' width={32} height={32} />
                 </button>
 
-                {/* Profile Menu (Sign Out Button) */}
                 {isProfileMenuOpen && (
                   <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
+                    <Link href='/command-post' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'>Command Post</Link>
                     <button
                       onClick={() => {
                         setIsProfileMenuOpen(false);

@@ -64,6 +64,12 @@ export class Vector {
     }
     return result;
   }
+
+  // Rotates vector around arbitrary axes
+  rotate(yaw, pitch, roll = 0) {
+    const mat = Matrix.fromEuler(yaw, pitch, roll);
+    return this.multiplyMatrix(mat);
+  }
 }
 
 export class Matrix {
@@ -109,5 +115,26 @@ export class Matrix {
     const result = new Matrix(size, size);
     for (let i = 0; i < size; i++) result.set(i, i, 1);
     return result;
+  }
+
+  static fromEuler(yaw, pitch, roll = 0) {
+    const cy = Math.cos(yaw);
+    const sy = Math.sin(yaw);
+    const cp = Math.cos(pitch);
+    const sp = Math.sin(pitch);
+    const cr = Math.cos(roll);
+    const sr = Math.sin(roll);
+
+    const res = new Matrix(3, 3);
+    res.set(0, 0, cy * cr + sy * sp * sr);
+    res.set(0, 1, sr * cp);
+    res.set(0, 2, -sy * cr + cy * sp * sr);
+    res.set(1, 0, -cy * sr + sy * sp * cr);
+    res.set(1, 1, cr * cp);
+    res.set(1, 2, sr * sy + cy * sp * cr);
+    res.set(2, 0, sy * cp);
+    res.set(2, 1, -sp);
+    res.set(2, 2, cy * cp);
+    return res;
   }
 }

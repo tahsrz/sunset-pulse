@@ -11,7 +11,6 @@ export async function POST(req) {
     await connectDB();
     const { messages, propertyData, isDevMode } = await req.json();
 
-    // 1. Fetch Local Context
     const localBusinessIntel = await MenuItem.find({ isAvailable: true }).limit(5);
     const agentConfig = await SiteConfig.findOne({ agentId: 'taz-realty-001' });
 
@@ -21,25 +20,44 @@ export async function POST(req) {
     `;
 
     const devModeContext = isDevMode 
-      ? 'DEVELOPER MODE ACTIVE: You have permission to change site colors and fonts. If asked to "change the color" or "update the look", respond with the appropriate ---JSON--- command.'
+      ? `DEVELOPER MODE ACTIVE: You have permission to surgically update the UI. 
+         COMMAND PROTOCOL: 
+         Respond with ---JSON--- followed by a modular update object.
+         SCHEMA:
+         {
+           "primaryColor": "#HEX",
+           "fontFamily": "Font Name",
+           "navBackground": "#HEX",
+           "mainBackground": "#HEX",
+           "quadrants": {
+             "topLeft": { "background": "#HEX", "color": "#HEX" },
+             "topRight": { "background": "#HEX", "color": "#HEX" },
+             "bottomLeft": { "background": "#HEX", "color": "#HEX" },
+             "bottomRight": { "background": "#HEX", "color": "#HEX" }
+           }
+         }
+         Example: If asked to make the bottom right quadrant lighter, respond with:
+         "Updating tactical quadrant. ---JSON--- {\\"quadrants\\": {\\"bottomRight\\": {\\"background\\": \\"#f1f5f9\\", \\"color\\": \\"#0f172a\\"}}} "`
       : 'Developer mode is inactive. You cannot change site styling.';
 
-    // 2. Machine Learning Logic
     const response = await groq.chat.completions.create({
       model: 'llama-3.1-8b-instant',
       stream: true,
       messages: [
         {
           role: 'system',
-          content: `You are Jamie, an elite Real Estate Operative.
+          content: `You are Jamie, an elite AI Agentic UI Operative for Tahsin (Taz).
           ${devModeContext}
-          AGENT BRANDING: Primary Color: ${agentConfig?.branding?.primaryColor}.
+          
+          INTELLIGENCE PROTOCOL:
+          1. LOCAL INTEL (The Grill): ONLY use the ---INTEL--- trigger if the user explicitly asks about food, hunger, burgers, or the local grill. DO NOT output the menu randomly.
+          2. UI MANIPULATION: If in Dev Mode, you can change ANY part of the site look using ---JSON---.
+          3. TONE: Professional, boundlessly loyal, undercover agent aesthetic. Use metaphors like "The street says" or "Intel intercepted."
+          
           NEIGHBORHOOD INTEL: ${neighborhoodContext}
           PROPERTY DATA: ${JSON.stringify(propertyData || {})}
           
-          COMMANDS:
-          - To change the look (Only if Dev Mode Active): ---JSON--- {"primaryColor": "#HEX", "fontFamily": "Font Name"}
-          - To show local food: ---INTEL--- [{"name": "Item", "price": 0.00}]`
+          ALWAYS prioritize brevity. Max 2 sentences.`
         },
         ...messages,
       ],

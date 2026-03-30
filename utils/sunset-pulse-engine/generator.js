@@ -3,46 +3,40 @@
  * Generates a .obj string based on property parameters
  */
 export const generatePropertyModel = (property) => {
-  const { square_feet, beds, amenities } = property;
-  const hasGarage = amenities.some(a => a.toLowerCase().includes('garage'));
+  // 1. Safety Destructuring with Fallbacks
+  const { square_feet = 2000, beds = 3, amenities = [] } = property || {};
+  const hasGarage = Array.isArray(amenities) && amenities.some(a => a?.toLowerCase().includes('garage'));
   
-  // 1. Calculate base dimensions
-  // Area = width * depth. We'll use a 1.2 aspect ratio for a standard house shape.
-  const totalArea = square_feet || 2000;
+  // 2. Base Dimensions
+  const totalArea = square_feet > 0 ? square_feet : 2000;
   const width = Math.sqrt(totalArea * 1.2);
   const depth = totalArea / width;
-  const height = 10; // Standard 10ft ceiling
+  const height = 10; 
   
   let vertices = [];
   let faces = [];
 
-  // Helper to add a box
   const addBox = (x, y, z, w, h, d) => {
     const startIdx = vertices.length + 1;
-    // Bottom 4
     vertices.push([x - w/2, y, z - d/2]);
     vertices.push([x + w/2, y, z - d/2]);
     vertices.push([x + w/2, y, z + d/2]);
     vertices.push([x - w/2, y, z + d/2]);
-    // Top 4
     vertices.push([x - w/2, y + h, z - d/2]);
     vertices.push([x + w/2, y + h, z - d/2]);
     vertices.push([x + w/2, y + h, z + d/2]);
     vertices.push([x - w/2, y + h, z + d/2]);
 
-    // Faces (standard cube)
-    faces.push([startIdx, startIdx+1, startIdx+5, startIdx+4]); // Front
-    faces.push([startIdx+1, startIdx+2, startIdx+6, startIdx+5]); // Right
-    faces.push([startIdx+2, startIdx+3, startIdx+7, startIdx+6]); // Back
-    faces.push([startIdx+3, startIdx, startIdx+4, startIdx+7]); // Left
-    faces.push([startIdx+4, startIdx+5, startIdx+6, startIdx+7]); // Top
-    faces.push([startIdx, startIdx+3, startIdx+2, startIdx+1]); // Bottom
+    faces.push([startIdx, startIdx+1, startIdx+5, startIdx+4]);
+    faces.push([startIdx+1, startIdx+2, startIdx+6, startIdx+5]);
+    faces.push([startIdx+2, startIdx+3, startIdx+7, startIdx+6]);
+    faces.push([startIdx+3, startIdx, startIdx+4, startIdx+7]);
+    faces.push([startIdx+4, startIdx+5, startIdx+6, startIdx+7]);
+    faces.push([startIdx, startIdx+3, startIdx+2, startIdx+1]);
   };
 
-  // Add Main House Body
   addBox(0, 0, 0, width, height, depth);
 
-  // Add Garage Wing if applicable
   if (hasGarage) {
     const gW = 20;
     const gD = 20;
@@ -50,22 +44,20 @@ export const generatePropertyModel = (property) => {
     addBox(width/2 + gW/2, 0, 0, gW, gH, gD);
   }
 
-  // Add a Gable Roof
   const roofHeight = 6;
   const rStart = vertices.length + 1;
-  vertices.push([-width/2 - 2, height, -depth/2 - 2]); // 0: Bottom-Left-Front
-  vertices.push([width/2 + 2, height, -depth/2 - 2]);  // 1: Bottom-Right-Front
-  vertices.push([width/2 + 2, height, depth/2 + 2]);   // 2: Bottom-Right-Back
-  vertices.push([-width/2 - 2, height, depth/2 + 2]);  // 3: Bottom-Left-Back
-  vertices.push([0, height + roofHeight, -depth/2 - 2]); // 4: Ridge-Front
-  vertices.push([0, height + roofHeight, depth/2 + 2]);  // 5: Ridge-Back
+  vertices.push([-width/2 - 2, height, -depth/2 - 2]); 
+  vertices.push([width/2 + 2, height, -depth/2 - 2]);  
+  vertices.push([width/2 + 2, height, depth/2 + 2]);   
+  vertices.push([-width/2 - 2, height, depth/2 + 2]);  
+  vertices.push([0, height + roofHeight, -depth/2 - 2]); 
+  vertices.push([0, height + roofHeight, depth/2 + 2]);  
 
-  faces.push([rStart, rStart+1, rStart+4]); // Front Gable
-  faces.push([rStart+2, rStart+3, rStart+5]); // Back Gable
-  faces.push([rStart, rStart+4, rStart+5, rStart+3]); // Left Slope
-  faces.push([rStart+1, rStart+2, rStart+5, rStart+4]); // Right Slope
+  faces.push([rStart, rStart+1, rStart+4]); 
+  faces.push([rStart+2, rStart+3, rStart+5]); 
+  faces.push([rStart, rStart+4, rStart+5, rStart+3]); 
+  faces.push([rStart+1, rStart+2, rStart+5, rStart+4]); 
 
-  // Build the OBJ string
   let obj = "# SunsetGG Generated Property Model\no House\n";
   vertices.forEach(v => obj += `v ${v[0].toFixed(3)} ${v[1].toFixed(3)} ${v[2].toFixed(3)}\n`);
   faces.forEach(f => {

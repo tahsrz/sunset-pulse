@@ -33,7 +33,7 @@ export class Mesh3D {
     this.triangles = triangles;
   }
 
-  static parseObj(text) {
+  static parseObj(text, color) {
     const vertices = [];
     const triangles = [];
     const lines = text.split('\n');
@@ -54,24 +54,24 @@ export class Mesh3D {
           .filter(idx => !isNaN(idx) && vertices[idx]);
 
         if (vIndices.length === 3) {
-          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]]));
+          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]], color));
         } else if (vIndices.length === 4) {
-          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]]));
-          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[2]], vertices[vIndices[3]]));
+          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[1]], vertices[vIndices[2]], color));
+          triangles.push(new Triangle3D(vertices[vIndices[0]], vertices[vIndices[2]], vertices[vIndices[3]], color));
         }
       }
     }
     return new Mesh3D(triangles);
   }
 
-  static async loadFromObj(url) {
+  static async loadFromObj(url, color) {
     const response = await fetch(url);
     const text = await response.text();
-    return Mesh3D.parseObj(text);
+    return Mesh3D.parseObj(text, color);
   }
 
-  static loadFromRaw(text) {
-    return Mesh3D.parseObj(text);
+  static loadFromRaw(text, color) {
+    return Mesh3D.parseObj(text, color);
   }
 }
 
@@ -106,6 +106,8 @@ export class Renderer {
     this.meshes = [];
     this.cameraPos = new Vector(0, 0, 0);
     this.lightDir = new Vector(1, 1, -1).normalized();
+    this.showWireframe = options.wireframe || false;
+    this.wireframeColor = options.wireframeColor || 'rgba(255, 255, 255, 0.2)';
     
     this.projMat = this.createProjectionMatrix();
   }
@@ -122,7 +124,7 @@ export class Renderer {
     return mat;
   }
 
-  render(cameraPos, cameraRotMat) {
+  render(cameraPos, cameraRotMat, meshPos = new Vector(0, 0, 0)) {
     this.ctx.clearRect(0, 0, this.width, this.height);
 
     const trianglesToRender = [];
@@ -132,25 +134,24 @@ export class Renderer {
 
     for (const mesh of this.meshes) {
       for (const tri of mesh.triangles) {
-        // Positioned further back (Z=60) for better framing
-        const worldPos = new Vector(0, 0, 60);
-        const transformedTri = this.transformTriangle(tri, Matrix.identityMatrix(3), worldPos);
+        // Use the provided meshPos for translation
+        const transformedTri = this.transformTriangle(tri, Matrix.identityMatrix(3), meshPos);
 
         const norm = transformedTri.getSurfaceNormal();
         const camToTri = transformedTri.get(0).subtract(cameraPos);
 
+        // Simple back-face culling
         if (norm.dotProduct(camToTri) < 0) {
           let shading = norm.dotProduct(this.lightDir);
-          shading = Math.max(0, Math.min(1, shading));
+          shading = Math.max(0.2, Math.min(1, shading));
           transformedTri.setShading(shading);
 
-          // View space
+          // Transform to view space
           const viewTri = this.transformTriangle(transformedTri, viewMat, viewVec);
           
           // Clip against near plane
           const clipped = this.clipTriangleAgainstPlane(viewTri, nearPlane);
           for (const cTri of clipped) {
-            // Project
             const projTri = this.projectTriangle(cTri);
             trianglesToRender.push(projTri);
           }
@@ -158,7 +159,7 @@ export class Renderer {
       }
     }
 
-    // Sort by depth (Z-buffer replacement for simple 2D drawing)
+    // Sort by depth (painter's algorithm)
     trianglesToRender.sort((a, b) => {
       const az = (a.get(0).z + a.get(1).z + a.get(2).z) / 3;
       const bz = (b.get(0).z + b.get(1).z + b.get(2).z) / 3;
@@ -179,13 +180,13 @@ export class Renderer {
 
   projectTriangle(tri) {
     const v = [tri.get(0), tri.get(1), tri.get(2)].map(curr => {
-      const z = curr.z;
+      const z = Math.max(this.zNear, curr.z); // Prevent divide by zero
       const newZ = (z - this.zNear) * this.projMat.get(2, 2);
       let projected = curr.multiplyMatrix(this.projMat);
       projected.set(2, newZ);
       projected = projected.divideByScalar(z);
 
-      const x = (-projected.x + 1.0) * this.width / 2.0;
+      const x = (projected.x + 1.0) * this.width / 2.0;
       const y = (-projected.y + 1.0) * this.height / 2.0;
       return new Vector(x, y, newZ);
     });
@@ -200,8 +201,15 @@ export class Renderer {
     this.ctx.lineTo(tri.get(1).x, tri.get(1).y);
     this.ctx.lineTo(tri.get(2).x, tri.get(2).y);
     this.ctx.closePath();
+    
     this.ctx.fillStyle = tri.getColorWithShading();
     this.ctx.fill();
+
+    if (this.showWireframe) {
+      this.ctx.strokeStyle = this.wireframeColor;
+      this.ctx.lineWidth = 0.5;
+      this.ctx.stroke();
+    }
   }
 
   clipTriangleAgainstPlane(tri, plane) {
