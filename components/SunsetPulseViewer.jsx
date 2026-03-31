@@ -10,11 +10,15 @@ import { TbDrone } from 'react-icons/tb';
 const SunsetPulseViewer = ({ objUrl, property }) => {
   const canvasRef = useRef(null);
   const rendererRef = useRef(null);
-  const { branding } = useTheme();
+  const { branding, isDevMode } = useTheme();
   const [loading, setLoading] = useState(true);
   const [isDroneMode, setDroneMode] = useState(false);
+  const [fps, setFps] = useState(0);
   
   const orbitState = useRef({ yaw: 0, pitch: -0.2 });
+  const lastTimeRef = useRef(performance.now());
+  const frameCountRef = useRef(0);
+
   const droneState = useRef({
     pos: new Vector(0, 5, -40),
     vel: new Vector(0, 0, 0),
@@ -74,7 +78,15 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
         setLoading(false);
       }
 
-      const renderLoop = () => {
+      const renderLoop = (time) => {
+        // FPS Counter
+        frameCountRef.current++;
+        if (time > lastTimeRef.current + 1000) {
+          setFps(Math.round((frameCountRef.current * 1000) / (time - lastTimeRef.current)));
+          lastTimeRef.current = time;
+          frameCountRef.current = 0;
+        }
+
         if (rendererRef.current) {
           if (!isDroneMode) {
             const rotMat = Matrix.fromEuler(orbitState.current.yaw, orbitState.current.pitch);
@@ -92,7 +104,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
         }
         animationId = requestAnimationFrame(renderLoop);
       };
-      renderLoop();
+      animationId = requestAnimationFrame(renderLoop);
     };
 
     initEngine();
@@ -202,6 +214,15 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
             </div>
 
             <div className='text-right font-mono'>
+              {isDevMode && (
+                <div className='mb-4 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-black text-blue-400 uppercase tracking-widest animate-pulse'>
+                  <div>[ PERFORMANCE_METRICS ]</div>
+                  <div className='flex justify-between gap-4 mt-1'>
+                    <span>FPS: {fps}</span>
+                    <span>TRIS: {rendererRef.current?.meshes[0]?.triangles?.length || 0}</span>
+                  </div>
+                </div>
+              )}
               <div 
                 className='text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-2 italic'
                 style={{ color: branding.primaryColor }}
@@ -212,6 +233,11 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
                 <span>LAT: 34.0522 N</span>
                 <span>LNG: 118.2437 W</span>
                 <span>SIG: 100% STABLE</span>
+                {isDevMode && (
+                  <div className='text-blue-500/60 mt-1 border-t border-white/5 pt-1'>
+                    X: {droneState.current.pos.x.toFixed(2)} Y: {droneState.current.pos.y.toFixed(2)} Z: {droneState.current.pos.z.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
           </div>

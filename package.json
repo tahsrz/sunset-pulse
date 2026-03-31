@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "set NEXT_PUBLIC_MOCK_MODE=true && next dev",
+    "leads:decay": "node scripts/decay-leads.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

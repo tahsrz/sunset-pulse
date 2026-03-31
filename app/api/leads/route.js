@@ -45,20 +45,24 @@ export const POST = async (request) => {
 
     const leadData = validation.data;
 
-    // --- ENHANCED LEAD SCORING ---
-    let probability = 50; // Base probability
+    // --- ENHANCED LEAD SCORING V5.0 (AI OPTIMIZED) ---
+    // Formula: Score = round( (min(Views, 20)*10 + min(ChatMins, 30)*5) * (TourRequest ? 3.0 : 1.0) )
+    
+    const viewPoints = Math.min(leadData.views || 0, 20) * 10;
+    const chatPoints = Math.min(leadData.chatMinutes || 0, 30) * 5;
+    const baseIntent = viewPoints + chatPoints;
+    
+    const hotMultiplier = leadData.tourRequested ? 3.0 : 1.0;
+    
+    // Calculate raw probability/score (0-100 scale for UI consistency)
+    let probability = Math.round(baseIntent * hotMultiplier);
 
-    // 1. Phone Number availability (+15%)
+    // 1. Phone Number bonus (+15 points)
     if (leadData.phone && leadData.phone.trim() !== '') {
       probability += 15;
     }
 
-    // 2. IDX Viewed status (+20%)
-    if (leadData.idxViewed) {
-      probability += 20;
-    }
-
-    // 3. Repeat Lead Check (+10%)
+    // 2. Repeat Lead Check (+10 points)
     const existingLead = await Lead.findOne({ email: leadData.email });
     if (existingLead) {
       probability += 10;

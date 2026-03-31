@@ -23,6 +23,18 @@ const LeadSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    views: {
+      type: Number,
+      default: 0,
+    },
+    chatMinutes: {
+      type: Number,
+      default: 0,
+    },
+    tourRequested: {
+      type: Boolean,
+      default: false,
+    },
     jamieNotes: {
       type: String,
     },
