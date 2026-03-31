@@ -1,5 +1,6 @@
 What It Does
-Jamie is an AI assistant that actually knows your neighborhoods. Not generic ChatGPT answers—real context pulled from local business data, market analytics, and your own brand.
+
+Jamie is an AI assistant that actually knows real context pulled from local business data, market analytics, and your own brand.
 
 One dashboard shows you:
 
@@ -7,14 +8,15 @@ Who to call first (lead scoring, not guesswork)
 
 What properties are moving
 
-Why a neighborhood is valuable (hint: it's not just comps)
+Why a neighborhood is valuable
 
 The Pitch
-IDX charges agents $2,000–$4,000 their first year for a property search page. That's it. No lead scoring. No follow-up. No local intelligence.
+IDX charges agents $840–$2,800 their first year for a basic property search page. That's it. No lead scoring. No follow-up. No local intelligence.
+What we offer is not only the search powered by the same MLS they would pay for anyways, but an entire websuite of tools to use to show listings or sell products.
 
-Sunset Pulse costs $60/month. Agents bring their own MLS feed. We layer an AI assistant on top that actually helps them close deals.
+Sunset Pulse costs $60/month. Agents can bring their own MLS feed for discounts. We layer an AI assistant on top that actually helps them close deals.
 
-Same data. Half the price. Way more useful.
+Same data. Half the price.
 
 How It Works (Tech Stack)
 Frontend: Next.js, Tailwind
@@ -36,7 +38,7 @@ No machine learning fluff. Just behavioral weightings that actually work.
 Why This Isn't Another ChatGPT Wrapper
 Most real estate AI is a thin layer over OpenAI. If OpenAI changes pricing or terms, those businesses are cooked.
 
-We built a Tri-Vector RAG architecture. Every AI response has to pull from three sources:
+Out of the fires of a purely mathematical Java 3D viewer I built a Tri-Vector RAG architecture. Every AI response has to pull from three sources:
 
 Hyper-local commerce — private business data that gives a neighborhood its character
 
@@ -75,7 +77,7 @@ Jamie doesn't just answer questions; he codes the site.
 
 Voice-Activated UI: Agents can tell Jamie to change the theme, swap colors, or update headlines.
 
-RentCast Integration: Jamie "pulls up" real-time rental estimates, confidence scores, and market comparables for any property.
+RentCast Integration: Jamie pulls up real-time rental estimates, confidence scores, and market comparables for any property.
 
 Personality: Encouraging, slightly obsessed with potatoes, and firmly believes the user can rule the world.
 
