@@ -1,4 +1,4 @@
-Sunset Pulse: Intelligent Real Estate Tools, Not Just Another Property Search
+Sunset Pulse: Intelligent Real Estate Tools Just Another Property Search
 
 The real estate technology landscape is crowded with solutions that promise much but deliver little beyond a basic listing feed. Agents are left paying premium prices for what amounts to a digital brochure, with no meaningful support for the actual work of closing deals.
 
