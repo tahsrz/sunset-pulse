@@ -1,141 +1,53 @@
-What It Does
-Jamie is an AI assistant that actually knows your neighborhoods. Not generic ChatGPT answers—real context pulled from local business data, market analytics, and your own brand.
+ New Feature: Map Explorer (Spatial Search)
+ Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router)
+  architecture. It is designed to bridge the gap between static property listings and an interactive, data-driven user
+  experience.
 
-One dashboard shows you:
+  The engine
+  handles occlusion in two primary stages:
 
-Who to call first (lead scoring, not guesswork)
+   1. Backface Culling: Uses a dot product analysis between the surface normal and the camera vector to immediately
+      discard triangles facing away from the viewer.
+   2. Depth Sorting Painter's Algorithm: Before drawing, we calculate the average Z-depth for every visible triangle
+      and sort the trianglesToRender array from back to front. This ensures that the closer geometry correctly "paints
+      over" the distant geometry.
 
-What properties are moving
+  You can see the implementation in the Renderer.render method:
 
-Why a neighborhood is valuable (hint: it's not just comps)
+   
+    trianglesToRender.sort((a, b) => {
+      const az = (a.get(0).z + a.get(1).z + a.get(2).z) / 3;
+      const bz = (b.get(0).z + b.get(1).z + b.get(2).z) / 3;
+      return bz - az; // Sort by average Z-depth
+    });
 
-The Pitch
-IDX charges agents $2,000–$4,000 their first year for a property search page. That's it. No lead scoring. No follow-up. No local intelligence.
+  This approach, combined with Near Plane Clipping, keeps the CPU overhead low while maintaining aesthetic.
 
-Sunset Pulse costs $60/month. Agents bring their own MLS feed. We layer an AI assistant on top that actually helps them close deals.
+  
+   Architectural Core & Tech Stack
+   * Framework: Next.js 14 using TypeScript. It leverages Server Actions for secure data mutations and Route Handlers
+     for API logic.
+   * Hybrid Data Strategy: The project is in a strategic transition. It currently uses MongoDB (Mongoose) for primary
+     property data and local business intelligence (The Grill), but is migrating to Supabase (PostgreSQL) for
+     enhanced relational integrity and real-time Authentication.
+   * Media & Visualization:
+       * Cloudinary: Handles all image processing, ensuring high-speed delivery of optimized property photos.
+       * Mapbox: Powers the geospatial search, allowing users to find properties via interactive maps.
+       * Three.js: Integrated for immersive 3D property visualizations (seen in the Lab experiments).
+       * Secret Features: ???
 
-Same data. Half the price. Way more useful.
+  2. Key Intelligent Modules
+   * Jamie Protocol Assistant: A real-time chat interface powered by Groq (Llama 3.1) and the Vercel AI SDK. Jamie
+     isn't just a chatbot; it has "Agentic" capabilities, meaning it can:
+       * Dynamic Theme Injection: Suggest and apply visual themes (Dark Mode, Minimalist, etc.) on the fly.
+       * Hyper-Local Intel: Pull real-time data from local businesses (like Sunset Grill) to give buyers neighborhood
+         context.
+   * Lead Intelligence: A robust lead capture system (LeadCaptureForm) that feeds into a decay-leads script. This script
+     automatically scores and manages leads based on time-decay, ensuring agents focus on the highest-probability
+     conversions.
 
-How It Works (Tech Stack)
-Frontend: Next.js, Tailwind
-Backend: Node.js / Next.js API routes
-Inference: Groq (Llama 3 / Mixtral)
-Vector DB: Supabase with pgvector
-Hosting: Vercel
-Data sources: RentCast API, agent-provided IDX feeds, local business data
-
-Lead Scoring Logic
-We don't guess which leads are hot. We calculate it:
-
-text
-Score = (Property Views × 10) + (Chat Minutes × 5) + (Tour Request × 20)
-Tour request is a binary flag. If someone asks for a showing, comps, or contact, they jump to the top of your list.
-
-No machine learning fluff. Just behavioral weightings that actually work.
-
-Why This Isn't Another ChatGPT Wrapper
-Most real estate AI is a thin layer over OpenAI. If OpenAI changes pricing or terms, those businesses are cooked.
-
-We built a Tri-Vector RAG architecture. Every AI response has to pull from three sources:
-
-Hyper-local commerce — private business data that gives a neighborhood its character
-
-Market analytics — real-time comps and ROI numbers via RentCast
-
-Agent brand DNA — the agent's own bio, past deals, and local expertise
-
-Copy the UI all you want. You can't copy the data synthesis.
-
-Costs (For The Nerds)
-At 5 paying users, $60/month each:
-
-Groq inference: ~$0.30
-
-Embeddings: ~$0.01
-
-Hosting (Vercel + Supabase): $45
-
-RentCast (free tier): $0
-
-Monthly cost: ~$47
-Monthly revenue: $300
-Gross margin: 84%
-
-At 50 users, margin pushes 93%. The only real variable is whether agents bring their own MLS feed or we have to license it.
-
-
-🌅 Sunset Pulse & Grill
-Real Estate Platform | AI-Driven Personalization | Family Business Integration
-Sunset Pulse is a dual-purpose Next.js application designed for the modern era of North Texas real estate. It combines a robust property listing engine with a unique, voice-activated AI assistant named Jamie, while also providing a digital storefront for the Sunset Grill family business.
-
-🤖 Meet Jamie: The Lead AI Developer
-Unlike traditional platforms, Sunset Pulse features Jamie—a custom-built AI assistant inspired by Kingdom Hearts (Sora) and Joe Rogan’s assistant.
-
-Jamie doesn't just answer questions; he codes the site.
-
-Voice-Activated UI: Agents can tell Jamie to change the theme, swap colors, or update headlines.
-
-RentCast Integration: Jamie "pulls up" real-time rental estimates, confidence scores, and market comparables for any property.
-
-Personality: Encouraging, slightly obsessed with potatoes, and firmly believes the user can rule the world.
-
-🛠 Tech Stack
-Frontend: Next.js 14+ (App Router), Tailwind CSS
-
-Database: MongoDB (Mongoose)
-
-AI Engine: Groq SDK (Llama 3.1 8B Instant)
-
-Data APIs: RentCast API for real-time real estate analytics
-
-Authentication: NextAuth.js / Custom Auth Provider
-
-Voice/TTS: Web Speech API (Synthesis & Recognition)
-
-📁 Project Structure
-Plaintext
-/src
-  /app            # Next.js App Router (Listings, Grill, Auth)
-  /components     # UI Components (JamieChat.tsx, Navbar, etc.)
-  /context        # ThemeProvider, CartContext, AuthContext
-  /lib
-    /ai           # Jamie's "Brain" (System prompts & Groq logic)
-    /data         # API Fetchers (RentCast, MongoDB utils)
-  /models         # MongoDB Schemas (SiteConfig, Property, Order)
-/mocks            # Local JSON samples for offline testing (RentCast)
-🚀 Getting Started
-1. Prerequisites
-Ensure you have Node.js installed and access to a MongoDB instance.
-
-2. Environment Variables
-Create a .env.local file in the root directory:
-
-Bash
-
-MONGODB_URI=your_mongodb_uri
-GROQ_API_KEY=your_groq_key
-RENTCAST_API_KEY=your_rentcast_key
-NEXTAUTH_SECRET=your_secret
-
-
-
-3. Installation
-Bash
-npm install
-npm run dev
-
-Current Status
-Early pilot. Voice-enabled Jamie is live. RAG pipeline is working. Lead scoring is implemented.
-
-Next up: automated SMS follow-ups via Twilio when a lead hits a score threshold.
-
-Why I Built This
-I watched real estate agents pay thousands for software that doesn't help them sell. IDX fees, CRM costs, AI add-ons that nobody actually uses.
-
-I figured there's a better way: less overhead, more closing power.
-
-If you're an agent who wants to test it, or a developer who wants to contribute, open an issue or DM me.
-
-Built with: Next.js, Groq, Supabase, Tailwind
-
-
+  3. Security & Access Control
+   * Property Verification Gate: A modular verification layer that ensures users are human before revealing sensitive
+     property coordinates or contact details, preventing bot scraping of your IDX data.
+   * Secure API Layer: All property and lead mutations are handled via server-side routes with
+     environment-variable-backed secrets (Twilio, Cloudinary, Groq, Supabase). 

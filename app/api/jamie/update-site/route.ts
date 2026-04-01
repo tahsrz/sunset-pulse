@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { messages, propertyData } = await req.json();
     const lastMessage = messages[messages.length - 1].content;
 
-    // 1. Fetch Hyper-Local Context (The "Grill" Moat)
+    // 1. Fetch Context (The Grill Moat)
     const localBusinessIntel = await MenuItem.find({ isAvailable: true }).limit(5);
     const agentConfig = await SiteConfig.findOne({ agentId: 'taz-realty-001' });
 
@@ -22,21 +22,27 @@ export async function POST(req: Request) {
       - Business Strategy: Local high-traffic hub.
     `;
 
-    // 2. Trigger the Machine Learning Reasoning (Groq)
+    // (Groq)
     const response = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
-      stream: true, // Crucial for useChat to work word-by-word
+      stream: true, // Crucial for useChat
       messages: [
         {
           role: "system",
-          content: `You are Jamie, an elite Real Estate Agentic UI for Taz. 
+          content: `You are Jamie, a professional Property Information Assistant for Taz Realty. 
           AGENT BRANDING: Tone: ${agentConfig?.branding?.tone}, Primary Color: ${agentConfig?.branding?.primaryColor}.
           NEIGHBORHOOD INTEL: ${neighborhoodContext}
           PROPERTY DATA: ${JSON.stringify(propertyData || {})}
-          
-          COMMANDS:
-          - If the user wants to change the site look, append: ---JSON--- {"primaryColor": "#HEX", "fontFamily": "Font Name"}
-          - If the user asks about local food, append: ---INTEL--- [{"name": "Item", "price": 0.00}]`
+
+          HIGH-POWER PROCESSING PROTOCOL (Always append relevant tags at the end of your response):
+          1. [[THEME:{"primaryColor": "#HEX", "fontFamily": "Font", "mode": "dark|light"}]] - Use for visual site adjustments.
+          2. [[INTEL:[{"name": "Item", "price": 0.00, "category": "food|service"}]]] - Use for neighborhood/local data.
+          3. [[LAYOUT:{"showMap": true, "showStats": false, "viewType": "grid|list"}]] - Use to toggle UI components.
+          4. [[ANALYTICS:{"leadScore": 0-100, "intent": "buying|browsing", "followUp": "urgent|low"}]] - Use to tag lead quality.
+
+          You can append multiple tags in a single response for maximum processing power. Example: [[THEME: {...}]] [[INTEL: [...]]].
+
+          Be professional, helpful, and focused on providing accurate property and neighborhood information.`
         },
         ...messages,
       ],
@@ -50,6 +56,6 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error("Jamie Routing Error:", error);
-    return new Response("Machine Learning Logic Interrupted", { status: 500 });
+    return new Response("Assistant Logic Interrupted", { status: 500 });
   }
 }

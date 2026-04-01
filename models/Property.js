@@ -32,6 +32,17 @@ const PropertySchema = new Schema(
         type: String,
       },
     },
+    location_geo: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        index: '2dsphere',
+      },
+    },
     beds: {
       type: Number,
       required: true,

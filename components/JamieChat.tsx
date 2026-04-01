@@ -9,37 +9,39 @@ import { FaTerminal, FaRobot, FaCogs } from 'react-icons/fa';
 export default function JamieChat({ propertyData }) {
   const { branding, stagedBranding, updateBranding, stageBranding, confirmBranding, cancelStaging, isDevMode, setDevMode } = useTheme();
   const [localIntel, setLocalIntel] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
 
-  const handleJamieAction = async (messageContent) => {
-    // PREVIEW STAGING
-    if (isDevMode && messageContent.includes('---PREVIEW---')) {
-      try {
-        const jsonPart = messageContent.split('---PREVIEW---')[1].trim();
-        const themePreview = JSON.parse(jsonPart);
-        stageBranding(themePreview);
-      } catch (e) {
-        console.error('Logic Error: Could not parse theme preview', e);
-      }
-    }
+  const handleJamieAction = (messageContent: string) => {
+    // 1. Metadata Interceptor - Regex for [[TAG:DATA]]
+    const tagRegex = /\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g;
+    let match;
+    const extractedData = {};
 
-    // PERMANENT UPDATE
-    if (isDevMode && messageContent.includes('---JSON---')) {
+    while ((match = tagRegex.exec(messageContent)) !== null) {
+      const [_, tag, jsonStr] = match;
       try {
-        const jsonPart = messageContent.split('---JSON---')[1].trim();
-        const themeUpdate = JSON.parse(jsonPart);
-        updateBranding(themeUpdate);
-      } catch (e) {
-        console.error('Logic Error: Could not parse theme command', e);
-      }
-    }
+        const data = JSON.parse(jsonStr);
+        extractedData[tag] = data;
 
-    if (messageContent.includes('---INTEL---')) {
-      try {
-        const intelPart = messageContent.split('---INTEL---')[1].trim();
-        const businessData = JSON.parse(intelPart);
-        setLocalIntel(businessData);
+        // 2. Dispatch Logic per Tag
+        switch (tag) {
+          case 'THEME':
+            if (isDevMode) stageBranding(data);
+            break;
+          case 'INTEL':
+            setLocalIntel(data);
+            break;
+          case 'LAYOUT':
+            console.log('UI Command Received:', data);
+            // Future logic for toggleMap, etc.
+            break;
+          case 'ANALYTICS':
+            setAnalytics(data);
+            console.log('Lead Intelligence:', data);
+            break;
+        }
       } catch (e) {
-        console.error('Logic Error: Could not parse neighborhood intel', e);
+        console.error(`Metadata Processing Error [${tag}]:`, e);
       }
     }
   };
@@ -55,6 +57,10 @@ export default function JamieChat({ propertyData }) {
     },
   });
 
+  const cleanContent = (content: string) => {
+    return content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
+  };
+
   return (
     <div className="fixed bottom-5 right-5 w-96 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-10 duration-500">
       {/* Dev Mode Toggle */}
@@ -68,7 +74,7 @@ export default function JamieChat({ propertyData }) {
       >
         <div className={`absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500`} />
         <FaTerminal className={isDevMode ? 'animate-pulse' : ''} /> 
-        <span className="relative">{isDevMode ? 'Dev Mode: Active' : 'Dev Mode: Off'}</span>
+        <span className="relative">{isDevMode ? 'Admin Settings: On' : 'Admin Settings: Off'}</span>
       </button>
 
       {localIntel && (
@@ -85,10 +91,10 @@ export default function JamieChat({ propertyData }) {
         <div className="bg-slate-900 border-2 border-orange-500 rounded-[2rem] p-6 shadow-2xl animate-in zoom-in duration-500">
           <div className="flex items-center gap-3 mb-4 text-orange-500">
             <FaCogs className="animate-spin" />
-            <h4 className="font-black uppercase text-xs tracking-widest">Staging Preview Active</h4>
+            <h4 className="font-black uppercase text-xs tracking-widest">Theme Preview Active</h4>
           </div>
           <p className="text-slate-300 text-[10px] uppercase font-bold mb-6 leading-relaxed">
-            Jamie has prepared a grid manipulation. Would you like to deploy these coordinates to the global branding?
+            Jamie has suggested a new visual theme. Would you like to apply these changes to the site?
           </p>
           <div className="grid grid-cols-2 gap-3">
             <button 
@@ -101,7 +107,7 @@ export default function JamieChat({ propertyData }) {
               onClick={confirmBranding}
               className="py-3 bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-orange-500/20 hover:scale-105 transition-all"
             >
-              Confirm Vibe
+              Apply Theme
             </button>
           </div>
         </div>
@@ -114,8 +120,8 @@ export default function JamieChat({ propertyData }) {
               <FaRobot className="text-lg" />
             </div>
             <div>
-              <h3 className="font-black tracking-[0.1em] uppercase text-sm italic">Jamie Agentic UI</h3>
-              <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Protocol V4.2.0</p>
+              <h3 className="font-black tracking-[0.1em] uppercase text-sm italic">Jamie Assistant</h3>
+              <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Real Estate Intelligence</p>
             </div>
           </div>
           <div className="relative">
@@ -132,20 +138,27 @@ export default function JamieChat({ propertyData }) {
                   ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10 border border-white/10' 
                   : 'bg-slate-800 text-slate-100 border border-white/5 rounded-tl-none shadow-black/20'
               }`}>
-                <p className="leading-relaxed font-medium">{m.content.split('---')[0]}</p>
+                <p className="leading-relaxed font-medium">{cleanContent(m.content)}</p>
               </div>
               
               {/* Debug Metadata Inspector */}
-              {isDevMode && m.role === 'assistant' && m.content.includes('---') && (
+              {isDevMode && m.role === 'assistant' && m.content.includes('[[') && (
                 <div className="mt-2 p-3 bg-slate-950/80 rounded-xl border border-blue-500/30 font-mono text-[9px] text-blue-300/80 max-w-[90%] overflow-x-auto">
                   <div className="flex items-center gap-2 mb-1 text-blue-400 font-black uppercase tracking-widest">
-                    <FaCogs /> [LOG_INTERCEPTED]
+                    <FaCogs /> [METADATA_INTERCEPTED]
                   </div>
-                  <pre className="whitespace-pre-wrap">{m.content.split('---').slice(1).join('---')}</pre>
+                  <pre className="whitespace-pre-wrap">{m.content.match(/\[\[(.*?)\]\]/g)?.join('\n')}</pre>
                 </div>
               )}
             </div>
           ))}
+          
+          {analytics && isDevMode && (
+            <div className="mx-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+              <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Lead Score: {analytics.leadScore}</span>
+              <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Intent: {analytics.intent}</span>
+            </div>
+          )}
           {isLoading && (
             <div className="flex items-center gap-3 text-[10px] font-black text-blue-400 uppercase tracking-widest animate-pulse">
               <div className="flex gap-1">
@@ -153,7 +166,7 @@ export default function JamieChat({ propertyData }) {
                 <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]" />
                 <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]" />
               </div>
-              Jamie is analyzing the grid...
+              Jamie is processing your request...
             </div>
           )}
         </div>
@@ -173,7 +186,7 @@ export default function JamieChat({ propertyData }) {
                 <button
                   key={vibe}
                   type="button"
-                  onClick={() => handleInputChange({ target: { value: `Jamie, switch to ${vibe} vibe.` } })}
+                  onClick={() => handleInputChange({ target: { value: `Jamie, switch to ${vibe} theme.` } })}
                   className="whitespace-nowrap bg-blue-500/10 border border-blue-500/30 text-[9px] font-black uppercase tracking-widest text-blue-400 px-3 py-1.5 rounded-full hover:bg-blue-500 hover:text-white transition-all"
                 >
                   {vibe}
@@ -185,7 +198,7 @@ export default function JamieChat({ propertyData }) {
             <input
               className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600"
               value={input}
-              placeholder={isDevMode ? "EXECUTE_VIBE_CHANGE..." : "COMMAND_JAMIE_AI..."}
+              placeholder={isDevMode ? "ENTER_THEME_COMMAND..." : "Ask Jamie about properties..."}
               onChange={handleInputChange}
             />
             <button 
@@ -200,3 +213,4 @@ export default function JamieChat({ propertyData }) {
     </div>
   );
 }
+
