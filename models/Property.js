@@ -91,6 +91,18 @@ const PropertySchema = new Schema(
       type: Boolean,
       default: false,
     },
+    source: {
+      type: String,
+      enum: ['Internal', 'MLS'],
+      default: 'Internal',
+    },
+    mls_id: {
+      type: String,
+    },
+    listing_status: {
+      type: String,
+      default: 'Active',
+    },
   },
   {
     timestamps: true,

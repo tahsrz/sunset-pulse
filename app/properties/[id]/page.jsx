@@ -9,7 +9,7 @@ import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
-import SphinxGatekeeper from '@/components/SphinxGatekeeper';
+import PropertyVerification from '@/components/SphinxGatekeeper';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import Spinner from '@/components/Spinner';
@@ -86,9 +86,9 @@ const PropertyPage = () => {
                 <aside className='space-y-4'>
                   <BookmarkButton property={property} />
                   <ShareButtons property={property} />
-                  <SphinxGatekeeper>
+                  <PropertyVerification>
                     <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
-                  </SphinxGatekeeper>
+                  </PropertyVerification>
                 </aside>
               </div>
             </div>

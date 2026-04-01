@@ -1,53 +1,91 @@
+import Link from 'next/link';
+import { fetchProperty } from '@/utils/requests';
+import { fetchRentEstimate } from '@/lib/data/rentcast';
+import PropertyHeaderImage from '@/components/PropertyHeaderImage';
+import PropertyDetails from '@/components/PropertyDetails';
+import PropertyImages from '@/components/PropertyImages';
+import BookmarkButton from '@/components/BookmarkButton';
+import LeadCaptureForm from '@/components/LeadCaptureForm';
+import PropertyVerification from '@/components/SphinxGatekeeper';
 import JamieChat from '@/components/JamieChat';
-import { fetchRentEstimate } from '@/lib/data/rentcast'; // The API fetcher we discussed
-import PropertyHero from '@/components/PropertyHero'; // Example component
+import ShareButtons from '@/components/ShareButtons';
+import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
 
 interface ListingPageProps {
   params: { id: string };
 }
 
 export default async function ListingPage({ params }: ListingPageProps) {
-  // 1. In a real app, you'd fetch the property from MongoDB here
-  // const property = await getPropertyById(params.id);
-  
-  // 2. Fetch the RentCast data (This will use your mock JSON if in dev mode)
-  // For now, we'll pass a Keller address to match your sample-estimate.json
-  const rentData = await fetchRentEstimate("123 Keller Parkway, Keller, TX");
+  const property = await fetchProperty(params.id);
+
+  if (!property) {
+    return (
+      <h1 className='text-center text-2xl font-bold mt-10 text-slate-800'>
+        Listing Intelligence Not Found
+      </h1>
+    );
+  }
+
+  // Fetch RentCast Data (Server Side)
+  const address = `${property.location.street}, ${property.location.city}, ${property.location.state} ${property.location.zipcode}`;
+  let rentData = null;
+  try {
+    rentData = await fetchRentEstimate(address);
+  } catch (e) {
+    console.error('Rent Data Failure:', e);
+  }
+
+  const jamieData = { ...property, rentData };
 
   return (
-    <main className="relative min-h-screen p-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        {/* Standard Property Details */}
-        <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h1 className="text-3xl font-bold text-slate-900">123 Keller Parkway</h1>
-          <p className="text-slate-500 mb-4">Keller, Texas 76248</p>
-          
-          <div className="grid grid-cols-3 gap-4 border-t pt-4">
-            <div>
-              <p className="text-xs text-gray-400 uppercase">Estimated Rent</p>
-              <p className="text-xl font-bold text-green-600">${rentData.rent}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase">Confidence</p>
-              <p className="text-xl font-bold text-slate-700">{rentData.confidenceScore}%</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase">Range</p>
-              <p className="text-sm font-medium text-slate-600">
-                ${rentData.rentRangeLow} - ${rentData.rentRangeHigh}
-              </p>
+    <main className='bg-slate-50 min-h-screen pb-20'>
+      <PropertyHeaderImage image={property.images[0]} />
+      
+      <section className='bg-white border-b border-slate-200'>
+        <div className='container m-auto py-6 px-6 flex justify-between items-center'>
+          <Link
+            href='/properties'
+            className='text-blue-600 hover:text-blue-700 flex items-center font-bold text-sm'
+          >
+            <FaArrowLeft className='mr-2' /> Back to All Listings
+          </Link>
+          <div className='flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100'>
+            <FaChartLine className='text-green-600' />
+            <span className='text-[10px] font-black uppercase text-green-700 tracking-widest'>Listing Active</span>
+          </div>
+        </div>
+      </section>
+
+      <div className='container m-auto py-10 px-6'>
+        <div className='grid grid-cols-1 md:grid-cols-70/30 w-full gap-8'>
+          <div>
+            <PropertyDetails property={property} rentData={rentData} />
+            <div className='mt-10'>
+              <h3 className='text-xl font-bold mb-6 text-slate-800 border-b pb-4'>Property Gallery</h3>
+              <PropertyImages images={property.images} />
             </div>
           </div>
-        </section>
 
-        {/* The rest of your listing content goes here */}
-        <div className="prose max-w-none text-slate-600">
-          <p>This beautiful property in the heart of Keller offers...</p>
+          <aside className='space-y-6'>
+            <div className='bg-white p-6 rounded-2xl shadow-sm border border-slate-100'>
+              <h4 className='text-xs font-black uppercase text-slate-400 tracking-widest mb-6'>Agent Controls</h4>
+              <div className='space-y-4'>
+                <BookmarkButton property={property} />
+                <ShareButtons property={property} />
+              </div>
+            </div>
+
+            <PropertyVerification>
+              <div className='bg-white p-6 rounded-2xl shadow-sm border border-slate-100'>
+                <h4 className='text-xs font-black uppercase text-slate-400 tracking-widest mb-6'>Direct Inquiry</h4>
+                <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
+              </div>
+            </PropertyVerification>
+          </aside>
         </div>
       </div>
 
-      {/* 3. Jamie sits "on top" of the page, holding the RentCast data */}
-      <JamieChat propertyData={rentData} />
+      <JamieChat propertyData={jamieData} />
     </main>
   );
 }

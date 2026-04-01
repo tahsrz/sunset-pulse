@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { memoryBridge } from '@/lib/memory_bridge';
 
 const PropertySearchForm = () => {
   const [location, setLocation] = useState('');
@@ -8,13 +9,33 @@ const PropertySearchForm = () => {
 
   const router = useRouter();
 
+  // Load preferences on mount for predictive search
+  useEffect(() => {
+    const prefs = memoryBridge.getPreferences();
+    if (prefs.location && !location) setLocation(prefs.location);
+    if (prefs.style && propertyType === 'All') setPropertyType(prefs.style);
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (location === '' && propertyType === 'All') {
       router.push('/properties');
     } else {
+      // Memory Layer 1: Log Interaction
+      memoryBridge.logInteraction(`Search: ${location} | ${propertyType}`);
+
+      // Memory Layer 2 & 3: Save to Dynamic/Session
+      memoryBridge.save('session', 'location', location);
+      memoryBridge.save('dynamic', 'style', propertyType);
+
       const query = `?location=${location}&propertyType=${propertyType}`;
+      
+      // Memory Layer Wrap: (For future Sanity/Data Pipeline logging)
+      const telemetry = memoryBridge.wrapQuery(query, 'Property Search RECON');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[MEMORY_BRIDGE_TELEMETRY]', telemetry);
+      }
 
       router.push(`/properties/search-results${query}`);
     }

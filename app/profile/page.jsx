@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import profileDefault from '@/assets/images/profile.png';
 import Spinner from '@/components/Spinner';
+import ComplexObservationsManager from '@/components/ComplexObservationsManager';
 import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
@@ -94,6 +95,9 @@ const ProfilePage = () => {
               <h2 className='text-2xl'>
                 <span className='font-bold block'>Email: </span> {profileEmail}
               </h2>
+              <div className='mt-10'>
+                <ComplexObservationsManager />
+              </div>
             </div>
 
             <div className='md:w-3/4 md:pl-4'>

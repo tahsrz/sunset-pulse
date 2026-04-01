@@ -20,6 +20,24 @@ const UserSchema = new Schema(
         ref: 'Property',
       },
     ],
+    savedSearches: [
+      {
+        query: { type: Map, of: String },
+        alertFrequency: { type: String, enum: ['daily', 'weekly', 'instant'], default: 'daily' },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
+    crmStatus: {
+      type: String,
+      enum: ['Lead', 'Active', 'Closed', 'Archived'],
+      default: 'Lead'
+    },
+    crmNotes: [
+      {
+        note: String,
+        date: { type: Date, default: Date.now }
+      }
+    ]
   },
   {
     timestamps: true,

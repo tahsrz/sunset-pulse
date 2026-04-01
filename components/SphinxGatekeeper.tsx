@@ -48,7 +48,7 @@ export default function PropertyVerification({ children }: PropertyVerificationP
           Property Access Verification
         </h2>
         <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-          Please complete the verification below to view premium property details and contact information.
+          Please complete the verification below to view property details and contact information.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function PropertyVerification({ children }: PropertyVerificationP
           />
           {error && (
             <p className="absolute -bottom-6 left-0 right-0 text-[10px] text-red-500 font-bold uppercase text-center animate-bounce">
-              Verification failed. Please try again.
+              Verification failed. Please try again. Are You Human?
             </p>
           )}
         </div>

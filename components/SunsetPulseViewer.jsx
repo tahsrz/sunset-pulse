@@ -6,6 +6,7 @@ import { generatePropertyModel } from '@/utils/sunset-pulse-engine/generator';
 import { centerModel } from '@/utils/threeUtils';
 import { useTheme } from '@/context/ThemeProvider';
 import { useMultiplayer } from '@/hooks/useMultiplayer'; 
+import { memoryBridge } from '@/lib/memory_bridge';
 import { FaSync, FaCrosshairs, FaWind, FaMap, FaTrophy } from 'react-icons/fa';
 import { TbDrone } from 'react-icons/tb';
 
@@ -16,6 +17,24 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
   const [loading, setLoading] = useState(true);
   const [isDroneMode, setDroneMode] = useState(false);
   const [fps, setFps] = useState(0);
+
+  // Load view mode from static memory on mount
+  useEffect(() => {
+    const prefs = memoryBridge.getPreferences();
+    if (prefs.viewMode === 'neural' && isDroneMode) setDroneMode(false);
+    if (prefs.viewMode === 'fiber' && !isDroneMode) setDroneMode(true);
+  }, []);
+
+  const handleDroneToggle = () => {
+    const newMode = !isDroneMode;
+    setDroneMode(newMode);
+    
+    // Save to Layer 1: Static (Persistent Preference)
+    memoryBridge.save('static', 'viewMode', newMode ? 'fiber' : 'neural');
+    
+    // Log Interaction
+    memoryBridge.logInteraction(newMode ? 'Drone Mode Activated' : 'Orbit Mode Activated');
+  };
 
   const orbitState = useRef({ yaw: 0, pitch: -0.2 });
   const lastTimeRef = useRef(performance.now());
@@ -83,6 +102,11 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
 
     const initEngine = async () => {
       setLoading(true);
+      
+      // Conceptually wrap engine init in telemetry logs
+      const telemetry = memoryBridge.wrapQuery(`INITIALIZE_ENGINE_PROPERTY_${propId}`, '3D_RECON_INITIALIZATION');
+      if (isDevMode) console.log('[3D_VIEWER_TELEMETRY]', telemetry);
+
       const canvas = canvasRef.current;
       const color = getBrandingColor();
       const renderer = new Renderer(canvas, { 
@@ -255,7 +279,7 @@ const SunsetPulseViewer = ({ objUrl, property }) => {
         <div className='absolute inset-0 pointer-events-none z-20 p-6'>
           <div className='flex justify-between items-start'>
             <button 
-              onClick={() => setDroneMode(!isDroneMode)}
+              onClick={handleDroneToggle}
               className='pointer-events-auto bg-black/60 backdrop-blur-2xl border border-white/10 px-6 py-2.5 rounded-full flex items-center gap-3'
             >
               {isDroneMode ? <TbDrone className='text-orange-500' size={20} /> : <FaSync className='text-blue-500' size={16} />}

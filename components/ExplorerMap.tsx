@@ -6,11 +6,30 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
-import { FaHome, FaInfoCircle, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaHome, FaInfoCircle, FaMapMarkedAlt, FaBrain } from 'react-icons/fa';
 import Link from 'next/link';
 
 const ExplorerMap = ({ onSelectionChange, results = [] }) => {
   const searchParams = useSearchParams();
+  const [jamieInsights, setJamieInsights] = useState([]);
+  const [selectedInsight, setSelectedInsight] = useState(null);
+
+  useEffect(() => {
+    // Fetch Jamie's 'Dreams' (Spatial Intelligence)
+    const fetchJamieInsights = async () => {
+      try {
+        const res = await fetch('/api/jamie/dreams');
+        if (res.ok) {
+          const data = await res.json();
+          setJamieInsights(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Jamie insights:', error);
+      }
+    };
+    fetchJamieInsights();
+  }, []);
+
   const urlLat = searchParams.get('lat');
   const urlLng = searchParams.get('lng');
   const urlId = searchParams.get('id');
@@ -123,6 +142,50 @@ const ExplorerMap = ({ onSelectionChange, results = [] }) => {
             </div>
           </Marker>
         ))}
+
+        {/* Jamie's Spatial Intelligence (Dreams) */}
+        {jamieInsights.map((dream, index) => (
+          <Marker
+            key={dream.id || index}
+            longitude={dream.geometry.coordinates[0]}
+            latitude={dream.geometry.coordinates[1]}
+            anchor="bottom"
+            onClick={e => {
+              e.originalEvent.stopPropagation();
+              setSelectedInsight(dream);
+            }}
+          >
+            <div className="bg-amber-500 p-2 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-125 transition-transform animate-pulse">
+              <FaBrain className="text-white text-xs" />
+            </div>
+          </Marker>
+        ))}
+
+        {selectedInsight && (
+          <Popup
+            longitude={selectedInsight.geometry.coordinates[0]}
+            latitude={selectedInsight.geometry.coordinates[1]}
+            anchor="top"
+            onClose={() => setSelectedInsight(null)}
+            closeOnClick={false}
+            className="z-50"
+          >
+            <div className="p-3 max-w-[220px] bg-slate-900 text-white rounded-xl">
+              <div className="flex items-center gap-2 mb-2 text-amber-400">
+                <FaBrain className="text-sm" />
+                <h4 className="font-black text-[10px] uppercase tracking-widest">{selectedInsight.properties.category}</h4>
+              </div>
+              <h3 className="font-bold text-sm mb-1">{selectedInsight.properties.title}</h3>
+              <p className="text-[10px] text-slate-300 leading-relaxed mb-3">
+                {selectedInsight.properties.description}
+              </p>
+              <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                <span className="text-[8px] font-black uppercase text-slate-500">Confidence: {selectedInsight.properties.intelligence_score}%</span>
+                <span className="text-[8px] font-black uppercase text-blue-400">JAMIE_DREAM</span>
+              </div>
+            </div>
+          </Popup>
+        )}
 
         {selectedProperty && (
           <Popup

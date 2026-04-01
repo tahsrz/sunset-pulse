@@ -10,6 +10,7 @@ export default function JamieChat({ propertyData }) {
   const { branding, stagedBranding, updateBranding, stageBranding, confirmBranding, cancelStaging, isDevMode, setDevMode } = useTheme();
   const [localIntel, setLocalIntel] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const handleJamieAction = (messageContent: string) => {
     // 1. Metadata Interceptor - Regex for [[TAG:DATA]]
@@ -31,13 +32,14 @@ export default function JamieChat({ propertyData }) {
           case 'INTEL':
             setLocalIntel(data);
             break;
+          case 'SUGGESTIONS':
+            setSuggestions(data);
+            break;
           case 'LAYOUT':
             console.log('UI Command Received:', data);
-            // Future logic for toggleMap, etc.
             break;
           case 'ANALYTICS':
             setAnalytics(data);
-            console.log('Lead Intelligence:', data);
             break;
         }
       } catch (e) {
@@ -46,7 +48,7 @@ export default function JamieChat({ propertyData }) {
     }
   };
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, append, setMessages } = useChat({
     api: '/api/chat',
     body: {
       propertyData,
@@ -56,6 +58,58 @@ export default function JamieChat({ propertyData }) {
       handleJamieAction(message.content);
     },
   });
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    // --- Guardian Shield Interception ---
+    try {
+      const shieldResponse = await fetch('/api/jamie/shield', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: input }),
+      });
+
+      const security = await shieldResponse.json();
+
+      if (security.status === 'BLOCKED') {
+        // Inject a system-style warning message into the chat
+        setMessages([
+          ...messages,
+          { id: Date.now().toString(), role: 'user', content: input },
+          { id: (Date.now() + 1).toString(), role: 'assistant', content: `⚠️ [SECURITY_SHIELD]: ${security.message}` }
+        ]);
+        handleInputChange({ target: { value: '' } } as any);
+        return;
+      }
+
+      if (security.status === 'RESOLVED_BY_MINI') {
+        // Display the Mini-LLM response directly without calling the main API
+        setMessages([
+          ...messages,
+          { id: Date.now().toString(), role: 'user', content: input },
+          { id: (Date.now() + 1).toString(), role: 'assistant', content: security.response }
+        ]);
+        handleInputChange({ target: { value: '' } } as any);
+        return;
+      }
+
+      // If status is ESCALATE, proceed to the original handleSubmit
+      originalHandleSubmit(e);
+    } catch (error) {
+      console.error('Shield Error:', error);
+      originalHandleSubmit(e); // Fallback to original for availability
+    }
+  };
+
+  const handleSuggestionClick = (question: string) => {
+    append({
+      role: 'user',
+      content: question
+    });
+    setSuggestions([]); // Clear after use
+  };
 
   const cleanContent = (content: string) => {
     return content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
@@ -172,6 +226,25 @@ export default function JamieChat({ propertyData }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 bg-slate-950/50 border-t border-white/5">
+          {/* Predictive Suggestions Layer */}
+          {suggestions.length > 0 && (
+            <div className="mb-4 animate-in slide-in-from-bottom-2 duration-500">
+              <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] mb-2 ml-1">Predictive Intelligence</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((q, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSuggestionClick(q)}
+                    className="text-[10px] font-bold bg-blue-600/10 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-lg shadow-blue-900/20"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isDevMode && (
             <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
