@@ -1,17 +1,16 @@
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
 import { fetchProperties } from '@/utils/requests';
+import { pulseRNG } from '@/utils/pulseRNG';
 
 const HomeProperties = async () => {
   const data = await fetchProperties();
 
-  // 1. Safety Check: If data or data.properties is missing, default to an empty array
+  // If data or data.properties is missing, defaults to an empty array:  Optional Chain
   const properties = data?.properties || [];
 
-  // 2. Sort safely on the defined array
-  const recentProperties = properties
-    .sort(() => Math.random() - 0.5) // Math.random() - 0.5 is the standard way to shuffle
-    .slice(0, 3);
+  // 2. Sort safely on the defined array using the custom PulseRNG engine
+  const recentProperties = pulseRNG.shuffle(properties).slice(0, 3);
 
   return (
     <>
@@ -31,7 +30,7 @@ const HomeProperties = async () => {
           </div>
         </div>
       </section>
-      {/* ... rest of your component */}
+      {/* ... rest of the component */}
     </>
   );
 };

@@ -4,6 +4,7 @@ import Property from '@/models/Property';
 import { getSessionUser } from '@/utils/getSessionUser';
 import { LeadSchema } from '@/lib/validation';
 import { getJamieResponse } from '@/lib/ai/jamie';
+import { pulseRNG } from '@/utils/pulseRNG';
 
 export const GET = async () => {
   try {
@@ -11,8 +12,8 @@ export const GET = async () => {
 
     const sessionUser = await getSessionUser();
 
-    // In a production app, we'd restrict this to Admin/Owner
-    // For now, we'll allow access if logged in for testing
+    // In a production app restrict this to Admin/Owner
+    // 
     if (!sessionUser || !sessionUser.userId) {
       return new Response('Unauthorized', { status: 401 });
     }
@@ -35,7 +36,7 @@ export const POST = async (request) => {
     await connectDB();
     const body = await request.json();
 
-    // Validate the incoming data
+    // Validate incoming data
     const validation = LeadSchema.safeParse(body);
 
     if (!validation.success) {
@@ -45,8 +46,8 @@ export const POST = async (request) => {
 
     const leadData = validation.data;
 
-    // --- ENHANCED LEAD SCORING V5.0 (AI OPTIMIZED) ---
-    // Formula: Score = round( (min(Views, 20)*10 + min(ChatMins, 30)*5) * (TourRequest ? 3.0 : 1.0) )
+    // --- ENHANCED LEAD SCORING V5.0  ---
+    // SUNSETPULSE Formula: Score = round( (min(Views, 20)*10 + min(ChatMins, 30)*5) * (TourRequest ? 3.0 : 1.0) )
     
     const viewPoints = Math.min(leadData.views || 0, 20) * 10;
     const chatPoints = Math.min(leadData.chatMinutes || 0, 30) * 5;
@@ -68,8 +69,13 @@ export const POST = async (request) => {
       probability += 10;
     }
 
+    // --- PULSE_RNG JITTER PROTOCOL ---
+    // Use geometric randomness to add "human" variance (+/- 3 points)
+    const jitter = pulseRNG.range(-3, 3);
+    probability = Math.round(probability + jitter);
+
     // Cap at 99% until human verified
-    probability = Math.min(probability, 99);
+    probability = Math.max(0, Math.min(probability, 99));
 
     // --- JAMIE NOTES GENERATION ---
     const property = await Property.findById(leadData.property);

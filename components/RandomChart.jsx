@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { pulseRNG } from '@/utils/pulseRNG';
 
 const RandomChart = ({ type = 'heatmap' }) => {
   const chartRef = useRef(null);
@@ -8,7 +9,7 @@ const RandomChart = ({ type = 'heatmap' }) => {
   useEffect(() => {
     if (!chartRef.current) return;
 
-    // Clear previous SVG
+    // Clear previous
     d3.select(chartRef.current).selectAll('*').remove();
 
     const margin = { top: 30, right: 30, bottom: 70, left: 60 };
@@ -23,13 +24,13 @@ const RandomChart = ({ type = 'heatmap' }) => {
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
     if (type === 'heatmap') {
-      // Mock big-data generator for heatmap
+      //  Big-data generator for heatmap
       const regions = ['North', 'South', 'East', 'West', 'Central'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const data = [];
       regions.forEach(r => {
         months.forEach(m => {
-          data.push({ region: r, month: m, value: Math.floor(Math.random() * 1000) + 500 });
+          data.push({ region: r, month: m, value: pulseRNG.int(500, 1500) });
         });
       });
 
@@ -64,7 +65,6 @@ const RandomChart = ({ type = 'heatmap' }) => {
         .attr('height', y.bandwidth())
         .style('fill', d => myColor(d.value));
 
-      // Add title
       svg.append('text')
         .attr('x', 0)
         .attr('y', -10)
@@ -74,11 +74,10 @@ const RandomChart = ({ type = 'heatmap' }) => {
         .text('Price Heatmap by Region');
 
     } else if (type === 'bar') {
-      // Mock big-data generator for rental yield
       const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego'];
       const data = cities.map(city => ({
         city,
-        yield: (Math.random() * 5 + 3).toFixed(2) // 3% to 8%
+        yield: (pulseRNG.range(3, 8)).toFixed(2) // 3% to 8%
       }));
 
       const x = d3.scaleBand()
@@ -110,7 +109,6 @@ const RandomChart = ({ type = 'heatmap' }) => {
         .attr('height', d => height - y(d.yield))
         .attr('fill', '#3b82f6');
 
-      // Add title
       svg.append('text')
         .attr('x', 0)
         .attr('y', -10)

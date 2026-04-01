@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   FaBed,
   FaBath,
@@ -7,17 +8,21 @@ import {
   FaMapMarker,
   FaChartLine,
   FaInfoCircle,
+  FaVrCardboard,
+  FaMicrochip,
 } from 'react-icons/fa';
 import PropertyMap from '@/components/PropertyMap';
 import SunsetPulseViewer from '@/components/SunsetPulseViewer';
+import PropertyFiberViewer from '@/components/PropertyFiberViewer';
 
 /**
- * Renders detailed information about a specific property.
- * @param {Object} props - Component properties.
- * @param {Object} props.property - The property object to display.
- * @param {Object} props.rentData - RentCast data for the property.
+ * Detailed information about property
+ * @param {Object} props - Component properties
+ * @param {Object} props.property - The property object
+ * @param {Object} props.rentData - RentCast data 
  */
 const PropertyDetails = ({ property, rentData }) => {
+  const [viewerType, setViewerType] = useState('fiber'); // Default to elite R3F
   return (
     <main>
       <div className='bg-slate-900 border border-white/10 p-8 rounded-2xl shadow-2xl text-center md:text-left overflow-hidden relative group transition-all duration-500 hover:border-blue-500/30'>
@@ -134,15 +139,39 @@ const PropertyDetails = ({ property, rentData }) => {
       </div>
 
       <div className='bg-slate-950 p-2 rounded-[2rem] mt-8 shadow-2xl border border-white/5'>
-        <div className='flex items-center justify-between px-6 py-4'>
-          <h3 className='text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic'>Sunset Pulse 3D Engine // Neural Feed</h3>
-          <div className='flex gap-1'>
-            <div className='w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse' />
-            <div className='w-1.5 h-1.5 bg-blue-500/50 rounded-full animate-pulse [animation-delay:0.2s]' />
-            <div className='w-1.5 h-1.5 bg-blue-500/20 rounded-full animate-pulse [animation-delay:0.4s]' />
+        <div className='flex items-center justify-between px-8 py-6'>
+          <div className='flex flex-col gap-1'>
+            <h3 className='text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic'>
+              3D Intelligence Grid // {viewerType === 'fiber' ? 'Elite Recon' : 'Neural Feed'}
+            </h3>
+            <div className='text-[8px] text-blue-500/50 font-mono'>
+              {viewerType === 'fiber' ? 'R3F_SATELLITE_INTERPOLATION_ON' : 'CUSTOM_RASTERIZER_V2.0'}
+            </div>
+          </div>
+
+          <div className='flex gap-2 bg-black/40 p-1.5 rounded-full border border-white/5'>
+            <button 
+              onClick={() => setViewerType('legacy')}
+              className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewerType === 'legacy' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <FaMicrochip size={10} /> Neural
+            </button>
+            <button 
+              onClick={() => setViewerType('fiber')}
+              className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewerType === 'fiber' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <FaVrCardboard size={12} /> Elite
+            </button>
           </div>
         </div>
-        <SunsetPulseViewer objUrl={property.objUrl} property={property} />
+
+        <div className='relative min-h-[500px]'>
+          {viewerType === 'fiber' ? (
+            <PropertyFiberViewer property={property} />
+          ) : (
+            <SunsetPulseViewer objUrl={property.objUrl} property={property} />
+          )}
+        </div>
       </div>
 
       <div className='bg-slate-900 border border-white/10 p-8 rounded-2xl shadow-2xl mt-8 transition-all duration-500 hover:border-blue-500/30'>

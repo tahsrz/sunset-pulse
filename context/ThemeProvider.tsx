@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ABIDAN_DATA, AbidanCharacter } from '@/constants/abidan';
 
 interface QuadrantStyle {
   background: string;
@@ -11,10 +12,8 @@ interface Branding {
   primaryColor: string;
   fontFamily: string;
   borderRadius: string;
-  // Modular UI Regions
   navBackground?: string;
   mainBackground?: string;
-  // Quadrant Targeting
   quadrants: {
     topLeft: QuadrantStyle;
     topRight: QuadrantStyle;
@@ -32,6 +31,8 @@ interface ThemeContextType {
   cancelStaging: () => void;
   isDevMode: boolean;
   setDevMode: (active: boolean) => void;
+  selectedAbidan: AbidanCharacter;
+  setSelectedAbidan: (abidan: AbidanCharacter) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -57,7 +58,6 @@ export function ThemeProvider({
   children: ReactNode; 
   branding: Branding; 
 }) {
-  // Deep merge initial with defaults
   const [branding, setBranding] = useState<Branding>(() => {
     const base = { ...defaultBranding, ...initialBranding };
     base.quadrants = { ...defaultBranding.quadrants, ...initialBranding?.quadrants };
@@ -66,24 +66,28 @@ export function ThemeProvider({
   
   const [stagedBranding, setStagedBranding] = useState<Branding | null>(null);
   const [isDevMode, setDevModeState] = useState(false);
+  const [selectedAbidan, setSelectedAbidanState] = useState<AbidanCharacter>(ABIDAN_DATA[0]);
 
-  // Persistence for Dev Mode
   useEffect(() => {
-    const saved = localStorage.getItem('jamie_dev_mode');
-    if (saved === 'true') {
-      setDevModeState(true);
-      console.log('⚡ [JAMIE_DEV_MODE] Intelligence Grid Synchronized. Protocol V4.2.0 Active.');
+    const savedDev = localStorage.getItem('jamie_dev_mode');
+    if (savedDev === 'true') setDevModeState(true);
+
+    const savedAbidanId = localStorage.getItem('selected_abidan');
+    if (savedAbidanId) {
+      const found = ABIDAN_DATA.find(a => a.id === savedAbidanId);
+      if (found) setSelectedAbidanState(found);
     }
   }, []);
+
+  const setSelectedAbidan = (abidan: AbidanCharacter) => {
+    setSelectedAbidanState(abidan);
+    localStorage.setItem('selected_abidan', abidan.id);
+    console.log(`🛡️ [ABIDAN_CORE] Mantle assumed: ${abidan.name} (${abidan.mantle})`);
+  };
 
   const setDevMode = (active: boolean) => {
     setDevModeState(active);
     localStorage.setItem('jamie_dev_mode', active ? 'true' : 'false');
-    if (active) {
-      console.log('⚡ [JAMIE_DEV_MODE] Active. UI Manipulation Protocol Enabled.');
-    } else {
-      console.log('🔒 [JAMIE_DEV_MODE] Inactive. Intelligence Grid Secured.');
-    }
   };
 
   const updateBranding = (newSettings: any) => {
@@ -129,7 +133,6 @@ export function ThemeProvider({
       root.style.setProperty('--nav-bg', target.navBackground || '');
       root.style.setProperty('--main-bg', target.mainBackground || '');
       
-      // Inject Quadrant Variables
       root.style.setProperty('--tl-bg', target.quadrants.topLeft.background);
       root.style.setProperty('--tr-bg', target.quadrants.topRight.background);
       root.style.setProperty('--bl-bg', target.quadrants.bottomLeft.background);
@@ -151,7 +154,9 @@ export function ThemeProvider({
       confirmBranding, 
       cancelStaging, 
       isDevMode, 
-      setDevMode 
+      setDevMode,
+      selectedAbidan,
+      setSelectedAbidan
     }}>
       <div 
         style={{ 
