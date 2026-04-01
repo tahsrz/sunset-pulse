@@ -1,4 +1,5 @@
 Sunset Pulse: Intelligent Real Estate Tools, Not Just Another Property Search
+
 The real estate technology landscape is crowded with solutions that promise much but deliver little beyond a basic listing feed. Agents are left paying premium prices for what amounts to a digital brochure, with no meaningful support for the actual work of closing deals.
 
 Sunset Pulse was built to address this gap. We provide a comprehensive operational suite—an intelligent platform that combines property search with actionable local intelligence and an AI assistant designed to help agents sell, not just display listings.
