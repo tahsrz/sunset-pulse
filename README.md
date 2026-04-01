@@ -1,143 +1,95 @@
-What It Does
+Sunset Pulse: Intelligent Real Estate Tools, Not Just Another Property Search
+The real estate technology landscape is crowded with solutions that promise much but deliver little beyond a basic listing feed. Agents are left paying premium prices for what amounts to a digital brochure, with no meaningful support for the actual work of closing deals.
 
-Jamie is an AI assistant that actually knows real context pulled from local business data, market analytics, and your own brand.
+Sunset Pulse was built to address this gap. We provide a comprehensive operational suite—an intelligent platform that combines property search with actionable local intelligence and an AI assistant designed to help agents sell, not just display listings.
 
-One dashboard shows you:
+A Direct Comparison: Value vs. Expense
+Consider the standard industry offering: The Pitch IDX charges agents between $840 and $2,800 in their first year for a simple property search page. This fee covers the search functionality and little else. There is no lead scoring, no automated follow-up, and no local market intelligence.
 
-Who to call first (lead scoring, not guesswork)
+Sunset Pulse offers a fundamentally different value proposition. For $60/month, we provide:
 
-What properties are moving
+A complete property search powered by the same MLS data (agents can supply their own feed for additional savings).
 
-Why a neighborhood is valuable
+A suite of tools for showcasing listings and managing client interactions.
 
-The Pitch
-IDX charges agents $840–$2,800 their first year for a basic property search page. That's it. No lead scoring. No follow-up. No local intelligence.
-What we offer is not only the search powered by the same MLS they would pay for anyways, but an entire websuite of tools to use to show listings or sell products.
+An integrated AI assistant that synthesizes market data, local business intelligence, and the agent’s own expertise to support deal-making.
 
-Sunset Pulse costs $60/month. Agents can bring their own MLS feed for discounts. We layer an AI assistant on top that actually helps them close deals.
+We utilize the same core data. Our platform costs less and delivers significantly more.
 
-Same data. Half the price.
+Platform Architecture: Built for Stability and Insight
+Unlike many real estate AI tools that function as thin wrappers around a single large language model, Sunset Pulse is built on a proprietary data architecture designed for long-term reliability and genuine utility.
 
-How It Works (Tech Stack)
-Frontend: Next.js, Tailwind
+Technology Stack:
+
+Frontend: Next.js, Tailwind CSS
+
 Backend: Node.js / Next.js API routes
-Inference: Groq (Llama 3 / Mixtral)
-Vector DB: Supabase with pgvector
+
+Inference Engine: Groq (Llama 3 / Mixtral)
+
+Vector Database: Supabase with pgvector
+
 Hosting: Vercel
-Data sources: RentCast API, agent-provided IDX feeds, local business data
 
-Lead Scoring Logic
-We don't guess which leads are hot. We calculate it:
+Data Sources: RentCast API, agent-provided IDX feeds, local business data
 
-text
+Lead Scoring: Calculated, Not Guessed
+Our lead scoring model moves beyond speculation by assigning weighted values to concrete actions:
+
 Score = (Property Views × 10) + (Chat Minutes × 5) + (Tour Request × 20)
-Tour request is a binary flag. If someone asks for a showing, comps, or contact, they jump to the top of your list.
 
-No machine learning fluff. Just behavioral weightings that actually work.
+A tour request—whether a showing, a comparative market analysis, or a direct contact inquiry—functions as a high-signal event, immediately elevating a lead to the top of the priority list. This is a transparent, behavior-based system designed for practical results.
 
-Why This Isn't Another ChatGPT Wrapper
-Most real estate AI is a thin layer over OpenAI. If OpenAI changes pricing or terms, those businesses are cooked.
+Tri-Vector RAG Architecture: Contextual Intelligence
+The platform’s AI, Jamie, operates on a unique Retrieval-Augmented Generation (RAG) architecture that grounds every response in three distinct data vectors:
 
-Out of the fires of a purely mathematical Java 3D viewer I built a Tri-Vector RAG architecture. Every AI response has to pull from three sources:
+Hyper-Local Commerce: Proprietary data on local businesses that defines a neighborhood’s character.
 
-Hyper-local commerce — private business data that gives a neighborhood its character
+Market Analytics: Real-time comparables and return-on-investment figures via RentCast.
 
-Market analytics — real-time comps and ROI numbers via RentCast
+Agent Brand DNA: The agent’s own professional biography, past transaction history, and local market expertise.
 
-Agent brand DNA — the agent's own bio, past deals, and local expertise
+This structure ensures that the AI provides contextually relevant insights that are directly tied to an agent’s market and personal brand.
 
-Copy the UI all you want. You can't copy the data synthesis.
+Operational Economics
+The platform is designed for sustainable, high-margin scalability.
 
-Costs (For The Nerds)
-At 5 paying users, $60/month each:
+At 5 users ($60/month each):
 
-Groq inference: ~$0.30
+Groq Inference: ~$0.30
 
 Embeddings: ~$0.01
 
 Hosting (Vercel + Supabase): $45
 
-RentCast (free tier): $0
+RentCast: $0 (free tier)
 
-Monthly cost: ~$47
-Monthly revenue: $300
-Gross margin: 84%
+Monthly Cost: ~$47
 
-At 50 users, margin pushes 93%. The only real variable is whether agents bring their own MLS feed or we have to license it.
+Monthly Revenue: $300
 
+Gross Margin: 84%
 
-🌅 Sunset Pulse & Grill
-Real Estate Platform | AI-Driven Personalization | Family Business Integration
-Sunset Pulse is a dual-purpose Next.js application designed for the modern era of North Texas real estate. It combines a robust property listing engine with a unique, voice-activated AI assistant named Jamie, while also providing a digital storefront for the Sunset Grill family business.
+At 50 users: Gross margin increases to approximately 93%. The primary variable cost is MLS data licensing, which can be offset when agents utilize their own existing feeds.
 
-🤖 Meet Jamie: The Lead AI Developer
-Unlike traditional platforms, Sunset Pulse features Jamie—a custom-built AI assistant inspired by Kingdom Hearts (Sora) and Joe Rogan’s assistant.
+Current Status & Roadmap
+Sunset Pulse is currently in an early pilot phase. The following components are operational:
 
-Jamie doesn't just answer questions; he codes the site.
+Voice-enabled AI assistant (Jamie)
 
-Voice-Activated UI: Agents can tell Jamie to change the theme, swap colors, or update headlines.
+Core RAG pipeline for data synthesis
 
-RentCast Integration: Jamie pulls up real-time rental estimates, confidence scores, and market comparables for any property.
+Lead scoring engine
 
-Personality: Encouraging, slightly obsessed with potatoes, and firmly believes the user can rule the world.
+Near-Term Development:
 
-🛠 Tech Stack
-Frontend: Next.js 14+ (App Router), Tailwind CSS
+Automated SMS follow-up via Twilio, triggered when a lead surpasses a predefined score threshold.
 
-Database: MongoDB (Mongoose)
+Background
+The impetus for Sunset Pulse came from observing a persistent inefficiency in the real estate technology market. Agents routinely pay substantial fees for software that fails to meaningfully contribute to their core objective: closing sales. Between IDX licensing, customer relationship management subscriptions, and underutilized AI add-ons, the overhead is significant while the operational leverage remains minimal.
 
-AI Engine: Groq SDK (Llama 3.1 8B Instant)
+Sunset Pulse represents an alternative approach—one that prioritizes utility, reduces overhead, and equips agents with tools that directly support the sales process.
 
-Data APIs: RentCast API for real-time real estate analytics
-
-Authentication: NextAuth.js / Custom Auth Provider
-
-Voice/TTS: Web Speech API (Synthesis & Recognition)
-
-📁 Project Structure
-Plaintext
-/src
-  /app            # Next.js App Router (Listings, Grill, Auth)
-  /components     # UI Components (JamieChat.tsx, Navbar, etc.)
-  /context        # ThemeProvider, CartContext, AuthContext
-  /lib
-    /ai           # Jamie's "Brain" (System prompts & Groq logic)
-    /data         # API Fetchers (RentCast, MongoDB utils)
-  /models         # MongoDB Schemas (SiteConfig, Property, Order)
-/mocks            # Local JSON samples for offline testing (RentCast)
-🚀 Getting Started
-1. Prerequisites
-Ensure you have Node.js installed and access to a MongoDB instance.
-
-2. Environment Variables
-Create a .env.local file in the root directory:
-
-Bash
-
-MONGODB_URI=your_mongodb_uri
-GROQ_API_KEY=your_groq_key
-RENTCAST_API_KEY=your_rentcast_key
-NEXTAUTH_SECRET=your_secret
-
-
-
-3. Installation
-Bash
-npm install
-npm run dev
-
-Current Status
-Early pilot. Voice-enabled Jamie is live. RAG pipeline is working. Lead scoring is implemented.
-
-Next up: automated SMS follow-ups via Twilio when a lead hits a score threshold.
-
-Why I Built This
-I watched real estate agents pay thousands for software that doesn't help them sell. IDX fees, CRM costs, AI add-ons that nobody actually uses.
-
-I figured there's a better way: less overhead, more closing power.
-
-If you're an agent who wants to test it, or a developer who wants to contribute, open an issue or DM me.
+For agents interested in piloting the platform or developers interested in contributing, further information is available by opening an issue or direct message.
 
 Built with: Next.js, Groq, Supabase, Tailwind
-
-
