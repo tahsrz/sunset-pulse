@@ -1,4 +1,37 @@
- New Feature: Map Explorer (Spatial Search)
+ New Feature: Valuation Model (View Counts, Chat Minutes, Tour Requests)
+
+ 1. Jamie AI Intelligence Agent
+   * Re-engagement Protocol: A new high-stakes re-engagement system (JAMIE_RE_ENGAGEMENT_PROTOCOL) has been implemented
+     in lib/ai/prompts.ts and lib/ai/jamie.ts. It uses OpenRouter (llama-3.3-70b-instruct) to generate
+     hyper-personalized reactivation hooks for dormant leads based on "Intelligence Grid" telemetry.
+   * Spatial Intelligence: Integration of "Jamie's Dreams" in the map view, providing AI-driven insights into specific
+     coordinates.
+   * Security Shield: Added a Guardian Shield interceptor in JamieChat.tsx to validate queries through a dedicated
+     security API before processing.
+
+  2. Lead Management & Scoring V6.0
+   * Dynamic Scoring: Moved scoring logic to utils/leadIntelligence.js, incorporating view counts, chat minutes, tour
+     requests, and budget/timeframe bonuses.
+   * Probability Decay: Implemented a 5% daily decay factor for inactivity, encouraging timely follow-ups.
+   * Engagement Velocity: Added a new metric to track how quickly a lead is moving through the funnel.
+   * Enhanced Lead Model: Updated models/Lead.js with fields for budget, timeframe, leadCategory (Residential vs. RV),
+     and engagementVelocity.
+
+  3. Command Post & Explorer Upgrades
+   * Command Post: Redesigned with a tactical "Strategic Overview." It now features category filters (RES vs. RV), a
+     "Top Priority Intercept" section, and real-time "Deployment" tracking for active bookings.
+   * Advanced Explorer Map:
+       * Added 3D Terrain and Mapbox Directions integration.
+       * Implemented Thermal Recon (Heatmaps) for property trends and clustering for high-density areas.
+       * Lifestyle Pulse: New neighborhood intelligence scoring for selected areas.
+   * Jamie Chat UI: Refactored into a modular system (Telariel, Makiel, Suriel, Zakariel) with a minimized mode and
+     theme preview management.
+
+  4. Infrastructure & Data
+   * New Models: Added Booking.js and Valuation.js to handle asset reservations and MLS/ML-driven property valuations.
+   * Query Builder: Centralized complex MongoDB searches in utils/propertyQueryBuilder.js, supporting geospatial
+     polygon/radius searches and specialized RV filters.
+   * API Standardization: Shifted to a unified response pattern using utils/apiResponse.js.
  Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router)
   architecture. It is designed to bridge the gap between static property listings and an interactive, data-driven user
   experience.
