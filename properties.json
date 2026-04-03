@@ -1,0 +1,557 @@
+[
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Bowie Highway Ranch",
+    "type": "House",
+    "description": "Solid ranch setup on 10 acres just south of Bowie. Perimeter's already fenced for cattle or horses. 4-stall barn is in good shape with a separate workshop that's got its own power. House is a big 4-bed layout, clean but ready for some personal touches. No city taxes.",
+    "location": {
+      "street": "1402 HWY 59 S",
+      "city": "Bowie",
+      "state": "TX",
+      "zipcode": "76230"
+    },
+    "beds": 4,
+    "baths": 3,
+    "square_feet": 3200,
+    "amenities": [
+      "Horse Stalls",
+      "Acreage",
+      "Gated Entry",
+      "Workshop",
+      "Septic System",
+      "Well Water",
+      "Covered Patio"
+    ],
+    "rates": {
+      "monthly": 2500
+    },
+    "seller_info": {
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "940-555-0123"
+    },
+    "images": ["/images/properties/ranch1.jpg"],
+    "is_featured": true
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Holly Ridge Estates 2.5ac",
+    "type": "House",
+    "description": "Quiet spot in the back of Holly Ridge. 2.5 acres that gives you some breathing room from the neighbors. Big back deck is great for the evenings. Master's got the whirlpool tub and double vanities. Roof was redone two years ago. Good, honest country living.",
+    "location": {
+      "street": "244 E Ridge St",
+      "city": "Decatur",
+      "state": "TX",
+      "zipcode": "76234"
+    },
+    "beds": 3,
+    "baths": 2,
+    "square_feet": 2203,
+    "amenities": [
+      "2.5 Acres",
+      "Whirlpool Tub",
+      "2-Car Attached Garage",
+      "Formal Dining Room",
+      "Wood Deck",
+      "Fireplace",
+      "Cul-De-Sac Lot",
+      "Septic System",
+      "Well Water"
+    ],
+    "rates": {
+      "monthly": 2200
+    },
+    "seller_info": {
+      "name": "Elite Leases & Property Management",
+      "email": "info@eliteleases.com",
+      "phone": "940-555-0199"
+    },
+    "images": ["/images/properties/244ridge1.jpg"],
+    "is_featured": true,
+    "createdAt": "2026-03-12T00:00:00.000Z"
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Sunset Barndominium w/ Shop",
+    "type": "Other",
+    "description": "The 'everything' property. 2,400 sqft of living space plus a massive 2,000 sqft attached shop. Spray-foam throughout so the electric bill stays low even in July. RV hookup on the side of the shop. Built tough and ready for whatever you're working on.",
+    "location": {
+      "street": "405 Main St",
+      "city": "Sunset",
+      "state": "TX",
+      "zipcode": "76270"
+    },
+    "beds": 3,
+    "baths": 2,
+    "square_feet": 2400,
+    "amenities": [
+      "Attached Workshop",
+      "High Ceilings",
+      "Energy Efficient",
+      "RV Hookup",
+      "Wifi",
+      "Smart Home Tech"
+    ],
+    "rates": {
+      "monthly": 1800
+    },
+    "seller_info": {
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "940-555-0123"
+    },
+    "images": ["/images/properties/barndo1.jpg"],
+    "is_featured": true
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Rhome Commuter Rental",
+    "type": "House",
+    "description": "Modern 3-bed right off HWY 287. Easy run into Fort Worth for work. Large fenced backyard if you've got dogs. Clean kitchen, good finishes, and a neighborhood that stays quiet. Available for move-in now.",
+    "location": {
+      "street": "210 Aurora St",
+      "city": "Rhome",
+      "state": "TX",
+      "zipcode": "76078"
+    },
+    "beds": 3,
+    "baths": 2,
+    "square_feet": 1850,
+    "amenities": [
+      "Fenced Backyard",
+      "Two-Car Garage",
+      "Modern Kitchen",
+      "Fast Internet",
+      "Dishwasher"
+    ],
+    "rates": {
+      "monthly": 1200
+    },
+    "seller_info": {
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "817-555-0987"
+    },
+    "images": ["/images/properties/rhome1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Alvord 980 Franklin - Land",
+    "type": "Other",
+    "description": "Good build site with some elevation. Several old oaks and a small pond towards the back. Ag-exempt status is a possibility here. Road frontage is paved. Bring your own builder and get to work.",
+    "location": {
+      "street": "980 E Franklin St",
+      "city": "Alvord",
+      "state": "TX",
+      "zipcode": "76225"
+    },
+    "beds": 0,
+    "baths": 0,
+    "square_feet": 0,
+    "amenities": [
+      "Pond",
+      "Mature Trees",
+      "Road Frontage",
+      "Agriculture Exempt Potential"
+    ],
+    "rates": {
+      "weekly": 500
+    },
+    "seller_info": {
+      "name": "Sunset Real Estate Group",
+      "email": "listings@sunsetpulse.com",
+      "phone": "940-555-0123"
+    },
+    "images": ["/images/properties/land1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Big Sky RV - Decatur",
+    "type": "RV Park",
+    "description": "Full-service RV spots. Concrete pads on every site, 50-amp service, and decent wifi. We've got a pool and a dog run for long-term stayers. Clean laundry room and management's on-site 24/7. No junkers allowed.",
+    "location": {
+      "street": "1200 Resort Way",
+      "city": "Decatur",
+      "state": "TX",
+      "zipcode": "76234"
+    },
+    "beds": 0,
+    "baths": 0,
+    "square_feet": 0,
+    "amenities": [
+      "50-Amp Hookups",
+      "Wifi",
+      "Laundry Facilities",
+      "Swimming Pool",
+      "Dog Park"
+    ],
+    "rates": {
+      "nightly": 45,
+      "weekly": 250,
+      "monthly": 800
+    },
+    "seller_info": {
+      "name": "Big Sky Management",
+      "email": "manager@bigskyrv.com",
+      "phone": "940-555-9000"
+    },
+    "images": ["/images/properties/rv1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "The Meridian - 2BR",
+    "type": "Apartment",
+    "description": "Modern units right in the middle of Bowie. High ceilings, stainless appliances, and fiber internet already hooked up. Rooftop lounge is open to all tenants. Covered parking is available but limited. Solid spot for anyone wanting to be close to everything.",
+    "location": {
+      "street": "888 Urban Blvd",
+      "city": "Bowie",
+      "state": "TX",
+      "zipcode": "76230"
+    },
+    "beds": 2,
+    "baths": 2,
+    "square_feet": 1100,
+    "amenities": [
+      "Fitness Center",
+      "Covered Parking",
+      "Rooftop Lounge",
+      "Stainless Appliances",
+      "High-Speed Fiber"
+    ],
+    "rates": {
+      "monthly": 1450
+    },
+    "seller_info": {
+      "name": "Meridian Leasing",
+      "email": "lease@themeridian.com",
+      "phone": "940-555-1212"
+    },
+    "images": ["/images/properties/apt1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Sunset Lakefront Cabin",
+    "type": "House",
+    "description": "Small cabin right on the water. Private dock's included. It's an older build but everything works. Great views in the evening. Good for a weekend away or short-term work stay. Furnished and ready.",
+    "location": {
+      "street": "500 Shoreline Dr",
+      "city": "Sunset",
+      "state": "TX",
+      "zipcode": "76270"
+    },
+    "beds": 2,
+    "baths": 1,
+    "square_feet": 900,
+    "amenities": [
+      "Lake Front",
+      "Private Dock",
+      "Fire Pit",
+      "Wifi",
+      "Fully Furnished"
+    ],
+    "rates": {
+      "nightly": 175,
+      "weekly": 1000
+    },
+    "seller_info": {
+      "name": "Sunset Vacation Rentals",
+      "email": "rent@sunsetcabins.com",
+      "phone": "940-555-4433"
+    },
+    "images": ["/images/properties/cabin1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Decatur Flex Space - 5k sqft",
+    "type": "Industrial",
+    "description": "5,000 sqft shop space. High ceilings and a full loading dock. 3-phase power is already in. Small climate-controlled office at the front. Lots of room for parking or staging outside. Clean and ready for move-in.",
+    "location": {
+      "street": "2020 Commerce Way",
+      "city": "Decatur",
+      "state": "TX",
+      "zipcode": "76234"
+    },
+    "beds": 0,
+    "baths": 1,
+    "square_feet": 5000,
+    "amenities": [
+      "Loading Dock",
+      "3-Phase Power",
+      "High Ceilings",
+      "Climate Controlled Office",
+      "Ample Parking"
+    ],
+    "rates": {
+      "monthly": 3500
+    },
+    "seller_info": {
+      "name": "North Texas Commercial",
+      "email": "info@ntxcommercial.com",
+      "phone": "940-555-7788"
+    },
+    "images": ["/images/properties/industrial1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Bowie Executive Suites",
+    "type": "Office",
+    "description": "Individual suites for small business owners. Rent includes fiber internet, access to the conference room, and coffee bar. Receptionist on-site during business hours. 24/7 access for tenants. Professional atmosphere, no drama.",
+    "location": {
+      "street": "101 Commerce St",
+      "city": "Bowie",
+      "state": "TX",
+      "zipcode": "76230"
+    },
+    "beds": 0,
+    "baths": 2,
+    "square_feet": 250,
+    "amenities": [
+      "Fiber Internet",
+      "Conference Room",
+      "Receptionist",
+      "Coffee Bar",
+      "24/7 Access"
+    ],
+    "rates": {
+      "monthly": 550
+    },
+    "seller_info": {
+      "name": "Bowie Executive Hub",
+      "email": "suites@bowiehub.com",
+      "phone": "940-555-3322"
+    },
+    "images": ["/images/properties/office1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Golden Oaks Community",
+    "type": "Senior Living",
+    "description": "Active senior community in Decatur. Mix of independent and assisted layouts. Staff handles the housekeeping and meals so you don't have to. Plenty of social stuff going on every week. It's a clean, safe, and friendly setup.",
+    "location": {
+      "street": "450 Wellness Way",
+      "city": "Decatur",
+      "state": "TX",
+      "zipcode": "76234"
+    },
+    "beds": 1,
+    "baths": 1,
+    "square_feet": 850,
+    "amenities": [
+      "Meal Service",
+      "Housekeeping",
+      "Fitness Center",
+      "Social Activities",
+      "Emergency Alert System"
+    ],
+    "rates": {
+      "monthly": 3200
+    },
+    "seller_info": {
+      "name": "Golden Oaks Management",
+      "email": "info@goldenoaks.com",
+      "phone": "940-555-8811"
+    },
+    "images": ["/images/properties/senior1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Sunset Meadows Park",
+    "type": "Mobile Home",
+    "description": "Clean mobile home spots in Sunset. Roads are paved and management stays on top of things. Big mature trees throughout the park. Good quiet community that's easy on the wallet. Right off the highway for an easy commute.",
+    "location": {
+      "street": "777 Meadow Ln",
+      "city": "Sunset",
+      "state": "TX",
+      "zipcode": "76270"
+    },
+    "beds": 3,
+    "baths": 2,
+    "square_feet": 1200,
+    "amenities": [
+      "Large Lots",
+      "Mature Trees",
+      "Paved Roads",
+      "On-site Management",
+      "Playground"
+    ],
+    "rates": {
+      "monthly": 950
+    },
+    "seller_info": {
+      "name": "Sunset Park Management",
+      "email": "manager@sunsetmeadows.com",
+      "phone": "940-555-0077"
+    },
+    "images": ["/images/properties/mobile1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Class A Luxury - Thor Windsport",
+    "type": "RV",
+    "rv_type": "Class A",
+    "rv_length": 35,
+    "description": "Top-tier Class A Windsport ready for your next road trip. This unit is professionally maintained and loaded with extras. Outdoor kitchen, 3 TVs, and enough solar to keep the batteries topped off for off-grid nights. Sleeps 6 comfortably.",
+    "location": {
+      "street": "1500 US-287",
+      "city": "Decatur",
+      "state": "TX",
+      "zipcode": "76234"
+    },
+    "beds": 3,
+    "baths": 1,
+    "square_feet": 320,
+    "hookups": {
+      "water": true,
+      "sewer": true,
+      "electric": "50-Amp"
+    },
+    "amenities": [
+      "Generator",
+      "Outdoor Kitchen",
+      "Leveling Jacks",
+      "Backup Camera",
+      "Solar Panels",
+      "Smart TV"
+    ],
+    "rates": {
+      "nightly": 225,
+      "weekly": 1400
+    },
+    "seller_info": {
+      "name": "Lone Star RV Rentals",
+      "email": "rentals@lonestarrv.com",
+      "phone": "940-555-4000"
+    },
+    "images": ["/images/properties/rv_classa1.jpg"],
+    "is_featured": true
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Sunset Lake RV Spot #12",
+    "type": "RV Park",
+    "rv_type": "Fifth Wheel",
+    "rv_length": 45,
+    "description": "Premium back-in spot right on the water at Sunset Lake. Fully paved pad with plenty of room for slide-outs. 50-amp service and high-speed wifi included. This is one of the quietest spots in the park with a direct view of the sunset every evening.",
+    "location": {
+      "street": "500 Shoreline Dr",
+      "city": "Sunset",
+      "state": "TX",
+      "zipcode": "76270"
+    },
+    "beds": 0,
+    "baths": 0,
+    "square_feet": 0,
+    "hookups": {
+      "water": true,
+      "sewer": true,
+      "electric": "Both"
+    },
+    "amenities": [
+      "Lake Front",
+      "Wifi",
+      "Fire Pit",
+      "Paved Pad",
+      "Pet Friendly"
+    ],
+    "rates": {
+      "nightly": 65,
+      "weekly": 350,
+      "monthly": 900
+    },
+    "seller_info": {
+      "name": "Sunset Lake RV Resort",
+      "email": "info@sunsetlakerv.com",
+      "phone": "940-555-8822"
+    },
+    "images": ["/images/properties/rv_spot1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Vintage Airstream 'Silver Bullet'",
+    "type": "RV",
+    "rv_type": "Travel Trailer",
+    "rv_length": 25,
+    "description": "Fully restored 1975 Airstream Land Yacht. This isn't just a trailer, it's an experience. Modern interior with high-end appliances, but keeps that classic aluminum charm on the outside. Available for local delivery to any park in Wise or Montague county.",
+    "location": {
+      "street": "101 N Mason St",
+      "city": "Bowie",
+      "state": "TX",
+      "zipcode": "76230"
+    },
+    "beds": 1,
+    "baths": 1,
+    "square_feet": 180,
+    "hookups": {
+      "water": true,
+      "sewer": true,
+      "electric": "30-Amp"
+    },
+    "amenities": [
+      "Air Conditioning",
+      "Bluetooth Audio",
+      "Nespresso Machine",
+      "Memory Foam Mattress",
+      "Delivery Service"
+    ],
+    "rates": {
+      "nightly": 150,
+      "weekly": 900
+    },
+    "seller_info": {
+      "name": "Bowie Boutique Rentals",
+      "email": "hello@bowierentals.com",
+      "phone": "940-555-1122"
+    },
+    "images": ["/images/properties/airstream1.jpg"],
+    "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Alvord Overlook - Off-Grid Spot",
+    "type": "RV Park",
+    "rv_type": "Other",
+    "rv_length": 30,
+    "description": "Boondocking spot with a view. No hookups, but total privacy on 20 acres of high ground in Alvord. Great for vans or small trailers. We've got a cleared area that's level enough for most rigs. Come for the stars, stay for the silence.",
+    "location": {
+      "street": "980 E Franklin St",
+      "city": "Alvord",
+      "state": "TX",
+      "zipcode": "76225"
+    },
+    "beds": 0,
+    "baths": 0,
+    "square_feet": 0,
+    "hookups": {
+      "water": false,
+      "sewer": false,
+      "electric": "None"
+    },
+    "amenities": [
+      "Scenic View",
+      "Stargazing",
+      "Hiking Trails",
+      "Private Land"
+    ],
+    "rates": {
+      "nightly": 25,
+      "weekly": 150
+    },
+    "seller_info": {
+      "name": "Franklin Ranch",
+      "email": "ranch@alvordtx.com",
+      "phone": "940-555-6677"
+    },
+    "images": ["/images/properties/boondocking1.jpg"],
+    "is_featured": false
+  }
+]
