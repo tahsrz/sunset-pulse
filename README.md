@@ -4,31 +4,46 @@
   experience.
 
 I. Makiel The Seer: Focuses on Fate and Trajectory. He predicts 5–10 year market appreciation and identifies Hubs before they manifest in the public grid. 
+
 II. Gadrael The Shield: Focuses on rigidity. He identifies legal vulnerabilities, zoning issues, and title risks, providing a "Defense Rating" to ensure an investment is unbreakable. 
+
 III. Durandiel The Ghost: Focuses on Spatial Control. He performs "ghost recon," reading neighborhood vibes and hidden property details without disturbing the endpoints. 
+
 IV. Telariel The Spider: Focuses on Connectivity. He crawls the web for off-market mentions, social sentiment, and the web of Influence surrounding a seller or neighborhood. 
+
 V. Rezael The Maker: Focuses on Attack. He generates negotiation strategies and aggressive acquisition plans to secure assets before competitors can react. 
-VI. Zakariel The Fox: Focuses on Logistic Velocity. He maps the fastest "Path to Closing," coordinating lenders and inspectors to eliminate friction and ensure rapid market entry.   
-VII, VIII 1st Generation Enforcers Daruman and Noyon. Rarely used.  
+
+VI. Zakariel The Fox: Focuses on Logistic Velocity. He maps the fastest "Path to Closing," coordinating lenders and inspectors to eliminate friction and ensure rapid market entry. 
+
+
+VII, VIII 1st Generation Enforcers Daruman and Noyon.
+
 The 2 Primary Aggregators 
-The Synthesis Layer 
+
+Synthesis Layer 
+
+ 
   Once the 6 Judges finish their recon, their raw threads of data are passed to the two most powerful entities for 
   final processing before sent down the Memory Bridge into the Way 
 
-   XI. Judge Suriel The Phoenix - Aggregator: 
-       * Role: Restoration and Synthesis. 
-       * She takes the 6 raw reports and "restores" them into a single, high-fidelity Intelligence Core Jamie can read. She 
-         heals gaps in the data using predictive restoration, ensuring the briefing is a cohesive whole whose story can be understood. 
+XI. Judge Suriel The Phoenix - Aggregator: 
 
-   X. Judge Ozriel  The Reaper Final Arbiter: 
-       * Role: Pruning and Destruction. 
-       * Function: He performs the "Final Scythe" harvest. He culls any data point that lacks the weight of absolute 
-         truth and delivers the final Cull or Keep verdict. He decides market viability as his output determines the Total Market Viability score.
+Restoration and Synthesis. 
 
 
+She takes the 6 raw reports and restores them into a single, high-fidelity Intelligence Core Jamie can read. She 
+heals gaps in the data using predictive restoration, ensuring the briefing is a cohesive whole whose story can be understood. 
 
-  The engine
-  handles occlusion in two primary stages:
+X. Judge Ozriel  The Reaper Final Arbiter: 
+
+
+Pruning and Destruction. 
+       
+He performs the Final Scythe harvest. He culls any data point that lacks the weight of absolute, 
+truth and delivers the final Cull or Keep verdict. He decides market viability as his output determines the Total Market Viability score. 
+
+The engine
+handles occlusion in two primary stages: 
 
    1. Backface Culling: Uses a dot product analysis between the surface normal and the camera vector to immediately
       discard triangles facing away from the viewer.
