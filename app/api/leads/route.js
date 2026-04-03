@@ -8,6 +8,8 @@ import { pulseRNG } from '@/lib/core/pulseRNG';
 import { calculateLeadScore, applyDecay, calculateVelocity } from '@/lib/intelligence/leadIntelligence';
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 
+import { supabase } from '@/lib/supabase';
+
 export const GET = async () => {
   try {
     await connectDB();
@@ -17,6 +19,7 @@ export const GET = async () => {
       return unauthorizedResponse();
     }
 
+    // Fetch from MongoDB
     const leads = await Lead.find({})
       .populate('property', 'name rates location type')
       .sort({ createdAt: -1 });
@@ -28,7 +31,28 @@ export const GET = async () => {
       return leadObj;
     });
 
-    return successResponse(enrichedLeads);
+    //  Fetch from Supabase to ensure consistency
+    const { data: supabaseLeads } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Map Supabase leads to match enriched format if needed
+    // Merge by email to avoid duplicates
+    const finalLeads = [...enrichedLeads];
+    if (supabaseLeads) {
+      supabaseLeads.forEach(sl => {
+        if (!finalLeads.find(l => l.email === sl.email)) {
+          finalLeads.push({
+            ...sl,
+            _id: sl.id, // Compatibility
+            mongo: false
+          });
+        }
+      });
+    }
+
+    return successResponse(finalLeads);
   } catch (error) {
     return errorResponse('Failed to fetch lead intelligence feed.', 500, error.message);
   }
@@ -63,7 +87,7 @@ export const POST = async (request) => {
     if (isRV) tags.push('RV-ENTHUSIAST');
     if (leadData.budget > 500000) tags.push('ESTATE-LEVEL');
 
-    // Generate  Re-engagement Hooks A-Z
+    // Generate Verbose Re-engagement Hooks A-Z
     const reengagementHook = await generateHighStakesHook(leadData, property);
 
     const propertyInfo = property 
@@ -86,6 +110,23 @@ export const POST = async (request) => {
     });
 
     await newLead.save();
+
+    // SYNC TO SUPABASE PIPELINE WIP
+    try {
+      await supabase.from('leads').upsert({
+        name: newLead.name,
+        email: newLead.email,
+        phone: newLead.phone,
+        property_id: newLead.property?.toString(),
+        budget: newLead.budget,
+        timeframe: newLead.timeframe,
+        probability: newLead.probability,
+        jamie_notes: newLead.jamieNotes,
+        stage: 'New'
+      });
+    } catch (sbError) {
+      console.error('Supabase Sync Failed:', sbError);
+    }
 
     return successResponse({ message: 'Lead Captured', id: newLead._id }, 201);
   } catch (error) {

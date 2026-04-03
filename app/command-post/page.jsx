@@ -3,10 +3,15 @@ import { useState, useEffect } from 'react';
 import { 
   FaUser, FaEnvelope, FaPhone, FaHome, FaGripLines, 
   FaCrosshairs, FaCheckCircle, FaExclamationCircle, 
-  FaBolt, FaUndo, FaClock, FaTag, FaRv, FaBuilding
+  FaBolt, FaUndo, FaClock, FaTag, FaRv, FaBuilding,
+  FaRocket, FaProjectDiagram, FaBrain
 } from 'react-icons/fa';
 import Spinner from '@/components/Spinner';
 import { toast } from 'react-toastify';
+import JamieSprintDashboard from '@/components/JamieSprintDashboard';
+import LeadPipelineBoard from '@/components/LeadPipelineBoard';
+import JamieSprintGenerator from '@/components/JamieSprintGenerator';
+import IntelligenceTimeline from '@/components/IntelligenceTimeline';
 
 const CommandPostPage = () => {
   const [leads, setLeads] = useState([]);
@@ -14,9 +19,9 @@ const CommandPostPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [bottomLeftMode, setBottomLeftMode] = useState('clusters'); // 'clusters', 'recon', 'dreams', or 'deployments'
-  const [valuations, setValuations] = useState([]);
-  const [dreams, setDreams] = useState([]);
+  const [bottomLeftMode, setBottomLeftMode] = useState('clusters'); // 'clusters', 'recon', 'dreams', 'deployments', 'sprints'
+  const [activeSprintId, setActiveSprintId] = useState(null);
+  const [showPipeline, setShowPipeline] = useState(false);
 
   const fetchLeads = async () => {
     try {
@@ -107,7 +112,7 @@ const CommandPostPage = () => {
     const hook = lead.reengagementHook[type.toLowerCase()];
     if (hook) {
       toast.success(`Protocol ${type} Engaged: ${hook}`);
-      // Here you would trigger actual email/SMS via API
+      // Trigger actual email/SMS via API
     } else {
       toast.error(`Protocol ${type} not found for this lead.`);
     }
@@ -200,7 +205,28 @@ const CommandPostPage = () => {
   if (loading) return <Spinner loading={loading} />;
 
   return (
-    <div className='min-h-screen grid grid-cols-1 md:grid-cols-2 grid-rows-2 transition-all duration-500'>
+    <div className='min-h-screen bg-slate-950 text-white relative overflow-hidden font-sans selection:bg-[var(--primary-color)] selection:text-white'>
+      
+      {/* Global Pipeline Overlay */}
+      {showPipeline && (
+        <div className='absolute inset-0 z-[100] bg-slate-950 p-8 overflow-y-auto animate-in fade-in zoom-in duration-300'>
+          <div className='flex justify-between items-center mb-10'>
+            <div>
+              <h1 className='text-5xl font-black italic tracking-tighter text-blue-400'>Asset Pipeline</h1>
+              <p className='text-[10px] font-mono text-slate-500 uppercase tracking-[0.5em] mt-2'>Grid State: Synchronized</p>
+            </div>
+            <button 
+              onClick={() => setShowPipeline(false)}
+              className='bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95'
+            >
+              Close Grid
+            </button>
+          </div>
+          <LeadPipelineBoard />
+        </div>
+      )}
+
+      <div className={`h-screen grid grid-cols-1 md:grid-cols-2 grid-rows-2 transition-all duration-500 ${showPipeline ? 'blur-2xl scale-110 pointer-events-none' : ''}`}>
       
       {/* TOP LEFT QUADRANT (Strategic Overview) WIP */}
       <div className='p-8 border-r border-b border-white/5 bg-[var(--tl-bg)] text-[var(--tl-color)] transition-all duration-500 overflow-y-auto'>
@@ -212,6 +238,12 @@ const CommandPostPage = () => {
             <p className='opacity-50 font-mono text-xs mt-1'>[ STRATEGIC OVERVIEW ]</p>
           </div>
           <div className='flex gap-2'>
+            <button 
+              onClick={() => setShowPipeline(true)}
+              className='bg-blue-600 hover:bg-blue-500 text-white px-4 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20'
+            >
+              <FaProjectDiagram size={12} /> Grid Pipeline
+            </button>
             <div className='bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-lg'>
               <div className='text-[8px] font-black uppercase text-blue-400'>Residential</div>
               <div className='text-lg font-mono font-bold'>{leads.filter(l => l.leadCategory === 'Residential').length}</div>
@@ -241,26 +273,33 @@ const CommandPostPage = () => {
         </div>
 
         {/* SUNSET PULSE OVERRIDE */}
-        <div className='mt-8 bg-black/40 border border-[var(--primary-color)]/30 p-6 rounded-2xl relative overflow-hidden group'>
-          <div className='absolute inset-0 bg-[var(--primary-color)]/5 opacity-0 group-hover:opacity-100 transition-opacity' />
-          <div className='relative z-10'>
-            <div className='flex items-center gap-2 mb-4'>
-              <FaBolt className='text-[var(--primary-color)] animate-pulse' />
-              <h2 className='text-xs font-black uppercase tracking-[0.2em] text-white'>Sunset Pulse Override</h2>
+        <div className='mt-8 space-y-6'>
+          <div className='bg-black/40 border border-[var(--primary-color)]/30 p-6 rounded-2xl relative overflow-hidden group'>
+            <div className='absolute inset-0 bg-[var(--primary-color)]/5 opacity-0 group-hover:opacity-100 transition-opacity' />
+            <div className='relative z-10'>
+              <div className='flex items-center gap-2 mb-4'>
+                <FaBolt className='text-[var(--primary-color)] animate-pulse' />
+                <h2 className='text-xs font-black uppercase tracking-[0.2em] text-white'>Sunset Pulse Override</h2>
+              </div>
+              <textarea
+                value={interestInput}
+                onChange={(e) => setInterestInput(e.target.value)}
+                placeholder="Inject new strategic interests into Jamie's spatial dream engine..."
+                className='w-full bg-slate-950/50 border border-white/10 rounded-xl p-4 text-xs font-mono text-blue-400 placeholder:text-slate-600 focus:outline-none focus:border-[var(--primary-color)]/50 transition-all resize-none h-24 mb-4'
+              />
+              <button
+                onClick={syncInterests}
+                className='w-full bg-[var(--primary-color)] hover:bg-[var(--primary-color)]/80 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95'
+              >
+                Sync Intel Grid
+              </button>
             </div>
-            <textarea
-              value={interestInput}
-              onChange={(e) => setInterestInput(e.target.value)}
-              placeholder="Inject new strategic interests into Jamie's spatial dream engine..."
-              className='w-full bg-slate-950/50 border border-white/10 rounded-xl p-4 text-xs font-mono text-blue-400 placeholder:text-slate-600 focus:outline-none focus:border-[var(--primary-color)]/50 transition-all resize-none h-24 mb-4'
-            />
-            <button
-              onClick={syncInterests}
-              className='w-full bg-[var(--primary-color)] hover:bg-[var(--primary-color)]/80 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95'
-            >
-              Sync Intel Grid
-            </button>
           </div>
+
+          <JamieSprintGenerator onSprintCreated={(id) => {
+            setActiveSprintId(id);
+            setBottomLeftMode('sprints');
+          }} />
         </div>
 
         {/* SYSTEM INTELLIGENCE NOTE */}
@@ -348,11 +387,13 @@ const CommandPostPage = () => {
             <button onClick={() => setBottomLeftMode('clusters')} className={`text-[8px] px-2 py-1 rounded font-black transition-all ${bottomLeftMode === 'clusters' ? 'bg-[var(--primary-color)] text-white' : 'text-white/30 hover:text-white/60'}`}>CLUSTERS</button>
             <button onClick={() => setBottomLeftMode('recon')} className={`text-[8px] px-2 py-1 rounded font-black transition-all ${bottomLeftMode === 'recon' ? 'bg-blue-600 text-white' : 'text-white/30 hover:text-white/60'}`}>MARKET RECON</button>
             <button onClick={() => setBottomLeftMode('dreams')} className={`text-[8px] px-2 py-1 rounded font-black transition-all ${bottomLeftMode === 'dreams' ? 'bg-amber-500 text-white' : 'text-white/30 hover:text-white/60'}`}>DREAM STREAM</button>
+            <button onClick={() => setBottomLeftMode('sprints')} className={`text-[8px] px-2 py-1 rounded font-black transition-all ${bottomLeftMode === 'sprints' ? 'bg-purple-600 text-white' : 'text-white/30 hover:text-white/60'}`}>SPRINTS</button>
+            <button onClick={() => setBottomLeftMode('timeline')} className={`text-[8px] px-2 py-1 rounded font-black transition-all ${bottomLeftMode === 'timeline' ? 'bg-slate-600 text-white' : 'text-white/30 hover:text-white/60'}`}>TIMELINE</button>
             <button onClick={() => setBottomLeftMode('deployments')} className={`text-[8px] px-2 py-1 rounded font-black transition-all ${bottomLeftMode === 'deployments' ? 'bg-green-600 text-white' : 'text-white/30 hover:text-white/60'}`}>DEPLOYMENTS</button>
           </div>
         </div>
         
-        <div className='space-y-6'>
+        <div className='space-y-6 h-full'>
           {bottomLeftMode === 'clusters' ? (
             Object.values(groupedLeads).map((group, idx) => (
               <div key={idx} className='group cursor-pointer'>
@@ -421,6 +462,10 @@ const CommandPostPage = () => {
                 </div>
               ))}
             </div>
+          ) : bottomLeftMode === 'sprints' ? (
+            <JamieSprintDashboard activeSprintId={activeSprintId} />
+          ) : bottomLeftMode === 'timeline' ? (
+            <IntelligenceTimeline />
           ) : (
             <div className='space-y-4'>
               {bookings.length > 0 ? bookings.map((booking) => (
