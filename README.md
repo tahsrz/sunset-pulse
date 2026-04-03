@@ -1,4 +1,6 @@
- New Feature: 10 parallel OpenRouter queries
+ New Feature: Supaflow Integration and Workflows 
+
+ 
  Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router)
   architecture. It is designed to bridge the gap between static property listings and an interactive, data-driven user
   experience.
