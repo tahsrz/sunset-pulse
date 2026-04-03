@@ -8,7 +8,8 @@ II. Gadrael The Shield: Focuses on rigidity. He identifies legal vulnerabilities
 III. Durandiel The Ghost: Focuses on Spatial Control. He performs "ghost recon," reading neighborhood vibes and hidden property details without disturbing the endpoints. 
 IV. Telariel The Spider: Focuses on Connectivity. He crawls the web for off-market mentions, social sentiment, and the web of Influence surrounding a seller or neighborhood. 
 V. Rezael The Maker: Focuses on Attack. He generates negotiation strategies and aggressive acquisition plans to secure assets before competitors can react. 
-VI. Zakariel The Fox: Focuses on Logistic Velocity. He maps the fastest "Path to Closing," coordinating lenders and inspectors to eliminate friction and ensure rapid market entry.
+VI. Zakariel The Fox: Focuses on Logistic Velocity. He maps the fastest "Path to Closing," coordinating lenders and inspectors to eliminate friction and ensure rapid market entry. 
+
 VII, VIII 1st Generation Enforcers Daruman and Noyon.
 
 The 2 Primary Aggregators 
