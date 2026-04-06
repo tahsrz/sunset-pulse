@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Map, { Source, Layer, Marker, Popup, NavigationControl, FullscreenControl } from 'react-map-gl';
 import { useSearchParams } from 'next/navigation';
 import mapboxgl from 'mapbox-gl';
@@ -9,7 +9,22 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 // @ts-ignore
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
-import { FaHome, FaInfoCircle, FaMapMarkedAlt, FaBrain, FaBolt, FaRoute, FaBus, FaTrailer, FaTags, FaGasPump, FaStore, FaCoffee, FaUtensils } from 'react-icons/fa';
+import { 
+  FaHouse, 
+  FaCircleInfo, 
+  FaMapLocationDot, 
+  FaBrain, 
+  FaBolt, 
+  FaRoute, 
+  FaBus, 
+  FaTrailer, 
+  FaTags, 
+  FaGasPump, 
+  FaStore, 
+  FaCoffee, 
+  FaUtensils,
+  FaCaravan
+} from 'react-icons/fa6';
 import Link from 'next/link';
 
 const clusterLayer = {
@@ -134,44 +149,63 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
     }
   }, [activeRouteProperty]);
 
-  // Convert properties to GeoJSON for clustering
-  const geojsonResults = {
+  // State for GeoJSON results calculated in Web Worker
+  const [geojsonResults, setGeojsonResults] = useState({
     type: 'FeatureCollection',
-    features: [
-      ...results.map(p => ({
-        type: 'Feature',
-        properties: { 
-          id: p._id,
-          name: p.name,
-          price: p.rates?.monthly || p.rates?.nightly || 0,
-          category: p.type,
-          isHovered: p._id === hoveredId,
-          dataType: 'property',
-          trend: 1.0 // Baseline trend for properties
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: [p.location_geo.coordinates[0], p.location_geo.coordinates[1]]
-        }
-      })),
-      ...valuations.map(v => ({
-        type: 'Feature',
-        properties: {
-          id: v._id,
-          name: v.address,
-          price: v.estimate,
-          category: 'Valuation',
-          isHovered: v._id === hoveredId,
-          dataType: 'valuation',
-          trend: v.ml_adjustments?.price_trend_index || 1.0 // Actual ML trend data
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: [v.location_geo.coordinates[0], v.location_geo.coordinates[1]]
-        }
-      }))
-    ]
-  };
+    features: []
+  });
+
+  const workerRef = useRef(null);
+
+  // Initialize Web Worker for background GeoJSON processing
+  useEffect(() => {
+    // @ts-ignore - Next.js handles Worker(new URL(...)) pattern
+    const worker = new Worker(new URL('../utils/workers/geojson.worker.js', import.meta.url));
+    workerRef.current = worker;
+
+    worker.onmessage = (event) => {
+      setGeojsonResults(event.data);
+    };
+
+    return () => {
+      worker.terminate();
+    };
+  }, []);
+
+  // Update GeoJSON when underlying data changes (Worker now handles state)
+  useEffect(() => {
+    if (workerRef.current) {
+      workerRef.current.postMessage({ results, valuations });
+    }
+  }, [results, valuations]);
+
+  // Sync hoveredId to Mapbox feature-state for instant performance
+  const prevHoveredId = useRef(null);
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current.getMap();
+    
+    // Clear previous hover state
+    if (prevHoveredId.current) {
+      try {
+        map.setFeatureState(
+          { source: 'properties', id: prevHoveredId.current },
+          { hovered: false }
+        );
+      } catch (err) { /* Silent fail if source not loaded */ }
+    }
+    
+    // Set new hover state
+    if (hoveredId) {
+      try {
+        map.setFeatureState(
+          { source: 'properties', id: hoveredId },
+          { hovered: true }
+        );
+        prevHoveredId.current = hoveredId;
+      } catch (err) { /* Silent fail if source not loaded */ }
+    }
+  }, [hoveredId]);
 
   useEffect(() => {
     const fetchJamieInsights = async () => {
@@ -339,6 +373,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
           cluster={true}
           clusterMaxZoom={14}
           clusterRadius={50}
+          promoteId="id"
         >
           {showHeatmap && <Layer {...heatmapLayer} />}
           <Layer {...clusterLayer} />
@@ -347,9 +382,9 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
             {...unclusteredPointLayer} 
             paint={{
               ...unclusteredPointLayer.paint,
-              'circle-radius': ['case', ['boolean', ['get', 'isHovered'], false], 12, 8],
-              'circle-stroke-width': ['case', ['boolean', ['get', 'isHovered'], false], 4, 2],
-              'circle-stroke-color': ['case', ['boolean', ['get', 'isHovered'], false], '#3b82f6', '#fff']
+              'circle-radius': ['case', ['boolean', ['feature-state', 'hovered'], false], 12, 8],
+              'circle-stroke-width': ['case', ['boolean', ['feature-state', 'hovered'], false], 4, 2],
+              'circle-stroke-color': ['case', ['boolean', ['feature-state', 'hovered'], false], '#3b82f6', '#fff']
             }}
           />
         </Source>
@@ -365,7 +400,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
           const isHighIntensity = intensity > 1.2;
           const isUrgent = property.leadCount > 10;
 
-          let RVIcon = FaRv;
+          let RVIcon = FaCaravan;
           if (property.rv_type?.includes('Class')) RVIcon = FaBus;
           else if (property.rv_type?.includes('Trailer') || property.rv_type?.includes('Fifth') || property.rv_type?.includes('Hauler')) RVIcon = FaTrailer;
 
@@ -402,7 +437,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
                     boxShadow: isHighIntensity ? `0 0 ${15 * intensity}px rgba(59, 130, 246, 0.6)` : 'none'
                   }}
                 >
-                  {isRV && !isHovered ? <RVIcon className="text-white text-xs" /> : <FaHome className="text-white text-xs" />}
+                  {isRV && !isHovered ? <RVIcon className="text-white text-xs" /> : <FaHouse className="text-white text-xs" />}
                 </div>
               </div>
             </Marker>
@@ -510,11 +545,10 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
       <div className="absolute top-5 right-5 z-10 space-y-3">
         <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl max-w-[250px]">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3 text-blue-400">
-              <FaMapMarkedAlt />
-              <h3 className="text-xs font-black uppercase tracking-widest">Grid Intelligence</h3>
-            </div>
-            <div className="flex gap-2">
+          <div className="flex items-center gap-3 text-blue-400">
+            <FaMapLocationDot />
+            <h3 className="text-xs font-black uppercase tracking-widest">Grid Intelligence</h3>
+          </div>            <div className="flex gap-2">
               <button 
                 onClick={() => setShowHeatmap(!showHeatmap)}
                 className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showHeatmap ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}

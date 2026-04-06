@@ -6,6 +6,8 @@ import AuthProvider from '@/components/AuthProvider';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
 import JamieChat from '@/components/JamieChat';
+import KeybindHandler from '@/components/KeybindHandler';
+import AdvancedModeIndicator from '@/components/AdvancedModeIndicator';
 import { SiteConfig } from '@/models/SiteConfig';
 import connectDB from '@/lib/core/database';
 import { ToastContainer } from 'react-toastify';
@@ -15,6 +17,9 @@ export const metadata = {
   title: 'Sunset Pulse | Real Estate & Intelligence',
   description: 'Find your dream home in North Texas, powered by Jamie AI.',
   keywords: 'rental, property, real estate, keller tx, rhome tx, investment',
+  icons: {
+    icon: '/next.svg',
+  },
 };
 
 /**
@@ -51,6 +56,8 @@ const MainLayout = async ({ children }) => {
               </div>
               
               <JamieChat />
+              <KeybindHandler />
+              <AdvancedModeIndicator />
               
               <ToastContainer />
             </ThemeProvider>

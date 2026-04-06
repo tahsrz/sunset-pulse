@@ -1,42 +1,44 @@
 export class Vector {
-  constructor(x = 0, y = 0, z = 0) {
+  coords: number[];
+
+  constructor(x: number = 0, y: number = 0, z: number = 0) {
     this.coords = [x, y, z];
   }
 
-  get(index) {
+  get(index: number): number {
     return this.coords[index];
   }
 
-  set(index, value) {
+  set(index: number, value: number): void {
     this.coords[index] = value;
   }
 
-  get x() { return this.coords[0]; }
-  get y() { return this.coords[1]; }
-  get z() { return this.coords[2]; }
+  get x(): number { return this.coords[0]; }
+  get y(): number { return this.coords[1]; }
+  get z(): number { return this.coords[2]; }
 
-  add(other) {
+  add(other: Vector): Vector {
     return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
   }
 
-  subtract(other) {
+  subtract(other: Vector): Vector {
     return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
   }
 
-  multiplyByScalar(scalar) {
+  multiplyByScalar(scalar: number): Vector {
     return new Vector(this.x * scalar, this.y * scalar, this.z * scalar);
   }
 
-  divideByScalar(scalar) {
+  divideByScalar(scalar: number): Vector {
     if (scalar === 0) return new Vector(0, 0, 0);
     return new Vector(this.x / scalar, this.y / scalar, this.z / scalar);
   }
 
-  dotProduct(other) {
+  dotProduct(other: Vector): number {
     return this.x * other.x + this.y * other.y + this.z * other.z;
   }
 
-  crossProduct(other) {
+  crossProduct(other: Vector): Vector {
     return new Vector(
       this.y * other.z - this.z * other.y,
       this.z * other.x - this.x * other.z,
@@ -44,16 +46,16 @@ export class Vector {
     );
   }
 
-  magnitude() {
+  magnitude(): number {
     return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
   }
 
-  normalized() {
+  normalized(): Vector {
     const mag = this.magnitude();
     return mag > 0 ? this.divideByScalar(mag) : new Vector(0, 0, 0);
   }
 
-  multiplyMatrix(matrix) {
+  multiplyMatrix(matrix: Matrix): Vector {
     const result = new Vector();
     for (let i = 0; i < 3; i++) {
       let sum = 0;
@@ -66,28 +68,32 @@ export class Vector {
   }
 
   // Rotates vector around arbitrary axes
-  rotate(yaw, pitch, roll = 0) {
+  rotate(yaw: number, pitch: number, roll: number = 0): Vector {
     const mat = Matrix.fromEuler(yaw, pitch, roll);
     return this.multiplyMatrix(mat);
   }
 }
 
 export class Matrix {
-  constructor(rows = 3, cols = 3) {
+  data: number[][];
+  rows: number;
+  cols: number;
+
+  constructor(rows: number = 3, cols: number = 3) {
     this.data = Array.from({ length: rows }, () => Array(cols).fill(0));
     this.rows = rows;
     this.cols = cols;
   }
 
-  get(row, col) {
+  get(row: number, col: number): number {
     return this.data[row][col];
   }
 
-  set(row, col, value) {
+  set(row: number, col: number, value: number): void {
     this.data[row][col] = value;
   }
 
-  multiplyMatrix(other) {
+  multiplyMatrix(other: Matrix): Matrix {
     const result = new Matrix(this.rows, other.cols);
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < other.cols; j++) {
@@ -101,7 +107,7 @@ export class Matrix {
     return result;
   }
 
-  getTransposed() {
+  getTransposed(): Matrix {
     const result = new Matrix(this.cols, this.rows);
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
@@ -111,13 +117,13 @@ export class Matrix {
     return result;
   }
 
-  static identityMatrix(size) {
+  static identityMatrix(size: number): Matrix {
     const result = new Matrix(size, size);
     for (let i = 0; i < size; i++) result.set(i, i, 1);
     return result;
   }
 
-  static fromEuler(yaw, pitch, roll = 0) {
+  static fromEuler(yaw: number, pitch: number, roll: number = 0): Matrix {
     const cy = Math.cos(yaw);
     const sy = Math.sin(yaw);
     const cp = Math.cos(pitch);

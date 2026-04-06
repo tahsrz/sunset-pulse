@@ -12,7 +12,7 @@ export interface MLSProperty {
   mls_id?: string;
   list_price: number;
   status: string;
-  // ... standardized MLS fields
+  //  standardized MLS fields
 }
 
 class MLSService {
@@ -33,7 +33,7 @@ class MLSService {
 
   private async fetchRepliers(endpoint: string, params: any = {}) {
     if (!this.apiKey) {
-      console.warn('MLS_API_KEY missing. Falling back to internal data only.');
+      console.warn('MLS_API_KEY missing. Falling back to internal data.');
       return null;
     }
 
@@ -106,7 +106,7 @@ class MLSService {
       this.fetchRepliers('/listings', repliersParams)
     ]);
 
-    const internalListings = internalRes.properties || [];
+    const internalListings = (internalRes.properties || []).map((p: any) => ({ ...p, source: 'Internal' }));
     const mlsListings = repliersData?.listings?.map(this.mapRepliersToProperty) || [];
 
     // Filter internal listings if city is provided
@@ -124,13 +124,13 @@ class MLSService {
    * Resolves a single listing by ID, checking internal first, then Repliers.io.
    */
   public async getListingById(id: string) {
-    // 1. Try local MongoDB first (standard MongoDB BSON ID check)
+    //  Try local MongoDB first
     if (id.length === 24) { 
       const internal = await fetchProperty(id);
       if (internal) return internal;
     }
 
-    // 2. Fallback to Repliers.io (Assuming id is an MLS number)
+    //  Fallback to Repliers.io Assuming id is an MLS number
     const repliersItem = await this.fetchRepliers(`/listings/${id}`);
     if (repliersItem) {
       return this.mapRepliersToProperty(repliersItem);

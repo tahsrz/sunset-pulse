@@ -6,10 +6,12 @@ import { useSession } from 'next-auth/react';
 import profileDefault from '@/assets/images/profile.png';
 import Spinner from '@/components/Spinner';
 import ComplexObservationsManager from '@/components/ComplexObservationsManager';
+import { useTheme } from '@/context/ThemeProvider';
 import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
   const { data: session } = useSession();
+  const { isAdvancedMode, setAdvancedMode, customKeybind, setCustomKeybind } = useTheme();
   const profileImage = session?.user?.image;
   const profileName = session?.user?.name;
   const profileEmail = session?.user?.email;
@@ -97,6 +99,55 @@ const ProfilePage = () => {
               </h2>
               <div className='mt-10'>
                 <ComplexObservationsManager />
+              </div>
+
+              <div className='mt-10 p-4 bg-slate-50 rounded-xl border border-slate-200'>
+                <h3 className='text-lg font-bold mb-4 flex items-center gap-2'>
+                  <span>⚙️</span> System Settings
+                </h3>
+                
+                {/* Advanced Mode Toggle */}
+                <div className='flex items-center justify-between mb-6'>
+                  <div>
+                    <p className='font-semibold'>Advanced Mode</p>
+                    <p className='text-xs text-gray-500'>Enable power-user features and Command Post access.</p>
+                  </div>
+                  <button 
+                    onClick={() => setAdvancedMode(!isAdvancedMode)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isAdvancedMode ? 'bg-primary' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAdvancedMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+
+                {/* Custom Keybind Input */}
+                <div className='pt-4 border-t border-slate-200'>
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <p className='font-semibold'>Activation Key</p>
+                      <p className='text-xs text-gray-500'>Trigger: Shift + {customKeybind}</p>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-sm font-mono bg-slate-200 px-2 py-1 rounded text-slate-600'>Shift +</span>
+                      <input 
+                        type='text' 
+                        maxLength={1}
+                        className='w-10 h-10 text-center font-bold border border-slate-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary uppercase'
+                        value={customKeybind}
+                        onChange={(e) => {
+                          const val = e.target.value.slice(-1);
+                          if (val && /[a-zA-Z0-9]/.test(val)) {
+                            setCustomKeybind(val);
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <p className='mt-6 text-[10px] text-gray-400 text-center uppercase tracking-widest'>
+                  Interactive System Control v1.0
+                </p>
               </div>
             </div>
 

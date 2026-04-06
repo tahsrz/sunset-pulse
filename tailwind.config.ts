@@ -1,5 +1,6 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from "tailwindcss";
+
+const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -38,13 +39,24 @@ module.exports = {
       animation: {
         "pulse-fast": "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "recon-sweep": "scan 4s linear infinite",
+        "pulse-expand": "pulse-expand 4s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+        "pulse-glow": "pulse-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite",
       },
       keyframes: {
         scan: {
           "0%": { top: "0%", opacity: "0" },
           "50%": { opacity: "0.5" },
           "100%": { top: "100%", opacity: "0" },
-        }
+        },
+        'pulse-expand': {
+          '0%': { transform: 'scale(1)', opacity: '0', filter: 'blur(0px)' },
+          '15%': { opacity: '0.7', filter: 'blur(1px)' },
+          '100%': { transform: 'scale(5)', opacity: '0', filter: 'blur(12px)' },
+        },
+        'pulse-glow': {
+          '0%, 100%': { opacity: '0.1', transform: 'scale(1)', filter: 'blur(6px)' },
+          '50%': { opacity: '0.4', transform: 'scale(1.08)', filter: 'blur(2px)' },
+        },
       }
     },
     container: {
@@ -61,3 +73,5 @@ module.exports = {
     require("@tailwindcss/forms"),
   ],
 };
+
+export default config;

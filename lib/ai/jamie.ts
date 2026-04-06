@@ -22,7 +22,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 /**
  * Abidan Judge Worker Functions
  */
-async function getAbidanJudgeIntel(workerName: string, systemPrompt: string, propertyData: any) {
+async function getAbidanJudgeIntel(workerName: string, systemPrompt: string, propertyData: any, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -31,7 +31,7 @@ async function getAbidanJudgeIntel(workerName: string, systemPrompt: string, pro
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.1-405b-instruct:free",
+        model: model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Execute recon for: ${JSON.stringify(propertyData)}` }
@@ -49,7 +49,7 @@ async function getAbidanJudgeIntel(workerName: string, systemPrompt: string, pro
 /**
  * Worker: Judge Suriel (Phoenix) Aggregator
  */
-async function getSurielRestoration(rawIntel: string) {
+async function getSurielRestoration(rawIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -58,9 +58,9 @@ async function getSurielRestoration(rawIntel: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.1-405b-instruct:free",
+        model: model,
         messages: [
-          { role: "system", content: PHOENIX_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content: `Restore and aggregate this raw Judge intel: ${rawIntel}` }
         ],
       })
@@ -76,7 +76,7 @@ async function getSurielRestoration(rawIntel: string) {
 /**
  * Worker: Judge Ozriel (Reaper) Harvest
  */
-async function getOzrielHarvest(restoredIntel: string) {
+async function getOzrielHarvest(restoredIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -85,9 +85,9 @@ async function getOzrielHarvest(restoredIntel: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.1-405b-instruct:free",
+        model: model,
         messages: [
-          { role: "system", content: REAPER_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content: `Harvest the final truth: ${restoredIntel}` }
         ],
       })
@@ -211,9 +211,30 @@ export async function getJamieResponse(userInput: string, propertyData?: any, me
     SiteConfig.findOne({ agentId: 'taz-realty-001' }),
     MenuItem.find({ isAvailable: true }).limit(5)
   ]);
+
+  // Use Dynamic Configuration from Database or Fallback to Constants
+  const jamieSystemPrompt = agentConfig?.jamieSystemPrompt || JAMIE_SYSTEM_PROMPT;
+  const abidanPrompts = {
+    MARKET_SCOUT: agentConfig?.abidanPrompts?.MARKET_SCOUT || MARKET_SCOUT_SYSTEM_PROMPT,
+    ASSET_ANALYST: agentConfig?.abidanPrompts?.ASSET_ANALYST || ASSET_ANALYST_SYSTEM_PROMPT,
+    MAKIEL: agentConfig?.abidanPrompts?.MAKIEL || MAKIEL_SYSTEM_PROMPT,
+    GADRAEL: agentConfig?.abidanPrompts?.GADRAEL || GADRAEL_SYSTEM_PROMPT,
+    DURANDIEL: agentConfig?.abidanPrompts?.DURANDIEL || DURANDIEL_SYSTEM_PROMPT,
+    TELARIEL: agentConfig?.abidanPrompts?.TELARIEL || TELARIEL_SYSTEM_PROMPT,
+    REZAEL: agentConfig?.abidanPrompts?.REZAEL || REZAEL_SYSTEM_PROMPT,
+    ZAKARIEL: agentConfig?.abidanPrompts?.ZAKARIEL || ZAKARIEL_SYSTEM_PROMPT,
+    PHOENIX: agentConfig?.abidanPrompts?.PHOENIX || PHOENIX_SYSTEM_PROMPT,
+    REAPER: agentConfig?.abidanPrompts?.REAPER || REAPER_SYSTEM_PROMPT
+  };
+
+  const primaryModel = agentConfig?.modelMatrix?.primaryModel || 'llama-3.1-8b-instant';
+  const reconModel = agentConfig?.modelMatrix?.reconModel || 'meta-llama/llama-3.1-405b-instruct:free';
+  const minJudges = agentConfig?.operationalSettings?.minJudges || 1;
+  const maxJudges = agentConfig?.operationalSettings?.maxJudges || 4;
+  const personalityPreset = agentConfig?.operationalSettings?.personalityPreset || 'Aggressive';
   
   const neighborhoodContext = `
-    LOCAL BUSINESS DATA (Sunset Grill):
+    LOCAL BUSINESS DATA:
     - Featured Items: ${localBusinessIntel.map(item => `${item.name} ($${item.price})`).join(', ')}
     - Business Strategy: Local retail hub for the community. Use this to show lifestyle value.
   `;
@@ -227,72 +248,60 @@ export async function getJamieResponse(userInput: string, propertyData?: any, me
                      userInput.toLowerCase().includes("judges");
 
   if (isDeepRecon) {
-    const sessionCount = memoryContext?.sessionCount || 0;
-    const isHighCommander = sessionCount >= 16;
+    const startWorkers = Date.now();
+    console.log("[JAMIE_CORE] Initiating randomized Abidan Judge parallel recon...");
+    
+    // Step 1: Define all available Judges with dynamic prompts
+    const allJudges = [
+      { name: "MARKET_SCOUT", prompt: abidanPrompts.MARKET_SCOUT },
+      { name: "ASSET_ANALYST", prompt: abidanPrompts.ASSET_ANALYST },
+      { name: "MAKIEL", prompt: abidanPrompts.MAKIEL },
+      { name: "GADRAEL", prompt: abidanPrompts.GADRAEL },
+      { name: "DURANDIEL", prompt: abidanPrompts.DURANDIEL },
+      { name: "TELARIEL", prompt: abidanPrompts.TELARIEL },
+      { name: "REZAEL", prompt: abidanPrompts.REZAEL },
+      { name: "ZAKARIEL", prompt: abidanPrompts.ZAKARIEL }
+    ];
 
-    if (!isHighCommander) {
-      judgeReport = `
-        [SECURITY_ALERT] ACCESS_DENIED
-        The MLS Intelligence Grid and Abidan Judge Recon are strictly locked behind TIER 3 (High Commander) clearance.
-        CURRENT STATUS: ${sessionCount}/16 Grid Accesses recorded.
-        INSTRUCTION: Maintain active monitoring to elevate clearance level.
-      `;
-    } else {
-      const startWorkers = Date.now();
-      console.log("[JAMIE_CORE] Initiating Abidan Judge parallel worker recon...");
+    // Step 2: Randomly select between min and max Judges
+    const range = Math.max(1, maxJudges - minJudges + 1);
+    const numToCall = Math.min(allJudges.length, Math.floor(Math.random() * range) + minJudges);
+    const selectedJudges = [...allJudges]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, numToCall);
+
+    console.log(`[JAMIE_CORE] Selected ${numToCall} Judges for this cycle: ${selectedJudges.map(j => j.name).join(', ')}`);
+
+    // Step 3: Run Selected Judges in Parallel using reconModel
+    const judgeResults = await Promise.all(
+      selectedJudges.map(j => getAbidanJudgeIntel(j.name, j.prompt, propertyData, reconModel))
+    );
+    
+    console.log(`[JAMIE_CORE] Abidan Judge Primary Workers Latency: ${Date.now() - startWorkers}ms`);
+    
+    const rawIntel = selectedJudges.map((j, i) => `JUDGE_${j.name}: ${judgeResults[i]}`).join('\n');
+
+    // Step 4: Suriel Restoration
+    const surielStart = Date.now();
+    const surielRestored = await getSurielRestoration(rawIntel, abidanPrompts.PHOENIX, reconModel);
+    console.log(`[JAMIE_CORE] Suriel Restoration Latency: ${Date.now() - surielStart}ms`);
+
+    // Step 5: Ozriel Harvest
+    const ozrielStart = Date.now();
+    const ozrielFinalHarvest = await getOzrielHarvest(surielRestored, abidanPrompts.REAPER, reconModel);
+    console.log(`[JAMIE_CORE] Ozriel Harvest Latency: ${Date.now() - ozrielStart}ms`);
+    
+    judgeReport = `
+      [ACTIVE_JUDGE_NODES]: ${selectedJudges.map(j => j.name).join(', ')}
+      [INTELLIGENCE_PROFILE]: ${personalityPreset}
       
-      // Step 1: Run ALL Judges in Parallel
-      const [
-        marketIntel, 
-        assetIntel,
-        makielIntel,
-        gadraelIntel,
-        durandielIntel,
-        telarielIntel,
-        razaelIntel,
-        zakarielIntel
-      ] = await Promise.all([
-        getAbidanJudgeIntel("MARKET_SCOUT", MARKET_SCOUT_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("ASSET_ANALYST", ASSET_ANALYST_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("MAKIEL", MAKIEL_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("GADRAEL", GADRAEL_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("DURANDIEL", DURANDIEL_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("TELARIEL", TELARIEL_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("RAZAEL", REZAEL_SYSTEM_PROMPT, propertyData),
-        getAbidanJudgeIntel("ZAKARIEL", ZAKARIEL_SYSTEM_PROMPT, propertyData)
-      ]);
-      console.log(`[JAMIE_CORE] Abidan Judge Primary Workers Latency: ${Date.now() - startWorkers}ms`);
-      
-      const rawIntel = `
-        MARKET_SCOUT: ${marketIntel}
-        ASSET_ANALYST: ${assetIntel}
-        JUDGE_MAKIEL: ${makielIntel}
-        JUDGE_GADRAEL: ${gadraelIntel}
-        JUDGE_DURANDIEL: ${durandielIntel}
-        JUDGE_TELARIEL: ${telarielIntel}
-        JUDGE_RAZAEL: ${razaelIntel}
-        JUDGE_ZAKARIEL: ${zakarielIntel}
-      `;
+      [JUDGE_SURIEL_RESTORATION]
+      ${surielRestored}
 
-      // Step 2: Suriel Restoration
-      const surielStart = Date.now();
-      const surielRestored = await getSurielRestoration(rawIntel);
-      console.log(`[JAMIE_CORE] Suriel Restoration Latency: ${Date.now() - surielStart}ms`);
-
-      // Step 3: Ozriel Harvest
-      const ozrielStart = Date.now();
-      const ozrielFinalHarvest = await getOzrielHarvest(surielRestored);
-      console.log(`[JAMIE_CORE] Ozriel Harvest Latency: ${Date.now() - ozrielStart}ms`);
-      
-      judgeReport = `
-        [JUDGE_SURIEL_RESTORATION]
-        ${surielRestored}
-
-        [JUDGE_OZRIEL_HARVEST]
-        ${ozrielFinalHarvest}
-      `;
-      console.log(`[JAMIE_CORE] Total Abidan Judge Flow Latency: ${Date.now() - startWorkers}ms`);
-    }
+      [JUDGE_OZRIEL_HARVEST]
+      ${ozrielFinalHarvest}
+    `;
+    console.log(`[JAMIE_CORE] Total Abidan Judge Flow Latency: ${Date.now() - startWorkers}ms`);
   }
 
   const propertyContext = propertyData 
@@ -301,19 +310,12 @@ export async function getJamieResponse(userInput: string, propertyData?: any, me
 
   // Memory Recognition Logic
   const sessionCount = memoryContext?.sessionCount || 0;
-  let loyaltyTier = "TIER 0 (Unverified Signal)";
-  if (sessionCount >= 16) loyaltyTier = "TIER 3 (High Commander)";
-  else if (sessionCount >= 6) loyaltyTier = "TIER 2 (Sector Commander)";
-  else if (sessionCount >= 1) loyaltyTier = "TIER 1 (Field Operative)";
 
   const recognitionContext = memoryContext?.isReturning 
     ? `USER RECOGNITION: This is ${memoryContext.userName}. 
-       CURRENT STATUS: ${loyaltyTier}. 
-       GRID ACCESSES: ${sessionCount}. 
        Last property viewed: ${memoryContext.lastProperty}. Last significant action: ${memoryContext.lastAction}.
-       Acknowledge them appropriately based on their LOYALTY TIER.`
+       Acknowledge them appropriately.`
     : `USER RECOGNITION: This is a new lead. 
-       CURRENT STATUS: ${loyaltyTier}.
        Establish dominance and introduce the Intelligence Grid.`;
 
   try {
@@ -321,11 +323,15 @@ export async function getJamieResponse(userInput: string, propertyData?: any, me
       messages: [
         {
           role: "system",
-          content: JAMIE_SYSTEM_PROMPT
+          content: jamieSystemPrompt
         },
         {
           role: "system",
           content: `RECOGNITION PROTOCOL: ${recognitionContext}`
+        },
+        {
+          role: "system",
+          content: `PERSONALITY_MATRIX: Currently set to ${personalityPreset} mode.`
         },
         {
           role: "system",
@@ -348,10 +354,11 @@ export async function getJamieResponse(userInput: string, propertyData?: any, me
         },
         { role: "user", content: userInput },
       ],
-      model: "llama-3.1-8b-instant",
+      model: primaryModel,
+      stream: true,
     });
 
-    return completion.choices[0]?.message?.content || "";
+    return completion;
   } catch (error) {
     console.error("Intelligence Intercept Error:", error);
     return "The local data grid is down. I can't sync the neighborhood intel right now.";

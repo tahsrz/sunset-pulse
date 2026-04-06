@@ -2,6 +2,7 @@ import connectDB from '@/lib/core/database';
 import Valuation from '@/models/Valuation';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 
 // GET /api/valuation - Fetch confirmed valuations for the map
 export const GET = async () => {
@@ -19,6 +20,13 @@ export const POST = async (request) => {
   try {
     await connectDB();
     const sessionUser = await getSessionUser();
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    const rateLimitToken = sessionUser?.userId || ip;
+
+    // Rate Limiting: 5 valuations per minute
+    const limitResponse = await applyApiRateLimit(rateLimitToken, 5);
+    if (limitResponse) return limitResponse;
+
     const { address, lat, lng, confirm = false, id = null } = await request.json();
 
     if (confirm && id) {

@@ -33,6 +33,10 @@ interface ThemeContextType {
   cancelStaging: () => void;
   isDevMode: boolean;
   setDevMode: (active: boolean) => void;
+  isAdvancedMode: boolean;
+  setAdvancedMode: (active: boolean) => void;
+  customKeybind: string;
+  setCustomKeybind: (key: string) => void;
   selectedAbidan: AbidanCharacter;
   setSelectedAbidan: (abidan: AbidanCharacter) => void;
 }
@@ -69,19 +73,32 @@ export function ThemeProvider({
   
   const [stagedBranding, setStagedBranding] = useState<Branding | null>(null);
   const [isDevMode, setDevModeState] = useState(false);
+  const [isAdvancedMode, setAdvancedModeState] = useState(false);
+  const [customKeybind, setCustomKeybindState] = useState('P');
   const [selectedAbidan, setSelectedAbidanState] = useState<AbidanCharacter>(ABIDAN_DATA[0]);
 
   useEffect(() => {
     const savedDev = localStorage.getItem('jamie_dev_mode');
     
-    // Check if user is still subscribed before restoring dev mode
-    if (savedDev === 'true') {
-      if (session?.user?.isSubscribed) {
-        setDevModeState(true);
-      } else {
-        localStorage.removeItem('jamie_dev_mode');
-        setDevModeState(false);
+    // Use session values as priority for Advanced Mode and Keybind
+    if (session?.user) {
+      if (typeof session.user.isAdvancedMode !== 'undefined') {
+        setAdvancedModeState(session.user.isAdvancedMode);
       }
+      if (session.user.customKeybind) {
+        setCustomKeybindState(session.user.customKeybind);
+      }
+    } else {
+      // Fallback to localStorage if not logged in
+      const savedAdvanced = localStorage.getItem('jamie_advanced_mode');
+      const savedKeybind = localStorage.getItem('jamie_custom_keybind');
+      if (savedAdvanced === 'true') setAdvancedModeState(true);
+      if (savedKeybind) setCustomKeybindState(savedKeybind);
+    }
+    
+    // Restore dev mode from localStorage
+    if (savedDev === 'true') {
+      setDevModeState(true);
     }
 
     const savedAbidanId = localStorage.getItem('selected_abidan');
@@ -105,6 +122,46 @@ export function ThemeProvider({
     }
     setDevModeState(active);
     localStorage.setItem('jamie_dev_mode', active ? 'true' : 'false');
+  };
+
+  const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string }) => {
+    if (!session?.user) return;
+    
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      
+      if (!res.ok) throw new Error('Failed to sync settings');
+    } catch (error) {
+      console.error('Settings sync error:', error);
+    }
+  };
+
+  const setAdvancedMode = (active: boolean) => {
+    setAdvancedModeState(active);
+    localStorage.setItem('jamie_advanced_mode', active ? 'true' : 'false');
+    if (active) {
+      toast.info('Advanced Mode Activated', { icon: '⚡' });
+    }
+    syncSettings({ isAdvancedMode: active });
+  };
+
+  const setCustomKeybind = (key: string) => {
+    const forbiddenKeys = ['T', 'N', 'W', 'S', 'F', 'L', 'R'];
+    const upperKey = key.toUpperCase();
+
+    if (forbiddenKeys.includes(upperKey)) {
+      toast.error(`Key "${upperKey}" is reserved for browser shortcuts. Please choose another.`);
+      return;
+    }
+
+    setCustomKeybindState(upperKey);
+    localStorage.setItem('jamie_custom_keybind', upperKey);
+    toast.success(`Keybind updated to: Shift + ${upperKey}`);
+    syncSettings({ customKeybind: upperKey });
   };
 
   const updateBranding = (newSettings: any) => {
@@ -172,6 +229,10 @@ export function ThemeProvider({
       cancelStaging, 
       isDevMode, 
       setDevMode,
+      isAdvancedMode,
+      setAdvancedMode,
+      customKeybind,
+      setCustomKeybind,
       selectedAbidan,
       setSelectedAbidan
     }}>

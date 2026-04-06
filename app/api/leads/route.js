@@ -7,7 +7,7 @@ import { generateHighStakesHook, getJamieResponse } from '@/lib/ai/jamie';
 import { pulseRNG } from '@/lib/core/pulseRNG';
 import { calculateLeadScore, applyDecay, calculateVelocity } from '@/lib/intelligence/leadIntelligence';
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
-
+import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { supabase } from '@/lib/supabase';
 
 export const GET = async () => {
@@ -61,6 +61,15 @@ export const GET = async () => {
 export const POST = async (request) => {
   try {
     await connectDB();
+    
+    // Rate Limiting: 3 leads per minute per IP/User
+    const sessionUser = await getSessionUser();
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    const rateLimitToken = sessionUser?.userId || ip;
+    
+    const limitResponse = await applyApiRateLimit(rateLimitToken, 3);
+    if (limitResponse) return limitResponse;
+
     const body = await request.json();
 
     const validation = LeadSchema.safeParse(body);
@@ -73,6 +82,7 @@ export const POST = async (request) => {
 
     let probability = calculateLeadScore(leadData, existingLead);
     const jitter = pulseRNG.range(-3, 3);
+    probability = Math.round(probability + jitter);
     probability = Math.round(probability + jitter);
     probability = Math.max(0, Math.min(probability, 99));
 

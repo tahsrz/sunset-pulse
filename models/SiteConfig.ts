@@ -17,6 +17,29 @@ const SiteConfigSchema = new mongoose.Schema({
     visible: { type: Boolean, default: true },
     order: { type: Number }
   }],
+  jamieSystemPrompt: { type: String },
+  abidanPrompts: {
+    MARKET_SCOUT: { type: String },
+    ASSET_ANALYST: { type: String },
+    MAKIEL: { type: String },
+    GADRAEL: { type: String },
+    DURANDIEL: { type: String },
+    TELARIEL: { type: String },
+    REZAEL: { type: String },
+    ZAKARIEL: { type: String },
+    PHOENIX: { type: String },
+    REAPER: { type: String }
+  },
+  modelMatrix: {
+    primaryModel: { type: String, default: 'llama-3.1-8b-instant' },
+    reconModel: { type: String, default: 'meta-llama/llama-3.1-405b-instruct:free' },
+    miniModel: { type: String, default: 'google/gemma-2-9b-it:free' }
+  },
+  operationalSettings: {
+    minJudges: { type: Number, default: 1 },
+    maxJudges: { type: Number, default: 4 },
+    personalityPreset: { type: String, enum: ['Aggressive', 'Supportive', 'Mysterious', 'Custom'], default: 'Aggressive' }
+  },
   lastModifiedBy: { type: String, default: 'Jamie' }
 });
 

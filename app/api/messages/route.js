@@ -3,6 +3,7 @@ import Message from '@/models/Message';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { MessageSchema } from '@/lib/core/validation';
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
+import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,10 @@ export const POST = async (request) => {
     }
 
     const { userId } = sessionUser;
+
+    // Apply Rate Limit: 5 messages per minute
+    const limitResponse = await applyApiRateLimit(userId, 5);
+    if (limitResponse) return limitResponse;
 
     // Tactical Check: Prevent self-intercepts
     if (userId === recipient) {

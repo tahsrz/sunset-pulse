@@ -31,7 +31,7 @@ export default function IntelCard({ businessName, items, onAction }: IntelCardPr
         onClick={onAction}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition-colors uppercase tracking-widest shadow-md"
       >
-        Order for Pickup via Taz
+        Order for Pickup at Store
       </button>
     </div>
   );

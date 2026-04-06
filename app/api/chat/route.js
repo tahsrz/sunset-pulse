@@ -1,23 +1,37 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai';
 import { getJamieResponse } from '@/lib/ai/jamie';
 import { errorResponse } from '@/lib/core/apiResponse';
+import { getSessionUser } from '@/lib/core/getSessionUser';
+import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
 
 export async function POST(req) {
   try {
+    const sessionUser = await getSessionUser();
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    const rateLimitToken = sessionUser?.userId || ip;
+
+    // Rate Limiting: 10 chat messages per minute
+    const limitResponse = await applyApiRateLimit(rateLimitToken, 10);
+    if (limitResponse) return limitResponse;
+
     const { messages, propertyData, isDevMode, memoryContext } = await req.json();
     
     // Extract the last user message
     const lastMessage = messages[messages.length - 1]?.content || "";
 
-    // Get Jamie's response using the consolidated logic
-    // We pass memoryContext to help Jamie recognize the user
-    const responseText = await getJamieResponse(lastMessage, propertyData, memoryContext, isDevMode);
-
-    // Since getJamieResponse currently returns a string, we wrap it in a stream format 
-    // for compatibility with the frontend's useChat, or just return it directly if eventually refactor Jamie to stream.
-    // To support streaming, Jamie would need to return a stream.
+    // Get Jamie's response (now returns a Groq/OpenAI compatible stream)
+    const streamResponse = await getJamieResponse(lastMessage, propertyData, memoryContext, isDevMode);
     
-    return new Response(responseText);
+    // If it's a string (fallback error message), return it as a simple response
+    if (typeof streamResponse === 'string') {
+      return new Response(streamResponse);
+    }
+
+    // Convert the Groq stream to an AI SDK compatible stream
+    const stream = OpenAIStream(streamResponse);
+
+    // Return the streaming response
+    return new StreamingTextResponse(stream);
 
   } catch (error) {
     console.error('Chat API Error:', error);

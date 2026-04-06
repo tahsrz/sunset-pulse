@@ -11,6 +11,7 @@ import {
   FaTrailer,
   FaPlug,
   FaRoute,
+  FaGlobeAmericas
 } from 'react-icons/fa';
 
 const PropertyCard = ({ property, onRouteClick = null }) => {
@@ -31,6 +32,7 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
   };
 
   const isRV = property.type === 'RV' || property.type === 'RV Park';
+  const isInternal = property.source === 'Internal' || !property.source; // Default to internal for MongoDB properties
 
   return (
     <div className={`rounded-xl shadow-md relative bg-white transition-all duration-500 ${isHighIntensity ? 'hover:scale-[1.02]' : ''}`}
@@ -54,18 +56,28 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
         </div>
       )}
 
+      {isInternal ? (
+        <div className='absolute top-2 left-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10'>
+          Sunset Pulse Verified
+        </div>
+      ) : (
+        <div className='absolute top-2 left-2 bg-slate-800 text-white text-[8px] font-black px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10 flex items-center gap-1'>
+          <FaGlobeAmericas className="text-blue-400" /> Global MLS Search
+        </div>
+      )}
+
       <Image
-        src={property.images[0]}
+        src={property.images?.[0] || '/images/property-placeholder.jpg'}
         alt=''
         height={0}
         width={0}
         sizes='100vw'
-        className='w-full h-auto rounded-t-xl'
+        className='w-full h-auto rounded-t-xl object-cover aspect-video'
       />
       <div className='p-4'>
         <div className='text-left md:text-center lg:text-left mb-6'>
           <div className='text-gray-600 text-xs uppercase font-bold tracking-widest'>{property.type}</div>
-          <h3 className='text-xl font-bold'>{property.name}</h3>
+          <h3 className='text-xl font-bold truncate' title={property.name}>{property.name}</h3>
         </div>
         <h3 
           style={{ color: 'var(--primary-color)' }}
@@ -163,7 +175,7 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
               <FaMapMarker /> Map
             </Link>
             <Link
-              href={`/properties/${property._id}`}
+              href={isInternal ? `/properties/${property._id}` : `/listings/${property._id}`}
               style={{ backgroundColor: 'var(--primary-color)' }}
               className='hover:opacity-90 text-white px-4 py-2 rounded-lg text-center text-xs transition-all'
             >

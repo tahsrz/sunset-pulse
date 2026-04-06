@@ -33,7 +33,6 @@ export async function POST(req) {
 
     if (userId) {
       await User.findByIdAndUpdate(userId, {
-        isSubscribed: true,
         subscriptionExpires: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000), // Approx 1 month
       });
       console.log(`✅ [STRIPE_WEBHOOK] User ${userId} upgraded to Premium.`);

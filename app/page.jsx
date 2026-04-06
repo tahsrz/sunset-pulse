@@ -1,15 +1,15 @@
-import Hero from '@/components/Hero';
+import CinematicHero from '@/components/CinematicHero';
 import InfoBoxes from '@/components/InfoBoxes';
-import HousingSections from '@/components/HousingSections';
 import FeaturedProperties from '@/components/FeaturedProperties';
 
 const HomePage = () => {
   return (
     <>
-      <Hero />
-      <InfoBoxes />
-      <FeaturedProperties />
-      <HousingSections />
+      <CinematicHero />
+      <div className="bg-white">
+        <FeaturedProperties />
+        <InfoBoxes />
+      </div>
     </>
   );
 };

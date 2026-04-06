@@ -17,7 +17,7 @@ import {
   FaBiohazard,
 } from 'react-icons/fa';
 import PropertyMap from '@/components/PropertyMap';
-import SunsetPulseViewer from '@/components/SunsetPulseViewer';
+import SunsetPulseViewer from './SunsetPulseViewer.jsx';
 import PropertyFiberViewer from '@/components/PropertyFiberViewer';
 
 /**

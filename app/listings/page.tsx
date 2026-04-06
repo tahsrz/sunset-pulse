@@ -54,7 +54,10 @@ export default function ListingsPage() {
                 <FaGlobeAmericas />
                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Unified MLS Engine</span>
               </div>
-              <h1 className="text-4xl font-black uppercase italic tracking-tighter">Global Listings</h1>
+              <h1 className="text-4xl font-black uppercase italic tracking-tighter">Market Intelligence</h1>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 max-w-md">
+                Blending <span className="text-green-400">Sunset Pulse Verified</span> assets with <span className="text-blue-400">Global MLS Search</span> for total market dominance.
+              </p>
               
               {/* Market / Board Selector */}
               <div className="mt-6 flex flex-wrap gap-2">

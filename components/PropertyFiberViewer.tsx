@@ -8,45 +8,54 @@ import {
   Float, 
   useTexture,
   MeshDistortMaterial,
-  PointerLockControls
+  MeshWobbleMaterial,
+  PointerLockControls,
+  Sparkles,
+  Stars
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { normalizeThreeGroup } from '@/lib/visualization/threeUtils';
 import { getPropertySatelliteUrl } from '@/lib/core/geospatial/geotagUtils';
-import { generateAbidanModel } from '@/lib/visualization/engine/generator';
+import { generatePropertyModel } from '@/lib/visualization/engine/generator';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { useTheme } from '@/context/ThemeProvider';
 
 /**
  * Kinetic Controller:
- * smooth WASD movement for the Fiber camera.
+ * smooth WASD movement for the Fiber camera with coordinate telemetry.
  */
-const KineticController = () => {
+const KineticController = ({ onUpdate }: { onUpdate: (pos: THREE.Vector3) => void }) => {
+  const velocity = useRef(new THREE.Vector3());
+  const direction = useRef(new THREE.Vector3());
+
   useFrame((state) => {
-    const camera = state.camera;
     const keys = (window as any).pressedKeys || {};
-    const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
     
     const boost = keys['shift'] ? 2.5 : 1.0;
     const speed = 0.2 * boost;
 
-    if (keys['w']) direction.z += 1;
-    if (keys['s']) direction.z -= 1;
-    if (keys['a']) direction.x += 1;
-    if (keys['d']) direction.x -= 1;
+    direction.current.set(0, 0, 0);
 
-    direction.normalize();
+    if (keys['w']) direction.current.z += 1;
+    if (keys['s']) direction.current.z -= 1;
+    if (keys['a']) direction.current.x += 1;
+    if (keys['d']) direction.current.x -= 1;
 
-    if (keys['w'] || keys['s']) velocity.z -= direction.z * speed;
-    if (keys['a'] || keys['d']) velocity.x -= direction.x * speed;
+    direction.current.normalize();
+
+    velocity.current.set(0, 0, 0);
+    if (keys['w'] || keys['s']) velocity.current.z -= direction.current.z * speed;
+    if (keys['a'] || keys['d']) velocity.current.x -= direction.current.x * speed;
     
     // Vertical
     if (keys[' ']) state.camera.position.y += speed;
     if (keys['c'] || keys['control']) state.camera.position.y -= speed;
 
-    state.camera.translateX(velocity.x);
-    state.camera.translateZ(velocity.z);
+    state.camera.translateX(velocity.current.x);
+    state.camera.translateZ(velocity.current.z);
+
+    // Send position back to parent for HUD
+    onUpdate(state.camera.position);
   });
 
   useEffect(() => {
@@ -81,29 +90,44 @@ const NormalizedModel = ({ children }: { children: React.ReactNode }) => {
   return <group ref={groupRef}>{children}</group>;
 };
 
-const AbidanEntity = ({ character }: { character: any }) => {
-  const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+/**
+ * PropertyDroneView:
+ * Renders the detailed procedural model of the property for Drone Mode.
+ */
+const PropertyDroneView = ({ property }: { property: any }) => {
+  const [meshes, setMeshes] = useState<THREE.Mesh[]>([]);
   
   useEffect(() => {
-    // We use the procedural generator to create the specific mantle geometry
-    const rawObj = generateAbidanModel(character.geometryType, character.color.replace('#', ''));
+    const rawObj = generatePropertyModel(property);
     const loader = new OBJLoader();
     const group = loader.parse(rawObj);
-    const mesh = group.children[0] as THREE.Mesh;
-    if (mesh) setGeometry(mesh.geometry);
-  }, [character]);
+    
+    const extractedMeshes: THREE.Mesh[] = [];
+    group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        extractedMeshes.push(child as THREE.Mesh);
+      }
+    });
+    setMeshes(extractedMeshes);
+  }, [property]);
 
-  if (!geometry) return null;
+  if (meshes.length === 0) return null;
 
   return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial 
-        color={character.color} 
-        emissive={character.color} 
-        emissiveIntensity={0.8} 
-        wireframe 
-      />
-    </mesh>
+    <group>
+      <Stars radius={50} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      {meshes.map((mesh, i) => (
+        <mesh key={i} geometry={mesh.geometry}>
+          <meshStandardMaterial 
+            color="#94a3b8" 
+            roughness={0.7}
+            metalness={0.2}
+            emissive="#3b82f6"
+            emissiveIntensity={0.05}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 };
 
@@ -134,29 +158,16 @@ const SatelliteInterpolatedMesh = ({ property, primaryColor, satelliteUrl }: { p
   );
 };
 
-const ReconHUD = () => (
-  <div className="absolute inset-0 pointer-events-none z-10">
-    <div className="absolute top-6 left-6 font-mono text-[10px] text-blue-400 tracking-[0.4em] uppercase flex items-center gap-2">
-      <div className="w-2 h-2 bg-blue-500 animate-pulse rounded-full" />
-      [ SATELLITE_INTERPOLATION_ACTIVE ]
-    </div>
-    <div className="absolute bottom-6 left-6 font-mono text-[9px] text-white/30 uppercase tracking-widest">
-      Neural Render Engine v4.0.2
-    </div>
-    <div className="recon-scan-line opacity-20" />
-  </div>
-);
-
 interface PropertyFiberViewerProps {
   property: any;
   color?: string;
 }
 
 export default function PropertyFiberViewer({ property, color }: PropertyFiberViewerProps) {
-  const { selectedAbidan } = useTheme();
   const primaryColor = color || '#ffffff';
   const [satelliteUrl, setSatelliteUrl] = useState<string | null>(null);
-  const [isAbidanMode, setAbidanMode] = useState(false);
+  const [isDroneMode, setDroneMode] = useState(false);
+  const [telemetry, setTelemetry] = useState({ lat: 0, lng: 0, alt: 0 });
 
   useEffect(() => {
     const fetchImagery = async () => {
@@ -166,43 +177,70 @@ export default function PropertyFiberViewer({ property, color }: PropertyFiberVi
     fetchImagery();
   }, [property]);
 
+  const updateTelemetry = (pos: THREE.Vector3) => {
+    // Mock coordinate mapping: Assume property is at base and 1 unit = 0.0001 degrees (~11m)
+    const baseLat = property.location_geo?.coordinates?.[1] || 32.7767;
+    const baseLng = property.location_geo?.coordinates?.[0] || -96.7970;
+    
+    setTelemetry({
+      lat: baseLat + (pos.z * 0.0001),
+      lng: baseLng + (pos.x * 0.0001),
+      alt: pos.y * 3.28084 // Convert to feet
+    });
+  };
+
   return (
-    <div className={`relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden border border-white/10 group shadow-2xl recon-hud transition-all duration-700 ${isAbidanMode ? 'ring-2 ring-blue-500/50' : ''}`}>
+    <div className={`relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden border border-white/10 group shadow-2xl recon-hud transition-all duration-700 ${isDroneMode ? 'ring-2 ring-blue-500/50' : ''}`}>
       
       {/* Dynamic HUD */}
       <div className="absolute inset-0 pointer-events-none z-10 p-6">
         <div className="flex justify-between items-start">
           <div className="flex flex-col gap-2">
-            <div className={`font-mono text-[10px] tracking-[0.4em] uppercase flex items-center gap-2 ${isAbidanMode ? 'text-blue-400' : 'text-slate-400'}`}>
-              <div className={`w-2 h-2 rounded-full animate-pulse ${isAbidanMode ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]' : 'bg-slate-500'}`} />
-              [ {isAbidanMode ? `ABIDAN_MANIFESTED // ${selectedAbidan.name.toUpperCase()}` : 'SATELLITE_INTERPOLATION_ACTIVE'} ]
+            <div className={`font-mono text-[10px] tracking-[0.4em] uppercase flex items-center gap-2 ${isDroneMode ? 'text-blue-400' : 'text-slate-400'}`}>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${isDroneMode ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]' : 'bg-slate-500'}`} />
+              [ {isDroneMode ? `DRONE_RECON_ACTIVE // ${property.name?.toUpperCase()}` : 'SATELLITE_INTERPOLATION_ACTIVE'} ]
             </div>
             <div className="font-mono text-[8px] text-white/20 uppercase tracking-widest">
-              Origin: {property.location?.street?.slice(0, 10) || 'ABIDAN_CORE'}...
+              Origin: {property.location?.street?.slice(0, 10) || 'PROPERTY_CORE'}...
             </div>
           </div>
 
           <button 
-            onClick={() => setAbidanMode(!isAbidanMode)}
+            onClick={() => setDroneMode(!isDroneMode)}
             className="pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-full text-[8px] font-black text-white/70 hover:text-white transition-colors tracking-tighter uppercase"
           >
-            {isAbidanMode ? 'Return to Recon' : 'Assume Mantle'}
+            {isDroneMode ? 'Exit Drone Mode' : 'Drone Mode'}
           </button>
         </div>
+
+        {/* Live Telemetry Overlay */}
+        {isDroneMode && (
+          <div className="absolute top-20 right-6 text-right font-mono space-y-1">
+            <div className="text-[10px] text-blue-500 uppercase tracking-tighter">Live Telemetry</div>
+            <div className="text-sm text-white font-bold">LAT: {telemetry.lat.toFixed(6)}</div>
+            <div className="text-sm text-white font-bold">LNG: {telemetry.lng.toFixed(6)}</div>
+            <div className="text-sm text-blue-400 font-bold">ALT: {telemetry.alt.toFixed(1)} FT</div>
+          </div>
+        )}
         
         <div className="absolute bottom-6 left-6 font-mono text-[9px] text-white/30 uppercase tracking-widest">
-          Neural Render Engine v5.0.0 // Abidan Core
+          Neural Render Engine v6.1.0 // Pulse Recon System
         </div>
-        <div className={`recon-scan-line ${isAbidanMode ? 'bg-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'opacity-20'}`} />
+        
+        <div className="absolute bottom-6 right-6 font-mono text-[9px] text-white/30 uppercase tracking-widest">
+          {isDroneMode ? 'NAV: WASD | SPD: SHIFT | VERT: SPACE/C' : 'MODE: ORBITAL_SCAN'}
+        </div>
+
+        <div className={`recon-scan-line ${isDroneMode ? 'bg-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'opacity-20'}`} />
       </div>
       
       <Canvas shadows dpr={[1, 2]}>
         <PerspectiveCamera makeDefault position={[0, 8, 15]} fov={45} />
         
-        {isAbidanMode ? (
+        {isDroneMode ? (
           <>
             <PointerLockControls />
-            <KineticController />
+            <KineticController onUpdate={updateTelemetry} />
           </>
         ) : (
           <OrbitControls 
@@ -217,15 +255,15 @@ export default function PropertyFiberViewer({ property, color }: PropertyFiberVi
           />
         )}
         
-        <ambientLight intensity={isAbidanMode ? 0.3 : 0.4} />
+        <ambientLight intensity={isDroneMode ? 0.3 : 0.4} />
         <spotLight position={[15, 20, 10]} angle={0.2} penumbra={1} intensity={2} castShadow />
-        <pointLight position={[-10, 5, -10]} intensity={1} color={isAbidanMode ? selectedAbidan.color : primaryColor} />
+        <pointLight position={[-10, 5, -10]} intensity={1} color={isDroneMode ? '#3b82f6' : primaryColor} />
 
         <Suspense fallback={null}>
-          <Float speed={isAbidanMode ? 2.5 : 1.2} rotationIntensity={0.5} floatIntensity={0.5}>
+          <Float speed={isDroneMode ? 2.5 : 1.2} rotationIntensity={0.5} floatIntensity={0.5}>
             <NormalizedModel>
-              {isAbidanMode ? (
-                <AbidanEntity character={selectedAbidan} />
+              {isDroneMode ? (
+                <PropertyDroneView property={property} />
               ) : (
                 <SatelliteInterpolatedMesh property={property} primaryColor={primaryColor} satelliteUrl={satelliteUrl} />
               )}
@@ -239,7 +277,7 @@ export default function PropertyFiberViewer({ property, color }: PropertyFiberVi
             blur={2.5} 
             far={5} 
           />
-          <Environment preset={isAbidanMode ? 'night' : 'city'} />
+          <Environment preset={isDroneMode ? 'night' : 'city'} />
         </Suspense>
       </Canvas>
     </div>

@@ -1,26 +1,36 @@
 import { Vector, Matrix } from './math';
 
+export interface Color {
+  r: number;
+  g: number;
+  b: number;
+}
+
 export class Triangle3D {
-  constructor(v1, v2, v3, color = { r: 255, g: 255, b: 255 }) {
+  vertices: Vector[];
+  color: Color;
+  shading: number;
+
+  constructor(v1: Vector, v2: Vector, v3: Vector, color: Color = { r: 255, g: 255, b: 255 }) {
     this.vertices = [v1, v2, v3];
     this.color = color;
     this.shading = 1.0;
   }
 
-  get(index) { return this.vertices[index]; }
-  set(index, value) { this.vertices[index] = value; }
+  get(index: number): Vector { return this.vertices[index]; }
+  set(index: number, value: Vector): void { this.vertices[index] = value; }
 
-  getSurfaceNormal() {
+  getSurfaceNormal(): Vector {
     const line1 = this.vertices[1].subtract(this.vertices[0]);
     const line2 = this.vertices[2].subtract(this.vertices[0]);
     return line1.crossProduct(line2).normalized();
   }
 
-  setShading(value) {
+  setShading(value: number): void {
     this.shading = value;
   }
 
-  getColorWithShading() {
+  getColorWithShading(): string {
     const r = Math.floor(this.color.r * this.shading);
     const g = Math.floor(this.color.g * this.shading);
     const b = Math.floor(this.color.b * this.shading);
@@ -29,14 +39,16 @@ export class Triangle3D {
 }
 
 export class Mesh3D {
-  constructor(triangles = []) {
+  triangles: Triangle3D[];
+
+  constructor(triangles: Triangle3D[] = []) {
     this.triangles = triangles;
   }
 
-  static parseObj(text, defaultColor = { r: 255, g: 255, b: 255 }) {
-    const vertices = [];
-    const triangles = [];
-    let currentColor = { ...defaultColor };
+  static parseObj(text: string, defaultColor: Color = { r: 255, g: 255, b: 255 }): Mesh3D {
+    const vertices: Vector[] = [];
+    const triangles: Triangle3D[] = [];
+    let currentColor: Color = { ...defaultColor };
     
     const lines = text.split('\n');
     for (const line of lines) {
@@ -76,17 +88,17 @@ export class Mesh3D {
     return new Mesh3D(triangles);
   }
 
-  static async loadFromObj(url, color) {
+  static async loadFromObj(url: string, color: Color): Promise<Mesh3D> {
     const response = await fetch(url);
     const text = await response.text();
     return Mesh3D.parseObj(text, color);
   }
 
-  static loadFromRaw(text, color) {
+  static loadFromRaw(text: string, color: Color): Mesh3D {
     return Mesh3D.parseObj(text, color);
   }
 
-  static createCube(size, color = { r: 255, g: 255, b: 255 }) {
+  static createCube(size: number, color: Color = { r: 255, g: 255, b: 255 }): Mesh3D {
     const s = size / 2;
     const vertices = [
       new Vector(-s, -s, -s), new Vector(s, -s, -s), new Vector(s, s, -s), new Vector(-s, s, -s),
@@ -111,16 +123,19 @@ export class Mesh3D {
 }
 
 export class Plane {
-  constructor(point, normal) {
+  point: Vector;
+  normal: Vector;
+
+  constructor(point: Vector, normal: Vector) {
     this.point = point;
     this.normal = normal.normalized();
   }
 
-  distanceFromPoint(p) {
+  distanceFromPoint(p: Vector): number {
     return this.normal.dotProduct(p.subtract(this.point));
   }
 
-  lineIntersectPlanePoint(start, end) {
+  lineIntersectPlanePoint(start: Vector, end: Vector): Vector {
     const ad = start.dotProduct(this.normal);
     const bd = end.dotProduct(this.normal);
     const planeD = this.point.dotProduct(this.normal);
@@ -129,10 +144,31 @@ export class Plane {
   }
 }
 
+export interface RendererOptions {
+  wireframe?: boolean;
+  wireframeColor?: string;
+}
+
 export class Renderer {
-  constructor(canvas, options = {}) {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  zNear: number;
+  zFar: number;
+  fov: number;
+  meshes: Mesh3D[];
+  cameraPos: Vector;
+  lightDir: Vector;
+  showWireframe: boolean;
+  wireframeColor: string;
+  projMat: Matrix;
+
+  constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Could not get 2D context');
+    this.ctx = context;
     this.width = canvas.width;
     this.height = canvas.height;
     this.zNear = 0.1;
@@ -147,7 +183,7 @@ export class Renderer {
     this.projMat = this.createProjectionMatrix();
   }
 
-  createProjectionMatrix() {
+  createProjectionMatrix(): Matrix {
     const mat = new Matrix(3, 3);
     const aspectRatio = this.height / this.width;
     const fovRatio = 1.0 / Math.tan(this.fov / 2.0);
@@ -159,10 +195,10 @@ export class Renderer {
     return mat;
   }
 
-  render(cameraPos, cameraRotMat, meshPos = new Vector(0, 0, 0)) {
+  render(cameraPos: Vector, cameraRotMat: Matrix, meshPos: Vector = new Vector(0, 0, 0)): void {
     this.ctx.clearRect(0, 0, this.width, this.height);
 
-    const trianglesToRender = [];
+    const trianglesToRender: Triangle3D[] = [];
     const viewMat = cameraRotMat.getTransposed();
     const viewVec = cameraPos.multiplyMatrix(viewMat).multiplyByScalar(-1.0);
     const nearPlane = new Plane(new Vector(0, 0, this.zNear), new Vector(0, 0, -1));
@@ -199,8 +235,8 @@ export class Renderer {
     }
   }
 
-  renderMesh(mesh, meshPos, cameraRotMat, cameraPos) {
-    const trianglesToRender = [];
+  renderMesh(mesh: Mesh3D, meshPos: Vector, cameraRotMat: Matrix, cameraPos: Vector): void {
+    const trianglesToRender: Triangle3D[] = [];
     const viewMat = cameraRotMat.getTransposed();
     const viewVec = cameraPos.multiplyMatrix(viewMat).multiplyByScalar(-1.0);
     const nearPlane = new Plane(new Vector(0, 0, this.zNear), new Vector(0, 0, -1));
@@ -235,7 +271,7 @@ export class Renderer {
     }
   }
 
-  projectPoint(point, cameraPos, cameraRotMat, meshPos = new Vector(0, 0, 0)) {
+  projectPoint(point: Vector, cameraPos: Vector, cameraRotMat: Matrix, meshPos: Vector = new Vector(0, 0, 0)): { x: number, y: number, z: number } | null {
     const viewMat = cameraRotMat.getTransposed();
     const viewVec = cameraPos.multiplyMatrix(viewMat).multiplyByScalar(-1.0);
     const worldPoint = point.add(meshPos);
@@ -252,7 +288,7 @@ export class Renderer {
     return { x, y, z: viewPoint.z };
   }
 
-  transformTriangle(tri, matrix, translation) {
+  transformTriangle(tri: Triangle3D, matrix: Matrix, translation: Vector): Triangle3D {
     const v1 = tri.get(0).multiplyMatrix(matrix).add(translation);
     const v2 = tri.get(1).multiplyMatrix(matrix).add(translation);
     const v3 = tri.get(2).multiplyMatrix(matrix).add(translation);
@@ -261,7 +297,7 @@ export class Renderer {
     return newTri;
   }
 
-  projectTriangle(tri) {
+  projectTriangle(tri: Triangle3D): Triangle3D {
     const v = [tri.get(0), tri.get(1), tri.get(2)].map(curr => {
       const z = Math.max(this.zNear, curr.z);
       const newZ = (z - this.zNear) * this.projMat.get(2, 2);
@@ -277,7 +313,7 @@ export class Renderer {
     return result;
   }
 
-  drawTriangle(tri) {
+  drawTriangle(tri: Triangle3D): void {
     this.ctx.beginPath();
     this.ctx.moveTo(tri.get(0).x, tri.get(0).y);
     this.ctx.lineTo(tri.get(1).x, tri.get(1).y);
@@ -294,9 +330,9 @@ export class Renderer {
     }
   }
 
-  clipTriangleAgainstPlane(tri, plane) {
-    const inside = [];
-    const outside = [];
+  clipTriangleAgainstPlane(tri: Triangle3D, plane: Plane): Triangle3D[] {
+    const inside: Vector[] = [];
+    const outside: Vector[] = [];
     for (let i = 0; i < 3; i++) {
       if (plane.distanceFromPoint(tri.get(i)) <= 0) inside.push(tri.get(i));
       else outside.push(tri.get(i));

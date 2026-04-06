@@ -17,6 +17,8 @@ export default function JamieChat({ propertyData }) {
   const [analytics, setAnalytics] = useState(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [tempInput, setTempInput] = useState('');
 
   // Recognition Context for returning users
   const memoryContext = memoryBridge.getGreetingContext();
@@ -45,14 +47,48 @@ export default function JamieChat({ propertyData }) {
     }
   };
 
-  const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, append, setMessages } = useChat({
+  const { messages, input, setInput, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, append, setMessages } = useChat({
     api: '/api/chat',
     body: { propertyData, isDevMode, memoryContext },
     onFinish: (message) => handleAction(message.content),
   });
+
+  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp') {
+      if (userMessages.length === 0) return;
+      e.preventDefault();
+      
+      let newIndex;
+      if (historyIndex === -1) {
+        setTempInput(input);
+        newIndex = userMessages.length - 1;
+      } else {
+        newIndex = Math.max(0, historyIndex - 1);
+      }
+      
+      setHistoryIndex(newIndex);
+      setInput(userMessages[newIndex]);
+    } else if (e.key === 'ArrowDown') {
+      if (historyIndex === -1) return;
+      e.preventDefault();
+
+      const newIndex = historyIndex + 1;
+      if (newIndex >= userMessages.length) {
+        setHistoryIndex(-1);
+        setInput(tempInput);
+      } else {
+        setHistoryIndex(newIndex);
+        setInput(userMessages[newIndex]);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return;
+    setHistoryIndex(-1);
     try {
       const shieldResponse = await fetch('/api/jamie/shield', {
         method: 'POST',
@@ -144,7 +180,14 @@ export default function JamieChat({ propertyData }) {
               </div>
             )}
             <div className="relative group/input">
-              <input className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600" value={input} placeholder="Search or ask..." onChange={handleInputChange} />
+              <input 
+                className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600" 
+                value={input} 
+                placeholder="Search or ask..." 
+                onChange={handleInputChange} 
+                onKeyDown={handleKeyDown}
+                autoComplete="off"
+              />
               <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 transition-colors"><FaCogs className={isLoading ? 'animate-spin' : ''} /></button>
             </div>
           </form>

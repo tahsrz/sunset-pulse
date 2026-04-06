@@ -38,16 +38,25 @@ const UserSchema = new Schema(
         date: { type: Date, default: Date.now }
       }
     ],
-    isSubscribed: {
-      type: Boolean,
-      default: false
-    },
     subscriptionExpires: {
       type: Date
     },
     currentInterests: {
       type: String,
       default: 'Focus on high-velocity commercial lead clusters'
+    },
+    isAdvancedMode: {
+      type: Boolean,
+      default: false
+    },
+    customKeybind: {
+      type: String,
+      default: 'P'
+    },
+    role: {
+      type: String,
+      enum: ['user', 'realtor', 'admin'],
+      default: 'user'
     }
   },
   {
