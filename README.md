@@ -1,4 +1,4 @@
- New Feature: Supaflow Integration and Workflows 
+ New Feature: Supaflow Integration and Workflows. Vis. Engine moved to TypeScript. Configuration of LLMs and mini-LLMs in UI.
 
  
  Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router)
