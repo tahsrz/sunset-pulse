@@ -6,10 +6,10 @@ import { FaHeart, FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaTrash, FaExt
 import Spinner from '@/components/Spinner';
 import { toggleCollection } from '@/lib/supabase';
 import { toast } from 'react-toastify';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 
 const CollectionsPage = () => {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,19 +28,21 @@ const CollectionsPage = () => {
   };
 
   useEffect(() => {
-    if (session) {
+    if (user) {
       fetchCollections();
+    } else {
+      setLoading(false);
     }
-  }, [session]);
+  }, [user]);
 
   const handleRemove = async (e, propId) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
 
     try {
-      await toggleCollection(session.user.id, propId);
+      await toggleCollection(user.id, propId);
       setProperties(prev => prev.filter(p => p._id !== propId));
       toast.success("Asset removed from Pulse Folder");
     } catch (err) {

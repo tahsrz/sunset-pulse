@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
-import { fetchProperties } from '@/lib/core/requests';
+import { getProperties } from '@/lib/core/propertyRecon';
 
 const HousingSections = async () => {
-  const data = await fetchProperties();
+  const data = await getProperties({ pageSize: 100 });
   const properties = data?.properties || [];
 
   // Filter properties by type for distinct sections

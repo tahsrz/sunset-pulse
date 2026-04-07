@@ -1,8 +1,8 @@
-import { fetchProperties } from '@/lib/core/requests';
+import { getProperties } from '@/lib/core/propertyRecon';
 import FeaturedPropertyCard from './FeaturedPropertyCard';
 
 const FeaturedProperties = async () => {
-  const properties = await fetchProperties({
+  const properties = await getProperties({
     showFeatured: true,
   });
 

@@ -13,6 +13,7 @@ import BookingForm from '@/components/BookingForm';
 import PropertyVerification from '@/components/SphinxGatekeeper';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
+import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
 import { FaArrowLeft } from 'react-icons/fa';
 
@@ -91,6 +92,7 @@ const PropertyPage = () => {
                   <PropertyVerification>
                     <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
                   </PropertyVerification>
+                  <RecommendedProperties currentPropertyId={property._id} type={property.type} />
                 </aside>
               </div>
             </div>

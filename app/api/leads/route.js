@@ -132,8 +132,9 @@ export const POST = async (request) => {
         timeframe: newLead.timeframe,
         probability: newLead.probability,
         jamie_notes: newLead.jamieNotes,
+        reengagement_hook: newLead.reengagementHook, // Synchronize the hooks
         stage: 'New'
-      });
+      }, { onConflict: 'email' }); // Fix: Specify email as conflict target to avoid DB errors
     } catch (sbError) {
       console.error('Supabase Sync Failed:', sbError);
     }

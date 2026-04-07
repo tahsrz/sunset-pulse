@@ -1,8 +1,4 @@
-'use client';
-import { useTheme } from '@/context/ThemeProvider';
-import { FaFlask, FaCheck, FaTimes, FaPalette } from 'react-icons/fa';
-
-const VIBE_DICTIONARY = {
+export const VIBE_DICTIONARY = {
   "Dark Mode": { "primaryColor": "#3b82f6", "mainBackground": "#0f172a", "navBackground": "#1e293b", "quadrants": { "topLeft": { "background": "#0f172a", "color": "#f8fafc" }, "topRight": { "background": "#1e293b", "color": "#f8fafc" }, "bottomLeft": { "background": "#1e293b", "color": "#f8fafc" }, "bottomRight": { "background": "#0f172a", "color": "#f8fafc" } } },
   "Cyberpunk": { "primaryColor": "#eab308", "mainBackground": "#000000", "navBackground": "#111111", "quadrants": { "topLeft": { "background": "#000000", "color": "#fbbf24" }, "topRight": { "background": "#111111", "color": "#ffffff" }, "bottomLeft": { "background": "#111111", "color": "#ffffff" }, "bottomRight": { "background": "#000000", "color": "#fbbf24" } } },
   "Tactical": { "primaryColor": "#ef4444", "mainBackground": "#000000", "navBackground": "#000000", "quadrants": { "topLeft": { "background": "#000000", "color": "#ffffff" }, "topRight": { "background": "#111111", "color": "#ef4444" }, "bottomLeft": { "background": "#111111", "color": "#ef4444" }, "bottomRight": { "background": "#000000", "color": "#ffffff" } } },
@@ -39,72 +35,3 @@ const VIBE_DICTIONARY = {
   "Mint": { "primaryColor": "#10b981", "mainBackground": "#f0fdf4", "navBackground": "#dcfce7", "quadrants": { "topLeft": { "background": "#ffffff", "color": "#064e3b" }, "topRight": { "background": "#f0fdf4", "color": "#10b981" }, "bottomLeft": { "background": "#f0fdf4", "color": "#10b981" }, "bottomRight": { "background": "#ffffff", "color": "#064e3b" } } },
   "High-Rise": { "primaryColor": "#1d4ed8", "mainBackground": "#f1f5f9", "navBackground": "#e2e8f0", "quadrants": { "topLeft": { "background": "#ffffff", "color": "#1e3a8a" }, "topRight": { "background": "#f1f5f9", "color": "#1d4ed8" }, "bottomLeft": { "background": "#f1f5f9", "color": "#1d4ed8" }, "bottomRight": { "background": "#ffffff", "color": "#1e3a8a" } } }
 };
-
-export default function VibeLabPage() {
-  const { branding, stagedBranding, stageBranding, confirmBranding, cancelStaging } = useTheme();
-
-  return (
-    <div className="min-h-screen p-8 transition-all duration-500">
-      <header className="mb-12 flex justify-between items-end">
-        <div>
-          <div className="flex items-center gap-3 mb-2 text-[var(--primary-color)]">
-            <FaFlask size={32} />
-            <h1 className="text-5xl font-black uppercase italic tracking-tighter">Vibe Lab</h1>
-          </div>
-          <p className="opacity-50 font-mono text-sm">[ EXPERIMENTAL UI MANIPULATION GRID ]</p>
-        </div>
-
-        {stagedBranding && (
-          <div className="flex gap-4 animate-in slide-in-from-right-4 duration-500">
-            <button 
-              onClick={cancelStaging}
-              className="flex items-center gap-2 px-6 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-full font-black uppercase text-xs hover:bg-red-500 hover:text-white transition-all"
-            >
-              <FaTimes /> Revert Grid
-            </button>
-            <button 
-              onClick={confirmBranding}
-              className="flex items-center gap-2 px-8 py-3 bg-green-500 text-white rounded-full font-black uppercase text-xs shadow-xl shadow-green-500/20 hover:scale-105 transition-all"
-            >
-              <FaCheck /> Deploy Vibe
-            </button>
-          </div>
-        )}
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-        {Object.entries(VIBE_DICTIONARY).map(([name, config]) => (
-          <div 
-            key={name}
-            onClick={() => stageBranding(config)}
-            className={`group cursor-pointer bg-white/5 border border-white/10 rounded-3xl p-6 transition-all duration-500 hover:border-[var(--primary-color)] hover:bg-white/10 ${
-              stagedBranding === config ? 'ring-2 ring-[var(--primary-color)]' : ''
-            }`}
-          >
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="font-black uppercase text-sm tracking-widest">{name}</h3>
-              <FaPalette className="opacity-20 group-hover:opacity-100 transition-opacity" />
-            </div>
-
-            {/* Mini Quadrant Preview */}
-            <div className="grid grid-cols-2 grid-rows-2 h-32 rounded-xl overflow-hidden shadow-2xl border border-white/5 transition-transform group-hover:scale-105 duration-500">
-              <div style={{ background: config.quadrants.topLeft.background }} className="border-r border-b border-white/5" />
-              <div style={{ background: config.quadrants.topRight.background }} className="border-b border-white/5" />
-              <div style={{ background: config.quadrants.bottomLeft.background }} className="border-r border-white/5" />
-              <div style={{ background: config.quadrants.bottomRight.background }} />
-            </div>
-
-            <div className="mt-6 flex justify-between items-center">
-              <div className="flex gap-1">
-                <div style={{ background: config.primaryColor }} className="w-3 h-3 rounded-full" />
-                <div style={{ background: config.mainBackground }} className="w-3 h-3 rounded-full border border-white/10" />
-                <div style={{ background: config.navBackground }} className="w-3 h-3 rounded-full border border-white/10" />
-              </div>
-              <span className="text-[9px] font-black uppercase opacity-30 group-hover:opacity-100 transition-opacity">Stage Vibe</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

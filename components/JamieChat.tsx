@@ -1,18 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChat } from 'ai/react';
 import { useTheme } from '@/context/ThemeProvider';
-import IntelCard from '@/components/IntelCard';
-import Telariel from '@/components/Telariel';
-import Makiel from '@/components/Makiel';
-import Suriel from '@/components/Suriel';
-import Zakariel from '@/components/Zakariel';
-import { FaRobot, FaCogs, FaMinus } from 'react-icons/fa';
 import { memoryBridge } from '@/lib/memory_bridge';
+import { speak } from '@/lib/core/tts';
+
+// Refactored Sub-components
+import JamieChatMinimized from './chat/JamieChatMinimized';
+import JamieChatHeader from './chat/JamieChatHeader';
+import JamieChatMessageList from './chat/JamieChatMessageList';
+import JamieChatInput from './chat/JamieChatInput';
+import JamieDevControls from './chat/JamieDevControls';
+import JamieIntelCard from './chat/JamieIntelCard';
+import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 
 export default function JamieChat({ propertyData }) {
-  const { stagedBranding, confirmBranding, cancelStaging, isDevMode, setDevMode } = useTheme();
+  const { 
+    stagedBranding, 
+    confirmBranding, 
+    cancelStaging, 
+    isDevMode, 
+    setDevMode,
+    isLefthandMode,
+    setLefthandMode
+  } = useTheme();
+
+  const [mounted, setMounted] = useState(false);
   const [localIntel, setLocalIntel] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -20,10 +34,26 @@ export default function JamieChat({ propertyData }) {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [tempInput, setTempInput] = useState('');
 
-  // Recognition Context for returning users
-  const memoryContext = memoryBridge.getGreetingContext();
+  // Recognition Context for returning users - safely handled after mount
+  const [memoryContext, setMemoryContext] = useState<any>(null);
+  const [persistentMessages, setPersistentMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    setMemoryContext(memoryBridge.getGreetingContext());
+    setPersistentMessages(memoryBridge.getHistory());
+  }, []);
 
   const handleAction = (messageContent: string) => {
+    if (!messageContent || typeof messageContent !== 'string') return;
+    
+    // Log assistant message to memory
+    memoryBridge.logInteraction({ role: 'assistant', content: messageContent, timestamp: new Date().toISOString() });
+
+    // TTS: Speak the message, but strip tags first
+    const cleanText = messageContent.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
+    if (cleanText) speak(cleanText);
+
     const tagRegex = /\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g;
     let match;
     while ((match = tagRegex.exec(messageContent)) !== null) {
@@ -50,8 +80,16 @@ export default function JamieChat({ propertyData }) {
   const { messages, input, setInput, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, append, setMessages } = useChat({
     api: '/api/chat',
     body: { propertyData, isDevMode, memoryContext },
+    initialMessages: persistentMessages,
     onFinish: (message) => handleAction(message.content),
   });
+
+  // Re-sync messages when persistentMessages load (to prevent loss of history during hydration)
+  useEffect(() => {
+    if (mounted && persistentMessages.length > 0 && messages.length === 0) {
+      setMessages(persistentMessages);
+    }
+  }, [mounted, persistentMessages, setMessages]);
 
   const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
 
@@ -89,6 +127,10 @@ export default function JamieChat({ propertyData }) {
     e.preventDefault();
     if (!input.trim()) return;
     setHistoryIndex(-1);
+
+    // Log user interaction
+    memoryBridge.logInteraction({ role: 'user', content: input, timestamp: new Date().toISOString() });
+
     try {
       const shieldResponse = await fetch('/api/jamie/shield', {
         method: 'POST',
@@ -97,12 +139,16 @@ export default function JamieChat({ propertyData }) {
       });
       const security = await shieldResponse.json();
       if (security.status === 'BLOCKED') {
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: input }, { id: (Date.now() + 1).toString(), role: 'assistant', content: `⚠️ [NOTICE]: ${security.message}` }]);
+        const assistantMsg = `⚠️ [NOTICE]: ${security.message}`;
+        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: input }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
+        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
         handleInputChange({ target: { value: '' } } as any);
         return;
       }
       if (security.status === 'RESOLVED_BY_MINI') {
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: input }, { id: (Date.now() + 1).toString(), role: 'assistant', content: security.response }]);
+        const assistantMsg = security.response;
+        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: input }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
+        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
         handleInputChange({ target: { value: '' } } as any);
         return;
       }
@@ -113,86 +159,51 @@ export default function JamieChat({ propertyData }) {
     }
   };
 
+  if (!mounted) return null;
+
+  if (isMinimized) {
+    return <JamieChatMinimized onOpen={() => setIsMinimized(false)} isLefthandMode={isLefthandMode} />;
+  }
+
   return (
-    <div className={`fixed bottom-5 right-5 z-50 flex flex-col gap-4 transition-all duration-500 ${isMinimized ? 'w-16 h-16' : 'w-96'}`}>
-      {!isMinimized && <Makiel isActive={isDevMode} onToggle={setDevMode} />}
+    <div className={`fixed bottom-5 ${isLefthandMode ? 'left-5' : 'right-5'} z-50 flex flex-col gap-4 transition-all duration-500 w-96`}>
+      <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
 
-      {localIntel && !isMinimized && (
+      {localIntel && (
         <div className="animate-in fade-in zoom-in duration-500">
-          <IntelCard businessName="Sunset Grill" items={localIntel} onAction={() => alert('Order sent.')} />
+          <JamieIntelCard businessName="Sunset Grill" items={localIntel} onAction={() => alert('Order sent.')} />
         </div>
       )}
 
-      {stagedBranding && !isMinimized && (
-        <Suriel onCancel={cancelStaging} onConfirm={confirmBranding} />
+      {stagedBranding && (
+        <JamieBrandingConfirm onCancel={cancelStaging} onConfirm={confirmBranding} />
       )}
 
-      {isMinimized ? (
-        <button
-          onClick={() => setIsMinimized(false)}
-          className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/20 relative"
-        >
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse" />
-          <FaRobot className="text-2xl" />
-        </button>
-      ) : (
-        <div className="bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/10 flex flex-col h-[550px] overflow-hidden transition-all duration-500 hover:border-blue-500/30 animate-in zoom-in-95 duration-300">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-5 text-white flex justify-between items-center shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md"><FaRobot className="text-lg" /></div>
-              <div>
-                <h3 className="font-black tracking-[0.1em] uppercase text-sm italic">Jamie</h3>
-                <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Active Session</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button onClick={() => setIsMinimized(true)} className="p-2 hover:bg-white/20 rounded-lg transition-colors"><FaMinus className="text-xs" /></button>
-              <div className="h-3 w-3 bg-green-400 rounded-full shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
-            </div>
-          </div>
+      <div className="bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/10 flex flex-col h-[550px] overflow-hidden transition-all duration-500 hover:border-blue-500/30 animate-in zoom-in-95 duration-300">
+        <JamieChatHeader 
+          onMinimize={() => setIsMinimized(true)} 
+          isLefthandMode={isLefthandMode} 
+          onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
+        />
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
-            {messages.map((m) => (
-              <Telariel key={m.id} message={m} isDevMode={isDevMode} />
-            ))}
-            
-            {analytics && isDevMode && (
-              <div className="mx-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-                <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Score: {analytics.leadScore}</span>
-                <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Intent: {analytics.intent}</span>
-              </div>
-            )}
-            {isLoading && (
-              <div className="flex items-center gap-3 text-[10px] font-black text-blue-400 uppercase tracking-widest animate-pulse">
-                Processing...
-              </div>
-            )}
-          </div>
+        <JamieChatMessageList 
+          messages={messages} 
+          isDevMode={isDevMode} 
+          analytics={analytics} 
+          isLoading={isLoading} 
+        />
 
-          <form onSubmit={handleSubmit} className="p-6 bg-slate-950/50 border-t border-white/5">
-            <Zakariel items={suggestions} onSelect={(q) => { append({ role: 'user', content: q }); setSuggestions([]); }} />
-
-            {isDevMode && (
-              <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {['Dark Mode', 'Cyberpunk', 'Tactical', 'Minimalist', 'Moody', 'Forest', 'Sunset', 'Oceanic', 'Luxury', 'Terminal'].map((vibe) => (
-                  <button key={vibe} type="button" onClick={() => handleInputChange({ target: { value: `Switch to ${vibe} theme.` } } as any)} className="whitespace-nowrap bg-blue-500/10 border border-blue-500/30 text-[9px] font-black uppercase tracking-widest text-blue-400 px-3 py-1.5 rounded-full hover:bg-blue-500 hover:text-white transition-all">{vibe}</button>
-                ))}
-              </div>
-            )}
-            <div className="relative group/input">
-              <input 
-                className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600" 
-                value={input} 
-                placeholder="Search or ask..." 
-                onChange={handleInputChange} 
-                onKeyDown={handleKeyDown}
-                autoComplete="off"
-              />
-              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 transition-colors"><FaCogs className={isLoading ? 'animate-spin' : ''} /></button>
-            </div>
-          </form>
-        </div>
-      )}
+        <JamieChatInput 
+          input={input}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          handleKeyDown={handleKeyDown}
+          isLoading={isLoading}
+          suggestions={suggestions}
+          onSelectSuggestion={(q) => { append({ role: 'user', content: q }); setSuggestions([]); }}
+          isDevMode={isDevMode}
+        />
+      </div>
     </div>
   );
 }

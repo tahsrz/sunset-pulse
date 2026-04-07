@@ -230,12 +230,12 @@ const SearchResultsPage = () => {
             
             <div className='mb-8'>
               <h1 className='text-3xl font-black text-slate-900 uppercase tracking-tighter'>Search Results</h1>
-              <div className='flex items-center gap-3 mt-1'>
+              <div className='flex flex-col gap-1 mt-1'>
                 <p className='text-slate-500 font-medium text-xs'>
-                  Found {properties.length} matches across Internal & MLS Intelligence Streams
+                  Found {properties.length} matches for <span className="text-blue-600 font-bold">{searchParams.get('location') || 'Global Sector'}</span> [{searchParams.get('propertyType') || 'All Assets'}] across Internal & MLS Intelligence Streams
                 </p>
                 {isPolygonActive && (
-                  <span className='text-[8px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded font-black uppercase'>Geo-Filtered</span>
+                  <span className='w-fit text-[8px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded font-black uppercase'>Geo-Filtered Tactical Sector</span>
                 )}
               </div>
             </div>
@@ -244,7 +244,7 @@ const SearchResultsPage = () => {
               <Spinner loading={loading} />
             ) : properties.length === 0 ? (
               <div className='bg-white p-12 rounded-3xl border border-slate-200 text-center shadow-sm'>
-                <p className='text-slate-500 font-bold text-sm uppercase tracking-widest'>No tactical matches found. Adjust your Recon filters.</p>
+                <p className='text-slate-500 font-bold text-sm uppercase tracking-widest'>No tactical matches found for "{searchParams.get('location')}". Adjust your Recon filters.</p>
               </div>
             ) : (
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20'>

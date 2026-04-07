@@ -1,9 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { ABIDAN_DATA, AbidanCharacter } from '@/constants/abidan';
 import { toast } from 'react-toastify';
+import { supabase } from '@/lib/supabase';
 
 interface QuadrantStyle {
   background: string;
@@ -35,6 +36,8 @@ interface ThemeContextType {
   setDevMode: (active: boolean) => void;
   isAdvancedMode: boolean;
   setAdvancedMode: (active: boolean) => void;
+  isLefthandMode: boolean;
+  setLefthandMode: (active: boolean) => void;
   customKeybind: string;
   setCustomKeybind: (key: string) => void;
   selectedAbidan: AbidanCharacter;
@@ -64,7 +67,7 @@ export function ThemeProvider({
   children: ReactNode; 
   branding: Branding; 
 }) {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [branding, setBranding] = useState<Branding>(() => {
     const base = { ...defaultBranding, ...initialBranding };
     base.quadrants = { ...defaultBranding.quadrants, ...initialBranding?.quadrants };
@@ -74,29 +77,33 @@ export function ThemeProvider({
   const [stagedBranding, setStagedBranding] = useState<Branding | null>(null);
   const [isDevMode, setDevModeState] = useState(false);
   const [isAdvancedMode, setAdvancedModeState] = useState(false);
+  const [isLefthandMode, setLefthandModeState] = useState(false);
   const [customKeybind, setCustomKeybindState] = useState('P');
   const [selectedAbidan, setSelectedAbidanState] = useState<AbidanCharacter>(ABIDAN_DATA[0]);
 
   useEffect(() => {
+    // 1. Initial Load and Auth-based settings
     const savedDev = localStorage.getItem('jamie_dev_mode');
+    const savedLefthand = localStorage.getItem('jamie_lefthand_mode');
     
-    // Use session values as priority for Advanced Mode and Keybind
-    if (session?.user) {
-      if (typeof session.user.isAdvancedMode !== 'undefined') {
-        setAdvancedModeState(session.user.isAdvancedMode);
+    if (user) {
+      if (typeof user.user_metadata?.isAdvancedMode !== 'undefined') {
+        setAdvancedModeState(user.user_metadata.isAdvancedMode);
       }
-      if (session.user.customKeybind) {
-        setCustomKeybindState(session.user.customKeybind);
+      if (user.user_metadata?.customKeybind) {
+        setCustomKeybindState(user.user_metadata.customKeybind);
+      }
+      if (typeof user.user_metadata?.isLefthandMode !== 'undefined') {
+        setLefthandModeState(user.user_metadata.isLefthandMode);
       }
     } else {
-      // Fallback to localStorage if not logged in
       const savedAdvanced = localStorage.getItem('jamie_advanced_mode');
       const savedKeybind = localStorage.getItem('jamie_custom_keybind');
       if (savedAdvanced === 'true') setAdvancedModeState(true);
       if (savedKeybind) setCustomKeybindState(savedKeybind);
+      if (savedLefthand === 'true') setLefthandModeState(true);
     }
     
-    // Restore dev mode from localStorage
     if (savedDev === 'true') {
       setDevModeState(true);
     }
@@ -106,7 +113,27 @@ export function ThemeProvider({
       const found = ABIDAN_DATA.find(a => a.id === savedAbidanId);
       if (found) setSelectedAbidanState(found);
     }
-  }, [session]);
+
+    // 2. Real-time Site Config Subscription
+    const channel = supabase
+      .channel('public:site_config')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'site_config',
+        filter: 'agent_id=eq.taz-realty-001'
+      }, (payload) => {
+        console.log('🔄 [THEME_SYNC] Site config update received:', payload.new);
+        if (payload.new.branding) {
+          setBranding(payload.new.branding);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const setSelectedAbidan = (abidan: AbidanCharacter) => {
     setSelectedAbidanState(abidan);
@@ -115,7 +142,7 @@ export function ThemeProvider({
   };
 
   const setDevMode = (active: boolean) => {
-    if (active && !session?.user?.isSubscribed) {
+    if (active && !user?.user_metadata?.isSubscribed) {
       toast.error('Subscription required for Dev Mode access.');
       console.warn('🔒 [JAMIE_SECURITY] Dev Mode access denied. Active subscription not found.');
       return;
@@ -124,8 +151,8 @@ export function ThemeProvider({
     localStorage.setItem('jamie_dev_mode', active ? 'true' : 'false');
   };
 
-  const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string }) => {
-    if (!session?.user) return;
+  const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string, isLefthandMode?: boolean }) => {
+    if (!user) return;
     
     try {
       const res = await fetch('/api/user/settings', {
@@ -147,6 +174,15 @@ export function ThemeProvider({
       toast.info('Advanced Mode Activated', { icon: '⚡' });
     }
     syncSettings({ isAdvancedMode: active });
+  };
+
+  const setLefthandMode = (active: boolean) => {
+    setLefthandModeState(active);
+    localStorage.setItem('jamie_lefthand_mode', active ? 'true' : 'false');
+    if (active) {
+      toast.info('Lefthand Mode Activated', { icon: '↔️' });
+    }
+    syncSettings({ isLefthandMode: active });
   };
 
   const setCustomKeybind = (key: string) => {
@@ -231,6 +267,8 @@ export function ThemeProvider({
       setDevMode,
       isAdvancedMode,
       setAdvancedMode,
+      isLefthandMode,
+      setLefthandMode,
       customKeybind,
       setCustomKeybind,
       selectedAbidan,

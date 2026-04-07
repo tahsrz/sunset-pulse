@@ -1,46 +1,19 @@
-import connectDB from '@/lib/core/database';
-import Property from '@/models/Property';
+import { getProperties } from '@/lib/core/propertyRecon';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import cloudinary from '@/config/cloudinary';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
-
-import Lead from '@/models/Lead';
+import Property from '@/models/Property';
+import connectDB from '@/lib/core/database';
 
 // GET /api/properties
 export const GET = async (request) => {
   try {
-    await connectDB();
-
     const page = request.nextUrl.searchParams.get('page') || 1;
     const pageSize = request.nextUrl.searchParams.get('pageSize') || 6;
-    const skip = (page - 1) * pageSize;
 
-    const total = await Property.countDocuments({});
-    const properties = await Property.find({}).skip(skip).limit(pageSize).lean();
+    const data = await getProperties({ page: parseInt(page), pageSize: parseInt(pageSize) });
 
-    // Aggregate Lead counts for Intensity Model
-    const propertyIds = properties.map(p => p._id);
-    const leadCounts = await Lead.aggregate([
-      { $match: { property: { $in: propertyIds } } },
-      { $group: { _id: '$property', count: { $sum: 1 } } }
-    ]);
-
-    const leadMap = leadCounts.reduce((acc, curr) => {
-      acc[curr._id.toString()] = curr.count;
-      return acc;
-    }, {});
-
-    const propertiesWithIntensity = properties.map(p => ({
-      ...p,
-      leadCount: leadMap[p._id.toString()] || 0,
-      // Global average for scaling
-      globalAvgLeads: 2 //  calculate properly? WIP
-    }));
-
-    return successResponse({
-      total,
-      properties: propertiesWithIntensity,
-    });
+    return successResponse(data);
   } catch (error) {
     return errorResponse('Failed to fetch property intelligence.', 500, error.message);
   }

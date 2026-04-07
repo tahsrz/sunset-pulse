@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import PropertyCard from '@/components/PropertyCard';
 import Spinner from '@/components/Spinner';
@@ -8,7 +8,7 @@ import Pagination from '@/components/Pagination';
 import { FaBullhorn } from 'react-icons/fa';
 
 const LeadGenPropertiesPage = () => {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,8 +17,9 @@ const LeadGenPropertiesPage = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || (session.user.role !== 'realtor' && session.user.role !== 'admin')) {
+    if (authLoading) return;
+    const role = user?.user_metadata?.role;
+    if (!user || (role !== 'realtor' && role !== 'admin')) {
       router.push('/');
       return;
     }
@@ -30,7 +31,10 @@ const LeadGenPropertiesPage = () => {
         );
 
         if (!res.ok) {
-          throw new Error('Failed to fetch data');
+          console.warn('Failed to fetch data');
+          setProperties([]);
+          setTotalItems(0);
+          return;
         }
 
         const data = await res.json();

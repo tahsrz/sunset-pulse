@@ -9,6 +9,7 @@ import { useTheme } from '@/context/ThemeProvider';
 
 import { useDroneControls } from '@/hooks/useDroneControls';
 import { useTrainingCourse } from '@/hooks/useTrainingCourse';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
 import ViewerHUD from './viewer/ViewerHUD';
 
 interface DroneDemoViewerProps {
@@ -17,6 +18,13 @@ interface DroneDemoViewerProps {
   userName: string;
 }
 
+const HOTSPOTS = [
+  { pos: new Vector(10, 25, 100), label: "High-Intensity Compute Cluster", key: 'hc-1' },
+  { pos: new Vector(-15, 15, 250), label: "Sub-Zero Coolant Link", key: 'cl-1' },
+  { pos: new Vector(20, 5, 450), label: "Neural Interface Node", key: 'ni-1' },
+  { pos: new Vector(0, 40, 600), label: "Strategic Uplink Array", key: 'su-1' },
+];
+
 const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, userName }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
@@ -24,6 +32,8 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
   
   const [loading, setLoading] = useState(true);
   const [fps, setFps] = useState(0);
+  const [isDataOverlayActive, setDataOverlayActive] = useState(true);
+  const [projectedHotspots, setProjectedHotspots] = useState<any[]>([]);
 
   const lastTimeRef = useRef(performance.now());
   const frameCountRef = useRef(0);
@@ -35,6 +45,16 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
     handleMouseMove,
     handleMouseUp,
   } = useDroneControls(canvasRef, 'demo-drone', userId, userName);
+
+  const {
+    peers,
+    sendUpdate,
+    announceLead,
+    togglePresentationMode,
+    leadId,
+    isMeLead,
+    presentationMode
+  } = useMultiplayer(userId, droneState.current.pos);
 
   const {
     level,
@@ -97,7 +117,12 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
           const renderer = rendererRef.current;
           const state = droneState.current;
           
-          updateDrone(false, false, null); // Manual control always
+          const leadData = !isMeLead && leadId ? peers[leadId] : null;
+          updateDrone(presentationMode, isMeLead, leadData);
+          
+          if (!presentationMode || isMeLead) {
+            sendUpdate(state.pos, state.rot, isMeLead);
+          }
 
           const camRot = Matrix.fromEuler(state.rot.yaw, state.rot.pitch);
           const camPos = new Vector(0, -5, 60);
@@ -112,6 +137,13 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
             renderer.renderMesh(rm.mesh, new Vector(0,0,0), camRot, camPos);
             renderer.showWireframe = true;
           });
+
+          // Project Hotspots
+          const projected = HOTSPOTS.map(h => {
+            const screen = renderer.projectPoint(h.pos, state.pos, camRot, new Vector(0,0,0));
+            return screen ? { ...screen, label: h.label, key: h.key } : null;
+          }).filter(Boolean);
+          setProjectedHotspots(projected);
         }
         animationId = requestAnimationFrame(renderLoop);
       };
@@ -124,7 +156,7 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
       if (animationId) cancelAnimationFrame(animationId);
       rendererRef.current = null;
     };
-  }, [property, initRings, updateDrone, checkProximity, level]);
+  }, [property, initRings, updateDrone, checkProximity, level, peers, isMeLead, leadId, presentationMode, sendUpdate]);
 
   return (
     <div className='relative w-full h-[600px] bg-slate-950 rounded-[2rem] overflow-hidden group shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]' onContextMenu={(e) => e.preventDefault()}>
@@ -150,9 +182,9 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
         fps={fps}
         level={level}
         isDevMode={isDevMode}
-        isDataOverlayActive={false}
-        setDataOverlayActive={() => {}}
-        projectedHotspots={[]}
+        isDataOverlayActive={isDataOverlayActive}
+        setDataOverlayActive={setDataOverlayActive}
+        projectedHotspots={projectedHotspots}
         comments={[]}
         renderer={rendererRef.current}
         droneState={droneState}
@@ -161,8 +193,8 @@ const DroneDemoViewer: React.FC<DroneDemoViewerProps> = ({ property, userId, use
         handleToggleCollection={() => {}}
         isCommentMode={false}
         setCommentMode={() => {}}
-        presentationMode={false}
-        setPresentationMode={() => {}}
+        presentationMode={presentationMode}
+        setPresentationMode={togglePresentationMode}
         pendingCommentPos={null}
         setPendingCommentPos={() => {}}
         newComment=""

@@ -43,9 +43,13 @@ const UserSchema = new Schema(
     },
     currentInterests: {
       type: String,
-      default: 'Focus on high-velocity commercial lead clusters'
+      default: 'Focus on high yield commercial lead clusters'
     },
     isAdvancedMode: {
+      type: Boolean,
+      default: false
+    },
+    isLefthandMode: {
       type: Boolean,
       default: false
     },

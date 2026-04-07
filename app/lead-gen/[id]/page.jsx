@@ -1,21 +1,22 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { FaArrowLeft, FaMagic, FaCopy, FaCheck, FaBullhorn, FaRobot, FaEnvelopeOpenText } from 'react-icons/fa';
 import Spinner from '@/components/Spinner';
 
 const LeadGenDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session || (session.user.role !== 'realtor' && session.user.role !== 'admin')) {
+    if (authLoading) return;
+    const role = user?.user_metadata?.role;
+    if (!user || (role !== 'realtor' && role !== 'admin')) {
       router.push('/');
       return;
     }

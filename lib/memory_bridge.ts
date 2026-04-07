@@ -95,7 +95,7 @@ class MemoryBridge {
    */
   public wrapQuery(baseQuery: string, contextTitle: string = 'Standard Recon'): string {
     const prefs = this.getPreferences();
-    const history = JSON.parse(sessionStorage.getItem('pulse_mem_history') || '[]');
+    const history = JSON.parse(localStorage.getItem('pulse_mem_history') || '[]');
 
     return `
 <context>
@@ -106,7 +106,7 @@ class MemoryBridge {
   ${Object.entries(prefs).map(([k, v]) => `<pref key="${k}">${v}</pref>`).join('\n  ')}
 </user_preferences>
 <session_history>
-  ${history.slice(-5).map((h: string) => `<entry>${h}</entry>`).join('\n  ')}
+  ${history.slice(-5).map((h: any) => `<entry>${typeof h === 'string' ? h : h.content}</entry>`).join('\n  ')}
 </session_history>
 <query>
   ${baseQuery}
@@ -124,11 +124,22 @@ class MemoryBridge {
     localStorage.setItem('pulse_mem_dynamic', JSON.stringify(dynamic));
   }
 
-  public logInteraction(action: string): void {
+  public logInteraction(action: any): void {
     if (typeof window === 'undefined') return;
-    const history = JSON.parse(sessionStorage.getItem('pulse_mem_history') || '[]');
+    const history = JSON.parse(localStorage.getItem('pulse_mem_history') || '[]');
     history.push(action);
-    sessionStorage.setItem('pulse_mem_history', JSON.stringify(history));
+    // Keep last 50 interactions to avoid bloating storage
+    localStorage.setItem('pulse_mem_history', JSON.stringify(history.slice(-50)));
+  }
+
+  public getHistory(): any[] {
+    if (typeof window === 'undefined') return [];
+    return JSON.parse(localStorage.getItem('pulse_mem_history') || '[]');
+  }
+
+  public clearHistory(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('pulse_mem_history');
   }
 }
 

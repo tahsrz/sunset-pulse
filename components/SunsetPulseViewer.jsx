@@ -163,8 +163,12 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
       setPendingCommentPos({ x: pos.x, y: pos.y, z: pos.z });
       return;
     }
-    if (isDroneMode && canvasRef.current) {
-      canvasRef.current.requestPointerLock();
+    if (isDroneMode && canvasRef.current && canvasRef.current.isConnected) {
+      try {
+        canvasRef.current.requestPointerLock();
+      } catch (e) {
+        console.warn('Pointer lock request failed:', e);
+      }
     }
   };
 

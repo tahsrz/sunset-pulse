@@ -22,7 +22,6 @@ export const normalizeThreeGroup = (group: THREE.Object3D, targetSize: number = 
   const scale = targetSize / (maxDim || 1);
   group.scale.setScalar(scale);
 
-  console.log(`[FIBER_NORMALIZER] Centered at ${center.x}, ${center.y}, ${center.z} | Scale: ${scale}`);
   return { scale, center };
 };
 

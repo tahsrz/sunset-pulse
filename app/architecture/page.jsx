@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeProvider';
 import { 
   FaServer, FaRobot, FaCube, FaCode, FaPaintBrush, FaBolt, 
@@ -10,24 +10,24 @@ import {
 } from 'react-icons/fa';
 
 const ArchitecturePage = () => {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const { isDevMode } = useTheme();
   const router = useRouter();
 
-  const isSubscribed = session?.user?.isSubscribed;
+  const isSubscribed = user?.user_metadata?.isSubscribed;
   const hasAccess = isDevMode && isSubscribed;
 
   useEffect(() => {
-    if (status !== 'loading' && !hasAccess) {
+    if (!authLoading && !hasAccess) {
       // Small delay to allow session to settle
       const timer = setTimeout(() => {
         if (!hasAccess) router.push('/premium');
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [hasAccess, status, router]);
+  }, [hasAccess, authLoading, router]);
 
-  if (status === 'loading') {
+  if (authLoading) {
     return (
       <div className='min-h-screen bg-slate-950 flex items-center justify-center'>
         <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500'></div>

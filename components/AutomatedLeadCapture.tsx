@@ -52,8 +52,8 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
         <div className='w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30'>
           <FaBolt className='text-white text-2xl' />
         </div>
-        <h3 className='text-xl font-black text-slate-900 uppercase tracking-tighter'>Intelligence Logged</h3>
-        <p className='text-slate-600 mt-2 font-medium text-sm'>A Sunset Pulse operative will reach out shortly.</p>
+        <h3 className='text-xl font-black text-slate-900 uppercase tracking-tighter'>Inquiry Received</h3>
+        <p className='text-slate-600 mt-2 font-medium text-sm'>A Sunset Pulse agent will reach out shortly.</p>
       </div>
     );
   }
@@ -86,7 +86,7 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           <input
             type='email'
             name='email'
-            placeholder='Intelligence Email'
+            placeholder='Email Address'
             required
             className='w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none'
             value={formData.email}
@@ -99,7 +99,7 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           <input
             type='tel'
             name='phone'
-            placeholder='Secure Phone (Optional)'
+            placeholder='Phone Number (Optional)'
             className='w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none'
             value={formData.phone}
             onChange={handleChange}
@@ -108,7 +108,7 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
 
         <textarea
           name='message'
-          placeholder='Operational Requirements...'
+          placeholder='Message or requirements...'
           rows={3}
           className='w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none'
           value={formData.message}
@@ -120,9 +120,9 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           disabled={isSubmitting}
           className='w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-blue-600/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3'
         >
-          {isSubmitting ? 'Transmitting...' : (
+          {isSubmitting ? 'Sending...' : (
             <>
-              Deploy Inquiry <FaBolt className='text-blue-200' />
+              Send Inquiry <FaBolt className='text-blue-200' />
             </>
           )}
         </button>

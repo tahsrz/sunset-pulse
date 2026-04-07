@@ -35,7 +35,8 @@ export const useDroneControls = (canvasRef: React.RefObject<HTMLCanvasElement>, 
     if (prefs.viewMode === 'fiber' && !isDroneMode) setDroneMode(true);
   }, []);
 
-  const handleDroneToggle = useCallback(() => {
+  const handleDroneToggle = useCallback((e?: any) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     const newMode = !isDroneMode;
     setDroneMode(newMode);
     
@@ -60,7 +61,8 @@ export const useDroneControls = (canvasRef: React.RefObject<HTMLCanvasElement>, 
       if (document.pointerLockElement === canvasRef.current && isDroneMode) {
         const sensitivity = 0.003;
         droneState.current.rot.yaw += e.movementX * sensitivity;
-        droneState.current.rot.pitch -= e.movementY * sensitivity;
+        // Inverted: += instead of -=
+        droneState.current.rot.pitch += e.movementY * sensitivity;
         droneState.current.rot.pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, droneState.current.rot.pitch));
       }
     };
@@ -90,7 +92,8 @@ export const useDroneControls = (canvasRef: React.RefObject<HTMLCanvasElement>, 
     }
 
     const keys = keysRef.current;
-    const speed = keys['shift'] ? 1.2 : 0.5;
+    const boost = keys[' '] ? 2.5 : 1.0;
+    const speed = 0.5 * boost;
 
     if (!presentationMode || isMeLead) {
       const forward = new Vector(0, 0, 1).rotate(state.rot.yaw, 0);
@@ -100,8 +103,8 @@ export const useDroneControls = (canvasRef: React.RefObject<HTMLCanvasElement>, 
       if (keys['s']) state.vel = state.vel.add(forward.multiplyByScalar(-speed));
       if (keys['a']) state.vel = state.vel.add(right.multiplyByScalar(-speed));
       if (keys['d']) state.vel = state.vel.add(right.multiplyByScalar(speed));
-      if (keys[' ']) state.vel.set(1, state.vel.y + speed); 
-      if (keys['c'] || keys['control']) state.vel.set(1, state.vel.y - speed); 
+      if (keys['control']) state.vel.set(1, state.vel.y + speed); 
+      if (keys['shift']) state.vel.set(1, state.vel.y - speed); 
 
       if (keys['q']) state.angVel.yaw -= 0.005;
       if (keys['e']) state.angVel.yaw += 0.005;

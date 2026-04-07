@@ -1,8 +1,14 @@
+'use client';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import logo from '@/assets/images/logo.png';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState('');
+
+  useEffect(() => {
+    setYear(new Date().getFullYear().toString());
+  }, []);
 
   return (
     <footer className='bg-gray-200 py-4 mt-24'>
@@ -13,7 +19,7 @@ const Footer = () => {
 
         <div>
           <p className='text-sm text-gray-500 mt-2 md:mt-0'>
-            &copy; {currentYear} SunsetCollective. All rights reserved.
+            &copy; {year} SunsetCollective. All rights reserved.
           </p>
         </div>
       </div>

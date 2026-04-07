@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
-import { fetchProperties } from '@/lib/core/requests';
+import { getProperties } from '@/lib/core/propertyRecon';
 import { pulseRNG } from '@/lib/core/pulseRNG';
 
 const HomeProperties = async () => {
-  const data = await fetchProperties();
+  const data = await getProperties();
 
   // If data or data.properties is missing, defaults to an empty array:  Optional Chain
   const properties = data?.properties || [];

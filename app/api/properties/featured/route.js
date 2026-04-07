@@ -1,20 +1,12 @@
-import connectDB from '@/lib/core/database';
-import Property from '@/models/Property';
+import { getProperties } from '@/lib/core/propertyRecon';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
 // GET /api/properties/featured
 export const GET = async (request) => {
   try {
-    await connectDB();
-
-    const properties = await Property.find({
-      is_featured: true,
-    });
-
-    return new Response(JSON.stringify(properties), {
-      status: 200,
-    });
+    const properties = await getProperties({ showFeatured: true });
+    return successResponse(properties);
   } catch (error) {
-    console.log(error);
-    return new Response('Something Went Wrong', { status: 500 });
+    return errorResponse('Intelligence failure in featured property reconnaissance.', 500, error.message);
   }
 };

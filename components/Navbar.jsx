@@ -8,29 +8,24 @@ import profileDefault from '@/assets/images/profile.png';
 import { FaGoogle, FaShoppingBasket, FaCode, FaShieldAlt } from 'react-icons/fa';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeProvider';
-import { signIn, signOut, useSession, getProviders } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-toastify';
 
 const Navbar = () => {
-  const { data: session } = useSession();
+  const { user, signOut } = useAuth();
   const { isDevMode } = useTheme();
-  const profileImage = session?.user?.image || profileDefault;
+  
+  // session.user from next-auth had 'image', supabase user has 'user_metadata.avatar_url'
+  // and my Profiles table has 'avatar_url'. 
+  // For now I'll use user_metadata or fallback
+  const profileImage = user?.user_metadata?.avatar_url || profileDefault;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [providers, setProviders] = useState(null);
   
   const pathname = usePathname();
   const { cart } = useCart();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-  useEffect(() => {
-    const setAuthProviders = async () => {
-      const res = await getProviders();
-      setProviders(res);
-    };
-    setAuthProviders();
-  }, []);
 
   return (
     <nav className='bg-[var(--nav-bg)] border-b border-white/10 transition-colors duration-500'>
@@ -47,7 +42,7 @@ const Navbar = () => {
               <div className='flex space-x-2'>
                 <Link href='/' className={`${pathname === '/' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Home</Link>
                 <Link href='/properties' className={`${pathname === '/properties' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Properties</Link>
-                {(session?.user?.role === 'realtor' || session?.user?.role === 'admin') && (
+                {(user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin') && (
                   <Link href='/lead-gen' className={`${pathname.startsWith('/lead-gen') ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Lead Gen</Link>
                 )}
                 <Link href='/explorer' className={`${pathname === '/explorer' ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
@@ -72,19 +67,14 @@ const Navbar = () => {
           </div>
 
           <div className='absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0'>
-            {!session && (
+            {!user && (
               <div className='hidden md:block md:ml-6'>
-                <div className='flex items-center'>
-                  {providers && Object.values(providers).map((provider, index) => (
-                    <button
-                      key={index}
-                      onClick={() => signIn(provider.id)}
-                      className='flex items-center text-white bg-white/10 hover:bg-white/20 rounded-md px-3 py-2 transition-colors'
-                    >
-                      <span>Login</span>
-                    </button>
-                  ))}
-                </div>
+                <Link
+                  href='/login'
+                  className='flex items-center text-white bg-white/10 hover:bg-white/20 rounded-md px-3 py-2 transition-colors'
+                >
+                  <span>Login</span>
+                </Link>
               </div>
             )}
 
@@ -97,20 +87,31 @@ const Navbar = () => {
               )}
             </Link>
 
-            {session && (
-              <div className='relative ml-3'>
+            {user && (
+              <div className='relative ml-3 flex items-center gap-3'>
+                {user?.user_metadata?.role === 'realtor' && (
+                  <div className='hidden lg:flex flex-col items-end'>
+                    <span className='text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none'>Realtor</span>
+                    <span className='text-[10px] font-mono text-green-500 animate-pulse leading-none mt-1'>VALIDATED</span>
+                  </div>
+                )}
                 <button
                   type='button'
-                  className='relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800'
+                  className='relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 border border-white/10'
                   onClick={() => setIsProfileMenuOpen((prev) => !prev)}
                 >
-                  <Image className='h-8 w-8 rounded-full' src={profileImage} alt='Profile' width={32} height={32} />
+                  <Image className='h-9 w-9 rounded-full object-cover' src={profileImage} alt='Profile' width={36} height={36} />
+                  {user?.user_metadata?.role === 'realtor' && (
+                    <div className='absolute -right-1 -top-1 bg-blue-600 text-white p-0.5 rounded-md shadow-lg border border-blue-400'>
+                      <FaShieldAlt size={8} />
+                    </div>
+                  )}
                 </button>
 
                 {isProfileMenuOpen && (
                   <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
-                    <Link href='/command-post' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'>Command Post</Link>
-                    {!session?.user?.isSubscribed && (
+                    <Link href='/command-post' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100' onClick={() => setIsProfileMenuOpen(false)}>Command Post</Link>
+                    {!user?.user_metadata?.isSubscribed && (
                       <Link 
                         href='/premium'
                         className='block w-full text-left px-4 py-2 text-sm text-blue-600 font-bold hover:bg-blue-50 hover:text-blue-700 transition-colors'
@@ -123,6 +124,7 @@ const Navbar = () => {
                       onClick={() => {
                         setIsProfileMenuOpen(false);
                         signOut();
+                        window.location.href = '/';
                       }}
                       className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left'
                     >

@@ -1,30 +1,28 @@
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/core/authOptions';
+import { createClient } from '@/utils/supabase/server';
 import { checkRateLimit } from '@/lib/core/rateLimit';
 
 export const PATCH = async (request) => {
   try {
     await connectDB();
+    const supabase = createClient();
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user) {
-      return new Response('User ID is required', { status: 401 });
+    if (authError || !authUser) {
+      return new Response('User authentication required', { status: 401 });
     }
 
-    const { id } = session.user;
+    const { id: userId } = authUser;
     
     // Rate Limiting: 10 requests per minute
-    const { isLimited } = await checkRateLimit(id, 10);
+    const { isLimited } = await checkRateLimit(userId, 10);
     if (isLimited) {
       return new Response('Too many requests. Please try again in a minute.', { status: 429 });
     }
 
     const body = await request.json();
-
-    const { isAdvancedMode, customKeybind } = body;
+    const { isAdvancedMode, customKeybind, isLefthandMode } = body;
 
     // Server-side Validation
     if (typeof customKeybind !== 'undefined') {
@@ -33,32 +31,48 @@ export const PATCH = async (request) => {
       }
     }
 
-    const user = await User.findById(id);
-
-    if (!user) {
-      return new Response('User not found', { status: 404 });
+    // 1. Sync to MongoDB (Legacy Support)
+    const mongoUser = await User.findOne({ email: authUser.email });
+    if (mongoUser) {
+      if (typeof isAdvancedMode === 'boolean') mongoUser.isAdvancedMode = isAdvancedMode;
+      if (typeof isLefthandMode === 'boolean') mongoUser.isLefthandMode = isLefthandMode;
+      if (customKeybind) mongoUser.customKeybind = customKeybind.toUpperCase();
+      await mongoUser.save();
     }
 
-    // Update fields
-    if (typeof isAdvancedMode === 'boolean') {
-      user.isAdvancedMode = isAdvancedMode;
+    // 2. Sync to Supabase Profiles (Modern Core)
+    const updates = {};
+    if (typeof isAdvancedMode === 'boolean') updates.is_advanced_mode = isAdvancedMode;
+    if (typeof isLefthandMode === 'boolean') updates.is_lefthand_mode = isLefthandMode;
+    if (customKeybind) updates.custom_keybind = customKeybind.toUpperCase();
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+
+    if (profileError) {
+      console.error('[SETTINGS_SYNC] Supabase Profile Update Failed:', profileError.message);
     }
 
-    if (customKeybind) {
-      user.customKeybind = customKeybind.toUpperCase();
-    }
+    // 3. Update Auth Metadata (for immediate client access via user_metadata)
+    await supabase.auth.updateUser({
+      data: { 
+        isAdvancedMode: typeof isAdvancedMode === 'boolean' ? isAdvancedMode : authUser.user_metadata?.isAdvancedMode,
+        isLefthandMode: typeof isLefthandMode === 'boolean' ? isLefthandMode : authUser.user_metadata?.isLefthandMode,
+        customKeybind: customKeybind ? customKeybind.toUpperCase() : authUser.user_metadata?.customKeybind
+      }
+    });
 
-    await user.save();
-
-    // Return only what is necessary
     return new Response(JSON.stringify({
-      isAdvancedMode: user.isAdvancedMode,
-      customKeybind: user.customKeybind
+      isAdvancedMode: isAdvancedMode,
+      isLefthandMode: isLefthandMode,
+      customKeybind: customKeybind ? customKeybind.toUpperCase() : undefined
     }), {
       status: 200,
     });
   } catch (error) {
-    console.error(error);
+    console.error('[SETTINGS_SYNC] Critical Failure:', error);
     return new Response('Something went wrong', { status: 500 });
   }
 };

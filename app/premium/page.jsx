@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { FaShieldAlt, FaCode, FaRocket, FaCheckCircle, FaStar, FaApplePay, FaGooglePay, FaPaypal, FaCreditCard } from 'react-icons/fa';
 import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'react-toastify';
@@ -9,11 +9,11 @@ import { toast } from 'react-toastify';
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 export default function PremiumPage() {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
-    if (!session) {
+    if (!user) {
       toast.error('Please login to upgrade to Premium.');
       return;
     }

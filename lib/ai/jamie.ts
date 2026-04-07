@@ -5,6 +5,7 @@ import connectDB from "@/lib/core/database";
 import { 
   JAMIE_SYSTEM_PROMPT, 
   JAMIE_RE_ENGAGEMENT_PROTOCOL,
+  JAMIE_SESSION_RECAP_PROTOCOL,
   MARKET_SCOUT_SYSTEM_PROMPT,
   ASSET_ANALYST_SYSTEM_PROMPT,
   MAKIEL_SYSTEM_PROMPT,
@@ -16,8 +17,37 @@ import {
   PHOENIX_SYSTEM_PROMPT,
   REAPER_SYSTEM_PROMPT 
 } from "./prompts";
+import { createClient } from "@/utils/supabase/server";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+export async function getJamieRecap(history: any[]) {
+  if (!history || history.length === 0) {
+    return "Welcome back, Commander. The Intelligence Grid is active and awaiting your orders.";
+  }
+
+  // Filter for clean text content from history
+  const historyText = history
+    .slice(-10) // Last 10 interactions for context
+    .map(h => `${h.role.toUpperCase()}: ${h.content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '')}`)
+    .join('\n');
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: JAMIE_SESSION_RECAP_PROTOCOL },
+        { role: "user", content: `History:\n${historyText}\n\nExecute session recap.` }
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3,
+    });
+
+    return completion.choices[0]?.message?.content || "Grid state restored. Ready for recon.";
+  } catch (error) {
+    console.error("Recap Generation Error:", error);
+    return "Welcome back. Previous session data has been archived. The grid is live.";
+  }
+}
 
 /**
  * Abidan Judge Worker Functions
@@ -203,12 +233,33 @@ export async function getJamieReengagement(lead: any, property: any, oldScore: n
   }
 }
 
-export async function getJamieResponse(userInput: string, propertyData?: any, memoryContext?: any, isDevMode: boolean = false) {
-  await connectDB();
+export async function getJamieResponse(messages: any[], propertyData?: any, memoryContext?: any, isDevMode: boolean = false) {
+  const userInput = messages[messages.length - 1]?.content || "";
+  
+  // 1. Fetch Config from Supabase (Primary)
+  const supabase = createClient();
+  const { data: sbConfig } = await supabase
+    .from('site_config')
+    .select('*')
+    .eq('agent_id', 'taz-realty-001')
+    .single();
 
-  // Parallel Database Queries
-  const [agentConfig, localBusinessIntel] = await Promise.all([
-    SiteConfig.findOne({ agentId: 'taz-realty-001' }),
+  let agentConfig;
+  if (sbConfig) {
+    agentConfig = {
+      jamieSystemPrompt: sbConfig.intelligence?.jamieSystemPrompt,
+      abidanPrompts: sbConfig.intelligence?.abidanPrompts,
+      modelMatrix: sbConfig.model_matrix,
+      operationalSettings: sbConfig.operational_settings,
+      branding: sbConfig.branding
+    };
+  } else {
+    // 2. Fallback to MongoDB (Legacy)
+    await connectDB();
+    agentConfig = await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
+  }
+
+  const [localBusinessIntel] = await Promise.all([
     MenuItem.find({ isAvailable: true }).limit(5)
   ]);
 
@@ -352,7 +403,7 @@ export async function getJamieResponse(userInput: string, propertyData?: any, me
           role: "system",
           content: `SUBORDINATE DATA (ABIDAN JUDGE GRID): ${judgeReport || 'No deep Abidan recon performed yet.'}`
         },
-        { role: "user", content: userInput },
+        ...messages
       ],
       model: primaryModel,
       stream: true,

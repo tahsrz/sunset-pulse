@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaMicroscope, FaExclamationTriangle, FaTrash, FaPlus, FaSatellite, FaSpinner, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import { speak } from '@/lib/core/tts';
 
 const ComplexObservationsManager = () => {
   const [observations, setObservations] = useState([]);
@@ -10,13 +11,18 @@ const ComplexObservationsManager = () => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ region: '', data: '' });
 
-  const fetchObservations = async () => {
+  const fetchObservations = async (shouldSpeak = false) => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/jamie/observations/log');
       if (res.ok) {
         const data = await res.json();
         setObservations(data);
+        
+        if (shouldSpeak && data.length > 0) {
+          const latest = data[0];
+          speak(`Observation in ${latest.region}: ${latest.data}`);
+        }
       }
     } catch (err) {
       console.error('Fetch error:', err);
@@ -26,7 +32,7 @@ const ComplexObservationsManager = () => {
   };
 
   useEffect(() => {
-    fetchObservations();
+    fetchObservations(true); // Speak latest on mount
   }, []);
 
   const handleAdd = async (e) => {
@@ -55,6 +61,7 @@ const ComplexObservationsManager = () => {
       });
 
       if (res.ok) {
+        speak(`New observation logged for ${newObs.region}.`);
         await fetchObservations(); // Refresh from backend
         setNewObs({ region: '', data: '' });
       }

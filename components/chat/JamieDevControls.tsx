@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FaTerminal, FaLock } from 'react-icons/fa';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 
 interface MakielProps {
   isActive: boolean;
@@ -10,8 +10,8 @@ interface MakielProps {
 }
 
 const Makiel: React.FC<MakielProps> = ({ isActive, onToggle }) => {
-  const { data: session } = useSession();
-  const isSubscribed = session?.user?.isSubscribed;
+  const { user } = useAuth();
+  const isSubscribed = user?.user_metadata?.isSubscribed;
 
   return (
     <button 

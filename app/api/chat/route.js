@@ -16,11 +16,8 @@ export async function POST(req) {
 
     const { messages, propertyData, isDevMode, memoryContext } = await req.json();
     
-    // Extract the last user message
-    const lastMessage = messages[messages.length - 1]?.content || "";
-
-    // Get Jamie's response (now returns a Groq/OpenAI compatible stream)
-    const streamResponse = await getJamieResponse(lastMessage, propertyData, memoryContext, isDevMode);
+    // Get Jamie's response (now accepts full messages array)
+    const streamResponse = await getJamieResponse(messages, propertyData, memoryContext, isDevMode);
     
     // If it's a string (fallback error message), return it as a simple response
     if (typeof streamResponse === 'string') {

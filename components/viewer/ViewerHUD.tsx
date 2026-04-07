@@ -71,7 +71,10 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
     <div className='absolute inset-0 pointer-events-none z-20 p-6'>
       <div className='flex justify-between items-start'>
         <button 
-          onClick={handleDroneToggle}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDroneToggle(e);
+          }}
           className='pointer-events-auto bg-black/60 backdrop-blur-2xl border border-white/10 px-6 py-2.5 rounded-full flex items-center gap-3'
         >
           {isDroneMode ? <TbDrone className='text-orange-500' size={20} /> : <FaSync className='text-blue-500' size={16} />}
@@ -86,16 +89,37 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
       </div>
 
       {/* Hotspot Labels */}
-      {isDataOverlayActive && projectedHotspots.map(h => (
-        <div 
-          key={h.key}
-          className='absolute pointer-events-auto bg-black/80 backdrop-blur-md border border-white/20 px-3 py-1 rounded text-[10px] text-white whitespace-nowrap shadow-xl flex items-center gap-2 transform -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300'
-          style={{ left: h.x, top: h.y, opacity: h.z > 0 ? 1 : 0 }}
-        >
-          <div className='w-1.5 h-1.5 rounded-full animate-pulse' style={{ backgroundColor: branding.primaryColor }} />
-          <span className='font-mono font-bold tracking-wider'>{h.label}</span>
-        </div>
-      ))}
+      {isDataOverlayActive && projectedHotspots.map(h => {
+        // Spatial Scaling based on Z (depth)
+        const scale = Math.max(0.4, Math.min(1, 200 / h.z));
+        const opacity = Math.max(0, Math.min(1, (1000 - h.z) / 800));
+        
+        return (
+          <div 
+            key={h.key}
+            className='absolute pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-xl text-white shadow-2xl flex items-center gap-3 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 group/hotspot hover:border-blue-500/50 hover:bg-black/80'
+            style={{ 
+              left: h.x, 
+              top: h.y, 
+              opacity: h.z > 0 ? opacity : 0,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+              zIndex: Math.floor(1000 - h.z)
+            }}
+          >
+            <div className='relative'>
+              <div className='w-2 h-2 rounded-full animate-ping absolute inset-0 opacity-50' style={{ backgroundColor: branding.primaryColor }} />
+              <div className='w-2 h-2 rounded-full relative z-10 shadow-[0_0_10px_rgba(59,130,246,0.8)]' style={{ backgroundColor: branding.primaryColor }} />
+            </div>
+            <div className='flex flex-col'>
+              <span className='text-[10px] font-black uppercase tracking-[0.2em] text-white/90 group-hover/hotspot:text-blue-400 transition-colors'>{h.label}</span>
+              <div className='flex items-center gap-2 mt-0.5'>
+                <div className='h-[1px] w-8 bg-gradient-to-r from-blue-500 to-transparent opacity-40' />
+                <span className='text-[7px] font-mono text-white/30 uppercase'>Intercept_Locked</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Comment Pins */}
       {comments.map(c => {

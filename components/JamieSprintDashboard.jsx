@@ -4,7 +4,7 @@ import {
   FaBolt, FaCheckCircle, FaClock, FaExclamationCircle, 
   FaPlay, FaPause, FaSync, FaDatabase, FaRocket
 } from 'react-icons/fa';
-import { subscribeToSprintTasks } from '@/lib/supabase';
+import { supabase, subscribeToSprintTasks } from '@/lib/supabase';
 
 const JamieSprintDashboard = ({ activeSprintId }) => {
   const [tasks, setTasks] = useState([]);
@@ -16,7 +16,7 @@ const JamieSprintDashboard = ({ activeSprintId }) => {
     // Initial fetch of tasks for the sprint
     const fetchTasks = async () => {
       try {
-        const { data, error } = await window.supabase
+        const { data, error } = await supabase
           .from('tasks')
           .select('*')
           .eq('sprint_id', activeSprintId)
@@ -43,7 +43,7 @@ const JamieSprintDashboard = ({ activeSprintId }) => {
     });
 
     return () => {
-      if (subscription) window.supabase.removeChannel(subscription);
+      if (subscription) supabase.removeChannel(subscription);
     };
   }, [activeSprintId]);
 

@@ -39,6 +39,13 @@ export const useMultiplayer = (user: string, initialPos: any) => {
       }
     });
 
+    // Listen for presentation mode toggle
+    channel.bind('client-presentation-toggle', (data: any) => {
+      if (data.user !== user) {
+        setPresentationMode(data.active);
+      }
+    });
+
     return () => {
       pusher.unsubscribe('presence-house-tour');
       channelRef.current = null;
@@ -66,13 +73,24 @@ export const useMultiplayer = (user: string, initialPos: any) => {
     }
   };
 
+  const togglePresentationMode = (active: boolean) => {
+    setPresentationMode(active);
+    if (channelRef.current && leadId === user) {
+      try {
+        channelRef.current.trigger('client-presentation-toggle', { user, active });
+      } catch (e) {
+        console.error('Presentation toggle sync failed', e);
+      }
+    }
+  };
+
   return { 
     peers, 
     sendUpdate, 
     announceLead, 
+    togglePresentationMode,
     leadId, 
     isMeLead: leadId === user,
     presentationMode,
-    setPresentationMode
   };
 };
