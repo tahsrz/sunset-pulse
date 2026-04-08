@@ -18,8 +18,8 @@ const JamieChatMessageList: React.FC<JamieChatMessageListProps> = ({
 }) => {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
-      {messages.map((m) => (
-        <JamieMessage key={m.id} message={m} isDevMode={isDevMode} />
+      {messages.map((m, i) => (
+        <JamieMessage key={m.id || i} message={m} isDevMode={isDevMode} />
       ))}
       
       {analytics && isDevMode && (

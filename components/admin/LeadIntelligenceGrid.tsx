@@ -68,8 +68,8 @@ const LeadIntelligenceGrid: React.FC<LeadIntelligenceGridProps> = ({ leads, onRe
 
       {filteredLeads.length === 0 && (
         <div className='text-center py-20 bg-slate-900/20 rounded-3xl border border-dashed border-white/5'>
-          <div className='text-slate-600 font-black uppercase tracking-[0.3em] text-xs mb-2'>Zero Signal</div>
-          <div className='text-[10px] text-slate-700 font-mono'>No leads match current intelligence filters.</div>
+          <div className='text-slate-600 font-black uppercase tracking-[0.3em] text-xs mb-2'>No Results</div>
+          <div className='text-[10px] text-slate-700 font-mono'>No leads match the current filters.</div>
         </div>
       )}
     </div>

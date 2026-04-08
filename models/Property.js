@@ -112,6 +112,22 @@ const PropertySchema = new Schema(
       type: String,
       default: 'Active',
     },
+    neighborhood_recon: {
+      type: Object,
+      default: null,
+    },
+    rent_recon: {
+      type: Object,
+      default: null,
+    },
+    valuation_recon: {
+      type: Object,
+      default: null,
+    },
+    recon_timestamp: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

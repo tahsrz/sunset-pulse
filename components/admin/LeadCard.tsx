@@ -35,9 +35,9 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) =
           <div className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${
             lead.probability > 0.7 ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'
           }`}>
-            {(lead.probability * 100).toFixed(0)}% PROB
+            {(lead.probability * 100).toFixed(0)}% Probability
           </div>
-          <div className='text-[7px] text-slate-600 font-mono italic'>JAMIE_RECON_V2</div>
+          <div className='text-[7px] text-slate-600 font-mono italic'>JAMIE_SCORING_V2</div>
         </div>
       </div>
 
@@ -52,20 +52,20 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) =
         )}
         <div className='flex items-center gap-2 text-[11px] text-blue-400 font-bold'>
           {lead.property?.type === 'RV' || lead.property?.type === 'RV Park' ? <FaRv /> : <FaBuilding />}
-          {lead.property?.name || 'Property Deleted'}
+          {lead.property?.name || 'Property Removed'}
         </div>
       </div>
 
       <div className='pt-4 border-t border-white/5 space-y-4'>
         <div className='flex items-center justify-between'>
-          <div className='text-[9px] font-black uppercase text-slate-500 tracking-widest'>Intelligence Protocols</div>
+          <div className='text-[9px] font-black uppercase text-slate-500 tracking-widest'>Engagement Protocols</div>
           <button 
             onClick={() => onReengage(lead._id)}
             disabled={reengagingId === lead._id}
             className='text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-tighter flex items-center gap-1 transition-all disabled:opacity-50'
           >
             <FaBolt className={reengagingId === lead._id ? 'animate-spin' : ''} />
-            {reengagingId === lead._id ? 'Synthesizing...' : 'Gen Protocols'}
+            {reengagingId === lead._id ? 'Generating...' : 'Refresh Hooks'}
           </button>
         </div>
         

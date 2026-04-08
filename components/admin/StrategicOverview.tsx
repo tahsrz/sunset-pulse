@@ -34,7 +34,7 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
                 {agent.avatar_url ? <img src={agent.avatar_url} alt='' className='w-full h-full object-cover' /> : <FaUser className='text-blue-400' />}
               </div>
               {agent.role === 'realtor' && (
-                <div className='absolute -right-2 -bottom-2 bg-green-500 text-black p-1 rounded-md shadow-lg' title='Validated Operative'>
+                <div className='absolute -right-2 -bottom-2 bg-green-500 text-black p-1 rounded-md shadow-lg' title='Verified Agent'>
                   <FaShieldAlt size={10} />
                 </div>
               )}
@@ -42,12 +42,12 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
           )}
           <div>
             <h1 className='text-4xl font-black tracking-tighter uppercase italic text-blue-500'>
-              Command Post
+              Management Console
             </h1>
             <div className='flex items-center gap-2 mt-1'>
-              <p className='opacity-50 font-mono text-[10px] uppercase tracking-widest'>[ {agent?.full_name || 'IDENTIFYING...'} ]</p>
+              <p className='opacity-50 font-mono text-[10px] uppercase tracking-widest'>[ {agent?.full_name || 'LOADING...'} ]</p>
               {agent?.role === 'realtor' && (
-                <span className='text-[7px] font-black bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 uppercase'>Validated</span>
+                <span className='text-[7px] font-black bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 uppercase'>Verified</span>
               )}
             </div>
           </div>
@@ -57,7 +57,7 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
             onClick={onShowPipeline}
             className='bg-blue-600 hover:bg-blue-500 text-white px-4 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20'
           >
-            <FaProjectDiagram size={12} /> Grid Pipeline
+            <FaProjectDiagram size={12} /> Pipeline Grid
           </button>
           <div className='bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-lg'>
             <div className='text-[8px] font-black uppercase text-blue-400'>Residential</div>
@@ -72,7 +72,7 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
       
       <div className='bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10'>
         <div className='flex justify-between items-center mb-4'>
-          <div className='text-xs uppercase tracking-widest opacity-50 font-bold'>Captured Intel Assets</div>
+          <div className='text-xs uppercase tracking-widest opacity-50 font-bold'>Total Leads Captured</div>
         </div>
         <div className='text-6xl font-mono'>{leadsCount}</div>
       </div>
@@ -87,7 +87,7 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
           <FaBrain size={40} className='text-blue-400' />
         </div>
         <p className='text-[9px] font-mono leading-relaxed text-blue-300/80 uppercase tracking-wider italic'>
-          <span className='text-blue-400 font-black'>[ LOGIC_CORE_UPDATE ]</span> : Spatial dreams autonomously refine Jamie's logic gates and contextual interpretation of the current grid state.
+          <span className='text-blue-400 font-black'>[ SYSTEM_UPDATE ]</span> : Jamie's logic engine is refining its contextual analysis of the property grid.
         </p>
       </div>
     </div>

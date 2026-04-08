@@ -18,7 +18,7 @@ const TopPriorityIntercept: React.FC<TopPriorityInterceptProps> = ({ topPriority
       <div className='flex items-center justify-between mb-6'>
         <div className='flex items-center gap-2'>
           <FaExclamationCircle className='text-blue-500' />
-          <h2 className='text-xs font-black uppercase tracking-widest opacity-50'>Top Priority Intercept</h2>
+          <h2 className='text-xs font-black uppercase tracking-widest opacity-50'>Top Priority Lead</h2>
         </div>
         <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase flex items-center gap-1 ${topPriority.leadCategory === 'RV' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
           {topPriority.leadCategory === 'RV' ? <FaRv size={8} /> : <FaBuilding size={8} />}

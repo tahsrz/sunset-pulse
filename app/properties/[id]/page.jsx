@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { fetchProperty } from '@/lib/core/requests';
-import { fetchRentEstimate } from '@/lib/data/rentcast';
 import PropertyHeaderImage from '@/components/PropertyHeaderImage';
 import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
@@ -31,14 +30,16 @@ const PropertyPage = () => {
         const propertyData = await fetchProperty(id);
         setProperty(propertyData);
 
-        // Fetch RentCast Data
-        if (propertyData && propertyData.location) {
-          const address = `${propertyData.location.street}, ${propertyData.location.city}, ${propertyData.location.state} ${propertyData.location.zipcode}`;
+        // Fetch Grid-Persistent Rent Intelligence
+        if (propertyData) {
           try {
-            const rent = await fetchRentEstimate(address);
-            setRentData(rent);
+            const rentRes = await fetch(`/api/properties/${id}/rent`);
+            if (rentRes.ok) {
+              const rent = await rentRes.json();
+              setRentData(rent);
+            }
           } catch (rentError) {
-            console.error('RentCast Fetch Error:', rentError);
+            console.error('Rent Recon Failure:', rentError);
           }
         }
       } catch (error) {

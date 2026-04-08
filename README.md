@@ -1,4 +1,8 @@
- New Feature: Supaflow Integration and Workflows. Vis. Engine moved to TypeScript. Configuration of LLMs and mini-LLMs in UI.
+ New Feature: Day-Night Cycle and localMemory isMounted Checks. Supaflow Integration and Workflows. Vis. Engine moved to TypeScript. Configuration of LLMs and mini-LLMs in UI. 
+
+TTL Protocol: Implemented a 30-day Time-To-Live (TTL). The API will now check the database first. 
+If fresh reconnaissance data exists, it returns the cached "Grid Memory" instantly (sub-10ms response). 
+
 
  
  Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router)

@@ -1,0 +1,30 @@
+import { fetchRentEstimate } from '@/lib/data/rentcast';
+import Property from '@/models/Property';
+import connectDB from '@/lib/core/database';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { IntelligenceVault } from '@/lib/core/intelligenceVault';
+
+/**
+ * GET /api/properties/[id]/rent
+ * Fetches RentCast intelligence with 30-day Grid Persistence.
+ */
+export const GET = async (request, { params }) => {
+  try {
+    await connectDB();
+    const { id } = params;
+
+    const property = await Property.findById(id).lean();
+    if (!property) return errorResponse('Asset not found in grid.', 404);
+
+    const address = `${property.location.street}, ${property.location.city}, ${property.location.state} ${property.location.zipcode}`;
+
+    // Resolve via Intelligence Vault
+    const rentData = await IntelligenceVault.resolve(id, 'rent', async () => {
+      return await fetchRentEstimate(address);
+    });
+
+    return successResponse(rentData);
+  } catch (error) {
+    return errorResponse('Market rent reconnaissance failed.', 500, error.message);
+  }
+};

@@ -1,4 +1,5 @@
 import { setDefaults, fromAddress } from 'react-geocode';
+import { persistenceEngine } from '../persistenceEngine';
 
 /**
  * GeotagUtils: Bridge between location data and high-stakes satellite imagery.
@@ -12,6 +13,7 @@ setDefaults({
 
 /**
  * Fetches latitude and longitude for a given address string.
+ * Uses PersistenceEngine to cache results for 30 days.
  */
 export const getCoordsFromAddress = async (address: string) => {
   const key = process.env.NEXT_PUBLIC_GOOGLE_GEOCODING_API_KEY;
@@ -20,20 +22,22 @@ export const getCoordsFromAddress = async (address: string) => {
     return null;
   }
 
-  try {
-    const res = await fromAddress(address);
-    if (res && res.results && res.results.length > 0) {
-      return res.results[0].geometry.location;
+  return await persistenceEngine.resolve(`GEOCODE_${address.replace(/\s+/g, '_')}`, async () => {
+    try {
+      const res = await fromAddress(address);
+      if (res && res.results && res.results.length > 0) {
+        return res.results[0].geometry.location;
+      }
+      return null;
+    } catch (error: any) {
+      if (error.message?.includes('ZERO_RESULTS')) {
+        console.warn(`📍 [GEOTAG_UTILS] No results found for address: ${address}`);
+      } else {
+        console.error('[GEOTAG_UTILS] Geocoding Error:', error);
+      }
+      return null;
     }
-    return null;
-  } catch (error: any) {
-    if (error.message?.includes('ZERO_RESULTS')) {
-      console.warn(`📍 [GEOTAG_UTILS] No results found for address: ${address}`);
-    } else {
-      console.error('[GEOTAG_UTILS] Geocoding Error:', error);
-    }
-    return null;
-  }
+  });
 };
 
 /**

@@ -3,6 +3,8 @@
  * Saves money, reduces latency, and builds a local intelligence grid.
  */
 
+import { GLOBAL_TTL_SECONDS } from './constants';
+
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -45,10 +47,12 @@ class PersistenceEngine {
     }
   }
 
+  private static readonly DEFAULT_TTL = GLOBAL_TTL_SECONDS;
+
   /**
    * Persist data to the Vault with a TTL (Time To Live in seconds).
    */
-  async set<T>(key: string, data: T, ttlSeconds: number = 86400): Promise<void> {
+  async set<T>(key: string, data: T, ttlSeconds: number = PersistenceEngine.DEFAULT_TTL): Promise<void> {
     if (typeof window === 'undefined') return;
 
     const entry: CacheEntry<T> = {
@@ -64,7 +68,7 @@ class PersistenceEngine {
   /**
    * Wraps an API call with Vault logic.
    */
-  async resolve<T>(key: string, apiCall: () => Promise<T>, ttl: number = 864000): Promise<T> {
+  async resolve<T>(key: string, apiCall: () => Promise<T>, ttl: number = PersistenceEngine.DEFAULT_TTL): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached) return cached;
 

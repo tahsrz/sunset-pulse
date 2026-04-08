@@ -34,7 +34,7 @@ const IntelligenceGrid: React.FC<IntelligenceGridProps> = ({
         <div className='flex items-center gap-2'>
           {bottomLeftMode === 'clusters' ? <FaHome className='opacity-50' /> : <FaCheckCircle className='opacity-50' />}
           <h2 className='text-xs font-black uppercase tracking-widest opacity-50'>
-            {bottomLeftMode === 'clusters' ? 'Intelligence Clusters' : 'Operational Stream'}
+            {bottomLeftMode === 'clusters' ? 'Lead Groups' : 'Operations Feed'}
           </h2>
         </div>
         <div className='flex bg-white/5 p-1 rounded-lg border border-white/10'>

@@ -77,7 +77,7 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
       <div className='p-4'>
         <div className='text-left md:text-center lg:text-left mb-6'>
           <div className='text-gray-600 text-xs uppercase font-bold tracking-widest'>{property.type}</div>
-          <h3 className='text-xl font-bold truncate' title={property.name}>{property.name}</h3>
+          <h3 className='text-xl font-bold text-slate-900 truncate' title={property.name}>{property.name}</h3>
         </div>
         <h3 
           style={{ color: 'var(--primary-color)' }}

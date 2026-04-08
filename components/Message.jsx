@@ -59,7 +59,7 @@ const Message = ({ message }) => {
           New
         </div>
       )}
-      <h2 className='text-xl mb-4'>
+      <h2 className='text-xl font-bold mb-4 text-slate-800'>
         <span className='font-bold'>Property Inquiry:</span>{' '}
         {message.property.name}
       </h2>

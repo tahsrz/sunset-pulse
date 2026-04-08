@@ -66,7 +66,7 @@ class MemoryBridge {
     const lastSession = JSON.parse(localStorage.getItem('pulse_mem_last_session') || '{}');
     
     return {
-      userName: prefs.style || 'Commander', // style often holds the "identity" in this setup
+      userName: prefs.style || 'User', // style often holds the "identity" in this setup
       lastAction: lastSession.action || 'None',
       lastProperty: lastSession.property || 'None',
       sessionCount: parseInt(localStorage.getItem('pulse_mem_count') || '0'),

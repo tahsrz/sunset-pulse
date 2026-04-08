@@ -11,10 +11,11 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
       },
     });
     if (error) toast.error(error.message);

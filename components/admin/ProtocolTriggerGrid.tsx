@@ -19,10 +19,10 @@ const ProtocolTriggerGrid: React.FC<ProtocolTriggerGridProps> = ({ lead, onSendH
 
     const hook = lead.reengagementHook?.[type.toLowerCase()];
     if (hook) {
-      toast.success(`Protocol ${type} Engaged: ${hook}`);
+      toast.success(`Protocol ${type} Active: ${hook}`);
       // In a real app, this would trigger an API call to send SMS/Email
     } else {
-      toast.error(`Protocol ${type} Offline for this lead.`);
+      toast.error(`Protocol ${type} Unavailable for this lead.`);
     }
   };
 
@@ -39,7 +39,7 @@ const ProtocolTriggerGrid: React.FC<ProtocolTriggerGridProps> = ({ lead, onSendH
                 ? 'bg-blue-600 border-blue-400 text-white hover:bg-blue-500 hover:scale-110 shadow-lg shadow-blue-900/20' 
                 : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
             }`}
-            title={isActive ? `Protocol ${char}: ${lead.reengagementHook[char.toLowerCase()]}` : `Protocol ${char} Offline`}
+            title={isActive ? `Protocol ${char}: ${lead.reengagementHook[char.toLowerCase()]}` : `Protocol ${char} Unavailable`}
             disabled={!isActive}
           >
             {char}

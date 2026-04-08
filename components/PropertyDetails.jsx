@@ -4,6 +4,7 @@ import { useState } from 'react';
 import PropertyMap from '@/components/PropertyMap';
 import PropertyHeader from './property/PropertyHeader';
 import MarketIntelligence from './property/MarketIntelligence';
+import NeighborhoodRecon from './property/NeighborhoodRecon';
 import PropertySpecs from './property/PropertySpecs';
 import AmenityList from './property/AmenityList';
 import PropertyViewer from './property/PropertyViewer';
@@ -23,6 +24,9 @@ const PropertyDetails = ({ property, rentData }) => {
 
       {/* Market Intel / RentCast Section */}
       <MarketIntelligence rentData={rentData} />
+
+      {/* Neighborhood Intelligence Recon */}
+      <NeighborhoodRecon propertyId={property._id} />
 
       <PropertySpecs property={property} />
 
