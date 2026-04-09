@@ -53,15 +53,6 @@ export async function updateSession(request) {
         return NextResponse.redirect(new URL('/properties', request.url))
       }
     }
-
-    // Role-based home redirection (if hitting root or landing)
-    if (path === '/') {
-      if (role === 'realtor') {
-        return NextResponse.redirect(new URL('/command-post', request.url))
-      } else {
-        return NextResponse.redirect(new URL('/properties', request.url))
-      }
-    }
   } else {
     // Redirect from protected paths to login
     if (path.startsWith('/collections') || path.startsWith('/profile') || path.startsWith('/command-post')) {

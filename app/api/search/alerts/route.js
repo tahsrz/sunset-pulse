@@ -1,6 +1,7 @@
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
 import { getSessionUser } from '@/lib/core/getSessionUser';
+import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
 /**
  * POST /api/search/alerts
@@ -12,13 +13,13 @@ export const POST = async (request) => {
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {
-      return new Response('Unauthorized', { status: 401 });
+      return unauthorizedResponse('Authentication required to save alerts.');
     }
 
     const { query, frequency } = await request.json();
 
     const user = await User.findById(sessionUser.userId);
-    if (!user) return new Response('User not found', { status: 404 });
+    if (!user) return errorResponse('User profile not found.', 404);
 
     user.savedSearches.push({
       query,
@@ -27,8 +28,9 @@ export const POST = async (request) => {
 
     await user.save();
 
-    return new Response(JSON.stringify({ message: 'Search alert saved' }), { status: 201 });
+    return successResponse({ message: 'Search alert successfully registered.' }, 201);
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to save alert' }), { status: 500 });
+    console.error('[SAVE_SEARCH_ALERT_ERROR]:', error);
+    return errorResponse('Failed to register search alert.', 500, error.message);
   }
 };

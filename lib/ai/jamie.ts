@@ -369,6 +369,16 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
     : `USER RECOGNITION: This is a new lead. 
        Establish dominance and introduce the Intelligence Grid.`;
 
+  // 3. Sanitize and Format Messages for Groq
+  // This prevents the "discriminator property 'role'" error by ensuring 
+  // only standard role/content pairs are sent.
+  const sanitizedMessages = messages
+    .filter(m => m && typeof m === 'object' && m.role && m.content)
+    .map(m => ({
+      role: m.role,
+      content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+    }));
+
   try {
     const completion = await groq.chat.completions.create({
       messages: [
@@ -403,7 +413,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
           role: "system",
           content: `SUBORDINATE DATA (ABIDAN JUDGE GRID): ${judgeReport || 'No deep Abidan recon performed yet.'}`
         },
-        ...messages
+        ...sanitizedMessages
       ],
       model: primaryModel,
       stream: true,

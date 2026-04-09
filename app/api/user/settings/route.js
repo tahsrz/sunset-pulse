@@ -2,6 +2,7 @@ import connectDB from '@/lib/core/database';
 import User from '@/models/User';
 import { createClient } from '@/utils/supabase/server';
 import { checkRateLimit } from '@/lib/core/rateLimit';
+import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
 export const PATCH = async (request) => {
   try {
@@ -10,7 +11,7 @@ export const PATCH = async (request) => {
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !authUser) {
-      return new Response('User authentication required', { status: 401 });
+      return unauthorizedResponse('User authentication required for settings updates.');
     }
 
     const { id: userId } = authUser;
@@ -18,7 +19,7 @@ export const PATCH = async (request) => {
     // Rate Limiting: 10 requests per minute
     const { isLimited } = await checkRateLimit(userId, 10);
     if (isLimited) {
-      return new Response('Too many requests. Please try again in a minute.', { status: 429 });
+      return errorResponse('Too many requests. Please wait before updating settings again.', 429);
     }
 
     const body = await request.json();
@@ -27,7 +28,7 @@ export const PATCH = async (request) => {
     // Server-side Validation
     if (typeof customKeybind !== 'undefined') {
       if (typeof customKeybind !== 'string' || customKeybind.length !== 1 || !/[a-zA-Z0-9]/.test(customKeybind)) {
-        return new Response('Invalid keybind format', { status: 400 });
+        return errorResponse('Invalid keybind format. Please use a single alphanumeric character.', 400);
       }
     }
 
@@ -64,15 +65,13 @@ export const PATCH = async (request) => {
       }
     });
 
-    return new Response(JSON.stringify({
-      isAdvancedMode: isAdvancedMode,
-      isLefthandMode: isLefthandMode,
+    return successResponse({
+      isAdvancedMode,
+      isLefthandMode,
       customKeybind: customKeybind ? customKeybind.toUpperCase() : undefined
-    }), {
-      status: 200,
     });
   } catch (error) {
     console.error('[SETTINGS_SYNC] Critical Failure:', error);
-    return new Response('Something went wrong', { status: 500 });
+    return errorResponse('Failed to synchronize user settings.', 500, error.message);
   }
 };

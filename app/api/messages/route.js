@@ -7,36 +7,39 @@ import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/messages
+/**
+ * GET /api/messages
+ * Retrieves all messages for the authenticated user, prioritized by unread status.
+ */
 export const GET = async () => {
   try {
     await connectDB();
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse();
+      return unauthorizedResponse('Authentication required to view messages.');
     }
 
     const { userId } = sessionUser;
 
-    const readMessages = await Message.find({ recipient: userId, read: true })
-      .sort({ createdAt: -1 })
+    // Fetch all messages for the recipient, sorted by read status (unread first) and then date
+    const messages = await Message.find({ recipient: userId })
+      .sort({ read: 1, createdAt: -1 })
       .populate('sender', 'username')
       .populate('property', 'name');
 
-    const unreadMessages = await Message.find({ recipient: userId, read: false })
-      .sort({ createdAt: -1 })
-      .populate('sender', 'username')
-      .populate('property', 'name');
-
-    return successResponse([...unreadMessages, ...readMessages]);
-  } catch (error) {
-    return errorResponse('Failed to fetch message intercept feed.', 500, error.message);
+    return successResponse(messages);
+  } catch (error: any) {
+    console.error('[MESSAGES_GET_ERROR]:', error);
+    return errorResponse('Failed to retrieve messages.', 500, error.message);
   }
 };
 
-// POST /api/messages
-export const POST = async (request) => {
+/**
+ * POST /api/messages
+ * Dispatches a new message regarding a property asset.
+ */
+export const POST = async (request: Request) => {
   try {
     await connectDB();
     const body = await request.json();
@@ -50,18 +53,18 @@ export const POST = async (request) => {
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse();
+      return unauthorizedResponse('Authentication required to send messages.');
     }
 
     const { userId } = sessionUser;
 
-    // Apply Rate Limit: 5 messages per minute
+    // Rate Limit: 5 messages per minute
     const limitResponse = await applyApiRateLimit(userId, 5);
     if (limitResponse) return limitResponse;
 
-    // Tactical Check: Prevent self-intercepts
+    // Prevent users from messaging themselves
     if (userId === recipient) {
-      return errorResponse('Operation failed: Communications cannot be self-intercepted.', 400);
+      return errorResponse('Users cannot send messages to themselves.', 400);
     }
 
     const newMessage = new Message({
@@ -75,8 +78,9 @@ export const POST = async (request) => {
     });
 
     await newMessage.save();
-    return successResponse({ message: 'Communication secured and dispatched.' });
-  } catch (error) {
-    return errorResponse('Critical failure in message dispatch.', 500, error.message);
+    return successResponse({ message: 'Message successfully sent.' });
+  } catch (error: any) {
+    console.error('[MESSAGES_POST_ERROR]:', error);
+    return errorResponse('Failed to send message.', 500, error.message);
   }
 };

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTheme } from '@/context/ThemeProvider';
+import { usePathname } from 'next/navigation';
 import HeroOverlay from './hero/HeroOverlay';
 import HeroSearch from './hero/HeroSearch';
 
@@ -16,6 +17,18 @@ const CinematicHero = () => {
   const { isAdvancedMode } = useTheme();
   const [isEntered, setIsEntered] = useState(false);
   const [query, setQuery] = useState('');
+  const pathname = usePathname();
+
+  // Reset tour state if we are on root and somehow stayed entered (e.g. Navbar click)
+  useEffect(() => {
+    if (pathname === '/') {
+      setIsEntered(false);
+    }
+  }, [pathname]);
+
+  const handleEnter = () => {
+    setIsEntered(true);
+  };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-slate-950">
@@ -40,7 +53,7 @@ const CinematicHero = () => {
       </div>
 
       {/* LAYER 3: Top Layer - Simple Overlay UI */}
-      <HeroOverlay isEntered={isEntered} onEnter={() => setIsEntered(true)} />
+      <HeroOverlay isEntered={isEntered} onEnter={handleEnter} />
 
       {/* POST-ENTER UI: Appears after "Start" is clicked */}
       <HeroSearch 

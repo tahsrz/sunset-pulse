@@ -14,21 +14,30 @@ interface TelarielProps {
 
 const cleanContent = (content: string) => {
   if (!content || typeof content !== 'string') return '';
+  // Only strip the tags that are purely metadata (JSON blocks), 
+  // but keep the text around them.
   return content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
 };
 
 const Telariel: React.FC<TelarielProps> = ({ message, isDevMode }) => {
   const isUser = message.role === 'user';
   const content = message.content || '';
+  const cleaned = cleanContent(content);
+
+  // If after cleaning it's empty but had content, it was likely ALL metadata.
+  // We should show a placeholder or the raw content if in dev mode.
+  const displayContent = cleaned || (isDevMode ? '[METADATA_ONLY_NODE]' : '');
+
+  if (!displayContent && !isDevMode) return null;
 
   return (
     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-in slide-in-from-${isUser ? 'right' : 'left'}-5 duration-300`}>
       <div className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm shadow-xl transition-all duration-500 hover:scale-[1.02] ${
         isUser 
           ? 'bg-blue-600 text-white rounded-tr-none border border-white/10' 
-          : 'bg-slate-800 text-slate-100 border border-white/5 rounded-tl-none'
+          : 'bg-slate-700 text-white border border-white/10 rounded-tl-none'
       }`}>
-        <p className="leading-relaxed font-medium">{cleanContent(content)}</p>
+        <p className="leading-relaxed font-medium whitespace-pre-wrap">{displayContent}</p>
       </div>
       
       {isDevMode && !isUser && content.includes('[[') && (

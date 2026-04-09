@@ -20,17 +20,45 @@ export const AuthProvider = ({ children }) => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchProfile(session.user);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    };
+
+    const fetchProfile = async (authUser) => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      const enrichedUser = {
+        ...authUser,
+        profile: profile,
+        user_metadata: {
+          ...authUser.user_metadata,
+          role: profile?.role || authUser.user_metadata?.role || 'consumer',
+          isSubscribed: profile?.role === 'realtor' || !!profile?.is_subscribed || !!authUser.user_metadata?.isSubscribed
+        }
+      };
+      setUser(enrichedUser);
       setLoading(false);
     };
 
     getSession();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        await fetchProfile(session.user);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
     });
 
     return () => {

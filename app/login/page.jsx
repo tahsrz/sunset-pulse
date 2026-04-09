@@ -1,11 +1,12 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { FaGoogle, FaEnvelope, FaLock, FaBolt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const LoginPage = () => {
+  const supabase = createClient();
   const [email, setEmail] = useState('');
   const [password, setLock] = useState('');
   const [loading, setLoading] = useState(false);

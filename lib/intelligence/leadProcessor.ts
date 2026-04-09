@@ -1,0 +1,94 @@
+import Lead from '@/models/Lead';
+import Property from '@/models/Property';
+import { LeadSchema } from '@/lib/core/validation';
+import { generateHighStakesHook, getJamieResponse } from '@/lib/ai/jamie';
+import { pulseRNG } from '@/lib/core/pulseRNG';
+import { calculateLeadScore } from '@/lib/intelligence/leadIntelligence';
+import { supabase } from '@/lib/supabase';
+
+export interface ProcessedLeadResult {
+  leadData: any;
+  probability: number;
+  tags: string[];
+  jamieNotes: string;
+  reengagementHook: any;
+  leadCategory: string;
+}
+
+/**
+ * Encapsulates the logic for processing new lead data, 
+ * including probability scoring, AI analysis, and external sync.
+ */
+export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadResult> => {
+  const validation = LeadSchema.safeParse(body);
+  if (!validation.success) {
+    throw new Error('Validation failed');
+  }
+
+  const leadData = validation.data;
+  const existingLead = await Lead.findOne({ email: leadData.email });
+
+  // 1. Calculate Probability with Jitter
+  let probability = calculateLeadScore(leadData, existingLead);
+  const jitter = pulseRNG.range(-3, 3);
+  probability = Math.round(probability + jitter);
+  probability = Math.max(0, Math.min(probability, 99));
+
+  // 2. Determine Category
+  const property = await Property.findById(leadData.property);
+  const isRV = property?.type === 'RV' || property?.type === 'RV Park';
+  const leadCategory = leadData.leadCategory || (isRV ? 'RV' : 'Residential');
+
+  // 3. Generate Tags
+  const tags = leadData.tags || [];
+  if (leadData.tourRequested) tags.push('TOUR-REQUEST');
+  if (probability > 80) tags.push('HIGH-VALUE');
+  if (isRV) tags.push('RV-ASSET');
+  if (leadData.budget > 500000) tags.push('PREMIUM-TIER');
+
+  // 4. Generate AI Intelligence Hooks
+  const reengagementHook = await generateHighStakesHook(leadData, property);
+
+  // 5. Generate Jamie AI Notes
+  const propertyInfo = property 
+    ? `Property: ${property.name}, Location: ${property.location.city}, ${property.location.state}, Type: ${property.type}`
+    : 'Unknown Property';
+
+  const jamieNotes = await getJamieResponse(
+    `Analyze this ${leadCategory} lead: ${leadData.name}. Interested in ${propertyInfo}. Budget: ${leadData.budget || 'Unknown'}. Probability: ${probability}%. Provide a professional summary of their intent.`,
+    property
+  );
+
+  return {
+    leadData,
+    probability,
+    tags,
+    jamieNotes,
+    reengagementHook,
+    leadCategory
+  };
+};
+
+/**
+ * Synchronizes lead data to the Supabase secondary grid.
+ */
+export const syncLeadToSupabase = async (lead: any) => {
+  try {
+    const { error } = await supabase.from('leads').upsert({
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      property_id: lead.property?.toString(),
+      budget: lead.budget,
+      timeframe: lead.timeframe,
+      probability: lead.probability,
+      jamie_notes: lead.jamieNotes,
+      reengagement_hook: lead.reengagementHook,
+      stage: 'New'
+    }, { onConflict: 'email' });
+
+    if (error) throw error;
+  } catch (err) {
+    console.error('[SUPABASE_SYNC_ERROR]:', err);
+  }
+};

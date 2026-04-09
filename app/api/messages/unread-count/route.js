@@ -5,14 +5,17 @@ import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/messages/unread-count
-export const GET = async (request) => {
+/**
+ * GET /api/messages/unread-count
+ * Retrieves the total count of unread messages for the authenticated user.
+ */
+export const GET = async () => {
   try {
     await connectDB();
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse();
+      return unauthorizedResponse('Authentication required to view unread count.');
     }
 
     const { userId } = sessionUser;
@@ -22,7 +25,8 @@ export const GET = async (request) => {
     });
 
     return successResponse({ count });
-  } catch (error) {
-    return errorResponse('Failed to retrieve unread communication count.', 500, error.message);
+  } catch (error: any) {
+    console.error('[UNREAD_COUNT_FETCH_ERROR]:', error);
+    return errorResponse('Failed to retrieve unread message count.', 500, error.message);
   }
 };

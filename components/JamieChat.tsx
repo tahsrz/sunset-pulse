@@ -81,17 +81,24 @@ export default function JamieChat({ propertyData }) {
     api: '/api/chat',
     body: { propertyData, isDevMode, memoryContext },
     initialMessages: persistentMessages,
-    onFinish: (message) => handleAction(message.content),
+    onFinish: (message) => {
+      handleAction(message.content);
+      // Persist the assistant response
+      memoryBridge.logInteraction({ role: 'assistant', content: message.content, timestamp: new Date().toISOString() });
+    },
   });
 
-  // Re-sync messages when persistentMessages load (to prevent loss of history during hydration)
+  // Sync messages from local storage on mount
   useEffect(() => {
     if (mounted && persistentMessages.length > 0 && messages.length === 0) {
       setMessages(persistentMessages);
     }
-  }, [mounted, persistentMessages, setMessages]);
+  }, [mounted, persistentMessages, setMessages, messages.length]);
 
-  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+  const userMessages = React.useMemo(() => 
+    messages.filter(m => m.role === 'user').map(m => m.content),
+    [messages]
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowUp') {
@@ -126,30 +133,31 @@ export default function JamieChat({ propertyData }) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return;
+    const currentInput = input;
     setHistoryIndex(-1);
 
-    // Log user interaction
-    memoryBridge.logInteraction({ role: 'user', content: input, timestamp: new Date().toISOString() });
+    // Log user interaction BEFORE sending
+    memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
 
     try {
       const shieldResponse = await fetch('/api/jamie/shield', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: input }),
+        body: JSON.stringify({ query: currentInput }),
       });
       const security = await shieldResponse.json();
       if (security.status === 'BLOCKED') {
         const assistantMsg = `⚠️ [NOTICE]: ${security.message}`;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: input }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
+        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
         memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
-        handleInputChange({ target: { value: '' } } as any);
+        setInput('');
         return;
       }
       if (security.status === 'RESOLVED_BY_MINI') {
         const assistantMsg = security.response;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: input }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
+        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
         memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
-        handleInputChange({ target: { value: '' } } as any);
+        setInput('');
         return;
       }
       originalHandleSubmit(e);

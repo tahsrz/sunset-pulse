@@ -1,21 +1,21 @@
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
 import { getSessionUser } from '@/lib/core/getSessionUser';
-import { NextResponse } from 'next/server';
+import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     await connectDB();
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return unauthorizedResponse('Authentication required to synchronize interests.');
     }
 
     const { interests } = await req.json();
 
     if (!interests) {
-      return new NextResponse('Interests required', { status: 400 });
+      return errorResponse('User interests data required.', 400);
     }
 
     const user = await User.findByIdAndUpdate(
@@ -24,11 +24,13 @@ export async function POST(req) {
       { new: true }
     );
 
-    console.log(`📡 [JAMIE_INTEL] Interests synchronized for user ${user._id}: ${interests}`);
+    if (!user) return errorResponse('User profile not found.', 404);
 
-    return NextResponse.json({ success: true, interests: user.currentInterests });
-  } catch (error) {
+    console.log(`📡 [INTERESTS_SYNC] Synchronized for user ${user._id}: ${interests}`);
+
+    return successResponse({ success: true, interests: user.currentInterests });
+  } catch (error: any) {
     console.error('Interests Sync Error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return errorResponse('Failed to synchronize user interests.', 500, error.message);
   }
 }
