@@ -14,7 +14,8 @@ import {
   clusterCountLayer, 
   heatmapLayer, 
   unclusteredPointLayer, 
-  poiLayer 
+  poiLayer,
+  vibeLayer
 } from '@/constants/mapLayers';
 
 import PropertyMarker from './explorer/PropertyMarker';
@@ -36,6 +37,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
   const [showDirections, setShowDirections] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPOIs, setShowPOIs] = useState(false);
+  const [showVisual, setShowVisual] = useState(false);
 
   // Sync routing from external trigger
   useEffect(() => {
@@ -133,6 +135,35 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
   const drawRef = useRef();
   const directionsRef = useRef();
 
+  const onMapClick = useCallback((event) => {
+    const map = mapRef.current.getMap();
+    const features = map.queryRenderedFeatures(event.point, {
+      layers: ['unclustered-point', 'clusters']
+    });
+
+    if (!features.length) return;
+
+    const feature = features[0];
+    if (feature.layer.id === 'clusters') {
+      const clusterId = feature.properties.cluster_id;
+      const source = map.getSource('properties');
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err) return;
+        map.easeTo({
+          center: feature.geometry.coordinates,
+          zoom: zoom
+        });
+      });
+    } else {
+      const propertyId = feature.properties.id;
+      const target = results.find(p => p._id === propertyId);
+      if (target) {
+        setSelectedProperty(target);
+        if (onPropertySelect) onPropertySelect(target);
+      }
+    }
+  }, [results, onPropertySelect]);
+
   // Handle draw control and directions initialization
   const onMapLoad = useCallback((e) => {
     const map = e.target;
@@ -212,13 +243,16 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
-        mapStyle="mapbox://styles/mapbox/dark-v11"
+        mapStyle={showVisual ? "mapbox://styles/mapbox/satellite-v9" : "mapbox://styles/mapbox/dark-v11"}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         onLoad={onMapLoad}
+        onClick={onMapClick}
+        interactiveLayerIds={['unclustered-point', 'clusters']}
         ref={mapRef}
         terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
       >
         {showPOIs && <Layer {...poiLayer} />}
+        {showVisual && <Layer {...vibeLayer} />}
         <Source
           id="mapbox-dem"
           type="raster-dem"
@@ -307,6 +341,8 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
         setShowHeatmap={setShowHeatmap}
         showPOIs={showPOIs}
         setShowPOIs={setShowPOIs}
+        showVisual={showVisual}
+        setShowVisual={setShowVisual}
         showDirections={showDirections}
       />
     </div>

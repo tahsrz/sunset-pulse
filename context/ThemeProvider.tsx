@@ -25,8 +25,27 @@ interface Branding {
   }
 }
 
+interface ProtocolLog {
+  id: string;
+  timestamp: string;
+  type: 'THEME' | 'DRONE' | 'AUTH' | 'DATA';
+  action: string;
+  metadata?: any;
+}
+
+interface GhostDeckConfig {
+  autoFlight: boolean;
+  manualControl: boolean;
+  lockOrientation: boolean;
+  presentationMode: boolean;
+  sequentialMode: boolean;
+  autoPlay: boolean;
+  autoPlayDelay: number;
+}
+
 interface ThemeContextType {
   branding: Branding;
+  setBranding: React.Dispatch<React.SetStateAction<Branding>>;
   stagedBranding: Branding | null;
   updateBranding: (newSettings: any) => void;
   stageBranding: (newSettings: any) => void;
@@ -42,6 +61,11 @@ interface ThemeContextType {
   setCustomKeybind: (key: string) => void;
   selectedAbidan: AbidanCharacter;
   setSelectedAbidan: (abidan: AbidanCharacter) => void;
+  protocolLogs: ProtocolLog[];
+  logProtocol: (type: ProtocolLog['type'], action: string, metadata?: any) => void;
+  clearProtocolLogs: () => void;
+  ghostDeckConfig: GhostDeckConfig;
+  updateGhostDeckConfig: (config: Partial<GhostDeckConfig>) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -80,6 +104,35 @@ export function ThemeProvider({
   const [isLefthandMode, setLefthandModeState] = useState(false);
   const [customKeybind, setCustomKeybindState] = useState('P');
   const [selectedAbidan, setSelectedAbidanState] = useState<AbidanCharacter>(ABIDAN_DATA[0]);
+  const [protocolLogs, setProtocolLogs] = useState<ProtocolLog[]>([]);
+  const [ghostDeckConfig, setGhostDeckConfig] = useState<GhostDeckConfig>({
+    autoFlight: true,
+    manualControl: false,
+    lockOrientation: true,
+    presentationMode: false,
+    sequentialMode: false,
+    autoPlay: false,
+    autoPlayDelay: 5000
+  });
+
+  const updateGhostDeckConfig = (config: Partial<GhostDeckConfig>) => {
+    setGhostDeckConfig(prev => ({ ...prev, ...config }));
+    logProtocol('DATA', 'Briefing Protocol Updated', config);
+  };
+
+  const logProtocol = (type: ProtocolLog['type'], action: string, metadata?: any) => {
+    const newLog: ProtocolLog = {
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toISOString(),
+      type,
+      action,
+      metadata
+    };
+    setProtocolLogs(prev => [newLog, ...prev].slice(0, 100));
+    console.log(`[PROTOCOL_LOG] ${type}: ${action}`, metadata || '');
+  };
+
+  const clearProtocolLogs = () => setProtocolLogs([]);
 
   useEffect(() => {
     // 1. Initial Load and Auth-based settings
@@ -258,6 +311,7 @@ export function ThemeProvider({
   return (
     <ThemeContext.Provider value={{ 
       branding, 
+      setBranding,
       stagedBranding, 
       updateBranding, 
       stageBranding, 
@@ -272,7 +326,12 @@ export function ThemeProvider({
       customKeybind,
       setCustomKeybind,
       selectedAbidan,
-      setSelectedAbidan
+      setSelectedAbidan,
+      protocolLogs,
+      logProtocol,
+      clearProtocolLogs,
+      ghostDeckConfig,
+      updateGhostDeckConfig
     }}>
       <div 
         style={{ 

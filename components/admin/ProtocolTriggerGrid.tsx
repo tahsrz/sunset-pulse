@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { toast } from 'react-toastify';
+import { Lead } from '@/lib/types';
 
 interface ProtocolTriggerGridProps {
-  lead: any;
-  onSendHook?: (lead: any, type: string) => void;
+  lead: Lead;
+  onSendHook?: (lead: Lead, type: string) => void;
 }
 
 const ProtocolTriggerGrid: React.FC<ProtocolTriggerGridProps> = ({ lead, onSendHook }) => {

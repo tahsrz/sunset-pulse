@@ -7,11 +7,12 @@ const InfoBoxes = () => {
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg'>
           <InfoBox
             heading='For Renters'
-            backgroundColor='bg-gray-100'
+            backgroundColor='bg-slate-900/60'
+            textColor='text-slate-100'
             buttonInfo={{
               text: 'Browse Properties',
               link: '/properties',
-              backgroundColor: 'bg-black',
+              backgroundColor: 'bg-blue-600',
             }}
           >
             Find your dream rental property. Bookmark properties and contact
@@ -19,11 +20,12 @@ const InfoBoxes = () => {
           </InfoBox>
           <InfoBox
             heading='For Property Owners'
-            backgroundColor='bg-blue-100'
+            backgroundColor='bg-blue-900/20'
+            textColor='text-slate-100'
             buttonInfo={{
               text: 'Add Property',
               link: '/properties/add',
-              backgroundColor: 'bg-blue-500',
+              backgroundColor: 'bg-blue-600',
             }}
           >
             List your properties and reach potential tenants. Rent short or long

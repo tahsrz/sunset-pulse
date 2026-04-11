@@ -1,15 +1,16 @@
 'use client';
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { FaGoogle, FaEnvelope, FaLock, FaBolt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
-const LoginPage = () => {
+const LoginPage: React.FC = () => {
   const supabase = createClient();
-  const [email, setEmail] = useState('');
-  const [password, setLock] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setLock] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleGoogleLogin = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -22,7 +23,7 @@ const LoginPage = () => {
     if (error) toast.error(error.message);
   };
 
-  const handleEmailLogin = async (e) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({

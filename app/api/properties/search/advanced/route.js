@@ -28,8 +28,8 @@ export const GET = async (request) => {
         type: params.propertyType === 'All' ? '' : params.propertyType,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
-        beds: params.minBeds,
-        bathrooms: params.minBaths
+        beds: params.beds,
+        bathrooms: params.baths
       };
       
       const mlsData = await mlsService.getListings(mlsParams);

@@ -8,6 +8,8 @@ interface MapControlsProps {
   setShowHeatmap: (show: boolean) => void;
   showPOIs: boolean;
   setShowPOIs: (show: boolean) => void;
+  showVisual: boolean;
+  setShowVisual: (show: boolean) => void;
   showDirections: boolean;
 }
 
@@ -16,6 +18,8 @@ const MapControls: React.FC<MapControlsProps> = ({
   setShowHeatmap, 
   showPOIs, 
   setShowPOIs,
+  showVisual,
+  setShowVisual,
   showDirections
 }) => {
   return (
@@ -26,12 +30,18 @@ const MapControls: React.FC<MapControlsProps> = ({
             <FaMapLocationDot />
             <h3 className="text-xs font-black uppercase tracking-widest">Grid Intelligence</h3>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button 
               onClick={() => setShowHeatmap(!showHeatmap)}
               className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showHeatmap ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
             >
               THERMAL
+            </button>
+            <button 
+              onClick={() => setShowVisual(!showVisual)}
+              className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showVisual ? 'bg-emerald-500 border-emerald-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
+            >
+              VISUAL
             </button>
             <button 
               onClick={() => setShowPOIs(!showPOIs)}
@@ -42,7 +52,7 @@ const MapControls: React.FC<MapControlsProps> = ({
           </div>
         </div>
         <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
-          3D Terrain and Clustering enabled. Toggle POI RECON to identify strategic infrastructure like gas and supplies.
+          3D Terrain and Clustering enabled. Toggle VISUAL for satellite data or POI RECON for infrastructure.
         </p>
       </div>
       

@@ -1,8 +1,16 @@
-export class Vector {
-  coords: number[];
+import { Poolable } from './pool';
+
+export class Vector implements Poolable {
+  private coords: Float32Array;
 
   constructor(x: number = 0, y: number = 0, z: number = 0) {
-    this.coords = [x, y, z];
+    this.coords = new Float32Array([x, y, z]);
+  }
+
+  reset(): void {
+    this.coords[0] = 0;
+    this.coords[1] = 0;
+    this.coords[2] = 0;
   }
 
   get(index: number): number {
@@ -14,24 +22,62 @@ export class Vector {
   }
 
   get x(): number { return this.coords[0]; }
+  set x(v: number) { this.coords[0] = v; }
   get y(): number { return this.coords[1]; }
+  set y(v: number) { this.coords[1] = v; }
   get z(): number { return this.coords[2]; }
+  set z(v: number) { this.coords[2] = v; }
+
+  copyFrom(other: Vector): void {
+    this.coords[0] = other.coords[0];
+    this.coords[1] = other.coords[1];
+    this.coords[2] = other.coords[2];
+  }
 
   add(other: Vector): Vector {
     return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
+  }
+
+  addInto(other: Vector, target: Vector): void {
+    target.x = this.x + other.x;
+    target.y = this.y + other.y;
+    target.z = this.z + other.z;
   }
 
   subtract(other: Vector): Vector {
     return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
   }
 
+  subtractInto(other: Vector, target: Vector): void {
+    target.x = this.x - other.x;
+    target.y = this.y - other.y;
+    target.z = this.z - other.z;
+  }
+
   multiplyByScalar(scalar: number): Vector {
     return new Vector(this.x * scalar, this.y * scalar, this.z * scalar);
+  }
+
+  multiplyByScalarInto(scalar: number, target: Vector): void {
+    target.x = this.x * scalar;
+    target.y = this.y * scalar;
+    target.z = this.z * scalar;
   }
 
   divideByScalar(scalar: number): Vector {
     if (scalar === 0) return new Vector(0, 0, 0);
     return new Vector(this.x / scalar, this.y / scalar, this.z / scalar);
+  }
+
+  divideByScalarInto(scalar: number, target: Vector): void {
+    if (scalar === 0) {
+      target.x = target.y = target.z = 0;
+      return;
+    }
+    const inv = 1.0 / scalar;
+    target.x = this.x * inv;
+    target.y = this.y * inv;
+    target.z = this.z * inv;
   }
 
   dotProduct(other: Vector): number {
@@ -46,6 +92,15 @@ export class Vector {
     );
   }
 
+  crossProductInto(other: Vector, target: Vector): void {
+    const x = this.y * other.z - this.z * other.y;
+    const y = this.z * other.x - this.x * other.z;
+    const z = this.x * other.y - this.y * other.x;
+    target.x = x;
+    target.y = y;
+    target.z = z;
+  }
+
   magnitude(): number {
     return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
   }
@@ -55,19 +110,28 @@ export class Vector {
     return mag > 0 ? this.divideByScalar(mag) : new Vector(0, 0, 0);
   }
 
+  normalizeInto(target: Vector): void {
+    const mag = this.magnitude();
+    if (mag > 0) {
+      this.divideByScalarInto(mag, target);
+    } else {
+      target.x = target.y = target.z = 0;
+    }
+  }
+
   multiplyMatrix(matrix: Matrix): Vector {
     const result = new Vector();
-    for (let i = 0; i < 3; i++) {
-      let sum = 0;
-      for (let j = 0; j < 3; j++) {
-        sum += this.get(j) * matrix.get(j, i);
-      }
-      result.set(i, sum);
-    }
+    this.multiplyMatrixInto(matrix, result);
     return result;
   }
 
-  // Rotates vector around arbitrary axes
+  multiplyMatrixInto(matrix: Matrix, target: Vector): void {
+    const x = this.x, y = this.y, z = this.z;
+    target.x = x * matrix.get(0, 0) + y * matrix.get(1, 0) + z * matrix.get(2, 0);
+    target.y = x * matrix.get(0, 1) + y * matrix.get(1, 1) + z * matrix.get(2, 1);
+    target.z = x * matrix.get(0, 2) + y * matrix.get(1, 2) + z * matrix.get(2, 2);
+  }
+
   rotate(yaw: number, pitch: number, roll: number = 0): Vector {
     const mat = Matrix.fromEuler(yaw, pitch, roll);
     return this.multiplyMatrix(mat);
@@ -75,22 +139,22 @@ export class Vector {
 }
 
 export class Matrix {
-  data: number[][];
-  rows: number;
-  cols: number;
+  private data: Float32Array;
+  readonly rows: number;
+  readonly cols: number;
 
   constructor(rows: number = 3, cols: number = 3) {
-    this.data = Array.from({ length: rows }, () => Array(cols).fill(0));
+    this.data = new Float32Array(rows * cols);
     this.rows = rows;
     this.cols = cols;
   }
 
   get(row: number, col: number): number {
-    return this.data[row][col];
+    return this.data[row * this.cols + col];
   }
 
   set(row: number, col: number, value: number): void {
-    this.data[row][col] = value;
+    this.data[row * this.cols + col] = value;
   }
 
   multiplyMatrix(other: Matrix): Matrix {

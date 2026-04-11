@@ -1,12 +1,33 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import PropertyCard from '@/components/PropertyCard';
 import Spinner from '@/components/Spinner';
 import { toast } from 'react-toastify';
 
-const SavedPropertiesPage = () => {
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
+interface Property {
+  _id: string;
+  name: string;
+  type: string;
+  images: string[];
+  location: {
+    street?: string;
+    city: string;
+    state: string;
+    zipcode?: string;
+  };
+  rates: {
+    nightly?: number;
+    weekly?: number;
+    monthly?: number;
+  };
+  amenities: string[];
+  [key: string]: any;
+}
+
+const SavedPropertiesPage: React.FC = () => {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchSavedProperties = async () => {
@@ -17,11 +38,11 @@ const SavedPropertiesPage = () => {
           const data = await res.json();
           setProperties(data);
         } else {
-          console.log(res.statusText);
+          console.error(res.statusText);
           toast.error('Failed to fetch saved properties');
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
         toast.error('Failed to fetch saved properties');
       } finally {
         setLoading(false);
@@ -50,4 +71,5 @@ const SavedPropertiesPage = () => {
     </section>
   );
 };
+
 export default SavedPropertiesPage;

@@ -553,5 +553,42 @@
     },
     "images": ["/images/properties/boondocking1.jpg"],
     "is_featured": false
+  },
+  {
+    "owner": "650c8e2b1f4e1a2b3c4d5e6f",
+    "name": "Kharg Elite Coastal Estate",
+    "type": "House",
+    "description": "Exclusive coastal residence on the strategic Kharg Island. This property offers high-security features, a private helipad, and panoramic views of the Persian Gulf. Designed for executive operations and luxury living in a high-stakes environment.",
+    "location": {
+      "street": "Coastal Road Sector 4",
+      "city": "Kharg Island",
+      "state": "Bushehr",
+      "zipcode": "75111"
+    },
+    "location_geo": {
+      "type": "Point",
+      "coordinates": [50.3125, 29.2444]
+    },
+    "beds": 5,
+    "baths": 4,
+    "square_feet": 4500,
+    "amenities": [
+      "High Security Perimeter",
+      "Private Helipad",
+      "Desalination System",
+      "Ocean View",
+      "Backup Power Grid",
+      "Satellite Uplink"
+    ],
+    "rates": {
+      "monthly": 12500
+    },
+    "seller_info": {
+      "name": "Sunset Global Recon",
+      "email": "global@sunsetpulse.com",
+      "phone": "+98-21-555-0199"
+    },
+    "images": ["/images/properties/kharg1.jpg"],
+    "is_featured": true
   }
 ]

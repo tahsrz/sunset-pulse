@@ -7,17 +7,20 @@ import {
   FaRocket, FaCrosshairs, FaCheckCircle, FaExclamationCircle
 } from 'react-icons/fa';
 import ProtocolTriggerGrid from './ProtocolTriggerGrid';
+import { Lead } from '@/lib/types';
 
 interface LeadCardProps {
-  lead: any;
+  lead: Lead;
   onReengage: (id: string) => void;
   reengagingId: string | null;
 }
 
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) => {
+  const property = lead.property as any; // Assuming populated for UI
+  
   return (
     <div className='bg-slate-900 border border-white/5 p-6 rounded-2xl transition-all hover:border-blue-500/30 group relative overflow-hidden'>
-      <div className={`absolute top-0 right-0 w-1 h-full ${lead.status === 'New' ? 'bg-blue-500' : 'bg-slate-700'}`} />
+      <div className={`absolute top-0 right-0 w-1 h-full ${lead.status === 'new' ? 'bg-blue-500' : 'bg-slate-700'}`} />
       
       <div className='flex justify-between items-start mb-4'>
         <div className='flex items-center gap-3'>
@@ -27,15 +30,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) =
           <div>
             <h3 className='text-white font-bold tracking-tight'>{lead.name}</h3>
             <div className='text-[9px] text-slate-500 uppercase tracking-widest flex items-center gap-1'>
-              <FaClock size={8} /> {new Date(lead.createdAt).toLocaleDateString()}
+              <FaClock size={8} /> {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A'}
             </div>
           </div>
         </div>
         <div className='flex flex-col items-end gap-1'>
           <div className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${
-            lead.probability > 0.7 ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'
+            lead.probability > 70 ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'
           }`}>
-            {(lead.probability * 100).toFixed(0)}% Probability
+            {lead.probability}% Probability
           </div>
           <div className='text-[7px] text-slate-600 font-mono italic'>JAMIE_SCORING_V2</div>
         </div>
@@ -51,8 +54,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) =
           </div>
         )}
         <div className='flex items-center gap-2 text-[11px] text-blue-400 font-bold'>
-          {lead.property?.type === 'RV' || lead.property?.type === 'RV Park' ? <FaRv /> : <FaBuilding />}
-          {lead.property?.name || 'Property Removed'}
+          {property?.type === 'RV' || property?.type === 'RV Park' ? <FaRv /> : <FaBuilding />}
+          {property?.name || 'Property Removed'}
         </div>
       </div>
 

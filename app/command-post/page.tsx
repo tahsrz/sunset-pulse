@@ -11,17 +11,72 @@ import IntelligenceGrid from '@/components/admin/IntelligenceGrid';
 import LeadIntelligenceGrid from '@/components/admin/LeadIntelligenceGrid';
 import IntelligenceRecap from '@/components/IntelligenceRecap';
 
-const CommandPostPage = () => {
-  const [leads, setLeads] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [agent, setAgent] = useState(null);
-  const [bottomLeftMode, setBottomLeftMode] = useState('clusters'); 
-  const [activeSprintId, setActiveSprintId] = useState(null);
-  const [showPipeline, setShowPipeline] = useState(false);
-  const [valuations, setValuations] = useState([]);
-  const [dreams, setDreams] = useState([]);
-  const [reengagingId, setReengagingId] = useState(null);
+// --- Interfaces for Type Safety ---
+interface Lead {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  probability: number;
+  status: string;
+  leadCategory: 'Residential' | 'RV' | string;
+  property?: {
+    _id: string;
+    name: string;
+    rates?: {
+      monthly?: number;
+      nightly?: number;
+    };
+  };
+  tags?: string[];
+}
+
+interface Booking {
+  _id: string;
+  lead: string;
+  property: string;
+  checkIn: string;
+  checkOut: string;
+  totalAmount: number;
+  status: string;
+}
+
+interface Valuation {
+  _id: string;
+  property_id: string;
+  value: number;
+  confidence: number;
+  timestamp: string;
+}
+
+interface Dream {
+  _id: string;
+  title: string;
+  insight: string;
+  priority: number;
+}
+
+interface AgentProfile {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  role: string;
+  is_subscribed: boolean;
+}
+
+type BottomLeftMode = 'clusters' | 'recon' | 'dreams' | 'sprints' | 'timeline' | 'deployments';
+
+const CommandPostPage: React.FC = () => {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [agent, setAgent] = useState<AgentProfile | null>(null);
+  const [bottomLeftMode, setBottomLeftMode] = useState<BottomLeftMode>('clusters');
+  const [activeSprintId, setActiveSprintId] = useState<string | null>(null);
+  const [showPipeline, setShowPipeline] = useState<boolean>(false);
+  const [valuations, setValuations] = useState<Valuation[]>([]);
+  const [dreams, setDreams] = useState<Dream[]>([]);
+  const [reengagingId, setReengagingId] = useState<string | null>(null);
 
   const fetchAgentProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -31,7 +86,7 @@ const CommandPostPage = () => {
         .select('*')
         .eq('id', user.id)
         .single();
-      setAgent(profile);
+      setAgent(profile as AgentProfile);
     }
   };
 
@@ -91,7 +146,7 @@ const CommandPostPage = () => {
     loadAll();
   }, []);
 
-  const handleReengage = async (leadId) => {
+  const handleReengage = async (leadId: string) => {
     setReengagingId(leadId);
     try {
       const res = await fetch('/api/leads/reengage', {
@@ -113,12 +168,12 @@ const CommandPostPage = () => {
   const topPriority = leads.length > 0 ? leads.reduce((prev, current) => 
     (prev.probability > current.probability) ? prev : current, leads[0]) : null;
 
-  const groupedLeads = leads.reduce((acc, lead) => {
+  const groupedLeads = leads.reduce<Record<string, { name: string; monthlyRate: number; leads: Lead[] }>>((acc, lead) => {
     const propId = lead.property?._id || 'unknown';
     if (!acc[propId]) {
       acc[propId] = {
         name: lead.property?.name || 'Unknown Property',
-        monthlyRate: lead.property?.rates?.monthly || lead.property?.rates?.nightly * 30 || 0,
+        monthlyRate: lead.property?.rates?.monthly || (lead.property?.rates?.nightly ? lead.property.rates.nightly * 30 : 0),
         leads: []
       };
     }
@@ -126,13 +181,13 @@ const CommandPostPage = () => {
     return acc;
   }, {});
 
-  const [demoLocation, setDemoLocation] = useState('Decatur');
-  const [demoChange, setDemoChange] = useState('+18%');
+  const [demoLocation, setDemoLocation] = useState<string>('Decatur');
+  const [demoChange, setDemoChange] = useState<string>('+18%');
 
-  const triggerDemo = async (action) => {
+  const triggerDemo = async (action: 'seed' | 'anomaly') => {
     const id = toast.loading(`Executing ${action.toUpperCase()} protocol...`);
     try {
-      const body = { action };
+      const body: { action: string; location?: string; change?: string } = { action };
       if (action === 'anomaly') {
         body.location = demoLocation;
         body.change = demoChange;
@@ -227,7 +282,7 @@ const CommandPostPage = () => {
           residentialCount={leads.filter(l => l.leadCategory === 'Residential').length}
           rvCount={leads.filter(l => l.leadCategory === 'RV').length}
           onShowPipeline={() => setShowPipeline(true)}
-          onSprintCreated={(id) => {
+          onSprintCreated={(id: string) => {
             setActiveSprintId(id);
             setBottomLeftMode('sprints');
           }}
@@ -240,7 +295,7 @@ const CommandPostPage = () => {
 
         <IntelligenceGrid 
           bottomLeftMode={bottomLeftMode}
-          setBottomLeftMode={setBottomLeftMode}
+          setBottomLeftMode={setBottomLeftMode as (mode: string) => void}
           groupedLeads={groupedLeads}
           valuations={valuations}
           dreams={dreams}

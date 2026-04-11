@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useEffect, useState } from 'react';
+import React, { Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { 
   OrbitControls, 
@@ -9,21 +9,92 @@ import {
   ContactShadows, 
   Float, 
   PointerLockControls,
-  Stars
+  Stars,
+  Html
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { normalizeThreeGroup } from '@/lib/visualization/threeUtils';
 import { getPropertySatelliteUrl } from '@/lib/core/geospatial/geotagUtils';
 import { generatePropertyModel } from '@/lib/visualization/engine/generator';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { useAuth } from '@/context/AuthContext';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
+import SunLight from './hero/SunLight';
+import TacticalStarfield from './hero/TacticalStarfield';
+import { useTheme } from '@/context/ThemeProvider';
+import { VIBE_DICTIONARY } from '@/constants/vibes';
 
 /**
- * Kinetic Controller:
- * smooth WASD movement for the Fiber camera with coordinate telemetry and collision intelligence.
+ *
+ * Represents other players in the grid using the Durandiel Ghost Protocol.
+ * Interactive on mouseover.
  */
-const KineticController = ({ onUpdate }: { onUpdate: (pos: THREE.Vector3) => void }) => {
+
+/**
+ * Represents Durandiel Ghost Protocol WIP
+ * Interactive on mouseover.
+ */
+const GhostOrb = ({ pos, user, isLead }: { pos: any, user: string, isLead?: boolean }) => {
+  const [hovered, setHovered] = useState(false);
+  const orbColor = isLead ? '#fbbf24' : '#ffffff'; // Amber for lead, white for ghost
+
+  return (
+    <mesh 
+      position={[pos.x, pos.y, pos.z]}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setHovered(true);
+      }}
+      onPointerOut={() => setHovered(false)}
+    >
+      <sphereGeometry args={[0.6, 32, 32]} />
+      <meshStandardMaterial 
+        color={orbColor} 
+        emissive={orbColor}
+        emissiveIntensity={hovered ? 5 : 1.5}
+        transparent 
+        opacity={0.4} 
+      />
+      
+      {/* Ghost Core */}
+      <mesh>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshBasicMaterial color={orbColor} />
+      </mesh>
+
+      {hovered && (
+        <Html distanceFactor={15}>
+          <div className="bg-black/90 backdrop-blur-xl border border-white/20 p-3 rounded-2xl whitespace-nowrap shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-2 mb-1">
+              <div className={`w-2 h-2 rounded-full ${isLead ? 'bg-amber-500 animate-pulse' : 'bg-white/50'}`} />
+              <div className="text-[10px] font-black uppercase text-white/40 tracking-widest">
+                {isLead ? 'Lead Interceptor' : 'Ghost Protocol'}
+              </div>
+            </div>
+            <div className="text-xs text-white font-bold tracking-tighter uppercase">{user}</div>
+            <div className="h-[1px] w-full bg-white/10 my-1.5" />
+            <div className="text-[8px] text-blue-400 font-mono uppercase tracking-tighter">Spatial_Sync: Locked</div>
+          </div>
+        </Html>
+      )}
+    </mesh>
+  );
+};
+
+/**
+ * Kinetic  Connection
+ * smooth WASD movement for the Fiber camera with coordinate telemetry and collision intelligence
+ */
+const KineticController = ({ 
+  onUpdate, 
+  onBoundaryHit 
+}: { 
+  onUpdate: (pos: THREE.Vector3, rot: { yaw: number, pitch: number }) => void,
+  onBoundaryHit: (hit: boolean) => void
+}) => {
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
+  const boundaryHitRef = useRef(false);
 
   useFrame((state) => {
     const keys = (window as any).pressedKeys || {};
@@ -44,7 +115,7 @@ const KineticController = ({ onUpdate }: { onUpdate: (pos: THREE.Vector3) => voi
     if (keys['w'] || keys['s']) velocity.current.z -= direction.current.z * speed;
     if (keys['a'] || keys['d']) velocity.current.x -= direction.current.x * speed;
 
-    // Vertical Movement (with collision/ceiling)
+    // Vertical Movement
     if (keys['control'] && state.camera.position.y < 30) state.camera.position.y += speed;
     if (keys['shift'] && state.camera.position.y > 1.5) state.camera.position.y -= speed;
 
@@ -53,12 +124,25 @@ const KineticController = ({ onUpdate }: { onUpdate: (pos: THREE.Vector3) => voi
 
     // Collision Intelligence: Boundary Clamp
     const limit = 40;
+    const prevX = state.camera.position.x;
+    const prevY = state.camera.position.y;
+    const prevZ = state.camera.position.z;
+
     state.camera.position.x = THREE.MathUtils.clamp(state.camera.position.x, -limit, limit);
     state.camera.position.z = THREE.MathUtils.clamp(state.camera.position.z, -limit, limit);
     state.camera.position.y = THREE.MathUtils.clamp(state.camera.position.y, 1.2, 35);
 
-    // Send position back to parent for HUD
-    onUpdate(state.camera.position);
+    const hit = state.camera.position.x !== prevX || state.camera.position.y !== prevY || state.camera.position.z !== prevZ;
+    if (hit !== boundaryHitRef.current) {
+      boundaryHitRef.current = hit;
+      onBoundaryHit(hit);
+    }
+
+    // Send position and rotation back to parent for HUD/Multiplayer
+    onUpdate(state.camera.position, { 
+      yaw: state.camera.rotation.y, 
+      pitch: state.camera.rotation.x 
+    });
   });
 
   useEffect(() => {
@@ -152,19 +236,52 @@ const PropertyDroneView = ({ property }: { property: any }) => {
   );
 };
 
-import ProceduralBuilding from './hero/ProceduralBuilding';
+import ProceduralBuilding, { BuildingType } from './hero/ProceduralBuilding';
 
 const SatelliteInterpolatedMesh = ({ property, color, customConfig }: { property: any, color: string, customConfig?: any }) => {
-  // Use custom config if provided, otherwise fallback to defaults
-  const buildingType = customConfig?.type || 'GABLE_HOUSE';
+  const typeMap: Record<string, BuildingType> = {
+    'House': 'GABLE_HOUSE',
+    'Industrial': 'INDUSTRIAL',
+    'Apartment': 'APARTMENT',
+    'RV': 'RV_TRAILER',
+    'RV Park': 'RV_TRAILER',
+    'Office': 'MODERN_CUBE',
+    'Senior Living': 'APARTMENT',
+    'Other': 'MODERN_CUBE'
+  };
+
+  const buildingType = customConfig?.type || typeMap[property.type] || 'GABLE_HOUSE';
   const finalColor = customConfig?.color || color;
   const seed = customConfig?.seed || property._id || 0;
+  
+  // Calculate dimensions based on square footage
+  // 1 unit roughly = 10ft in world space
+  const sqft = property.square_feet || 2000;
+  const area = sqft / 100; // normalized area
+  const side = Math.sqrt(area);
+  
+  const dimensions = {
+    width: side,
+    height: (property.beds > 3 || sqft > 3000) ? 1.8 : 1.0, // Multi-story proxy
+    depth: side
+  };
+
+  if (buildingType === 'INDUSTRIAL') {
+    dimensions.width *= 1.5;
+    dimensions.depth *= 2;
+    dimensions.height = 1.2;
+  } else if (buildingType === 'RV_TRAILER') {
+    dimensions.width = 1.5;
+    dimensions.depth = 0.6;
+    dimensions.height = 0.6;
+  }
   
   return (
     <ProceduralBuilding 
       type={buildingType as any} 
       color={finalColor} 
       seed={seed} 
+      dimensions={dimensions}
     />
   );
 };
@@ -176,10 +293,30 @@ interface PropertyFiberViewerProps {
 }
 
 export default function PropertyFiberViewer({ property, color, customConfig }: PropertyFiberViewerProps) {
+  const { user } = useAuth();
+  const { updateBranding, logProtocol } = useTheme();
+  const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous_Ghost';
+
   const primaryColor = color || '#ffffff';
   const [satelliteUrl, setSatelliteUrl] = useState<string | null>(null);
   const [isDroneMode, setDroneMode] = useState(false);
   const [telemetry, setTelemetry] = useState({ lat: 0, lng: 0, alt: 0 });
+  const [boundaryHit, setBoundaryHit] = useState(false);
+  
+  // Track local drone state for multiplayer sync
+  const dronePos = useRef(new THREE.Vector3(0, 8, 15));
+  const droneRot = useRef({ yaw: 0, pitch: 0 });
+
+  const { peers, sendUpdate, leadId, isMeLead } = useMultiplayer(userName, dronePos.current);
+
+  const handleThemeRandomizer = () => {
+    const keys = Object.keys(VIBE_DICTIONARY);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    const randomVibe = (VIBE_DICTIONARY as any)[randomKey];
+    
+    logProtocol('THEME', `Property Trigger: Shifting grid to ${randomKey}`, { theme: randomKey });
+    updateBranding(randomVibe);
+  };
 
   useEffect(() => {
     const fetchImagery = async () => {
@@ -189,7 +326,7 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
     fetchImagery();
   }, [property]);
 
-  const updateTelemetry = (pos: THREE.Vector3) => {
+  const handleUpdate = (pos: THREE.Vector3, rot: { yaw: number, pitch: number }) => {
     // Mock coordinate mapping: Assume property is at base and 1 unit = 0.0001 degrees (~11m)
     const baseLat = property.location_geo?.coordinates?.[1] || 32.7767;
     const baseLng = property.location_geo?.coordinates?.[0] || -96.7970;
@@ -199,11 +336,27 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
       lng: baseLng + (pos.x * 0.0001),
       alt: pos.y * 3.28084 // Convert to feet
     });
+
+    dronePos.current.copy(pos);
+    droneRot.current = rot;
+
+    if (isDroneMode) {
+      sendUpdate(pos, rot, isMeLead);
+    }
   };
 
   return (
     <div className={`relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden border border-white/10 group shadow-2xl recon-hud transition-all duration-700 ${isDroneMode ? 'ring-2 ring-blue-500/50' : ''}`}>
       
+      {/* Sector Boundary Alert */}
+      {boundaryHit && (
+        <div className="absolute inset-0 pointer-events-none z-20 border-[10px] border-red-500/20 animate-pulse flex items-center justify-center">
+           <div className="font-mono text-red-500 text-[8px] font-black uppercase tracking-[0.5em] bg-black/80 px-4 py-2 rounded-full border border-red-500/50 backdrop-blur-md">
+             [ ! ] Sector_Boundary_Reached
+           </div>
+        </div>
+      )}
+
       {/* Dynamic HUD */}
       <div className="absolute inset-0 pointer-events-none z-10 p-6" onPointerDown={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-start">
@@ -266,22 +419,41 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
           autoRotateSpeed={0.8}
         />
 
-        {isDroneMode && <KineticController onUpdate={updateTelemetry} />}
+        {isDroneMode && (
+          <KineticController 
+            onUpdate={handleUpdate} 
+            onBoundaryHit={setBoundaryHit}
+          />
+        )}
+        
+        <SunLight preset="CYCLE" cycleSpeed={1000} />
         
         <ambientLight intensity={isDroneMode ? 0.3 : 0.4} />
-        <spotLight position={[15, 20, 10]} angle={0.2} penumbra={1} intensity={2} castShadow />
-        <pointLight position={[-10, 5, -10]} intensity={1} color={isDroneMode ? '#3b82f6' : primaryColor} />
+        <spotLight position={[20, 30, 10]} angle={0.15} penumbra={1} intensity={0.5} color="#facc15" castShadow />
+        <pointLight position={[-15, 10, -15]} intensity={0.8} color="#3b82f6" />
+        <pointLight position={[15, 5, 15]} intensity={0.4} color="#f87171" />
 
         <Suspense fallback={null}>
+          <TacticalStarfield />
           <Float speed={isDroneMode ? 2.5 : 1.2} rotationIntensity={0.5} floatIntensity={0.5}>
             <NormalizedModel>
               {isDroneMode ? (
                 <PropertyDroneView property={property} />
               ) : (
-                <SatelliteInterpolatedMesh property={property} color={primaryColor} customConfig={customConfig} />
+                <SatelliteInterpolatedMesh property={property} color={primaryColor} customConfig={customConfig} onClick={handleThemeRandomizer} />
               )}
             </NormalizedModel>
           </Float>
+
+          {/* Multiplayer Orbs (Ghost Protocol) */}
+          {Object.entries(peers).map(([peerId, peer]: [string, any]) => (
+            <GhostOrb 
+              key={peerId} 
+              pos={peer.pos} 
+              user={peerId} 
+              isLead={peerId === leadId} 
+            />
+          ))}
           
           <ContactShadows 
             position={[0, -2.5, 0]} 

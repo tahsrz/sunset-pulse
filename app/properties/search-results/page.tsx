@@ -131,7 +131,7 @@ const SearchResultsPage = () => {
   };
 
   return (
-    <div className='flex flex-col min-h-screen bg-white'>
+    <div className='flex flex-col min-h-screen bg-slate-950'>
       <SearchHeader onSearch={handleSearch} />
 
       <div className='flex flex-col md:flex-row h-[calc(100vh-160px)] overflow-hidden relative'>

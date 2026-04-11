@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,22 +10,19 @@ import { FaGoogle, FaShoppingBasket, FaCode, FaShieldAlt } from 'react-icons/fa'
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'react-toastify';
+import { CartItem } from '@/lib/types';
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isDevMode } = useTheme();
   
-  // session.user from next-auth had 'image', supabase user has 'user_metadata.avatar_url'
-  // and my Profiles table has 'avatar_url'. 
-  // For now I'll use user_metadata or fallback
   const profileImage = user?.user_metadata?.avatar_url || profileDefault;
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState<boolean>(false);
   
   const pathname = usePathname();
-  const { cart } = useCart();
+  const { cart } = useCart() as { cart: CartItem[] };
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (

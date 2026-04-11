@@ -1,13 +1,23 @@
 'use client';
+
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LeadSchema } from '@/lib/core/validation';
 import { toast } from 'react-toastify';
-import { useState } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaPaperPlane, FaCheckCircle, FaSync, FaDollarSign, FaCalendarAlt, FaStar } from 'react-icons/fa';
+import { z } from 'zod';
 
-const LeadCaptureForm = ({ propertyId, propertyName }) => {
-  const [isSubmitted, setIsSubmitted] = useState(false);
+// Derive the form data type from the Zod schema
+type LeadFormData = z.infer<typeof LeadSchema>;
+
+interface LeadCaptureFormProps {
+  propertyId: string;
+  propertyName: string;
+}
+
+const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyName }) => {
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   
   const {
     register,
@@ -15,7 +25,7 @@ const LeadCaptureForm = ({ propertyId, propertyName }) => {
     watch,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm({
+  } = useForm<LeadFormData>({
     resolver: zodResolver(LeadSchema),
     defaultValues: {
       property: propertyId,
@@ -30,20 +40,20 @@ const LeadCaptureForm = ({ propertyId, propertyName }) => {
 
   const watchAll = watch();
   
-  const calculateLiveProbability = () => {
+  const calculateLiveProbability = (): number => {
     let score = 30;
-    if (watchAll.name?.length > 2) score += 10;
-    if (watchAll.email?.includes('@')) score += 10;
-    if (watchAll.phone?.length > 5) score += 15;
-    if (watchAll.budget > 0) score += 5;
-    if (watchAll.timeframe !== 'unknown') score += 10;
+    if (watchAll.name && watchAll.name.length > 2) score += 10;
+    if (watchAll.email && watchAll.email.includes('@')) score += 10;
+    if (watchAll.phone && watchAll.phone.length > 5) score += 15;
+    if (watchAll.budget && watchAll.budget > 0) score += 5;
+    if (watchAll.timeframe && watchAll.timeframe !== 'unknown') score += 10;
     if (watchAll.tourRequested) score += 20;
     return Math.min(score, 99);
   };
 
   const liveProb = calculateLiveProbability();
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: LeadFormData) => {
     // Convert budget to number
     data.budget = Number(data.budget);
     try {
@@ -120,7 +130,7 @@ const LeadCaptureForm = ({ propertyId, propertyName }) => {
                 placeholder='Full Name'
               />
             </div>
-            {errors.name && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{errors.name.message}</p>}
+            {errors.name && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{(errors.name as any).message}</p>}
           </div>
 
           <div className='space-y-2'>
@@ -133,7 +143,7 @@ const LeadCaptureForm = ({ propertyId, propertyName }) => {
                 placeholder='Email'
               />
             </div>
-            {errors.email && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{errors.email.message}</p>}
+            {errors.email && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{(errors.email as any).message}</p>}
           </div>
         </div>
 

@@ -1,7 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { FaChartLine, FaChartBar, FaTimes } from 'react-icons/fa';
+import { FaChartLine, FaChartBar, FaTimes, FaZap } from 'react-icons/fa';
+import { useTheme } from '@/context/ThemeProvider';
 
 // Dynamically import the heavy D3 engine
 const RandomChart = dynamic(() => import('./RandomChart'), {
@@ -11,6 +12,7 @@ const RandomChart = dynamic(() => import('./RandomChart'), {
 
 const GlobalMarketPulse = () => {
   const [activeChart, setActiveChart] = useState(null);
+  const { isAdvancedMode } = useTheme();
 
   const toggleChart = (type) => {
     if (activeChart === type) {
@@ -37,6 +39,19 @@ const GlobalMarketPulse = () => {
               <span className="text-slate-400">Price Index:</span>
               <span className="text-orange-400">+1.2%</span>
             </div>
+
+            {isAdvancedMode && (
+              <div className="flex items-center gap-2 whitespace-nowrap pl-4 border-l border-white/10 ml-2 animate-in fade-in slide-in-from-left duration-700">
+                <div className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </div>
+                <div className="flex items-center gap-1.5 text-blue-400 font-black tracking-tighter italic">
+                  <FaZap size={10} className="fill-blue-400" />
+                  <span>Advanced_Protocol: Active</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">

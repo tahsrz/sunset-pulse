@@ -1,4 +1,6 @@
 'use client';
+
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -13,11 +15,17 @@ import {
   FaRoute,
   FaGlobeAmericas
 } from 'react-icons/fa';
+import { Property } from '@/lib/types';
 
-const PropertyCard = ({ property, onRouteClick = null }) => {
-  const intensity = (property.leadCount / (property.globalAvgLeads || 5)) * 1.5;
+interface PropertyCardProps {
+  property: Property;
+  onRouteClick?: ((property: Property) => void) | null;
+}
+
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = null }) => {
+  const intensity = ((property.leadCount || 0) / (property.globalAvgLeads || 5)) * 1.5;
   const isHighIntensity = intensity > 1.2;
-  const isUrgent = property.leadCount > 10; // Mock urgency threshold
+  const isUrgent = (property.leadCount || 0) > 10;
 
   const getRateDisplay = () => {
     const { rates } = property;
@@ -29,17 +37,17 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
     } else if (rates.nightly) {
       return `${rates.nightly.toLocaleString()}/night`;
     }
+    return '0/night';
   };
 
   const isRV = property.type === 'RV' || property.type === 'RV Park';
-  const isInternal = property.source === 'Internal' || !property.source; // Default to internal for MongoDB properties
+  const isInternal = property.source === 'Internal' || !property.source;
 
   return (
     <div className={`rounded-xl shadow-md relative bg-white transition-all duration-500 ${isHighIntensity ? 'hover:scale-[1.02]' : ''}`}
       style={{
         boxShadow: isHighIntensity ? `0 0 ${20 * intensity}px rgba(59, 130, 246, ${0.1 * intensity})` : 'none',
         border: isUrgent ? '2px solid rgba(239, 68, 68, 0.5)' : 'none',
-        animation: isUrgent ? 'pulse-border 2s infinite' : 'none'
       }}
     >
       <style jsx>{`
@@ -80,8 +88,7 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
           <h3 className='text-xl font-bold text-slate-900 truncate' title={property.name}>{property.name}</h3>
         </div>
         <h3 
-          style={{ color: 'var(--primary-color)' }}
-          className='absolute top-[10px] right-[10px] bg-white/90 backdrop-blur-md px-4 py-2 rounded-lg font-black text-right md:text-center lg:text-right shadow-lg'
+          className='absolute top-[10px] right-[10px] bg-white/90 backdrop-blur-md px-4 py-2 rounded-lg font-black text-right md:text-center lg:text-right shadow-lg text-blue-600'
         >
           ${getRateDisplay()}
         </h3>
@@ -89,59 +96,59 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
         <div className='flex justify-center gap-4 text-gray-500 mb-4'>
           {isRV ? (
             <>
-              <p>
+              <div className='flex items-center'>
                 {property.rv_type?.includes('Class') ? <FaBus className='inline mr-2' /> : <FaTrailer className='inline mr-2' />}
                 <span className='md:hidden lg:inline'>{property.rv_type || 'RV'}</span>
-              </p>
+              </div>
               {property.rv_length && (
-                <p>
+                <div className='flex items-center'>
                   <FaRulerCombined className='inline mr-2' />
                   {property.rv_length} <span className='md:hidden lg:inline'>ft</span>
-                </p>
+                </div>
               )}
-              {property.hookups?.electric !== 'None' && (
-                <p title={`Electric: ${property.hookups.electric}`}>
+              {property.hookups?.electric !== 'None' && property.hookups?.electric && (
+                <div className='flex items-center' title={`Electric: ${property.hookups.electric}`}>
                   <FaPlug className='inline mr-2 text-yellow-600' />
                   <span className='md:hidden lg:inline'>{property.hookups.electric}</span>
-                </p>
+                </div>
               )}
             </>
           ) : (
             <>
-              <p>
+              <div className='flex items-center'>
                 <FaBed className='inline mr-2' /> {property.beds}{' '}
                 <span className='md:hidden lg:inline'>Beds</span>
-              </p>
-              <p>
+              </div>
+              <div className='flex items-center'>
                 <FaBath className='inline mr-2' />
                 {property.baths} <span className='md:hidden lg:inline'>Baths</span>
-              </p>
-              <p>
+              </div>
+              <div className='flex items-center'>
                 <FaRulerCombined className='inline mr-2' />
                 {property.square_feet}{' '}
                 <span className='md:hidden lg:inline'>sqft</span>
-              </p>
+              </div>
             </>
           )}
         </div>
 
         <div className='flex justify-center gap-4 text-green-900 text-sm mb-4'>
           {property.rates.nightly && (
-            <p>
+            <div className='flex items-center'>
               <FaMoneyBill className='inline mr-2' /> Nightly
-            </p>
+            </div>
           )}
 
           {property.rates.weekly && (
-            <p>
+            <div className='flex items-center'>
               <FaMoneyBill className='inline mr-2' /> Weekly
-            </p>
+            </div>
           )}
 
           {property.rates.monthly && (
-            <p>
+            <div className='flex items-center'>
               <FaMoneyBill className='inline mr-2' /> Monthly
-            </p>
+            </div>
           )}
         </div>
 
@@ -176,8 +183,7 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
             </Link>
             <Link
               href={isInternal ? `/properties/${property._id}` : `/listings/${property._id}`}
-              style={{ backgroundColor: 'var(--primary-color)' }}
-              className='hover:opacity-90 text-white px-4 py-2 rounded-lg text-center text-xs transition-all'
+              className='hover:opacity-90 text-white px-4 py-2 rounded-lg text-center text-xs transition-all bg-blue-600'
             >
               Details
             </Link>
@@ -187,4 +193,5 @@ const PropertyCard = ({ property, onRouteClick = null }) => {
     </div>
   );
 };
+
 export default PropertyCard;

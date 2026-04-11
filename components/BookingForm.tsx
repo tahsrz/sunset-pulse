@@ -1,16 +1,22 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { FaCalendarAlt, FaCreditCard, FaCheckCircle, FaExclamationTriangle, FaUsers, FaBed, FaBath } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { Property } from '@/lib/types';
 
-const BookingForm = ({ property }) => {
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
-  const [guests, setGuests] = useState(1);
-  const [numNights, setNumNights] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [isBooking, setIsBooking] = useState(false);
-  const [booked, setBooked] = useState(false);
+interface BookingFormProps {
+  property: Property;
+}
+
+const BookingForm: React.FC<BookingFormProps> = ({ property }) => {
+  const [checkIn, setCheckIn] = useState<string>('');
+  const [checkOut, setCheckOut] = useState<string>('');
+  const [guests, setGuests] = useState<number>(1);
+  const [numNights, setNumNights] = useState<number>(0);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [isBooking, setIsBooking] = useState<boolean>(false);
+  const [booked, setBooked] = useState<boolean>(false);
 
   const isRV = property.type === 'RV' || property.type === 'RV Park';
 
@@ -18,12 +24,14 @@ const BookingForm = ({ property }) => {
     if (checkIn && checkOut) {
       const d1 = new Date(checkIn);
       const d2 = new Date(checkOut);
-      const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+      const diff = Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
       
       if (diff > 0) {
         setNumNights(diff);
-        const rate = property.rates.nightly || (property.rates.weekly / 7) || (property.rates.monthly / 30);
-        setTotalPrice(Math.round(diff * rate));
+        const nightlyRate = property.rates.nightly || 
+                           (property.rates.weekly ? property.rates.weekly / 7 : 0) || 
+                           (property.rates.monthly ? property.rates.monthly / 30 : 0);
+        setTotalPrice(Math.round(diff * nightlyRate));
       } else {
         setNumNights(0);
         setTotalPrice(0);
@@ -31,7 +39,7 @@ const BookingForm = ({ property }) => {
     }
   }, [checkIn, checkOut, property]);
 
-  const handleBooking = async (e) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkIn || !checkOut) return toast.error('Check-in/out dates required.');
     if (numNights <= 0) return toast.error('Invalid date range.');

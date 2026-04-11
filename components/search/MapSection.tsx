@@ -30,7 +30,7 @@ const MapSection: React.FC<MapSectionProps> = ({
   activeRouteProperty
 }) => {
   return (
-    <div className='w-full md:w-2/5 h-[400px] md:h-full relative border-r border-slate-200'>
+    <div className='w-full md:w-2/5 h-[400px] md:h-full relative border-r border-white/10'>
       <ExplorerMap 
         results={properties} 
         onSelectionChange={handlePolygonChange}

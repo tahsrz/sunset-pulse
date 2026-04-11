@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -7,8 +8,13 @@ import {
   FaMoneyBill,
   FaMapMarker,
 } from 'react-icons/fa';
+import { Property } from '@/lib/types';
 
-const FeaturedPropertyCard = ({ property }) => {
+interface FeaturedPropertyCardProps {
+  property: Property;
+}
+
+const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property }) => {
   const getRateDisplay = () => {
     const { rates } = property;
 
@@ -19,12 +25,13 @@ const FeaturedPropertyCard = ({ property }) => {
     } else if (rates.nightly) {
       return `${rates.nightly.toLocaleString()}/night`;
     }
+    return '0/night';
   };
 
   return (
     <div className='bg-white rounded-xl shadow-md relative flex flex-col md:flex-row'>
       <Image
-        src={property.images[0]}
+        src={property.images[0] || '/images/property-placeholder.jpg'}
         alt=''
         width={0}
         height={0}
@@ -34,42 +41,42 @@ const FeaturedPropertyCard = ({ property }) => {
       <div className='p-6'>
         <h3 className='text-xl font-bold text-slate-900'>{property.name}</h3>
         <div className='text-gray-600 mb-4'>{property.type}</div>
-        <h3 className='absolute top-[10px] left-[10px] bg-white px-4 py-2 rounded-lg text-blue-500 font-bold text-right md:text-center lg:text-right'>
+        <h3 className='absolute top-[10px] left-[10px] bg-white px-4 py-2 rounded-lg text-blue-500 font-bold text-right md:text-center lg:text-right shadow-md'>
           ${getRateDisplay()}
         </h3>
         <div className='flex justify-center gap-4 text-gray-500 mb-4'>
-          <p>
+          <div className='flex items-center'>
             <FaBed className='inline-block mr-2' /> {property.beds}{' '}
             <span className='md:hidden lg:inline'>Beds</span>
-          </p>
-          <p>
+          </div>
+          <div className='flex items-center'>
             <FaBath className='inline-block mr-2' /> {property.baths}{' '}
             <span className='md:hidden lg:inline'>Baths</span>
-          </p>
-          <p>
+          </div>
+          <div className='flex items-center'>
             <FaRulerCombined className='inline-block mr-2' />
             {property.square_feet}{' '}
             <span className='md:hidden lg:inline'>sqft</span>
-          </p>
+          </div>
         </div>
 
         <div className='flex justify-center gap-4 text-green-900 text-sm mb-4'>
           {property.rates.nightly && (
-            <p>
+            <div className='flex items-center'>
               <FaMoneyBill className='inline mr-2' /> Nightly
-            </p>
+            </div>
           )}
 
           {property.rates.weekly && (
-            <p>
+            <div className='flex items-center'>
               <FaMoneyBill className='inline mr-2' /> Weekly
-            </p>
+            </div>
           )}
 
           {property.rates.monthly && (
-            <p>
+            <div className='flex items-center'>
               <FaMoneyBill className='inline mr-2' /> Monthly
-            </p>
+            </div>
           )}
         </div>
 
@@ -85,7 +92,7 @@ const FeaturedPropertyCard = ({ property }) => {
           </div>
           <Link
             href={`/properties/${property._id}`}
-            className='h-[36px] bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-center text-sm'
+            className='h-[36px] bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-center text-sm transition-colors flex items-center'
           >
             Details
           </Link>
@@ -94,4 +101,5 @@ const FeaturedPropertyCard = ({ property }) => {
     </div>
   );
 };
+
 export default FeaturedPropertyCard;

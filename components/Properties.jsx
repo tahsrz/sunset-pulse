@@ -51,7 +51,7 @@ const Properties = () => {
       <div className='container-xl lg:container m-auto px-4 py-6'>
         {/* Navigation Toggle Header */}
         <div className='flex justify-between items-center mb-10'>
-          <h2 className='text-2xl font-black text-slate-800 uppercase italic tracking-tighter'>
+          <h2 className='text-2xl font-black text-white uppercase italic tracking-tighter'>
             Property Grid
           </h2>
           <Link 

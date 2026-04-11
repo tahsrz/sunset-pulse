@@ -2,8 +2,7 @@
 
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
-
-export type BuildingType = 'MODERN_CUBE' | 'GABLE_HOUSE' | 'A_FRAME' | 'RV_TRAILER' | 'SKYSCRAPER_SLIM';
+export type BuildingType = 'MODERN_CUBE' | 'GABLE_HOUSE' | 'A_FRAME' | 'RV_TRAILER' | 'SKYSCRAPER_SLIM' | 'INDUSTRIAL' | 'APARTMENT';
 
 interface ProceduralBuildingProps {
   type?: BuildingType;
@@ -11,6 +10,8 @@ interface ProceduralBuildingProps {
   seed?: string | number;
   scale?: [number, number, number];
   position?: [number, number, number];
+  dimensions?: { width: number; height: number; depth: number };
+  onClick?: () => void;
 }
 
 const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({ 
@@ -18,15 +19,18 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
   color = '#3b82f6', 
   seed = 0,
   scale = [1, 1, 1],
-  position = [0, 0, 0]
+  position = [0, 0, 0],
+  dimensions,
+  onClick
 }) => {
+  const [noiseTexture, setNoiseTexture] = React.useState<THREE.CanvasTexture | null>(null);
   const s = useMemo(() => (typeof seed === 'string' ? seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : seed), [seed]);
 
   const variations = useMemo(() => {
     return {
-      width: 1 + (Math.sin(s * 1.1) * 0.2),
-      height: 1 + (Math.cos(s * 0.9) * 0.3),
-      depth: 1 + (Math.sin(s * 0.7) * 0.2),
+      width: (dimensions?.width || 1) * (1 + (Math.sin(s * 1.1) * 0.1)),
+      height: (dimensions?.height || 1) * (1 + (Math.cos(s * 0.9) * 0.1)),
+      depth: (dimensions?.depth || 1) * (1 + (Math.sin(s * 0.7) * 0.1)),
       roofHeight: 0.5 + (Math.abs(Math.sin(s * 1.5)) * 0.5),
       windowDensity: 0.5 + (Math.abs(Math.cos(s * 2.2)) * 0.5),
       hasBalcony: Math.sin(s * 3.1) > 0.5,
@@ -36,14 +40,13 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
     };
   }, [s]);
 
-  // Procedural Noise Texture Generator (Simulating surface detail)
-  const noiseTexture = useMemo(() => {
-    if (typeof document === 'undefined') return null;
+  // Procedural Noise Texture Generator (Client-side only)
+  React.useEffect(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    if (!ctx) return;
 
     // Base color
     ctx.fillStyle = '#ffffff';
@@ -66,7 +69,7 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(variations.textureRepeat, variations.textureRepeat);
-    return tex;
+    setNoiseTexture(tex);
   }, [variations.textureRepeat]);
 
   // Rooftop Clutter (AC Units, Antennas)
@@ -203,6 +206,50 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           </group>
         );
 
+      case 'INDUSTRIAL':
+        const indW = 8 * variations.width;
+        const indH = 3 * variations.height;
+        const indD = 10 * variations.depth;
+        return (
+          <group>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[indW, indH, indD]} />
+              <meshStandardMaterial 
+                color="#475569" 
+                roughness={0.4} 
+                metalness={0.6} 
+                map={noiseTexture || undefined}
+              />
+            </mesh>
+            {/* Loading Docks */}
+            <mesh position={[indW/2 + 0.01, -indH/2 + 1, 0]}>
+              <boxGeometry args={[0.2, 1.5, indD * 0.8]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+            <RooftopClutter w={indW} h={indH} d={indD} />
+          </group>
+        );
+
+      case 'APARTMENT':
+        const aptW = 6 * variations.width;
+        const aptH = 8 * variations.height;
+        const aptD = 6 * variations.depth;
+        return (
+          <group>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[aptW, aptH, aptD]} />
+              <meshStandardMaterial 
+                color={color} 
+                roughness={0.5} 
+                metalness={0.2} 
+                map={noiseTexture || undefined}
+              />
+            </mesh>
+            <Windows w={aptW} h={aptH} d={aptD} density={1.5} />
+            <RooftopClutter w={aptW} h={aptH} d={aptD} />
+          </group>
+        );
+
       case 'SKYSCRAPER_SLIM':
         const skH = 12 * variations.height;
         return (
@@ -264,7 +311,22 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
   };
 
   return (
-    <group position={position} scale={scale}>
+    <group 
+      position={position} 
+      scale={scale} 
+      onClick={(e) => {
+        e.stopPropagation();
+        if (onClick) onClick();
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'auto';
+      }}
+    >
       {renderBuilding()}
     </group>
   );

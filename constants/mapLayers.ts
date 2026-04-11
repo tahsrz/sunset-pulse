@@ -66,6 +66,7 @@ export const poiLayer = {
   type: 'symbol',
   source: 'composite',
   'source-layer': 'poi_label',
+  minzoom: 12,
   filter: ['any', 
     ['==', ['get', 'category_en'], 'Gas station'],
     ['==', ['get', 'category_en'], 'Supermarket'],
@@ -90,7 +91,8 @@ export const poiLayer = {
       'Bank', 'bank',
       'dot'
     ],
-    'icon-size': 1.2
+    'icon-size': 1.2,
+    'visibility': 'visible'
   },
   paint: {
     'text-color': '#94a3b8',
@@ -98,5 +100,22 @@ export const poiLayer = {
     'text-halo-width': 2,
     'icon-opacity': 0.8,
     'icon-color': '#3b82f6'
+  }
+};
+
+export const vibeLayer = {
+  id: 'neighborhood-vibe',
+  type: 'fill',
+  source: 'properties',
+  paint: {
+    'fill-color': [
+      'interpolate',
+      ['linear'],
+      ['get', 'pulseScore'],
+      50, '#ef4444',
+      75, '#f59e0b',
+      90, '#10b981'
+    ],
+    'fill-opacity': 0.15
   }
 };

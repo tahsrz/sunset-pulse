@@ -8,9 +8,9 @@ import { toast } from 'react-toastify';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
-export default function PremiumPage() {
+const PremiumPage: React.FC = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -93,7 +93,12 @@ export default function PremiumPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-b from-blue-600 to-blue-800 p-1 rounded-[3rem] shadow-2xl shadow-blue-500/20 max-w-md mx-auto">
+        <div className="bg-gradient-to-b from-blue-600 to-blue-800 p-1 rounded-[3rem] shadow-2xl shadow-blue-500/20 max-w-md mx-auto relative">
+          {/* Trial Badge */}
+          <div className="absolute -top-6 -right-6 bg-orange-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-2xl shadow-xl animate-pulse z-10 rotate-12 border-4 border-slate-950">
+            30 Days Free
+          </div>
+
           <div className="bg-slate-950 rounded-[2.8rem] p-10">
             <div className="mb-8">
               <span className="text-slate-400 text-sm font-black uppercase tracking-widest block mb-2">Monthly Subscription</span>
@@ -101,6 +106,9 @@ export default function PremiumPage() {
                 <span className="text-5xl font-black">$59.96</span>
                 <span className="text-slate-500 font-bold mb-1">/mo</span>
               </div>
+              <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-4">
+                Risk-Free: 1 Month Trial Included
+              </p>
             </div>
 
             <ul className="space-y-4 mb-10 text-sm text-slate-300 text-left px-4">
@@ -117,7 +125,7 @@ export default function PremiumPage() {
             >
               {loading ? 'Initializing...' : (
                 <span className="flex items-center justify-center gap-2">
-                  Initialize Upgrade <FaRocket className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  Start Free Trial <FaRocket className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </span>
               )}
             </button>
@@ -137,4 +145,6 @@ export default function PremiumPage() {
       </div>
     </div>
   );
-}
+};
+
+export default PremiumPage;

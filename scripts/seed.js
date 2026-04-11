@@ -2,7 +2,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const connectDB = require('../config/database').default;
+const connectDB = require('../lib/core/database').default;
 const Property = require('../models/Property').default;
 const properties = require('../properties.json');
 const axios = require('axios');
@@ -33,8 +33,15 @@ const seedData = async () => {
     console.log('Connecting to MongoDB...');
     await connectDB();
     
-    console.log('Clearing existing properties...');
+    console.log('Clearing existing properties and leads...');
     await Property.deleteMany(); 
+    try {
+      const Lead = require('../models/Lead').default;
+      await Lead.deleteMany();
+      console.log('Leads cleared.');
+    } catch (e) {
+      console.warn('Lead model not found or clear failed, skipping.');
+    }
 
     console.log('Geocoding and sanitizing properties...');
     const sanitizedProperties = [];
@@ -42,12 +49,16 @@ const seedData = async () => {
     for (const property of properties) {
       const p = { ...property };
       delete p._id;
-      if (p.owner === "" || p.owner === "1") delete p.owner;
+      if (!p.owner || p.owner === "" || p.owner === "1") {
+        p.owner = "650c8e2b1f4e1a2b3c4d5e6f"; // Default to valid test user
+      }
 
-      // Add Geocoding Logic
+      // Add Geocoding Logic but keep existing coords as fallback
       const geo = await geocodeAddress(p.location);
       if (geo) {
         p.location_geo = geo;
+      } else if (!p.location_geo) {
+        console.warn(`No geocoding for ${p.name} and no existing location_geo.`);
       }
 
       sanitizedProperties.push(p);

@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
-import { NextResponse } from 'next/server';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -16,12 +16,12 @@ export async function POST(req) {
   try {
     if (!signature || !webhookSecret) {
       console.error('Webhook: Missing signature or secret');
-      return new NextResponse('Webhook Error', { status: 400 });
+      return errorResponse('Webhook Error: Missing signature or secret', 400);
     }
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    return errorResponse(`Webhook Error: ${err.message}`, 400);
   }
 
   const session = event.data.object;
@@ -48,5 +48,5 @@ export async function POST(req) {
     console.log(`📡 [STRIPE_WEBHOOK] Subscription ${subscription.id} deleted.`);
   }
 
-  return new NextResponse('Success', { status: 200 });
+  return successResponse({ received: true });
 }

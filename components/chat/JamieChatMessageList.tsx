@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import JamieMessage from './JamieMessage';
 
 interface JamieChatMessageListProps {
@@ -16,8 +16,32 @@ const JamieChatMessageList: React.FC<JamieChatMessageListProps> = ({
   analytics,
   isLoading,
 }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      scrollToBottom('instant' as ScrollBehavior);
+      isInitialMount.current = false;
+    } else {
+      scrollToBottom('smooth');
+    }
+  }, [messages, isLoading, analytics]);
+
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+    <div 
+      ref={scrollContainerRef}
+      className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
+    >
       {messages.map((m, i) => (
         <JamieMessage key={m.id || i} message={m} isDevMode={isDevMode} />
       ))}

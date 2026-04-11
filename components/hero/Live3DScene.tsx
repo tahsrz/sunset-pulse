@@ -5,8 +5,12 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Float, Stars } from '@react-three/drei';
 import ProceduralBuilding, { BuildingType } from './ProceduralBuilding';
 import SunLight from './SunLight';
+import TacticalStarfield from './TacticalStarfield';
+import { useTheme } from '@/context/ThemeProvider';
+import { VIBE_DICTIONARY } from '@/constants/vibes';
 
 const ProceduralCity = () => {
+  const { updateBranding, logProtocol } = useTheme();
   const buildings = useMemo(() => {
     const types: BuildingType[] = ['GABLE_HOUSE', 'MODERN_CUBE', 'A_FRAME', 'RV_TRAILER', 'SKYSCRAPER_SLIM'];
     const b = [];
@@ -25,6 +29,15 @@ const ProceduralCity = () => {
     return b;
   }, []);
 
+  const handleThemeRandomizer = () => {
+    const keys = Object.keys(VIBE_DICTIONARY);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    const randomVibe = (VIBE_DICTIONARY as any)[randomKey];
+    
+    logProtocol('THEME', `Building Trigger: Shifting grid to ${randomKey}`, { theme: randomKey });
+    updateBranding(randomVibe);
+  };
+
   return (
     <group>
       {buildings.map((b) => (
@@ -35,11 +48,12 @@ const ProceduralCity = () => {
           color={b.color} 
           seed={b.id}
           scale={[b.scale, b.scale, b.scale]}
+          onClick={handleThemeRandomizer}
         />
       ))}
       {/* Centerpiece */}
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-        <ProceduralBuilding type="MODERN_CUBE" color="#facc15" seed="center" />
+        <ProceduralBuilding type="MODERN_CUBE" color="#facc15" seed="center" onClick={handleThemeRandomizer} />
       </Float>
     </group>
   );
@@ -67,7 +81,7 @@ const Live3DScene = () => {
       
       
       <Suspense fallback={null}>
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <TacticalStarfield />
         <ProceduralCity />
         <ContactShadows position={[0, -2, 0]} opacity={0.4} scale={50} blur={2} far={10} />
         <Environment preset="city" />
