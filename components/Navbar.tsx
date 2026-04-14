@@ -46,20 +46,13 @@ const Navbar: React.FC = () => {
                 <Link href='/explorer' className={`${pathname === '/explorer' ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
                   Explorer
                 </Link>
-                <Link href='/drone-demo' className={`${pathname === '/drone-demo' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest`}>
-                  Drone Academy
-                </Link>
                 <Link href='/grill' className={`${pathname === '/grill' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Grill</Link>
+                <Link href='/#architecture' className={`${pathname === '/architecture' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
+                  <FaCode /> Architecture
+                </Link>
                 <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-blue-600/30 text-blue-200 border-blue-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
                   <FaShieldAlt className='text-blue-500' /> Abidan
                 </Link>
-                
-                {/* DEV MODE ONLY: ARCHITECTURE */}
-                {isDevMode && (
-                  <Link href='/architecture' className={`${pathname === '/architecture' ? 'bg-orange-500/20 text-orange-400' : 'text-slate-400'} hover:bg-white/10 flex items-center gap-2 rounded-md px-3 py-2 transition-all border border-transparent ${isDevMode ? 'border-orange-500/20' : ''}`}>
-                    <FaCode /> Architecture
-                  </Link>
-                )}
               </div>
             </div>
           </div>
@@ -108,7 +101,7 @@ const Navbar: React.FC = () => {
 
                 {isProfileMenuOpen && (
                   <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
-                    <Link href='/command-post' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100' onClick={() => setIsProfileMenuOpen(false)}>Command Post</Link>
+                    <Link href='/dashboard' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100' onClick={() => setIsProfileMenuOpen(false)}>Dashboard</Link>
                     {!user?.user_metadata?.isSubscribed && (
                       <Link 
                         href='/premium'

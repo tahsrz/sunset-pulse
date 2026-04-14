@@ -5,10 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LeadSchema } from '@/lib/core/validation';
 import { toast } from 'react-toastify';
-import { FaUser, FaEnvelope, FaPhone, FaPaperPlane, FaCheckCircle, FaSync, FaDollarSign, FaCalendarAlt, FaStar } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaPaperPlane, FaSync, FaDollarSign, FaCalendarAlt, FaStar } from 'react-icons/fa';
 import { z } from 'zod';
+import LeadCaptureSuccess from './lead-capture/LeadCaptureSuccess';
+import LeadIntelligenceBar from './lead-capture/LeadIntelligenceBar';
 
-// Derive the form data type from the Zod schema
+// Derive the form data type from the ZOD schema
 type LeadFormData = z.infer<typeof LeadSchema>;
 
 interface LeadCaptureFormProps {
@@ -80,19 +82,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
   };
 
   if (isSubmitted) {
-    return (
-      <div className='bg-blue-900/40 border border-blue-400/50 p-8 rounded-2xl text-center backdrop-blur-xl shadow-[0_0_30px_rgba(59,130,246,0.3)] animate-in fade-in zoom-in duration-700'>
-        <div className='relative inline-block'>
-          <FaCheckCircle className='text-blue-400 text-5xl mx-auto mb-4 animate-bounce' />
-          <div className='absolute inset-0 bg-blue-400 blur-2xl opacity-20 animate-pulse' />
-        </div>
-        <h3 className='text-2xl font-bold text-white mb-2 uppercase tracking-tight'>Inquiry Received</h3>
-        <p className='text-blue-100/70 text-sm font-medium'>
-          Your interest in <span className='text-blue-300 font-bold'>{propertyName}</span> has been logged. Our team will follow up soon.
-        </p>
-        <div className='mt-6 h-1 w-full bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50' />
-      </div>
-    );
+    return <LeadCaptureSuccess propertyName={propertyName} />;
   }
 
   return (
@@ -105,19 +95,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
       </h3>
       
       <form onSubmit={handleSubmit(onSubmit)} className='relative space-y-6'>
-        {/* Intelligence Bar */}
-        <div className='space-y-2'>
-          <div className='flex justify-between items-end'>
-            <label className='block text-[10px] font-black text-blue-400 uppercase tracking-widest ml-1'>Intel Probability</label>
-            <span className='text-[10px] font-mono font-bold text-blue-400'>{liveProb}%</span>
-          </div>
-          <div className='h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5'>
-            <div 
-              className='h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
-              style={{ width: `${liveProb}%` }}
-            />
-          </div>
-        </div>
+        <LeadIntelligenceBar probability={liveProb} />
 
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div className='space-y-2'>

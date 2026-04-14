@@ -3,19 +3,18 @@
 import React from 'react';
 import { 
   FaUser, FaEnvelope, FaPhone, FaHome, 
-  FaBolt, FaUndo, FaClock, FaTag, FaRv, FaBuilding,
+  FaBolt, FaUndo, FaClock, FaTag, FaBus, FaBuilding,
   FaRocket, FaCrosshairs, FaCheckCircle, FaExclamationCircle
 } from 'react-icons/fa';
-import ProtocolTriggerGrid from './ProtocolTriggerGrid';
+import EngagementTriggerGrid from './EngagementTriggerGrid';
 import { Lead } from '@/lib/types';
 
 interface LeadCardProps {
   lead: Lead;
-  onReengage: (id: string) => void;
-  reengagingId: string | null;
+  onRefreshLeads: () => void;
 }
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) => {
+const LeadCard: React.FC<LeadCardProps> = ({ lead, onRefreshLeads }) => {
   const property = lead.property as any; // Assuming populated for UI
   
   return (
@@ -54,25 +53,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onReengage, reengagingId }) =
           </div>
         )}
         <div className='flex items-center gap-2 text-[11px] text-blue-400 font-bold'>
-          {property?.type === 'RV' || property?.type === 'RV Park' ? <FaRv /> : <FaBuilding />}
+          {property?.type === 'RV' || property?.type === 'RV Park' ? <FaBus /> : <FaBuilding />}
           {property?.name || 'Property Removed'}
         </div>
       </div>
 
-      <div className='pt-4 border-t border-white/5 space-y-4'>
-        <div className='flex items-center justify-between'>
-          <div className='text-[9px] font-black uppercase text-slate-500 tracking-widest'>Engagement Protocols</div>
-          <button 
-            onClick={() => onReengage(lead._id)}
-            disabled={reengagingId === lead._id}
-            className='text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-tighter flex items-center gap-1 transition-all disabled:opacity-50'
-          >
-            <FaBolt className={reengagingId === lead._id ? 'animate-spin' : ''} />
-            {reengagingId === lead._id ? 'Generating...' : 'Refresh Hooks'}
-          </button>
-        </div>
-        
-        <ProtocolTriggerGrid lead={lead} />
+      <div className='pt-4 border-t border-white/5'>
+        <EngagementTriggerGrid lead={lead} onRefreshSuccess={onRefreshLeads} />
       </div>
     </div>
   );

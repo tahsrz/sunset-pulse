@@ -1,8 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { FaChartLine, FaChartBar, FaTimes, FaZap } from 'react-icons/fa';
+import { FaChartLine, FaChartBar, FaTimes, FaBolt } from 'react-icons/fa';
 import { useTheme } from '@/context/ThemeProvider';
+import { useProperties } from '@/hooks/useProperties';
 
 // Dynamically import the heavy D3 engine
 const RandomChart = dynamic(() => import('./RandomChart'), {
@@ -13,6 +14,28 @@ const RandomChart = dynamic(() => import('./RandomChart'), {
 const GlobalMarketPulse = () => {
   const [activeChart, setActiveChart] = useState(null);
   const { isAdvancedMode } = useTheme();
+  const { properties } = useProperties();
+
+  // Calculate dynamic Global Yield based on active properties
+  const globalYield = useMemo(() => {
+    if (!properties || properties.length === 0) return 5.42;
+    
+    let totalYield = 0;
+    let count = 0;
+
+    properties.forEach(p => {
+      const monthlyRate = p.rates?.monthly || (p.rates?.nightly ? p.rates.nightly * 30 : 0);
+      if (monthlyRate > 0) {
+        // Mock estimate if missing (Annual Rent / 0.06 Cap Rate)
+        const estimate = (monthlyRate * 12) / 0.06;
+        const yieldVal = (monthlyRate * 12) / estimate * 100;
+        totalYield += yieldVal;
+        count++;
+      }
+    });
+
+    return count > 0 ? (totalYield / count).toFixed(2) : 5.42;
+  }, [properties]);
 
   const toggleChart = (type) => {
     if (activeChart === type) {
@@ -33,7 +56,7 @@ const GlobalMarketPulse = () => {
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
               <span className="text-slate-400">Global Yield:</span>
-              <span className="text-blue-400">5.42%</span>
+              <span className="text-blue-400">{globalYield}%</span>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
               <span className="text-slate-400">Price Index:</span>
@@ -47,7 +70,7 @@ const GlobalMarketPulse = () => {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                 </div>
                 <div className="flex items-center gap-1.5 text-blue-400 font-black tracking-tighter italic">
-                  <FaZap size={10} className="fill-blue-400" />
+                  <FaBolt size={10} className="fill-blue-400" />
                   <span>Advanced_Protocol: Active</span>
                 </div>
               </div>

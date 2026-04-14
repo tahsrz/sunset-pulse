@@ -1,88 +1,110 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { promises as fs } from 'fs';
 import path from 'path';
+import { crypto } from 'crypto';
 
 const LOG_PATH = path.join(process.cwd(), 'lib/ai/memory/daily_observations.log');
 
 /**
+ * Helper to ensure the log directory exists
+ * WIP REMEMBER TO CONNECT THIS
+ */
+async function ensureDirectory() {
+  const dir = path.dirname(LOG_PATH);
+  await fs.mkdir(dir, { recursive: true });
+}
+
+/**
  * POST /api/jamie/observations/log
- * Logs a complex observation to the daily log for consolidation during autoDream.
+ * Logs a complex observation with a unique ID for precise management
  */
 export async function POST(request: Request) {
   try {
     const { region, data } = await request.json();
 
     if (!region || !data) {
-      return NextResponse.json({ error: 'Region and Data are required.' }, { status: 400 });
+      return errorResponse('Region and Data are required.', 400);
     }
 
-    const observationEntry = `[Complex Observation][Region: ${region}] ${data}\n`;
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    const timestamp = new Date().toISOString();
     
-    // Ensure directory exists
-    fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+    // Structured entry: [ID][Timestamp][Region] Data
+    const observationEntry = `[ID: ${id}][TS: ${timestamp}][Region: ${region}] ${JSON.stringify(data)}\n`;
     
-    // Append to log
-    fs.appendFileSync(LOG_PATH, observationEntry);
+    await ensureDirectory();
+    await fs.appendFile(LOG_PATH, observationEntry, 'utf8');
 
-    const savedObs = {
-      id: Date.now().toString(),
-      region,
-      data,
-      timestamp: new Date().toISOString()
-    };
-
-    return NextResponse.json(savedObs);
-  } catch (error) {
+    return successResponse({ id, region, data, timestamp });
+  } catch (error: any) {
     console.error('Observation Log Error:', error);
-    return NextResponse.json({ error: 'Failed to log observation' }, { status: 500 });
+    return errorResponse('Failed to log observation', 500, error.message);
   }
 }
 
 /**
  * GET /api/jamie/observations/active
+ * Retrieves the most recent 5 observations.
  */
 export async function GET() {
   try {
-    if (!fs.existsSync(LOG_PATH)) return NextResponse.json([]);
+    try {
+      await fs.access(LOG_PATH);
+    } catch {
+      return successResponse([]); // File doesn't exist yet
+    }
 
-    const logContent = fs.readFileSync(LOG_PATH, 'utf8');
-    const lines = logContent.split('\n').filter(l => l.trim() && l.startsWith('[Complex Observation]'));
+    const logContent = await fs.readFile(LOG_PATH, 'utf8');
+    const lines = logContent.split('\n').filter(l => l.trim().startsWith('[ID:'));
     
-    const activeObs = lines.map((line, index) => {
+    const activeObs = lines.map((line) => {
+      const idMatch = line.match(/\[ID: (.*?)\]/);
+      const tsMatch = line.match(/\[TS: (.*?)\]/);
       const regionMatch = line.match(/\[Region: (.*?)\]/);
-      const data = line.split(']').pop()?.trim();
+      const dataString = line.split(']').pop()?.trim();
+
       return {
-        id: `obs_${index}_${Buffer.from(line).toString('hex').slice(0, 8)}`,
+        id: idMatch ? idMatch[1] : 'unknown',
+        timestamp: tsMatch ? tsMatch[1] : null,
         region: regionMatch ? regionMatch[1] : 'Unknown',
-        data,
+        data: dataString,
         raw: line
       };
     }).slice(-5);
 
-    return NextResponse.json(activeObs);
-  } catch (error) {
-    return NextResponse.json([]);
+    return successResponse(activeObs);
+  } catch (error: any) {
+    console.error('GET Observation Error:', error);
+    return errorResponse('Failed to fetch observations', 500);
   }
 }
 
 /**
  * DELETE /api/jamie/observations/log
- * Removes an observation from the log to prevent consolidation. Ozriel WIP
+ * Removes a specific observation by its unique raw string or ID.
  */
 export async function DELETE(request: Request) {
   try {
     const { rawLine } = await request.json();
-    if (!fs.existsSync(LOG_PATH)) return NextResponse.json({ success: true });
+    
+    try {
+      await fs.access(LOG_PATH);
+    } catch {
+      return successResponse({ success: true });
+    }
 
-    const logContent = fs.readFileSync(LOG_PATH, 'utf8');
-    const updatedContent = logContent
-      .split('\n')
+    const logContent = await fs.readFile(LOG_PATH, 'utf8');
+    const lines = logContent.split('\n');
+    
+    // Filter out the specific line
+    const updatedContent = lines
       .filter(line => line.trim() !== rawLine.trim())
       .join('\n');
 
-    fs.writeFileSync(LOG_PATH, updatedContent + '\n');
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete observation' }, { status: 500 });
+    await fs.writeFile(LOG_PATH, updatedContent.trim() + '\n', 'utf8');
+    
+    return successResponse({ success: true });
+  } catch (error: any) {
+    return errorResponse('Failed to delete observation', 500, error.message);
   }
 }

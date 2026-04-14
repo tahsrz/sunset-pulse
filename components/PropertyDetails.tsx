@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import PropertyMap from '@/components/PropertyMap';
 import PropertyHeader from './property/PropertyHeader';
 import MarketIntelligence from './property/MarketIntelligence';
-import NeighborhoodRecon from './property/NeighborhoodRecon';
+import NeighborhoodInsights from './property/NeighborhoodInsights';
 import PropertySpecs from './property/PropertySpecs';
 import AmenityList from './property/AmenityList';
 import PropertyViewer from './property/PropertyViewer';
@@ -19,17 +19,17 @@ interface PropertyDetailsProps {
  * Detailed information about property
  */
 const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, rentData }) => {
-  const [viewerType, setViewerType] = useState<string>('fiber'); // Default to elite R3F
+  const [viewerType, setViewerType] = useState<string>('fiber'); // Default to R3F
 
   return (
     <main>
       <PropertyHeader property={property} />
 
-      {/* Market Intel / RentCast Section */}
+      {/* Market Analysis */}
       <MarketIntelligence rentData={rentData} />
 
-      {/* Neighborhood Intelligence Recon */}
-      <NeighborhoodRecon propertyId={property._id} />
+      {/* Neighborhood Insights */}
+      <NeighborhoodInsights propertyId={property._id} />
 
       <PropertySpecs property={property} />
 

@@ -13,7 +13,7 @@ import {
   PHOENIX_SYSTEM_PROMPT,
   REAPER_SYSTEM_PROMPT
 } from '@/lib/ai/prompts';
-import { NextResponse } from 'next/server';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
 export async function GET() {
   try {
@@ -39,7 +39,7 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json({
+    return successResponse({
       jamieSystemPrompt: config.jamieSystemPrompt || JAMIE_SYSTEM_PROMPT,
       abidanPrompts: {
         MARKET_SCOUT: config.abidanPrompts?.MARKET_SCOUT || MARKET_SCOUT_SYSTEM_PROMPT,
@@ -64,8 +64,8 @@ export async function GET() {
         personalityPreset: 'Aggressive'
       }
     });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch prompts' }, { status: 500 });
+  } catch (error: any) {
+    return errorResponse('Failed to fetch prompts', 500, error.message);
   }
 }
 
@@ -87,8 +87,8 @@ export async function POST(req: Request) {
       { upsert: true }
     );
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to update prompts' }, { status: 500 });
+    return successResponse({ success: true });
+  } catch (error: any) {
+    return errorResponse('Failed to update prompts', 500, error.message);
   }
 }

@@ -1,13 +1,12 @@
 import React from 'react';
-import { FaSync, FaDatabase, FaHeart, FaCommentDots, FaEye, FaPaperPlane } from 'react-icons/fa';
-import { TbDrone } from 'react-icons/tb';
+import { FaSync, FaDatabase, FaHeart, FaCommentDots, FaEye, FaPaperPlane, FaCompass } from 'react-icons/fa';
 import { Vector, Matrix } from '@/lib/visualization/engine/math';
 
 interface ViewerHUDProps {
   loading: boolean;
   branding: any;
-  isDroneMode: boolean;
-  handleDroneToggle: () => void;
+  isNavigationMode: boolean;
+  handleNavigationToggle: () => void;
   fps: number;
   level?: number;
   isDevMode: boolean;
@@ -16,7 +15,7 @@ interface ViewerHUDProps {
   projectedHotspots: any[];
   comments: any[];
   renderer: any;
-  droneState: any;
+  navigationState: any;
   property: any;
   isInCollection: boolean;
   handleToggleCollection: () => void;
@@ -34,8 +33,8 @@ interface ViewerHUDProps {
 const ViewerHUD: React.FC<ViewerHUDProps> = ({
   loading,
   branding,
-  isDroneMode,
-  handleDroneToggle,
+  isNavigationMode,
+  handleNavigationToggle,
   fps,
   level,
   isDevMode,
@@ -44,7 +43,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
   projectedHotspots,
   comments,
   renderer,
-  droneState,
+  navigationState,
   property,
   isInCollection,
   handleToggleCollection,
@@ -62,7 +61,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
     return (
       <div className='absolute inset-0 flex flex-col items-center justify-center font-mono text-sm bg-slate-950 z-20' style={{ color: branding.primaryColor }}>
         <FaSync className='animate-spin mb-4' size={40} />
-        <div className='tracking-[0.5em] animate-pulse uppercase'>[ INITIALIZING_NEURAL_LINK... ]</div>
+        <div className='tracking-[0.5em] animate-pulse uppercase'>[ INITIALIZING_VIRTUAL_VIEWER... ]</div>
       </div>
     );
   }
@@ -73,24 +72,23 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
         <button 
           onClick={(e) => {
             e.stopPropagation();
-            handleDroneToggle(e);
+            handleNavigationToggle();
           }}
           className='pointer-events-auto bg-black/60 backdrop-blur-2xl border border-white/10 px-6 py-2.5 rounded-full flex items-center gap-3'
         >
-          {isDroneMode ? <TbDrone className='text-orange-500' size={20} /> : <FaSync className='text-blue-500' size={16} />}
-          <span className='text-[10px] font-black uppercase tracking-[0.3em] text-white'>{isDroneMode ? 'Link Active' : 'Orbit Ready'}</span>
+          {isNavigationMode ? <FaCompass className='text-orange-500' size={18} /> : <FaSync className='text-blue-500' size={16} />}
+          <span className='text-[10px] font-black uppercase tracking-[0.3em] text-white'>{isNavigationMode ? 'Navigation Active' : 'Viewer Ready'}</span>
         </button>
 
         <div className='text-right font-mono'>
           {isDevMode && <div className='text-[9px] text-blue-400'>FPS: {fps}</div>}
           {level && <div className='text-xs font-black text-blue-500 mb-1'>LVL_{level.toString().padStart(2, '0')}</div>}
-          <div className='text-[10px] font-black uppercase opacity-80' style={{ color: branding.primaryColor }}>{isDroneMode ? 'SYS_RECON' : 'SYS_ORBIT'}</div>
+          <div className='text-[10px] font-black uppercase opacity-80' style={{ color: branding.primaryColor }}>{isNavigationMode ? 'SYS_NAV' : 'SYS_VIEW'}</div>
         </div>
       </div>
 
-      {/* Hotspot Labels */}
+      {/* Insight Labels */}
       {isDataOverlayActive && projectedHotspots.map(h => {
-        // Spatial Scaling based on Z (depth)
         const scale = Math.max(0.4, Math.min(1, 200 / h.z));
         const opacity = Math.max(0, Math.min(1, (1000 - h.z) / 800));
         
@@ -114,7 +112,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
               <span className='text-[10px] font-black uppercase tracking-[0.2em] text-white/90 group-hover/hotspot:text-blue-400 transition-colors'>{h.label}</span>
               <div className='flex items-center gap-2 mt-0.5'>
                 <div className='h-[1px] w-8 bg-gradient-to-r from-blue-500 to-transparent opacity-40' />
-                <span className='text-[7px] font-mono text-white/30 uppercase'>Intercept_Locked</span>
+                <span className='text-[7px] font-mono text-white/30 uppercase'>Insight_Locked</span>
               </div>
             </div>
           </div>
@@ -123,7 +121,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
 
       {/* Comment Pins */}
       {comments.map(c => {
-        const state = droneState.current;
+        const state = navigationState.current;
         const screenPos = renderer?.projectPoint(
           new Vector(c.position_x, c.position_y, c.position_z), 
           state.pos, 
@@ -152,7 +150,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
         <div className='p-5 bg-black/60 backdrop-blur-2xl rounded-2xl border border-white/10'>
           <div className='flex justify-between items-start mb-2'>
             <div>
-              <div className='text-[9px] text-blue-400 uppercase mb-1'>Asset Locked</div>
+              <div className='text-[9px] text-blue-400 uppercase mb-1'>Property Selected</div>
               <div className='text-sm font-black text-white'>{property?.name || 'GENERIC_UNIT_01'}</div>
             </div>
             <button 
@@ -173,7 +171,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
         {/* Spatial Comment Input */}
         {isCommentMode && (
           <div className='pointer-events-auto bg-black/80 backdrop-blur-xl border border-orange-500/30 p-4 rounded-2xl w-[250px] shadow-2xl animate-in slide-in-from-bottom-4 duration-300'>
-            <div className='text-[8px] font-black uppercase text-orange-400 mb-3 tracking-widest'>Drop Spatial Feedback</div>
+            <div className='text-[8px] font-black uppercase text-orange-400 mb-3 tracking-widest'>Add 3D Feedback</div>
             {!pendingCommentPos ? (
               <div className='text-[10px] text-white/60 italic leading-tight'>Click anywhere in the 3D grid to set a pin position.</div>
             ) : (
@@ -181,7 +179,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
                 <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="What are we looking at?" className='w-full bg-white/5 border border-white/10 rounded-lg p-3 text-[10px] text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/50 resize-none h-20' />
                 <div className='flex gap-2'>
                   <button onClick={() => setPendingCommentPos(null)} className='flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-[8px] font-black uppercase text-white/40 transition-all'>Reset Pin</button>
-                  <button onClick={handleDropComment} className='flex-1 py-2 bg-orange-600 hover:bg-orange-500 rounded-lg text-[8px] font-black uppercase text-white transition-all flex items-center justify-center gap-2'><FaPaperPlane size={8} /> Transmit</button>
+                  <button onClick={handleDropComment} className='flex-1 py-2 bg-orange-600 hover:bg-orange-500 rounded-lg text-[8px] font-black uppercase text-white transition-all flex items-center justify-center gap-2'><FaPaperPlane size={8} /> Send</button>
                 </div>
               </div>
             )}

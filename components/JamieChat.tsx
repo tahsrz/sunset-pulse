@@ -42,7 +42,18 @@ export default function JamieChat({ propertyData }) {
     setMounted(true);
     setMemoryContext(memoryBridge.getGreetingContext());
     setPersistentMessages(memoryBridge.getHistory());
+    
+    // Load minimized state from localStorage
+    const savedMinimized = localStorage.getItem('jamie_chat_minimized');
+    if (savedMinimized !== null) {
+      setIsMinimized(savedMinimized === 'true');
+    }
   }, []);
+
+  const toggleMinimized = (val: boolean) => {
+    setIsMinimized(val);
+    localStorage.setItem('jamie_chat_minimized', val.toString());
+  };
 
   const handleAction = (messageContent: string) => {
     if (!messageContent || typeof messageContent !== 'string') return;
@@ -88,7 +99,7 @@ export default function JamieChat({ propertyData }) {
     },
   });
 
-  // Sync messages from local storage on mount
+  // Sync messages from local storage on mount WIP
   useEffect(() => {
     if (mounted && persistentMessages.length > 0 && messages.length === 0) {
       setMessages(persistentMessages);
@@ -170,7 +181,7 @@ export default function JamieChat({ propertyData }) {
   if (!mounted) return null;
 
   if (isMinimized) {
-    return <JamieChatMinimized onOpen={() => setIsMinimized(false)} isLefthandMode={isLefthandMode} />;
+    return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} />;
   }
 
   return (
@@ -189,7 +200,7 @@ export default function JamieChat({ propertyData }) {
 
       <div className="bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/10 flex flex-col h-[550px] overflow-hidden transition-all duration-500 hover:border-blue-500/30 animate-in zoom-in-95 duration-300">
         <JamieChatHeader 
-          onMinimize={() => setIsMinimized(true)} 
+          onMinimize={() => toggleMinimized(true)} 
           isLefthandMode={isLefthandMode} 
           onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
         />

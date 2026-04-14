@@ -4,7 +4,7 @@
  * Integrates user preferences into data queries using XML tagging.
  */
 
-export type MemoryLayer = 'static' | 'dynamic' | 'session';
+export type MemoryLayer = 'static' | 'dynamic' | 'session' | 'core' | 'activity';
 
 export interface UserPreferences {
   style?: string;
@@ -32,7 +32,7 @@ class MemoryBridge {
   public save(layer: MemoryLayer, key: string, value: any): void {
     if (typeof window === 'undefined') return;
 
-    const storage = layer === 'session' ? sessionStorage : localStorage;
+    const storage = (layer === 'session' || layer === 'activity') ? sessionStorage : localStorage;
     const current = JSON.parse(storage.getItem(`pulse_mem_${layer}`) || '{}');
     current[key] = value;
     storage.setItem(`pulse_mem_${layer}`, JSON.stringify(current));
@@ -57,7 +57,7 @@ class MemoryBridge {
   }
 
   /**
-   * Generates a context object for Jamie to recognize the user across sessions.
+   * Generates a context object for the AI assistant to recognize the user across sessions.
    */
   public getGreetingContext(): any {
     if (typeof window === 'undefined') return {};
@@ -91,9 +91,39 @@ class MemoryBridge {
   }
 
   /**
+   * Categorized Logging: Core Insights (Key Decisions)
+   */
+  public logCoreInsight(insight: string, metadata?: any): void {
+    if (typeof window === 'undefined') return;
+    const history = JSON.parse(localStorage.getItem('pulse_mem_core') || '[]');
+    history.push({ insight, metadata, timestamp: new Date().toISOString() });
+    localStorage.setItem('pulse_mem_core', JSON.stringify(history.slice(-20))); // Keep last 20 insights
+  }
+
+  /**
+   * Categorized Logging: Activity Logs (System events)
+   */
+  public logActivityEvent(event: string, metadata?: any): void {
+    if (typeof window === 'undefined') return;
+    const history = JSON.parse(sessionStorage.getItem('pulse_mem_activity') || '[]');
+    history.push({ event, metadata, timestamp: new Date().toISOString() });
+    sessionStorage.setItem('pulse_mem_activity', JSON.stringify(history.slice(-50))); // Keep last 50 session events
+  }
+
+  public getCoreInsights(): any[] {
+    if (typeof window === 'undefined') return [];
+    return JSON.parse(localStorage.getItem('pulse_mem_core') || '[]');
+  }
+
+  public getActivityLogs(): any[] {
+    if (typeof window === 'undefined') return [];
+    return JSON.parse(sessionStorage.getItem('pulse_mem_activity') || '[]');
+  }
+
+  /**
    * Wraps a query with the XML metadata structure for Sanity/Data processing.
    */
-  public wrapQuery(baseQuery: string, contextTitle: string = 'Standard Recon'): string {
+  public wrapQuery(baseQuery: string, contextTitle: string = 'Standard Insights'): string {
     const prefs = this.getPreferences();
     const history = JSON.parse(localStorage.getItem('pulse_mem_history') || '[]');
 
@@ -119,7 +149,6 @@ class MemoryBridge {
    */
   private updateDynamic(key: string, value: any): void {
     const dynamic = JSON.parse(localStorage.getItem('pulse_mem_dynamic') || '{}');
-    // Simple frequency/recency logic: replace for now, could be an aggregator
     dynamic[key] = value;
     localStorage.setItem('pulse_mem_dynamic', JSON.stringify(dynamic));
   }
@@ -128,7 +157,6 @@ class MemoryBridge {
     if (typeof window === 'undefined') return;
     const history = JSON.parse(localStorage.getItem('pulse_mem_history') || '[]');
     history.push(action);
-    // Keep last 50 interactions to avoid bloating storage
     localStorage.setItem('pulse_mem_history', JSON.stringify(history.slice(-50)));
   }
 
@@ -140,6 +168,8 @@ class MemoryBridge {
   public clearHistory(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('pulse_mem_history');
+    localStorage.removeItem('pulse_mem_core');
+    sessionStorage.removeItem('pulse_mem_activity');
   }
 }
 

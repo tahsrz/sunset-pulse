@@ -2,7 +2,12 @@
 
 import useSWR from 'swr';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => {
+    if (!res.ok) {
+      return res.json().then(err => { throw err; });
+    }
+    return res.json();
+  });
 
 export const useJamieInsights = () => {
   const { data, error, isLoading } = useSWR('/api/jamie/dreams', fetcher, {
@@ -11,7 +16,7 @@ export const useJamieInsights = () => {
   });
 
   return { 
-    jamieInsights: data || [], 
+    jamieInsights: Array.isArray(data) ? data : [], 
     loading: isLoading,
     error 
   };

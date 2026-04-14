@@ -6,7 +6,7 @@ import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
-import PropertyVerification from '@/components/SphinxGatekeeper';
+import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
@@ -21,7 +21,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
   if (!property) {
     return (
       <h1 className='text-center text-2xl font-bold mt-10 text-slate-800'>
-        Listing Intelligence Not Found
+        Listing Not Found
       </h1>
     );
   }
@@ -32,7 +32,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
   try {
     rentData = await fetchRentEstimate(address);
   } catch (e) {
-    console.error('Rent Data Failure:', e);
+    console.error('Market analysis failed:', e);
   }
 
   const jamieData = { ...property, rentData };

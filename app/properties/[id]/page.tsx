@@ -10,35 +10,15 @@ import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import BookingForm from '@/components/BookingForm';
-import PropertyVerification from '@/components/SphinxGatekeeper';
+import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
 import { FaArrowLeft } from 'react-icons/fa';
+import { Property } from '@/lib/types';
 
 // --- Interfaces for Type Safety ---
-interface Property {
-  _id: string;
-  name: string;
-  type: string;
-  images: string[];
-  location: {
-    street?: string;
-    city: string;
-    state: string;
-    zipcode?: string;
-  };
-  rates: {
-    nightly?: number;
-    weekly?: number;
-    monthly?: number;
-  };
-  amenities: string[];
-  // Add other properties as needed
-  [key: string]: any; 
-}
-
 interface RentData {
   status: string;
   rentEstimate?: number;
@@ -62,7 +42,7 @@ const PropertyPage: React.FC = () => {
         const propertyData = await fetchProperty(id);
         setProperty(propertyData as Property);
 
-        // Fetch Grid-Persistent Rent Intelligence
+        // get market rent insights
         if (propertyData) {
           try {
             const rentRes = await fetch(`/api/properties/${id}/rent`);
@@ -71,7 +51,7 @@ const PropertyPage: React.FC = () => {
               setRentData(rent as RentData);
             }
           } catch (rentError) {
-            console.error('Rent Recon Failure:', rentError);
+            console.error('Market analysis failed:', rentError);
           }
         }
       } catch (error) {

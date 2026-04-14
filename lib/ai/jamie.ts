@@ -21,38 +21,61 @@ import { createClient } from "@/utils/supabase/server";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-export async function getJamieRecap(history: any[]) {
-  if (!history || history.length === 0) {
-    return "Welcome back, Commander. The Intelligence Grid is active and awaiting your orders.";
+export async function getJamieActivityRecap(history: any[], coreInsights: any[] = [], activityLogs: any[] = []) {
+  const hasSignificantHistory = history.length > 0 || coreInsights.length > 0 || activityLogs.length > 0;
+  
+  if (!hasSignificantHistory) {
+    return "Welcome back. I am Jamie, and I'm ready to assist you with your property search.";
   }
 
   // Filter for clean text content from history
   const historyText = history
-    .slice(-10) // Last 10 interactions for context
+    .slice(-5) 
     .map(h => `${h.role.toUpperCase()}: ${h.content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '')}`)
     .join('\n');
+
+  const coreText = coreInsights
+    .slice(-5)
+    .map(s => `[CORE_INSIGHT] ${s.insight} (${s.timestamp})`)
+    .join('\n');
+
+  const activityText = activityLogs
+    .slice(-5)
+    .map(t => `[ACTIVITY] ${t.event} (${t.timestamp})`)
+    .join('\n');
+
+  const combinedContext = `
+    CORE_INSIGHTS:
+    ${coreText || 'None recorded.'}
+
+    ACTIVITY_LOGS:
+    ${activityText || 'None recorded.'}
+
+    RECENT_CHAT_HISTORY:
+    ${historyText || 'None recorded.'}
+  `;
 
   try {
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: JAMIE_SESSION_RECAP_PROTOCOL },
-        { role: "user", content: `History:\n${historyText}\n\nExecute session recap.` }
+        { role: "user", content: `Contextualized History:\n${combinedContext}\n\nExecute Jamie's session recap. Focus on key progress first.` }
       ],
       model: "llama-3.3-70b-versatile",
       temperature: 0.3,
     });
 
-    return completion.choices[0]?.message?.content || "Grid state restored. Ready for recon.";
+    return completion.choices[0]?.message?.content || "Session state restored. Jamie has recognized your activity.";
   } catch (error) {
     console.error("Recap Generation Error:", error);
-    return "Welcome back. Previous session data has been archived. The grid is live.";
+    return "Welcome back. Jamie has synchronized your previous activity.";
   }
 }
 
 /**
- * Abidan Judge Worker Functions
+ * Jamie's Analysis Functions
  */
-async function getAbidanJudgeIntel(workerName: string, systemPrompt: string, propertyData: any, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
+async function getJamieAnalysisIntel(workerName: string, systemPrompt: string, propertyData: any, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -64,22 +87,22 @@ async function getAbidanJudgeIntel(workerName: string, systemPrompt: string, pro
         model: model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Execute recon for: ${JSON.stringify(propertyData)}` }
+          { role: "user", content: `Jamie's analysis request: ${JSON.stringify(propertyData)}` }
         ],
       })
     });
     const data = await response.json();
-    return data.choices[0]?.message?.content || `JUDGE_${workerName}_FAILURE: Intel stream broken.`;
+    return data.choices[0]?.message?.content || `ANALYSIS_${workerName}_FAILURE: Jamie's data stream interrupted.`;
   } catch (error) {
-    console.error(`Judge ${workerName} Error:`, error);
-    return `JUDGE_${workerName}_ERROR: Signal lost.`;
+    console.error(`Analysis ${workerName} Error:`, error);
+    return `ANALYSIS_${workerName}_ERROR: Jamie communication error.`;
   }
 }
 
 /**
- * Worker: Judge Suriel (Phoenix) Aggregator
+ * Data Aggregator
  */
-async function getSurielRestoration(rawIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
+async function getJamieDataAggregation(rawIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -91,22 +114,22 @@ async function getSurielRestoration(rawIntel: string, systemPrompt: string, mode
         model: model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Restore and aggregate this raw Judge intel: ${rawIntel}` }
+          { role: "user", content: `Jamie needs to aggregate and summarize this analysis: ${rawIntel}` }
         ],
       })
     });
     const data = await response.json();
-    return data.choices[0]?.message?.content || "SURIEL_FAILURE: Restoration failed.";
+    return data.choices[0]?.message?.content || "AGGREGATION_FAILURE: Jamie's data aggregation failed.";
   } catch (error) {
-    console.error("Suriel Error:", error);
-    return "SURIEL_ERROR: Phoenix flame flickering.";
+    console.error("Aggregation Error:", error);
+    return "AGGREGATION_ERROR: Jamie system error during data processing.";
   }
 }
 
 /**
- * Worker: Judge Ozriel (Reaper) Harvest
+ * Final Insights
  */
-async function getOzrielHarvest(restoredIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
+async function getJamieFinalInsights(restoredIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -118,21 +141,21 @@ async function getOzrielHarvest(restoredIntel: string, systemPrompt: string, mod
         model: model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Harvest the final truth: ${restoredIntel}` }
+          { role: "user", content: `Jamie is generating final insights: ${restoredIntel}` }
         ],
       })
     });
     const data = await response.json();
-    return data.choices[0]?.message?.content || "OZRIEL_FAILURE: Harvest skipped.";
+    return data.choices[0]?.message?.content || "INSIGHT_FAILURE: Jamie's insight generation skipped.";
   } catch (error) {
-    console.error("Ozriel Error:", error);
-    return "OZRIEL_ERROR: The Scythe has failed.";
+    console.error("Insight Error:", error);
+    return "INSIGHT_ERROR: Jamie core processing failure.";
   }
 }
 
 import { calculateMaxStay, calculateBudgetGap, synthesizePortfolio } from '../intelligence/budgetLogic';
 
-export async function generateHighStakesHook(leadData: any, property: any) {
+export async function generateJamieEngagementHook(leadData: any, property: any) {
   const usps = [
     property.type,
     ...(property.amenities || []),
@@ -149,16 +172,16 @@ export async function generateHighStakesHook(leadData: any, property: any) {
   
   // Asset Optimization Logic
   const optimizationNotes = [
-    maxStayDays > 0 ? `Max Continuous Stay Velocity: ${maxStayDays} Days.` : null,
-    budgetGap > 0 ? `Gap to Next-Tier USPs: $${budgetGap}.` : null,
-    leadData.budget > 250000 ? `Lead qualifies for 'Yield Portfolio' synthesis (Knapsack Opt).` : null,
+    maxStayDays > 0 ? `Max Continuous Stay Potential: ${maxStayDays} Days.` : null,
+    budgetGap > 0 ? `Gap to Next-Tier Features: $${budgetGap}.` : null,
+    leadData.budget > 250000 ? `Lead qualifies for 'Yield Portfolio' synthesis.` : null,
   ].filter(Boolean).join(" ");
 
   const budgetConstraint = (leadData.budget > 0 && leadData.budget < propertyPrice) 
-    ? `ALERT: Lead budget is BELOW property price. Archetypes 'L', 'Y', and 'D' MUST focus on 'Discussing Financing' or 'Investment Strategy'. ${optimizationNotes}`
+    ? `ALERT: Lead budget is below property price. Jamie's focus: 'Discussing Financing' or 'Investment Strategy'. ${optimizationNotes}`
     : optimizationNotes;
 
-  const prompt = `Using the user's budget of $${leadData.budget || 'Unknown'} and the property's USPs (${usps}), execute the JAMIE_A-Z_RE-ENGAGEMENT_GRID.
+  const prompt = `Using the user's budget of $${leadData.budget || 'Unknown'} and the property's features (${usps}), Jamie will generate an engagement strategy.
   Lead Name: ${leadData.name}
   Property Name: ${property.name}
   Location: ${property.location.city}, ${property.location.state}
@@ -185,18 +208,18 @@ export async function generateHighStakesHook(leadData: any, property: any) {
     const content = data.choices[0]?.message?.content || "";
     return JSON.parse(content);
   } catch (error) {
-    console.error("A-Z Hook Generation Failed:", error);
-    return { a: "The market is moving fast. Should we talk?" };
+    console.error("Engagement Hook Generation Failed:", error);
+    return { a: "The market is moving fast. Should we talk? - Jamie" };
   }
 }
 
-export async function getJamieReengagement(lead: any, property: any, oldScore: number, newScore: number) {
+export async function getJamieEngagement(lead: any, property: any, oldScore: number, newScore: number) {
   const propertyPrice = property.rates?.monthly || (property.rates?.nightly * 30) || 0;
   const budgetConstraint = (lead.budget > 0 && lead.budget < propertyPrice) 
-    ? "ALERT: Lead budget is BELOW property price. Archetypes 'L', 'Y', and 'D' MUST focus on 'Discussing Financing' or 'Investment Strategy'."
+    ? "ALERT: Lead budget is below property price. Jamie's focus: 'Discussing Financing' or 'Investment Strategy'."
     : "";
 
-  const prompt = `Using the Score Trajectory ${oldScore} -> ${newScore}, execute the JAMIE_A-Z_RE-ENGAGEMENT_GRID.
+  const prompt = `Using the Score Trajectory ${oldScore} -> ${newScore}, Jamie will generate an engagement strategy.
   Lead Name: ${lead.name}
   Property Name: ${property.name}
   Location: ${property.location.city}, ${property.location.state}
@@ -224,19 +247,19 @@ export async function getJamieReengagement(lead: any, property: any, oldScore: n
     try {
       return JSON.parse(content);
     } catch (e) {
-      console.error("Failed to parse Jamie A-Z JSON:", content);
+      console.error("Failed to parse engagement JSON:", content);
       return { a: content };
     }
   } catch (error) {
-    console.error("OpenRouter A-Z Re-engagement Failed:", error);
-    return { a: "Intelligence Grid offline." };
+    console.error("Engagement Strategy Generation Failed:", error);
+    return { a: "Jamie is currently offline." };
   }
 }
 
 export async function getJamieResponse(messages: any[], propertyData?: any, memoryContext?: any, isDevMode: boolean = false) {
   const userInput = messages[messages.length - 1]?.content || "";
   
-  // 1. Fetch Config from Supabase (Primary)
+  // Fetch Config from Supabase (Primary)
   const supabase = createClient();
   const { data: sbConfig } = await supabase
     .from('site_config')
@@ -254,7 +277,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
       branding: sbConfig.branding
     };
   } else {
-    // 2. Fallback to MongoDB (Legacy)
+    // Fallback to MongoDB (Legacy)
     await connectDB();
     agentConfig = await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
   }
@@ -279,99 +302,96 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
   };
 
   const primaryModel = agentConfig?.modelMatrix?.primaryModel || 'llama-3.1-8b-instant';
-  const reconModel = agentConfig?.modelMatrix?.reconModel || 'meta-llama/llama-3.1-405b-instruct:free';
+  const analysisModel = agentConfig?.modelMatrix?.reconModel || 'meta-llama/llama-3.1-405b-instruct:free';
   const minJudges = agentConfig?.operationalSettings?.minJudges || 1;
   const maxJudges = agentConfig?.operationalSettings?.maxJudges || 4;
-  const personalityPreset = agentConfig?.operationalSettings?.personalityPreset || 'Aggressive';
+  const personalityPreset = agentConfig?.operationalSettings?.personalityPreset || 'Professional';
   
   const neighborhoodContext = `
     LOCAL BUSINESS DATA:
     - Featured Items: ${localBusinessIntel.map(item => `${item.name} ($${item.price})`).join(', ')}
-    - Business Strategy: Local retail hub for the community. Use this to show lifestyle value.
+    - Business Strategy: Local retail hub for the community. Jamie uses this to show lifestyle value.
   `;
 
   // Parallelized Worker Workflow
-  let judgeReport = "";
-  const isDeepRecon = userInput.toLowerCase().includes("pull that up") || 
+  let analysisReport = "";
+  const isDeepAnalysis = userInput.toLowerCase().includes("pull that up") || 
                      userInput.toLowerCase().includes("numbers") || 
-                     userInput.toLowerCase().includes("intel") ||
-                     userInput.toLowerCase().includes("abidan") ||
-                     userInput.toLowerCase().includes("judges");
+                     userInput.toLowerCase().includes("analysis") ||
+                     userInput.toLowerCase().includes("insights");
 
-  if (isDeepRecon) {
+  if (isDeepAnalysis) {
     const startWorkers = Date.now();
-    console.log("[JAMIE_CORE] Initiating randomized Abidan Judge parallel recon...");
+    console.log("[JAMIE_CORE] Jamie initiating parallel data analysis...");
     
-    // Step 1: Define all available Judges with dynamic prompts
-    const allJudges = [
+    // 1 Define all available analysis agents with dynamic prompts
+    const allAnalyticAgents = [
       { name: "MARKET_SCOUT", prompt: abidanPrompts.MARKET_SCOUT },
       { name: "ASSET_ANALYST", prompt: abidanPrompts.ASSET_ANALYST },
-      { name: "MAKIEL", prompt: abidanPrompts.MAKIEL },
-      { name: "GADRAEL", prompt: abidanPrompts.GADRAEL },
-      { name: "DURANDIEL", prompt: abidanPrompts.DURANDIEL },
-      { name: "TELARIEL", prompt: abidanPrompts.TELARIEL },
-      { name: "REZAEL", prompt: abidanPrompts.REZAEL },
-      { name: "ZAKARIEL", prompt: abidanPrompts.ZAKARIEL }
+      { name: "DATA_VALIDATOR", prompt: abidanPrompts.MAKIEL },
+      { name: "RISK_ASSESSOR", prompt: abidanPrompts.GADRAEL },
+      { name: "YIELD_SPECIALIST", prompt: abidanPrompts.DURANDIEL },
+      { name: "TREND_ANALYST", prompt: abidanPrompts.TELARIEL },
+      { name: "PORTFOLIO_STRATEGIST", prompt: abidanPrompts.REZAEL },
+      { name: "VALUATION_EXPERT", prompt: abidanPrompts.ZAKARIEL }
     ];
 
-    // Step 2: Randomly select between min and max Judges
+    // 2 Randomly select between min and max agents
     const range = Math.max(1, maxJudges - minJudges + 1);
-    const numToCall = Math.min(allJudges.length, Math.floor(Math.random() * range) + minJudges);
-    const selectedJudges = [...allJudges]
+    const numToCall = Math.min(allAnalyticAgents.length, Math.floor(Math.random() * range) + minJudges);
+    const selectedAgents = [...allAnalyticAgents]
       .sort(() => 0.5 - Math.random())
       .slice(0, numToCall);
 
-    console.log(`[JAMIE_CORE] Selected ${numToCall} Judges for this cycle: ${selectedJudges.map(j => j.name).join(', ')}`);
+    console.log(`[JAMIE_CORE] Jamie selected ${numToCall} analysis agents for this cycle: ${selectedAgents.map(j => j.name).join(', ')}`);
 
-    // Step 3: Run Selected Judges in Parallel using reconModel
-    const judgeResults = await Promise.all(
-      selectedJudges.map(j => getAbidanJudgeIntel(j.name, j.prompt, propertyData, reconModel))
+    // Step 3: Run Selected agents in Parallel using analysisModel
+    const analysisResults = await Promise.all(
+      selectedAgents.map(j => getJamieAnalysisIntel(j.name, j.prompt, propertyData, analysisModel))
     );
     
-    console.log(`[JAMIE_CORE] Abidan Judge Primary Workers Latency: ${Date.now() - startWorkers}ms`);
+    console.log(`[JAMIE_CORE] Jamie's Analysis Workers Latency: ${Date.now() - startWorkers}ms`);
     
-    const rawIntel = selectedJudges.map((j, i) => `JUDGE_${j.name}: ${judgeResults[i]}`).join('\n');
+    const rawIntel = selectedAgents.map((j, i) => `ANALYSIS_${j.name}: ${analysisResults[i]}`).join('\n');
 
-    // Step 4: Suriel Restoration
-    const surielStart = Date.now();
-    const surielRestored = await getSurielRestoration(rawIntel, abidanPrompts.PHOENIX, reconModel);
-    console.log(`[JAMIE_CORE] Suriel Restoration Latency: ${Date.now() - surielStart}ms`);
+    // 4: Jamie Data Aggregation
+    const aggregationStart = Date.now();
+    const aggregatedData = await getJamieDataAggregation(rawIntel, abidanPrompts.PHOENIX, analysisModel);
+    console.log(`[JAMIE_CORE] Jamie's Data Aggregation Latency: ${Date.now() - aggregationStart}ms`);
 
-    // Step 5: Ozriel Harvest
-    const ozrielStart = Date.now();
-    const ozrielFinalHarvest = await getOzrielHarvest(surielRestored, abidanPrompts.REAPER, reconModel);
-    console.log(`[JAMIE_CORE] Ozriel Harvest Latency: ${Date.now() - ozrielStart}ms`);
+    // 5 Jamie Final Insights
+    const insightStart = Date.now();
+    const finalInsights = await getJamieFinalInsights(aggregatedData, abidanPrompts.REAPER, analysisModel);
+    console.log(`[JAMIE_CORE] Jamie's Final Insight Latency: ${Date.now() - insightStart}ms`);
     
-    judgeReport = `
-      [ACTIVE_JUDGE_NODES]: ${selectedJudges.map(j => j.name).join(', ')}
-      [INTELLIGENCE_PROFILE]: ${personalityPreset}
+    analysisReport = `
+      [ACTIVE_ANALYSIS_NODES]: ${selectedAgents.map(j => j.name).join(', ')}
+      [ANALYSIS_PROFILE]: ${personalityPreset}
       
-      [JUDGE_SURIEL_RESTORATION]
-      ${surielRestored}
+      [JAMIE_DATA_AGGREGATION]
+      ${aggregatedData}
 
-      [JUDGE_OZRIEL_HARVEST]
-      ${ozrielFinalHarvest}
+      [JAMIE_FINAL_INSIGHTS]
+      ${finalInsights}
     `;
-    console.log(`[JAMIE_CORE] Total Abidan Judge Flow Latency: ${Date.now() - startWorkers}ms`);
+    console.log(`[JAMIE_CORE] Total Jamie Analysis Flow Latency: ${Date.now() - startWorkers}ms`);
   }
 
   const propertyContext = propertyData 
     ? typeof propertyData === 'string' ? propertyData : JSON.stringify(propertyData)
-    : "No property data currently intercepted.";
+    : "No property data currently available for Jamie.";
 
   // Memory Recognition Logic
   const sessionCount = memoryContext?.sessionCount || 0;
 
   const recognitionContext = memoryContext?.isReturning 
-    ? `USER RECOGNITION: This is ${memoryContext.userName}. 
+    ? `USER RECOGNITION: Jamie recognizes ${memoryContext.userName}. 
        Last property viewed: ${memoryContext.lastProperty}. Last significant action: ${memoryContext.lastAction}.
-       Acknowledge them appropriately.`
-    : `USER RECOGNITION: This is a new lead. 
-       Establish dominance and introduce the Intelligence Grid.`;
+       Jamie will acknowledge them appropriately.`
+    : `USER RECOGNITION: Jamie is meeting a new client. 
+       Jamie will introduce the platform and capabilities.`;
 
-  // 3. Sanitize and Format Messages for Groq
-  // This prevents the "discriminator property 'role'" error by ensuring 
-  // only standard role/content pairs are sent.
+  // Sanitize and Format Messages for Groq
   const sanitizedMessages = messages
     .filter(m => m && typeof m === 'object' && m.role && m.content)
     .map(m => ({
@@ -392,26 +412,26 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
         },
         {
           role: "system",
-          content: `PERSONALITY_MATRIX: Currently set to ${personalityPreset} mode.`
+          content: `PERSONALITY_MATRIX: Jamie is currently in ${personalityPreset} mode.`
         },
         {
           role: "system",
-          content: `AGENT BRANDING GUIDELINES:
+          content: `JAMIE BRANDING GUIDELINES:
           - Tone: ${agentConfig?.branding?.tone || 'Professional and local'}
           - Focus Area: ${agentConfig?.focusNeighborhood || 'North Texas'}
           - Primary Color: ${agentConfig?.branding?.primaryColor || '#2563eb'}`
         },
         {
           role: "system",
-          content: `NEIGHBORHOOD INTEL: ${neighborhoodContext}`
+          content: `NEIGHBORHOOD_CONTEXT: ${neighborhoodContext}`
         },
         {
           role: "system",
-          content: `PROPERTY INTEL: ${propertyContext}`
+          content: `PROPERTY_CONTEXT: ${propertyContext}`
         },
         {
           role: "system",
-          content: `SUBORDINATE DATA (ABIDAN JUDGE GRID): ${judgeReport || 'No deep Abidan recon performed yet.'}`
+          content: `JAMIE_ANALYSIS_REPORT: ${analysisReport || 'No deep analysis performed yet.'}`
         },
         ...sanitizedMessages
       ],
@@ -421,7 +441,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
 
     return completion;
   } catch (error) {
-    console.error("Intelligence Intercept Error:", error);
-    return "The local data grid is down. I can't sync the neighborhood intel right now.";
+    console.error("Jamie Analysis Error:", error);
+    return "Jamie's local data grid is currently unavailable. I cannot sync the neighborhood data at this time.";
   }
 }

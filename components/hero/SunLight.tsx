@@ -16,49 +16,80 @@ const SunLight: React.FC<SunLightProps> = ({ preset = 'REALTIME', cycleSpeed = 5
   
   const simulatedHourRef = useRef(12);
   const [mounted, setMounted] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    simulatedHourRef.current = new Date().getHours();
+    
+    // Attempt to get user location for more precise grounding
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        () => console.log("[SunLight] Location denied. Defaulting to local time sync.")
+      );
+    }
+
+    const now = new Date();
+    simulatedHourRef.current = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   }, []);
 
   const getSunSettings = (hour: number) => {
     let currentHour = hour;
-    if (preset === 'GOLDEN_HOUR') currentHour = 18.5;
+    if (preset === 'GOLDEN_HOUR') currentHour = 18.3; // Deep golden hour
     if (preset === 'MIDNIGHT') currentHour = 0;
-    if (preset === 'HIGH_NOON') currentHour = 12;
+    if (preset === 'HIGH_NOON') currentHour = 12.5;
 
+    // Mapping hour to azimuth (angle around the Y axis)
+    // 6 AM = 0, 12 PM = PI/2, 6 PM = PI, 12 AM = 3PI/2
     const angle = ((currentHour - 6) / 24) * Math.PI * 2;
-    const radius = 30;
+    const radius = 40;
+    
+    // Height adjustment based on time of day (sine wave)
+    // Noon is highest (positive Y), Midnight is lowest (negative Y)
+    const yHeight = Math.sin(((currentHour - 6) / 12) * Math.PI) * radius;
+    
+    // Azimuth (X and Z)
     const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    const z = Math.sin(angle * 0.5) * 10;
+    const z = Math.sin(angle) * radius;
 
-    const isDay = currentHour >= 6 && currentHour <= 18;
+    const isDay = currentHour >= 5.5 && currentHour <= 19.5;
     let color = new THREE.Color('#ffffff');
     let intensity = 1.0;
 
-    if (currentHour >= 5 && currentHour < 7) {
-      const t = (currentHour - 5) / 2;
-      color.lerpColors(new THREE.Color('#3b82f6'), new THREE.Color('#ff9e22'), t);
-      intensity = 0.2 + t * 0.8;
-    } else if (currentHour >= 7 && currentHour < 17) {
+    // Detailed Lighting Transitions (Grounding in Real-world States)
+    if (currentHour >= 4.5 && currentHour < 6.5) {
+      // Dawn / Early Morning
+      const t = (currentHour - 4.5) / 2;
+      color.lerpColors(new THREE.Color('#1e1b4b'), new THREE.Color('#fbbf24'), t);
+      intensity = 0.1 + t * 0.7;
+    } else if (currentHour >= 6.5 && currentHour < 16.5) {
+      // Daylight
       color.set('#ffffff');
       intensity = 1.0;
-    } else if (currentHour >= 17 && currentHour < 19) {
-      const t = (currentHour - 17) / 2;
-      color.lerpColors(new THREE.Color('#ffffff'), new THREE.Color('#f87171'), t);
-      intensity = 1.0 + Math.sin(t * Math.PI) * 0.5;
-    } else if (currentHour >= 19 && currentHour < 21) {
-      const t = (currentHour - 19) / 2;
-      color.lerpColors(new THREE.Color('#f87171'), new THREE.Color('#1e293b'), t);
-      intensity = 1.2 - t * 1.0;
+    } else if (currentHour >= 16.5 && currentHour < 19.5) {
+      // Golden Hour / Sunset
+      const t = (currentHour - 16.5) / 3;
+      if (t < 0.5) {
+        // Shifting to gold
+        color.lerpColors(new THREE.Color('#ffffff'), new THREE.Color('#f59e0b'), t * 2);
+        intensity = 1.0 + t * 0.4;
+      } else {
+        // Shifting to deep orange/red
+        color.lerpColors(new THREE.Color('#f59e0b'), new THREE.Color('#ef4444'), (t - 0.5) * 2);
+        intensity = 1.4 - (t - 0.5) * 0.6;
+      }
+    } else if (currentHour >= 19.5 && currentHour < 21.5) {
+      // Twilight / Dusk
+      const t = (currentHour - 19.5) / 2;
+      color.lerpColors(new THREE.Color('#7f1d1d'), new THREE.Color('#0f172a'), t);
+      intensity = 0.8 - t * 0.7;
     } else {
-      color.set('#1e293b');
-      intensity = 0.15;
+      // Midnight / Night
+      color.set('#1e293b'); // Dark blue night
+      intensity = 0.1;
     }
 
-    return { position: [x, Math.max(y, -5), z] as [number, number, number], color, intensity, isDay };
+    return { position: [x, yHeight, z] as [number, number, number], color, intensity, isDay };
   };
 
   useFrame((state) => {
@@ -68,8 +99,9 @@ const SunLight: React.FC<SunLightProps> = ({ preset = 'REALTIME', cycleSpeed = 5
     if (preset === 'CYCLE') {
       const timeDelta = state.clock.getDelta() * (cycleSpeed / 3600);
       simulatedHourRef.current = (simulatedHourRef.current + timeDelta) % 24;
-    } else {
-      simulatedHourRef.current = new Date().getHours();
+    } else if (preset === 'REALTIME') {
+      const now = new Date();
+      simulatedHourRef.current = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
     }
 
     const settings = getSunSettings(simulatedHourRef.current);
@@ -78,19 +110,23 @@ const SunLight: React.FC<SunLightProps> = ({ preset = 'REALTIME', cycleSpeed = 5
     if (sunRef.current) {
       sunRef.current.position.set(...settings.position);
       sunRef.current.color.copy(settings.color);
-      const shimmer = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      // Atmosphere jitter for realism
+      const shimmer = Math.sin(state.clock.elapsedTime * 0.2) * 0.01;
       sunRef.current.intensity = settings.intensity + shimmer;
     }
 
     if (ambientRef.current) {
-      ambientRef.current.intensity = settings.isDay ? 0.3 : 0.05;
-      ambientRef.current.color.copy(new THREE.Color(settings.isDay ? '#ffffff' : '#1e293b'));
+      // Blue ambient light at night, White/Sky blue during day
+      ambientRef.current.intensity = settings.isDay ? 0.4 : 0.08;
+      ambientRef.current.color.copy(new THREE.Color(settings.isDay ? '#cbd5e1' : '#1e1b4b'));
     }
 
     if (sunMeshRef.current) {
       sunMeshRef.current.position.set(...settings.position);
       (sunMeshRef.current.material as THREE.MeshBasicMaterial).color.copy(settings.color);
-      (sunMeshRef.current.material as THREE.MeshBasicMaterial).opacity = settings.isDay ? 1 : 0.5;
+      // Hide sun below horizon
+      (sunMeshRef.current.material as THREE.MeshBasicMaterial).opacity = settings.position[1] > -2 ? 1 : 0;
+      sunMeshRef.current.scale.setScalar(settings.isDay ? 1 : 0.5);
     }
   });
 
@@ -102,12 +138,16 @@ const SunLight: React.FC<SunLightProps> = ({ preset = 'REALTIME', cycleSpeed = 5
         ref={sunRef}
         castShadow
         shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
       />
       
       <ambientLight ref={ambientRef} />
       
       <mesh ref={sunMeshRef}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1.5, 32, 32]} />
         <meshBasicMaterial transparent />
       </mesh>
     </group>

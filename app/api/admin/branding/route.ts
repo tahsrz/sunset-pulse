@@ -1,6 +1,6 @@
 import connectDB from '@/lib/core/database';
 import { SiteConfig } from '@/models/SiteConfig';
-import { NextResponse } from 'next/server';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const { branding } = body;
 
     if (!branding) {
-      return NextResponse.json({ error: 'Branding data is required' }, { status: 400 });
+      return errorResponse('Branding data is required', 400);
     }
 
     await SiteConfig.findOneAndUpdate(
@@ -21,9 +21,9 @@ export async function POST(req: Request) {
       { upsert: true }
     );
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    return successResponse({ success: true });
+  } catch (error: any) {
     console.error('[BRANDING_UPDATE_ERROR]', error);
-    return NextResponse.json({ error: 'Failed to update branding' }, { status: 500 });
+    return errorResponse('Failed to update branding', 500, error.message);
   }
 }

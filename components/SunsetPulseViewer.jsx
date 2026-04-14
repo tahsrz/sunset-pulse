@@ -10,7 +10,6 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { toggleCollection, addPropertyComment, subscribeToPropertyComments, supabase, logEvent } from '@/lib/supabase';
 import { toast } from 'react-toastify';
 
-import { useDroneControls } from '@/hooks/useDroneControls';
 import ViewerHUD from './viewer/ViewerHUD';
 
 const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
@@ -32,16 +31,9 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
   const lastTimeRef = useRef(performance.now());
   const frameCountRef = useRef(0);
 
-  const {
-    isDroneMode,
-    droneState,
-    orbitState,
-    handleDroneToggle,
-    updateDrone,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-  } = useDroneControls(canvasRef, propId, userId, userName);
+  // Simplified state for orbital navigation since drone controls are removed
+  const orbitState = useRef({ yaw: 0, pitch: -0.2 });
+  const mouseRef = useRef({ isDown: false, button: 0, lastX: 0, lastY: 0 });
 
   const { 
     peers, 
@@ -50,7 +42,7 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
     isMeLead,
     presentationMode,
     setPresentationMode 
-  } = useMultiplayer(property?.name || 'User', droneState.current.pos);
+  } = useMultiplayer(property?.name || 'User', new Vector(0,0,0));
 
   const hotspots = React.useMemo(() => [
     { pos: new Vector(10, 10, 10), label: `Price/sqft: $${property?.square_feet ? Math.round(property.rates?.monthly / (property.square_feet / 10)) : 'N/A'}`, key: 'price' },
@@ -117,7 +109,7 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
       actorId: userId,
       actorName: userName,
       targetId: propId,
-      severity: wasIn ? 'INFO' : 'TACTICAL'
+      severity: wasIn ? 'INFO' : 'LOW'
     });
 
     toast.success(wasIn ? "Removed from Pulse Folder" : "Added to Pulse Folder");
@@ -140,13 +132,13 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
       const savedComment = await addPropertyComment(commentData);
       
       await logEvent({
-        type: 'SPATIAL_INTEL',
-        description: `${userName} dropped spatial feedback on ${property?.name}: "${newComment.substring(0, 30)}..."`,
+        type: 'SPATIAL_FEEDBACK',
+        description: `${userName} dropped feedback on ${property?.name}: "${newComment.substring(0, 30)}..."`,
         actorId: userId,
         actorName: userName,
         targetId: savedComment.id,
         metadata: { property_name: property?.name, content: newComment },
-        severity: 'TACTICAL'
+        severity: 'INFO'
       });
 
       setNewComment('');
@@ -157,18 +149,33 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
     }
   };
 
-  const togglePointerLock = () => {
+  // Simplified Mouse Handlers for Orbital View
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    mouseRef.current.isDown = true;
+    mouseRef.current.lastX = e.clientX;
+    mouseRef.current.lastY = e.clientY;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!mouseRef.current.isDown) return;
+    const deltaX = e.clientX - mouseRef.current.lastX;
+    const deltaY = e.clientY - mouseRef.current.lastY;
+    
+    orbitState.current.yaw += deltaX * 0.01;
+    orbitState.current.pitch += deltaY * 0.01;
+    orbitState.current.pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, orbitState.current.pitch));
+    
+    mouseRef.current.lastX = e.clientX;
+    mouseRef.current.lastY = e.clientY;
+  };
+
+  const handleMouseUp = () => { mouseRef.current.isDown = false; };
+
+  const handleCanvasClick = (e) => {
     if (isCommentMode) {
-      const pos = isDroneMode ? droneState.current.pos : new Vector(0,0,0);
-      setPendingCommentPos({ x: pos.x, y: pos.y, z: pos.z });
-      return;
-    }
-    if (isDroneMode && canvasRef.current && canvasRef.current.isConnected) {
-      try {
-        canvasRef.current.requestPointerLock();
-      } catch (e) {
-        console.warn('Pointer lock request failed:', e);
-      }
+      // setting it to origin.
+      setPendingCommentPos({ x: 0, y: 10, z: 0 });
     }
   };
 
@@ -181,17 +188,14 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
       const canvas = canvasRef.current;
       const color = getBrandingColor();
       const renderer = new Renderer(canvas, { 
-        wireframe: true, 
+        wireframe: isDevMode, 
         wireframeColor: `rgba(${color.r}, ${color.g}, ${color.b}, 0.3)` 
       });
       rendererRef.current = renderer;
 
       try {
         let mesh = null;
-        if (isDroneMode) {
-          const rawObj = generatePropertyModel(property, false);
-          mesh = Mesh3D.loadFromRaw(rawObj, color);
-        } else if (objUrl) {
+        if (objUrl) {
           try {
             mesh = await Mesh3D.loadFromObj(objUrl, color);
           } catch (e) {
@@ -221,27 +225,19 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
 
         if (rendererRef.current) {
           const renderer = rendererRef.current;
-          let camPos, camRot;
-          const state = droneState.current;
           
-          const leadData = leadId ? peers[leadId] : null;
-          updateDrone(presentationMode, isMeLead, leadData);
-
-          if (!isDroneMode) {
-            camPos = new Vector(0, -5, 60);
-            camRot = Matrix.fromEuler(orbitState.current.yaw, orbitState.current.pitch);
-            renderer.render(new Vector(0,0,0), camRot, camPos);
-          } else {
-            camRot = Matrix.fromEuler(state.rot.yaw, state.rot.pitch);
-            camPos = new Vector(0, -5, 60);
-            renderer.render(state.pos, camRot, camPos);
-            
-            sendUpdate(state.pos, state.rot, isMeLead);
+          if (!mouseRef.current.isDown) {
+            orbitState.current.yaw += 0.005; // Auto-rotate
           }
+
+          const camPos = new Vector(0, -5, 60);
+          const camRot = Matrix.fromEuler(orbitState.current.yaw, orbitState.current.pitch);
+          
+          renderer.render(new Vector(0,0,0), camRot, camPos);
 
           if (isDataOverlayActive) {
             const projected = hotspots.map(h => {
-              const screenPos = renderer.projectPoint(h.pos, state.pos, camRot, new Vector(0,0,0));
+              const screenPos = renderer.projectPoint(h.pos, new Vector(0,0,0), camRot, new Vector(0,0,0));
               return screenPos ? { ...h, ...screenPos } : null;
             }).filter(Boolean);
             if (frameCountRef.current % 2 === 0) setProjectedHotspots(projected);
@@ -258,7 +254,7 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
       if (animationId) cancelAnimationFrame(animationId);
       rendererRef.current = null;
     };
-  }, [objUrl, propId, isDroneMode, peers, isMeLead, presentationMode, isDataOverlayActive, leadId, property, updateDrone, hotspots]);
+  }, [objUrl, propId, peers, isMeLead, presentationMode, isDataOverlayActive, leadId, property, hotspots, isDevMode]);
 
   return (
     <div className='relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group' onContextMenu={(e) => e.preventDefault()}>
@@ -268,19 +264,19 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
         ref={canvasRef}
         width={800}
         height={500}
-        onClick={togglePointerLock}
+        onClick={handleCanvasClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`w-full h-full cursor-crosshair transition-all duration-1000 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+        className={`w-full h-full cursor-grab active:cursor-grabbing transition-all duration-1000 ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
       />
 
       <ViewerHUD
         loading={loading}
         branding={branding}
-        isDroneMode={isDroneMode}
-        handleDroneToggle={handleDroneToggle}
+        isNavigationMode={false}
+        handleNavigationToggle={() => {}}
         fps={fps}
         isDevMode={isDevMode}
         isDataOverlayActive={isDataOverlayActive}
@@ -288,7 +284,7 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
         projectedHotspots={projectedHotspots}
         comments={comments}
         renderer={rendererRef.current}
-        droneState={droneState}
+        navigationState={{ current: { pos: new Vector(0,0,0), rot: { yaw: orbitState.current.yaw, pitch: orbitState.current.pitch } } }}
         property={property}
         isInCollection={isInCollection}
         handleToggleCollection={handleToggleCollection}

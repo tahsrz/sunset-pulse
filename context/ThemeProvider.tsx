@@ -195,7 +195,10 @@ export function ThemeProvider({
   };
 
   const setDevMode = (active: boolean) => {
-    if (active && !user?.user_metadata?.isSubscribed) {
+    const isAdmin = user?.user_metadata?.role === 'admin';
+    const isSubscribed = user?.user_metadata?.isSubscribed;
+
+    if (active && !isSubscribed && !isAdmin) {
       toast.error('Subscription required for Dev Mode access.');
       console.warn('🔒 [JAMIE_SECURITY] Dev Mode access denied. Active subscription not found.');
       return;

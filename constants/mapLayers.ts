@@ -30,7 +30,7 @@ export const heatmapLayer = {
   source: 'properties',
   maxzoom: 15,
   paint: {
-    'heatmap-weight': ['interpolate', ['linear'], ['get', 'trend'], 0.9, 0, 1.1, 1],
+    'heatmap-weight': ['interpolate', ['linear'], ['get', 'trend'], 0.8, 0, 1.2, 1],
     'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
     'heatmap-color': [
       'interpolate',
