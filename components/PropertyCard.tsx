@@ -189,6 +189,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
             </Link>
           </div>
         </div>
+
+        {!isInternal && property.listing_brokerage && (
+          <div className='mt-2 pt-3 border-t border-slate-100'>
+            <p className='text-[7px] font-black text-slate-400 uppercase tracking-widest leading-tight'>
+              Listing Data Provided by: <span className='text-slate-600'>{property.listing_brokerage}</span>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

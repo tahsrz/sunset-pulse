@@ -38,14 +38,21 @@ export async function updateSession(request) {
   const path = url.pathname
 
   if (user) {
-    // Fetch profile to check role - Validation? WIP
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    let role = null;
+    try {
+      // Fetch profile to check role - Wrapped in try-catch to prevent middleware crash
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    const role = profile?.role
+      if (!error && profile) {
+        role = profile.role;
+      }
+    } catch (err) {
+      console.error('[MIDDLEWARE_PROFILE_FETCH_ERROR]:', err);
+    }
 
     // Realtor only routes
     if (path.startsWith('/command-post') || path.startsWith('/api/leads/reengage')) {

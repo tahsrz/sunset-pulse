@@ -81,6 +81,14 @@ const LeadSchema = new Schema(
       enum: ['Residential', 'RV'],
       default: 'Residential',
     },
+    marketingConsent: {
+      type: Boolean,
+      default: false
+    },
+    crossPlatformConsent: {
+      type: Boolean,
+      default: false
+    }
   },
   {
     timestamps: true,

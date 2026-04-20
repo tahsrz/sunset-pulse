@@ -11,6 +11,7 @@ import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
 import { CartItem } from '@/lib/types';
+import InvestorBar from './investor/InvestorBar';
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -52,6 +53,9 @@ const Navbar: React.FC = () => {
                 </Link>
                 <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-blue-600/30 text-blue-200 border-blue-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
                   <FaShieldAlt className='text-blue-500' /> Abidan
+                </Link>
+                <Link href='/investors' className={`${pathname === '/investors' ? 'bg-orange-600/20 text-orange-400 border-orange-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-[0.2em]`}>
+                  <span className='w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse' /> Investors
                 </Link>
               </div>
             </div>
@@ -128,6 +132,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       </div>
+      <InvestorBar />
     </nav>
   );
 };

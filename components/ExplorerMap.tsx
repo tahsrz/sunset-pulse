@@ -58,7 +58,6 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
 
   // Initialize Web Worker for background GeoJSON processing
   useEffect(() => {
-    // @ts-ignore - Next.js handles Worker(new URL(...)) pattern
     const worker = new Worker(new URL('../utils/workers/geojson.worker.js', import.meta.url));
     workerRef.current = worker;
 
@@ -106,9 +105,9 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
     }
   }, [hoveredId]);
 
-  const urlLat = searchParams.get('lat');
-  const urlLng = searchParams.get('lng');
-  const urlId = searchParams.get('id');
+  const urlLat = searchParams?.get('lat');
+  const urlLng = searchParams?.get('lng');
+  const urlId = searchParams?.get('id');
 
   const [selectedProperty, setSelectedProperty] = useState(null);
 

@@ -49,8 +49,8 @@ export interface Property {
   hookups?: {
     electric: string;
   };
-}
-
+  listing_brokerage?: string;
+  }
 export interface Lead {
   _id: string;
   name: string;

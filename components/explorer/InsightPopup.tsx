@@ -10,6 +10,10 @@ interface InsightPopupProps {
 }
 
 const InsightPopup: React.FC<InsightPopupProps> = ({ dream, onClose }) => {
+  if (!dream || !dream.geometry || !dream.geometry.coordinates || !dream.properties) {
+    return null;
+  }
+
   return (
     <Popup
       longitude={dream.geometry.coordinates[0]}

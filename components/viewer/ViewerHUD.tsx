@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaSync, FaDatabase, FaHeart, FaCommentDots, FaEye, FaPaperPlane, FaCompass } from 'react-icons/fa';
+import { FaSync, FaDatabase, FaHeart, FaCommentDots, FaEye, FaPaperPlane, FaCompass, FaMapMarkerAlt } from 'react-icons/fa';
 import { Vector, Matrix } from '@/lib/visualization/engine/math';
 
 interface ViewerHUDProps {
@@ -12,7 +12,10 @@ interface ViewerHUDProps {
   isDevMode: boolean;
   isDataOverlayActive: boolean;
   setDataOverlayActive: (active: boolean) => void;
+  isPOIOverlayActive?: boolean;
+  setPOIOverlayActive?: (active: boolean) => void;
   projectedHotspots: any[];
+  projectedPOIs?: any[];
   comments: any[];
   renderer: any;
   navigationState: any;
@@ -30,6 +33,13 @@ interface ViewerHUDProps {
   handleDropComment: () => void;
 }
 
+const POI_COLORS: Record<string, string> = {
+  'School': '#f59e0b',
+  'Hospital': '#ef4444',
+  'Park': '#10b981',
+  'Default': '#3b82f6'
+};
+
 const ViewerHUD: React.FC<ViewerHUDProps> = ({
   loading,
   branding,
@@ -40,7 +50,10 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
   isDevMode,
   isDataOverlayActive,
   setDataOverlayActive,
+  isPOIOverlayActive,
+  setPOIOverlayActive,
   projectedHotspots,
+  projectedPOIs = [],
   comments,
   renderer,
   navigationState,
@@ -119,6 +132,33 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
         );
       })}
 
+      {/* POI Labels */}
+      {isPOIOverlayActive && projectedPOIs.map(p => {
+        const scale = Math.max(0.3, Math.min(0.8, 150 / p.z));
+        const opacity = Math.max(0, Math.min(0.8, (1200 - p.z) / 1000));
+        const poiColor = POI_COLORS[p.category] || POI_COLORS.Default;
+        
+        return (
+          <div 
+            key={p.id}
+            className='absolute pointer-events-auto bg-black/40 backdrop-blur-md border border-white/5 px-3 py-1.5 rounded-lg text-white shadow-xl flex items-center gap-2 transform -translate-x-1/2 -translate-y-1/2 transition-opacity duration-500'
+            style={{ 
+              left: p.x, 
+              top: p.y, 
+              opacity: p.z > 0 ? opacity : 0,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+              zIndex: Math.floor(800 - p.z)
+            }}
+          >
+            <div className='w-1.5 h-1.5 rounded-full' style={{ backgroundColor: poiColor }} />
+            <div className='flex flex-col'>
+              <span className='text-[8px] font-bold uppercase tracking-wider text-white/80'>{p.label}</span>
+              <span className='text-[6px] font-mono text-white/40 uppercase'>{p.category}</span>
+            </div>
+          </div>
+        );
+      })}
+
       {/* Comment Pins */}
       {comments.map(c => {
         const state = navigationState.current;
@@ -163,6 +203,7 @@ const ViewerHUD: React.FC<ViewerHUDProps> = ({
           
           <div className='flex gap-2 mt-4 pointer-events-auto'>
             <button onClick={() => setDataOverlayActive(!isDataOverlayActive)} className={`p-2 rounded-lg border transition-all ${isDataOverlayActive ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`} title="Data Overlay"><FaDatabase size={14} /></button>
+            <button onClick={() => setPOIOverlayActive?.(!isPOIOverlayActive)} className={`p-2 rounded-lg border transition-all ${isPOIOverlayActive ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`} title="POI Overlay"><FaMapMarkerAlt size={14} /></button>
             <button onClick={() => setCommentMode(!isCommentMode)} className={`p-2 rounded-lg border transition-all ${isCommentMode ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`} title="3D Comment"><FaCommentDots size={14} /></button>
             <button onClick={() => setPresentationMode(!presentationMode)} className={`p-2 rounded-lg border transition-all ${presentationMode ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`} title="Presentation Mode"><FaEye size={14} /></button>
           </div>

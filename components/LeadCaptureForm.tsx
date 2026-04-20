@@ -184,6 +184,31 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
           </div>
         </div>
 
+        {/* Privacy & Consent Layer */}
+        <div className='space-y-3 px-1'>
+          <div className='flex items-start gap-3'>
+            <input
+              type='checkbox'
+              {...register('marketingConsent')}
+              className='mt-1 w-4 h-4 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 transition-all cursor-pointer'
+            />
+            <p className='text-[7px] text-slate-500 uppercase font-bold leading-relaxed'>
+              I consent to receive automated property alerts and tactical market updates via email/SMS. 
+              I understand I can opt-out at any time.
+            </p>
+          </div>
+          <div className='flex items-start gap-3'>
+            <input
+              type='checkbox'
+              {...register('crossPlatformConsent')}
+              className='mt-1 w-4 h-4 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 transition-all cursor-pointer'
+            />
+            <p className='text-[7px] text-slate-500 uppercase font-bold leading-relaxed'>
+              Cross-Platform Intelligence: I agree to let Jamie AI use my real estate search intent to provide personalized "Sunset Grill" lifestyle leverage and local business offers.
+            </p>
+          </div>
+        </div>
+
         <button
           type='submit'
           disabled={isSubmitting}

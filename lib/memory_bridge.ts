@@ -4,6 +4,8 @@
  * Integrates user preferences into data queries using XML tagging.
  */
 
+import { createClient } from '@/utils/supabase/client';
+
 export type MemoryLayer = 'static' | 'dynamic' | 'session' | 'core' | 'activity';
 
 export interface UserPreferences {
@@ -16,6 +18,7 @@ export interface UserPreferences {
 
 class MemoryBridge {
   private static instance: MemoryBridge;
+  private supabase = createClient();
 
   private constructor() {}
 
@@ -41,6 +44,65 @@ class MemoryBridge {
     if (layer === 'session') {
       this.updateDynamic(key, value);
     }
+  }
+
+  /**
+   * Synchronizes a single interaction to Supabase for cross-device persistence.
+   */
+  public async syncInteraction(role: string, content: string, metadata: any = {}): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await this.supabase.from('jamie_interactions').insert({
+        user_id: user.id,
+        role,
+        content,
+        metadata,
+        timestamp: new Date().toISOString()
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('[MEMORY_BRIDGE_SYNC_ERROR]:', err);
+    }
+  }
+
+  /**
+   * Loads historical interactions from Supabase to hydrate local state sorted by timestamp
+   */
+  public async loadInteractions(): Promise<any[]> {
+    if (typeof window === 'undefined') return [];
+
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await this.supabase
+        .from('jamie_interactions')
+        .select('*')
+        .order('timestamp', { ascending: true })
+        .limit(50);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Map database fields to the expected interaction format if different
+        const mappedData = data.map(item => ({
+          role: item.role,
+          content: item.content,
+          timestamp: item.timestamp,
+          metadata: item.metadata
+        }));
+        localStorage.setItem('pulse_mem_history', JSON.stringify(mappedData));
+        return mappedData;
+      }
+    } catch (err) {
+      console.error('[MEMORY_BRIDGE_LOAD_ERROR]:', err);
+    }
+    return this.getHistory();
   }
 
   /**
@@ -153,11 +215,14 @@ class MemoryBridge {
     localStorage.setItem('pulse_mem_dynamic', JSON.stringify(dynamic));
   }
 
-  public logInteraction(action: any): void {
+  public async logInteraction(action: any): Promise<void> {
     if (typeof window === 'undefined') return;
     const history = JSON.parse(localStorage.getItem('pulse_mem_history') || '[]');
     history.push(action);
     localStorage.setItem('pulse_mem_history', JSON.stringify(history.slice(-50)));
+
+    // Background sync to Supabase
+    this.syncInteraction(action.role, action.content, action.metadata || {});
   }
 
   public getHistory(): any[] {

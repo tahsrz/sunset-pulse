@@ -14,12 +14,12 @@ const SearchResultsPage = () => {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
-  const [boundaryName, setBoundaryName] = useState(searchParams.get('label') || '');
+  const [boundaryName, setBoundaryName] = useState(searchParams?.get('label') || '');
   const [activeRouteProperty, setActiveRouteProperty] = useState<any>(null);
   const [savedSectors, setSavedSectors] = useState<any[]>([]);
   const [showSectorSidebar, setShowSectorSidebar] = useState(false);
 
-  const isPolygonActive = !!searchParams.get('polygon');
+  const isPolygonActive = !!searchParams?.get('polygon');
 
   // Load saved regions from localStorage
   useEffect(() => {
@@ -29,13 +29,14 @@ const SearchResultsPage = () => {
 
   // Sync boundary name with URL
   useEffect(() => {
-    const label = searchParams.get('label');
+    const label = searchParams?.get('label');
     if (label) setBoundaryName(label);
   }, [searchParams]);
 
   // Fetch results based on search params
   useEffect(() => {
     const fetchSearchResults = async () => {
+      if (!searchParams) return;
       setLoading(true);
       try {
         const res = await fetch(`/api/properties/search/advanced?${searchParams.toString()}`);
@@ -70,7 +71,7 @@ const SearchResultsPage = () => {
   };
 
   const handlePolygonChange = (selection: any) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (selection && selection.type === 'polygon') {
       params.set('polygon', selection.data);
       if (boundaryName) params.set('label', boundaryName);
@@ -89,7 +90,7 @@ const SearchResultsPage = () => {
     const newSector = {
       id: Date.now(),
       name: boundaryName,
-      polygon: searchParams.get('polygon'),
+      polygon: searchParams?.get('polygon'),
       timestamp: new Date().toISOString()
     };
 
@@ -100,7 +101,7 @@ const SearchResultsPage = () => {
   };
 
   const handleDeploySector = (sector: any) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('polygon', sector.polygon);
     params.set('label', sector.name);
     router.push(`/properties/search-results?${params.toString()}`);
@@ -155,8 +156,8 @@ const SearchResultsPage = () => {
         <ResultsList 
           properties={properties}
           loading={loading}
-          locationLabel={searchParams.get('location') || 'Global Search'}
-          propertyTypeLabel={searchParams.get('propertyType') || 'All Properties'}
+          locationLabel={searchParams?.get('location') || 'Global Search'}
+          propertyTypeLabel={searchParams?.get('propertyType') || 'All Properties'}
           isPolygonActive={isPolygonActive}
           hoveredPropertyId={hoveredPropertyId}
           setHoveredPropertyId={setHoveredPropertyId}

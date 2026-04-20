@@ -1,171 +1,258 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { FaBolt, FaMousePointer, FaMoneyBillWave, FaArrowRight, FaChartLine, FaMicrochip } from 'react-icons/fa';
-import { LucideLayers } from 'lucide-react';
-import { generatePredictiveQueries } from '@/lib/ai/query-generator';
-import PulsarSprite from '@/components/PulsarSprite';
+import React, { useState } from 'react';
+import { 
+  FaArrowRight, FaArrowLeft, FaGlobe, FaDatabase, FaChartLine, 
+  FaUserTie, FaCube, FaLayerGroup, FaNetworkWired, FaRocket 
+} from 'react-icons/fa';
+import { LucideShieldCheck, LucideZap, LucideCpu } from 'lucide-react';
 import InvestorSlide from '@/components/investor/InvestorSlide';
 
 const InvestorPage = () => {
   const [step, setStep] = useState(0);
-  const [stats, setStats] = useState({ views: 0, chat: 0, tour: false });
-  const [apis, setApis] = useState({ attom: true, osm: true, census: false });
-  const [probability, setProbability] = useState(0);
-  const [aiActive, setAiActive] = useState(false);
-  const [queries, setQueries] = useState([]);
-
-  // Simplified context for query generation demo
-  const mockContext = {
-    property: { address: '123 Pulse Way', views: stats.views, chatMinutes: stats.chat, tourRequested: stats.tour },
-    external: {
-      census: apis.census ? {
-        medianIncome: 72500, medianAge: 34.5, homeownershipRate: 68.2, bachelorsPlus: 42.1,
-        povertyRate: 8.4, unemploymentRate: 3.2, meanCommute: 28.5, medianHomeValue: 345000,
-        monthlyHousingCost: 1850, broadbandAccess: 94.2, medianYearBuilt: 1974, wfhRate: 15.4,
-        transitRate: 4.2, fireDensity: 12.1, techDensity: 18.5, rentBurden: 32.1,
-        migrationFlux: 5.8, medianRooms: 6.2, totalUnits: 12500, internetUbiquity: 98.1
-      } : null
-    }
-  };
-
-  useEffect(() => {
-    setProbability(calculateScore(stats.views, stats.chat, stats.tour, apis));
-    if (apis.census && stats.views > 1) {
-      setAiActive(true);
-      const generated = generatePredictiveQueries(mockContext);
-      setQueries(generated as any);
-    } else {
-      setAiActive(false);
-      setQueries([]);
-    }
-  }, [stats, apis]);
-
-  const calculateScore = (v: number, c: number, t: boolean, sources: any) => {
-    let score = ((v * 10) + (c * 5)) * (t ? 3.0 : 1.0);
-    if (sources.attom) score += 5;
-    if (sources.osm) score += 7;
-    if (sources.census) score += 25;
-    return Math.min(Math.round(score), 99);
-  };
-
-  const toggleApi = (id: string) => setApis(prev => ({ ...prev, [id as any]: !(prev as any)[id] }));
 
   const slides = [
     {
-      title: "Universal Intelligence Hub",
-      subtitle: "Predictive Query Generation",
-      icon: <LucideLayers className="text-blue-400" />,
-      content: "Sunset Pulse now predicts the user's next question. By cross-referencing 20 socioeconomic vectors with engagement, Jamie generates 'Strategic Intercepts' to guide the conversion.",
+      id: "hook",
+      title: "The Industry Friction",
+      subtitle: "The Hook // 05 Mins",
+      icon: <LucideShieldCheck className="text-orange-500" />,
+      content: "Real estate data is trapped in 2D silos. Agents are drowning in fragmented IDX feeds, while buyers struggle to visualize assets in their true spatial context. The friction isn't just data—it's immersion.",
       interactive: (
-        <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mt-4">
-          <h3 className="text-[10px] uppercase font-black tracking-widest text-green-400 mb-4">Intelligence Cluster Layering</h3>
-          <div className="grid grid-cols-1 gap-3">
-            {['attom', 'osm', 'census'].map(id => (
-              <label key={id} className="flex items-center gap-4 cursor-pointer">
-                <input type="checkbox" checked={(apis as any)[id]} onChange={() => toggleApi(id)} className="w-5 h-5 rounded border-white/20 bg-black checked:bg-green-500 transition-all" />
-                <span className={`text-sm font-bold ${(apis as any)[id] ? 'text-green-400' : 'text-white/50'}`}>{id === 'attom' ? 'ATTOM (Asset)' : id === 'osm' ? 'OSM (Gravity)' : 'Deep Census (20 Vectors)'}</span>
-              </label>
-            ))}
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
+            <div className="text-[10px] font-black uppercase text-orange-400 mb-1 tracking-widest">Pain Point A</div>
+            <div className="text-xl font-black text-white/90 uppercase tracking-tighter italic">2D Static Feeds</div>
+            <p className="text-[10px] text-white/40 mt-2 font-mono">Legacy MLS systems fail to communicate architectural value.</p>
+          </div>
+          <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
+            <div className="text-[10px] font-black uppercase text-orange-400 mb-1 tracking-widest">Pain Point B</div>
+            <div className="text-xl font-black text-white/90 uppercase tracking-tighter italic">Lead Fragmentation</div>
+            <p className="text-[10px] text-white/40 mt-2 font-mono">Disjointed CRM flows lose 40% of high-intent engagement.</p>
           </div>
         </div>
       ),
-      action: () => setStep(1),
-      button: "Initiate Decision Engine"
+      button: "Identify the Gap",
+      action: () => setStep(1)
     },
     {
-      title: "Step 1: The Spark (Engagement)",
-      subtitle: "Predictive Intelligence Priming.",
-      icon: <FaBolt className="text-yellow-400" />,
-      content: "As you add views, Jamie analyzes the census data for 'Economic Stress' and 'Remote Resilience'. The system then predicts the best query for this lead.",
+      id: "gap",
+      title: "Why Solutions Fail",
+      subtitle: "The Gap // 10 Mins",
+      icon: <FaLayerGroup className="text-blue-400" />,
+      content: "Existing platforms treat 3D as a gimmick, not a core search primitive. They bolt visualization onto old databases. Data fragmentation leads to 'Intelligence Decay'—where leads go cold because the context is lost.",
       interactive: (
-        <div className="flex flex-col gap-4 mt-4">
-          <div className="flex gap-4 items-center">
-            <button onClick={() => setStats(s => ({...s, views: s.views + 1}))} className="bg-white/10 hover:bg-white/20 p-3 rounded-lg text-xs font-bold transition-colors">Add View (+10)</button>
-            <div className="text-4xl font-black text-green-400">{probability}%</div>
-          </div>
-          
-          {aiActive && queries.length > 0 && (
-            <div className="space-y-2 mt-4">
-              <div className="text-[10px] uppercase font-black text-blue-400 flex items-center gap-2">
-                <FaMicrochip /> Jamie's Predicted Strategic Intercepts:
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {queries.map((q: any, i: number) => (
-                  <div key={i} className="group bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl hover:bg-blue-500/20 cursor-pointer transition-all flex justify-between items-center">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase text-blue-400">{q.intent}</span>
-                      <span className="text-xs font-bold">{q.label}</span>
-                    </div>
-                    <FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                  </div>
-                ))}
-              </div>
+        <div className="space-y-3 mt-4">
+          <div className="flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">✕</div>
+            <div>
+              <div className="text-[10px] font-black uppercase text-red-400">Visualization Lag</div>
+              <p className="text-[10px] text-white/50">3D renders are disconnected from live market pricing.</p>
             </div>
-          )}
+          </div>
+          <div className="flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">✕</div>
+            <div>
+              <div className="text-[10px] font-black uppercase text-red-400">Contextual Silos</div>
+              <p className="text-[10px] text-white/50">Buyer behavior is tracked, but not translated into strategy.</p>
+            </div>
+          </div>
         </div>
       ),
-      action: () => setStep(2),
-      button: "Trace the Path"
+      button: "Reveal the Bridge",
+      action: () => setStep(2)
     },
     {
-      title: "Step 2: The Path (Clicks)",
-      subtitle: "Migration Recon.",
-      icon: <FaMousePointer className="text-purple-400" />,
-      content: "interaction is the map. With 20 signals, Jamie predicts the conversion path based on industry density and transit connectivity.",
-      action: () => setStep(3),
-      button: "Seal the Deal"
+      id: "reveal",
+      title: "Sunset Pulse: The Bridge",
+      subtitle: "The Reveal // 15 Mins",
+      icon: <FaCube className="text-orange-500 animate-pulse" />,
+      content: "We provide 'Spatial Intelligence'. A unified platform where live IDX data, 3D architectural renders, and AI-driven behavior analysis converge. We don't just show homes; we project value.",
+      interactive: (
+        <div className="bg-gradient-to-br from-blue-900/40 to-orange-900/40 border border-white/20 p-6 rounded-3xl mt-6 relative overflow-hidden group">
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">The Pulse View</span>
+            </div>
+            <div className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-2">3D Spatial <br/>Search Engine</div>
+            <p className="text-xs text-white/60 max-w-[200px]">Live IDX integrated directly into Three.js architectural meshes.</p>
+          </div>
+          <div className="absolute -right-8 -bottom-8 opacity-20 group-hover:scale-110 transition-transform duration-1000">
+            <FaGlobe size={120} className="text-white" />
+          </div>
+        </div>
+      ),
+      button: "Validate the Tech",
+      action: () => setStep(3)
     },
     {
-      title: "Step 3: The Heartbeat (Sales)",
-      subtitle: "The 3.0x Multiplier.",
-      icon: <FaMoneyBillWave className="text-green-400" />,
-      content: "Final conversion. Jamie uses the generated queries to prepare the final closing argument for the agent/admin.",
-      action: () => setStep(4),
-      button: "Review ROI"
+      id: "tech",
+      title: "Scalable Architecture",
+      subtitle: "Validation // 10 Mins",
+      icon: <LucideCpu className="text-blue-400" />,
+      content: "Built for growth. Our stack leverages Next.js for SSR edge-delivery and Supabase for high-integrity asset management. This is not a concept; it's an operational grid.",
+      interactive: (
+        <div className="grid grid-cols-1 gap-2 mt-4">
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center gap-3">
+              <FaNetworkWired className="text-blue-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Market Integration</span>
+            </div>
+            <span className="text-[8px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-mono">LIVE_IDX_SYNC</span>
+          </div>
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center gap-3">
+              <FaDatabase className="text-blue-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Asset Persistence</span>
+            </div>
+            <span className="text-[8px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-mono">SUPABASE_POSTGRES</span>
+          </div>
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center gap-3">
+              <LucideZap className="text-blue-500" size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Edge Deployment</span>
+            </div>
+            <span className="text-[8px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded font-mono">VERCEL_GLOBAL</span>
+          </div>
+        </div>
+      ),
+      button: "View The Roadmap",
+      action: () => setStep(4)
     },
     {
-      title: "ROI: Jamie's Intelligence",
-      subtitle: "Data into Decisions.",
-      icon: <FaChartLine className="text-blue-500" />,
-      content: "We don't just provide data; we predict the strategy. Jamie ensures that every data point becomes a strategic question that leads to a sale.",
-      action: () => { setStep(0); setStats({views: 0, chat: 0, tour: false}); setApis({attom: true, osm: true, census: false}); },
-      button: "Restart Protocol"
+      id: "roadmap",
+      title: "Strategic Rollout",
+      subtitle: "The Future // 2026-2027",
+      icon: <FaRocket className="text-orange-500" />,
+      content: "From regional dominance in North Texas to a national spatial intelligence standard. We are scaling the data bridge.",
+      interactive: (
+        <div className="relative border-l border-white/10 pl-6 space-y-6 mt-6 ml-2">
+          <div className="relative">
+            <div className="absolute -left-[29px] top-1 w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
+            <div className="text-[10px] font-black uppercase text-orange-400">Q3 2026</div>
+            <div className="text-sm font-bold">NTREIS Grid Saturation</div>
+          </div>
+          <div className="relative opacity-60">
+            <div className="absolute -left-[29px] top-1 w-3 h-3 rounded-full bg-white/20" />
+            <div className="text-[10px] font-black uppercase text-white/40">Q1 2027</div>
+            <div className="text-sm font-bold italic">Predictive Valuation Engine</div>
+          </div>
+          <div className="relative opacity-30">
+            <div className="absolute -left-[29px] top-1 w-3 h-3 rounded-full bg-white/10" />
+            <div className="text-[10px] font-black uppercase text-white/40">Q3 2027</div>
+            <div className="text-sm font-bold italic">National Expansion (NAR Integration)</div>
+          </div>
+        </div>
+      ),
+      button: "The Visionary",
+      action: () => setStep(5)
+    },
+    {
+      id: "visionary",
+      title: "The Visionary",
+      subtitle: "Realtor + Engineer",
+      icon: <FaUserTie className="text-blue-400" />,
+      content: "Founded at the intersection of high-stakes real estate and full-stack engineering. We speak the language of both the grid and the ground.",
+      interactive: (
+        <div className="flex items-center gap-4 mt-6 p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
+          <div className="w-16 h-16 rounded-xl bg-blue-600/20 border border-blue-500/30 overflow-hidden flex items-center justify-center">
+             <FaUserTie className="text-blue-400 text-3xl" />
+          </div>
+          <div>
+            <div className="text-xl font-black uppercase italic tracking-tighter">Tahsin Reza</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-blue-400">Senior Architect / Founder</div>
+            <p className="text-[9px] text-white/40 mt-1">Bridging architectural intent with scalable engineering.</p>
+          </div>
+        </div>
+      ),
+      button: "Initiate Pitch Recap",
+      action: () => setStep(0)
     }
   ];
 
   const currentSlide = slides[step];
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans flex flex-col items-center justify-center p-6 selection:bg-green-500 selection:text-black">
-      <div className="fixed inset-0 bg-[radial-gradient(#22c55e_1px,transparent_1px)] [background-size:40px_40px] opacity-10 pointer-events-none" />
-      <div className="fixed top-8 left-8 flex items-center gap-2">
-        <div className={`w-4 h-4 rounded-full animate-ping ${aiActive ? 'bg-blue-500' : 'bg-green-500'}`} />
-        <span className="text-xs font-black uppercase tracking-[0.2em] italic">Sunset Pulse // Predictive Intelligence v6.0</span>
+    <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col items-center justify-center p-6 selection:bg-orange-500 selection:text-black">
+      {/* Background Ambience */}
+      <div className="fixed inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:40px_40px] opacity-20 pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent_50%)] pointer-events-none" />
+      
+      {/* HUD Elements */}
+      <div className="fixed top-8 left-8 flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400/80">Investor Mode</span>
+        </div>
+        <div className="h-4 w-px bg-white/10" />
+        <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">SLIDE_OP_{step + 1}</span>
       </div>
 
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
-        <div className="flex flex-col items-center justify-center space-y-8">
-          <PulsarSprite 
-            intensity={1 + (probability / 100)} 
-            status={aiActive ? 'ai' : apis.census ? 'processing' : step === 1 ? 'engagement' : step === 3 ? (stats.tour ? 'success' : 'active') : 'idle'} 
-          />
-          <div className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full">
-            <div className="text-[10px] uppercase font-bold opacity-30 mb-2">Confidence Metric</div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-mono"><span>Vector Signal Depth</span><span className="text-blue-400 font-bold">{apis.census ? '20' : '3'} VECTORS</span></div>
-              <div className="flex justify-between text-xs font-mono"><span>Predictive Readiness</span><span className={aiActive ? "text-blue-400 font-bold" : "opacity-30"}>{aiActive ? "ACTIVE (JAMIE)" : "LOW"}</span></div>
-              <div className="h-1 bg-white/10 rounded-full overflow-hidden mt-4"><div className={`h-full transition-all duration-1000 ${aiActive ? 'bg-blue-500' : 'bg-green-500'}`} style={{ width: `${probability}%` }} /></div>
-            </div>
-          </div>
+      <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative z-10">
+        <div className="hidden md:flex flex-col items-center justify-center space-y-8">
+           {/* Visual anchor reflecting the slide content */}
+           <div className="w-full aspect-square bg-slate-900/50 rounded-[40px] border border-white/5 flex items-center justify-center relative overflow-hidden group shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/10 to-transparent opacity-50" />
+              <div className={`transition-all duration-1000 transform ${step === 0 ? 'scale-110 rotate-3' : 'scale-100 rotate-0'}`}>
+                {step === 0 && <FaLayerGroup size={160} className="text-orange-500/20 blur-[2px]" />}
+                {step === 1 && <FaNetworkWired size={160} className="text-red-500/20 blur-[1px]" />}
+                {step === 2 && <FaCube size={180} className="text-blue-500/30 animate-spin-slow" />}
+                {step === 3 && <FaDatabase size={160} className="text-blue-500/20" />}
+                {step === 4 && <FaChartLine size={160} className="text-orange-500/20" />}
+                {step === 5 && <FaUserTie size={160} className="text-blue-500/20" />}
+              </div>
+              
+              {/* Dynamic Data Pulse Overlay */}
+              <div className="absolute bottom-12 left-12 right-12">
+                 <div className="flex justify-between items-end mb-2">
+                    <div className="text-[10px] font-black uppercase tracking-tighter text-blue-400">Market_Pulse_Sync</div>
+                    <div className="text-[8px] font-mono text-white/30">v6.0.48</div>
+                 </div>
+                 <div className="h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${((step + 1) / slides.length) * 100}%` }} />
+                 </div>
+              </div>
+           </div>
         </div>
 
-        <InvestorSlide 
-          slide={currentSlide}
-          aiActive={aiActive}
-          step={step}
-        />
+        <div className="relative">
+          {/* Navigation Controls */}
+          <div className="absolute -top-12 left-0 flex gap-4">
+             <button 
+               onClick={() => setStep(Math.max(0, step - 1))}
+               disabled={step === 0}
+               className="text-white/20 hover:text-white transition-colors disabled:opacity-0"
+             >
+               <FaArrowLeft size={14} />
+             </button>
+             <div className="flex gap-1 items-center">
+                {slides.map((_, i) => (
+                  <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i === step ? 'w-4 bg-orange-500' : 'w-1 bg-white/10'}`} />
+                ))}
+             </div>
+          </div>
+
+          <InvestorSlide 
+            slide={currentSlide as any}
+            aiActive={false}
+            step={step}
+          />
+        </div>
       </div>
-      <div className="fixed bottom-8 text-[8px] uppercase tracking-widest opacity-20 text-center max-w-lg">Proprietary SUNSETPULSE V6.0. Predictive Strategic Intercepts via Jamie AI Operative.</div>
+
+      <div className="fixed bottom-8 text-[8px] uppercase tracking-[0.4em] opacity-20 text-center max-w-lg font-black italic">
+        Proprietary Intelligence Grid // Powered by Jamie AI Operative // © 2026 Sunset Pulse
+      </div>
+
+      <style jsx global>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 12s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };

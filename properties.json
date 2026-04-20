@@ -197,7 +197,7 @@
       "email": "manager@bigskyrv.com",
       "phone": "940-555-9000"
     },
-    "images": ["/images/properties/rv1.jpg"],
+    "images": ["/images/properties/ranch1.jpg"],
     "is_featured": false
   },
   {
@@ -229,7 +229,7 @@
       "email": "lease@themeridian.com",
       "phone": "940-555-1212"
     },
-    "images": ["/images/properties/apt1.jpg"],
+    "images": ["/images/properties/rhome1.jpg"],
     "is_featured": false
   },
   {
@@ -262,7 +262,7 @@
       "email": "rent@sunsetcabins.com",
       "phone": "940-555-4433"
     },
-    "images": ["/images/properties/cabin1.jpg"],
+    "images": ["/images/properties/244ridge1.jpg"],
     "is_featured": false
   },
   {
@@ -294,7 +294,7 @@
       "email": "info@ntxcommercial.com",
       "phone": "940-555-7788"
     },
-    "images": ["/images/properties/industrial1.jpg"],
+    "images": ["/images/properties/barndo1.jpg"],
     "is_featured": false
   },
   {
@@ -326,7 +326,7 @@
       "email": "suites@bowiehub.com",
       "phone": "940-555-3322"
     },
-    "images": ["/images/properties/office1.jpg"],
+    "images": ["/images/properties/ranch1.jpg"],
     "is_featured": false
   },
   {
@@ -358,7 +358,7 @@
       "email": "info@goldenoaks.com",
       "phone": "940-555-8811"
     },
-    "images": ["/images/properties/senior1.jpg"],
+    "images": ["/images/properties/rhome1.jpg"],
     "is_featured": false
   },
   {
@@ -390,7 +390,7 @@
       "email": "manager@sunsetmeadows.com",
       "phone": "940-555-0077"
     },
-    "images": ["/images/properties/mobile1.jpg"],
+    "images": ["/images/properties/244ridge1.jpg"],
     "is_featured": false
   },
   {
@@ -431,7 +431,7 @@
       "email": "rentals@lonestarrv.com",
       "phone": "940-555-4000"
     },
-    "images": ["/images/properties/rv_classa1.jpg"],
+    "images": ["/images/properties/ranch1.jpg"],
     "is_featured": true
   },
   {
@@ -472,7 +472,7 @@
       "email": "info@sunsetlakerv.com",
       "phone": "940-555-8822"
     },
-    "images": ["/images/properties/rv_spot1.jpg"],
+    "images": ["/images/properties/barndo1.jpg"],
     "is_featured": false
   },
   {
@@ -512,7 +512,7 @@
       "email": "hello@bowierentals.com",
       "phone": "940-555-1122"
     },
-    "images": ["/images/properties/airstream1.jpg"],
+    "images": ["/images/properties/rhome1.jpg"],
     "is_featured": false
   },
   {
@@ -551,7 +551,7 @@
       "email": "ranch@alvordtx.com",
       "phone": "940-555-6677"
     },
-    "images": ["/images/properties/boondocking1.jpg"],
+    "images": ["/images/properties/land1.jpg"],
     "is_featured": false
   },
   {
@@ -588,7 +588,7 @@
       "email": "global@sunsetpulse.com",
       "phone": "+98-21-555-0199"
     },
-    "images": ["/images/properties/kharg1.jpg"],
+    "images": ["/images/properties/barndo1.jpg"],
     "is_featured": true
   }
 ]

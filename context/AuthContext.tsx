@@ -42,19 +42,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchProfile = async (authUser: User) => {
-    const { data: profile } = await supabase
+    // Using empty select() and maybeSingle() to bypass potential library concatenation bugs
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select()
       .eq('id', authUser.id)
-      .single();
+      .maybeSingle();
     
+    if (error) {
+      console.error('[AUTH_CONTEXT] Profile fetch error:', error.message);
+      // Fallback logic
+      setUser({
+        ...authUser,
+        profile: null,
+        user_metadata: {
+          ...authUser.user_metadata,
+          role: authUser.user_metadata?.role || 'consumer',
+          isSubscribed: authUser.user_metadata?.isSubscribed || false
+        }
+      });
+      setLoading(false);
+      return;
+    }
+
     const enrichedUser: AuthUser = {
       ...authUser,
       profile: profile as Profile,
       user_metadata: {
         ...authUser.user_metadata,
-        role: (profile as Profile)?.role || authUser.user_metadata?.role || 'consumer',
-        isSubscribed: (profile as Profile)?.role === 'realtor' || !!(profile as Profile)?.is_subscribed || !!authUser.user_metadata?.isSubscribed
+        role: (profile as any)?.role || authUser.user_metadata?.role || 'consumer',
+        isSubscribed: (profile as any)?.role === 'realtor' || !!(profile as any)?.is_subscribed || !!authUser.user_metadata?.isSubscribed
       }
     };
     setUser(enrichedUser);

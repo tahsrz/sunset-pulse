@@ -41,7 +41,13 @@ export default function JamieChat({ propertyData }) {
   useEffect(() => {
     setMounted(true);
     setMemoryContext(memoryBridge.getGreetingContext());
-    setPersistentMessages(memoryBridge.getHistory());
+    
+    // Hydrate history from Supabase for cross-device persistence
+    const hydrateHistory = async () => {
+      const history = await memoryBridge.loadInteractions();
+      setPersistentMessages(history);
+    };
+    hydrateHistory();
     
     // Load minimized state from localStorage
     const savedMinimized = localStorage.getItem('jamie_chat_minimized');
@@ -55,11 +61,11 @@ export default function JamieChat({ propertyData }) {
     localStorage.setItem('jamie_chat_minimized', val.toString());
   };
 
-  const handleAction = (messageContent: string) => {
+  const handleAction = async (messageContent: string) => {
     if (!messageContent || typeof messageContent !== 'string') return;
     
     // Log assistant message to memory
-    memoryBridge.logInteraction({ role: 'assistant', content: messageContent, timestamp: new Date().toISOString() });
+    await memoryBridge.logInteraction({ role: 'assistant', content: messageContent, timestamp: new Date().toISOString() });
 
     // TTS: Speak the message, but strip tags first
     const cleanText = messageContent.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
@@ -92,14 +98,12 @@ export default function JamieChat({ propertyData }) {
     api: '/api/chat',
     body: { propertyData, isDevMode, memoryContext },
     initialMessages: persistentMessages,
-    onFinish: (message) => {
-      handleAction(message.content);
-      // Persist the assistant response
-      memoryBridge.logInteraction({ role: 'assistant', content: message.content, timestamp: new Date().toISOString() });
+    onFinish: async (message) => {
+      await handleAction(message.content);
     },
   });
 
-  // Sync messages from local storage on mount WIP
+  // Sync messages from local storage or Supabase on mount
   useEffect(() => {
     if (mounted && persistentMessages.length > 0 && messages.length === 0) {
       setMessages(persistentMessages);
@@ -148,7 +152,7 @@ export default function JamieChat({ propertyData }) {
     setHistoryIndex(-1);
 
     // Log user interaction BEFORE sending
-    memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
+    await memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
 
     try {
       const shieldResponse = await fetch('/api/jamie/shield', {

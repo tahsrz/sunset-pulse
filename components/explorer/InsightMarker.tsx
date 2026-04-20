@@ -10,6 +10,11 @@ interface InsightMarkerProps {
 }
 
 const InsightMarker: React.FC<InsightMarkerProps> = ({ dream, onSelect }) => {
+  if (!dream.geometry || !dream.geometry.coordinates) {
+    console.warn(`[InsightMarker]: Dream ${dream.id} is missing spatial data. Skipping render.`);
+    return null;
+  }
+
   return (
     <Marker
       longitude={dream.geometry.coordinates[0]}

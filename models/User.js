@@ -61,6 +61,14 @@ const UserSchema = new Schema(
       type: String,
       enum: ['user', 'realtor', 'admin'],
       default: 'user'
+    },
+    marketingConsent: {
+      type: Boolean,
+      default: false
+    },
+    crossPlatformConsent: {
+      type: Boolean,
+      default: false
     }
   },
   {

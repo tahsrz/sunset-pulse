@@ -73,7 +73,10 @@ export const poiLayer = {
     ['==', ['get', 'category_en'], 'Coffee shop'],
     ['==', ['get', 'category_en'], 'Restaurant'],
     ['==', ['get', 'category_en'], 'Pharmacy'],
-    ['==', ['get', 'category_en'], 'Bank']
+    ['==', ['get', 'category_en'], 'Bank'],
+    ['==', ['get', 'category_en'], 'School'],
+    ['==', ['get', 'category_en'], 'Hospital'],
+    ['==', ['get', 'category_en'], 'Park']
   ],
   layout: {
     'text-field': ['get', 'name_en'],
@@ -89,6 +92,9 @@ export const poiLayer = {
       'Restaurant', 'restaurant',
       'Pharmacy', 'pharmacy',
       'Bank', 'bank',
+      'School', 'school',
+      'Hospital', 'hospital',
+      'Park', 'park',
       'dot'
     ],
     'icon-size': 1.2,
@@ -99,7 +105,12 @@ export const poiLayer = {
     'text-halo-color': 'rgba(15, 23, 42, 0.8)',
     'text-halo-width': 2,
     'icon-opacity': 0.8,
-    'icon-color': '#3b82f6'
+    'icon-color': ['match', ['get', 'category_en'],
+      'School', '#f59e0b',
+      'Hospital', '#ef4444',
+      'Park', '#10b981',
+      '#3b82f6'
+    ]
   }
 };
 

@@ -119,6 +119,14 @@ const ValuationPage = () => {
             </div>
           ))}
         </div>
+        
+        <div className='max-w-4xl mx-auto mt-20 pt-8 border-t border-white/5 text-center'>
+          <p className='text-[7px] font-black uppercase tracking-[0.4em] text-white/20 leading-relaxed'>
+            Regulatory Notice: Sunset Pulse utilizes Automated Valuation Models (AVM) for all property estimations. 
+            These figures are calculated through algorithmic data synthesis and are not intended to replace licensed professional appraisals. 
+            Engagement with this tool constitutes acknowledgment of the inherent variability in automated market analysis.
+          </p>
+        </div>
       </section>
     </div>
   );
