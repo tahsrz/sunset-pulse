@@ -1,7 +1,6 @@
-'use client';
-
 import React from 'react';
 import { Play } from 'lucide-react';
+import marketingCopy from '@/config/marketing_copy.json';
 
 interface HeroOverlayProps {
   isEntered: boolean;
@@ -9,6 +8,8 @@ interface HeroOverlayProps {
 }
 
 const HeroOverlay: React.FC<HeroOverlayProps> = ({ isEntered, onEnter }) => {
+  const { hero, cta } = marketingCopy;
+
   return (
     <div 
       className={`absolute inset-0 z-30 flex flex-col items-center justify-center px-6 transition-all duration-[1500ms] ease-in-out ${
@@ -27,20 +28,20 @@ const HeroOverlay: React.FC<HeroOverlayProps> = ({ isEntered, onEnter }) => {
             </div>
           )}
           
-          <h1 className="text-6xl md:text-8xl font-bold tracking-tight text-white mb-6">
-            Sunset <span className="text-primary italic">Pulse</span>
+          <h1 className="text-6xl md:text-8xl font-bold tracking-tight text-white mb-6 uppercase italic">
+            {hero.title.split(' ')[0]} <span className="text-primary italic">{hero.title.split(' ')[1]}</span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 max-w-2xl mx-auto font-light tracking-wide">
-            The premium intelligence layer for North Texas real estate.
+          <p className="text-xl md:text-2xl text-slate-300 max-w-2xl mx-auto font-light tracking-wide italic">
+            {hero.subtitle}. {hero.description}
           </p>
         </div>
 
         <button 
           onClick={onEnter}
-          className="group relative flex items-center gap-4 px-10 py-5 bg-white text-slate-950 rounded-full font-bold text-xl transition-all hover:scale-105 hover:bg-primary hover:text-white shadow-[0_0_50px_rgba(255,255,255,0.2)]"
+          className="group relative flex items-center gap-4 px-10 py-5 bg-white text-slate-950 rounded-full font-black uppercase tracking-widest text-xl transition-all hover:scale-105 hover:bg-primary hover:text-white shadow-[0_0_50px_rgba(255,255,255,0.2)]"
         >
           <Play size={24} className="fill-current" />
-          <span>Start My Tour</span>
+          <span>{cta.button_text}</span>
           <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
 

@@ -25,12 +25,22 @@ const AbidanIntroPage = () => {
   return (
     <div className='min-h-screen bg-slate-950 text-slate-100 p-8 font-sans'>
       <header className='mb-12 border-b border-slate-800 pb-6'>
-        <h1 className='text-6xl font-black tracking-tighter uppercase italic text-blue-500'>
-          The Abidan Court
-        </h1>
-        <p className='text-slate-400 font-mono text-sm mt-2 uppercase tracking-widest'>
-          [ ACCESS LEVEL: JUDGE // PROTOCOL: MANTLE_ASSUMPTION ]
-        </p>
+        <div className='flex justify-between items-end'>
+          <div>
+            <h1 className='text-6xl font-black tracking-tighter uppercase italic text-blue-500'>
+              The Abidan Court
+            </h1>
+            <p className='text-slate-400 font-mono text-sm mt-2 uppercase tracking-widest'>
+              [ ACCESS LEVEL: JUDGE // PROTOCOL: MANTLE_ASSUMPTION ]
+            </p>
+          </div>
+          <a 
+            href='/abidan/war-room' 
+            className='px-6 py-3 bg-blue-600/10 border border-blue-500/30 rounded-xl text-blue-400 font-black uppercase text-[10px] tracking-[0.3em] hover:bg-blue-600 hover:text-white transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)]'
+          >
+            Enter War Room
+          </a>
+        </div>
       </header>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-12 mb-20'>

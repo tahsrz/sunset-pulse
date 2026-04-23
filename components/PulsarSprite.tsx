@@ -34,11 +34,11 @@ const PulsarSprite: React.FC<PulsarSpriteProps> = ({ intensity = 1, status = 'id
         <path d="M25 75C35 85 65 85 75 75C70 65 30 65 25 75Z" fill="#15803d" />
       </svg>
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl whitespace-nowrap text-[10px] font-mono uppercase tracking-tighter text-green-400">
-        {status === 'idle' && "Lead gen, a machine it is."}
-        {status === 'ai' && "Predictive queries, I generate. Ask me, you must."}
-        {status === 'success' && "The Heartbeat, we capture!"}
-        {status === 'processing' && "20-vector reconstruction active."}
-        {status === 'engagement' && "Engagement Protocol Active."}
+        {status === 'idle' && "Grid Reconnaissance: Standing By."}
+        {status === 'ai' && "Jamie: DNA Query Engine Active."}
+        {status === 'success' && "Intelligence Core Synchronized."}
+        {status === 'processing' && "Analyzing Request DNA & Computational Weight..."}
+        {status === 'engagement' && "High-Stakes Engagement Protocol Active."}
       </div>
     </div>
   );

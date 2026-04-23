@@ -7,12 +7,14 @@ interface SatelliteInterpolatedMeshProps {
   property: any;
   color: string;
   customConfig?: any;
+  isNeuralMode?: boolean;
 }
 
 const SatelliteInterpolatedMesh: React.FC<SatelliteInterpolatedMeshProps> = ({ 
   property, 
   color, 
-  customConfig 
+  customConfig,
+  isNeuralMode = false
 }) => {
   const typeMap: Record<string, BuildingType> = {
     'House': 'GABLE_HOUSE',
@@ -55,6 +57,7 @@ const SatelliteInterpolatedMesh: React.FC<SatelliteInterpolatedMeshProps> = ({
       color={finalColor} 
       seed={seed} 
       dimensions={dimensions}
+      isNeuralMode={isNeuralMode}
     />
   );
 };

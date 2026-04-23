@@ -22,6 +22,8 @@ import UserOrb from './viewer/UserOrb';
 import NavigationController from './viewer/NavigationController';
 import DetailedPropertyMesh from './viewer/DetailedPropertyMesh';
 import SatelliteInterpolatedMesh from './viewer/SatelliteInterpolatedMesh';
+import SpatialHotspots from './viewer/SpatialHotspots';
+
 const NormalizedModel = ({ children }: { children: React.ReactNode }) => {
   const groupRef = useRef<THREE.Group>(null);
 
@@ -38,9 +40,10 @@ interface PropertyFiberViewerProps {
   property: any;
   color?: string;
   customConfig?: any;
+  isNeuralMode?: boolean;
 }
 
-export default function PropertyFiberViewer({ property, color, customConfig }: PropertyFiberViewerProps) {
+export default function PropertyFiberViewer({ property, color, customConfig, isNeuralMode = false }: PropertyFiberViewerProps) {
   const { user } = useAuth();
   const { updateBranding, logProtocol } = useTheme();
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous_User';
@@ -98,7 +101,7 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
           <div className="flex flex-col gap-2">
             <div className={`font-mono text-[10px] tracking-[0.4em] uppercase flex items-center gap-2 ${isNavigationMode ? 'text-blue-400' : 'text-slate-400'}`}>
               <div className={`w-2 h-2 rounded-full animate-pulse ${isNavigationMode ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]' : 'bg-slate-500'}`} />
-              [ {isNavigationMode ? `VIRTUAL_VIEW_ACTIVE // ${property.name?.toUpperCase()}` : 'ORBITAL_SCAN_ACTIVE'} ]
+              [ {isNavigationMode ? `VIRTUAL_VIEW_ACTIVE // ${property.name?.toUpperCase()}` : (isNeuralMode ? 'NEURAL_GRID_SCAN' : 'ORBITAL_SCAN_ACTIVE')} ]
             </div>
             <div className="font-mono text-[8px] text-white/20 uppercase tracking-widest">
               Location: {property.location?.street?.slice(0, 10) || 'PROPERTY_BASE'}...
@@ -126,7 +129,7 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
         )}
         
         <div className="absolute bottom-6 left-6 font-mono text-[9px] text-white/30 uppercase tracking-widest">
-          Sunset Render Engine v6.1.0 // Pulse Visualization
+          Sunset Render Engine v7.0.0 // {isNeuralMode ? 'Neural Hybrid' : 'Elite Recon'}
         </div>
         
         <div className="absolute bottom-6 right-6 font-mono text-[9px] text-white/30 uppercase tracking-widest">
@@ -160,7 +163,7 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
           />
         )}
         
-        <SunLight preset="CYCLE" cycleSpeed={1000} />
+        {!isNeuralMode && <SunLight preset="CYCLE" cycleSpeed={1000} />}
         
         <ambientLight intensity={isNavigationMode ? 0.3 : 0.4} />
         <spotLight position={[20, 30, 10]} angle={0.15} penumbra={1} intensity={0.5} color="#facc15" castShadow />
@@ -169,12 +172,13 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
 
         <Suspense fallback={null}>
           <TacticalStarfield />
+          <SpatialHotspots property={property} isNeuralMode={isNeuralMode} />
           <Float speed={isNavigationMode ? 2.5 : 1.2} rotationIntensity={0.5} floatIntensity={0.5}>
             <NormalizedModel>
               {isNavigationMode ? (
-                <DetailedPropertyMesh property={property} />
+                <DetailedPropertyMesh property={property} isNeuralMode={isNeuralMode} />
               ) : (
-                <SatelliteInterpolatedMesh property={property} color={primaryColor} customConfig={customConfig} />
+                <SatelliteInterpolatedMesh property={property} color={primaryColor} customConfig={customConfig} isNeuralMode={isNeuralMode} />
               )}
             </NormalizedModel>
           </Float>
@@ -190,12 +194,12 @@ export default function PropertyFiberViewer({ property, color, customConfig }: P
           
           <ContactShadows 
             position={[0, -2.5, 0]} 
-            opacity={0.6} 
+            opacity={isNeuralMode ? 0.2 : 0.6} 
             scale={25} 
             blur={2.5} 
             far={5} 
           />
-          <Environment preset={isNavigationMode ? 'night' : 'city'} />
+          <Environment preset={isNavigationMode || isNeuralMode ? 'night' : 'city'} />
         </Suspense>
       </Canvas>
     </div>

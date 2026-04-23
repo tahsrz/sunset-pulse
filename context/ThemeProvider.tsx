@@ -25,6 +25,16 @@ interface Branding {
   }
 }
 
+interface IntelligenceConfig {
+  grill: {
+    name: string;
+    tagline: string;
+    coordinates: [number, number];
+    address: string;
+    mapUrl?: string;
+  }
+}
+
 interface ProtocolLog {
   id: string;
   timestamp: string;
@@ -44,9 +54,12 @@ interface GhostDeckConfig {
 }
 
 interface ThemeContextType {
+  agentId: string;
   branding: Branding;
   setBranding: React.Dispatch<React.SetStateAction<Branding>>;
   stagedBranding: Branding | null;
+  intelligence: IntelligenceConfig;
+  setIntelligence: React.Dispatch<React.SetStateAction<IntelligenceConfig>>;
   updateBranding: (newSettings: any) => void;
   stageBranding: (newSettings: any) => void;
   confirmBranding: () => void;
@@ -84,18 +97,35 @@ const defaultBranding: Branding = {
   }
 };
 
+const defaultIntelligence: IntelligenceConfig = {
+  grill: {
+    name: 'Sunset Gas & Grill',
+    tagline: 'Quality Meat • Friendly Service',
+    coordinates: [-97.0403, 32.8998],
+    address: '101 S. Council, Sunset, TX 76270'
+  }
+};
+
 export function ThemeProvider({ 
   children, 
-  branding: initialBranding 
+  branding: initialBranding,
+  intelligence: initialIntelligence,
+  agentId = 'taz-realty-001'
 }: { 
   children: ReactNode; 
-  branding: Branding; 
+  branding: Branding;
+  intelligence?: IntelligenceConfig;
+  agentId?: string;
 }) {
   const { user } = useAuth();
   const [branding, setBranding] = useState<Branding>(() => {
     const base = { ...defaultBranding, ...initialBranding };
     base.quadrants = { ...defaultBranding.quadrants, ...initialBranding?.quadrants };
     return base;
+  });
+
+  const [intelligence, setIntelligence] = useState<IntelligenceConfig>(() => {
+    return { ...defaultIntelligence, ...initialIntelligence };
   });
   
   const [stagedBranding, setStagedBranding] = useState<Branding | null>(null);
@@ -135,7 +165,6 @@ export function ThemeProvider({
   const clearProtocolLogs = () => setProtocolLogs([]);
 
   useEffect(() => {
-    // 1. Initial Load and Auth-based settings
     const savedDev = localStorage.getItem('jamie_dev_mode');
     const savedLefthand = localStorage.getItem('jamie_lefthand_mode');
     
@@ -167,18 +196,20 @@ export function ThemeProvider({
       if (found) setSelectedAbidanState(found);
     }
 
-    // 2. Real-time Site Config Subscription
     const channel = supabase
       .channel('public:site_config')
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'site_config',
-        filter: 'agent_id=eq.taz-realty-001'
+        filter: `agent_id=eq.${agentId}`
       }, (payload) => {
         console.log('🔄 [THEME_SYNC] Site config update received:', payload.new);
         if (payload.new.branding) {
           setBranding(payload.new.branding);
+        }
+        if (payload.new.intelligence) {
+          setIntelligence(payload.new.intelligence);
         }
       })
       .subscribe();
@@ -186,12 +217,11 @@ export function ThemeProvider({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, agentId]);
 
   const setSelectedAbidan = (abidan: AbidanCharacter) => {
     setSelectedAbidanState(abidan);
     localStorage.setItem('selected_abidan', abidan.id);
-    console.log(`🛡️ [ABIDAN_CORE] Mantle assumed: ${abidan.name} (${abidan.mantle})`);
   };
 
   const setDevMode = (active: boolean) => {
@@ -200,7 +230,6 @@ export function ThemeProvider({
 
     if (active && !isSubscribed && !isAdmin) {
       toast.error('Subscription required for Dev Mode access.');
-      console.warn('🔒 [JAMIE_SECURITY] Dev Mode access denied. Active subscription not found.');
       return;
     }
     setDevModeState(active);
@@ -209,15 +238,12 @@ export function ThemeProvider({
 
   const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string, isLefthandMode?: boolean }) => {
     if (!user) return;
-    
     try {
-      const res = await fetch('/api/user/settings', {
+      await fetch('/api/user/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-      
-      if (!res.ok) throw new Error('Failed to sync settings');
     } catch (error) {
       console.error('Settings sync error:', error);
     }
@@ -226,56 +252,30 @@ export function ThemeProvider({
   const setAdvancedMode = (active: boolean) => {
     setAdvancedModeState(active);
     localStorage.setItem('jamie_advanced_mode', active ? 'true' : 'false');
-    if (active) {
-      toast.info('Advanced Mode Activated', { icon: '⚡' });
-    }
     syncSettings({ isAdvancedMode: active });
   };
 
   const setLefthandMode = (active: boolean) => {
     setLefthandModeState(active);
     localStorage.setItem('jamie_lefthand_mode', active ? 'true' : 'false');
-    if (active) {
-      toast.info('Lefthand Mode Activated', { icon: '↔️' });
-    }
     syncSettings({ isLefthandMode: active });
   };
 
   const setCustomKeybind = (key: string) => {
     const forbiddenKeys = ['T', 'N', 'W', 'S', 'F', 'L', 'R'];
     const upperKey = key.toUpperCase();
-
-    if (forbiddenKeys.includes(upperKey)) {
-      toast.error(`Key "${upperKey}" is reserved for browser shortcuts. Please choose another.`);
-      return;
-    }
-
+    if (forbiddenKeys.includes(upperKey)) return;
     setCustomKeybindState(upperKey);
     localStorage.setItem('jamie_custom_keybind', upperKey);
-    toast.success(`Keybind updated to: Shift + ${upperKey}`);
     syncSettings({ customKeybind: upperKey });
   };
 
   const updateBranding = (newSettings: any) => {
-    setBranding((prev) => {
-      const updated = { ...prev, ...newSettings };
-      if (newSettings.quadrants) {
-        updated.quadrants = { ...prev.quadrants, ...newSettings.quadrants };
-      }
-      return updated;
-    });
-    setStagedBranding(null);
+    setBranding((prev) => ({ ...prev, ...newSettings }));
   };
 
   const stageBranding = (newSettings: any) => {
-    setStagedBranding((prev) => {
-      const base = prev || branding;
-      const updated = { ...base, ...newSettings };
-      if (newSettings.quadrants) {
-        updated.quadrants = { ...base.quadrants, ...newSettings.quadrants };
-      }
-      return updated;
-    });
+    setStagedBranding((prev) => ({ ...(prev || branding), ...newSettings }));
   };
 
   const confirmBranding = () => {
@@ -285,9 +285,7 @@ export function ThemeProvider({
     }
   };
 
-  const cancelStaging = () => {
-    setStagedBranding(null);
-  };
+  const cancelStaging = () => setStagedBranding(null);
 
   useEffect(() => {
     const target = stagedBranding || branding;
@@ -296,26 +294,17 @@ export function ThemeProvider({
       root.style.setProperty('--primary-color', target.primaryColor);
       root.style.setProperty('--font-family', target.fontFamily);
       root.style.setProperty('--border-radius', target.borderRadius);
-      root.style.setProperty('--nav-bg', target.navBackground || '');
-      root.style.setProperty('--main-bg', target.mainBackground || '');
-      
-      root.style.setProperty('--tl-bg', target.quadrants.topLeft.background);
-      root.style.setProperty('--tr-bg', target.quadrants.topRight.background);
-      root.style.setProperty('--bl-bg', target.quadrants.bottomLeft.background);
-      root.style.setProperty('--br-bg', target.quadrants.bottomRight.background);
-      
-      root.style.setProperty('--tl-color', target.quadrants.topLeft.color);
-      root.style.setProperty('--tr-color', target.quadrants.topRight.color);
-      root.style.setProperty('--bl-color', target.quadrants.bottomLeft.color);
-      root.style.setProperty('--br-color', target.quadrants.bottomRight.color);
     }
   }, [branding, stagedBranding]);
 
   return (
     <ThemeContext.Provider value={{ 
+      agentId,
       branding, 
       setBranding,
       stagedBranding, 
+      intelligence,
+      setIntelligence,
       updateBranding, 
       stageBranding, 
       confirmBranding, 

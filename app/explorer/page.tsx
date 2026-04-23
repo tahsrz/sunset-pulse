@@ -5,8 +5,10 @@ import JamieChat from '@/components/JamieChat';
 import { FaMapMarkedAlt, FaSearch, FaBolt, FaRoute, FaHeartbeat } from 'react-icons/fa';
 import { calculatePulseScore } from '@/lib/intelligence/neighborhoodIntelligence';
 import { useSearchParams } from 'next/navigation';
+import { useTheme } from '@/context/ThemeProvider';
 
 function ExplorerContent() {
+  const { intelligence } = useTheme();
   const searchParams = useSearchParams();
   const targetId = searchParams.get('id');
   const [selection, setSelection] = useState(null);
@@ -26,7 +28,7 @@ function ExplorerContent() {
             setProperties([property]);
             
             setAreaIntel({
-              pulseScore: calculatePulseScore(property.location_geo.coordinates),
+              pulseScore: calculatePulseScore(property.location_geo.coordinates, [], intelligence.grill.coordinates),
               tourRecommendation: `Priority target: ${property.name}. Highly localized intelligence active.`
             });
           }
@@ -45,7 +47,7 @@ function ExplorerContent() {
       }
     };
     initializeExplorer();
-  }, [targetId]);
+  }, [targetId, intelligence.grill.coordinates]);
 
   // Sync selection with Jamie
   useEffect(() => {
@@ -68,7 +70,7 @@ function ExplorerContent() {
       // Calculate area-wide intelligence
       if (data.length > 0) {
         const avgScore = Math.round(data.reduce((acc, p) => 
-          acc + calculatePulseScore(p.location_geo.coordinates), 0) / data.length);
+          acc + calculatePulseScore(p.location_geo.coordinates, [], intelligence.grill.coordinates), 0) / data.length);
         
         setAreaIntel({
           pulseScore: avgScore,
@@ -134,6 +136,14 @@ function ExplorerContent() {
               <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic border-t border-white/5 pt-3">
                 "Selection encompasses {selection.type === 'polygon' ? 'a custom-defined area' : 'a radius around your point'}. Jamie is now analyzing local business metrics and property yields for this specific coordinate block."
               </p>
+
+              {/* Spatial Value Briefing */}
+              <div className="mt-4 p-4 bg-orange-600/10 border border-orange-500/20 rounded-2xl group hover:bg-orange-600/20 transition-all">
+                <h4 className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1">Spatial Advantage</h4>
+                <p className="text-[10px] text-slate-300 leading-relaxed">
+                  Decipher neighborhood flow and asset proximity in real-time. Spatial search allows you to uncover hidden potential that legacy lists ignore.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -141,6 +151,20 @@ function ExplorerContent() {
 
       {/* Jamie Integration (Floating Chat) */}
       <JamieChat propertyData={properties} />
+
+      {/* Narrative Status Overlay (Bottom Right) */}
+      <div className="absolute bottom-10 right-10 z-20 flex flex-col items-end gap-2 pointer-events-none">
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-xl flex items-center gap-3 animate-in slide-in-from-right-10 duration-1000">
+          <div className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+          </div>
+          <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">High-Fidelity MLS Stream: Active</span>
+        </div>
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-xl flex items-center gap-2 opacity-50">
+          <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Search Latency: &lt;10ms</span>
+        </div>
+      </div>
       
       {/* Global Navigation Link */}
       <div className="absolute bottom-10 left-10 z-20">

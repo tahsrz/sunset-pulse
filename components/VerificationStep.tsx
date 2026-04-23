@@ -1,6 +1,8 @@
 'use client';
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { FaLock, FaUnlock, FaInfoCircle } from 'react-icons/fa';
+import logo from '@/assets/images/logo.png';
 
 interface PropertyVerificationProps {
   children: React.ReactNode;
@@ -81,7 +83,7 @@ export default function PropertyVerification({ children }: PropertyVerificationP
       </form>
 
       <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-center gap-4 opacity-40">
-        <img src="/assets/images/logo.png" alt="Sunset Pulse" className="h-4" />
+        <Image src={logo} alt="Sunset Pulse" className="h-4 w-auto" />
         <div className="h-4 w-px bg-white/20" />
         <span className="text-[8px] font-bold uppercase tracking-widest">Verification Service</span>
       </div>

@@ -68,7 +68,7 @@ const ROICalculator = () => {
         <ul className='space-y-4 relative z-10'>
           {[
             'Unlimited Spatial Analysis', 
-            'Priority Research Assistant', 
+            'Jamie: DNA Query Analysis', 
             'Advanced Market Datasets', 
             'Dynamic Environment Profiles', 
             'Automated Lead Management'

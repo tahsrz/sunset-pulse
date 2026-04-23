@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 const { Schema, model, models } = mongoose;
 
 const MenuItemSchema = new Schema({
+  agentId: { type: String, required: true, default: 'taz-realty-001' },
   name: { type: String, required: true },
   price: { type: Number, required: true },
   description: { type: String },

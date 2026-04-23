@@ -18,8 +18,8 @@ export async function POST(req: Request) {
       return errorResponse('User interests data required.', 400);
     }
 
-    const user = await User.findByIdAndUpdate(
-      sessionUser.userId,
+    const user = await User.findOneAndUpdate(
+      { email: sessionUser.user.email },
       { currentInterests: interests },
       { new: true }
     );

@@ -87,7 +87,7 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
           <FaBrain size={40} className='text-blue-400' />
         </div>
         <p className='text-[9px] font-mono leading-relaxed text-blue-300/80 uppercase tracking-wider italic'>
-          <span className='text-blue-400 font-black'>[ SYSTEM_UPDATE ]</span> : Jamie's logic engine is refining its contextual analysis of the property grid.
+          <span className='text-blue-400 font-black'>[ SYSTEM_UPDATE ]</span> : Jamie is analyzing the DNA of current market requests to eliminate search fatigue across the grid.
         </p>
       </div>
     </div>

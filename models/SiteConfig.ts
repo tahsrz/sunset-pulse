@@ -12,6 +12,15 @@ const SiteConfigSchema = new mongoose.Schema({
     subtitle: { type: String, default: 'Powered by Jamie AI' },
     backgroundImage: { type: String },
   },
+  intelligence: {
+    grill: {
+      name: { type: String, default: 'Sunset Gas & Grill' },
+      tagline: { type: String, default: 'Quality Meat • Friendly Service' },
+      coordinates: { type: [Number], default: [-97.0403, 32.8998] }, // [lng, lat]
+      address: { type: String, default: '101 S. Council, Sunset, TX 76270' },
+      mapUrl: { type: String }
+    }
+  },
   sections: [{
     type: { type: String }, // e.g., 'listings', 'contact', 'about'
     visible: { type: Boolean, default: true },

@@ -30,13 +30,13 @@ export async function POST(req: NextRequest) {
   // Handle successful checkout
   if (event.type === 'checkout.session.completed') {
     await connectDB();
-    const userId = session.metadata?.userId;
+    const customerEmail = session.customer_email;
 
-    if (userId) {
-      await User.findByIdAndUpdate(userId, {
+    if (customerEmail) {
+      await User.findOneAndUpdate({ email: customerEmail }, {
         subscriptionExpires: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000), //  1 month
       });
-      console.log(`✅ [STRIPE_WEBHOOK] User ${userId} upgraded to Premium.`);
+      console.log(`✅ [STRIPE_WEBHOOK] User ${customerEmail} upgraded to Premium.`);
     }
   }
 

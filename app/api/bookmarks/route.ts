@@ -17,8 +17,8 @@ export const GET = async () => {
       return unauthorizedResponse();
     }
 
-    const { userId } = sessionUser;
-    const user = await User.findOne({ _id: userId });
+    const { user: authUser } = sessionUser;
+    const user = await User.findOne({ email: authUser.email });
     
     if (!user) {
       return errorResponse('Operator profile not found.', 404);
@@ -41,8 +41,8 @@ export const POST = async (request: NextRequest) => {
       return unauthorizedResponse();
     }
 
-    const { userId } = sessionUser;
-    const user = await User.findOne({ _id: userId });
+    const { user: authUser } = sessionUser;
+    const user = await User.findOne({ email: authUser.email });
 
     if (!user) {
       return errorResponse('Operator profile not found.', 404);

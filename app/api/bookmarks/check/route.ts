@@ -17,9 +17,9 @@ export const POST = async (request: NextRequest) => {
       return unauthorizedResponse('User authentication required.');
     }
 
-    const { userId } = sessionUser;
+    const { user: authUser } = sessionUser;
 
-    const user: any = await User.findOne({ _id: userId });
+    const user: any = await User.findOne({ email: authUser.email });
     if (!user) return errorResponse('User profile not found.', 404);
 
     const isBookmarked = user.bookmarks.includes(propertyId);

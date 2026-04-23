@@ -123,9 +123,9 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hovere
   }, [urlId, results, onPropertySelect]);
 
   const [viewState, setViewState] = useState({
-    longitude: urlLng ? parseFloat(urlLng) : -97.7431,
-    latitude: urlLat ? parseFloat(urlLat) : 30.2672,
-    zoom: urlId ? 15 : 11,
+    longitude: urlLng ? parseFloat(urlLng) : -97.0403,
+    latitude: urlLat ? parseFloat(urlLat) : 32.8998,
+    zoom: urlId ? 15 : 10,
     pitch: 45,
     bearing: -17
   });

@@ -19,7 +19,7 @@ export const POST = async (request: NextRequest) => {
 
     const { query, frequency } = await request.json();
 
-    const user: any = await User.findById(sessionUser.userId);
+    const user: any = await User.findOne({ email: sessionUser.user.email });
     if (!user) return errorResponse('User profile not found.', 404);
 
     user.savedSearches.push({

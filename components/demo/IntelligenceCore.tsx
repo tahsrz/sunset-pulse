@@ -12,7 +12,7 @@ const IntelligenceCore = () => {
       </div>
       <h3 className='text-4xl font-black uppercase italic tracking-tighter mb-6 text-white'>Jamie: Intelligence Engine</h3>
       <p className='text-slate-400 max-w-2xl text-lg mb-12 font-medium'>
-        Jamie is an autonomous research assistant. Utilizing extensive socioeconomic datasets, he provides persistent context across user sessions, predictive analysis, and professional data briefings.
+        Agent queries shouldn't be a game of trial and error. While standard search tools rely on rigid parameters, Jamie analyzes the DNA of your request. By determining the exact computational weight needed and scaling its internal architecture accordingly, it eliminates the 'search fatigue' that plagues traditional real estate platforms.
       </p>
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 w-full'>
         <div className='p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl'>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { FaShieldAlt, FaEye, FaGhost, FaSpider, FaHammer, FaFox, FaGlobe, FaMap, FaRoute, FaUserTie } from 'react-icons/fa';
+import { FaShieldAlt, FaEye, FaGhost, FaSpider, FaCrosshairs, FaBolt, FaGlobe, FaMap, FaRoute, FaUserTie } from 'react-icons/fa';
 
 const InvestorBar: React.FC = () => {
   const pathname = usePathname();
@@ -14,8 +14,8 @@ const InvestorBar: React.FC = () => {
     { name: 'Gadrael', icon: <FaShieldAlt className="text-orange-400" />, status: 'SHIELD_LOCKED' },
     { name: 'Durandiel', icon: <FaGhost className="text-slate-400" />, status: 'GHOST_OPS' },
     { name: 'Telariel', icon: <FaSpider className="text-purple-400" />, status: 'GRID_CRAWL' },
-    { name: 'Rezael', icon: <FaHammer className="text-red-400" />, status: 'ATTACK_READY' },
-    { name: 'Zakariel', icon: <FaFox className="text-orange-500" />, status: 'VELOCITY_SYNC' },
+    { name: 'Rezael', icon: <FaCrosshairs className="text-red-400" />, status: 'ATTACK_READY' },
+    { name: 'Zakariel', icon: <FaBolt className="text-orange-500" />, status: 'VELOCITY_SYNC' },
   ];
 
   const highlights = [

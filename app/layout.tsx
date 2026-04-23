@@ -40,6 +40,16 @@ interface Branding {
   };
 }
 
+interface IntelligenceConfig {
+  grill: {
+    name: string;
+    tagline: string;
+    coordinates: [number, number];
+    address: string;
+    mapUrl?: string;
+  };
+}
+
 /**
  * Root layout component for the application.
  * Establishes database connection and provides global context providers.
@@ -69,17 +79,32 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const fallbackIntelligence: IntelligenceConfig = {
+    grill: {
+      name: 'Sunset Gas & Grill',
+      tagline: 'Quality Meat • Friendly Service',
+      coordinates: [-97.0403, 32.8998],
+      address: '101 S. Council, Sunset, TX 76270'
+    }
+  };
+
   let branding: Branding;
+  let intelligence: IntelligenceConfig;
   
-  if (sbConfig && sbConfig.branding) {
-    // Merge Supabase branding with fallback to ensure all properties exist
+  if (sbConfig) {
+    // Merge Supabase branding with fallback
     branding = {
       ...fallbackBranding,
-      ...sbConfig.branding,
+      ...(sbConfig.branding || {}),
       quadrants: {
         ...fallbackBranding.quadrants,
-        ...(sbConfig.branding.quadrants || {})
+        ...(sbConfig.branding?.quadrants || {})
       }
+    };
+    // Merge Supabase intelligence with fallback
+    intelligence = {
+      ...fallbackIntelligence,
+      ...(sbConfig.intelligence || {})
     };
   } else {
     // 2. Fallback to MongoDB (Legacy)
@@ -87,21 +112,27 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
       await connectDB();
       const config = await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
       
-      if (config && config.branding) {
+      if (config) {
         branding = {
           ...fallbackBranding,
-          ...config.branding,
+          ...(config.branding || {}),
           quadrants: {
             ...fallbackBranding.quadrants,
-            ...(config.branding.quadrants || {})
+            ...(config.branding?.quadrants || {})
           }
+        };
+        intelligence = {
+          ...fallbackIntelligence,
+          ...(config.intelligence || {})
         };
       } else {
         branding = fallbackBranding;
+        intelligence = fallbackIntelligence;
       }
     } catch (dbError) {
       console.error('Failed to connect to MongoDB fallback:', dbError);
       branding = fallbackBranding;
+      intelligence = fallbackIntelligence;
     }
   }
 
@@ -110,7 +141,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
       <body className='bg-slate-950'>
         <AuthProvider>
           <CartProvider>
-            <ThemeProvider branding={branding}>
+            <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
               <div className='flex flex-col min-h-screen'>
                 <GlobalMarketPulse />
                 <Navbar />

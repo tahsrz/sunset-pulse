@@ -82,8 +82,8 @@ handles occlusion in two primary stages:
        * Secret Features: ???
 
   2. Key Intelligent Modules
-   * Jamie Protocol Assistant: A real-time chat interface powered by Groq (Llama 3.1) and the Vercel AI SDK. Jamie
-     isn't just a chatbot; it has "Agentic" capabilities, meaning it can:
+   * Jamie Protocol Assistant: A real-time chat interface powered by Groq (Llama 3.1) and the Vercel AI SDK. Agent queries shouldn't be a game of trial and error. While standard search tools rely on rigid parameters, Jamie analyzes the DNA of your request. By determining the exact computational weight needed and scaling its internal architecture accordingly, it eliminates the 'search fatigue' that plagues traditional real estate platforms.
+     Jamie has "Agentic" capabilities, meaning it can:
        * Dynamic Theme Injection: Suggest and apply visual themes (Dark Mode, Minimalist, etc.) on the fly.
        * Hyper-Local Intel: Pull real-time data from local businesses (like Sunset Grill) to give buyers neighborhood
          context.

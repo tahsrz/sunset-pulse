@@ -3,8 +3,7 @@ const { Schema, model, models } = mongoose;
 const PropertySchema = new Schema(
   {
     owner: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
     },
     name: {

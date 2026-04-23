@@ -17,8 +17,7 @@ const OrderSchema = new Schema(
     },
     // Useful if you want to link it to a logged-in user
     user: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
     },
   },
   {

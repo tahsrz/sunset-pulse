@@ -56,6 +56,23 @@ const InfrastructureSection = () => {
           </div>
         </div>
       </div>
+
+      <div className='bg-blue-600/5 border border-blue-500/20 p-8 rounded-3xl backdrop-blur-xl'>
+        <h3 className='text-sm font-black text-blue-400 uppercase tracking-[0.3em] mb-4'>Elite Performance Benchmarks</h3>
+        <div className='grid grid-cols-2 gap-8'>
+          <div>
+            <div className='text-3xl font-black text-white italic'>&lt;10ms</div>
+            <div className='text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1'>Search Latency</div>
+          </div>
+          <div>
+            <div className='text-3xl font-black text-white italic'>100%</div>
+            <div className='text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1'>Grid Sync Rate</div>
+          </div>
+        </div>
+        <p className='text-[10px] text-slate-500 mt-6 leading-relaxed italic'>
+          "Architecture scales dynamically based on request DNA, ensuring surgical precision during high-intensity asset discovery."
+        </p>
+      </div>
     </section>
   );
 };

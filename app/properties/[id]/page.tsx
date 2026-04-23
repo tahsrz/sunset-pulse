@@ -10,6 +10,7 @@ import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import BookingForm from '@/components/BookingForm';
+import TourRequestForm from '@/components/property/TourRequestForm';
 import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
@@ -17,6 +18,8 @@ import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
 import { FaArrowLeft } from 'react-icons/fa';
 import { Property } from '@/lib/types';
+import { logEvent } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 // --- Interfaces for Type Safety ---
 interface RentData {
@@ -30,6 +33,7 @@ interface RentData {
 const PropertyPage: React.FC = () => {
   const params = useParams();
   const id = params?.id as string;
+  const { user } = useAuth();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [rentData, setRentData] = useState<RentData | null>(null);
@@ -42,8 +46,17 @@ const PropertyPage: React.FC = () => {
         const propertyData = await fetchProperty(id);
         setProperty(propertyData as Property);
 
-        // get market rent insights
         if (propertyData) {
+          // Log Engagement Event (Last 48h tracking)
+          logEvent({
+            type: 'PROPERTY_VIEW',
+            description: `Asset ${propertyData.name} scanned in sector.`,
+            actorId: user?.id || 'anonymous',
+            actorName: user?.user_metadata?.full_name || 'Anonymous_User',
+            targetId: id,
+            severity: 'INFO'
+          });
+
           try {
             const rentRes = await fetch(`/api/properties/${id}/rent`);
             if (rentRes.ok) {
@@ -64,7 +77,7 @@ const PropertyPage: React.FC = () => {
     if (property === null) {
       fetchPropertyData();
     }
-  }, [id, property]);
+  }, [id, property, user]);
 
   if (!property && !loading) {
     return (
@@ -73,6 +86,9 @@ const PropertyPage: React.FC = () => {
       </h1>
     );
   }
+
+  // Determine if it's a rental/RV or a Sale/Standard property for form logic
+  const isShortTerm = property?.type === 'RV' || property?.type === 'RV Park';
 
   // Combine property and rent data for Jamie
   const jamieData = property ? { ...property, rentData } : null;
@@ -101,7 +117,14 @@ const PropertyPage: React.FC = () => {
                 <aside className='space-y-4'>
                   <BookmarkButton property={property} />
                   <ShareButtons property={property} />
-                  <BookingForm property={property} />
+                  
+                  {/* Action Forms based on Property Intel Type */}
+                  {isShortTerm ? (
+                    <BookingForm property={property} />
+                  ) : (
+                    <TourRequestForm propertyId={property._id} propertyName={property.name} />
+                  )}
+
                   <PropertyVerification>
                     <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
                   </PropertyVerification>

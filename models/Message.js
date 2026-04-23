@@ -3,13 +3,11 @@ import { Schema, model, models } from 'mongoose';
 const MessageSchema = new Schema(
   {
     sender: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
     },
     recipient: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
     },
     property: {

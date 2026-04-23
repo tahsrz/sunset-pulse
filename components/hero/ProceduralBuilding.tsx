@@ -11,6 +11,7 @@ interface ProceduralBuildingProps {
   scale?: [number, number, number];
   position?: [number, number, number];
   dimensions?: { width: number; height: number; depth: number };
+  isNeuralMode?: boolean;
   onClick?: () => void;
 }
 
@@ -21,10 +22,28 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
   scale = [1, 1, 1],
   position = [0, 0, 0],
   dimensions,
+  isNeuralMode = false,
   onClick
 }) => {
   const [noiseTexture, setNoiseTexture] = React.useState<THREE.CanvasTexture | null>(null);
   const s = useMemo(() => (typeof seed === 'string' ? seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : seed), [seed]);
+
+  const neuralColors = {
+    primary: '#3b82f6', // Logic
+    secondary: '#a855f7', // Data
+    accent: '#22c55e', // Agent
+  };
+
+  const getNeuralMaterial = (type: 'primary' | 'secondary' | 'accent' = 'primary') => {
+    return (
+      <meshBasicMaterial 
+        color={neuralColors[type]} 
+        wireframe={true} 
+        transparent={true} 
+        opacity={0.8}
+      />
+    );
+  };
 
   const variations = useMemo(() => {
     return {
@@ -38,7 +57,7 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
       rooftopClutter: Math.sin(s * 4.5) > 0,
       lawnClutter: Math.cos(s * 5.5) > 0
     };
-  }, [s]);
+  }, [s, dimensions]);
 
   // Procedural Noise Texture Generator (Client-side only)
   React.useEffect(() => {
@@ -48,11 +67,9 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Base color
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, 256, 256);
 
-    // Add noise
     for (let i = 0; i < 5000; i++) {
       const x = Math.random() * 256;
       const y = Math.random() * 256;
@@ -61,7 +78,6 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
       ctx.fillRect(x, y, 1, 1);
     }
 
-    // Add some "seams" or grid
     ctx.strokeStyle = 'rgba(0,0,0,0.1)';
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, 256, 256);
@@ -72,42 +88,40 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
     setNoiseTexture(tex);
   }, [variations.textureRepeat]);
 
-  // Rooftop Clutter (AC Units, Antennas)
   const RooftopClutter = ({ w, h, d }: { w: number, h: number, d: number }) => {
     if (!variations.rooftopClutter) return null;
     return (
       <group position={[0, h / 2, 0]}>
         <mesh position={[w * 0.2, 0.2, d * 0.2]}>
           <boxGeometry args={[0.6, 0.4, 0.6]} />
-          <meshStandardMaterial color="#64748b" metalness={0.8} />
+          {isNeuralMode ? getNeuralMaterial('secondary') : <meshStandardMaterial color="#64748b" metalness={0.8} />}
         </mesh>
         <mesh position={[-w * 0.2, 0.5, -d * 0.2]}>
           <cylinderGeometry args={[0.02, 0.02, 1]} />
-          <meshStandardMaterial color="#94a3b8" />
+          {isNeuralMode ? getNeuralMaterial('secondary') : <meshStandardMaterial color="#94a3b8" />}
         </mesh>
       </group>
     );
   };
 
-  // Lawn Detail (Bushes, Mailboxes)
   const LawnDetail = ({ w, d }: { w: number, d: number }) => {
     if (!variations.lawnClutter) return null;
     return (
       <group position={[0, 0, d / 2 + 1]}>
         <mesh position={[w * 0.4, 0, 0]}>
           <sphereGeometry args={[0.4, 8, 8]} />
-          <meshStandardMaterial color="#16a34a" />
+          {isNeuralMode ? getNeuralMaterial('accent') : <meshStandardMaterial color="#16a34a" />}
         </mesh>
         <mesh position={[-w * 0.4, 0.3, 0.5]}>
           <boxGeometry args={[0.2, 0.6, 0.2]} />
-          <meshStandardMaterial color="#475569" />
+          {isNeuralMode ? getNeuralMaterial('secondary') : <meshStandardMaterial color="#475569" />}
         </mesh>
       </group>
     );
   };
 
-  // Procedural Window Generator
   const Windows = ({ w, h, d, density }: { w: number, h: number, d: number, density: number }) => {
+    if (isNeuralMode) return null; // Windows are redundant in neural wireframe
     const windows = [];
     const rows = Math.floor(h * 2 * density);
     const cols = Math.floor(w * 1.5 * density);
@@ -148,20 +162,22 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           <group>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[mcW, mcH, mcD]} />
-              <meshStandardMaterial 
-                color={color} 
-                roughness={0.2} 
-                metalness={0.8} 
-                map={noiseTexture || undefined}
-                bumpMap={noiseTexture || undefined}
-                bumpScale={0.05}
-              />
+              {isNeuralMode ? getNeuralMaterial('primary') : (
+                <meshStandardMaterial 
+                  color={color} 
+                  roughness={0.2} 
+                  metalness={0.8} 
+                  map={noiseTexture || undefined}
+                  bumpMap={noiseTexture || undefined}
+                  bumpScale={0.05}
+                />
+              )}
             </mesh>
             <Windows w={mcW} h={mcH} d={mcD} density={variations.windowDensity} />
             {variations.hasBalcony && (
               <mesh position={[0, 0, mcD / 2 + 0.3]}>
                 <boxGeometry args={[mcW * 0.8, 0.1, 0.6]} />
-                <meshStandardMaterial color="#1e293b" metalness={0.5} map={noiseTexture || undefined} />
+                {isNeuralMode ? getNeuralMaterial('secondary') : <meshStandardMaterial color="#1e293b" metalness={0.5} map={noiseTexture || undefined} />}
               </mesh>
             )}
             <RooftopClutter w={mcW} h={mcH} d={mcD} />
@@ -175,32 +191,14 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           <group>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[rvW, 2.5, 2.5]} />
-              <meshStandardMaterial 
-                color="#f8fafc" 
-                metalness={0.9} 
-                roughness={0.1} 
-                map={noiseTexture || undefined}
-              />
-            </mesh>
-            <mesh position={[rvW * 0.2, 0.3, 1.26]}>
-              <planeGeometry args={[1, 0.8]} />
-              <meshStandardMaterial color="#1e293b" metalness={1} roughness={0} />
-            </mesh>
-            <mesh position={[-rvW * 0.2, 0.3, 1.26]}>
-              <planeGeometry args={[1, 0.8]} />
-              <meshStandardMaterial color="#1e293b" metalness={1} roughness={0} />
-            </mesh>
-            <mesh position={[0, -0.2, 1.26]}>
-              <planeGeometry args={[rvW, 0.2]} />
-              <meshStandardMaterial color={color} metalness={0.5} />
-            </mesh>
-            <mesh position={[-1.5, -1.2, 1]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />
-              <meshStandardMaterial color="#0f172a" />
-            </mesh>
-            <mesh position={[1.5, -1.2, 1]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />
-              <meshStandardMaterial color="#0f172a" />
+              {isNeuralMode ? getNeuralMaterial('primary') : (
+                <meshStandardMaterial 
+                  color="#f8fafc" 
+                  metalness={0.9} 
+                  roughness={0.1} 
+                  map={noiseTexture || undefined}
+                />
+              )}
             </mesh>
             <LawnDetail w={rvW} d={2.5} />
           </group>
@@ -214,17 +212,14 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           <group>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[indW, indH, indD]} />
-              <meshStandardMaterial 
-                color="#475569" 
-                roughness={0.4} 
-                metalness={0.6} 
-                map={noiseTexture || undefined}
-              />
-            </mesh>
-            {/* Loading Docks */}
-            <mesh position={[indW/2 + 0.01, -indH/2 + 1, 0]}>
-              <boxGeometry args={[0.2, 1.5, indD * 0.8]} />
-              <meshStandardMaterial color="#1e293b" />
+              {isNeuralMode ? getNeuralMaterial('primary') : (
+                <meshStandardMaterial 
+                  color="#475569" 
+                  roughness={0.4} 
+                  metalness={0.6} 
+                  map={noiseTexture || undefined}
+                />
+              )}
             </mesh>
             <RooftopClutter w={indW} h={indH} d={indD} />
           </group>
@@ -238,12 +233,14 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           <group>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[aptW, aptH, aptD]} />
-              <meshStandardMaterial 
-                color={color} 
-                roughness={0.5} 
-                metalness={0.2} 
-                map={noiseTexture || undefined}
-              />
+              {isNeuralMode ? getNeuralMaterial('primary') : (
+                <meshStandardMaterial 
+                  color={color} 
+                  roughness={0.5} 
+                  metalness={0.2} 
+                  map={noiseTexture || undefined}
+                />
+              )}
             </mesh>
             <Windows w={aptW} h={aptH} d={aptD} density={1.5} />
             <RooftopClutter w={aptW} h={aptH} d={aptD} />
@@ -256,20 +253,18 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           <group>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[2.5, skH, 2.5]} />
-              <meshStandardMaterial 
-                color="#0f172a" 
-                metalness={0.9} 
-                roughness={0.1} 
-                map={noiseTexture || undefined}
-                bumpMap={noiseTexture || undefined}
-                bumpScale={0.1}
-              />
+              {isNeuralMode ? getNeuralMaterial('primary') : (
+                <meshStandardMaterial 
+                  color="#0f172a" 
+                  metalness={0.9} 
+                  roughness={0.1} 
+                  map={noiseTexture || undefined}
+                  bumpMap={noiseTexture || undefined}
+                  bumpScale={0.1}
+                />
+              )}
             </mesh>
             <Windows w={2.5} h={skH} d={2.5} density={1.2} />
-            <mesh position={[0, skH/2 + 1, 0]}>
-              <cylinderGeometry args={[0.02, 0.02, 2]} />
-              <meshStandardMaterial color="#64748b" />
-            </mesh>
             <RooftopClutter w={2.5} h={skH} d={2.5} />
           </group>
         );
@@ -283,26 +278,22 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
           <group>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[ghW, ghH, ghD]} />
-              <meshStandardMaterial 
-                color={color} 
-                roughness={0.7} 
-                metalness={0.1} 
-                map={noiseTexture || undefined}
-                bumpMap={noiseTexture || undefined}
-                bumpScale={0.02}
-              />
-            </mesh>
-            <mesh position={[ghW * 0.2, -ghH / 2 + 0.8, ghD / 2 + 0.01]}>
-              <planeGeometry args={[0.8, 1.6]} />
-              <meshStandardMaterial color="#1e293b" map={noiseTexture || undefined} />
-            </mesh>
-            <mesh position={[-ghW * 0.2, 0.2, ghD / 2 + 0.02]}>
-              <planeGeometry args={[1, 1]} />
-              <meshStandardMaterial color="#60a5fa" transparent opacity={0.6} metalness={1} />
+              {isNeuralMode ? getNeuralMaterial('primary') : (
+                <meshStandardMaterial 
+                  color={color} 
+                  roughness={0.7} 
+                  metalness={0.1} 
+                  map={noiseTexture || undefined}
+                  bumpMap={noiseTexture || undefined}
+                  bumpScale={0.02}
+                />
+              )}
             </mesh>
             <mesh position={[0, ghH / 2 + (variations.roofHeight * 2) / 2, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
               <coneGeometry args={[ghW * 0.8, variations.roofHeight * 2.5, 4]} />
-              <meshStandardMaterial color="#1e293b" flatShading roughness={0.9} map={noiseTexture || undefined} />
+              {isNeuralMode ? getNeuralMaterial('secondary') : (
+                <meshStandardMaterial color="#1e293b" flatShading roughness={0.9} map={noiseTexture || undefined} />
+              )}
             </mesh>
             <LawnDetail w={ghW} d={ghD} />
           </group>
@@ -317,14 +308,6 @@ const ProceduralBuilding: React.FC<ProceduralBuildingProps> = ({
       onClick={(e) => {
         e.stopPropagation();
         if (onClick) onClick();
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'auto';
       }}
     >
       {renderBuilding()}
