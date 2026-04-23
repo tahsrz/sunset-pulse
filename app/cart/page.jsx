@@ -1,13 +1,51 @@
 'use client';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
-import { FaTrash, FaArrowLeft } from 'react-icons/fa';
+import { FaTrash, FaArrowLeft, FaCreditCard, FaUtensils, FaSpinner } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const CartPage = () => {
   const { cart, removeFromCart, cartTotal, clearCart } = useCart();
   const router = useRouter();
+
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
+  const handleStripeCheckout = async () => {
+    setIsCheckoutLoading(true);
+    try {
+      // 1. Create the order first in Pending state
+      const orderRes = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart, totalAmount: cartTotal }),
+      });
+      
+      const orderResult = await orderRes.json();
+      if (!orderRes.ok) throw new Error('Failed to create order grid entry.');
+      const orderId = orderResult.data.id;
+
+      // 2. Initialize Stripe with the order ID
+      const res = await fetch('/api/checkout/grill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart, totalAmount: cartTotal, orderId }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error('Stripe initialization failed.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Network error during checkout.');
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
 
   const handleCheckout = async () => {
     try {
@@ -87,19 +125,32 @@ const CartPage = () => {
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
 
-                <div className='mt-8 flex flex-col md:flex-row gap-4'>
+                <div className='mt-8 space-y-4'>
+                  <div className='flex flex-col md:flex-row gap-4'>
+                    <button
+                      onClick={handleStripeCheckout}
+                      disabled={isCheckoutLoading}
+                      className='flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest py-4 px-6 rounded-2xl text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50'
+                    >
+                      {isCheckoutLoading ? <FaSpinner className='animate-spin' /> : <FaCreditCard />}
+                      Pay Now with Card
+                    </button>
+
+                    <button
+                      onClick={handleCheckout}
+                      className='flex-1 bg-slate-900 hover:bg-black text-white font-black uppercase tracking-widest py-4 px-6 rounded-2xl text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3'
+                    >
+                      <FaUtensils />
+                      Pay at Counter
+                    </button>
+                  </div>
+
                   <Link
                     href='/grill'
-                    className='flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl transition-colors'
+                    className='w-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-3 px-6 rounded-xl transition-colors text-xs uppercase tracking-widest'
                   >
-                    <FaArrowLeft className='mr-2' /> Add More Food
+                    <FaArrowLeft className='mr-2' /> Return to Menu
                   </Link>
-                  <button
-                    onClick={handleCheckout}
-                    className='flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-lg transition-transform active:scale-95'
-                  >
-                    Place Order (Pay at Counter)
-                  </button>
                 </div>
               </div>
             </>

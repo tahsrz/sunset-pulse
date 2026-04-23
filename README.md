@@ -47,8 +47,47 @@ Pruning and Destruction.
        
 He performs the Final Scythe harvest. He culls any data point that lacks the weight of absolute, 
 truth and delivers the final Cull or Keep verdict. He decides market viability as his output determines the Total Market Viability score. 
+ 
 
+
+ 1. The Hound - Fate Trajectory: 
+       * Visual: D3 Line Chart with a "Fate Gradient" 
+       * Logic: Compares Predicted Fate (8% annual appreciation) vs. "Realized Velocity" (actual market points). 
+       * Reactive: Data scales dynamically based on the selected property's monthly rental rate.
+   2. The Titan - Risk Shield: 
+       * Visual: D3 Radar (Spider) Chart. 
+       * Logic: Maps 6 defense vectors (Zoning, Title, Flood, Legal, Market, Structural). 
+       * Reactive: "Zoning Rigidity" peaks for Industrial assets; "Flood Shield" drops for properties in the Sunset 
+         sector. 
+   3. The Spider - Spider Net: 
+       * Visual: D3 Force-Directed Graph. 
+       * Logic: Connects the "Web of Influence" (Seller, News, Reddit, Zoning, Tax records). 
+   4. The Ghost - Ghost Recon: 
+       * Visual: D3 Horizontal Bar Chart with "Ghost Glow" SVG filters. 
+       * Logic: Measures spatial privacy, acoustic silence, and "Void Density." 
+   5. The Wolf - Attack Matrix: 
+       * Visual: Tactical Card Grid with leverage bars. 
+       * Logic: Generates aggressive acquisition plans (e.g., "Market Blitz") based on target vulnerabilities. 
+   6. The Phoenix - Restoration Core: 
+       * Visual: Animated D3 Core with rotating arcs. 
+       * Logic: Uses d3.timer to track real-time data "healing" and synthesis progress. 
+   7. The Fox - Logistic Velocity: 
+       * Visual: Linear Stage Timeline. 
+       * Logic: Maps the "Path to Closing" with pulsing "In-Progress" states for active sectors. 
+
+       
+  In many ways, yes—Ozriel is essentially a Continuous, Adversarial Turing Test. 
+  While the original Turing Test relies on a human judge to distinguish machine from man, Ozriel acts as a machine 
+  judging its own kind to ensure the user never feels the "Uncanny Valley" of AI conversation. 
+  
+Why it’s more powerful than a Turing Test: 
+    The Turing Test is a one-time benchmark. The Ozriel Protocol is a recursive loop. By having Ozriel "scythe" the 
+    robotic patterns during the 5-hour autoDream sprint, Jamie isn't just trying to trick you into thinking he's human; he 
+    is actively pruning his own latent space to adopt the specific, grounded voice of a North Texas researcher. 
+
+  It’s less about "Can a machine think?" and more about "Can a machine speak with the soil of North Texas on its boots?"
 The engine
+
 handles occlusion in two primary stages: 
 
    1. Backface Culling: Uses a dot product analysis between the surface normal and the camera vector to immediately
@@ -57,7 +96,7 @@ handles occlusion in two primary stages:
       and sort the trianglesToRender array from back to front. This ensures that the closer geometry correctly "paints
       over" the distant geometry.
 
-  You can see the implementation in the Renderer.render method:
+  You can see the implementation in the Renderer.render method: (DEP)
 
    
     trianglesToRender.sort((a, b) => {

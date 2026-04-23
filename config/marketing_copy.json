@@ -1,67 +1,67 @@
 {
   "hero": {
     "title": "Sunset Pulse",
-    "subtitle": "The Premium Intelligence Layer for North Texas Real Estate",
-    "description": "Eliminating search fatigue through DNA-level request analysis. Experience a search engine that scales its computational weight to match your ambition."
+    "subtitle": "Advanced Portfolio Discovery & Asset Intelligence",
+    "description": "Institutional-grade tools designed for market precision. Access live telemetry and data-driven insights for North Texas real estate."
   },
   "section_headers": {
     "value_prop": {
-      "title": "Intelligence Architecture",
-      "tagline": "Surgical. Persistent. Elite."
+      "title": "Enterprise Architecture",
+      "tagline": "Professional. Reliable. Institutional."
     },
     "featured": {
-      "title": "Strategic Asset Discovery",
-      "tagline": "Elite Real-Time MLS Integration"
+      "title": "Strategic Asset Identification",
+      "tagline": "Direct Regional Market Integration"
     }
   },
   "features": {
     "mls_efficiency": {
-      "title": "Elite Asset Discovery",
-      "tagline": "Real-Time MLS Synchronization",
-      "description": "Traditional search tools rely on rigid parameters. Jamie analyzes the DNA of your request, utilizing our high-performance PostgreSQL backend to deliver sub-10ms responses from the live MLS grid. See only the properties that align with your strategic goals."
+      "title": "High-Frequency Discovery",
+      "tagline": "Live Market Synchronization",
+      "description": "Our high-performance backend provides real-time synchronization with regional markets. Filter assets by yield, submarket momentum, and institutional-grade criteria."
     },
     "spatial_search": {
-      "title": "Surgical Immersion",
+      "title": "Interactive Geospatial Analysis",
       "tagline": "Beyond Static Imagery",
-      "description": "Static photos hide the truth. Our spatial engine provides architectural transparency, allowing you to visualize property flow, neighborhood context, and structural integrity. Gain the confidence to move on elite assets with dimensional precision, reducing site visits and accelerating your closing path."
+      "description": "Our spatial engine provides interactive visualizations for evaluating asset flow and neighborhood context. Make informed decisions with dimensional accuracy."
     },
     "backend_integrity": {
-      "title": "Enterprise Reliability",
-      "tagline": "Cloud-First Intelligence",
-      "description": "We've bridged the gap between complex engineering and seamless user experience. With a robust Supabase architecture, your preferences remain persistent and your data stays secure across every session."
+      "title": "Secure Infrastructure",
+      "tagline": "Cloud-Native Platform",
+      "description": "A robust architecture ensures your portfolio preferences and private data remain secure and persistent across all devices."
     }
   },
   "cta": {
-    "button_text": "Begin Your Discovery",
-    "footer_note": "Precision Intelligence // Architectural Excellence"
+    "button_text": "Launch Platform",
+    "footer_note": "Market Intelligence // Operational Excellence"
   },
   "faq": {
-    "title": "Intelligence Briefing",
-    "tagline": "Decoding the Pulse Platform",
+    "title": "Platform Briefing",
+    "tagline": "Institutional Search Protocol",
     "items": [
       {
-        "question": "How does Jamie analyze my 'Request DNA'?",
-        "answer": "Unlike traditional filters, Jamie uses semantic analysis to understand the intent behind your search. By scaling computational weight to your specific requirements, Jamie cross-references live MLS data with neighborhood socioeconomic metrics to find matches that align with your long-term goals.",
+        "question": "How does the search engine optimize my criteria?",
+        "answer": "The platform utilizes semantic analysis to prioritize results based on your specific investment goals. It cross-references market yields and submarket growth signals to identify opportunities that meet institutional standards.",
         "score": 42
       },
       {
-        "question": "What is the value of 'Spatial Search' over standard lists?",
-        "answer": "Spatial search allows you to define search parameters based on coordinate blocks and neighborhood 'vibes' rather than just zip codes. This identifies hidden opportunities in high-growth corridors that legacy platforms often miss.",
+        "question": "What are the benefits of Geospatial Search?",
+        "answer": "Geospatial search allows you to define parameters based on submarket corridors and proximity to infrastructure, identifying high-yield assets that traditional filters may overlook.",
         "score": 38
       },
       {
-        "question": "How do I use the 3D Surgical Immersion feature?",
-        "answer": "Within any property profile, you can activate the 3D grid. This provides a dimensional view of the property's flow and structural layout. You can toggle between 'Elite Recon' for architectural detail and 'Neural Hybrid' for technical data overlays like price-per-square-foot heatmaps.",
+        "question": "How do I utilize the 3D Asset Evaluation tool?",
+        "answer": "Within any property profile, you can activate the interactive viewer. This provides an accurate representation of the layout and spatial context, allowing for detailed site assessment from any device.",
         "score": 25
       },
       {
-        "question": "Is the MLS data really real-time?",
-        "answer": "Yes. Our high-performance PostgreSQL backend synchronizes with the live MLS grid to deliver sub-10ms response times. When a property status changes or a new asset is injected into the market, it appears on your grid instantly.",
+        "question": "Is the market data truly real-time?",
+        "answer": "Yes. Our systems maintain persistent links to regional data providers. When a property status changes or a new asset is listed, the platform reflects those updates immediately.",
         "score": 56
       },
       {
-        "question": "How do I save a specific search region?",
-        "answer": "In the Map Explorer, use the polygon tool to draw a custom boundary around your target area. Once defined, you can label the region and save it to your 'Recon Surveillance' list for automated status pings.",
+        "question": "Can I save custom submarket search areas?",
+        "answer": "Yes. Use the polygon tool in the Explorer to define custom boundaries. You can save these regions to your watch list for automated status updates and market alerts.",
         "score": 12
       }
     ]

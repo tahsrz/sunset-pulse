@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { FaChevronDown, FaBrain, FaQuestionCircle, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { FaChevronDown, FaInfoCircle, FaQuestionCircle, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import marketingCopy from '@/config/marketing_copy.json';
 
 const FAQSection = () => {
@@ -17,9 +17,6 @@ const FAQSection = () => {
     const newItems = [...items];
     newItems[index].score += delta;
     setItems(newItems);
-    
-    // In a real production environment, we would also trigger a POST to sync this back to the server
-    // For now, it updates the session state to demonstrate the sorting logic.
   };
 
   const toggleFAQ = (id: string) => {
@@ -31,7 +28,7 @@ const FAQSection = () => {
       <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4 border border-blue-500/20">
-            <FaBrain className="text-xs" /> Platform Intelligence
+            <FaInfoCircle className="text-xs" /> Platform Overview
           </div>
           <h2 className="text-4xl font-black uppercase italic tracking-tighter text-white mb-2">{faq.title}</h2>
           <p className="text-slate-500 text-[10px] font-mono uppercase tracking-[0.6em]">{faq.tagline}</p>
@@ -58,7 +55,7 @@ const FAQSection = () => {
                     <button 
                       onClick={() => handleVote(originalIndex, 1)}
                       className="p-2 text-slate-600 hover:text-blue-400 transition-colors"
-                      title="Relevant Briefing"
+                      title="Helpful"
                     >
                       <FaArrowUp size={12} />
                     </button>
@@ -66,7 +63,7 @@ const FAQSection = () => {
                     <button 
                       onClick={() => handleVote(originalIndex, -1)}
                       className="p-2 text-slate-600 hover:text-red-400 transition-colors"
-                      title="Outdated Briefing"
+                      title="Not Helpful"
                     >
                       <FaArrowDown size={12} />
                     </button>
@@ -100,12 +97,12 @@ const FAQSection = () => {
                   }`}
                 >
                   <div className="px-8 pb-8 pl-[7.5rem]">
-                    <p className="text-slate-400 text-sm leading-relaxed font-medium italic">
-                      "{item.answer}"
+                    <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                      {item.answer}
                     </p>
                     <div className="mt-6 flex items-center gap-3 opacity-20">
                       <div className="h-px w-8 bg-blue-500" />
-                      <span className="text-[8px] font-mono uppercase tracking-widest">Protocol Verified</span>
+                      <span className="text-[8px] font-mono uppercase tracking-widest">Verified Content</span>
                     </div>
                   </div>
                 </div>

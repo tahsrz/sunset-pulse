@@ -3,35 +3,49 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const TelarielSpiderNet = () => {
+interface SpiderNode {
+  id: string;
+  group: number;
+  radius: number;
+  x?: number;
+  y?: number;
+}
+
+interface SpiderLink {
+  source: string;
+  target: string;
+}
+
+interface TelarielSpiderNetProps {
+  customNodes?: SpiderNode[];
+  customLinks?: SpiderLink[];
+  intelSummary?: string;
+}
+
+const TelarielSpiderNet: React.FC<TelarielSpiderNetProps> = ({ 
+  customNodes, 
+  customLinks, 
+  intelSummary 
+}) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
-    // Data for "Network of Influence"
-    const nodes = [
+    // Fallback data if no custom data is provided
+    const nodes: SpiderNode[] = customNodes || [
       { id: "Property", group: 1, radius: 15 },
       { id: "Seller", group: 2, radius: 10 },
       { id: "Local News", group: 3, radius: 8 },
-      { id: "Reddit /r/RealEstate", group: 3, radius: 8 },
       { id: "Zoning Board", group: 2, radius: 10 },
-      { id: "Nextdoor", group: 3, radius: 8 },
       { id: "Tax Records", group: 2, radius: 10 },
-      { id: "Competitor 1", group: 4, radius: 6 },
-      { id: "Competitor 2", group: 4, radius: 6 },
     ];
 
-    const links = [
+    const links: SpiderLink[] = customLinks || [
       { source: "Property", target: "Seller" },
       { source: "Property", target: "Local News" },
       { source: "Property", target: "Zoning Board" },
       { source: "Property", target: "Tax Records" },
-      { source: "Seller", target: "Nextdoor" },
-      { source: "Local News", target: "Reddit /r/RealEstate" },
-      { source: "Zoning Board", target: "Competitor 1" },
-      { source: "Tax Records", target: "Competitor 2" },
-      { source: "Reddit /r/RealEstate", target: "Property" },
     ];
 
     const svg = d3.select(svgRef.current);
@@ -101,8 +115,8 @@ const TelarielSpiderNet = () => {
     <div className="w-full h-full flex flex-col items-center">
       <svg ref={svgRef} viewBox="0 0 800 400" className="w-full h-auto" />
       <div className="mt-6 p-4 bg-purple-600/10 border border-purple-500/20 rounded-xl w-full">
-        <p className="text-[10px] text-purple-400 font-mono leading-relaxed">
-          TELARIEL INTEL: Sentiment nodes pulsing green in the /r/Dallas subreddit. Seller urgency detected via metadata decay in secondary tax records. Grid is live.
+        <p className="text-[10px] text-purple-400 font-mono leading-relaxed uppercase">
+          TELARIEL ANALYTICS: {intelSummary || "Market sentiment indicates positive momentum. Network nodes verified via secondary records."}
         </p>
       </div>
     </div>

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeProvider';
 import { FaPlus, FaMapMarkerAlt, FaUtensils } from 'react-icons/fa';
@@ -120,10 +121,16 @@ const GrillPage = () => {
           )}
 
           {/* Footer Note */}
-          <footer className='mt-16 text-center border-t-2 border-[#5d2a18] pt-6'>
+          <footer className='mt-16 text-center border-t-2 border-[#5d2a18] pt-6 relative'>
             <p className='text-[#5d2a18] font-bold italic'>
               "{grill.tagline}"
             </p>
+            <Link 
+              href="/grill/kds" 
+              className="absolute bottom-0 right-0 opacity-0 hover:opacity-100 text-[8px] text-[#5d2a18] font-mono uppercase tracking-[0.5em] transition-opacity"
+            >
+              [ OPERATIONS_LOG ]
+            </Link>
           </footer>
         </div>
       </div>

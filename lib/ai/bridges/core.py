@@ -3,9 +3,15 @@ import json
 import time
 from datetime import datetime
 
+# Define base paths relative to the project root (assumed to be 2 levels up from this script)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+DREAM_KNOWLEDGE_GRAPH = os.path.join(PROJECT_ROOT, "utils/jamie/memory/knowledge_graph.json")
+LOG_PATH = os.path.join(PROJECT_ROOT, "lib/ai/memory/daily_observations.log")
+JOKE_PATH = os.path.join(PROJECT_ROOT, "utils/jamie/memory/daily_joke.json")
+TELEPORT_PATH = os.path.join(PROJECT_ROOT, "utils/jamie/teleport_payload.json")
+
 # consolidates daily observations into a local knowledge graph (knowledge_graph.json). This process ensures that logical contradictions are removed and only "verified facts" are stored after successful file writes.
 TELEPORT_SENTINEL = "__ULTRAPLAN_TELEPORT_LOCAL__"
-DREAM_KNOWLEDGE_GRAPH = "utils/jamie/memory/knowledge_graph.json"
 
 class JamieCore:
     def __init__(self):
@@ -31,16 +37,18 @@ class JamieCore:
         return False
 
     def _log_observation(self, observation: str):
-        log_path = "utils/jamie/memory/daily_observations.log"
-        with open(log_path, "a") as f:
+        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+        with open(LOG_PATH, "a") as f:
             f.write(f"[{datetime.now().isoformat()}] {observation}\n")
 
     def deepDreamOntheWay(self, verbose_thoughts: str):
         """Second-stage consolidation: Prunes the verbose theWay reasoning chain into 'Gold' facts."""
         print("theWay Research Received. Initiating Second-Stage 'Deep Dream' Consolidation...")
         
+        subconscious_log = os.path.join(PROJECT_ROOT, "utils/jamie/memory/theWay_subconscious.log")
+        os.makedirs(os.path.dirname(subconscious_log), exist_ok=True)
         # Log the raw 'subconscious' thoughts for audit, but keep them out of the graph for now
-        with open("utils/jamie/memory/theWay_subconscious.log", "a") as f:
+        with open(subconscious_log, "a") as f:
             f.write(f"--- THEWAY SESSION {datetime.now().isoformat()} ---\n{verbose_thoughts}\n")
 
         # Use the Mini-LLM (Guardian core logic) to prune the theWay thoughts
@@ -63,11 +71,10 @@ class JamieCore:
     def autoDream(self):
         """Nightly Memory Consolidation: Merge observations, then trigger theWay -> Deep Dream -> Teleport."""
         print("Initiating autoDream: Stage 1 (Local Consolidation)...")
-        log_path = "utils/jamie/memory/daily_observations.log"
-        if not os.path.exists(log_path):
+        if not os.path.exists(LOG_PATH):
             return "No new memories to dream about."
 
-        with open(log_path, "r") as f:
+        with open(LOG_PATH, "r") as f:
             observations = f.readlines()
 
         with open(DREAM_KNOWLEDGE_GRAPH, "r+") as f:
@@ -76,13 +83,21 @@ class JamieCore:
             graph["verified_facts"].extend(new_facts)
             f.seek(0); json.dump(graph, f, indent=2); f.truncate()
 
-        os.remove(log_path)
+        os.remove(LOG_PATH)
         
         if new_facts:
             print(f"Stage 1 Complete. Triggering theWay Research on {len(new_facts)} facts...")
-            from utils.jamie.jamie_theWay_bridge import call_theWay_ccr
             
-            research_task = f"Analyze these facts for North Texas real estate anomalies: {', '.join(new_facts)}"
+            # Handle both package and direct script execution for the bridge import
+            try:
+                from .jamie_theWay_bridge import call_theWay_ccr
+            except (ImportError, ValueError):
+                import sys
+                # Add the current directory to sys.path to allow absolute imports of sibling modules
+                sys.path.append(os.path.dirname(__file__))
+                from jamie_theWay_bridge import call_theWay_ccr
+            
+            research_task = f"Analyze these facts for North Texas real estate anomalies: {', '.join(new_facts)}. Additionally, research and generate a professional real estate joke for the user."
             raw_theWay_output = call_theWay_ccr(research_task)
             
             # STAGE 2: DREAM ON THEWAY THOUGHTS
@@ -99,17 +114,84 @@ class JamieCore:
         if TELEPORT_SENTINEL in reasoning_chain:
             print("Teleport Sentinel Detected. Packaging reasoning chain...")
             # Extract the payload after the sentinel
-            payload = reasoning_chain.split(TELEPORT_SENTINEL)[-1].strip()
+            payload_str = reasoning_chain.split(TELEPORT_SENTINEL)[-1].strip()
             
-            # Implementation: Save the teleported decision to a local instruction set
-            teleport_path = "utils/jamie/teleport_payload.json"
-            with open(teleport_path, "w") as f:
-                json.dump({
-                    "origin": "CCR_THEWAY_SESSION",
+            try:
+                payload_data = json.loads(payload_str)
+                
+                # Extract daily briefing data (joke + articles)
+                briefing_path = os.path.join(PROJECT_ROOT, "utils/jamie/memory/daily_briefing.json")
+                os.makedirs(os.path.dirname(briefing_path), exist_ok=True)
+                
+                briefing_data = {
                     "timestamp": datetime.now().isoformat(),
-                    "payload": payload
-                }, f, indent=2)
-            return f"Teleport successful. Payload injected to {teleport_path}"
+                    "simulated_research_hours": payload_data.get("simulated_research_hours", 5),
+                    "daily_joke": payload_data.get("daily_joke", ""),
+                    "news_articles": payload_data.get("news_articles", []),
+                    "consolidated_truth": payload_data.get("consolidated_truth", ""),
+                    "ozriel_audit": payload_data.get("ozriel_audit", {})
+                }
+                
+                with open(briefing_path, "w") as f:
+                    json.dump(briefing_data, f, indent=2)
+                print(f"Daily briefing (Articles + Jokes) saved to {briefing_path}")
+
+                # Update Ozriel's Scythe Registry (AI tendency log)
+                audit_data = payload_data.get("ozriel_audit", {})
+                if audit_data and audit_data.get("humanized_rewrites"):
+                    registry_path = os.path.join(PROJECT_ROOT, "utils/jamie/memory/scythe_registry.json")
+                    os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+                    
+                    registry = []
+                    if os.path.exists(registry_path):
+                        with open(registry_path, "r") as f:
+                            registry = json.load(f)
+                    
+                    new_entries = [
+                        {
+                            "timestamp": datetime.now().isoformat(),
+                            "original": r["original_fragment"],
+                            "replacement": r["suggested_rewrite"],
+                            "rationale": r["rationale"]
+                        } for r in audit_data["humanized_rewrites"]
+                    ]
+                    
+                    registry.extend(new_entries)
+                    # Keep the registry fresh but manageable (last 500 tendencies)
+                    registry = registry[-500:]
+                    
+                    with open(registry_path, "w") as f:
+                        json.dump(registry, f, indent=2)
+                    print(f"Ozriel's Scythe Registry updated with {len(new_entries)} new AI tendencies.")
+
+                # Still save the standalone joke for compatibility
+                if "daily_joke" in payload_data:
+                    os.makedirs(os.path.dirname(JOKE_PATH), exist_ok=True)
+                    with open(JOKE_PATH, "w") as f:
+                        json.dump({
+                            "joke": payload_data["daily_joke"],
+                            "timestamp": datetime.now().isoformat()
+                        }, f, indent=2)
+
+                # Save the full teleported decision as a proper JSON object
+                os.makedirs(os.path.dirname(TELEPORT_PATH), exist_ok=True)
+                with open(TELEPORT_PATH, "w") as f:
+                    json.dump({
+                        "origin": "CCR_THEWAY_SESSION",
+                        "timestamp": datetime.now().isoformat(),
+                        "payload": payload_data
+                    }, f, indent=2)
+                return f"Teleport successful. Payload injected to {TELEPORT_PATH}"
+            except json.JSONDecodeError:
+                # Fallback for non-JSON payload
+                os.makedirs(os.path.dirname(TELEPORT_PATH), exist_ok=True)
+                with open(TELEPORT_PATH, "w") as f:
+                    json.dump({
+                        "origin": "CCR_THEWAY_SESSION",
+                        "timestamp": datetime.now().isoformat(),
+                        "payload": payload_str
+                    }, f, indent=2)
+                return f"Teleport successful (Plaintext). Payload injected to {TELEPORT_PATH}"
         return "Error: Teleport sentinel missing from reasoning chain."
 
 if __name__ == "__main__":

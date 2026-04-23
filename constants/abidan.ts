@@ -71,5 +71,13 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#1e1b4b', // Midnight Indigo/Black
     description: 'The Judge of Destruction. The absolute end of all things. Ozriel is the only Abidan capable of erasing an iteration without leaving behind the corruption of the Void.',
     geometryType: 'reaper'
+  },
+  {
+    id: 'daily-briefing',
+    name: 'Jamie Pulse',
+    mantle: 'The Regional Briefing',
+    color: '#10b981', // Emerald
+    description: 'The 5-Hour Intelligence Sprint. Jamie consumes the news and purifies the signal.',
+    geometryType: 'phoenix'
   }
 ];

@@ -1,52 +1,75 @@
 # SUNSET PULSE // DEVELOPMENT LOG
+**DATE:** 2026-04-23
+**STATUS:** ASSET INTELLIGENCE DASHBOARD & OPERATIONS CENTER DEPLOYMENT
+
+### 1. Advanced Portfolio Intelligence Hub
+Launched a high-fidelity asset management dashboard at `/abidan/war-room` providing institutional-grade due diligence for all portfolio properties.
+
+#### Module Specifications:
+- **Makiel (The Hound) - Fate Trajectory**: 
+    - **Visualization**: D3.js Monotone Curve.
+    - **Logic**: Comparative analysis of "Predicted Appreciation" vs "Market Actuals," driven by property-specific rental yields.
+- **Gadrael (The Titan) - Risk Assessment**: 
+    - **Visualization**: D3.js Radial Analysis.
+    - **Logic**: Evaluates 6 critical due diligence vectors: Zoning, Title, Flood, Legal, Market, and Structural Integrity.
+- **Telariel (The Spider) - Network Analysis**: 
+    - **Visualization**: D3.js Force-Directed Network.
+    - **Logic**: Visualizes market influence and sentiment nodes including Public Records and Social Momentum.
+- **Durandiel (The Ghost) - Site Reconnaissance**: 
+    - **Visualization**: D3.js Stylized Bar Analysis.
+    - **Logic**: Measures qualitative asset factors such as Privacy, Acoustic Profiles, and Spatial Density.
+- **Razael (The Wolf) - Acquisition Strategy**: 
+    - **Visualization**: Strategic Matrix.
+    - **Logic**: Generates data-driven negotiation strategies and leverage assessments.
+- **Suriel (The Phoenix) - Data Synthesis**: 
+    - **Visualization**: Animated D3 Arcs.
+    - **Logic**: Manages the reconciliation and synthesis of high-fidelity asset profiles.
+- **Zakariel (The Fox) - Logistics & Escrow**: 
+    - **Visualization**: Linear Closing Timeline.
+    - **Logic**: Real-time tracking of the Escrow process from Inspection to Closing.
+- **Ozriel (The Reaper) - Investment Verdict**: 
+    - **Visualization**: Decision Engine.
+    - **Logic**: Issues a final **ACQUIRE** or **PASS** recommendation based on comprehensive viability scoring.
+
+### 2. Integrated Feedback System
+- **Core Infrastructure**: Established `models/Feedback.ts` for structured client engagement.
+- **Service Widget**: Deployed `FeedbackWidget.tsx` to facilitate direct communication between users and the development team.
+
+### 3. Kitchen Operations Center (KDS)
+- **Tablet Optimization**: Designed `/grill/kds` for real-time order management and kitchen efficiency.
+- **Alert System**: Implemented urgency indicators for orders pending >15 minutes.
+
+### 4. Stripe Commerce & Automated Payment Verification
+- **Digital Payments**: Integrated Stripe Checkout for seamless grill transactions.
+- **Automated Verification**: Configured a Stripe Webhook to automatically update order payment status on the Operations Center (KDS) upon successful transaction.
+
+### 5. High-Intensity AI Research & Linguistic Integrity (The 5-Hour Sprint)
+Revolutionized the background research chain with a simulated 5-hour deep-dive protocol ("autoDream").
+
+#### Neural Upgrades:
+- **News Scouting**: Integrated `news_scout.py` to fetch live North Texas RSS data (Dallas Morning News), providing real-time market context to the research agents.
+- **Visualizer Synthesis**: Jamie now generates structured `visualizer_config` metadata (3D types, seeds, colors) for all news articles, bridging the gap between text research and 3D visualization.
+- **Ozriel (The Reaper) - Linguistic Harvest**: 
+    - **Logic**: Deployed a linguistic audit protocol to detect and "scythe" robotic AI speech patterns (AI-isms).
+    - **Registry**: Established `scythe_registry.json` as a permanent ledger of AI tendencies to accelerate future purification.
+- **Telariel (The Spider) - Article Influence Mapping**: 
+    - **UI**: Modified `TelarielSpiderNet.tsx` to dynamically render D3.js force-directed networks for individual news articles based on AI-extracted keywords.
+
+#### Dashboard Integration:
+- **Jamie Pulse Briefing**: Deployed a new command module in the War Room (`daily-briefing`) that serves the consolidated results of the 5-hour research sprint, including humanized articles and visual synthesis.
+- **Turing Gauntlet Game Engine**: Launched `/api/jamie/training/gauntlet`, a backend system that serves linguistic challenges (Machine vs Purified) to train users (and the AI) in recognizing authentic North Texas speech.
+
+### 6. Idle-Trigger Automation
+- **Watcher System**: Implemented `idle-dream-watcher.js` to automatically trigger the 5-hour research sprint after 15 minutes of user inactivity, ensuring Jamie "dreams" and researches while the operator is idle.
+
+### 7. System & Infrastructure Synchronization
+- **Architecture Visualization**: Refactored the core architecture components (`ArchitectureOverview.tsx`, `EngineSection.tsx`, `IntelligenceLayer.tsx`) to match the high-fidelity War Room aesthetic.
+- **Grill & Cart Optimization**: Streamlined the `app/cart` and `app/grill` interfaces for faster transaction processing and better responsive behavior.
+- **Database Migration Cleanup**: Purged 18 legacy Supabase migration files to stabilize the production schema and eliminate RLS (Row Level Security) recursion vulnerabilities identified during the linguistic audit.
+- **Hero & Narrative Alignment**: Synchronized `HeroOverlay.tsx` and marketing config files with the new "Jamie Pulse" data-driven narrative.
+
+---
+
 **DATE:** 2026-04-22
 **STATUS:** RAMZA INTELLIGENCE & CLOTH SYSTEM MIGRATION
-
-### 1. Ramza (Subject 042) Identity Migration
-- **Identity Refactor**: Fully refactored the "Curtis" subject to **Ramza**, aligning with the project's high-stakes intelligence aesthetic. Updated all constants, component names, and internal logic.
-- **Centralized Intel**: Created `constants/ramza.ts` to host standardized speech pools, unique identifiers, and mood engine parameters.
-
-### 2. High-Fidelity Cloth Physics Engine
-- **3D Verlet Migration**: Successfully ported the legacy PlayCanvas/Ammo.js physics logic to a native **React Three Fiber (R3F) 3D Cloth** component.
-    - Implemented a custom Verlet-integration solver for structural constraints and dynamic impulses.
-    - Added support for R3F `VideoTexture`, allowing the Ramza entity to be projected directly onto the physical 3D mesh.
-- **2D Tactical Visualizer**: Upgraded `TacticalCloth.tsx` with a ref-based API, enabling external components to trigger physical reactions ("Pet" and "Poke") in the 2D dashboard visualizer.
-- **Legacy Deprecation**: Removed the legacy `.mjs` script after successfully verifying feature parity in the R3F/TypeScript stack.
-
-### 3. Jamie Intelligence Integration
-- **Intel Stream Uplink**: Connected the Ramza subject card to the `useJamieInsights` hook, creating a live data bridge between the Jamie Dream Bridge and the visual interface.
-- **Autonomous Intelligence Reaction**: Ramza now autonomously "speaks" Jamie's spatial insights every 15 seconds, accompanied by physical ripples in the cloth simulation as new intelligence is processed.
-- **Dynamic Mood Engine**: Implemented a reactive mood system (Stable -> Annoyed -> Done) that tracks user engagement and data-density in real-time.
-
----
-
-**DATE:** 2026-04-21
-**STATUS:** AUTH CORE & API STABILIZATION
-
-### 1. Supabase-MongoDB Identity Bridge
-- **ID Type Harmonization**: Updated `Property`, `Booking`, `Message`, and `Order` models to use `String` for user-related fields. This prevents `Cast to ObjectId` errors when using Supabase UUIDs within MongoDB schemas.
-- **Robust User Lookups**: Refactored API routes (`bookmarks`, `search/alerts`, `stripe webhook`, `user/interests`) to prioritize email-based lookups. This ensures consistent user identification across legacy MongoDB records and new Supabase authentication profiles.
-- **Stripe Webhook Optimization**: Updated the Stripe integration to use `customer_email` for user identification, bypassing UUID/ObjectId casting conflicts during subscription upgrades.
-
-### 2. Authentication Core Resilience
-- **Profile Fetch Fix**: Transitioned from `.single()` to `.maybeSingle()` in the `getSessionUser` utility. This resolves the `Cannot coerce the result to a single JSON object` error that occurred when a Supabase Auth user lacked a corresponding record in the `profiles` table.
-- **Graceful Failovers**: Improved error handling in the session retrieval logic to ensure a smoother experience for newly registered users whose profiles are still in the synchronization pipeline.
-
----
-
-**DATE:** 2026-04-21
-**STATUS:** NEURAL HUB CONFIGURATION & REGIONAL RE-ALIGNMENT
-
-### 1. Neural-Elite 3D Engine Consolidation (V7.0)
-- **Unified Rendering Core**: Sunset Render Engine V7.0 successfully standardizes all property visualizations on **React Three Fiber (R3F)**. The legacy software rasterizer has been deprecated in favor of a high-performance GPU-accelerated pipeline.
-- **Neural Aesthetic Port**: Transferred the signature "Neural" wireframe/hacker aesthetic into the R3F engine. Agents can now toggle between high-fidelity "Elite Recon" and data-centric "Neural Hybrid" modes within a single unified viewport.
-- **Procedural Geometric Parity**: Ported the procedural building generator to support both modes, ensuring that properties without custom models still benefit from dynamic, multi-modal visualization.
-- **Improved Telemetry & Control**: Enhanced the R3F viewport with consistent WASD navigation, multiplayer User Orbs, and real-time spatial coordinates across all viewing modes.
-- **Tactical Spatial Hotspots**: Implemented data-driven 3D overlays in Neural Mode. Assets now project real-time "Neural Pulse" scores, "Tactical Yield" ($/sqft), and "Market Momentum" indicators directly into the spatial grid.
-- **Neural Pulse Visualization**: Added concentric "Pulse Rings" to the Neural Hybrid mode, providing a visual representation of the property's spatial influence and data-density.
-- **Market Intelligence Integration**: Developed the `calculateMarketMomentum` utility to derive regional growth signals from property metadata, feeding directly into the visual layer.
-- **Engagement Velocity Tracking**: Implemented a real-time event logging system for `PROPERTY_VIEW` events. The recon API now calculates "Engagement Density" (visits in the last 48 hours), projecting this data as a "Visit Density" hotspot in the 3D grid with associated velocity states (`HIGH`, `MODERATE`, `STABLE`).
-- **Tactical Recon Protocols (Tour Requests)**: Launched a new service for requesting property tours. Users can now schedule "In-Person," "Drone-Stream," or "Jamie-Guided" recon missions directly from the property grid.
-- **Automated Agent Alerting**: Integrated Twilio SMS notifications for tour requests, ensuring immediate tactical synchronization between leads and the primary agent (Taz).
-- **Intelligent Form Orchestration**: Updated the property detail page to dynamically toggle between "Booking" (Short-term/RV) and "Tour Request" (Residential/Investment) based on asset class.
 ...

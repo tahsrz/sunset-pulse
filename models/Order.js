@@ -15,6 +15,13 @@ const OrderSchema = new Schema(
       enum: ['pending', 'cooking', 'completed', 'cancelled'],
       default: 'pending',
     },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+    paymentSessionId: {
+      type: String,
+    },
     // Useful if you want to link it to a logged-in user
     user: {
       type: String,

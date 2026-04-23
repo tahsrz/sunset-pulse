@@ -13,21 +13,21 @@ const EngineSection = () => {
 
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
         <div className='bg-white/5 border border-white/10 p-6 rounded-2xl'>
-          <h4 className='font-bold mb-3 flex items-center gap-2'><FaNetworkWired className='text-orange-400' size={14}/> Geometric Analysis</h4>
+          <h4 className='font-bold mb-3 flex items-center gap-2'><FaNetworkWired className='text-orange-400' size={14}/> Spatial Asset Mapping</h4>
           <p className='text-xs text-slate-400 leading-relaxed'>
-            High-performance spatial mathematics using optimized algorithms for 3D representation. We utilize advanced rotation matrices and custom projection logic to deliver accurate architectural visualizations.
+            Institutional-grade geospatial analysis using optimized algorithms for 3D representation. We utilize advanced projection logic to deliver accurate floor plans and site visualizations.
           </p>
         </div>
         <div className='bg-white/5 border border-white/10 p-6 rounded-2xl'>
-          <h4 className='font-bold mb-3 flex items-center gap-2'><FaBolt className='text-orange-400' size={14}/> Rendering Pipeline</h4>
+          <h4 className='font-bold mb-3 flex items-center gap-2'><FaBolt className='text-orange-400' size={14}/> Visual Evaluation Core</h4>
           <p className='text-xs text-slate-400 leading-relaxed'>
-            An optimized graphics pipeline featuring depth sorting and performance-focused culling algorithms, ensuring high-fidelity visuals with efficient resource utilization.
+            An optimized rendering pipeline designed for high-fidelity asset inspection, ensuring detailed visual data is delivered with institutional efficiency.
           </p>
         </div>
         <div className='bg-white/5 border border-white/10 p-6 rounded-2xl'>
-          <h4 className='font-bold mb-3 flex items-center gap-2'><FaRocket className='text-orange-400' size={14}/> Interactive Simulation</h4>
+          <h4 className='font-bold mb-3 flex items-center gap-2'><FaRocket className='text-orange-400' size={14}/> Dimensional Exploration</h4>
           <p className='text-xs text-slate-400 leading-relaxed'>
-            Physics-based navigation with refined momentum and damping controls, providing an intuitive and fluid exploration experience for complex data sets.
+            Intuitive navigation with refined spatial controls, providing a fluid exploration experience for evaluating complex portfolio layouts.
           </p>
         </div>
       </div>

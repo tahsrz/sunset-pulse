@@ -50,7 +50,7 @@ const PropertyPage: React.FC = () => {
           // Log Engagement Event (Last 48h tracking)
           logEvent({
             type: 'PROPERTY_VIEW',
-            description: `Asset ${propertyData.name} scanned in sector.`,
+            description: `Viewed property: ${propertyData.name}.`,
             actorId: user?.id || 'anonymous',
             actorName: user?.user_metadata?.full_name || 'Anonymous_User',
             targetId: id,

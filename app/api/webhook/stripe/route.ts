@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
+import Order from '@/models/Order';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
@@ -31,12 +32,23 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     await connectDB();
     const customerEmail = session.customer_email;
+    const metadata = session.metadata;
 
-    if (customerEmail) {
+    // 1. Handle Subscription Upgrades
+    if (!metadata?.orderType && customerEmail) {
       await User.findOneAndUpdate({ email: customerEmail }, {
         subscriptionExpires: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000), //  1 month
       });
       console.log(`✅ [STRIPE_WEBHOOK] User ${customerEmail} upgraded to Premium.`);
+    }
+
+    // 2. Handle Grill Food Orders
+    if (metadata?.orderType === 'grill_food' && metadata?.orderId) {
+      await Order.findByIdAndUpdate(metadata.orderId, {
+        isPaid: true,
+        paymentSessionId: session.id
+      });
+      console.log(`🍔 [STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
     }
   }
 

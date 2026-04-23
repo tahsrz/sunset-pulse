@@ -31,7 +31,7 @@ const HeroOverlay: React.FC<HeroOverlayProps> = ({ isEntered, onEnter }) => {
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight text-white mb-6 uppercase italic">
             {hero.title.split(' ')[0]} <span className="text-primary italic">{hero.title.split(' ')[1]}</span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 max-w-2xl mx-auto font-light tracking-wide italic">
+          <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto font-medium tracking-wide">
             {hero.subtitle}. {hero.description}
           </p>
         </div>
@@ -45,8 +45,8 @@ const HeroOverlay: React.FC<HeroOverlayProps> = ({ isEntered, onEnter }) => {
           <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
 
-        <div className="mt-8 text-slate-400 font-mono text-xs uppercase tracking-[0.5em] animate-pulse">
-          [ System Ready // Engine Warm ]
+        <div className="mt-8 text-slate-500 font-mono text-[10px] uppercase tracking-[0.5em]">
+          Institutional Real Estate // North Texas
         </div>
       </div>
     </div>

@@ -3,17 +3,18 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const MakielFateChart = () => {
+const MakielFateChart = ({ property }: { property: any }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
-    // Data generation for "Fate Trajectory"
+    // Data generation influenced by property
+    const baseValue = (property?.rates?.monthly || property?.rates?.nightly * 30 || 1500) * 150;
     const data = Array.from({ length: 20 }, (_, i) => ({
       year: 2024 + i * 0.5,
-      predicted: 450000 * Math.pow(1.08, i * 0.5) + (Math.random() - 0.5) * 10000,
-      realized: i < 5 ? 450000 * Math.pow(1.07, i * 0.5) + (Math.random() - 0.5) * 5000 : null
+      predicted: baseValue * Math.pow(1.08, i * 0.5) + (Math.random() - 0.5) * 10000,
+      realized: i < 5 ? baseValue * Math.pow(1.07, i * 0.5) + (Math.random() - 0.5) * 5000 : null
     }));
 
     const svg = d3.select(svgRef.current);
@@ -28,7 +29,7 @@ const MakielFateChart = () => {
       .range([margin.left, width - margin.right]);
 
     const y = d3.scaleLinear()
-      .domain([400000, 1200000])
+      .domain([baseValue * 0.8, baseValue * 2.5])
       .range([height - margin.bottom, margin.top]);
 
     // Grid lines
@@ -101,7 +102,7 @@ const MakielFateChart = () => {
       .call(d3.axisLeft(y).ticks(5).tickFormat(d => `$${(d as number) / 1000}k`))
       .attr('color', '#64748b');
 
-  }, []);
+  }, [property]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
@@ -117,8 +118,8 @@ const MakielFateChart = () => {
       </div>
       <svg ref={svgRef} viewBox="0 0 800 400" className="w-full h-auto drop-shadow-2xl" />
       <div className="mt-6 p-4 bg-blue-600/10 border border-blue-500/20 rounded-xl w-full">
-        <p className="text-[10px] text-blue-400 font-mono leading-relaxed">
-          MAKIEL ANALYSIS: Convergence confirmed in Sector 7. Trajectory remains bullish with a 12.4% alpha above baseline grid. Hub manifest expected in Q3 2027.
+        <p className="text-[10px] text-blue-400 font-mono leading-relaxed uppercase">
+          MAKIEL ANALYSIS [{property?.name || 'TARGET'}]: Asset trajectory remains bullish with a 12.4% alpha above regional baseline. Growth manifest expected in next 24 months.
         </p>
       </div>
     </div>

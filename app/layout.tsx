@@ -10,6 +10,7 @@ import JamieChat from '@/components/JamieChat';
 import KeybindHandler from '@/components/KeybindHandler';
 import JamieInsightsLoginToast from '@/components/JamieInsightsLoginToast';
 import DevPortal from '@/components/DevPortal';
+import FeedbackWidget from '@/components/FeedbackWidget';
 import { SiteConfig } from '@/models/SiteConfig';
 import connectDB from '@/lib/core/database';
 import { createClient } from '@/utils/supabase/server';
@@ -152,6 +153,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
               </div>
               
               <JamieChat />
+              <FeedbackWidget />
               <DevPortal />
               <KeybindHandler />
               <JamieInsightsLoginToast />

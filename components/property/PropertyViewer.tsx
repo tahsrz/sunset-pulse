@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaMicrochip, FaVrCardboard, FaSlidersH } from 'react-icons/fa';
+import { FaDatabase, FaVrCardboard, FaSlidersH, FaCube } from 'react-icons/fa';
 import PropertyFiberViewer from '@/components/PropertyFiberViewer';
 import ProceduralBuildingConfig from './ProceduralBuildingConfig';
 import { BuildingType } from '../hero/ProceduralBuilding';
@@ -36,17 +36,17 @@ const PropertyViewer: React.FC<PropertyViewerProps> = ({ property }) => {
       <div className='flex items-center justify-between px-8 py-6 relative z-20'>
         <div className='flex flex-col gap-1'>
           <h3 className='text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic'>
-            3D Intelligence Grid // {isNeuralMode ? 'Neural Hybrid' : 'Elite Recon'}
+            Interactive Asset Analysis // {isNeuralMode ? 'Data Layer' : '3D View'}
           </h3>
           <div className='text-[8px] text-blue-500/50 font-mono'>
-            R3F_SATELLITE_INTERPOLATION_V7.0
+            PROPERTY VISUALIZER V7.0
           </div>
         </div>
 
         {/* Narrative Hook */}
         <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 bg-blue-600/10 border border-blue-500/20 px-4 py-2 rounded-xl">
            <p className="text-[9px] font-mono text-blue-300 uppercase tracking-widest text-center">
-             Spatial Intelligence: Moving beyond static imagery to provide surgical architectural depth.
+             Spatial Analysis: Interactive visualization for detailed property inspection and site evaluation.
            </p>
         </div>
 
@@ -54,7 +54,7 @@ const PropertyViewer: React.FC<PropertyViewerProps> = ({ property }) => {
           <button 
             onClick={() => setShowConfig(!showConfig)}
             className={`p-1.5 rounded-full transition-all ${showConfig ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'}`}
-            title="Configure Mesh"
+            title="Configure View"
           >
             <FaSlidersH size={12} />
           </button>
@@ -63,13 +63,13 @@ const PropertyViewer: React.FC<PropertyViewerProps> = ({ property }) => {
             onClick={() => setIsNeuralMode(true)}
             className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${isNeuralMode ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <FaMicrochip size={10} /> Neural
+            <FaDatabase size={10} /> Data Mode
           </button>
           <button 
             onClick={() => setIsNeuralMode(false)}
             className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${!isNeuralMode ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <FaVrCardboard size={12} /> Elite
+            <FaCube size={12} /> 3D Mode
           </button>
         </div>
       </div>

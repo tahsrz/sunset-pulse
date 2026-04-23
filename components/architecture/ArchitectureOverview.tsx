@@ -35,10 +35,10 @@ const ArchitectureOverview = () => {
             </h2>
             <div className='space-y-8 text-xl text-slate-400 font-serif italic leading-relaxed'>
               <p>
-                "Sunset Pulse represents the convergence of high-performance spatial computing and Jamie's DNA-level request analysis, eliminating the 'search fatigue' that defines legacy real estate platforms."
+                "Sunset Pulse integrates high-performance geospatial analysis with advanced data-driven search, optimizing the asset identification process for the institutional market."
               </p>
               <p>
-                "By determining the exact computational weight needed and scaling our architecture accordingly, we have created an intelligence layer that is both surgical and persistent."
+                "By leveraging a secure, cloud-native architecture, we deliver a platform that is precise, reliable, and capable of handling high-frequency market updates."
               </p>
             </div>
             <div className='mt-16 flex flex-col items-center'>

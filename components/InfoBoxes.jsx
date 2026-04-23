@@ -6,30 +6,28 @@ const InfoBoxes = () => {
       <div className='container-xl lg:container m-auto'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg'>
           <InfoBox
-            heading='For Renters'
+            heading='Portfolio Search'
             backgroundColor='bg-slate-900/60'
             textColor='text-slate-100'
             buttonInfo={{
-              text: 'Browse Properties',
+              text: 'Browse Assets',
               link: '/properties',
               backgroundColor: 'bg-blue-600',
             }}
           >
-            Find your dream rental property. Bookmark properties and contact
-            owners.
+            Identify institutional-grade rental opportunities. Manage bookmarks and coordinate directly with asset managers.
           </InfoBox>
           <InfoBox
-            heading='For Property Owners'
+            heading='Asset Management'
             backgroundColor='bg-blue-900/20'
             textColor='text-slate-100'
             buttonInfo={{
-              text: 'Add Property',
+              text: 'List Property',
               link: '/properties/add',
               backgroundColor: 'bg-blue-600',
             }}
           >
-            List your properties and reach potential tenants. Rent short or long
-            term.
+            Onboard your assets to the platform for high-visibility market exposure and tenant lead generation.
           </InfoBox>
         </div>
       </div>

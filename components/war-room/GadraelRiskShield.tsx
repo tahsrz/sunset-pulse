@@ -3,19 +3,20 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const GadraelRiskShield = () => {
+const GadraelRiskShield = ({ property }: { property: any }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
+    // Data influenced by property type and location
     const metrics = [
-      { axis: "Zoning Rigidity", value: 0.9 },
-      { axis: "Title Integrity", value: 0.95 },
-      { axis: "Flood Shield", value: 0.6 },
+      { axis: "Zoning Rigidity", value: property?.type === 'Industrial' ? 0.95 : 0.7 },
+      { axis: "Title Integrity", value: property?.beds > 0 ? 0.95 : 0.8 },
+      { axis: "Flood Shield", value: property?.location?.city === 'Sunset' ? 0.5 : 0.8 },
       { axis: "Legal Buffer", value: 0.8 },
-      { axis: "Market Immunity", value: 0.75 },
-      { axis: "Structural Armor", value: 0.85 }
+      { axis: "Market Immunity", value: property?.is_featured ? 0.9 : 0.6 },
+      { axis: "Structural Armor", value: property?.square_feet > 2000 ? 0.85 : 0.5 }
     ];
 
     const svg = d3.select(svgRef.current);
@@ -99,14 +100,14 @@ const GadraelRiskShield = () => {
       .attr('stroke', '#fff')
       .attr('stroke-width', 2);
 
-  }, []);
+  }, [property]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
       <svg ref={svgRef} viewBox="0 0 600 400" className="w-full h-auto" />
       <div className="mt-6 p-4 bg-slate-600/10 border border-slate-500/20 rounded-xl w-full">
-        <p className="text-[10px] text-slate-400 font-mono leading-relaxed">
-          GADRAEL DEFENSE RATING: 84.2%. Structural and legal buffers are within safe tolerances. Flood shield requires augmentation (drainage grid latency detected).
+        <p className="text-[10px] text-slate-400 font-mono leading-relaxed uppercase">
+          GADRAEL DEFENSE [{property?.name || 'TARGET'}]: Structural and legal buffers are within safe tolerances. Current rating: {(property?.square_feet > 0 ? 84.2 : 62.5).toFixed(1)}%.
         </p>
       </div>
     </div>

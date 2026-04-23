@@ -49,8 +49,8 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ rentData }) => 
         </div>
       </div>
 
-      <p className='text-[9px] text-slate-500 mt-6 uppercase tracking-widest italic'>
-        * Intelligence data fetched in real-time. Jamie is using this to calculate potential ROI.
+      <p className='text-[9px] text-slate-500 mt-6 uppercase tracking-widest font-medium'>
+        * Data provided by RentCast API for market rent analysis and investment evaluation.
       </p>
     </div>
   );

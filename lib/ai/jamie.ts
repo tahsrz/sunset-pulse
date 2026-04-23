@@ -2,6 +2,8 @@ import Groq from "groq-sdk";
 import MenuItem from "@/models/MenuItem";
 import { SiteConfig } from "@/models/SiteConfig";
 import connectDB from "@/lib/core/database";
+import fs from 'fs';
+import path from 'path';
 import { 
   JAMIE_SYSTEM_PROMPT, 
   JAMIE_RE_ENGAGEMENT_PROTOCOL,
@@ -21,11 +23,43 @@ import { createClient } from "@/utils/supabase/server";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+/**
+ * Internal system tracker for idle-dream triggering
+ */
+function trackInteraction() {
+  try {
+    const interactionPath = path.join(process.cwd(), 'utils/jamie/last_interaction.json');
+    if (!fs.existsSync(path.dirname(interactionPath))) {
+      fs.mkdirSync(path.dirname(interactionPath), { recursive: true });
+    }
+    fs.writeFileSync(interactionPath, JSON.stringify({ 
+      timestamp: new Date().toISOString(),
+      type: 'user_activity'
+    }), 'utf8');
+  } catch (err) {
+    console.error("Failed to track interaction:", err);
+  }
+}
+
 export async function getJamieActivityRecap(history: any[], coreInsights: any[] = [], activityLogs: any[] = []) {
   const hasSignificantHistory = history.length > 0 || coreInsights.length > 0 || activityLogs.length > 0;
   
   if (!hasSignificantHistory) {
     return "Welcome back. I am Jamie, and I'm ready to assist you with your property search.";
+  }
+
+  trackInteraction();
+
+  // Load daily joke from the backend (local file system)
+  let dailyJoke = "";
+  try {
+    const jokePath = path.join(process.cwd(), 'utils/jamie/memory/daily_joke.json');
+    if (fs.existsSync(jokePath)) {
+      const jokeData = JSON.parse(fs.readFileSync(jokePath, 'utf8'));
+      dailyJoke = jokeData.joke;
+    }
+  } catch (err) {
+    console.error("Error reading daily joke in recap:", err);
   }
 
   // Filter for clean text content from history
@@ -53,6 +87,9 @@ export async function getJamieActivityRecap(history: any[], coreInsights: any[] 
 
     RECENT_CHAT_HISTORY:
     ${historyText || 'None recorded.'}
+
+    DAILY_JOKE_RESEARCH:
+    ${dailyJoke || 'None available today.'}
   `;
 
   try {
@@ -383,6 +420,8 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
 
   // Memory Recognition Logic
   const sessionCount = memoryContext?.sessionCount || 0;
+
+  trackInteraction();
 
   const recognitionContext = memoryContext?.isReturning 
     ? `USER RECOGNITION: Jamie recognizes ${memoryContext.userName}. 
