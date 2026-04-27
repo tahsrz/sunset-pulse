@@ -1,7 +1,6 @@
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { crypto } from 'crypto';
 
 const LOG_PATH = path.join(process.cwd(), 'lib/ai/memory/daily_observations.log');
 

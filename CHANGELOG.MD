@@ -1,6 +1,56 @@
 # SUNSET PULSE // DEVELOPMENT LOG
+**DATE:** 2026-04-26
+**STATUS:** NARRATIVE ENGINE & STUDIO DEPLOYMENT
+
+## [Unreleased] - 2026-04-26
+
+### Added
+- **Narrative Engine (Storytime API)**: Launched a new system for re-interpreting external content (like children's books) into tactical AI monologues.
+  - **Dynamic Interpretation**: API generates character-specific scripts using Groq (Llama 3.1 8B).
+  - **Visual Sync**: Automated visual cues (ripple, pulse, shake) tied to narrative beats.
+- **Storytime Studio UI**: A standalone production suite at `/storytime` for high-frequency content creation.
+  - **Persona Picker**: Support for session-based Envoy selection (Spike, Ghost, Jamie) without affecting global site state.
+  - **Tactical Toggle**: Dual-mode display for "Original Intel" vs "Tactical Interpretation" comparison.
+  - **Export Module**: Integrated a mock render pipeline for preparing MP4 exports.
+- **Modular Persona Registry**: Established the `Entity` model to decouple physical visual assets (Rotoscope videos) from AI logic.
+
+### Changed
+- **Lead Data Integrity**: Added `unique: true` constraint to the `Lead` model email field.
+- **Valuation Standardization**: Updated the `Valuation` model to use Supabase `String` IDs.
+
 **DATE:** 2026-04-23
+**STATUS:** JAMIE INTELLIGENCE EXPANSION & SCYTHE PURIFIER DEPLOYMENT
+
+### 1. Persistent AI Memory (Supabase Integration)
+Transformed Jamie's local memory into a long-term, searchable cloud database.  
+- **Supabase Persistence**: Migrated the `daily_briefings` and `scythe_registry` from local JSON to Supabase Postgres tables.  
+- **Sync Engine**: Developed a Python-based synchronization client in `supabase_client.py` using `httpx` to push research results directly to the cloud.  
+- **Resilient Fallback**: Implemented a hybrid data strategy where the system prioritizes cloud data but maintains local JSON caches as a safety measure.
+
+### 2. Live "Neural" Notifications
+Added real-time feedback for background research events.  
+- **Pulse Overlay**: Designed a global hero-style notification system that appears anywhere on the site when new research is consolidated.  
+- **Visual R3F Ripples**: Integrated animated ripple effects (`animate-pulse-expand`) that originate from the screen center, signaling a "Neural Pulse" detection.  
+- **Real-time Subscriptions**: Connected the frontend to Supabase Realtime channels to trigger the overlay the moment the background research chain finishes.
+
+### 3. Ghost Recon 3D Intel Overlays
+Bridged the gap between news data and spatial visualization in the 3D Viewer.  
+- **Intel Spires**: Developed `GhostReconOverlays.tsx` to render glowing vertical pillars in the 3D property scene.  
+- **Geo-Tagging**: Updated the AI synthesis chain to extract coordinates for North Texas news (e.g., Frisco, Alliance Corridor), projecting them as interactive markers in the viewer.  
+- **Region Highlighting**: Implemented color-coded logic for anomalies: Purple for zoning shifts and Emerald for industrial growth.
+
+### 4. Ozriel's Scythe: The Text Purifier
+Launched a standalone linguistic purification tool at `/scythe`.  
+- **Turing Test UI**: A dedicated interface for scanning emails and reports against robotic machine tendencies.  
+- **Humanity Rating**: Generates a 0-100% "Humanity Score" based on detections from the Scythe Registry.  
+- **Linguistic Redaction**: Automatically suggests "Purified" replacements for robotic preambles and AI-ism tells (e.g., "synergy", "delve", "important to note").  
+- **Court Integration**: Linked the Purifier protocol directly into the Abidan Court and the War Room audit screens.
+
+---
+
+**DATE:** 2026-04-23 (Early Ops)
 **STATUS:** ASSET INTELLIGENCE DASHBOARD & OPERATIONS CENTER DEPLOYMENT
+...
 
 ### 1. Advanced Portfolio Intelligence Hub
 Launched a high-fidelity asset management dashboard at `/abidan/war-room` providing institutional-grade due diligence for all portfolio properties.

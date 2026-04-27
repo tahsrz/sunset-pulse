@@ -110,6 +110,24 @@ const AbidanIntroPage = () => {
                 <span className='text-sm font-bold uppercase italic'>Judge Class // ∞</span>
               </div>
             </div>
+
+            {selectedAbidan.id === 'ozriel' && (
+              <div className="mt-8 animate-in slide-in-from-bottom-4 duration-1000">
+                <a 
+                  href="/scythe" 
+                  className="block w-full py-6 bg-gradient-to-r from-rose-900/40 to-indigo-900/40 border border-rose-500/30 rounded-3xl text-center group relative overflow-hidden transition-all hover:scale-[1.02]"
+                >
+                  <div className="absolute inset-0 bg-rose-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative z-10 flex items-center justify-center gap-4">
+                    <FaSkull className="text-rose-500 animate-pulse" />
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.5em] text-rose-400 mb-1">External Protocol</div>
+                      <div className="text-xl font-black italic tracking-tighter text-white uppercase">Invoke the Scythe Purifier</div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>

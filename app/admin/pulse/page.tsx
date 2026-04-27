@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  FaHeartbeat, 
+  FaHeartPulse, 
   FaCalendarCheck, 
   FaClock, 
   FaUser, 
@@ -81,7 +81,7 @@ export default function PulseCommandCenter() {
   const getTourIcon = (type: string) => {
     switch (type) {
       case 'Virtual': return <FaVideo />;
-      case 'Drone-Stream': return <FaDrone />;
+      case 'Drone-Stream': return <FaSatellite />;
       case 'Jamie-Guided': return <FaRobot />;
       default: return <FaLocationDot />;
     }
@@ -115,7 +115,7 @@ export default function PulseCommandCenter() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-blue-500/20 pb-8 gap-6">
           <div>
             <div className="flex items-center gap-3 text-blue-500 mb-2">
-              <FaHeartbeat className="animate-pulse" />
+              <FaHeartPulse className="animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-[0.4em]">Grid Deployment</span>
             </div>
             <h1 className="text-5xl font-black uppercase italic tracking-tighter text-white">Pulse Center</h1>

@@ -34,7 +34,7 @@ const PremiumPage: React.FC = () => {
 
       const stripe = await stripePromise;
       if (stripe) {
-        const { error } = await stripe.redirectToCheckout({ sessionId });
+        const { error } = await (stripe as any).redirectToCheckout({ sessionId });
         if (error) toast.error(error.message);
       }
     } catch (err) {

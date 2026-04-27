@@ -15,7 +15,7 @@ import JamieDevControls from './chat/JamieDevControls';
 import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 
-export default function JamieChat({ propertyData }) {
+export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
   const { 
     stagedBranding, 
     confirmBranding, 

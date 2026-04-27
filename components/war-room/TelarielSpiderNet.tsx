@@ -51,27 +51,29 @@ const TelarielSpiderNet: React.FC<TelarielSpiderNetProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    const width = 800;
-    const height = 400;
+    const width = 400;
+    const height = 200;
 
     const simulation = d3.forceSimulation(nodes as any)
-      .force("link", d3.forceLink(links).id((d: any) => d.id).distance(100))
-      .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2));
+      .force("link", d3.forceLink(links).id((d: any) => d.id).distance(50))
+      .force("charge", d3.forceManyBody().strength(-200))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("x", d3.forceX(width / 2).strength(0.15))
+      .force("y", d3.forceY(height / 2).strength(0.15));
 
     const link = svg.append("g")
       .attr("stroke", "#a855f7")
-      .attr("stroke-opacity", 0.3)
+      .attr("stroke-opacity", 0.6)
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke-width", 1);
+      .attr("stroke-width", 2);
 
     const node = svg.append("g")
       .selectAll("circle")
       .data(nodes)
       .join("circle")
-      .attr("r", d => d.radius)
+      .attr("r", d => d.radius * 1.4)
       .attr("fill", d => {
         if (d.group === 1) return "#a855f7";
         if (d.group === 2) return "#3b82f6";
@@ -79,19 +81,19 @@ const TelarielSpiderNet: React.FC<TelarielSpiderNetProps> = ({
         return "#64748b";
       })
       .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
-      .style("filter", "drop-shadow(0 0 5px rgba(168, 85, 247, 0.5))");
+      .attr("stroke-width", 2)
+      .style("filter", "drop-shadow(0 0 12px rgba(168, 85, 247, 0.8))");
 
     const label = svg.append("g")
       .selectAll("text")
       .data(nodes)
       .join("text")
       .text(d => d.id)
-      .attr("font-size", "10px")
-      .attr("fill", "#94a3b8")
-      .attr("dx", 15)
-      .attr("dy", 4)
-      .attr("class", "font-mono uppercase font-black tracking-tighter");
+      .attr("font-size", "12px")
+      .attr("fill", "#ffffff")
+      .attr("text-anchor", "middle") // Center the text on the node
+      .attr("dy", d => -(d.radius * 1.4 + 10)) // Position label above the node
+      .attr("class", "font-mono uppercase font-black tracking-tighter pointer-events-none");
 
     simulation.on("tick", () => {
       link
@@ -112,10 +114,10 @@ const TelarielSpiderNet: React.FC<TelarielSpiderNetProps> = ({
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
-      <svg ref={svgRef} viewBox="0 0 800 400" className="w-full h-auto" />
-      <div className="mt-6 p-4 bg-purple-600/10 border border-purple-500/20 rounded-xl w-full">
-        <p className="text-[10px] text-purple-400 font-mono leading-relaxed uppercase">
+    <div className="w-full h-full flex flex-col items-center justify-center min-h-[350px]">
+      <svg ref={svgRef} viewBox="-50 -50 500 300" className="w-full h-full overflow-visible" />
+      <div className="mt-4 p-3 bg-purple-600/10 border border-purple-500/20 rounded-xl w-full">
+        <p className="text-[10px] text-purple-400 font-mono leading-relaxed uppercase text-center">
           TELARIEL ANALYTICS: {intelSummary || "Market sentiment indicates positive momentum. Network nodes verified via secondary records."}
         </p>
       </div>

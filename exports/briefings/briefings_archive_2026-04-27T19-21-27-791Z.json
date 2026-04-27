@@ -1,0 +1,104 @@
+[
+  {
+    "id": "69ffa1b8-aafe-4a66-b08d-f093fa05281b",
+    "created_at": "2026-04-23T22:51:35.27055+00:00",
+    "timestamp": "2026-04-23T17:51:34.199320",
+    "simulated_research_hours": 5,
+    "daily_joke": "Why did the AI get a real estate license? Because it wanted to optimize the search for 'Home.exe'.",
+    "news_articles": [
+      {
+        "title": "Tarrant County Zoning Shift: Industrial to Residential",
+        "summary": "Jamie detected a 12% shift in permit applications near the 121 corridor."
+      }
+    ],
+    "consolidated_truth": "The market is shifting toward high-density suburban clusters.",
+    "ozriel_audit": {
+      "humanized_rewrites": [
+        {
+          "rationale": "Avoided corporate AI buzzword 'synergies'.",
+          "original_fragment": "We should leverage market synergies.",
+          "suggested_rewrite": "We should see how these neighborhoods work together."
+        }
+      ]
+    }
+  },
+  {
+    "id": "b2b14d22-9c77-4e42-83fd-8fde041c7165",
+    "created_at": "2026-04-23T23:09:09.110411+00:00",
+    "timestamp": "2026-04-23T18:09:08.166884",
+    "simulated_research_hours": 5,
+    "daily_joke": "Why did the AI get a real estate license? Because it wanted to optimize the search for 'Home.exe'.",
+    "news_articles": [
+      {
+        "title": "Tarrant County Zoning Shift: Industrial to Residential",
+        "summary": "Jamie detected a 12% shift in permit applications near the 121 corridor."
+      }
+    ],
+    "consolidated_truth": "The market is shifting toward high-density suburban clusters.",
+    "ozriel_audit": {
+      "humanized_rewrites": [
+        {
+          "rationale": "Avoided corporate AI buzzword 'synergies'.",
+          "original_fragment": "We should leverage market synergies.",
+          "suggested_rewrite": "We should see how these neighborhoods work together."
+        }
+      ]
+    }
+  },
+  {
+    "id": "7ad91971-f9d5-4ee7-a62b-30e53f86a373",
+    "created_at": "2026-04-23T23:11:13.439692+00:00",
+    "timestamp": "2026-04-23T18:11:12.480686",
+    "simulated_research_hours": 5,
+    "daily_joke": "Why did the AI get a real estate license? Because it wanted to optimize the search for 'Home.exe'.",
+    "news_articles": [
+      {
+        "title": "Tarrant County Zoning Shift: Industrial to Residential",
+        "summary": "Jamie detected a 12% shift in permit applications near the 121 corridor."
+      }
+    ],
+    "consolidated_truth": "The market is shifting toward high-density suburban clusters.",
+    "ozriel_audit": {
+      "humanized_rewrites": [
+        {
+          "rationale": "Avoided corporate AI buzzword 'synergies'.",
+          "original_fragment": "We should leverage market synergies.",
+          "suggested_rewrite": "We should see how these neighborhoods work together."
+        }
+      ]
+    }
+  },
+  {
+    "id": "344378ec-9a73-4049-8c07-573ab757147c",
+    "created_at": "2026-04-23T23:14:06.924879+00:00",
+    "timestamp": "2026-04-23T18:14:05.932676",
+    "simulated_research_hours": 5,
+    "daily_joke": "Why did the AI get a real estate license? Because it wanted to optimize the search for 'Home.exe'.",
+    "news_articles": [
+      {
+        "title": "Tarrant County Zoning Shift: Industrial to Residential",
+        "summary": "Jamie detected a 12% shift in permit applications near the 121 corridor."
+      }
+    ],
+    "consolidated_truth": "The market is shifting toward high-density suburban clusters.",
+    "ozriel_audit": {
+      "humanized_rewrites": [
+        {
+          "rationale": "Avoided corporate AI buzzword 'synergies'.",
+          "original_fragment": "We should leverage market synergies.",
+          "suggested_rewrite": "We should see how these neighborhoods work together."
+        },
+        {
+          "rationale": "Replaced 'delve' (overused AI verb).",
+          "original_fragment": "delving deep into the data",
+          "suggested_rewrite": "checking the numbers"
+        },
+        {
+          "rationale": "Removed formulaic AI marketing speak.",
+          "original_fragment": "Unlock the potential",
+          "suggested_rewrite": "Open up the possibilities"
+        }
+      ]
+    }
+  }
+]

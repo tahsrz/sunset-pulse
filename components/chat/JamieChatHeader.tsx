@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaRobot, FaMinus, FaExchangeAlt, FaHeartbeat } from 'react-icons/fa';
+import { FaRobot, FaMinus, FaExchangeAlt } from 'react-icons/fa';
 
 interface JamieChatHeaderProps {
   onMinimize: () => void;
@@ -29,7 +29,7 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </span>
-            <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Active Heartbeat</p>
+            <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Analyst Online</p>
           </div>
         </div>
       </div>

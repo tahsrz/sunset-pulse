@@ -28,7 +28,7 @@ import MapControls from './explorer/MapControls';
 import { useJamieInsights } from '@/hooks/useJamieInsights';
 import { useValuations } from '@/hooks/useValuations';
 
-const ExplorerMap = ({ onSelectionChange, onPropertySelect, results = [], hoveredId = null, activeRouteProperty = null }) => {
+const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [], hoveredId = null, activeRouteProperty = null }) => {
   const searchParams = useSearchParams();
   const { jamieInsights } = useJamieInsights();
   const { valuations } = useValuations();

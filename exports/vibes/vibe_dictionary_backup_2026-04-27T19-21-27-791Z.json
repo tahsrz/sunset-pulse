@@ -1,0 +1,56 @@
+[
+  {
+    "_id": "69efb3a2cee8c8133703e1df",
+    "vibeId": "vibe-noir-spike",
+    "__v": 0,
+    "createdAt": "2026-04-27T19:06:09.617Z",
+    "description": "A world of cigarette smoke, jazz, and nonchalant high-stakes operations.",
+    "linguisticLogic": {
+      "tone": "cynical",
+      "pacing": "relaxed",
+      "vocabulary": [
+        "whatever",
+        "bounty",
+        "jazz",
+        "smoke",
+        "easy"
+      ]
+    },
+    "name": "Noir Tactical (Spike Spiegel)",
+    "sourceVideoPath": "/videos/anime_spike.mp4",
+    "updatedAt": "2026-04-27T19:06:09.617Z",
+    "visualParameters": {
+      "meshColor": "#f87171",
+      "bloomIntensity": 1.2,
+      "glitchFrequency": 0.05,
+      "particleDensity": 50
+    }
+  },
+  {
+    "_id": "69efb3a2cee8c8133703e1e0",
+    "vibeId": "vibe-emerald-matrix",
+    "__v": 0,
+    "createdAt": "2026-04-27T19:06:09.867Z",
+    "description": "A crisp, high-fidelity digital realm focused on strategic asset management.",
+    "linguisticLogic": {
+      "tone": "professional",
+      "pacing": "flowing",
+      "vocabulary": [
+        "optimized",
+        "grid",
+        "intelligence",
+        "sync",
+        "strategic"
+      ]
+    },
+    "name": "Emerald Intelligence (Jamie)",
+    "sourceVideoPath": "/videos/jamie_base.mp4",
+    "updatedAt": "2026-04-27T19:06:09.867Z",
+    "visualParameters": {
+      "meshColor": "#22c55e",
+      "bloomIntensity": 0.8,
+      "glitchFrequency": 0.01,
+      "particleDensity": 120
+    }
+  }
+]

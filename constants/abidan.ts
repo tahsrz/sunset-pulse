@@ -4,6 +4,7 @@ export interface AbidanCharacter {
   mantle: string;
   color: string;
   description: string;
+  missionLabel: string;
   geometryType: 'hound' | 'titan' | 'ghost' | 'spider' | 'wolf' | 'phoenix' | 'fox' | 'reaper';
 }
 
@@ -14,6 +15,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Hound',
     color: '#3b82f6', // Deep Blue
     description: 'The Judge of Fate.',
+    missionLabel: 'Growth Outlook',
     geometryType: 'hound'
   },
   {
@@ -22,7 +24,8 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Titan',
     color: '#94a3b8', // Slate/Steel
     description: 'The Ultimate Shield.',
-    geometryType: 'gigante'
+    missionLabel: 'Risk Review',
+    geometryType: 'titan'
   },
   {
     id: 'durandiel',
@@ -30,6 +33,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Ghost',
     color: '#ffffff', // White/Silver
     description: 'The Judge of Silence. Durandiel manages the end of things, ensuring that what must fall away does so without disturbing the balance.',
+    missionLabel: 'Neighborhood Signals',
     geometryType: 'ghost'
   },
   {
@@ -38,6 +42,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Spider',
     color: '#a855f7', // Purple
     description: 'The Network of Intelligence. Telariel sees all across the myriad iterations, connecting the grid of Abidan awareness.',
+    missionLabel: 'Influence Map',
     geometryType: 'spider'
   },
   {
@@ -46,6 +51,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Wolf',
     color: '#ef4444', // Red
     description: 'The Judge of Combat. The heavy hand of the Abidan, Razael is the ultimate force deployed when worlds are beyond diplomacy.',
+    missionLabel: 'Negotiation Strategy',
     geometryType: 'wolf'
   },
   {
@@ -54,6 +60,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Phoenix',
     color: '#22c55e', // Green/Emerald
     description: 'The Judge of Restoration. Suriel carries the power of healing and renewal, capable of restoring entire iterations from the brink of collapse.',
+    missionLabel: 'Recovery Model',
     geometryType: 'phoenix'
   },
   {
@@ -62,6 +69,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Fox',
     color: '#f97316', // Orange
     description: 'The Judge of Speed and Transit. Zakariel masters the distances between worlds, moving the Abidan with near-instantaneous efficiency.',
+    missionLabel: 'Path To Close',
     geometryType: 'fox'
   },
   {
@@ -70,6 +78,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Reaper',
     color: '#1e1b4b', // Midnight Indigo/Black
     description: 'The Judge of Destruction. The absolute end of all things. Ozriel is the only Abidan capable of erasing an iteration without leaving behind the corruption of the Void.',
+    missionLabel: 'Final Recommendation',
     geometryType: 'reaper'
   },
   {
@@ -78,6 +87,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     mantle: 'The Regional Briefing',
     color: '#10b981', // Emerald
     description: 'The 5-Hour Intelligence Sprint. Jamie consumes the news and purifies the signal.',
+    missionLabel: 'Regional Brief',
     geometryType: 'phoenix'
   }
 ];

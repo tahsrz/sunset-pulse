@@ -3,6 +3,14 @@ import json
 import time
 from datetime import datetime
 
+# Handle both package and direct script execution for the bridge import
+try:
+    from .supabase_client import SupabaseClient
+except (ImportError, ValueError):
+    import sys
+    sys.path.append(os.path.dirname(__file__))
+    from supabase_client import SupabaseClient
+
 # Define base paths relative to the project root (assumed to be 2 levels up from this script)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 DREAM_KNOWLEDGE_GRAPH = os.path.join(PROJECT_ROOT, "utils/jamie/memory/knowledge_graph.json")
@@ -16,6 +24,7 @@ TELEPORT_SENTINEL = "__ULTRAPLAN_TELEPORT_LOCAL__"
 class JamieCore:
     def __init__(self):
         self.last_successful_write = None
+        self.supabase = SupabaseClient()
         self._ensure_memory_structure()
 
     def _ensure_memory_structure(self):
@@ -110,7 +119,7 @@ class JamieCore:
 
 
     def initiate_ccr_teleport(self, reasoning_chain: str):
-        """The Teleport Pattern: Inject high-reasoning chain results locally."""
+        """The Teleport Pattern: Inject high-reasoning chain results locally and sync to Supabase."""
         if TELEPORT_SENTINEL in reasoning_chain:
             print("Teleport Sentinel Detected. Packaging reasoning chain...")
             # Extract the payload after the sentinel
@@ -132,9 +141,13 @@ class JamieCore:
                     "ozriel_audit": payload_data.get("ozriel_audit", {})
                 }
                 
+                # Local write
                 with open(briefing_path, "w") as f:
                     json.dump(briefing_data, f, indent=2)
                 print(f"Daily briefing (Articles + Jokes) saved to {briefing_path}")
+
+                # Supabase sync
+                self.supabase.upsert_daily_briefing(briefing_data)
 
                 # Update Ozriel's Scythe Registry (AI tendency log)
                 audit_data = payload_data.get("ozriel_audit", {})
@@ -156,13 +169,16 @@ class JamieCore:
                         } for r in audit_data["humanized_rewrites"]
                     ]
                     
+                    # Supabase sync
+                    self.supabase.insert_scythe_registry_entries(new_entries)
+                    
                     registry.extend(new_entries)
                     # Keep the registry fresh but manageable (last 500 tendencies)
                     registry = registry[-500:]
                     
                     with open(registry_path, "w") as f:
                         json.dump(registry, f, indent=2)
-                    print(f"Ozriel's Scythe Registry updated with {len(new_entries)} new AI tendencies.")
+                    print(f"Ozriel's Scythe Registry updated locally with {len(new_entries)} new entries.")
 
                 # Still save the standalone joke for compatibility
                 if "daily_joke" in payload_data:
@@ -181,7 +197,7 @@ class JamieCore:
                         "timestamp": datetime.now().isoformat(),
                         "payload": payload_data
                     }, f, indent=2)
-                return f"Teleport successful. Payload injected to {TELEPORT_PATH}"
+                return f"Teleport successful. Payload injected to {TELEPORT_PATH} and synced to Supabase."
             except json.JSONDecodeError:
                 # Fallback for non-JSON payload
                 os.makedirs(os.path.dirname(TELEPORT_PATH), exist_ok=True)
@@ -193,6 +209,7 @@ class JamieCore:
                     }, f, indent=2)
                 return f"Teleport successful (Plaintext). Payload injected to {TELEPORT_PATH}"
         return "Error: Teleport sentinel missing from reasoning chain."
+
 
 if __name__ == "__main__":
     jamie = JamieCore()

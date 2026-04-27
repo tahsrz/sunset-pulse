@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 MODELS = {
     "RESEARCHER": "google/gemma-3-27b-it:free",
     "CRITIC": "meta-llama/llama-3.3-70b-instruct:free",
-    "SYNTHESIZER": "qwen/qwen3-coder:free"
+    "SYNTHESIZER": "nousresearch/hermes-3-llama-3.1-405b:free"
 }
 
 TELEPORT_SENTINEL = "__ULTRAPLAN_TELEPORT_LOCAL__"
@@ -21,7 +21,11 @@ def _get_api_key():
             with open(env_path, "r") as f:
                 for line in f:
                     if "OPENROUTER_API_KEY" in line:
-                        api_key = line.split("=")[-1].strip()
+                        # Handle both singular and plural (API_KEYS)
+                        val = line.split("=")[-1].strip()
+                        # If multiple keys, take the first
+                        api_key = val.split(",")[0].strip()
+                        break
     return api_key
 
 def _call_model(model_id: str, prompt: str, role_title: str) -> str:
@@ -36,28 +40,32 @@ def _call_model(model_id: str, prompt: str, role_title: str) -> str:
         "X-Title": f"Jamie theWay: {role_title}"
     }
     
-    payload = {
-        "model": model_id,
-        "messages": [{"role": "user", "content": prompt}]
-    }
-
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
-            if response.status_code == 429:
-                wait = (attempt + 1) * 5
-                print(f"Rate limited for {role_title}. Retrying in {wait}s...")
-                time.sleep(wait)
-                continue
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            if attempt == max_retries - 1:
-                return f"Error in {role_title} session: {str(e)}"
-            time.sleep(2)
-    return f"Error in {role_title} session: Maximum retries exceeded."
+    messages = [{"role": "user", "content": prompt}]
+    
+    # If the primary model fails or is rate limited, we try a faster fallback
+    models_to_try = [model_id, "meta-llama/llama-3.1-8b-instruct:free"]
+    
+    for current_model in models_to_try:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json={"model": current_model, "messages": messages})
+                if response.status_code == 429:
+                    # Exponential backoff with jitter
+                    wait = ((attempt + 1) * 7) + (attempt * 2)
+                    print(f"Rate limited for {role_title} on {current_model}. Retrying in {wait}s...")
+                    time.sleep(wait)
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    print(f"Failed {current_model} after {max_retries} attempts. Trying fallback if available.")
+                    break
+                time.sleep(3)
+    
+    return f"Error: All models in the chain failed for {role_title}."
 
 def call_theWay_ccr(task_prompt: str) -> str:
     """Initiates the 30-minute Council-driven research session."""
@@ -73,7 +81,7 @@ def call_theWay_ccr(task_prompt: str) -> str:
         print(f"News scouting failed, proceeding with baseline knowledge. Error: {e}")
         news_context = "No live news available."
 
-    # STAGE 1: RAW RESEARCH (Gemini)
+    # STAGE 1: RAW RESEARCH
     print("Stage 1: Raw Discovery (Researcher Agent)...")
     research_prompt = f"""
     ROLE: Lead Researcher.
@@ -84,26 +92,61 @@ def call_theWay_ccr(task_prompt: str) -> str:
 
     MANDATE: 
     1. Conduct a simulated 15-minute deep-dive. 
-    2. Identify all possible leads, market anomalies, and zoning shifts in North Texas.
-    3. Analyze the LIVE MARKET CONTEXT provided above and correlate it with real estate opportunities.
     Be verbose. Explore every logical branch.
     """
     raw_research = _call_model(MODELS["RESEARCHER"], research_prompt, "Researcher")
     print("Discovery phase complete.")
 
-    # STAGE 2: ADVERSARIAL CRITIQUE (Llama 3.3)
+    # STAGE 2: ADVERSARIAL CRITIQUE
     print("Stage 2: Adversarial Review (Architect/Critic Agent)...")
     critique_prompt = f"""
     ROLE: Adversarial Critic / Lead Architect.
     INPUT DATA: {raw_research}
-    MANDATE: Analyze the research above for logical fallacies, hallucinations, and market contradictions. 
-    Challenge the assumptions. Refine the signal from the noise.
+    MANDATE: Analyze the research above for logical fallacies. Challenge the assumptions.
     """
     refined_critique = _call_model(MODELS["CRITIC"], critique_prompt, "Critic")
     print("Critique phase complete.")
 
-    # STAGE 3: FINAL SYNTHESIS & TELEPORT (Qwen 3 Coder)
+    # STAGE 3: FINAL SYNTHESIS & TELEPORT
     print("Stage 3: Synthesis & Teleport Packaging (Synthesizer Agent)...")
+    
+    json_requirements = """
+    {
+      "simulated_research_hours": 5,
+      "spatial_updates": [{"lat": float, "lng": float, "title": string, "intel": string}],
+      "lead_intelligence": [{"email": string, "new_score": int, "rationale": string}],
+      "news_articles": [
+        {
+          "title": string,
+          "content": string,
+          "source_link": string,
+          "geo_tag": {"lat": float, "lng": float, "label": string},
+          "highlight_region": {
+            "center": {"lat": float, "lng": float},
+            "radius": number,
+            "label": string
+          },
+          "visualizer_config": {
+            "type": "GABLE_HOUSE" | "MODERN_OFFICE" | "INDUSTRIAL_HUB" | "DATA_PLOT",
+            "seed": string,
+            "color": string
+          },
+          "spider_net_data": {
+            "nodes": [{"id": string, "group": number, "radius": number}],
+            "links": [{"source": string, "target": string}]
+          }
+        }
+      ],
+      "consolidated_truth": string,
+      "daily_joke": string,
+      "ozriel_audit": {
+        "ai_patterns_detected": [string],
+        "humanized_rewrites": [{"original_fragment": string, "suggested_rewrite": string, "rationale": string}],
+        "overall_tone_score": number
+      }
+    }
+    """
+
     synthesis_prompt = f"""
     ROLE: Master Synthesizer.
     RESEARCH: {raw_research}
@@ -111,64 +154,15 @@ def call_theWay_ccr(task_prompt: str) -> str:
     MANDATE: 
     1. Consolidate the verified facts into a 'Gold Truth' summary.
     2. CONSUME RAW NEWS: Convert the news headlines from RESEARCH into full-form "Pulse Articles."
-    3. VISUAL SYNTHESIS: For each article, generate a 'visualizer_config' that our Visualizer Engine can use to render a 3D building or data plot.
-    4. You MUST end with the sentinel {TELEPORT_SENTINEL} followed by a valid JSON payload.
+    3. You MUST end with the sentinel {TELEPORT_SENTINEL} followed by a valid JSON payload.
     
     JSON REQUIREMENTS:
-    {{
-      "simulated_research_hours": 5,
-      "spatial_updates": [{{"lat": float, "lng": float, "title": string, "intel": string}}],
-      "lead_intelligence": [{{"email": string, "new_score": int, "rationale": string}}],
-      "news_articles": [
-        {{
-          "title": string,
-          "content": string,
-          "source_link": string,
-          "visualizer_config": {{
-            "type": "GABLE_HOUSE" | "MODERN_OFFICE" | "INDUSTRIAL_HUB" | "DATA_PLOT",
-            "seed": string,
-            "color": string
-          }},
-          "spider_net_data": {{
-            "nodes": [
-              {{"id": string, "group": number, "radius": number (scaled by keyword frequency)}}
-            ],
-            "links": [
-              {{"source": string, "target": string}}
-            ]
-          }}
-        }}
-      ],
-      "consolidated_truth": string,
-      "daily_joke": string,
-      "ozriel_audit": {{
-        "ai_patterns_detected": [string],
-        "humanized_rewrites": [
-          {{
-            "original_fragment": string,
-            "suggested_rewrite": string,
-            "rationale": string
-          }}
-        ],
-        "overall_tone_score": number (0-100, 100 being perfectly human)
-      }}
-    }}
+    {json_requirements}
     """
     final_output = _call_model(MODELS["SYNTHESIZER"], synthesis_prompt, "Synthesizer")
     print("Synthesis complete. theWay Chain Finished.")
 
-    # Combine for the Deep Dream stage
-    verbose_chain = f"""
-    === RESEARCHER LOG ===
-    {raw_research}
-    
-    === CRITIC LOG ===
-    {refined_critique}
-    
-    === FINAL SYNTHESIS ===
-    {final_output}
-    """
-    return final_output if TELEPORT_SENTINEL in final_output else f"FAIL: {verbose_chain}"
+    return final_output
 
 if __name__ == "__main__":
     import sys

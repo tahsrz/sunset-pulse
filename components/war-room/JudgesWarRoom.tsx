@@ -12,10 +12,10 @@ import SurielRestorationCore from './SurielRestorationCore';
 import ZakarielLogisticFox from './ZakarielLogisticFox';
 import OzrielFinalArbiter from './OzrielFinalArbiter';
 import propertiesData from '@/properties.json';
-import TelarielSpiderNet from './TelarielSpiderNet';
+import { JamieBriefing } from '@/lib/types/jamieBriefing';
 
 const JamiePulseBriefing = () => {
-  const [briefing, setBriefing] = useState<any>(null);
+  const [briefing, setBriefing] = useState<JamieBriefing | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,45 +37,56 @@ const JamiePulseBriefing = () => {
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* Header Info */}
-      <div className="flex justify-between items-center border-b border-white/10 pb-6">
+      <div className="grid gap-6 md:grid-cols-[1.6fr_1fr] border-b border-white/10 pb-6">
         <div>
-          <h4 className="text-3xl font-black italic tracking-tighter text-emerald-500">TODAY'S HARVEST</h4>
+          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-500 mb-2">Regional Brief</p>
+          <h4 className="text-3xl font-black italic tracking-tighter text-emerald-500">North Texas Intelligence Summary</h4>
           <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">
-            Simulated Research: {briefing.simulated_research_hours} Hours // {new Date(briefing.timestamp).toLocaleDateString()}
+            Brief Runtime: {briefing.simulated_research_hours} Hours // {new Date(briefing.timestamp).toLocaleDateString()}
+          </p>
+          <p className="text-sm text-slate-300 leading-relaxed mt-4 max-w-3xl">
+            {briefing.executive_summary}
           </p>
         </div>
         <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl max-w-md">
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">Operator Note</p>
           <p className="text-xs italic text-emerald-300">"{briefing.daily_joke}"</p>
         </div>
       </div>
 
-      {/* Truth Summary */}
-      <div className="bg-white/5 border border-white/10 p-8 rounded-3xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
-        <h5 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-4">Consolidated Regional Truth</h5>
-        <p className="text-xl font-serif italic text-white/90 leading-relaxed">
-          {briefing.consolidated_truth}
-        </p>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+          <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-2">Top Headline</p>
+          <p className="text-lg font-bold text-white leading-snug">{briefing.top_headline}</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+          <p className="text-[9px] font-black uppercase tracking-widest text-blue-400 mb-2">Signals Reviewed</p>
+          <p className="text-3xl font-black italic text-white">{briefing.key_signal_count}</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+          <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2">Copy Risk Flags</p>
+          <p className="text-3xl font-black italic text-white">{briefing.ozriel_audit.humanized_rewrites.length}</p>
+        </div>
       </div>
 
       {/* Articles Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {briefing.news_articles.map((article: any, idx: number) => (
+        {briefing.news_articles.map((article, idx: number) => (
           <div key={idx} className="bg-slate-900/50 border border-white/5 rounded-3xl overflow-hidden flex flex-col">
             <div className="p-8 space-y-4">
               <span className="text-[9px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full font-black uppercase tracking-widest">
-                Pulse Article // {article.visualizer_config.type}
+                Market Signal // {article.category}
               </span>
               <h6 className="text-2xl font-black tracking-tighter uppercase">{article.title}</h6>
-              <p className="text-sm text-slate-400 leading-relaxed">{article.content}</p>
+              <p className="text-sm text-slate-400 leading-relaxed">{article.summary}</p>
             </div>
             
             {/* Visual Synthesis: Spider Net for this article */}
             <div className="bg-black/40 border-t border-white/5 p-4 h-64">
               <span className="text-[8px] font-mono text-purple-500 uppercase tracking-widest mb-2 block">Telariel Network Mapping</span>
               <TelarielSpiderNet 
-                customNodes={article.spider_net_data.nodes} 
-                customLinks={article.spider_net_data.links}
+                customNodes={article.spider_net_data?.nodes} 
+                customLinks={article.spider_net_data?.links}
                 intelSummary={`Influence grid for: ${article.title}`}
               />
             </div>
@@ -90,8 +101,8 @@ const JamiePulseBriefing = () => {
               <FaSkull className="text-indigo-400 text-xl" />
            </div>
            <div>
-              <h5 className="text-2xl font-black italic tracking-tighter uppercase">Ozriel linguistic Harvest</h5>
-              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-1">Purifying the machine signal</p>
+              <h5 className="text-2xl font-black italic tracking-tighter uppercase">Language Quality Review</h5>
+              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-1">Plain-language pass before release</p>
            </div>
         </div>
         <OzrielFinalArbiter auditData={briefing.ozriel_audit} />
@@ -197,7 +208,7 @@ const JudgesWarRoom = () => {
               </div>
               <div className="text-left">
                 <p className="text-xs font-black uppercase tracking-tighter leading-none">{judge.name}</p>
-                <p className="text-[9px] text-slate-500 uppercase font-mono mt-1 opacity-70">{judge.mantle}</p>
+                <p className="text-[9px] text-slate-500 uppercase font-mono mt-1 opacity-70">{judge.missionLabel}</p>
               </div>
               {activeJudge.id === judge.id && (
                 <div className="absolute right-4 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,1)]" />
@@ -215,7 +226,8 @@ const JudgesWarRoom = () => {
                 <div className="w-1 h-12 bg-blue-500" />
                 <div>
                   <h3 className="text-2xl font-black uppercase tracking-tighter">{activeJudge.name} / {activeJudge.mantle}</h3>
-                  <p className="text-[10px] text-slate-500 uppercase font-mono tracking-widest mt-1">Operational Protocol: {activeJudge.geometryType.toUpperCase()}</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-mono tracking-widest mt-1">{activeJudge.missionLabel} // {activeJudge.geometryType.toUpperCase()}</p>
+                  <p className="text-sm text-slate-400 mt-3 max-w-3xl">{activeJudge.description}</p>
                 </div>
               </div>
 
@@ -228,7 +240,7 @@ const JudgesWarRoom = () => {
                 {activeJudge.id === 'razael' && <RazaelAttackStrategy property={selectedProperty} />}
                 {activeJudge.id === 'suriel' && <SurielRestorationCore property={selectedProperty} />}
                 {activeJudge.id === 'zakariel' && <ZakarielLogisticFox property={selectedProperty} />}
-                {activeJudge.id === 'ozriel' && <OzrielFinalArbiter property={selectedProperty} />}
+                {activeJudge.id === 'ozriel' && <OzrielFinalArbiter />}
                 {activeJudge.id === 'daily-briefing' && <JamiePulseBriefing />}
               </div>
             </div>

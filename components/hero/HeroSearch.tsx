@@ -51,7 +51,7 @@ const HeroSearch: React.FC<HeroSearchProps> = ({ isEntered, isAdvancedMode, quer
         </div>
         <input 
           type="text"
-          placeholder="Enter address, city, or zip code..."
+          placeholder="Search a city, ZIP, or property to start the brief..."
           className="flex-grow py-4 px-2 text-lg text-white bg-transparent focus:outline-none placeholder:text-white/30"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -66,7 +66,7 @@ const HeroSearch: React.FC<HeroSearchProps> = ({ isEntered, isAdvancedMode, quer
 
       <div className="mt-8 flex gap-4 pointer-events-auto">
          <Link href="/properties" className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-full text-white hover:bg-white/10 transition-all text-sm font-medium">
-          Browse Listings
+          Browse Opportunities
         </Link>
         {isAdvancedMode && (
           <Link href="/command-post" className="flex items-center gap-2 px-6 py-3 bg-primary/20 border border-primary/30 rounded-full text-primary hover:bg-primary/30 transition-all text-sm font-medium">

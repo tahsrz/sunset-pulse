@@ -1,74 +1,31 @@
 {
-  "timestamp": "2026-04-23T17:30:00.000Z",
+  "timestamp": "2026-04-23T18:14:05.932676",
   "simulated_research_hours": 5,
-  "daily_joke": "Why did the realtor become a gardener? Because they wanted to help their clients find some 'ground' floor opportunities!",
-  "consolidated_truth": "The North Texas market is currently anchored by a massive industrial absorption trend near DFW, while luxury residential hubs like Frisco are preparing for a significant tech-talent influx from Austin following recent zoning approvals for the 'Fields' development.",
+  "daily_joke": "Why did the AI get a real estate license? Because it wanted to optimize the search for 'Home.exe'.",
   "news_articles": [
     {
-      "title": "Frisco 'Fields' Zoning Approved: A New Hub for Tech Talent",
-      "content": "The Frisco City Council has officially greenlit the latest zoning phase for the 'Fields' development, a massive 2,500-acre project. This phase focuses on high-density luxury residential units and mixed-use commercial space specifically designed to attract the tech talent currently migrating from Austin and Silicon Valley. Market analysts predict a 15% surge in local property values over the next 18 months as the 'PGA Effect' combines with these new high-tech office anchors.",
-      "source_link": "https://www.dallasnews.com/business/real-estate/",
-      "visualizer_config": {
-        "type": "MODERN_OFFICE",
-        "seed": "frisco-fields-zoning-2026",
-        "color": "#3b82f6"
-      },
-      "spider_net_data": {
-        "nodes": [
-          {"id": "Frisco Council", "group": 2, "radius": 12},
-          {"id": "Tech Talent", "group": 3, "radius": 18},
-          {"id": "Fields Dev", "group": 1, "radius": 20},
-          {"id": "Austin Migration", "group": 3, "radius": 14},
-          {"id": "PGA Effect", "group": 2, "radius": 10}
-        ],
-        "links": [
-          {"source": "Frisco Council", "target": "Fields Dev"},
-          {"source": "Fields Dev", "target": "Tech Talent"},
-          {"source": "Tech Talent", "target": "Austin Migration"},
-          {"source": "Fields Dev", "target": "PGA Effect"}
-        ]
-      }
-    },
-    {
-      "title": "DFW Industrial Absorption Hits Record 45M Square Feet",
-      "content": "Logistics and distribution demand near the DFW International Airport has hit an all-time high, with net absorption reaching 45 million square feet in the last quarter. The shift is driven by a permanent change in regional supply chain strategies. Industrial land prices in the Alliance Corridor have tripled since 2024, creating a 'halo effect' on surrounding residential markets in Fort Worth and Denton.",
-      "source_link": "https://www.dallasnews.com/business/real-estate/",
-      "visualizer_config": {
-        "type": "INDUSTRIAL_HUB",
-        "seed": "dfw-industrial-2026",
-        "color": "#10b981"
-      },
-      "spider_net_data": {
-        "nodes": [
-          {"id": "DFW Airport", "group": 1, "radius": 18},
-          {"id": "Alliance Corridor", "group": 1, "radius": 15},
-          {"id": "Logistics Demand", "group": 2, "radius": 20},
-          {"id": "Supply Chain", "group": 3, "radius": 12},
-          {"id": "Land Prices", "group": 2, "radius": 14}
-        ],
-        "links": [
-          {"source": "DFW Airport", "target": "Logistics Demand"},
-          {"source": "Logistics Demand", "target": "Alliance Corridor"},
-          {"source": "Alliance Corridor", "target": "Land Prices"},
-          {"source": "Logistics Demand", "target": "Supply Chain"}
-        ]
-      }
+      "title": "Tarrant County Zoning Shift: Industrial to Residential",
+      "summary": "Jamie detected a 12% shift in permit applications near the 121 corridor."
     }
   ],
+  "consolidated_truth": "The market is shifting toward high-density suburban clusters.",
   "ozriel_audit": {
-    "ai_patterns_detected": ["Robotic Preamble", "Formulaic Verbs", "Passive Conclusion"],
     "humanized_rewrites": [
       {
-        "original_fragment": "It is important to note that the Frisco market is currently experiencing a significant shift.",
-        "suggested_rewrite": "Look, the Frisco market is going through a massive shift right now.",
-        "rationale": "Removes the robotic 'It is important to note' preamble."
+        "original_fragment": "We should leverage market synergies.",
+        "suggested_rewrite": "We should see how these neighborhoods work together.",
+        "rationale": "Avoided corporate AI buzzword 'synergies'."
       },
       {
-        "original_fragment": "Unlock the potential of industrial logistics hubs near the DFW airport region.",
-        "suggested_rewrite": "The DFW airport area is a goldmine for industrial logistics right now.",
-        "rationale": "Avoids the 'Unlock the potential' cliché."
+        "original_fragment": "delving deep into the data",
+        "suggested_rewrite": "checking the numbers",
+        "rationale": "Replaced 'delve' (overused AI verb)."
+      },
+      {
+        "original_fragment": "Unlock the potential",
+        "suggested_rewrite": "Open up the possibilities",
+        "rationale": "Removed formulaic AI marketing speak."
       }
-    ],
-    "overall_tone_score": 74
+    ]
   }
 }

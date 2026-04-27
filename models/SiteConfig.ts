@@ -27,6 +27,7 @@ const SiteConfigSchema = new mongoose.Schema({
     order: { type: Number }
   }],
   jamieSystemPrompt: { type: String },
+  activeEnvoyId: { type: String, default: 'ENVOY-JAMIE' },
   abidanPrompts: {
     MARKET_SCOUT: { type: String },
     ASSET_ANALYST: { type: String },

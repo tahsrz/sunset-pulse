@@ -12,6 +12,7 @@ interface TacticalClothProps {
 export interface TacticalClothRef {
   applyForce: (x: number, y: number, radius: number, strength: number) => void;
   pet: () => void;
+  glitch: () => void;
 }
 
 /**
@@ -22,7 +23,7 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
   id = "042", 
   status = "AWAKE", 
   moodColor = "#22c55e",
-  videoSrc = "https://dzrmwng2ae8bq.cloudfront.net/42485456/1b8d44f227cc049d0e846b9852f254fd32ea54e83f805c5d54ff07c477dfb117_source-ezgif.com-gif-to-mp4-converter.mp4"
+  videoSrc = "/videos/jamie_base.mp4"
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,6 +51,14 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
         if (!p.pinned) {
           p.py -= 8;
           p.px += (Math.random() - 0.5) * 8;
+        }
+      });
+    },
+    glitch: () => {
+      points.current.forEach(p => {
+        if (!p.pinned && Math.random() > 0.8) {
+          p.x += (Math.random() - 0.5) * 40;
+          p.y += (Math.random() - 0.5) * 40;
         }
       });
     }

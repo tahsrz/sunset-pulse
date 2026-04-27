@@ -1,137 +1,73 @@
- New Feature: Day-Night Cycle and localMemory isMounted Checks. Supaflow Integration and Workflows. Vis. Engine moved to TypeScript. Configuration of LLMs and mini-LLMs in UI. 
+# SUNSET PULSE // MISSION READ ME
+**LAST UPDATED:** 2026-04-23  
+**STATUS:** JAMIE INTELLIGENCE EXPANSION (SUPABASE STABLE)
 
-TTL Protocol: Implemented a 30-day Time-To-Live (TTL). The API will now check the database first. 
-If fresh reconnaissance data exists, it returns the cached "Grid Memory" instantly (sub-10ms response). 
+Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router) architecture. It is designed to bridge the gap between static property listings and an interactive, data-driven user experience.
 
+### ⚡ Recent Neural Upgrades (v2.5)
+- **Supabase Long-Term Memory**: Jamie's research is now fully persistent. Migrated the `daily_briefings` and `scythe_registry` to Supabase Postgres to enable historical intelligence tracking.  
+- **Live Neural Notifications**: A global R3F ripple overlay now triggers across the site whenever Jamie consolidates a 5-hour research sprint, powered by Supabase Realtime.  
+- **Ghost Recon 3D Overlays**: Real-world North Texas news anomalies are now projected as "Intel Spires" and "Corridor Highlights" directly within the 3D Property Viewer.  
+- **Ozriel's Scythe Purifier**: A standalone linguistic tool at `/scythe` that uses the Scythe Registry to excise robotic patterns from your communications.  
 
+---
+
+### I. The Abidan Court (The Intelligence Layer)
+The platform is governed by the Abidan Protocol, a multi-agent system where specialized "Judges" perform due diligence on every asset.
+
+- **I. Makiel (The Hound)**: Predicts 5–10 year market appreciation hubs before they manifest in the public grid.  
+- **II. Gadrael (The Titan)**: Identifies legal vulnerabilities and zoning risks, providing a "Defense Rating."  
+- **III. Durandiel (The Ghost)**: Performs non-invasive "ghost recon" on neighborhood vibes and spatial density.  
+- **IV. Telariel (The Spider)**: Crawls the web for off-market sentiment and the web of influence surrounding an asset.  
+- **V. Razael (The Wolf)**: Generates aggressive negotiation strategies and acquisition plans.  
+- **VI. Zakariel (The Fox)**: Maps the fastest "Path to Closing," coordinating lenders and inspectors.  
+
+---
+
+### II. The Aggregators (Jamie AI)
+Once the Judges finish their recon, data is synthesized by two primary entities:
+
+- **IX. Suriel (The Phoenix)**: Performs "Predictive Restoration," healing gaps in the data to create a cohesive intelligence core.  
+- **X. Ozriel (The Reaper)**: The Final Arbiter. He "scythes" any data point lacking absolute truth and issues the final **CULL** or **KEEP** verdict.
+
+---
+
+### III. The War Room (D3.js Visualization)
+The Intelligence Dashboard (`/abidan/war-room`) provides institutional-grade visualizations for every property:
+1. **Fate Trajectory**: D3 Line Chart comparing predicted vs. actual market velocity.  
+2. **Risk Shield**: D3 Radar Chart mapping 6 critical defense vectors.  
+3. **Spider Net**: D3 Force-Directed Graph connecting tax records, news, and social sentiment.  
+4. **Ghost Recon**: Qualitative spatial analysis using "Ghost Glow" SVG filters.  
+
+---
+
+### IV. Technical Infrastructure
+- **Framework**: Next.js 14 (App Router) with TypeScript.  
+- **Hybrid Data Strategy**: Primary property data resides in MongoDB, while Intelligence (Briefings, Scythe Registry, Auth) has migrated to **Supabase (PostgreSQL)**.  
+- **Visualization Engine**: A custom-built, CPU-efficient 3D renderer using Backface Culling and Depth Sorting (Painter's Algorithm) for immersive property tours.  
+- **Automation**: An idle-trigger system ("autoDream") initiates a 5-hour research sprint after 15 minutes of inactivity, ensuring the system researches while you sleep.
+
+--- 
  
- Sunset Pulse is a sophisticated, high-performance real estate platform built on a modern Next.js 14 (App Router)
-  architecture. It is designed to bridge the gap between static property listings and an interactive, data-driven user
-  experience.
+ 1. Local "Brain" (SAM 2): The segmentation isn't happening on a metered cloud API (like Runway or Adobe). It's
+      running on hardware via the local Python segmenter(sam2.1_hiera_tiny.pt). 
+   2. FFmpeg.wasm Safety Net: The Studio.tsx uses browser-side FFmpeg. This means the expensive work of rendering the
+      stylized video happens in your browser's memory, not on a paid server. 
+   3. Confidence Gating: I've integrated a confidence check into the response. The system reported a 0.943 (94.3%)
+      confidence for the Jamie video. If the subject was blurry, that score would drop, and the
+      system is designed to return a mock fallback rather than trying to force a broken (and potentially expensive)
+      render.
+   4. The "Pre-Flight" Check: The JAMIE_VISUALS_WORKFLOW.md I wrote ensures you extract the first frame
+      (jamie_first_frame.jpg) and verify it before you ever trigger a full project render.
 
-I. Makiel The Seer: Focuses on Fate and Trajectory. He predicts 5–10 year market appreciation and identifies Hubs before they manifest in the public grid. 
+  The Fail-Safes Added:
+   * Mode Awareness: The segmenter returns mode: "live" or mode: "mock". If the model weights aren't loaded correctly,
+     it defaults to a free "mock" box rather than crashing the pipeline.
+   * Static Previews: We use ffmpeg locally to verify the video format (h264, 1920x1080) before the AI even touches it.
 
-II. Gadrael The Shield: Focuses on rigidity. He identifies legal vulnerabilities, zoning issues, and title risks, providing a "Defense Rating" to ensure an investment is unbreakable. 
-
-III. Durandiel The Ghost: Focuses on Spatial Control. He performs "ghost recon," reading neighborhood vibes and hidden property details without disturbing the endpoints. 
-
-IV. Telariel The Spider: Focuses on Connectivity. He crawls the web for off-market mentions, social sentiment, and the web of Influence surrounding a seller or neighborhood. 
-
-V. Rezael The Maker: Focuses on Attack. He generates negotiation strategies and aggressive acquisition plans to secure assets before competitors can react. 
-
-VI. Zakariel The Fox: Focuses on Logistic Velocity. He maps the fastest "Path to Closing," coordinating lenders and inspectors to eliminate friction and ensure rapid market entry. 
-
-
-VII, VIII 1st Generation Enforcers Daruman and Noyon.
-
-The 2 Primary Aggregators 
-
-Synthesis Layer 
-
- 
-  Once the 6 Judges finish their recon, their raw threads of data are passed to the two most powerful entities for 
-  final processing before sent down the Memory Bridge into the Way 
-
-XI. Judge Suriel The Phoenix - Aggregator: 
-
-Restoration and Synthesis. 
+  Bottom line: We are using Meta's open-source SAM 2 on your machine. 
+ We can iterate on Jamie's soul as much as we want without hitting a credit limit. 
 
 
-She takes the 6 raw reports and restores them into a single, high-fidelity Intelligence Core Jamie can read. She 
-heals gaps in the data using predictive restoration, ensuring the briefing is a cohesive whole whose story can be understood. 
-
-X. Judge Ozriel  The Reaper Final Arbiter: 
-
-
-Pruning and Destruction. 
-       
-He performs the Final Scythe harvest. He culls any data point that lacks the weight of absolute, 
-truth and delivers the final Cull or Keep verdict. He decides market viability as his output determines the Total Market Viability score. 
- 
-
-
- 1. The Hound - Fate Trajectory: 
-       * Visual: D3 Line Chart with a "Fate Gradient" 
-       * Logic: Compares Predicted Fate (8% annual appreciation) vs. "Realized Velocity" (actual market points). 
-       * Reactive: Data scales dynamically based on the selected property's monthly rental rate.
-   2. The Titan - Risk Shield: 
-       * Visual: D3 Radar (Spider) Chart. 
-       * Logic: Maps 6 defense vectors (Zoning, Title, Flood, Legal, Market, Structural). 
-       * Reactive: "Zoning Rigidity" peaks for Industrial assets; "Flood Shield" drops for properties in the Sunset 
-         sector. 
-   3. The Spider - Spider Net: 
-       * Visual: D3 Force-Directed Graph. 
-       * Logic: Connects the "Web of Influence" (Seller, News, Reddit, Zoning, Tax records). 
-   4. The Ghost - Ghost Recon: 
-       * Visual: D3 Horizontal Bar Chart with "Ghost Glow" SVG filters. 
-       * Logic: Measures spatial privacy, acoustic silence, and "Void Density." 
-   5. The Wolf - Attack Matrix: 
-       * Visual: Tactical Card Grid with leverage bars. 
-       * Logic: Generates aggressive acquisition plans (e.g., "Market Blitz") based on target vulnerabilities. 
-   6. The Phoenix - Restoration Core: 
-       * Visual: Animated D3 Core with rotating arcs. 
-       * Logic: Uses d3.timer to track real-time data "healing" and synthesis progress. 
-   7. The Fox - Logistic Velocity: 
-       * Visual: Linear Stage Timeline. 
-       * Logic: Maps the "Path to Closing" with pulsing "In-Progress" states for active sectors. 
-
-       
-  In many ways, yes—Ozriel is essentially a Continuous, Adversarial Turing Test. 
-  While the original Turing Test relies on a human judge to distinguish machine from man, Ozriel acts as a machine 
-  judging its own kind to ensure the user never feels the "Uncanny Valley" of AI conversation. 
-  
-Why it’s more powerful than a Turing Test: 
-    The Turing Test is a one-time benchmark. The Ozriel Protocol is a recursive loop. By having Ozriel "scythe" the 
-    robotic patterns during the 5-hour autoDream sprint, Jamie isn't just trying to trick you into thinking he's human; he 
-    is actively pruning his own latent space to adopt the specific, grounded voice of a North Texas researcher. 
-
-  It’s less about "Can a machine think?" and more about "Can a machine speak with the soil of North Texas on its boots?"
-The engine
-
-handles occlusion in two primary stages: 
-
-   1. Backface Culling: Uses a dot product analysis between the surface normal and the camera vector to immediately
-      discard triangles facing away from the viewer.
-   2. Depth Sorting Painter's Algorithm: Before drawing, we calculate the average Z-depth for every visible triangle
-      and sort the trianglesToRender array from back to front. This ensures that the closer geometry correctly "paints
-      over" the distant geometry.
-
-  You can see the implementation in the Renderer.render method: (DEP)
-
-   
-    trianglesToRender.sort((a, b) => {
-      const az = (a.get(0).z + a.get(1).z + a.get(2).z) / 3;
-      const bz = (b.get(0).z + b.get(1).z + b.get(2).z) / 3;
-      return bz - az; // Sort by average Z-depth
-    });
-
-  This approach, combined with Near Plane Clipping, keeps the CPU overhead low while maintaining aesthetic.
-
-  
-   Architectural Core & Tech Stack
-   * Framework: Next.js 14 using TypeScript. It leverages Server Actions for secure data mutations and Route Handlers
-     for API logic.
-   * Hybrid Data Strategy: The project is in a strategic transition. It currently uses MongoDB (Mongoose) for primary
-     property data and local business intelligence (The Grill), but is migrating to Supabase (PostgreSQL) for
-     enhanced relational integrity and real-time Authentication.
-   * Media & Visualization:
-       * Cloudinary: Handles all image processing, ensuring high-speed delivery of optimized property photos.
-       * Mapbox: Powers the geospatial search, allowing users to find properties via interactive maps.
-       * Three.js: Integrated for immersive 3D property visualizations (seen in the Lab experiments).
-       * Secret Features: ???
-
-  2. Key Intelligent Modules
-   * Jamie Protocol Assistant: A real-time chat interface powered by Groq (Llama 3.1) and the Vercel AI SDK. Agent queries shouldn't be a game of trial and error. While standard search tools rely on rigid parameters, Jamie analyzes the DNA of your request. By determining the exact computational weight needed and scaling its internal architecture accordingly, it eliminates the 'search fatigue' that plagues traditional real estate platforms.
-     Jamie has "Agentic" capabilities, meaning it can:
-       * Dynamic Theme Injection: Suggest and apply visual themes (Dark Mode, Minimalist, etc.) on the fly.
-       * Hyper-Local Intel: Pull real-time data from local businesses (like Sunset Grill) to give buyers neighborhood
-         context.
-   * Lead Intelligence: A robust lead capture system (LeadCaptureForm) that feeds into a decay-leads script. This script
-     automatically scores and manages leads based on time-decay, ensuring agents focus on the highest-probability
-     conversions.
-
-  3. Security & Access Control
-   * Property Verification Gate: A modular verification layer that ensures users are human before revealing sensitive
-     property coordinates or contact details, preventing bot scraping of your IDX data.
-   * Secure API Layer: All property and lead mutations are handled via server-side routes with
-     environment-variable-backed secrets (Twilio, Cloudinary, Groq, Supabase). 
+**Property of the Sunset Collective // System: Abidan Core**  
+"The Way remains. The Court observes."

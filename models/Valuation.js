@@ -4,8 +4,7 @@ const { Schema, model, models } = mongoose;
 const ValuationSchema = new Schema(
   {
     user: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
     },
     address: {
       type: String,

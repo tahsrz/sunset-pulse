@@ -6,9 +6,11 @@ import Footer from '@/components/Footer';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
+import { JamiePulseProvider } from '@/context/JamiePulseContext';
 import JamieChat from '@/components/JamieChat';
 import KeybindHandler from '@/components/KeybindHandler';
 import JamieInsightsLoginToast from '@/components/JamieInsightsLoginToast';
+import JamiePulseOverlay from '@/components/JamiePulseOverlay';
 import DevPortal from '@/components/DevPortal';
 import FeedbackWidget from '@/components/FeedbackWidget';
 import { SiteConfig } from '@/models/SiteConfig';
@@ -111,7 +113,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
     // 2. Fallback to MongoDB (Legacy)
     try {
       await connectDB();
-      const config = await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
+      const config: any = await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
       
       if (config) {
         branding = {
@@ -143,22 +145,25 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
         <AuthProvider>
           <CartProvider>
             <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
-              <div className='flex flex-col min-h-screen'>
-                <GlobalMarketPulse />
-                <Navbar />
-                <main className='flex-grow'>
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              
-              <JamieChat />
-              <FeedbackWidget />
-              <DevPortal />
-              <KeybindHandler />
-              <JamieInsightsLoginToast />
-              
-              <ToastContainer />
+              <JamiePulseProvider>
+                <div className='flex flex-col min-h-screen'>
+                  <GlobalMarketPulse />
+                  <Navbar />
+                  <main className='flex-grow'>
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+                
+                <JamieChat />
+                <FeedbackWidget />
+                <DevPortal />
+                <KeybindHandler />
+                <JamieInsightsLoginToast />
+                <JamiePulseOverlay />
+                
+                <ToastContainer />
+              </JamiePulseProvider>
             </ThemeProvider>
           </CartProvider>
         </AuthProvider>

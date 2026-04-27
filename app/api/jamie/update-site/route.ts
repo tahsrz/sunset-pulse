@@ -1,7 +1,7 @@
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import Groq from "groq-sdk";
 import connectDB from "@/lib/core/database";
-import { MenuItem } from "@/models/MenuItem";
+import MenuItem from "@/models/MenuItem";
 import { SiteConfig } from "@/models/SiteConfig";
 import { abidanGatekeeper } from "@/lib/security/gatekeeper";
 

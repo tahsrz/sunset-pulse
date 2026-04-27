@@ -55,6 +55,16 @@ const OzrielFinalArbiter: React.FC<OzrielFinalArbiterProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center gap-8 py-8">
+      <div className="w-full max-w-2xl text-center space-y-2">
+        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-indigo-400">Final Recommendation</p>
+        <h3 className="text-2xl font-black uppercase tracking-tight">
+          {hasPurified || verdict === 'PURE' ? 'Copy passes the trust check.' : 'Copy needs human cleanup before release.'}
+        </h3>
+        <p className="text-sm text-slate-400">
+          Ozriel is acting as the language QA layer here: keep what sounds human, remove what sounds generated.
+        </p>
+      </div>
+
       {/* Verdict Card */}
       <div className={`relative w-64 h-64 rounded-full flex flex-col items-center justify-center border-8 transition-all duration-1000 ${
         verdict === 'PURE' || hasPurified
@@ -106,10 +116,20 @@ const OzrielFinalArbiter: React.FC<OzrielFinalArbiterProps> = ({
       )}
 
       {hasPurified && (
-        <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl w-full max-w-xl text-center animate-in zoom-in-95 duration-700">
-           <p className="text-xs text-emerald-300 font-serif italic leading-relaxed">
-            "The harvest is complete. The speech has been purified. Jamie now speaks with the weight of humanity. No robotic traces remain."
-          </p>
+        <div className="flex flex-col items-center gap-6 w-full max-w-xl">
+          <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl w-full text-center animate-in zoom-in-95 duration-700">
+            <p className="text-xs text-emerald-300 font-serif italic leading-relaxed">
+              "The harvest is complete. The speech has been purified. Jamie now speaks with the weight of humanity. No robotic traces remain."
+            </p>
+          </div>
+          
+          <a 
+            href="/scythe"
+            className="group flex items-center gap-3 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+          >
+            <FaSkull className="text-rose-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60 group-hover:text-white">Access External Purifier Protocol</span>
+          </a>
         </div>
       )}
 

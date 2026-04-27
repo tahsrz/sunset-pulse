@@ -1,0 +1,128 @@
+{
+  "_id": "69ee9746cee8c8133703cbde",
+  "uid": "CATERPILLAR-01",
+  "__v": 0,
+  "author": "Eric Carle (Tactical Adaption)",
+  "createdAt": "2026-04-26T22:52:53.909Z",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "originalText": "In the light of the moon, a little egg lay on a leaf.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "peaceful"
+      },
+      "_id": "69ef81b1ca820bcc97781ea2"
+    },
+    {
+      "pageNumber": 2,
+      "originalText": "One Sunday morning the warm sun came up and - pop! - out of the egg came a tiny and very hungry caterpillar.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "intense"
+      },
+      "_id": "69ef81b1ca820bcc97781ea3"
+    },
+    {
+      "pageNumber": 3,
+      "originalText": "He started to look for some food.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "hungry"
+      },
+      "_id": "69ef81b1ca820bcc97781ea4"
+    },
+    {
+      "pageNumber": 4,
+      "originalText": "On Monday he ate through one apple. But he was still hungry.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "hungry"
+      },
+      "_id": "69ef81b1ca820bcc97781ea5"
+    },
+    {
+      "pageNumber": 5,
+      "originalText": "On Tuesday he ate through two pears, but he was still hungry.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "hungry"
+      },
+      "_id": "69ef81b1ca820bcc97781ea6"
+    },
+    {
+      "pageNumber": 6,
+      "originalText": "On Wednesday he ate through three plums, but he was still hungry.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "hungry"
+      },
+      "_id": "69ef81b1ca820bcc97781ea7"
+    },
+    {
+      "pageNumber": 7,
+      "originalText": "On Thursday he ate through four strawberries, but he was still hungry.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "hungry"
+      },
+      "_id": "69ef81b1ca820bcc97781ea8"
+    },
+    {
+      "pageNumber": 8,
+      "originalText": "On Friday he ate through five oranges, but he was still hungry.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "hungry"
+      },
+      "_id": "69ef81b1ca820bcc97781ea9"
+    },
+    {
+      "pageNumber": 9,
+      "originalText": "On Saturday he ate through one piece of chocolate cake, one ice-cream cone, one pickle, one slice of Swiss cheese, one slice of salami, one lollipop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "overwhelmed"
+      },
+      "_id": "69ef81b1ca820bcc97781eaa"
+    },
+    {
+      "pageNumber": 10,
+      "originalText": "The next day was Sunday again. The caterpillar ate through one nice green leaf, and after that he felt much better.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "relieved"
+      },
+      "_id": "69ef81b1ca820bcc97781eab"
+    },
+    {
+      "pageNumber": 11,
+      "originalText": "Now he wasn't hungry anymore - and he wasn't a little caterpillar anymore. He was a big, fat caterpillar.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "growth"
+      },
+      "_id": "69ef81b1ca820bcc97781eac"
+    },
+    {
+      "pageNumber": 12,
+      "originalText": "He built a small house, called a cocoon, around himself. He stayed inside for more than two weeks.",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "incubation"
+      },
+      "_id": "69ef81b1ca820bcc97781ead"
+    },
+    {
+      "pageNumber": 13,
+      "originalText": "Then he nibbled a hole in the cocoon, pushed his way out and... he was a beautiful butterfly!",
+      "visualCue": "none",
+      "metadata": {
+        "vibe": "transformation"
+      },
+      "_id": "69ef81b1ca820bcc97781eae"
+    }
+  ],
+  "title": "The Very Hungry Operative",
+  "updatedAt": "2026-04-27T15:33:05.715Z"
+}

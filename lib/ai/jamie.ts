@@ -19,6 +19,7 @@ import {
   PHOENIX_SYSTEM_PROMPT,
   REAPER_SYSTEM_PROMPT 
 } from "./prompts";
+import Entity from "@/models/Entity";
 import { createClient } from "@/utils/supabase/server";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -293,6 +294,9 @@ export async function getJamieEngagement(lead: any, property: any, oldScore: num
   }
 }
 
+export const generateHighStakesHook = generateJamieEngagementHook;
+export const getJamieReengagement = getJamieEngagement;
+
 export async function getJamieResponse(messages: any[], propertyData?: any, memoryContext?: any, isDevMode: boolean = false) {
   const userInput = messages[messages.length - 1]?.content || "";
   
@@ -361,17 +365,20 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
     const startWorkers = Date.now();
     console.log("[JAMIE_CORE] Jamie initiating parallel data analysis...");
     
-    // 1 Define all available analysis agents with dynamic prompts
-    const allAnalyticAgents = [
-      { name: "MARKET_SCOUT", prompt: abidanPrompts.MARKET_SCOUT },
-      { name: "ASSET_ANALYST", prompt: abidanPrompts.ASSET_ANALYST },
-      { name: "DATA_VALIDATOR", prompt: abidanPrompts.MAKIEL },
-      { name: "RISK_ASSESSOR", prompt: abidanPrompts.GADRAEL },
-      { name: "YIELD_SPECIALIST", prompt: abidanPrompts.DURANDIEL },
-      { name: "TREND_ANALYST", prompt: abidanPrompts.TELARIEL },
-      { name: "PORTFOLIO_STRATEGIST", prompt: abidanPrompts.REZAEL },
-      { name: "VALUATION_EXPERT", prompt: abidanPrompts.ZAKARIEL }
-    ];
+    // Fetch Dynamic Council Members from Registry
+    const councilEntities = await Entity.find({ 
+      'operationalSettings.isCouncilMember': true 
+    }).lean();
+
+    const allAnalyticAgents = councilEntities.map(e => ({
+      name: e.uid.replace('JUDGE-', ''),
+      prompt: e.logic.systemPrompt,
+      model: e.logic.modelId
+    }));
+
+    if (allAnalyticAgents.length === 0) {
+      console.warn("[JAMIE_CORE] No council members found in registry. Falling back to default.");
+    }
 
     // 2 Randomly select between min and max agents
     const range = Math.max(1, maxJudges - minJudges + 1);
@@ -382,9 +389,9 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
 
     console.log(`[JAMIE_CORE] Jamie selected ${numToCall} analysis agents for this cycle: ${selectedAgents.map(j => j.name).join(', ')}`);
 
-    // Step 3: Run Selected agents in Parallel using analysisModel
+    // Step 3: Run Selected agents in Parallel using their specific model or the default analysisModel
     const analysisResults = await Promise.all(
-      selectedAgents.map(j => getJamieAnalysisIntel(j.name, j.prompt, propertyData, analysisModel))
+      selectedAgents.map(j => getJamieAnalysisIntel(j.name, j.prompt, propertyData, j.model || analysisModel))
     );
     
     console.log(`[JAMIE_CORE] Jamie's Analysis Workers Latency: ${Date.now() - startWorkers}ms`);

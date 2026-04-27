@@ -1,13 +1,13 @@
 {
   "hero": {
     "title": "Sunset Pulse",
-    "subtitle": "Advanced Portfolio Discovery & Asset Intelligence",
-    "description": "Institutional-grade tools designed for market precision. Access live telemetry and data-driven insights for North Texas real estate."
+    "subtitle": "Intelligence-Backed Property Decisions",
+    "description": "Search North Texas opportunities, inspect market signals, and move from listing to recommendation with Jamie as your operating analyst."
   },
   "section_headers": {
     "value_prop": {
-      "title": "Enterprise Architecture",
-      "tagline": "Professional. Reliable. Institutional."
+      "title": "Why It Wins",
+      "tagline": "Find faster. Understand deeper. Act with confidence."
     },
     "featured": {
       "title": "Strategic Asset Identification",
@@ -16,52 +16,52 @@
   },
   "features": {
     "mls_efficiency": {
-      "title": "High-Frequency Discovery",
-      "tagline": "Live Market Synchronization",
-      "description": "Our high-performance backend provides real-time synchronization with regional markets. Filter assets by yield, submarket momentum, and institutional-grade criteria."
+      "title": "Find Better Opportunities Faster",
+      "tagline": "Live Search, Cleaner Shortlists",
+      "description": "Search regional inventory with filters that help you surface viable opportunities quickly instead of sorting through generic listing noise."
     },
     "spatial_search": {
-      "title": "Interactive Geospatial Analysis",
-      "tagline": "Beyond Static Imagery",
-      "description": "Our spatial engine provides interactive visualizations for evaluating asset flow and neighborhood context. Make informed decisions with dimensional accuracy."
+      "title": "Inspect Context, Not Just Photos",
+      "tagline": "Maps, Viewer, Neighborhood Signals",
+      "description": "Use spatial search and immersive property views to understand asset context, neighborhood momentum, and hidden tradeoffs before you commit."
     },
     "backend_integrity": {
-      "title": "Secure Infrastructure",
-      "tagline": "Cloud-Native Platform",
-      "description": "A robust architecture ensures your portfolio preferences and private data remain secure and persistent across all devices."
+      "title": "Get A Clear Recommendation",
+      "tagline": "Jamie Briefs The Next Move",
+      "description": "Jamie turns scattered market inputs into one usable brief with summary, signal review, language QA, and the next action worth taking."
     }
   },
   "cta": {
-    "button_text": "Launch Platform",
-    "footer_note": "Market Intelligence // Operational Excellence"
+    "button_text": "Start Exploring",
+    "footer_note": "North Texas Intelligence // From Search To Decision"
   },
   "faq": {
-    "title": "Platform Briefing",
-    "tagline": "Institutional Search Protocol",
+    "title": "How The Product Works",
+    "tagline": "Plain-English Answers For The Core Workflow",
     "items": [
       {
-        "question": "How does the search engine optimize my criteria?",
-        "answer": "The platform utilizes semantic analysis to prioritize results based on your specific investment goals. It cross-references market yields and submarket growth signals to identify opportunities that meet institutional standards.",
+        "question": "What does Jamie actually do for me?",
+        "answer": "Jamie acts like an operating analyst. It summarizes regional signals, highlights risks, surfaces the strongest headline, and points you toward the next action instead of leaving you with raw data alone.",
         "score": 42
       },
       {
-        "question": "What are the benefits of Geospatial Search?",
-        "answer": "Geospatial search allows you to define parameters based on submarket corridors and proximity to infrastructure, identifying high-yield assets that traditional filters may overlook.",
+        "question": "Why use the Explorer instead of a normal property map?",
+        "answer": "The Explorer helps you search by area, proximity, and local context so you can spot patterns and submarkets that are easy to miss in a standard listing feed.",
         "score": 38
       },
       {
-        "question": "How do I utilize the 3D Asset Evaluation tool?",
-        "answer": "Within any property profile, you can activate the interactive viewer. This provides an accurate representation of the layout and spatial context, allowing for detailed site assessment from any device.",
+        "question": "What is the 3D viewer for?",
+        "answer": "The viewer is there to help you inspect a property spatially, layer in intelligence overlays, and understand context more like a walkthrough than a static gallery.",
         "score": 25
       },
       {
-        "question": "Is the market data truly real-time?",
-        "answer": "Yes. Our systems maintain persistent links to regional data providers. When a property status changes or a new asset is listed, the platform reflects those updates immediately.",
+        "question": "How does the War Room help with decisions?",
+        "answer": "The War Room organizes the brief into practical lenses like growth outlook, risk review, influence mapping, and final recommendation so you can move from signal to judgment quickly.",
         "score": 56
       },
       {
-        "question": "Can I save custom submarket search areas?",
-        "answer": "Yes. Use the polygon tool in the Explorer to define custom boundaries. You can save these regions to your watch list for automated status updates and market alerts.",
+        "question": "Can I save specific areas or markets to watch?",
+        "answer": "Yes. You can search custom areas in the Explorer, save promising properties, and use those saved views as the start of a repeatable market review process.",
         "score": 12
       }
     ]

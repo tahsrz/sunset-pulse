@@ -11,12 +11,15 @@ import { toggleCollection, addPropertyComment, subscribeToPropertyComments, supa
 import { toast } from 'react-toastify';
 
 import ViewerHUD from './viewer/ViewerHUD';
+import GhostReconOverlays from './viewer/GhostReconOverlays';
+import { useJamiePulse } from '@/context/JamiePulseContext';
 
 const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
   const propId = property?._id;
   const canvasRef = useRef(null);
   const rendererRef = useRef(null);
   const { branding, isDevMode } = useTheme();
+  const { latestBriefing } = useJamiePulse();
   
   const [loading, setLoading] = useState(true);
   const [fps, setFps] = useState(0);
@@ -26,12 +29,16 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
   const [newComment, setNewComment] = useState('');
   const [pendingCommentPos, setPendingCommentPos] = useState(null);
   const [isDataOverlayActive, setDataOverlayActive] = useState(false);
+  const [isIntelOverlayActive, setIntelOverlayActive] = useState(true);
   const [projectedHotspots, setProjectedHotspots] = useState([]);
 
   const lastTimeRef = useRef(performance.now());
   const frameCountRef = useRef(0);
 
-  // Simplified state for orbital navigation since drone controls are removed
+  // Orbital state for camera rotation
+  const [camOrientation, setCamOrientation] = useState({ yaw: 0, pitch: -0.2 });
+
+  // Simplified state for orbital navigation
   const orbitState = useRef({ yaw: 0, pitch: -0.2 });
   const mouseRef = useRef({ isDown: false, button: 0, lastX: 0, lastY: 0 });
 
@@ -235,6 +242,9 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
           
           renderer.render(new Vector(0,0,0), camRot, camPos);
 
+          // Update React state for overlays
+          setCamOrientation({ yaw: orbitState.current.yaw, pitch: orbitState.current.pitch });
+
           if (isDataOverlayActive) {
             const projected = hotspots.map(h => {
               const screenPos = renderer.projectPoint(h.pos, new Vector(0,0,0), camRot, new Vector(0,0,0));
@@ -281,6 +291,8 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
         isDevMode={isDevMode}
         isDataOverlayActive={isDataOverlayActive}
         setDataOverlayActive={setDataOverlayActive}
+        isPOIOverlayActive={isIntelOverlayActive}
+        setPOIOverlayActive={setIntelOverlayActive}
         projectedHotspots={projectedHotspots}
         comments={comments}
         renderer={rendererRef.current}
@@ -298,6 +310,16 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
         setNewComment={setNewComment}
         handleDropComment={handleDropComment}
       />
+
+      {isIntelOverlayActive && (
+        <GhostReconOverlays
+          latestBriefing={latestBriefing}
+          renderer={rendererRef.current}
+          camRot={Matrix.fromEuler(camOrientation.yaw, camOrientation.pitch)}
+          camPos={new Vector(0, -5, 60)}
+          property={property}
+        />
+      )}
     </div>
   );
 };
