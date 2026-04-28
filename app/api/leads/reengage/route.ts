@@ -1,50 +1,43 @@
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Lead from '@/models/Lead';
-import { getSessionUser } from '@/lib/core/getSessionUser';
-import { getJamieReengagement } from '@/lib/ai/jamie';
-import { applyDecay } from '@/lib/intelligence/leadIntelligence';
-import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse } from '@/lib/core/apiResponse';
+import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
 
-export const POST = async (request: NextRequest) => {
+/**
+ * POST /api/leads/reengage
+ * Attaches a briefing URL to a lead's reengagement_hook.
+ */
+export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const { leadId } = await request.json();
+    const { leadId, briefingUrl, notes } = await req.json();
 
-    const sessionUser = await getSessionUser();
-    if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse();
+    if (!leadId || !briefingUrl) {
+      return errorResponse('Lead ID and Briefing URL are required.', 400);
     }
 
-    const lead = await Lead.findById(leadId).populate('property');
-    if (!lead) {
-      return notFoundResponse('Lead');
-    }
+    const lead = await Lead.findById(leadId);
+    if (!lead) return notFoundResponse('Lead');
 
-    const currentScore = lead.probability;
-    const decayedScore = applyDecay(currentScore, lead.lastActivity || lead.updatedAt);
-    
-    // Generate reactivation hooks
-    const hooks = await getJamieReengagement(
-      lead,
-      lead.property,
-      currentScore,
-      decayedScore
-    );
+    // Update the JSONB-style reengagement_hook
+    lead.reengagement_hook = {
+      type: 'VIDEO_BRIEFING',
+      url: briefingUrl,
+      sentAt: new Date(),
+      notes: notes || 'Personalized property intelligence briefing.'
+    };
 
-    // Update lead with the hooks and mark as re-engaged
-    lead.reengagementHook = hooks;
-    lead.status = 'contact';
-    lead.lastActivity = new Date();
-    lead.probability = decayedScore;
-    
     await lead.save();
 
+    console.log(`[REENGAGE] Briefing attached to lead: ${lead.email}`);
+
     return successResponse({ 
-      message: 'Leads generated.', 
-      hooks: hooks 
+      message: 'Briefing successfully attached to lead.',
+      lead: lead.email 
     });
+
   } catch (error: any) {
-    return errorResponse('Failed to execute lead re-engagement protocol.', 500, error.message);
+    console.error('Reengage API Error:', error);
+    return errorResponse('Failed to attach briefing.', 500, error.message);
   }
-};
+}
