@@ -14,7 +14,7 @@ import OzrielFinalArbiter from './OzrielFinalArbiter';
 import propertiesData from '@/properties.json';
 import { JamieBriefing } from '@/lib/types/jamieBriefing';
 
-const JamiePulseBriefing = () => {
+const JamiePulseBriefing = ({ property }: { property: any }) => {
   const [briefing, setBriefing] = useState<JamieBriefing | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -85,6 +85,7 @@ const JamiePulseBriefing = () => {
             <div className="bg-black/40 border-t border-white/5 p-4 h-64">
               <span className="text-[8px] font-mono text-purple-500 uppercase tracking-widest mb-2 block">Telariel Network Mapping</span>
               <TelarielSpiderNet 
+                property={property}
                 customNodes={article.spider_net_data?.nodes} 
                 customLinks={article.spider_net_data?.links}
                 intelSummary={`Influence grid for: ${article.title}`}
@@ -241,7 +242,7 @@ const JudgesWarRoom = () => {
                 {activeJudge.id === 'suriel' && <SurielRestorationCore property={selectedProperty} />}
                 {activeJudge.id === 'zakariel' && <ZakarielLogisticFox property={selectedProperty} />}
                 {activeJudge.id === 'ozriel' && <OzrielFinalArbiter />}
-                {activeJudge.id === 'daily-briefing' && <JamiePulseBriefing />}
+                {activeJudge.id === 'daily-briefing' && <JamiePulseBriefing property={selectedProperty} />}
               </div>
             </div>
 

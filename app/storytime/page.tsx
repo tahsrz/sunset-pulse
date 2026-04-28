@@ -355,6 +355,21 @@ const StorytimePage = () => {
                 <p className={`text-2xl md:text-3xl font-bold leading-snug ${isTacticalMode ? 'text-white' : 'text-slate-400 font-serif italic'}`}>
                   {isTacticalMode ? page.tacticalInterpretation : page.originalText}
                 </p>
+
+                {isTacticalMode && page.humanityScore !== undefined && (
+                  <div className="flex items-center gap-4 mt-6 pt-6 border-t border-white/5">
+                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${page.humanityScore}%` }}
+                        className={`h-full ${page.humanityScore > 80 ? 'bg-intel-green' : page.humanityScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                      Humanity: <span className="text-white font-bold">{page.humanityScore}%</span>
+                    </span>
+                  </div>
+                )}
               </div>
               
               {/* Subtle Scanline Effect */}

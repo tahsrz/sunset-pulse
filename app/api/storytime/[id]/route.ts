@@ -4,6 +4,7 @@ import Story from '@/models/Story';
 import Entity from '@/models/Entity';
 import { SiteConfig } from '@/models/SiteConfig';
 import Groq from 'groq-sdk';
+import { purifyText } from '@/lib/ai/purifier';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -33,26 +34,39 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     let hasChanges = false;
     const updatedPages = await Promise.all(
       story.pages.map(async (page: any) => {
-        // Only generate if tacticalInterpretation is missing
-        if (!page.tacticalInterpretation) {
-          console.log(`📡 [STORYTIME_INTEL] Generating interpretation for Page ${page.pageNumber}...`);
-          const prompt = `
-            ENVOY_PROFILE: ${envoy.logic.systemPrompt}
-            TASK: Re-interpret this children's book text into your tactical persona. 
-            STRICT LIMIT: Keep it under 25 words. Maintain your unique tone.
-            TEXT: "${page.originalText}"
-          `;
+        // Only generate if tacticalInterpretation is missing OR not yet purified
+        if (!page.tacticalInterpretation || !page.isPurified) {
+          console.log(`📡 [STORYTIME_INTEL] Processing interpretation for Page ${page.pageNumber}...`);
+          
+          let rawInterpretation = page.tacticalInterpretation;
 
-          const completion = await groq.chat.completions.create({
-            messages: [
-              { role: 'system', content: 'You are an elite tactical AI operative specializing in narrative re-interpretation.' },
-              { role: 'user', content: prompt }
-            ],
-            model: 'llama-3.1-8b-instant',
-            temperature: 0.6,
-          });
+          if (!rawInterpretation) {
+            const prompt = `
+              ENVOY_PROFILE: ${envoy.logic.systemPrompt}
+              TASK: Re-interpret this children's book text into your tactical persona. 
+              STRICT LIMIT: Keep it under 25 words. Maintain your unique tone.
+              TEXT: "${page.originalText}"
+            `;
 
-          page.tacticalInterpretation = completion.choices[0]?.message?.content || page.originalText;
+            const completion = await groq.chat.completions.create({
+              messages: [
+                { role: 'system', content: 'You are an elite tactical AI operative specializing in narrative re-interpretation.' },
+                { role: 'user', content: prompt }
+              ],
+              model: 'llama-3.1-8b-instant',
+              temperature: 0.6,
+            });
+
+            rawInterpretation = completion.choices[0]?.message?.content || page.originalText;
+          }
+
+          // Invoke Ozriel's Scythe Purification Layer
+          console.log(`⚔️ [OZRIEL_SCYTHE] Purifying Page ${page.pageNumber}...`);
+          const purification = await purifyText(rawInterpretation);
+          
+          page.tacticalInterpretation = purification.purified_text;
+          page.humanityScore = purification.humanity_score;
+          page.isPurified = true;
           hasChanges = true;
         }
 

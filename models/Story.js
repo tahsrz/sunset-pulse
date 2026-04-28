@@ -11,6 +11,8 @@ const StorySchema = new Schema(
         pageNumber: Number,
         originalText: String,
         tacticalInterpretation: String,
+        humanityScore: { type: Number, default: 100 },
+        isPurified: { type: Boolean, default: false },
         visualCue: {
           type: String,
           enum: ['ripple', 'pulse', 'shake', 'glitch', 'none'],
