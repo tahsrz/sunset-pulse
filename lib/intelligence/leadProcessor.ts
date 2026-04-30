@@ -71,10 +71,11 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
 
 /**
  * Synchronizes lead data to the Supabase secondary grid.
+ * Hardened with conflict resolution and integrity checks.
  */
-export const syncLeadToSupabase = async (lead: any) => {
+export const syncLeadToSupabase = async (lead: any, retries = 2) => {
   try {
-    const { error } = await supabase.from('leads').upsert({
+    const payload = {
       name: lead.name,
       email: lead.email,
       phone: lead.phone,
@@ -83,12 +84,31 @@ export const syncLeadToSupabase = async (lead: any) => {
       timeframe: lead.timeframe,
       probability: lead.probability,
       jamie_notes: lead.jamieNotes,
-      reengagement_hook: lead.reengagementHook,
-      stage: 'New'
-    }, { onConflict: 'email' });
+      reengagement_hook: lead.reengagementHook, // JSONB
+      stage: lead.stage || 'New',
+      last_activity: lead.lastActivity || new Date().toISOString()
+    };
 
-    if (error) throw error;
-  } catch (err) {
-    console.error('[SUPABASE_SYNC_ERROR]:', err);
+    const { error } = await supabase
+      .from('leads')
+      .upsert(payload, { 
+        onConflict: 'email',
+        ignoreDuplicates: false // We want to update existing leads
+      });
+
+    if (error) {
+      console.error(`[SUPABASE_SYNC_ATTEMPT_FAILED]: ${error.message}`);
+      if (retries > 0) {
+        console.log(`Retrying sync... (${retries} attempts left)`);
+        await new Promise(res => setTimeout(res, 1000));
+        return await syncLeadToSupabase(lead, retries - 1);
+      }
+      throw error;
+    }
+
+    console.log(`[SUPABASE_SYNC_SUCCESS]: Lead ${lead.email} synchronized to grid.`);
+  } catch (err: any) {
+    console.error('[SUPABASE_SYNC_CRITICAL_FAILURE]:', err.message);
+    // In a production tactical environment, we would queue this for later retry
   }
 };

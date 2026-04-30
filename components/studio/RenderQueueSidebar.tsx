@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaVolumeUp } from 'react-icons/fa';
 
 interface RenderQueueSidebarProps {
   isOpen: boolean;
@@ -7,10 +8,11 @@ interface RenderQueueSidebarProps {
   jobs: any[];
   onBatchRender: () => void;
   onDeliver: (job: any) => void;
+  onDirectVoiceover: (job: any) => void;
 }
 
 export const RenderQueueSidebar: React.FC<RenderQueueSidebarProps> = ({ 
-  isOpen, onClose, jobs, onBatchRender, onDeliver 
+  isOpen, onClose, jobs, onBatchRender, onDeliver, onDirectVoiceover 
 }) => {
   return (
     <AnimatePresence>
@@ -58,9 +60,17 @@ export const RenderQueueSidebar: React.FC<RenderQueueSidebarProps> = ({
                     )}
                     {job.outputUrl && (
                       <div className="space-y-2">
-                        <a href={job.outputUrl} target="_blank" className="block text-center py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:bg-blue-600 transition-all">
-                          Download MP4
-                        </a>
+                        <div className="grid grid-cols-2 gap-2">
+                          <a href={job.outputUrl} target="_blank" className="block text-center py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:bg-blue-600 transition-all">
+                            MP4
+                          </a>
+                          <button 
+                            onClick={() => onDirectVoiceover(job)}
+                            className="py-2 bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-1"
+                          >
+                            <FaVolumeUp size={10} /> Voice
+                          </button>
+                        </div>
                         <button 
                           onClick={() => onDeliver(job)}
                           className="w-full py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase hover:bg-emerald-500 transition-all shadow-lg"

@@ -9,6 +9,19 @@ export const useStudio = () => {
   const [targetScene, setTargetScene] = useState<string>('');
   const [tacticalText, setTacticalText] = useState<string>('');
   const [selectedVoice, setSelectedVoice] = useState<string>('Jamie');
+  const [clonedVoices, setClonedVoices] = useState<{id: string, name: string, sampleUrl?: string}[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('cloned_voices');
+    if (saved) setClonedVoices(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    if (clonedVoices.length > 0) {
+      localStorage.setItem('cloned_voices', JSON.stringify(clonedVoices));
+    }
+  }, [clonedVoices]);
+
   const [selectedLead, setSelectedLead] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isHarvesting, setIsHarvesting] = useState(false);
@@ -91,6 +104,7 @@ export const useStudio = () => {
     targetScene, setTargetScene,
     tacticalText, setTacticalText,
     selectedVoice, setSelectedVoice,
+    clonedVoices, setClonedVoices,
     selectedLead, setSelectedLead,
     isProcessing, setIsProcessing,
     isHarvesting, isAcquiring, setIsAcquiring,

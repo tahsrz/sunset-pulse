@@ -62,8 +62,29 @@ export async function updateSession(request) {
     }
   } else {
     // Redirect from protected paths to login
-    if (path.startsWith('/collections') || path.startsWith('/profile') || path.startsWith('/command-post')) {
+    if (
+      path.startsWith('/collections') || 
+      path.startsWith('/profile') || 
+      path.startsWith('/command-post') ||
+      path.startsWith('/abidan/war-room') ||
+      path.startsWith('/scythe') ||
+      path.startsWith('/briefing') ||
+      path.startsWith('/admin')
+    ) {
       return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
+
+  // Role-based access for the War Room (Operator role required)
+  if (user && path.startsWith('/abidan/war-room')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    
+    if (profile?.role !== 'operator' && profile?.role !== 'realtor' && profile?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/properties', request.url))
     }
   }
 

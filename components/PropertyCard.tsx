@@ -190,10 +190,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
           </div>
         </div>
 
-        {!isInternal && property.listing_brokerage && (
-          <div className='mt-2 pt-3 border-t border-slate-100'>
-            <p className='text-[7px] font-black text-slate-400 uppercase tracking-widest leading-tight'>
-              Listing Data Provided by: <span className='text-slate-600'>{property.listing_brokerage}</span>
+        {!isInternal && (
+          <div className='mt-4 pt-3 border-t border-slate-100 space-y-2'>
+            {property.listing_brokerage && (
+              <p className='text-[7px] font-black text-slate-400 uppercase tracking-widest leading-tight'>
+                Listing Broker: <span className='text-slate-600'>{property.listing_brokerage}</span>
+              </p>
+            )}
+            <p className='text-[6px] text-slate-400 italic leading-[1.4]'>
+              The data relating to real estate for sale on this web site comes in part from the Internet Data Exchange program of NTREIS. Real estate listings held by brokerage firms other than Sunset Real Estate Group are marked with the NTREIS logo or the IDX logo and detailed information about them includes the name of the listing brokers. This information is deemed reliable but not guaranteed.
             </p>
           </div>
         )}

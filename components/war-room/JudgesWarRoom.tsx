@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ABIDAN_DATA } from '@/constants/abidan';
-import { FaEye, FaShieldAlt, FaGhost, FaSpider, FaCrosshairs, FaDove, FaBolt, FaSkull, FaChevronDown } from 'react-icons/fa';
+import { FaEye, FaShieldAlt, FaGhost, FaSpider, FaCrosshairs, FaDove, FaBolt, FaSkull, FaChevronDown, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import MakielFateChart from './MakielFateChart';
 import GadraelRiskShield from './GadraelRiskShield';
 import TelarielSpiderNet from './TelarielSpiderNet';
@@ -13,10 +13,12 @@ import ZakarielLogisticFox from './ZakarielLogisticFox';
 import OzrielFinalArbiter from './OzrielFinalArbiter';
 import propertiesData from '@/properties.json';
 import { JamieBriefing } from '@/lib/types/jamieBriefing';
+import { speak } from '@/lib/core/tts';
 
 const JamiePulseBriefing = ({ property }: { property: any }) => {
   const [briefing, setBriefing] = useState<JamieBriefing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
     fetch('/api/jamie/briefing')
@@ -31,6 +33,27 @@ const JamiePulseBriefing = ({ property }: { property: any }) => {
       });
   }, []);
 
+  const handleNarrate = () => {
+    if (!briefing) return;
+    
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      const textToSpeak = `Intelligence Summary for ${new Date(briefing.timestamp).toLocaleDateString()}. ${briefing.executive_summary}. Top Headline: ${briefing.top_headline}. Key signal count: ${briefing.key_signal_count}.`;
+      speak(textToSpeak, 'Jamie');
+      setIsSpeaking(true);
+      
+      // Reset icon when speech end
+      const checkSpeech = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+          setIsSpeaking(false);
+          clearInterval(checkSpeech);
+        }
+      }, 1000);
+    }
+  };
+
   if (loading) return <div className="p-20 text-center animate-pulse font-mono text-blue-500">INITIATING 5-HOUR DATA HARVEST...</div>;
   if (!briefing || briefing.error) return <div className="p-20 text-center font-mono text-red-500">NO BRIEFING DETECTED. RUN AUTODREAM.</div>;
 
@@ -39,7 +62,20 @@ const JamiePulseBriefing = ({ property }: { property: any }) => {
       {/* Header Info */}
       <div className="grid gap-6 md:grid-cols-[1.6fr_1fr] border-b border-white/10 pb-6">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-500 mb-2">Regional Brief</p>
+          <div className="flex items-center gap-4 mb-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-500">Regional Brief</p>
+            <button 
+              onClick={handleNarrate}
+              className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${
+                isSpeaking 
+                ? 'bg-emerald-500 border-emerald-400 text-black animate-pulse' 
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
+              }`}
+            >
+              {isSpeaking ? <FaVolumeMute /> : <FaVolumeUp />}
+              {isSpeaking ? 'STOP NARRATION' : 'NARRATE BRIEF'}
+            </button>
+          </div>
           <h4 className="text-3xl font-black italic tracking-tighter text-emerald-500">North Texas Intelligence Summary</h4>
           <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">
             Brief Runtime: {briefing.simulated_research_hours} Hours // {new Date(briefing.timestamp).toLocaleDateString()}
@@ -81,7 +117,7 @@ const JamiePulseBriefing = ({ property }: { property: any }) => {
               <p className="text-sm text-slate-400 leading-relaxed">{article.summary}</p>
             </div>
             
-            {/* Visual Synthesis: Spider Net for this article */}
+            {/* Visual Synthesis: Spider Net Telariel */}
             <div className="bg-black/40 border-t border-white/5 p-4 h-64">
               <span className="text-[8px] font-mono text-purple-500 uppercase tracking-widest mb-2 block">Telariel Network Mapping</span>
               <TelarielSpiderNet 
@@ -133,7 +169,7 @@ const JudgesWarRoom = () => {
 
   return (
     <div className="bg-slate-950 min-h-screen text-slate-100 p-6 font-sans border border-white/5 rounded-[2rem] m-4 shadow-2xl overflow-hidden relative">
-      {/* Background Decorative Elements */}
+      {/* Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 blur-[120px] -z-10 rounded-full" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 blur-[120px] -z-10 rounded-full" />
 
@@ -192,7 +228,7 @@ const JudgesWarRoom = () => {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* JUDGE SELECTION COLUMN */}
+        {/* JUDGE SELECTIOn */}
         <div className="lg:col-span-1 space-y-3">
           {ABIDAN_DATA.map((judge) => (
             <button

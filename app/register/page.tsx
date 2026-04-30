@@ -14,6 +14,7 @@ const RegisterContent = () => {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -46,11 +47,11 @@ const RegisterContent = () => {
         options: {
           data: {
             full_name: fullName,
-            user_name: fullName.split(' ')[0],
+            user_name: username || fullName.split(' ')[0],
             role: role,
             license_id: licenseId,
             isSubscribed: role === 'realtor',
-            avatar_url: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(fullName || 'default')}`
+            avatar_url: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(username || fullName || 'default')}`
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -90,6 +91,7 @@ const RegisterContent = () => {
       {step === 1 && (
         <AccountInfoForm 
           fullName={fullName} setFullName={setFullName}
+          username={username} setUsername={setUsername}
           email={email} setEmail={setEmail}
           password={password} setPassword={setPassword}
           confirmPassword={confirmPassword} setConfirmPassword={setConfirmPassword}

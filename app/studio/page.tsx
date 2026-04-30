@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaExchangeAlt, FaQuoteLeft, FaCheckCircle, FaVolumeUp } from 'react-icons/fa';
+import { FaExchangeAlt, FaQuoteLeft, FaCheckCircle, FaVolumeUp, FaMicrophone } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudio } from '@/hooks/useStudio';
 import { RenderQueueSidebar } from '@/components/studio/RenderQueueSidebar';
 import { LibraryStep } from '@/components/studio/LibraryStep';
 import { speak } from '@/lib/core/tts';
+
+import { VibeEngine, VibeDictionary } from '@/utils/security/VibeEngine';
 
 const ProductionStudio = () => {
   const {
@@ -17,6 +19,7 @@ const ProductionStudio = () => {
     targetScene, setTargetScene,
     tacticalText, setTacticalText,
     selectedVoice, setSelectedVoice,
+    clonedVoices, setClonedVoices,
     selectedLead, setSelectedLead,
     isProcessing, setIsProcessing,
     isHarvesting, isAcquiring, setIsAcquiring,
@@ -27,6 +30,7 @@ const ProductionStudio = () => {
     fetchQueue, handleHarvest, handleDeleteAsset
   } = useStudio();
 
+  const vibeSignature = VibeEngine.getVibeSignature(compositing.vibePreset, transform);
   const [showQueue, setShowQueue] = useState(false);
   const availableVoices = ['Jamie', 'Spike', 'Ghost'];
 
@@ -35,12 +39,12 @@ const ProductionStudio = () => {
     speak(tacticalText, selectedVoice);
   };
 
-  const vibePresets: any = {
-    none: { filter: 'none', label: 'RAW' },
-    tactical: { filter: 'sepia(0.3) hue-rotate(90deg) brightness(1.1) contrast(1.2)', label: 'TACTICAL' },
-    noir: { filter: 'grayscale(1) contrast(1.5) brightness(0.9)', label: 'NOIR' },
-    vapor: { filter: 'hue-rotate(280deg) saturate(2) brightness(1.2)', label: 'VAPOR' },
-    glitch: { filter: 'saturate(5) hue-rotate(180deg) invert(0.1)', label: 'GLITCH' }
+  const handleCloneVoice = () => {
+    const name = prompt("Enter a name for your cloned voice preset:");
+    if (name) {
+      setClonedVoices([...clonedVoices, { id: `CLONE-${Date.now()}`, name }]);
+      alert(`Voice "${name}" has been cloned and saved to your presets.`);
+    }
   };
 
   const blendModes = ['normal', 'screen', 'multiply', 'overlay', 'hard-light', 'difference'];
@@ -84,6 +88,12 @@ const ProductionStudio = () => {
     
     setIsProcessing(false);
     setStep(2);
+  };
+
+  const handleDirectVoiceover = (clip: any) => {
+    setTargetScene(clip.path);
+    setExtractedEntity(null);
+    setStep(3);
   };
 
   const handleBatchRender = async () => {
@@ -182,7 +192,11 @@ const ProductionStudio = () => {
             onClose={() => setShowQueue(false)} 
             jobs={renderQueue} 
             onBatchRender={handleBatchRender} 
-            onDeliver={handleDeliverBriefing} 
+            onDeliver={handleDeliverBriefing}
+            onDirectVoiceover={(job) => {
+              handleDirectVoiceover({ path: job.outputUrl, name: `RE-RENDER_${job.jobId}` });
+              setShowQueue(false);
+            }} 
           />
 
           <AnimatePresence mode="wait">
@@ -195,7 +209,8 @@ const ProductionStudio = () => {
                 handleHarvest={handleHarvest} 
                 handleDeleteAsset={handleDeleteAsset} 
                 handleAcquire={handleAcquire} 
-                handleRasterize={handleRasterize} 
+                handleRasterize={handleRasterize}
+                handleDirectVoiceover={handleDirectVoiceover} 
               />
             )}
 
@@ -215,7 +230,7 @@ const ProductionStudio = () => {
                           src={extractedEntity?.visual?.assetPath} 
                           autoPlay muted loop 
                           style={{ 
-                            filter: `${vibePresets[compositing.vibePreset].filter} contrast(${transform.contrast}%) brightness(${transform.brightness}%)`,
+                            filter: VibeEngine.computeFilter(compositing.vibePreset, transform),
                             maskImage: `radial-gradient(circle, black ${transform.maskRadius - transform.maskFeather}%, transparent ${transform.maskRadius}%)`,
                             WebkitMaskImage: `radial-gradient(circle, black ${transform.maskRadius - transform.maskFeather}%, transparent ${transform.maskRadius}%)`
                           }}
@@ -226,10 +241,19 @@ const ProductionStudio = () => {
 
                     <div className="space-y-6 pt-4 border-t border-white/5">
                       <div className="space-y-2">
-                        <label className="text-[8px] font-mono text-white/30 uppercase tracking-widest">Color Grade (LUT)</label>
+                        <div className="flex justify-between items-center">
+                          <label className="text-[8px] font-mono text-white/30 uppercase tracking-widest">Color Grade (LUT)</label>
+                          <span className="text-[7px] font-mono text-blue-500 uppercase">Hash: {vibeSignature.substring(0, 8)}</span>
+                        </div>
                         <div className="grid grid-cols-3 gap-2">
-                          {Object.keys(vibePresets).map(v => (
-                            <button key={v} onClick={() => setCompositing({...compositing, vibePreset: v})} className={`py-2 rounded-lg text-[7px] font-black uppercase border transition-all ${compositing.vibePreset === v ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}>{vibePresets[v].label}</button>
+                          {Object.keys(VibeDictionary).map(v => (
+                            <button 
+                              key={v} 
+                              onClick={() => setCompositing({...compositing, vibePreset: v})} 
+                              className={`py-2 rounded-lg text-[7px] font-black uppercase border transition-all ${compositing.vibePreset === v ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}
+                            >
+                              {(VibeDictionary as any)[v].label}
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -265,7 +289,7 @@ const ProductionStudio = () => {
                               style={{ 
                                 x: `${transform.x}%`, y: `${transform.y}%`, scale: transform.scale,
                                 mixBlendMode: compositing.blendMode as any,
-                                filter: `${vibePresets[compositing.vibePreset].filter} contrast(${transform.contrast}%) brightness(${transform.brightness}%)`,
+                                filter: VibeEngine.computeFilter(compositing.vibePreset, transform),
                                 maskImage: `radial-gradient(circle, black ${transform.maskRadius - transform.maskFeather}%, transparent ${transform.maskRadius}%)`,
                                 WebkitMaskImage: `radial-gradient(circle, black ${transform.maskRadius - transform.maskFeather}%, transparent ${transform.maskRadius}%)`
                               }}
@@ -293,6 +317,26 @@ const ProductionStudio = () => {
                     <div className="absolute bottom-12 left-12 right-12"><motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-white text-3xl font-black italic uppercase tracking-tighter leading-none drop-shadow-lg">{tacticalText || 'Awaiting script...'}</motion.p></div>
                   </div>
                   <div className="md:col-span-5 bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+                    <div className="space-y-4 pb-6 border-b border-white/5">
+                      <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voice Protocol</span></div>
+                      <div className="flex gap-2">
+                        <select 
+                          value={selectedVoice} 
+                          onChange={e => setSelectedVoice(e.target.value)} 
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-[10px] font-mono text-white outline-none focus:border-blue-500"
+                        >
+                          {availableVoices.map(v => <option key={v} value={v} className="bg-slate-900">{v.toUpperCase()}</option>)}
+                          {clonedVoices.map(cv => <option key={cv.id} value={cv.id} className="bg-slate-900">{cv.name.toUpperCase()} (CLONE)</option>)}
+                        </select>
+                        <button 
+                          onClick={handleCloneVoice}
+                          className="px-4 bg-blue-600/20 border border-blue-500/30 text-blue-400 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"
+                          title="Clone your own voice"
+                        >
+                          <FaMicrophone size={12} />
+                        </button>
+                      </div>
+                    </div>
                     <div className="space-y-4 pb-6 border-b border-white/5">
                       <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Assignment</span></div>
                       <select value={selectedLead} onChange={e => setSelectedLead(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-[10px] font-mono text-white outline-none focus:border-blue-500">

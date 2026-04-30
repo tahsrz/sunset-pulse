@@ -675,8 +675,39 @@ While in **Dev Mode** (toggle the terminal icon in Jamie's chat), ask Jamie thin
 ```  
   
 ---  
-  
-## 📘 Vibe Dictionary (JSON Reference) New Coding Language for LLM to LLM communication possible? .tah  
+
+## 📽️ 36. Production Studio Vibes (PulseHash Integrated)
+**Prompt:** *"Jamie, apply a high-fidelity vibe to this clip."*
+
+These vibes are specialized for the **Production Studio** pipeline. They utilize **PulseHash** to ensure visual parity between the frontend React preview and the backend FFmpeg render engine.
+
+### ⚡ Institutional Visual Intelligence
+Every "Vibe Recipe" (Preset + Transforms) generates a unique 16-character hex **Vibe Signature**. This allows Jamie to verify visual integrity across platforms.
+
+| Preset | Aesthetic Intent | FFmpeg Vector |
+| :--- | :--- | :--- |
+| `tactical` | High-contrast, sepia-tinted intelligence. | `colorbalance=rs=0.2:gs=0.3:bs=0.1` |
+| `noir` | Grayscale cinematic reconnaissance. | `hue=s=0,eq=contrast=1.5` |
+| `vapor` | Retro-futuristic neon saturation. | `hue=h=280:s=2` |
+| `glitch` | Unstable neural link (Noise/Invert). | `noise=alls=20,hue=s=5` |
+
+### 📘 Vibe Recipe Format (.tah compatible)
+```json
+{
+  "vibe": "tactical",
+  "signature": "811C9DC511023456",
+  "transforms": {
+    "brightness": 110,
+    "contrast": 120,
+    "maskRadius": 80
+  }
+}
+```
+
+---  
+
+## 📘 Vibe Dictionary (JSON Reference)
+ New Coding Language for LLM to LLM communication possible? .tah  
   
 ```json  
 {  

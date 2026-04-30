@@ -242,6 +242,27 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
           
           renderer.render(new Vector(0,0,0), camRot, camPos);
 
+          // Render Tactical Spires directly in canvas 
+          if (isIntelOverlayActive && latestBriefing?.news_articles) {
+            latestBriefing.news_articles.forEach((article, idx) => {
+              // from GhostReconOverlays WIP
+              let pos = new Vector(0,0,0);
+              if (article.geo_tag?.lat && article.geo_tag?.lng) {
+                const latOffset = (article.geo_tag.lat - (property?.location?.lat || 33.1)) * 5000;
+                const lngOffset = (article.geo_tag.lng - (property?.location?.lng || -96.8)) * 5000;
+                pos = new Vector(lngOffset, 15, -latOffset);
+              } else {
+                pos = new Vector((idx % 2 === 0 ? 1 : -1) * (35 + idx * 5), 15, (idx % 3 === 0 ? 1 : -1) * (25 + idx * 2));
+              }
+              const color = article.visualizer_config?.color || '#3b82f6';
+              renderer.drawTacticalSpire(pos, color, camRot, camPos);
+            });
+
+            // Draw Permanent Spires
+            renderer.drawTacticalSpire(new Vector(15, 25, -15), '#3b82f6', camRot, camPos);
+            renderer.drawTacticalSpire(new Vector(-15, 25, -15), '#94a3b8', camRot, camPos);
+          }
+
           // Update React state for overlays
           setCamOrientation({ yaw: orbitState.current.yaw, pitch: orbitState.current.pitch });
 

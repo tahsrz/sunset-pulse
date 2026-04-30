@@ -3,19 +3,32 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
+import historicalData from '@/constants/historical_sales.json';
+
 const MakielFateChart = ({ property }: { property: any }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
-    // Data generation influenced by property
-    const baseValue = (property?.rates?.monthly || property?.rates?.nightly * 30 || 1500) * 150;
-    const data = Array.from({ length: 20 }, (_, i) => ({
-      year: 2024 + i * 0.5,
-      predicted: baseValue * Math.pow(1.08, i * 0.5) + (Math.random() - 0.5) * 10000,
-      realized: i < 5 ? baseValue * Math.pow(1.07, i * 0.5) + (Math.random() - 0.5) * 5000 : null
-    }));
+    // Data acquisition from Core
+    const ntData = historicalData.north_texas;
+    const propertyValue = (property?.rates?.monthly || 2500) * 150; // Simple multiplier for estimation
+    const regionalBaseline2024 = ntData.historical[ntData.historical.length - 1].avg_price;
+    const scaleFactor = propertyValue / regionalBaseline2024;
+
+    const data = [
+      ...ntData.historical.map(d => ({
+        year: d.year,
+        predicted: d.avg_price * scaleFactor,
+        realized: d.avg_price * scaleFactor
+      })),
+      ...ntData.predictions.map(d => ({
+        year: d.year,
+        predicted: d.mid * scaleFactor,
+        realized: null
+      }))
+    ];
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
@@ -29,7 +42,7 @@ const MakielFateChart = ({ property }: { property: any }) => {
       .range([margin.left, width - margin.right]);
 
     const y = d3.scaleLinear()
-      .domain([baseValue * 0.8, baseValue * 2.5])
+      .domain([propertyValue * 0.7, propertyValue * 2.5])
       .range([height - margin.bottom, margin.top]);
 
     // Grid lines

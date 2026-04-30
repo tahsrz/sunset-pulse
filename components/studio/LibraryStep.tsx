@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaCut, FaPlay, FaGhost } from 'react-icons/fa';
+import { FaCut, FaPlay, FaGhost, FaVolumeUp, FaUpload } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface LibraryStepProps {
@@ -11,11 +11,12 @@ interface LibraryStepProps {
   handleDeleteAsset: (id: string) => void;
   handleAcquire: (url: string) => void;
   handleRasterize: (clip: any) => void;
+  handleDirectVoiceover: (clip: any) => void;
 }
 
 export const LibraryStep: React.FC<LibraryStepProps> = ({
   availableClips, isHarvesting, isAcquiring, isProcessing,
-  handleHarvest, handleDeleteAsset, handleAcquire, handleRasterize
+  handleHarvest, handleDeleteAsset, handleAcquire, handleRasterize, handleDirectVoiceover
 }) => {
   const [importUrl, setImportUrl] = useState('');
   const [showIngest, setShowIngest] = useState(false);
@@ -69,9 +70,9 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
             </button>
             <button 
               onClick={() => setShowIngest(true)}
-              className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+              className="px-6 py-3 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2"
             >
-              + Upload New Clip
+              <FaUpload size={10} /> Upload for Voiceover
             </button>
           </div>
         </div>
@@ -103,11 +104,18 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
                   </button>
                 )}
                 <button 
+                  onClick={() => handleDirectVoiceover(clip)}
+                  className="px-4 py-2 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2"
+                  title="Direct Voiceover"
+                >
+                  <FaVolumeUp /> Voiceover
+                </button>
+                <button 
                   onClick={() => handleRasterize(clip)}
                   disabled={isProcessing}
                   className="px-6 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:scale-105 transition-all"
                 >
-                  {isProcessing ? 'Extracting...' : 'Select Character'}
+                  {isProcessing ? 'Extracting...' : 'Extract & Composite'}
                 </button>
               </div>
             </div>
@@ -132,15 +140,24 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
               exit={{ scale: 0.9, opacity: 0 }}
               className="relative bg-slate-900 border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl space-y-6"
             >
-              <h3 className="text-sm font-black uppercase tracking-widest text-white border-b border-white/5 pb-4">Upload Video Clip</h3>
-              <form onSubmit={(e) => { e.preventDefault(); setShowIngest(false); }} className="space-y-4">
+              <h3 className="text-sm font-black uppercase tracking-widest text-white border-b border-white/5 pb-4">Upload Video for Voiceover</h3>
+              <form 
+                onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  if (newClip.path) {
+                    handleDirectVoiceover({ name: newClip.name, path: newClip.path });
+                    setShowIngest(false);
+                  }
+                }} 
+                className="space-y-4"
+              >
                 <div className="space-y-2">
                   <label className="text-[9px] font-mono text-white/30 uppercase tracking-widest">Clip Name</label>
                   <input 
                     required
                     value={newClip.name}
                     onChange={e => setNewClip({...newClip, name: e.target.value})}
-                    placeholder="e.g., Rooftop_Chase.mp4"
+                    placeholder="e.g., Tactical_Briefing.mp4"
                     className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs font-mono text-white focus:border-blue-500 outline-none transition-all"
                   />
                 </div>
@@ -172,9 +189,10 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
                 </div>
                 <button 
                   type="submit"
-                  className="w-full py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-xl hover:bg-blue-500 transition-all shadow-xl"
+                  disabled={!newClip.path}
+                  className="w-full py-4 bg-emerald-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-xl hover:bg-emerald-500 transition-all shadow-xl disabled:opacity-20"
                 >
-                  Add to Library
+                  Launch Voiceover Studio
                 </button>
               </form>
             </motion.div>

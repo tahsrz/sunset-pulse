@@ -212,6 +212,73 @@ export class Renderer {
     this.renderInternal(this.meshes.flatMap(m => m.triangles), cameraPos, cameraRotMat, meshPos);
   }
 
+  /**
+   * Projects a 3D point to 2D screen coordinates.
+   * Essential for UI overlays and tactical markers.
+   */
+  projectPoint(point: Vector, meshPos: Vector, cameraRotMat: Matrix, cameraPos: Vector): { x: number, y: number, z: number } | null {
+    const viewMat = cameraRotMat.getTransposed();
+    
+    // Transform to world space
+    const worldX = point.x + meshPos.x;
+    const worldY = point.y + meshPos.y;
+    const worldZ = point.z + meshPos.z;
+
+    // Transform to view space
+    const rx = worldX - cameraPos.x;
+    const ry = worldY - cameraPos.y;
+    const rz = worldZ - cameraPos.z;
+
+    const vx = rx * viewMat.get(0, 0) + ry * viewMat.get(1, 0) + rz * viewMat.get(2, 0);
+    const vy = rx * viewMat.get(0, 1) + ry * viewMat.get(1, 1) + rz * viewMat.get(2, 1);
+    const vz = rx * viewMat.get(0, 2) + ry * viewMat.get(1, 2) + rz * viewMat.get(2, 2);
+
+    if (vz < this.zNear) return null;
+
+    const invZ = 1.0 / vz;
+    const px = (vx * this.projMat.get(0, 0) + vy * this.projMat.get(1, 0) + vz * this.projMat.get(2, 0)) * invZ;
+    const py = (vx * this.projMat.get(0, 1) + vy * this.projMat.get(1, 1) + vz * this.projMat.get(2, 1)) * invZ;
+    
+    return {
+      x: (px + 1.0) * this.width * 0.5,
+      y: (-py + 1.0) * this.height * 0.5,
+      z: vz
+    };
+  }
+
+  /**
+   * Tactical Spire Rendering (Optimized)
+   * Draws the spire visual directly in the canvas for high density support.
+   */
+  drawTacticalSpire(pos: Vector, color: string, camRot: Matrix, camPos: Vector): void {
+    const screen = this.projectPoint(pos, new Vector(0,0,0), camRot, camPos);
+    if (!screen || screen.z > 1500) return;
+
+    const opacity = Math.max(0, Math.min(1, (1500 - screen.z) / 1000));
+    this.ctx.globalAlpha = opacity;
+    
+    // Draw Spire Line
+    const gradient = this.ctx.createLinearGradient(screen.x, screen.y, screen.x, screen.y - 60);
+    gradient.addColorStop(0, 'transparent');
+    gradient.addColorStop(1, color);
+    
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = gradient;
+    this.ctx.lineWidth = 2;
+    this.ctx.moveTo(screen.x, screen.y);
+    this.ctx.lineTo(screen.x, screen.y - 60);
+    this.ctx.stroke();
+
+    // Draw Base Pulse
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 1;
+    this.ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
+    this.ctx.stroke();
+    
+    this.ctx.globalAlpha = 1.0;
+  }
+
   renderMesh(mesh: Mesh3D, meshPos: Vector, cameraRotMat: Matrix, cameraPos: Vector): void {
     this.renderInternal(mesh.triangles, cameraPos, cameraRotMat, meshPos);
   }

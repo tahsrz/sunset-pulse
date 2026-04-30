@@ -6,20 +6,45 @@ import pyttsx3
 from datetime import datetime
 
 def generate_tts(text, voice_name, output_path):
-    print(f"[*] Generating TTS for: {voice_name}")
+    print(f"[*] Generating TTS for Persona: {voice_name}")
     engine = pyttsx3.init()
     
     # Try to find a voice that matches our desired vibe
     voices = engine.getProperty('voices')
-    # Default to first voice, but look for a male one for 'Tactical' feel if requested
     selected_voice = voices[0]
-    for v in voices:
-        if "male" in v.name.lower():
-            selected_voice = v
-            break
+    
+    # Persona Mapping
+    if voice_name == 'Spike':
+        # US Male, Faster
+        for v in voices:
+            if "male" in v.name.lower() and ("us" in v.id.lower() or "united states" in v.name.lower()):
+                selected_voice = v
+                break
+        engine.setProperty('rate', 190)
+    elif voice_name == 'Ghost':
+        # Female, Slower, Ethereal
+        for v in voices:
+            if "female" in v.name.lower():
+                selected_voice = v
+                break
+        engine.setProperty('rate', 130)
+    elif voice_name == 'Jamie':
+        # UK Male, Tactical
+        for v in voices:
+            if "male" in v.name.lower() and ("uk" in v.id.lower() or "united kingdom" in v.name.lower()):
+                selected_voice = v
+                break
+        engine.setProperty('rate', 160)
+    else:
+        # Cloned or Custom Voice Fallback
+        print(f"[!] Custom/Cloned voice detected: {voice_name}. Using high-fidelity fallback.")
+        for v in voices:
+            if "male" in v.name.lower():
+                selected_voice = v
+                break
+        engine.setProperty('rate', 155)
             
     engine.setProperty('voice', selected_voice.id)
-    engine.setProperty('rate', 150) # Slightly faster
     engine.setProperty('volume', 1.0)
     
     engine.save_to_file(text, output_path)
@@ -42,8 +67,12 @@ def render_video(recipe):
 
     # 1. Prepare Inputs
     bg_video = os.path.join(public_dir, recipe['targetScene'].lstrip('/'))
-    subject_video = os.path.join(public_dir, recipe['extractedEntity']['visual']['assetPath'].lstrip('/'))
     bg_music = os.path.join(public_dir, recipe['audioConfig']['backgroundTrack'].lstrip('/'))
+    
+    has_subject = recipe.get('extractedEntity') is not None
+    subject_video = None
+    if has_subject:
+        subject_video = os.path.join(public_dir, recipe['extractedEntity']['visual']['assetPath'].lstrip('/'))
     
     # 2. Generate Voice-over
     voice_path = os.path.join(temp_dir, f"voice_{timestamp}.mp3")
@@ -76,27 +105,26 @@ def render_video(recipe):
         vibe_filter = ",noise=alls=20:allf=t+u,hue=s=5"
 
     # FFmpeg Complex Filter
-    # [0:v] background
-    # [1:v] subject
-    # We first apply scale and mask to subject
-    # Mask is generated using geq filter to create a radial gradient in the alpha channel
-    
-    # Simplified complex filter:
-    # 1. Scale subject
-    # 2. Apply mask (radial)
-    # 3. Apply color/vibe filters
-    # 4. Overlay onto background at x,y
-    # 5. Mix audio
-    
-    filter_complex = (
-        f"[1:v]scale=iw*{scale}:-1,format=rgba,"
-        f"geq=lum='lum(X,Y)':a='if(lte(sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),W/2*{radius}),255,if(lte(sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),W/2*({radius}+{feather})),255*(1-(sqrt(pow(X-W/2,2)+pow(Y-H/2,2))-W/2*{radius})/(W/2*{feather})),0))'"
-        f"{vibe_filter}[subject];"
-        f"[0:v][subject]overlay=x=(W-w)/2+W*{tx/100}:y=(H-h)/2+H*{ty/100}[outv];"
-        f"[2:a]volume={recipe['audioConfig']['backgroundVolume']/100.0}[bgm];"
-        f"[3:a]volume={recipe['audioConfig']['subjectVolume']/100.0}[vox];"
-        f"[bgm][vox]amix=inputs=2:duration=first[outa]"
-    )
+    if has_subject:
+        filter_complex = (
+            f"[1:v]scale=iw*{scale}:-1,format=rgba,"
+            f"geq=lum='lum(X,Y)':a='if(lte(sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),W/2*{radius}),255,if(lte(sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),W/2*({radius}+{feather})),255*(1-(sqrt(pow(X-W/2,2)+pow(Y-H/2,2))-W/2*{radius})/(W/2*{feather})),0))'"
+            f"{vibe_filter}[subject];"
+            f"[0:v][subject]overlay=x=(W-w)/2+W*{tx/100}:y=(H-h)/2+H*{ty/100}[outv];"
+            f"[2:a]volume={recipe['audioConfig']['backgroundVolume']/100.0}[bgm];"
+            f"[3:a]volume={recipe['audioConfig']['subjectVolume']/100.0}[vox];"
+            f"[bgm][vox]amix=inputs=2:duration=first[outa]"
+        )
+        inputs = ["-i", bg_video, "-i", subject_video, "-i", bg_music, "-i", voice_path]
+    else:
+        # Voiceover only mode
+        filter_complex = (
+            f"[0:v]format=yuv420p{vibe_filter}[outv];"
+            f"[1:a]volume={recipe['audioConfig']['backgroundVolume']/100.0}[bgm];"
+            f"[2:a]volume={recipe['audioConfig']['subjectVolume']/100.0}[vox];"
+            f"[bgm][vox]amix=inputs=2:duration=first[outa]"
+        )
+        inputs = ["-i", bg_video, "-i", bg_music, "-i", voice_path]
 
     # Text Overlay (optional, added to the end of outv)
     if recipe.get('script'):
@@ -108,10 +136,7 @@ def render_video(recipe):
 
     cmd = [
         "ffmpeg", "-y",
-        "-i", bg_video,
-        "-i", subject_video,
-        "-i", bg_music,
-        "-i", voice_path,
+        *inputs,
         "-filter_complex", filter_complex,
         "-map", "[outv]",
         "-map", "[outa]",

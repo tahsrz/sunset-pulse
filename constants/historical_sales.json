@@ -1,0 +1,27 @@
+{
+  "north_texas": {
+    "region": "North Texas (NTREIS)",
+    "baseline_growth": 0.072,
+    "historical": [
+      { "year": 2018.0, "avg_price": 285000, "volume": 105000 },
+      { "year": 2018.5, "avg_price": 292000, "volume": 110000 },
+      { "year": 2019.0, "avg_price": 305000, "volume": 115000 },
+      { "year": 2019.5, "avg_price": 312000, "volume": 112000 },
+      { "year": 2020.0, "avg_price": 325000, "volume": 108000 },
+      { "year": 2020.5, "avg_price": 345000, "volume": 125000 },
+      { "year": 2021.0, "avg_price": 385000, "volume": 140000 },
+      { "year": 2021.5, "avg_price": 415000, "volume": 138000 },
+      { "year": 2022.0, "avg_price": 445000, "volume": 130000 },
+      { "year": 2022.5, "avg_price": 435000, "volume": 120000 },
+      { "year": 2023.0, "avg_price": 425000, "volume": 115000 },
+      { "year": 2023.5, "avg_price": 438000, "volume": 118000 },
+      { "year": 2024.0, "avg_price": 452000, "volume": 122000 }
+    ],
+    "predictions": [
+      { "year": 2024.5, "low": 465000, "mid": 472000, "high": 485000 },
+      { "year": 2025.0, "low": 480000, "mid": 495000, "high": 515000 },
+      { "year": 2025.5, "low": 505000, "mid": 525000, "high": 555000 },
+      { "year": 2026.0, "low": 530000, "mid": 560000, "high": 610000 }
+    ]
+  }
+}
