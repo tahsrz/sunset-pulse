@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Lead from '@/models/Lead';
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
+import { syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
 
 /**
  * POST /api/leads/reengage
@@ -29,10 +30,13 @@ export async function POST(req: NextRequest) {
 
     await lead.save();
 
-    console.log(`[REENGAGE] Briefing attached to lead: ${lead.email}`);
+    //  Synchronize to Supabase secondary grid
+    await syncLeadToSupabase(lead);
+
+    console.log(`[REENGAGE] Briefing attached and synced to lead: ${lead.email}`);
 
     return successResponse({ 
-      message: 'Briefing successfully attached to lead.',
+      message: 'Briefing successfully attached and synced.',
       lead: lead.email 
     });
 

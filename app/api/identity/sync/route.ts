@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { IdentityBloomFilter } from '@/utils/security/IdentityBloomFilter';
-// import User from '@/models/User'; // Assuming Mongoose or similar
-// import { connectDB } from '@/lib/core/database';
+import { createClient } from '@/utils/supabase/server';
 
 /**
  * Generates a fresh Bloom Filter from the database.
@@ -9,15 +8,23 @@ import { IdentityBloomFilter } from '@/utils/security/IdentityBloomFilter';
  */
 export async function GET() {
   try {
+    const supabase = createClient();
+
     // 1. Initialize Filter (Size 100k, 7 Probability Loops)
     const filter = new IdentityBloomFilter(100000, 7);
 
-    // 2. Fetch all usernames WIP stream or cursor
-    // await connectDB();
-    // const users = await User.find({}, 'username').lean();
+    // 2. Fetch all usernames from public.profiles
+    const { data: users, error } = await supabase
+      .from('profiles')
+      .select('username');
+
+    if (error) throw error;
     
-    const mockUsernames = ['jamie', 'spike', 'ghost', 'tahsin', 'admin'];
-    mockUsernames.forEach(u => filter.add(u));
+    if (users) {
+      users.forEach(u => {
+        if (u.username) filter.add(u.username);
+      });
+    }
 
     // 3. Export as Base64 for client consumption
     const payload = filter.export();
@@ -26,9 +33,11 @@ export async function GET() {
       success: true,
       data: payload,
       config: { size: 100000, hashCount: 7 },
+      userCount: users?.length || 0,
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
+    console.error("[IDENTITY_SYNC_ERROR]", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

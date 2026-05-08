@@ -7,6 +7,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
 import { JamiePulseProvider } from '@/context/JamiePulseContext';
+import { VibeProvider } from '@/context/VibeContext';
 import JamieChat from '@/components/JamieChat';
 import KeybindHandler from '@/components/KeybindHandler';
 import JamieInsightsLoginToast from '@/components/JamieInsightsLoginToast';
@@ -145,25 +146,27 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
         <AuthProvider>
           <CartProvider>
             <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
-              <JamiePulseProvider>
-                <div className='flex flex-col min-h-screen'>
-                  <GlobalMarketPulse />
-                  <Navbar />
-                  <main className='flex-grow'>
-                    {children}
-                  </main>
-                  <Footer />
-                </div>
-                
-                <JamieChat />
-                <FeedbackWidget />
-                <DevPortal />
-                <KeybindHandler />
-                <JamieInsightsLoginToast />
-                <JamiePulseOverlay />
-                
-                <ToastContainer />
-              </JamiePulseProvider>
+              <VibeProvider>
+                <JamiePulseProvider>
+                  <div className='flex flex-col min-h-screen'>
+                    <GlobalMarketPulse />
+                    <Navbar />
+                    <main className='flex-grow'>
+                      {children}
+                    </main>
+                    <Footer />
+                  </div>
+                  
+                  <JamieChat />
+                  <FeedbackWidget />
+                  <DevPortal />
+                  <KeybindHandler />
+                  <JamieInsightsLoginToast />
+                  <JamiePulseOverlay />
+                  
+                  <ToastContainer />
+                </JamiePulseProvider>
+              </VibeProvider>
             </ThemeProvider>
           </CartProvider>
         </AuthProvider>

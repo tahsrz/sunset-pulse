@@ -31,10 +31,12 @@ The grid is governed by the Abidan Protocol, a multi-agent system where speciali
 ---
 
 ### II. The Aggregators (Jamie AI)
-Once the Judges finish their recon, data is synthesized by two primary entities:
+Jamie is more than a chatbot; it is a **Multi-Agent Orchestrator** capable of parallelized market research and high-stakes lead engagement.
 
-- **IX. Suriel (The Phoenix)**: Performs "Predictive Restoration," healing gaps in the data to create a cohesive intelligence core.  
-- **X. Ozriel (The Reaper)**: The Final Arbiter. He "scythes" any data point lacking absolute truth and issues the final **CULL** or **KEEP** verdict.
+- **Council of Judges**: Jamie can activate the "Abidan Council"—a group of specialized sub-agents (Makiel, Gadrael, etc.) to perform deep property audits.
+- **A-Z Engagement Grid**: Automated 26-point personalization for lead follow-up.
+- **Cognitive Symmetry**: Jamie's responses are synchronized with the `<TacticalCloth />` visual state.
+- **Full Specification**: See [JAMIE_INTELLIGENCE_SPEC.md](./JAMIE_INTELLIGENCE_SPEC.md) for the deep technical architecture.
 
 ---
 

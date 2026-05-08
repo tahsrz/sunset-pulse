@@ -2,9 +2,16 @@
  * SunsetPulse Standardized API Response Helper
  */
 
-export const successResponse = (data, status = 200) => {
-  return new Response(JSON.stringify(data), {
-    status,
+export const successResponse = (data, metadata = {}, status = 200) => {
+  const payload = {
+    success: true,
+    data,
+    metadata: typeof metadata === 'object' ? metadata : { status: metadata },
+    timestamp: new Date().toISOString(),
+  };
+
+  return new Response(JSON.stringify(payload), {
+    status: typeof metadata === 'number' ? metadata : status,
     headers: { 'Content-Type': 'application/json' },
   });
 };

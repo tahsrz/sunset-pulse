@@ -69,7 +69,7 @@ const HeroSearch: React.FC<HeroSearchProps> = ({ isEntered, isAdvancedMode, quer
           Browse Opportunities
         </Link>
         {isAdvancedMode && (
-          <Link href="/command-post" className="flex items-center gap-2 px-6 py-3 bg-primary/20 border border-primary/30 rounded-full text-primary hover:bg-primary/30 transition-all text-sm font-medium">
+          <Link href="/dashboard" className="flex items-center gap-2 px-6 py-3 bg-primary/20 border border-primary/30 rounded-full text-primary hover:bg-primary/30 transition-all text-sm font-medium">
             <Sparkles size={16} />
             Command Post
           </Link>

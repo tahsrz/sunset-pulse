@@ -103,7 +103,8 @@ export async function getJamieActivityRecap(history: any[], coreInsights: any[] 
       temperature: 0.3,
     });
 
-    return completion.choices[0]?.message?.content || "Session state restored. Jamie has recognized your activity.";
+    const content = completion.choices[0]?.message?.content || "Session state restored. Jamie has recognized your activity.";
+    return enforceFHAGuardrails(content);
   } catch (error) {
     console.error("Recap Generation Error:", error);
     return "Welcome back. Jamie has synchronized your previous activity.";
@@ -192,12 +193,15 @@ async function getJamieFinalInsights(restoredIntel: string, systemPrompt: string
 }
 
 import { calculateMaxStay, calculateBudgetGap, synthesizePortfolio } from '../intelligence/budgetLogic';
+import { getNeighborhoodIntel } from '../intelligence/neighborhoodIntel';
 
 export async function generateJamieEngagementHook(leadData: any, property: any) {
+  const neighborhoodIntel = getNeighborhoodIntel(property.location.city, property.location.neighborhood);
+
   const usps = [
     property.type,
     ...(property.amenities || []),
-    property.hookups?.electric !== 'None' ? property.hookups?.electric : null,
+    property.hookups?.electric !== 'None' ? `Power: ${property.hookups?.electric}` : null,
     property.hookups?.water ? 'Water Hookup' : null,
     property.hookups?.sewer ? 'Sewer Hookup' : null,
   ].filter(Boolean).join(", ");
@@ -210,20 +214,37 @@ export async function generateJamieEngagementHook(leadData: any, property: any) 
   
   // Asset Optimization Logic
   const optimizationNotes = [
-    maxStayDays > 0 ? `Max Continuous Stay Potential: ${maxStayDays} Days.` : null,
-    budgetGap > 0 ? `Gap to Next-Tier Features: $${budgetGap}.` : null,
-    leadData.budget > 250000 ? `Lead qualifies for 'Yield Portfolio' synthesis.` : null,
+    maxStayDays > 0 ? `Max Stay Potential: ${maxStayDays} Days.` : null,
+    budgetGap > 0 ? `Budget Delta: $${budgetGap}.` : null,
+    leadData.budget > 250000 ? `Strategy: 'Yield Portfolio' synthesis candidate.` : null,
   ].filter(Boolean).join(" ");
 
   const budgetConstraint = (leadData.budget > 0 && leadData.budget < propertyPrice) 
-    ? `ALERT: Lead budget is below property price. Jamie's focus: 'Discussing Financing' or 'Investment Strategy'. ${optimizationNotes}`
+    ? `ANALYSIS: Lead budget ($${leadData.budget}) is below target price ($${propertyPrice}). Jamie's focus: 'Value-Add Transition' or 'Financing Discussion'.`
     : optimizationNotes;
 
-  const prompt = `Using the user's budget of $${leadData.budget || 'Unknown'} and the property's features (${usps}), Jamie will generate an engagement strategy.
-  Lead Name: ${leadData.name}
-  Property Name: ${property.name}
-  Location: ${property.location.city}, ${property.location.state}
-  ${budgetConstraint}`;
+  const prompt = `
+  # SURGICAL_INTELLIGENCE_REQUEST
+  Jamie will generate a 26-point engagement grid (A-Z) based on the following 'Atomic Truths':
+
+  ## LEAD_DATA
+  - Name: ${leadData.name}
+  - Target Budget: $${leadData.budget || 'Unknown'}
+  - ${budgetConstraint}
+
+  ## PROPERTY_CORE
+  - Asset: ${property.name}
+  - Specs: ${usps}
+  - Location: ${property.location.city}, ${property.location.state}
+
+  ## NEIGHBORHOOD_VIBE (TAH_RETRIEVAL)
+  - Character: ${neighborhoodIntel.vibe}
+  - Key Fact: ${neighborhoodIntel.fact}
+  - Local Amenity: ${neighborhoodIntel.amenity}
+
+  ## MISSION
+  Generate one-sentence, hyper-personalized re-engagement hooks that blend the property's value with local flavor. Reference the potatoes metaphor for 'solid ground' or 'good fortune' where it fits the vibe.
+  `;
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -297,6 +318,36 @@ export async function getJamieEngagement(lead: any, property: any, oldScore: num
 export const generateHighStakesHook = generateJamieEngagementHook;
 export const getJamieReengagement = getJamieEngagement;
 
+/**
+ * FHA Compliance Guardrail
+ * Deterministically blocks or redacts prohibited terminology to prevent steering or bias.
+ */
+function enforceFHAGuardrails(content: string): string {
+  const prohibitedKeywords = [
+    /\bsafe\b/gi, /\bsafety\b/gi, /\bcrime\b/gi, /\bcriminal\b/gi,
+    /\bneighborhood quality\b/gi, /\bdemographics\b/gi, /\bracial\b/gi,
+    /\bethnic\b/gi, /\breligious\b/gi, /\bghetto\b/gi, /\bwealthy neighborhood\b/gi,
+    /\bpoor neighborhood\b/gi, /\bsegregated\b/gi, /\bwhite\b/gi, /\bblack\b/gi,
+    /\bhispanic\b/gi, /\basian\b/gi
+  ];
+
+  let compliantContent = content;
+  let violationDetected = false;
+
+  prohibitedKeywords.forEach(regex => {
+    if (regex.test(compliantContent)) {
+      violationDetected = true;
+      compliantContent = compliantContent.replace(regex, "[REDACTED_FOR_FHA_COMPLIANCE]");
+    }
+  });
+
+  if (violationDetected) {
+    console.warn("[FHA_GUARDRAIL] Prohibited terminology detected and redacted in Jamie output.");
+  }
+
+  return compliantContent;
+}
+
 export async function getJamieResponse(messages: any[], propertyData?: any, memoryContext?: any, isDevMode: boolean = false) {
   const userInput = messages[messages.length - 1]?.content || "";
   
@@ -342,7 +393,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
     REAPER: agentConfig?.abidanPrompts?.REAPER || REAPER_SYSTEM_PROMPT
   };
 
-  const primaryModel = agentConfig?.modelMatrix?.primaryModel || 'llama-3.1-8b-instant';
+  const primaryModel = agentConfig?.modelMatrix?.primaryModel || 'llama-3.3-70b-versatile';
   const analysisModel = agentConfig?.modelMatrix?.reconModel || 'meta-llama/llama-3.1-405b-instruct:free';
   const minJudges = agentConfig?.operationalSettings?.minJudges || 1;
   const maxJudges = agentConfig?.operationalSettings?.maxJudges || 4;
@@ -408,7 +459,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
     const finalInsights = await getJamieFinalInsights(aggregatedData, abidanPrompts.REAPER, analysisModel);
     console.log(`[JAMIE_CORE] Jamie's Final Insight Latency: ${Date.now() - insightStart}ms`);
     
-    analysisReport = `
+    analysisReport = enforceFHAGuardrails(`
       [ACTIVE_ANALYSIS_NODES]: ${selectedAgents.map(j => j.name).join(', ')}
       [ANALYSIS_PROFILE]: ${personalityPreset}
       
@@ -417,7 +468,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
 
       [JAMIE_FINAL_INSIGHTS]
       ${finalInsights}
-    `;
+    `);
     console.log(`[JAMIE_CORE] Total Jamie Analysis Flow Latency: ${Date.now() - startWorkers}ms`);
   }
 

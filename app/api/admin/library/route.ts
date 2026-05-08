@@ -5,6 +5,8 @@ import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/api
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/library
  * Retrieves all assets from the tactical library.

@@ -707,7 +707,7 @@ Every "Vibe Recipe" (Preset + Transforms) generates a unique 16-character hex **
 ---  
 
 ## 📘 Vibe Dictionary (JSON Reference)
- New Coding Language for LLM to LLM communication possible? .tah  
+ New Coding Language for LLM to LLM communication possible? .tah  hashmap/cityhash
   
 ```json  
 {  

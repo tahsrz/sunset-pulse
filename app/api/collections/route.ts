@@ -5,6 +5,8 @@ import { getSessionUser } from '@/lib/core/getSessionUser';
 import { supabase } from '@/lib/supabase';
 import { successResponse, unauthorizedResponse, errorResponse } from '@/lib/core/apiResponse';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = async (req: NextRequest) => {
   try {
     const sessionUser = await getSessionUser();

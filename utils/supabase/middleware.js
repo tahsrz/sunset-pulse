@@ -55,7 +55,7 @@ export async function updateSession(request) {
     }
 
     // Realtor only routes
-    if (path.startsWith('/command-post') || path.startsWith('/api/leads/reengage')) {
+    if (path.startsWith('/dashboard') || path.startsWith('/api/leads/reengage')) {
       if (role !== 'realtor') {
         return NextResponse.redirect(new URL('/properties', request.url))
       }
@@ -65,7 +65,7 @@ export async function updateSession(request) {
     if (
       path.startsWith('/collections') || 
       path.startsWith('/profile') || 
-      path.startsWith('/command-post') ||
+      path.startsWith('/dashboard') ||
       path.startsWith('/abidan/war-room') ||
       path.startsWith('/scythe') ||
       path.startsWith('/briefing') ||

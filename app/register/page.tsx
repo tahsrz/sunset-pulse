@@ -47,13 +47,14 @@ const RegisterContent = () => {
         options: {
           data: {
             full_name: fullName,
+            username: username || fullName.split(' ')[0],
             user_name: username || fullName.split(' ')[0],
             role: role,
             license_id: licenseId,
             isSubscribed: role === 'realtor',
             avatar_url: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(username || fullName || 'default')}`
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/auth/success`,
         },
       });
 
@@ -62,7 +63,7 @@ const RegisterContent = () => {
       } else {
         if (data.session) {
           toast.success("Account created successfully. Welcome to Sunset Pulse.");
-          window.location.href = role === 'realtor' ? '/command-post' : '/properties';
+          window.location.href = role === 'realtor' ? '/dashboard' : '/properties';
         } else {
           setStep(3); // Show verification success step
         }

@@ -5,6 +5,8 @@ import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import { PulseCache } from '@/utils/security/PulseCache';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/properties/search
 export const GET = async (request: NextRequest) => {
   try {

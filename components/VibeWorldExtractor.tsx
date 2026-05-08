@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { FaVideo, FaMicrochip, FaGlobeAmericas, FaSave, FaCrosshairs, FaSkull } from 'react-icons/fa';
+import { FaVideo, FaMicrochip, FaGlobeAmericas, FaSave, FaCrosshairs, FaSkull, FaCheckCircle } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const VibeWorldExtractor = ({ onVibeExtracted }: { onVibeExtracted: (vibe: any) => void }) => {

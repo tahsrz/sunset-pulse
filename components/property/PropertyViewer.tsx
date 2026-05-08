@@ -12,7 +12,7 @@ interface PropertyViewerProps {
 
 const PropertyViewer: React.FC<PropertyViewerProps> = ({ property }) => {
   const [showConfig, setShowConfig] = useState(false);
-  const [isNeuralMode, setIsNeuralMode] = useState(false);
+  const [isNeuralMode, setIsNeuralMode] = useState(true);
   
   // Default type mapping
   const typeMap: Record<string, BuildingType> = {

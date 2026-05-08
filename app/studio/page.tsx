@@ -118,8 +118,7 @@ const ProductionStudio = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           leadId: selectedLead,
-          briefingUrl: `/briefing/${job.jobId}`,
-          notes: `Personalized market briefing: ${targetScene.split('/').pop()}`
+          briefingUrl: `/briefing/render/${job.jobId}`,          notes: `Personalized market briefing: ${targetScene.split('/').pop()}`
         })
       });
       if (res.ok) alert("Briefing delivered.");

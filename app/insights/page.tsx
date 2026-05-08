@@ -49,7 +49,7 @@ const InsightsPage = () => {
               </div>
             </div>
             <Link 
-              href="/command-post"
+              href="/dashboard"
               className="px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl flex items-center gap-4 transition-all group"
             >
               <div className="text-left">

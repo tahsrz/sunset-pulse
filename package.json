@@ -12,7 +12,9 @@
     "ozriel:dream": "node scripts/ozriel_dream.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -60,7 +62,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "25.5.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.0",
     "@types/react": "19.2.14",
     "autoprefixer": "^10.0.1",
     "cssnano": "^7.1.7",

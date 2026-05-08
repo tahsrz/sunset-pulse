@@ -165,26 +165,3 @@ const GhostReconOverlays: React.FC<GhostReconOverlaysProps> = ({ latestBriefing,
 };
 
 export default GhostReconOverlays;
-
-  if (!renderer) return null;
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {overlays.map(overlay => (
-        <IntelSpire
-          key={overlay.id}
-          position={overlay.position}
-          label={overlay.label}
-          intel={overlay.intel}
-          color={overlay.color}
-          renderer={renderer}
-          camRot={camRot}
-          camPos={camPos}
-          icon={overlay.icon}
-        />
-      ))}
-    </div>
-  );
-};
-
-export default GhostReconOverlays;

@@ -12,7 +12,7 @@ const HeroOverlay: React.FC<HeroOverlayProps> = ({ isEntered, onEnter }) => {
 
   return (
     <div 
-      className={`absolute inset-0 z-30 flex flex-col items-center justify-center px-6 transition-all duration-[1500ms] ease-in-out ${
+      className={`absolute inset-0 z-30 flex flex-col items-center justify-center px-6 transition-all duration-1500 ease-in-out ${
         isEntered ? 'opacity-0 pointer-events-none backdrop-blur-none' : 'opacity-100 backdrop-blur-[20px]'
       }`}
     >

@@ -6,6 +6,8 @@ import Property from '@/models/Property';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/bookings
 export const GET = async (request: NextRequest) => {
   try {

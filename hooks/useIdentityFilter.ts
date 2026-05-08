@@ -34,7 +34,7 @@ export const useIdentityFilter = () => {
   }, []);
 
   /**
-   * Check Availability
+   * Check Availability (Probabilistic)
    * true -> Definitely Available
    * false -> Might be taken (Verify with DB)
    */
@@ -43,5 +43,20 @@ export const useIdentityFilter = () => {
     return !filter.isProbablyTaken(username);
   };
 
-  return { checkAvailability, isLoading };
+  /**
+   * Verify with DB (Definitive)
+   * Calls the secondary verification endpoint to resolve Bloom Filter false positives.
+   */
+  const verifyWithDB = async (username: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/identity/verify?username=${encodeURIComponent(username)}`);
+      const json = await res.json();
+      return json.success && json.isAvailable;
+    } catch (err) {
+      console.error("Secondary verification failed:", err);
+      return false; // Fail closed
+    }
+  };
+
+  return { checkAvailability, verifyWithDB, isLoading };
 };

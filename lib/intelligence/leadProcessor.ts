@@ -5,6 +5,7 @@ import { generateHighStakesHook, getJamieResponse } from '@/lib/ai/jamie';
 import { pulseRNG } from '@/lib/core/pulseRNG';
 import { calculateLeadScore } from '@/lib/intelligence/leadIntelligence';
 import { supabase } from '@/lib/supabase';
+import { sendTelegramNotification } from '@/lib/communication/telegram';
 
 export interface ProcessedLeadResult {
   leadData: any;
@@ -48,6 +49,11 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
 
   // 4. Generate AI Intelligence Hooks
   const reengagementHook = await generateHighStakesHook(leadData, property);
+
+  // Proactive Telegram Notification
+  const topHook = reengagementHook?.a || reengagementHook?.b || "New high-stakes lead detected.";
+  const notification = `🚀 *NEW LEAD ALERT*\n\n*Name:* ${leadData.name}\n*Probability:* ${probability}%\n*Top Hook:* ${topHook}\n\nView details in the Pulse Collective Command Center.`;
+  await sendTelegramNotification(notification);
 
   // 5. Generate Jamie AI Notes
   const propertyInfo = property 

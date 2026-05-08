@@ -1,0 +1,48 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+
+/**
+ * GET /api/identity/verify?username=...
+ * Performs a definitive database check for username availability.
+ * This is the second stage of the Identity Purifier flow, 
+ * called only if the Bloom Filter returns a "Probably Taken" result.
+ */
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const username = searchParams.get('username');
+
+  if (!username) {
+    return NextResponse.json({ success: false, error: "Username is required" }, { status: 400 });
+  }
+
+  try {
+    const supabase = createClient();
+    
+    // Check for existence in public.profiles
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username.toLowerCase())
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
+      throw error;
+    }
+
+    const isTaken = !!data;
+
+    return NextResponse.json({
+      success: true,
+      username,
+      isAvailable: !isTaken,
+      isDefinitive: true,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("[IDENTITY_VERIFY_ERROR]", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Verification stream interrupted. Jamie is checking the grid manually." 
+    }, { status: 500 });
+  }
+}

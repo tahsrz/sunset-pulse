@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '@/assets/images/logo-white.png';
@@ -16,6 +16,7 @@ import InvestorBar from './investor/InvestorBar';
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isDevMode } = useTheme();
+  const router = useRouter();
   
   const profileImage = user?.user_metadata?.avatar_url || profileDefault;
 
@@ -116,10 +117,15 @@ const Navbar: React.FC = () => {
                       </Link>
                     )}
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsProfileMenuOpen(false);
-                        signOut();
-                        window.location.href = '/';
+                        const { error } = await signOut();
+                        if (error) {
+                          console.error('[NAVBAR] Sign out failed:', error.message);
+                          return;
+                        }
+                        router.push('/');
+                        router.refresh();
                       }}
                       className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left'
                     >

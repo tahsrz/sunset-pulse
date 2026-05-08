@@ -8,6 +8,7 @@ Ensure the following tools are available in your environment:
 - **ffmpeg**: For frame extraction and asset conditioning.
 - **SAM 2 Checkpoint**: Located at `Rotoscope/checkpoints/sam2.1_hiera_tiny.pt`.
 - **Segmenter Runtime**: Python environment with `torch` and `sam2`.
+- **Intelligence Spec**: Reference [JAMIE_INTELLIGENCE_SPEC.md](./JAMIE_INTELLIGENCE_SPEC.md) for cognitive integration.
 
 ---
 

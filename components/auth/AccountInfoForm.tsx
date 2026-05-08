@@ -23,8 +23,36 @@ const AccountInfoForm: React.FC<AccountInfoFormProps> = ({
   password, setPassword, confirmPassword, setConfirmPassword,
   onContinue
 }) => {
-  const { checkAvailability, isLoading } = useIdentityFilter();
-  const isAvailable = username ? checkAvailability(username) : true;
+  const { checkAvailability, verifyWithDB, isLoading: filterLoading } = useIdentityFilter();
+  const [isDefinitivelyAvailable, setIsDefinitivelyAvailable] = React.useState<boolean | null>(null);
+  const [isVerifying, setIsVerifying] = React.useState(false);
+
+  // Two-Stage Identity Purifier Logic
+  React.useEffect(() => {
+    if (!username) {
+      setIsDefinitivelyAvailable(null);
+      return;
+    }
+
+    const probabilisticAvailability = checkAvailability(username);
+
+    if (probabilisticAvailability) {
+      // Stage 1: Bloom Filter says it's definitely available
+      setIsDefinitivelyAvailable(true);
+    } else {
+      // Stage 2: Bloom Filter says "Probably Taken" -> Trigger DB Verification
+      const debouncer = setTimeout(async () => {
+        setIsVerifying(true);
+        const definitiveAvailability = await verifyWithDB(username);
+        setIsDefinitivelyAvailable(definitiveAvailability);
+        setIsVerifying(false);
+      }, 500); // 500ms debounce for DB hits
+
+      return () => clearTimeout(debouncer);
+    }
+  }, [username, checkAvailability, verifyWithDB]);
+
+  const isAvailable = isDefinitivelyAvailable === true;
 
   return (
     <form className='space-y-4' onSubmit={(e) => { e.preventDefault(); onContinue(); }}>
@@ -53,8 +81,8 @@ const AccountInfoForm: React.FC<AccountInfoFormProps> = ({
           required
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-          {isLoading && <div className="w-3 h-3 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />}
-          {!isLoading && username && (
+          {(filterLoading || isVerifying) && <div className="w-3 h-3 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />}
+          {!(filterLoading || isVerifying) && username && (
             isAvailable ? <FaCheckCircle className="text-emerald-500" size={10} /> : <FaExclamationTriangle className="text-red-500" size={10} />
           )}
         </div>

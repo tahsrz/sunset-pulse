@@ -40,7 +40,7 @@ const CinematicHero = () => {
 
       {/* LAYER 2: Middle Layer - Hero Video/Image Cinematic Loop */}
       <div 
-        className={`absolute inset-0 z-10 transition-all duration-[2000ms] ease-in-out ${
+        className={`absolute inset-0 z-10 transition-all duration-2000 ease-in-out ${
           isEntered ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'
         }`}
       >

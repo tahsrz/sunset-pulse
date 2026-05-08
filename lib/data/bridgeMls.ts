@@ -3,6 +3,8 @@
  * High-fidelity property data acquisition via Bridge API (NTREIS).
  */
 
+import { gatekeeper } from '@/lib/core/gatekeeper';
+
 export interface BridgeProperty {
   ListingId: string;
   ListPrice: number;
@@ -61,6 +63,46 @@ class BridgeMLSService {
     }
   }
 
+  /**
+   * The Pulse: Asynchronous Ingestion Stream (SICP Pattern)
+   * Fetches listings in chunks and yields only those that pass the TAH Gatekeeper.
+   */
+  public async *getListingStream(params: any = {}) {
+    let offset = 0;
+    const limit = 50;
+    let hasMore = true;
+
+    console.log('📡 [BRIDGE_PULSE] Initiating Asynchronous Ingestion Stream...');
+
+    while (hasMore) {
+      const bridgeParams = {
+        '$limit': limit,
+        '$skip': offset,
+        ...params
+      };
+
+      const bundle = await this.fetchBridge('', bridgeParams);
+      
+      if (!bundle || !Array.isArray(bundle) || bundle.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      for (const item of bundle) {
+        // Apply the TAH Listing Gate at the stream edge
+        if (gatekeeper.shouldProcessListing(item.ListingId, item.ModificationTimestamp)) {
+          yield this.mapBridgeToProperty(item);
+        }
+      }
+
+      offset += limit;
+      // Safety break for prototype / prevent infinite loops
+      if (offset >= 500) hasMore = false; 
+    }
+    
+    console.log('🏁 [BRIDGE_PULSE] Ingestion Stream completed.');
+  }
+
   private mapBridgeToProperty(item: BridgeProperty) {
     return {
       _id: item.ListingId,
@@ -94,9 +136,9 @@ class BridgeMLSService {
 
   /**
    * Fetches properties from NTREIS via Bridge Interactive.
+   * Now integrated with Gatekeeper for traditional array-based fetches.
    */
   public async getListings(params: any = {}) {
-    // Standard tactical filters
     const bridgeParams: any = {
       '$limit': 20,
       ...params
@@ -105,7 +147,9 @@ class BridgeMLSService {
     const data = await this.fetchBridge('', bridgeParams);
     if (!data || !Array.isArray(data)) return [];
 
-    return data.map((item: any) => this.mapBridgeToProperty(item));
+    return data
+      .filter((item: any) => gatekeeper.shouldProcessListing(item.ListingId, item.ModificationTimestamp))
+      .map((item: any) => this.mapBridgeToProperty(item));
   }
 
   /**

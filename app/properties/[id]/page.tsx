@@ -8,10 +8,8 @@ import PropertyHeaderImage from '@/components/PropertyHeaderImage';
 import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
-import LeadCaptureForm from '@/components/LeadCaptureForm';
 import BookingForm from '@/components/BookingForm';
 import TourRequestForm from '@/components/property/TourRequestForm';
-import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import RecommendedProperties from '@/components/property/RecommendedProperties';
@@ -125,9 +123,6 @@ const PropertyPage: React.FC = () => {
                     <TourRequestForm propertyId={property._id} propertyName={property.name} />
                   )}
 
-                  <PropertyVerification>
-                    <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
-                  </PropertyVerification>
                   <RecommendedProperties currentPropertyId={property._id} type={property.type} />
                 </aside>
               </div>

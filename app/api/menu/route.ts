@@ -4,6 +4,8 @@ import MenuItem from '@/models/MenuItem';
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
 import { createClient } from '@/utils/supabase/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/menu?agentId=...
  * Retrieves menu items for the tactical hub.

@@ -5,6 +5,8 @@ import { mlsService } from '@/lib/data/mls';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/properties/search/advanced
  * Full  intelligence search across internal grid and external MLS.
@@ -18,7 +20,7 @@ export const GET = async (request: NextRequest) => {
     const includeMLS = params.includeMLS !== 'false';
 
     // Build and Execute Internal Grid Query
-    const query = buildPropertyQuery(params);
+    const { query } = buildPropertyQuery(params);
     const internalProperties = await Property.find(query).lean();
 
     // External MLS Intelligence via Repliers.io bridge

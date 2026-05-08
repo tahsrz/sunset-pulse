@@ -42,6 +42,13 @@ const config: Config = {
         "pulse-expand": "pulse-expand 4s cubic-bezier(0.16, 1, 0.3, 1) infinite",
         "pulse-glow": "pulse-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite",
       },
+      transitionDuration: {
+        1500: "1500ms",
+        2000: "2000ms",
+      },
+      gridTemplateColumns: {
+        '28': 'repeat(28, minmax(0, 1fr))',
+      },
       keyframes: {
         scan: {
           "0%": { top: "0%", opacity: "0" },

@@ -6,6 +6,8 @@ import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core
 import Property from '@/models/Property';
 import connectDB from '@/lib/core/database';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/properties
 export const GET = async (request: NextRequest) => {
   try {

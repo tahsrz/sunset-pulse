@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 import { LucideShieldCheck, LucideZap, LucideCpu } from 'lucide-react';
 import InvestorSlide from '@/components/investor/InvestorSlide';
+import LiveIDXPulse from '@/components/investor/LiveIDXPulse';
 
 const InvestorPage = () => {
   const [step, setStep] = useState(0);
@@ -68,18 +69,21 @@ const InvestorPage = () => {
       icon: <FaCube className="text-orange-500 animate-pulse" />,
       content: "We provide 'Spatial Intelligence'. A unified platform where live IDX data, 3D architectural renders, and AI-driven behavior analysis converge. We don't just show homes; we project value.",
       interactive: (
-        <div className="bg-gradient-to-br from-blue-900/40 to-orange-900/40 border border-white/20 p-6 rounded-3xl mt-6 relative overflow-hidden group">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">The Pulse View</span>
+        <div className="space-y-4 mt-6">
+          <div className="bg-gradient-to-br from-blue-900/40 to-orange-900/40 border border-white/20 p-6 rounded-3xl relative overflow-hidden group">
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">The Pulse View</span>
+              </div>
+              <div className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-2">3D Spatial <br/>Search Engine</div>
+              <p className="text-xs text-white/60 max-w-[200px]">Live IDX integrated directly into Three.js architectural meshes.</p>
             </div>
-            <div className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-2">3D Spatial <br/>Search Engine</div>
-            <p className="text-xs text-white/60 max-w-[200px]">Live IDX integrated directly into Three.js architectural meshes.</p>
+            <div className="absolute -right-8 -bottom-8 opacity-20 group-hover:scale-110 transition-transform duration-1000">
+              <FaGlobe size={120} className="text-white" />
+            </div>
           </div>
-          <div className="absolute -right-8 -bottom-8 opacity-20 group-hover:scale-110 transition-transform duration-1000">
-            <FaGlobe size={120} className="text-white" />
-          </div>
+          <LiveIDXPulse />
         </div>
       ),
       button: "Validate the Tech",
