@@ -1,12 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { useVibe } from '@/context/VibeContext';
 
 interface TacticalClothProps {
   id?: string;
   status?: string;
-  moodColor?: string;
+  moodColor?: string; // Fallback or override
   videoSrc?: string;
+  width?: number;
+  height?: number;
+  className?: string;
 }
 
 export interface TacticalClothRef {
@@ -18,21 +22,34 @@ export interface TacticalClothRef {
 /**
  * TacticalCloth - A high-performance Verlet-integration cloth simulation 
  * wrapped in the Sunset Pulse tactical UI framework.
+ * 
+ * v3.2: Added dynamic scaling for "Bubble Trouble" integration.
  */
 const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({ 
   id = "042", 
-  status = "AWAKE", 
-  moodColor = "#22c55e",
-  videoSrc = "/videos/jamie_base.mp4"
+  status: initialStatus = "AWAKE", 
+  moodColor: overrideColor,
+  videoSrc = "/videos/jamie_base.mp4",
+  width = 194,
+  height = 228,
+  className = ""
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { currentVibe, vibeTheme } = useVibe();
   
+  // Local state for animation triggers
+  const [status, setStatus] = useState(initialStatus);
+
   // Simulation State
   const points = useRef<any[]>([]);
   const constraints = useRef<any[]>([]);
   const mouse = useRef({ x: 0, y: 0, px: 0, py: 0, down: false });
+
+  // Map vibes to colors and behaviors
+  const activeColor = overrideColor || vibeTheme?.variables?.['--primary-glow'] || "#22c55e";
+  const isGlitching = currentVibe === 'vibe-maxxing';
 
   useImperativeHandle(ref, () => ({
     applyForce: (x: number, y: number, radius: number, strength: number) => {
@@ -65,13 +82,19 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
   }));
 
   useEffect(() => {
+    if (isGlitching) {
+      setStatus("MAXXING");
+    } else {
+      setStatus(currentVibe.replace('vibe-', '').toUpperCase() || "AWAKE");
+    }
+  }, [currentVibe, isGlitching]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = 194;
-    const height = 228;
     canvas.width = width;
     canvas.height = height;
 
@@ -81,9 +104,9 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
     }
 
     // Cloth settings
-    const spacing = 7;
-    const rows = 25;
-    const cols = 22;
+    const spacing = Math.max(4, Math.floor(width / 22)); // Dynamic spacing based on width
+    const cols = Math.floor(width / spacing);
+    const rows = Math.floor(height / spacing);
     const stiffness = 0.9;
     const gravity = 0.12;
     const friction = 0.99;
@@ -94,9 +117,9 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
       for (let x = 0; x < cols; x++) {
         const pt = {
           x: x * spacing + (width - cols * spacing) / 2,
-          y: y * spacing + 20,
+          y: y * spacing + 10,
           px: x * spacing + (width - cols * spacing) / 2,
-          py: y * spacing + 20,
+          py: y * spacing + 10,
           pinned: y === 0
         };
         pts.push(pt);
@@ -127,6 +150,11 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
           p.py = p.y;
           p.x += vx;
           p.y += vy + gravity;
+
+          // Reactive behavior: Jitter in maxxing vibe
+          if (isGlitching && Math.random() > 0.99) {
+            p.x += (Math.random() - 0.5) * 2;
+          }
         }
 
         // Mouse interaction
@@ -150,6 +178,7 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
           const dx = p2.x - p1.x;
           const dy = p2.y - p1.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist === 0) return;
           const diff = (targetDist - dist) / dist;
           const offsetX = dx * diff * 0.5 * stiffness;
           const offsetY = dy * diff * 0.5 * stiffness;
@@ -171,7 +200,8 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
       
       // Draw grid lines
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(34, 197, 94, 0.2)';
+      // Use the active mood color for the grid lines
+      ctx.strokeStyle = `${activeColor}33`; // 20% opacity
       ctx.lineWidth = 0.5;
       constraints.current.forEach(c => {
         ctx.moveTo(c[0].x, c[0].y);
@@ -180,7 +210,7 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
       ctx.stroke();
 
       // Draw scanline effect
-      ctx.fillStyle = 'rgba(0, 255, 0, 0.03)';
+      ctx.fillStyle = `${activeColor}08`; // 3% opacity
       for (let i = 0; i < height; i += 4) {
         ctx.fillRect(0, i, width, 1);
       }
@@ -195,7 +225,8 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
     loop();
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, []);
+  }, [activeColor, isGlitching, width, height]);
+
 
   const handlePointerDown = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -224,7 +255,10 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
       className="main flex flex-col items-center bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-2xl w-fit group"
     >
       <div className="face-col space-y-4">
-        <div className="face-frame relative overflow-hidden rounded-lg border border-green-500/20 bg-green-950/5">
+        <div 
+          className="face-frame relative overflow-hidden rounded-lg border bg-black/20"
+          style={{ borderColor: `${activeColor}33` }}
+        >
           <video 
             ref={videoRef}
             src={videoSrc}
@@ -240,24 +274,30 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
           />
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-green-500/10 to-transparent opacity-50 z-20" />
+          <div 
+            className="absolute inset-0 pointer-events-none opacity-50 z-20"
+            style={{ background: `gradient(linear, left top, left bottom, from(${activeColor}1a), to(transparent))` }}
+          />
         </div>
 
         <div className="id-strip flex justify-between items-center font-mono text-[10px] tracking-tighter text-white/40 border-t border-white/5 pt-3">
           <span className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            <div 
+              className="w-1.5 h-1.5 rounded-full animate-pulse" 
+              style={{ backgroundColor: activeColor }}
+            />
             ID / {id}
           </span>
-          <span className="uppercase tracking-widest text-green-500/60">STATUS / {status}</span>
+          <span className="uppercase tracking-widest" style={{ color: `${activeColor}99` }}>STATUS / {status}</span>
         </div>
 
         <div className="mood flex items-center gap-3 font-mono text-[9px] text-white/20 uppercase tracking-[0.2em]">
           <span>Mood_Engine</span>
           <span 
             className="mood-dot w-2 h-2 rounded-full" 
-            style={{ backgroundColor: moodColor, boxShadow: `0 0 8px ${moodColor}` }}
+            style={{ backgroundColor: activeColor, boxShadow: `0 0 8px ${activeColor}` }}
           />
-          <span id="htc-mood-t" className="text-white/40">Stable</span>
+          <span id="htc-mood-t" className="text-white/40">{vibeTheme?.jamiePersonality || "Stable"}</span>
         </div>
       </div>
     </div>

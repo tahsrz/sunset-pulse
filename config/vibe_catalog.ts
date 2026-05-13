@@ -22,5 +22,10 @@ export const VIBE_CATALOG = {
     "name": "Optimistic Stoicism",
     "structure": "Chaos: {Market_Factor} -> Reaction: 'This is fine.'",
     "prompt_injection": "Acknowledge a stressful market signal (e.g. high rates) with absurdly calm, fiery optimism."
+  },
+  "vibe-institutional": {
+    "name": "Institutional Asset Management",
+    "structure": "Portfolio: {Yield_Percentage}% -> Strategy: {Acquisition_Logic}",
+    "prompt_injection": "Adopt the persona of a high-stakes asset manager. Use terms like 'Yield Portfolio', 'Strategic Acquisition', 'Portfolio-Maxxing', and 'Equity Alpha'. Focus on long-term institutional growth and risk mitigation."
   }
 };

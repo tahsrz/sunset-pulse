@@ -8,6 +8,7 @@ Sunset Pulse is a high-performance intelligence grid built on a modern Next.js 1
 - **Identity Purifier (Neural Bloom Filter)**: Solved the "impossible problem" of zero-lookup membership testing. Implemented a 7-stage polynomial rolling hash engine to perform instantaneous username availability checks without database pings.
 - **PulseHash & Intelligence Cache**: Integrated CityHash-inspired query signatures. Every property search is now fingerprinted with a 16-character hex signature, enabling institutional-grade server-side caching and client-side memoization.
 - **Vibe Signature Protocol**: Introduced deterministic visual state management. Visual aesthetics are now fingerprinted via the `VibeEngine`, ensuring perfect parity between React previews and backend FFmpeg renders.
+- **Arcade Protocol (Vibe Stress-Testing)**: Launched `/arcade`, featuring the **Bubble Trouble** and **Insaniquarium_V3** protocols. Each uses the `TacticalCloth` mascot for high-frequency physics and biological economy simulations.
 - **Modular Production Pipeline**: Decoupled the Voiceover module from character extraction. Operators can now perform direct video uploads for narration and re-narrate completed renders using the upgraded Persona Pool (Jamie, Spike, Ghost).
 
 ### ⚡ Previous Intelligence Cycles (v2.5)

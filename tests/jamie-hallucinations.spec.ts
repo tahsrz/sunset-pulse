@@ -25,6 +25,10 @@ test.describe('Jamie Hallucination Cycle', () => {
     await expect(ticker).toBeVisible();
     await expect(ticker).toContainText(/OPTIMIZING_YIELD/);
 
+    // NEW: Assert TacticalCloth Reactivity
+    const mascotStatus = page.locator('span:has-text("STATUS /")');
+    await expect(mascotStatus).toContainText('MAXXING');
+
     // Assert CSS variable injection (Checking primary glow color)
     const glowColor = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--primary-glow').trim());
     expect(glowColor).toBe('#22c55e');

@@ -21,6 +21,36 @@ import {
 } from "./prompts";
 import Entity from "@/models/Entity";
 import { createClient } from "@/utils/supabase/server";
+import { TAHRetriever } from '../core/tah_retriever';
+
+/**
+ * Abidan Expertise Resolver
+ * Injects deterministic ground-truth from TAH cartridges into Judge prompts.
+ */
+async function getAbidanExpertise(judgeName: string, city: string): Promise<string> {
+  const cartridgeMap: Record<string, string> = {
+    'MAKIEL': 'makiel_expertise.tah',
+    'GADRAEL': 'gadrael_expertise.tah',
+    'DURANDIEL': 'durandiel_expertise.tah'
+  };
+
+  const cartridgeName = cartridgeMap[judgeName.toUpperCase()];
+  if (!cartridgeName) return "";
+
+  const cartridgePath = path.resolve(process.cwd(), `cartridges/${cartridgeName}`);
+  if (!fs.existsSync(cartridgePath)) return "";
+
+  try {
+    const retriever = new TAHRetriever(cartridgePath);
+    const results = retriever.search(city);
+    if (results.length > 0) {
+      return `\n[DETERMINISTIC_GROUND_TRUTH_FROM_VAULT]: ${results[0].data}`;
+    }
+  } catch (err) {
+    console.error(`[ABIDAN_EXPERT_RETRIEVAL_ERROR] ${judgeName}:`, err);
+  }
+  return "";
+}
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -116,6 +146,11 @@ export async function getJamieActivityRecap(history: any[], coreInsights: any[] 
  */
 async function getJamieAnalysisIntel(workerName: string, systemPrompt: string, propertyData: any, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
+    // 1. TAH Ground Truth Retrieval
+    const city = propertyData?.location?.city || "";
+    const expertise = await getAbidanExpertise(workerName, city);
+    const enrichedPrompt = systemPrompt + expertise;
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -125,7 +160,7 @@ async function getJamieAnalysisIntel(workerName: string, systemPrompt: string, p
       body: JSON.stringify({
         model: model,
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: enrichedPrompt },
           { role: "user", content: `Jamie's analysis request: ${JSON.stringify(propertyData)}` }
         ],
       })

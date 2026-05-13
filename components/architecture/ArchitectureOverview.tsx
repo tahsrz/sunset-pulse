@@ -5,6 +5,7 @@ import { FaShieldAlt } from 'react-icons/fa';
 import InfrastructureSection from './InfrastructureSection';
 import IntelligenceLayer from './IntelligenceLayer';
 import EngineSection from './EngineSection';
+import VibeEngineSection from './VibeEngineSection';
 
 const ArchitectureOverview = () => {
   return (
@@ -23,6 +24,7 @@ const ArchitectureOverview = () => {
           <InfrastructureSection />
           <IntelligenceLayer />
           <EngineSection />
+          <VibeEngineSection />
         </div>
 
         <footer className='border-t border-white/5 pt-16 pb-10'>

@@ -35,18 +35,18 @@ const IntelligenceLayer = () => {
 
       <div className='bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-xl'>
         <h3 className='text-lg font-bold mb-4 flex items-center gap-2'>
-          <FaPaintBrush className='text-green-500' /> Reactive Platform States
+          <FaPaintBrush className='text-green-500' /> Neural Vibe Engine (VibeSimulacrum)
         </h3>
         <p className='text-sm text-slate-400 leading-relaxed mb-4'>
-          The platform interface is dynamic, adapting its visual and functional state based on user criteria and market segment analysis.
+          The platform interface is governed by a <em>Neural Styling Layer</em> that translates AI-driven linguistic "vibes" into deterministic visual states. This ensures the design evolves in real-time with the intelligence context.
         </p>
         <div className='bg-black/40 p-4 rounded-xl border border-white/5 font-mono text-[10px] text-green-300'>
-          // DATA PROCESSING FLOW<br/>
-          1. Query Analysis & Asset Extraction<br/>
-          2. Yield Mapping & Logic Processing<br/>
-          3. Portfolio Context Updates<br/>
-          4. Asset Class Filtering<br/>
-          5. Visual State Transitions
+          // VIBE_INJECTION_FLOW<br/>
+          1. Jamie Linguistic Analysis<br/>
+          2. Vibe Signature Extraction (PulseHash)<br/>
+          3. Global VibeContext Dispatch<br/>
+          4. Deterministic Component Morphing<br/>
+          5. Visual Parity Verification
         </div>
       </div>
     </section>

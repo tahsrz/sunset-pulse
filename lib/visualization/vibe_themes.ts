@@ -49,6 +49,17 @@ export const VIBE_THEMES: Record<string, any> = {
     },
     features: ['FIRE_PARTICLES', 'CALM_OVERLAY'],
     jamiePersonality: 'Optimistic Stoicism'
+  },
+  "vibe-institutional": {
+    variables: {
+      '--primary-glow': '#1e3a8a',
+      '--ui-border-style': 'ridge',
+      '--ui-text-transform': 'none',
+      '--bg-scanline-opacity': '0.03',
+      '--accent-color': '#eab308'
+    },
+    features: ['GOLDEN_TICKER', 'EQUITY_RIFT'],
+    jamiePersonality: 'Institutional / High-Net-Worth'
   }
 };
 
@@ -57,10 +68,11 @@ export const VIBE_THEMES: Record<string, any> = {
  * or explicit metadata.
  */
 export const resolveVibeFromContent = (content: string): string => {
-  if (content.includes('-maxxing')) return 'vibe-maxxing';
+  if (content.includes('-maxxing') && !content.includes('Portfolio-Maxxing')) return 'vibe-maxxing';
   if (content.includes('Level 4') || content.includes('cosmic')) return 'vibe-expanding-brain';
   if (content.includes('!!') || content.includes('leaning forward')) return 'vibe-leaning-forward';
   if (content.includes('This is fine')) return 'vibe-this-is-fine';
+  if (content.includes('Portfolio-Maxxing') || content.includes('Yield Portfolio') || content.includes('Institutional')) return 'vibe-institutional';
   
   return 'default';
 };

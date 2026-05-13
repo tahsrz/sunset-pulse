@@ -1,8 +1,14 @@
+import path from 'path';
+import fs from 'fs';
+import { TAHRetriever } from '../core/tah_retriever';
+
 /**
  * Neighborhood Intelligence Retriever
  * Surgical lookup of local facts for Jamie AI.
- * Future implementation will use TAH Cartridges.
+ * Now utilizing TAH Cartridges for deterministic expertise.
  */
+
+const CARTRIDGE_PATH = path.resolve(process.cwd(), 'cartridges/neighborhood_intel.tah');
 
 const NEIGHBORHOOD_KNOWLEDGE = {
   "bowie": {
@@ -29,6 +35,34 @@ const NEIGHBORHOOD_KNOWLEDGE = {
 
 export function getNeighborhoodIntel(city: string, neighborhood?: string) {
   const key = city.toLowerCase().trim();
+  
+  // 1. Attempt TAH Retrieval (Expertise Layer)
+  if (fs.existsSync(CARTRIDGE_PATH)) {
+    try {
+      const retriever = new TAHRetriever(CARTRIDGE_PATH);
+      const results = retriever.search(key);
+      
+      if (results.length > 0) {
+        console.log(`🎯 [TAH_HIT] Expertise retrieved for: ${key}`);
+        // For now, we take the first matching shard and parse it.
+        // Expecting format: "Vibe: ... | Fact: ... | Amenity: ..."
+        const data = results[0].data;
+        const parts = data.split('|').map(p => p.split(':')[1]?.trim());
+        
+        if (parts.length >= 3) {
+          return {
+            vibe: parts[0],
+            fact: parts[1],
+            amenity: parts[2]
+          };
+        }
+      }
+    } catch (err) {
+      console.error(`[TAH_ERROR] Failed to retrieve intelligence for ${key}:`, err);
+    }
+  }
+
+  // 2. Fallback to Hardcoded Knowledge
   const intel = NEIGHBORHOOD_KNOWLEDGE[key as keyof typeof NEIGHBORHOOD_KNOWLEDGE] || {
     vibe: "High-potential growth zone.",
     fact: "Located in a region with significant economic momentum.",

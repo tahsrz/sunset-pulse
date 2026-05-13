@@ -1,0 +1,36 @@
+{
+  "targetScene": "/videos/jamie_base.mp4",
+  "extractedEntity": {
+    "uid": "JAMIE-01",
+    "name": "Jamie",
+    "visual": {
+      "assetPath": "/videos/jamie_base.mp4",
+      "meshColor": "#3b82f6"
+    },
+    "isExtracted": true
+  },
+  "transform": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "maskRadius": 80,
+    "maskFeather": 20,
+    "brightness": 110,
+    "contrast": 120
+  },
+  "compositing": {
+    "blendMode": "normal",
+    "vibePreset": "tactical",
+    "motionPath": "none",
+    "opacity": 100
+  },
+  "audioConfig": {
+    "backgroundTrack": "/audio/intro.mp3",
+    "backgroundVolume": 30,
+    "subjectVolume": 100,
+    "isMuted": false
+  },
+  "script": "Tactical Briefing: Deepfake Alpha Test",
+  "voice": "Jamie",
+  "externalAudio": "/audio/uploads/upload_2026-05-12T00-22-47-359Z.wav"
+}

@@ -51,6 +51,35 @@ def generate_tts(text, voice_name, output_path):
     engine.runAndWait()
     return output_path
 
+def run_wav2lip(video_path, audio_path, output_path):
+    print(f"[*] Running Wav2Lip Deepfake Sync...")
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    wav2lip_dir = os.path.join(project_root, "scripts", "wav2lip")
+    checkpoint = os.path.join(wav2lip_dir, "checkpoints", "wav2lip_gan.pth")
+    
+    if not os.path.exists(checkpoint):
+        print(f"[-] Wav2Lip Checkpoint not found: {checkpoint}")
+        return None
+
+    # We execute the script in its own directory to avoid import issues
+    cmd = [
+        "python", "inference.py",
+        "--checkpoint_path", checkpoint,
+        "--face", video_path,
+        "--audio", audio_path,
+        "--outfile", output_path,
+        "--pads", "0", "10", "0", "0",
+        "--nosmooth" # Often better for tactical/glitchy vibe
+    ]
+    
+    try:
+        # Important: Run in the wav2lip directory
+        subprocess.run(cmd, check=True, cwd=wav2lip_dir)
+        return output_path
+    except Exception as e:
+        print(f"[-] Wav2Lip Failed: {e}")
+        return None
+
 def render_video(recipe):
     print("[*] Starting Render Engine v1.0...")
     
@@ -74,9 +103,21 @@ def render_video(recipe):
     if has_subject:
         subject_video = os.path.join(public_dir, recipe['extractedEntity']['visual']['assetPath'].lstrip('/'))
     
-    # 2. Generate Voice-over
-    voice_path = os.path.join(temp_dir, f"voice_{timestamp}.mp3")
-    generate_tts(recipe['script'], recipe['voice'], voice_path)
+    # 2. Handle Audio (Voice-over) & Lip-Sync
+    if recipe.get('externalAudio'):
+        voice_path = os.path.join(public_dir, recipe['externalAudio'].lstrip('/'))
+        print(f"[*] Using External Audio: {voice_path}")
+        
+        # Trigger Wav2Lip if we have a subject
+        if has_subject:
+            synced_subject = os.path.join(temp_dir, f"synced_subject_{timestamp}.mp4")
+            result = run_wav2lip(subject_video, voice_path, synced_subject)
+            if result:
+                subject_video = result
+                print(f"[+] Lip-Sync complete for subject.")
+    else:
+        voice_path = os.path.join(temp_dir, f"voice_{timestamp}.mp3")
+        generate_tts(recipe['script'], recipe['voice'], voice_path)
 
     # 3. Build FFmpeg Command
     # Transform params
@@ -131,8 +172,8 @@ def render_video(recipe):
         # Drawtext is picky about paths on Windows, we'll keep it simple
         # Escaping for drawtext: backslashes and colons need special handling
         clean_text = recipe['script'].replace("'", "").replace(":", "")
-        filter_complex = filter_complex.replace("[outv]", "[v_pretext];")
-        filter_complex += f"[v_pretext]drawtext=text='{clean_text}':fontcolor=white:fontsize=24:x=(w-text_w)/2:y=h-100:shadowcolor=black:shadowx=2:shadowy=2[outv]"
+        filter_complex = filter_complex.replace("[outv]", "[v_pretext]")
+        filter_complex += f";[v_pretext]drawtext=text='{clean_text}':fontcolor=white:fontsize=24:x=(w-text_w)/2:y=h-100:shadowcolor=black:shadowx=2:shadowy=2[outv]"
 
     cmd = [
         "ffmpeg", "-y",
