@@ -6,19 +6,19 @@
 
 # Test info
 
-- Name: arcade-whitebox.spec.ts >> Arcade Protocol: White-Box Analysis >> BubbleTrouble: Game Engine White-Box >> should trigger Mission Success and transition to next level
-- Location: tests\arcade-whitebox.spec.ts:112:9
+- Name: arcade-whitebox.spec.ts >> Arcade Protocol: White-Box Analysis >> BubbleTrouble: Game Engine White-Box >> should split bubbles upon harpoon impact
+- Location: tests\arcade-whitebox.spec.ts:61:9
 
 # Error details
 
 ```
-Error: locator.boundingBox: Timeout 15000ms exceeded.
-Call log:
-  - waiting for getByTestId('bubble').first()
+Error: expect(received).toBeGreaterThan(expected)
 
+Expected: > 1
+Received:   1
 
 Call Log:
-- Timeout 60000ms exceeded while waiting on the predicate
+- Test timeout of 30000ms exceeded
 ```
 
 # Page snapshot
@@ -164,6 +164,40 @@ Call Log:
 # Test source
 
 ```ts
+  1   | import { test, expect } from '@playwright/test';
+  2   | 
+  3   | /**
+  4   |  * Arcade White-Box Test Suite // V3.2
+  5   |  * Exhaustive verification of TacticalCloth physics and BubbleTrouble game logic.
+  6   |  */
+  7   | test.describe('Arcade Protocol: White-Box Analysis', () => {
+  8   | 
+  9   |   test.beforeEach(async ({ page }) => {
+  10  |     // Navigate to the Arcade Protocol page
+  11  |     await page.goto('/arcade');
+  12  |   });
+  13  | 
+  14  |   test.describe('TacticalCloth: Visual & Physics Integrity', () => {
+  15  |     
+  16  |     test('should render multiple cloth instances with dynamic scaling', async ({ page }) => {
+  17  |       // Large bubble cloth should be visible
+  18  |       const clothInstances = page.locator('#htc-video-canvas');
+  19  |       await expect(clothInstances).toHaveCount(1); // Initially 1 large bubble
+  20  |       
+  21  |       const box = await clothInstances.first().boundingBox();
+  22  |       expect(box?.width).toBeGreaterThan(0);
+  23  |       expect(box?.height).toBeGreaterThan(0);
+  24  |     });
+  25  | 
+  26  |     test('should inherit mood color from VibeContext', async ({ page }) => {
+  27  |       // Trigger a vibe change via Chaos Mode (if available in dev)
+  28  |       const chaosBtn = page.locator('button:has-text("Chaos: OFF")');
+  29  |       if (await chaosBtn.isVisible()) {
+  30  |         await chaosBtn.click();
+  31  |         const cycleBtn = page.locator('button:has-text("Cycle Vibe")');
+  32  |         await cycleBtn.click(); // Switch to vibe-maxxing (Green)
+  33  |         
+  34  |         // Check canvas scanline color or mood dot
   35  |         const moodDot = page.locator('.mood-dot').first();
   36  |         const color = await moodDot.evaluate((el) => getComputedStyle(el).backgroundColor);
   37  |         // Green color check (rgb(34, 197, 94) is tailwind green-500)
@@ -223,7 +257,8 @@ Call Log:
   91  | 
   92  |         const count = await bubbles.count();
   93  |         expect(count).toBeGreaterThan(1);
-  94  |       }).toPass({ timeout: 20000, intervals: [500, 1000] });
+> 94  |       }).toPass({ timeout: 20000, intervals: [500, 1000] });
+      |          ^ Error: expect(received).toBeGreaterThan(expected)
   95  | 
   96  |       await expect(hud).toContainText('2');
   97  |     });
@@ -264,8 +299,7 @@ Call Log:
   132 |         
   133 |         const count = await bubbles.count();
   134 |         expect(count).toBe(0);
-> 135 |       }).toPass({ timeout: 60000, intervals: [200] });
-      |          ^ Error: locator.boundingBox: Timeout 15000ms exceeded.
+  135 |       }).toPass({ timeout: 60000, intervals: [200] });
   136 | 
   137 |       // Assert Mission Success screen
   138 |       const successScreen = page.locator('text=Mission Success');
@@ -325,26 +359,4 @@ Call Log:
   192 |       // Simulate resource collection if one exists
   193 |       const resource = page.getByTestId('resource');
   194 |       if (await resource.isVisible()) {
-  195 |         await resource.click();
-  196 |         const newMoney = await capacityHud.innerText();
-  197 |         expect(parseInt(newMoney.replace('$', ''))).toBeGreaterThan(parseInt(initialMoney.replace('$', '')));
-  198 |       }
-  199 |     });
-  200 | 
-  201 |     test('should detect and handle system anomalies', async ({ page }) => {
-  202 |       // Anomalies spawn based on THREAT_SPAWN_CHANCE (0.002)
-  203 |       // For white-box, we wait for one or verify the HUD reaction
-  204 |       const anomaly = page.getByTestId('anomaly');
-  205 |       
-  206 |       // We can't easily force a spawn without mocking, so we check HUD behavior
-  207 |       const tank = page.locator('.cursor-crosshair').first();
-  208 |       await expect(tank).toHaveClass(/cursor-crosshair/); // Initial state
-  209 |       
-  210 |       // If anomaly appears, it should pulse and show ALERT
-  211 |       // This is a long-wait test
-  212 |     });
-  213 |   });
-  214 | 
-  215 | });
-  216 | 
 ```

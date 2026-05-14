@@ -6,19 +6,23 @@
 
 # Test info
 
-- Name: arcade-whitebox.spec.ts >> Arcade Protocol: White-Box Analysis >> BubbleTrouble: Game Engine White-Box >> should trigger Mission Success and transition to next level
-- Location: tests\arcade-whitebox.spec.ts:112:9
+- Name: arcade-whitebox.spec.ts >> Arcade Protocol: White-Box Analysis >> BubbleTrouble: Game Engine White-Box >> should trigger Game Over on collision
+- Location: tests\arcade-whitebox.spec.ts:99:9
 
 # Error details
 
 ```
-Error: locator.boundingBox: Timeout 15000ms exceeded.
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('text=Game Over')
+Expected: visible
+Timeout: 15000ms
+Error: element(s) not found
+
 Call log:
-  - waiting for getByTestId('bubble').first()
+  - Expect "toBeVisible" with timeout 15000ms
+  - waiting for locator('text=Game Over')
 
-
-Call Log:
-- Timeout 60000ms exceeded while waiting on the predicate
 ```
 
 # Page snapshot
@@ -97,73 +101,97 @@ Call Log:
                 - img [ref=e68]
                 - text: Insaniquarium_V3
           - generic [ref=e70]:
-            - generic [ref=e72]:
-              - generic [ref=e79]:
-                - generic [ref=e82]: "Sector 01: Bowie_Ranch_Gate"
-                - text: "LISTING: Bowie Highway Ranch"
-                - text: "MARKET: Bowie, TX"
-                - text: "MISSION_STATUS: ACTIVE"
-                - text: "TARGET_COUNT: 0"
-                - text: "LEVEL: 1/50"
-              - generic [ref=e83]:
-                - heading "Mission Success" [level=2] [ref=e84]
-                - paragraph [ref=e85]: "Sector 01: Bowie_Ranch_Gate // SECURED"
-                - button "Next Sector" [ref=e86] [cursor=pointer]
-            - generic [ref=e87]:
-              - generic [ref=e88]:
-                - 'heading "Operation: Cloth Trouble" [level=3] [ref=e89]':
-                  - img [ref=e90]
+            - generic [ref=e80]:
+              - generic [ref=e83]: "Sector 01: Bowie_Ranch_Gate"
+              - text: "LISTING: Bowie Highway Ranch"
+              - text: "MARKET: Bowie, TX"
+              - text: "MISSION_STATUS: ACTIVE"
+              - text: "TARGET_COUNT: 1"
+              - text: "LEVEL: 1/50"
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - 'heading "Operation: Cloth Trouble" [level=3] [ref=e86]':
+                  - img [ref=e87]
                   - text: "Operation: Cloth Trouble"
-                - paragraph [ref=e92]: This prototype demonstrates the high-performance reactivity of the TacticalCloth component. Each bubble is a live Verlet simulation reacting to physics and combat triggers.
-                - generic [ref=e93]:
+                - paragraph [ref=e89]: This prototype demonstrates the high-performance reactivity of the TacticalCloth component. Each bubble is a live Verlet simulation reacting to physics and combat triggers.
+                - generic [ref=e90]:
+                  - generic [ref=e91]:
+                    - generic [ref=e92]: Combat Reactivity
+                    - generic [ref=e93]: When hit, bubbles split and re-rasterize their neural meshes in real-time.
                   - generic [ref=e94]:
-                    - generic [ref=e95]: Combat Reactivity
-                    - generic [ref=e96]: When hit, bubbles split and re-rasterize their neural meshes in real-time.
-                  - generic [ref=e97]:
-                    - generic [ref=e98]: Neural Parity
-                    - generic [ref=e99]: Entities inherit current site "vibe" (colors, scanlines) from the VibeContext.
-              - generic [ref=e100]:
-                - heading "Developer Notes" [level=4] [ref=e101]
-                - paragraph [ref=e102]: "\"We repurposed the property visualization mesh for high-frequency collision testing.\""
-      - contentinfo [ref=e103]:
-        - generic [ref=e104]:
-          - img "Logo" [ref=e106]
-          - generic [ref=e107]:
-            - paragraph [ref=e108]: © 2026 SunsetCollective. All rights reserved.
-            - link "Texas Real Estate Commission Consumer Protection Notice (CN 1-5)" [ref=e109] [cursor=pointer]:
+                    - generic [ref=e95]: Neural Parity
+                    - generic [ref=e96]: Entities inherit current site "vibe" (colors, scanlines) from the VibeContext.
+              - generic [ref=e97]:
+                - heading "Developer Notes" [level=4] [ref=e98]
+                - paragraph [ref=e99]: "\"We repurposed the property visualization mesh for high-frequency collision testing.\""
+      - contentinfo [ref=e100]:
+        - generic [ref=e101]:
+          - img "Logo" [ref=e103]
+          - generic [ref=e104]:
+            - paragraph [ref=e105]: © 2026 SunsetCollective. All rights reserved.
+            - link "Texas Real Estate Commission Consumer Protection Notice (CN 1-5)" [ref=e106] [cursor=pointer]:
               - /url: https://www.trec.texas.gov/forms/consumer-protection-notice
-            - generic [ref=e110]: "|"
-            - link "Information About Brokerage Services (IABS)" [ref=e111] [cursor=pointer]:
+            - generic [ref=e107]: "|"
+            - link "Information About Brokerage Services (IABS)" [ref=e108] [cursor=pointer]:
               - /url: /iabs
-    - generic [ref=e112]:
-      - 'button "Oversight: Locked" [ref=e113]':
-        - img [ref=e115]
-        - img [ref=e117]
-        - generic [ref=e119]: "Oversight: Locked"
-      - generic [ref=e120]:
-        - generic [ref=e121]:
-          - generic [ref=e122]:
-            - img [ref=e124]
-            - generic [ref=e126]:
-              - heading "Jamie" [level=3] [ref=e127]
-              - paragraph [ref=e132]: Analyst Online
-          - generic [ref=e133]:
-            - button "Toggle Lefthand Mode" [ref=e134] [cursor=pointer]:
+    - generic [ref=e109]:
+      - 'button "Oversight: Locked" [ref=e110]':
+        - img [ref=e112]
+        - img [ref=e114]
+        - generic [ref=e116]: "Oversight: Locked"
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - generic [ref=e119]:
+            - img [ref=e121]
+            - generic [ref=e123]:
+              - heading "Jamie" [level=3] [ref=e124]
+              - paragraph [ref=e129]: Analyst Online
+          - generic [ref=e130]:
+            - button "Toggle Lefthand Mode" [ref=e131] [cursor=pointer]:
+              - img [ref=e132]
+            - button [ref=e134] [cursor=pointer]:
               - img [ref=e135]
-            - button [ref=e137] [cursor=pointer]:
-              - img [ref=e138]
-        - generic [ref=e142]:
-          - textbox "Search or ask..." [ref=e143]
-          - button [ref=e144] [cursor=pointer]:
-            - img [ref=e145]
-    - button "Open Dev Portal" [ref=e147] [cursor=pointer]:
-      - img [ref=e148]
-  - alert [ref=e150]
+        - generic [ref=e139]:
+          - textbox "Search or ask..." [ref=e140]
+          - button [ref=e141] [cursor=pointer]:
+            - img [ref=e142]
+    - button "Open Dev Portal" [ref=e144] [cursor=pointer]:
+      - img [ref=e145]
+  - alert [ref=e147]
 ```
 
 # Test source
 
 ```ts
+  6   |  */
+  7   | test.describe('Arcade Protocol: White-Box Analysis', () => {
+  8   | 
+  9   |   test.beforeEach(async ({ page }) => {
+  10  |     // Navigate to the Arcade Protocol page
+  11  |     await page.goto('/arcade');
+  12  |   });
+  13  | 
+  14  |   test.describe('TacticalCloth: Visual & Physics Integrity', () => {
+  15  |     
+  16  |     test('should render multiple cloth instances with dynamic scaling', async ({ page }) => {
+  17  |       // Large bubble cloth should be visible
+  18  |       const clothInstances = page.locator('#htc-video-canvas');
+  19  |       await expect(clothInstances).toHaveCount(1); // Initially 1 large bubble
+  20  |       
+  21  |       const box = await clothInstances.first().boundingBox();
+  22  |       expect(box?.width).toBeGreaterThan(0);
+  23  |       expect(box?.height).toBeGreaterThan(0);
+  24  |     });
+  25  | 
+  26  |     test('should inherit mood color from VibeContext', async ({ page }) => {
+  27  |       // Trigger a vibe change via Chaos Mode (if available in dev)
+  28  |       const chaosBtn = page.locator('button:has-text("Chaos: OFF")');
+  29  |       if (await chaosBtn.isVisible()) {
+  30  |         await chaosBtn.click();
+  31  |         const cycleBtn = page.locator('button:has-text("Cycle Vibe")');
+  32  |         await cycleBtn.click(); // Switch to vibe-maxxing (Green)
+  33  |         
+  34  |         // Check canvas scanline color or mood dot
   35  |         const moodDot = page.locator('.mood-dot').first();
   36  |         const color = await moodDot.evaluate((el) => getComputedStyle(el).backgroundColor);
   37  |         // Green color check (rgb(34, 197, 94) is tailwind green-500)
@@ -235,7 +263,8 @@ Call Log:
   103 |       }
   104 |       
   105 |       const gameOverScreen = page.locator('text=Game Over');
-  106 |       await expect(gameOverScreen).toBeVisible({ timeout: 15000 });
+> 106 |       await expect(gameOverScreen).toBeVisible({ timeout: 15000 });
+      |                                    ^ Error: expect(locator).toBeVisible() failed
   107 |       
   108 |       const statusHUD = page.locator('text=MISSION_STATUS:');
   109 |       await expect(statusHUD).toContainText('TERMINATED');
@@ -264,8 +293,7 @@ Call Log:
   132 |         
   133 |         const count = await bubbles.count();
   134 |         expect(count).toBe(0);
-> 135 |       }).toPass({ timeout: 60000, intervals: [200] });
-      |          ^ Error: locator.boundingBox: Timeout 15000ms exceeded.
+  135 |       }).toPass({ timeout: 60000, intervals: [200] });
   136 | 
   137 |       // Assert Mission Success screen
   138 |       const successScreen = page.locator('text=Mission Success');
@@ -337,14 +365,4 @@ Call Log:
   204 |       const anomaly = page.getByTestId('anomaly');
   205 |       
   206 |       // We can't easily force a spawn without mocking, so we check HUD behavior
-  207 |       const tank = page.locator('.cursor-crosshair').first();
-  208 |       await expect(tank).toHaveClass(/cursor-crosshair/); // Initial state
-  209 |       
-  210 |       // If anomaly appears, it should pulse and show ALERT
-  211 |       // This is a long-wait test
-  212 |     });
-  213 |   });
-  214 | 
-  215 | });
-  216 | 
 ```
