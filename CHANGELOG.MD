@@ -1,6 +1,29 @@
 # SUNSET PULSE // DEVELOPMENT LOG
+**DATE:** 2026-05-14
+**STATUS:** ALPHA MATURATION // TAH MEMORY FORGE & OZRIEL PROTOCOL
+
+## [Unreleased] - 2026-05-14
+
+### Added
+- **TAH Memory Forge (TypeScript Core)**: Engineered an automated generation system for binary `.tah` expertise cartridges.
+  - **Surgical Hash Index**: Upgraded TAH retrieval with a `CityHash64` primary key index, enabling sub-1ms lookups and O(1) shard identification.
+  - **In-Memory Buffer Processing**: Refactored `TAHRetriever` to support direct `Buffer` ingestion, facilitating seamless integration with cloud-native storage.
+- **Ozriel Protocol (Scythe Filter)**: Integrated the Scythe Purifier as a mandatory intelligence guardrail for the memory pipeline.
+  - **Humanity Thresholds**: Implemented a mandatory score check (Threshold: 85) for all session data. Robotic or low-entropy interactions are blocked from memory maturation.
+  - **Autonomous Refactoring**: Enabled "Humanized Rewrites" where Ozriel automatically replaces robotic success hooks with higher-fidelity linguistic variants before forging.
+- **Session Memory Belt**: Developed a decentralized intelligence conveyor belt that harvests live lead interactions from Supabase.
+  - **Event Harvesting**: Automated extraction of `intelligence_events` (property views, chat patterns, clicks) for session-based memory consolidation.
+  - **Cloud-Native Deployment**: Forged cartridges are automatically synchronized to the Supabase `cartridges/sessions/` bucket, ensuring persistent long-term memory for Jamie AI.
+- **Supabase Hegemony (Alpha Consolidation)**: Unified the property grid and intelligence layers into a single PostgreSQL environment.
+  - **Property Grid Migration**: Prepared the `properties` table schema with surgical indexes for city-wide and price-range lookups.
+  - **Cloud-Hosted Expertise**: Successfully migrated 6 specialized TAH expertise cartridges (Makiel, Gadrael, etc.) to Supabase Storage.
+- **Logistic Velocity Maturation**: Refactored lead engagement scoring using a sigmoid growth function.
+  - **Normalization Formula**: $V = S \cdot \frac{1}{1 + e^{-k(t-x)}}$, ensuring lead velocity stabilizes over a 7-day maturation period rather than decaying linearly.
+
+# SUNSET PULSE // DEVELOPMENT LOG
 **DATE:** 2026-05-08
 **STATUS:** COLLECTIVE COMMAND v1.0 // HUD, INTELLIGENCE & TELEGRAM SYNC
+
 
 ## [Unreleased] - 2026-05-08
 

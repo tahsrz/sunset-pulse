@@ -20,21 +20,26 @@ export class TAHRetriever {
   private bloomFilter: Buffer | null = null;
   private shardIndex: Buffer | null = null;
 
-  constructor(private cartridgePath: string) {
+  constructor(private source: string | Buffer) {
     this.load();
   }
 
   private load() {
-    if (!fs.existsSync(this.cartridgePath)) {
-      throw new Error(`Cartridge not found: ${this.cartridgePath}`);
+    if (Buffer.isBuffer(this.source)) {
+      this.buffer = this.source;
+    } else {
+      if (!fs.existsSync(this.source)) {
+        throw new Error(`Cartridge not found: ${this.source}`);
+      }
+      this.buffer = fs.readFileSync(this.source);
     }
 
-    this.buffer = fs.readFileSync(this.cartridgePath);
     const magic = this.buffer.readUInt32LE(0);
     
     // Support both TAH! (0x54414821) and other potential magic numbers
     if (magic !== 0x54414821) {
-      console.warn(`[TAH_RETRIEVER] Unexpected magic number: 0x${magic.toString(16)} for ${path.basename(this.cartridgePath)}`);
+      const sourceName = Buffer.isBuffer(this.source) ? 'In-Memory Buffer' : path.basename(this.source);
+      console.warn(`[TAH_RETRIEVER] Unexpected magic number: 0x${magic.toString(16)} for ${sourceName}`);
     }
 
     this.k = this.buffer.readUInt8(6);
@@ -65,7 +70,7 @@ export class TAHRetriever {
     return true;
   }
 
-  public getShard(index: number): TAHShard | null {
+  public getShard(index: number): (TAHShard & { kwHash: bigint }) | null {
     if (!this.shardIndex || index >= this.shardCount) return null;
 
     const entryOffset = index * 80;
@@ -73,6 +78,7 @@ export class TAHRetriever {
     const offset = this.shardIndex.readBigUint64LE(entryOffset + 8);
     const length = this.shardIndex.readUInt32LE(entryOffset + 16);
     const meta = this.shardIndex.readUInt32LE(entryOffset + 20);
+    const kwHash = this.shardIndex.readBigUint64LE(entryOffset + 24);
 
     const dataBuffer = this.buffer!.slice(Number(offset), Number(offset) + length);
     
@@ -87,6 +93,7 @@ export class TAHRetriever {
       offset,
       length,
       meta,
+      kwHash,
       data: text
     };
   }
@@ -95,12 +102,24 @@ export class TAHRetriever {
     const results: TAHShard[] = [];
     if (!this.containsKeyword(query)) return results;
 
-    // Simple exhaustive search over shards that pass local bloom check
-    // In a real implementation, we'd use the specialized index (bytes 24-80 of shard index entry)
+    const queryBuf = Buffer.from(query.toLowerCase().trim(), 'utf-8');
+    const queryHash = city_hash64(queryBuf);
+
+    // Primary: Surgical Hash Index Match
     for (let i = 0; i < this.shardCount; i++) {
       const shard = this.getShard(i);
-      if (shard && shard.data.toLowerCase().includes(query.toLowerCase())) {
+      if (shard && shard.kwHash === queryHash) {
         results.push(shard);
+      }
+    }
+
+    // Secondary: Fallback to string search if no hash matches (legacy support)
+    if (results.length === 0) {
+      for (let i = 0; i < this.shardCount; i++) {
+        const shard = this.getShard(i);
+        if (shard && shard.data.toLowerCase().includes(query.toLowerCase())) {
+          results.push(shard);
+        }
       }
     }
 

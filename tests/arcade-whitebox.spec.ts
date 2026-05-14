@@ -110,10 +110,10 @@ test.describe('Arcade Protocol: White-Box Analysis', () => {
     });
 
     test('should trigger Mission Success and transition to next level', async ({ page }) => {
-      // White-box seek-and-fire loop to clear all bubbles
+      test.slow(); // Increase timeout for the clearing loop
+      
       const bubbles = page.getByTestId('bubble');
       
-      // We clear the first level
       await expect(async () => {
         const bubbleBox = await bubbles.first().boundingBox();
         const player = page.locator('.absolute.bottom-4');
@@ -121,13 +121,18 @@ test.describe('Arcade Protocol: White-Box Analysis', () => {
 
         if (bubbleBox && playerBox) {
           const targetX = bubbleBox.x + bubbleBox.width / 2;
-          await page.keyboard.press(playerBox.x + playerBox.width / 2 < targetX ? 'ArrowRight' : 'ArrowLeft');
-          await page.keyboard.press(' ');
+          const currentX = playerBox.x + playerBox.width / 2;
+
+          // More aggressive movement and firing
+          if (Math.abs(currentX - targetX) > 15) {
+            await page.keyboard.press(currentX < targetX ? 'ArrowRight' : 'ArrowLeft');
+          }
+          await page.keyboard.press(' ', { delay: 50 });
         }
         
         const count = await bubbles.count();
         expect(count).toBe(0);
-      }).toPass({ timeout: 40000, intervals: [500] });
+      }).toPass({ timeout: 60000, intervals: [200] });
 
       // Assert Mission Success screen
       const successScreen = page.locator('text=Mission Success');

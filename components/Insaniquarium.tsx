@@ -64,6 +64,7 @@ const TANK_HEIGHT = 600;
 const THREAT_SPAWN_CHANCE = 0.002;
 const LASER_DAMAGE = 20;
 const HUNGER_DECAY = 0.15;
+const ARCADE_BALL_SPRITE = '/arcade/redball.avif';
 const COIN_INTERVALS: Record<number, number> = {
   2: 5000, 
   3: 10000, 
@@ -130,7 +131,7 @@ const Insaniquarium = () => {
   const [evolutionStage, setEvolutionStage] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   
-  const { vibeTheme, currentVibe, setVibeFromContent } = useVibe();
+  const { currentVibe, setVibeFromContent } = useVibe();
   const tankRef = useRef<HTMLDivElement>(null);
 
   const spawnUnit = () => {
@@ -411,7 +412,7 @@ const Insaniquarium = () => {
             <div className="mt-1 text-[7px] font-black text-white uppercase tracking-tighter bg-black/40 px-1 rounded">{p.type.split('_')[0]}</div>
           </div>
         </div>
-      )}
+      ))}
 
       {/* Resource Inputs */}
       {pellets.map(p => <div key={p.id} data-testid="input" className="absolute w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_8px_orange] z-10" style={{ left: p.x, top: p.y }} />)}
@@ -441,7 +442,18 @@ const Insaniquarium = () => {
           style={{ left: f.x, top: f.y, transform: `${f.direction === 'left' ? 'scaleX(-1)' : ''} scale(${(f.size * 0.2) + 0.4})` }}
         >
           <div className="relative group">
-            <TacticalCloth width={100} height={100} moodColor={f.isShielded ? '#a855f7' : f.hunger < 30 ? '#ef4444' : (vibeTheme?.variables?.['--primary-glow'] as string || '#00f2ff')} status={f.hunger < 30 ? "VITALITY_LOW" : "OPERATIONAL"} />
+            <div
+              className={`relative h-[100px] w-[100px] rounded-full bg-cover bg-center shadow-[inset_-14px_-18px_28px_rgba(0,0,0,0.32),inset_10px_10px_18px_rgba(255,255,255,0.2),0_14px_35px_rgba(220,38,38,0.35)] ring-2 ${
+                f.isShielded
+                  ? 'ring-purple-300/80 drop-shadow-[0_0_22px_rgba(168,85,247,0.85)]'
+                  : f.hunger < 30
+                    ? 'ring-red-300/90 animate-pulse'
+                    : 'ring-white/25'
+              }`}
+              style={{ backgroundImage: `url('${ARCADE_BALL_SPRITE}')` }}
+            >
+              <div className="absolute left-[18%] top-[16%] h-5 w-5 rounded-full bg-white/65 blur-[1px]" />
+            </div>
             
             <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[7px] font-black uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 px-1.5 py-0.5 rounded border border-white/10 ${OPERATIONAL_TIERS[f.rank].color}`}>
               {OPERATIONAL_TIERS[f.rank].label}

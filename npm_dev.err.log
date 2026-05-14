@@ -1,14 +1,3 @@
-(node:44812) ExperimentalWarning: CommonJS module C:\Users\Taz\SunsetPulse\node_modules\tailwindcss\lib\lib\load-config.js is loading ES Module C:\Users\Taz\SunsetPulse\tailwind.config.ts using require().
+(node:23996) ExperimentalWarning: CommonJS module C:\Users\Taz\SunsetPulse\node_modules\tailwindcss\lib\lib\load-config.js is loading ES Module C:\Users\Taz\SunsetPulse\tailwind.config.ts using require().
 Support for loading ES Module in require() is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
-
-[1m[33mwarn[39m[22m - The class `duration-[1500ms]` is ambiguous and matches multiple utilities.
-[1m[33mwarn[39m[22m - If this is content and not a class, replace it with `duration-&lsqb;1500ms&rsqb;` to silence this warning.
-
-[1m[33mwarn[39m[22m - The class `duration-[2000ms]` is ambiguous and matches multiple utilities.
-[1m[33mwarn[39m[22m - If this is content and not a class, replace it with `duration-&lsqb;2000ms&rsqb;` to silence this warning.
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (102kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (227kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
-[API_ERROR] 500: Grid search failed. init["status"] must be in the range of 200 to 599, inclusive.

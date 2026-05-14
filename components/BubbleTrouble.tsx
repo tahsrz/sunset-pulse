@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import TacticalCloth from '@/components/TacticalCloth';
 import { useVibe } from '@/context/VibeContext';
 
 interface Bubble {
@@ -16,47 +15,82 @@ interface Bubble {
 interface LevelConfig {
   id: number;
   name: string;
+  listing: string;
+  location: string;
   background: string;
   bubbles: Bubble[];
   vibe: string;
 }
 
-const LEVELS: LevelConfig[] = [
-  {
-    id: 1,
-    name: 'Sector 01: Suburban_Infiltration',
-    background: 'https://images.unsplash.com/photo-1600585154340-be6191da95b4?q=80&w=2070&auto=format&fit=crop',
-    vibe: 'default',
-    bubbles: [
-      { id: '1-1', x: 200, y: 100, vx: 2, vy: 0, size: 3 }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Sector 02: Industrial_Logic',
-    background: 'https://images.unsplash.com/photo-1558441719-ffb4d4500a67?q=80&w=2070&auto=format&fit=crop',
-    vibe: 'vibe-maxxing',
-    bubbles: [
-      { id: '2-1', x: 100, y: 100, vx: 2, vy: 0, size: 2 },
-      { id: '2-2', x: 600, y: 100, vx: -2, vy: 0, size: 2 }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Sector 03: Zenith_Acquisition',
-    background: 'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?q=80&w=2024&auto=format&fit=crop',
-    vibe: 'vibe-leaning-forward',
-    bubbles: [
-      { id: '3-1', x: 400, y: 80, vx: 3, vy: 0, size: 3 },
-      { id: '3-2', x: 400, y: 80, vx: -3, vy: 0, size: 1 }
-    ]
-  }
+const LISTING_SECTORS = [
+  { name: 'Bowie_Ranch_Gate', listing: 'Bowie Highway Ranch', location: 'Bowie, TX', background: '/images/properties/ranch1.jpg' },
+  { name: 'Holly_Ridge_Deck', listing: 'Holly Ridge Estates 2.5ac', location: 'Decatur, TX', background: '/images/properties/244ridge1.jpg' },
+  { name: 'Barndo_Shop_Line', listing: 'Sunset Barndominium w/ Shop', location: 'Sunset, TX', background: '/images/properties/barndo1.jpg' },
+  { name: 'Rhome_Commuter_Run', listing: 'Rhome Commuter Rental', location: 'Rhome, TX', background: '/images/properties/rhome1.jpg' },
+  { name: 'Alvord_Land_Claim', listing: 'Alvord 980 Franklin - Land', location: 'Alvord, TX', background: '/images/properties/land1.jpg' },
+  { name: 'Big_Sky_RV_Field', listing: 'Big Sky RV - Decatur', location: 'Decatur, TX', background: '/images/properties/ranch1.jpg' },
+  { name: 'Meridian_Lease_Lock', listing: 'The Meridian - 2BR', location: 'Bowie, TX', background: '/images/properties/rhome1.jpg' },
+  { name: 'Lakefront_Cabin_Final', listing: 'Sunset Lakefront Cabin', location: 'Sunset, TX', background: '/images/properties/244ridge1.jpg' },
+  { name: 'Flex_Space_Pressure', listing: 'Decatur Flex Space - 5k sqft', location: 'Decatur, TX', background: '/images/properties/barndo1.jpg' },
+  { name: 'Franklin_Overlook', listing: 'Alvord Overlook - Off-Grid Spot', location: 'Alvord, TX', background: '/images/properties/land1.jpg' }
 ];
+
+const VIBE_SEQUENCE = ['default', 'vibe-maxxing', 'vibe-leaning-forward', 'vibe-expanding-brain'];
+
+const createLevelBubbles = (level: number): Bubble[] => {
+  const speedBase = 1.55 + Math.min(level * 0.055, 2.75);
+
+  return Array.from({ length: level }, (_, index) => {
+    const lane = index % 10;
+    const row = Math.floor(index / 10);
+    const wave = Math.sin((level * 17 + index * 31) * 0.37);
+    const size = level < 4 ? 1 + (index % 2) : index % 7 === 0 ? 3 : index % 3 === 0 ? 2 : 1;
+    const direction = index % 2 === 0 ? 1 : -1;
+
+    return {
+      id: `${level}-${index + 1}`,
+      x: 40 + lane * 72 + (wave * 12),
+      y: 55 + row * 32 + Math.abs(wave) * 18,
+      vx: direction * (speedBase + (index % 5) * 0.18),
+      vy: -Math.abs(wave) * 1.2,
+      size
+    };
+  });
+};
+
+const LEVELS: LevelConfig[] = Array.from({ length: 50 }, (_, index) => {
+  const id = index + 1;
+  const sector = LISTING_SECTORS[index % LISTING_SECTORS.length];
+
+  return {
+    id,
+    name: `Sector ${String(id).padStart(2, '0')}: ${sector.name}`,
+    listing: sector.listing,
+    location: sector.location,
+    background: sector.background,
+    vibe: VIBE_SEQUENCE[index % VIBE_SEQUENCE.length],
+    bubbles: createLevelBubbles(id)
+  };
+});
 
 const GRAVITY = 0.15;
 const BOUNCE = -1;
 const PLAYER_SPEED = 7;
 const HARPOON_SPEED = 10;
+const ARCADE_BALL_SPRITE = '/arcade/redball.avif';
+const GAMEPLAY_KEYS = new Set([' ', 'Spacebar', 'Space', 'ArrowLeft', 'ArrowRight']);
+
+const isEditableKeyTarget = (target: EventTarget | null) => {
+  const element = target as HTMLElement | null;
+  return (
+    element?.tagName === 'INPUT' ||
+    element?.tagName === 'TEXTAREA' ||
+    element?.tagName === 'SELECT' ||
+    element?.isContentEditable
+  );
+};
+
+const isGameplayKey = (e: KeyboardEvent) => GAMEPLAY_KEYS.has(e.key) || GAMEPLAY_KEYS.has(e.code);
 
 const BubbleTrouble = () => {
   const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
@@ -68,7 +102,7 @@ const BubbleTrouble = () => {
   const [gameOver, setGameOver] = useState(false);
   const [levelSuccess, setLevelSuccess] = useState(false);
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const { vibeTheme, setVibeFromContent } = useVibe();
+  const { setVibeFromContent } = useVibe();
 
   // Initialize Level
   useEffect(() => {
@@ -78,20 +112,34 @@ const BubbleTrouble = () => {
     setLevelSuccess(false);
     // Set Vibe based on level
     setVibeFromContent(currentLevel.vibe === 'default' ? 'neutral' : currentLevel.vibe);
-  }, [currentLevelIdx]);
+  }, [currentLevel.bubbles, currentLevel.vibe, currentLevelIdx, setVibeFromContent]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!isEditableKeyTarget(e.target) && isGameplayKey(e)) {
+      e.preventDefault();
+    }
+
     if (gameOver || levelSuccess) return;
     if (e.key === 'ArrowLeft') setPlayerX(prev => Math.max(20, prev - PLAYER_SPEED));
     if (e.key === 'ArrowRight') setPlayerX(prev => Math.min(780, prev + PLAYER_SPEED));
-    if (e.key === ' ' && !harpoon) {
+    if ((e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') && !harpoon) {
       setHarpoon({ x: playerX + 15, y: 550 });
     }
   }, [playerX, harpoon, gameOver, levelSuccess]);
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const suppressBrowserScroll = (e: KeyboardEvent) => {
+      if (!isEditableKeyTarget(e.target) && isGameplayKey(e)) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener('keypress', suppressBrowserScroll, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener('keypress', suppressBrowserScroll, { capture: true });
+    };
   }, [handleKeyDown]);
 
   const startNextLevel = () => {
@@ -195,26 +243,21 @@ const BubbleTrouble = () => {
         />
       )}
 
-      {/* Bubbles (TacticalCloth Instances) */}
+      {/* Bubbles */}
       {bubbles.map(b => (
         <div 
           key={b.id}
           data-testid="bubble"
-          className="absolute z-20"
+          className="absolute z-20 rounded-full bg-cover bg-center shadow-[inset_-18px_-24px_35px_rgba(0,0,0,0.35),inset_12px_12px_22px_rgba(255,255,255,0.18),0_18px_45px_rgba(220,38,38,0.35)] ring-2 ring-white/20"
           style={{ 
             left: b.x, 
             top: b.y, 
-            transform: `scale(${b.size / 3})`,
-            transformOrigin: 'top left' 
+            width: b.size * 50,
+            height: b.size * 50,
+            backgroundImage: `url('${ARCADE_BALL_SPRITE}')`,
+            transformOrigin: 'center'
           }}
-        >
-          <TacticalCloth 
-            width={150} 
-            height={180} 
-            moodColor={vibeTheme?.variables?.['--primary-glow']}
-            status="COMBAT"
-          />
-        </div>
+        />
       ))}
 
       {/* Player */}
@@ -234,8 +277,11 @@ const BubbleTrouble = () => {
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           <span>{currentLevel.name}</span>
         </div>
+        LISTING: {currentLevel.listing}<br/>
+        MARKET: {currentLevel.location}<br/>
         MISSION_STATUS: {gameOver ? 'TERMINATED' : 'ACTIVE'}<br/>
-        TARGET_COUNT: {bubbles.length}
+        TARGET_COUNT: {bubbles.length}<br/>
+        LEVEL: {currentLevelIdx + 1}/{LEVELS.length}
       </div>
 
       {gameOver && (

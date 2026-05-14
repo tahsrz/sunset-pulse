@@ -6,20 +6,54 @@
    - Local:        http://localhost:3000
    - Environments: .env.local, .env
 
- ✓ Ready in 1925ms
- ○ Compiling /not-found ...
- ✓ Compiled /not-found in 9.7s (3058 modules)
+ ✓ Ready in 3.7s
+ ✓ Compiled /middleware in 347ms (119 modules)
+ ○ Compiling /arcade ...
+ ✓ Compiled /arcade in 5.9s (2934 modules)
 MongoDB connected...
- ○ Compiling /properties/[id] ...
- ✓ Compiled /properties/[id] in 12.5s (4307 modules)
- ✓ Compiled /api/properties/[id]/rent in 317ms (2198 modules)
- ✓ Compiled (2222 modules)
+ ○ Compiling /api/jamie/dreams ...
+ ✓ Compiled /api/jamie/dreams in 1378ms (1517 modules)
+ ✓ Compiled (1536 modules)
 [DREAMS_API]: Request received
 [DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
 [DREAMS_API]: File read successful, length: 1368
 [DREAMS_API]: JSON parse successful, items: 3
-💾 [GRID_MEMORY_HIT] Intel: rent // Asset: 69dfbfedfbfeac2489fda32c
-💾 [GRID_MEMORY_HIT] Intel: rent // Asset: 69dfbfedfbfeac2489fda32c
- ✓ Compiled /api/bookmarks/check in 318ms (2226 modules)
- ✓ Compiled in 2.4s (2105 modules)
- ✓ Compiled in 1944ms (4291 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ✓ Compiled in 6.1s (2948 modules)
+ ○ Compiling /api/properties/search ...
+ ✓ Compiled /api/properties/search in 600ms (1529 modules)
+ ✓ Compiled (1536 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ✓ Compiled in 2s (2976 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ✓ Compiled in 2.2s (2948 modules)
+ ✓ Compiled /api/jamie/dreams in 384ms (1517 modules)
+ ✓ Compiled (1536 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ○ Compiling /properties/[id] ...
+ ✓ Compiled /properties/[id] in 3.4s (4314 modules)
+ ✓ Compiled in 986ms (2114 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 2.4s (4392 modules)
+ ✓ Compiled /api/jamie/dreams in 298ms (2260 modules)
+ ✓ Compiled (2278 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3

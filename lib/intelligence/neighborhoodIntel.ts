@@ -1,16 +1,14 @@
-import path from 'path';
-import fs from 'fs';
 import { TAHRetriever } from '../core/tah_retriever';
+import { supabase } from '../supabase';
 
 /**
  * Neighborhood Intelligence Retriever
  * Surgical lookup of local facts for Jamie AI.
- * Now utilizing TAH Cartridges for deterministic expertise.
+ * Now utilizing Supabase-hosted TAH Cartridges for cloud-native expertise.
  */
 
-const CARTRIDGE_PATH = path.resolve(process.cwd(), 'cartridges/neighborhood_intel.tah');
-
 const NEIGHBORHOOD_KNOWLEDGE = {
+  // ... (keeping fallback knowledge for safety)
   "bowie": {
     "vibe": "Ranch-ready and community-focused.",
     "fact": "Known for the Second Monday Trade Days, one of the oldest and largest flea markets in the state.",
@@ -33,19 +31,36 @@ const NEIGHBORHOOD_KNOWLEDGE = {
   }
 };
 
-export function getNeighborhoodIntel(city: string, neighborhood?: string) {
+// Warm Cache for TAH Buffers to minimize storage egress
+const TAH_CACHE: Record<string, Buffer> = {};
+
+export async function getNeighborhoodIntel(city: string, neighborhood?: string) {
   const key = city.toLowerCase().trim();
+  const cartridgeName = 'neighborhood_intel.tah';
   
-  // 1. Attempt TAH Retrieval (Expertise Layer)
-  if (fs.existsSync(CARTRIDGE_PATH)) {
-    try {
-      const retriever = new TAHRetriever(CARTRIDGE_PATH);
+  // 1. Attempt TAH Retrieval (Expertise Layer via Supabase Storage)
+  try {
+    let buffer = TAH_CACHE[cartridgeName];
+    
+    if (!buffer) {
+      console.log(`🌐 [TAH_FETCH] Downloading ${cartridgeName} from grid storage...`);
+      const { data, error } = await supabase.storage
+        .from('cartridges')
+        .download(cartridgeName);
+      
+      if (!error && data) {
+        const arrayBuffer = await data.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+        TAH_CACHE[cartridgeName] = buffer;
+      }
+    }
+
+    if (buffer) {
+      const retriever = new TAHRetriever(buffer);
       const results = retriever.search(key);
       
       if (results.length > 0) {
-        console.log(`🎯 [TAH_HIT] Expertise retrieved for: ${key}`);
-        // For now, we take the first matching shard and parse it.
-        // Expecting format: "Vibe: ... | Fact: ... | Amenity: ..."
+        console.log(`🎯 [TAH_HIT] Expertise retrieved from storage for: ${key}`);
         const data = results[0].data;
         const parts = data.split('|').map(p => p.split(':')[1]?.trim());
         
@@ -57,9 +72,9 @@ export function getNeighborhoodIntel(city: string, neighborhood?: string) {
           };
         }
       }
-    } catch (err) {
-      console.error(`[TAH_ERROR] Failed to retrieve intelligence for ${key}:`, err);
     }
+  } catch (err) {
+    console.error(`[TAH_STORAGE_ERROR] Failed to retrieve intelligence for ${key}:`, err);
   }
 
   // 2. Fallback to Hardcoded Knowledge

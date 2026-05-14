@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { mlsService } from '@/lib/data/mls';
 import PropertyCard from '@/components/PropertyCard';
 import PropertySearchForm from '@/components/PropertySearchForm';
 import { FaGlobeAmericas, FaServer, FaMapMarkerAlt } from 'react-icons/fa';
@@ -28,10 +27,24 @@ export default function ListingsPage() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const params = Object.fromEntries(searchParams.entries());
-      const data = await mlsService.getListings(params);
-      setListings(data);
-      setLoading(false);
+      try {
+        const params = new URLSearchParams(searchParams.toString());
+        if (params.has('city') && !params.has('location')) {
+          params.set('location', params.get('city') || '');
+        }
+        params.set('includeMLS', 'true');
+
+        const res = await fetch(`/api/properties/search/advanced?${params.toString()}`, {
+          cache: 'no-store'
+        });
+        const payload = await res.json();
+        setListings(payload.success ? payload.data : []);
+      } catch (error) {
+        console.error('Failed to load listings:', error);
+        setListings([]);
+      } finally {
+        setLoading(false);
+      }
     };
     loadData();
   }, [searchParams]);

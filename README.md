@@ -1,8 +1,16 @@
 # SUNSET PULSE // MISSION READ ME
-**LAST UPDATED:** 2026-04-30  
-**STATUS:** PROBABILISTIC SECURITY & DETERMINISTIC STYLING (v3.0)
+**LAST UPDATED:** 2026-05-14  
+**STATUS:** PROBABILISTIC SECURITY & DETERMINISTIC STYLING (v3.5 - Alpha Maturation)
 
-Sunset Pulse is a high-performance intelligence grid built on a modern Next.js 14 (App Router) architecture. It is designed to bridge the gap between static property data and an interactive, neural-driven user experience.
+Sunset Pulse is a high-performance intelligence grid built on a modern Next.js 14 (App Router) architecture. It leverages TAH (Tactical Asset Harvesting) cartridges for deterministic ground-truth expertise and the Ozriel Protocol for humanity-verified memory consolidation.
+
+### ⚡ Core Intelligence Stack (v3.5)
+- **TAH Memory Forge**: Automated generation of binary expertise cartridges with a Surgical Hash Index (CityHash64) for sub-1ms lookups.
+- **Ozriel Protocol**: Integrated Scythe Purifier that audits all session data for "Humanity Scores." Only high-entropy, non-robotic interactions are forged into long-term memory.
+- **Session Conveyor Belt**: A decentralized intelligence pipeline that harvests live lead events and consolidates them into TAH expertise units stored in Supabase Storage.
+- **Supabase Hegemony**: Consolidated storage for properties, intelligence events, and TAH cartridges, eliminating MongoDB dependency for Alpha.
+- **Logistic Velocity Maturation**: Normalized lead scoring using a sigmoid growth function, ensuring engagement metrics mature over a 7-day inflection point.
+
 
 ### ⚡ Recent Neural Upgrades (v3.0)
 - **Identity Purifier (Neural Bloom Filter)**: Solved the "impossible problem" of zero-lookup membership testing. Implemented a 7-stage polynomial rolling hash engine to perform instantaneous username availability checks without database pings.

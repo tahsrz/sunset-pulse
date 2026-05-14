@@ -1,46 +1,75 @@
 import os
-import json
+import struct
+import math
+from pymongo import MongoClient
+from dotenv import load_dotenv
+
+# Import TAH logic from the project
 import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tahs'))
+from tah_engine import get_tah_indices
 
-# Add SunsetWars to path
-WARS_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../SunsetWars"))
-sys.path.append(WARS_ROOT)
-sys.path.append(os.path.join(WARS_ROOT, "builder"))
-
-from builder.tah_builder import TAHBuilder
-
-def forge_gate():
-    print("🚀 [GATE_FORGE] Generating Listing Gate from properties.json...")
+def forge_listings_gate():
+    # 1. Load Environment
+    load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env.local'))
+    mongodb_uri = os.getenv('MONGODB_URI')
     
-    properties_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../properties.json"))
-    if not os.path.exists(properties_path):
-        print(f"❌ Error: {properties_path} not found.")
+    if not mongodb_uri:
+        print("Error: MONGODB_URI not found in .env.local")
         return
 
-    with open(properties_path, 'r') as f:
-        properties = json.load(f)
+    print("📡 Connecting to SunsetCluster (DB: test)...")
+    client = MongoClient(mongodb_uri)
+    db = client['test'] # Specify 'test' as found in research
+    properties_col = db['properties']
 
-    # We want a very low false positive rate for the gate
-    builder = TAHBuilder(target_fp=0.0001, expected_elements=len(properties) * 2)
+    # 2. Fetch Signatures (mls_id | updatedAt)
+    print("🔍 Fetching listing signatures...")
+    cursor = properties_col.find({'source': 'MLS'}, {'mls_id': 1, 'last_updated': 1, 'updatedAt': 1})
+    signatures = []
+    for doc in cursor:
+        mls_id = doc.get('mls_id')
+        last_updated = doc.get('last_updated') or doc.get('updatedAt')
+        if mls_id and last_updated:
+            # Ensure last_updated is a string for the signature
+            if not isinstance(last_updated, str):
+                last_updated = last_updated.isoformat()
+            signatures.append(f"{mls_id}|{last_updated}")
+
+    print(f"✅ Found {len(signatures)} listings.")
+
+    # 3. Configure Bloom Filter
+    # Aim for 0.0001 FP rate
+    n = max(len(signatures), 1000) * 2 # Buffering for new listings
+    target_fp = 0.0001
+    m = math.ceil(-(n * math.log(target_fp)) / (math.log(2)**2))
+    k = math.ceil((m / n) * math.log(2))
+    m = math.ceil(m / 64) * 64 # Align to 64-bit boundaries
     
-    count = 0
-    for p in properties:
-        mls_id = p.get('mls_id') or p.get('_id') or p.get('name')
-        last_updated = p.get('last_updated', '2026-01-01T00:00:00Z')
-        
-        if mls_id:
-            # The signature is MLS_ID + LastUpdated
-            signature = f"{mls_id}|{last_updated}"
-            builder._add_to_global_filter(signature)
-            count += 1
-            
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cartridges"))
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        
-    output_path = os.path.join(output_dir, "listings_gate.tah")
-    builder.save(output_path)
-    print(f"✅ [GATE_FORGE] Successfully indexed {count} listings into {output_path}")
+    print(f"🛠️ Forging TAH Gate (m={m}, k={k})...")
+    bloom_filter = bytearray(m // 8)
+
+    for sig in signatures:
+        indices = get_tah_indices(sig, m, k)
+        for idx in indices:
+            byte_idx = idx // 8
+            bit_idx = idx % 8
+            bloom_filter[byte_idx] |= (1 << bit_idx)
+
+    # 4. Save TAH File (Hybrid v3.0/v3.1)
+    # Header (64 bytes): Magic, Version, k, Pad, m (uint64), ShardCount (uint32)
+    magic = 0x54414821 # 'TAH!'
+    shard_count = 0
+    header = struct.pack('<I H B B Q I', magic, 0x0300, k, 0, m, shard_count)
+    header = header.ljust(64, b'\x00')
+
+    output_path = os.path.join(os.path.dirname(__file__), '..', 'cartridges', 'listings_gate.tah')
+    with open(output_path, 'wb') as f:
+        f.write(header)
+        f.write(bloom_filter)
+
+    print(f"🚀 Cartridge saved: {output_path} ({len(header) + len(bloom_filter)} bytes)")
+    client.close()
 
 if __name__ == "__main__":
-    forge_gate()
+    forge_listings_gate()

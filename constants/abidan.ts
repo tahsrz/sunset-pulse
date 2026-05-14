@@ -12,81 +12,81 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
   {
     id: 'makiel',
     name: 'Makiel',
-    mantle: 'The Hound',
-    color: '#3b82f6', // Deep Blue
-    description: 'The Judge of Fate.',
-    missionLabel: 'Growth Outlook',
+    mantle: 'Future Outlook',
+    color: '#3b82f6',
+    description: 'Projects 5-10 year growth, infrastructure movement, and regional momentum for a target asset.',
+    missionLabel: 'Growth Forecast',
     geometryType: 'hound'
   },
   {
     id: 'gadrael',
     name: 'Gadrael',
-    mantle: 'The Titan',
-    color: '#94a3b8', // Slate/Steel
-    description: 'The Ultimate Shield.',
-    missionLabel: 'Risk Review',
+    mantle: 'Stability',
+    color: '#94a3b8',
+    description: 'Reviews zoning, risk exposure, FHA-sensitive language, and structural market stability.',
+    missionLabel: 'Risk Shield',
     geometryType: 'titan'
   },
   {
     id: 'durandiel',
     name: 'Durandiel',
-    mantle: 'The Ghost',
-    color: '#ffffff', // White/Silver
-    description: 'The Judge of Silence. Durandiel manages the end of things, ensuring that what must fall away does so without disturbing the balance.',
-    missionLabel: 'Neighborhood Signals',
+    mantle: 'Spatial Intelligence',
+    color: '#ffffff',
+    description: 'Maps transit access, utility corridors, infrastructure proximity, and location constraints.',
+    missionLabel: 'Spatial Recon',
     geometryType: 'ghost'
   },
   {
     id: 'telariel',
     name: 'Telariel',
-    mantle: 'The Spider',
-    color: '#a855f7', // Purple
-    description: 'The Network of Intelligence. Telariel sees all across the myriad iterations, connecting the grid of Abidan awareness.',
-    missionLabel: 'Influence Map',
+    mantle: 'Community Signals',
+    color: '#a855f7',
+    description: 'Connects neighborhood activity, historical listing behavior, and soft-market signal patterns.',
+    missionLabel: 'Network Map',
     geometryType: 'spider'
   },
   {
     id: 'razael',
     name: 'Razael',
-    mantle: 'The Wolf',
-    color: '#ef4444', // Red
-    description: 'The Judge of Combat. The heavy hand of the Abidan, Razael is the ultimate force deployed when worlds are beyond diplomacy.',
-    missionLabel: 'Negotiation Strategy',
+    mantle: 'Navigation',
+    color: '#ef4444',
+    description: 'Builds buyer strategy, timing guidance, negotiation posture, and tactical next steps.',
+    missionLabel: 'Buyer Strategy',
     geometryType: 'wolf'
   },
   {
     id: 'suriel',
     name: 'Suriel',
-    mantle: 'The Phoenix',
-    color: '#22c55e', // Green/Emerald
-    description: 'The Judge of Restoration. Suriel carries the power of healing and renewal, capable of restoring entire iterations from the brink of collapse.',
-    missionLabel: 'Recovery Model',
+    mantle: 'Aggregation',
+    color: '#22c55e',
+    description: 'Synthesizes raw judge output into a cohesive briefing with a plain-language throughline.',
+    missionLabel: 'Restoration Core',
     geometryType: 'phoenix'
   },
   {
     id: 'zakariel',
     name: 'Zakariel',
-    mantle: 'The Fox',
-    color: '#f97316', // Orange
-    description: 'The Judge of Speed and Transit. Zakariel masters the distances between worlds, moving the Abidan with near-instantaneous efficiency.',
-    missionLabel: 'Path To Close',
+    mantle: 'Coordination',
+    color: '#f97316',
+    description: 'Optimizes closing timelines, operator handoffs, logistics, and task sequencing.',
+    missionLabel: 'Close Path',
     geometryType: 'fox'
   },
   {
     id: 'ozriel',
     name: 'Ozriel',
-    mantle: 'The Reaper',
-    color: '#1e1b4b', // Midnight Indigo/Black
-    description: 'The Judge of Destruction. The absolute end of all things. Ozriel is the only Abidan capable of erasing an iteration without leaving behind the corruption of the Void.',
-    missionLabel: 'Final Recommendation',
+    mantle: 'Evaluation',
+    color: '#1e1b4b',
+    description: 'Performs final balanced review, language cleanup, and potential score evaluation.',
+    missionLabel: 'Final Arbiter',
     geometryType: 'reaper'
   },
   {
     id: 'daily-briefing',
     name: 'Jamie Pulse',
-    mantle: 'The Regional Briefing',
-    color: '#10b981', // Emerald
-    description: 'The 5-Hour Intelligence Sprint. Jamie consumes the news and purifies the signal.',
+    mantle: 'Regional Intelligence',
+    color: '#10b981',
+    description: 'Summarizes live regional signals, market notes, and operator-ready daily context.',
     missionLabel: 'Regional Brief',
     geometryType: 'phoenix'
   }

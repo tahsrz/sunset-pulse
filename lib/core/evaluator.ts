@@ -6,6 +6,8 @@
 
 import { TAHRetriever, TAHShard } from './tah_retriever';
 import path from 'path';
+import Property from '@/models/Property';
+import connectDB from './database';
 
 type LispExp = string | LispExp[];
 
@@ -17,15 +19,18 @@ export class SearchEvaluator {
     this.cartridgeDir = path.resolve(process.cwd(), 'cartridges');
     this.env = {
       'QUERY': this.primitiveQuery.bind(this),
-      'VERSION': () => "TAH-EVAL v1.0 (TS)",
-      'LIST-CARTRIDGES': this.listCartridges.bind(this)
+      'EXISTS?': this.primitiveExists.bind(this),
+      'VERSION': () => "TAH-EVAL v1.2 (TS)",
+      'LIST-CARTRIDGES': this.listCartridges.bind(this),
+      'SEARCH': this.primitiveSearch.bind(this),
+      'HELP': this.help.bind(this)
     };
   }
 
   /**
    * The core eval loop: eval(exp, env)
    */
-  public evaluate(exp: LispExp): any {
+  public async evaluate(exp: LispExp): Promise<any> {
     if (typeof exp === 'string') {
       // Atomic symbol/keyword
       const upperExp = exp.toUpperCase();
@@ -38,30 +43,77 @@ export class SearchEvaluator {
     // Procedure call: (operator operand1 operand2 ...)
     if (exp.length === 0) return null;
 
-    const procedure = this.evaluate(exp[0]);
-    const args = exp.slice(1).map(arg => this.evaluate(arg));
+    const procedure = await this.evaluate(exp[0]);
+    const args = await Promise.all(exp.slice(1).map(arg => this.evaluate(arg)));
 
     if (typeof procedure === 'function') {
-      return procedure(...args);
+      return await procedure(...args);
     }
     
     throw new Error(`Unknown procedure: ${exp[0]}`);
   }
 
-  private primitiveQuery(cartridgeName: string, terms: string): TAHShard[] {
+  private async primitiveQuery(cartridgeName: string, terms: string): Promise<TAHShard[]> {
     const cleanCartridge = cartridgeName.replace(/['"]/g, '');
     const cleanTerms = terms.replace(/['"]/g, '');
     
     const cartridgePath = path.join(this.cartridgeDir, `${cleanCartridge}.tah`);
+    if (!require('fs').existsSync(cartridgePath)) return [];
+
     const retriever = new TAHRetriever(cartridgePath);
     return retriever.search(cleanTerms);
   }
 
+  private async primitiveExists(cartridgeName: string, term: string): Promise<boolean> {
+    const cleanCartridge = cartridgeName.replace(/['"]/g, '');
+    const cleanTerm = term.replace(/['"]/g, '');
+    
+    const cartridgePath = path.join(this.cartridgeDir, `${cleanCartridge}.tah`);
+    if (!require('fs').existsSync(cartridgePath)) return false;
+    
+    const retriever = new TAHRetriever(cartridgePath);
+    return retriever.containsKeyword(cleanTerm);
+  }
+
+  private async primitiveSearch(location: string, ...options: any[]) {
+    console.log(`[EVAL] Executing SEARCH in ${location} with options:`, options);
+    await connectDB();
+    
+    const query: any = {
+      'location.city': { $regex: new RegExp(location, 'i') }
+    };
+
+    // Parse keywords/options
+    for (let i = 0; i < options.length; i += 2) {
+      const key = options[i];
+      const val = options[i + 1];
+
+      if (key === ':price-max') query['rates.monthly'] = { ...query['rates.monthly'], $lte: val };
+      if (key === ':price-min') query['rates.monthly'] = { ...query['rates.monthly'], $gte: val };
+      if (key === ':beds-min') query['beds'] = { $gte: val };
+      if (key === ':baths-min') query['baths'] = { $gte: val };
+    }
+
+    const results = await Property.find(query).limit(10);
+    return results;
+  }
+
   private listCartridges(): string[] {
     const fs = require('fs');
+    if (!fs.existsSync(this.cartridgeDir)) return [];
     return fs.readdirSync(this.cartridgeDir)
       .filter((f: string) => f.endsWith('.tah'))
       .map((f: string) => f.replace('.tah', ''));
+  }
+
+  private help() {
+    return [
+      "(QUERY \"cartridge\" \"term\") - Search a TAH cartridge",
+      "(EXISTS? \"cartridge\" \"term\") - Check Bloom filter membership",
+      "(SEARCH \"city\" :price-max N :beds-min M) - Programmable property search",
+      "(LIST-CARTRIDGES) - List active cartridges",
+      "(VERSION) - Show evaluator version"
+    ];
   }
 
   /**
@@ -84,6 +136,10 @@ export class SearchEvaluator {
       } else if (token === ')') {
         throw new Error("Unexpected )");
       } else {
+        // Clean quotes from atoms
+        if (token && (token.startsWith('"') || token.startsWith("'"))) {
+           return token.slice(1, -1);
+        }
         return token!;
       }
     };
@@ -93,3 +149,4 @@ export class SearchEvaluator {
 }
 
 export const searchEvaluator = new SearchEvaluator();
+

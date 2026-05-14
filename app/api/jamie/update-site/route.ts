@@ -3,7 +3,7 @@ import Groq from "groq-sdk";
 import connectDB from "@/lib/core/database";
 import MenuItem from "@/models/MenuItem";
 import { SiteConfig } from "@/models/SiteConfig";
-import { abidanGatekeeper } from "@/lib/security/gatekeeper";
+import { abidanGatekeeper } from "@/lib/security/identityGatekeeper";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
