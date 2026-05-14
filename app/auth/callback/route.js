@@ -48,6 +48,15 @@ export async function GET(request) {
       license_id: metadata.license_id || null,
       is_subscribed: role === 'realtor' || !!metadata.isSubscribed,
       is_advanced_mode: role === 'realtor',
+      brokerage_name: metadata.brokerage_name || null,
+      brokerage_license: metadata.brokerage_license || null,
+      brokerage_email: metadata.brokerage_email || null,
+      brokerage_phone: metadata.brokerage_phone || null,
+      designated_broker: metadata.designated_broker || null,
+      designated_broker_license: metadata.designated_broker_license || null,
+      supervisor: metadata.supervisor || null,
+      supervisor_license: metadata.supervisor_license || null,
+      phone_number: metadata.phone_number || null,
     }
 
     const { data: profile, error: profileError } = await supabase

@@ -19,7 +19,16 @@
   - **Cloud-Hosted Expertise**: Successfully migrated 6 specialized TAH expertise cartridges (Makiel, Gadrael, etc.) to Supabase Storage.
 - **Logistic Velocity Maturation**: Refactored lead engagement scoring using a sigmoid growth function.
   - **Normalization Formula**: $V = S \cdot \frac{1}{1 + e^{-k(t-x)}}$, ensuring lead velocity stabilizes over a 7-day maturation period rather than decaying linearly.
-
+- **Market Velocity Simulation (Abidan Grid)**: Ported the sigmoid maturation logic to the regional market layer, enabling realistic "Fate Trajectories" in the War Room.
+- **Market Velocity Cartridge (TAH)**: Automated the forging of expertise cartridges containing simulated velocity data for sub-1ms retrieval during property audits.
+- **Ozriel Protocol Integration**: Verified that all forged market expertise passes the humanity-threshold audit, ensuring clean intelligence for Jamie AI.
+- **TREC Consumer Notice**: Integrated a mandatory global header notice (10pt font) for all promulgated contract simulations, ensuring legal compliance and user safety.
+- **TREC Mandatory Disclosure**: Added a direct link to the TREC Consumer Protection Notice (Form CN 1-5) in the global footer.
+- **Dynamic IABS Integration**: Launched the Information About Brokerage Services (IABS) page (`/iabs`), featuring a dynamic form that populates sponsoring broker and agent license data directly from the user's TAH-verified profile.
+- **Verification Suite**: Expanded the Vitest unit testing framework to include `market-velocity.test.ts`, verifying sigmoid maturation accuracy and deterministic jitter logic.
+- **Production Orchestration**: Refactored core Property and Search APIs to prioritize Supabase, enabling high-performance production lookups via MLS ID and internal UUIDs.
+- **Cloud-Native Expertise**: Upgraded `TAHRetriever` and Jamie AI to fetch expertise cartridges from Supabase Storage as a primary production fallback.
+- **Production Sync Script**: Launched `sync-mls-production.ts`, a SICP-stream-powered worker for continuous MLS ingestion into the consolidated Supabase grid.
 # SUNSET PULSE // DEVELOPMENT LOG
 **DATE:** 2026-05-08
 **STATUS:** COLLECTIVE COMMAND v1.0 // HUD, INTELLIGENCE & TELEGRAM SYNC

@@ -1,6 +1,7 @@
 import React from 'react';
 import '@/assets/styles/globals.css'; 
 import Navbar from '@/components/Navbar';
+import TRECConsumerNotice from '@/components/TRECConsumerNotice';
 import GlobalMarketPulse from '@/components/GlobalMarketPulse';
 import Footer from '@/components/Footer';
 import { AuthProvider } from '@/context/AuthContext';
@@ -149,6 +150,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
               <VibeProvider>
                 <JamiePulseProvider>
                   <div className='flex flex-col min-h-screen'>
+                    <TRECConsumerNotice />
                     <GlobalMarketPulse />
                     <Navbar />
                     <main className='flex-grow'>

@@ -34,20 +34,62 @@ async function getAbidanExpertise(judgeName: string, city: string): Promise<stri
     'DURANDIEL': 'durandiel_expertise.tah'
   };
 
-  const cartridgeName = cartridgeMap[judgeName.toUpperCase()];
-  if (!cartridgeName) return "";
+  const upperJudge = judgeName.toUpperCase();
+  const primaryCartridge = cartridgeMap[upperJudge];
+  let expertise = "";
 
-  const cartridgePath = path.resolve(process.cwd(), `cartridges/${cartridgeName}`);
-  if (!fs.existsSync(cartridgePath)) return "";
+  // 1. Fetch Primary Expertise
+  if (primaryCartridge) {
+    expertise += await fetchFromCartridge(primaryCartridge, city);
+  }
+
+  // 2. Fetch Specialized Legal Expertise for Gadrael
+  if (upperJudge === 'GADRAEL') {
+    expertise += await fetchFromCartridge('texas_contracts_expertise.tah', 'TEXAS');
+  }
+
+  return expertise ? `\n[DETERMINISTIC_GROUND_TRUTH_FROM_VAULT]: ${expertise}` : "";
+}
+
+/**
+ * Internal helper for TAH retrieval
+ * Supports both local file-system and cloud-native Supabase Storage.
+ */
+async function fetchFromCartridge(cartridgeName: string, query: string): Promise<string> {
+  const localPath = path.resolve(process.cwd(), `cartridges/${cartridgeName}`);
+  let buffer: Buffer | null = null;
+
+  // 1. Try Local File System first (Dev/Edge)
+  if (fs.existsSync(localPath)) {
+    buffer = fs.readFileSync(localPath);
+  } else {
+    // 2. Fallback to Supabase Storage (Production/Cloud)
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.storage
+        .from('cartridges')
+        .download(cartridgeName);
+
+      if (!error && data) {
+        const arrayBuffer = await data.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+        console.log(`[TAH_CLOUD_LOAD] Successfully retrieved ${cartridgeName} from Supabase.`);
+      }
+    } catch (cloudErr) {
+      console.error(`[TAH_CLOUD_FETCH_FAILED] ${cartridgeName}:`, cloudErr);
+    }
+  }
+
+  if (!buffer) return "";
 
   try {
-    const retriever = new TAHRetriever(cartridgePath);
-    const results = retriever.search(city);
+    const retriever = new TAHRetriever(buffer);
+    const results = retriever.search(query);
     if (results.length > 0) {
-      return `\n[DETERMINISTIC_GROUND_TRUTH_FROM_VAULT]: ${results[0].data}`;
+      return results.map(r => r.data).join(' | ');
     }
   } catch (err) {
-    console.error(`[ABIDAN_EXPERT_RETRIEVAL_ERROR] ${judgeName}:`, err);
+    console.error(`[TAH_RETRIEVAL_ERROR] ${cartridgeName}:`, err);
   }
   return "";
 }
@@ -151,10 +193,11 @@ async function getJamieAnalysisIntel(workerName: string, systemPrompt: string, p
     const expertise = await getAbidanExpertise(workerName, city);
     const enrichedPrompt = systemPrompt + expertise;
 
+    const apiKey = process.env.OPENROUTER_API_KEY || (process.env.OPENROUTER_API_KEYS ? process.env.OPENROUTER_API_KEYS.split(',')[0] : '');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -178,10 +221,11 @@ async function getJamieAnalysisIntel(workerName: string, systemPrompt: string, p
  */
 async function getJamieDataAggregation(rawIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY || (process.env.OPENROUTER_API_KEYS ? process.env.OPENROUTER_API_KEYS.split(',')[0] : '');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -205,10 +249,11 @@ async function getJamieDataAggregation(rawIntel: string, systemPrompt: string, m
  */
 async function getJamieFinalInsights(restoredIntel: string, systemPrompt: string, model: string = "meta-llama/llama-3.1-405b-instruct:free") {
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY || (process.env.OPENROUTER_API_KEYS ? process.env.OPENROUTER_API_KEYS.split(',')[0] : '');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -231,7 +276,9 @@ import { calculateMaxStay, calculateBudgetGap, synthesizePortfolio } from '../in
 import { getNeighborhoodIntel } from '../intelligence/neighborhoodIntel';
 
 export async function generateJamieEngagementHook(leadData: any, property: any) {
-  const neighborhoodIntel = getNeighborhoodIntel(property.location.city, property.location.neighborhood);
+  const neighborhoodIntel = await getNeighborhoodIntel(property.location.city, property.location.neighborhood);
+
+  const apiKey = process.env.OPENROUTER_API_KEY || (process.env.OPENROUTER_API_KEYS ? process.env.OPENROUTER_API_KEYS.split(',')[0] : '');
 
   const usps = [
     property.type,
@@ -282,14 +329,15 @@ export async function generateJamieEngagementHook(leadData: any, property: any) 
   `;
 
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY || (process.env.OPENROUTER_API_KEYS ? process.env.OPENROUTER_API_KEYS.split(',')[0] : '');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.3-70b-instruct:free",
+        model: "anthropic/claude-3-haiku",
         messages: [
           { role: "system", content: JAMIE_RE_ENGAGEMENT_PROTOCOL },
           { role: "user", content: prompt }
@@ -299,7 +347,16 @@ export async function generateJamieEngagementHook(leadData: any, property: any) 
     });
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || "";
+    if (data.error) {
+      console.error("OpenRouter API Error:", data.error);
+      throw new Error(`OpenRouter error: ${data.error.message || 'Unknown error'}`);
+    }
+    
+    const content = data.choices?.[0]?.message?.content || "";
+    if (!content) {
+      console.warn("Jamie generated empty content. Returning fallback hook.");
+      return { a: "The market is moving fast. Should we talk? - Jamie" };
+    }
     return JSON.parse(content);
   } catch (error) {
     console.error("Engagement Hook Generation Failed:", error);
@@ -320,14 +377,15 @@ export async function getJamieEngagement(lead: any, property: any, oldScore: num
   ${budgetConstraint}`;
 
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY || (process.env.OPENROUTER_API_KEYS ? process.env.OPENROUTER_API_KEYS.split(',')[0] : '');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.3-70b-instruct:free",
+        model: "anthropic/claude-3-haiku",
         messages: [
           { role: "system", content: JAMIE_RE_ENGAGEMENT_PROTOCOL },
           { role: "user", content: prompt }

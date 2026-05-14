@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { cityHash64 as city_hash64 } from './cityhash';
-
-const MASK64 = BigInt('0xFFFFFFFFFFFFFFFF');
+import { getTahIndices, getSurgicalHash } from './tah_utils';
 
 export interface TAHShard {
   type: number;
@@ -54,12 +52,9 @@ export class TAHRetriever {
   public containsKeyword(keyword: string): boolean {
     if (!this.bloomFilter) return false;
 
-    const data = Buffer.from(keyword.toLowerCase().trim(), 'utf-8');
-    const h1 = city_hash64(data);
-    const h2 = city_hash64(Buffer.concat([data, Buffer.from('TAH_SALT', 'utf-8')]));
+    const indices = getTahIndices(keyword, this.m, this.k);
 
-    for (let i = 0n; i < BigInt(this.k); i++) {
-      const idx = ((h1 + i * h2) & MASK64) % this.m;
+    for (const idx of indices) {
       const byteIdx = Number(idx / 8n);
       const bitIdx = Number(idx % 8n);
       
@@ -102,8 +97,7 @@ export class TAHRetriever {
     const results: TAHShard[] = [];
     if (!this.containsKeyword(query)) return results;
 
-    const queryBuf = Buffer.from(query.toLowerCase().trim(), 'utf-8');
-    const queryHash = city_hash64(queryBuf);
+    const queryHash = getSurgicalHash(query);
 
     // Primary: Surgical Hash Index Match
     for (let i = 0; i < this.shardCount; i++) {

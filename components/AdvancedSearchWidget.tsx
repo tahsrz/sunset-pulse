@@ -2,9 +2,25 @@
 import { useState } from 'react';
 import { FaSearch, FaSlidersH, FaBell, FaMapMarkedAlt } from 'react-icons/fa';
 
-const AdvancedSearchWidget = ({ onSearch, onSaveAlert }) => {
+interface AdvancedSearchFilters {
+  location: string;
+  propertyType: string;
+  minPrice: string;
+  maxPrice: string;
+  beds: string;
+  baths: string;
+  amenities: string[];
+  includeMLS: boolean;
+}
+
+interface AdvancedSearchWidgetProps {
+  onSearch: (filters: AdvancedSearchFilters) => void;
+  onSaveAlert?: (filters: AdvancedSearchFilters) => void;
+}
+
+const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, onSaveAlert }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<AdvancedSearchFilters>({
     location: '',
     propertyType: 'All',
     minPrice: '',
@@ -18,15 +34,16 @@ const AdvancedSearchWidget = ({ onSearch, onSaveAlert }) => {
   const propertyTypes = ['All', 'House', 'Apartment', 'RV Park', 'Condo', 'Industrial', 'Office', 'Senior Living', 'Mobile Home'];
   const commonAmenities = ['Wifi', 'Pool', 'Gym', 'Parking', 'RV Hookup', 'Laundry'];
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFilters(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
 
-  const toggleAmenity = (amenity) => {
+  const toggleAmenity = (amenity: string) => {
     setFilters(prev => ({
       ...prev,
       amenities: prev.amenities.includes(amenity) 
@@ -35,7 +52,7 @@ const AdvancedSearchWidget = ({ onSearch, onSaveAlert }) => {
     }));
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(filters);
   };

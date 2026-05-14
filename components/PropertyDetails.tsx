@@ -33,11 +33,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, rentData })
 
       <PropertySpecs property={property} />
 
-      <PropertyViewer 
-        property={property} 
-        viewerType={viewerType} 
-        setViewerType={setViewerType} 
-      />
+      <PropertyViewer property={property} />
 
       <AmenityList amenities={property.amenities || []} />
 

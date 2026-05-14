@@ -19,9 +19,9 @@ export interface JamieRewrite {
 }
 
 export interface JamieAudit {
-  ai_patterns_detected?: string[];
+  ai_patterns_detected: string[];
   humanized_rewrites: JamieRewrite[];
-  overall_tone_score?: number;
+  overall_tone_score: number;
 }
 
 export interface JamieBriefing {
@@ -35,10 +35,23 @@ export interface JamieBriefing {
   executive_summary: string;
   key_signal_count: number;
   top_headline: string;
+  error?: string;
 }
 
 export function normalizeJamieBriefing(input: any): JamieBriefing | null {
-  if (!input || input.error) return null;
+  if (!input) return null;
+  if (input.error) return { 
+    error: input.error,
+    timestamp: new Date().toISOString(),
+    simulated_research_hours: 0,
+    daily_joke: '',
+    consolidated_truth: '',
+    news_articles: [],
+    ozriel_audit: { ai_patterns_detected: [], humanized_rewrites: [], overall_tone_score: 0 },
+    executive_summary: '',
+    key_signal_count: 0,
+    top_headline: ''
+  };
 
   const newsArticles: JamieBriefingArticle[] = Array.isArray(input.news_articles)
     ? input.news_articles.map((article: any) => ({
@@ -61,7 +74,7 @@ export function normalizeJamieBriefing(input: any): JamieBriefing | null {
     overall_tone_score:
       typeof input?.ozriel_audit?.overall_tone_score === 'number'
         ? input.ozriel_audit.overall_tone_score
-        : undefined,
+        : 0,
   };
 
   const consolidatedTruth =

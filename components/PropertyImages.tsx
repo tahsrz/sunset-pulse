@@ -21,7 +21,7 @@ const PropertyImages: React.FC<PropertyImagesProps> = ({ images }) => {
             >
               {({ ref, open }) => (
                 <Image
-                  ref={ref as React.MutableRefObject<HTMLImageElement>}
+                  ref={ref as unknown as React.MutableRefObject<HTMLImageElement>}
                   onClick={open}
                   src={images[0]}
                   alt='Property'
@@ -53,7 +53,7 @@ const PropertyImages: React.FC<PropertyImagesProps> = ({ images }) => {
                   >
                     {({ ref, open }) => (
                       <Image
-                        ref={ref as React.MutableRefObject<HTMLImageElement>}
+                        ref={ref as unknown as React.MutableRefObject<HTMLImageElement>}
                         onClick={open}
                         src={image}
                         alt={`Property ${index + 1}`}

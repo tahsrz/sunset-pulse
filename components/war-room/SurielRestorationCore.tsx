@@ -3,7 +3,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const SurielRestorationCore = () => {
+interface SurielRestorationCoreProps {
+  property?: any;
+}
+
+const SurielRestorationCore: React.FC<SurielRestorationCoreProps> = ({ property }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {

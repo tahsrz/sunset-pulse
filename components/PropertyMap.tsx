@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Map, { Marker } from 'react-map-gl';
-import { setDefaults, fromAddress } from 'react-geocode';
+import { setDefaults, fromAddress, OutputFormat } from 'react-geocode';
 import Spinner from './Spinner';
 import Image from 'next/image';
 import pin from '@/assets/images/pin.svg';
@@ -22,6 +22,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ property }) => {
     key: process.env.NEXT_PUBLIC_GOOGLE_GEOCODING_API_KEY || '',
     language: 'en',
     region: 'us',
+    outputFormat: OutputFormat.JSON,
   });
 
   useEffect(() => {

@@ -8,8 +8,10 @@ Sunset Pulse is a high-performance intelligence grid built on a modern Next.js 1
 - **TAH Memory Forge**: Automated generation of binary expertise cartridges with a Surgical Hash Index (CityHash64) for sub-1ms lookups.
 - **Ozriel Protocol**: Integrated Scythe Purifier that audits all session data for "Humanity Scores." Only high-entropy, non-robotic interactions are forged into long-term memory.
 - **Session Conveyor Belt**: A decentralized intelligence pipeline that harvests live lead events and consolidates them into TAH expertise units stored in Supabase Storage.
-- **Supabase Hegemony**: Consolidated storage for properties, intelligence events, and TAH cartridges, eliminating MongoDB dependency for Alpha.
-- **Logistic Velocity Maturation**: Normalized lead scoring using a sigmoid growth function, ensuring engagement metrics mature over a 7-day inflection point.
+- **Supabase Alpha Consolidation**: Consolidated storage for properties, intelligence events, and TAH cartridges, eliminating MongoDB dependency for Alpha.
+- **Logistic Velocity Maturation**: Normalized lead and market scoring using a sigmoid growth function, ensuring metrics mature over a 15-day inflection point.
+- **Legal Compliance Suite**: Integrated TREC Promulgated Contracts (TAH) and dynamic IABS forms to ensure legal ground-truth across the Abidan grid.
+- **Market Velocity Simulation**: Engineered a regional maturation layer that drives deterministic "Fate Trajectories" in the War Room HUD.
 
 
 ### ⚡ Recent Neural Upgrades (v3.0)

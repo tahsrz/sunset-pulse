@@ -12,7 +12,7 @@ import SurielRestorationCore from './SurielRestorationCore';
 import ZakarielLogisticFox from './ZakarielLogisticFox';
 import OzrielFinalArbiter from './OzrielFinalArbiter';
 import propertiesData from '@/properties.json';
-import { JamieBriefing } from '@/lib/types/jamieBriefing';
+import { JamieBriefing, normalizeJamieBriefing } from '@/lib/types/jamieBriefing';
 import { speak } from '@/lib/core/tts';
 
 const JamiePulseBriefing = ({ property }: { property: any }) => {
@@ -24,7 +24,7 @@ const JamiePulseBriefing = ({ property }: { property: any }) => {
     fetch('/api/jamie/briefing')
       .then(res => res.json())
       .then(data => {
-        setBriefing(data);
+        setBriefing(normalizeJamieBriefing(data));
         setLoading(false);
       })
       .catch(err => {

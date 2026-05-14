@@ -19,11 +19,11 @@ export default function MemoriaAtlasPage() {
     const [askResponse, setAskResponse] = useState(null);
     const [isIgnited, setIsIgnited] = useState(false);
     
-    const readerRef = useRef(null);
-    const fgRef = useRef();
-    const scrollRef = useRef(null);
+    const readerRef = useRef<HTMLDivElement>(null);
+    const fgRef = useRef<any>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-    const scrollToNode = (node) => {
+    const scrollToNode = (node: any) => {
         setSelectedNode(node);
         // If we are in reader mode, the AnimatePresence might need a moment or we scroll the ref
         if (readerRef.current) {
@@ -31,7 +31,7 @@ export default function MemoriaAtlasPage() {
         }
     };
 
-    const handleGlobalPulse = (query) => {
+    const handleGlobalPulse = (query: string) => {
         if (!query) { setPulseResults([]); return; }
         setIsPulseLoading(true);
         fetch(`http://localhost:8000/pulse?query=${encodeURIComponent(query)}`)
@@ -40,7 +40,7 @@ export default function MemoriaAtlasPage() {
             .catch(err => { console.error("Pulse failed:", err); setIsPulseLoading(false); });
     };
 
-    const handleAskVault = (query) => {
+    const handleAskVault = (query: string) => {
         if (!currentCartridge || !query) return;
         setLoading(true);
         fetch(`http://localhost:8000/cartridge/${currentCartridge}/ask?query=${encodeURIComponent(query)}`)
@@ -49,19 +49,19 @@ export default function MemoriaAtlasPage() {
             .catch(err => { console.error("Failed to query vault:", err); setLoading(false); });
     };
 
-    const scroll = (offset) => {
+    const scroll = (offset: number) => {
         if (scrollRef.current) scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
     };
 
     useEffect(() => {
         if (fgRef.current && isIgnited) {
-            fgRef.current.d3Force('charge').strength(-100);
-            fgRef.current.d3Force('link').distance(30);
-            fgRef.current.d3ReheatSimulation();
+            (fgRef.current as any).d3Force('charge').strength(-100);
+            (fgRef.current as any).d3Force('link').distance(30);
+            (fgRef.current as any).d3ReheatSimulation();
         } else if (fgRef.current && !isIgnited) {
-            fgRef.current.d3Force('charge').strength(0);
-            fgRef.current.d3Force('link').distance(1);
-            fgRef.current.d3ReheatSimulation();
+            (fgRef.current as any).d3Force('charge').strength(0);
+            (fgRef.current as any).d3Force('link').distance(1);
+            (fgRef.current as any).d3ReheatSimulation();
         }
     }, [isIgnited, graphData]);
 
@@ -325,7 +325,7 @@ export default function MemoriaAtlasPage() {
                                     type="text" 
                                     placeholder="ASK_VAULT: Querying Memoria Protocol..." 
                                     className="bg-transparent flex-1 border-none outline-none text-sm text-slate-200 placeholder:text-slate-700 font-mono"
-                                    onKeyDown={(e) => { if (e.key === 'Enter') { handleAskVault(e.target.value); e.target.value = ''; } }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { const target = e.target as HTMLInputElement; handleAskVault(target.value); target.value = ''; } }}
                                 />
                                 <div className="text-[8px] font-mono text-slate-700 border border-slate-800 px-1.5 py-0.5 rounded group-focus-within:text-cyan-500 group-focus-within:border-cyan-500 transition-colors">CMD+K</div>
                             </div>

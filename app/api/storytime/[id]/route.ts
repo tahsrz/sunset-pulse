@@ -27,7 +27,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       envoyId = (config as any)?.activeEnvoyId || 'ENVOY-JAMIE';
     }
 
-    const envoy = await Entity.findOne({ uid: envoyId }).lean();
+    const envoy = (await Entity.findOne({ uid: envoyId }).lean()) as any;
     if (!envoy) return NextResponse.json({ error: 'Envoy not found' }, { status: 404 });
 
     // 3. Narrative Intelligence Grid: Check for missing interpretations or visual cues

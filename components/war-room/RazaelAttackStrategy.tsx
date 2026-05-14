@@ -3,7 +3,11 @@
 import React from 'react';
 import { FaBolt, FaCrosshairs, FaSkull, FaFire } from 'react-icons/fa';
 
-const RazaelAttackStrategy = () => {
+interface RazaelAttackStrategyProps {
+  property?: any;
+}
+
+const RazaelAttackStrategy: React.FC<RazaelAttackStrategyProps> = ({ property }) => {
   const strategies = [
     { id: 1, title: "Aggressive Acquisition", risk: "HIGH", leverage: "85%", icon: <FaBolt /> },
     { id: 2, title: "Shadow Negotiation", risk: "MED", leverage: "62%", icon: <FaCrosshairs /> },

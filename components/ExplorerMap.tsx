@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import Map, { Source, Layer, NavigationControl, FullscreenControl } from 'react-map-gl';
+import Map, { Source, Layer, NavigationControl, FullscreenControl, MapRef } from 'react-map-gl';
 import { useSearchParams } from 'next/navigation';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
@@ -28,12 +28,26 @@ import MapControls from './explorer/MapControls';
 import { useJamieInsights } from '@/hooks/useJamieInsights';
 import { useValuations } from '@/hooks/useValuations';
 
-const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [], hoveredId = null, activeRouteProperty = null }) => {
+interface ExplorerMapProps {
+  onSelectionChange: (selection: any) => void;
+  onPropertySelect?: (property: any) => void;
+  results?: any[];
+  hoveredId?: string | null;
+  activeRouteProperty?: any;
+}
+
+const ExplorerMap: React.FC<ExplorerMapProps> = ({ 
+  onSelectionChange, 
+  onPropertySelect = null, 
+  results = [], 
+  hoveredId = null, 
+  activeRouteProperty = null 
+}) => {
   const searchParams = useSearchParams();
   const { jamieInsights } = useJamieInsights();
   const { valuations } = useValuations();
-  const [selectedInsight, setSelectedInsight] = useState(null);
-  const [selectedValuation, setSelectedValuation] = useState(null);
+  const [selectedInsight, setSelectedInsight] = useState<any>(null);
+  const [selectedValuation, setSelectedValuation] = useState<any>(null);
   const [showDirections, setShowDirections] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPOIs, setShowPOIs] = useState(false);
@@ -49,12 +63,12 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
   }, [activeRouteProperty]);
 
   // State for GeoJSON results calculated in Web Worker
-  const [geojsonResults, setGeojsonResults] = useState({
+  const [geojsonResults, setGeojsonResults] = useState<any>({
     type: 'FeatureCollection',
     features: []
   });
 
-  const workerRef = useRef(null);
+  const workerRef = useRef<Worker | null>(null);
 
   // Initialize Web Worker for background GeoJSON processing
   useEffect(() => {
@@ -78,7 +92,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
   }, [results, valuations]);
 
   // Sync hoveredId to Mapbox feature-state for instant performance
-  const prevHoveredId = useRef(null);
+  const prevHoveredId = useRef<string | null>(null);
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
@@ -109,7 +123,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
   const urlLng = searchParams?.get('lng');
   const urlId = searchParams?.get('id');
 
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
 
   // Auto-select property if urlId is present
   useEffect(() => {
@@ -130,11 +144,12 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
     bearing: -17
   });
 
-  const mapRef = useRef();
-  const drawRef = useRef();
-  const directionsRef = useRef();
+  const mapRef = useRef<MapRef>(null);
+  const drawRef = useRef<any>(null);
+  const directionsRef = useRef<any>(null);
 
-  const onMapClick = useCallback((event) => {
+  const onMapClick = useCallback((event: any) => {
+    if (!mapRef.current) return;
     const map = mapRef.current.getMap();
     const features = map.queryRenderedFeatures(event.point, {
       layers: ['unclustered-point', 'clusters']
@@ -142,11 +157,11 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
 
     if (!features.length) return;
 
-    const feature = features[0];
+    const feature: any = features[0];
     if (feature.layer.id === 'clusters') {
       const clusterId = feature.properties.cluster_id;
-      const source = map.getSource('properties');
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+      const source: any = map.getSource('properties');
+      source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
         if (err) return;
         map.easeTo({
           center: feature.geometry.coordinates,
@@ -164,7 +179,7 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
   }, [results, onPropertySelect]);
 
   // Handle draw control and directions initialization
-  const onMapLoad = useCallback((e) => {
+  const onMapLoad = useCallback((e: any) => {
     const map = e.target;
     
     // Draw Control
@@ -193,12 +208,12 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
     });
     directionsRef.current = directions;
 
-    const updateSelection = (event) => {
+    const updateSelection = (event: any) => {
       const features = draw.getAll().features;
       if (features.length > 0) {
         const feature = features[features.length - 1]; 
         if (feature.geometry.type === 'Polygon') {
-          const coords = feature.geometry.coordinates[0].flat().join(',');
+          const coords = (feature.geometry as any).coordinates[0].flat().join(',');
           onSelectionChange({ type: 'polygon', data: coords, feature });
         }
       }
@@ -215,25 +230,27 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
     };
   }, [onSelectionChange]);
 
-  const toggleDirections = (targetProperty) => {
+  const toggleDirections = (targetProperty: any) => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
 
     if (showDirections) {
-      map.removeControl(directionsRef.current);
+      if (directionsRef.current) map.removeControl(directionsRef.current);
       setShowDirections(false);
     } else {
-      map.addControl(directionsRef.current, 'top-left');
-      
-      // Attempt to get user location
-      navigator.geolocation.getCurrentPosition((pos) => {
-        directionsRef.current.setOrigin([pos.coords.longitude, pos.coords.latitude]);
-        directionsRef.current.setDestination([
-          targetProperty.location_geo.coordinates[0], 
-          targetProperty.location_geo.coordinates[1]
-        ]);
-      });
-      setShowDirections(true);
+      if (directionsRef.current) {
+        map.addControl(directionsRef.current, 'top-left');
+        
+        // Attempt to get user location
+        navigator.geolocation.getCurrentPosition((pos) => {
+          directionsRef.current.setOrigin([pos.coords.longitude, pos.coords.latitude]);
+          directionsRef.current.setDestination([
+            targetProperty.location_geo.coordinates[0], 
+            targetProperty.location_geo.coordinates[1]
+          ]);
+        });
+        setShowDirections(true);
+      }
     }
   };
 
@@ -248,10 +265,10 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
         onClick={onMapClick}
         interactiveLayerIds={['unclustered-point', 'clusters']}
         ref={mapRef}
-        terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
+        terrain={{ source: 'mapbox-dem', exaggeration: 1.5 } as any}
       >
-        {showPOIs && <Layer {...poiLayer} />}
-        {showVisual && <Layer {...vibeLayer} />}
+        {showPOIs && <Layer {...(poiLayer as any)} />}
+        {showVisual && <Layer {...(vibeLayer as any)} />}
         <Source
           id="mapbox-dem"
           type="raster-dem"
@@ -269,13 +286,13 @@ const ExplorerMap = ({ onSelectionChange, onPropertySelect = null, results = [],
           clusterRadius={50}
           promoteId="id"
         >
-          {showHeatmap && <Layer {...heatmapLayer} />}
-          <Layer {...clusterLayer} />
-          <Layer {...clusterCountLayer} />
+          {showHeatmap && <Layer {...(heatmapLayer as any)} />}
+          <Layer {...(clusterLayer as any)} />
+          <Layer {...(clusterCountLayer as any)} />
           <Layer 
-            {...unclusteredPointLayer} 
+            {...(unclusteredPointLayer as any)} 
             paint={{
-              ...unclusteredPointLayer.paint,
+              ...(unclusteredPointLayer.paint as any),
               'circle-radius': ['case', ['boolean', ['feature-state', 'hovered'], false], 12, 8],
               'circle-stroke-width': ['case', ['boolean', ['feature-state', 'hovered'], false], 4, 2],
               'circle-stroke-color': ['case', ['boolean', ['feature-state', 'hovered'], false], '#3b82f6', '#fff']

@@ -1,4 +1,4 @@
-import { setDefaults, fromAddress } from 'react-geocode';
+import { setDefaults, fromAddress, OutputFormat } from 'react-geocode';
 import { persistenceEngine } from '../persistenceEngine';
 
 /**
@@ -9,6 +9,7 @@ setDefaults({
   key: process.env.NEXT_PUBLIC_GOOGLE_GEOCODING_API_KEY,
   language: 'en',
   region: 'us',
+  outputFormat: OutputFormat.JSON,
 });
 
 /**

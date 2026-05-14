@@ -3,7 +3,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const DurandielGhostRecon = () => {
+interface DurandielGhostReconProps {
+  property?: any;
+}
+
+const DurandielGhostRecon: React.FC<DurandielGhostReconProps> = ({ property }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {

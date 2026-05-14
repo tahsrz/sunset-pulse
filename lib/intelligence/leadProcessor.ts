@@ -60,10 +60,19 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
     ? `Property: ${property.name}, Location: ${property.location.city}, ${property.location.state}, Type: ${property.type}`
     : 'Unknown Property';
 
-  const jamieNotes = await getJamieResponse(
-    `Analyze this ${leadCategory} lead: ${leadData.name}. Interested in ${propertyInfo}. Budget: ${leadData.budget || 'Unknown'}. Probability: ${probability}%. Provide a professional summary of their intent.`,
-    property
-  );
+  const prompt = `Analyze this ${leadCategory} lead: ${leadData.name}. Interested in ${propertyInfo}. Budget: ${leadData.budget || 'Unknown'}. Probability: ${probability}%. Provide a professional summary of their intent.`;
+  
+  const response = await getJamieResponse([{ role: 'user', content: prompt }], property);
+  
+  let jamieNotes = '';
+  if (typeof response === 'string') {
+    jamieNotes = response;
+  } else {
+    // Consume the stream
+    for await (const chunk of response) {
+      jamieNotes += chunk.choices[0]?.delta?.content || '';
+    }
+  }
 
   return {
     leadData,

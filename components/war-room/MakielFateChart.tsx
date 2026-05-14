@@ -5,8 +5,37 @@ import * as d3 from 'd3';
 
 import historicalData from '@/constants/historical_sales.json';
 
-const MakielFateChart = ({ property }: { property: any }) => {
+interface MakielFateChartProps {
+  property?: any;
+}
+
+const MakielFateChart: React.FC<MakielFateChartProps> = ({ property }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [velocityData, setVelocityData] = React.useState<any>(null);
+
+  useEffect(() => {
+    // 1. Fetch Real-time Market Velocity from TAH Grid
+    const city = property?.location?.city || 'Dallas';
+    fetch('/api/tah/eval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: `(QUERY "market_velocity" "${city.toUpperCase()}")` })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.result?.length > 0) {
+        // Parse TAH data: CITY: Bowie | VELOCITY: 16.32 | TREND: DOWN | ...
+        const raw = data.result[0].data;
+        const parts = raw.split('|').reduce((acc: any, part: string) => {
+          const [key, val] = part.split(':').map(s => s.trim());
+          acc[key.toLowerCase()] = val;
+          return acc;
+        }, {});
+        setVelocityData(parts);
+      }
+    })
+    .catch(err => console.error('[MAKIEL_CHART_FETCH_ERROR]', err));
+  }, [property]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -17,17 +46,24 @@ const MakielFateChart = ({ property }: { property: any }) => {
     const regionalBaseline2024 = ntData.historical[ntData.historical.length - 1].avg_price;
     const scaleFactor = propertyValue / regionalBaseline2024;
 
+    // Adjust realized data based on simulated TAH velocity if available
+    const velocityMultiplier = velocityData ? (parseFloat(velocityData.velocity) / 100) + 0.5 : 1.0;
+
     const data = [
       ...ntData.historical.map(d => ({
         year: d.year,
         predicted: d.avg_price * scaleFactor,
         realized: d.avg_price * scaleFactor
       })),
-      ...ntData.predictions.map(d => ({
-        year: d.year,
-        predicted: d.mid * scaleFactor,
-        realized: null
-      }))
+      ...ntData.predictions.map(d => {
+        // Only show realized for current year/period
+        const isCurrentPeriod = d.year <= 2026.5; 
+        return {
+          year: d.year,
+          predicted: d.mid * scaleFactor,
+          realized: isCurrentPeriod ? (d.mid * scaleFactor * velocityMultiplier) : null
+        };
+      })
     ];
 
     const svg = d3.select(svgRef.current);

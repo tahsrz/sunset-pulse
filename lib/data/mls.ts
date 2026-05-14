@@ -17,7 +17,7 @@ export interface MLSProperty {
   //  standardized MLS fields
 }
 
-class MLSService {
+export class MLSService {
   private static instance: MLSService;
 
   private constructor() {}

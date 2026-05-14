@@ -26,6 +26,16 @@ function hashLen16(u: bigint, v: bigint): bigint {
   return b;
 }
 
+function weakHashLen32WithSeeds(w: bigint, x: bigint, y: bigint, z: bigint, a: bigint, b: bigint): [bigint, bigint] {
+  a = (a + w) & MASK64;
+  b = rotate((b + a + z) & MASK64, 21n);
+  const c = a;
+  a = (a + x) & MASK64;
+  a = (a + y) & MASK64;
+  b = (b + rotate(a, 44n)) & MASK64;
+  return [(a + z) & MASK64, (b + c) & MASK64];
+}
+
 function fetch64(data: Buffer, offset: number): bigint {
   return data.readBigUint64LE(offset);
 }
@@ -89,10 +99,34 @@ export function cityHash64(data: Buffer): bigint {
     }
   }
   
-  const a = fetch64(data, 0);
-  const b = fetch64(data, 8);
-  const c = fetch64(data, len - 8);
-  const d = fetch64(data, len - 16);
-  return hashLen16((rotate((a - b) & MASK64, 43n) + rotate(c, 30n) + d) & MASK64,
-                   (a + rotate((b ^ K2) & MASK64, 18n) + c) & MASK64);
+  let x = fetch64(data, 0);
+  let y = (fetch64(data, len - 16) ^ fetch64(data, len - 32)) & MASK64;
+  let z = fetch64(data, len - 8);
+  let v: [bigint, bigint] = [
+    (rotate(y, 33n) * K1) & MASK64,
+    (rotate((y + x) & MASK64, 33n) * K1) & MASK64
+  ];
+  let w: [bigint, bigint] = [
+    ((rotate((z + v[0]) & MASK64, 35n) * K1) + v[1]) & MASK64,
+    (rotate((x + y) & MASK64, 33n) * K1) & MASK64
+  ];
+  x = (rotate((x + y) & MASK64, 42n) * K1) & MASK64;
+  
+  let offset = 0;
+  while (len - offset > 64) {
+    x = (rotate((x + y + v[0] + fetch64(data, offset + 8)) & MASK64, 37n) * K1) & MASK64;
+    y = (rotate((y + v[1] + fetch64(data, offset + 48)) & MASK64, 42n) * K1) & MASK64;
+    x ^= w[1];
+    y = (y + v[0] + fetch64(data, offset + 40)) & MASK64;
+    z = (rotate((z + w[0]) & MASK64, 33n) * K1) & MASK64;
+    v = weakHashLen32WithSeeds(fetch64(data, offset), fetch64(data, offset + 16), fetch64(data, offset + 24), fetch64(data, offset + 32), v[0], v[1]);
+    w = weakHashLen32WithSeeds(fetch64(data, offset + 32), fetch64(data, offset + 40), fetch64(data, offset + 48), fetch64(data, offset + 56), w[0], w[1]);
+    const temp = z;
+    z = x;
+    x = temp;
+    offset += 64;
+  }
+  
+  return hashLen16((hashLen16(v[0], v[1]) + (shiftMix(y) * K1) + z) & MASK64,
+                   (hashLen16(w[0], w[1]) + x) & MASK64);
 }

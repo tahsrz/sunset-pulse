@@ -3,7 +3,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const GadraelRiskShield = ({ property }: { property: any }) => {
+interface GadraelRiskShieldProps {
+  property?: any;
+}
+
+const GadraelRiskShield: React.FC<GadraelRiskShieldProps> = ({ property }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {

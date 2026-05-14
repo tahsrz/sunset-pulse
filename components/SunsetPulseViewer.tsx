@@ -1,56 +1,80 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Vector, Matrix } from '@/lib/visualization/engine/math';
 import { Renderer, Mesh3D } from '@/lib/visualization/engine/renderer';
 import { generatePropertyModel } from '@/lib/visualization/engine/generator';
 import { centerModel } from '@/lib/visualization/threeUtils';
 import { useTheme } from '@/context/ThemeProvider';
 import { useMultiplayer } from '@/hooks/useMultiplayer'; 
-import { toggleCollection, addPropertyComment, subscribeToPropertyComments, supabase, logEvent } from '@/lib/supabase';
-import { toast } from 'react-toastify';
-
+import { useJamiePulse } from '@/context/JamiePulseContext';
+import { usePropertyInteraction } from '@/hooks/usePropertyInteraction';
+import { useOrbitalNavigation } from '@/hooks/useOrbitalNavigation';
 import ViewerHUD from './viewer/ViewerHUD';
 import GhostReconOverlays from './viewer/GhostReconOverlays';
-import { useJamiePulse } from '@/context/JamiePulseContext';
 
-const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
+interface SunsetPulseViewerProps {
+  objUrl?: string;
+  property: any;
+  userId: string;
+  userName: string;
+}
+
+/**
+ * SunsetPulseViewer - High-Performance Custom 3D Engine Viewer.
+ * Refactored to TS and modular hooks (v7.2.0).
+ */
+const SunsetPulseViewer: React.FC<SunsetPulseViewerProps> = ({ 
+  objUrl, 
+  property, 
+  userId, 
+  userName 
+}) => {
   const propId = property?._id;
-  const canvasRef = useRef(null);
-  const rendererRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererRef = useRef<Renderer | null>(null);
   const { branding, isDevMode } = useTheme();
   const { latestBriefing } = useJamiePulse();
   
+  // --- UI State ---
   const [loading, setLoading] = useState(true);
   const [fps, setFps] = useState(0);
-  const [isInCollection, setIsInCollection] = useState(false);
   const [isCommentMode, setCommentMode] = useState(false);
-  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-  const [pendingCommentPos, setPendingCommentPos] = useState(null);
+  const [pendingCommentPos, setPendingCommentPos] = useState<any>(null);
   const [isDataOverlayActive, setDataOverlayActive] = useState(false);
   const [isIntelOverlayActive, setIntelOverlayActive] = useState(true);
-  const [projectedHotspots, setProjectedHotspots] = useState([]);
+  const [projectedHotspots, setProjectedHotspots] = useState<any[]>([]);
+  const [camOrientation, setCamOrientation] = useState({ yaw: 0, pitch: -0.2 });
 
+  // --- Refs ---
   const lastTimeRef = useRef(performance.now());
   const frameCountRef = useRef(0);
 
-  // Orbital state for camera rotation
-  const [camOrientation, setCamOrientation] = useState({ yaw: 0, pitch: -0.2 });
+  // --- Custom Hooks ---
+  const { 
+    orbitState, 
+    mouseRef, 
+    handleMouseDown, 
+    handleMouseMove, 
+    handleMouseUp 
+  } = useOrbitalNavigation();
 
-  // Simplified state for orbital navigation
-  const orbitState = useRef({ yaw: 0, pitch: -0.2 });
-  const mouseRef = useRef({ isDown: false, button: 0, lastX: 0, lastY: 0 });
+  const {
+    isInCollection,
+    comments,
+    handleToggleCollection,
+    submitComment
+  } = usePropertyInteraction(propId, userId, userName, property);
 
   const { 
     peers, 
-    sendUpdate, 
     leadId, 
-    isMeLead,
     presentationMode,
-    setPresentationMode 
+    togglePresentationMode: setPresentationMode 
   } = useMultiplayer(property?.name || 'User', new Vector(0,0,0));
 
+  // --- Hotspots Calculation ---
   const hotspots = React.useMemo(() => [
     { pos: new Vector(10, 10, 10), label: `Price/sqft: $${property?.square_feet ? Math.round(property.rates?.monthly / (property.square_feet / 10)) : 'N/A'}`, key: 'price' },
     { pos: new Vector(-10, 15, -10), label: `Score: ${property?.is_featured ? '9.8 (Elite)' : '8.2 (Solid)'}`, key: 'judge' },
@@ -68,60 +92,6 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
     return { r: 59, g: 130, b: 246 };
   };
 
-  useEffect(() => {
-    if (!propId || !userId) return;
-
-    const checkCollection = async () => {
-      const { data } = await supabase
-        .from('collections')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('property_id', propId)
-        .single();
-      setIsInCollection(!!data);
-    };
-
-    const fetchComments = async () => {
-      const { data } = await supabase
-        .from('property_comments')
-        .select('*')
-        .eq('property_id', propId)
-        .order('created_at', { ascending: true });
-      if (data) setComments(data);
-    };
-
-    checkCollection();
-    fetchComments();
-
-    const sub = subscribeToPropertyComments(propId, (payload) => {
-      setComments(prev => [...prev, payload.new]);
-      toast.info(`New Feedback from ${payload.new.user_name || 'Consumer'}`);
-    });
-
-    return () => {
-      if (sub) supabase.removeChannel(sub);
-    };
-  }, [propId, userId]);
-
-  const handleToggleCollection = async () => {
-    if (!userId) return toast.warn("Sign in to save properties.");
-    await toggleCollection(userId, propId);
-    
-    const wasIn = isInCollection;
-    setIsInCollection(!wasIn);
-    
-    await logEvent({
-      type: 'COLLECTION_SYNC',
-      description: `${userName} ${wasIn ? 'removed' : 'added'} ${property?.name} to Pulse Folder.`,
-      actorId: userId,
-      actorName: userName,
-      targetId: propId,
-      severity: wasIn ? 'INFO' : 'LOW'
-    });
-
-    toast.success(wasIn ? "Removed from Pulse Folder" : "Added to Pulse Folder");
-  };
-
   const handleDropComment = async () => {
     if (!pendingCommentPos || !newComment) return;
     
@@ -136,63 +106,29 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
     };
 
     try {
-      const savedComment = await addPropertyComment(commentData);
-      
-      await logEvent({
-        type: 'SPATIAL_FEEDBACK',
-        description: `${userName} dropped feedback on ${property?.name}: "${newComment.substring(0, 30)}..."`,
-        actorId: userId,
-        actorName: userName,
-        targetId: savedComment.id,
-        metadata: { property_name: property?.name, content: newComment },
-        severity: 'INFO'
-      });
-
+      await submitComment(commentData);
       setNewComment('');
       setPendingCommentPos(null);
       setCommentMode(false);
     } catch (err) {
-      toast.error("Feedback transmission failed.");
+      // Error handled in hook
     }
   };
 
-  // Simplified Mouse Handlers for Orbital View
-  const handleMouseDown = (e) => {
-    e.preventDefault();
-    mouseRef.current.isDown = true;
-    mouseRef.current.lastX = e.clientX;
-    mouseRef.current.lastY = e.clientY;
-  };
-
-  const handleMouseMove = (e) => {
-    if (!mouseRef.current.isDown) return;
-    const deltaX = e.clientX - mouseRef.current.lastX;
-    const deltaY = e.clientY - mouseRef.current.lastY;
-    
-    orbitState.current.yaw += deltaX * 0.01;
-    orbitState.current.pitch += deltaY * 0.01;
-    orbitState.current.pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, orbitState.current.pitch));
-    
-    mouseRef.current.lastX = e.clientX;
-    mouseRef.current.lastY = e.clientY;
-  };
-
-  const handleMouseUp = () => { mouseRef.current.isDown = false; };
-
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = () => {
     if (isCommentMode) {
-      // setting it to origin.
       setPendingCommentPos({ x: 0, y: 10, z: 0 });
     }
   };
 
+  // --- Engine Lifecycle ---
   useEffect(() => {
-    let animationId;
+    let animationId: number;
     if (!canvasRef.current) return;
 
     const initEngine = async () => {
       setLoading(true);
-      const canvas = canvasRef.current;
+      const canvas = canvasRef.current!;
       const color = getBrandingColor();
       const renderer = new Renderer(canvas, { 
         wireframe: isDevMode, 
@@ -222,7 +158,7 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
         setLoading(false);
       }
 
-      const renderLoop = (time) => {
+      const renderLoop = (time: number) => {
         frameCountRef.current++;
         if (time > lastTimeRef.current + 1000) {
           setFps(Math.round((frameCountRef.current * 1000) / (time - lastTimeRef.current)));
@@ -242,10 +178,9 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
           
           renderer.render(new Vector(0,0,0), camRot, camPos);
 
-          // Render Tactical Spires directly in canvas 
+          // Render Tactical Spires
           if (isIntelOverlayActive && latestBriefing?.news_articles) {
-            latestBriefing.news_articles.forEach((article, idx) => {
-              // from GhostReconOverlays WIP
+            latestBriefing.news_articles.forEach((article: any, idx: number) => {
               let pos = new Vector(0,0,0);
               if (article.geo_tag?.lat && article.geo_tag?.lng) {
                 const latOffset = (article.geo_tag.lat - (property?.location?.lat || 33.1)) * 5000;
@@ -258,12 +193,10 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
               renderer.drawTacticalSpire(pos, color, camRot, camPos);
             });
 
-            // Draw Permanent Spires
             renderer.drawTacticalSpire(new Vector(15, 25, -15), '#3b82f6', camRot, camPos);
             renderer.drawTacticalSpire(new Vector(-15, 25, -15), '#94a3b8', camRot, camPos);
           }
 
-          // Update React state for overlays
           setCamOrientation({ yaw: orbitState.current.yaw, pitch: orbitState.current.pitch });
 
           if (isDataOverlayActive) {
@@ -285,7 +218,7 @@ const SunsetPulseViewer = ({ objUrl, property, userId, userName }) => {
       if (animationId) cancelAnimationFrame(animationId);
       rendererRef.current = null;
     };
-  }, [objUrl, propId, peers, isMeLead, presentationMode, isDataOverlayActive, leadId, property, hotspots, isDevMode]);
+  }, [objUrl, propId, isDataOverlayActive, property, hotspots, isDevMode, latestBriefing, isIntelOverlayActive]);
 
   return (
     <div className='relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group' onContextMenu={(e) => e.preventDefault()}>

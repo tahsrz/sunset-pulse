@@ -1,4 +1,4 @@
-import { cityHash64 } from './cityhash';
+import { getTahIndices, getSurgicalHash } from './tah_utils';
 
 /**
  * TAHBuilder - The Memory Forge
@@ -12,8 +12,6 @@ export interface TAHInput {
   type?: number;
   meta?: number;
 }
-
-const MASK64 = BigInt('0xFFFFFFFFFFFFFFFF');
 
 export class TAHBuilder {
   private k: number = 14; // Default k (matches listings_gate.tah)
@@ -47,14 +45,11 @@ export class TAHBuilder {
     // 1. Populate Bloom Filter
     for (const input of inputs) {
       for (const kw of input.keywords) {
-        if (!kw || typeof kw !== 'string') continue; // Skip invalid keywords
+        if (!kw || typeof kw !== 'string') continue;
         
-        const data = Buffer.from(kw.toLowerCase().trim(), 'utf-8');
-        const h1 = cityHash64(data);
-        const h2 = cityHash64(Buffer.concat([data, Buffer.from('TAH_SALT', 'utf-8')]));
+        const indices = getTahIndices(kw, this.m, this.k);
 
-        for (let i = 0n; i < BigInt(this.k); i++) {
-          const idx = ((h1 + i * h2) & MASK64) % this.m;
+        for (const idx of indices) {
           const byteIdx = Number(idx / 8n);
           const bitIdx = Number(idx % 8n);
           bloomFilter[byteIdx] |= (1 << bitIdx);
@@ -78,8 +73,7 @@ export class TAHBuilder {
 
       // Surgical Index: Store the hash of the primary keyword at offset 24
       if (input.keywords.length > 0 && typeof input.keywords[0] === 'string') {
-        const kwBuf = Buffer.from(input.keywords[0].toLowerCase().trim(), 'utf-8');
-        const kwHash = cityHash64(kwBuf);
+        const kwHash = getSurgicalHash(input.keywords[0]);
         shardIndex.writeBigUint64LE(kwHash, entryOffset + 24);
       }
 

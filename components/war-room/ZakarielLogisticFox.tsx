@@ -3,7 +3,11 @@
 import React from 'react';
 import { FaTruck, FaFileSignature, FaSearchDollar, FaHandshake, FaFlagCheckered } from 'react-icons/fa';
 
-const ZakarielLogisticFox = () => {
+interface ZakarielLogisticFoxProps {
+  property?: any;
+}
+
+const ZakarielLogisticFox: React.FC<ZakarielLogisticFoxProps> = ({ property }) => {
   const stages = [
     { label: "Inspections", status: "COMPLETE", velocity: "HIGH", icon: <FaSearchDollar /> },
     { label: "Appraisal", status: "IN_PROGRESS", velocity: "MODERATE", icon: <FaTruck /> },
