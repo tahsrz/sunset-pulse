@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { normalizeJamieBriefing } from '@/lib/types/jamieBriefing';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/jamie/briefing
  * Returns the daily 5-hour research sprint results.

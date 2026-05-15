@@ -3,6 +3,8 @@ import path from 'path';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/jamie/training/gauntlet
  * Returns a random linguistic challenge for "The Scythe's Edge" game.

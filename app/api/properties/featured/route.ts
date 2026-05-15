@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { getProperties } from '@/lib/core/propertyRecon';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/properties/featured
 export const GET = async (request: NextRequest) => {
   try {
