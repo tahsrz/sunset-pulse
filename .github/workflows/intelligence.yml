@@ -1,0 +1,35 @@
+name: Vercel Intelligence
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  intelligence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Get Vercel Deployment
+        uses: dlip/get-vercel-deployment-action@v1.0.2
+        id: get-deployment
+        with:
+          token: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: vercel-ai
+        uses: vercel/ai-action@v2.2.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-deployment-url: ${{ steps.get-deployment.outputs.url }}

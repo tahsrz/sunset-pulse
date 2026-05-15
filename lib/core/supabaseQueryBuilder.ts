@@ -7,6 +7,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export const applyPropertyFilters = (query: any, searchParams: Record<string, string>) => {
   let filteredQuery = query;
 
+  // 0. Filter Demo Listings
+  filteredQuery = filteredQuery.not('is_demo', 'is', true);
+
   // 1. Text Search (Name, City)
   if (searchParams.location) {
     // Supabase or() for text search

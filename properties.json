@@ -26,8 +26,9 @@
       "monthly": 2500
     },
     "seller_info": {
-      "name": "Sunset Real Estate Group",
-      "email": "listings@sunsetpulse.com",
+      "name": "Lion Drive Realty",
+      "email": "tahsin.reza817@gmail.com",
+      "is_demo": true,
       "phone": "940-555-0123"
     },
     "images": ["/images/properties/ranch1.jpg"],
@@ -64,6 +65,7 @@
     "seller_info": {
       "name": "Elite Leases & Property Management",
       "email": "info@eliteleases.com",
+      "is_demo": true,
       "phone": "940-555-0199"
     },
     "images": ["/images/properties/244ridge1.jpg"],
@@ -96,8 +98,9 @@
       "monthly": 1800
     },
     "seller_info": {
-      "name": "Sunset Real Estate Group",
-      "email": "listings@sunsetpulse.com",
+      "name": "Lion Drive Realty",
+      "email": "tahsin.reza817@gmail.com",
+      "is_demo": true,
       "phone": "940-555-0123"
     },
     "images": ["/images/properties/barndo1.jpg"],
@@ -128,8 +131,9 @@
       "monthly": 1200
     },
     "seller_info": {
-      "name": "Sunset Real Estate Group",
-      "email": "listings@sunsetpulse.com",
+      "name": "Lion Drive Realty",
+      "email": "tahsin.reza817@gmail.com",
+      "is_demo": true,
       "phone": "817-555-0987"
     },
     "images": ["/images/properties/rhome1.jpg"],
@@ -159,8 +163,9 @@
       "weekly": 500
     },
     "seller_info": {
-      "name": "Sunset Real Estate Group",
-      "email": "listings@sunsetpulse.com",
+      "name": "Lion Drive Realty",
+      "email": "tahsin.reza817@gmail.com",
+      "is_demo": true,
       "phone": "940-555-0123"
     },
     "images": ["/images/properties/land1.jpg"],
@@ -195,6 +200,7 @@
     "seller_info": {
       "name": "Big Sky Management",
       "email": "manager@bigskyrv.com",
+      "is_demo": true,
       "phone": "940-555-9000"
     },
     "images": ["/images/properties/ranch1.jpg"],
@@ -227,6 +233,7 @@
     "seller_info": {
       "name": "Meridian Leasing",
       "email": "lease@themeridian.com",
+      "is_demo": true,
       "phone": "940-555-1212"
     },
     "images": ["/images/properties/rhome1.jpg"],
@@ -260,6 +267,7 @@
     "seller_info": {
       "name": "Sunset Vacation Rentals",
       "email": "rent@sunsetcabins.com",
+      "is_demo": true,
       "phone": "940-555-4433"
     },
     "images": ["/images/properties/244ridge1.jpg"],
@@ -292,6 +300,7 @@
     "seller_info": {
       "name": "North Texas Commercial",
       "email": "info@ntxcommercial.com",
+      "is_demo": true,
       "phone": "940-555-7788"
     },
     "images": ["/images/properties/barndo1.jpg"],
@@ -324,6 +333,7 @@
     "seller_info": {
       "name": "Bowie Executive Hub",
       "email": "suites@bowiehub.com",
+      "is_demo": true,
       "phone": "940-555-3322"
     },
     "images": ["/images/properties/ranch1.jpg"],
@@ -356,6 +366,7 @@
     "seller_info": {
       "name": "Golden Oaks Management",
       "email": "info@goldenoaks.com",
+      "is_demo": true,
       "phone": "940-555-8811"
     },
     "images": ["/images/properties/rhome1.jpg"],
@@ -388,6 +399,7 @@
     "seller_info": {
       "name": "Sunset Park Management",
       "email": "manager@sunsetmeadows.com",
+      "is_demo": true,
       "phone": "940-555-0077"
     },
     "images": ["/images/properties/244ridge1.jpg"],
@@ -429,6 +441,7 @@
     "seller_info": {
       "name": "Lone Star RV Rentals",
       "email": "rentals@lonestarrv.com",
+      "is_demo": true,
       "phone": "940-555-4000"
     },
     "images": ["/images/properties/ranch1.jpg"],
@@ -470,6 +483,7 @@
     "seller_info": {
       "name": "Sunset Lake RV Resort",
       "email": "info@sunsetlakerv.com",
+      "is_demo": true,
       "phone": "940-555-8822"
     },
     "images": ["/images/properties/barndo1.jpg"],
@@ -510,6 +524,7 @@
     "seller_info": {
       "name": "Bowie Boutique Rentals",
       "email": "hello@bowierentals.com",
+      "is_demo": true,
       "phone": "940-555-1122"
     },
     "images": ["/images/properties/rhome1.jpg"],
@@ -549,6 +564,7 @@
     "seller_info": {
       "name": "Franklin Ranch",
       "email": "ranch@alvordtx.com",
+      "is_demo": true,
       "phone": "940-555-6677"
     },
     "images": ["/images/properties/land1.jpg"],
@@ -586,6 +602,7 @@
     "seller_info": {
       "name": "Sunset Global Recon",
       "email": "global@sunsetpulse.com",
+      "is_demo": true,
       "phone": "+98-21-555-0199"
     },
     "images": ["/images/properties/barndo1.jpg"],

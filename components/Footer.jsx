@@ -34,7 +34,16 @@ const Footer = () => {
             href="/iabs" 
             className="text-xs text-blue-600 hover:underline font-bold"
           >
-            Information About Brokerage Services (IABS)
+            IABS (Interactive)
+          </a>
+          <span className="text-gray-300 hidden md:block">|</span>
+          <a 
+            href="https://www.dropbox.com/scl/fi/xjnnszs2h24nq95tvdmts/Information-About-Brokerage-Services.pdf?rlkey=uwn66iikqswvjscfr86dos7tk&e=1&st=bp3w9yw4&dl=0" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline font-bold"
+          >
+            IABS (Dropbox PDF)
           </a>
         </div>
       </div>

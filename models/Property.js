@@ -127,6 +127,10 @@ const PropertySchema = new Schema(
       type: Date,
       default: null,
     },
+    is_demo: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

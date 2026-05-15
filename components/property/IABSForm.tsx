@@ -27,25 +27,25 @@ const IABSForm = () => {
   const profile = user?.profile as IABSProfile;
 
   const data = {
-    brokerageName: profile?.brokerage_name || 'Sunset Real Estate Group',
-    brokerageLicense: profile?.brokerage_license || '9001234',
-    brokerageEmail: profile?.brokerage_email || 'info@sunsetpulse.com',
-    brokeragePhone: profile?.brokerage_phone || '940-555-0123',
-    
-    designatedBroker: profile?.designated_broker || 'Tahsin Noyon Reza',
+    brokerageName: profile?.brokerage_name || 'Lion Drive Realty',
+    brokerageLicense: profile?.brokerage_license || '9013032',
+    brokerageEmail: profile?.brokerage_email || 'tahsin.reza817@gmail.com',
+    brokeragePhone: profile?.brokerage_phone || '214-555-0123',
+
+    designatedBroker: profile?.designated_broker || 'Tahsin Reza',
     designatedBrokerLicense: profile?.designated_broker_license || '0654321',
-    designatedBrokerEmail: profile?.brokerage_email || 'treza@sunsetpulse.com',
-    designatedBrokerPhone: profile?.brokerage_phone || '940-555-0123',
+    designatedBrokerEmail: profile?.brokerage_email || 'tahsin.reza817@gmail.com',
+    designatedBrokerPhone: profile?.brokerage_phone || '214-555-0123',
 
-    supervisor: profile?.supervisor || 'Jamie AI Controller',
+    supervisor: profile?.supervisor || 'Lion Drive Operations',
     supervisorLicense: profile?.supervisor_license || 'N/A',
-    supervisorEmail: 'ai-ops@sunsetpulse.com',
-    supervisorPhone: '940-555-0999',
+    supervisorEmail: 'ops@liondriverealty.com',
+    supervisorPhone: '214-555-0999',
 
-    agentName: profile?.full_name || user?.user_metadata?.full_name || 'Sunset Agent',
+    agentName: profile?.full_name || user?.user_metadata?.full_name || 'Tahsin Reza',
     agentLicense: profile?.license_id || user?.user_metadata?.license_id || 'Pending',
-    agentEmail: user?.email || 'agent@sunsetpulse.com',
-    agentPhone: profile?.phone_number || 'Contact via Grid',
+    agentEmail: user?.email || 'tahsin.reza817@gmail.com',
+    agentPhone: profile?.phone_number || 'Contact via Pulse',
   };
 
   return (

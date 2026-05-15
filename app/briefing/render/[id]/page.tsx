@@ -131,7 +131,7 @@ const IntelligenceBriefing = () => {
       <footer className="border-t border-slate-100 py-12 px-8 mt-24">
         <div className="max-w-6xl mx-auto flex justify-between items-center opacity-40">
           <p className="text-[10px] font-bold uppercase tracking-widest">Sunset Pulse // Intelligence Division</p>
-          <p className="text-[10px] font-medium">© 2026 Tahsin Noyon Reza</p>
+          <p className="text-[10px] font-medium">© 2026 Tahsin Reza</p>
         </div>
       </footer>
     </div>

@@ -198,7 +198,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
               </p>
             )}
             <p className='text-[6px] text-slate-400 italic leading-[1.4]'>
-              The data relating to real estate for sale on this web site comes in part from the Internet Data Exchange program of NTREIS. Real estate listings held by brokerage firms other than Sunset Real Estate Group are marked with the NTREIS logo or the IDX logo and detailed information about them includes the name of the listing brokers. This information is deemed reliable but not guaranteed.
+              The data relating to real estate for sale on this web site comes in part from the Internet Data Exchange program of NTREIS. Real estate listings held by brokerage firms other than Lion Drive Realty are marked with the NTREIS logo or the IDX logo and detailed information about them includes the name of the listing brokers. This information is deemed reliable but not guaranteed.
             </p>
           </div>
         )}

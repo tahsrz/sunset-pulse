@@ -2,8 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Html } from '@react-three/drei';
-import { getGroundTruth, GroundTruthResult } from '@/lib/core/surgicalRetriever';
 import { FaShieldAlt, FaDatabase, FaInfoCircle } from 'react-icons/fa';
+
+interface GroundTruthResult {
+  source: string;
+  data: string;
+  confidence: number;
+}
 
 interface SurgicalIntelligenceOverlaysProps {
   property: any;
@@ -22,8 +27,11 @@ const SurgicalIntelligenceOverlays: React.FC<SurgicalIntelligenceOverlaysProps> 
       const fetchIntel = async () => {
         setLoading(true);
         try {
-          const results = await getGroundTruth(property.location.city);
-          setIntel(results);
+          const res = await fetch(`/api/intelligence/ground-truth?query=${encodeURIComponent(property.location.city)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setIntel(data.data || []);
+          }
         } catch (err) {
           console.error('Failed to fetch ground truth:', err);
         } finally {

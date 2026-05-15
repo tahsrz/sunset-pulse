@@ -7,7 +7,7 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
     name: '',
     email: '',
     phone: '',
-    message: 'I would like more information about this property. Tahsin Reza SunsetPulse.',
+    message: 'I would like more information about this property. Tahsin Reza | Lion Drive Realty.',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -28,6 +28,7 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           ...formData,
           property: propertyId,
           source: 'Automated Form',
+          agent_email: 'tahsin.reza817@gmail.com',
           // Simulated behavioral data for the Pulse Scoring Engine
           views: 5,
           chatMinutes: 2,
@@ -53,7 +54,7 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           <FaBolt className='text-white text-2xl' />
         </div>
         <h3 className='text-xl font-black text-slate-900 uppercase tracking-tighter'>Inquiry Received</h3>
-        <p className='text-slate-600 mt-2 font-medium text-sm'>A Sunset Pulse agent will reach out shortly.</p>
+        <p className='text-slate-600 mt-2 font-medium text-sm'>A Lion Drive Realty agent will reach out shortly.</p>
       </div>
     );
   }
