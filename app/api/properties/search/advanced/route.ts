@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
@@ -5,7 +6,7 @@ import { mlsService } from '@/lib/data/mls';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/properties/search/advanced

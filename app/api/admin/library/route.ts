@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import ViralAsset from '@/models/ViralAsset';
@@ -5,7 +6,7 @@ import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/api
 import fs from 'fs';
 import path from 'path';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/admin/library

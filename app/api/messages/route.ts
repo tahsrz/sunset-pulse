@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
 import Message from '@/models/Message';
 import { getSessionUser } from '@/lib/core/getSessionUser';
@@ -5,7 +6,7 @@ import { MessageSchema } from '@/lib/core/validation';
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/messages

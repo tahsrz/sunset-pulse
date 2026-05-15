@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { fetchRentEstimate } from '@/lib/data/rentcast';
 import Property from '@/models/Property';

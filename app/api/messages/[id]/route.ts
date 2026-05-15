@@ -1,10 +1,11 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Message from '@/models/Message';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse } from '@/lib/core/apiResponse';
 
-export const dynamic = 'force-dynamic';
+
 
 // PUT /api/messages/:id
 export const PUT = async (request: NextRequest, { params }: { params: { id: string } }) => {

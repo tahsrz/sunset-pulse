@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { fetchOSMAmenities } from '@/lib/data/external/osm';
 import Property from '@/models/Property';

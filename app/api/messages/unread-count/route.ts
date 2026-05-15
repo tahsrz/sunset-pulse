@@ -1,9 +1,10 @@
+export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
 import Message from '@/models/Message';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/messages/unread-count

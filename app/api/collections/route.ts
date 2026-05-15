@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
@@ -5,7 +6,7 @@ import { getSessionUser } from '@/lib/core/getSessionUser';
 import { supabase } from '@/lib/supabase';
 import { successResponse, unauthorizedResponse, errorResponse } from '@/lib/core/apiResponse';
 
-export const dynamic = 'force-dynamic';
+
 
 export const GET = async (req: NextRequest) => {
   try {

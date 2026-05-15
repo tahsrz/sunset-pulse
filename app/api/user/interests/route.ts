@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
 import { getSessionUser } from '@/lib/core/getSessionUser';

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import connectDB from '@/lib/core/database';

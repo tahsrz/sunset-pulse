@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import User from '@/models/User';
@@ -5,7 +6,7 @@ import Property from '@/models/Property';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
-export const dynamic = 'force-dynamic';
+
 
 // GET /api/bookmarks
 export const GET = async () => {

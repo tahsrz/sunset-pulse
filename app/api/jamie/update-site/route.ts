@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import Groq from "groq-sdk";
 import connectDB from "@/lib/core/database";

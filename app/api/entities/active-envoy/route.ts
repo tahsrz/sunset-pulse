@@ -1,9 +1,10 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Entity from '@/models/Entity';
 import { SiteConfig } from '@/models/SiteConfig';
 
-export const dynamic = 'force-dynamic';
+
 
 export async function GET() {
   try {

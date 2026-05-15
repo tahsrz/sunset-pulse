@@ -1,10 +1,11 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import MenuItem from '@/models/MenuItem';
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
 import { createClient } from '@/utils/supabase/server';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/menu?agentId=...

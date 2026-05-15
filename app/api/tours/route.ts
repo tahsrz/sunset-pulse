@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
 import TourRequest from '@/models/TourRequest';
 import { getSessionUser } from '@/lib/core/getSessionUser';
@@ -6,7 +7,7 @@ import { successResponse, errorResponse, unauthorizedResponse, validationErrorRe
 import { logEvent } from '@/lib/supabase';
 import { notifyTourRequest } from '@/lib/core/notifications';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * POST /api/tours

@@ -1,10 +1,11 @@
+export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
 import TourRequest from '@/models/TourRequest';
 import Property from '@/models/Property';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 
-export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/admin/tours
