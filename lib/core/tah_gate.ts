@@ -16,17 +16,23 @@ export class TAHGate {
   private k: number = 0;
   private m: bigint = 0n;
 
-  constructor(cartridgePath: string) {
-    this.loadCartridge(cartridgePath);
+  constructor(private source: string | Buffer) {
+    this.loadCartridge();
   }
 
-  private loadCartridge(filePath: string) {
-    if (!fs.existsSync(filePath)) {
-      console.warn(`[TAH_GATE] Cartridge not found: ${filePath}`);
-      return;
+  private loadCartridge() {
+    let buffer: Buffer;
+
+    if (Buffer.isBuffer(this.source)) {
+      buffer = this.source;
+    } else {
+      if (!fs.existsSync(this.source)) {
+        console.warn(`[TAH_GATE] Cartridge not found: ${this.source}`);
+        return;
+      }
+      buffer = fs.readFileSync(this.source);
     }
 
-    const buffer = fs.readFileSync(filePath);
     const magic = buffer.readUInt32LE(0);
     if (magic !== 0x54414821) {
       console.error('[TAH_GATE] Invalid TAH magic number');
@@ -38,7 +44,12 @@ export class TAHGate {
     
     const bloomByteSize = Number((this.m + 7n) / 8n);
     this.bloomFilter = new Uint8Array(buffer.buffer, buffer.byteOffset + 64, bloomByteSize);
-    console.log(`[TAH_GATE] Loaded cartridge: ${path.basename(filePath)} (m=${this.m}, k=${this.k})`);
+    
+    if (typeof this.source === 'string') {
+      console.log(`[TAH_GATE] Loaded cartridge: ${path.basename(this.source)} (m=${this.m}, k=${this.k})`);
+    } else {
+      console.log(`[TAH_GATE] Loaded cartridge from Buffer (m=${this.m}, k=${this.k})`);
+    }
   }
 
   public isProbablyPresent(text: string): boolean {

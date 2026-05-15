@@ -7,7 +7,13 @@ const CARTRIDGES = [
   'abidan_court.tah',
   'abidan_vault.tah',
   'neighborhood_intel.tah',
-  'user_memories.tah'
+  'user_memories.tah',
+  'durandiel_expertise.tah',
+  'gadrael_expertise.tah',
+  'makiel_expertise.tah',
+  'texas_contracts_expertise.tah',
+  'market_velocity.tah',
+  'sunset_pulse_expertise.tah'
 ];
 
 const TAH_CACHE: Record<string, Buffer> = {};

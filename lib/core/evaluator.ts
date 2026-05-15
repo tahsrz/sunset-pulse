@@ -8,8 +8,13 @@ import { TAHRetriever, TAHShard } from './tah_retriever';
 import path from 'path';
 import Property from '@/models/Property';
 import connectDB from './database';
+import fs from 'fs';
+import { supabase } from '../supabase';
 
 type LispExp = string | LispExp[];
+
+// Warm Cache for TAH Buffers to minimize storage egress in production
+const TAH_CACHE: Record<string, Buffer> = {};
 
 export class SearchEvaluator {
   private env: Record<string, Function>;
@@ -25,6 +30,43 @@ export class SearchEvaluator {
       'SEARCH': this.primitiveSearch.bind(this),
       'HELP': this.help.bind(this)
     };
+  }
+
+  /**
+   * Internal helper to retrieve cartridge buffer (Local with Cloud Fallback)
+   */
+  private async getCartridgeBuffer(cartridgeName: string): Promise<Buffer | null> {
+    const fileName = cartridgeName.endsWith('.tah') ? cartridgeName : `${cartridgeName}.tah`;
+    
+    // 1. Check Cache
+    if (TAH_CACHE[fileName]) return TAH_CACHE[fileName];
+
+    // 2. Try Local File System
+    const localPath = path.join(this.cartridgeDir, fileName);
+    if (fs.existsSync(localPath)) {
+      const buffer = fs.readFileSync(localPath);
+      TAH_CACHE[fileName] = buffer;
+      return buffer;
+    }
+
+    // 3. Fallback to Supabase Storage (Cloud)
+    try {
+      console.log(`🌐 [EVAL_FETCH] Downloading ${fileName} from grid storage...`);
+      const { data, error } = await supabase.storage
+        .from('cartridges')
+        .download(fileName);
+      
+      if (!error && data) {
+        const arrayBuffer = await data.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        TAH_CACHE[fileName] = buffer;
+        return buffer;
+      }
+    } catch (err) {
+      console.error(`[EVAL_STORAGE_ERROR] Failed to retrieve ${fileName}:`, err);
+    }
+
+    return null;
   }
 
   /**
@@ -57,10 +99,10 @@ export class SearchEvaluator {
     const cleanCartridge = cartridgeName.replace(/['"]/g, '');
     const cleanTerms = terms.replace(/['"]/g, '');
     
-    const cartridgePath = path.join(this.cartridgeDir, `${cleanCartridge}.tah`);
-    if (!require('fs').existsSync(cartridgePath)) return [];
+    const buffer = await this.getCartridgeBuffer(cleanCartridge);
+    if (!buffer) return [];
 
-    const retriever = new TAHRetriever(cartridgePath);
+    const retriever = new TAHRetriever(buffer);
     return retriever.search(cleanTerms);
   }
 
@@ -68,10 +110,10 @@ export class SearchEvaluator {
     const cleanCartridge = cartridgeName.replace(/['"]/g, '');
     const cleanTerm = term.replace(/['"]/g, '');
     
-    const cartridgePath = path.join(this.cartridgeDir, `${cleanCartridge}.tah`);
-    if (!require('fs').existsSync(cartridgePath)) return false;
+    const buffer = await this.getCartridgeBuffer(cleanCartridge);
+    if (!buffer) return false;
     
-    const retriever = new TAHRetriever(cartridgePath);
+    const retriever = new TAHRetriever(buffer);
     return retriever.containsKeyword(cleanTerm);
   }
 
@@ -99,7 +141,6 @@ export class SearchEvaluator {
   }
 
   private listCartridges(): string[] {
-    const fs = require('fs');
     if (!fs.existsSync(this.cartridgeDir)) return [];
     return fs.readdirSync(this.cartridgeDir)
       .filter((f: string) => f.endsWith('.tah'))
