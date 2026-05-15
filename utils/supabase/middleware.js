@@ -31,6 +31,11 @@ export async function updateSession(request) {
     }
   )
 
+  // Bypass for E2E Tests / Mock Mode
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    return response
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes and role-based redirection

@@ -64,8 +64,10 @@ export const POST = async (request: Request) => {
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
     const rateLimitToken = sessionUser?.userId || ip;
     
-    const limitResponse = await applyApiRateLimit(rateLimitToken, 3);
-    if (limitResponse) return limitResponse;
+    if (process.env.NEXT_PUBLIC_MOCK_MODE !== 'true') {
+      const limitResponse = await applyApiRateLimit(rateLimitToken, 3);
+      if (limitResponse) return limitResponse;
+    }
 
     const body = await request.json();
 

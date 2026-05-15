@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { supabase } from '../lib/supabase';
 import registry from '../utils/jamie/memory/scythe_registry.json';
 

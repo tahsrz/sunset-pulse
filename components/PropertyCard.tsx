@@ -44,7 +44,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
   const isInternal = property.source === 'Internal' || !property.source;
 
   return (
-    <div className={`rounded-xl shadow-md relative bg-white transition-all duration-500 ${isHighIntensity ? 'hover:scale-[1.02]' : ''}`}
+    <div className={`property-card rounded-xl shadow-md relative bg-white transition-all duration-500 ${isHighIntensity ? 'hover:scale-[1.02]' : ''}`}
       style={{
         boxShadow: isHighIntensity ? `0 0 ${20 * intensity}px rgba(59, 130, 246, ${0.1 * intensity})` : 'none',
         border: isUrgent ? '2px solid rgba(239, 68, 68, 0.5)' : 'none',

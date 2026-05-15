@@ -62,33 +62,60 @@ export async function purifyText(text: string) {
   }
 
   const domain = detectDomain(text);
-  const { data: registry } = await (supabase as any).from('scythe_registry').select('*');
+  const { data: registry, error: registryError } = await (supabase as any).from('scythe_registry').select('*');
+
+  if (registryError) {
+    console.error('[PURIFIER_REGISTRY_ERROR]:', registryError.message);
+  }
 
   const detections: any[] = [];
   let purifiedText = text;
   const wordCount = text.split(/\s+/).length;
 
+  console.log(`[PURIFIER_DEBUG]: Registry count: ${registry?.length || 0}, Word count: ${wordCount}`);
+
   if (registry) {
     registry.forEach((entry: any) => {
-      const escapedPattern = entry.original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b${escapedPattern}\\b`, 'gi');
+      // Escape special characters but handle trailing punctuation specially
+      let pattern = entry.original;
+      const hasTrailingPunctuation = /[.!?]$/.test(pattern);
       
-      const matches = text.match(regex);
-      if (matches) {
-        let weight = 1.0;
-        if (domain === 'real_estate' && (entry.original.includes('market') || entry.original.includes('zoning'))) {
-          weight = 0.5;
+      if (hasTrailingPunctuation) {
+        // If it ends in punctuation, we match the punctuation but don't force a word boundary AFTER it
+        const escapedBase = pattern.slice(0, -1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const punctuation = pattern.slice(-1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escapedBase}${punctuation}`, 'gi');
+        
+        const matches = text.match(regex);
+        if (matches) {
+          processMatch(entry, matches.length);
+          purifiedText = purifiedText.replace(regex, entry.replacement);
         }
-
-        detections.push({
-          robotic: entry.original,
-          purified: entry.replacement,
-          rationale: entry.rationale,
-          count: matches.length,
-          weight
-        });
-        purifiedText = purifiedText.replace(regex, entry.replacement);
+      } else {
+        const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escapedPattern}\\b`, 'gi');
+        
+        const matches = text.match(regex);
+        if (matches) {
+          processMatch(entry, matches.length);
+          purifiedText = purifiedText.replace(regex, entry.replacement);
+        }
       }
+    });
+  }
+
+  function processMatch(entry: any, count: number) {
+    let weight = 1.0;
+    if (domain === 'real_estate' && (entry.original.includes('market') || entry.original.includes('zoning'))) {
+      weight = 0.5;
+    }
+
+    detections.push({
+      robotic: entry.original,
+      purified: entry.replacement,
+      rationale: entry.rationale,
+      count: count,
+      weight
     });
   }
 

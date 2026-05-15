@@ -1,10 +1,7 @@
+import './load-env.js';
 import connectDB from '../lib/core/database.js';
 import User from '../models/User.js';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { supabase } from '../lib/supabase.js';
-
-dotenv.config({ path: '.env.local' });
+import { supabaseAdmin } from '../lib/supabase.js';
 
 async function verifySystem() {
   try {
@@ -26,12 +23,21 @@ async function verifySystem() {
     // 3. Verify TAH Cloud Retrieval
     console.log('\n🔍 Verifying TAH Cloud Storage Fallback...');
     const testCartridge = 'neighborhood_intel.tah';
-    const { data, error } = await supabase.storage
+    
+    // Debug: Check if service role key is actually loaded
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not found in process.env');
+    }
+
+    const { data, error } = await supabaseAdmin.storage
       .from('cartridges')
       .download(testCartridge);
 
     if (error) {
       console.error(`❌ TAH Cloud Retrieval Failed for ${testCartridge}:`, error.message);
+      if (error.message === 'fetch failed') {
+          console.error('   (Potential network error or invalid SUPABASE_URL)');
+      }
     } else {
       console.log(`✅ TAH Cloud Retrieval Success: ${testCartridge} (${data.size} bytes)`);
     }

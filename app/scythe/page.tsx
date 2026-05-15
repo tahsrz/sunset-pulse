@@ -132,7 +132,7 @@ const ScythePurifierPage = () => {
                           <FaFingerprint size={80} />
                        </div>
                       <div className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Humanity Rating</div>
-                      <div className={`text-7xl font-black italic tracking-tighter ${getScoreColor(result.humanity_score)}`}>
+                      <div className={`humanity-score text-7xl font-black italic tracking-tighter ${getScoreColor(result.humanity_score)}`}>
                         {result.humanity_score}%
                       </div>
                       <div className="mt-4 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
@@ -173,7 +173,7 @@ const ScythePurifierPage = () => {
                     ) : (
                       <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
                         {result.detections.map((det: any, idx: number) => (
-                          <div key={idx} className="p-6 bg-white/5 border border-white/10 rounded-2xl group hover:border-rose-500/30 transition-all relative">
+                          <div key={idx} className="detection-item p-6 bg-white/5 border border-white/10 rounded-2xl group hover:border-rose-500/30 transition-all relative">
                             <button 
                               onClick={() => handleReport(det)}
                               disabled={isReporting === det.robotic}

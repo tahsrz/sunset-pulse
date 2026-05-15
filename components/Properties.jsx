@@ -27,7 +27,8 @@ const Properties = () => {
           return;
         }
 
-        const data = await res.json();
+        const json = await res.json();
+        const data = json.data;
         setProperties(data.properties);
         setTotalItems(data.total);
       } catch (error) {

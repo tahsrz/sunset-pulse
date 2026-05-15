@@ -8,7 +8,9 @@ export const applyPropertyFilters = (query: any, searchParams: Record<string, st
   let filteredQuery = query;
 
   // 0. Filter Demo Listings
-  filteredQuery = filteredQuery.not('is_demo', 'is', true);
+  if (process.env.NEXT_PUBLIC_MOCK_MODE !== 'true') {
+    filteredQuery = filteredQuery.not('is_demo', 'is', true);
+  }
 
   // 1. Text Search (Name, City)
   if (searchParams.location) {

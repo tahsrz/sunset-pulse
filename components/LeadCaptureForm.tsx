@@ -56,6 +56,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
   const liveProb = calculateLiveProbability();
 
   const onSubmit = async (data: LeadFormData) => {
+    console.log('[LEAD_SUBMIT_DEBUG]: Submitting lead data:', data);
     // Convert budget to number
     data.budget = Number(data.budget);
     try {
@@ -67,16 +68,19 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
         body: JSON.stringify(data),
       });
 
+      console.log('[LEAD_SUBMIT_DEBUG]: API Response Status:', res.status);
+
       if (res.status === 201) {
         toast.success('Inquiry received! We will contact you shortly.');
         setIsSubmitted(true);
         reset();
       } else {
         const errorData = await res.json();
+        console.error('[LEAD_SUBMIT_DEBUG]: API Error Data:', errorData);
         toast.error(errorData.message || 'Failed to send inquiry');
       }
     } catch (error) {
-      console.error('Inquiry submission error:', error);
+      console.error('[LEAD_SUBMIT_DEBUG]: Network/Submission Error:', error);
       toast.error('Something went wrong. Please try again.');
     }
   };
@@ -145,10 +149,11 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
               <input
                 type='number'
                 {...register('budget')}
-                className='w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-700'
+                className={`w-full bg-slate-950/50 border ${errors.budget ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-700`}
                 placeholder='Budget'
               />
             </div>
+            {errors.budget && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{(errors.budget as any).message}</p>}
           </div>
 
           <div className='space-y-2'>
