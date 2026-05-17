@@ -58,9 +58,10 @@ export class MLSService {
     const protocol = domain.includes('vercel.app') ? 'https' : 'http';
     const internalUrl = domain.startsWith('http') ? `${domain}/api/properties` : `${protocol}://${domain}/api/properties`;
 
-    // Fetch both in parallel for maximum velocity    const [internalRes, mlsListings] = await Promise.all([
+    // Fetch both in parallel for maximum velocity
+    const [internalRes, mlsListings] = await Promise.all([
       fetch(internalUrl, { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : { properties: [] })
+        .then(r => (r.ok ? r.json() : { properties: [] }))
         .catch(() => ({ properties: [] })),
       this.activeMlsService.getListings(params)
     ]);
