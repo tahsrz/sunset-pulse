@@ -1,18 +1,22 @@
 'use client';
 
 import React from 'react';
-import { FaRobot, FaMinus, FaExchangeAlt } from 'react-icons/fa';
+import { FaRobot, FaMinus, FaExchangeAlt, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 
 interface JamieChatHeaderProps {
   onMinimize: () => void;
   isLefthandMode: boolean;
   onToggleLefthand: () => void;
+  isVoiceEnabled: boolean;
+  onToggleVoice: () => void;
 }
 
 const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({ 
   onMinimize, 
   isLefthandMode, 
-  onToggleLefthand 
+  onToggleLefthand,
+  isVoiceEnabled,
+  onToggleVoice
 }) => {
   return (
     <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-5 text-white flex justify-between items-center shadow-lg shrink-0 relative overflow-hidden group">
@@ -35,6 +39,13 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 relative z-10">
+        <button 
+          onClick={onToggleVoice} 
+          title={isVoiceEnabled ? "Mute Jamie" : "Unmute Jamie"}
+          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+        >
+          {isVoiceEnabled ? <FaVolumeUp className="text-[10px]" /> : <FaVolumeMute className="text-[10px] text-white/50" />}
+        </button>
         <button 
           onClick={onToggleLefthand} 
           title="Toggle Lefthand Mode"

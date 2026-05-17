@@ -6,6 +6,10 @@
 export const speak = (text: string, voiceName: string = 'Jamie') => {
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
+  // Global Mute Check
+  const voiceEnabled = localStorage.getItem('jamie_voice_enabled') !== 'false';
+  if (!voiceEnabled) return;
+
   // Cancel any ongoing speech
   window.speechSynthesis.cancel();
 

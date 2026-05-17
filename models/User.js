@@ -53,6 +53,10 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false
     },
+    isVoiceEnabled: {
+      type: Boolean,
+      default: true
+    },
     customKeybind: {
       type: String,
       default: 'P'

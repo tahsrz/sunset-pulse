@@ -23,7 +23,9 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     isDevMode, 
     setDevMode,
     isLefthandMode,
-    setLefthandMode
+    setLefthandMode,
+    isVoiceEnabled,
+    setVoiceEnabled
   } = useTheme();
 
   const [mounted, setMounted] = useState(false);
@@ -69,7 +71,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
     // TTS: Speak the message, but strip tags first
     const cleanText = messageContent.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
-    if (cleanText) speak(cleanText);
+    if (cleanText && isVoiceEnabled) speak(cleanText);
 
     const tagRegex = /\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g;
     let match;
@@ -207,6 +209,8 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
           onMinimize={() => toggleMinimized(true)} 
           isLefthandMode={isLefthandMode} 
           onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
+          isVoiceEnabled={isVoiceEnabled}
+          onToggleVoice={() => setVoiceEnabled(!isVoiceEnabled)}
         />
 
         <JamieChatMessageList 

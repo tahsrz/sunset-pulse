@@ -23,8 +23,11 @@ export const POST = async (request: Request) => {
     }
 
     if (action === 'anomaly') {
-      const { location = 'Decatur', change = '+10%' } = await request.json();
-      const domain = process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000';
+      const { location = 'Decatur', change = '+10%' } = await request.clone().json(); // clone to avoid stream consumption issues
+      
+      const requestUrl = new URL(request.url);
+      const domain = process.env.NEXT_PUBLIC_DOMAIN || `${requestUrl.protocol}//${requestUrl.host}`;
+      
       const res = await fetch(`${domain}/api/market-anomaly`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

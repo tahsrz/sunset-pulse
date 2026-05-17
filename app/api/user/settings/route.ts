@@ -25,7 +25,7 @@ export const PATCH = async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { isAdvancedMode, customKeybind, isLefthandMode } = body;
+    const { isAdvancedMode, customKeybind, isLefthandMode, isVoiceEnabled } = body;
 
     // Server-side Validation
     if (typeof customKeybind !== 'undefined') {
@@ -39,6 +39,7 @@ export const PATCH = async (request: NextRequest) => {
     if (mongoUser) {
       if (typeof isAdvancedMode === 'boolean') mongoUser.isAdvancedMode = isAdvancedMode;
       if (typeof isLefthandMode === 'boolean') mongoUser.isLefthandMode = isLefthandMode;
+      if (typeof isVoiceEnabled === 'boolean') mongoUser.isVoiceEnabled = isVoiceEnabled;
       if (customKeybind) mongoUser.customKeybind = customKeybind.toUpperCase();
       await mongoUser.save();
     }
@@ -47,6 +48,7 @@ export const PATCH = async (request: NextRequest) => {
     const updates: any = {};
     if (typeof isAdvancedMode === 'boolean') updates.is_advanced_mode = isAdvancedMode;
     if (typeof isLefthandMode === 'boolean') updates.is_lefthand_mode = isLefthandMode;
+    if (typeof isVoiceEnabled === 'boolean') updates.is_voice_enabled = isVoiceEnabled;
     if (customKeybind) updates.custom_keybind = customKeybind.toUpperCase();
 
     const { error: profileError } = await supabase
@@ -63,6 +65,7 @@ export const PATCH = async (request: NextRequest) => {
       data: { 
         isAdvancedMode: typeof isAdvancedMode === 'boolean' ? isAdvancedMode : authUser.user_metadata?.isAdvancedMode,
         isLefthandMode: typeof isLefthandMode === 'boolean' ? isLefthandMode : authUser.user_metadata?.isLefthandMode,
+        isVoiceEnabled: typeof isVoiceEnabled === 'boolean' ? isVoiceEnabled : authUser.user_metadata?.isVoiceEnabled,
         customKeybind: customKeybind ? customKeybind.toUpperCase() : authUser.user_metadata?.customKeybind
       }
     });
@@ -70,6 +73,7 @@ export const PATCH = async (request: NextRequest) => {
     return successResponse({
       isAdvancedMode,
       isLefthandMode,
+      isVoiceEnabled,
       customKeybind: customKeybind ? customKeybind.toUpperCase() : undefined
     });
   } catch (error: any) {

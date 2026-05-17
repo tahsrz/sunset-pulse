@@ -54,10 +54,11 @@ export class MLSService {
    * Merges MongoDB results with live MLS stream.
    */
   public async getListings(params: any = {}) {
-    const internalUrl = `${process.env.NEXT_PUBLIC_API_DOMAIN || 'http://localhost:3000'}/api/properties`;
-    
-    // Fetch both in parallel for maximum velocity
-    const [internalRes, mlsListings] = await Promise.all([
+    const domain = process.env.NEXT_PUBLIC_API_DOMAIN || 'http://localhost:3000';
+    const protocol = domain.includes('vercel.app') ? 'https' : 'http';
+    const internalUrl = domain.startsWith('http') ? `${domain}/api/properties` : `${protocol}://${domain}/api/properties`;
+
+    // Fetch both in parallel for maximum velocity    const [internalRes, mlsListings] = await Promise.all([
       fetch(internalUrl, { cache: 'no-store' })
         .then(r => r.ok ? r.json() : { properties: [] })
         .catch(() => ({ properties: [] })),

@@ -70,6 +70,8 @@ interface ThemeContextType {
   setAdvancedMode: (active: boolean) => void;
   isLefthandMode: boolean;
   setLefthandMode: (active: boolean) => void;
+  isVoiceEnabled: boolean;
+  setVoiceEnabled: (active: boolean) => void;
   customKeybind: string;
   setCustomKeybind: (key: string) => void;
   selectedAbidan: AbidanCharacter;
@@ -132,6 +134,7 @@ export function ThemeProvider({
   const [isDevMode, setDevModeState] = useState(false);
   const [isAdvancedMode, setAdvancedModeState] = useState(false);
   const [isLefthandMode, setLefthandModeState] = useState(false);
+  const [isVoiceEnabled, setVoiceEnabledState] = useState(true);
   const [customKeybind, setCustomKeybindState] = useState('P');
   const [selectedAbidan, setSelectedAbidanState] = useState<AbidanCharacter>(ABIDAN_DATA[0]);
   const [protocolLogs, setProtocolLogs] = useState<ProtocolLog[]>([]);
@@ -167,6 +170,7 @@ export function ThemeProvider({
   useEffect(() => {
     const savedDev = localStorage.getItem('jamie_dev_mode');
     const savedLefthand = localStorage.getItem('jamie_lefthand_mode');
+    const savedVoice = localStorage.getItem('jamie_voice_enabled');
     
     if (user) {
       if (typeof user.user_metadata?.isAdvancedMode !== 'undefined') {
@@ -178,12 +182,16 @@ export function ThemeProvider({
       if (typeof user.user_metadata?.isLefthandMode !== 'undefined') {
         setLefthandModeState(user.user_metadata.isLefthandMode);
       }
+      if (typeof user.user_metadata?.isVoiceEnabled !== 'undefined') {
+        setVoiceEnabledState(user.user_metadata.isVoiceEnabled);
+      }
     } else {
       const savedAdvanced = localStorage.getItem('jamie_advanced_mode');
       const savedKeybind = localStorage.getItem('jamie_custom_keybind');
       if (savedAdvanced === 'true') setAdvancedModeState(true);
       if (savedKeybind) setCustomKeybindState(savedKeybind);
       if (savedLefthand === 'true') setLefthandModeState(true);
+      if (savedVoice === 'false') setVoiceEnabledState(false);
     }
     
     if (savedDev === 'true') {
@@ -236,7 +244,7 @@ export function ThemeProvider({
     localStorage.setItem('jamie_dev_mode', active ? 'true' : 'false');
   };
 
-  const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string, isLefthandMode?: boolean }) => {
+  const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string, isLefthandMode?: boolean, isVoiceEnabled?: boolean }) => {
     if (!user) return;
     try {
       await fetch('/api/user/settings', {
@@ -268,6 +276,15 @@ export function ThemeProvider({
     setCustomKeybindState(upperKey);
     localStorage.setItem('jamie_custom_keybind', upperKey);
     syncSettings({ customKeybind: upperKey });
+  };
+
+  const setVoiceEnabled = (active: boolean) => {
+    setVoiceEnabledState(active);
+    localStorage.setItem('jamie_voice_enabled', active ? 'true' : 'false');
+    if (!active && typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if (user) syncSettings({ isVoiceEnabled: active } as any);
   };
 
   const updateBranding = (newSettings: any) => {
@@ -315,6 +332,8 @@ export function ThemeProvider({
       setAdvancedMode,
       isLefthandMode,
       setLefthandMode,
+      isVoiceEnabled,
+      setVoiceEnabled,
       customKeybind,
       setCustomKeybind,
       selectedAbidan,
