@@ -243,11 +243,13 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         
         // Attempt to get user location
         navigator.geolocation.getCurrentPosition((pos) => {
-          directionsRef.current.setOrigin([pos.coords.longitude, pos.coords.latitude]);
-          directionsRef.current.setDestination([
-            targetProperty.location_geo.coordinates[0], 
-            targetProperty.location_geo.coordinates[1]
-          ]);
+          if (targetProperty?.location_geo?.coordinates) {
+            directionsRef.current.setOrigin([pos.coords.longitude, pos.coords.latitude]);
+            directionsRef.current.setDestination([
+              targetProperty.location_geo.coordinates[0], 
+              targetProperty.location_geo.coordinates[1]
+            ]);
+          }
         });
         setShowDirections(true);
       }

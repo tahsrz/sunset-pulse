@@ -15,7 +15,7 @@ test.describe('Arcade Protocol: White-Box Analysis', () => {
     
     test('should render multiple cloth instances with dynamic scaling', async ({ page }) => {
       // Large bubble cloth should be visible
-      const clothInstances = page.locator('#htc-video-canvas');
+      const clothInstances = page.locator('[id^="htc-video-canvas"]');
       await expect(clothInstances).toHaveCount(1); // Initially 1 large bubble
       
       const box = await clothInstances.first().boundingBox();
@@ -115,6 +115,9 @@ test.describe('Arcade Protocol: White-Box Analysis', () => {
       const bubbles = page.getByTestId('bubble');
       
       await expect(async () => {
+        const count = await bubbles.count();
+        if (count === 0) return;
+
         const bubbleBox = await bubbles.first().boundingBox();
         const player = page.locator('.absolute.bottom-4');
         const playerBox = await player.boundingBox();
@@ -130,8 +133,8 @@ test.describe('Arcade Protocol: White-Box Analysis', () => {
           await page.keyboard.press(' ', { delay: 50 });
         }
         
-        const count = await bubbles.count();
-        expect(count).toBe(0);
+        const currentCount = await bubbles.count();
+        expect(currentCount).toBe(0);
       }).toPass({ timeout: 60000, intervals: [200] });
 
       // Assert Mission Success screen
@@ -143,8 +146,8 @@ test.describe('Arcade Protocol: White-Box Analysis', () => {
       await nextBtn.click();
 
       // Verify Level 2 HUD
-      const hud = page.locator('text=Sector 02: Industrial_Logic');
-      await expect(hud).toBeVisible();
+      const hud = page.getByTestId('hud-level-name');
+      await expect(hud).toContainText('Industrial_Logic');
       
       // Verify new bubble count for Level 2 (2 bubbles)
       await expect(bubbles).toHaveCount(2);

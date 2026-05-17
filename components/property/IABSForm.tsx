@@ -28,24 +28,24 @@ const IABSForm = () => {
 
   const data = {
     brokerageName: profile?.brokerage_name || 'Lion Drive Realty',
-    brokerageLicense: profile?.brokerage_license || '9013032',
-    brokerageEmail: profile?.brokerage_email || 'tahsin.reza817@gmail.com',
-    brokeragePhone: profile?.brokerage_phone || '214-555-0123',
+    brokerageLicense: profile?.brokerage_license || '9013052',
+    brokerageEmail: profile?.brokerage_email || 'eric@liondriverealty.com',
+    brokeragePhone: profile?.brokerage_phone || '713-858-8058',
 
-    designatedBroker: profile?.designated_broker || 'Tahsin Reza',
-    designatedBrokerLicense: profile?.designated_broker_license || '0654321',
-    designatedBrokerEmail: profile?.brokerage_email || 'tahsin.reza817@gmail.com',
-    designatedBrokerPhone: profile?.brokerage_phone || '214-555-0123',
+    designatedBroker: profile?.designated_broker || 'Eric Wargo',
+    designatedBrokerLicense: profile?.designated_broker_license || '707250',
+    designatedBrokerEmail: profile?.brokerage_email || 'eric@liondriverealty.com',
+    designatedBrokerPhone: profile?.brokerage_phone || '713-858-8058',
 
     supervisor: profile?.supervisor || 'Lion Drive Operations',
-    supervisorLicense: profile?.supervisor_license || 'N/A',
+    supervisorLicense: profile?.supervisor_license || '707250',
     supervisorEmail: 'ops@liondriverealty.com',
     supervisorPhone: '214-555-0999',
 
     agentName: profile?.full_name || user?.user_metadata?.full_name || 'Tahsin Reza',
-    agentLicense: profile?.license_id || user?.user_metadata?.license_id || 'Pending',
+    agentLicense: profile?.license_id || user?.user_metadata?.license_id || '847789',
     agentEmail: user?.email || 'tahsin.reza817@gmail.com',
-    agentPhone: profile?.phone_number || 'Contact via Pulse',
+    agentPhone: profile?.phone_number || '817-980-5953',
   };
 
   return (

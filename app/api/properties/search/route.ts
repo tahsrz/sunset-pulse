@@ -1,22 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { NextRequest } from 'next/server';
+import connectDB from '@/lib/core/database';
+import Property from '@/models/Property';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { applyPropertyFilters } from '@/lib/core/supabaseQueryBuilder';
+import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import { PulseCache } from '@/utils/security/PulseCache';
-import { PulseHash } from '@/utils/security/PulseHash';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/properties/search
+// Consolidates internal grid search with geospatial support
 export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
     
-    // Generate signature for caching
-    const signature = PulseHash.signature(params);
+    // 1. Build Query & Handle Cache Signature
+    const { query, signature } = buildPropertyQuery(params);
 
-    // 1. Cache Check
+    // 2. Cache Check
     const cachedData = PulseCache.get(signature);
     if (cachedData) {
       const response = successResponse(cachedData, { signature, cached: true });
@@ -24,17 +25,11 @@ export const GET = async (request: NextRequest) => {
       return response;
     }
 
-    // 2. Supabase Execution (Alpha Consolidation)
-    let query = supabase.from('properties').select('*');
-    query = applyPropertyFilters(query, params);
+    // 3. Database Execution (MongoDB Source of Truth for Explorer)
+    await connectDB();
+    const properties = await Property.find(query).lean();
 
-    const { data: properties, error } = await query;
-
-    if (error) {
-      throw error;
-    }
-
-    // 3. Store in PulseCache
+    // 4. Store in PulseCache
     PulseCache.set(signature, properties);
 
     const response = successResponse(properties, { signature, cached: false });

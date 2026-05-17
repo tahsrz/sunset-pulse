@@ -22,9 +22,14 @@ export const POST = async (request: Request) => {
     console.log(`[ANOMALY_DETECTED] Type: ${type}, Location: ${location}, Severity: ${severity}`);
 
     // Trigger Supabase Edge Function for real-time processing and lead matching
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
     
+    // Robustness fallback
+    if (!supabaseUrl || supabaseUrl.includes('vercel.app')) {
+      supabaseUrl = 'https://xlyfhiafactxahhvikyv.supabase.co';
+    }
+
     if (supabaseUrl && supabaseAnonKey) {
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/market-alert`;
       

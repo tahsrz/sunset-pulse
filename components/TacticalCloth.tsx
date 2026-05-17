@@ -267,7 +267,7 @@ const TacticalCloth = forwardRef<TacticalClothRef, TacticalClothProps>(({
           />
           <canvas 
             ref={canvasRef}
-            id="htc-video-canvas" 
+            id={`htc-video-canvas-${id}`} 
             className="relative z-10 cursor-crosshair touch-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}

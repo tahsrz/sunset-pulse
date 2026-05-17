@@ -3,10 +3,17 @@ import { cookies } from 'next/headers'
 
 export function createClient() {
   const cookieStore = cookies()
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+
+  // Robustness fallback for Vercel/Local consistency
+  if (!url || url.includes('vercel.app')) {
+    url = 'https://xlyfhiafactxahhvikyv.supabase.co'
+  }
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url,
+    key || 'placeholder-key',
     {
       cookies: {
         getAll() {

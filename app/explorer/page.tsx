@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import ExplorerMap from '@/components/ExplorerMap';
 import JamieChat from '@/components/JamieChat';
 import { FaMapMarkedAlt, FaSearch, FaBolt, FaRoute, FaHeartbeat } from 'react-icons/fa';
@@ -11,10 +11,47 @@ function ExplorerContent() {
   const { intelligence } = useTheme();
   const searchParams = useSearchParams();
   const targetId = searchParams.get('id');
-  const [selection, setSelection] = useState(null);
+  const [selection, setSelection] = useState<any>(null);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [areaIntel, setAreaIntel] = useState({ pulseScore: 0, tourRecommendation: '' });
+
+  const fetchProperties = useCallback(async () => {
+    if (!selection) return;
+    setLoading(true);
+    try {
+      const url = selection.type === 'polygon' 
+        ? `/api/properties/search?polygon=${selection.data}`
+        : `/api/properties/search?radius=${selection.data}`;
+      
+      const json = await res.json();
+      
+      // Fix: Standardized API response uses data.data for payload
+      const data = json.data || json;
+      const propertyArray = Array.isArray(data) ? data : (data.properties || []);
+      setProperties(propertyArray);
+
+      // Calculate area-wide intelligence
+      if (propertyArray.length > 0) {
+        const totalScore = propertyArray.reduce((acc: number, p: any) => 
+          acc + calculatePulseScore(p.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates), 0);
+        const avgScore = Math.round(totalScore / propertyArray.length);
+        
+        setAreaIntel({
+          pulseScore: avgScore,
+          tourRecommendation: propertyArray.length > 1 
+            ? `Optimal tour starts at ${propertyArray[0].name}. Intelligence suggests a clockwise route for maximum daylight leverage.`
+            : 'Standalone priority asset identified.'
+        });
+      } else {
+        setAreaIntel({ pulseScore: 0, tourRecommendation: 'No local assets identified for this sector.' });
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selection, intelligence.grill.coordinates]);
 
   // Initial load for all properties or specific target
   useEffect(() => {
@@ -24,20 +61,22 @@ function ExplorerContent() {
         if (targetId) {
           const res = await fetch(`/api/properties/${targetId}`);
           if (res.ok) {
-            const property = await res.json();
+            const json = await res.json();
+            const property = json.data || json;
             setProperties([property]);
             
             setAreaIntel({
-              pulseScore: calculatePulseScore(property.location_geo.coordinates, [], intelligence.grill.coordinates),
+              pulseScore: calculatePulseScore(property.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates),
               tourRecommendation: `Priority target: ${property.name}. Highly localized intelligence active.`
             });
           }
         } else {
           // Fetch ALL properties for global grid view
-          const res = await fetch('/api/properties?pageSize=100'); // High pageSize to get "all"
+          const res = await fetch('/api/properties?pageSize=100');
           if (res.ok) {
-            const data = await res.json();
-            setProperties(data.properties);
+            const json = await res.json();
+            const data = json.data || json;
+            setProperties(data.properties || []);
           }
         }
       } catch (error) {
@@ -54,37 +93,7 @@ function ExplorerContent() {
     if (selection) {
       fetchProperties();
     }
-  }, [selection]);
-
-  const fetchProperties = async () => {
-    setLoading(true);
-    try {
-      const url = selection.type === 'polygon' 
-        ? `/api/properties/search?polygon=${selection.data}`
-        : `/api/properties/search?radius=${selection.data}`;
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      setProperties(data);
-
-      // Calculate area-wide intelligence
-      if (data.length > 0) {
-        const avgScore = Math.round(data.reduce((acc, p) => 
-          acc + calculatePulseScore(p.location_geo.coordinates, [], intelligence.grill.coordinates), 0) / data.length);
-        
-        setAreaIntel({
-          pulseScore: avgScore,
-          tourRecommendation: data.length > 1 
-            ? `Optimal tour starts at ${data[0].name}. Intelligence suggests a clockwise route for maximum daylight leverage.`
-            : 'Standalone priority asset identified.'
-        });
-      }
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selection, fetchProperties]);
 
   return (
     <main className="relative h-screen w-full overflow-hidden bg-black">

@@ -11,7 +11,7 @@ export const useValuations = () => {
   });
 
   return { 
-    valuations: data || [], 
+    valuations: data?.data || [], 
     loading: isLoading,
     error 
   };

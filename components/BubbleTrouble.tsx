@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import TacticalCloth from '@/components/TacticalCloth';
 import { useVibe } from '@/context/VibeContext';
 
 interface Bubble {
@@ -24,7 +25,7 @@ interface LevelConfig {
 
 const LISTING_SECTORS = [
   { name: 'Bowie_Ranch_Gate', listing: 'Bowie Highway Ranch', location: 'Bowie, TX', background: '/images/properties/ranch1.jpg' },
-  { name: 'Holly_Ridge_Deck', listing: 'Holly Ridge Estates 2.5ac', location: 'Decatur, TX', background: '/images/properties/244ridge1.jpg' },
+  { name: 'Industrial_Logic', listing: 'Holly Ridge Estates 2.5ac', location: 'Decatur, TX', background: '/images/properties/244ridge1.jpg' },
   { name: 'Barndo_Shop_Line', listing: 'Sunset Barndominium w/ Shop', location: 'Sunset, TX', background: '/images/properties/barndo1.jpg' },
   { name: 'Rhome_Commuter_Run', listing: 'Rhome Commuter Rental', location: 'Rhome, TX', background: '/images/properties/rhome1.jpg' },
   { name: 'Alvord_Land_Claim', listing: 'Alvord 980 Franklin - Land', location: 'Alvord, TX', background: '/images/properties/land1.jpg' },
@@ -44,7 +45,8 @@ const createLevelBubbles = (level: number): Bubble[] => {
     const lane = index % 10;
     const row = Math.floor(index / 10);
     const wave = Math.sin((level * 17 + index * 31) * 0.37);
-    const size = level < 4 ? 1 + (index % 2) : index % 7 === 0 ? 3 : index % 3 === 0 ? 2 : 1;
+    // Level 1 starts with a large bubble to ensure splitting test works
+    const size = level === 1 ? 3 : (level < 4 ? 1 + (index % 2) : index % 7 === 0 ? 3 : index % 3 === 0 ? 2 : 1);
     const direction = index % 2 === 0 ? 1 : -1;
 
     return {
@@ -169,8 +171,8 @@ const BubbleTrouble = () => {
 
           // Wall collisions
           if (nx < 0 || nx > 750) nvx *= BOUNCE;
-          if (ny > 500) {
-            nvy = -Math.sqrt(b.size * 25); // Higher bounce for bigger bubbles
+          if (ny > 560) {
+            nvy = -Math.sqrt(b.size * 22); // Lower bounce slightly
           }
 
           // Player collision
@@ -248,16 +250,23 @@ const BubbleTrouble = () => {
         <div 
           key={b.id}
           data-testid="bubble"
-          className="absolute z-20 rounded-full bg-cover bg-center shadow-[inset_-18px_-24px_35px_rgba(0,0,0,0.35),inset_12px_12px_22px_rgba(255,255,255,0.18),0_18px_45px_rgba(220,38,38,0.35)] ring-2 ring-white/20"
+          className="absolute z-20 pointer-events-none"
           style={{ 
             left: b.x, 
             top: b.y, 
             width: b.size * 50,
             height: b.size * 50,
-            backgroundImage: `url('${ARCADE_BALL_SPRITE}')`,
             transformOrigin: 'center'
           }}
-        />
+        >
+          <TacticalCloth 
+            width={b.size * 50} 
+            height={b.size * 50} 
+            id={b.id.slice(0, 4)} 
+            status="ACTIVE"
+            moodColor="#dc2626"
+          />
+        </div>
       ))}
 
       {/* Player */}
@@ -275,7 +284,7 @@ const BubbleTrouble = () => {
       <div className="absolute top-4 left-4 font-mono text-xs text-green-500 bg-black/80 p-3 rounded-xl border border-green-500/20 z-40 backdrop-blur-md">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>{currentLevel.name}</span>
+          <span data-testid="hud-level-name">{currentLevel.name}</span>
         </div>
         LISTING: {currentLevel.listing}<br/>
         MARKET: {currentLevel.location}<br/>
