@@ -15,20 +15,35 @@ export default function IDXConsumerExperience({ matrixUrl }: IDXConsumerExperien
   const [sentPrompt, setSentPrompt] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState('');
+  const [dynamicUrl, setDynamicUrl] = useState(matrixUrl);
+
+  const buildMatrixUrl = (params: any) => {
+    const url = new URL(matrixUrl);
+    // Common Matrix/IDX parameter guesses - these often vary by setup
+    if (params.city) url.searchParams.set('City', params.city);
+    if (params.zipcode) url.searchParams.set('Zip', params.zipcode);
+    if (params.price_min) url.searchParams.set('MinPrice', params.price_min.toString());
+    if (params.price_max) url.searchParams.set('MaxPrice', params.price_max.toString());
+    if (params.beds_min) url.searchParams.set('Beds', params.beds_min.toString());
+    if (params.full_baths_min) url.searchParams.set('Baths', params.full_baths_min.toString());
+    
+    return url.toString();
+  };
 
   useEffect(() => {
     const handleJamieToolCall = (event: any) => {
       const { tool, parameters } = event.detail;
       if (tool === 'search_properties') {
         console.log('🚀 [JAMIE_TOOL] Search Properties Triggered:', parameters);
-        // Here we would implement the logic to update the iframe or fetch results
-        // For now, let's just log it and potentially set a local state if needed.
+        const newUrl = buildMatrixUrl(parameters);
+        setDynamicUrl(newUrl);
+        setFrameLoaded(false); // Reset loading state for new URL
       }
     };
 
     window.addEventListener('sunsetpulse:jamie-tool-call', handleJamieToolCall);
     return () => window.removeEventListener('sunsetpulse:jamie-tool-call', handleJamieToolCall);
-  }, []);
+  }, [matrixUrl]);
 
   useEffect(() => {
     if (frameLoaded) return;
@@ -161,27 +176,6 @@ export default function IDXConsumerExperience({ matrixUrl }: IDXConsumerExperien
           <p className="mt-2">
             Focus on the home, the numbers, and your own practical fit. Sunset Pulse keeps
             guidance tied to property details, infrastructure, costs, and tradeoffs.
-          </p>
-        </div>
-
-        {showFallback && (
-          <div className="rounded-lg border border-amber-100/25 bg-amber-100/[0.08] p-4 text-sm leading-6 text-amber-50">
-            <p className="font-bold">Matrix is taking a moment to load.</p>
-            <a
-              href={matrixUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex rounded-md border border-amber-100/25 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-50 transition hover:bg-white/15"
-            >
-              Open Matrix Search
-            </a>
-          </div>
-        )}
-      </aside>
-    </section>
-  );
-}
-ils, infrastructure, costs, and tradeoffs.
           </p>
         </div>
 
