@@ -25,9 +25,13 @@ ALTER TABLE public.daily_briefings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scythe_registry ENABLE ROW LEVEL SECURITY;
 
 -- Allow read access
+DROP POLICY IF EXISTS "Allow public read access for daily_briefings" ON public.daily_briefings;
 CREATE POLICY "Allow public read access for daily_briefings" ON public.daily_briefings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read access for scythe_registry" ON public.scythe_registry;
 CREATE POLICY "Allow public read access for scythe_registry" ON public.scythe_registry FOR SELECT USING (true);
 
 -- Allow service role full access (default in Supabase, but explicit is fine)
+DROP POLICY IF EXISTS "Allow service_role full access for daily_briefings" ON public.daily_briefings;
 CREATE POLICY "Allow service_role full access for daily_briefings" ON public.daily_briefings TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow service_role full access for scythe_registry" ON public.scythe_registry;
 CREATE POLICY "Allow service_role full access for scythe_registry" ON public.scythe_registry TO service_role USING (true) WITH CHECK (true);

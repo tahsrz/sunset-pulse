@@ -25,10 +25,12 @@ CREATE TABLE IF NOT EXISTS public.properties (
 ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
 
 -- Create Policies
+DROP POLICY IF EXISTS "Public properties are viewable by everyone." ON public.properties;
 CREATE POLICY "Public properties are viewable by everyone." 
 ON public.properties FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Service role can manage properties." ON public.properties;
 CREATE POLICY "Service role can manage properties." 
 ON public.properties FOR ALL 
 USING (auth.jwt() ->> 'role' = 'service_role');

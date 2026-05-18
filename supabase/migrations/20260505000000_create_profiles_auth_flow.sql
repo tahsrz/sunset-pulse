@@ -33,18 +33,21 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS welcome_email_sent BOOLEAN 
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Profiles are readable by authenticated users" ON public.profiles;
 CREATE POLICY "Profiles are readable by authenticated users"
 ON public.profiles
 FOR SELECT
 TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile"
 ON public.profiles
 FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
 ON public.profiles
 FOR UPDATE
@@ -52,6 +55,7 @@ TO authenticated
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Service role can manage profiles" ON public.profiles;
 CREATE POLICY "Service role can manage profiles"
 ON public.profiles
 TO service_role
