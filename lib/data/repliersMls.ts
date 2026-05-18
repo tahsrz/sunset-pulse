@@ -4,6 +4,7 @@
  */
 
 import { gatekeeper } from '@/lib/core/gatekeeper';
+import { sanitizeMlsForPublicUse } from '@/lib/data/mlsCompliance';
 
 export interface RepliersProperty {
   mlsNumber: string;
@@ -125,7 +126,7 @@ class RepliersMLSService {
   }
 
   private mapRepliersToProperty(item: RepliersProperty) {
-    return {
+    return sanitizeMlsForPublicUse({
       _id: item.mlsNumber,
       name: `${item.address.streetNumber} ${item.address.streetName} ${item.address.streetSuffix}`,
       type: item.details.propertyType || 'Residential',
@@ -154,8 +155,16 @@ class RepliersMLSService {
       source: 'MLS',
       mls_id: item.mlsNumber,
       listing_status: item.status === 'A' ? 'Active' : item.status,
-      last_updated: item.updatedOn
-    };
+      last_updated: item.updatedOn,
+      metadata: {
+        provider: 'repliers',
+        resource: (item as any).resource,
+        standardStatus: (item as any).standardStatus,
+        listDate: item.listDate,
+        modificationTimestamp: item.updatedOn,
+        photoCount: (item as any).photoCount,
+      }
+    });
   }
 
   public async getListings(params: any = {}) {
