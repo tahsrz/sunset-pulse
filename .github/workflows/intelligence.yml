@@ -26,6 +26,8 @@ jobs:
         id: get-deployment
         with:
           token: ${{ secrets.VERCEL_TOKEN }}
+          wait: true
+          timeout: 600 
 
       - name: vercel-ai
         uses: vercel/ai-action@v2.2.0
