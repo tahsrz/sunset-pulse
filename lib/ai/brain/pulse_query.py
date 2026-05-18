@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -13,6 +14,7 @@ from cityhash import city_hash64, get_memoria_indices, normalize
 from memoria_query import MemoriaQuery
 
 TAH_MAGIC = 0x54414821
+MAX_SYMBOLS_PER_SHARD = 128
 STOPWORDS = {
     "what", "does", "this", "that", "with", "from", "your", "have", "about",
     "tell", "give", "show", "find", "for", "and", "the", "are", "was", "were",
@@ -59,7 +61,7 @@ def _cartridge_dirs():
 
 
 def _query_terms(query):
-    clean_query = re.sub(r"[^\w\s]", " ", query.lower()).strip()
+    clean_query = re.sub(r"[^\w\s/.-]", " ", query.lower()).strip()
     terms = [term for term in clean_query.split() if len(term) > 2 and term not in STOPWORDS]
     ngrams = terms[:]
     for index in range(len(terms) - 1):
@@ -142,6 +144,93 @@ class SingleFileTAHQuery:
         return results
 
 
+class SwarmPrototypeQuery:
+    """Reader for raw v3.5 swarm prototype .tah streams plus optional DHT sidecar."""
+
+    def __init__(self, path):
+        self.path = Path(path)
+        self.buffer = self.path.read_bytes()
+        self.dht = self._load_dht()
+        self.shards = None
+
+    def _load_dht(self):
+        dht_path = self.path.with_name(f"{self.path.stem}_dht.json")
+        if not dht_path.exists():
+            return {}
+        try:
+            return json.loads(dht_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def _parse_shards(self):
+        if self.shards is not None:
+            return self.shards
+
+        shards = []
+        offset = 0
+        while offset < len(self.buffer):
+            null_pos = self.buffer.find(b"\0", offset)
+            if null_pos == -1 or null_pos + 3 > len(self.buffer):
+                break
+
+            text = _clean_text(self.buffer[offset:null_pos].decode("utf-8", errors="ignore"))
+            symbol_count = int.from_bytes(self.buffer[null_pos + 1:null_pos + 3], "little")
+            symbol_bytes = 2 + symbol_count * 32
+            next_offset = null_pos + 1 + symbol_bytes
+
+            if symbol_count > MAX_SYMBOLS_PER_SHARD or next_offset > len(self.buffer):
+                break
+
+            links = []
+            for index in range(symbol_count):
+                hash_start = null_pos + 3 + index * 32
+                symbol_hash = self.buffer[hash_start:hash_start + 32].hex()
+                links.append({
+                    "hash": symbol_hash,
+                    "offset": self.dht.get(symbol_hash, "UNRESOLVED"),
+                })
+
+            if text:
+                shards.append({
+                    "offset": offset,
+                    "length": next_offset - offset,
+                    "text": text,
+                    "links": links,
+                })
+
+            offset = next_offset
+
+        self.shards = shards
+        return shards
+
+    def get_matches(self, query_text, top_n=3):
+        clean_query, terms, _ = _query_terms(query_text)
+        query_symbol_hash = hashlib.sha256(query_text.strip().encode("utf-8")).hexdigest()
+        results = []
+
+        for shard in self._parse_shards():
+            normalized = shard["text"].lower()
+            term_matches = sum(1 for term in terms if term in normalized)
+            phrase_match = bool(clean_query and clean_query in normalized)
+            link_match = any(link["hash"] == query_symbol_hash for link in shard["links"])
+
+            if not term_matches and not phrase_match and not link_match:
+                continue
+
+            score = term_matches * 10 + (25 if phrase_match else 0) + (15 if link_match else 0) + 5
+            text = self._format_shard(shard)
+            results.append((score, text))
+
+        return sorted(results, key=lambda item: item[0], reverse=True)[:top_n]
+
+    def _format_shard(self, shard):
+        if not shard["links"]:
+            return shard["text"]
+
+        links = ", ".join(f"{link['hash'][:12]} -> {link['offset']}" for link in shard["links"])
+        return f"{shard['text']}\n\n[SWARM_LINKS] {links}"
+
+
 def _search_hat(path, query_terms, top_n):
     try:
         q = MemoriaQuery(path)
@@ -166,6 +255,14 @@ def _search_tah(path, query_terms, top_n):
         return []
 
 
+def _search_swarm(path, query_terms, top_n):
+    try:
+        q = SwarmPrototypeQuery(path)
+        return [(score, path.name, data) for score, data in q.get_matches(query_terms, top_n=top_n)]
+    except Exception:
+        return []
+
+
 def pulse_search(query_terms, limit=10, print_results=False):
     cartridges = []
     for directory in _cartridge_dirs():
@@ -180,7 +277,12 @@ def pulse_search(query_terms, limit=10, print_results=False):
             if not paired_tah.exists():
                 return []
             return _search_hat(path, query_terms, min(limit, 5))
-        return _search_tah(path, query_terms, min(limit, 5))
+        if _has_paired_memoria_hat(path):
+            return []
+        tah_results = _search_tah(path, query_terms, min(limit, 5))
+        if tah_results:
+            return tah_results
+        return _search_swarm(path, query_terms, min(limit, 5))
 
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(search_path, path) for path in cartridges]
@@ -197,6 +299,13 @@ def pulse_search(query_terms, limit=10, print_results=False):
         print_pulse_results(query_terms, structured)
 
     return structured
+
+
+def _has_paired_memoria_hat(path):
+    path = Path(path)
+    if str(path).endswith(".tah.tah"):
+        return Path(str(path)[:-8] + ".tah.hat").exists()
+    return path.with_suffix(".hat").exists()
 
 
 def print_pulse_results(query_terms, results):

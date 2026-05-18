@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import { MemoriaRetriever } from '@/lib/core/memoria_retriever';
+import { SwarmRetriever } from '@/lib/core/swarm_retriever';
 import { TAHRetriever } from '@/lib/core/tah_retriever';
 
 /**
  * Pulse Search (TypeScript Edition)
  * Optimized for Vercel/Next.js environment.
- * Searches TAH single-file cartridges and split Memoria .hat/.tah cartridges.
+ * Searches TAH single-file cartridges, split Memoria .hat/.tah cartridges,
+ * and raw swarm prototype .tah streams.
  */
 export async function pulse_search(query: string, maxResults = 25): Promise<any[]> {
   const cartridgeDirs = getCartridgeDirs();
@@ -25,23 +27,17 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
       if (processedFiles.has(processedKey)) continue;
       processedFiles.add(processedKey);
 
-      if (file.endsWith('.tah')) {
-        const magic = readMagic(filePath);
-        if (magic !== 0x54414821) continue;
-      }
-
       if (file.endsWith('.hat')) {
         const tahPath = resolveMemoriaTahPath(filePath);
         if (!fs.existsSync(tahPath)) continue;
       }
 
+      if (file.endsWith('.tah') && hasPairedMemoriaHat(filePath)) {
+        continue;
+      }
+
       try {
-        const matches = file.endsWith('.hat')
-          ? new MemoriaRetriever(filePath).search(query)
-          : new TAHRetriever(filePath).search(query).map(match => ({
-              score: 1.0,
-              data: match.data
-            }));
+        const matches = searchCartridge(filePath, file, query);
         
         if (matches.length > 0) {
           matches.forEach(m => {
@@ -59,6 +55,25 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
   }
 
   return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
+}
+
+function searchCartridge(filePath: string, file: string, query: string): Array<{ score: number; data: string }> {
+  if (file.endsWith('.hat')) {
+    return new MemoriaRetriever(filePath).search(query);
+  }
+
+  const magic = readMagic(filePath);
+  if (magic === 0x54414821) {
+    return new TAHRetriever(filePath).search(query).map(match => ({
+      score: 1.0,
+      data: match.data
+    }));
+  }
+
+  return new SwarmRetriever(filePath).search(query).map(match => ({
+    score: match.score,
+    data: match.data
+  }));
 }
 
 function getCartridgeDirs(): string[] {
@@ -94,4 +109,12 @@ function resolveMemoriaTahPath(hatPath: string): string {
   }
 
   return path.join(path.dirname(hatPath), `${path.basename(hatPath, '.hat')}.tah`);
+}
+
+function hasPairedMemoriaHat(tahPath: string): boolean {
+  if (tahPath.endsWith('.tah.tah')) {
+    return fs.existsSync(`${tahPath.slice(0, -8)}.tah.hat`);
+  }
+
+  return fs.existsSync(path.join(path.dirname(tahPath), `${path.basename(tahPath, '.tah')}.hat`));
 }
