@@ -441,6 +441,66 @@ function enforceFHAGuardrails(content: string): string {
   return compliantContent;
 }
 
+export const SEARCH_PROPERTIES_TOOL = {
+  type: "function",
+  function: {
+    name: "search_properties",
+    description: "Search for real estate properties on Sunset Pulse using specific criteria filtered from natural language.",
+    parameters: {
+      type: "object",
+      properties: {
+        city: { type: "string", description: "City to search in (e.g., 'Frisco', 'Plano')." },
+        zipcode: { type: "string", description: "5-digit ZIP code." },
+        neighborhood: { type: "string", description: "Specific neighborhood name." },
+        property_types: {
+          type: "array",
+          description: "Selected property types to include or exclude.",
+          items: {
+            type: "string",
+            enum: ["Residential", "Residential Income", "Land", "Commercial Sale", "Commercial Lease", "Residential Lease"]
+          }
+        },
+        property_types_logic: {
+          type: "string",
+          enum: ["Or", "Not"],
+          description: "Specifies whether to match any selected property types (Or) or exclude them (Not)."
+        },
+        property_sub_types: {
+          type: "array",
+          description: "Selected property sub-types.",
+          items: {
+            type: "string",
+            enum: ["Single Family Residence", "Condominium", "Townhouse", "Mobile Home", "Apartment"]
+          }
+        },
+        property_sub_types_logic: {
+          type: "string",
+          enum: ["Or", "Not"],
+          description: "Specifies whether to include (Or) or exclude (Not) the chosen sub-types."
+        },
+        price_min: { type: "integer", description: "Minimum budget boundary in USD." },
+        price_max: { type: "integer", description: "Maximum budget boundary in USD." },
+        beds_min: { type: "integer", description: "Minimum number of bedrooms required." },
+        beds_max: { type: "integer", description: "Maximum number of bedrooms allowed." },
+        full_baths_min: { type: "integer", description: "Minimum full bathrooms." },
+        sqft_min: { type: "integer", description: "Minimum interior square footage." },
+        pool: { 
+          type: "string", 
+          enum: ["Yes", "No", ""],
+          description: "Filter by presence of a swimming pool."
+        },
+        construction_status: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["Preowned", "New Construction - Complete", "New Construction - Incomplete", "Proposed", "Unknown"]
+          }
+        }
+      }
+    }
+  }
+};
+
 export async function getJamieResponse(messages: any[], propertyData?: any, memoryContext?: any, isDevMode: boolean = false) {
   const userInput = messages[messages.length - 1]?.content || "";
   
@@ -626,6 +686,8 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
         ...sanitizedMessages
       ],
       model: primaryModel,
+      tools: [SEARCH_PROPERTIES_TOOL] as any,
+      tool_choice: "auto",
       stream: true,
     });
 

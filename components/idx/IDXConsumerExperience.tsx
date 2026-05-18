@@ -17,6 +17,20 @@ export default function IDXConsumerExperience({ matrixUrl }: IDXConsumerExperien
   const [resolveError, setResolveError] = useState('');
 
   useEffect(() => {
+    const handleJamieToolCall = (event: any) => {
+      const { tool, parameters } = event.detail;
+      if (tool === 'search_properties') {
+        console.log('🚀 [JAMIE_TOOL] Search Properties Triggered:', parameters);
+        // Here we would implement the logic to update the iframe or fetch results
+        // For now, let's just log it and potentially set a local state if needed.
+      }
+    };
+
+    window.addEventListener('sunsetpulse:jamie-tool-call', handleJamieToolCall);
+    return () => window.removeEventListener('sunsetpulse:jamie-tool-call', handleJamieToolCall);
+  }, []);
+
+  useEffect(() => {
     if (frameLoaded) return;
 
     const timer = window.setTimeout(() => setShowFallback(true), FALLBACK_DELAY_MS);
@@ -86,7 +100,7 @@ export default function IDXConsumerExperience({ matrixUrl }: IDXConsumerExperien
     <section className="mx-auto grid max-w-7xl gap-4 px-3 py-3 sm:px-6 sm:py-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="h-[calc(100dvh-220px)] min-h-[680px] overflow-hidden rounded-lg border border-teal-100/20 bg-white shadow-2xl shadow-cyan-950/40">
         <iframe
-          src={matrixUrl}
+          src={dynamicUrl}
           title="NTREIS Matrix IDX listing search"
           className="h-full w-full"
           frameBorder="0"
@@ -147,6 +161,27 @@ export default function IDXConsumerExperience({ matrixUrl }: IDXConsumerExperien
           <p className="mt-2">
             Focus on the home, the numbers, and your own practical fit. Sunset Pulse keeps
             guidance tied to property details, infrastructure, costs, and tradeoffs.
+          </p>
+        </div>
+
+        {showFallback && (
+          <div className="rounded-lg border border-amber-100/25 bg-amber-100/[0.08] p-4 text-sm leading-6 text-amber-50">
+            <p className="font-bold">Matrix is taking a moment to load.</p>
+            <a
+              href={matrixUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex rounded-md border border-amber-100/25 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-50 transition hover:bg-white/15"
+            >
+              Open Matrix Search
+            </a>
+          </div>
+        )}
+      </aside>
+    </section>
+  );
+}
+ils, infrastructure, costs, and tradeoffs.
           </p>
         </div>
 
