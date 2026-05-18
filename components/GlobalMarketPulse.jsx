@@ -46,21 +46,21 @@ const GlobalMarketPulse = () => {
   };
 
   return (
-    <div className="w-full bg-slate-900 text-white border-b border-slate-700">
+    <div className="w-full bg-[#0b1f2d]/90 text-white border-b border-teal-200/10 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-10 text-xs font-medium uppercase tracking-wider">
           <div className="flex items-center space-x-6 overflow-x-auto no-scrollbar">
             <div className="flex items-center gap-2 whitespace-nowrap">
               <span className="text-slate-400">Market Pulse:</span>
-              <span className="text-green-400">Active</span>
+              <span className="text-teal-300">Active</span>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
               <span className="text-slate-400">Global Yield:</span>
-              <span className="text-blue-400">{globalYield}%</span>
+              <span className="text-violet-200">{globalYield}%</span>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
               <span className="text-slate-400">Price Index:</span>
-              <span className="text-orange-400">+1.2%</span>
+              <span className="text-amber-200">+1.2%</span>
             </div>
 
             {isAdvancedMode && (
@@ -69,8 +69,8 @@ const GlobalMarketPulse = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                 </div>
-                <div className="flex items-center gap-1.5 text-blue-400 font-black tracking-tighter italic">
-                  <FaBolt size={10} className="fill-blue-400" />
+                <div className="flex items-center gap-1.5 text-rose-200 font-black tracking-tighter italic">
+                  <FaBolt size={10} className="fill-rose-200" />
                   <span>Advanced_Protocol: Active</span>
                 </div>
               </div>
@@ -95,7 +95,7 @@ const GlobalMarketPulse = () => {
       </div>
 
       {activeChart && (
-        <div className="bg-slate-800 p-6 border-b border-slate-700 relative animate-in fade-in slide-in-from-top duration-300">
+        <div className="waterlily-section p-6 border-b border-teal-200/10 relative animate-in fade-in slide-in-from-top duration-300">
           <button 
             onClick={() => setActiveChart(null)}
             className="absolute top-4 right-4 text-slate-400 hover:text-white"

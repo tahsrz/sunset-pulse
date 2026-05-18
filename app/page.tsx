@@ -10,7 +10,7 @@ const HomePage: React.FC = () => {
   return (
     <>
       <CinematicHero />
-      <div className="bg-slate-950">
+      <div className="waterlily-surface">
         <ValuePropositionGrid />
         
         {/* @ts-expect-error Async Server Component */}

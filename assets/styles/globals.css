@@ -4,16 +4,29 @@
 
 @layer base {
   :root {
-    --primary-color: #3b82f6;
-    --primary-color-hover: #2563eb;
-    --glass-bg: rgba(15, 23, 42, 0.7);
-    --glass-border: rgba(51, 65, 85, 0.5);
+    --primary-color: #7c5cff;
+    --primary-color-hover: #3fb7a3;
+    --glass-bg: rgba(18, 42, 58, 0.68);
+    --glass-border: rgba(184, 167, 255, 0.26);
+    --pond-deep: #102a3a;
+    --pond-blue: #2f7f9f;
+    --lily-teal: #3fb7a3;
+    --mist-lavender: #b8a7ff;
+    --iris-violet: #7c5cff;
+    --petal-rose: #f29ab4;
+    --sun-peach: #ffb36b;
+    --pollen-gold: #f6d365;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
   }
 
   body {
-    @apply bg-slate-950 text-slate-100 font-sans;
+    @apply text-slate-100 font-sans;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(242, 154, 180, 0.22), transparent 30rem),
+      radial-gradient(circle at 88% 14%, rgba(63, 183, 163, 0.24), transparent 34rem),
+      radial-gradient(circle at 50% 52%, rgba(124, 92, 255, 0.16), transparent 42rem),
+      linear-gradient(135deg, #081824 0%, #102a3a 42%, #16294a 100%);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -25,11 +38,15 @@
 
 @layer components {
   .glassmorphism {
-    @apply bg-slate-900 backdrop-blur-xl border border-white border-opacity-10 shadow-2xl;
+    @apply backdrop-blur-xl border shadow-2xl;
+    background: rgba(16, 42, 58, 0.64);
+    border-color: rgba(184, 167, 255, 0.22);
   }
 
   .glassmorphism-card {
-    @apply bg-white bg-opacity-5 backdrop-blur-lg border border-white border-opacity-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:border-opacity-20 transition-all duration-500;
+    @apply backdrop-blur-lg border shadow-[0_8px_32px_0_rgba(2,6,23,0.32)] transition-all duration-500;
+    background: linear-gradient(145deg, rgba(255,255,255,0.09), rgba(63,183,163,0.08));
+    border-color: rgba(255,255,255,0.14);
   }
 
   .recon-hud {
@@ -41,7 +58,68 @@
   }
 
   .btn-primary {
-    @apply bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded-full shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200;
+    @apply text-white font-bold py-2 px-4 rounded-full shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200;
+    background: linear-gradient(135deg, var(--iris-violet), var(--lily-teal));
+    box-shadow: 0 16px 48px rgba(124, 92, 255, 0.24);
+  }
+
+  .waterlily-surface {
+    background:
+      radial-gradient(circle at 15% 10%, rgba(242, 154, 180, 0.22), transparent 22rem),
+      radial-gradient(circle at 78% 24%, rgba(246, 211, 101, 0.16), transparent 24rem),
+      radial-gradient(circle at 54% 70%, rgba(63, 183, 163, 0.18), transparent 28rem),
+      linear-gradient(145deg, rgba(9, 26, 38, 0.98), rgba(20, 48, 70, 0.96) 48%, rgba(47, 44, 88, 0.96));
+  }
+
+  .waterlily-section {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(120deg, rgba(255,255,255,0.035), transparent 42%),
+      radial-gradient(circle at 10% 0%, rgba(255, 179, 107, 0.18), transparent 22rem),
+      radial-gradient(circle at 90% 15%, rgba(184, 167, 255, 0.18), transparent 26rem),
+      rgba(8, 24, 36, 0.86);
+  }
+
+  .waterlily-card {
+    @apply border backdrop-blur-xl transition-all duration-500;
+    background:
+      linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.045)),
+      radial-gradient(circle at 0% 0%, rgba(246, 211, 101, 0.16), transparent 16rem),
+      radial-gradient(circle at 100% 10%, rgba(63, 183, 163, 0.16), transparent 18rem);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 22px 70px rgba(3, 14, 24, 0.28);
+  }
+
+  .waterlily-card:hover {
+    border-color: rgba(184, 167, 255, 0.38);
+    box-shadow: 0 28px 90px rgba(63, 183, 163, 0.16);
+    transform: translateY(-2px);
+  }
+
+  .waterlily-button {
+    @apply text-white font-bold transition-all duration-300;
+    background: linear-gradient(135deg, #7c5cff, #3fb7a3 52%, #ffb36b);
+    box-shadow: 0 18px 48px rgba(124, 92, 255, 0.24);
+  }
+
+  .waterlily-button:hover {
+    filter: saturate(1.18) brightness(1.08);
+    box-shadow: 0 22px 60px rgba(63, 183, 163, 0.26);
+  }
+
+  .waterlily-heading {
+    color: transparent;
+    background: linear-gradient(100deg, #f6d365, #f29ab4 28%, #b8a7ff 58%, #3fb7a3);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .waterlily-chip {
+    @apply border backdrop-blur-md;
+    color: #dffdf6;
+    background: rgba(63, 183, 163, 0.12);
+    border-color: rgba(63, 183, 163, 0.25);
   }
 }
 
@@ -61,9 +139,10 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-950;
+  background: #081824;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-800 rounded-full hover:bg-slate-700 transition-colors;
+  @apply rounded-full transition-colors;
+  background: linear-gradient(#b8a7ff, #3fb7a3);
 }

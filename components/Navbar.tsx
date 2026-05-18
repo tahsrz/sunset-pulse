@@ -28,7 +28,7 @@ const Navbar: React.FC = () => {
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <nav className='bg-[var(--nav-bg)] border-b border-white/10 transition-colors duration-500'>
+    <nav className='bg-[#0c2130]/85 backdrop-blur-xl border-b border-teal-200/10 transition-colors duration-500'>
       <div className='mx-auto max-w-7xl px-2 sm:px-6 lg:px-8'>
         <div className='relative flex h-20 items-center justify-between'>
           <div className='flex flex-1 items-center justify-center md:items-stretch md:justify-start'>
@@ -45,15 +45,15 @@ const Navbar: React.FC = () => {
                 {(user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin') && (
                   <Link href='/lead-gen' className={`${pathname.startsWith('/lead-gen') ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Lead Gen</Link>
                 )}
-                <Link href='/explorer' className={`${pathname === '/explorer' ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
+                <Link href='/explorer' className={`${pathname === '/explorer' ? 'bg-teal-500/20 text-teal-200' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
                   Explorer
                 </Link>
                 <Link href='/grill' className={`${pathname === '/grill' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Grill</Link>
                 <Link href='/#architecture' className={`${pathname === '/architecture' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
                   <FaCode /> Architecture
                 </Link>
-                <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-blue-600/30 text-blue-200 border-blue-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
-                  <FaShieldAlt className='text-blue-500' /> Abidan
+                <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-violet-500/30 text-violet-100 border-violet-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
+                  <FaShieldAlt className='text-violet-300' /> Abidan
                 </Link>
                 <Link href='/investors' className={`${pathname === '/investors' ? 'bg-orange-600/20 text-orange-400 border-orange-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-[0.2em]`}>
                   <span className='w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse' /> Investors

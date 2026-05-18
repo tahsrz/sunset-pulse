@@ -143,7 +143,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang='en'>
-      <body className='bg-slate-950'>
+      <body className='waterlily-surface'>
         <AuthProvider>
           <CartProvider>
             <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
