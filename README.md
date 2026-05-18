@@ -4,19 +4,19 @@ Sunset Pulse is a Next.js 14 real estate intelligence platform for property disc
 
 ## Current Status
 
-- Application framework: Next.js 14 App Router with React and TypeScript
-- Data services: Supabase, MongoDB-backed property models, and local mock data for development and testing
-- Test coverage: Vitest unit tests and Playwright browser tests
-- Primary focus: property search, lead intelligence, Jamie assistant workflows, valuation tools, and internal operations dashboards
+- **Status:** 🟢 Alpha Maturation // Supabase Hegemony
+- **Application framework:** Next.js 14 App Router with React and TypeScript
+- **Data services:** Supabase (Consolidated Property Grid), MongoDB, and local mock data.
+- **Test coverage:** Vitest unit tests and Playwright browser tests.
+- **Primary focus:** TAH Memory Forge, Sigmoid Lead Maturation, and Ozriel Protocol integration.
 
 ## Core Capabilities
 
-- Property browsing, search, saved listings, and listing detail pages
-- Lead capture, re-engagement, scoring, and pipeline intelligence
-- Jamie assistant workflows for market research, messaging support, and site operations
-- Valuation and market intelligence modules for property-level analysis
-- Admin tools for branding, prompts, render queues, acquisition workflows, and audit actions
-- Visualization components for maps, 3D property views, intelligence dashboards, and interactive demos
+- Property browsing, search, saved listings, and high-performance IDX sync via Repliers.io.
+- Lead capture, re-engagement with Sigmoid velocity scoring, and Jamie AI hooks.
+- Neighborhood Recon & Budget Delta analysis for hyper-personalized interactions.
+- TAH Expertise retrieval (Makiel, Gadrael, etc.) from Supabase Cloud-Native storage.
+- Visualization components for maps, 3D property views, and D3.js velocity trajectories.
 
 ## Technology Stack
 

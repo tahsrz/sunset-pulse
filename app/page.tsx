@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react'; // <-- Added Suspense here
 import CinematicHero from '@/components/CinematicHero';
 import InfoBoxes from '@/components/InfoBoxes';
 import FeaturedProperties from '@/components/FeaturedProperties';
@@ -12,7 +12,17 @@ const HomePage: React.FC = () => {
       <CinematicHero />
       <div className="bg-slate-950">
         <ValuePropositionGrid />
-        <FeaturedProperties />
+        
+        {/* @ts-expect-error Async Server Component */}
+        <Suspense fallback={
+          <div className="text-center py-20 text-slate-500 font-mono text-xs uppercase tracking-widest animate-pulse">
+            Loading Featured Properties...
+          </div>
+        }>
+          {/* @ts-expect-error Async Server Component */}
+          <FeaturedProperties />
+        </Suspense>
+
         <InfoBoxes />
         <FAQSection />
         <ArchitectureOverview />
