@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { FaClock } from 'react-icons/fa';
 
 interface ActivityGridProps {
@@ -18,9 +19,9 @@ const ActivityGrid: React.FC<ActivityGridProps> = ({ bookings }) => {
           </div>
           <div className='flex justify-between items-center'>
             <div className='flex items-center gap-2'>
-              <div className='w-6 h-6 rounded-full bg-slate-800 border border-white/10 overflow-hidden'>
+              <div className='relative w-6 h-6 rounded-full bg-slate-800 border border-white/10 overflow-hidden'>
                 {booking.user?.image ? (
-                  <img src={booking.user.image} alt='' />
+                  <Image src={booking.user.image} alt='' fill sizes='24px' className='object-cover' />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center text-[8px] font-bold text-white'>
                     {booking.user?.username?.charAt(0)}

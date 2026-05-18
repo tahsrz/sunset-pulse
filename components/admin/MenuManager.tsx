@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FaUtensils, FaPlus, FaTrash, FaEdit, FaSave, FaTimes, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -26,7 +26,7 @@ export default function MenuManager({ agentId = 'taz-realty-001' }: { agentId?: 
   });
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const fetchMenu = async () => {
+  const fetchMenu = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/menu?agentId=${agentId}`);
@@ -40,11 +40,11 @@ export default function MenuManager({ agentId = 'taz-realty-001' }: { agentId?: 
     } finally {
       setLoading(false);
     }
-  };
+  }, [agentId]);
 
   useEffect(() => {
     fetchMenu();
-  }, [agentId]);
+  }, [fetchMenu]);
 
   const handleAdd = async () => {
     if (!newItem.name || newItem.price <= 0) {

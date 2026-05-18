@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Spinner from '@/components/Spinner';
 import { supabase } from '@/lib/supabase';
 import StrategicOverview from '@/components/admin/StrategicOverview';
@@ -78,7 +78,7 @@ const DashboardPage: React.FC = () => {
   const [valuations, setValuations] = useState<Valuation[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
 
-  const fetchAgentProfile = async () => {
+  const fetchAgentProfile = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase
@@ -88,9 +88,9 @@ const DashboardPage: React.FC = () => {
         .single();
       setAgent(profile as AgentProfile);
     }
-  };
+  }, []);
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       const res = await fetch('/api/leads');
       if (res.status === 200) {
@@ -100,9 +100,9 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Lead fetch failed:', error);
     }
-  };
+  }, []);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       const res = await fetch('/api/bookings?role=agent');
       if (res.ok) {
@@ -112,9 +112,9 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Bookings fetch failed:', error);
     }
-  };
+  }, []);
 
-  const fetchValuations = async () => {
+  const fetchValuations = useCallback(async () => {
     try {
       const res = await fetch('/api/valuation');
       if (res.ok) {
@@ -124,9 +124,9 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Valuation fetch failed:', error);
     }
-  };
+  }, []);
 
-  const fetchInsights = async () => {
+  const fetchInsights = useCallback(async () => {
     try {
       const res = await fetch('/api/jamie/dreams');
       if (res.ok) {
@@ -136,16 +136,16 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Insights fetch failed:', error);
     }
-  };
+  }, []);
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     await Promise.all([fetchAgentProfile(), fetchLeads(), fetchBookings(), fetchValuations(), fetchInsights()]);
     setLoading(false);
-  };
+  }, [fetchAgentProfile, fetchLeads, fetchBookings, fetchValuations, fetchInsights]);
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [loadAll]);
 
   const topPriority = leads.length > 0 ? leads.reduce((prev, current) => 
     (prev.probability > current.probability) ? prev : current, leads[0]) : null;

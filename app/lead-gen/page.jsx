@@ -48,7 +48,7 @@ const LeadGenPropertiesPage = () => {
     };
 
     fetchProperties();
-  }, [page, pageSize]);
+  }, [authLoading, page, pageSize, router, user]);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);

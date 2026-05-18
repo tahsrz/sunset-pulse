@@ -35,7 +35,7 @@ const MakielFateChart: React.FC<MakielFateChartProps> = ({ property }) => {
       }
     })
     .catch(err => console.error('[MAKIEL_CHART_FETCH_ERROR]', err));
-  }, [property]);
+  }, [property, velocityData]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -151,7 +151,7 @@ const MakielFateChart: React.FC<MakielFateChartProps> = ({ property }) => {
       .call(d3.axisLeft(y).ticks(5).tickFormat(d => `$${(d as number) / 1000}k`))
       .attr('color', '#64748b');
 
-  }, [property]);
+  }, [property, velocityData]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">

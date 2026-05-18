@@ -81,7 +81,7 @@ const SunsetPulseViewer: React.FC<SunsetPulseViewerProps> = ({
     { pos: new Vector(0, 20, 5), label: `Status: ${property?.type || 'Available'}`, key: 'status' },
   ], [property]);
 
-  const getBrandingColor = () => {
+  const getBrandingColor = React.useCallback(() => {
     const hex = branding?.primaryColor || '#3b82f6';
     if (hex.startsWith('#') && hex.length >= 7) {
       const r = parseInt(hex.slice(1, 3), 16);
@@ -90,7 +90,7 @@ const SunsetPulseViewer: React.FC<SunsetPulseViewerProps> = ({
       return { r, g, b };
     }
     return { r: 59, g: 130, b: 246 };
-  };
+  }, [branding?.primaryColor]);
 
   const handleDropComment = async () => {
     if (!pendingCommentPos || !newComment) return;
@@ -218,7 +218,7 @@ const SunsetPulseViewer: React.FC<SunsetPulseViewerProps> = ({
       if (animationId) cancelAnimationFrame(animationId);
       rendererRef.current = null;
     };
-  }, [objUrl, propId, isDataOverlayActive, property, hotspots, isDevMode, latestBriefing, isIntelOverlayActive]);
+  }, [objUrl, propId, isDataOverlayActive, property, hotspots, isDevMode, latestBriefing, isIntelOverlayActive, getBrandingColor, mouseRef, orbitState]);
 
   return (
     <div className='relative w-full h-[500px] bg-slate-950 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group' onContextMenu={(e) => e.preventDefault()}>

@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { FaArrowLeft, FaMagic, FaCopy, FaCheck, FaBullhorn, FaRobot, FaEnvelopeOpenText } from 'react-icons/fa';
 import Spinner from '@/components/Spinner';
+import Image from 'next/image';
 
 const LeadGenDetailPage = () => {
   const { id } = useParams();
@@ -34,7 +35,7 @@ const LeadGenDetailPage = () => {
       }
     };
     fetchPropertyData();
-  }, [id]);
+  }, [authLoading, id, router, user]);
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -92,11 +93,15 @@ Full 3D digital twin and RentCast analytics are ready for your review.`
               <div className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2 italic">Selected Asset</div>
               <h1 className="text-2xl font-black italic uppercase mb-6 tracking-tighter">{property.name}</h1>
               
-              <img 
+              <div className="relative mb-6 h-48 w-full overflow-hidden rounded-xl">
+                <Image
                 src={property.images?.[0] || '/images/property-placeholder.jpg'} 
                 alt={property.name}
-                className="w-full h-48 object-cover rounded-xl mb-6 grayscale hover:grayscale-0 transition-all duration-700"
-              />
+                  fill
+                  sizes="(min-width: 1024px) 33vw, 100vw"
+                  className="object-cover grayscale transition-all duration-700 hover:grayscale-0"
+                />
+              </div>
 
               <div className="space-y-4">
                 <div className="flex justify-between text-xs border-b border-white/5 pb-2">

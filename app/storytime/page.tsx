@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import TacticalCloth, { TacticalClothRef } from '@/components/TacticalCloth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, ChevronLeft, ChevronRight, Activity, Cpu, Volume2 } from 'lucide-react';
@@ -78,7 +78,7 @@ const StorytimePage = () => {
     setIsLoading(false);
   };
 
-  const triggerVisualCue = (cue: string) => {
+  const triggerVisualCue = useCallback((cue: string) => {
     if (!clothRef.current) return;
     
     switch (cue) {
@@ -97,23 +97,23 @@ const StorytimePage = () => {
       default:
         break;
     }
-  };
+  }, []);
 
-  const handleSpeech = () => {
+  const handleSpeech = useCallback(() => {
     if (story?.pages[currentPage]) {
       const text = isTacticalMode 
         ? story.pages[currentPage].tacticalInterpretation 
         : story.pages[currentPage].originalText;
       speak(text, story.envoyName);
     }
-  };
+  }, [currentPage, isTacticalMode, story]);
 
   useEffect(() => {
     if (story?.pages[currentPage]) {
       triggerVisualCue(story.pages[currentPage].visualCue);
       handleSpeech();
     }
-  }, [currentPage, story, isTacticalMode]);
+  }, [currentPage, handleSpeech, isTacticalMode, story, triggerVisualCue]);
 
   if (isLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-primary font-mono animate-pulse">SYNCHRONIZING NARRATIVE...</div>;
   if (!story) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-red-500 font-mono">ERROR: STORY_NOT_FOUND</div>;

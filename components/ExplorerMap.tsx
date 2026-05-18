@@ -53,15 +53,6 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const [showPOIs, setShowPOIs] = useState(false);
   const [showVisual, setShowVisual] = useState(false);
 
-  // Sync routing from external trigger
-  useEffect(() => {
-    if (activeRouteProperty && !showDirections) {
-      toggleDirections(activeRouteProperty);
-    } else if (!activeRouteProperty && showDirections) {
-      toggleDirections(null);
-    }
-  }, [activeRouteProperty]);
-
   // State for GeoJSON results calculated in Web Worker
   const [geojsonResults, setGeojsonResults] = useState<any>({
     type: 'FeatureCollection',
@@ -251,7 +242,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     };
   }, [onSelectionChange]);
 
-  const toggleDirections = (targetProperty: any) => {
+  const toggleDirections = useCallback((targetProperty: any) => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
 
@@ -275,7 +266,16 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         setShowDirections(true);
       }
     }
-  };
+  }, [showDirections]);
+
+  // Sync routing from external trigger
+  useEffect(() => {
+    if (activeRouteProperty && !showDirections) {
+      toggleDirections(activeRouteProperty);
+    } else if (!activeRouteProperty && showDirections) {
+      toggleDirections(null);
+    }
+  }, [activeRouteProperty, showDirections, toggleDirections]);
 
   return (
     <div className="relative w-full h-screen">

@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa6';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface TourRequest {
   _id: string;
@@ -155,10 +156,12 @@ export default function PulseCommandCenter() {
               >
                 {/* Header: Property Intel */}
                 <div className="relative h-32 overflow-hidden">
-                  <img 
+                  <Image
                     src={tour.property?.images[0] || '/images/placeholder.jpg'} 
                     alt="Asset"
-                    className="w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700"
+                    fill
+                    sizes="(min-width: 1280px) 33vw, (min-width: 1024px) 50vw, 100vw"
+                    className="object-cover opacity-40 transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
                   <div className="absolute bottom-4 left-6">

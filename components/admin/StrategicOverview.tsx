@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { 
   FaUser, FaShieldAlt, FaProjectDiagram, FaBrain
 } from 'react-icons/fa';
@@ -30,8 +31,8 @@ const StrategicOverview: React.FC<StrategicOverviewProps> = ({
         <div className='flex gap-4 items-start'>
           {agent && (
             <div className='relative'>
-              <div className='w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 overflow-hidden flex items-center justify-center'>
-                {agent.avatar_url ? <img src={agent.avatar_url} alt='' className='w-full h-full object-cover' /> : <FaUser className='text-blue-400' />}
+              <div className='relative w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 overflow-hidden flex items-center justify-center'>
+                {agent.avatar_url ? <Image src={agent.avatar_url} alt='' fill sizes='48px' className='object-cover' /> : <FaUser className='text-blue-400' />}
               </div>
               {agent.role === 'realtor' && (
                 <div className='absolute -right-2 -bottom-2 bg-green-500 text-black p-1 rounded-md shadow-lg' title='Verified Agent'>

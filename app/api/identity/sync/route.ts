@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { IdentityBloomFilter } from '@/utils/security/IdentityBloomFilter';
 import { createClient } from '@/utils/supabase/server';
+import { isNextDynamicServerUsage } from '@/lib/core/nextDynamicError';
 
 /**
  * Generates a fresh Bloom Filter from the database.
@@ -37,6 +38,10 @@ export async function GET() {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
+    if (isNextDynamicServerUsage(error)) {
+      return NextResponse.json({ success: false, error: 'Dynamic identity sync requires a request context.' }, { status: 503 });
+    }
+
     console.error("[IDENTITY_SYNC_ERROR]", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

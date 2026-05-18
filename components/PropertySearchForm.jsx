@@ -17,7 +17,7 @@ const PropertySearchForm = () => {
     const prefs = memoryBridge.getPreferences();
     if (prefs.location && !location) setLocation(prefs.location);
     if (prefs.style && propertyType === 'All') setPropertyType(prefs.style);
-  }, []);
+  }, [location, propertyType]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

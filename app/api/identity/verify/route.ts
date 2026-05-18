@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { isNextDynamicServerUsage } from '@/lib/core/nextDynamicError';
 
 /**
  * GET /api/identity/verify?username=...
@@ -39,6 +40,13 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
+    if (isNextDynamicServerUsage(error)) {
+      return NextResponse.json({
+        success: false,
+        error: "Verification requires a live request context."
+      }, { status: 503 });
+    }
+
     console.error("[IDENTITY_VERIFY_ERROR]", error);
     return NextResponse.json({ 
       success: false, 
