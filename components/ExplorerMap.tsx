@@ -148,6 +148,27 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const drawRef = useRef<any>(null);
   const directionsRef = useRef<any>(null);
 
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current.getMap();
+
+    const applyTerrain = () => {
+      if (!map.getSource('mapbox-dem')) return;
+      const currentTerrain = (map as any).getTerrain?.();
+      if (currentTerrain?.source === 'mapbox-dem' && currentTerrain?.exaggeration === 1.5) return;
+      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+    };
+
+    applyTerrain();
+    map.on('styledata', applyTerrain);
+    map.on('sourcedata', applyTerrain);
+
+    return () => {
+      map.off('styledata', applyTerrain);
+      map.off('sourcedata', applyTerrain);
+    };
+  }, [showVisual]);
+
   const onMapClick = useCallback((event: any) => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
@@ -267,7 +288,6 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         onClick={onMapClick}
         interactiveLayerIds={['unclustered-point', 'clusters']}
         ref={mapRef}
-        terrain={{ source: 'mapbox-dem', exaggeration: 1.5 } as any}
       >
         {showPOIs && <Layer {...(poiLayer as any)} />}
         {showVisual && <Layer {...(vibeLayer as any)} />}
