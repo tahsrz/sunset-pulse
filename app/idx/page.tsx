@@ -1,3 +1,5 @@
+import IDXConsumerExperience from '@/components/idx/IDXConsumerExperience';
+
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
 export default function IDXSearchPage() {
@@ -14,17 +16,17 @@ export default function IDXSearchPage() {
             </h1>
             <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.22em]">
               <span className="rounded-md border border-teal-200/30 bg-teal-200/10 px-3 py-1 text-teal-100">
-                Matrix-hosted
+                Matrix-hosted data
               </span>
               <span className="rounded-md border border-rose-200/30 bg-rose-200/10 px-3 py-1 text-rose-100">
-                No local ingest
+                Consumer guidance
               </span>
             </div>
           </div>
           <div className="max-w-xl text-sm leading-6 text-slate-200">
             <p>
-              Search runs inside the authorized NTREIS Matrix IDX frame. Sunset Pulse is
-              not scraping or storing these listing results.
+              Search NTREIS listings directly through the authorized Matrix IDX frame,
+              then ask Jamie to help you think through the numbers and practical fit.
             </p>
             <a
               href={MATRIX_IDX_URL}
@@ -38,19 +40,7 @@ export default function IDXSearchPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-6">
-        <div className="h-[calc(100dvh-220px)] min-h-[680px] overflow-hidden rounded-lg border border-teal-100/20 bg-white shadow-2xl shadow-cyan-950/40">
-          <iframe
-            src={MATRIX_IDX_URL}
-            title="NTREIS Matrix IDX listing search"
-            className="h-full w-full"
-            frameBorder="0"
-            marginWidth={0}
-            marginHeight={0}
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-      </section>
+      <IDXConsumerExperience matrixUrl={MATRIX_IDX_URL} />
     </main>
   );
 }

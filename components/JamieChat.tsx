@@ -35,6 +35,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
   const [isMinimized, setIsMinimized] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [tempInput, setTempInput] = useState('');
+  const [propertyDataOverride, setPropertyDataOverride] = useState<any>(null);
 
   // Recognition Context for returning users - safely handled after mount
   const [memoryContext, setMemoryContext] = useState<any>(null);
@@ -96,14 +97,37 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     }
   };
 
+  const activePropertyData = propertyDataOverride || propertyData;
+
   const { messages, input, setInput, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, append, setMessages } = useChat({
     api: '/api/chat',
-    body: { propertyData, isDevMode, memoryContext },
+    body: { propertyData: activePropertyData, isDevMode, memoryContext },
     initialMessages: persistentMessages,
     onFinish: async (message) => {
       await handleAction(message.content);
     },
   });
+
+  useEffect(() => {
+    const handleJamiePrompt = (event: Event) => {
+      const detail = (event as CustomEvent<{ prompt?: string; propertyData?: any }>).detail;
+      const prompt = detail?.prompt?.trim();
+      if (!prompt) return;
+
+      setPropertyDataOverride(detail?.propertyData || null);
+      setIsMinimized(false);
+      localStorage.setItem('jamie_chat_minimized', 'false');
+      setInput(prompt);
+    };
+
+    window.addEventListener('sunsetpulse:jamie-prompt', handleJamiePrompt);
+    return () => window.removeEventListener('sunsetpulse:jamie-prompt', handleJamiePrompt);
+  }, [setInput]);
+
+  const submitWithCurrentContext = (event: React.FormEvent<HTMLFormElement>) => {
+    originalHandleSubmit(event);
+    window.setTimeout(() => setPropertyDataOverride(null), 0);
+  };
 
   // Sync messages from local storage or Supabase on mount
   useEffect(() => {
@@ -168,6 +192,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
         memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
         setInput('');
+        setPropertyDataOverride(null);
         return;
       }
       if (security.status === 'RESOLVED_BY_MINI') {
@@ -175,12 +200,13 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
         memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
         setInput('');
+        setPropertyDataOverride(null);
         return;
       }
-      originalHandleSubmit(e);
+      submitWithCurrentContext(e);
     } catch (error) {
       console.error('Submission Error:', error);
-      originalHandleSubmit(e);
+      submitWithCurrentContext(e);
     }
   };
 
