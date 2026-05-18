@@ -42,6 +42,7 @@ const Navbar: React.FC = () => {
               <div className='flex space-x-2'>
                 <Link href='/' className={`${pathname === '/' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Home</Link>
                 <Link href='/properties' className={`${pathname === '/properties' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Properties</Link>
+                <Link href='/idx' className={`${pathname === '/idx' ? 'bg-teal-500/20 text-teal-200' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>IDX Search</Link>
                 {(user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin') && (
                   <Link href='/lead-gen' className={`${pathname.startsWith('/lead-gen') ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Lead Gen</Link>
                 )}
