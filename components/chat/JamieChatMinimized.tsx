@@ -10,13 +10,19 @@ interface JamieChatMinimizedProps {
 
 const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({ onOpen, isLefthandMode }) => {
   return (
-    <div className={`fixed bottom-5 ${isLefthandMode ? 'left-5' : 'right-5'} z-50 transition-all duration-500`}>
+    <div className={`fixed top-1/2 ${isLefthandMode ? 'left-0' : 'right-0'} z-50 -translate-y-1/2 transition-all duration-500`}>
       <button
         onClick={onOpen}
-        className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/20 relative"
+        aria-label="Open Jamie"
+        className={`group flex h-40 w-12 flex-col items-center justify-center gap-3 border border-blue-200/20 bg-gradient-to-b from-blue-600 to-cyan-500 text-white shadow-2xl shadow-cyan-950/40 transition-all duration-300 hover:w-14 hover:brightness-110 ${
+          isLefthandMode ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'
+        }`}
       >
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse" />
-        <FaRobot className="text-2xl" />
+        <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.8)]" />
+        <FaRobot className="text-lg transition-transform group-hover:scale-110" />
+        <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-black uppercase tracking-[0.24em]">
+          Jamie
+        </span>
       </button>
     </div>
   );

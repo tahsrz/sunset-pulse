@@ -190,8 +190,11 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} />;
   }
 
+  const dockSideClass = isLefthandMode ? 'left-0 items-start' : 'right-0 items-end';
+  const panelRadiusClass = isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
+
   return (
-    <div className={`fixed bottom-5 ${isLefthandMode ? 'left-5' : 'right-5'} z-50 flex flex-col gap-4 transition-all duration-500 w-96`}>
+    <div className={`fixed bottom-5 top-24 ${dockSideClass} z-50 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`}>
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
 
       {localIntel && (
@@ -204,7 +207,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         <JamieBrandingConfirm onCancel={cancelStaging} onConfirm={confirmBranding} />
       )}
 
-      <div className="bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/10 flex flex-col h-[550px] overflow-hidden transition-all duration-500 hover:border-blue-500/30 animate-in zoom-in-95 duration-300">
+      <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-slate-900/[0.92] shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 hover:border-blue-500/30 animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 ${panelRadiusClass}`}>
         <JamieChatHeader 
           onMinimize={() => toggleMinimized(true)} 
           isLefthandMode={isLefthandMode} 
