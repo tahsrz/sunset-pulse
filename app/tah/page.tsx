@@ -61,16 +61,19 @@ export default function TahPage() {
             </div>
             <div className="rounded border border-white/10 bg-black/25 p-4">
               <h2 className="text-sm font-black uppercase tracking-[0.18em] text-emerald-200">
-                Query pattern
+                Dynamic catalog
               </h2>
-              <p className="mt-3 font-mono text-xs leading-6 text-slate-200">
-                GET /api/tah?q=North%20Texas%20market&limit=5
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                Fetch `/tah/index.json` for the live cartridge map. It is rebuilt from the cartridge directories on request.
               </p>
             </div>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 text-sm font-semibold">
             <Link className="rounded bg-cyan-300 px-4 py-2 text-slate-950" href="/api/tah">
               API catalog
+            </Link>
+            <Link className="rounded bg-emerald-300 px-4 py-2 text-slate-950" href="/tah/index.json">
+              JSON catalog
             </Link>
             <Link className="rounded border border-white/20 px-4 py-2 text-white" href="/llms.txt">
               llms.txt

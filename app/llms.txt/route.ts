@@ -13,6 +13,7 @@ export function GET() {
     '',
     '## Primary Context Entrypoints',
     `- TAH archive: ${host}/tah`,
+    `- Dynamic TAH catalog JSON: ${host}/tah/index.json`,
     `- TAH search API: ${host}/api/tah`,
     `- Advanced TAH evaluator: ${host}/api/tah/eval`,
     '',
