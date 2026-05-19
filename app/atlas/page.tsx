@@ -34,6 +34,27 @@ type AtlasMap = {
   links: Array<{ source: string; target: string; value: number }>;
 };
 
+type ProbeItem = {
+  slug: string;
+  source: string;
+  searchQuery: string;
+  byteSize: number;
+  payloadByteSize: number;
+  shardCount: number;
+  bloomBits: string;
+  hashCount: number;
+  format: string;
+  summary: string;
+};
+
+type ProbeState = {
+  mapped: number;
+  total: number;
+  percent: number;
+  done: boolean;
+  items: ProbeItem[];
+};
+
 const DOMAIN_COLORS: Record<string, string> = {
   world: '#f8fafc',
   pulse: '#22d3ee',
@@ -51,6 +72,7 @@ export default function MemoriaAtlasPage() {
   const [selectedNode, setSelectedNode] = useState<AtlasNode | null>(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [probeState, setProbeState] = useState<ProbeState>({ mapped: 0, total: 0, percent: 0, done: false, items: [] });
   const [loading, setLoading] = useState(true);
   const fgRef = useRef<any>(null);
 
@@ -63,6 +85,47 @@ export default function MemoriaAtlasPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!atlas) return;
+
+    let cancelled = false;
+
+    async function mapCartridges() {
+      let cursor: number | null = 0;
+      const items: ProbeItem[] = [];
+
+      while (cursor !== null && !cancelled) {
+        const response = await fetch(`/api/tah/atlas/probe?cursor=${cursor}&limit=18`, { cache: 'no-store' });
+        const body = await response.json();
+        items.push(...body.items);
+
+        if (cancelled) return;
+        setProbeState({
+          mapped: body.mapped,
+          total: body.total,
+          percent: body.percent,
+          done: body.done,
+          items: [...items]
+        });
+
+        cursor = body.nextCursor;
+        if (cursor !== null) {
+          await new Promise(resolve => window.setTimeout(resolve, 350));
+        }
+      }
+    }
+
+    mapCartridges().catch(() => {
+      if (!cancelled) {
+        setProbeState(prev => ({ ...prev, done: true }));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [atlas]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -82,6 +145,8 @@ export default function MemoriaAtlasPage() {
 
   const worldStages = atlas?.progress.stages || [];
   const visibleNodes = useMemo(() => atlas?.nodes || [], [atlas]);
+  const mappedBySlug = useMemo(() => new Map(probeState.items.map(item => [item.slug, item])), [probeState.items]);
+  const selectedProbe = selectedNode?.slug ? mappedBySlug.get(selectedNode.slug) : null;
 
   return (
     <main className="relative h-screen overflow-hidden bg-[#071013] text-slate-50">
@@ -137,6 +202,20 @@ export default function MemoriaAtlasPage() {
         </div>
 
         <div className="mt-4 rounded border border-white/10 bg-white/[0.04] p-4">
+          <div className="mb-4 border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em]">
+              <span className="text-cyan-200">Mapping Run</span>
+              <span className={probeState.done ? 'text-emerald-200' : 'text-pink-200'}>
+                {probeState.percent}%
+              </span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded bg-white/10">
+              <div className="h-full bg-cyan-300 transition-all duration-300" style={{ width: `${probeState.percent}%` }} />
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              {probeState.mapped} of {probeState.total || atlas?.progress.totalCartridges || 0} cartridge headers probed by the website.
+            </p>
+          </div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-200">Selected Region</p>
           <h2 className="mt-3 text-2xl font-black">{selectedNode?.label || 'Loading Atlas'}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -144,6 +223,19 @@ export default function MemoriaAtlasPage() {
             {selectedNode?.type === 'continent' && 'A knowledge continent grouping related cartridges into a navigable region.'}
             {selectedNode?.type === 'cartridge' && `Source: ${selectedNode.source}. Query seed: ${selectedNode.searchQuery || selectedNode.label}`}
           </p>
+          {selectedProbe && (
+            <div className="mt-4 rounded border border-white/10 bg-black/25 p-3 text-xs leading-5 text-slate-300">
+              <div className="grid grid-cols-2 gap-2 font-mono text-[10px] uppercase tracking-tight text-slate-400">
+                <span>Format: {selectedProbe.format}</span>
+                <span>Shards: {selectedProbe.shardCount}</span>
+                <span>Bloom: {selectedProbe.bloomBits}</span>
+                <span>Hashes: {selectedProbe.hashCount}</span>
+                <span>File: {selectedProbe.byteSize}b</span>
+                <span>Payload: {selectedProbe.payloadByteSize}b</span>
+              </div>
+              <p className="mt-3 line-clamp-4 text-slate-400">{selectedProbe.summary}</p>
+            </div>
+          )}
           {selectedNode?.url && (
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
               <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href={selectedNode.url.replace('https://sunsetpulse.com', '')}>Open</Link>

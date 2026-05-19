@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { NextRequest } from 'next/server';
 import { GET as getLlms } from '@/app/llms.txt/route';
 import { GET as getTahHeadless } from '@/app/tah/headless/route';
 import { GET as getTahIndex } from '@/app/tah/index.json/route';
 import { GET as getCartridgeHeadless } from '@/app/tah/[slug]/headless/route';
 import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
+import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
 
 describe('TAH robot-facing routes', () => {
   it('serves the headless archive as plain text', async () => {
@@ -86,5 +88,26 @@ describe('TAH robot-facing routes', () => {
     expect(webNode.searchQuery).not.toMatch(/^Web \d+$/);
     expect(webNode.apiUrl).toContain(encodeURIComponent(webNode.searchQuery));
     expect(body.links.length).toBeGreaterThan(0);
+  });
+
+  it('serves progressive Atlas cartridge probes', async () => {
+    const response = getAtlasProbe(new NextRequest('https://sunsetpulse.com/api/tah/atlas/probe?cursor=0&limit=3'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(body.cursor).toBe(0);
+    expect(body.limit).toBe(3);
+    expect(body.items).toHaveLength(3);
+    expect(body.items[0]).toEqual(
+      expect.objectContaining({
+        slug: expect.any(String),
+        searchQuery: expect.any(String),
+        byteSize: expect.any(Number),
+        format: expect.any(String),
+        summary: expect.any(String)
+      })
+    );
+    expect(body.nextCursor).toBe(3);
   });
 });
