@@ -13,6 +13,7 @@ Sunset Pulse is a Next.js 14 real estate intelligence platform for property disc
 ## Core Capabilities
 
 - Property browsing, search, saved listings, and high-performance IDX sync via Repliers.io.
+- Authenticated Matrix IDX access through `/idx` and the embedded Jamie tab MLS drawer.
 - Lead capture, re-engagement with Sigmoid velocity scoring, and Jamie AI hooks.
 - Neighborhood Recon & Budget Delta analysis for hyper-personalized interactions.
 - TAH Expertise retrieval (Makiel, Gadrael, etc.) from Supabase Cloud-Native storage.
@@ -26,6 +27,21 @@ Sunset Pulse is a Next.js 14 real estate intelligence platform for property disc
 - **Testing:** Vitest, Testing Library, Playwright
 - **Payments and messaging:** Stripe, Twilio, Telegram integrations IAP WIP
 - **Media workflows:** FFmpeg-oriented render pipeline, local visual assets, and segmentation support
+
+## MLS / IDX Access
+
+Sunset Pulse exposes MLS search through an authorized NTREIS Matrix IDX iframe:
+
+- The standalone MLS route is `/idx`.
+- `/idx` is server-gated with Supabase auth through `getSessionUser()`.
+- Anonymous users are redirected to `/login?redirect=/idx`.
+- Jamie's docked tab can also show the Matrix IDX iframe in-place through the `MLS` control.
+- The Jamie MLS drawer does not change the user's current page.
+- The Jamie MLS drawer renders the iframe only for authenticated users.
+- Anonymous users see a login prompt inside Jamie instead of the MLS iframe.
+- Jamie must not automatically navigate users to `/idx`; MLS access should be an explicit user action.
+
+This keeps Matrix/IDX access close to the assistant while preserving a clear login boundary around listing data.
 
 ## Getting Started
 

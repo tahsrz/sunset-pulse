@@ -65,7 +65,29 @@ Used for automated, high-probability lead alerts.
 
 ---
 
-## 5. Visual Synchronicity: TacticalCloth
+## 5. Jamie Tab & MLS Anchor
+
+Jamie appears on-site as a persistent docked tab rather than a redirecting navigation agent.
+
+### Tab Behavior
+- Closed state: Jamie is a slim viewport-edge tab.
+- Open state: Jamie expands into a docked side panel.
+- Left-hand mode moves both the tab and the panel to the left edge.
+- Jamie should answer in-place and must not automatically push users to `/idx`.
+
+### MLS Anchor
+- The open Jamie tab includes an explicit `MLS` control.
+- Clicking `MLS` toggles an embedded NTREIS Matrix IDX iframe inside Jamie.
+- Opening the MLS drawer does not change the user's current page.
+- The embedded MLS iframe is available only to authenticated users.
+- If no user is logged in, Jamie shows a login prompt instead of rendering MLS content.
+- The standalone `/idx` route is also protected and redirects anonymous users to `/login?redirect=/idx`.
+
+The operating principle is: Jamie may keep MLS close at hand, but MLS visibility is user-requested and auth-gated.
+
+---
+
+## 6. Visual Synchronicity: TacticalCloth
 Jamie's physical manifestation on the site is the `<TacticalCloth />` component.
 - **Reactive Physics**: Verlet integration reacts to user interaction.
 - **State Linkage**: Jamie's "mood" (moodColor) and activity status (status="BROADCASTING") are synchronized with the LLM's response stream.
