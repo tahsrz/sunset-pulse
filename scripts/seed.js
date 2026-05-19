@@ -52,6 +52,7 @@ const seedData = async () => {
       if (!p.owner || p.owner === "" || p.owner === "1") {
         p.owner = "650c8e2b1f4e1a2b3c4d5e6f"; // Default to valid test user
       }
+      p.is_demo = true;
 
       // Add Geocoding Logic but keep existing coords as fallback
       const geo = await geocodeAddress(p.location);
