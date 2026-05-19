@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { FaRobot, FaMinus, FaExchangeAlt, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import Link from 'next/link';
+import { FaRobot, FaMinus, FaExchangeAlt, FaVolumeUp, FaVolumeMute, FaHome } from 'react-icons/fa';
 
 interface JamieChatHeaderProps {
   onMinimize: () => void;
@@ -39,6 +40,14 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 relative z-10">
+        <Link
+          href="/idx"
+          title="Open MLS Search"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/10 px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.16em] transition-colors hover:bg-white/20"
+        >
+          <FaHome className="text-[10px]" />
+          MLS
+        </Link>
         <button 
           onClick={onToggleVoice} 
           title={isVoiceEnabled ? "Mute Jamie" : "Unmute Jamie"}
