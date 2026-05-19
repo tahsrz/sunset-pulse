@@ -53,6 +53,12 @@ const Navbar: React.FC = () => {
                 <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-violet-500/30 text-violet-100 border-violet-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
                   <FaShieldAlt className='text-violet-300' /> Abidan
                 </Link>
+                <Link href='/atlas' className={`${pathname === '/atlas' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
+                  Atlas
+                </Link>
+                <Link href='/tah' className={`${pathname.startsWith('/tah') ? 'bg-emerald-500/20 text-emerald-100 border-emerald-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
+                  TAH
+                </Link>
                 <Link href='/investors' className={`${pathname === '/investors' ? 'bg-orange-600/20 text-orange-400 border-orange-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-[0.2em]`}>
                   <span className='w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse' /> Investors
                 </Link>
