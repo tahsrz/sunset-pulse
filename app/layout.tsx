@@ -88,7 +88,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
     grill: {
       name: 'Sunset Gas & Grill',
       tagline: 'Quality Meat • Friendly Service',
-      coordinates: [-97.0403, 32.8998],
+      coordinates: [-97.766724, 33.453823],
       address: '101 S. Council, Sunset, TX 76270'
     }
   };
@@ -106,10 +106,14 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
         ...(sbConfig.branding?.quadrants || {})
       }
     };
-    // Merge Supabase intelligence with fallback
+    // Merge Supabase intelligence with fallback (Deep merge for grill)
     intelligence = {
       ...fallbackIntelligence,
-      ...(sbConfig.intelligence || {})
+      ...(sbConfig.intelligence || {}),
+      grill: {
+        ...fallbackIntelligence.grill,
+        ...(sbConfig.intelligence?.grill || {})
+      }
     };
   } else {
     // 2. Fallback to MongoDB (Legacy)
@@ -126,9 +130,14 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
             ...(config.branding?.quadrants || {})
           }
         };
+        // Deep merge for grill
         intelligence = {
           ...fallbackIntelligence,
-          ...(config.intelligence || {})
+          ...(config.intelligence || {}),
+          grill: {
+            ...fallbackIntelligence.grill,
+            ...(config.intelligence?.grill || {})
+          }
         };
       } else {
         branding = fallbackBranding;

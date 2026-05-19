@@ -103,7 +103,7 @@ const defaultIntelligence: IntelligenceConfig = {
   grill: {
     name: 'Sunset Gas & Grill',
     tagline: 'Quality Meat • Friendly Service',
-    coordinates: [-97.0403, 32.8998],
+    coordinates: [-97.766724, 33.453823],
     address: '101 S. Council, Sunset, TX 76270'
   }
 };
@@ -127,7 +127,11 @@ export function ThemeProvider({
   });
 
   const [intelligence, setIntelligence] = useState<IntelligenceConfig>(() => {
-    return { ...defaultIntelligence, ...initialIntelligence };
+    const base = { ...defaultIntelligence, ...initialIntelligence };
+    if (initialIntelligence?.grill) {
+      base.grill = { ...defaultIntelligence.grill, ...initialIntelligence.grill };
+    }
+    return base;
   });
   
   const [stagedBranding, setStagedBranding] = useState<Branding | null>(null);
@@ -214,10 +218,20 @@ export function ThemeProvider({
       }, (payload) => {
         console.log('🔄 [THEME_SYNC] Site config update received:', payload.new);
         if (payload.new.branding) {
-          setBranding(payload.new.branding);
+          setBranding(prev => ({ 
+            ...defaultBranding, 
+            ...prev, 
+            ...payload.new.branding,
+            quadrants: { ...defaultBranding.quadrants, ...prev.quadrants, ...payload.new.branding.quadrants }
+          }));
         }
         if (payload.new.intelligence) {
-          setIntelligence(payload.new.intelligence);
+          setIntelligence(prev => ({
+            ...defaultIntelligence,
+            ...prev,
+            ...payload.new.intelligence,
+            grill: { ...defaultIntelligence.grill, ...prev.grill, ...payload.new.intelligence.grill }
+          }));
         }
       })
       .subscribe();

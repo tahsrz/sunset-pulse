@@ -31,9 +31,14 @@ export const GET = async (request: NextRequest, { params }: { params: { id: stri
       .eq('agent_id', 'taz-realty-001')
       .single();
 
-    const grillConfig = sbConfig?.intelligence?.grill || {
+    const defaultGrill = {
       name: 'Sunset Gas & Grill',
       coordinates: [-97.0403, 32.8998]
+    };
+
+    const grillConfig = {
+      ...defaultGrill,
+      ...(sbConfig?.intelligence?.grill || {})
     };
     
     const activeVibe = sbConfig?.branding?.siteName || 'Sunset'; 

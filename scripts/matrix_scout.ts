@@ -29,49 +29,75 @@ async function matrixScout() {
   console.log('3. Ensure you are on the "Agent Single Line" or similar grid view.');
   console.log('📡 [SCOUT] Watching for grid signatures...');
 
-  // 3. Wait for the Grid to manifest (using the stable class found in analysis)
-  try {
-    await page.waitForSelector('.displayGrid.ajax_display', { timeout: 0 });
-  } catch (e) {
-    console.error('❌ [SCOUT] Grid detection failed or timed out.');
-    await browser.close();
-    return;
+  // 3. Wait for the Grid to manifest (detecting Classic or Modern)
+  console.log('📡 [SCOUT] Detecting Matrix interface signature...');
+  const mode = await page.evaluate(() => {
+    if (document.querySelector('.displayGrid.ajax_display')) return 'CLASSIC';
+    if (document.querySelector('#__next') || document.querySelector('.MuiGrid-root')) return 'MODERN';
+    return 'UNKNOWN';
+  });
+
+  if (mode === 'UNKNOWN') {
+    console.log('📡 [SCOUT] Waiting for grid lock-on...');
+    await page.waitForFunction(() => 
+      document.querySelector('.displayGrid.ajax_display') || 
+      document.querySelector('.MuiGrid-root')
+    , { timeout: 0 });
   }
 
-  console.log('✅ [SCOUT] Grid Lock-on Confirmed. Extracting telemetry...');
+  console.log(`✅ [SCOUT] Interface Lock-on: ${mode}. Extracting telemetry...`);
 
   // 4. Extract Data from the DOM
-  const telemetry = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('.DisplayRegRow, .DisplayAltRow'));
-    
-    return rows.map(row => {
-      const tds = Array.from(row.querySelectorAll('td'));
-      const mlsId = row.querySelector('.d109m4')?.textContent?.trim();
-      const address = row.querySelector('.d109m5')?.textContent?.trim();
-      const city = row.querySelector('.d109m6')?.textContent?.trim();
-      const priceRaw = row.querySelector('.d109m12')?.textContent?.trim();
-      
-      // Beds and Baths often share the same d109m10 class in this layout
-      const m10Cells = Array.from(row.querySelectorAll('.d109m10'));
-      const beds = m10Cells[0]?.textContent?.trim();
-      const baths = m10Cells[1]?.textContent?.trim();
-      const sqft = row.querySelector('.d109m8')?.textContent?.trim();
+  const telemetry = await page.evaluate((currentMode) => {
+    if (currentMode === 'CLASSIC' || document.querySelector('.displayGrid.ajax_display')) {
+      const rows = Array.from(document.querySelectorAll('.DisplayRegRow, .DisplayAltRow'));
+      return rows.map(row => {
+        const mlsId = row.querySelector('.d109m4')?.textContent?.trim();
+        const address = row.querySelector('.d109m5')?.textContent?.trim();
+        const city = row.querySelector('.d109m6')?.textContent?.trim();
+        const priceRaw = row.querySelector('.d109m12')?.textContent?.trim();
+        const m10Cells = Array.from(row.querySelectorAll('.d109m10'));
+        const beds = m10Cells[0]?.textContent?.trim();
+        const baths = m10Cells[1]?.textContent?.trim();
+        const sqft = row.querySelector('.d109m8')?.textContent?.trim();
+        const backupMlsId = row.querySelector('a[href*="Redisplay"]')?.textContent?.trim();
 
-      // Fallback: If classes shifted, try to find by link patterns
-      const backupMlsId = row.querySelector('a[href*="Redisplay"]')?.textContent?.trim();
+        return {
+          mls_id: mlsId || backupMlsId,
+          address, city, price: priceRaw, beds: parseInt(beds || '0'), baths: parseInt(baths || '0'), sqft: sqft?.replace(/,/g, ''),
+          last_updated: new Date().toISOString()
+        };
+      });
+    } else {
+      // MODERN MODE (OneHome / Portal View)
+      // Properties are typically in cards or grid items
+      const cards = Array.from(document.querySelectorAll('.MuiCard-root, [data-id^="property-card"]'));
+      return cards.map(card => {
+        const price = card.querySelector('.MuiTypography-h6, .MuiTypography-h5')?.textContent?.trim();
+        const address = card.querySelector('.MuiTypography-body1, .MuiTypography-subtitle1')?.textContent?.trim();
+        const details = card.querySelector('.MuiTypography-body2')?.textContent?.trim(); // e.g. "3 Beds | 2 Baths | 1,500 Sq Ft"
+        
+        // Match patterns for beds/baths/sqft in the details string
+        const bedsMatch = details?.match(/([0-9]+)\s*Bed/i);
+        const bathsMatch = details?.match(/([0-9]+)\s*Bath/i);
+        const sqftMatch = details?.match(/([0-9,]+)\s*Sq\s*Ft/i);
+        
+        // Find MLS ID - often in a caption or small text
+        const mlsMatch = card.textContent?.match(/ML[S]?\s*#?\s*([0-9]+)/i);
 
-      return {
-        mls_id: mlsId || backupMlsId,
-        address,
-        city,
-        price: priceRaw,
-        beds: parseInt(beds || '0'),
-        baths: parseInt(baths || '0'),
-        sqft: sqft?.replace(/,/g, ''),
-        last_updated: new Date().toISOString()
-      };
-    });
-  });
+        return {
+          mls_id: mlsMatch?.[1],
+          address,
+          city: 'North Texas', // Modern portal often splits address/city differently
+          price,
+          beds: parseInt(bedsMatch?.[1] || '0'),
+          baths: parseInt(bathsMatch?.[1] || '0'),
+          sqft: sqftMatch?.[1]?.replace(/,/g, ''),
+          last_updated: new Date().toISOString()
+        };
+      });
+    }
+  }, mode);
 
   console.log(`📊 [SCOUT] Harvested ${telemetry.length} listing signatures.`);
 

@@ -43,6 +43,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
   const isRV = property.type === 'RV' || property.type === 'RV Park';
   const isInternal = property.source === 'Internal' || !property.source;
 
+  const normalizeImg = (src: string) => {
+    if (!src) return '/images/property-placeholder.jpg';
+    if (src.startsWith('http') || src.startsWith('/')) return src;
+    return `/${src}`;
+  };
+
   return (
     <div className={`property-card rounded-xl shadow-md relative bg-white transition-all duration-500 ${isHighIntensity ? 'hover:scale-[1.02]' : ''}`}
       style={{
@@ -75,7 +81,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
       )}
 
       <Image
-        src={property.images?.[0] || '/images/property-placeholder.jpg'}
+        src={normalizeImg(property.images?.[0])}
         alt=''
         height={0}
         width={0}
