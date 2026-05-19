@@ -1,4 +1,5 @@
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
+import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,9 +28,10 @@ export function GET() {
         title: cartridge.title,
         source: cartridge.name,
         type: cartridge.type,
+        searchQuery: getCartridgeSearchQuery(cartridge),
         htmlUrl: `${host}/tah/${cartridge.slug}`,
         headlessUrl: `${host}/tah/${cartridge.slug}/headless`,
-        apiUrl: `${host}/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`
+        apiUrl: getCartridgeApiUrl(host, cartridge)
       }))
     },
     {

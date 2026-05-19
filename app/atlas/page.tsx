@@ -18,6 +18,7 @@ type AtlasNode = {
   url?: string;
   headlessUrl?: string;
   apiUrl?: string;
+  searchQuery?: string;
   x?: number;
   y?: number;
 };
@@ -141,12 +142,13 @@ export default function MemoriaAtlasPage() {
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode?.type === 'world' && `${atlas?.progress.totalCartridges || 0} cartridges are discoverable out of a ${atlas?.progress.targetCartridges || 1000}-cartridge atlas target.`}
             {selectedNode?.type === 'continent' && 'A knowledge continent grouping related cartridges into a navigable region.'}
-            {selectedNode?.type === 'cartridge' && `Source: ${selectedNode.source}`}
+            {selectedNode?.type === 'cartridge' && `Source: ${selectedNode.source}. Query seed: ${selectedNode.searchQuery || selectedNode.label}`}
           </p>
           {selectedNode?.url && (
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
               <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href={selectedNode.url.replace('https://sunsetpulse.com', '')}>Open</Link>
               {selectedNode.headlessUrl && <Link className="rounded bg-pink-300 px-3 py-2 text-slate-950" href={selectedNode.headlessUrl.replace('https://sunsetpulse.com', '')}>Headless</Link>}
+              {selectedNode.apiUrl && <Link className="rounded border border-white/20 px-3 py-2 text-white" href={selectedNode.apiUrl.replace('https://sunsetpulse.com', '')}>Query API</Link>}
             </div>
           )}
         </div>

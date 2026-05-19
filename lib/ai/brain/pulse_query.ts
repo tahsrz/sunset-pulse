@@ -3,6 +3,7 @@ import path from 'path';
 import { MemoriaRetriever } from '@/lib/core/memoria_retriever';
 import { SwarmRetriever } from '@/lib/core/swarm_retriever';
 import { TAHRetriever } from '@/lib/core/tah_retriever';
+import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 
 /**
  * Pulse Search (TypeScript Edition)
@@ -112,7 +113,7 @@ export async function previewPulseCartridge(slug: string, maxResults = 5): Promi
   const cartridge = getPulseCartridge(slug);
   if (!cartridge) return [];
 
-  const query = cartridge.title.replace(/[^a-z0-9 ]/gi, ' ').trim() || cartridge.name;
+  const query = getCartridgeSearchQuery(cartridge).replace(/[^a-z0-9 .+#-]/gi, ' ').trim() || cartridge.name;
   const results = await pulse_search(query, 100);
   return results
     .filter(result => result.source === cartridge.name)

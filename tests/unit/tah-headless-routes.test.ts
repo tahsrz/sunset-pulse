@@ -81,6 +81,10 @@ describe('TAH robot-facing routes', () => {
         expect.objectContaining({ id: 'cartridge:algorithms', type: 'cartridge' })
       ])
     );
+    const webNode = body.nodes.find((node: any) => node.id.startsWith('cartridge:web-'));
+    expect(webNode.searchQuery).toBeTruthy();
+    expect(webNode.searchQuery).not.toMatch(/^Web \d+$/);
+    expect(webNode.apiUrl).toContain(encodeURIComponent(webNode.searchQuery));
     expect(body.links.length).toBeGreaterThan(0);
   });
 });

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPulseCartridge, listPulseCartridges, previewPulseCartridge } from '@/lib/ai/brain/pulse_query';
+import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,7 @@ export default async function TahCartridgePage({ params }: TahCartridgePageProps
   if (!cartridge) notFound();
 
   const previews = await previewPulseCartridge(params.slug, 6);
+  const searchQuery = getCartridgeSearchQuery(cartridge);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Dataset',
@@ -47,7 +49,7 @@ export default async function TahCartridgePage({ params }: TahCartridgePageProps
     encodingFormat: cartridge.type === 'hat' ? 'application/x-hat' : 'application/x-tah',
     distribution: {
       '@type': 'DataDownload',
-      contentUrl: `/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`,
+      contentUrl: `/api/tah?q=${encodeURIComponent(searchQuery)}&limit=10`,
       encodingFormat: 'application/json'
     }
   };
@@ -79,14 +81,17 @@ export default async function TahCartridgePage({ params }: TahCartridgePageProps
             </div>
             <div className="rounded border border-white/10 bg-white/[0.04] p-4">
               <dt className="text-slate-400">Query API</dt>
-              <dd className="mt-2 font-mono text-cyan-100">/api/tah</dd>
+              <dd className="mt-2 font-mono text-cyan-100">/api/tah?q={searchQuery}</dd>
             </div>
           </dl>
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
+            Query seed: <span className="font-mono text-cyan-100">{searchQuery}</span>
+          </p>
           <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
             <Link className="rounded bg-pink-300 px-4 py-2 text-slate-950" href={`/tah/${cartridge.slug}/headless`}>
               Headless text
             </Link>
-            <Link className="rounded border border-white/20 px-4 py-2 text-white" href={`/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`}>
+            <Link className="rounded border border-white/20 px-4 py-2 text-white" href={`/api/tah?q=${encodeURIComponent(searchQuery)}&limit=10`}>
               Query API
             </Link>
           </div>

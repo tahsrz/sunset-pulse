@@ -1,4 +1,5 @@
 import { PulseCartridge, listPulseCartridges } from '@/lib/ai/brain/pulse_query';
+import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 
 type AtlasNode = {
   id: string;
@@ -12,6 +13,7 @@ type AtlasNode = {
   url?: string;
   headlessUrl?: string;
   apiUrl?: string;
+  searchQuery?: string;
 };
 
 type AtlasLink = {
@@ -85,7 +87,8 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
         val: 6,
         url: `${host}/tah/${cartridge.slug}`,
         headlessUrl: `${host}/tah/${cartridge.slug}/headless`,
-        apiUrl: `${host}/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`
+        apiUrl: getCartridgeApiUrl(host, cartridge),
+        searchQuery: getCartridgeSearchQuery(cartridge)
       });
       links.push({ source: domain.id, target: `cartridge:${cartridge.slug}`, value: 1 });
     }

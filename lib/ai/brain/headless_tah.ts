@@ -1,4 +1,5 @@
 import { PulseCartridge } from '@/lib/ai/brain/pulse_query';
+import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 
 type HeadlessPreview = {
   score?: number;
@@ -29,9 +30,10 @@ export function formatHeadlessCatalog(host: string, cartridges: PulseCartridge[]
       `TITLE: ${cartridge.title}`,
       `TYPE: ${cartridge.type}`,
       `SOURCE: ${cartridge.name}`,
+      `QUERY_SEED: ${getCartridgeSearchQuery(cartridge)}`,
       `HTML: ${host}/tah/${cartridge.slug}`,
       `HEADLESS: ${host}/tah/${cartridge.slug}/headless`,
-      `API: ${host}/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`,
+      `API: ${getCartridgeApiUrl(host, cartridge)}`,
       ''
     ])
   ].join('\n');
@@ -47,10 +49,11 @@ export function formatHeadlessCartridge(host: string, cartridge: PulseCartridge,
     `TITLE: ${cartridge.title}`,
     `TYPE: ${cartridge.type}`,
     `SOURCE: ${cartridge.name}`,
+    `QUERY_SEED: ${getCartridgeSearchQuery(cartridge)}`,
     `HTML: ${host}/tah/${cartridge.slug}`,
     `HEADLESS: ${host}/tah/${cartridge.slug}/headless`,
     `JSON_INDEX: ${host}/tah/index.json`,
-    `QUERY_API: ${host}/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`,
+    `QUERY_API: ${getCartridgeApiUrl(host, cartridge)}`,
     '',
     'PREVIEW_SHARDS:',
     previews.length > 0
