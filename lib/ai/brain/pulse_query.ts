@@ -57,6 +57,38 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
   return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
 }
 
+export function listPulseCartridges(): Array<{ name: string; path: string; type: 'hat' | 'tah' }> {
+  const cartridges: Array<{ name: string; path: string; type: 'hat' | 'tah' }> = [];
+  const seen = new Set<string>();
+
+  for (const dir of getCartridgeDirs()) {
+    if (!fs.existsSync(dir)) continue;
+
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.tah') || f.endsWith('.hat'));
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      if (seen.has(filePath)) continue;
+      seen.add(filePath);
+
+      if (file.endsWith('.hat') && !fs.existsSync(resolveMemoriaTahPath(filePath))) {
+        continue;
+      }
+
+      if (file.endsWith('.tah') && hasPairedMemoriaHat(filePath)) {
+        continue;
+      }
+
+      cartridges.push({
+        name: file,
+        path: filePath,
+        type: file.endsWith('.hat') ? 'hat' : 'tah'
+      });
+    }
+  }
+
+  return cartridges.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function searchCartridge(filePath: string, file: string, query: string): Array<{ score: number; data: string }> {
   if (file.endsWith('.hat')) {
     return new MemoriaRetriever(filePath).search(query);

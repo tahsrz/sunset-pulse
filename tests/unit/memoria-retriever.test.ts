@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { MemoriaRetriever } from '@/lib/core/memoria_retriever';
-import { pulse_search } from '@/lib/ai/brain/pulse_query';
+import { listPulseCartridges, pulse_search } from '@/lib/ai/brain/pulse_query';
 
 describe('MemoriaRetriever', () => {
   const cartridgePath = path.resolve(__dirname, '../../cartridges/wiki_dallas.hat');
@@ -23,5 +23,13 @@ describe('MemoriaRetriever', () => {
     expect(results.length).toBeLessThanOrEqual(10);
     expect(results.length).toBeGreaterThan(0);
     expect(results.some(result => result.source === 'wiki_dallas.hat')).toBe(true);
+  });
+
+  it('lists queryable cartridges without duplicate memoria pairs', () => {
+    const cartridges = listPulseCartridges();
+    const names = cartridges.map(cartridge => cartridge.name);
+
+    expect(names).toContain('wiki_dallas.hat');
+    expect(names).not.toContain('wiki_dallas.tah');
   });
 });
