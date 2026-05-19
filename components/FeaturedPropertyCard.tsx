@@ -15,6 +15,12 @@ interface FeaturedPropertyCardProps {
 }
 
 const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property }) => {
+  const normalizeImg = (src: string) => {
+    if (!src) return '/images/property-placeholder.jpg';
+    if (src.startsWith('http') || src.startsWith('/')) return src;
+    return `/${src}`;
+  };
+
   const getRateDisplay = () => {
     const { rates } = property;
 
@@ -31,7 +37,7 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property })
   return (
     <div className='waterlily-card rounded-2xl relative flex flex-col md:flex-row overflow-hidden'>
       <Image
-        src={property.images[0] || '/images/property-placeholder.jpg'}
+        src={normalizeImg(property.images[0])}
         alt=''
         width={0}
         height={0}
