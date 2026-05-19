@@ -52,6 +52,8 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `POST /api/tah` accepts `{ "query": "Dallas zoning", "limit": 10, "sync": false }`.
 - `sync: true` attempts a Supabase cartridge sync before searching.
 - `/api/tah/eval` remains the advanced S-expression evaluator for internal workflows.
+- `/tah` and `/tah/[cartridge]` expose crawlable HTML context pages for robots and agents.
+- `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
 
 ## Getting Started
 

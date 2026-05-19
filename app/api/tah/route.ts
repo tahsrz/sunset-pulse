@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return successResponse({
       status: 'ready',
       endpoint: '/api/tah',
-      cartridges: cartridges.map(({ name, type }) => ({ name, type })),
+      cartridges: cartridges.map(({ name, slug, title, type }) => ({ name, slug, title, type, url: `/tah/${slug}` })),
       count: cartridges.length
     });
   }
