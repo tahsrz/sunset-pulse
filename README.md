@@ -43,6 +43,21 @@ Sunset Pulse exposes MLS search through an authorized NTREIS Matrix IDX iframe:
 
 This keeps Matrix/IDX access close to the assistant while preserving a clear login boundary around listing data.
 
+## TAH API
+
+Sunset Pulse exposes the local cartridge brain through `/api/tah`:
+
+- `GET /api/tah` returns endpoint status and the queryable cartridge catalog.
+- `GET /api/tah?q=Dallas&limit=5` runs a quick cartridge search.
+- `POST /api/tah` accepts `{ "query": "Dallas zoning", "limit": 10, "sync": false }`.
+- `sync: true` attempts a Supabase cartridge sync before searching.
+- `/api/tah/eval` remains the advanced S-expression evaluator for internal workflows.
+- `/tah` and `/tah/[cartridge]` expose crawlable HTML context pages for robots and agents.
+- `/tah/index.json` exposes a dynamic, machine-readable catalog rebuilt from the cartridge directories on request.
+- `/tah/headless` and `/tah/[cartridge]/headless` expose plain-text scraper views with backend-oriented labels.
+- `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
+- `/tah` includes explicit AI-agent crawl guidance and preferred query patterns.
+
 ## Getting Started
 
 Install dependencies:

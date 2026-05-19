@@ -57,6 +57,89 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
   return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
 }
 
+export type PulseCartridge = {
+  name: string;
+  path: string;
+  slug: string;
+  title: string;
+  type: 'hat' | 'tah';
+};
+
+export function listPulseCartridges(): PulseCartridge[] {
+  const cartridges: PulseCartridge[] = [];
+  const seen = new Set<string>();
+  const seenSlugs = new Set<string>();
+
+  for (const dir of getCartridgeDirs()) {
+    if (!fs.existsSync(dir)) continue;
+
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.tah') || f.endsWith('.hat'));
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      if (seen.has(filePath)) continue;
+      seen.add(filePath);
+
+      if (file.endsWith('.hat') && !fs.existsSync(resolveMemoriaTahPath(filePath))) {
+        continue;
+      }
+
+      if (file.endsWith('.tah') && hasPairedMemoriaHat(filePath)) {
+        continue;
+      }
+
+      const slug = cartridgeSlug(file);
+      if (seenSlugs.has(slug)) continue;
+      seenSlugs.add(slug);
+
+      cartridges.push({
+        name: file,
+        path: filePath,
+        slug,
+        title: cartridgeTitle(file),
+        type: file.endsWith('.hat') ? 'hat' : 'tah'
+      });
+    }
+  }
+
+  return cartridges.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getPulseCartridge(slug: string): PulseCartridge | null {
+  return listPulseCartridges().find(cartridge => cartridge.slug === slug) || null;
+}
+
+export async function previewPulseCartridge(slug: string, maxResults = 5): Promise<any[]> {
+  const cartridge = getPulseCartridge(slug);
+  if (!cartridge) return [];
+
+  const query = cartridge.title.replace(/[^a-z0-9 ]/gi, ' ').trim() || cartridge.name;
+  const results = await pulse_search(query, 100);
+  return results
+    .filter(result => result.source === cartridge.name)
+    .slice(0, maxResults);
+}
+
+function cartridgeSlug(file: string): string {
+  return file
+    .replace(/\.tah\.hat$/, '')
+    .replace(/\.tah\.tah$/, '')
+    .replace(/\.(hat|tah)$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function cartridgeTitle(file: string): string {
+  return file
+    .replace(/\.tah\.hat$/, '')
+    .replace(/\.tah\.tah$/, '')
+    .replace(/\.(hat|tah)$/, '')
+    .split(/[_\-\s]+/)
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function searchCartridge(filePath: string, file: string, query: string): Array<{ score: number; data: string }> {
   if (file.endsWith('.hat')) {
     return new MemoriaRetriever(filePath).search(query);
