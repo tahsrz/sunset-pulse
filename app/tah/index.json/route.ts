@@ -17,6 +17,7 @@ export function GET() {
       count: cartridges.length,
       endpoints: {
         htmlIndex: `${host}/tah`,
+        headlessIndex: `${host}/tah/headless`,
         searchApi: `${host}/api/tah`,
         llms: `${host}/llms.txt`,
         sitemap: `${host}/sitemap.xml`
@@ -27,6 +28,7 @@ export function GET() {
         source: cartridge.name,
         type: cartridge.type,
         htmlUrl: `${host}/tah/${cartridge.slug}`,
+        headlessUrl: `${host}/tah/${cartridge.slug}/headless`,
         apiUrl: `${host}/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`
       }))
     },

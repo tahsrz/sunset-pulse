@@ -82,6 +82,14 @@ export default async function TahCartridgePage({ params }: TahCartridgePageProps
               <dd className="mt-2 font-mono text-cyan-100">/api/tah</dd>
             </div>
           </dl>
+          <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+            <Link className="rounded bg-pink-300 px-4 py-2 text-slate-950" href={`/tah/${cartridge.slug}/headless`}>
+              Headless text
+            </Link>
+            <Link className="rounded border border-white/20 px-4 py-2 text-white" href={`/api/tah?q=${encodeURIComponent(cartridge.title)}&limit=10`}>
+              Query API
+            </Link>
+          </div>
         </div>
       </section>
 

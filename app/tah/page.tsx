@@ -56,7 +56,7 @@ export default function TahPage() {
                 Crawl policy
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-200">
-                Prefer `/tah`, `/tah/[slug]`, `/llms.txt`, and `/sitemap.xml`. Avoid private app surfaces such as dashboards and admin tools.
+                Prefer `/tah`, `/tah/headless`, `/tah/[slug]`, `/llms.txt`, and `/sitemap.xml`. Avoid private app surfaces such as dashboards and admin tools.
               </p>
             </div>
             <div className="rounded border border-white/10 bg-black/25 p-4">
@@ -74,6 +74,9 @@ export default function TahPage() {
             </Link>
             <Link className="rounded bg-emerald-300 px-4 py-2 text-slate-950" href="/tah/index.json">
               JSON catalog
+            </Link>
+            <Link className="rounded bg-pink-300 px-4 py-2 text-slate-950" href="/tah/headless">
+              Headless text
             </Link>
             <Link className="rounded border border-white/20 px-4 py-2 text-white" href="/llms.txt">
               llms.txt

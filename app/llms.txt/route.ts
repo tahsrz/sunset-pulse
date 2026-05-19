@@ -13,6 +13,7 @@ export function GET() {
     '',
     '## Primary Context Entrypoints',
     `- TAH archive: ${host}/tah`,
+    `- Headless TAH catalog: ${host}/tah/headless`,
     `- Dynamic TAH catalog JSON: ${host}/tah/index.json`,
     `- TAH search API: ${host}/api/tah`,
     `- Advanced TAH evaluator: ${host}/api/tah/eval`,
@@ -21,6 +22,7 @@ export function GET() {
     ...cartridges.map(cartridge => `- ${cartridge.title}: ${host}/tah/${cartridge.slug}`),
     '',
     '## API Usage',
+    `GET ${host}/tah/headless`,
     `GET ${host}/api/tah?q=Dallas&limit=5`,
     `POST ${host}/api/tah with {"query":"North Texas market intelligence","limit":10}`,
     ''

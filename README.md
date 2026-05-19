@@ -54,6 +54,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `/api/tah/eval` remains the advanced S-expression evaluator for internal workflows.
 - `/tah` and `/tah/[cartridge]` expose crawlable HTML context pages for robots and agents.
 - `/tah/index.json` exposes a dynamic, machine-readable catalog rebuilt from the cartridge directories on request.
+- `/tah/headless` and `/tah/[cartridge]/headless` expose plain-text scraper views with backend-oriented labels.
 - `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
 - `/tah` includes explicit AI-agent crawl guidance and preferred query patterns.
 
