@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useChat } from 'ai/react';
 import { useTheme } from '@/context/ThemeProvider';
+import { useAuth } from '@/context/AuthContext';
 import { memoryBridge } from '@/lib/memory_bridge';
 import { speak } from '@/lib/core/tts';
 
@@ -18,6 +20,7 @@ import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
 export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
+  const { user, loading: authLoading } = useAuth();
   const { 
     stagedBranding, 
     confirmBranding, 
@@ -232,26 +235,47 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
                   MLS search is anchored here so your page stays put.
                 </p>
               </div>
-              <a
-                href={MATRIX_IDX_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-md border border-white/10 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-teal-100 transition hover:bg-white/15"
-              >
-                Open
-              </a>
+              {user && (
+                <a
+                  href={MATRIX_IDX_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-md border border-white/10 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-teal-100 transition hover:bg-white/15"
+                >
+                  Open
+                </a>
+              )}
             </div>
-            <div className="h-72 overflow-hidden rounded-lg border border-white/10 bg-white">
-              <iframe
-                src={MATRIX_IDX_URL}
-                title="NTREIS Matrix IDX listing search"
-                className="h-full w-full"
-                frameBorder="0"
-                marginWidth={0}
-                marginHeight={0}
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
+            {authLoading ? (
+              <div className="flex h-72 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-[10px] font-black uppercase tracking-[0.2em] text-teal-200">
+                Checking Access
+              </div>
+            ) : user ? (
+              <div className="h-72 overflow-hidden rounded-lg border border-white/10 bg-white">
+                <iframe
+                  src={MATRIX_IDX_URL}
+                  title="NTREIS Matrix IDX listing search"
+                  className="h-full w-full"
+                  frameBorder="0"
+                  marginWidth={0}
+                  marginHeight={0}
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            ) : (
+              <div className="rounded-lg border border-teal-100/20 bg-slate-900 p-5 text-center">
+                <p className="text-sm font-bold text-white">Log in to view MLS listings.</p>
+                <p className="mt-2 text-xs leading-5 text-slate-400">
+                  Matrix IDX search is available to authenticated Sunset Pulse users.
+                </p>
+                <Link
+                  href="/login?redirect=/idx"
+                  className="mt-4 inline-flex rounded-md border border-teal-200/25 bg-teal-200/15 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-teal-100 transition hover:bg-teal-200/20"
+                >
+                  Log In
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

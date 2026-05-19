@@ -1,6 +1,17 @@
+import { redirect } from 'next/navigation';
+import { getSessionUser } from '@/lib/core/getSessionUser';
+
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
-export default function IDXSearchPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function IDXSearchPage() {
+  const sessionUser = await getSessionUser();
+
+  if (!sessionUser) {
+    redirect('/login?redirect=/idx');
+  }
+
   return (
     <main className="min-h-screen bg-[#071b24] text-white">
       <section className="border-b border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.18),transparent_32%),linear-gradient(135deg,#0c2130_0%,#11384a_48%,#122d34_100%)]">
