@@ -31,23 +31,26 @@ const DOMAIN_RULES: Array<{ id: string; label: string; keywords: string[] }> = [
 ];
 
 const STAGES = [
-  { id: 'discover', label: 'Discovered', weight: 20 },
-  { id: 'html', label: 'HTML Pages', weight: 20 },
-  { id: 'json', label: 'JSON Catalog', weight: 20 },
-  { id: 'headless', label: 'Headless Text', weight: 20 },
-  { id: 'search', label: 'Search API', weight: 20 }
+  { id: 'seed', label: 'Seed Map', threshold: 1 },
+  { id: 'regions', label: 'Regions', threshold: 25 },
+  { id: 'library', label: 'Library Scale', threshold: 100 },
+  { id: 'bridges', label: 'Cross Links', threshold: 250 },
+  { id: 'swarm', label: 'Swarm Scale', threshold: 1000 }
 ];
+
+const DEFAULT_ATLAS_TARGET_CARTRIDGES = 1000;
 
 export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
   const cartridges = listPulseCartridges();
   const domainBuckets = bucketCartridges(cartridges);
+  const progress = calculateAtlasProgress(cartridges.length);
   const nodes: AtlasNode[] = [
     {
       id: 'world',
       label: 'TAH World Map',
       type: 'world',
       group: 'world',
-      progress: calculateWorldProgress(cartridges.length),
+      progress: progress.percent,
       val: 32,
       url: `${host}/tah`
     }
@@ -63,7 +66,7 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
       label: domain.label,
       type: 'continent',
       group: domain.id,
-      progress: calculateWorldProgress(items.length),
+      progress: calculateAtlasProgress(items.length, Math.ceil(progress.targetCartridges / DOMAIN_RULES.length)).percent,
       val: Math.min(24, 10 + items.length / 4),
       url: `${host}/tah`
     });
@@ -91,10 +94,11 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
     generatedAt: new Date().toISOString(),
     progress: {
       totalCartridges: cartridges.length,
-      percent: calculateWorldProgress(cartridges.length),
+      targetCartridges: progress.targetCartridges,
+      percent: progress.percent,
       stages: STAGES.map(stage => ({
         ...stage,
-        complete: true
+        complete: cartridges.length >= stage.threshold
       }))
     },
     nodes,
@@ -114,7 +118,25 @@ function bucketCartridges(cartridges: PulseCartridge[]) {
   return buckets;
 }
 
-function calculateWorldProgress(cartridgeCount: number) {
-  if (cartridgeCount <= 0) return 0;
-  return STAGES.reduce((sum, stage) => sum + stage.weight, 0);
+function calculateAtlasProgress(cartridgeCount: number, targetCartridges = atlasTargetCartridges()) {
+  if (cartridgeCount <= 0) {
+    return {
+      targetCartridges,
+      percent: 0
+    };
+  }
+  const rawPercent = Math.round((cartridgeCount / targetCartridges) * 100);
+  return {
+    targetCartridges,
+    percent: Math.min(99, Math.max(1, rawPercent))
+  };
+}
+
+function atlasTargetCartridges() {
+  const configuredTarget = Number(process.env.TAH_ATLAS_TARGET_CARTRIDGES);
+  if (Number.isFinite(configuredTarget) && configuredTarget > 0) {
+    return configuredTarget;
+  }
+
+  return DEFAULT_ATLAS_TARGET_CARTRIDGES;
 }

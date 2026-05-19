@@ -64,8 +64,16 @@ describe('TAH robot-facing routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('no-store');
-    expect(body.progress.percent).toBe(100);
+    expect(body.progress.percent).toBeGreaterThan(0);
+    expect(body.progress.percent).toBeLessThan(100);
+    expect(body.progress.targetCartridges).toBe(1000);
     expect(body.progress.totalCartridges).toBeGreaterThan(0);
+    expect(body.progress.stages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'seed', complete: true }),
+        expect.objectContaining({ id: 'swarm', complete: false })
+      ])
+    );
     expect(body.nodes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'world', type: 'world' }),

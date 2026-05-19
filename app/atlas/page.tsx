@@ -25,8 +25,9 @@ type AtlasNode = {
 type AtlasMap = {
   progress: {
     totalCartridges: number;
+    targetCartridges: number;
     percent: number;
-    stages: Array<{ id: string; label: string; weight: number; complete: boolean }>;
+    stages: Array<{ id: string; label: string; threshold: number; complete: boolean }>;
   };
   nodes: AtlasNode[];
   links: Array<{ source: string; target: string; value: number }>;
@@ -96,16 +97,19 @@ export default function MemoriaAtlasPage() {
 
           <div className="w-full max-w-xl">
             <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              <span>World Completion</span>
+              <span>Atlas Coverage</span>
               <span className="text-cyan-200">{atlas?.progress.percent || 0}%</span>
             </div>
             <div className="grid grid-cols-5 overflow-hidden rounded border border-white/10 bg-white/10">
               {worldStages.map(stage => (
-                <div key={stage.id} className="border-r border-black/20 bg-cyan-300 px-2 py-2 text-center text-[10px] font-black uppercase tracking-tight text-slate-950 last:border-r-0">
+                <div key={stage.id} className={`border-r border-black/20 px-2 py-2 text-center text-[10px] font-black uppercase tracking-tight last:border-r-0 ${stage.complete ? 'bg-cyan-300 text-slate-950' : 'bg-white/10 text-slate-400'}`}>
                   {stage.label}
                 </div>
               ))}
             </div>
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              {atlas?.progress.totalCartridges || 0} of {atlas?.progress.targetCartridges || 1000} target cartridges charted. Routes are online; the world is still being mapped.
+            </p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
               <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href="/tah">Archive</Link>
               <Link className="rounded bg-emerald-300 px-3 py-2 text-slate-950" href="/tah/index.json">JSON</Link>
@@ -134,7 +138,7 @@ export default function MemoriaAtlasPage() {
           <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-200">Selected Region</p>
           <h2 className="mt-3 text-2xl font-black">{selectedNode?.label || 'Loading Atlas'}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            {selectedNode?.type === 'world' && `${atlas?.progress.totalCartridges || 0} cartridges are discoverable through the TAH archive.`}
+            {selectedNode?.type === 'world' && `${atlas?.progress.totalCartridges || 0} cartridges are discoverable out of a ${atlas?.progress.targetCartridges || 1000}-cartridge atlas target.`}
             {selectedNode?.type === 'continent' && 'A knowledge continent grouping related cartridges into a navigable region.'}
             {selectedNode?.type === 'cartridge' && `Source: ${selectedNode.source}`}
           </p>
