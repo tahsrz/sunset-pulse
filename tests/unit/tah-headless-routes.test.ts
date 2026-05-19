@@ -10,7 +10,7 @@ import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
 
 describe('TAH robot-facing routes', () => {
   it('serves the headless archive as plain text', async () => {
-    const response = getTahHeadless();
+    const response = getTahHeadless(new Request('https://sunsetpulse.com/tah/headless'));
     const body = await response.text();
 
     expect(response.status).toBe(200);
@@ -34,7 +34,7 @@ describe('TAH robot-facing routes', () => {
   });
 
   it('serves the dynamic JSON catalog with headless URLs', async () => {
-    const response = getTahIndex();
+    const response = getTahIndex(new Request('https://sunsetpulse.com/tah/index.json'));
     const body = await response.json();
 
     expect(response.status).toBe(200);

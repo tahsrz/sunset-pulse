@@ -1,5 +1,6 @@
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
+import { siteUrlFromRequest } from '@/lib/core/site_url';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,16 +44,4 @@ export function GET(request: Request) {
       'Content-Type': 'text/plain; charset=utf-8'
     }
   });
-}
-
-function siteUrlFromRequest(request: Request) {
-  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const host = forwardedHost || request.headers.get('host');
-
-  if (host) {
-    return `${forwardedProto}://${host}`;
-  }
-
-  return process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.com';
 }

@@ -1,11 +1,12 @@
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
+import { siteUrlFromRequest } from '@/lib/core/site_url';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export function GET() {
-  const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.com';
+export function GET(request: Request) {
+  const host = siteUrlFromRequest(request);
   const cartridges = listPulseCartridges();
   const generatedAt = new Date().toISOString();
 
