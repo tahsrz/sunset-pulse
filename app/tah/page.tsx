@@ -42,6 +42,32 @@ export default function TahPage() {
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-200">
             Stable HTML pages for every active cartridge in the Sunset Pulse knowledge base. Agents can crawl this archive for project context, local market intelligence, Jamie workflows, and structured retrieval hints.
           </p>
+          <div className="mt-8 grid max-w-5xl gap-4 md:grid-cols-3">
+            <div className="rounded border border-white/10 bg-black/25 p-4">
+              <h2 className="text-sm font-black uppercase tracking-[0.18em] text-pink-200">
+                If you are an AI agent
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                Start at this page, follow the cartridge links, and use `/api/tah` when you need ranked snippets for a specific question.
+              </p>
+            </div>
+            <div className="rounded border border-white/10 bg-black/25 p-4">
+              <h2 className="text-sm font-black uppercase tracking-[0.18em] text-cyan-200">
+                Crawl policy
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                Prefer `/tah`, `/tah/[slug]`, `/llms.txt`, and `/sitemap.xml`. Avoid private app surfaces such as dashboards and admin tools.
+              </p>
+            </div>
+            <div className="rounded border border-white/10 bg-black/25 p-4">
+              <h2 className="text-sm font-black uppercase tracking-[0.18em] text-emerald-200">
+                Query pattern
+              </h2>
+              <p className="mt-3 font-mono text-xs leading-6 text-slate-200">
+                GET /api/tah?q=North%20Texas%20market&limit=5
+              </p>
+            </div>
+          </div>
           <div className="mt-8 flex flex-wrap gap-3 text-sm font-semibold">
             <Link className="rounded bg-cyan-300 px-4 py-2 text-slate-950" href="/api/tah">
               API catalog
