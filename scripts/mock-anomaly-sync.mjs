@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error("❌ ERROR: Supabase credentials missing in .env.local");
@@ -34,16 +34,20 @@ async function syncLeads() {
 
     const updates = leads.map((lead, index) => ({
       id: lead.id,
-      location_interest: locations[index % locations.length],
-      lead_category: categories[index % categories.length],
-      status: 'New'
+      name: lead.name,
+      email: lead.email,
+      metadata: {
+        location_interest: locations[index % locations.length],
+        lead_category: categories[index % categories.length],
+      },
+      stage: 'New'
     }));
 
     if (updates.length > 0) {
       console.log(`📡 [INTEL_PUSH] Updating ${updates.length} leads with reconnaissance profiles...`);
       const { error: updateError } = await supabase
         .from('leads')
-        .upsert(updates);
+        .upsert(updates, { onConflict: 'email' });
 
       if (updateError) throw updateError;
       console.log("✅ [MOCK_SYNC] Success. Intelligence grid synchronized.");

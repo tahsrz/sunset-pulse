@@ -18,17 +18,22 @@ export async function POST(req: NextRequest) {
     const { messages, propertyData, isDevMode, memoryContext } = await req.json();
     
     // Get Jamie response
-    const streamResponse = await getJamieResponse(messages, propertyData, memoryContext, isDevMode);
+    const response = await getJamieResponse(messages, propertyData, memoryContext, isDevMode);
     
-    // If it's a string (fallback error message), return it as a simple response
-    if (typeof streamResponse === 'string') {
-      return new Response(streamResponse);
+    // 1. Handle Fallback/Error strings
+    if (typeof response === 'string') {
+      return new Response(response);
     }
 
-    // Convert the Groq stream to an AI SDK compatible stream
-    const stream = OpenAIStream(streamResponse as any);
+    // 2. Handle Structured Tool Calls (Non-streaming)
+    if (response && (response as any).tool_calls) {
+      return new Response(JSON.stringify(response), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-    // Return the streaming response
+    // 3. Handle Text Streams (Standard Interaction)
+    const stream = OpenAIStream(response as any);
     return new StreamingTextResponse(stream);
 
   } catch (error: any) {

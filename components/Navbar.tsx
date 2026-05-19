@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import logo from '@/assets/images/logo-white.png';
 import profileDefault from '@/assets/images/profile.png';
-import { FaGoogle, FaShoppingBasket, FaCode, FaShieldAlt } from 'react-icons/fa';
+import { FaGoogle, FaShoppingBasket, FaShieldAlt } from 'react-icons/fa';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
@@ -50,9 +50,6 @@ const Navbar: React.FC = () => {
                   Explorer
                 </Link>
                 <Link href='/grill' className={`${pathname === '/grill' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Grill</Link>
-                <Link href='/#architecture' className={`${pathname === '/architecture' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
-                  <FaCode /> Architecture
-                </Link>
                 <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-violet-500/30 text-violet-100 border-violet-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
                   <FaShieldAlt className='text-violet-300' /> Abidan
                 </Link>

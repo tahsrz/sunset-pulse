@@ -40,14 +40,14 @@ const SearchResultsPage = () => {
       setLoading(true);
       try {
         const res = await fetch(`/api/properties/search/advanced?${searchParams.toString()}`);
-        if (res.status === 200) {
-          const data = await res.json();
-          setProperties(data);
-        } else {
-          setProperties([]);
-        }
+        const json = await res.json();
+        
+        // Fix: Extract data from successResponse wrapper
+        const propertyArray = json.data || json;
+        setProperties(Array.isArray(propertyArray) ? propertyArray : []);
       } catch (error) {
         console.error('[FETCH_SEARCH_RESULTS_ERROR]', error);
+        setProperties([]);
       } finally {
         setLoading(false);
       }

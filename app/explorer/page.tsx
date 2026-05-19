@@ -24,23 +24,26 @@ function ExplorerContent() {
         ? `/api/properties/search?polygon=${selection.data}`
         : `/api/properties/search?radius=${selection.data}`;
       
+      const res = await fetch(url);
       const json = await res.json();
       
       // Fix: Standardized API response uses data.data for payload
       const data = json.data || json;
-      const propertyArray = Array.isArray(data) ? data : (data.properties || []);
-      setProperties(propertyArray);
+      const propertyArray = Array.isArray(data) ? data : (data.properties || [data]);
+      // Ensure we filter out any potential non-object artifacts if data was a single object
+      const finalArray = Array.isArray(propertyArray) ? propertyArray.filter(p => typeof p === 'object' && p !== null) : [];
+      setProperties(finalArray as any);
 
       // Calculate area-wide intelligence
-      if (propertyArray.length > 0) {
-        const totalScore = propertyArray.reduce((acc: number, p: any) => 
+      if (finalArray.length > 0) {
+        const totalScore = finalArray.reduce((acc: number, p: any) => 
           acc + calculatePulseScore(p.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates), 0);
-        const avgScore = Math.round(totalScore / propertyArray.length);
+        const avgScore = Math.round(totalScore / finalArray.length);
         
         setAreaIntel({
           pulseScore: avgScore,
-          tourRecommendation: propertyArray.length > 1 
-            ? `Optimal tour starts at ${propertyArray[0].name}. Intelligence suggests a clockwise route for maximum daylight leverage.`
+          tourRecommendation: finalArray.length > 1 
+            ? `Optimal tour starts at ${finalArray[0].name}. Intelligence suggests a clockwise route for maximum daylight leverage.`
             : 'Standalone priority asset identified.'
         });
       } else {

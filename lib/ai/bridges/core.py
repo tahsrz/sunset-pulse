@@ -92,6 +92,15 @@ class JamieCore:
             graph["verified_facts"].extend(new_facts)
             f.seek(0); json.dump(graph, f, indent=2); f.truncate()
 
+        # STAGE 1.5: FORGE BINARY CARTRIDGE
+        try:
+            from .tah_forge import TAHForge
+            cartridge_path = os.path.join(PROJECT_ROOT, "cartridges/pulse_intelligence.tah")
+            os.makedirs(os.path.dirname(cartridge_path), exist_ok=True)
+            TAHForge.compile_cartridge(graph.get("verified_facts", []), cartridge_path)
+        except Exception as e:
+            print(f"[FORGE_ERROR] Could not compile intelligence cartridge: {e}")
+
         os.remove(LOG_PATH)
         
         if new_facts:

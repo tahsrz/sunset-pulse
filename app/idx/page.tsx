@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import IDXConsumerExperience from '@/components/idx/IDXConsumerExperience';
 
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
@@ -40,7 +41,9 @@ export default function IDXSearchPage() {
         </div>
       </section>
 
-      <IDXConsumerExperience matrixUrl={MATRIX_IDX_URL} />
+      <Suspense fallback={<div className="p-12 text-center text-teal-200 font-black uppercase tracking-widest animate-pulse">Initializing Matrix Intelligence Feed...</div>}>
+        <IDXConsumerExperience matrixUrl={MATRIX_IDX_URL} />
+      </Suspense>
     </main>
   );
 }

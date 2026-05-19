@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const FALLBACK_DELAY_MS = 4500;
 
@@ -9,13 +10,24 @@ interface IDXConsumerExperienceProps {
 }
 
 export default function IDXConsumerExperience({ matrixUrl }: IDXConsumerExperienceProps) {
+  const searchParams = useSearchParams();
   const [listingReference, setListingReference] = useState('');
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const [sentPrompt, setSentPrompt] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState('');
-  const [dynamicUrl, setDynamicUrl] = useState(matrixUrl);
+  
+  // Initialize from URL params if present
+  const [dynamicUrl, setDynamicUrl] = useState(() => {
+    const url = new URL(matrixUrl);
+    if (searchParams) {
+      searchParams.forEach((value, key) => {
+        url.searchParams.set(key, value);
+      });
+    }
+    return url.toString();
+  });
 
   const buildMatrixUrl = (params: any) => {
     const url = new URL(matrixUrl);

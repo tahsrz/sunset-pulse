@@ -31,6 +31,7 @@ serve(async (req) => {
       
       updates.push({
         id: lead.id,
+        email: lead.email,
         reengagement_hook: currentHooks,
         probability: 95, 
         jamie_notes: `[MARKET_ANOMALY] High-stakes shift detected in ${anomaly.location}. Lead interest matched.`
@@ -40,7 +41,7 @@ serve(async (req) => {
     if (updates.length > 0) {
       const { error: updateError } = await supabase
         .from('leads')
-        .upsert(updates);
+        .upsert(updates, { onConflict: 'email' });
       if (updateError) throw updateError;
     }
 

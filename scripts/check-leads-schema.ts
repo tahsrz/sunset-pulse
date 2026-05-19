@@ -5,10 +5,11 @@ dotenv.config();
 async function checkSchema() {
   const { supabaseAdmin } = await import('../lib/supabase');
   
+  // @ts-ignore
+  console.log('SUPABASE_URL:', supabaseAdmin.supabaseUrl || 'unknown');
+  
   console.log('🔍 [SCHEMA_AUDIT] Fetching column names for table: leads...');
   
-  // We can't easily query information_schema via the client without RPC or direct SQL
-  // but we can try to fetch a single row and look at the keys
   const { data, error } = await supabaseAdmin
     .from('leads')
     .select('*')
@@ -20,7 +21,7 @@ async function checkSchema() {
   }
 
   if (data && data.length > 0) {
-    console.log('✅ [SCHEMA_AUDIT] Sample lead found. Columns:', Object.keys(data[0]).join(', '));
+    console.log('✅ [SCHEMA_AUDIT] Sample lead found:', JSON.stringify(data[0], null, 2));
   } else {
     console.log('⚠️ [SCHEMA_AUDIT] No data in leads table to inspect columns.');
   }

@@ -12,7 +12,7 @@ serve(async (req) => {
     // 1. Fetch all active leads with probability > 5
     const { data: leads, error: fetchError } = await supabase
       .from('leads')
-      .select('id, probability, updated_at')
+      .select('id, email, probability, updated_at')
       .gt('probability', 5);
 
     if (fetchError) throw fetchError;
@@ -34,6 +34,7 @@ serve(async (req) => {
         if (newProbability !== lead.probability) {
           updates.push({
             id: lead.id,
+            email: lead.email,
             probability: newProbability,
             // We don't want to update 'updated_at' here or it will reset the decay timer
             // unless the database is configured to auto-update it.
@@ -48,7 +49,7 @@ serve(async (req) => {
       // Bulk update (Supabase allows upsert for bulk updates if IDs are provided)
       const { error: updateError } = await supabase
         .from('leads')
-        .upsert(updates);
+        .upsert(updates, { onConflict: 'email' });
 
       if (updateError) throw updateError;
     }

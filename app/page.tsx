@@ -1,26 +1,30 @@
-import React, { Suspense } from 'react'; // <-- Added Suspense here
+import React, { Suspense } from 'react';
 import CinematicHero from '@/components/CinematicHero';
 import InfoBoxes from '@/components/InfoBoxes';
-import FeaturedProperties from '@/components/FeaturedProperties';
-import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
+import UnifiedPropertyStage from '@/components/marketing/UnifiedPropertyStage';
 import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
 import FAQSection from '@/components/marketing/FAQSection';
+import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
+import { getProperties } from '@/lib/core/propertyRecon';
 
-const HomePage: React.FC = () => {
+const HomePage: React.FC = async () => {
+  const stagedPropertiesRaw = await getProperties({ showFeatured: true });
+  
+  // Force serialization to plain objects for Client Component compatibility
+  const stagedProperties = JSON.parse(JSON.stringify(stagedPropertiesRaw));
+
   return (
     <>
       <CinematicHero />
       <div className="waterlily-surface">
         <ValuePropositionGrid />
         
-        {/* @ts-expect-error Async Server Component */}
         <Suspense fallback={
           <div className="text-center py-20 text-slate-500 font-mono text-xs uppercase tracking-widest animate-pulse">
-            Loading Featured Properties...
+            Initializing Intelligence Stage...
           </div>
         }>
-          {/* @ts-expect-error Async Server Component */}
-          <FeaturedProperties />
+          <UnifiedPropertyStage initialStagedProperties={stagedProperties} />
         </Suspense>
 
         <InfoBoxes />

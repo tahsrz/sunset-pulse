@@ -5,6 +5,7 @@ import { useChat } from 'ai/react';
 import { useTheme } from '@/context/ThemeProvider';
 import { memoryBridge } from '@/lib/memory_bridge';
 import { speak } from '@/lib/core/tts';
+import { useRouter, usePathname } from 'next/navigation';
 
 // Refactored Sub-components
 import JamieChatMinimized from './chat/JamieChatMinimized';
@@ -16,6 +17,8 @@ import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 
 export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { 
     stagedBranding, 
     confirmBranding, 
@@ -195,14 +198,67 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         setPropertyDataOverride(null);
         return;
       }
-      if (security.status === 'RESOLVED_BY_MINI') {
-        const assistantMsg = security.response;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
-        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
-        setInput('');
-        setPropertyDataOverride(null);
-        return;
+
+      // Check for Tool Calling (Non-streaming) via a manual fetch first
+      const chatResponse = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: [...messages, { role: 'user', content: currentInput }], 
+          propertyData: activePropertyData, 
+          isDevMode, 
+          memoryContext 
+        }),
+      });
+
+      const contentType = chatResponse.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const result = await chatResponse.json();
+        
+        // Handle Tool Calls
+        if (result.tool_calls) {
+          const toolCall = result.tool_calls[0];
+          const parameters = typeof toolCall.function.arguments === 'string' 
+            ? JSON.parse(toolCall.function.arguments) 
+            : toolCall.function.arguments;
+
+          // Map parameters to Matrix keys for URL consistency
+          const mappedParams: Record<string, string> = {};
+          if (parameters.city) mappedParams.City = parameters.city;
+          if (parameters.zipcode) mappedParams.Zip = parameters.zipcode;
+          if (parameters.price_min) mappedParams.MinPrice = parameters.price_min.toString();
+          if (parameters.price_max) mappedParams.MaxPrice = parameters.price_max.toString();
+          if (parameters.beds_min) mappedParams.Beds = parameters.beds_min.toString();
+          if (parameters.full_baths_min) mappedParams.Baths = parameters.full_baths_min.toString();
+
+          const queryString = new URLSearchParams(mappedParams).toString();
+
+          // Dispatch the search event (for local page updates)
+          window.dispatchEvent(new CustomEvent('sunsetpulse:jamie-tool-call', {
+            detail: { tool: toolCall.function.name, parameters }
+          }));
+
+          // Handle Cross-Page Redirection
+          if (pathname !== '/idx') {
+            console.log('🚀 [JAMIE_NAV] Redirecting to IDX portal with parameters...');
+            router.push(`/idx?${queryString}`);
+          }
+
+          // Add message to chat list
+          const assistantMsg = result.content || `Scanning the grid for ${currentInput.substring(0, 30)}...`;
+          setMessages([...messages, 
+            { id: Date.now().toString(), role: 'user', content: currentInput }, 
+            { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }
+          ]);
+          
+          await handleAction(assistantMsg);
+          setInput('');
+          setPropertyDataOverride(null);
+          return;
+        }
       }
+
+      // If not a tool call, fallback to the standard useChat handleSubmit
       submitWithCurrentContext(e);
     } catch (error) {
       console.error('Submission Error:', error);

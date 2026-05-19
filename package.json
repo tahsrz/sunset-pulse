@@ -16,7 +16,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:unit": "vitest run",
-    "test:unit:watch": "vitest"
+    "test:unit:watch": "vitest",
+    "matrix:scout": "npx tsx scripts/matrix_scout.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

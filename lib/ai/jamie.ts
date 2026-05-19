@@ -654,7 +654,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
       messages: [
         {
           role: "system",
-          content: jamieSystemPrompt
+          content: jamieSystemPrompt + "\n\nCRITICAL: When using search_properties, you MUST provide a brief 1-sentence natural language acknowledgment BEFORE the tool call. Example: 'I'm scanning the North Texas grid for 4-bedroom homes in Frisco under $1M now.'"
         },
         {
           role: "system",
@@ -688,10 +688,23 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
       model: primaryModel,
       tools: [SEARCH_PROPERTIES_TOOL] as any,
       tool_choice: "auto",
-      stream: true,
+      stream: false, // Switching to non-streaming for tool-call stability
     });
 
-    return completion;
+    const responseMessage = completion.choices[0].message;
+
+    // Handle Tool Calls
+    if (responseMessage.tool_calls) {
+      // Force a fallback content if Jamie forgot to provide one despite the prompt
+      const content = responseMessage.content || `Scanning the grid for ${userInput.substring(0, 30)}...`;
+      return {
+        role: "assistant",
+        content,
+        tool_calls: responseMessage.tool_calls
+      };
+    }
+
+    return responseMessage.content;
   } catch (error) {
     console.error("Jamie Analysis Error:", error);
     return "Jamie's local data grid is currently unavailable. I cannot sync the neighborhood data at this time.";
