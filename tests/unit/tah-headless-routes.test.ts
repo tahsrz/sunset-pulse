@@ -51,13 +51,21 @@ describe('TAH robot-facing routes', () => {
   });
 
   it('advertises headless and JSON entrances in llms.txt', async () => {
-    const response = getLlms();
+    const response = getLlms(new Request('https://preview.sunsetpulse.test/llms.txt', {
+      headers: {
+        host: 'preview.sunsetpulse.test',
+        'x-forwarded-proto': 'https'
+      }
+    }));
     const body = await response.text();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/plain');
-    expect(body).toContain('Headless TAH catalog: https://sunsetpulse.com/tah/headless');
-    expect(body).toContain('Dynamic TAH catalog JSON: https://sunsetpulse.com/tah/index.json');
+    expect(body).toContain('[Headless TAH catalog](https://preview.sunsetpulse.test/tah/headless)');
+    expect(body).toContain('[Dynamic TAH catalog JSON](https://preview.sunsetpulse.test/tah/index.json)');
+    expect(body).toContain('[Algorithms](https://preview.sunsetpulse.test/tah/algorithms)');
+    expect(body).toContain('[headless](https://preview.sunsetpulse.test/tah/algorithms/headless)');
+    expect(body).toContain('[query](https://preview.sunsetpulse.test/api/tah?q=Algorithms&limit=10)');
   });
 
   it('serves the consolidated Atlas world map from the TAH catalog', async () => {
