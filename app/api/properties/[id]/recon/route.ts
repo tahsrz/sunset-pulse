@@ -33,7 +33,7 @@ export const GET = async (request: NextRequest, { params }: { params: { id: stri
 
     const defaultGrill = {
       name: 'Sunset Gas & Grill',
-      coordinates: [-97.0403, 32.8998]
+      coordinates: [-97.766724, 33.453823]
     };
 
     const grillConfig = {

@@ -92,7 +92,7 @@ export const POST = async (request: NextRequest) => {
       estimate,
       location_geo: {
         type: 'Point',
-        coordinates: [lng || -97.0403, lat || 32.8998]
+        coordinates: [lng || -97.766724, lat || 33.453823]
       },
       mls_comps,
       ml_adjustments,

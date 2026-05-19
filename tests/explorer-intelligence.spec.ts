@@ -22,7 +22,7 @@ test.describe('Explorer: Spatial Intelligence Grid', () => {
 
   test('should execute radius search and update area analysis', async ({ page }) => {
     // Use domcontentloaded for deep-links to avoid tile-load hangs
-    await page.goto('/explorer?lat=32.8998&lng=-97.0403&id=650c8e2b1f4e1a2b3c4d5e6f', { waitUntil: 'domcontentloaded' });
+    await page.goto('/explorer?lat=33.453823&lng=-97.766724&id=650c8e2b1f4e1a2b3c4d5e6f', { waitUntil: 'domcontentloaded' });
     
     const analysisOverlay = page.locator('text=Area Analysis');
     await expect(analysisOverlay).toBeVisible({ timeout: 15000 });

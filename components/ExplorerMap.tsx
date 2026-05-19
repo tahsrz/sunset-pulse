@@ -129,7 +129,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
 
   const [viewState, setViewState] = useState({
     longitude: urlLng ? parseFloat(urlLng) : -97.0403,
-    latitude: urlLat ? parseFloat(urlLat) : 32.8998,
+    latitude: urlLat ? parseFloat(urlLat) : 33.453823,
     zoom: urlId ? 15 : 10,
     pitch: 45,
     bearing: -17
