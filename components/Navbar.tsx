@@ -56,9 +56,6 @@ const Navbar: React.FC = () => {
                 <Link href='/investors' className={`${pathname === '/investors' ? 'bg-orange-600/20 text-orange-400 border-orange-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-[0.2em]`}>
                   <span className='w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse' /> Investors
                 </Link>
-                <Link href='/arcade' className={`${pathname === '/arcade' ? 'bg-green-600/20 text-green-400 border-green-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
-                  Arcade
-                </Link>
               </div>
             </div>
           </div>
