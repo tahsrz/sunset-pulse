@@ -27,6 +27,7 @@ const DOMAIN_RULES: Array<{ id: string; label: string; keywords: string[] }> = [
   { id: 'ai', label: 'AI & Learning', keywords: ['ai', 'artificial', 'deep', 'learning', 'neural', 'polymorphic'] },
   { id: 'medicine', label: 'Medical', keywords: ['medical', 'encyclopedia'] },
   { id: 'local-world', label: 'Local World', keywords: ['dallas', 'wiki', 'local'] },
+  { id: 'web-captures', label: 'Web Captures', keywords: ['web', 'crawl', 'site', 'url', 'internet', 'html', 'docs'] },
   { id: 'knowledge', label: 'General Knowledge', keywords: [] }
 ];
 

@@ -41,6 +41,7 @@ const DOMAIN_COLORS: Record<string, string> = {
   ai: '#f472b6',
   medicine: '#fb7185',
   'local-world': '#facc15',
+  'web-captures': '#38bdf8',
   knowledge: '#94a3b8'
 };
 

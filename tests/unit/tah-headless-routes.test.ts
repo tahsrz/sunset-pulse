@@ -77,6 +77,7 @@ describe('TAH robot-facing routes', () => {
     expect(body.nodes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'world', type: 'world' }),
+        expect.objectContaining({ id: 'web-captures', type: 'continent' }),
         expect.objectContaining({ id: 'cartridge:algorithms', type: 'cartridge' })
       ])
     );
