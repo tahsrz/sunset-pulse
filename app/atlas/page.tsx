@@ -52,6 +52,7 @@ type ProbeState = {
   total: number;
   percent: number;
   done: boolean;
+  published?: boolean;
   items: ProbeItem[];
 };
 
@@ -92,6 +93,21 @@ export default function MemoriaAtlasPage() {
     let cancelled = false;
 
     async function mapCartridges() {
+      const manifestResponse = await fetch('/api/tah/atlas/manifest', { cache: 'no-store' });
+      const manifest = await manifestResponse.json();
+
+      if (!cancelled && manifest.published && Array.isArray(manifest.items)) {
+        setProbeState({
+          mapped: manifest.mapped,
+          total: manifest.total,
+          percent: manifest.percent,
+          done: true,
+          published: true,
+          items: manifest.items
+        });
+        return;
+      }
+
       let cursor: number | null = 0;
       const items: ProbeItem[] = [];
 
@@ -213,7 +229,7 @@ export default function MemoriaAtlasPage() {
               <div className="h-full bg-cyan-300 transition-all duration-300" style={{ width: `${probeState.percent}%` }} />
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              {probeState.mapped} of {probeState.total || atlas?.progress.totalCartridges || 0} cartridge headers probed by the website.
+              {probeState.mapped} of {probeState.total || atlas?.progress.totalCartridges || 0} cartridge headers {probeState.published ? 'loaded from the local swarm manifest' : 'probed by the website'}.
             </p>
           </div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-200">Selected Region</p>

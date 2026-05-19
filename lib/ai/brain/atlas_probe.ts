@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 import { listPulseCartridges, type PulseCartridge } from '@/lib/ai/brain/pulse_query';
+import { TAHRetriever } from '@/lib/core/tah_retriever';
 
 const MAX_PROBE_LIMIT = 25;
 const DEFAULT_PROBE_LIMIT = 12;
@@ -61,7 +62,7 @@ function probeCartridge(cartridge: PulseCartridge): AtlasProbeItem {
     bloomBits: header.bloomBits,
     hashCount: header.hashCount,
     format,
-    summary: summarizePayload(payloadPath, searchQuery)
+    summary: summarizePayload(payloadPath, searchQuery, format)
   };
 }
 
@@ -119,7 +120,12 @@ function statSafe(filePath: string) {
   }
 }
 
-function summarizePayload(payloadPath: string, fallback: string) {
+function summarizePayload(payloadPath: string, fallback: string, format: AtlasProbeItem['format']) {
+  if (format === 'indexed-tah') {
+    const shardSummary = summarizeIndexedTah(payloadPath);
+    if (shardSummary) return shardSummary;
+  }
+
   try {
     if (!fs.existsSync(payloadPath)) return fallback;
     const fd = fs.openSync(payloadPath, 'r');
@@ -134,9 +140,33 @@ function summarizePayload(payloadPath: string, fallback: string) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (!text) return fallback;
+    if (!text || looksBinary(text)) return fallback;
     return text.slice(0, 240);
   } catch {
     return fallback;
   }
+}
+
+function summarizeIndexedTah(payloadPath: string) {
+  try {
+    const retriever = new TAHRetriever(payloadPath);
+    const summaries: string[] = [];
+
+    for (let index = 0; index < 8; index++) {
+      const shard = retriever.getShard(index);
+      const text = shard?.data?.replace(/\s+/g, ' ').trim();
+      if (text && !looksBinary(text)) summaries.push(text);
+      if (summaries.join(' ').length > 240) break;
+    }
+
+    return summaries.join(' ').slice(0, 240);
+  } catch {
+    return '';
+  }
+}
+
+function looksBinary(text: string) {
+  if (!text) return true;
+  const suspectCharacters = text.match(/[\u0000-\u0008\u000E-\u001F\uFFFD]/g)?.length || 0;
+  return suspectCharacters / text.length > 0.08;
 }

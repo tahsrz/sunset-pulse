@@ -5,6 +5,7 @@ import { GET as getTahHeadless } from '@/app/tah/headless/route';
 import { GET as getTahIndex } from '@/app/tah/index.json/route';
 import { GET as getCartridgeHeadless } from '@/app/tah/[slug]/headless/route';
 import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
+import { GET as getAtlasManifest } from '@/app/api/tah/atlas/manifest/route';
 import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
 
 describe('TAH robot-facing routes', () => {
@@ -63,6 +64,7 @@ describe('TAH robot-facing routes', () => {
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(body).toContain('[Headless TAH catalog](https://preview.sunsetpulse.test/tah/headless)');
     expect(body).toContain('[Dynamic TAH catalog JSON](https://preview.sunsetpulse.test/tah/index.json)');
+    expect(body).toContain('[Atlas published manifest](https://preview.sunsetpulse.test/api/tah/atlas/manifest)');
     expect(body).toContain('[Algorithms](https://preview.sunsetpulse.test/tah/algorithms)');
     expect(body).toContain('[headless](https://preview.sunsetpulse.test/tah/algorithms/headless)');
     expect(body).toContain('[query](https://preview.sunsetpulse.test/api/tah?q=Algorithms&limit=10)');
@@ -117,5 +119,24 @@ describe('TAH robot-facing routes', () => {
       })
     );
     expect(body.nextCursor).toBe(3);
+  });
+
+  it('serves an Atlas manifest for published local swarm maps', async () => {
+    const response = getAtlasManifest();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(body.name).toBe('Sunset Pulse TAH Atlas Manifest');
+    expect(body.total).toBeGreaterThan(0);
+    expect(body.items.length).toBe(body.mapped);
+    expect(body.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          slug: 'algorithms',
+          searchQuery: 'Algorithms'
+        })
+      ])
+    );
   });
 });

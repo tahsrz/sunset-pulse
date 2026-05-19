@@ -11,6 +11,7 @@
     "jamie:watcher": "node scripts/idle-dream-watcher.js",
     "jamie:dream": "python lib/ai/bridges/core.py",
     "ozriel:dream": "node scripts/ozriel_dream.mjs",
+    "atlas:publish": "tsx scripts/publish-atlas-manifest.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

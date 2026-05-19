@@ -18,6 +18,7 @@ export function GET(request: Request) {
     `- [Dynamic TAH catalog JSON](${host}/tah/index.json)`,
     `- [TAH search API](${host}/api/tah)`,
     `- [Atlas world map](${host}/atlas)`,
+    `- [Atlas published manifest](${host}/api/tah/atlas/manifest)`,
     `- [Atlas map JSON](${host}/api/tah/atlas/map)`,
     `- [Atlas progressive probe](${host}/api/tah/atlas/probe?cursor=0&limit=12)`,
     '',
