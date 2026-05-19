@@ -3,6 +3,7 @@ import { GET as getLlms } from '@/app/llms.txt/route';
 import { GET as getTahHeadless } from '@/app/tah/headless/route';
 import { GET as getTahIndex } from '@/app/tah/index.json/route';
 import { GET as getCartridgeHeadless } from '@/app/tah/[slug]/headless/route';
+import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
 
 describe('TAH robot-facing routes', () => {
   it('serves the headless archive as plain text', async () => {
@@ -55,5 +56,22 @@ describe('TAH robot-facing routes', () => {
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(body).toContain('Headless TAH catalog: https://sunsetpulse.com/tah/headless');
     expect(body).toContain('Dynamic TAH catalog JSON: https://sunsetpulse.com/tah/index.json');
+  });
+
+  it('serves the consolidated Atlas world map from the TAH catalog', async () => {
+    const response = getAtlasMap();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(body.progress.percent).toBe(100);
+    expect(body.progress.totalCartridges).toBeGreaterThan(0);
+    expect(body.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'world', type: 'world' }),
+        expect.objectContaining({ id: 'cartridge:algorithms', type: 'cartridge' })
+      ])
+    );
+    expect(body.links.length).toBeGreaterThan(0);
   });
 });
