@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { FaRobot, FaMinus, FaExchangeAlt, FaVolumeUp, FaVolumeMute, FaHome } from 'react-icons/fa';
 
 interface JamieChatHeaderProps {
   onMinimize: () => void;
+  isMlsOpen: boolean;
+  onToggleMls: () => void;
   isLefthandMode: boolean;
   onToggleLefthand: () => void;
   isVoiceEnabled: boolean;
@@ -14,6 +15,8 @@ interface JamieChatHeaderProps {
 
 const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({ 
   onMinimize, 
+  isMlsOpen,
+  onToggleMls,
   isLefthandMode, 
   onToggleLefthand,
   isVoiceEnabled,
@@ -40,14 +43,17 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 relative z-10">
-        <Link
-          href="/idx"
-          title="Open MLS Search"
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/10 px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.16em] transition-colors hover:bg-white/20"
+        <button
+          type="button"
+          onClick={onToggleMls}
+          title={isMlsOpen ? 'Hide MLS Search' : 'Show MLS Search'}
+          className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.16em] transition-colors ${
+            isMlsOpen ? 'border-white/25 bg-white/25' : 'border-white/10 bg-white/10 hover:bg-white/20'
+          }`}
         >
           <FaHome className="text-[10px]" />
           MLS
-        </Link>
+        </button>
         <button 
           onClick={onToggleVoice} 
           title={isVoiceEnabled ? "Mute Jamie" : "Unmute Jamie"}

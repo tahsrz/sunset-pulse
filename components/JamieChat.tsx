@@ -15,6 +15,8 @@ import JamieDevControls from './chat/JamieDevControls';
 import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 
+const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
+
 export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
   const { 
     stagedBranding, 
@@ -33,6 +35,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
   const [analytics, setAnalytics] = useState(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isMlsOpen, setIsMlsOpen] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [tempInput, setTempInput] = useState('');
 
@@ -210,11 +213,47 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
       <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-slate-900/[0.92] shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 hover:border-blue-500/30 animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 ${panelRadiusClass}`}>
         <JamieChatHeader 
           onMinimize={() => toggleMinimized(true)} 
+          isMlsOpen={isMlsOpen}
+          onToggleMls={() => setIsMlsOpen((value) => !value)}
           isLefthandMode={isLefthandMode} 
           onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
           isVoiceEnabled={isVoiceEnabled}
           onToggleVoice={() => setVoiceEnabled(!isVoiceEnabled)}
         />
+
+        {isMlsOpen && (
+          <div className="shrink-0 border-b border-white/10 bg-slate-950/70 p-3">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.22em] text-teal-200">
+                  Matrix IDX
+                </p>
+                <p className="text-[10px] leading-4 text-slate-400">
+                  MLS search is anchored here so your page stays put.
+                </p>
+              </div>
+              <a
+                href={MATRIX_IDX_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-md border border-white/10 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-teal-100 transition hover:bg-white/15"
+              >
+                Open
+              </a>
+            </div>
+            <div className="h-72 overflow-hidden rounded-lg border border-white/10 bg-white">
+              <iframe
+                src={MATRIX_IDX_URL}
+                title="NTREIS Matrix IDX listing search"
+                className="h-full w-full"
+                frameBorder="0"
+                marginWidth={0}
+                marginHeight={0}
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+        )}
 
         <JamieChatMessageList 
           messages={messages} 
