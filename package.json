@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:mock": "set NEXT_PUBLIC_MOCK_MODE=true && next dev",
     "leads:decay": "node scripts/decay-leads.mjs",
+    "properties:clear-fakes": "node scripts/clear-fake-properties.mjs",
     "meme:harvest": "python scripts/meme_harvester.py",
     "jamie:watcher": "node scripts/idle-dream-watcher.js",
     "jamie:dream": "python lib/ai/bridges/core.py",

@@ -54,8 +54,8 @@ class RepliersMLSService {
   private async fetchRepliers(endpoint: string = '', params: any = {}) {
     const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
     
-    if (!this.apiKey || isMock) {
-      console.warn(`📡 [REPLIERS_MOCK] ${isMock ? 'Mock mode active' : 'API Key missing'}. Loading local sample data.`);
+    if (isMock) {
+      console.warn('[REPLIERS_MOCK] Mock mode active. Loading local sample data.');
       try {
         const mockData = require('../mocks/repliers/listings.json');
         return mockData;
@@ -63,6 +63,11 @@ class RepliersMLSService {
         console.error('Failed to load Repliers mock data:', e);
         return null;
       }
+    }
+
+    if (!this.apiKey) {
+      console.warn('[REPLIERS] API key missing. Returning no live MLS listings.');
+      return null;
     }
 
     const url = new URL(`${this.baseUrl}${endpoint}`);
