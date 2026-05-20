@@ -16,6 +16,8 @@ export interface Profile {
 export interface AuthUser extends User {
   profile?: Profile | null;
   user_metadata: {
+    avatar_url?: string;
+    full_name?: string;
     role?: string;
     isSubscribed?: boolean;
     [key: string]: any;
@@ -51,12 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (error) {
       console.error('[AUTH_CONTEXT] Profile fetch error:', error.message);
+      const fallbackAvatar = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || authUser.user_metadata?.photo_url;
       // Fallback logic
       setUser({
         ...authUser,
         profile: null,
         user_metadata: {
           ...authUser.user_metadata,
+          avatar_url: fallbackAvatar,
           role: authUser.user_metadata?.role || 'consumer',
           isSubscribed: authUser.user_metadata?.isSubscribed || false
         }
@@ -65,11 +69,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    const profileAvatar = (profile as any)?.avatar_url;
+    const metadataAvatar = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || authUser.user_metadata?.photo_url;
+    const profileName = (profile as any)?.full_name;
+    const metadataName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.user_metadata?.user_name;
+
     const enrichedUser: AuthUser = {
       ...authUser,
       profile: profile as Profile,
       user_metadata: {
         ...authUser.user_metadata,
+        avatar_url: profileAvatar || metadataAvatar,
+        full_name: profileName || metadataName,
         role: (profile as any)?.role || authUser.user_metadata?.role || 'consumer',
         isSubscribed: (profile as any)?.role === 'realtor' || !!(profile as any)?.is_subscribed || !!authUser.user_metadata?.isSubscribed
       }

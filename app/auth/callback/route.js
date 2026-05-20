@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { sanitizeAuthNext } from '@/lib/core/auth_redirect'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +10,7 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/auth/success'
+  const next = sanitizeAuthNext(searchParams.get('next'))
   const error = searchParams.get('error')
   const error_description = searchParams.get('error_description')
 
@@ -47,11 +49,20 @@ export async function GET(request) {
 
     const metadata = user.user_metadata || {}
     const role = metadata.role || 'consumer'
+    const avatarUrl = metadata.avatar_url || metadata.picture || metadata.photo_url || null
+    const fullName = metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Sunset Pulse User'
+    const profileClient = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createSupabaseClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+          auth: { persistSession: false },
+        })
+      : supabase
+
     const profilePayload = {
       id: user.id,
-      full_name: metadata.full_name || user.email?.split('@')[0] || 'Sunset Pulse User',
+      email: user.email,
+      full_name: fullName,
       username: `${metadata.username || metadata.user_name || user.email?.split('@')[0] || 'user'}-${user.id.slice(0, 8)}`,
-      avatar_url: metadata.avatar_url || null,
+      avatar_url: avatarUrl,
       role,
       license_id: metadata.license_id || null,
       is_subscribed: role === 'realtor' || !!metadata.isSubscribed,
@@ -67,7 +78,7 @@ export async function GET(request) {
       phone_number: metadata.phone_number || null,
     }
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await profileClient
       .from('profiles')
       .upsert(profilePayload, { onConflict: 'id' })
       .select('welcome_email_sent')
@@ -90,7 +101,7 @@ export async function GET(request) {
       if (welcomeError) {
         console.error('[AUTH_CALLBACK] Welcome email failed:', welcomeError.message)
       } else {
-        await supabase
+        await profileClient
           .from('profiles')
           .update({ welcome_email_sent: true })
           .eq('id', user.id)

@@ -39,6 +39,8 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMlsOpen, setIsMlsOpen] = useState(false);
+  const [mlsAccess, setMlsAccess] = useState<'checking' | 'allowed' | 'denied'>('checking');
+  const [mlsFrameState, setMlsFrameState] = useState<'idle' | 'loading' | 'loaded'>('idle');
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [tempInput, setTempInput] = useState('');
 
@@ -68,6 +70,38 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     setIsMinimized(val);
     localStorage.setItem('jamie_chat_minimized', val.toString());
   };
+
+  useEffect(() => {
+    if (!isMlsOpen) {
+      setMlsFrameState('idle');
+      return;
+    }
+
+    let isCancelled = false;
+    const revealTimer = window.setTimeout(() => {
+      if (!isCancelled) setMlsFrameState('loaded');
+    }, 4500);
+
+    setMlsAccess(user ? 'allowed' : 'checking');
+    setMlsFrameState('loading');
+
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((body) => {
+        if (isCancelled) return;
+        setMlsAccess(body?.authenticated ? 'allowed' : 'denied');
+      })
+      .catch((error) => {
+        console.error('[JAMIE_MLS] Session probe failed:', error);
+        if (!isCancelled) setMlsAccess(user ? 'allowed' : 'denied');
+      });
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(revealTimer);
+    };
+  }, [isMlsOpen, user]);
+
 
   const handleAction = async (messageContent: string) => {
     if (!messageContent || typeof messageContent !== 'string') return;
@@ -99,6 +133,14 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
       } catch (e) {
         console.error(`Processing Error [${tag}]:`, e);
       }
+    }
+  };
+
+  const openMatrixIdx = () => {
+    const opened = window.open(MATRIX_IDX_URL, '_blank', 'noopener,noreferrer');
+
+    if (!opened) {
+      window.location.assign(MATRIX_IDX_URL);
     }
   };
 
@@ -198,6 +240,8 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
   const dockSideClass = isLefthandMode ? 'left-0 items-start' : 'right-0 items-end';
   const panelRadiusClass = isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
+  const isCheckingMlsAccess = authLoading || mlsAccess === 'checking';
+  const canViewMls = Boolean(user) || mlsAccess === 'allowed';
 
   return (
     <div className={`fixed bottom-5 top-24 ${dockSideClass} z-50 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`}>
@@ -235,23 +279,32 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
                   MLS search is anchored here so your page stays put.
                 </p>
               </div>
-              {user && (
-                <a
-                  href={MATRIX_IDX_URL}
-                  target="_blank"
-                  rel="noreferrer"
+              {canViewMls && (
+                <button
+                  type="button"
+                  onClick={openMatrixIdx}
                   className="rounded-md border border-white/10 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-teal-100 transition hover:bg-white/15"
                 >
                   Open
-                </a>
+                </button>
               )}
             </div>
-            {authLoading ? (
+            {isCheckingMlsAccess ? (
               <div className="flex h-72 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-[10px] font-black uppercase tracking-[0.2em] text-teal-200">
                 Checking Access
               </div>
-            ) : user ? (
-              <div className="h-72 overflow-hidden rounded-lg border border-white/10 bg-white">
+            ) : canViewMls ? (
+              <div className="relative h-72 overflow-hidden rounded-lg border border-white/10 bg-white">
+                {mlsFrameState !== 'loaded' && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-200">
+                      Loading Matrix IDX
+                    </p>
+                    <p className="mt-2 max-w-52 text-[10px] leading-4 text-slate-400">
+                      If the frame stays blank, use Open to launch Matrix directly.
+                    </p>
+                  </div>
+                )}
                 <iframe
                   src={MATRIX_IDX_URL}
                   title="NTREIS Matrix IDX listing search"
@@ -259,6 +312,11 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
                   frameBorder="0"
                   marginWidth={0}
                   marginHeight={0}
+                  loading="eager"
+                  allow="geolocation; fullscreen"
+                  allowFullScreen
+                  onLoadCapture={() => setMlsFrameState('loaded')}
+                  onLoad={() => setMlsFrameState('loaded')}
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               </div>

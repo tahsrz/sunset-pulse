@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,19 +13,48 @@ import { useAuth } from '@/context/AuthContext';
 import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
 
+interface ServerSessionUser {
+  id: string;
+  email?: string;
+  image?: string | null;
+  name?: string | null;
+  role?: string;
+}
+
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isDevMode } = useTheme();
   const router = useRouter();
   
-  const profileImage = user?.user_metadata?.avatar_url || profileDefault;
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState<boolean>(false);
+  const [profileImageFailed, setProfileImageFailed] = useState<boolean>(false);
+  const [serverSessionUser, setServerSessionUser] = useState<ServerSessionUser | null>(null);
   
   const pathname = usePathname();
   const { cart } = useCart() as { cart: CartItem[] };
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const profileImage = user?.profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || serverSessionUser?.image || profileDefault;
+  const sessionRole = user?.user_metadata?.role || serverSessionUser?.role;
+  const isLoggedIn = Boolean(user || serverSessionUser);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((body) => {
+        if (isCancelled) return;
+        setServerSessionUser(body?.authenticated ? body.user : null);
+      })
+      .catch((error) => {
+        console.error('[NAVBAR] Server session probe failed:', error);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
 
   return (
     <nav className='bg-[#0c2130]/85 backdrop-blur-xl border-b border-teal-200/10 transition-colors duration-500'>
@@ -67,7 +96,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className='absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0'>
-            {!user && (
+            {!isLoggedIn && (
               <div className='hidden md:block md:ml-6'>
                 <Link
                   href='/login'
@@ -87,9 +116,9 @@ const Navbar: React.FC = () => {
               )}
             </Link>
 
-            {user && (
+            {isLoggedIn && (
               <div className='relative ml-3 flex items-center gap-3'>
-                {user?.user_metadata?.role === 'realtor' && (
+                {sessionRole === 'realtor' && (
                   <div className='hidden lg:flex flex-col items-end'>
                     <span className='text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none'>Realtor</span>
                     <span className='text-[10px] font-mono text-green-500 animate-pulse leading-none mt-1'>VALIDATED</span>
@@ -100,8 +129,21 @@ const Navbar: React.FC = () => {
                   className='relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 border border-white/10'
                   onClick={() => setIsProfileMenuOpen((prev) => !prev)}
                 >
-                  <Image className='h-9 w-9 rounded-full object-cover' src={profileImage} alt='Profile' width={36} height={36} />
-                  {user?.user_metadata?.role === 'realtor' && (
+                  {typeof profileImage === 'string' && !profileImageFailed ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      className='h-9 w-9 rounded-full object-cover'
+                      src={profileImage}
+                      alt='Profile'
+                      width={36}
+                      height={36}
+                      referrerPolicy='no-referrer'
+                      onError={() => setProfileImageFailed(true)}
+                    />
+                  ) : (
+                    <Image className='h-9 w-9 rounded-full object-cover' src={profileDefault} alt='Profile' width={36} height={36} />
+                  )}
+                  {sessionRole === 'realtor' && (
                     <div className='absolute -right-1 -top-1 bg-blue-600 text-white p-0.5 rounded-md shadow-lg border border-blue-400'>
                       <FaShieldAlt size={8} />
                     </div>
@@ -111,7 +153,7 @@ const Navbar: React.FC = () => {
                 {isProfileMenuOpen && (
                   <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
                     <Link href='/dashboard' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100' onClick={() => setIsProfileMenuOpen(false)}>Dashboard</Link>
-                    {!user?.user_metadata?.isSubscribed && (
+                    {!user?.user_metadata?.isSubscribed && sessionRole !== 'realtor' && (
                       <Link 
                         href='/premium'
                         className='block w-full text-left px-4 py-2 text-sm text-blue-600 font-bold hover:bg-blue-50 hover:text-blue-700 transition-colors'
@@ -128,6 +170,7 @@ const Navbar: React.FC = () => {
                           console.error('[NAVBAR] Sign out failed:', error.message);
                           return;
                         }
+                        setServerSessionUser(null);
                         router.push('/');
                         router.refresh();
                       }}

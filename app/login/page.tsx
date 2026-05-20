@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { FaGoogle, FaEnvelope, FaLock, FaBolt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { buildAuthCallbackUrl, getBrowserAuthOrigin, sanitizeAuthNext } from '@/lib/core/auth_redirect';
 
 const LoginPage: React.FC = () => {
   const supabase = createClient();
@@ -13,11 +14,13 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleGoogleLogin = async () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const next = sanitizeAuthNext(params?.get('redirect') || params?.get('next') || '/auth/success');
+    const origin = getBrowserAuthOrigin();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: buildAuthCallbackUrl(origin, next),
       },
     });
     if (error) toast.error(error.message);
