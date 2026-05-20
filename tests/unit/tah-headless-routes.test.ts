@@ -175,8 +175,6 @@ describe('TAH robot-facing routes', () => {
     expect(body.progress.worldCompletion).toBeLessThan(100);
     expect(body.progress.knownNodes).toBeGreaterThan(0);
     expect(body.progress.plottedNodes).toBe(body.progress.knownNodes);
-    expect(body.progress.webNodes).toBeGreaterThan(0);
-    expect(body.progress.locationalWebNodes).toBeGreaterThan(0);
     expect(body.progress.targetNodes).toBe(1000);
     expect(body.domains).toEqual(
       expect.arrayContaining([
@@ -199,16 +197,6 @@ describe('TAH robot-facing routes', () => {
           routes: expect.objectContaining({
             headless: 'https://sunsetpulse.com/tah/algorithms/headless'
           })
-        })
-      ])
-    );
-    expect(body.nodes).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          source: 'wiki_dallas.hat',
-          isWebCapture: true,
-          coordinateSource: 'texas-location-match',
-          physicalPlace: 'Dallas, Texas'
         })
       ])
     );

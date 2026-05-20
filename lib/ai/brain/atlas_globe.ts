@@ -1,7 +1,6 @@
 import { CARTRIDGE_DOMAINS } from '@/lib/ai/brain/cartridge_domains';
 import { getCartridgeMetadata, type CartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 import { readAtlasManifest } from '@/lib/ai/brain/atlas_manifest';
-import { isWebCaptureCartridge, resolveAtlasLocation, type AtlasCoordinateSource } from '@/lib/ai/brain/atlas_location_mapper';
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 
 type GlobeStatus = 'mapped' | 'discovered' | 'empty';
@@ -22,15 +21,10 @@ export type AtlasGlobeNode = {
   snippetCount: number;
   byteSize: number;
   shardCount: number;
-  isWebCapture: boolean;
   lat: number;
   lng: number;
   radius: number;
-  coordinateSource: AtlasCoordinateSource;
-  physicalPlace: string | null;
-  physicalRegion: string | null;
-  locationConfidence: number;
-  locationReason: string;
+  coordinateSource: 'domain-hash';
   lastMappedAt: string | null;
   routes: CartridgeMetadata['routes'];
   summary: string;
@@ -50,9 +44,6 @@ export function buildAtlasGlobe(host = 'https://sunsetpulse.com') {
   const mappedNodes = nodes.filter(node => node.status === 'mapped').length;
   const discoveredNodes = nodes.length;
   const plottedNodes = nodes.filter(node => Number.isFinite(node.lat) && Number.isFinite(node.lng)).length;
-  const locationalNodes = nodes.filter(node => node.coordinateSource !== 'domain-hash').length;
-  const webNodes = nodes.filter(node => node.isWebCapture).length;
-  const locationalWebNodes = nodes.filter(node => node.isWebCapture && node.coordinateSource !== 'domain-hash').length;
   const indexedSnippets = nodes.reduce((sum, node) => sum + node.snippetCount, 0);
   const byteSize = nodes.reduce((sum, node) => sum + node.byteSize, 0);
   const averageCoverage = nodes.length === 0
@@ -70,11 +61,6 @@ export function buildAtlasGlobe(host = 'https://sunsetpulse.com') {
       targetNodes,
       knownNodes: discoveredNodes,
       plottedNodes,
-      locationalNodes,
-      webNodes,
-      locationalWebNodes,
-      locationalCoverage: coveragePercent(locationalNodes, discoveredNodes),
-      locationalWebCoverage: coveragePercent(locationalWebNodes, webNodes),
       mappedNodes,
       unmappedNodes: Math.max(0, discoveredNodes - mappedNodes),
       worldCompletion,
@@ -101,8 +87,7 @@ export function buildAtlasGlobe(host = 'https://sunsetpulse.com') {
 }
 
 function toGlobeNode(item: CartridgeMetadata, manifestItem: any, fallbackTimestamp: string): AtlasGlobeNode {
-  const fallbackCoordinates = coordinatesFor(item.slug, item.domain.id);
-  const location = resolveAtlasLocation(item, fallbackCoordinates);
+  const coordinates = coordinatesFor(item.slug, item.domain.id);
   const snippetCount = Math.max(item.shardCount || 0, manifestItem?.shardCount || 0);
   const coverage = coverageFor(item, manifestItem);
   const confidence = confidenceFor(item, manifestItem);
@@ -120,15 +105,10 @@ function toGlobeNode(item: CartridgeMetadata, manifestItem: any, fallbackTimesta
     snippetCount,
     byteSize: item.payloadByteSize || item.byteSize,
     shardCount: item.shardCount,
-    isWebCapture: isWebCaptureCartridge(item),
-    lat: location.lat,
-    lng: location.lng,
+    lat: coordinates.lat,
+    lng: coordinates.lng,
     radius: Math.max(2.5, Math.min(9, 2 + Math.log10(Math.max(10, item.payloadByteSize || item.byteSize)))),
-    coordinateSource: location.coordinateSource,
-    physicalPlace: location.placeName,
-    physicalRegion: location.region,
-    locationConfidence: location.confidence,
-    locationReason: location.reason,
+    coordinateSource: 'domain-hash',
     lastMappedAt: manifestItem ? manifestItem.mappedAt || manifestItem.generatedAt || fallbackTimestamp : null,
     routes: item.routes,
     summary: item.summary,
@@ -150,11 +130,6 @@ function confidenceFor(item: CartridgeMetadata, manifestItem: any) {
   if (item.format === 'indexed-tah' && item.hashCount > 0) return 82;
   if (item.summary && item.summary !== item.searchQuery) return 72;
   return 48;
-}
-
-function coveragePercent(part: number, total: number) {
-  if (total === 0 || part === 0) return 0;
-  return Math.max(1, Math.round((part / total) * 100));
 }
 
 function coordinatesFor(slug: string, domainId: string) {

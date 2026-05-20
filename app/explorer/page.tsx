@@ -6,20 +6,6 @@ import { FaMapMarkedAlt, FaSearch, FaBolt, FaRoute, FaHeartbeat } from 'react-ic
 import { calculatePulseScore } from '@/lib/intelligence/neighborhoodIntelligence';
 import { useSearchParams } from 'next/navigation';
 import { useTheme } from '@/context/ThemeProvider';
-import type { AtlasPulsePlace } from '@/components/explorer/AtlasPulseMarker';
-
-type AtlasPulseState = {
-  name: string;
-  scope: string;
-  progress: {
-    percent: number;
-    boundPlaces: number;
-    livePlaces: number;
-    totalSeededPlaces: number;
-    plannedRegions: number;
-  };
-  places: AtlasPulsePlace[];
-};
 
 function ExplorerContent() {
   const { intelligence } = useTheme();
@@ -29,7 +15,6 @@ function ExplorerContent() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [areaIntel, setAreaIntel] = useState({ pulseScore: 0, tourRecommendation: '' });
-  const [atlasPulse, setAtlasPulse] = useState<AtlasPulseState | null>(null);
 
   const fetchProperties = useCallback(async () => {
     if (!selection) return;
@@ -106,21 +91,6 @@ function ExplorerContent() {
     initializeExplorer();
   }, [targetId, intelligence.grill.coordinates]);
 
-  useEffect(() => {
-    const loadAtlasPulse = async () => {
-      try {
-        const res = await fetch('/api/atlas-pulse', { cache: 'no-store' });
-        if (!res.ok) return;
-        const json = await res.json();
-        setAtlasPulse(json.atlasPulse || null);
-      } catch (error) {
-        console.error('Failed to load Atlas Pulse layer:', error);
-      }
-    };
-
-    loadAtlasPulse();
-  }, []);
-
   // Sync selection with Jamie
   useEffect(() => {
     if (selection) {
@@ -132,18 +102,12 @@ function ExplorerContent() {
     <main className="relative h-screen w-full overflow-hidden bg-black">
       {/* Full-Screen Map Layer */}
       <div className="absolute inset-0">
-        <ExplorerMap
-          onSelectionChange={setSelection}
-          results={properties}
-          atlasPulsePlaces={atlasPulse?.places || []}
-        />
+        <ExplorerMap onSelectionChange={setSelection} results={properties} />
       </div>
-
-      {atlasPulse && <AtlasPulseExplorerPanel atlasPulse={atlasPulse} />}
 
       {/* Stats Overlay (Left) */}
       {selection && (
-        <div className={`absolute left-16 z-10 animate-in slide-in-from-left-10 duration-500 ${atlasPulse ? 'top-48' : 'top-5'}`}>
+        <div className="absolute top-5 left-16 z-10 animate-in slide-in-from-left-10 duration-500">
           <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl max-w-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-black uppercase tracking-widest text-white italic">Area Analysis</h2>
@@ -225,60 +189,6 @@ function ExplorerContent() {
         </a>
       </div>
     </main>
-  );
-}
-
-function AtlasPulseExplorerPanel({ atlasPulse }: { atlasPulse: AtlasPulseState }) {
-  const leadPlace = atlasPulse.places[0];
-
-  return (
-    <div className="absolute left-16 top-5 z-10 w-[350px] max-w-[calc(100vw-2rem)] rounded-2xl border border-amber-200/20 bg-slate-950/85 p-4 text-white shadow-2xl backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-amber-200">
-            <FaMapMarkedAlt />
-            <p className="text-[10px] font-black uppercase tracking-[0.24em]">Atlas Pulse</p>
-          </div>
-          <h2 className="mt-2 text-lg font-black">Physical TAH Layer</h2>
-        </div>
-        <div className="rounded-full border border-amber-200/30 bg-amber-200/10 px-3 py-1 font-mono text-xs text-amber-100">
-          {atlasPulse.progress.percent}%
-        </div>
-      </div>
-
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-amber-300" style={{ width: `${atlasPulse.progress.percent}%` }} />
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg border border-white/10 bg-black/25 p-2">
-          <p className="text-[8px] font-black uppercase tracking-[0.12em] text-slate-500">Bound</p>
-          <p className="mt-1 text-sm font-black text-amber-100">{atlasPulse.progress.boundPlaces}</p>
-        </div>
-        <div className="rounded-lg border border-white/10 bg-black/25 p-2">
-          <p className="text-[8px] font-black uppercase tracking-[0.12em] text-slate-500">Seeded</p>
-          <p className="mt-1 text-sm font-black text-amber-100">{atlasPulse.progress.totalSeededPlaces}</p>
-        </div>
-        <div className="rounded-lg border border-white/10 bg-black/25 p-2">
-          <p className="text-[8px] font-black uppercase tracking-[0.12em] text-slate-500">Regions</p>
-          <p className="mt-1 text-sm font-black text-amber-100">{atlasPulse.progress.plannedRegions}</p>
-        </div>
-      </div>
-
-      {leadPlace && (
-        <p className="mt-4 text-xs leading-5 text-slate-300">
-          <FaBolt className="mr-2 inline text-amber-300" />
-          {leadPlace.name} is live as the first bound place marker. Click the amber marker for its physical TAH detail.
-        </p>
-      )}
-
-      <a
-        href="/atlas"
-        className="mt-4 inline-flex rounded-full bg-amber-300 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-950 transition hover:bg-white"
-      >
-        Open Atlas Pulse
-      </a>
-    </div>
   );
 }
 

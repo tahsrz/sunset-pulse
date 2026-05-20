@@ -1,2 +1,0 @@
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\Taz\SunsetPulse\.next\cache\webpack\client-development\6.pack.gz_' -> 'C:\Users\Taz\SunsetPulse\.next\cache\webpack\client-development\6.pack.gz'
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from C:\Users\Taz\SunsetPulse\.next\cache\webpack\client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')

@@ -83,12 +83,7 @@ type GlobeNode = {
   lat: number;
   lng: number;
   radius: number;
-  coordinateSource: 'atlas-pulse-place' | 'texas-location-match' | 'domain-hash';
-  isWebCapture?: boolean;
-  physicalPlace?: string | null;
-  physicalRegion?: string | null;
-  locationConfidence?: number;
-  locationReason?: string;
+  coordinateSource: 'domain-hash';
   lastMappedAt: string | null;
   routes: {
     html: string;
@@ -107,11 +102,6 @@ type AtlasGlobe = {
     targetNodes: number;
     knownNodes: number;
     plottedNodes: number;
-    locationalNodes?: number;
-    webNodes?: number;
-    locationalWebNodes?: number;
-    locationalCoverage?: number;
-    locationalWebCoverage?: number;
     mappedNodes: number;
     unmappedNodes: number;
     worldCompletion: number;
@@ -300,8 +290,7 @@ export default function MemoriaAtlasPage() {
   };
 
   return (
-    <main className="bg-[#071013] text-slate-50">
-      <section className="relative h-screen overflow-hidden">
+    <main className="relative h-screen overflow-hidden bg-[#071013] text-slate-50">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(244,114,182,0.14),transparent_30%),linear-gradient(135deg,#071013_0%,#0f1f24_48%,#1f2937_100%)]" />
 
       <section className="absolute left-0 right-0 top-0 z-30 border-b border-white/10 bg-black/35 px-5 py-4 backdrop-blur-xl">
@@ -331,9 +320,6 @@ export default function MemoriaAtlasPage() {
             </p>
             <p className="mt-1 text-xs leading-5 text-emerald-200">
               {globe?.progress.plottedNodes || 0} of {globe?.progress.knownNodes || 0} cartridges are physically plotted on the globe.
-            </p>
-            <p className="mt-1 text-xs leading-5 text-amber-100">
-              {globe?.progress.locationalWebNodes || 0} of {globe?.progress.webNodes || 0} web cartridges are sorted onto physical place anchors.
             </p>
             {atlasPulse && (
               <div className="mt-4 rounded border border-amber-200/20 bg-amber-200/10 p-3">
@@ -484,130 +470,7 @@ export default function MemoriaAtlasPage() {
           />
         )}
       </section>
-      </section>
-
-      <AtlasPulseStory globe={globe} atlasPulse={atlasPulse} />
     </main>
-  );
-}
-
-function AtlasPulseStory({ globe, atlasPulse }: { globe: AtlasGlobe | null; atlasPulse: AtlasPulse | null }) {
-  const locationalWebNodes = globe?.progress.locationalWebNodes || 0;
-  const webNodes = globe?.progress.webNodes || 0;
-  const bindingPercent = atlasPulse?.progress.percent || 0;
-
-  return (
-    <section className="border-t border-white/10 bg-[#071013]">
-      <div className="mx-auto max-w-7xl px-6 py-24">
-        <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.45em] text-amber-200">Atlas Pulse</p>
-            <h2 className="mt-4 max-w-3xl text-4xl font-black uppercase italic tracking-tighter text-white md:text-6xl">
-              The map becomes the product memory.
-            </h2>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
-              Atlas Pulse links digital TAH cartridges to the physical places they describe. A town, listing area, market note, source page, or local history shard can become a mapped node with visible confidence instead of staying buried in a file index.
-            </p>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">
-              The first layer starts in Texas: verified place histories, property context, web captures, and market intelligence are sorted into physical anchors. As more cartridges are forged, the atlas shows exactly where the knowledge is strongest and where it still needs coverage.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <StoryMetric label="Physical Binding" value={`${bindingPercent}%`} detail="Current Atlas Pulse place binding strength." />
-            <StoryMetric label="TAH Nodes" value={String(globe?.progress.knownNodes || 0)} detail="Queryable cartridges visible to the atlas." />
-            <StoryMetric label="Mapped Shards" value={String(globe?.progress.indexedSnippets || 0)} detail="Indexed snippets and shards available to search." />
-            <StoryMetric label="Web Anchors" value={`${locationalWebNodes}/${webNodes}`} detail="Web-derived cartridges sorted to real places." />
-          </div>
-        </div>
-
-        <div className="mt-20 grid gap-5 lg:grid-cols-3">
-          <StoryPanel
-            eyebrow="Search"
-            title="Queries Become Places"
-            body="A search result can point back to a cartridge, and a cartridge can point back to a physical town, county, or market. That makes search feel grounded instead of abstract."
-          />
-          <StoryPanel
-            eyebrow="Explorer"
-            title="The Map Shows Coverage"
-            body="Explorer can display Atlas Pulse places as amber markers, so users can see which parts of the real world already have TAH memory attached."
-          />
-          <StoryPanel
-            eyebrow="Integrity"
-            title="Progress Is Visible"
-            body="Each place moves through located, sourced, seeded, forged, bound, and live. The progress bar tells the truth about what the system knows."
-          />
-        </div>
-      </div>
-
-      <div className="border-y border-white/10 bg-black/20">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-200">How It Works</p>
-            <h2 className="mt-4 text-3xl font-black uppercase italic tracking-tighter text-white md:text-5xl">
-              Digital cartridges, physical anchors.
-            </h2>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <PipelineStep step="01" title="Ingest" body="TAH, HAT, wiki, and web cartridges are scanned through the same robot-facing archive." />
-            <PipelineStep step="02" title="Resolve" body="Titles, queries, summaries, and source text are matched against known Texas place anchors." />
-            <PipelineStep step="03" title="Bind" body="Matched cartridges receive coordinates, confidence, and a visible status in Atlas Pulse." />
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-6 py-24">
-        <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-200">Built Into Sunset Pulse</p>
-            <h2 className="mt-4 text-3xl font-black uppercase italic tracking-tighter text-white md:text-5xl">
-              Atlas Pulse connects the rest of the app.
-            </h2>
-            <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-400">
-              The atlas is not a separate brochure. It is the connective layer between property search, Explorer, local history, IDX intelligence, market velocity, and the TAH archive. The more the system learns, the more the map lights up.
-            </p>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Open A Surface</p>
-            <div className="mt-4 grid gap-3 text-sm font-semibold">
-              <Link className="rounded bg-amber-300 px-4 py-3 text-slate-950" href="/explorer">Explorer</Link>
-              <Link className="rounded bg-cyan-300 px-4 py-3 text-slate-950" href="/tah">TAH Archive</Link>
-              <Link className="rounded border border-white/15 px-4 py-3 text-white" href="/properties">Properties</Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StoryMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-slate-400">{detail}</p>
-    </div>
-  );
-}
-
-function StoryPanel({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
-  return (
-    <article className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
-      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-200">{eyebrow}</p>
-      <h3 className="mt-4 text-xl font-black uppercase tracking-tight text-white">{title}</h3>
-      <p className="mt-4 text-sm leading-7 text-slate-400">{body}</p>
-    </article>
-  );
-}
-
-function PipelineStep({ step, title, body }: { step: string; title: string; body: string }) {
-  return (
-    <article className="rounded-lg border border-white/10 bg-[#071013]/80 p-5">
-      <p className="font-mono text-xs text-cyan-200">{step}</p>
-      <h3 className="mt-3 text-lg font-black uppercase tracking-tight text-white">{title}</h3>
-      <p className="mt-3 text-xs leading-6 text-slate-400">{body}</p>
-    </article>
   );
 }
 
