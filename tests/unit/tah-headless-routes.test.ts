@@ -151,7 +151,7 @@ describe('TAH robot-facing routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('no-store');
-    expect(body.name).toBe('Sunset Pulse TAH Atlas Manifest');
+    expect(body.name).toBe('Atlas Pulse TAH Manifest');
     expect(body.total).toBeGreaterThan(0);
     expect(body.items.length).toBe(body.mapped);
     expect(body.items).toEqual(
@@ -170,7 +170,7 @@ describe('TAH robot-facing routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('no-store');
-    expect(body.name).toBe('Sunset Pulse TAH Atlas Globe');
+    expect(body.name).toBe('Atlas Pulse TAH Globe');
     expect(body.progress.worldCompletion).toBeGreaterThan(0);
     expect(body.progress.worldCompletion).toBeLessThan(100);
     expect(body.progress.knownNodes).toBeGreaterThan(0);

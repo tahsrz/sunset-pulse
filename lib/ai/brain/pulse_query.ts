@@ -18,9 +18,7 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
   const processedFiles = new Set<string>();
 
   for (const dir of cartridgeDirs) {
-    if (!fs.existsSync(dir)) continue;
-
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.tah') || f.endsWith('.hat'));
+    const files = readCartridgeFiles(dir);
     
     for (const file of files) {
       const filePath = path.join(dir, file);
@@ -72,9 +70,7 @@ export function listPulseCartridges(): PulseCartridge[] {
   const seenSlugs = new Set<string>();
 
   for (const dir of getCartridgeDirs()) {
-    if (!fs.existsSync(dir)) continue;
-
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.tah') || f.endsWith('.hat'));
+    const files = readCartridgeFiles(dir);
     for (const file of files) {
       const filePath = path.join(dir, file);
       if (seen.has(filePath)) continue;
@@ -187,19 +183,30 @@ function getCartridgeDirs(): string[] {
 function collectCartridgeDirs(root: string, depth = 3): string[] {
   if (!fs.existsSync(root)) return [];
 
-  const dirs = [root];
-  if (depth <= 0) return dirs;
+  if (depth <= 0) return [root];
 
   try {
-    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    const entries = fs.readdirSync(root, { withFileTypes: true });
+    const dirs = [root];
+
+    for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       dirs.push(...collectCartridgeDirs(path.join(root, entry.name), depth - 1));
     }
-  } catch {
-    return dirs;
-  }
 
-  return dirs;
+    return dirs;
+  } catch {
+    return [];
+  }
+}
+
+function readCartridgeFiles(dir: string): string[] {
+  try {
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir).filter(file => file.endsWith('.tah') || file.endsWith('.hat'));
+  } catch {
+    return [];
+  }
 }
 
 function readMagic(filePath: string): number | null {
