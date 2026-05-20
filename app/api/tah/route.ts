@@ -1,7 +1,9 @@
 import { NextRequest } from 'next/server';
 import { listPulseCartridges, pulse_search } from '@/lib/ai/brain/pulse_query';
+import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 import { syncUniversalIntelligence } from '@/lib/ai/brain/remote_atlas';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
+import { siteUrlFromRequest } from '@/lib/core/site_url';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,11 +24,25 @@ export async function GET(request: NextRequest) {
   const sync = request.nextUrl.searchParams.get('sync') === 'true';
 
   if (!query.trim()) {
-    const cartridges = listPulseCartridges();
+    const host = siteUrlFromRequest(request);
+    const cartridges = listPulseCartridges().map(cartridge => getCartridgeMetadata(cartridge, host));
     return successResponse({
       status: 'ready',
       endpoint: '/api/tah',
-      cartridges: cartridges.map(({ name, slug, title, type }) => ({ name, slug, title, type, url: `/tah/${slug}` })),
+      cartridges: cartridges.map(cartridge => ({
+        name: cartridge.source,
+        slug: cartridge.slug,
+        title: cartridge.displayTitle,
+        canonicalTitle: cartridge.title,
+        type: cartridge.type,
+        domain: cartridge.domain,
+        format: cartridge.format,
+        byteSize: cartridge.byteSize,
+        shardCount: cartridge.shardCount,
+        summary: cartridge.summary,
+        url: `/tah/${cartridge.slug}`,
+        metaUrl: cartridge.routes.meta
+      })),
       count: cartridges.length
     });
   }

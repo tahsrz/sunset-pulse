@@ -4,6 +4,7 @@ import { GET as getLlms } from '@/app/llms.txt/route';
 import { GET as getTahHeadless } from '@/app/tah/headless/route';
 import { GET as getTahIndex } from '@/app/tah/index.json/route';
 import { GET as getCartridgeHeadless } from '@/app/tah/[slug]/headless/route';
+import { GET as getCartridgeMeta } from '@/app/api/tah/[slug]/meta/route';
 import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
 import { GET as getAtlasManifest } from '@/app/api/tah/atlas/manifest/route';
 import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
@@ -48,6 +49,28 @@ describe('TAH robot-facing routes', () => {
           headlessUrl: 'https://sunsetpulse.com/tah/algorithms/headless'
         })
       ])
+    );
+  });
+
+  it('serves per-cartridge metadata for robots and UI clients', async () => {
+    const response = getCartridgeMeta(new NextRequest('https://sunsetpulse.com/api/tah/algorithms/meta'), {
+      params: { slug: 'algorithms' }
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.cartridge).toEqual(
+      expect.objectContaining({
+        slug: 'algorithms',
+        title: 'Algorithms',
+        domain: expect.objectContaining({ id: 'computer-science' }),
+        format: expect.any(String),
+        searchQuery: 'Algorithms',
+        routes: expect.objectContaining({
+          headless: 'https://sunsetpulse.com/tah/algorithms/headless',
+          meta: 'https://sunsetpulse.com/api/tah/algorithms/meta'
+        })
+      })
     );
   });
 

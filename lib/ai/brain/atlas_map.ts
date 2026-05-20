@@ -1,5 +1,6 @@
 import { PulseCartridge, listPulseCartridges } from '@/lib/ai/brain/pulse_query';
-import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
+import { CARTRIDGE_DOMAINS } from '@/lib/ai/brain/cartridge_domains';
+import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 
 type AtlasNode = {
   id: string;
@@ -8,6 +9,11 @@ type AtlasNode = {
   group: string;
   slug?: string;
   source?: string;
+  displayTitle?: string;
+  summary?: string;
+  format?: string;
+  byteSize?: number;
+  shardCount?: number;
   progress: number;
   val: number;
   url?: string;
@@ -22,17 +28,6 @@ type AtlasLink = {
   value: number;
 };
 
-const DOMAIN_RULES: Array<{ id: string; label: string; keywords: string[] }> = [
-  { id: 'pulse', label: 'Sunset Pulse', keywords: ['sunset', 'pulse', 'jamie', 'user', 'memory', 'memories', 'abidan', 'vault'] },
-  { id: 'real-estate', label: 'Real Estate', keywords: ['real', 'estate', 'tarrant', 'texas', 'deeds', 'listing', 'mls', 'neighborhood'] },
-  { id: 'computer-science', label: 'Computer Science', keywords: ['algorithm', 'architecture', 'compiler', 'operating', 'python', 'unix', 'sicp', 'schemer', 'category'] },
-  { id: 'ai', label: 'AI & Learning', keywords: ['ai', 'artificial', 'deep', 'learning', 'neural', 'polymorphic'] },
-  { id: 'medicine', label: 'Medical', keywords: ['medical', 'encyclopedia'] },
-  { id: 'local-world', label: 'Local World', keywords: ['dallas', 'wiki', 'local'] },
-  { id: 'web-captures', label: 'Web Captures', keywords: ['web', 'crawl', 'site', 'url', 'internet', 'html', 'docs'] },
-  { id: 'knowledge', label: 'General Knowledge', keywords: [] }
-];
-
 const STAGES = [
   { id: 'seed', label: 'Seed Map', threshold: 1 },
   { id: 'regions', label: 'Regions', threshold: 25 },
@@ -45,8 +40,9 @@ const DEFAULT_ATLAS_TARGET_CARTRIDGES = 1000;
 
 export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
   const cartridges = listPulseCartridges();
+  const metadata = cartridges.map(cartridge => getCartridgeMetadata(cartridge, host));
   const domainBuckets = bucketCartridges(cartridges);
-  const progress = calculateAtlasProgress(cartridges.length);
+  const progress = calculateAtlasProgress(metadata.length);
   const nodes: AtlasNode[] = [
     {
       id: 'world',
@@ -60,7 +56,7 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
   ];
   const links: AtlasLink[] = [];
 
-  for (const domain of DOMAIN_RULES) {
+  for (const domain of CARTRIDGE_DOMAINS) {
     const items = domainBuckets[domain.id] || [];
     if (items.length === 0) continue;
 
@@ -69,28 +65,36 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
       label: domain.label,
       type: 'continent',
       group: domain.id,
-      progress: calculateAtlasProgress(items.length, Math.ceil(progress.targetCartridges / DOMAIN_RULES.length)).percent,
+      progress: calculateAtlasProgress(items.length, Math.ceil(progress.targetCartridges / CARTRIDGE_DOMAINS.length)).percent,
       val: Math.min(24, 10 + items.length / 4),
       url: `${host}/tah`
     });
     links.push({ source: 'world', target: domain.id, value: 4 });
 
     for (const cartridge of items) {
+      const item = metadata.find(candidate => candidate.slug === cartridge.slug);
+      if (!item) continue;
+
       nodes.push({
-        id: `cartridge:${cartridge.slug}`,
-        label: cartridge.title,
+        id: `cartridge:${item.slug}`,
+        label: item.displayTitle,
         type: 'cartridge',
         group: domain.id,
-        slug: cartridge.slug,
-        source: cartridge.name,
+        slug: item.slug,
+        source: item.source,
+        displayTitle: item.displayTitle,
+        summary: item.summary,
+        format: item.format,
+        byteSize: item.byteSize,
+        shardCount: item.shardCount,
         progress: 100,
         val: 6,
-        url: `${host}/tah/${cartridge.slug}`,
-        headlessUrl: `${host}/tah/${cartridge.slug}/headless`,
-        apiUrl: getCartridgeApiUrl(host, cartridge),
-        searchQuery: getCartridgeSearchQuery(cartridge)
+        url: item.routes.html,
+        headlessUrl: item.routes.headless,
+        apiUrl: item.routes.api,
+        searchQuery: item.searchQuery
       });
-      links.push({ source: domain.id, target: `cartridge:${cartridge.slug}`, value: 1 });
+      links.push({ source: domain.id, target: `cartridge:${item.slug}`, value: 1 });
     }
   }
 
@@ -111,11 +115,10 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
 }
 
 function bucketCartridges(cartridges: PulseCartridge[]) {
-  const buckets: Record<string, PulseCartridge[]> = Object.fromEntries(DOMAIN_RULES.map(domain => [domain.id, []]));
+  const buckets: Record<string, PulseCartridge[]> = Object.fromEntries(CARTRIDGE_DOMAINS.map(domain => [domain.id, []]));
 
   for (const cartridge of cartridges) {
-    const haystack = `${cartridge.slug} ${cartridge.title} ${cartridge.name}`.toLowerCase();
-    const domain = DOMAIN_RULES.find(rule => rule.keywords.some(keyword => haystack.includes(keyword))) || DOMAIN_RULES[DOMAIN_RULES.length - 1];
+    const domain = getCartridgeMetadata(cartridge).domain;
     buckets[domain.id].push(cartridge);
   }
 

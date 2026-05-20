@@ -1,5 +1,5 @@
 import { PulseCartridge } from '@/lib/ai/brain/pulse_query';
-import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
+import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 
 type HeadlessPreview = {
   score?: number;
@@ -8,6 +8,8 @@ type HeadlessPreview = {
 };
 
 export function formatHeadlessCatalog(host: string, cartridges: PulseCartridge[]) {
+  const metadata = cartridges.map(cartridge => getCartridgeMetadata(cartridge, host));
+
   return [
     'TAH_ARCHIVE',
     'FORMAT: text/plain',
@@ -24,36 +26,52 @@ export function formatHeadlessCatalog(host: string, cartridges: PulseCartridge[]
     '- Use /tah/{slug}/headless for cartridge-specific plain text.',
     '- Use /api/tah?q={query}&limit={n} for ranked retrieval snippets.',
     '',
-    ...cartridges.flatMap((cartridge, index) => [
+    ...metadata.flatMap((cartridge, index) => [
       `ENTRY ${index + 1}:`,
       `SLUG: ${cartridge.slug}`,
-      `TITLE: ${cartridge.title}`,
+      `TITLE: ${cartridge.displayTitle}`,
+      `CANONICAL_TITLE: ${cartridge.title}`,
       `TYPE: ${cartridge.type}`,
-      `SOURCE: ${cartridge.name}`,
-      `QUERY_SEED: ${getCartridgeSearchQuery(cartridge)}`,
-      `HTML: ${host}/tah/${cartridge.slug}`,
-      `HEADLESS: ${host}/tah/${cartridge.slug}/headless`,
-      `API: ${getCartridgeApiUrl(host, cartridge)}`,
+      `DOMAIN: ${cartridge.domain.label}`,
+      `FORMAT: ${cartridge.format}`,
+      `SHARDS: ${cartridge.shardCount}`,
+      `BYTES: ${cartridge.byteSize}`,
+      `SOURCE: ${cartridge.source}`,
+      `QUERY_SEED: ${cartridge.searchQuery}`,
+      `SUMMARY: ${cartridge.summary}`,
+      `HTML: ${cartridge.routes.html}`,
+      `HEADLESS: ${cartridge.routes.headless}`,
+      `API: ${cartridge.routes.api}`,
+      `META: ${cartridge.routes.meta}`,
       ''
     ])
   ].join('\n');
 }
 
 export function formatHeadlessCartridge(host: string, cartridge: PulseCartridge, previews: HeadlessPreview[]) {
+  const metadata = getCartridgeMetadata(cartridge, host);
+
   return [
     'TAH_CARTRIDGE',
     'FORMAT: text/plain',
     'VERSION: 1',
     `GENERATED_AT: ${new Date().toISOString()}`,
-    `SLUG: ${cartridge.slug}`,
-    `TITLE: ${cartridge.title}`,
-    `TYPE: ${cartridge.type}`,
-    `SOURCE: ${cartridge.name}`,
-    `QUERY_SEED: ${getCartridgeSearchQuery(cartridge)}`,
-    `HTML: ${host}/tah/${cartridge.slug}`,
-    `HEADLESS: ${host}/tah/${cartridge.slug}/headless`,
+    `SLUG: ${metadata.slug}`,
+    `TITLE: ${metadata.displayTitle}`,
+    `CANONICAL_TITLE: ${metadata.title}`,
+    `TYPE: ${metadata.type}`,
+    `DOMAIN: ${metadata.domain.label}`,
+    `FORMAT: ${metadata.format}`,
+    `SHARDS: ${metadata.shardCount}`,
+    `BYTES: ${metadata.byteSize}`,
+    `SOURCE: ${metadata.source}`,
+    `QUERY_SEED: ${metadata.searchQuery}`,
+    `SUMMARY: ${metadata.summary}`,
+    `HTML: ${metadata.routes.html}`,
+    `HEADLESS: ${metadata.routes.headless}`,
     `JSON_INDEX: ${host}/tah/index.json`,
-    `QUERY_API: ${getCartridgeApiUrl(host, cartridge)}`,
+    `QUERY_API: ${metadata.routes.api}`,
+    `META_API: ${metadata.routes.meta}`,
     '',
     'PREVIEW_SHARDS:',
     previews.length > 0

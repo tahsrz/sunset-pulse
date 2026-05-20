@@ -166,13 +166,40 @@ function getCartridgeDirs(): string[] {
     .map(dir => dir.trim())
     .filter(Boolean);
 
-  return [
+  const roots = [
     path.join(process.cwd(), 'cartridges'),
     path.resolve(process.cwd(), '..', 'SunsetWars', 'cartridges'),
     ...configuredDirs,
     '/tmp/cartridges', // Synced from Supabase
     '/tmp'
   ];
+
+  const dirs = new Set<string>();
+  for (const root of roots) {
+    for (const dir of collectCartridgeDirs(root)) {
+      dirs.add(dir);
+    }
+  }
+
+  return [...dirs];
+}
+
+function collectCartridgeDirs(root: string, depth = 3): string[] {
+  if (!fs.existsSync(root)) return [];
+
+  const dirs = [root];
+  if (depth <= 0) return dirs;
+
+  try {
+    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      dirs.push(...collectCartridgeDirs(path.join(root, entry.name), depth - 1));
+    }
+  } catch {
+    return dirs;
+  }
+
+  return dirs;
 }
 
 function readMagic(filePath: string): number | null {

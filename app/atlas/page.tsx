@@ -13,6 +13,11 @@ type AtlasNode = {
   group: string;
   slug?: string;
   source?: string;
+  displayTitle?: string;
+  summary?: string;
+  format?: string;
+  byteSize?: number;
+  shardCount?: number;
   progress: number;
   val: number;
   url?: string;
@@ -37,6 +42,12 @@ type AtlasMap = {
 type ProbeItem = {
   slug: string;
   source: string;
+  displayTitle: string;
+  domain: {
+    id: string;
+    label: string;
+    color: string;
+  };
   searchQuery: string;
   byteSize: number;
   payloadByteSize: number;
@@ -162,6 +173,15 @@ export default function MemoriaAtlasPage() {
   const worldStages = atlas?.progress.stages || [];
   const visibleNodes = useMemo(() => atlas?.nodes || [], [atlas]);
   const mappedBySlug = useMemo(() => new Map(probeState.items.map(item => [item.slug, item])), [probeState.items]);
+  const domainStats = useMemo(() => {
+    const continents = visibleNodes.filter(node => node.type === 'continent');
+    return continents.map(continent => ({
+      id: continent.id,
+      label: continent.label,
+      count: visibleNodes.filter(node => node.type === 'cartridge' && node.group === continent.id).length,
+      color: DOMAIN_COLORS[continent.group] || '#94a3b8'
+    }));
+  }, [visibleNodes]);
   const selectedProbe = selectedNode?.slug ? mappedBySlug.get(selectedNode.slug) : null;
 
   return (
@@ -232,13 +252,35 @@ export default function MemoriaAtlasPage() {
               {probeState.mapped} of {probeState.total || atlas?.progress.totalCartridges || 0} cartridge headers {probeState.published ? 'loaded from the local swarm manifest' : 'probed by the website'}.
             </p>
           </div>
+          <div className="mb-4 border-b border-white/10 pb-4">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">Domains</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {domainStats.map(domain => (
+                <button
+                  key={domain.id}
+                  type="button"
+                  onClick={() => setSelectedNode(visibleNodes.find(node => node.id === domain.id) || selectedNode)}
+                  className="rounded border border-white/10 bg-black/20 p-2 text-left transition hover:border-cyan-200/60"
+                >
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-300">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: domain.color }} />
+                    {domain.label}
+                  </span>
+                  <span className="mt-1 block text-lg font-black text-white">{domain.count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-200">Selected Region</p>
-          <h2 className="mt-3 text-2xl font-black">{selectedNode?.label || 'Loading Atlas'}</h2>
+          <h2 className="mt-3 text-2xl font-black">{selectedNode?.displayTitle || selectedNode?.label || 'Loading Atlas'}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode?.type === 'world' && `${atlas?.progress.totalCartridges || 0} cartridges are discoverable out of a ${atlas?.progress.targetCartridges || 1000}-cartridge atlas target.`}
             {selectedNode?.type === 'continent' && 'A knowledge continent grouping related cartridges into a navigable region.'}
             {selectedNode?.type === 'cartridge' && `Source: ${selectedNode.source}. Query seed: ${selectedNode.searchQuery || selectedNode.label}`}
           </p>
+          {selectedNode?.type === 'cartridge' && selectedNode.summary && (
+            <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-400">{selectedNode.summary}</p>
+          )}
           {selectedProbe && (
             <div className="mt-4 rounded border border-white/10 bg-black/25 p-3 text-xs leading-5 text-slate-300">
               <div className="grid grid-cols-2 gap-2 font-mono text-[10px] uppercase tracking-tight text-slate-400">
@@ -246,8 +288,8 @@ export default function MemoriaAtlasPage() {
                 <span>Shards: {selectedProbe.shardCount}</span>
                 <span>Bloom: {selectedProbe.bloomBits}</span>
                 <span>Hashes: {selectedProbe.hashCount}</span>
-                <span>File: {selectedProbe.byteSize}b</span>
-                <span>Payload: {selectedProbe.payloadByteSize}b</span>
+                <span>File: {formatBytes(selectedProbe.byteSize)}</span>
+                <span>Payload: {formatBytes(selectedProbe.payloadByteSize)}</span>
               </div>
               <p className="mt-3 line-clamp-4 text-slate-400">{selectedProbe.summary}</p>
             </div>
@@ -305,7 +347,7 @@ export default function MemoriaAtlasPage() {
               if (globalScale > 0.7 || node.type !== 'cartridge') {
                 ctx.font = `${node.type === 'cartridge' ? 9 : 12}px JetBrains Mono, monospace`;
                 ctx.fillStyle = 'rgba(248, 250, 252, 0.78)';
-                ctx.fillText(node.label, node.x + radius + 4, node.y + 3);
+                ctx.fillText(node.displayTitle || node.label, node.x + radius + 4, node.y + 3);
               }
             }}
           />
@@ -313,4 +355,11 @@ export default function MemoriaAtlasPage() {
       </section>
     </main>
   );
+}
+
+function formatBytes(bytes: number) {
+  if (!bytes) return '0 b';
+  if (bytes < 1024) return `${bytes} b`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 102.4) / 10} kb`;
+  return `${Math.round(bytes / 104857.6) / 10} mb`;
 }

@@ -57,6 +57,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `/tah/headless` and `/tah/[cartridge]/headless` expose plain-text scraper views with backend-oriented labels.
 - `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
 - `/tah` includes explicit AI-agent crawl guidance and preferred query patterns.
+- Abidan judge context is routed through `lib/ai/brain/abidan_tah.ts`, which supports both indexed `.tah` cartridges and split Memoria `.hat`/`.tah` pairs before adding broad Pulse matches.
 
 ## Getting Started
 

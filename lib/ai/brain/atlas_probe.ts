@@ -1,18 +1,20 @@
-import fs from 'fs';
-import path from 'path';
-import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 import { listPulseCartridges, type PulseCartridge } from '@/lib/ai/brain/pulse_query';
-import { TAHRetriever } from '@/lib/core/tah_retriever';
+import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 
 const MAX_PROBE_LIMIT = 25;
 const DEFAULT_PROBE_LIMIT = 12;
-const SAMPLE_BYTES = 2048;
 
 export type AtlasProbeItem = {
   slug: string;
   title: string;
+  displayTitle: string;
   source: string;
   type: PulseCartridge['type'];
+  domain: {
+    id: string;
+    label: string;
+    color: string;
+  };
   searchQuery: string;
   byteSize: number;
   payloadByteSize: number;
@@ -44,129 +46,22 @@ export function buildAtlasProbe(cursor = 0, limit = DEFAULT_PROBE_LIMIT) {
 }
 
 function probeCartridge(cartridge: PulseCartridge): AtlasProbeItem {
-  const header = readHeader(cartridge.path);
-  const payloadPath = cartridge.type === 'hat' ? resolvePairedTahPath(cartridge.path) : cartridge.path;
-  const payloadStats = statSafe(payloadPath);
-  const format = classifyFormat(cartridge, header.magic);
-  const searchQuery = getCartridgeSearchQuery(cartridge);
+  const metadata = getCartridgeMetadata(cartridge);
 
   return {
-    slug: cartridge.slug,
-    title: cartridge.title,
-    source: cartridge.name,
-    type: cartridge.type,
-    searchQuery,
-    byteSize: statSafe(cartridge.path),
-    payloadByteSize: payloadStats,
-    shardCount: header.shardCount,
-    bloomBits: header.bloomBits,
-    hashCount: header.hashCount,
-    format,
-    summary: summarizePayload(payloadPath, searchQuery, format)
+    slug: metadata.slug,
+    title: metadata.title,
+    displayTitle: metadata.displayTitle,
+    source: metadata.source,
+    type: metadata.type,
+    domain: metadata.domain,
+    searchQuery: metadata.searchQuery,
+    byteSize: metadata.byteSize,
+    payloadByteSize: metadata.payloadByteSize,
+    shardCount: metadata.shardCount,
+    bloomBits: metadata.bloomBits,
+    hashCount: metadata.hashCount,
+    format: metadata.format,
+    summary: metadata.summary
   };
-}
-
-function readHeader(filePath: string) {
-  try {
-    const fd = fs.openSync(filePath, 'r');
-    const header = Buffer.alloc(64);
-    const bytesRead = fs.readSync(fd, header, 0, 64, 0);
-    fs.closeSync(fd);
-
-    if (bytesRead < 20) {
-      return emptyHeader();
-    }
-
-    return {
-      magic: header.readUInt32LE(0),
-      hashCount: header.readUInt8(6),
-      bloomBits: header.readBigUInt64LE(8).toString(),
-      shardCount: header.readUInt32LE(16)
-    };
-  } catch {
-    return emptyHeader();
-  }
-}
-
-function emptyHeader() {
-  return {
-    magic: 0,
-    hashCount: 0,
-    bloomBits: '0',
-    shardCount: 0
-  };
-}
-
-function classifyFormat(cartridge: PulseCartridge, magic: number): AtlasProbeItem['format'] {
-  if (cartridge.type === 'hat') return 'memoria-pair';
-  if (magic === 0x54414821) return 'indexed-tah';
-  if (statSafe(cartridge.path) > 0) return 'swarm-stream';
-  return 'unknown';
-}
-
-function resolvePairedTahPath(hatPath: string) {
-  if (hatPath.endsWith('.tah.hat')) {
-    return `${hatPath.slice(0, -8)}.tah.tah`;
-  }
-
-  return path.join(path.dirname(hatPath), `${path.basename(hatPath, '.hat')}.tah`);
-}
-
-function statSafe(filePath: string) {
-  try {
-    return fs.statSync(filePath).size;
-  } catch {
-    return 0;
-  }
-}
-
-function summarizePayload(payloadPath: string, fallback: string, format: AtlasProbeItem['format']) {
-  if (format === 'indexed-tah') {
-    const shardSummary = summarizeIndexedTah(payloadPath);
-    if (shardSummary) return shardSummary;
-  }
-
-  try {
-    if (!fs.existsSync(payloadPath)) return fallback;
-    const fd = fs.openSync(payloadPath, 'r');
-    const buffer = Buffer.alloc(SAMPLE_BYTES);
-    const bytesRead = fs.readSync(fd, buffer, 0, SAMPLE_BYTES, 0);
-    fs.closeSync(fd);
-
-    const text = buffer
-      .subarray(0, bytesRead)
-      .toString('utf8')
-      .replace(/\0/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (!text || looksBinary(text)) return fallback;
-    return text.slice(0, 240);
-  } catch {
-    return fallback;
-  }
-}
-
-function summarizeIndexedTah(payloadPath: string) {
-  try {
-    const retriever = new TAHRetriever(payloadPath);
-    const summaries: string[] = [];
-
-    for (let index = 0; index < 8; index++) {
-      const shard = retriever.getShard(index);
-      const text = shard?.data?.replace(/\s+/g, ' ').trim();
-      if (text && !looksBinary(text)) summaries.push(text);
-      if (summaries.join(' ').length > 240) break;
-    }
-
-    return summaries.join(' ').slice(0, 240);
-  } catch {
-    return '';
-  }
-}
-
-function looksBinary(text: string) {
-  if (!text) return true;
-  const suspectCharacters = text.match(/[\u0000-\u0008\u000E-\u001F\uFFFD]/g)?.length || 0;
-  return suspectCharacters / text.length > 0.08;
 }

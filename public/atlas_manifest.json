@@ -1,22 +1,28 @@
 {
   "name": "Sunset Pulse TAH Atlas Manifest",
   "version": 1,
-  "generatedAt": "2026-05-19T18:47:14.147Z",
+  "generatedAt": "2026-05-20T01:10:48.187Z",
   "source": "local-swarm-publish",
-  "total": 353,
-  "mapped": 353,
+  "total": 357,
+  "mapped": 357,
   "percent": 100,
   "formats": {
     "indexed-tah": 33,
     "swarm-stream": 6,
-    "memoria-pair": 314
+    "memoria-pair": 318
   },
   "items": [
     {
       "slug": "abidan-court",
       "title": "Abidan Court",
+      "displayTitle": "Abidan Court",
       "source": "abidan_court.tah",
       "type": "tah",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "Abidan Court",
       "byteSize": 1461,
       "payloadByteSize": 1461,
@@ -29,8 +35,14 @@
     {
       "slug": "abidan-vault",
       "title": "Abidan Vault",
+      "displayTitle": "Abidan Vault",
       "source": "abidan_vault.tah",
       "type": "tah",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "Abidan Vault",
       "byteSize": 1489,
       "payloadByteSize": 1489,
@@ -43,8 +55,14 @@
     {
       "slug": "algorithms",
       "title": "Algorithms",
+      "displayTitle": "Algorithms",
       "source": "algorithms.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Algorithms",
       "byteSize": 2709464,
       "payloadByteSize": 2709464,
@@ -57,8 +75,14 @@
     {
       "slug": "architecture",
       "title": "Architecture",
+      "displayTitle": "Architecture",
       "source": "architecture.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Architecture",
       "byteSize": 3612399,
       "payloadByteSize": 3612399,
@@ -71,8 +95,14 @@
     {
       "slug": "categorytheory",
       "title": "CategoryTheory",
+      "displayTitle": "CategoryTheory",
       "source": "categoryTheory.tah",
       "type": "tah",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "CategoryTheory",
       "byteSize": 619111,
       "payloadByteSize": 619111,
@@ -85,8 +115,14 @@
     {
       "slug": "compilers",
       "title": "Compilers",
+      "displayTitle": "Compilers",
       "source": "compilers.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Compilers",
       "byteSize": 2127240,
       "payloadByteSize": 2127240,
@@ -99,8 +135,14 @@
     {
       "slug": "cplus",
       "title": "CPlus",
+      "displayTitle": "CPlus",
       "source": "cPlus.tah",
       "type": "tah",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "CPlus",
       "byteSize": 388305,
       "payloadByteSize": 388305,
@@ -113,8 +155,14 @@
     {
       "slug": "datadesign",
       "title": "DataDesign",
+      "displayTitle": "DataDesign",
       "source": "dataDesign.tah",
       "type": "tah",
+      "domain": {
+        "id": "knowledge",
+        "label": "General Knowledge",
+        "color": "#94a3b8"
+      },
       "searchQuery": "DataDesign",
       "byteSize": 1165399,
       "payloadByteSize": 1165399,
@@ -127,8 +175,14 @@
     {
       "slug": "deeplearning",
       "title": "DeepLearning",
+      "displayTitle": "DeepLearning",
       "source": "deepLearning.tah",
       "type": "tah",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "DeepLearning",
       "byteSize": 1546535,
       "payloadByteSize": 1546535,
@@ -141,8 +195,14 @@
     {
       "slug": "durandiel-expertise",
       "title": "Durandiel Expertise",
+      "displayTitle": "Durandiel Expertise",
       "source": "durandiel_expertise.tah",
       "type": "tah",
+      "domain": {
+        "id": "knowledge",
+        "label": "General Knowledge",
+        "color": "#94a3b8"
+      },
       "searchQuery": "Durandiel Expertise",
       "byteSize": 757,
       "payloadByteSize": 757,
@@ -155,8 +215,14 @@
     {
       "slug": "gadrael-expertise",
       "title": "Gadrael Expertise",
+      "displayTitle": "Gadrael Expertise",
       "source": "gadrael_expertise.tah",
       "type": "tah",
+      "domain": {
+        "id": "local-world",
+        "label": "Local World",
+        "color": "#facc15"
+      },
       "searchQuery": "Gadrael Expertise",
       "byteSize": 753,
       "payloadByteSize": 753,
@@ -169,8 +235,14 @@
     {
       "slug": "listings-gate",
       "title": "Listings Gate",
+      "displayTitle": "Listings Gate",
       "source": "listings_gate.tah",
       "type": "tah",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Listings Gate",
       "byteSize": 4864,
       "payloadByteSize": 4864,
@@ -183,8 +255,14 @@
     {
       "slug": "makiel-expertise",
       "title": "Makiel Expertise",
+      "displayTitle": "Makiel Expertise",
       "source": "makiel_expertise.tah",
       "type": "tah",
+      "domain": {
+        "id": "local-world",
+        "label": "Local World",
+        "color": "#facc15"
+      },
       "searchQuery": "Makiel Expertise",
       "byteSize": 954,
       "payloadByteSize": 954,
@@ -197,8 +275,14 @@
     {
       "slug": "market-velocity",
       "title": "Market Velocity",
+      "displayTitle": "Market Velocity",
       "source": "market_velocity.tah",
       "type": "tah",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Market Velocity",
       "byteSize": 1377,
       "payloadByteSize": 1377,
@@ -211,8 +295,14 @@
     {
       "slug": "medical-encyclopedia",
       "title": "Medical Encyclopedia",
+      "displayTitle": "Medical Encyclopedia",
       "source": "medical_encyclopedia.tah",
       "type": "tah",
+      "domain": {
+        "id": "medicine",
+        "label": "Medical",
+        "color": "#fb7185"
+      },
       "searchQuery": "Medical Encyclopedia",
       "byteSize": 25301,
       "payloadByteSize": 25301,
@@ -225,8 +315,14 @@
     {
       "slug": "neighborhood-intel",
       "title": "Neighborhood Intel",
+      "displayTitle": "Neighborhood Intel",
       "source": "neighborhood_intel.tah",
       "type": "tah",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Neighborhood Intel",
       "byteSize": 1417,
       "payloadByteSize": 1417,
@@ -239,8 +335,14 @@
     {
       "slug": "operatingsystem-concept",
       "title": "OperatingSystem Concept",
+      "displayTitle": "OperatingSystem Concept",
       "source": "operatingSystem_concept.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "OperatingSystem Concept",
       "byteSize": 1645308,
       "payloadByteSize": 1645308,
@@ -253,8 +355,14 @@
     {
       "slug": "operatingsystem-links",
       "title": "OperatingSystem Links",
+      "displayTitle": "OperatingSystem Links",
       "source": "operatingSystem_links.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "OperatingSystem Links",
       "byteSize": 1625102,
       "payloadByteSize": 1625102,
@@ -267,8 +375,14 @@
     {
       "slug": "operatingsystem-recursive",
       "title": "OperatingSystem Recursive",
+      "displayTitle": "OperatingSystem Recursive",
       "source": "operatingSystem_recursive.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "OperatingSystem Recursive",
       "byteSize": 1606359,
       "payloadByteSize": 1606359,
@@ -281,8 +395,14 @@
     {
       "slug": "operatingsystem-vital",
       "title": "OperatingSystem Vital",
+      "displayTitle": "OperatingSystem Vital",
       "source": "operatingSystem_vital.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "OperatingSystem Vital",
       "byteSize": 1603399,
       "payloadByteSize": 1603399,
@@ -295,8 +415,14 @@
     {
       "slug": "operatingsystem",
       "title": "OperatingSystem",
+      "displayTitle": "OperatingSystem",
       "source": "operatingSystem.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "OperatingSystem",
       "byteSize": 1625102,
       "payloadByteSize": 1625102,
@@ -309,8 +435,14 @@
     {
       "slug": "polymorphic-test",
       "title": "Polymorphic Test",
+      "displayTitle": "Polymorphic Test",
       "source": "polymorphic_test.tah",
       "type": "tah",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "Polymorphic Test",
       "byteSize": 578,
       "payloadByteSize": 578,
@@ -323,8 +455,14 @@
     {
       "slug": "postgres-mastery",
       "title": "Postgres Mastery",
+      "displayTitle": "Postgres Mastery",
       "source": "postgres_mastery.tah",
       "type": "tah",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Postgres Mastery",
       "byteSize": 1786,
       "payloadByteSize": 1786,
@@ -337,8 +475,14 @@
     {
       "slug": "python-core",
       "title": "Python Core",
+      "displayTitle": "Python Core",
       "source": "python_core.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Python Core",
       "byteSize": 824768,
       "payloadByteSize": 824768,
@@ -351,8 +495,14 @@
     {
       "slug": "re-rasterizer",
       "title": "Re Rasterizer",
+      "displayTitle": "Re Rasterizer",
       "source": "re_rasterizer.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "Re Rasterizer",
       "byteSize": 6461,
       "payloadByteSize": 51418,
@@ -365,8 +515,14 @@
     {
       "slug": "security-architect",
       "title": "Security Architect",
+      "displayTitle": "Security Architect",
       "source": "security_architect.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Security Architect",
       "byteSize": 1980,
       "payloadByteSize": 1980,
@@ -379,8 +535,14 @@
     {
       "slug": "sicp-expert",
       "title": "Sicp Expert",
+      "displayTitle": "Sicp Expert",
       "source": "sicp_expert.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Sicp Expert",
       "byteSize": 1398186,
       "payloadByteSize": 1398186,
@@ -393,8 +555,14 @@
     {
       "slug": "sicp",
       "title": "Sicp",
+      "displayTitle": "Sicp",
       "source": "sicp.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "Sicp",
       "byteSize": 1253153,
       "payloadByteSize": 1253153,
@@ -407,8 +575,14 @@
     {
       "slug": "spatial-computing",
       "title": "Spatial Computing",
+      "displayTitle": "Spatial Computing",
       "source": "spatial_computing.tah",
       "type": "tah",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Spatial Computing",
       "byteSize": 1682,
       "payloadByteSize": 1682,
@@ -421,8 +595,14 @@
     {
       "slug": "sunset-pulse-expertise",
       "title": "Sunset Pulse Expertise",
+      "displayTitle": "Sunset Pulse Expertise",
       "source": "sunset_pulse_expertise.tah",
       "type": "tah",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "Sunset Pulse Expertise",
       "byteSize": 24749,
       "payloadByteSize": 24749,
@@ -435,8 +615,14 @@
     {
       "slug": "sunset-pulse",
       "title": "Sunset Pulse",
+      "displayTitle": "Sunset Pulse",
       "source": "sunset_pulse.hat",
       "type": "hat",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "Sunset Pulse",
       "byteSize": 66848,
       "payloadByteSize": 732185,
@@ -449,8 +635,14 @@
     {
       "slug": "sunset-wars",
       "title": "Sunset Wars",
+      "displayTitle": "Sunset Wars",
       "source": "sunset_wars.hat",
       "type": "hat",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "Sunset Wars",
       "byteSize": 12818,
       "payloadByteSize": 214980,
@@ -463,8 +655,14 @@
     {
       "slug": "swarm-test",
       "title": "Swarm Test",
+      "displayTitle": "Swarm Test",
       "source": "swarm_test.tah",
       "type": "tah",
+      "domain": {
+        "id": "knowledge",
+        "label": "General Knowledge",
+        "color": "#94a3b8"
+      },
       "searchQuery": "Swarm Test",
       "byteSize": 151,
       "payloadByteSize": 151,
@@ -477,8 +675,14 @@
     {
       "slug": "tarrant-deeds",
       "title": "Tarrant Deeds",
+      "displayTitle": "Tarrant Deeds",
       "source": "tarrant_deeds.tah",
       "type": "tah",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Tarrant Deeds",
       "byteSize": 4167,
       "payloadByteSize": 4167,
@@ -491,8 +695,14 @@
     {
       "slug": "test-v3-1",
       "title": "Test V3 1",
+      "displayTitle": "Test V3 1",
       "source": "test_v3_1.tah.hat",
       "type": "hat",
+      "domain": {
+        "id": "local-world",
+        "label": "Local World",
+        "color": "#facc15"
+      },
       "searchQuery": "Test V3 1",
       "byteSize": 2621,
       "payloadByteSize": 78,
@@ -505,8 +715,14 @@
     {
       "slug": "test-v3",
       "title": "Test V3",
+      "displayTitle": "Test V3",
       "source": "test_v3.tah",
       "type": "tah",
+      "domain": {
+        "id": "local-world",
+        "label": "Local World",
+        "color": "#facc15"
+      },
       "searchQuery": "Test V3",
       "byteSize": 2696,
       "payloadByteSize": 2696,
@@ -519,8 +735,14 @@
     {
       "slug": "texas-contracts-expertise",
       "title": "Texas Contracts Expertise",
+      "displayTitle": "Texas Contracts Expertise",
       "source": "texas_contracts_expertise.tah",
       "type": "tah",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Texas Contracts Expertise",
       "byteSize": 2682,
       "payloadByteSize": 2682,
@@ -533,8 +755,14 @@
     {
       "slug": "texas-real-estate",
       "title": "Texas Real Estate",
+      "displayTitle": "Texas Real Estate",
       "source": "texas_real_estate.tah",
       "type": "tah",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Texas Real Estate",
       "byteSize": 1341,
       "payloadByteSize": 1341,
@@ -547,8 +775,14 @@
     {
       "slug": "thelittleschemer",
       "title": "TheLittleSchemer",
+      "displayTitle": "TheLittleSchemer",
       "source": "theLittleSchemer.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "TheLittleSchemer",
       "byteSize": 205331,
       "payloadByteSize": 205331,
@@ -561,8 +795,14 @@
     {
       "slug": "unixart",
       "title": "UnixArt",
+      "displayTitle": "UnixArt",
       "source": "unixArt.tah",
       "type": "tah",
+      "domain": {
+        "id": "computer-science",
+        "label": "Computer Science",
+        "color": "#a78bfa"
+      },
       "searchQuery": "UnixArt",
       "byteSize": 1249595,
       "payloadByteSize": 1249595,
@@ -575,8 +815,14 @@
     {
       "slug": "user-memories",
       "title": "User Memories",
+      "displayTitle": "User Memories",
       "source": "user_memories.tah",
       "type": "tah",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "User Memories",
       "byteSize": 2903,
       "payloadByteSize": 2903,
@@ -589,8 +835,14 @@
     {
       "slug": "user-memories-unified",
       "title": "User Memories.unified",
+      "displayTitle": "User Memories.unified",
       "source": "user_memories.unified.tah",
       "type": "tah",
+      "domain": {
+        "id": "pulse",
+        "label": "Sunset Pulse",
+        "color": "#22d3ee"
+      },
       "searchQuery": "User Memories.unified",
       "byteSize": 2903,
       "payloadByteSize": 2903,
@@ -603,8 +855,14 @@
     {
       "slug": "web-1779058412",
       "title": "Web 1779058412",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058412.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -617,8 +875,14 @@
     {
       "slug": "web-1779058418",
       "title": "Web 1779058418",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058418.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -631,8 +895,14 @@
     {
       "slug": "web-1779058419",
       "title": "Web 1779058419",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058419.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -645,8 +915,14 @@
     {
       "slug": "web-1779058423",
       "title": "Web 1779058423",
+      "displayTitle": "reference documentation",
       "source": "web_1779058423.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -659,8 +935,14 @@
     {
       "slug": "web-1779058431",
       "title": "Web 1779058431",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058431.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -673,8 +955,14 @@
     {
       "slug": "web-1779058436",
       "title": "Web 1779058436",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058436.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -687,8 +975,14 @@
     {
       "slug": "web-1779058437",
       "title": "Web 1779058437",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058437.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -701,8 +995,14 @@
     {
       "slug": "web-1779058441",
       "title": "Web 1779058441",
+      "displayTitle": "reference documentation",
       "source": "web_1779058441.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -715,8 +1015,14 @@
     {
       "slug": "web-1779058450",
       "title": "Web 1779058450",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058450.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -729,8 +1035,14 @@
     {
       "slug": "web-1779058455",
       "title": "Web 1779058455",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058455.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -743,8 +1055,14 @@
     {
       "slug": "web-1779058460",
       "title": "Web 1779058460",
+      "displayTitle": "reference documentation",
       "source": "web_1779058460.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -757,8 +1075,14 @@
     {
       "slug": "web-1779058469",
       "title": "Web 1779058469",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058469.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -771,8 +1095,14 @@
     {
       "slug": "web-1779058474",
       "title": "Web 1779058474",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058474.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -785,8 +1115,14 @@
     {
       "slug": "web-1779058475",
       "title": "Web 1779058475",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058475.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -799,8 +1135,14 @@
     {
       "slug": "web-1779058479",
       "title": "Web 1779058479",
+      "displayTitle": "reference documentation",
       "source": "web_1779058479.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -813,8 +1155,14 @@
     {
       "slug": "web-1779058488",
       "title": "Web 1779058488",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058488.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -827,8 +1175,14 @@
     {
       "slug": "web-1779058493",
       "title": "Web 1779058493",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058493.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -841,8 +1195,14 @@
     {
       "slug": "web-1779058498",
       "title": "Web 1779058498",
+      "displayTitle": "reference documentation",
       "source": "web_1779058498.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -855,8 +1215,14 @@
     {
       "slug": "web-1779058507",
       "title": "Web 1779058507",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058507.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -869,8 +1235,14 @@
     {
       "slug": "web-1779058512",
       "title": "Web 1779058512",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058512.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -883,8 +1255,14 @@
     {
       "slug": "web-1779058516",
       "title": "Web 1779058516",
+      "displayTitle": "reference documentation",
       "source": "web_1779058516.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -897,8 +1275,14 @@
     {
       "slug": "web-1779058525",
       "title": "Web 1779058525",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058525.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -911,8 +1295,14 @@
     {
       "slug": "web-1779058530",
       "title": "Web 1779058530",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058530.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -925,8 +1315,14 @@
     {
       "slug": "web-1779058542",
       "title": "Web 1779058542",
+      "displayTitle": "reference documentation",
       "source": "web_1779058542.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -939,8 +1335,14 @@
     {
       "slug": "web-1779058586",
       "title": "Web 1779058586",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058586.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -953,8 +1355,14 @@
     {
       "slug": "web-1779058590",
       "title": "Web 1779058590",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058590.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -967,8 +1375,14 @@
     {
       "slug": "web-1779058591",
       "title": "Web 1779058591",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058591.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -981,8 +1395,14 @@
     {
       "slug": "web-1779058596",
       "title": "Web 1779058596",
+      "displayTitle": "reference documentation",
       "source": "web_1779058596.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -995,8 +1415,14 @@
     {
       "slug": "web-1779058604",
       "title": "Web 1779058604",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058604.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1009,8 +1435,14 @@
     {
       "slug": "web-1779058609",
       "title": "Web 1779058609",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058609.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1023,8 +1455,14 @@
     {
       "slug": "web-1779058610",
       "title": "Web 1779058610",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058610.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1037,8 +1475,14 @@
     {
       "slug": "web-1779058614",
       "title": "Web 1779058614",
+      "displayTitle": "reference documentation",
       "source": "web_1779058614.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1051,8 +1495,14 @@
     {
       "slug": "web-1779058623",
       "title": "Web 1779058623",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058623.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1065,8 +1515,14 @@
     {
       "slug": "web-1779058627",
       "title": "Web 1779058627",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058627.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1079,8 +1535,14 @@
     {
       "slug": "web-1779058628",
       "title": "Web 1779058628",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058628.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1093,8 +1555,14 @@
     {
       "slug": "web-1779058632",
       "title": "Web 1779058632",
+      "displayTitle": "reference documentation",
       "source": "web_1779058632.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1107,8 +1575,14 @@
     {
       "slug": "web-1779058641",
       "title": "Web 1779058641",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058641.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1121,8 +1595,14 @@
     {
       "slug": "web-1779058646",
       "title": "Web 1779058646",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058646.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1135,8 +1615,14 @@
     {
       "slug": "web-1779058647",
       "title": "Web 1779058647",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058647.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1149,8 +1635,14 @@
     {
       "slug": "web-1779058651",
       "title": "Web 1779058651",
+      "displayTitle": "reference documentation",
       "source": "web_1779058651.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1163,8 +1655,14 @@
     {
       "slug": "web-1779058660",
       "title": "Web 1779058660",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058660.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1177,8 +1675,14 @@
     {
       "slug": "web-1779058664",
       "title": "Web 1779058664",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058664.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1191,8 +1695,14 @@
     {
       "slug": "web-1779058665",
       "title": "Web 1779058665",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058665.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1205,8 +1715,14 @@
     {
       "slug": "web-1779058669",
       "title": "Web 1779058669",
+      "displayTitle": "reference documentation",
       "source": "web_1779058669.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1219,8 +1735,14 @@
     {
       "slug": "web-1779058678",
       "title": "Web 1779058678",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058678.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1233,8 +1755,14 @@
     {
       "slug": "web-1779058682",
       "title": "Web 1779058682",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058682.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1247,8 +1775,14 @@
     {
       "slug": "web-1779058683",
       "title": "Web 1779058683",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058683.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1261,8 +1795,14 @@
     {
       "slug": "web-1779058687",
       "title": "Web 1779058687",
+      "displayTitle": "reference documentation",
       "source": "web_1779058687.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1275,8 +1815,14 @@
     {
       "slug": "web-1779058696",
       "title": "Web 1779058696",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058696.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1289,8 +1835,14 @@
     {
       "slug": "web-1779058701",
       "title": "Web 1779058701",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058701.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1303,8 +1855,14 @@
     {
       "slug": "web-1779058706",
       "title": "Web 1779058706",
+      "displayTitle": "reference documentation",
       "source": "web_1779058706.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1317,8 +1875,14 @@
     {
       "slug": "web-1779058714",
       "title": "Web 1779058714",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058714.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1331,8 +1895,14 @@
     {
       "slug": "web-1779058719",
       "title": "Web 1779058719",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058719.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1345,8 +1915,14 @@
     {
       "slug": "web-1779058720",
       "title": "Web 1779058720",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058720.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1359,8 +1935,14 @@
     {
       "slug": "web-1779058724",
       "title": "Web 1779058724",
+      "displayTitle": "reference documentation",
       "source": "web_1779058724.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1373,8 +1955,14 @@
     {
       "slug": "web-1779058733",
       "title": "Web 1779058733",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058733.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1387,8 +1975,14 @@
     {
       "slug": "web-1779058738",
       "title": "Web 1779058738",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058738.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1401,8 +1995,14 @@
     {
       "slug": "web-1779058742",
       "title": "Web 1779058742",
+      "displayTitle": "reference documentation",
       "source": "web_1779058742.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1415,8 +2015,14 @@
     {
       "slug": "web-1779058751",
       "title": "Web 1779058751",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058751.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1429,8 +2035,14 @@
     {
       "slug": "web-1779058755",
       "title": "Web 1779058755",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058755.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1443,8 +2055,14 @@
     {
       "slug": "web-1779058756",
       "title": "Web 1779058756",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058756.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1457,8 +2075,14 @@
     {
       "slug": "web-1779058760",
       "title": "Web 1779058760",
+      "displayTitle": "reference documentation",
       "source": "web_1779058760.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1471,8 +2095,14 @@
     {
       "slug": "web-1779058769",
       "title": "Web 1779058769",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058769.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1485,8 +2115,14 @@
     {
       "slug": "web-1779058774",
       "title": "Web 1779058774",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058774.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1499,8 +2135,14 @@
     {
       "slug": "web-1779058775",
       "title": "Web 1779058775",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058775.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1513,8 +2155,14 @@
     {
       "slug": "web-1779058779",
       "title": "Web 1779058779",
+      "displayTitle": "reference documentation",
       "source": "web_1779058779.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1527,8 +2175,14 @@
     {
       "slug": "web-1779058788",
       "title": "Web 1779058788",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058788.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1541,8 +2195,14 @@
     {
       "slug": "web-1779058793",
       "title": "Web 1779058793",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058793.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1555,8 +2215,14 @@
     {
       "slug": "web-1779058794",
       "title": "Web 1779058794",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058794.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1569,8 +2235,14 @@
     {
       "slug": "web-1779058798",
       "title": "Web 1779058798",
+      "displayTitle": "reference documentation",
       "source": "web_1779058798.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1583,8 +2255,14 @@
     {
       "slug": "web-1779058807",
       "title": "Web 1779058807",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058807.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14749,
@@ -1597,8 +2275,14 @@
     {
       "slug": "web-1779058822",
       "title": "Web 1779058822",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058822.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1611,8 +2295,14 @@
     {
       "slug": "web-1779058823",
       "title": "Web 1779058823",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058823.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1625,8 +2315,14 @@
     {
       "slug": "web-1779058827",
       "title": "Web 1779058827",
+      "displayTitle": "reference documentation",
       "source": "web_1779058827.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1639,8 +2335,14 @@
     {
       "slug": "web-1779058835",
       "title": "Web 1779058835",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058835.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1653,8 +2355,14 @@
     {
       "slug": "web-1779058840",
       "title": "Web 1779058840",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058840.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1667,8 +2375,14 @@
     {
       "slug": "web-1779058841",
       "title": "Web 1779058841",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058841.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1681,8 +2395,14 @@
     {
       "slug": "web-1779058845",
       "title": "Web 1779058845",
+      "displayTitle": "reference documentation",
       "source": "web_1779058845.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1695,8 +2415,14 @@
     {
       "slug": "web-1779058854",
       "title": "Web 1779058854",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058854.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1709,8 +2435,14 @@
     {
       "slug": "web-1779058859",
       "title": "Web 1779058859",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058859.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1723,8 +2455,14 @@
     {
       "slug": "web-1779058860",
       "title": "Web 1779058860",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058860.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1737,8 +2475,14 @@
     {
       "slug": "web-1779058864",
       "title": "Web 1779058864",
+      "displayTitle": "reference documentation",
       "source": "web_1779058864.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1751,8 +2495,14 @@
     {
       "slug": "web-1779058873",
       "title": "Web 1779058873",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058873.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1765,8 +2515,14 @@
     {
       "slug": "web-1779058877",
       "title": "Web 1779058877",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058877.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1779,8 +2535,14 @@
     {
       "slug": "web-1779058878",
       "title": "Web 1779058878",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058878.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1793,8 +2555,14 @@
     {
       "slug": "web-1779058882",
       "title": "Web 1779058882",
+      "displayTitle": "reference documentation",
       "source": "web_1779058882.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1807,8 +2575,14 @@
     {
       "slug": "web-1779058891",
       "title": "Web 1779058891",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058891.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1821,8 +2595,14 @@
     {
       "slug": "web-1779058896",
       "title": "Web 1779058896",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058896.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1835,8 +2615,14 @@
     {
       "slug": "web-1779058901",
       "title": "Web 1779058901",
+      "displayTitle": "reference documentation",
       "source": "web_1779058901.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1849,8 +2635,14 @@
     {
       "slug": "web-1779058910",
       "title": "Web 1779058910",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058910.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1863,8 +2655,14 @@
     {
       "slug": "web-1779058916",
       "title": "Web 1779058916",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058916.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1877,8 +2675,14 @@
     {
       "slug": "web-1779058917",
       "title": "Web 1779058917",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058917.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1891,8 +2695,14 @@
     {
       "slug": "web-1779058921",
       "title": "Web 1779058921",
+      "displayTitle": "reference documentation",
       "source": "web_1779058921.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1905,8 +2715,14 @@
     {
       "slug": "web-1779058930",
       "title": "Web 1779058930",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058930.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1919,8 +2735,14 @@
     {
       "slug": "web-1779058935",
       "title": "Web 1779058935",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058935.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1933,8 +2755,14 @@
     {
       "slug": "web-1779058936",
       "title": "Web 1779058936",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058936.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -1947,8 +2775,14 @@
     {
       "slug": "web-1779058940",
       "title": "Web 1779058940",
+      "displayTitle": "reference documentation",
       "source": "web_1779058940.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -1961,8 +2795,14 @@
     {
       "slug": "web-1779058948",
       "title": "Web 1779058948",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058948.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -1975,8 +2815,14 @@
     {
       "slug": "web-1779058954",
       "title": "Web 1779058954",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058954.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -1989,8 +2835,14 @@
     {
       "slug": "web-1779058955",
       "title": "Web 1779058955",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058955.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2003,8 +2855,14 @@
     {
       "slug": "web-1779058959",
       "title": "Web 1779058959",
+      "displayTitle": "reference documentation",
       "source": "web_1779058959.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2017,8 +2875,14 @@
     {
       "slug": "web-1779058968",
       "title": "Web 1779058968",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058968.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2031,8 +2895,14 @@
     {
       "slug": "web-1779058972",
       "title": "Web 1779058972",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058972.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2045,8 +2915,14 @@
     {
       "slug": "web-1779058973",
       "title": "Web 1779058973",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058973.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2059,8 +2935,14 @@
     {
       "slug": "web-1779058978",
       "title": "Web 1779058978",
+      "displayTitle": "reference documentation",
       "source": "web_1779058978.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2073,8 +2955,14 @@
     {
       "slug": "web-1779058990",
       "title": "Web 1779058990",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779058990.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2087,8 +2975,14 @@
     {
       "slug": "web-1779058995",
       "title": "Web 1779058995",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779058995.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2101,8 +2995,14 @@
     {
       "slug": "web-1779058996",
       "title": "Web 1779058996",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779058996.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2115,8 +3015,14 @@
     {
       "slug": "web-1779059000",
       "title": "Web 1779059000",
+      "displayTitle": "reference documentation",
       "source": "web_1779059000.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2129,8 +3035,14 @@
     {
       "slug": "web-1779059009",
       "title": "Web 1779059009",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059009.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2143,8 +3055,14 @@
     {
       "slug": "web-1779059013",
       "title": "Web 1779059013",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059013.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2157,8 +3075,14 @@
     {
       "slug": "web-1779059014",
       "title": "Web 1779059014",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059014.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2171,8 +3095,14 @@
     {
       "slug": "web-1779059018",
       "title": "Web 1779059018",
+      "displayTitle": "reference documentation",
       "source": "web_1779059018.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2185,8 +3115,14 @@
     {
       "slug": "web-1779059027",
       "title": "Web 1779059027",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059027.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2199,8 +3135,14 @@
     {
       "slug": "web-1779059032",
       "title": "Web 1779059032",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059032.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2213,8 +3155,14 @@
     {
       "slug": "web-1779059034",
       "title": "Web 1779059034",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059034.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2227,8 +3175,14 @@
     {
       "slug": "web-1779059038",
       "title": "Web 1779059038",
+      "displayTitle": "reference documentation",
       "source": "web_1779059038.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2241,8 +3195,14 @@
     {
       "slug": "web-1779059047",
       "title": "Web 1779059047",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059047.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2255,8 +3215,14 @@
     {
       "slug": "web-1779059052",
       "title": "Web 1779059052",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059052.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2269,8 +3235,14 @@
     {
       "slug": "web-1779059057",
       "title": "Web 1779059057",
+      "displayTitle": "reference documentation",
       "source": "web_1779059057.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2283,8 +3255,14 @@
     {
       "slug": "web-1779059065",
       "title": "Web 1779059065",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059065.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2297,8 +3275,14 @@
     {
       "slug": "web-1779059070",
       "title": "Web 1779059070",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059070.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2311,8 +3295,14 @@
     {
       "slug": "web-1779059071",
       "title": "Web 1779059071",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059071.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2325,8 +3315,14 @@
     {
       "slug": "web-1779059075",
       "title": "Web 1779059075",
+      "displayTitle": "reference documentation",
       "source": "web_1779059075.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2339,8 +3335,14 @@
     {
       "slug": "web-1779059084",
       "title": "Web 1779059084",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059084.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2353,8 +3355,14 @@
     {
       "slug": "web-1779059088",
       "title": "Web 1779059088",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059088.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2367,8 +3375,14 @@
     {
       "slug": "web-1779059089",
       "title": "Web 1779059089",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059089.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2381,8 +3395,14 @@
     {
       "slug": "web-1779059093",
       "title": "Web 1779059093",
+      "displayTitle": "reference documentation",
       "source": "web_1779059093.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2395,8 +3415,14 @@
     {
       "slug": "web-1779059102",
       "title": "Web 1779059102",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059102.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2409,8 +3435,14 @@
     {
       "slug": "web-1779059107",
       "title": "Web 1779059107",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059107.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2423,8 +3455,14 @@
     {
       "slug": "web-1779059108",
       "title": "Web 1779059108",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059108.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2437,8 +3475,14 @@
     {
       "slug": "web-1779059112",
       "title": "Web 1779059112",
+      "displayTitle": "reference documentation",
       "source": "web_1779059112.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2451,8 +3495,14 @@
     {
       "slug": "web-1779059121",
       "title": "Web 1779059121",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059121.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2465,8 +3515,14 @@
     {
       "slug": "web-1779059126",
       "title": "Web 1779059126",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059126.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2479,8 +3535,14 @@
     {
       "slug": "web-1779059127",
       "title": "Web 1779059127",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059127.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2493,8 +3555,14 @@
     {
       "slug": "web-1779059131",
       "title": "Web 1779059131",
+      "displayTitle": "reference documentation",
       "source": "web_1779059131.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2507,8 +3575,14 @@
     {
       "slug": "web-1779059140",
       "title": "Web 1779059140",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059140.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2521,8 +3595,14 @@
     {
       "slug": "web-1779059145",
       "title": "Web 1779059145",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059145.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2535,8 +3615,14 @@
     {
       "slug": "web-1779059146",
       "title": "Web 1779059146",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059146.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2549,8 +3635,14 @@
     {
       "slug": "web-1779059150",
       "title": "Web 1779059150",
+      "displayTitle": "reference documentation",
       "source": "web_1779059150.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2563,8 +3655,14 @@
     {
       "slug": "web-1779059159",
       "title": "Web 1779059159",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059159.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2577,8 +3675,14 @@
     {
       "slug": "web-1779059164",
       "title": "Web 1779059164",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059164.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2591,8 +3695,14 @@
     {
       "slug": "web-1779059169",
       "title": "Web 1779059169",
+      "displayTitle": "reference documentation",
       "source": "web_1779059169.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2605,8 +3715,14 @@
     {
       "slug": "web-1779059177",
       "title": "Web 1779059177",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059177.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2619,8 +3735,14 @@
     {
       "slug": "web-1779059182",
       "title": "Web 1779059182",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059182.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2633,8 +3755,14 @@
     {
       "slug": "web-1779059183",
       "title": "Web 1779059183",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059183.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2647,8 +3775,14 @@
     {
       "slug": "web-1779059187",
       "title": "Web 1779059187",
+      "displayTitle": "reference documentation",
       "source": "web_1779059187.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2661,8 +3795,14 @@
     {
       "slug": "web-1779059196",
       "title": "Web 1779059196",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059196.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2675,8 +3815,14 @@
     {
       "slug": "web-1779059201",
       "title": "Web 1779059201",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059201.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2689,8 +3835,14 @@
     {
       "slug": "web-1779059202",
       "title": "Web 1779059202",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059202.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2703,8 +3855,14 @@
     {
       "slug": "web-1779059207",
       "title": "Web 1779059207",
+      "displayTitle": "reference documentation",
       "source": "web_1779059207.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2717,8 +3875,14 @@
     {
       "slug": "web-1779059215",
       "title": "Web 1779059215",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059215.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2731,8 +3895,14 @@
     {
       "slug": "web-1779059220",
       "title": "Web 1779059220",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059220.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2745,8 +3915,14 @@
     {
       "slug": "web-1779059221",
       "title": "Web 1779059221",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059221.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2759,8 +3935,14 @@
     {
       "slug": "web-1779059225",
       "title": "Web 1779059225",
+      "displayTitle": "reference documentation",
       "source": "web_1779059225.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2773,8 +3955,14 @@
     {
       "slug": "web-1779059234",
       "title": "Web 1779059234",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059234.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2787,8 +3975,14 @@
     {
       "slug": "web-1779059239",
       "title": "Web 1779059239",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059239.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2801,8 +3995,14 @@
     {
       "slug": "web-1779059240",
       "title": "Web 1779059240",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059240.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2815,8 +4015,14 @@
     {
       "slug": "web-1779059244",
       "title": "Web 1779059244",
+      "displayTitle": "reference documentation",
       "source": "web_1779059244.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2829,8 +4035,14 @@
     {
       "slug": "web-1779059253",
       "title": "Web 1779059253",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059253.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2843,8 +4055,14 @@
     {
       "slug": "web-1779059258",
       "title": "Web 1779059258",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059258.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2857,8 +4075,14 @@
     {
       "slug": "web-1779059259",
       "title": "Web 1779059259",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059259.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2871,8 +4095,14 @@
     {
       "slug": "web-1779059263",
       "title": "Web 1779059263",
+      "displayTitle": "reference documentation",
       "source": "web_1779059263.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2885,8 +4115,14 @@
     {
       "slug": "web-1779059271",
       "title": "Web 1779059271",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059271.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2899,8 +4135,14 @@
     {
       "slug": "web-1779059276",
       "title": "Web 1779059276",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059276.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2913,8 +4155,14 @@
     {
       "slug": "web-1779059277",
       "title": "Web 1779059277",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059277.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2927,8 +4175,14 @@
     {
       "slug": "web-1779059282",
       "title": "Web 1779059282",
+      "displayTitle": "reference documentation",
       "source": "web_1779059282.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2941,8 +4195,14 @@
     {
       "slug": "web-1779059291",
       "title": "Web 1779059291",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059291.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -2955,8 +4215,14 @@
     {
       "slug": "web-1779059295",
       "title": "Web 1779059295",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059295.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -2969,8 +4235,14 @@
     {
       "slug": "web-1779059296",
       "title": "Web 1779059296",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059296.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -2983,8 +4255,14 @@
     {
       "slug": "web-1779059300",
       "title": "Web 1779059300",
+      "displayTitle": "reference documentation",
       "source": "web_1779059300.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -2997,8 +4275,14 @@
     {
       "slug": "web-1779059309",
       "title": "Web 1779059309",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059309.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3011,8 +4295,14 @@
     {
       "slug": "web-1779059314",
       "title": "Web 1779059314",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059314.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3025,8 +4315,14 @@
     {
       "slug": "web-1779059315",
       "title": "Web 1779059315",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059315.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3039,8 +4335,14 @@
     {
       "slug": "web-1779059320",
       "title": "Web 1779059320",
+      "displayTitle": "reference documentation",
       "source": "web_1779059320.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3053,8 +4355,14 @@
     {
       "slug": "web-1779059329",
       "title": "Web 1779059329",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059329.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3067,8 +4375,14 @@
     {
       "slug": "web-1779059335",
       "title": "Web 1779059335",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059335.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3081,8 +4395,14 @@
     {
       "slug": "web-1779059336",
       "title": "Web 1779059336",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059336.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3095,8 +4415,14 @@
     {
       "slug": "web-1779059340",
       "title": "Web 1779059340",
+      "displayTitle": "reference documentation",
       "source": "web_1779059340.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3109,8 +4435,14 @@
     {
       "slug": "web-1779059349",
       "title": "Web 1779059349",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059349.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3123,8 +4455,14 @@
     {
       "slug": "web-1779059354",
       "title": "Web 1779059354",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059354.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3137,8 +4475,14 @@
     {
       "slug": "web-1779059355",
       "title": "Web 1779059355",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059355.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3151,8 +4495,14 @@
     {
       "slug": "web-1779059360",
       "title": "Web 1779059360",
+      "displayTitle": "reference documentation",
       "source": "web_1779059360.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3165,8 +4515,14 @@
     {
       "slug": "web-1779059369",
       "title": "Web 1779059369",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059369.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3179,8 +4535,14 @@
     {
       "slug": "web-1779059375",
       "title": "Web 1779059375",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059375.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3193,8 +4555,14 @@
     {
       "slug": "web-1779059376",
       "title": "Web 1779059376",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059376.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3207,8 +4575,14 @@
     {
       "slug": "web-1779059381",
       "title": "Web 1779059381",
+      "displayTitle": "reference documentation",
       "source": "web_1779059381.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3221,8 +4595,14 @@
     {
       "slug": "web-1779059390",
       "title": "Web 1779059390",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059390.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3235,8 +4615,14 @@
     {
       "slug": "web-1779059397",
       "title": "Web 1779059397",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059397.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3249,8 +4635,14 @@
     {
       "slug": "web-1779059398",
       "title": "Web 1779059398",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059398.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3263,8 +4655,14 @@
     {
       "slug": "web-1779059403",
       "title": "Web 1779059403",
+      "displayTitle": "reference documentation",
       "source": "web_1779059403.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3277,8 +4675,14 @@
     {
       "slug": "web-1779059412",
       "title": "Web 1779059412",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059412.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3291,8 +4695,14 @@
     {
       "slug": "web-1779059417",
       "title": "Web 1779059417",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059417.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3305,8 +4715,14 @@
     {
       "slug": "web-1779059418",
       "title": "Web 1779059418",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059418.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3319,8 +4735,14 @@
     {
       "slug": "web-1779059423",
       "title": "Web 1779059423",
+      "displayTitle": "reference documentation",
       "source": "web_1779059423.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3333,8 +4755,14 @@
     {
       "slug": "web-1779059432",
       "title": "Web 1779059432",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059432.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3347,8 +4775,14 @@
     {
       "slug": "web-1779059437",
       "title": "Web 1779059437",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059437.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3361,8 +4795,14 @@
     {
       "slug": "web-1779059438",
       "title": "Web 1779059438",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059438.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3375,8 +4815,14 @@
     {
       "slug": "web-1779059443",
       "title": "Web 1779059443",
+      "displayTitle": "reference documentation",
       "source": "web_1779059443.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3389,8 +4835,14 @@
     {
       "slug": "web-1779059452",
       "title": "Web 1779059452",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059452.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3403,8 +4855,14 @@
     {
       "slug": "web-1779059457",
       "title": "Web 1779059457",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059457.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3417,8 +4875,14 @@
     {
       "slug": "web-1779059458",
       "title": "Web 1779059458",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059458.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3431,8 +4895,14 @@
     {
       "slug": "web-1779059463",
       "title": "Web 1779059463",
+      "displayTitle": "reference documentation",
       "source": "web_1779059463.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3445,8 +4915,14 @@
     {
       "slug": "web-1779059472",
       "title": "Web 1779059472",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059472.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3459,8 +4935,14 @@
     {
       "slug": "web-1779059479",
       "title": "Web 1779059479",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059479.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3473,8 +4955,14 @@
     {
       "slug": "web-1779059480",
       "title": "Web 1779059480",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059480.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3487,8 +4975,14 @@
     {
       "slug": "web-1779059484",
       "title": "Web 1779059484",
+      "displayTitle": "reference documentation",
       "source": "web_1779059484.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3501,8 +4995,14 @@
     {
       "slug": "web-1779059494",
       "title": "Web 1779059494",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059494.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3515,8 +5015,14 @@
     {
       "slug": "web-1779059500",
       "title": "Web 1779059500",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059500.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3529,8 +5035,14 @@
     {
       "slug": "web-1779059501",
       "title": "Web 1779059501",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059501.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3543,8 +5055,14 @@
     {
       "slug": "web-1779059507",
       "title": "Web 1779059507",
+      "displayTitle": "reference documentation",
       "source": "web_1779059507.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3557,8 +5075,14 @@
     {
       "slug": "web-1779059517",
       "title": "Web 1779059517",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059517.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3571,8 +5095,14 @@
     {
       "slug": "web-1779059523",
       "title": "Web 1779059523",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059523.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3585,8 +5115,14 @@
     {
       "slug": "web-1779059524",
       "title": "Web 1779059524",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059524.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3599,8 +5135,14 @@
     {
       "slug": "web-1779059530",
       "title": "Web 1779059530",
+      "displayTitle": "reference documentation",
       "source": "web_1779059530.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3613,8 +5155,14 @@
     {
       "slug": "web-1779059540",
       "title": "Web 1779059540",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059540.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3627,8 +5175,14 @@
     {
       "slug": "web-1779059546",
       "title": "Web 1779059546",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059546.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3641,8 +5195,14 @@
     {
       "slug": "web-1779059547",
       "title": "Web 1779059547",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059547.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3655,8 +5215,14 @@
     {
       "slug": "web-1779059552",
       "title": "Web 1779059552",
+      "displayTitle": "reference documentation",
       "source": "web_1779059552.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3669,8 +5235,14 @@
     {
       "slug": "web-1779059562",
       "title": "Web 1779059562",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059562.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3683,8 +5255,14 @@
     {
       "slug": "web-1779059569",
       "title": "Web 1779059569",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059569.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3697,8 +5275,14 @@
     {
       "slug": "web-1779059570",
       "title": "Web 1779059570",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059570.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3711,8 +5295,14 @@
     {
       "slug": "web-1779059575",
       "title": "Web 1779059575",
+      "displayTitle": "reference documentation",
       "source": "web_1779059575.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3725,8 +5315,14 @@
     {
       "slug": "web-1779059585",
       "title": "Web 1779059585",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059585.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3739,8 +5335,14 @@
     {
       "slug": "web-1779059591",
       "title": "Web 1779059591",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059591.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3753,8 +5355,14 @@
     {
       "slug": "web-1779059592",
       "title": "Web 1779059592",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059592.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3767,8 +5375,14 @@
     {
       "slug": "web-1779059598",
       "title": "Web 1779059598",
+      "displayTitle": "reference documentation",
       "source": "web_1779059598.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3781,8 +5395,14 @@
     {
       "slug": "web-1779059608",
       "title": "Web 1779059608",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059608.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3795,8 +5415,14 @@
     {
       "slug": "web-1779059614",
       "title": "Web 1779059614",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059614.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3809,8 +5435,14 @@
     {
       "slug": "web-1779059616",
       "title": "Web 1779059616",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059616.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3823,8 +5455,14 @@
     {
       "slug": "web-1779059621",
       "title": "Web 1779059621",
+      "displayTitle": "reference documentation",
       "source": "web_1779059621.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3837,8 +5475,14 @@
     {
       "slug": "web-1779059631",
       "title": "Web 1779059631",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059631.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3851,8 +5495,14 @@
     {
       "slug": "web-1779059638",
       "title": "Web 1779059638",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059638.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3865,8 +5515,14 @@
     {
       "slug": "web-1779059639",
       "title": "Web 1779059639",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059639.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3879,8 +5535,14 @@
     {
       "slug": "web-1779059644",
       "title": "Web 1779059644",
+      "displayTitle": "reference documentation",
       "source": "web_1779059644.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3893,8 +5555,14 @@
     {
       "slug": "web-1779059654",
       "title": "Web 1779059654",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059654.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3907,8 +5575,14 @@
     {
       "slug": "web-1779059661",
       "title": "Web 1779059661",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059661.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3921,8 +5595,14 @@
     {
       "slug": "web-1779059662",
       "title": "Web 1779059662",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059662.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3935,8 +5615,14 @@
     {
       "slug": "web-1779059667",
       "title": "Web 1779059667",
+      "displayTitle": "reference documentation",
       "source": "web_1779059667.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -3949,8 +5635,14 @@
     {
       "slug": "web-1779059677",
       "title": "Web 1779059677",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059677.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -3963,8 +5655,14 @@
     {
       "slug": "web-1779059683",
       "title": "Web 1779059683",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059683.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -3977,8 +5675,14 @@
     {
       "slug": "web-1779059684",
       "title": "Web 1779059684",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059684.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -3991,8 +5695,14 @@
     {
       "slug": "web-1779059690",
       "title": "Web 1779059690",
+      "displayTitle": "reference documentation",
       "source": "web_1779059690.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4005,8 +5715,14 @@
     {
       "slug": "web-1779059699",
       "title": "Web 1779059699",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059699.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4019,8 +5735,14 @@
     {
       "slug": "web-1779059706",
       "title": "Web 1779059706",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059706.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4033,8 +5755,14 @@
     {
       "slug": "web-1779059707",
       "title": "Web 1779059707",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059707.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4047,8 +5775,14 @@
     {
       "slug": "web-1779059713",
       "title": "Web 1779059713",
+      "displayTitle": "reference documentation",
       "source": "web_1779059713.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4061,8 +5795,14 @@
     {
       "slug": "web-1779059723",
       "title": "Web 1779059723",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059723.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4075,8 +5815,14 @@
     {
       "slug": "web-1779059729",
       "title": "Web 1779059729",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059729.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4089,8 +5835,14 @@
     {
       "slug": "web-1779059730",
       "title": "Web 1779059730",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059730.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4103,8 +5855,14 @@
     {
       "slug": "web-1779059735",
       "title": "Web 1779059735",
+      "displayTitle": "reference documentation",
       "source": "web_1779059735.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4117,8 +5875,14 @@
     {
       "slug": "web-1779059745",
       "title": "Web 1779059745",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059745.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4131,8 +5895,14 @@
     {
       "slug": "web-1779059751",
       "title": "Web 1779059751",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059751.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4145,8 +5915,14 @@
     {
       "slug": "web-1779059752",
       "title": "Web 1779059752",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059752.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4159,8 +5935,14 @@
     {
       "slug": "web-1779059757",
       "title": "Web 1779059757",
+      "displayTitle": "reference documentation",
       "source": "web_1779059757.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4173,8 +5955,14 @@
     {
       "slug": "web-1779059767",
       "title": "Web 1779059767",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059767.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4187,8 +5975,14 @@
     {
       "slug": "web-1779059773",
       "title": "Web 1779059773",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059773.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4201,8 +5995,14 @@
     {
       "slug": "web-1779059774",
       "title": "Web 1779059774",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059774.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4215,8 +6015,14 @@
     {
       "slug": "web-1779059779",
       "title": "Web 1779059779",
+      "displayTitle": "reference documentation",
       "source": "web_1779059779.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4229,8 +6035,14 @@
     {
       "slug": "web-1779059789",
       "title": "Web 1779059789",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059789.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4243,8 +6055,14 @@
     {
       "slug": "web-1779059795",
       "title": "Web 1779059795",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059795.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4257,8 +6075,14 @@
     {
       "slug": "web-1779059796",
       "title": "Web 1779059796",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059796.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4271,8 +6095,14 @@
     {
       "slug": "web-1779059801",
       "title": "Web 1779059801",
+      "displayTitle": "reference documentation",
       "source": "web_1779059801.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4285,8 +6115,14 @@
     {
       "slug": "web-1779059811",
       "title": "Web 1779059811",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059811.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4299,8 +6135,14 @@
     {
       "slug": "web-1779059817",
       "title": "Web 1779059817",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059817.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4313,8 +6155,14 @@
     {
       "slug": "web-1779059818",
       "title": "Web 1779059818",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059818.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4327,8 +6175,14 @@
     {
       "slug": "web-1779059823",
       "title": "Web 1779059823",
+      "displayTitle": "reference documentation",
       "source": "web_1779059823.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4341,8 +6195,14 @@
     {
       "slug": "web-1779059833",
       "title": "Web 1779059833",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059833.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4355,8 +6215,14 @@
     {
       "slug": "web-1779059840",
       "title": "Web 1779059840",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059840.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4369,8 +6235,14 @@
     {
       "slug": "web-1779059841",
       "title": "Web 1779059841",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059841.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4383,8 +6255,14 @@
     {
       "slug": "web-1779059846",
       "title": "Web 1779059846",
+      "displayTitle": "reference documentation",
       "source": "web_1779059846.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4397,8 +6275,14 @@
     {
       "slug": "web-1779059856",
       "title": "Web 1779059856",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059856.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4411,8 +6295,14 @@
     {
       "slug": "web-1779059862",
       "title": "Web 1779059862",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059862.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4425,8 +6315,14 @@
     {
       "slug": "web-1779059863",
       "title": "Web 1779059863",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059863.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4439,8 +6335,14 @@
     {
       "slug": "web-1779059869",
       "title": "Web 1779059869",
+      "displayTitle": "reference documentation",
       "source": "web_1779059869.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4453,8 +6355,14 @@
     {
       "slug": "web-1779059878",
       "title": "Web 1779059878",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059878.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4467,8 +6375,14 @@
     {
       "slug": "web-1779059883",
       "title": "Web 1779059883",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059883.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4481,8 +6395,14 @@
     {
       "slug": "web-1779059884",
       "title": "Web 1779059884",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059884.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4495,8 +6415,14 @@
     {
       "slug": "web-1779059889",
       "title": "Web 1779059889",
+      "displayTitle": "reference documentation",
       "source": "web_1779059889.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4509,8 +6435,14 @@
     {
       "slug": "web-1779059899",
       "title": "Web 1779059899",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059899.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4523,8 +6455,14 @@
     {
       "slug": "web-1779059904",
       "title": "Web 1779059904",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059904.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4537,8 +6475,14 @@
     {
       "slug": "web-1779059905",
       "title": "Web 1779059905",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059905.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4551,8 +6495,14 @@
     {
       "slug": "web-1779059910",
       "title": "Web 1779059910",
+      "displayTitle": "reference documentation",
       "source": "web_1779059910.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4565,8 +6515,14 @@
     {
       "slug": "web-1779059920",
       "title": "Web 1779059920",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059920.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4579,8 +6535,14 @@
     {
       "slug": "web-1779059927",
       "title": "Web 1779059927",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059927.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4593,8 +6555,14 @@
     {
       "slug": "web-1779059928",
       "title": "Web 1779059928",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059928.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4607,8 +6575,14 @@
     {
       "slug": "web-1779059933",
       "title": "Web 1779059933",
+      "displayTitle": "reference documentation",
       "source": "web_1779059933.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4621,8 +6595,14 @@
     {
       "slug": "web-1779059943",
       "title": "Web 1779059943",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059943.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4635,8 +6615,14 @@
     {
       "slug": "web-1779059949",
       "title": "Web 1779059949",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059949.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4649,8 +6635,14 @@
     {
       "slug": "web-1779059950",
       "title": "Web 1779059950",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059950.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4663,8 +6655,14 @@
     {
       "slug": "web-1779059957",
       "title": "Web 1779059957",
+      "displayTitle": "reference documentation",
       "source": "web_1779059957.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4677,8 +6675,14 @@
     {
       "slug": "web-1779059967",
       "title": "Web 1779059967",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059967.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4691,8 +6695,14 @@
     {
       "slug": "web-1779059973",
       "title": "Web 1779059973",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059973.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4705,8 +6715,14 @@
     {
       "slug": "web-1779059974",
       "title": "Web 1779059974",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059974.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4719,8 +6735,14 @@
     {
       "slug": "web-1779059980",
       "title": "Web 1779059980",
+      "displayTitle": "reference documentation",
       "source": "web_1779059980.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4733,8 +6755,14 @@
     {
       "slug": "web-1779059990",
       "title": "Web 1779059990",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779059990.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4747,8 +6775,14 @@
     {
       "slug": "web-1779059996",
       "title": "Web 1779059996",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779059996.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4761,8 +6795,14 @@
     {
       "slug": "web-1779059998",
       "title": "Web 1779059998",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779059998.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4775,8 +6815,14 @@
     {
       "slug": "web-1779060002",
       "title": "Web 1779060002",
+      "displayTitle": "reference documentation",
       "source": "web_1779060002.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4789,8 +6835,14 @@
     {
       "slug": "web-1779060011",
       "title": "Web 1779060011",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779060011.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4803,8 +6855,14 @@
     {
       "slug": "web-1779060017",
       "title": "Web 1779060017",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779060017.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4817,8 +6875,14 @@
     {
       "slug": "web-1779060018",
       "title": "Web 1779060018",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779060018.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4831,8 +6895,14 @@
     {
       "slug": "web-1779060024",
       "title": "Web 1779060024",
+      "displayTitle": "reference documentation",
       "source": "web_1779060024.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4845,8 +6915,14 @@
     {
       "slug": "web-1779060034",
       "title": "Web 1779060034",
+      "displayTitle": "Next.js documentation",
       "source": "web_1779060034.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Next.js documentation",
       "byteSize": 976,
       "payloadByteSize": 14544,
@@ -4859,8 +6935,14 @@
     {
       "slug": "web-1779060040",
       "title": "Web 1779060040",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
       "source": "web_1779060040.hat",
       "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "PostgreSQL 18.4 Documentation",
       "byteSize": 216,
       "payloadByteSize": 2910,
@@ -4873,8 +6955,14 @@
     {
       "slug": "web-1779060041",
       "title": "Web 1779060041",
+      "displayTitle": "Supabase Documentation",
       "source": "web_1779060041.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Supabase Documentation",
       "byteSize": 976,
       "payloadByteSize": 30827,
@@ -4887,8 +6975,94 @@
     {
       "slug": "web-1779060046",
       "title": "Web 1779060046",
+      "displayTitle": "reference documentation",
       "source": "web_1779060046.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
+      "searchQuery": "reference documentation",
+      "byteSize": 976,
+      "payloadByteSize": 21756,
+      "shardCount": 6,
+      "bloomBits": "3456",
+      "hashCount": 14,
+      "format": "memoria-pair",
+      "summary": "API Reference Copy page Copy React Reference Overview This section provides detailed reference documentation for working with React. For an introduction to React, please visit the Learn section. The React reference documentation is broken d"
+    },
+    {
+      "slug": "web-1779229372",
+      "title": "Web 1779229372",
+      "displayTitle": "Next.js documentation",
+      "source": "web_1779229372.hat",
+      "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
+      "searchQuery": "Next.js documentation",
+      "byteSize": 976,
+      "payloadByteSize": 14544,
+      "shardCount": 6,
+      "bloomBits": "3456",
+      "hashCount": 14,
+      "format": "memoria-pair",
+      "summary": "Menu Using App Router Features available in /app Latest Version 16.2.6 For an index of Next.js documentation , see /docs/llms.txt . Next.js Docs Welcome to the Next.js documentation! What is Next.js? Next.js is a React framework for buildin"
+    },
+    {
+      "slug": "web-1779229377",
+      "title": "Web 1779229377",
+      "displayTitle": "PostgreSQL 18.4 Documentation",
+      "source": "web_1779229377.hat",
+      "type": "hat",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
+      "searchQuery": "PostgreSQL 18.4 Documentation",
+      "byteSize": 216,
+      "payloadByteSize": 2910,
+      "shardCount": 1,
+      "bloomBits": "576",
+      "hashCount": 14,
+      "format": "memoria-pair",
+      "summary": "PostgreSQL 18.4 Documentation Next PostgreSQL 18.4 Documentation The PostgreSQL Global Development Group Copyright © 1996–2026 The PostgreSQL Global Development Group Legal Notice Table of Contents Preface 1. What Is PostgreSQL ? 2. A Brief"
+    },
+    {
+      "slug": "web-1779229378",
+      "title": "Web 1779229378",
+      "displayTitle": "Supabase Documentation",
+      "source": "web_1779229378.hat",
+      "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
+      "searchQuery": "Supabase Documentation",
+      "byteSize": 976,
+      "payloadByteSize": 30827,
+      "shardCount": 6,
+      "bloomBits": "3456",
+      "hashCount": 14,
+      "format": "memoria-pair",
+      "summary": "Supabase Documentation Learn how to get up and running with Supabase through tutorials, APIs and platform resources. Getting Started Set up and connect a database in just a few minutes. Start with Supabase AI prompts Products Database Supab"
+    },
+    {
+      "slug": "web-1779229382",
+      "title": "Web 1779229382",
+      "displayTitle": "reference documentation",
+      "source": "web_1779229382.hat",
+      "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "reference documentation",
       "byteSize": 976,
       "payloadByteSize": 21756,
@@ -4901,8 +7075,14 @@
     {
       "slug": "web-foundations",
       "title": "Web Foundations",
+      "displayTitle": "Web Foundations",
       "source": "web_foundations.tah",
       "type": "tah",
+      "domain": {
+        "id": "web-captures",
+        "label": "Web Captures",
+        "color": "#38bdf8"
+      },
       "searchQuery": "Web Foundations",
       "byteSize": 1921,
       "payloadByteSize": 1921,
@@ -4915,8 +7095,14 @@
     {
       "slug": "wiki-artificial-intelligence",
       "title": "Wiki Artificial Intelligence",
+      "displayTitle": "Wiki Artificial Intelligence",
       "source": "wiki_artificial_intelligence.hat",
       "type": "hat",
+      "domain": {
+        "id": "ai",
+        "label": "AI & Learning",
+        "color": "#f472b6"
+      },
       "searchQuery": "Wiki Artificial Intelligence",
       "byteSize": 23628,
       "payloadByteSize": 204413,
@@ -4929,8 +7115,14 @@
     {
       "slug": "wiki-dallas",
       "title": "Wiki Dallas",
+      "displayTitle": "Wiki Dallas",
       "source": "wiki_dallas.hat",
       "type": "hat",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Wiki Dallas",
       "byteSize": 13957,
       "payloadByteSize": 122129,
@@ -4943,8 +7135,14 @@
     {
       "slug": "wiki-real-estate",
       "title": "Wiki Real Estate",
+      "displayTitle": "Wiki Real Estate",
       "source": "wiki_real_estate.hat",
       "type": "hat",
+      "domain": {
+        "id": "real-estate",
+        "label": "Real Estate",
+        "color": "#34d399"
+      },
       "searchQuery": "Wiki Real Estate",
       "byteSize": 9385,
       "payloadByteSize": 66294,
