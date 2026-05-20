@@ -17,7 +17,7 @@ const JamieSprintGenerator: React.FC<JamieSprintGeneratorProps> = ({ onSprintCre
     if (!goal) return toast.warn("Specify a strategic goal first.");
     
     setLoading(true);
-    toast.info("JAMIE: Architecting roadmap...");
+    toast.info("Jamie is building a roadmap...");
     
     try {
       //  Call the Edge Function
@@ -42,12 +42,12 @@ const JamieSprintGenerator: React.FC<JamieSprintGeneratorProps> = ({ onSprintCre
         severity: 'INFO'
       });
       
-      toast.success("Roadmap injected by Jamie.");
+      toast.success("Roadmap created by Jamie.");
       if (onSprintCreated) onSprintCreated(result.sprint_id);
       setGoal('');
     } catch (err) {
       console.error(err);
-      toast.error("Jamie's generation sequence failed.");
+      toast.error("Jamie could not create the roadmap.");
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ const JamieSprintGenerator: React.FC<JamieSprintGeneratorProps> = ({ onSprintCre
         <textarea
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          placeholder="Command Jamie: 'Find a rental for Chris' or 'Analyze North Texas listings'..."
+          placeholder="Ask Jamie: 'Find a rental for Chris' or 'Analyze North Texas listings'..."
           className='w-full bg-slate-950/50 border border-white/10 rounded-xl p-4 text-xs font-mono text-purple-300 placeholder:text-slate-600 focus:outline-none focus:border-purple-500/50 transition-all resize-none h-24 mb-4'
         />
         
@@ -99,7 +99,7 @@ const JamieSprintGenerator: React.FC<JamieSprintGeneratorProps> = ({ onSprintCre
           ) : (
             <>
               <FaBolt size={10} />
-              <span>Initialize Jamie's Sprint</span>
+              <span>Create Jamie Workflow</span>
             </>
           )}
         </button>

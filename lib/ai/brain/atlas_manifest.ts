@@ -28,7 +28,7 @@ export function buildAtlasManifest(batchSize = 25) {
   }, {});
 
   return {
-    name: 'Sunset Pulse TAH Atlas Manifest',
+    name: 'Atlas Pulse TAH Manifest',
     version: 1,
     generatedAt,
     source: 'local-swarm-publish',

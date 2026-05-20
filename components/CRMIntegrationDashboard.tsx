@@ -28,7 +28,7 @@ const CRMIntegrationDashboard = ({ user }) => {
             <FaDatabase className='text-white' />
           </div>
           <div>
-            <h3 className='text-xl font-black text-white uppercase tracking-tighter'>CRM Command Center</h3>
+            <h3 className='text-xl font-black text-white uppercase tracking-tighter'>CRM Dashboard</h3>
             <p className='text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]'>Integrated Lead Management</p>
           </div>
         </div>
@@ -60,7 +60,7 @@ const CRMIntegrationDashboard = ({ user }) => {
 
         {/* Rapid Notes */}
         <div className='space-y-4'>
-          <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-500'>Operational Notes</h4>
+          <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-500'>Lead Notes</h4>
           <div className='flex gap-2'>
             <input
               type='text'

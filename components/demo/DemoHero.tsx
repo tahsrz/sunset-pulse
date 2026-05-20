@@ -10,10 +10,10 @@ const DemoHero = () => {
         <FaRocket /> Platform Demonstration
       </div>
       <h1 className='text-7xl font-black uppercase italic tracking-tighter mb-8 leading-none text-white'>
-        Predictive <span className='text-blue-500 underline decoration-blue-500/30 underline-offset-8'>Spatial</span> Intelligence.
+        Predictive <span className='text-blue-500 underline decoration-blue-500/30 underline-offset-8'>Spatial</span> Search.
       </h1>
       <p className='text-slate-400 text-xl font-medium leading-relaxed max-w-2xl italic'>
-        Experience the fusion of high-fidelity spatial data and generative intelligence. Sunset Pulse streamlines property analysis and lead conversion through autonomous data processing.
+        Experience spatial property data, 3D visualization, and Jamie-assisted analysis in one guided workflow.
       </p>
     </section>
   );

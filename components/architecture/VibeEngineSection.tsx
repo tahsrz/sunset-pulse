@@ -8,7 +8,7 @@ const VibeEngineSection = () => {
     <section className='col-span-1 xl:col-span-2 space-y-6 mt-12'>
       <div className='flex items-center gap-4 text-violet-200'>
         <FaPalette size={32} />
-        <h2 className='text-3xl font-black uppercase tracking-tight'>Neural Styling Layer (VibeSimulacrum)</h2>
+        <h2 className='text-3xl font-black uppercase tracking-tight'>Adaptive Styling Layer</h2>
       </div>
 
       <div className='waterlily-card p-8 rounded-2xl backdrop-blur-2xl relative overflow-hidden group'>
@@ -20,20 +20,20 @@ const VibeEngineSection = () => {
               <FaBrain className='text-violet-200' /> Deterministic Aesthetic Morphing
             </h3>
             <p className='text-sm text-teal-50/70 leading-relaxed mb-6'>
-              The <strong>VibeEngine</strong> establishes a deterministic relationship between AI linguistic output and UI aesthetics. Using 16-character <em>PulseHash</em> signatures, visual states are synchronized across React components and backend FFmpeg renderers.
+              The <strong>VibeEngine</strong> connects generated copy with consistent UI styling. Using 16-character <em>PulseHash</em> signatures, visual states stay synchronized across React components and backend FFmpeg renderers.
             </p>
             <ul className='space-y-3 text-xs text-teal-100/55 font-mono'>
               <li className='flex items-center gap-2'>
                 <div className='w-1 h-1 bg-violet-300 rounded-full' />
-                LINGUISTIC_RESOLVER: SCANNING_FOR_VIBE_SIGNATURES
+                STYLE_RESOLVER: CHECKING_VIBE_SIGNATURES
               </li>
               <li className='flex items-center gap-2'>
                 <div className='w-1 h-1 bg-teal-300 rounded-full' />
-                DYNAMIC_CSS_OVERRIDE: INJECTING_VARIABLE_ROOTS
+                DYNAMIC_CSS: APPLYING_VARIABLE_ROOTS
               </li>
               <li className='flex items-center gap-2'>
                 <div className='w-1 h-1 bg-rose-300 rounded-full' />
-                VISUAL_HALLUCINATION: TRIGGERING_CSS_FILTERS
+                VISUAL_PREVIEW: APPLYING_CSS_FILTERS
               </li>
             </ul>
           </div>
@@ -59,7 +59,7 @@ const VibeEngineSection = () => {
                 </div>
                 <div className='flex justify-between items-center text-[10px] font-mono'>
                   <span className='text-teal-100/45'>[vibe-institutional]</span>
-                  <span className='text-amber-200'>EQUITY_MAXIMA</span>
+                  <span className='text-amber-200'>PORTFOLIO_VIEW</span>
                 </div>
               </div>
             </div>
@@ -67,8 +67,8 @@ const VibeEngineSection = () => {
             <div className='flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-teal-200/10'>
               <FaWaveSquare className='text-violet-200 animate-pulse' />
               <div className='flex-1'>
-                <div className='text-[8px] font-bold text-teal-100/50 uppercase tracking-widest'>Neural Parity Sync</div>
-                <div className='text-[10px] text-white font-mono'>FRO-PREVIEW // BAK-RENDER: 100% MATCH</div>
+                <div className='text-[8px] font-bold text-teal-100/50 uppercase tracking-widest'>Preview Parity Sync</div>
+                <div className='text-[10px] text-white font-mono'>FRONTEND PREVIEW // BACKEND RENDER: 100% MATCH</div>
               </div>
               <FaMagic className='text-rose-200' />
             </div>

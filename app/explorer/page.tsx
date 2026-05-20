@@ -34,7 +34,7 @@ function ExplorerContent() {
       const finalArray = Array.isArray(propertyArray) ? propertyArray.filter(p => typeof p === 'object' && p !== null) : [];
       setProperties(finalArray as any);
 
-      // Calculate area-wide intelligence
+      // Calculate area-wide market context
       if (finalArray.length > 0) {
         const totalScore = finalArray.reduce((acc: number, p: any) => 
           acc + calculatePulseScore(p.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates), 0);
@@ -43,11 +43,11 @@ function ExplorerContent() {
         setAreaIntel({
           pulseScore: avgScore,
           tourRecommendation: finalArray.length > 1 
-            ? `Optimal tour starts at ${finalArray[0].name}. Intelligence suggests a clockwise route for maximum daylight leverage.`
-            : 'Standalone priority asset identified.'
+            ? `Suggested tour starts at ${finalArray[0].name}. A clockwise route may make the best use of daylight.`
+            : 'One property is available in this area.'
         });
       } else {
-        setAreaIntel({ pulseScore: 0, tourRecommendation: 'No local assets identified for this sector.' });
+        setAreaIntel({ pulseScore: 0, tourRecommendation: 'No properties found in this area.' });
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -70,11 +70,11 @@ function ExplorerContent() {
             
             setAreaIntel({
               pulseScore: calculatePulseScore(property.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates),
-              tourRecommendation: `Priority target: ${property.name}. Highly localized intelligence active.`
+              tourRecommendation: `Selected property: ${property.name}. Local context is available.`
             });
           }
         } else {
-          // Fetch ALL properties for global grid view
+          // Fetch all properties for the full property view
           const res = await fetch('/api/properties?pageSize=100');
           if (res.ok) {
             const json = await res.json();
@@ -137,23 +137,23 @@ function ExplorerContent() {
               {areaIntel.tourRecommendation && (
                 <div className="bg-blue-600/10 p-3 rounded-xl border border-blue-500/20">
                   <div className="flex items-center gap-2 mb-1 text-[8px] font-black text-blue-400 uppercase tracking-widest">
-                    <FaRoute /> Jamie's Tour Protocol
+                    <FaRoute /> Suggested Tour Route
                   </div>
                   <p className="text-[10px] text-white/80 italic leading-relaxed">
-                    "{areaIntel.tourRecommendation}"
+                    {areaIntel.tourRecommendation}
                   </p>
                 </div>
               )}
               
               <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic border-t border-white/5 pt-3">
-                "Selection encompasses {selection.type === 'polygon' ? 'a custom-defined area' : 'a radius around your point'}. Jamie is now analyzing local business metrics and property yields for this specific coordinate block."
+                Selection includes {selection.type === 'polygon' ? 'a custom-defined area' : 'a radius around your point'}. Jamie can review nearby activity, local context, and property yield estimates for this area.
               </p>
 
-              {/* Spatial Value Briefing */}
+              {/* Location context */}
               <div className="mt-4 p-4 bg-orange-600/10 border border-orange-500/20 rounded-2xl group hover:bg-orange-600/20 transition-all">
-                <h4 className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1">Spatial Advantage</h4>
+                <h4 className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1">Location Context</h4>
                 <p className="text-[10px] text-slate-300 leading-relaxed">
-                  Decipher neighborhood flow and asset proximity in real-time. Spatial search allows you to uncover hidden potential that legacy lists ignore.
+                  Review neighborhood flow and property proximity in real time. Spatial search helps compare areas beyond a standard list view.
                 </p>
               </div>
             </div>
@@ -171,7 +171,7 @@ function ExplorerContent() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
           </div>
-          <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">High-Fidelity MLS Stream: Active</span>
+          <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">MLS Feed: Active</span>
         </div>
         <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-xl flex items-center gap-2 opacity-50">
           <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Search Latency: &lt;10ms</span>
@@ -185,7 +185,7 @@ function ExplorerContent() {
           className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-blue-600 hover:text-white transition-all group"
         >
           <FaSearch className="group-hover:rotate-12 transition-transform" />
-          Back to Grid
+          Back to Properties
         </a>
       </div>
     </main>

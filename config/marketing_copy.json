@@ -1,8 +1,8 @@
 {
   "hero": {
     "title": "Sunset Pulse",
-    "subtitle": "Intelligence-Backed Property Decisions",
-    "description": "Search North Texas opportunities, inspect market signals, and move from listing to recommendation with Jamie as your operating analyst."
+    "subtitle": "Clearer Property Decisions",
+    "description": "Search North Texas opportunities, review market context, and move from listing to recommendation with Jamie as your research assistant."
   },
   "section_headers": {
     "value_prop": {
@@ -10,8 +10,8 @@
       "tagline": "Find faster. Understand deeper. Act with confidence."
     },
     "featured": {
-      "title": "Strategic Asset Identification",
-      "tagline": "Direct Regional Market Integration"
+      "title": "Curated Property Opportunities",
+      "tagline": "Regional Market Search"
     }
   },
   "features": {
@@ -22,18 +22,18 @@
     },
     "spatial_search": {
       "title": "Inspect Context, Not Just Photos",
-      "tagline": "Maps, Viewer, Neighborhood Signals",
-      "description": "Use spatial search and immersive property views to understand asset context, neighborhood momentum, and hidden tradeoffs before you commit."
+      "tagline": "Maps, Viewer, Neighborhood Context",
+      "description": "Use spatial search and immersive property views to understand location context, neighborhood momentum, and tradeoffs before you commit."
     },
     "backend_integrity": {
       "title": "Get A Clear Recommendation",
-      "tagline": "Jamie Briefs The Next Move",
-      "description": "Jamie turns scattered market inputs into one usable brief with summary, signal review, language QA, and the next action worth taking."
+      "tagline": "Jamie Summarizes What Matters",
+      "description": "Jamie turns scattered market inputs into one usable summary with key details, risk notes, and a practical next step."
     }
   },
   "cta": {
     "button_text": "Start Exploring",
-    "footer_note": "North Texas Intelligence // From Search To Decision"
+    "footer_note": "North Texas Property Search // From Listing To Decision"
   },
   "faq": {
     "title": "How The Product Works",
@@ -41,7 +41,7 @@
     "items": [
       {
         "question": "What does Jamie actually do for me?",
-        "answer": "Jamie acts like an operating analyst. It summarizes regional signals, highlights risks, surfaces the strongest headline, and points you toward the next action instead of leaving you with raw data alone.",
+        "answer": "Jamie summarizes regional market context, highlights risks, surfaces the strongest takeaway, and points you toward the next action instead of leaving you with raw data alone.",
         "score": 42
       },
       {
@@ -51,12 +51,12 @@
       },
       {
         "question": "What is the 3D viewer for?",
-        "answer": "The viewer is there to help you inspect a property spatially, layer in intelligence overlays, and understand context more like a walkthrough than a static gallery.",
+        "answer": "The viewer helps you inspect a property spatially, review useful overlays, and understand context more like a walkthrough than a static gallery.",
         "score": 25
       },
       {
-        "question": "How does the War Room help with decisions?",
-        "answer": "The War Room organizes the brief into practical lenses like growth outlook, risk review, influence mapping, and final recommendation so you can move from signal to judgment quickly.",
+        "question": "How do the decision tools help?",
+        "answer": "The decision tools organize the summary into practical lenses like growth outlook, risk review, local context, and final recommendation so you can move from information to judgment quickly.",
         "score": 56
       },
       {

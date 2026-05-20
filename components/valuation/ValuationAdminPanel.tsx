@@ -50,7 +50,7 @@ const ValuationAdminPanel = () => {
           <div className='flex items-center justify-between'>
             <div>
               <h4 className='text-sm font-bold text-white'>Bypass Rate Limits</h4>
-              <p className='text-[10px] text-slate-500 mt-1'>Disable API throttling for rapid reconnaissance.</p>
+              <p className='text-[10px] text-slate-500 mt-1'>Disable API throttling for rapid testing.</p>
             </div>
             <button 
               onClick={() => setBypassLimits(!bypassLimits)}

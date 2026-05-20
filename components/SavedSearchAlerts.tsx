@@ -28,10 +28,10 @@ const SavedSearchAlerts = () => {
     <div className='bg-slate-900/50 p-6 rounded-3xl border border-white/5 backdrop-blur-xl'>
       <div className='flex items-center justify-between mb-6'>
         <h3 className='text-xs font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2'>
-          <FaBell className='text-blue-500' /> Recon Surveillance
+          <FaBell className='text-blue-500' /> Saved Search Alerts
         </h3>
         <div className='flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/10'>
-          <span className='text-[8px] font-black uppercase tracking-widest text-slate-500'>Market Anomaly Ping</span>
+          <span className='text-[8px] font-black uppercase tracking-widest text-slate-500'>Market Updates</span>
           <button 
             onClick={() => setAnomalyAlerts(!anomalyAlerts)}
             className={`w-8 h-4 rounded-full transition-all relative ${anomalyAlerts ? 'bg-blue-600' : 'bg-slate-800'}`}
@@ -47,19 +47,19 @@ const SavedSearchAlerts = () => {
             <div className='flex items-start gap-3'>
               <FaExclamationTriangle className='text-blue-400 mt-1' size={14} />
               <div>
-                <p className='text-[11px] font-bold text-blue-100'>Market Anomaly Protocol Active</p>
-                <p className='text-[9px] text-blue-300/60 uppercase tracking-tighter'>Monitoring RentCast & MLS for volatility pings.</p>
+                <p className='text-[11px] font-bold text-blue-100'>Market updates are active</p>
+                <p className='text-[9px] text-blue-300/60 uppercase tracking-tighter'>Monitoring RentCast and MLS data for notable changes.</p>
               </div>
             </div>
           </div>
         )}
 
         {loading ? (
-          <p className='text-slate-500 text-[10px] font-mono italic animate-pulse'>ACCESSING ENCRYPTED ALERTS...</p>
+          <p className='text-slate-500 text-[10px] font-mono italic animate-pulse'>Loading saved alerts...</p>
         ) : alerts.length === 0 ? (
           <div className='py-8 text-center border border-dashed border-white/5 rounded-2xl'>
-            <p className='text-slate-500 text-[10px] uppercase font-black tracking-widest'>No Active Target Alerts</p>
-            <p className='text-[9px] text-slate-600 italic mt-1'>Deploy reconnaissance from the search grid.</p>
+            <p className='text-slate-500 text-[10px] uppercase font-black tracking-widest'>No saved alerts yet</p>
+            <p className='text-[9px] text-slate-600 italic mt-1'>Save a search to receive updates.</p>
           </div>
         ) : (
           <div className='space-y-2'>

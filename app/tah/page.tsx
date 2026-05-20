@@ -6,7 +6,7 @@ import { TahLibraryClient } from '@/app/tah/TahLibraryClient';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'TAH Intelligence Archive | Sunset Pulse',
+  title: 'TAH Knowledge Archive | Sunset Pulse',
   description: 'A crawlable archive of Sunset Pulse TAH and HAT cartridges for robots, agents, and context-aware systems.'
 };
 
@@ -20,7 +20,7 @@ export default function TahPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Sunset Pulse TAH Intelligence Archive',
+    name: 'Sunset Pulse TAH Knowledge Archive',
     description: 'Crawlable context pages for the Sunset Pulse cartridge knowledge base.',
     hasPart: cartridges.map(cartridge => ({
       '@type': 'Dataset',
@@ -45,7 +45,7 @@ export default function TahPage() {
             TAH Library
           </p>
           <h1 className="max-w-4xl text-4xl font-black leading-tight text-white md:text-6xl">
-            Sunset Pulse TAH Intelligence Archive
+            Sunset Pulse TAH Knowledge Archive
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-200">
             A dense, crawlable library for every active cartridge in the knowledge base. Humans browse the catalog; agents use the same pages, JSON, headless text, and query APIs as stable route contracts.

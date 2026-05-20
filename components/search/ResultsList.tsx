@@ -34,13 +34,13 @@ const ResultsList: React.FC<ResultsListProps> = ({
           </div>
         </div>
 
-        {/* Intelligence Briefing Hook */}
+        {/* Jamie Summary */}
         <div className='mb-8 p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center gap-4 group hover:bg-blue-600/20 transition-all'>
            <div className='w-1 h-12 bg-blue-500 rounded-full group-hover:scale-y-110 transition-transform' />
            <div>
-             <h3 className='text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1'>Jamie Intelligence Briefing</h3>
+             <h3 className='text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1'>Jamie Search Summary</h3>
              <p className='text-[11px] text-slate-300 font-medium leading-relaxed italic'>
-               "Request DNA analyzed. Scaling PostgreSQL weight to match your search intensity. Results synchronized with live MLS grid."
+               "Your filters are applied. Results are refreshed with available MLS and local listing data."
              </p>
            </div>
         </div>

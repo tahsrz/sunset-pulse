@@ -17,13 +17,13 @@ const SpatialRecon: React.FC<SpatialReconProps> = ({ property }) => {
         <div>
           <h3 className='text-2xl font-black uppercase italic tracking-tighter mb-4 text-white'>Spatial Data Analysis</h3>
           <p className='text-slate-400 text-sm leading-relaxed font-medium'>
-            Analyze property assets with high precision. Our engine synthesizes structural data and neighborhood environmental factors, providing a comprehensive professional profile of every listing.
+            Analyze properties with high precision. The engine combines structural data and neighborhood context to create a professional profile for each listing.
           </p>
         </div>
         <div className='space-y-4'>
           <div className='p-4 bg-white/5 rounded-2xl border border-white/5'>
             <div className='text-[10px] font-bold uppercase text-blue-400 mb-1'>Structural Mapping</div>
-            <div className='text-xs font-bold text-slate-300'>Detailed boundary analysis and real-time spatial telemetry.</div>
+            <div className='text-xs font-bold text-slate-300'>Detailed boundary analysis and real-time spatial context.</div>
           </div>
           <div className='p-4 bg-white/5 rounded-2xl border border-white/5'>
             <div className='text-[10px] font-bold uppercase text-blue-400 mb-1'>Environmental Simulation</div>

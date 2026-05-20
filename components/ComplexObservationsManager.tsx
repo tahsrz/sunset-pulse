@@ -38,7 +38,7 @@ const ComplexObservationsManager = () => {
   const handleAdd = async (e) => {
     e.preventDefault();
     if (observations.length >= 5) {
-      alert("Operational Limit Reached: Only 5 active complex observations allowed.");
+      alert("Limit reached: only 5 active observations are allowed.");
       return;
     }
 
@@ -48,7 +48,7 @@ const ComplexObservationsManager = () => {
            o.data.toLowerCase() === newObs.data.toLowerCase()
     );
     if (isDuplicate) {
-      alert("Intelligence Redundancy: This observation already exists in the log.");
+      alert("This observation already exists in the log.");
       return;
     }
 
@@ -73,7 +73,7 @@ const ComplexObservationsManager = () => {
   };
 
   const handleDelete = async (obs) => {
-    if (!window.confirm("Purge reconnaissance data from log?")) return;
+    if (!window.confirm("Remove this observation from the log?")) return;
 
     try {
       const res = await fetch('/api/jamie/observations/log', {
@@ -133,7 +133,7 @@ const ComplexObservationsManager = () => {
           </div>
           <div>
             <h3 className='text-xl font-black text-white uppercase tracking-tighter'>Complex Observations</h3>
-            <p className='text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]'>Region-Specific Recon Data</p>
+            <p className='text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]'>Region-Specific Notes</p>
           </div>
         </div>
         <div className='flex items-center gap-2'>
@@ -154,7 +154,7 @@ const ComplexObservationsManager = () => {
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
           <input
             type='text'
-            placeholder='Target Region'
+            placeholder='Region'
             required
             className='md:col-span-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-amber-500 transition-all'
             value={newObs.region}
@@ -162,7 +162,7 @@ const ComplexObservationsManager = () => {
           />
           <input
             type='text'
-            placeholder='Recon Data...'
+            placeholder='Observation...'
             required
             className='md:col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-amber-500 transition-all'
             value={newObs.data}
@@ -183,12 +183,12 @@ const ComplexObservationsManager = () => {
         {isLoading ? (
           <div className='flex flex-col items-center justify-center py-12 gap-4'>
             <FaSpinner className='text-amber-500 text-3xl animate-spin' />
-            <p className='text-slate-500 text-[10px] font-black uppercase tracking-widest'>Decrypting Subconscious...</p>
+            <p className='text-slate-500 text-[10px] font-black uppercase tracking-widest'>Loading Observations...</p>
           </div>
         ) : observations.length === 0 ? (
           <div className='py-12 text-center border-2 border-dashed border-white/5 rounded-2xl'>
             <FaSatellite className='text-slate-700 text-3xl mx-auto mb-4' />
-            <p className='text-slate-500 text-xs font-bold uppercase tracking-widest'>No active reconnaissance</p>
+            <p className='text-slate-500 text-xs font-bold uppercase tracking-widest'>No active observations</p>
           </div>
         ) : (
           observations.map((obs) => (

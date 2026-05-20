@@ -12,8 +12,8 @@ const InsightsPage = () => {
   if (error) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <div className="text-center p-8 bg-rose-500/10 border border-rose-500/20 rounded-3xl backdrop-blur-xl">
-        <h2 className="text-xl font-bold text-rose-500 mb-2">Protocol Interrupted</h2>
-        <p className="text-rose-400 text-xs uppercase tracking-widest">Failed to retrieve spatial dreams.</p>
+        <h2 className="text-xl font-bold text-rose-500 mb-2">Insights Unavailable</h2>
+        <p className="text-rose-400 text-xs uppercase tracking-widest">Failed to retrieve market insights.</p>
       </div>
     </div>
   );
@@ -31,13 +31,13 @@ const InsightsPage = () => {
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 text-blue-500 mb-6 animate-pulse">
               <FaBrain size={24} />
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">Neural_Intelligence_Feed</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">Market Insight Feed</span>
             </div>
             <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white mb-6 leading-[0.9]">
-              Jamie's <span className="text-blue-500">Spatial Dreams</span>
+              Jamie's <span className="text-blue-500">Market Insights</span>
             </h1>
             <p className="text-slate-400 text-lg max-w-xl border-l-2 border-blue-500/30 pl-6">
-              Critical insights extracted from the Jamie Dream Bridge. Real-time predictive intelligence for your real estate tactical sprint.
+              Current market patterns, location context, and search opportunities summarized for clearer property decisions.
             </p>
           </div>
 
@@ -54,7 +54,7 @@ const InsightsPage = () => {
             >
               <div className="text-left">
                 <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Control Center</div>
-                <div className="text-sm font-bold tracking-tight">Command Post</div>
+                <div className="text-sm font-bold tracking-tight">Dashboard</div>
               </div>
               <FaArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -80,13 +80,13 @@ const InsightsPage = () => {
           
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12 text-center md:text-left">
             <div>
-              <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Need a customized tactical sprint?</h2>
+              <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Need a custom market plan?</h2>
               <p className="text-slate-300 max-w-xl">
-                Jamie can generate a high-stakes intelligence report tailored to your specific goals and asset portfolio.
+                Jamie can generate a focused property report tailored to your goals, timeline, and search criteria.
               </p>
             </div>
             <button className="px-10 py-5 bg-white text-black font-black uppercase text-[10px] tracking-[0.4em] rounded-full hover:bg-blue-500 hover:text-white transition-all shadow-2xl shadow-white/5">
-              Initialize Deep Recon
+              Request Analysis
             </button>
           </div>
         </div>

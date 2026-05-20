@@ -46,7 +46,7 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
   const nodes: AtlasNode[] = [
     {
       id: 'world',
-      label: 'TAH World Map',
+      label: 'Atlas Pulse',
       type: 'world',
       group: 'world',
       progress: progress.percent,

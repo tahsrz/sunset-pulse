@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { MapPin, Search, Sparkles } from 'lucide-react';
+import { Compass, MapPin, Search, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { memoryBridge } from '@/lib/memory_bridge';
 
@@ -51,7 +51,7 @@ const HeroSearch: React.FC<HeroSearchProps> = ({ isEntered, isAdvancedMode, quer
         </div>
         <input 
           type="text"
-          placeholder="Search a city, ZIP, or property to start the brief..."
+          placeholder="Search a city, ZIP, or property..."
           className="flex-grow py-4 px-2 text-lg text-white bg-transparent focus:outline-none placeholder:text-white/30"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -64,14 +64,18 @@ const HeroSearch: React.FC<HeroSearchProps> = ({ isEntered, isAdvancedMode, quer
         </button>
       </form>
 
-      <div className="mt-8 flex gap-4 pointer-events-auto">
+      <div className="mt-8 flex flex-wrap justify-center gap-4 pointer-events-auto">
+        <a href="#pulse-world" className="flex items-center gap-2 px-6 py-3 waterlily-button rounded-full text-white hover:scale-105 transition-all text-sm font-medium">
+          <Compass size={16} />
+          Platform Map
+        </a>
          <Link href="/properties" className="flex items-center gap-2 px-6 py-3 waterlily-chip rounded-full text-white hover:bg-white/10 transition-all text-sm font-medium">
           Browse Opportunities
         </Link>
         {isAdvancedMode && (
           <Link href="/dashboard" className="flex items-center gap-2 px-6 py-3 bg-violet-500/20 border border-violet-300/30 rounded-full text-violet-100 hover:bg-violet-400/30 transition-all text-sm font-medium">
             <Sparkles size={16} />
-            Command Post
+            Dashboard
           </Link>
         )}
       </div>

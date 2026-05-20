@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { FaSearch, FaSlidersH, FaBell, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaSearch, FaSlidersH, FaBell } from 'react-icons/fa';
 
 interface AdvancedSearchFilters {
   location: string;
@@ -85,7 +85,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
             type='submit'
             className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95'
           >
-            RECON SEARCH
+            Search
           </button>
         </div>
 
@@ -96,7 +96,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
             onClick={() => setIsExpanded(!isExpanded)}
             className='flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold text-xs uppercase tracking-widest transition-colors'
           >
-            <FaSlidersH /> {isExpanded ? 'Hide Recon Options' : 'Advanced Recon Options'}
+            <FaSlidersH /> {isExpanded ? 'Hide Filters' : 'Advanced Filters'}
           </button>
           
           <div className='flex gap-4'>
@@ -115,7 +115,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
           <div className='mt-8 pt-8 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-top-4 duration-300'>
             {/* Price Range */}
             <div>
-              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Target Price Range</h4>
+              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Price Range</h4>
               <div className='flex gap-2 items-center'>
                 <input
                   type='number'
@@ -139,7 +139,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
 
             {/* Beds / Baths */}
             <div>
-              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Structural Specs</h4>
+              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Beds & Baths</h4>
               <div className='flex gap-2'>
                 <select name='beds' className='w-full p-3 rounded-lg bg-slate-50 border-none text-sm' value={filters.beds} onChange={handleChange}>
                   <option value=''>Min Beds</option>
@@ -154,7 +154,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
 
             {/* Source Selection */}
             <div>
-              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Intelligence Source</h4>
+              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Listing Source</h4>
               <label className='flex items-center gap-3 cursor-pointer group'>
                 <div className='relative'>
                   <input
@@ -173,7 +173,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
 
             {/* Amenities */}
             <div className='md:col-span-3'>
-              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Required Assets</h4>
+              <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4'>Amenities</h4>
               <div className='flex flex-wrap gap-2'>
                 {commonAmenities.map(amenity => (
                   <button

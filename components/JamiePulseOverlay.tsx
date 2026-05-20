@@ -56,7 +56,7 @@ const JamiePulseOverlay = () => {
           <div className="relative flex flex-col items-center text-center">
             <div className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold tracking-widest uppercase italic animate-pulse">
               <Activity size={16} />
-              Live Intelligence Pulse Detected
+              New Market Summary Ready
             </div>
 
             <div className="flex flex-col md:flex-row gap-8 items-center mb-12 w-full">
@@ -73,8 +73,8 @@ const JamiePulseOverlay = () => {
                   {activeEnvoy?.name || "Jamie"} Research <span className="text-primary">Consolidated</span>
                 </h2>
                 <p className="text-xl text-slate-400 max-w-2xl">
-                  Jamie finished a {latestBriefing.simulated_research_hours}-hour regional brief.
-                  Here is the summary, top signal, and copy-risk check in one place.
+                  Jamie finished a {latestBriefing.simulated_research_hours}-hour regional summary.
+                  Here is the overview, top market note, and language QA in one place.
                 </p>
               </div>
             </div>
@@ -95,13 +95,13 @@ const JamiePulseOverlay = () => {
               <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
                 <div className="flex items-center gap-3 text-intel-green mb-4">
                   <Zap size={20} />
-                  <h3 className="font-bold uppercase tracking-wider text-sm">Top Market Signal</h3>
+                  <h3 className="font-bold uppercase tracking-wider text-sm">Top Market Note</h3>
                 </div>
                 <div className="space-y-3">
                   <div className="border-l-2 border-intel-green/30 pl-4">
                     <h4 className="text-white font-medium text-sm mb-1">{latestBriefing.top_headline}</h4>
                     <p className="text-slate-400 text-xs">
-                      {latestBriefing.key_signal_count} active signal{latestBriefing.key_signal_count === 1 ? '' : 's'} in this briefing.
+                      {latestBriefing.key_signal_count} active note{latestBriefing.key_signal_count === 1 ? '' : 's'} in this summary.
                     </p>
                   </div>
                 </div>
@@ -127,7 +127,7 @@ const JamiePulseOverlay = () => {
               onClick={() => setShowOverlay(false)}
               className="mt-12 px-8 py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.5)] uppercase tracking-widest italic"
             >
-              Acknowledge Intel
+              Close Summary
             </button>
           </div>
         </motion.div>

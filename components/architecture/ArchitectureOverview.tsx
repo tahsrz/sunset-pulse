@@ -16,7 +16,7 @@ const ArchitectureOverview = () => {
             Technical Architecture
           </h1>
           <p className='text-teal-100/60 font-mono text-sm mt-4 tracking-widest'>
-            ENTERPRISE INFRASTRUCTURE & INTELLIGENCE
+            ENTERPRISE INFRASTRUCTURE & PROPERTY DATA
           </p>
         </header>
 
@@ -37,7 +37,7 @@ const ArchitectureOverview = () => {
             </h2>
             <div className='space-y-8 text-xl text-teal-50/70 font-serif italic leading-relaxed'>
               <p>
-                "Sunset Pulse integrates high-performance geospatial analysis with advanced data-driven search, optimizing the asset identification process for the institutional market."
+                "Sunset Pulse integrates high-performance geospatial analysis with data-driven search, making it easier to identify relevant properties and compare opportunities."
               </p>
               <p>
                 "By leveraging a secure, cloud-native architecture, we deliver a platform that is precise, reliable, and capable of handling high-frequency market updates."

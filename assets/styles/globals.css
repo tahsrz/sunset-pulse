@@ -121,6 +121,17 @@
     background: rgba(63, 183, 163, 0.12);
     border-color: rgba(63, 183, 163, 0.25);
   }
+
+  .virtual-world-canvas-frame,
+  .virtual-world-canvas-frame > div,
+  .virtual-world-canvas-frame canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .virtual-world-canvas-frame canvas {
+    display: block;
+  }
 }
 
 @layer utilities {

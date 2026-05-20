@@ -44,9 +44,9 @@ const CollectionsPage = () => {
     try {
       await toggleCollection(user.id, propId);
       setProperties(prev => prev.filter(p => p._id !== propId));
-      toast.success("Asset removed from Pulse Folder");
+      toast.success("Property removed from saved list.");
     } catch (err) {
-      toast.error("Eviction failed.");
+      toast.error("Unable to remove property.");
     }
   };
 
@@ -58,14 +58,14 @@ const CollectionsPage = () => {
         <div>
           <div className='flex items-center gap-3 text-red-500 mb-2'>
             <FaHeart size={20} className='animate-pulse' />
-            <span className='text-[10px] font-black uppercase tracking-[0.5em] text-white/40'>Consumer_Grid</span>
+            <span className='text-[10px] font-black uppercase tracking-[0.5em] text-white/40'>Saved Properties</span>
           </div>
-          <h1 className='text-6xl font-black italic tracking-tighter text-white'>My Pulse Folder</h1>
-          <p className='text-slate-500 font-mono text-xs mt-2 uppercase tracking-widest'>Intelligence-backed asset collection</p>
+          <h1 className='text-6xl font-black italic tracking-tighter text-white'>Saved Properties</h1>
+          <p className='text-slate-500 font-mono text-xs mt-2 uppercase tracking-widest'>Your saved listings and property notes</p>
         </div>
         <div className='text-right'>
           <div className='text-4xl font-mono font-bold text-red-500'>{properties.length}</div>
-          <div className='text-[10px] font-black uppercase opacity-30'>Saved Assets</div>
+          <div className='text-[10px] font-black uppercase opacity-30'>Saved Properties</div>
         </div>
       </header>
 
@@ -77,7 +77,7 @@ const CollectionsPage = () => {
             </div>
             <h2 className='text-xl font-bold text-white/40 uppercase tracking-widest'>Your Folder is Empty</h2>
             <Link href='/properties' className='mt-6 px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all'>
-              Recon Properties
+              Browse Properties
             </Link>
           </div>
         ) : (
@@ -103,7 +103,7 @@ const CollectionsPage = () => {
 
                   <div className='absolute bottom-4 left-4 right-4 flex justify-between items-end'>
                     <div className='bg-red-600/90 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2'>
-                      <FaRobot size={10} /> Jamie_Verified
+                      <FaRobot size={10} /> Jamie Reviewed
                     </div>
                     <div className='text-2xl font-black text-white'>
                       ${property.rates?.monthly?.toLocaleString() || property.rates?.nightly?.toLocaleString()}
@@ -145,7 +145,7 @@ const CollectionsPage = () => {
                       href={`/properties/${property._id}`}
                       className='flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-all flex items-center justify-center gap-2'
                     >
-                      <FaExternalLinkAlt size={10} /> View Intel
+                      <FaExternalLinkAlt size={10} /> View Details
                     </Link>
                     <Link 
                       href={`/properties/${property._id}?tour=true`}

@@ -33,7 +33,7 @@ const HotspotLabel: React.FC<HotspotProps> = ({ position, label, icon, value, co
             </span>
             {trend && (
               <span className={`text-[8px] font-bold ${trend === 'UP' ? 'text-green-500' : trend === 'DOWN' ? 'text-red-500' : 'text-slate-500'}`}>
-                {trend === 'UP' ? '▲' : trend === 'DOWN' ? '▼' : '●'}
+                {trend === 'UP' ? 'UP' : trend === 'DOWN' ? 'DOWN' : '-'}
               </span>
             )}
           </div>
@@ -69,7 +69,7 @@ const SpatialHotspots: React.FC<SpatialHotspotsProps> = ({ property, isNeuralMod
     const yieldValue = reconData?.financial?.yield?.percentage || '---';
     const grade = reconData?.financial?.investment_grade || 'U';
     const pulseScore = reconData?.neighborhood?.pulseScore || '---';
-    const neuralStatus = reconData?.neighborhood?.neural_status || 'SYNCHRONIZING';
+    const neuralStatus = reconData?.neighborhood?.neural_status || 'UPDATING';
     const momentum = reconData?.financial?.market || { percentage: 0, trend: 'STABLE' };
     const visits = reconData?.engagement?.visits_48h || 0;
     const velocity = reconData?.engagement?.velocity || 'STABLE';
@@ -78,7 +78,7 @@ const SpatialHotspots: React.FC<SpatialHotspotsProps> = ({ property, isNeuralMod
       {
         id: 'yield',
         position: [6, 8, 6] as [number, number, number],
-        label: 'Tactical Yield',
+        label: 'Est. Yield',
         icon: <FaDollarSign size={8} />,
         value: `${yieldValue}% ARR`,
         color: '#3b82f6'
@@ -94,7 +94,7 @@ const SpatialHotspots: React.FC<SpatialHotspotsProps> = ({ property, isNeuralMod
       {
         id: 'pulse',
         position: [8, 4, -8] as [number, number, number],
-        label: 'Neural Pulse',
+        label: 'Area Score',
         icon: <FaHeartbeat size={8} />,
         value: `${pulseScore}/100 SCORE`,
         color: '#ef4444',
@@ -114,16 +114,16 @@ const SpatialHotspots: React.FC<SpatialHotspotsProps> = ({ property, isNeuralMod
         position: [10, 12, 0] as [number, number, number],
         label: 'Visit Density',
         icon: <FaEye size={8} />,
-        value: `${visits} SCANS / 48H`,
+        value: `${visits} VISITS / 48H`,
         color: '#38bdf8',
         status: `${velocity}_VELOCITY`
       },
       {
         id: 'recon',
         position: [0, 20, 5] as [number, number, number],
-        label: 'Cognitive Recon',
+        label: 'Data Review',
         icon: <FaBroadcastTower size={8} />,
-        value: 'GRID_LINK_ACTIVE',
+        value: 'DATA LINK ACTIVE',
         color: '#10b981',
         status: reconData?.neighborhood?.vibe_alignment ? `${reconData.neighborhood.vibe_alignment}_VIBE` : ''
       }
@@ -134,7 +134,7 @@ const SpatialHotspots: React.FC<SpatialHotspotsProps> = ({ property, isNeuralMod
 
   return (
     <group>
-      {/* Neural Pulse Radius Visualization */}
+      {/* Area score radius visualization */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
         <ringGeometry args={[15, 15.2, 64]} />
         <meshBasicMaterial color="#3b82f6" transparent opacity={0.2} />

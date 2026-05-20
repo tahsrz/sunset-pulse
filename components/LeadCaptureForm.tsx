@@ -183,9 +183,9 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
           <div className='flex-1'>
             <div className='flex items-center gap-2'>
               <FaStar className='text-amber-400 text-xs animate-pulse' />
-              <span className='text-[10px] font-black text-white uppercase tracking-widest'>Request Priority VIP Tour</span>
+              <span className='text-[10px] font-black text-white uppercase tracking-widest'>Request Priority Tour</span>
             </div>
-            <p className='text-[8px] text-blue-400/60 uppercase font-bold mt-0.5'>Direct intelligence intercept with a lead agent (3x Velocity Boost)</p>
+            <p className='text-[8px] text-blue-400/60 uppercase font-bold mt-0.5'>Connect directly with a lead agent for faster scheduling.</p>
           </div>
         </div>
 
@@ -198,7 +198,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
               className='mt-1 w-4 h-4 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 transition-all cursor-pointer'
             />
             <p className='text-[7px] text-slate-500 uppercase font-bold leading-relaxed'>
-              I consent to receive automated property alerts and tactical market updates via email/SMS. 
+              I consent to receive automated property alerts and market updates via email/SMS.
               I understand I can opt-out at any time.
             </p>
           </div>
@@ -209,7 +209,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
               className='mt-1 w-4 h-4 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 transition-all cursor-pointer'
             />
             <p className='text-[7px] text-slate-500 uppercase font-bold leading-relaxed'>
-              Cross-Platform Intelligence: I agree to let Jamie AI use my real estate search intent to provide personalized "Sunset Grill" lifestyle leverage and local business offers.
+              Cross-platform personalization: I agree to let Jamie AI use my real estate search intent to provide relevant local recommendations and offers.
             </p>
           </div>
         </div>
@@ -236,7 +236,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
           <div className='flex items-center gap-2 justify-center opacity-40 group-hover:opacity-100 transition-opacity duration-500'>
             <div className='h-[1px] w-8 bg-blue-500' />
             <p className='text-[8px] font-bold text-blue-400 uppercase tracking-widest'>
-              Secure Intelligence Intercept
+              Secure Inquiry
             </p>
             <div className='h-[1px] w-8 bg-blue-500' />
           </div>

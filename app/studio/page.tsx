@@ -59,7 +59,7 @@ const ProductionStudio = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Success: ${data.asset} acquired.`);
+        alert(`Success: ${data.asset} imported.`);
         handleHarvest();
       }
     } catch (err) {
@@ -118,10 +118,10 @@ const ProductionStudio = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           leadId: selectedLead,
-          briefingUrl: `/briefing/render/${job.jobId}`,          notes: `Personalized market briefing: ${targetScene.split('/').pop()}`
+          briefingUrl: `/briefing/render/${job.jobId}`,          notes: `Personalized market report: ${targetScene.split('/').pop()}`
         })
       });
-      if (res.ok) alert("Briefing delivered.");
+      if (res.ok) alert("Report delivered.");
     } catch (err) {
       console.error("Delivery Failed:", err);
     }
@@ -161,7 +161,7 @@ const ProductionStudio = () => {
         <header className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-white/5 pb-12">
           <div>
             <h1 className="text-6xl font-black uppercase italic tracking-tighter text-white">Production <span className="text-blue-500">Studio</span></h1>
-            <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em] mt-2">Professional_Intelligence // v1.2</p>
+            <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em] mt-2">Professional Studio // v1.2</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -306,7 +306,7 @@ const ProductionStudio = () => {
 
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="lg:col-span-12 space-y-8">
-                <div className="flex items-center gap-4 text-emerald-400"><FaQuoteLeft size={24} /><h2 className="text-2xl font-black uppercase tracking-tight">Step 3: Intelligence & Delivery</h2></div>
+                <div className="flex items-center gap-4 text-emerald-400"><FaQuoteLeft size={24} /><h2 className="text-2xl font-black uppercase tracking-tight">Step 3: Message & Delivery</h2></div>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                   <div className="md:col-span-7 relative aspect-video bg-black rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
                     <video src={targetScene} autoPlay muted loop className="w-full h-full object-cover opacity-80" />
@@ -317,7 +317,7 @@ const ProductionStudio = () => {
                   </div>
                   <div className="md:col-span-5 bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 space-y-6">
                     <div className="space-y-4 pb-6 border-b border-white/5">
-                      <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voice Protocol</span></div>
+                      <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voiceover Settings</span></div>
                       <div className="flex gap-2">
                         <select 
                           value={selectedVoice} 

@@ -122,8 +122,31 @@ type AtlasGlobe = {
   nodes: GlobeNode[];
 };
 
+type AtlasPulse = {
+  name: string;
+  scope: string;
+  progress: {
+    percent: number;
+    boundPlaces: number;
+    livePlaces: number;
+    totalSeededPlaces: number;
+    plannedRegions: number;
+  };
+  places: Array<{
+    slug: string;
+    name: string;
+    region: string;
+    atlasPulse: {
+      physicalAnchor: string;
+      bindingStrength: number;
+      activeStage: string;
+    };
+  }>;
+};
+
 const DOMAIN_COLORS: Record<string, string> = {
   world: '#f8fafc',
+  'texas-history': '#facc15',
   pulse: '#22d3ee',
   'real-estate': '#34d399',
   'computer-science': '#a78bfa',
@@ -137,6 +160,7 @@ const DOMAIN_COLORS: Record<string, string> = {
 export default function MemoriaAtlasPage() {
   const [atlas, setAtlas] = useState<AtlasMap | null>(null);
   const [globe, setGlobe] = useState<AtlasGlobe | null>(null);
+  const [atlasPulse, setAtlasPulse] = useState<AtlasPulse | null>(null);
   const [selectedNode, setSelectedNode] = useState<AtlasNode | null>(null);
   const [selectedGlobeNode, setSelectedGlobeNode] = useState<GlobeNode | null>(null);
   const [query, setQuery] = useState('');
@@ -147,11 +171,13 @@ export default function MemoriaAtlasPage() {
   useEffect(() => {
     Promise.all([
       fetch('/api/tah/atlas/map', { cache: 'no-store' }).then(res => res.json()),
-      fetch('/api/tah/atlas/globe', { cache: 'no-store' }).then(res => res.json())
+      fetch('/api/tah/atlas/globe', { cache: 'no-store' }).then(res => res.json()),
+      fetch('/api/atlas-pulse', { cache: 'no-store' }).then(res => res.json())
     ])
-      .then(([mapData, globeData]) => {
+      .then(([mapData, globeData, pulseData]) => {
         setAtlas(mapData);
         setGlobe(globeData);
+        setAtlasPulse(pulseData.atlasPulse || null);
         setSelectedNode(mapData.nodes?.[0] || null);
         setSelectedGlobeNode(globeData.nodes?.[0] || null);
       })
@@ -270,10 +296,10 @@ export default function MemoriaAtlasPage() {
       <section className="absolute left-0 right-0 top-0 z-30 border-b border-white/10 bg-black/35 px-5 py-4 backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">Memoria Atlas</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight md:text-5xl">TAH World Map</h1>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">Atlas Pulse</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight md:text-5xl">Physical TAH Map</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-              A living map of the cartridge universe. The map is the progress bar: every reachable page, headless route, JSON catalog entry, and search endpoint is another plotted region of the world.
+              A living map of digital cartridges and the real places they are most strongly linked to. The map is the progress bar: every verified source, forged shard, and physical anchor pushes the Texas layer forward.
             </p>
           </div>
 
@@ -295,11 +321,26 @@ export default function MemoriaAtlasPage() {
             <p className="mt-1 text-xs leading-5 text-emerald-200">
               {globe?.progress.plottedNodes || 0} of {globe?.progress.knownNodes || 0} cartridges are physically plotted on the globe.
             </p>
+            {atlasPulse && (
+              <div className="mt-4 rounded border border-amber-200/20 bg-amber-200/10 p-3">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em]">
+                  <span className="text-amber-100">Physical Binding</span>
+                  <span className="text-amber-100">{atlasPulse.progress.percent}%</span>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded bg-black/35">
+                  <div className="h-full bg-amber-200" style={{ width: `${atlasPulse.progress.percent}%` }} />
+                </div>
+                <p className="mt-2 text-xs leading-5 text-amber-50/70">
+                  {atlasPulse.progress.boundPlaces} bound place out of {atlasPulse.progress.totalSeededPlaces} seeded Texas place. {atlasPulse.progress.plannedRegions} regions are queued.
+                </p>
+              </div>
+            )}
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
               <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href="/tah">Archive</Link>
               <Link className="rounded bg-emerald-300 px-3 py-2 text-slate-950" href="/tah/index.json">JSON</Link>
               <Link className="rounded bg-pink-300 px-3 py-2 text-slate-950" href="/tah/headless">Headless</Link>
               <Link className="rounded bg-violet-300 px-3 py-2 text-slate-950" href="/api/tah/atlas/globe">Globe JSON</Link>
+              <Link className="rounded bg-amber-200 px-3 py-2 text-slate-950" href="/api/atlas-pulse">Atlas Pulse JSON</Link>
               <Link className="rounded border border-white/20 px-3 py-2 text-white" href="/llms.txt">llms.txt</Link>
             </div>
           </div>

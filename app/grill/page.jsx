@@ -73,7 +73,7 @@ const GrillPage = () => {
             <div className='flex items-center justify-center gap-4'>
               <div className='h-px bg-[#5d2a18] w-20'></div>
               <p className='text-[#5d2a18] font-bold uppercase tracking-widest text-xs'>
-                Est. 2026 • Local Intelligence Hub
+                Est. 2026 - Local Restaurant
               </p>
               <div className='h-px bg-[#5d2a18] w-20'></div>
             </div>
@@ -83,7 +83,7 @@ const GrillPage = () => {
           {loading ? (
             <div className='flex flex-col items-center justify-center py-20 text-[#5d2a18] animate-pulse'>
               <FaUtensils size={48} className='mb-4' />
-              <p className='font-bold uppercase tracking-[0.3em] text-xs'>Synchronizing Menu Grid...</p>
+              <p className='font-bold uppercase tracking-[0.3em] text-xs'>Loading Menu...</p>
             </div>
           ) : (
             <div className='grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8'>
@@ -129,7 +129,7 @@ const GrillPage = () => {
               href="/grill/kds" 
               className="absolute bottom-0 right-0 opacity-0 hover:opacity-100 text-[8px] text-[#5d2a18] font-mono uppercase tracking-[0.5em] transition-opacity"
             >
-              [ OPERATIONS_LOG ]
+              [ ORDERS ]
             </Link>
           </footer>
         </div>

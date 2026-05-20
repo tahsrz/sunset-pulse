@@ -49,7 +49,7 @@ const PremiumPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white py-20 px-4">
       <div className="max-w-4xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-400 text-xs font-black uppercase tracking-widest mb-8 animate-bounce">
-          <FaStar /> Elite Access Protocol
+          <FaStar /> Premium Access
         </div>
         
         <h1 className="text-6xl md:text-8xl font-black uppercase italic tracking-tighter mb-6">
@@ -57,8 +57,8 @@ const PremiumPage: React.FC = () => {
         </h1>
         
         <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-16 leading-relaxed">
-          Unlock the full potential of the Jamie Intelligence Grid. Gain oversight of the interface, 
-          access architectural blueprints, and deploy custom vibes to the entire network.
+          Unlock the full potential of Jamie. Customize the interface, access architecture tools,
+          and manage premium workflows across your account.
         </p>
 
         <div className="grid md:grid-cols-3 gap-8 mb-20 text-left">
@@ -66,9 +66,9 @@ const PremiumPage: React.FC = () => {
             <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-500 mb-6 group-hover:scale-110 transition-transform">
               <FaCode size={24} />
             </div>
-            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Grid Manipulation</h3>
+            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Site Customization</h3>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Full Oversight Mode. Command Jamie to rewrite the site's aesthetic DNA in real-time with zero friction.
+              Use Jamie to adjust the site's visual style, layout, and content with a guided editing workflow.
             </p>
           </div>
 
@@ -76,9 +76,9 @@ const PremiumPage: React.FC = () => {
             <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center text-orange-500 mb-6 group-hover:scale-110 transition-transform">
               <FaShieldAlt size={24} />
             </div>
-            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Abidan Core</h3>
+            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Architecture Tools</h3>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Access the Architecture dashboard. Visualize the underlying systems and intelligence flows.
+              Access the Architecture dashboard and review the systems that power the product experience.
             </p>
           </div>
 
@@ -86,9 +86,9 @@ const PremiumPage: React.FC = () => {
             <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center text-green-500 mb-6 group-hover:scale-110 transition-transform">
               <FaRocket size={24} />
             </div>
-            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Priority Intel</h3>
+            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Priority Analysis</h3>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Faster response times from Jamie and early access to experimental real-estate analysis protocols.
+              Faster response times from Jamie and early access to experimental real-estate analysis tools.
             </p>
           </div>
         </div>
@@ -112,10 +112,10 @@ const PremiumPage: React.FC = () => {
             </div>
 
             <ul className="space-y-4 mb-10 text-sm text-slate-300 text-left px-4">
-              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Infinite Grid Manipulations</li>
-              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Abidan Architecture Access</li>
+              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Unlimited Site Customizations</li>
+              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Architecture Dashboard Access</li>
               <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Premium Jamie Persona</li>
-              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> High-Stakes Lead Analysis</li>
+              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Advanced Lead Analysis</li>
             </ul>
 
             <button

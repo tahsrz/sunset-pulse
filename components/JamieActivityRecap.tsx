@@ -69,8 +69,8 @@ const JamieActivityRecap = () => {
               <FaBrain className="animate-pulse" />
             </div>
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400">Jamie's Activity Briefing</h3>
-              <p className="text-[8px] font-mono text-slate-500 uppercase">Jamie Intelligence // Session_Restore</p>
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400">Jamie's Activity Summary</h3>
+              <p className="text-[8px] font-mono text-slate-500 uppercase">Jamie Session Restore</p>
             </div>
           </div>
           <button 

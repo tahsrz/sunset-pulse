@@ -29,7 +29,7 @@ const BriefingPage = () => {
       {/* Background UI */}
       <div className="absolute top-8 left-8 z-10 pointer-events-none">
         <h1 className="text-2xl font-black italic tracking-tighter text-white/80 uppercase">
-          System_Briefing // {slug.toUpperCase()}
+          System Presentation // {slug.toUpperCase()}
         </h1>
         <p className="text-[10px] font-mono text-blue-500 uppercase tracking-[0.3em] mt-1">
           Spatial Presentation Engine v1.0.4
@@ -42,14 +42,14 @@ const BriefingPage = () => {
           <div className="flex items-center gap-2 mb-4">
             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-white/60 group-hover:text-blue-400 transition-colors">
-              Engine_Specification
+              Engine Specification
             </h2>
           </div>
           <div className="space-y-4">
             <section>
               <h3 className="text-[9px] font-bold text-white uppercase mb-1 tracking-wider">Spatial Architecture</h3>
               <p className="text-[11px] leading-relaxed text-white/40 font-medium">
-                Decouples presentation content from the core rendering logic using a centralized registry. Slides are projected as interactive 3D panels within a volumetric grid environment.
+                Decouples presentation content from the core rendering logic using a centralized registry. Slides are projected as interactive 3D panels within a spatial environment.
               </p>
             </section>
             <section>
@@ -61,7 +61,7 @@ const BriefingPage = () => {
             <section>
               <h3 className="text-[9px] font-bold text-white uppercase mb-1 tracking-wider">Navigational Logic</h3>
               <p className="text-[11px] leading-relaxed text-white/40 font-medium">
-                Supports linear sequential paths, autonomous flight protocols, and manual discovery. Camera transitions are managed via high-precision interpolation for a smooth, cinematic experience.
+                Supports linear paths, guided playback, and manual exploration. Camera transitions are managed with smooth interpolation for a polished viewing experience.
               </p>
             </section>
           </div>
@@ -98,7 +98,7 @@ const BriefingPage = () => {
 
       {/* Footer Branding */}
       <div className="absolute bottom-8 left-8 z-10 pointer-events-none font-mono text-[8px] text-white/20 uppercase tracking-widest">
-        Property Pulse // Infrastructure Intelligence
+        Property Pulse // Infrastructure Overview
       </div>
     </main>
   );

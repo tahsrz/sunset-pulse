@@ -50,7 +50,7 @@ export default function RamzaSubjectCard({
     }
   }, [pickSpeech]);
 
-  // Jamie Intelligence Integration
+  // Jamie insight integration
   useEffect(() => {
     if (!autoIntelligence || loading || jamieInsights.length === 0) return;
 
@@ -59,7 +59,7 @@ export default function RamzaSubjectCard({
       const intelText = insight.properties?.description || insight.properties?.title;
       
       if (intelText) {
-        setSpeech(`INTEL: ${intelText}`);
+        setSpeech(`Insight: ${intelText}`);
         clothRef.current?.applyForce(Math.random() * 194, Math.random() * 228, 40, 12);
         setInsightIndex(prev => prev + 1);
       }
@@ -85,7 +85,7 @@ export default function RamzaSubjectCard({
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6 bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] w-fit shadow-2xl animate-in zoom-in-95 duration-500">
-      {/* Left Column: Tactical Visualizer */}
+      {/* Left Column: Visualizer */}
       <div className="flex flex-col gap-4">
         <TacticalCloth 
           ref={clothRef}
@@ -107,7 +107,7 @@ export default function RamzaSubjectCard({
         <div className="space-y-4">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-              <span>Simulation_Mass</span>
+              <span>Simulation Mass</span>
               <span className="text-blue-400">{mass.toFixed(1)}</span>
             </div>
             <input 
@@ -123,7 +123,7 @@ export default function RamzaSubjectCard({
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-              <span>Tensile_Stiffness</span>
+              <span>Tensile Stiffness</span>
               <span className="text-blue-400">{stiffness.toFixed(2)}</span>
             </div>
             <input 
@@ -139,7 +139,7 @@ export default function RamzaSubjectCard({
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-              <span>Metalic_Shine</span>
+              <span>Metallic Shine</span>
               <span className="text-blue-400">{shine.toFixed(2)}</span>
             </div>
             <input 
@@ -200,7 +200,7 @@ export default function RamzaSubjectCard({
                 onClick={() => setIsTalkActive(true)}
                 className="w-full py-4 rounded-xl bg-blue-600/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-[0_0_20px_rgba(59,130,246,0.1)]"
               >
-                Establish Uplink
+                Start Conversation
               </button>
             )}
           </div>

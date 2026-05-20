@@ -49,7 +49,7 @@ export default async function TahCartridgePage({ params }: TahCartridgePageProps
     url: `/tah/${metadata.slug}`,
     isPartOf: {
       '@type': 'CollectionPage',
-      name: 'Sunset Pulse TAH Intelligence Archive',
+      name: 'Sunset Pulse TAH Knowledge Archive',
       url: '/tah'
     },
     encodingFormat: metadata.type === 'hat' ? 'application/x-hat' : 'application/x-tah',

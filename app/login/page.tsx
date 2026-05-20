@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Welcome back to the grid.");
+      toast.success("Welcome back to Sunset Pulse.");
       window.location.href = '/';
     }
     setLoading(false);
@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
         <div className='text-center mb-10'>
           <div className='flex items-center justify-center gap-2 text-blue-500 mb-4'>
             <FaBolt size={24} className='animate-pulse' />
-            <span className='text-xs font-black uppercase tracking-[0.4em] text-white/40'>Intelligence_Auth</span>
+            <span className='text-xs font-black uppercase tracking-[0.4em] text-white/40'>Account Access</span>
           </div>
           <h1 className='text-4xl font-black italic tracking-tighter text-white'>Sign In</h1>
           <p className='text-slate-500 text-xs mt-2 uppercase tracking-widest'>Secure access to Sunset Pulse</p>
@@ -56,9 +56,12 @@ const LoginPage: React.FC = () => {
 
         <button 
           onClick={handleGoogleLogin}
-          className='w-full py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-200 transition-all mb-6 shadow-xl shadow-white/5'
+          className='relative w-full py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 transition-all mb-6 shadow-xl shadow-white/5'
         >
-          <FaGoogle size={14} /> Continue with Google
+          <span className='absolute left-5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center'>
+            <FaGoogle size={14} />
+          </span>
+          <span className='block text-center'>Continue with Google</span>
         </button>
 
         <div className='relative flex items-center gap-4 mb-6'>
@@ -101,8 +104,8 @@ const LoginPage: React.FC = () => {
 
         <div className='mt-8 text-center space-y-4'>
           <p className='text-[8px] font-black text-white/20 uppercase tracking-widest leading-loose'>
-            Authorized Personnel Only.<br />
-            Access attempts are logged for security purposes.
+            Secure account access.<br />
+            Sign-in attempts may be logged for security purposes.
           </p>
           <p className='text-[8px] font-black text-white/40 uppercase tracking-widest'>
             New User? <Link href={`/register${email ? `?email=${encodeURIComponent(email)}` : ''}`} className='text-blue-500 hover:text-blue-400 transition-colors'>Create Account</Link>

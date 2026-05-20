@@ -17,7 +17,7 @@ export interface SlideData {
 
 /**
  * BriefingSlide:
- * A 3D polygonal panel representing a single "slide" in the grid.
+ * A 3D polygonal panel representing a single slide.
  */
 const BriefingSlide = ({ 
   slide, 
@@ -51,7 +51,7 @@ const BriefingSlide = ({
           />
         </mesh>
 
-        {/* Tactical Border */}
+        {/* Panel border */}
         <mesh position={[0, 0, -0.01]}>
           <planeGeometry args={[8.2, 4.7]} />
           <meshBasicMaterial color={baseColor} transparent opacity={0.1} side={THREE.DoubleSide} />
@@ -158,7 +158,7 @@ export const TacticalBriefingEngine = ({ slides }: { slides: SlideData[] }) => {
               onClick={() => setActiveIdx(prev => Math.max(0, prev - 1))}
               className="p-4 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl text-white/40 hover:text-blue-400 transition-all uppercase text-[10px] font-black tracking-widest"
             >
-              [ PREV_SECTOR ]
+              Previous
             </button>
             
             <div className="flex gap-2">
@@ -174,7 +174,7 @@ export const TacticalBriefingEngine = ({ slides }: { slides: SlideData[] }) => {
               onClick={() => setActiveIdx(prev => Math.min(slides.length - 1, prev + 1))}
               className="p-4 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl text-white/40 hover:text-blue-400 transition-all uppercase text-[10px] font-black tracking-widest"
             >
-              [ NEXT_SECTOR ]
+              Next
             </button>
           </div>
         </Html>

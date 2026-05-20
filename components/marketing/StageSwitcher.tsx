@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaLayerGroup, FaBolt, FaShieldAlt } from 'react-icons/fa';
+import { FaBolt, FaHome } from 'react-icons/fa';
 
 export type StageMode = 'STAGED' | 'LIVE';
 
@@ -22,8 +22,8 @@ const StageSwitcher: React.FC<StageSwitcherProps> = ({ mode, onModeChange }) => 
               : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
           }`}
         >
-          <FaShieldAlt className={mode === 'STAGED' ? 'animate-pulse' : ''} />
-          <span>Curated Stage</span>
+          <FaHome className={mode === 'STAGED' ? 'animate-pulse' : ''} />
+          <span>Curated Listings</span>
         </button>
         <button
           onClick={() => onModeChange('LIVE')}
@@ -42,8 +42,8 @@ const StageSwitcher: React.FC<StageSwitcherProps> = ({ mode, onModeChange }) => 
         <div className="h-px w-12 bg-white/20" />
         <span className="text-[9px] font-mono uppercase tracking-[0.4em] italic text-slate-400">
           {mode === 'STAGED' 
-            ? 'Accessing high-signal property intelligence' 
-            : 'Sourcing raw telemetry from regional grid'}
+            ? 'Showing selected properties'
+            : 'Loading current listings from the regional MLS feed'}
         </span>
         <div className="h-px w-12 bg-white/20" />
       </div>

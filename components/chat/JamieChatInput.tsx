@@ -16,7 +16,7 @@ interface JamieChatInputProps {
 }
 
 const VIBES = [
-  'Dark Mode', 'Cyberpunk', 'Tactical', 'Minimalist', 'Moody', 
+  'Dark Mode', 'Cyberpunk', 'Bold', 'Minimalist', 'Moody',
   'Forest', 'Sunset', 'Oceanic', 'Luxury', 'Terminal'
 ];
 

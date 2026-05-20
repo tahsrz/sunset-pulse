@@ -10,9 +10,9 @@ const IntelligenceCore = () => {
       <div className='mb-12'>
         <PulsarSprite intensity={1.5} status="ai" />
       </div>
-      <h3 className='text-4xl font-black uppercase italic tracking-tighter mb-6 text-white'>Jamie: Intelligence Engine</h3>
+      <h3 className='text-4xl font-black uppercase italic tracking-tighter mb-6 text-white'>Jamie: Analysis Engine</h3>
       <p className='text-slate-400 max-w-2xl text-lg mb-12 font-medium'>
-        Agent queries shouldn't be a game of trial and error. While standard search tools rely on rigid parameters, Jamie analyzes the DNA of your request. By determining the exact computational weight needed and scaling its internal architecture accordingly, it eliminates the 'search fatigue' that plagues traditional real estate platforms.
+        Property search should not be a game of trial and error. While standard tools rely on rigid parameters, Jamie interprets the intent behind your request and keeps context across the search journey.
       </p>
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 w-full'>
         <div className='p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl'>
@@ -23,7 +23,7 @@ const IntelligenceCore = () => {
         <div className='p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl'>
           <div className='text-2xl mb-4 text-blue-400'><FaSatellite /></div>
           <h4 className='text-sm font-bold uppercase mb-2 text-white'>Data Triangulation</h4>
-          <p className='text-[10px] text-slate-500 uppercase tracking-widest font-bold'>Analysis of multiple socioeconomic data points to predict market momentum.</p>
+          <p className='text-[10px] text-slate-500 uppercase tracking-widest font-bold'>Reviews multiple market and neighborhood data points to estimate momentum.</p>
         </div>
         <div className='p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl'>
           <div className='text-2xl mb-4 text-blue-400'><FaShieldAlt /></div>

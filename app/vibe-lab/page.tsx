@@ -38,7 +38,7 @@ const VibeWorldCard = ({ vibe, onApply }: { vibe: any, onApply: (vibe: any) => v
         onClick={() => onApply(vibe)}
         className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all"
       >
-        Deploy World
+        Apply Vibe
       </button>
     </div>
   );
@@ -64,7 +64,7 @@ const [isArchiving, setIsArchiving] = useState(false);
     try {
       const res = await fetch('/api/admin/archive', { method: 'POST' });
       if (res.ok) {
-        alert("Success: Intelligence Grid physicalized to /exports folder.");
+        alert("Success: archive saved to the /exports folder.");
       }
     } catch (err) {
       console.error("Archive Failed:", err);
@@ -102,7 +102,7 @@ const [isArchiving, setIsArchiving] = useState(false);
             </div>
             <div>
               <h1 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter text-white leading-none">Vibe Lab</h1>
-              <p className="text-[10px] font-mono text-blue-400 uppercase tracking-[0.5em] mt-2">Pick_a_Vibe_&_Extract_Worlds</p>
+              <p className="text-[10px] font-mono text-blue-400 uppercase tracking-[0.5em] mt-2">Pick a Vibe and Build a Library</p>
             </div>
           </div>
         </div>
@@ -146,7 +146,7 @@ const [isArchiving, setIsArchiving] = useState(false);
               <FaBolt /> Vibe Extraction Active
             </h3>
             <p className="text-slate-400 text-xs leading-relaxed font-mono">
-              The Vibe Lab is ready. You can extract "worlds" from video clips and save them to your local dictionary.
+              The Vibe Lab is ready. You can extract visual styles from video clips and save them to your local library.
             </p>
           </div>
           
@@ -160,7 +160,7 @@ const [isArchiving, setIsArchiving] = useState(false);
               <FaGlobeAmericas /> Vibe Dictionary
             </h2>
             <span className="px-3 py-1 bg-white/5 rounded-full text-[9px] font-mono text-slate-500 uppercase">
-              {vibes.length} Saved Worlds
+              {vibes.length} Saved Vibes
             </span>
           </div>
 

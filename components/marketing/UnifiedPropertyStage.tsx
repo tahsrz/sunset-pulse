@@ -7,7 +7,7 @@ import PropertyCard from '../PropertyCard';
 import Spinner from '../Spinner';
 import { Property } from '@/lib/types';
 import marketingCopy from '@/config/marketing_copy.json';
-import { FaBroadcastTower, FaShieldAlt } from 'react-icons/fa';
+import { FaHome, FaListUl } from 'react-icons/fa';
 
 interface UnifiedPropertyStageProps {
   initialStagedProperties: Property[];
@@ -29,7 +29,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
   const fetchLiveFeed = async () => {
     setLoadingLive(true);
     try {
-      // Ingest "Hot Moving Special" listings directly from the Matrix Grid
+      // Load current listings from the IDX feed.
       const res = await fetch('/api/idx/hot-moving');
       if (res.ok) {
         const json = await res.json();
@@ -37,7 +37,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         setLiveProperties(json.data.listings || []);
       }
     } catch (error) {
-      console.error('[LIVE_FEED_ERROR]: Signal lost.', error);
+      console.error('[LIVE_FEED_ERROR]: Unable to load listings.', error);
     } finally {
       setLoadingLive(false);
     }
@@ -50,14 +50,14 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         {/* Stage Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 mb-4">
-            {mode === 'STAGED' ? <FaShieldAlt className="text-blue-400" /> : <FaBroadcastTower className="text-amber-400" />}
-            {mode === 'STAGED' ? 'Intelligence Stage' : 'Matrix Grid // Hot Moving'}
+            {mode === 'STAGED' ? <FaHome className="text-blue-400" /> : <FaListUl className="text-amber-400" />}
+            {mode === 'STAGED' ? 'Curated Listings' : 'Live MLS Feed'}
           </div>
           <h2 className="text-4xl font-black uppercase italic tracking-tighter waterlily-heading mb-2">
-            {mode === 'STAGED' ? featured.title : 'Hot Moving Specials'}
+            {mode === 'STAGED' ? featured.title : 'Active IDX Listings'}
           </h2>
           <p className="text-teal-100/55 text-[10px] font-mono uppercase tracking-[0.4em]">
-            {mode === 'STAGED' ? featured.tagline : 'Real-time high-velocity listings from the North Texas grid'}
+            {mode === 'STAGED' ? featured.tagline : 'Current listings from the regional MLS feed'}
           </p>
         </div>
 
@@ -73,7 +73,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
                   property && <FeaturedPropertyCard key={property._id} property={property} />
                 ))
               ) : (
-                <div className="col-span-full text-center py-20 opacity-40 italic">No staged intelligence available.</div>
+                <div className="col-span-full text-center py-20 opacity-40 italic">No curated listings are available right now.</div>
               )}
             </div>
           ) : (
@@ -81,7 +81,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
               {loadingLive ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Spinner />
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-teal-400 animate-pulse">Syncing with regional grid...</p>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-teal-400 animate-pulse">Loading regional listings...</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -91,7 +91,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
                     ))
                   ) : (
                     <div className="col-span-full text-center py-20 border border-dashed border-white/10 rounded-3xl">
-                       <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">No live signals detected in this sector.</p>
+                       <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">No live listings are available right now.</p>
                     </div>
                   )}
                 </div>
@@ -103,7 +103,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         {/* Stage Footer Note */}
         <div className="mt-16 text-center">
           <p className="text-[8px] font-mono uppercase tracking-[0.6em] text-slate-600 italic">
-            [ {mode} ] - {mode === 'STAGED' ? 'Consolidated via Jamie Core' : 'Direct Matrix Integration Proxy'}
+            [ {mode} ] - {mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}
           </p>
         </div>
       </div>

@@ -1,12 +1,18 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/core/getSessionUser';
+import MatrixBridgeConsole from '@/components/idx/MatrixBridgeConsole';
 
-const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
+const MATRIX_IDX_URL = process.env.NEXT_PUBLIC_MATRIX_IDX_URL || 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
 export const dynamic = 'force-dynamic';
 
 export default async function IDXSearchPage() {
   const sessionUser = await getSessionUser();
+  const requestHeaders = headers();
+  const host = requestHeaders.get('x-forwarded-host') || requestHeaders.get('host') || 'localhost:3000';
+  const protocol = requestHeaders.get('x-forwarded-proto') || (host.startsWith('localhost') ? 'http' : 'https');
+  const pulseOrigin = process.env.NEXT_PUBLIC_PULSE_ORIGIN || process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
 
   if (!sessionUser) {
     redirect('/login?redirect=/idx');
@@ -34,8 +40,8 @@ export default async function IDXSearchPage() {
           </div>
           <div className="max-w-xl text-sm leading-6 text-slate-200">
             <p>
-              Search runs inside the authorized NTREIS Matrix IDX frame. Sunset Pulse is
-              not scraping or storing these listing results.
+              Search runs inside the authorized NTREIS Matrix IDX frame while Pulse
+              controls stay mapped to Matrix criteria fields.
             </p>
             <a
               href={MATRIX_IDX_URL}
@@ -49,19 +55,7 @@ export default async function IDXSearchPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-6">
-        <div className="h-[calc(100dvh-220px)] min-h-[680px] overflow-hidden rounded-lg border border-teal-100/20 bg-white shadow-2xl shadow-cyan-950/40">
-          <iframe
-            src={MATRIX_IDX_URL}
-            title="NTREIS Matrix IDX listing search"
-            className="h-full w-full"
-            frameBorder="0"
-            marginWidth={0}
-            marginHeight={0}
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-      </section>
+      <MatrixBridgeConsole matrixUrl={MATRIX_IDX_URL} pulseOrigin={pulseOrigin} />
     </main>
   );
 }

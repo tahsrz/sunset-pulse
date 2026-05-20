@@ -49,7 +49,7 @@ const IntelligenceTimeline = () => {
         <div className='p-2 bg-slate-800 rounded-lg text-slate-400'>
           <FaHistory size={12} />
         </div>
-        <h3 className='text-xs font-black uppercase tracking-widest text-white'>Intelligence Audit Stream</h3>
+        <h3 className='text-xs font-black uppercase tracking-widest text-white'>Activity Timeline</h3>
       </div>
 
       <div className='space-y-4 overflow-y-auto pr-2 custom-scrollbar'>

@@ -12,7 +12,7 @@ const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ suggestions, onSuggesti
 
   return (
     <div className="mb-4 animate-in slide-in-from-bottom-2 duration-500">
-      <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] mb-2 ml-1">Predictive Intelligence</p>
+      <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] mb-2 ml-1">Suggested Searches</p>
       <div className="flex flex-wrap gap-2">
         {suggestions.map((q, i) => (
           <button

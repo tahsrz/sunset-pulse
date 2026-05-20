@@ -33,8 +33,8 @@ const InsightPopup: React.FC<InsightPopupProps> = ({ dream, onClose }) => {
           {dream.properties.description}
         </p>
         <div className="flex justify-between items-center pt-2 border-t border-white/10">
-          <span className="text-[8px] font-black uppercase text-slate-500">Intelligence: {dream.properties.intelligence_score}%</span>
-          <span className="text-[8px] font-black uppercase text-blue-400">JAMIE_INTEL</span>
+          <span className="text-[8px] font-black uppercase text-slate-500">Insight Score: {dream.properties.intelligence_score}%</span>
+          <span className="text-[8px] font-black uppercase text-blue-400">Jamie Insight</span>
         </div>
       </div>
     </Popup>

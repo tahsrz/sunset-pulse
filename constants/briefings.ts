@@ -4,7 +4,7 @@ export const INVESTOR_DECK: SlideData[] = [
   {
     id: '001',
     title: 'Sunset Pulse // Phase 1',
-    content: 'Revolutionizing real estate intelligence through spatial reconnaissance and automated lead decay protocols.',
+    content: 'Modernizing real estate search through spatial property analysis and automated lead follow-up.',
     position: [0, 5, 0],
     rotation: [0, 0, 0],
     color: '#3b82f6'

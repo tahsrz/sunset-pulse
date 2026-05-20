@@ -2,6 +2,7 @@
 
 import AdvancedSearchWidget from '@/components/AdvancedSearchWidget';
 import Properties from '@/components/Properties';
+import SunsetHistorySection from '@/components/marketing/SunsetHistorySection';
 import { useRouter } from 'next/navigation';
 
 interface SearchFilters {
@@ -37,7 +38,7 @@ const PropertiesPage: React.FC = () => {
         body: JSON.stringify({ query: filters, frequency: 'daily' }),
       });
       if (res.ok) {
-        alert('Recon alert deployed successfully.');
+        alert('Search alert saved successfully.');
       }
     } catch (error) {
       console.error('Save alert error:', error);
@@ -52,6 +53,7 @@ const PropertiesPage: React.FC = () => {
         </div>
       </section>
       <Properties />
+      <SunsetHistorySection />
     </>
   );
 };

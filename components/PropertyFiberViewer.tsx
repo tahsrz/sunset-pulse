@@ -18,7 +18,7 @@ interface PropertyFiberViewerProps {
 }
 
 /**
- * PropertyFiberViewer - The High-Stakes 3D Property Exploration Engine.
+ * PropertyFiberViewer - 3D property exploration engine.
  * Refactored for modularity and performance (v7.1.0).
  */
 export default function PropertyFiberViewer({ 

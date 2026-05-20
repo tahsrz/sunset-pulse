@@ -75,7 +75,7 @@ export const RenderQueueSidebar: React.FC<RenderQueueSidebarProps> = ({
                           onClick={() => onDeliver(job)}
                           className="w-full py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase hover:bg-emerald-500 transition-all shadow-lg"
                         >
-                          Deliver Briefing
+                          Deliver Report
                         </button>
                       </div>
                     )}

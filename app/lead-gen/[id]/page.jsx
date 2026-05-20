@@ -44,22 +44,22 @@ const LeadGenDetailPage = () => {
   };
 
   if (loading) return <Spinner />;
-  if (!property) return <div className="text-center p-10">Asset not found.</div>;
+  if (!property) return <div className="text-center p-10">Property not found.</div>;
 
   const templates = [
     {
-      id: 'intercept',
-      name: 'Automated Intercept',
+      id: 'followup',
+      name: 'Automated Follow-Up',
       icon: <FaRobot className="text-blue-500" />,
-      description: 'Triggered when a user spends >30s in 3D orbit. Focused on urgency.',
-      content: `Hey, I see you're analyzing ${property.name}. I'm Jamie, the lead agent here. This ${property.type} is seeing high intensity today. Would you like a live drone walkthrough before the next investor locks it?`
+      description: 'Triggered when a user spends more than 30 seconds in the 3D view.',
+      content: `Hi, I see you are reviewing ${property.name}. I am Jamie, the lead assistant here. Would you like a live walkthrough or a quick summary of the key property details?`
     },
     {
       id: 'social',
-      name: 'Neural Social Ad',
+      name: 'Social Ad',
       icon: <FaMagic className="text-purple-500" />,
-      description: 'Optimized for high-clickthrough on visual platforms. Hyper-targeted.',
-      content: `UNITS DETECTED: ${property.name} in ${property.location.city}. This isn't just a property; it's a yield engine. ${property.beds}B/${property.baths}B footprint with elite neural rendering available. Click to intercept this asset.`
+      description: 'Optimized for visual platforms and local property interest.',
+      content: `Explore ${property.name} in ${property.location.city}. Review the ${property.beds} bed / ${property.baths} bath layout, view the 3D experience, and request details from the Sunset Pulse team.`
     },
     {
       id: 'investor',
@@ -70,7 +70,7 @@ const LeadGenDetailPage = () => {
 
 Dear Investor,
 
-Our proprietary telemetry has flagged ${property.name} as a high-potential acquisition. Located in the ${property.location.city} corridor, this asset features ${property.amenities?.slice(0, 3).join(', ')}.
+Our property review identified ${property.name} as a strong fit for your acquisition criteria. Located in the ${property.location.city} area, this property features ${property.amenities?.slice(0, 3).join(', ')}.
 
 Full 3D digital twin and RentCast analytics are ready for your review.`
     }
@@ -83,14 +83,14 @@ Full 3D digital twin and RentCast analytics are ready for your review.`
           onClick={() => router.push('/lead-gen')}
           className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 uppercase text-[10px] font-black tracking-widest"
         >
-          <FaArrowLeft /> Return to Command
+          <FaArrowLeft /> Return to Lead Center
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Left Column: Asset Intel */}
+          {/* Left Column: Property Details */}
           <div className="lg:col-span-1">
             <div className="bg-slate-800 rounded-2xl p-6 border border-white/5 shadow-2xl sticky top-8">
-              <div className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2 italic">Selected Asset</div>
+              <div className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2 italic">Selected Property</div>
               <h1 className="text-2xl font-black italic uppercase mb-6 tracking-tighter">{property.name}</h1>
               
               <div className="relative mb-6 h-48 w-full overflow-hidden rounded-xl">
@@ -106,7 +106,7 @@ Full 3D digital twin and RentCast analytics are ready for your review.`
               <div className="space-y-4">
                 <div className="flex justify-between text-xs border-b border-white/5 pb-2">
                   <span className="text-slate-500 font-bold uppercase">Status</span>
-                  <span className="text-green-400 font-black">ACTIVE_INTERCEPT</span>
+                  <span className="text-green-400 font-black">Active</span>
                 </div>
                 <div className="flex justify-between text-xs border-b border-white/5 pb-2">
                   <span className="text-slate-500 font-bold uppercase">Type</span>
@@ -128,7 +128,7 @@ Full 3D digital twin and RentCast analytics are ready for your review.`
               </div>
               <div>
                 <h2 className="text-3xl font-black uppercase italic tracking-tighter">Lead Gen Templates</h2>
-                <p className="text-slate-400 text-sm font-medium">Neural-optimized copy for various capture channels.</p>
+                <p className="text-slate-400 text-sm font-medium">Professional copy for your outreach channels.</p>
               </div>
             </div>
 

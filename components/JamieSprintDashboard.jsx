@@ -63,9 +63,9 @@ const JamieSprintDashboard = ({ activeSprintId }) => {
           <div className='p-2 bg-green-500/20 rounded-lg text-green-400'>
             <FaBolt size={12} />
           </div>
-          <h3 className='text-xs font-black uppercase tracking-widest text-white'>Live Sprint Execution</h3>
+          <h3 className='text-xs font-black uppercase tracking-widest text-white'>Live Workflow Progress</h3>
         </div>
-        <div className='text-[10px] font-mono text-green-400 animate-pulse'>ACTIVE_LOGIC_STREAM</div>
+        <div className='text-[10px] font-mono text-green-400 animate-pulse'>Active Updates</div>
       </div>
 
       <div className='space-y-3'>
@@ -111,7 +111,7 @@ const JamieSprintDashboard = ({ activeSprintId }) => {
                 </div>
               </div>
               <button className='opacity-0 group-hover:opacity-100 transition-opacity text-[8px] font-black uppercase tracking-widest text-white/40 hover:text-white'>
-                Intercept Manual
+                Open Details
               </button>
             </div>
           </div>
@@ -119,14 +119,14 @@ const JamieSprintDashboard = ({ activeSprintId }) => {
 
         {tasks.length === 0 && !loading && (
           <div className='text-center py-10 opacity-20 text-[10px] font-black uppercase tracking-widest'>
-            Initializing Task Matrix...
+            Preparing Tasks...
           </div>
         )}
       </div>
 
       <div className='pt-4 border-t border-white/5'>
         <button className='w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 transition-all flex items-center justify-center gap-2'>
-          <FaSync size={10} /> Recalibrate Sprint Logic
+          <FaSync size={10} /> Refresh Workflow
         </button>
       </div>
     </div>

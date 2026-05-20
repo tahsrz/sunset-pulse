@@ -10,15 +10,15 @@ const InfoBoxes = () => {
             backgroundColor='bg-transparent'
             textColor='text-slate-100'
             buttonInfo={{
-              text: 'Browse Assets',
+              text: 'Browse Properties',
               link: '/properties',
               backgroundColor: 'bg-transparent',
             }}
           >
-            Identify institutional-grade rental opportunities. Manage bookmarks and coordinate directly with asset managers.
+            Identify strong rental opportunities. Manage bookmarks and coordinate directly with property managers.
           </InfoBox>
           <InfoBox
-            heading='Asset Management'
+            heading='Property Management'
             backgroundColor='bg-transparent'
             textColor='text-slate-100'
             buttonInfo={{
@@ -27,7 +27,7 @@ const InfoBoxes = () => {
               backgroundColor: 'bg-transparent',
             }}
           >
-            Onboard your assets to the platform for high-visibility market exposure and tenant lead generation.
+            Onboard your properties to the platform for better market exposure and tenant lead generation.
           </InfoBox>
         </div>
       </div>

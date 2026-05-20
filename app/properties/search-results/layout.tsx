@@ -6,7 +6,7 @@ export default function SearchResultsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Initializing Intelligence Grid...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Search Results...</div>}>
       {children}
     </Suspense>
   );

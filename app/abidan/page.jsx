@@ -28,17 +28,17 @@ const AbidanIntroPage = () => {
         <div className='flex justify-between items-end'>
           <div>
             <h1 className='text-6xl font-black tracking-tighter uppercase italic text-blue-500'>
-              The Abidan Court
+              Abidan Analysis Suite
             </h1>
             <p className='text-slate-400 font-mono text-sm mt-2 uppercase tracking-widest'>
-              [ ACCESS LEVEL: JUDGE // PROTOCOL: MANTLE_ASSUMPTION ]
+              Advanced property review and market analysis tools
             </p>
           </div>
           <a 
             href='/abidan/war-room' 
             className='px-6 py-3 bg-blue-600/10 border border-blue-500/30 rounded-xl text-blue-400 font-black uppercase text-[10px] tracking-[0.3em] hover:bg-blue-600 hover:text-white transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)]'
           >
-            Enter War Room
+            Open Analysis Room
           </a>
         </div>
       </header>
@@ -72,7 +72,7 @@ const AbidanIntroPage = () => {
           ))}
         </div>
 
-        {/* Active Mantle */}
+        {/* Active Profile */}
         <div className='lg:col-span-2 space-y-8'>
           <div className='bg-white/5 border border-white/10 p-10 rounded-[3rem] backdrop-blur-xl relative overflow-hidden'>
             <div className='absolute top-0 right-0 p-8 opacity-5'>
@@ -106,8 +106,8 @@ const AbidanIntroPage = () => {
                 <span className='text-sm font-bold uppercase'>{selectedAbidan.geometryType}</span>
               </div>
               <div className='bg-black/40 p-4 rounded-2xl border border-white/5'>
-                <span className='text-[10px] text-blue-500 block mb-1 uppercase font-mono'>Power Output</span>
-                <span className='text-sm font-bold uppercase italic'>Judge Class // ∞</span>
+                <span className='text-[10px] text-blue-500 block mb-1 uppercase font-mono'>Analysis Level</span>
+                <span className='text-sm font-bold uppercase italic'>Advanced</span>
               </div>
             </div>
 
@@ -121,8 +121,8 @@ const AbidanIntroPage = () => {
                   <div className="relative z-10 flex items-center justify-center gap-4">
                     <FaSkull className="text-rose-500 animate-pulse" />
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.5em] text-rose-400 mb-1">External Protocol</div>
-                      <div className="text-xl font-black italic tracking-tighter text-white uppercase">Invoke the Scythe Purifier</div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.5em] text-rose-400 mb-1">External Tool</div>
+                      <div className="text-xl font-black italic tracking-tighter text-white uppercase">Open Scythe Review</div>
                     </div>
                   </div>
                 </a>
@@ -135,10 +135,10 @@ const AbidanIntroPage = () => {
       <footer className='border-t border-white/10 pt-12 pb-20'>
         <div className='max-w-4xl mx-auto text-center'>
           <h2 className='text-2xl font-black uppercase tracking-tighter italic mb-4 text-slate-500'>
-            The Way remains. The Court observes.
+            Structured analysis for property and market review.
           </h2>
           <p className='text-[10px] font-mono tracking-[0.5em] uppercase text-slate-600'>
-            Property of the Sunset Collective // System: Abidan Core
+            Sunset Pulse // Abidan Analysis Suite
           </p>
         </div>
       </footer>

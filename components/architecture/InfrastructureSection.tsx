@@ -39,7 +39,7 @@ const InfrastructureSection = () => {
           <FaDatabase className='text-amber-200' /> Scalable Data Persistence
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-4'>
-          A robust data layer manages property listings, lead engagement, and application state. Our schema design is optimized for high-speed retrieval and cross-referencing of architectural assets.
+          A robust data layer manages property listings, lead engagement, and application state. The schema is optimized for fast retrieval and cross-referencing of property records.
         </p>
         <div className='space-y-2 text-[10px] font-mono text-teal-100/55'>
           <div className='flex items-center gap-2'>
@@ -52,13 +52,13 @@ const InfrastructureSection = () => {
           </div>
           <div className='flex items-center gap-2'>
             <span className='bg-violet-500/15 text-violet-200 px-2 py-0.5 rounded'>System</span> 
-            <span>Application configuration and dynamic assets.</span>
+            <span>Application configuration and dynamic media.</span>
           </div>
         </div>
       </div>
 
       <div className='waterlily-card p-8 rounded-2xl'>
-        <h3 className='text-sm font-black text-amber-100 uppercase tracking-[0.3em] mb-4'>Elite Performance Benchmarks</h3>
+        <h3 className='text-sm font-black text-amber-100 uppercase tracking-[0.3em] mb-4'>Performance Benchmarks</h3>
         <div className='grid grid-cols-2 gap-8'>
           <div>
             <div className='text-3xl font-black text-white italic'>&lt;10ms</div>
@@ -66,11 +66,11 @@ const InfrastructureSection = () => {
           </div>
           <div>
             <div className='text-3xl font-black text-white italic'>100%</div>
-            <div className='text-[8px] font-bold text-teal-100/50 uppercase tracking-widest mt-1'>Grid Sync Rate</div>
+            <div className='text-[8px] font-bold text-teal-100/50 uppercase tracking-widest mt-1'>Data Sync Rate</div>
           </div>
         </div>
         <p className='text-[10px] text-teal-100/55 mt-6 leading-relaxed italic'>
-          "Architecture scales dynamically based on request DNA, ensuring surgical precision during high-intensity asset discovery."
+          "Architecture scales dynamically based on request volume, keeping property search fast and reliable."
         </p>
       </div>
     </section>

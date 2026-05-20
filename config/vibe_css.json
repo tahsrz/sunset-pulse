@@ -1,30 +1,30 @@
 {
   "vibe-leaning-forward": {
     "vibe_id": "vibe-leaning-forward",
-    "name": "The Competitive Lean",
-    "structure": "Standard state: {Observation} -> Focus state: {Intense_Action} !!",
-    "logic": "Sudden escalation from casual monitoring to aggressive execution.",
-    "prompt_injection": "Describe a transition from standard market analysis to high-stakes decision making using the 'leaning forward in chair' logic."
+    "name": "Competitive Focus",
+    "structure": "Standard state: {Observation} -> Focus state: {Next_Action}",
+    "logic": "A clear shift from passive review to focused decision making.",
+    "prompt_injection": "Describe a transition from standard market analysis to focused decision making in a professional tone."
   },
   "vibe-env-escape": {
     "vibe_id": "vibe-env-escape",
     "name": "The Geographic Exit",
-    "structure": "Absurdity: {Market_Signal} -> Action: 'I am no longer in this market.'",
-    "logic": "Total rejection of a market condition so ridiculous it forces an exit from reality.",
-    "prompt_injection": "React to over-leveraged or absurdly priced listings by stating you have exited the environment entirely."
+    "structure": "Market factor: {Market_Context} -> Action: reassess the search criteria.",
+    "logic": "A practical response to a market condition that no longer fits the buyer's goals.",
+    "prompt_injection": "React to over-leveraged or overpriced listings by calmly recommending revised criteria."
   },
   "vibe-doorbell-chud": {
     "vibe_id": "vibe-doorbell-chud",
     "name": "The Intrusive Presence",
-    "structure": "Context: {Private_Space} -> Intrusion: {Unwanted_Signal} -> Result: {Uncanny_Stare}",
-    "logic": "An unwanted or awkward market force suddenly appearing where it doesn't belong.",
-    "prompt_injection": "Describe intrusive market forces like rate hikes or corporate flippers as an unsettling doorbell-camera presence."
+    "structure": "Context: {Buyer_Goal} -> Disruption: {Market_Factor} -> Result: {Next_Step}",
+    "logic": "An unexpected market force affects the user's original plan.",
+    "prompt_injection": "Describe disruptive market forces like rate hikes or corporate buyers with practical next steps."
   },
   "vibe-maxxing": {
     "vibe_id": "vibe-maxxing",
     "name": "Hyper-Optimization",
     "structure": "{Metric}-maxxing the {Subject}",
-    "logic": "Obsessive focus on one specific attribute to the exclusion of all else.",
-    "prompt_injection": "Adopt a tone of singular obsession with a specific property metric by appending '-maxxing' to key nouns."
+    "logic": "Focused emphasis on one specific attribute while keeping the broader search context intact.",
+    "prompt_injection": "Focus on a specific property metric with concise, professional language."
   }
 }

@@ -14,7 +14,7 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Atlas',
     mantle: 'Strategic Forecast',
     color: '#3b82f6', 
-    description: 'Specialized in multi-iteration predictive modeling and long-term asset growth.',
+    description: 'Specialized in multi-iteration predictive modeling and long-term property growth.',
     missionLabel: 'Growth Outlook',
     geometryType: 'hound'
   },
@@ -23,17 +23,17 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Sentinel',
     mantle: 'Defensive Integrity',
     color: '#94a3b8', 
-    description: 'Expert in risk mitigation and structural asset protection.',
+    description: 'Expert in risk mitigation and structural property protection.',
     missionLabel: 'Risk Review',
     geometryType: 'titan'
   },
   {
     id: 'phantom',
     name: 'Phantom',
-    mantle: 'Neighborhood Intelligence',
+    mantle: 'Neighborhood Analysis',
     color: '#ffffff', 
-    description: 'Analyzes subtle neighborhood signals and market anomalies that escape traditional audits.',
-    missionLabel: 'Neighborhood Signals',
+    description: 'Analyzes neighborhood patterns and market changes that may not appear in standard listing data.',
+    missionLabel: 'Neighborhood Context',
     geometryType: 'ghost'
   },
   {
@@ -41,7 +41,7 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Nexus',
     mantle: 'Network Connectivity',
     color: '#a855f7', 
-    description: 'Manages the integration of disparate data streams across the regional grid.',
+    description: 'Manages the integration of regional data sources.',
     missionLabel: 'Influence Map',
     geometryType: 'spider'
   },
@@ -50,7 +50,7 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Vanguard',
     mantle: 'Strategic Execution',
     color: '#ef4444', 
-    description: 'Deployment lead for high-stakes negotiations and competitive acquisition strategies.',
+    description: 'Supports negotiation planning and competitive acquisition strategies.',
     missionLabel: 'Negotiation Strategy',
     geometryType: 'wolf'
   },
@@ -59,7 +59,7 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Aegis',
     mantle: 'Resource Optimization',
     color: '#22c55e', 
-    description: 'Focused on asset recovery and the revitalization of underperforming portfolios.',
+    description: 'Focused on property recovery and the revitalization of underperforming portfolios.',
     missionLabel: 'Recovery Model',
     geometryType: 'phoenix'
   },
@@ -68,7 +68,7 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Vector',
     mantle: 'Logistics Efficiency',
     color: '#f97316', 
-    description: 'Master of transit-linked asset valuation and rapid deployment logistics.',
+    description: 'Specializes in transit-linked property valuation and closing logistics.',
     missionLabel: 'Path To Close',
     geometryType: 'fox'
   },
@@ -77,17 +77,17 @@ export const INTELLIGENCE_DATA: IntelligencePersona[] = [
     name: 'Auditor',
     mantle: 'Final Recommendation',
     color: '#1e1b4b', 
-    description: 'Performs the final liquidation audit and definitive asset evaluation.',
+    description: 'Performs the final review and property evaluation.',
     missionLabel: 'Final Recommendation',
     geometryType: 'reaper'
   },
   {
     id: 'daily-briefing',
     name: 'Jamie Pulse',
-    mantle: 'Regional Intelligence',
+    mantle: 'Regional Analysis',
     color: '#10b981', 
-    description: 'The automated intelligence stream that purifies high-density market data into actionable signals.',
-    missionLabel: 'Regional Brief',
+    description: 'An automated stream that summarizes dense market data into useful context.',
+    missionLabel: 'Regional Summary',
     geometryType: 'phoenix'
   }
 ];

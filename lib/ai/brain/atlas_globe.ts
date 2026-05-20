@@ -53,7 +53,7 @@ export function buildAtlasGlobe(host = 'https://sunsetpulse.com') {
   const catalogCoverage = discoveredNodes === 0 ? 0 : Math.round((mappedNodes / discoveredNodes) * 100);
 
   return {
-    name: 'Sunset Pulse TAH Atlas Globe',
+    name: 'Atlas Pulse TAH Globe',
     version: 1,
     generatedAt,
     source: manifest ? 'published-swarm-manifest' : 'live-local-catalog',

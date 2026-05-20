@@ -86,7 +86,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ rentData }) => 
       </div>
 
       <p className="text-[10px] text-slate-500 mt-6 leading-relaxed font-medium">
-        Estimate provided by RentCast where available. Use as a directional market signal, not a guaranteed rental price.
+        Estimate provided by RentCast where available. Use as directional market context, not a guaranteed rental price.
       </p>
     </div>
   );

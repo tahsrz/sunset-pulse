@@ -12,10 +12,10 @@ import IntelligenceCore from '@/components/demo/IntelligenceCore';
 import ROICalculator from '@/components/demo/ROICalculator';
 
 const DemoPage = () => {
-  const [activeStation, setActiveStation] = useState<'RECON' | 'INTEL' | 'ROI'>('RECON');
+  const [activeStation, setActiveStation] = useState<'SPATIAL' | 'ANALYSIS' | 'ROI'>('SPATIAL');
 
   const mockProperty = {
-    _id: 'elite-asset-001',
+    _id: 'featured-property-001',
     name: 'Sunset Elite Plaza',
     type: 'Commercial Hybrid',
     location: { street: 'Pulse Corridor', city: 'Dallas', state: 'TX' },
@@ -38,8 +38,8 @@ const DemoPage = () => {
         {/* Station Switcher */}
         <div className='flex gap-4 mb-8 overflow-x-auto pb-2'>
           {[
-            { id: 'RECON', label: 'Spatial Analysis', icon: <FaSatellite /> },
-            { id: 'INTEL', label: 'Intelligence Engine', icon: <FaBrain /> },
+            { id: 'SPATIAL', label: 'Spatial Analysis', icon: <FaSatellite /> },
+            { id: 'ANALYSIS', label: 'Analysis Engine', icon: <FaBrain /> },
             { id: 'ROI', label: 'ROI Analysis', icon: <FaCalculator /> }
           ].map(s => (
             <button 
@@ -58,8 +58,8 @@ const DemoPage = () => {
 
         {/* Dynamic Station View */}
         <div className='bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 shadow-2xl min-h-[600px] animate-in zoom-in-95 duration-500'>
-          {activeStation === 'RECON' && <SpatialRecon property={mockProperty} />}
-          {activeStation === 'INTEL' && <IntelligenceCore />}
+          {activeStation === 'SPATIAL' && <SpatialRecon property={mockProperty} />}
+          {activeStation === 'ANALYSIS' && <IntelligenceCore />}
           {activeStation === 'ROI' && <ROICalculator />}
         </div>
 
@@ -71,14 +71,14 @@ const DemoPage = () => {
             </div>
             <div className='text-center'>
               <div className='text-3xl font-mono font-bold text-blue-500'>20+</div>
-              <div className='text-[8px] font-bold uppercase tracking-widest text-slate-500 mt-1'>Intelligence Vectors</div>
+              <div className='text-[8px] font-bold uppercase tracking-widest text-slate-500 mt-1'>Market Data Points</div>
             </div>
             <div className='text-center'>
               <div className='text-3xl font-mono font-bold text-blue-500'>35</div>
               <div className='text-[8px] font-bold uppercase tracking-widest text-slate-500 mt-1'>Custom Profiles</div>
             </div>
           </div>
-          <div className='text-[8px] font-mono uppercase tracking-[0.5em] text-slate-600'>Professional Real Estate Intelligence // Supported by Jamie AI</div>
+          <div className='text-[8px] font-mono uppercase tracking-[0.5em] text-slate-600'>Professional Real Estate Analysis // Supported by Jamie AI</div>
         </footer>
       </div>
 

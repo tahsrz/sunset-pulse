@@ -40,7 +40,7 @@ const PropertySearchForm = () => {
       memoryBridge.save('dynamic', 'style', propertyType);
       
       // Memory Layer Wrap: (For future Sanity/Data Pipeline logging)
-      const telemetry = memoryBridge.wrapQuery(query, 'Property Search RECON');
+      const telemetry = memoryBridge.wrapQuery(query, 'Property Search');
       if (process.env.NODE_ENV === 'development') {
         console.log('[MEMORY_BRIDGE_TELEMETRY]', telemetry);
       }
@@ -101,7 +101,7 @@ const PropertySearchForm = () => {
       {isRV && (
         <div className='mt-2 flex flex-col gap-2 bg-slate-100/50 p-4 rounded-lg border border-slate-200 animate-in fade-in duration-500'>
           <div className='flex items-center justify-between'>
-            <span className='text-xs font-black uppercase tracking-widest text-slate-500 italic'>RV Advanced Recon</span>
+            <span className='text-xs font-black uppercase tracking-widest text-slate-500 italic'>RV Filters</span>
             <button 
               type='button'
               onClick={() => setShowAdvanced(!showAdvanced)}

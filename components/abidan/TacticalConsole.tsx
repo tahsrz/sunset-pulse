@@ -41,7 +41,7 @@ const TacticalConsole = () => {
     } catch (err) {
       setHistory(prev => [...prev, { 
         query: currentQuery, 
-        result: "COMMUNICATION_FAILURE: Terminal link severed.",
+        result: "Connection error. Please try again.",
         error: true
       }]);
     } finally {
@@ -54,7 +54,7 @@ const TacticalConsole = () => {
       <button 
         onClick={() => setIsOpen(true)}
         className="fixed bottom-8 right-8 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-[100] border-2 border-white/20"
-        title="Open Tactical Console"
+        title="Open Analysis Console"
       >
         <FaTerminal />
       </button>
@@ -67,7 +67,7 @@ const TacticalConsole = () => {
       <div className="p-4 bg-slate-900/80 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Tactical Console v1.2</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Analysis Console v1.2</h3>
         </div>
         <button 
           onClick={() => setIsOpen(false)}

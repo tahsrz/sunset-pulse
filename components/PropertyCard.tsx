@@ -176,7 +176,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
                   onRouteClick(property);
                 }}
                 className='bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-center text-xs flex items-center justify-center transition-all'
-                title='Route to Asset'
+                title='Route to Property'
               >
                 <FaRoute />
               </button>

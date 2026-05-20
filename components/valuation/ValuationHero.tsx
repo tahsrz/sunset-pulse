@@ -15,7 +15,7 @@ const ValuationHero: React.FC<ValuationHeroProps> = ({ address, setAddress, onEs
     <section className='relative py-32 overflow-hidden no-print'>
       <div className='container m-auto px-6 text-center relative z-10'>
         <div className='inline-flex items-center gap-2 bg-blue-500/10 text-blue-500 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.4em] mb-8 border border-blue-500/20'>
-          <FaChartLine /> Real Estate Intelligence
+          <FaChartLine /> Real Estate Analysis
         </div>
         <h1 className='text-7xl font-black uppercase italic tracking-tighter mb-8 leading-none'>
           Analyze Your <span className='text-blue-500'>Market Position.</span>

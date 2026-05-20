@@ -11,7 +11,7 @@ export function GET(request: Request) {
   const body = [
     '# Sunset Pulse',
     '',
-    'Sunset Pulse is a real estate intelligence platform with a crawlable TAH/HAT cartridge archive for project context, Jamie workflows, MLS/IDX support, and North Texas market intelligence.',
+    'Sunset Pulse is a real estate search platform with a crawlable TAH/HAT cartridge archive for project context, Jamie workflows, MLS/IDX support, and North Texas market research.',
     '',
     '## Primary Context Entrypoints',
     `- [TAH archive](${host}/tah)`,
@@ -35,7 +35,7 @@ export function GET(request: Request) {
     '## API Usage',
     `- \`GET ${host}/tah/headless\``,
     `- \`GET ${host}/api/tah?q=Dallas&limit=5\``,
-    `- \`POST ${host}/api/tah\` with \`{"query":"North Texas market intelligence","limit":10}\``,
+    `- \`POST ${host}/api/tah\` with \`{"query":"North Texas market research","limit":10}\``,
     ''
   ].join('\n');
 

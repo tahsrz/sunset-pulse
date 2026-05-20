@@ -15,9 +15,9 @@ const InvestorPage = () => {
     {
       id: "hook",
       title: "The Industry Friction",
-      subtitle: "The Hook // 05 Mins",
+      subtitle: "Opening Context // 05 Mins",
       icon: <LucideShieldCheck className="text-orange-500" />,
-      content: "Real estate data is trapped in 2D silos. Agents are drowning in fragmented IDX feeds, while buyers struggle to visualize assets in their true spatial context. The friction isn't just data—it's immersion.",
+      content: "Real estate data is trapped in 2D silos. Agents are dealing with fragmented IDX feeds, while buyers struggle to understand properties in their true spatial context. The friction is not just data; it is context and visualization.",
       interactive: (
         <div className="grid grid-cols-2 gap-4 mt-6">
           <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
@@ -40,7 +40,7 @@ const InvestorPage = () => {
       title: "Why Solutions Fail",
       subtitle: "The Gap // 10 Mins",
       icon: <FaLayerGroup className="text-blue-400" />,
-      content: "Existing platforms treat 3D as a gimmick, not a core search primitive. They bolt visualization onto old databases. Data fragmentation leads to 'Intelligence Decay'—where leads go cold because the context is lost.",
+      content: "Existing platforms often treat 3D as an add-on instead of a core search tool. They bolt visualization onto old databases, and fragmented data causes context loss across the buyer journey.",
       interactive: (
         <div className="space-y-3 mt-4">
           <div className="flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
@@ -67,7 +67,7 @@ const InvestorPage = () => {
       title: "Sunset Pulse: The Bridge",
       subtitle: "The Reveal // 15 Mins",
       icon: <FaCube className="text-orange-500 animate-pulse" />,
-      content: "We provide 'Spatial Intelligence'. A unified platform where live IDX data, 3D architectural renders, and AI-driven behavior analysis converge. We don't just show homes; we project value.",
+      content: "We provide spatial property search: a unified platform where live IDX data, 3D architectural renders, and AI-assisted behavior analysis work together to make property value easier to understand.",
       interactive: (
         <div className="space-y-4 mt-6">
           <div className="bg-gradient-to-br from-blue-900/40 to-orange-900/40 border border-white/20 p-6 rounded-3xl relative overflow-hidden group">
@@ -94,7 +94,7 @@ const InvestorPage = () => {
       title: "Scalable Architecture",
       subtitle: "Validation // 10 Mins",
       icon: <LucideCpu className="text-blue-400" />,
-      content: "Built for growth. Our stack leverages Next.js for SSR edge-delivery and Supabase for high-integrity asset management. This is not a concept; it's an operational grid.",
+      content: "Built for growth. Our stack leverages Next.js for SSR edge delivery and Supabase for high-integrity property data management. This is not a concept; it is an operating platform.",
       interactive: (
         <div className="grid grid-cols-1 gap-2 mt-4">
           <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
@@ -107,7 +107,7 @@ const InvestorPage = () => {
           <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
             <div className="flex items-center gap-3">
               <FaDatabase className="text-blue-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Asset Persistence</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Property Data Persistence</span>
             </div>
             <span className="text-[8px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-mono">SUPABASE_POSTGRES</span>
           </div>
@@ -128,13 +128,13 @@ const InvestorPage = () => {
       title: "Strategic Rollout",
       subtitle: "The Future // 2026-2027",
       icon: <FaRocket className="text-orange-500" />,
-      content: "From regional dominance in North Texas to a national spatial intelligence standard. We are scaling the data bridge.",
+      content: "From North Texas coverage to a national spatial search standard, we are scaling the data bridge.",
       interactive: (
         <div className="relative border-l border-white/10 pl-6 space-y-6 mt-6 ml-2">
           <div className="relative">
             <div className="absolute -left-[29px] top-1 w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
             <div className="text-[10px] font-black uppercase text-orange-400">Q3 2026</div>
-            <div className="text-sm font-bold">NTREIS Grid Saturation</div>
+            <div className="text-sm font-bold">NTREIS Coverage</div>
           </div>
           <div className="relative opacity-60">
             <div className="absolute -left-[29px] top-1 w-3 h-3 rounded-full bg-white/20" />
@@ -156,7 +156,7 @@ const InvestorPage = () => {
       title: "The Visionary",
       subtitle: "Realtor + Engineer",
       icon: <FaUserTie className="text-blue-400" />,
-      content: "Founded at the intersection of high-stakes real estate and full-stack engineering. We speak the language of both the grid and the ground.",
+      content: "Founded at the intersection of real estate practice and full-stack engineering. We understand both the market and the systems that power it.",
       interactive: (
         <div className="flex items-center gap-4 mt-6 p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
           <div className="w-16 h-16 rounded-xl bg-blue-600/20 border border-blue-500/30 overflow-hidden flex items-center justify-center">
@@ -169,7 +169,7 @@ const InvestorPage = () => {
           </div>
         </div>
       ),
-      button: "Initiate Pitch Recap",
+      button: "Restart Pitch",
       action: () => setStep(0)
     }
   ];
@@ -245,7 +245,7 @@ const InvestorPage = () => {
       </div>
 
       <div className="fixed bottom-8 text-[8px] uppercase tracking-[0.4em] opacity-20 text-center max-w-lg font-black italic">
-        Proprietary Intelligence Grid // Powered by Jamie AI Operative // © 2026 Sunset Pulse
+        Proprietary Property Platform // Powered by Jamie AI // (c) 2026 Sunset Pulse
       </div>
 
       <style jsx global>{`

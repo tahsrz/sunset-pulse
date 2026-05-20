@@ -53,7 +53,7 @@ const Properties = () => {
         {/* Navigation Toggle Header */}
         <div className='flex justify-between items-center mb-10'>
           <h2 className='text-2xl font-black text-white uppercase italic tracking-tighter'>
-            Property Grid
+            Properties
           </h2>
           <Link 
             href='/explorer'
@@ -81,7 +81,7 @@ const Properties = () => {
         />
       </div>
 
-      {/* Floating Tactical Map Toggle */}
+      {/* Floating Map Toggle */}
       <Link 
         href='/explorer'
         className='fixed bottom-10 right-10 z-50 group flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-full font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all duration-300'

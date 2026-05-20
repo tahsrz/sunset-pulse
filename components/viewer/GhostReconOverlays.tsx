@@ -33,7 +33,7 @@ const IntelSpire = ({ position, label, intel, color, renderer, camRot, camPos, i
         zIndex: Math.floor(2000 - screenPos.z)
       }}
     >
-      {/* The "Spire" Visual */}
+      {/* Overlay marker */}
       <div className="flex flex-col items-center">
         {/* Label Box */}
         <div className="mb-2 bg-black/80 backdrop-blur-xl border border-white/20 px-4 py-2 rounded-xl min-w-[180px] shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-primary/50 group-hover:scale-110">
@@ -65,29 +65,29 @@ const GhostReconOverlays: React.FC<GhostReconOverlaysProps> = ({ latestBriefing,
 
     // 1. Permanent Economic/Risk Spires (Makiel & Gadrael)
     if (property) {
-      // Makiel Spire: Appreciation Fate
+      // Growth marker
       results.push({
         id: 'economic-makiel',
         position: new Vector(15, 25, -15), // Northeast quadrant
-        label: 'Makiel Appreciation Fate',
-        intel: `Predicted growth manifest: +12.4% alpha expected in 24 months.`,
+        label: 'Growth Outlook',
+        intel: `Projected growth: +12.4% above regional baseline over 24 months.`,
         color: '#3b82f6',
         icon: <FaBolt size={10} />
       });
 
-      // Gadrael Spire: Risk Integrity
+      // Risk marker
       const riskRating = property?.square_feet > 0 ? 84.2 : 62.5;
       results.push({
         id: 'economic-gadrael',
         position: new Vector(-15, 25, -15), // Northwest quadrant
-        label: 'Gadrael Risk Buffer',
-        intel: `Buffer Integrity: ${riskRating}%. Zoning and Title protocols verified.`,
+        label: 'Risk Review',
+        intel: `Risk rating: ${riskRating}%. Zoning and title checks reviewed.`,
         color: '#94a3b8',
         icon: <FaShieldAlt size={10} />
       });
     }
 
-    // 2. News/Intelligence Spires from Briefing
+    // 2. News and market overlays from the regional summary
     if (latestBriefing && latestBriefing.news_articles) {
       latestBriefing.news_articles.forEach((article: any, idx: number) => {
         // Determine Position
@@ -132,7 +132,7 @@ const GhostReconOverlays: React.FC<GhostReconOverlaysProps> = ({ latestBriefing,
         results.push({
           id: `intel-${idx}`,
           position: pos,
-          label: article.geo_tag?.label || article.category || 'Intel Signal',
+          label: article.geo_tag?.label || article.category || 'Market Note',
           intel: article.title,
           color,
           icon

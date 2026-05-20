@@ -31,7 +31,7 @@ const JamieInsightCard: React.FC<JamieInsightCardProps> = ({ insight }) => {
             <FaQuestionCircle size={14} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-            {insight.category} Intelligence
+            {insight.category} Insight
           </span>
         </div>
 
@@ -51,10 +51,10 @@ const JamieInsightCard: React.FC<JamieInsightCardProps> = ({ insight }) => {
 
       <div className="px-8 py-4 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
         <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">
-          Source: Jamie Dream Bridge
+          Source: Jamie Insights
         </span>
         <button className="text-[8px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-400 transition-colors flex items-center gap-2">
-          Verify Intel <FaInfoCircle size={10} />
+          Verify Details <FaInfoCircle size={10} />
         </button>
       </div>
     </div>

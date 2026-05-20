@@ -23,7 +23,7 @@ const CartPage = () => {
       });
       
       const orderResult = await orderRes.json();
-      if (!orderRes.ok) throw new Error('Failed to create order grid entry.');
+      if (!orderRes.ok) throw new Error('Failed to create order.');
       const orderId = orderResult.data.id;
 
       // 2. Initialize Stripe with the order ID

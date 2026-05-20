@@ -60,13 +60,13 @@ const SurgicalIntelligenceOverlays: React.FC<SurgicalIntelligenceOverlaysProps> 
           <div className="flex flex-col gap-1.5 pointer-events-none select-none">
             <div className="flex items-center gap-2 bg-black/80 backdrop-blur-md border border-blue-500/30 px-3 py-1.5 rounded-lg shadow-2xl">
               <div className="text-blue-400">
-                {item.source.includes('COURT') ? <FaShieldAlt size={10} /> : 
-                 item.source.includes('VAULT') ? <FaDatabase size={10} /> : 
+                {item.source.includes('COURT') ? <FaShieldAlt size={10} /> :
+                 item.source.includes('VAULT') ? <FaDatabase size={10} /> :
                  <FaInfoCircle size={10} />}
               </div>
               <div className="flex flex-col">
                 <span className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-500/60">
-                  {item.source}_DATA_STREAM
+                  {item.source.replaceAll('_', ' ')} Data
                 </span>
                 <span className="text-[9px] font-medium text-white/90 max-w-[200px] leading-relaxed">
                   {item.data}

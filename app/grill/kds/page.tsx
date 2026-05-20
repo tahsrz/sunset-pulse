@@ -71,11 +71,11 @@ const KitchenDisplaySystem = () => {
   };
 
   const purgeOrder = async (id: string) => {
-    if (!window.confirm("Purge order from grid?")) return;
+    if (!window.confirm("Remove this order?")) return;
     try {
       const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        toast.warning('Order Purged');
+        toast.warning('Order removed.');
         fetchOrders();
       }
     } catch (error) {
@@ -96,10 +96,10 @@ const KitchenDisplaySystem = () => {
       <header className="flex justify-between items-center mb-10 border-b-2 border-white/10 pb-6">
         <div>
           <h1 className="text-5xl font-black italic tracking-tighter uppercase text-red-600">
-            Operations Center
+            Kitchen Orders
           </h1>
           <p className="text-slate-500 font-mono text-xs uppercase tracking-[0.5em] mt-2">
-            [ KITCHEN_DISPLAY_SYSTEM // ACTIVE_ORDERS ]
+            Kitchen Display System // Active Orders
           </p>
         </div>
         
@@ -120,13 +120,13 @@ const KitchenDisplaySystem = () => {
       {loading && orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-slate-800">
           <FaFire size={120} className="animate-pulse mb-8" />
-          <h2 className="text-2xl font-black uppercase tracking-[0.5em]">Synchronizing Grid...</h2>
+          <h2 className="text-2xl font-black uppercase tracking-[0.5em]">Loading Orders...</h2>
         </div>
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] border-4 border-dashed border-white/5 rounded-[3rem]">
           <FaClock size={80} className="text-slate-900 mb-6" />
           <h2 className="text-slate-700 text-3xl font-black uppercase tracking-widest italic">All Quiet on the Grill</h2>
-          <p className="text-slate-800 font-mono mt-4 uppercase">No pending deployments detected.</p>
+          <p className="text-slate-800 font-mono mt-4 uppercase">No pending orders.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -213,7 +213,7 @@ const KitchenDisplaySystem = () => {
 
       {/* Footer Info */}
       <footer className="mt-20 border-t border-white/5 pt-8 flex justify-between items-center opacity-30">
-        <p className="text-[10px] font-mono uppercase tracking-[0.5em]">System Stability: Optimal // Grid: Sunset_Gas_Grill</p>
+        <p className="text-[10px] font-mono uppercase tracking-[0.5em]">System Status: Online // Sunset Gas Grill</p>
         <p className="text-[10px] font-mono uppercase tracking-[0.5em]">Refreshed: {new Date().toLocaleTimeString()}</p>
       </footer>
     </div>

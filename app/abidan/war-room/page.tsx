@@ -2,8 +2,8 @@ import React from 'react';
 import JudgesWarRoom from '@/components/war-room/JudgesWarRoom';
 
 export const metadata = {
-  title: 'Judges War Room | Sunset Pulse',
-  description: 'Multi-dimensional reconnaissance grid for high-stakes real estate intelligence.',
+  title: 'Abidan Analysis Room | Sunset Pulse',
+  description: 'Multi-dimensional property analysis workspace for real estate research.',
 };
 
 const WarRoomPage = () => {

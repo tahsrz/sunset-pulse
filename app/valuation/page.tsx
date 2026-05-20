@@ -41,7 +41,7 @@ const ValuationPage = () => {
 
   const handleConfirm = async () => {
     setConfirmed(true);
-    toast.success("Property added to market grid.");
+    toast.success("Property added to your market list.");
   };
 
   const handleDownloadReport = () => {
@@ -79,7 +79,7 @@ const ValuationPage = () => {
         }
       `}</style>
 
-      {/* Hero Sector */}
+      {/* Hero Section */}
       {!result && (
         <ValuationHero 
           address={address} 
@@ -104,13 +104,13 @@ const ValuationPage = () => {
         )}
       </div>
 
-      {/* Grid Specs */}
+      {/* Valuation Details */}
       <section className='py-20 border-t border-white/5 no-print'>
         <div className='container m-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12'>
           {[
             { icon: <FaHome />, title: 'Real-Time Valuation', desc: 'Continuous monitoring of residential property values across local markets.' },
             { icon: <FaBrain />, title: 'Advanced Analysis', desc: 'Proprietary algorithms integrating local commerce data with real estate trends.' },
-            { icon: <FaMapMarkedAlt />, title: 'Market Synchronization', desc: 'Seamlessly integrate property data into our professional reconnaissance network.' }
+            { icon: <FaMapMarkedAlt />, title: 'Market Sync', desc: 'Add property data to your saved market analysis workflow.' }
           ].map((item, i) => (
             <div key={i} className='space-y-4'>
               <div className='text-blue-500 text-3xl'>{item.icon}</div>

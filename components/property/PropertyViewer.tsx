@@ -36,7 +36,7 @@ const PropertyViewer: React.FC<PropertyViewerProps> = ({ property }) => {
       <div className='flex items-center justify-between px-8 py-6 relative z-20'>
         <div className='flex flex-col gap-1'>
           <h3 className='text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic'>
-            Interactive Asset Analysis // {isNeuralMode ? 'Data Layer' : '3D View'}
+            Interactive Property Analysis // {isNeuralMode ? 'Data Layer' : '3D View'}
           </h3>
           <div className='text-[8px] text-blue-500/50 font-mono'>
             PROPERTY VISUALIZER V7.0

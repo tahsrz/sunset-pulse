@@ -6,6 +6,7 @@ export type CartridgeDomain = {
 };
 
 export const CARTRIDGE_DOMAINS: CartridgeDomain[] = [
+  { id: 'texas-history', label: 'Atlas Pulse', color: '#facc15', keywords: ['atlas pulse', 'texas place history', 'sunset texas', 'sunset tx', 'montague county', 'handbook of texas', 'portal to texas history'] },
   { id: 'pulse', label: 'Sunset Pulse', color: '#22d3ee', keywords: ['sunset', 'pulse', 'jamie', 'user', 'memory', 'memories', 'abidan', 'vault'] },
   { id: 'real-estate', label: 'Real Estate', color: '#34d399', keywords: ['real', 'estate', 'tarrant', 'texas', 'deeds', 'listing', 'mls', 'neighborhood'] },
   { id: 'computer-science', label: 'Computer Science', color: '#a78bfa', keywords: ['algorithm', 'architecture', 'compiler', 'operating', 'python', 'unix', 'sicp', 'schemer', 'category'] },

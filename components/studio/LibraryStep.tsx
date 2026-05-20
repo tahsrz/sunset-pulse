@@ -55,7 +55,7 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
               disabled={isAcquiring || !importUrl}
               className="px-4 py-3 bg-blue-600/20 border border-blue-500/40 text-blue-400 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all disabled:opacity-20"
             >
-              {isAcquiring ? 'Acquiring...' : 'Acquire Asset'}
+              {isAcquiring ? 'Importing...' : 'Import Clip'}
             </button>
           </form>
 
@@ -98,7 +98,7 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
                   <button 
                     onClick={() => handleDeleteAsset(clip._id)}
                     className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"
-                    title="Purge Asset"
+                    title="Remove Clip"
                   >
                     <FaGhost size={12} />
                   </button>
@@ -157,7 +157,7 @@ export const LibraryStep: React.FC<LibraryStepProps> = ({
                     required
                     value={newClip.name}
                     onChange={e => setNewClip({...newClip, name: e.target.value})}
-                    placeholder="e.g., Tactical_Briefing.mp4"
+                    placeholder="e.g., Property_Update.mp4"
                     className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs font-mono text-white focus:border-blue-500 outline-none transition-all"
                   />
                 </div>

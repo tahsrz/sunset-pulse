@@ -64,10 +64,10 @@ const LeadGenPropertiesPage = () => {
             </div>
             <div>
               <h1 className='text-3xl font-black text-slate-900 uppercase italic tracking-tighter'>
-                Lead Generation Command
+                Lead Generation Center
               </h1>
               <p className='text-slate-500 text-sm font-medium'>
-                Select an asset to configure automated capture funnels and intelligence intercepts.
+                Select a property to configure outreach templates and lead capture workflows.
               </p>
             </div>
           </div>

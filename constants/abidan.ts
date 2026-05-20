@@ -14,7 +14,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     name: 'Makiel',
     mantle: 'Future Outlook',
     color: '#3b82f6',
-    description: 'Projects 5-10 year growth, infrastructure movement, and regional momentum for a target asset.',
+    description: 'Projects 5-10 year growth, infrastructure movement, and regional momentum for a property.',
     missionLabel: 'Growth Forecast',
     geometryType: 'hound'
   },
@@ -30,18 +30,18 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
   {
     id: 'durandiel',
     name: 'Durandiel',
-    mantle: 'Spatial Intelligence',
+    mantle: 'Spatial Analysis',
     color: '#ffffff',
     description: 'Maps transit access, utility corridors, infrastructure proximity, and location constraints.',
-    missionLabel: 'Spatial Recon',
+    missionLabel: 'Spatial Review',
     geometryType: 'ghost'
   },
   {
     id: 'telariel',
     name: 'Telariel',
-    mantle: 'Community Signals',
+    mantle: 'Community Context',
     color: '#a855f7',
-    description: 'Connects neighborhood activity, historical listing behavior, and soft-market signal patterns.',
+    description: 'Connects neighborhood activity, historical listing behavior, and broader market patterns.',
     missionLabel: 'Network Map',
     geometryType: 'spider'
   },
@@ -50,7 +50,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     name: 'Razael',
     mantle: 'Navigation',
     color: '#ef4444',
-    description: 'Builds buyer strategy, timing guidance, negotiation posture, and tactical next steps.',
+    description: 'Builds buyer strategy, timing guidance, negotiation posture, and next steps.',
     missionLabel: 'Buyer Strategy',
     geometryType: 'wolf'
   },
@@ -59,8 +59,8 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     name: 'Suriel',
     mantle: 'Aggregation',
     color: '#22c55e',
-    description: 'Synthesizes raw judge output into a cohesive briefing with a plain-language throughline.',
-    missionLabel: 'Restoration Core',
+    description: 'Synthesizes raw analysis into a cohesive summary with a plain-language throughline.',
+    missionLabel: 'Summary Builder',
     geometryType: 'phoenix'
   },
   {
@@ -68,7 +68,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     name: 'Zakariel',
     mantle: 'Coordination',
     color: '#f97316',
-    description: 'Optimizes closing timelines, operator handoffs, logistics, and task sequencing.',
+    description: 'Optimizes closing timelines, handoffs, logistics, and task sequencing.',
     missionLabel: 'Close Path',
     geometryType: 'fox'
   },
@@ -84,10 +84,10 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
   {
     id: 'daily-briefing',
     name: 'Jamie Pulse',
-    mantle: 'Regional Intelligence',
+    mantle: 'Regional Analysis',
     color: '#10b981',
-    description: 'Summarizes live regional signals, market notes, and operator-ready daily context.',
-    missionLabel: 'Regional Brief',
+    description: 'Summarizes live regional trends, market notes, and daily context.',
+    missionLabel: 'Regional Summary',
     geometryType: 'phoenix'
   }
 ];

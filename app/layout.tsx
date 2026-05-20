@@ -22,8 +22,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata = {
-  title: 'Sunset Pulse | Real Estate & Intelligence',
-  description: 'Find your dream home in North Texas, powered by Jamie AI.',
+  title: 'Sunset Pulse | Real Estate Search',
+  description: 'Find your next home in North Texas with Jamie AI.',
   keywords: 'rental, property, real estate, keller tx, rhome tx, investment',
   icons: {
     icon: '/next.svg',
@@ -87,7 +87,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
   const fallbackIntelligence: IntelligenceConfig = {
     grill: {
       name: 'Sunset Gas & Grill',
-      tagline: 'Quality Meat • Friendly Service',
+      tagline: 'Quality Meat - Friendly Service',
       coordinates: [-97.766724, 33.453823],
       address: '101 S. Council, Sunset, TX 76270'
     }

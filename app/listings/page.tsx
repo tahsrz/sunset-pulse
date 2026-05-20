@@ -67,9 +67,9 @@ export default function ListingsPage() {
                 <FaGlobeAmericas />
                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Unified MLS Engine</span>
               </div>
-              <h1 className="text-4xl font-black uppercase italic tracking-tighter">Market Intelligence</h1>
+              <h1 className="text-4xl font-black uppercase italic tracking-tighter">Market Listings</h1>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 max-w-md">
-                Blending <span className="text-green-400">Sunset Pulse Verified</span> assets with <span className="text-blue-400">Global MLS Search</span> for total market dominance.
+                Combining <span className="text-green-400">Sunset Pulse Verified</span> properties with <span className="text-blue-400">Global MLS Search</span> for broader market coverage.
               </p>
               
               {/* Market / Board Selector */}
@@ -108,7 +108,7 @@ export default function ListingsPage() {
         <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest">
-              {loading ? 'Scanning Network...' : `${listings.length} Properties Analyzed`}
+              {loading ? 'Loading Listings...' : `${listings.length} Properties Found`}
             </h2>
             {currentCity && (
               <span className="flex items-center gap-1 bg-blue-100 text-blue-600 px-2 py-1 rounded text-[9px] font-black uppercase">

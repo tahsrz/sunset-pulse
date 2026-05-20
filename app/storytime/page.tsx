@@ -115,14 +115,14 @@ const StorytimePage = () => {
     }
   }, [currentPage, handleSpeech, isTacticalMode, story, triggerVisualCue]);
 
-  if (isLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-primary font-mono animate-pulse">SYNCHRONIZING NARRATIVE...</div>;
+  if (isLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-primary font-mono animate-pulse">Loading Story...</div>;
   if (!story) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-red-500 font-mono">ERROR: STORY_NOT_FOUND</div>;
 
   const page = story.pages[currentPage];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-primary/30">
-      {/* Tactical Header */}
+      {/* Story Header */}
       <header className="border-b border-white/5 bg-slate-900/50 backdrop-blur-md p-6">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -324,14 +324,14 @@ const StorytimePage = () => {
         <section className="space-y-12">
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Narrative Protocol</h3>
-              <p className="text-xs text-white/40">{isTacticalMode ? 'Envoy Interpretation Active' : 'Original Text Stream'}</p>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Narrative Mode</h3>
+              <p className="text-xs text-white/40">{isTacticalMode ? 'Guided Interpretation Active' : 'Original Text'}</p>
             </div>
             <button 
               onClick={() => setIsTacticalMode(!isTacticalMode)}
               className={`px-4 py-2 rounded-lg font-mono text-[10px] uppercase tracking-widest border transition-all ${isTacticalMode ? 'bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/10 text-white/40'}`}
             >
-              {isTacticalMode ? 'Tactical_On' : 'Tactical_Off'}
+              {isTacticalMode ? 'Guided On' : 'Guided Off'}
             </button>
           </div>
 
@@ -350,7 +350,7 @@ const StorytimePage = () => {
               <div className="space-y-4 relative z-10">
                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border ${isTacticalMode ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/10 text-white/60 border-white/20'}`}>
                   {isTacticalMode ? <Activity size={12} className="animate-pulse" /> : <BookOpen size={12} />}
-                  {isTacticalMode ? 'Tactical Interpretation' : 'Original Intel'}
+                  {isTacticalMode ? 'Guided Interpretation' : 'Original Text'}
                 </div>
                 <p className={`text-2xl md:text-3xl font-bold leading-snug ${isTacticalMode ? 'text-white' : 'text-slate-400 font-serif italic'}`}>
                   {isTacticalMode ? page.tacticalInterpretation : page.originalText}
