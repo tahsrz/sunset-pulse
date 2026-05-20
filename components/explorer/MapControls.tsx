@@ -10,6 +10,8 @@ interface MapControlsProps {
   setShowPOIs: (show: boolean) => void;
   showVisual: boolean;
   setShowVisual: (show: boolean) => void;
+  showAtlasPulse?: boolean;
+  setShowAtlasPulse?: (show: boolean) => void;
   showDirections: boolean;
 }
 
@@ -20,6 +22,8 @@ const MapControls: React.FC<MapControlsProps> = ({
   setShowPOIs,
   showVisual,
   setShowVisual,
+  showAtlasPulse = false,
+  setShowAtlasPulse,
   showDirections
 }) => {
   return (
@@ -49,10 +53,18 @@ const MapControls: React.FC<MapControlsProps> = ({
             >
               POI
             </button>
+            {setShowAtlasPulse && (
+              <button
+                onClick={() => setShowAtlasPulse(!showAtlasPulse)}
+                className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showAtlasPulse ? 'bg-amber-400 border-amber-300 text-slate-950' : 'bg-white/5 border-white/10 text-slate-500'}`}
+              >
+                ATLAS
+              </button>
+            )}
           </div>
         </div>
         <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
-          3D terrain and clustering are enabled. Toggle visual, heatmap, or POI layers for local context.
+          3D terrain and clustering are enabled. Toggle visual, heatmap, POI, or Atlas Pulse layers for local context.
         </p>
       </div>
       

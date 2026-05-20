@@ -24,6 +24,8 @@ import InsightPopup from './explorer/InsightPopup';
 import ValuationMarker from './explorer/ValuationMarker';
 import ValuationPopup from './explorer/ValuationPopup';
 import MapControls from './explorer/MapControls';
+import AtlasPulseMarker, { type AtlasPulsePlace } from './explorer/AtlasPulseMarker';
+import AtlasPulsePopup from './explorer/AtlasPulsePopup';
 
 import { useJamieInsights } from '@/hooks/useJamieInsights';
 import { useValuations } from '@/hooks/useValuations';
@@ -34,6 +36,7 @@ interface ExplorerMapProps {
   results?: any[];
   hoveredId?: string | null;
   activeRouteProperty?: any;
+  atlasPulsePlaces?: AtlasPulsePlace[];
 }
 
 const ExplorerMap: React.FC<ExplorerMapProps> = ({ 
@@ -41,7 +44,8 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   onPropertySelect = null, 
   results = [], 
   hoveredId = null, 
-  activeRouteProperty = null 
+  activeRouteProperty = null,
+  atlasPulsePlaces = []
 }) => {
   const searchParams = useSearchParams();
   const { jamieInsights } = useJamieInsights();
@@ -52,6 +56,8 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPOIs, setShowPOIs] = useState(false);
   const [showVisual, setShowVisual] = useState(false);
+  const [showAtlasPulse, setShowAtlasPulse] = useState(true);
+  const [selectedAtlasPulsePlace, setSelectedAtlasPulsePlace] = useState<AtlasPulsePlace | null>(null);
 
   // State for GeoJSON results calculated in Web Worker
   const [geojsonResults, setGeojsonResults] = useState<any>({
@@ -371,6 +377,21 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
             onClose={() => setSelectedValuation(null)}
           />
         )}
+
+        {showAtlasPulse && atlasPulsePlaces.map(place => (
+          <AtlasPulseMarker
+            key={place.slug}
+            place={place}
+            onSelect={setSelectedAtlasPulsePlace}
+          />
+        ))}
+
+        {selectedAtlasPulsePlace && (
+          <AtlasPulsePopup
+            place={selectedAtlasPulsePlace}
+            onClose={() => setSelectedAtlasPulsePlace(null)}
+          />
+        )}
       </Map>
 
       {/* Floating UI Elements */}
@@ -381,6 +402,8 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         setShowPOIs={setShowPOIs}
         showVisual={showVisual}
         setShowVisual={setShowVisual}
+        showAtlasPulse={showAtlasPulse}
+        setShowAtlasPulse={setShowAtlasPulse}
         showDirections={showDirections}
       />
     </div>

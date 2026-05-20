@@ -1,0 +1,58 @@
+
+> property-pulse@0.1.0 dev
+> next dev -p 3001
+
+   ▲ Next.js 14.1.0
+   - Local:        http://localhost:3001
+   - Environments: .env.local, .env
+
+ ✓ Ready in 2.9s
+ ✓ Compiled /middleware in 286ms (119 modules)
+ ○ Compiling /properties ...
+ ✓ Compiled /properties in 13.2s (2962 modules)
+MongoDB connected...
+MongoDB connected...
+ ✓ Compiled /api/properties in 402ms (1533 modules)
+ ✓ Compiled (1630 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ✓ Compiled in 2.2s (1450 modules)
+ ✓ Compiled in 1193ms (1450 modules)
+ ✓ Compiled in 1125ms (1450 modules)
+ ✓ Compiled in 1070ms (1450 modules)
+ ✓ Compiled in 681ms (1450 modules)
+ ✓ Compiled in 799ms (1450 modules)
+ ✓ Compiled in 817ms (1450 modules)
+ ✓ Compiled in 988ms (1450 modules)
+ ○ Compiling /explorer ...
+ ✓ Compiled /explorer in 6.1s (3244 modules)
+ ✓ Compiled /api/valuation in 325ms (1638 modules)
+ ✓ Compiled /api/properties in 0ms (1668 modules)
+ ✓ Compiled in 0ms (1742 modules)
+ ✓ Compiled in 1ms (1742 modules)
+ ✓ Compiled /api/atlas-pulse in 0ms (1742 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ✓ Compiled (1745 modules)
+[DREAMS_API]: Request received
+[DREAMS_API]: Targeting path: C:\Users\Taz\SunsetPulse\lib\ai\memory\spatial_dreams.json
+[DREAMS_API]: File read successful, length: 1368
+[DREAMS_API]: JSON parse successful, items: 3
+ ✓ Compiled in 1198ms (1576 modules)
+ ✓ Compiled in 815ms (1576 modules)
+ ✓ Compiled in 737ms (1576 modules)
+ ✓ Compiled in 936ms (1576 modules)
+ ✓ Compiled in 995ms (1576 modules)
+ ✓ Compiled in 789ms (1576 modules)
+ ✓ Compiled in 1339ms (1576 modules)
+ ✓ Compiled in 849ms (1576 modules)
+ ○ Compiling /api/tah/atlas/globe ...
+ ✓ Compiled /api/tah/atlas/globe in 633ms (1649 modules)
+ ○ Compiling /atlas ...
+ ✓ Compiled /atlas in 592ms (1653 modules)
+ ✓ Compiled in 3.8s (3205 modules)
+ ✓ Compiled /atlas in 373ms (1633 modules)
