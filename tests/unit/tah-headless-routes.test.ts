@@ -8,6 +8,7 @@ import { GET as getCartridgeMeta } from '@/app/api/tah/[slug]/meta/route';
 import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
 import { GET as getAtlasManifest } from '@/app/api/tah/atlas/manifest/route';
 import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
+import { GET as getAtlasGlobe } from '@/app/api/tah/atlas/globe/route';
 
 describe('TAH robot-facing routes', () => {
   it('serves the headless archive as plain text', async () => {
@@ -158,6 +159,44 @@ describe('TAH robot-facing routes', () => {
         expect.objectContaining({
           slug: 'algorithms',
           searchQuery: 'Algorithms'
+        })
+      ])
+    );
+  });
+
+  it('serves a globe-native Atlas progress dataset', async () => {
+    const response = getAtlasGlobe();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(body.name).toBe('Sunset Pulse TAH Atlas Globe');
+    expect(body.progress.worldCompletion).toBeGreaterThan(0);
+    expect(body.progress.worldCompletion).toBeLessThan(100);
+    expect(body.progress.knownNodes).toBeGreaterThan(0);
+    expect(body.progress.plottedNodes).toBe(body.progress.knownNodes);
+    expect(body.progress.targetNodes).toBe(1000);
+    expect(body.domains).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'computer-science',
+          knownNodes: expect.any(Number),
+          coverage: expect.any(Number)
+        })
+      ])
+    );
+    expect(body.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          slug: 'algorithms',
+          lat: expect.any(Number),
+          lng: expect.any(Number),
+          coordinateSource: 'domain-hash',
+          coverage: expect.any(Number),
+          confidence: expect.any(Number),
+          routes: expect.objectContaining({
+            headless: 'https://sunsetpulse.com/tah/algorithms/headless'
+          })
         })
       ])
     );

@@ -1,10 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
-
-const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
 type AtlasNode = {
   id: string;
@@ -67,6 +64,64 @@ type ProbeState = {
   items: ProbeItem[];
 };
 
+type GlobeNode = {
+  id: string;
+  slug: string;
+  title: string;
+  source: string;
+  domain: {
+    id: string;
+    label: string;
+    color: string;
+  };
+  status: 'mapped' | 'discovered' | 'empty';
+  coverage: number;
+  confidence: number;
+  snippetCount: number;
+  byteSize: number;
+  shardCount: number;
+  lat: number;
+  lng: number;
+  radius: number;
+  coordinateSource: 'domain-hash';
+  lastMappedAt: string | null;
+  routes: {
+    html: string;
+    headless: string;
+    api: string;
+    meta: string;
+  };
+  summary: string;
+  searchQuery: string;
+};
+
+type AtlasGlobe = {
+  generatedAt: string;
+  source: string;
+  progress: {
+    targetNodes: number;
+    knownNodes: number;
+    plottedNodes: number;
+    mappedNodes: number;
+    unmappedNodes: number;
+    worldCompletion: number;
+    catalogCoverage: number;
+    averageCoverage: number;
+    indexedSnippets: number;
+    byteSize: number;
+    lastSwarmRunAt: string | null;
+  };
+  domains: Array<{
+    id: string;
+    label: string;
+    color: string;
+    knownNodes: number;
+    mappedNodes: number;
+    coverage: number;
+  }>;
+  nodes: GlobeNode[];
+};
+
 const DOMAIN_COLORS: Record<string, string> = {
   world: '#f8fafc',
   pulse: '#22d3ee',
@@ -81,19 +136,24 @@ const DOMAIN_COLORS: Record<string, string> = {
 
 export default function MemoriaAtlasPage() {
   const [atlas, setAtlas] = useState<AtlasMap | null>(null);
+  const [globe, setGlobe] = useState<AtlasGlobe | null>(null);
   const [selectedNode, setSelectedNode] = useState<AtlasNode | null>(null);
+  const [selectedGlobeNode, setSelectedGlobeNode] = useState<GlobeNode | null>(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [probeState, setProbeState] = useState<ProbeState>({ mapped: 0, total: 0, percent: 0, done: false, items: [] });
   const [loading, setLoading] = useState(true);
-  const fgRef = useRef<any>(null);
 
   useEffect(() => {
-    fetch('/api/tah/atlas/map', { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        setAtlas(data);
-        setSelectedNode(data.nodes?.[0] || null);
+    Promise.all([
+      fetch('/api/tah/atlas/map', { cache: 'no-store' }).then(res => res.json()),
+      fetch('/api/tah/atlas/globe', { cache: 'no-store' }).then(res => res.json())
+    ])
+      .then(([mapData, globeData]) => {
+        setAtlas(mapData);
+        setGlobe(globeData);
+        setSelectedNode(mapData.nodes?.[0] || null);
+        setSelectedGlobeNode(globeData.nodes?.[0] || null);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -174,15 +234,34 @@ export default function MemoriaAtlasPage() {
   const visibleNodes = useMemo(() => atlas?.nodes || [], [atlas]);
   const mappedBySlug = useMemo(() => new Map(probeState.items.map(item => [item.slug, item])), [probeState.items]);
   const domainStats = useMemo(() => {
+    if (globe?.domains?.length) {
+      return globe.domains.map(domain => ({
+        id: domain.id,
+        label: domain.label,
+        count: domain.knownNodes,
+        mapped: domain.mappedNodes,
+        coverage: domain.coverage,
+        color: domain.color
+      }));
+    }
+
     const continents = visibleNodes.filter(node => node.type === 'continent');
     return continents.map(continent => ({
       id: continent.id,
       label: continent.label,
       count: visibleNodes.filter(node => node.type === 'cartridge' && node.group === continent.id).length,
+      mapped: 0,
+      coverage: 0,
       color: DOMAIN_COLORS[continent.group] || '#94a3b8'
     }));
-  }, [visibleNodes]);
+  }, [globe, visibleNodes]);
   const selectedProbe = selectedNode?.slug ? mappedBySlug.get(selectedNode.slug) : null;
+  const selectedGlobe = selectedGlobeNode || (selectedNode?.slug ? globe?.nodes.find(node => node.slug === selectedNode.slug) : null);
+
+  const selectGlobeNode = (node: GlobeNode) => {
+    setSelectedGlobeNode(node);
+    setSelectedNode(visibleNodes.find(candidate => candidate.slug === node.slug) || selectedNode);
+  };
 
   return (
     <main className="relative h-screen overflow-hidden bg-[#071013] text-slate-50">
@@ -200,8 +279,8 @@ export default function MemoriaAtlasPage() {
 
           <div className="w-full max-w-xl">
             <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              <span>Atlas Coverage</span>
-              <span className="text-cyan-200">{atlas?.progress.percent || 0}%</span>
+              <span>World Completion</span>
+              <span className="text-cyan-200">{globe?.progress.worldCompletion || atlas?.progress.percent || 0}%</span>
             </div>
             <div className="grid grid-cols-5 overflow-hidden rounded border border-white/10 bg-white/10">
               {worldStages.map(stage => (
@@ -211,12 +290,16 @@ export default function MemoriaAtlasPage() {
               ))}
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-400">
-              {atlas?.progress.totalCartridges || 0} of {atlas?.progress.targetCartridges || 1000} target cartridges charted. Routes are online; the world is still being mapped.
+              {globe?.progress.knownNodes || atlas?.progress.totalCartridges || 0} known nodes out of a {globe?.progress.targetNodes || atlas?.progress.targetCartridges || 1000}-node atlas target. {globe?.progress.indexedSnippets || 0} snippets/shards are visible to the map.
+            </p>
+            <p className="mt-1 text-xs leading-5 text-emerald-200">
+              {globe?.progress.plottedNodes || 0} of {globe?.progress.knownNodes || 0} cartridges are physically plotted on the globe.
             </p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
               <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href="/tah">Archive</Link>
               <Link className="rounded bg-emerald-300 px-3 py-2 text-slate-950" href="/tah/index.json">JSON</Link>
               <Link className="rounded bg-pink-300 px-3 py-2 text-slate-950" href="/tah/headless">Headless</Link>
+              <Link className="rounded bg-violet-300 px-3 py-2 text-slate-950" href="/api/tah/atlas/globe">Globe JSON</Link>
               <Link className="rounded border border-white/20 px-3 py-2 text-white" href="/llms.txt">llms.txt</Link>
             </div>
           </div>
@@ -242,14 +325,14 @@ export default function MemoriaAtlasPage() {
             <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.18em]">
               <span className="text-cyan-200">Mapping Run</span>
               <span className={probeState.done ? 'text-emerald-200' : 'text-pink-200'}>
-                {probeState.percent}%
+                {globe?.progress.catalogCoverage ?? probeState.percent}%
               </span>
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded bg-white/10">
-              <div className="h-full bg-cyan-300 transition-all duration-300" style={{ width: `${probeState.percent}%` }} />
+              <div className="h-full bg-cyan-300 transition-all duration-300" style={{ width: `${globe?.progress.catalogCoverage ?? probeState.percent}%` }} />
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              {probeState.mapped} of {probeState.total || atlas?.progress.totalCartridges || 0} cartridge headers {probeState.published ? 'loaded from the local swarm manifest' : 'probed by the website'}.
+              {globe?.progress.mappedNodes ?? probeState.mapped} of {globe?.progress.knownNodes || probeState.total || atlas?.progress.totalCartridges || 0} cartridge headers {globe?.source === 'published-swarm-manifest' ? 'loaded from the local swarm manifest' : 'mapped from the live local catalog'}.
             </p>
           </div>
           <div className="mb-4 border-b border-white/10 pb-4">
@@ -267,17 +350,31 @@ export default function MemoriaAtlasPage() {
                     {domain.label}
                   </span>
                   <span className="mt-1 block text-lg font-black text-white">{domain.count}</span>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{domain.coverage}% mapped</span>
                 </button>
               ))}
             </div>
           </div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-200">Selected Region</p>
-          <h2 className="mt-3 text-2xl font-black">{selectedNode?.displayTitle || selectedNode?.label || 'Loading Atlas'}</h2>
+          <h2 className="mt-3 text-2xl font-black">{selectedGlobe?.title || selectedNode?.displayTitle || selectedNode?.label || 'Loading Atlas'}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            {selectedNode?.type === 'world' && `${atlas?.progress.totalCartridges || 0} cartridges are discoverable out of a ${atlas?.progress.targetCartridges || 1000}-cartridge atlas target.`}
+            {selectedNode?.type === 'world' && `${globe?.progress.knownNodes || atlas?.progress.totalCartridges || 0} cartridges are discoverable out of a ${globe?.progress.targetNodes || atlas?.progress.targetCartridges || 1000}-node atlas target.`}
             {selectedNode?.type === 'continent' && 'A knowledge continent grouping related cartridges into a navigable region.'}
             {selectedNode?.type === 'cartridge' && `Source: ${selectedNode.source}. Query seed: ${selectedNode.searchQuery || selectedNode.label}`}
+            {!selectedNode?.type && selectedGlobe && `Source: ${selectedGlobe.source}. Query seed: ${selectedGlobe.searchQuery}`}
           </p>
+          {selectedGlobe && (
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <MetricPill label="Coverage" value={`${selectedGlobe.coverage}%`} />
+              <MetricPill label="Confidence" value={`${selectedGlobe.confidence}%`} />
+              <MetricPill label="Snippets" value={String(selectedGlobe.snippetCount)} />
+            </div>
+          )}
+          {selectedGlobe && (
+            <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              Plotted at {selectedGlobe.lat}, {selectedGlobe.lng} via {selectedGlobe.coordinateSource}
+            </p>
+          )}
           {selectedNode?.type === 'cartridge' && selectedNode.summary && (
             <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-400">{selectedNode.summary}</p>
           )}
@@ -321,40 +418,192 @@ export default function MemoriaAtlasPage() {
       <section className="absolute inset-0 z-10 pt-44 lg:pl-96">
         {loading && (
           <div className="flex h-full items-center justify-center text-xs font-black uppercase tracking-[0.28em] text-cyan-200">
-            Mapping TAH world...
+            Mapping TAH globe...
           </div>
         )}
-        {!loading && atlas && (
-          <ForceGraph2D
-            ref={fgRef}
-            graphData={{ nodes: visibleNodes, links: atlas.links }}
-            backgroundColor="rgba(0,0,0,0)"
-            nodeRelSize={5}
-            linkColor={() => 'rgba(148, 163, 184, 0.22)'}
-            linkWidth={(link: any) => link.value || 1}
-            onNodeClick={(node: any) => setSelectedNode(node)}
-            nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-              const color = DOMAIN_COLORS[node.group] || '#94a3b8';
-              const radius = node.type === 'world' ? 11 : node.type === 'continent' ? 8 : 4;
-              ctx.shadowColor = color;
-              ctx.shadowBlur = node.type === 'cartridge' ? 8 : 18;
-              ctx.fillStyle = color;
-              ctx.beginPath();
-              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
-              ctx.fill();
-              ctx.shadowBlur = 0;
-
-              if (globalScale > 0.7 || node.type !== 'cartridge') {
-                ctx.font = `${node.type === 'cartridge' ? 9 : 12}px JetBrains Mono, monospace`;
-                ctx.fillStyle = 'rgba(248, 250, 252, 0.78)';
-                ctx.fillText(node.displayTitle || node.label, node.x + radius + 4, node.y + 3);
-              }
-            }}
+        {!loading && globe && (
+          <AtlasGlobeCanvas
+            globe={globe}
+            selectedSlug={selectedGlobe?.slug}
+            onSelect={selectGlobeNode}
           />
         )}
       </section>
     </main>
   );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded border border-white/10 bg-black/30 p-2">
+      <p className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function AtlasGlobeCanvas({ globe, selectedSlug, onSelect }: { globe: AtlasGlobe; selectedSlug?: string; onSelect: (node: GlobeNode) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const projectedRef = useRef<Array<{ node: GlobeNode; x: number; y: number; visible: boolean; radius: number }>>([]);
+  const selectedSlugRef = useRef(selectedSlug);
+
+  useEffect(() => {
+    selectedSlugRef.current = selectedSlug;
+  }, [selectedSlug]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    let frame = 0;
+    let raf = 0;
+
+    const render = () => {
+      const bounds = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(1, bounds.width);
+      const height = Math.max(1, bounds.height);
+
+      if (canvas.width !== Math.floor(width * ratio) || canvas.height !== Math.floor(height * ratio)) {
+        canvas.width = Math.floor(width * ratio);
+        canvas.height = Math.floor(height * ratio);
+      }
+
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+      const globeRadius = Math.max(120, Math.min(width, height) * 0.37);
+      const rotation = frame * 0.0016;
+      const projected: Array<{ node: GlobeNode; x: number; y: number; visible: boolean; radius: number }> = [];
+
+      const oceanGradient = context.createRadialGradient(cx - globeRadius * 0.32, cy - globeRadius * 0.38, globeRadius * 0.1, cx, cy, globeRadius);
+      oceanGradient.addColorStop(0, 'rgba(34, 211, 238, 0.34)');
+      oceanGradient.addColorStop(0.5, 'rgba(15, 23, 42, 0.88)');
+      oceanGradient.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+
+      context.save();
+      context.shadowColor = 'rgba(34, 211, 238, 0.55)';
+      context.shadowBlur = 32;
+      context.fillStyle = oceanGradient;
+      context.beginPath();
+      context.arc(cx, cy, globeRadius, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+
+      context.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+      context.lineWidth = 1;
+      for (let index = -60; index <= 60; index += 30) {
+        context.beginPath();
+        const y = cy - (index / 90) * globeRadius;
+        const rx = globeRadius * Math.cos((index * Math.PI) / 180);
+        context.ellipse(cx, y, rx, globeRadius * 0.08, 0, 0, Math.PI * 2);
+        context.stroke();
+      }
+      for (let index = 0; index < 12; index++) {
+        context.beginPath();
+        context.ellipse(cx, cy, globeRadius * Math.abs(Math.cos(index)), globeRadius, 0, 0, Math.PI * 2);
+        context.stroke();
+      }
+
+      for (const node of globe.nodes) {
+        const point = projectNode(node, rotation);
+        const x = cx + point.x * globeRadius;
+        const y = cy - point.y * globeRadius;
+        const visible = point.z > -0.12;
+        const radius = node.radius * (visible ? 1 : 0.55);
+        projected.push({ node, x, y, visible, radius });
+      }
+
+      projected
+        .sort((a, b) => Number(a.visible) - Number(b.visible))
+        .forEach(point => {
+          const alpha = point.visible ? 0.92 : 0.18;
+          const color = point.node.domain.color || '#94a3b8';
+          context.globalAlpha = alpha;
+          context.shadowColor = color;
+          context.shadowBlur = point.node.status === 'mapped' ? 16 : 6;
+          context.fillStyle = point.node.status === 'mapped' ? color : 'rgba(148, 163, 184, 0.72)';
+          context.beginPath();
+          context.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+          context.fill();
+
+          if (point.node.slug === selectedSlugRef.current) {
+            context.globalAlpha = 1;
+            context.shadowBlur = 0;
+            context.strokeStyle = '#f8fafc';
+            context.lineWidth = 2;
+            context.beginPath();
+            context.arc(point.x, point.y, point.radius + 5, 0, Math.PI * 2);
+            context.stroke();
+          }
+        });
+
+      context.globalAlpha = 1;
+      context.shadowBlur = 0;
+      context.fillStyle = 'rgba(248, 250, 252, 0.8)';
+      context.font = '10px JetBrains Mono, monospace';
+      context.fillText(`${globe.progress.knownNodes} known nodes`, cx - globeRadius, cy + globeRadius + 32);
+      context.fillText(`${globe.progress.worldCompletion}% world completion`, cx - globeRadius, cy + globeRadius + 48);
+
+      projectedRef.current = projected;
+      frame += 1;
+      raf = window.requestAnimationFrame(render);
+    };
+
+    raf = window.requestAnimationFrame(render);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+    };
+  }, [globe]);
+
+  const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const hit = projectedRef.current
+      .filter(point => point.visible)
+      .map(point => ({
+        ...point,
+        distance: Math.hypot(point.x - x, point.y - y)
+      }))
+      .filter(point => point.distance <= Math.max(12, point.radius + 7))
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    if (hit) onSelect(hit.node);
+  };
+
+  return (
+    <div className="relative h-full w-full">
+      <canvas
+        ref={canvasRef}
+        onClick={handleClick}
+        className="h-full w-full cursor-crosshair"
+        aria-label="Interactive TAH knowledge globe"
+      />
+      <div className="pointer-events-none absolute bottom-8 right-8 max-w-sm rounded border border-white/10 bg-black/35 p-4 backdrop-blur-xl">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Globe Feed</p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          Bright nodes are mapped cartridges. Dim nodes are discovered knowledge waiting for deeper swarm coverage.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function projectNode(node: GlobeNode, rotation: number) {
+  const lat = (node.lat * Math.PI) / 180;
+  const lng = (node.lng * Math.PI) / 180 + rotation;
+  const x = Math.cos(lat) * Math.sin(lng);
+  const y = Math.sin(lat);
+  const z = Math.cos(lat) * Math.cos(lng);
+
+  return { x, y, z };
 }
 
 function formatBytes(bytes: number) {

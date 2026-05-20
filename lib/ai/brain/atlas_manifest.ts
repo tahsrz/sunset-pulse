@@ -10,10 +10,14 @@ export function buildAtlasManifest(batchSize = 25) {
   let cursor: number | null = 0;
   const items: any[] = [];
   let lastBatch = buildAtlasProbe(0, batchSize);
+  const generatedAt = new Date().toISOString();
 
   while (cursor !== null) {
     const batch = buildAtlasProbe(cursor, batchSize);
-    items.push(...batch.items);
+    items.push(...batch.items.map(item => ({
+      ...item,
+      mappedAt: generatedAt
+    })));
     lastBatch = batch;
     cursor = batch.nextCursor;
   }
@@ -26,7 +30,7 @@ export function buildAtlasManifest(batchSize = 25) {
   return {
     name: 'Sunset Pulse TAH Atlas Manifest',
     version: 1,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     source: 'local-swarm-publish',
     total: lastBatch.total,
     mapped: items.length,

@@ -26,4 +26,9 @@ if ($existing) {
 $env:PYTHONUNBUFFERED = "1"
 Set-Location $warsRoot
 
-& $python $orchestrator 1>> $outLog 2>> $errLog
+try {
+  & $python $orchestrator 1>> $outLog 2>> $errLog
+} finally {
+  Set-Location $pulseRoot
+  npm run atlas:publish 1>> $outLog 2>> $errLog
+}
