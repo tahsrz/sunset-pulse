@@ -6,6 +6,8 @@ import Property from '@/models/Property';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse } from '@/lib/core/apiResponse';
 
+import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
+
 // GET /api/properties/:id
 export const GET = async (request: NextRequest, { params }: { params: { id: string } }) => {
   try {
@@ -22,7 +24,7 @@ export const GET = async (request: NextRequest, { params }: { params: { id: stri
     if (!sbError && sbProperty) {
       // Map Supabase flatter structure back to the shared interface if needed
       // (Though the frontend is being updated to handle the consolidated grid)
-      return successResponse(sbProperty);
+      return successResponse(normalizePropertyPricing(sbProperty));
     }
 
     // 2. MongoDB Fallback (Legacy Support)
@@ -31,7 +33,7 @@ export const GET = async (request: NextRequest, { params }: { params: { id: stri
 
     if (!property) return notFoundResponse('Property Asset');
 
-    return successResponse(property);
+    return successResponse(normalizePropertyPricing(property));
   } catch (error: any) {
     console.error('[API_PROPERTY_GET_ERROR]', error.message);
     return errorResponse('Failed to retrieve property intel.', 500, error.message);

@@ -108,11 +108,23 @@ const CollectionsPage = () => {
                     <div className='text-2xl font-black text-white'>
                       {property.price > 0 ? (
                         `$${property.price.toLocaleString()}`
-                      ) : (
+                      ) : property.rates?.monthly ? (
                         <>
-                          ${(property.rates?.monthly || property.rates?.nightly || 0).toLocaleString()}
+                          ${property.rates.monthly.toLocaleString()}
                           <span className='text-[10px] font-normal opacity-60 ml-1'>/mo</span>
                         </>
+                      ) : property.rates?.weekly ? (
+                        <>
+                          ${property.rates.weekly.toLocaleString()}
+                          <span className='text-[10px] font-normal opacity-60 ml-1'>/wk</span>
+                        </>
+                      ) : property.rates?.nightly ? (
+                        <>
+                          ${property.rates.nightly.toLocaleString()}
+                          <span className='text-[10px] font-normal opacity-60 ml-1'>/night</span>
+                        </>
+                      ) : (
+                        '$0'
                       )}
                     </div>
                   </div>

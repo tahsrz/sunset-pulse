@@ -8,6 +8,8 @@ import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 
 
 
+import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
+
 /**
  * GET /api/properties/search/advanced
  * Full  intelligence search across internal grid and external MLS.
@@ -41,7 +43,7 @@ export const GET = async (request: NextRequest) => {
       mlsProperties = mlsData.filter((p: any) => p.source === 'MLS');
     }
 
-    const allResults = [...internalProperties, ...mlsProperties];
+    const allResults = [...internalProperties, ...mlsProperties].map(normalizePropertyPricing);
     return successResponse(allResults);
 
   } catch (error: any) {

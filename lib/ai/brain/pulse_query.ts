@@ -5,57 +5,6 @@ import { SwarmRetriever } from '@/lib/core/swarm_retriever';
 import { TAHRetriever } from '@/lib/core/tah_retriever';
 import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 
-/**
- * Pulse Search (TypeScript Edition)
- * Optimized for Vercel/Next.js environment.
- * Searches TAH single-file cartridges, split Memoria .hat/.tah cartridges,
- * and raw swarm prototype .tah streams.
- */
-export async function pulse_search(query: string, maxResults = 25): Promise<any[]> {
-  const cartridgeDirs = getCartridgeDirs();
-
-  const results: any[] = [];
-  const processedFiles = new Set<string>();
-
-  for (const dir of cartridgeDirs) {
-    const files = readCartridgeFiles(dir);
-    
-    for (const file of files) {
-      const filePath = path.join(dir, file);
-      const processedKey = `${dir}:${file}`;
-      if (processedFiles.has(processedKey)) continue;
-      processedFiles.add(processedKey);
-
-      if (file.endsWith('.hat')) {
-        const tahPath = resolveMemoriaTahPath(filePath);
-        if (!fs.existsSync(tahPath)) continue;
-      }
-
-      if (file.endsWith('.tah') && hasPairedMemoriaHat(filePath)) {
-        continue;
-      }
-
-      try {
-        const matches = searchCartridge(filePath, file, query);
-        
-        if (matches.length > 0) {
-          matches.forEach(m => {
-            results.push({
-              source: file,
-              text: m.data,
-              score: m.score
-            });
-          });
-        }
-      } catch (err) {
-        // console.error(`[PulseSearch] Error in ${file}:`, err);
-      }
-    }
-  }
-
-  return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
-}
-
 export type PulseCartridge = {
   name: string;
   path: string;
@@ -64,12 +13,35 @@ export type PulseCartridge = {
   type: 'hat' | 'tah';
 };
 
-export function listPulseCartridges(): PulseCartridge[] {
-  const cartridges: PulseCartridge[] = [];
-  const seen = new Set<string>();
-  const seenSlugs = new Set<string>();
+let cachedCartridges: PulseCartridge[] | null = null;
+let cachedKey: string | null = null;
 
-  for (const dir of getCartridgeDirs()) {
+export function listPulseCartridges(): PulseCartridge[] {
+  const dirs = getCartridgeDirs();
+  const rawFilesInfo: string[] = [];
+
+  for (const dir of dirs) {
+    const files = readCartridgeFiles(dir);
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      try {
+        const stat = fs.statSync(filePath);
+        rawFilesInfo.push(`${filePath}:${stat.size}:${stat.mtimeMs}`);
+      } catch {
+        rawFilesInfo.push(`${filePath}:0:0`);
+      }
+    }
+  }
+
+  const currentKey = rawFilesInfo.join('|');
+  if (cachedCartridges && cachedKey === currentKey) {
+    return cachedCartridges;
+  }
+
+  const rawCartridges: PulseCartridge[] = [];
+  const seen = new Set<string>();
+
+  for (const dir of dirs) {
     const files = readCartridgeFiles(dir);
     for (const file of files) {
       const filePath = path.join(dir, file);
@@ -85,10 +57,8 @@ export function listPulseCartridges(): PulseCartridge[] {
       }
 
       const slug = cartridgeSlug(file);
-      if (seenSlugs.has(slug)) continue;
-      seenSlugs.add(slug);
 
-      cartridges.push({
+      rawCartridges.push({
         name: file,
         path: filePath,
         slug,
@@ -98,11 +68,67 @@ export function listPulseCartridges(): PulseCartridge[] {
     }
   }
 
-  return cartridges.sort((a, b) => a.name.localeCompare(b.name));
+  // Group by Search Query to consolidate duplicates (keeping the latest scrape)
+  const uniqueGroups = new Map<string, PulseCartridge>();
+
+  for (const cartridge of rawCartridges) {
+    const searchQuery = getCartridgeSearchQuery(cartridge);
+    const existing = uniqueGroups.get(searchQuery);
+    if (!existing) {
+      uniqueGroups.set(searchQuery, cartridge);
+    } else {
+      const existingMatch = existing.name.match(/\d+/);
+      const currentMatch = cartridge.name.match(/\d+/);
+      const existingTime = existingMatch ? Number(existingMatch[0]) : 0;
+      const currentTime = currentMatch ? Number(currentMatch[0]) : 0;
+
+      if (currentTime > existingTime) {
+        uniqueGroups.set(searchQuery, cartridge);
+      }
+    }
+  }
+
+  const consolidated = Array.from(uniqueGroups.values()).sort((a, b) => a.name.localeCompare(b.name));
+  
+  cachedCartridges = consolidated;
+  cachedKey = currentKey;
+
+  return consolidated;
 }
 
 export function getPulseCartridge(slug: string): PulseCartridge | null {
   return listPulseCartridges().find(cartridge => cartridge.slug === slug) || null;
+}
+
+/**
+ * Pulse Search (TypeScript Edition)
+ * Optimized for Vercel/Next.js environment.
+ * Searches TAH single-file cartridges, split Memoria .hat/.tah cartridges,
+ * and raw swarm prototype .tah streams.
+ */
+export async function pulse_search(query: string, maxResults = 25): Promise<any[]> {
+  const cartridges = listPulseCartridges();
+  const results: any[] = [];
+
+  for (const cartridge of cartridges) {
+    try {
+      const matches = searchCartridge(cartridge.path, cartridge.name, query);
+      
+      if (matches.length > 0) {
+        matches.forEach(m => {
+          results.push({
+            source: cartridge.name,
+            text: m.data,
+            score: m.score
+          });
+        });
+      }
+    } catch (err) {
+      // console.error(`[PulseSearch] Error in ${cartridge.name}:`, err);
+    }
+  }
+
+  return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
 }
 
 export async function previewPulseCartridge(slug: string, maxResults = 5): Promise<any[]> {

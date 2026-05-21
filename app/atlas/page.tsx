@@ -290,7 +290,7 @@ export default function MemoriaAtlasPage() {
         </div>
       </section>
 
-      <section className="absolute bottom-0 left-0 top-44 z-20 w-full lg:w-96 border-r border-white/10 bg-black/30 p-5 backdrop-blur-xl">
+      <section className="absolute bottom-0 left-0 top-44 z-20 w-full lg:w-96 border-r border-white/10 bg-black/30 p-5 backdrop-blur-xl overflow-y-auto">
         <div className="rounded border border-white/10 bg-white/[0.04] p-4">
           <label className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200" htmlFor="atlas-query">
             Pulse Query

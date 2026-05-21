@@ -144,15 +144,19 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {isMoreMenuOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-52 rounded-lg border border-white/10 bg-[#071722]/96 p-2 shadow-2xl backdrop-blur-2xl">
+                  <div className="absolute right-0 top-full mt-3 w-52 rounded-xl border border-cyan-400/20 bg-[#0a1e2d]/95 p-2 shadow-[0_20px_50px_rgba(8,112,184,0.25)] backdrop-blur-2xl z-[100] transition-all duration-200 origin-top-right scale-100 hover:border-cyan-400/30">
                     {overflowLinks.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold transition ${link.active ? mobileActiveClass(link.emphasis) : 'text-slate-200 hover:bg-white/[0.08]'}`}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-all duration-200 border ${
+                          link.active
+                            ? desktopDropdownActiveClass(link.emphasis)
+                            : 'border-transparent text-slate-200 hover:bg-white/[0.08] hover:text-white'
+                        }`}
                       >
-                        {link.label === 'Abidan' && <FaShieldAlt className="text-violet-300" />}
-                        {link.label === 'Investors' && <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />}
+                        {link.label === 'Abidan' && <FaShieldAlt className="text-violet-300 shrink-0" />}
+                        {link.label === 'Investors' && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0 animate-pulse" />}
                         {link.label}
                       </Link>
                     ))}
@@ -211,7 +215,7 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-56 overflow-hidden rounded-lg border border-white/10 bg-white py-1 text-slate-800 shadow-2xl">
+                  <div className="absolute right-0 top-full mt-3 w-56 overflow-hidden rounded-lg border border-white/10 bg-white py-1 text-slate-800 shadow-2xl z-[100]">
                     <Link href="/dashboard" className="flex items-center gap-2 px-4 py-3 text-sm font-bold hover:bg-slate-100">
                       <User size={16} />
                       Dashboard
@@ -321,6 +325,25 @@ function mobileActiveClass(emphasis?: NavLink['emphasis']) {
       return 'border-orange-300/20 bg-orange-600/20 text-orange-100';
     default:
       return 'border-white/10 bg-black/25 text-white';
+  }
+}
+
+function desktopDropdownActiveClass(emphasis?: NavLink['emphasis']) {
+  switch (emphasis) {
+    case 'teal':
+      return 'bg-teal-500/20 text-teal-100 border-teal-500/30';
+    case 'blue':
+      return 'bg-blue-500/20 text-blue-100 border-blue-500/30';
+    case 'violet':
+      return 'bg-violet-500/20 text-violet-100 border-violet-500/30';
+    case 'cyan':
+      return 'bg-cyan-500/20 text-cyan-100 border-cyan-500/30';
+    case 'emerald':
+      return 'bg-emerald-500/20 text-emerald-100 border-emerald-500/30';
+    case 'orange':
+      return 'bg-orange-500/20 text-orange-100 border-orange-500/30';
+    default:
+      return 'bg-white/10 text-white border-white/20';
   }
 }
 

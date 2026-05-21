@@ -34,6 +34,35 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
             <p className="mt-5 max-w-xl text-sm leading-7 text-teal-100/55">
               {entry.detail}
             </p>
+
+            {/* Sunset Gas & Grill History Section */}
+            <div className="mt-8 max-w-xl rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-black/10 p-6 shadow-[0_0_30px_rgba(245,158,11,0.05)] backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300">
+                  <FaStore className="text-lg" />
+                </div>
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-300">Community Landmark</span>
+                  <h3 className="text-xl font-bold uppercase tracking-tight text-white">Sunset Gas & Grill</h3>
+                </div>
+              </div>
+              <p className="text-sm leading-7 text-teal-50/80">
+                Established along the historic farm roads of southern Montague County, <span className="text-amber-200 font-semibold">Sunset Gas & Grill</span> has stood as the authentic beating heart of the community for generations. Originally founded as a modest oak-fired pit stop and mechanical outpost, it quickly evolved into the county's definitive gathering place.
+              </p>
+              <p className="mt-3 text-xs leading-6 text-teal-100/60">
+                Famous for its slow-smoked oak brisket, hand-stretched cobblers, and double-filtered fuel, it represents the living history of the working Texas frontier. Fusing historic rural heritage with modern digital connectivity under the Sunset Pulse network, the Grill remains the premier physical anchor for local legends, neighborhood debates, and deep community roots.
+              </p>
+              <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                <span className="text-[10px] font-mono text-amber-400/80">📍 101 S. Council, Sunset, TX</span>
+                <a 
+                  href="/grill"
+                  className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300 hover:text-amber-200 transition-colors"
+                >
+                  Visit Grill Menu <span className="text-xs">→</span>
+                </a>
+              </div>
+            </div>
+
             <div className="mt-7 rounded-lg border border-amber-200/15 bg-black/18 p-4">
               <div className="flex items-center justify-between gap-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-100/70">
