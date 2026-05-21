@@ -18,13 +18,14 @@ import FeedbackWidget from '@/components/FeedbackWidget';
 import { SiteConfig } from '@/models/SiteConfig';
 import connectDB from '@/lib/core/database';
 import { createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata = {
-  title: 'Sunset Pulse | Real Estate Search',
-  description: 'Find your next home in North Texas with Jamie AI.',
-  keywords: 'rental, property, real estate, keller tx, rhome tx, investment',
+  title: 'Sunset Pulse | North Texas Intelligence Atlas',
+  description: 'A living atlas for North Texas place memory, real estate intelligence, and market context.',
+  keywords: 'north texas real estate, atlas pulse, idx search, property intelligence, sunset pulse',
   icons: {
     icon: '/next.svg',
   },
@@ -59,7 +60,20 @@ interface IntelligenceConfig {
  * Root layout component for the application.
  * Establishes database connection and provides global context providers.
  */
-const MainLayout = async ({ children }: { children: React.ReactNode }) => {
+const MainLayout = async ({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) => {
+  const tenantSite = headers().get('x-sunset-tenant');
+
+  if (tenantSite) {
+    return (
+      <html lang='en'>
+        <body className='waterlily-surface antialiased selection:bg-cyan-200 selection:text-slate-950'>
+          {children}
+          {modal}
+        </body>
+      </html>
+    );
+  }
+
   // 1. Fetch from Supabase (Primary)
   const supabase = createClient();
   const { data: sbConfig } = await supabase
@@ -152,19 +166,20 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang='en'>
-      <body className='waterlily-surface'>
+      <body className='waterlily-surface antialiased selection:bg-cyan-200 selection:text-slate-950'>
         <AuthProvider>
           <CartProvider>
             <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
               <VibeProvider>
                 <JamiePulseProvider>
-                  <div className='flex flex-col min-h-screen'>
+                  <div className='flex min-h-screen flex-col bg-[#06131d]/30'>
                     <TRECConsumerNotice />
                     <GlobalMarketPulse />
                     <Navbar />
                     <main className='flex-grow'>
                       {children}
                     </main>
+                    {modal}
                     <Footer />
                   </div>
                   

@@ -1,52 +1,50 @@
 import React from 'react';
-import { Play } from 'lucide-react';
+import Link from 'next/link';
+import { Compass, Search } from 'lucide-react';
 import marketingCopy from '@/config/marketing_copy.json';
 
-interface HeroOverlayProps {
-  isEntered: boolean;
-  onEnter: () => void;
-}
-
-const HeroOverlay: React.FC<HeroOverlayProps> = ({ isEntered, onEnter }) => {
+const HeroOverlay: React.FC = () => {
   const { hero, cta } = marketingCopy;
+  const titleWords = hero.title.split(' ');
 
   return (
-    <div 
-      className={`absolute inset-0 z-30 flex flex-col items-center justify-center px-6 transition-all duration-1500 ease-in-out ${
-        isEntered ? 'opacity-0 pointer-events-none backdrop-blur-none' : 'opacity-100 backdrop-blur-[20px]'
-      }`}
-    >
+    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 backdrop-blur-[10px]">
       <div className="relative z-40 w-full max-w-3xl flex flex-col items-center text-center">
-        
-        {/* Text Container with Centered Ripples */}
         <div className="relative mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-          {/* Ripples originating from text */}
-          {!isEntered && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
-              <div className="absolute h-32 w-32 rounded-full border border-primary/30 animate-pulse-expand" />
-              <div className="absolute h-32 w-32 rounded-full border border-primary/30 animate-pulse-expand [animation-delay:2s]" />
-            </div>
-          )}
-          
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic">
-            {hero.title.split(' ')[0]} <span className="waterlily-heading italic">{hero.title.split(' ')[1]}</span>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
+            <div className="absolute h-36 w-36 rounded-full border border-cyan-200/30 animate-pulse-expand" />
+            <div className="absolute h-36 w-36 rounded-full border border-amber-200/25 animate-pulse-expand [animation-delay:1.6s]" />
+            <div className="absolute h-36 w-36 rounded-full border border-rose-200/20 animate-pulse-expand [animation-delay:3.2s]" />
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
+            {titleWords[0]} <span className="waterlily-heading italic">{titleWords.slice(1).join(' ')}</span>
           </h1>
-          <p className="text-base md:text-lg text-slate-300 max-w-xl mx-auto font-medium tracking-wide">
+          <p className="text-base md:text-lg text-slate-200 max-w-xl mx-auto font-medium tracking-wide drop-shadow-[0_2px_18px_rgba(2,6,23,0.75)]">
             {hero.subtitle}. {hero.description}
           </p>
         </div>
 
-        <button 
-          onClick={onEnter}
-          className="group relative flex items-center gap-4 px-10 py-5 waterlily-button rounded-full font-black uppercase tracking-widest text-xl hover:scale-105"
-        >
-          <Play size={24} className="fill-current" />
-          <span>{cta.button_text}</span>
-          <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-        </button>
+        <div className="flex flex-col items-center gap-4 sm:flex-row">
+          <Link
+            href="/atlas"
+            className="group relative flex items-center gap-4 rounded-full px-10 py-5 waterlily-button font-black uppercase text-xl hover:scale-105"
+          >
+            <Compass size={24} />
+            <span>{cta.button_text}</span>
+            <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          </Link>
+          <Link
+            href="/idx"
+            className="group relative flex items-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-black uppercase text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10"
+          >
+            <Search size={18} />
+            <span>IDX Search</span>
+          </Link>
+        </div>
 
-        <div className="mt-8 text-teal-100/60 font-mono text-[10px] uppercase tracking-[0.5em]">
-          Institutional Real Estate // North Texas
+        <div className="mt-8 text-teal-100/70 font-mono text-[10px] uppercase">
+          {cta.footer_note}
         </div>
       </div>
     </div>

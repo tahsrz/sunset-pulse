@@ -487,7 +487,7 @@ export function TahLibraryClient({ cartridges, masterArchive }: TahLibraryClient
                   <p className="mt-3 truncate font-mono text-xs text-cyan-100">{cartridge.source}</p>
 
                   <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                    <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href={`/tah/${cartridge.slug}`}>Page</Link>
+                    <Link className="rounded bg-cyan-300 px-3 py-2 text-slate-950" href={`/tah/${cartridge.slug}`} scroll={false}>Page</Link>
                     <Link className="rounded bg-pink-300 px-3 py-2 text-slate-950" href={`/tah/${cartridge.slug}/headless`}>Headless</Link>
                     <Link className="rounded border border-white/20 px-3 py-2 text-white" href={`/api/tah/${cartridge.slug}/meta`}>Meta</Link>
                     <Link className="rounded border border-white/20 px-3 py-2 text-white" href={cartridge.routes.api.replace(/^https?:\/\/[^/]+/, '')}>Query</Link>

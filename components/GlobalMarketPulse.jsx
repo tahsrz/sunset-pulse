@@ -46,20 +46,24 @@ const GlobalMarketPulse = () => {
   };
 
   return (
-    <div className="w-full bg-[#0b1f2d]/90 text-white border-b border-teal-200/10 backdrop-blur-xl">
+    <div className="w-full bg-[#06131d]/92 text-white border-b border-cyan-100/10 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-10 text-xs font-medium uppercase tracking-wider">
-          <div className="flex items-center space-x-6 overflow-x-auto no-scrollbar">
+        <div className="flex items-center justify-between gap-4 min-h-10 py-2 text-[11px] font-semibold uppercase">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar sm:gap-6">
             <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="text-slate-400">Market Pulse:</span>
-              <span className="text-teal-300">Active</span>
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-300" />
+              </span>
+              <span className="text-slate-400">Market Pulse</span>
+              <span className="text-cyan-200">Active</span>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="text-slate-400">Global Yield:</span>
+              <span className="text-slate-400">Yield</span>
               <span className="text-violet-200">{globalYield}%</span>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="text-slate-400">Price Index:</span>
+              <span className="text-slate-400">Price Index</span>
               <span className="text-amber-200">+1.2%</span>
             </div>
 
@@ -77,16 +81,16 @@ const GlobalMarketPulse = () => {
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="hidden items-center gap-2 sm:flex">
             <button 
               onClick={() => toggleChart('heatmap')}
-              className={`flex items-center gap-1 hover:text-white transition-colors ${activeChart === 'heatmap' ? 'text-white' : 'text-slate-400'}`}
+              className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-colors ${activeChart === 'heatmap' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/[0.08] hover:text-white'}`}
             >
               <FaChartLine /> Heatmap
             </button>
             <button 
               onClick={() => toggleChart('bar')}
-              className={`flex items-center gap-1 hover:text-white transition-colors ${activeChart === 'bar' ? 'text-white' : 'text-slate-400'}`}
+              className={`flex items-center gap-1 rounded-full px-3 py-1.5 transition-colors ${activeChart === 'bar' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/[0.08] hover:text-white'}`}
             >
               <FaChartBar /> Yields
             </button>

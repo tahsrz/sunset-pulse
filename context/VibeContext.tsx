@@ -7,9 +7,6 @@ interface VibeContextType {
   currentVibe: string;
   setVibeFromContent: (content: string) => void;
   vibeTheme: any;
-  isChaosMode: boolean;
-  toggleChaosMode: () => void;
-  cycleVibe: () => void;
 }
 
 const VibeContext = createContext<VibeContextType | undefined>(undefined);
@@ -17,21 +14,10 @@ const VibeContext = createContext<VibeContextType | undefined>(undefined);
 export const VibeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentVibe, setCurrentVibe] = useState('default');
   const [vibeTheme, setVibeTheme] = useState<any>(null);
-  const [isChaosMode, setIsChaosMode] = useState(false);
 
   const setVibeFromContent = (content: string) => {
-    if (isChaosMode) return; // Ignore AI cues in Chaos Mode
     const vibe = resolveVibeFromContent(content);
     setCurrentVibe(vibe);
-  };
-
-  const toggleChaosMode = () => setIsChaosMode(!isChaosMode);
-
-  const cycleVibe = () => {
-    const vibes = ['default', ...Object.keys(VIBE_THEMES)];
-    const currentIndex = vibes.indexOf(currentVibe);
-    const nextIndex = (currentIndex + 1) % vibes.length;
-    setCurrentVibe(vibes[nextIndex]);
   };
 
   useEffect(() => {
@@ -51,30 +37,10 @@ export const VibeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentVibe]);
 
   return (
-    <VibeContext.Provider value={{ currentVibe, setVibeFromContent, vibeTheme, isChaosMode, toggleChaosMode, cycleVibe }}>
+    <VibeContext.Provider value={{ currentVibe, setVibeFromContent, vibeTheme }}>
       <div className={`vibe-simulacrum-root transition-all duration-1000 ${currentVibe}`}>
         {children}
-        
-        {/* Chaos Mode Control (Fixed Overlay for MVP) */}
-        {process.env.NODE_ENV === 'development' || true && (
-          <div className="fixed top-24 left-6 z-[200] pointer-events-auto">
-            <button 
-              onClick={toggleChaosMode}
-              className={`p-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${isChaosMode ? 'bg-red-600 border-red-400 text-white' : 'bg-black/60 border-white/10 text-white/40'}`}
-            >
-              Chaos: {isChaosMode ? 'ON' : 'OFF'}
-            </button>
-            {isChaosMode && (
-              <button 
-                onClick={cycleVibe}
-                className="ml-2 p-2 bg-blue-600 border border-blue-400 rounded-lg text-[10px] font-black uppercase text-white"
-              >
-                Cycle Vibe: {currentVibe}
-              </button>
-            )}
-          </div>
-        )}
-        
+
         {/* Simulacrum Global Mocks */}
         {vibeTheme?.features.includes('METRIC_TICKER') && (
           <div className="fixed bottom-0 left-0 w-full h-8 bg-black/80 border-t border-[var(--primary-glow)] text-[var(--primary-glow)] flex items-center overflow-hidden z-[100] font-mono text-[10px] uppercase">

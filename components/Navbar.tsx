@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ChevronDown, LogIn, LogOut, Menu, Search, User, X } from 'lucide-react';
+import { FaShoppingBasket, FaShieldAlt } from 'react-icons/fa';
 import logo from '@/assets/images/logo-white.png';
 import profileDefault from '@/assets/images/profile.png';
-import { FaGoogle, FaShoppingBasket, FaShieldAlt } from 'react-icons/fa';
 import { useCart } from '@/context/CartContext';
-import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
 import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
@@ -21,22 +21,48 @@ interface ServerSessionUser {
   role?: string;
 }
 
+type NavLink = {
+  href: string;
+  label: string;
+  active: boolean;
+  emphasis?: 'teal' | 'blue' | 'violet' | 'cyan' | 'emerald' | 'orange';
+  compact?: boolean;
+};
+
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { isDevMode } = useTheme();
   const router = useRouter();
-  
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState<boolean>(false);
-  const [profileImageFailed, setProfileImageFailed] = useState<boolean>(false);
-  const [serverSessionUser, setServerSessionUser] = useState<ServerSessionUser | null>(null);
-  
   const pathname = usePathname();
   const { cart } = useCart() as { cart: CartItem[] };
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
+  const [serverSessionUser, setServerSessionUser] = useState<ServerSessionUser | null>(null);
+
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const profileImage = user?.profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || serverSessionUser?.image || profileDefault;
   const sessionRole = user?.user_metadata?.role || serverSessionUser?.role;
   const isLoggedIn = Boolean(user || serverSessionUser);
+  const isRealtorOrAdmin = user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin';
+
+  const navLinks = useMemo<NavLink[]>(() => [
+    { href: '/', label: 'Home', active: pathname === '/' },
+    { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
+    { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
+    { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
+    { href: '/properties', label: 'Properties', active: pathname === '/properties' },
+    { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
+    ...(isRealtorOrAdmin ? [{ href: '/lead-gen', label: 'Lead Gen', active: pathname.startsWith('/lead-gen'), emphasis: 'blue' as const }] : []),
+    { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), emphasis: 'emerald', compact: true },
+    { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
+    { href: '/grill', label: 'Grill', active: pathname === '/grill' },
+    { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true }
+  ], [isRealtorOrAdmin, pathname]);
+
+  const primaryLinks = navLinks.slice(0, 5);
+  const overflowLinks = navLinks.slice(5);
 
   useEffect(() => {
     let isCancelled = false;
@@ -56,138 +82,246 @@ const Navbar: React.FC = () => {
     };
   }, [user]);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsMoreMenuOpen(false);
+    setIsProfileMenuOpen(false);
+  }, [pathname]);
+
+  const handleSignOut = async () => {
+    setIsProfileMenuOpen(false);
+    const { error } = await signOut();
+    if (error) {
+      console.error('[NAVBAR] Sign out failed:', error.message);
+      return;
+    }
+    setServerSessionUser(null);
+    router.push('/');
+    router.refresh();
+  };
+
   return (
-    <nav className='bg-[#0c2130]/85 backdrop-blur-xl border-b border-teal-200/10 transition-colors duration-500'>
-      <div className='mx-auto max-w-7xl px-2 sm:px-6 lg:px-8'>
-        <div className='relative flex h-20 items-center justify-between'>
-          <div className='flex flex-1 items-center justify-center md:items-stretch md:justify-start'>
-            <Link className='flex flex-shrink-0 items-center' href='/'>
-              <Image className='h-10 w-auto' src={logo} alt='Sunset Pulse' />
-              <span className='hidden md:block text-white text-2xl font-bold ml-2'>
-                Sunset Pulse
-              </span>
+    <nav className="sticky top-0 z-50 border-b border-cyan-100/10 bg-[#06131d]/82 text-white shadow-[0_18px_60px_rgba(2,6,23,0.24)] backdrop-blur-2xl">
+      <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-3 md:h-[72px]">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.06] text-slate-100 transition hover:bg-white/[0.1] focus:outline-none focus:ring-2 focus:ring-cyan-300 lg:hidden"
+              aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            >
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+
+            <Link className="flex min-w-0 items-center gap-2" href="/">
+              <Image className="h-9 w-auto shrink-0" src={logo} alt="Sunset Pulse" priority />
+              <span className="truncate text-lg font-black tracking-tight sm:text-xl">Sunset Pulse</span>
             </Link>
-            <div className='hidden md:ml-6 md:block'>
-              <div className='flex space-x-2'>
-                <Link href='/' className={`${pathname === '/' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Home</Link>
-                <Link href='/properties' className={`${pathname === '/properties' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Properties</Link>
-                <Link href='/idx' className={`${pathname === '/idx' ? 'bg-teal-500/20 text-teal-200' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>IDX Search</Link>
-                {(user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin') && (
-                  <Link href='/lead-gen' className={`${pathname.startsWith('/lead-gen') ? 'bg-blue-600/20 text-blue-400' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Lead Gen</Link>
-                )}
-                <Link href='/explorer' className={`${pathname === '/explorer' ? 'bg-teal-500/20 text-teal-200' : 'text-white'} hover:bg-white/10 rounded-md px-3 py-2 transition-colors flex items-center gap-2`}>
-                  Explorer
-                </Link>
-                <Link href='/grill' className={`${pathname === '/grill' ? 'bg-black/20' : ''} text-white hover:bg-white/10 rounded-md px-3 py-2 transition-colors`}>Grill</Link>
-                <Link href='/abidan' className={`${pathname === '/abidan' ? 'bg-violet-500/30 text-violet-100 border-violet-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
-                  <FaShieldAlt className='text-violet-300' /> Abidan
-                </Link>
-                <Link href='/atlas' className={`${pathname === '/atlas' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
-                  Atlas
-                </Link>
-                <Link href='/tah' className={`${pathname.startsWith('/tah') ? 'bg-emerald-500/20 text-emerald-100 border-emerald-300/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-widest`}>
-                  TAH
-                </Link>
-                <Link href='/investors' className={`${pathname === '/investors' ? 'bg-orange-600/20 text-orange-400 border-orange-500/20' : 'text-slate-300'} border border-transparent hover:bg-white/10 rounded-md px-3 py-2 transition-all flex items-center gap-2 italic font-black uppercase text-[10px] tracking-[0.2em]`}>
-                  <span className='w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse' /> Investors
-                </Link>
-              </div>
-            </div>
           </div>
 
-          <div className='absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0'>
-            {!isLoggedIn && (
-              <div className='hidden md:block md:ml-6'>
-                <Link
-                  href='/login'
-                  className='flex items-center text-white bg-white/10 hover:bg-white/20 rounded-md px-3 py-2 transition-colors'
+          <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] p-1 lg:flex">
+            {primaryLinks.map((link) => (
+              <NavPill key={link.href} link={link} />
+            ))}
+
+            {overflowLinks.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  className={`flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold transition ${
+                    overflowLinks.some((link) => link.active)
+                      ? 'bg-white/[0.12] text-white'
+                      : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                  aria-label="Open more navigation links"
+                  aria-expanded={isMoreMenuOpen}
+                  onClick={() => setIsMoreMenuOpen((prev) => !prev)}
                 >
-                  <span>Login</span>
-                </Link>
+                  More
+                  <ChevronDown size={16} className={isMoreMenuOpen ? 'rotate-180 transition' : 'transition'} />
+                </button>
+
+                {isMoreMenuOpen && (
+                  <div className="absolute right-0 top-full mt-3 w-52 rounded-lg border border-white/10 bg-[#071722]/96 p-2 shadow-2xl backdrop-blur-2xl">
+                    {overflowLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold transition ${link.active ? mobileActiveClass(link.emphasis) : 'text-slate-200 hover:bg-white/[0.08]'}`}
+                      >
+                        {link.label === 'Abidan' && <FaShieldAlt className="text-violet-300" />}
+                        {link.label === 'Investors' && <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />}
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
+          </div>
 
-            <Link href='/cart' className='relative group px-3'>
-              <FaShoppingBasket className='text-white text-2xl group-hover:text-gray-300' />
+          <div className="flex items-center justify-end gap-1 sm:gap-2">
+            <Link
+              href="/idx"
+              className="hidden items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-2 text-xs font-black uppercase text-cyan-50 transition hover:bg-cyan-200/15 sm:flex"
+            >
+              <Search size={15} />
+              IDX
+            </Link>
+
+            <Link href="/cart" className="relative rounded-full p-2.5 text-slate-100 transition hover:bg-white/[0.08]" aria-label="Open cart">
+              <FaShoppingBasket className="text-xl" />
               {itemCount > 0 && (
-                <span className='absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full'>
+                <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black leading-none text-white">
                   {itemCount}
                 </span>
               )}
             </Link>
 
-            {isLoggedIn && (
-              <div className='relative ml-3 flex items-center gap-3'>
-                {sessionRole === 'realtor' && (
-                  <div className='hidden lg:flex flex-col items-end'>
-                    <span className='text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none'>Realtor</span>
-                    <span className='text-[10px] font-mono text-green-500 animate-pulse leading-none mt-1'>VALIDATED</span>
-                  </div>
-                )}
+            {isLoggedIn ? (
+              <div className="relative">
                 <button
-                  type='button'
-                  className='relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 border border-white/10'
+                  type="button"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
                   onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                  aria-label="Open profile menu"
+                  aria-expanded={isProfileMenuOpen}
                 >
                   {typeof profileImage === 'string' && !profileImageFailed ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      className='h-9 w-9 rounded-full object-cover'
+                      className="h-10 w-10 rounded-full object-cover"
                       src={profileImage}
-                      alt='Profile'
-                      width={36}
-                      height={36}
-                      referrerPolicy='no-referrer'
+                      alt="Profile"
+                      width={40}
+                      height={40}
+                      referrerPolicy="no-referrer"
                       onError={() => setProfileImageFailed(true)}
                     />
                   ) : (
-                    <Image className='h-9 w-9 rounded-full object-cover' src={profileDefault} alt='Profile' width={36} height={36} />
+                    <Image className="h-10 w-10 rounded-full object-cover" src={profileDefault} alt="Profile" width={40} height={40} />
                   )}
                   {sessionRole === 'realtor' && (
-                    <div className='absolute -right-1 -top-1 bg-blue-600 text-white p-0.5 rounded-md shadow-lg border border-blue-400'>
+                    <div className="absolute -right-0.5 -top-0.5 rounded-md border border-blue-300/50 bg-blue-600 p-0.5 text-white shadow-lg">
                       <FaShieldAlt size={8} />
                     </div>
                   )}
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
-                    <Link href='/dashboard' className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100' onClick={() => setIsProfileMenuOpen(false)}>Dashboard</Link>
+                  <div className="absolute right-0 top-full mt-3 w-56 overflow-hidden rounded-lg border border-white/10 bg-white py-1 text-slate-800 shadow-2xl">
+                    <Link href="/dashboard" className="flex items-center gap-2 px-4 py-3 text-sm font-bold hover:bg-slate-100">
+                      <User size={16} />
+                      Dashboard
+                    </Link>
                     {!user?.user_metadata?.isSubscribed && sessionRole !== 'realtor' && (
-                      <Link 
-                        href='/premium'
-                        className='block w-full text-left px-4 py-2 text-sm text-blue-600 font-bold hover:bg-blue-50 hover:text-blue-700 transition-colors'
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        🚀 Go Premium
+                      <Link href="/premium" className="block px-4 py-3 text-sm font-black text-blue-700 hover:bg-blue-50">
+                        Go Premium
                       </Link>
                     )}
-                    <button
-                      onClick={async () => {
-                        setIsProfileMenuOpen(false);
-                        const { error } = await signOut();
-                        if (error) {
-                          console.error('[NAVBAR] Sign out failed:', error.message);
-                          return;
-                        }
-                        setServerSessionUser(null);
-                        router.push('/');
-                        router.refresh();
-                      }}
-                      className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left'
-                    >
+                    <button onClick={handleSignOut} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-100">
+                      <LogOut size={16} />
                       Sign Out
                     </button>
                   </div>
                 )}
               </div>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-50 sm:flex"
+              >
+                <LogIn size={16} />
+                Login
+              </Link>
             )}
           </div>
         </div>
       </div>
+
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-white/10 bg-[#071722]/96 px-3 pb-4 pt-3 shadow-2xl backdrop-blur-2xl">
+          <div className="grid gap-2">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center justify-between rounded-md border px-4 py-3 text-sm font-bold transition ${
+                  link.active
+                    ? mobileActiveClass(link.emphasis)
+                    : 'border-transparent text-slate-200 hover:border-white/10 hover:bg-white/[0.08]'
+                } ${link.compact ? 'uppercase italic tracking-widest text-[11px]' : ''}`}
+              >
+                <span className="flex items-center gap-2">
+                  {link.label === 'Abidan' && <FaShieldAlt className="text-violet-300" />}
+                  {link.label === 'Investors' && <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />}
+                  {link.label}
+                </span>
+              </Link>
+            ))}
+
+            {!isLoggedIn && (
+              <Link href="/login" className="mt-2 flex items-center gap-2 rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
+                <LogIn size={16} />
+                Login
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       <InvestorBar />
     </nav>
   );
 };
+
+function NavPill({ link }: { link: NavLink }) {
+  return (
+    <Link
+      href={link.href}
+      className={`rounded-full px-3 py-2 text-sm font-bold transition ${
+        link.active
+          ? desktopActiveClass(link.emphasis)
+          : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+      }`}
+    >
+      {link.label}
+    </Link>
+  );
+}
+
+function desktopActiveClass(emphasis?: NavLink['emphasis']) {
+  switch (emphasis) {
+    case 'teal':
+      return 'bg-teal-300/15 text-teal-100';
+    case 'cyan':
+      return 'bg-cyan-300/15 text-cyan-100';
+    case 'violet':
+      return 'bg-violet-300/15 text-violet-100';
+    default:
+      return 'bg-white/[0.12] text-white';
+  }
+}
+
+function mobileActiveClass(emphasis?: NavLink['emphasis']) {
+  switch (emphasis) {
+    case 'teal':
+      return 'border-teal-300/20 bg-teal-500/15 text-teal-100';
+    case 'blue':
+      return 'border-blue-300/20 bg-blue-600/15 text-blue-100';
+    case 'violet':
+      return 'border-violet-300/20 bg-violet-500/20 text-violet-100';
+    case 'cyan':
+      return 'border-cyan-300/20 bg-cyan-500/20 text-cyan-100';
+    case 'emerald':
+      return 'border-emerald-300/20 bg-emerald-500/20 text-emerald-100';
+    case 'orange':
+      return 'border-orange-300/20 bg-orange-600/20 text-orange-100';
+    default:
+      return 'border-white/10 bg-black/25 text-white';
+  }
+}
 
 export default Navbar;

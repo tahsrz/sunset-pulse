@@ -2,6 +2,33 @@ import mongoose from 'mongoose';
 
 const SiteConfigSchema = new mongoose.Schema({
   agentId: { type: String, required: true, unique: true },
+  ownerId: { type: String },
+  ownerName: { type: String },
+  subdomain: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    unique: true,
+    sparse: true,
+    match: /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/
+  },
+  customDomain: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'draft', 'suspended'],
+    default: 'draft'
+  },
+  subscriptionTier: {
+    type: String,
+    enum: ['starter', 'site', 'atlas', 'enterprise'],
+    default: 'site'
+  },
   branding: {
     primaryColor: { type: String, default: '#2563eb' }, // Default Blue
     fontFamily: { type: String, default: 'Inter' },

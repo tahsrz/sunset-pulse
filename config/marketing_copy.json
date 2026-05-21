@@ -1,8 +1,8 @@
 {
   "hero": {
     "title": "Sunset Pulse",
-    "subtitle": "Clearer Property Decisions",
-    "description": "Search North Texas opportunities, review market context, and move from listing to recommendation with Jamie as your research assistant."
+    "subtitle": "A Living Atlas For North Texas",
+    "description": "Follow place, memory, market motion, and local intelligence as they resolve into one navigable pulse."
   },
   "section_headers": {
     "value_prop": {
@@ -32,8 +32,8 @@
     }
   },
   "cta": {
-    "button_text": "Start Exploring",
-    "footer_note": "North Texas Property Search // From Listing To Decision"
+    "button_text": "Enter Atlas",
+    "footer_note": "Atlas Pulse // North Texas Intelligence"
   },
   "faq": {
     "title": "How The Product Works",

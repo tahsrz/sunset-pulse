@@ -57,8 +57,8 @@ const PremiumPage: React.FC = () => {
         </h1>
         
         <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-16 leading-relaxed">
-          Unlock the full potential of Jamie. Customize the interface, access architecture tools,
-          and manage premium workflows across your account.
+          Claim a personal sunsetpulse.app subdomain, customize the interface with Jamie,
+          and run a branded local intelligence portal from your account.
         </p>
 
         <div className="grid md:grid-cols-3 gap-8 mb-20 text-left">
@@ -66,9 +66,9 @@ const PremiumPage: React.FC = () => {
             <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-500 mb-6 group-hover:scale-110 transition-transform">
               <FaCode size={24} />
             </div>
-            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Site Customization</h3>
+            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Personal Subdomain</h3>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Use Jamie to adjust the site's visual style, layout, and content with a guided editing workflow.
+              Reserve your own word at word.sunsetpulse.app and give clients a branded place to land.
             </p>
           </div>
 
@@ -112,6 +112,7 @@ const PremiumPage: React.FC = () => {
             </div>
 
             <ul className="space-y-4 mb-10 text-sm text-slate-300 text-left px-4">
+              <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Personal sunsetpulse.app Subdomain</li>
               <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Unlimited Site Customizations</li>
               <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Architecture Dashboard Access</li>
               <li className="flex items-center gap-3"><FaCheckCircle className="text-blue-500" /> Premium Jamie Persona</li>
@@ -125,7 +126,7 @@ const PremiumPage: React.FC = () => {
             >
               {loading ? 'Initializing...' : (
                 <span className="flex items-center justify-center gap-2">
-                  Start Free Trial <FaRocket className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  Claim Your Site <FaRocket className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </span>
               )}
             </button>

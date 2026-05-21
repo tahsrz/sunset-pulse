@@ -1,7 +1,36 @@
+import { NextResponse } from 'next/server'
+import { getTenantRewrite } from '@/lib/sites/tenantRouting'
 import { updateSession } from '@/utils/supabase/middleware'
 
 export async function middleware(request) {
-  return await updateSession(request)
+  const tenantRewrite = getTenantRewrite(request)
+
+  if (tenantRewrite) {
+    return await updateSession(request, () => {
+      const requestHeaders = getForwardedRequestHeaders(request)
+      requestHeaders.set('x-sunset-tenant', tenantRewrite.tenant)
+      requestHeaders.set('x-sunset-tenant-host', tenantRewrite.hostname)
+
+      return NextResponse.rewrite(tenantRewrite.url, {
+        request: {
+          headers: requestHeaders,
+        },
+      })
+    })
+  }
+
+  return await updateSession(request, () => NextResponse.next({
+    request: {
+      headers: getForwardedRequestHeaders(request),
+    },
+  }))
+}
+
+function getForwardedRequestHeaders(request) {
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.delete('x-sunset-tenant')
+  requestHeaders.delete('x-sunset-tenant-host')
+  return requestHeaders
 }
 
 export const config = {

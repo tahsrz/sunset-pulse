@@ -1,7 +1,30 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import logo from '@/assets/images/logo.png';
+import Link from 'next/link';
+import logo from '@/assets/images/logo-white.png';
+
+const footerLinks = [
+  { href: '/atlas', label: 'Atlas' },
+  { href: '/idx', label: 'IDX Search' },
+  { href: '/properties', label: 'Properties' },
+  { href: '/explorer', label: 'Explorer' }
+];
+
+const complianceLinks = [
+  {
+    href: 'https://www.trec.texas.gov/forms/consumer-protection-notice',
+    label: 'TREC Consumer Notice',
+    external: true
+  },
+  { href: '/iabs', label: 'IABS Interactive' },
+  {
+    href: 'https://www.dropbox.com/scl/fi/xjnnszs2h24nq95tvdmts/Information-About-Brokerage-Services.pdf?rlkey=uwn66iikqswvjscfr86dos7tk&e=1&st=bp3w9yw4&dl=0',
+    label: 'IABS PDF',
+    external: true
+  }
+];
 
 const Footer = () => {
   const [year, setYear] = useState('');
@@ -11,43 +34,54 @@ const Footer = () => {
   }, []);
 
   return (
-    <footer className='waterlily-section py-6 mt-24 border-t border-teal-200/10'>
-      <div className='container mx-auto flex flex-col md:flex-row items-center justify-between px-4'>
-        <div className='mb-4 md:mb-0'>
-          <Image src={logo} alt='Logo' className='h-8 w-auto' />
+    <footer className="mt-24 border-t border-cyan-100/10 bg-[#06131d] text-slate-300">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.1fr_1fr_1fr] lg:px-8">
+        <div>
+          <Link href="/" className="inline-flex items-center gap-3">
+            <Image src={logo} alt="Sunset Pulse" className="h-9 w-auto" />
+            <span className="text-lg font-black text-white">Sunset Pulse</span>
+          </Link>
+          <p className="mt-4 max-w-sm text-sm leading-6 text-slate-400">
+            A living atlas for North Texas real estate intelligence, place memory, and market context.
+          </p>
         </div>
 
-        <div className='flex flex-col md:flex-row items-center gap-4'>
-          <p className='text-sm text-teal-100/65 mt-2 md:mt-0'>
-            &copy; {year} SunsetCollective. All rights reserved.
-          </p>
-          <a 
-            href="https://www.trec.texas.gov/forms/consumer-protection-notice" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs text-teal-200 hover:text-rose-200 hover:underline font-bold"
-          >
-            Texas Real Estate Commission Consumer Protection Notice (CN 1-5)
-          </a>
-          <span className="text-teal-200/25 hidden md:block">|</span>
-          <a 
-            href="/iabs" 
-            className="text-xs text-teal-200 hover:text-rose-200 hover:underline font-bold"
-          >
-            IABS (Interactive)
-          </a>
-          <span className="text-teal-200/25 hidden md:block">|</span>
-          <a 
-            href="https://www.dropbox.com/scl/fi/xjnnszs2h24nq95tvdmts/Information-About-Brokerage-Services.pdf?rlkey=uwn66iikqswvjscfr86dos7tk&e=1&st=bp3w9yw4&dl=0" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-teal-200 hover:text-rose-200 hover:underline font-bold"
-          >
-            IABS (Dropbox PDF)
-          </a>
+        <div>
+          <p className="text-xs font-black uppercase text-cyan-200">Explore</p>
+          <div className="mt-4 grid gap-3">
+            {footerLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="text-sm font-semibold text-slate-300 transition hover:text-white">
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </div>
+
+        <div>
+          <p className="text-xs font-black uppercase text-cyan-200">Compliance</p>
+          <div className="mt-4 grid gap-3">
+            {complianceLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noopener noreferrer' : undefined}
+                className="text-sm font-semibold text-slate-300 transition hover:text-white"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-white/5 px-4 py-5">
+        <p className="mx-auto max-w-7xl text-xs text-slate-500">
+          &copy; {year} SunsetCollective. All rights reserved.
+        </p>
       </div>
     </footer>
   );
 };
+
 export default Footer;

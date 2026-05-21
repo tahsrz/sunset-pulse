@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Sunset Premium Subscription',
-              description: 'Access to Advanced Platform Features, Abidan Core, and Priority Data Insights.',
+              name: 'Sunset Pulse Site Subscription',
+              description: 'Personal sunsetpulse.app subdomain, Jamie-powered site customization, and priority real-estate intelligence tools.',
             },
             unit_amount: 5996, // $59.96
             recurring: {
