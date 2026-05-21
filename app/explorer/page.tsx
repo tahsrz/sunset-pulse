@@ -119,10 +119,24 @@ function ExplorerContent() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-black/40 p-3 rounded-xl border border-white/5">
-                  <p className="text-[8px] text-slate-500 uppercase font-black mb-1">Avg Rent</p>
+                  <p className="text-[8px] text-slate-500 uppercase font-black mb-1">
+                    {properties.filter((p: any) => (p.price || 0) > 0).length >= properties.filter((p: any) => (p.rates?.monthly || 0) > 0).length 
+                      ? 'Avg Sale Price' 
+                      : 'Avg Monthly Rent'}
+                  </p>
                   <p className="text-sm font-bold text-blue-400">
                     ${properties.length > 0 
-                      ? Math.round(properties.reduce((acc, p) => acc + (p.rates.monthly || 0), 0) / properties.length).toLocaleString()
+                      ? (() => {
+                          const sales = properties.filter((p: any) => (p.price || 0) > 0);
+                          const rentals = properties.filter((p: any) => (p.rates?.monthly || 0) > 0);
+                          
+                          if (sales.length >= rentals.length && sales.length > 0) {
+                            return Math.round(sales.reduce((acc, p: any) => acc + (p.price || 0), 0) / sales.length).toLocaleString();
+                          } else if (rentals.length > 0) {
+                            return Math.round(rentals.reduce((acc, p: any) => acc + (p.rates.monthly || 0), 0) / rentals.length).toLocaleString();
+                          }
+                          return '0';
+                        })()
                       : '0'}
                   </p>
                 </div>

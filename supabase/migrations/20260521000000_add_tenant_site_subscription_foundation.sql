@@ -1,6 +1,64 @@
 -- Tenant site subscription foundation
 -- Supports word.sunsetpulse.app routing and stores the customer-owned site config.
 
+-- Fix for enum mismatch: Ensure 'role' is TEXT to support 'operator' and 'admin'
+-- This resolves: invalid input value for enum user_role: "operator"
+DO $$ 
+BEGIN
+    -- Only attempt conversion if the column exists and is of the custom enum type
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'profiles' 
+        AND column_name = 'role' 
+        AND udt_name = 'user_role'
+    ) THEN
+        -- Drop dependent policies first
+        DROP POLICY IF EXISTS "Realtors can view all profiles" ON public.profiles;
+        DROP POLICY IF EXISTS "Realtors see all leads" ON public.leads;
+        DROP POLICY IF EXISTS "Realtor full access to workflows" ON public.workflows;
+        DROP POLICY IF EXISTS "Realtor full access to sprints" ON public.sprints;
+        DROP POLICY IF EXISTS "Realtor full access to tasks" ON public.tasks;
+        DROP POLICY IF EXISTS "Realtors view all collections" ON public.collections;
+        DROP POLICY IF EXISTS "Realtors manage all comments" ON public.property_comments;
+        DROP POLICY IF EXISTS "Realtors view intelligence events" ON public.intelligence_events;
+
+        -- Alter the column
+        ALTER TABLE public.profiles ALTER COLUMN role TYPE TEXT;
+        ALTER TABLE public.profiles ALTER COLUMN role SET DEFAULT 'consumer';
+        
+        -- Add check constraint for allowed roles
+        ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('consumer', 'realtor', 'operator', 'admin'));
+
+        -- Recreate policies
+        CREATE POLICY "Realtors can view all profiles" ON public.profiles
+            FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+        
+        CREATE POLICY "Realtors see all leads" ON public.leads
+            FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+            
+        CREATE POLICY "Realtor full access to workflows" ON public.workflows 
+            FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+            
+        CREATE POLICY "Realtor full access to sprints" ON public.sprints 
+            FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+            
+        CREATE POLICY "Realtor full access to tasks" ON public.tasks 
+            FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+            
+        CREATE POLICY "Realtors view all collections" ON public.collections
+            FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+
+        CREATE POLICY "Realtors manage all comments" ON public.property_comments
+            FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+
+        CREATE POLICY "Realtors view intelligence events" ON public.intelligence_events
+            FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.site_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now(),

@@ -28,7 +28,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
   const isUrgent = (property.leadCount || 0) > 10;
 
   const getRateDisplay = () => {
-    const { rates } = property;
+    const { rates, price } = property;
+
+    if (price && price > 0) {
+      return price.toLocaleString();
+    }
 
     if (rates.monthly) {
       return `${rates.monthly.toLocaleString()}/mo`;

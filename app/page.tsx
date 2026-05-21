@@ -7,14 +7,21 @@ import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
 import SunsetHistorySection from '@/components/marketing/SunsetHistorySection';
 import FAQSection from '@/components/marketing/FAQSection';
 import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
-import { getProperties } from '@/lib/core/propertyRecon';
+import { getCachedProperties } from '@/lib/core/propertyRecon';
 
-const HomePage: React.FC = async () => {
-  const stagedPropertiesRaw = await getProperties({ showFeatured: true });
+/**
+ * Dynamic Pocket: Fetches curated properties on the server and streams them once resolved.
+ */
+const StagedPropertiesPocket: React.FC = async () => {
+  const stagedPropertiesRaw = await getCachedProperties({ showFeatured: true });
   
   // Force serialization to plain objects for Client Component compatibility
   const stagedProperties = JSON.parse(JSON.stringify(stagedPropertiesRaw));
 
+  return <UnifiedPropertyStage initialStagedProperties={stagedProperties} />;
+};
+
+const HomePage: React.FC = () => {
   return (
     <>
       <CinematicHero />
@@ -22,12 +29,13 @@ const HomePage: React.FC = async () => {
         <VirtualWorldHub />
         <ValuePropositionGrid />
         
+        {/* Partial Prerendering (PPR) Pocket */}
         <Suspense fallback={
           <div className="text-center py-20 text-slate-500 font-mono text-xs uppercase tracking-widest animate-pulse">
             Loading curated listings...
           </div>
         }>
-          <UnifiedPropertyStage initialStagedProperties={stagedProperties} />
+          <StagedPropertiesPocket />
         </Suspense>
 
         <SunsetHistorySection />

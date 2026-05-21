@@ -1,3 +1,4 @@
+import 'server-only';
 import Groq from "groq-sdk";
 import MenuItem from "@/models/MenuItem";
 import { SiteConfig } from "@/models/SiteConfig";

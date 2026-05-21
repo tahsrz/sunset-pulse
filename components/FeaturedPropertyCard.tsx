@@ -22,7 +22,11 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property })
   };
 
   const getRateDisplay = () => {
-    const { rates } = property;
+    const { rates, price } = property;
+
+    if (price && price > 0) {
+      return price.toLocaleString();
+    }
 
     if (rates.monthly) {
       return `${rates.monthly.toLocaleString()}/mo`;

@@ -19,7 +19,15 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
         </p>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
+        {property.price > 0 && (
+          <div className='bg-slate-950/50 border border-blue-500/20 p-6 rounded-2xl transition-all hover:bg-slate-900'>
+            <div className='text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2'>Sale Price</div>
+            <div className='text-3xl font-black text-white italic'>
+              ${property.price.toLocaleString()}
+            </div>
+          </div>
+        )}
         <div className='bg-slate-950/50 border border-white/5 p-6 rounded-2xl transition-all hover:bg-slate-900'>
           <div className='text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2'>Nightly</div>
           <div className='text-3xl font-black text-blue-400 italic'>

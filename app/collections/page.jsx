@@ -106,8 +106,14 @@ const CollectionsPage = () => {
                       <FaRobot size={10} /> Jamie Reviewed
                     </div>
                     <div className='text-2xl font-black text-white'>
-                      ${property.rates?.monthly?.toLocaleString() || property.rates?.nightly?.toLocaleString()}
-                      <span className='text-[10px] font-normal opacity-60 ml-1'>/mo</span>
+                      {property.price > 0 ? (
+                        `$${property.price.toLocaleString()}`
+                      ) : (
+                        <>
+                          ${(property.rates?.monthly || property.rates?.nightly || 0).toLocaleString()}
+                          <span className='text-[10px] font-normal opacity-60 ml-1'>/mo</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </Link>

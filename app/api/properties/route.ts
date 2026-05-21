@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
-import { getProperties } from '@/lib/core/propertyRecon';
+import { revalidateTag } from 'next/cache';
+import { getCachedProperties } from '@/lib/core/propertyRecon';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import cloudinary from '@/config/cloudinary';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
@@ -15,7 +16,7 @@ export const GET = async (request: NextRequest) => {
     const page = request.nextUrl.searchParams.get('page') || '1';
     const pageSize = request.nextUrl.searchParams.get('pageSize') || '6';
 
-    const data = await getProperties({ page: parseInt(page), pageSize: parseInt(pageSize) });
+    const data = await getCachedProperties({ page: parseInt(page), pageSize: parseInt(pageSize) });
 
     return successResponse(data);
   } catch (error: any) {
@@ -83,6 +84,9 @@ export const POST = async (request: NextRequest) => {
 
     const newProperty = new Property(propertyData);
     await newProperty.save();
+
+    // Invalidate the 'properties' tag in Next.js App Router Cache
+    revalidateTag('properties');
 
     return successResponse({ 
       message: 'Asset captured on Intelligence Grid.', 

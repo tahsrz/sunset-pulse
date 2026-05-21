@@ -16,20 +16,20 @@ const InfrastructureSection = () => {
           <FaLayerGroup className='text-teal-200' /> Modern Web Architecture
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-6'>
-          Built on a modern framework utilizing server-side rendering for optimized data delivery and client-side interactivity for a seamless user experience. API endpoints are deployed on global edge networks for minimal latency.
+          Built on Next.js 14 utilizing React Server Components (RSC) for optimized data delivery, combined with instant static page shells. <strong>Streaming Suspense Pockets</strong> allow critical layouts to mount instantly, concurrently streaming dynamic segments.
         </p>
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] font-mono'>
           <div className='bg-[#081824]/45 p-3 rounded-xl border border-teal-200/10'>
-            <span className='text-teal-200 block mb-1 font-bold'>DATA MANAGEMENT</span>
-            - Server-Side Rendering (SSR)<br/>
-            - Optimized Route Handlers<br/>
-            - Scalable Data Fetching
+            <span className='text-teal-200 block mb-1 font-bold'>STREAMING POCKETS</span>
+            - Unblocked Page Shells<br/>
+            - Concurrent Segment Hydration<br/>
+            - Zero-JS Layout Skeleton
           </div>
           <div className='bg-[#081824]/45 p-3 rounded-xl border border-violet-200/10'>
-            <span className='text-violet-200 block mb-1 font-bold'>SECURITY FRAMEWORK</span>
-            - Identity & Access Management<br/>
-            - Secure Authentication Flows<br/>
-            - Enterprise Session Handling
+            <span className='text-violet-200 block mb-1 font-bold'>SERVER-ONLY GATES</span>
+            - RSC Compilation Firewall<br/>
+            - Zero Browser-Bundle Leakage<br/>
+            - Enforced Key Encapsulation
           </div>
         </div>
       </div>
@@ -39,20 +39,20 @@ const InfrastructureSection = () => {
           <FaDatabase className='text-amber-200' /> Scalable Data Persistence
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-4'>
-          A robust data layer manages property listings, lead engagement, and application state. The schema is optimized for fast retrieval and cross-referencing of property records.
+          Our robust database layer queries MongoDB/Mongoose directly. We optimize database reads using <strong>Granular Tag-Based Revalidation</strong>, caching server execution structures via <code>unstable_cache</code> and wiping them instantly using <code>revalidateTag</code> upon mutations.
         </p>
         <div className='space-y-2 text-[10px] font-mono text-teal-100/55'>
           <div className='flex items-center gap-2'>
             <span className='bg-teal-500/15 text-teal-200 px-2 py-0.5 rounded'>Properties</span> 
-            <span>Spatial specifications and listing data.</span>
+            <span>Cached under 'properties' tag. Purged on POST/PATCH.</span>
           </div>
           <div className='flex items-center gap-2'>
             <span className='bg-rose-500/15 text-rose-200 px-2 py-0.5 rounded'>Leads</span> 
-            <span>Engagement metrics and trend analysis.</span>
+            <span>Linear sigmoid velocity scoring & re-engagement hooks.</span>
           </div>
           <div className='flex items-center gap-2'>
             <span className='bg-violet-500/15 text-violet-200 px-2 py-0.5 rounded'>System</span> 
-            <span>Application configuration and dynamic media.</span>
+            <span>Dynamic TAH Expertise cartridges synced with Supabase.</span>
           </div>
         </div>
       </div>

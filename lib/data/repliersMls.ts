@@ -131,6 +131,10 @@ class RepliersMLSService {
   }
 
   private mapRepliersToProperty(item: RepliersProperty) {
+    const propertyType = item.details.propertyType?.toLowerCase() || '';
+    const isRental = propertyType.includes('lease') || propertyType.includes('rental');
+    const listPrice = parseFloat(item.listPrice) || 0;
+
     return sanitizeMlsForPublicUse({
       _id: item.mlsNumber,
       name: `${item.address.streetNumber} ${item.address.streetName} ${item.address.streetSuffix}`,
@@ -153,8 +157,9 @@ class RepliersMLSService {
       baths: parseInt(item.details.numBathrooms) || 0,
       square_feet: parseInt(item.details.sqft || '0') || 0,
       amenities: [],
+      price: !isRental ? listPrice : 0,
       rates: {
-        monthly: parseFloat(item.listPrice) || 0
+        monthly: isRental ? listPrice : 0
       },
       images: item.images || [],
       source: 'MLS',

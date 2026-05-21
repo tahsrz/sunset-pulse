@@ -61,6 +61,7 @@
     "react-share": "^5.1.0",
     "react-spinners": "^0.13.8",
     "react-toastify": "^10.0.4",
+    "server-only": "^0.0.1",
     "stripe": "^21.0.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",

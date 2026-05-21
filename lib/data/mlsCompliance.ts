@@ -27,6 +27,7 @@ const PUBLIC_PROPERTY_FIELDS = new Set([
   'baths',
   'square_feet',
   'amenities',
+  'price',
   'rates',
   'images',
   'source',

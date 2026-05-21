@@ -1,6 +1,20 @@
 # SUNSET PULSE // DEVELOPMENT LOG
-**DATE:** 2026-05-14
-**STATUS:** ALPHA MATURATION // TAH MEMORY FORGE & OZRIEL PROTOCOL
+**DATE:** 2026-05-21
+**STATUS:** SECURITY ENFORCEMENT & PARTIAL PRERENDERING // PPR EXPERIMENTS
+
+## [Unreleased] - 2026-05-21
+
+### Added
+- **Server-Only Security Boundaries (RSC Isolation)**: Engineered Next.js compilation-level firewalls to guarantee sensitive server-side modules never leak to browser bundles.
+  - **Twilio Protection**: Isolated [lib/twilio.js](file:///C:/Users/Taz/SunsetPulse/lib/twilio.js) with the `server-only` compiler guard to lock process keys.
+  - **Identity Gatekeeper Protection**: Protected [lib/security/identityGatekeeper.ts](file:///C:/Users/Taz/SunsetPulse/lib/security/identityGatekeeper.ts) containing Groq API invocations and adversarial injection defenses.
+  - **`server-only` Package Integration**: Added `server-only` package dependencies to trigger build-time failures on boundary violations.
+- **Dynamic Suspense Pockets (Streaming Shell optimization)**: Refactored the core homepage layout to decouple blocking data-fetches.
+  - **Unblocked Shell**: Freed [app/page.tsx](file:///C:/Users/Taz/SunsetPulse/app/page.tsx) from top-level database loading, enabling the Cinematic Hero and Virtual World Hub to render with instant, static-like speeds.
+  - **Suspense Isolation**: Encapsulated property loading within `<StagedPropertiesPocket />` so curated listings stream in concurrently upon resolution without delaying initial page loads.
+- **Granular Tag-Based Revalidation (unstable_cache integration)**: Built high-performance query caching with on-demand invalidation for direct MongoDB transactions.
+  - **Database Caching Wrapper**: Created `getCachedProperties` in [lib/core/propertyRecon.js](file:///C:/Users/Taz/SunsetPulse/lib/core/propertyRecon.js) using Next.js `unstable_cache` tagged under `'properties'`.
+  - **Surgical Purging**: Integrated `revalidateTag('properties')` inside the `POST` route in [app/api/properties/route.ts](file:///C:/Users/Taz/SunsetPulse/app/api/properties/route.ts) to instantly wipe and refresh cached properties globally upon creating/modifying assets.
 
 ## [Unreleased] - 2026-05-14
 

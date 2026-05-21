@@ -72,6 +72,24 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - Queued terminal intents persist to `/.orchestrator/terminal-intents.json` by default. Set `ORCHESTRATOR_COMMAND_QUEUE_PATH` to move the local queue store.
 - `/api/telegram/webhook` accepts Telegram updates, authorizes `AUTHORIZED_USER_ID` or `TELEGRAM_OPERATOR_CHAT_ID`, and routes `/commands`, `/status`, `/sessions`, `/tah`, `/places`, `/check`, `/cancel`, `/pack_master`, and guarded `!command` terminal intents.
 
+## Data Architecture & Caching Strategy
+
+To support lightning-fast user interactions and fluid AI-agent background loops, Sunset Pulse leverages a sophisticated multi-layered caching and isolation strategy built directly on top of Next.js 14's App Router:
+
+### 1. Server-Only Boundaries (`server-only`)
+To strictly enforce security boundaries and prevent credential leakage, secure utility files (such as Twilio SMS configurations and Identity Gatekeepers) are wrapped with `import 'server-only'`. This creates an absolute build-time firewall, throwing compiler errors if any client-side components attempt to load server-exclusive logical branches.
+
+### 2. Instant Static Layouts with Dynamic Pockets (Suspense Streaming)
+By separating static structural grids (like navbars and structural layouts) from highly dynamic data queries, we ensure near-zero Time to First Byte (TTFB). Slow database calls (e.g., retrieving verified real estate assets) are decoupled into dedicated component streams wrapped in React `<Suspense>` boundaries. The shell serves instantly, and dynamic elements stream in as they resolve.
+
+### 3. Granular Cache Invalidation (Tag-Based Revalidation)
+While native fetch caches are straightforward, direct MongoDB or Supabase calls require custom handling. Direct database reads are wrapped inside Next.js's `unstable_cache` and assigned dynamic, hashed keys (incorporating user sessions and query parameters). This data is tagged globally (such as `bookmarks-${userId}` or `collections-${userId}`). Upon user mutation (like saving an asset or modifying a watchlist), the cache is purged instantly and on-demand using `revalidateTag()`.
+
+### 4. NoSQL for the Agentic Age (The SunsetWars Paradigm)
+> *Traditional SQL engines are ledger-first systems—rigidly structured for human operations. In the Agentic Age, autonomous AI agents operate dynamically, recursively, and at sub-millisecond intervals. They require an adaptable memory substrate to store intermediate reasoning, dynamic context, and rapidly-evolving operational states.*
+>
+> *By combining Supabase's structured relational persistence with MongoDB/Mongoose's fluid document schema, Sunset Pulse provides a hybrid memory engine. This gives our autonomous agents (like Jamie) the ultra-low latency, schema-less canvas they need to learn, evaluate, and act independently.*
+
 ## Getting Started
 
 Install dependencies:
@@ -97,8 +115,6 @@ Open the application at `http://localhost:3000`.
 ## Environment Configuration
 
 The application can run with partial configuration for local UI work, but production-like workflows require service credentials.
-
-
 
 Use `NEXT_PUBLIC_MOCK_MODE=true` when running local tests or development flows that should avoid live data providers.
 

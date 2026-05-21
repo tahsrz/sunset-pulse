@@ -104,6 +104,8 @@ class BridgeMLSService {
   }
 
   private mapBridgeToProperty(item: BridgeProperty) {
+    const isRental = item.PropertyType?.toLowerCase().includes('residential lease') || false;
+    
     return {
       _id: item.ListingId,
       name: item.UnparsedAddress,
@@ -123,8 +125,9 @@ class BridgeMLSService {
       baths: item.BathroomsFull || 0,
       square_feet: item.LivingArea || 0,
       amenities: [],
+      price: !isRental ? item.ListPrice : 0,
       rates: {
-        monthly: item.ListPrice || 0
+        monthly: isRental ? item.ListPrice : 0
       },
       images: item.Media?.map(m => m.MediaURL) || [],
       source: 'MLS',

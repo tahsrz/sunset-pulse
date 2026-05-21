@@ -22,6 +22,7 @@ export interface Property {
   baths: number;
   square_feet: number;
   amenities?: string[];
+  price?: number;
   rates: {
     nightly?: number;
     weekly?: number;
