@@ -46,11 +46,24 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
                   <h3 className="text-xl font-bold uppercase tracking-tight text-white">Sunset Gas & Grill</h3>
                 </div>
               </div>
+
+              {/* Grill Image Showcase */}
+              <div className="relative mb-5 overflow-hidden rounded-lg border border-amber-500/15 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                <img 
+                  src="/images/grill/Sunset.png" 
+                  alt="Sunset Gas & Grill Landmark" 
+                  className="w-full h-44 object-cover object-center transition-transform duration-700 hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+              </div>
               <p className="text-sm leading-7 text-teal-50/80">
                 Established along the historic farm roads of southern Montague County, <span className="text-amber-200 font-semibold">Sunset Gas & Grill</span> has stood as the authentic beating heart of the community for generations. Originally founded as a modest oak-fired pit stop and mechanical outpost, it quickly evolved into the county's definitive gathering place.
               </p>
               <p className="mt-3 text-xs leading-6 text-teal-100/60">
-                Famous for its slow-smoked oak brisket, hand-stretched cobblers, and double-filtered fuel, it represents the living history of the working Texas frontier. Fusing historic rural heritage with modern digital connectivity under the Sunset Pulse network, the Grill remains the premier physical anchor for local legends, neighborhood debates, and deep community roots.
+                Famous for its slow-cooked angus beef burgers, cold beers, and great coffee, it represents the living history of the working Texas frontier. Fusing historic rural heritage with modern digital connectivity under the Sunset Pulse network, the Grill remains the premier physical anchor for local legends, neighborhood debates, and deep community roots.
+              </p>
+              <p className="mt-3 text-xs leading-6 text-amber-200/80 italic font-medium">
+                Community legends like Jay "JH" Hartswell and Bobby McGee have always chosen the Sunset Grill as their favorite watering hole.
               </p>
               <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
                 <span className="text-[10px] font-mono text-amber-400/80">📍 101 S. Council, Sunset, TX</span>
