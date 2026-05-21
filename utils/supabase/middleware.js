@@ -49,6 +49,7 @@ export async function updateSession(request) {
   // Protected routes and role-based redirection
   const url = new URL(request.url)
   const path = url.pathname
+  const localOrchestratorRoute = path.startsWith('/admin/orchestrator') && isLocalRequest(request)
 
   if (user) {
     let role = null;
@@ -82,7 +83,7 @@ export async function updateSession(request) {
       path.startsWith('/abidan/war-room') ||
       path.startsWith('/scythe') ||
       path.startsWith('/briefing') ||
-      path.startsWith('/admin')
+      (path.startsWith('/admin') && !localOrchestratorRoute)
     ) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -108,4 +109,22 @@ export async function updateSession(request) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   return response
+}
+
+function isLocalRequest(request) {
+  const urlHost = request.nextUrl?.hostname
+  const headerHost = request.headers.get('host') || ''
+  const hostname = (urlHost || normalizeHost(headerHost)).toLowerCase()
+
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+}
+
+function normalizeHost(host) {
+  if (!host) return ''
+  if (host.startsWith('[')) {
+    const closeIndex = host.indexOf(']')
+    return closeIndex === -1 ? host : host.slice(1, closeIndex)
+  }
+
+  return host.split(':')[0]
 }

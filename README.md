@@ -52,12 +52,25 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `POST /api/tah` accepts `{ "query": "Dallas zoning", "limit": 10, "sync": false }`.
 - `sync: true` attempts a Supabase cartridge sync before searching.
 - `/api/tah/eval` remains the advanced S-expression evaluator for internal workflows.
+- `GET /api/tah/master` inspects the local `atlas_pulse_master.hat/.tah` Memoria pair when it has been generated.
+- `GET /api/tah/master/search?q=Atlas%20Pulse&limit=5` searches only the local master archive.
+- `POST /api/tah/master/search` accepts `{ "query": "Deep Ellum", "limit": 5 }`.
+- `GET /api/tah/master/sources` pages through the master archive provenance manifest.
+- `GET /api/tah/master/places` extracts Atlas Pulse place bindings from the packed master payload.
 - `/tah` and `/tah/[cartridge]` expose crawlable HTML context pages for robots and agents.
 - `/tah/index.json` exposes a dynamic, machine-readable catalog rebuilt from the cartridge directories on request.
 - `/tah/headless` and `/tah/[cartridge]/headless` expose plain-text scraper views with backend-oriented labels.
 - `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
 - `/tah` includes explicit AI-agent crawl guidance and preferred query patterns.
 - Abidan judge context is routed through `lib/ai/brain/abidan_tah.ts`, which supports both indexed `.tah` cartridges and split Memoria `.hat`/`.tah` pairs before adding broad Pulse matches.
+- `TAH_MEMORIA_V4_SPEC.md` defines the draft super-cartridge direction for packaging existing cartridges into a high-capacity, provenance-aware Memoria pair.
+- `npm run tah:pack-master` packages the current cartridge catalog into a local `cartridges/master/atlas_pulse_master.hat/.tah` pair with a provenance manifest.
+- `lib/core/memoria_v4.ts` contains the first Memoria v4 superblock and section-directory reader prototype.
+- `/admin/orchestrator` is the local/operator control room for Telegram routing, model-network status, guarded tools, process grouping, and browser-style checks.
+- `/api/admin/orchestrator/command` runs the same command router from the web console.
+- `/api/admin/orchestrator/terminal-intents/[id]` approves, rejects, or runs queued terminal intents. Low-risk commands can run directly, medium-risk commands require approval first, and high-risk commands are manual-only.
+- Queued terminal intents persist to `/.orchestrator/terminal-intents.json` by default. Set `ORCHESTRATOR_COMMAND_QUEUE_PATH` to move the local queue store.
+- `/api/telegram/webhook` accepts Telegram updates, authorizes `AUTHORIZED_USER_ID` or `TELEGRAM_OPERATOR_CHAT_ID`, and routes `/commands`, `/status`, `/sessions`, `/tah`, `/places`, `/check`, `/cancel`, `/pack_master`, and guarded `!command` terminal intents.
 
 ## Getting Started
 

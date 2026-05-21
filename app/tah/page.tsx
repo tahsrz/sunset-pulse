@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 import { TahLibraryClient } from '@/app/tah/TahLibraryClient';
+import { getTahMasterMetadata } from '@/lib/core/tah_master';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,17 @@ export const metadata = {
 export default function TahPage() {
   const cartridges = listPulseCartridges().map(cartridge => getCartridgeMetadata(cartridge));
   const publicCartridges = cartridges.map(({ path: _path, ...cartridge }) => cartridge);
+  const master = getTahMasterMetadata();
+  const masterArchive = {
+    status: master.status,
+    name: master.name,
+    generatedAt: master.generatedAt,
+    sourceCount: master.sourceCount,
+    shardCount: master.shardCount,
+    skippedCount: master.skippedCount,
+    stats: master.stats,
+    files: master.files
+  };
   const formats = cartridges.reduce<Record<string, number>>((acc, cartridge) => {
     acc[cartridge.format] = (acc[cartridge.format] || 0) + 1;
     return acc;
@@ -73,7 +85,7 @@ export default function TahPage() {
         </div>
       </section>
 
-      <TahLibraryClient cartridges={publicCartridges} />
+      <TahLibraryClient cartridges={publicCartridges} masterArchive={masterArchive} />
     </main>
   );
 }

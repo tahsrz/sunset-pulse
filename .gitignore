@@ -29,6 +29,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /scripts/logs/
+/cartridges/master/
+/.orchestrator/
 
 # local env files
 .env*.local

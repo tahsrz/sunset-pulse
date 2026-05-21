@@ -20,7 +20,8 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "matrix:scout": "npx tsx scripts/matrix_scout.ts",
-    "texas-history:forge": "tsx scripts/forge-texas-place-history.ts"
+    "texas-history:forge": "tsx scripts/forge-texas-place-history.ts",
+    "tah:pack-master": "tsx scripts/pack-atlas-master.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

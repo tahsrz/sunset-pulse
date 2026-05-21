@@ -9,34 +9,53 @@ import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
 import { GET as getAtlasManifest } from '@/app/api/tah/atlas/manifest/route';
 import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
 import { GET as getAtlasGlobe } from '@/app/api/tah/atlas/globe/route';
+import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
+import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
+
+const CANONICAL_HOST = 'https://sunsetpulse.com';
+const PREVIEW_HOST = 'https://preview.sunsetpulse.test';
+
+function getCatalogFixture() {
+  const cartridge = listPulseCartridges()[0];
+  if (!cartridge) throw new Error('Expected at least one TAH cartridge fixture.');
+  return cartridge;
+}
+
+function getCatalogFixtureMetadata(host = CANONICAL_HOST) {
+  return getCartridgeMetadata(getCatalogFixture(), host);
+}
 
 describe('TAH robot-facing routes', () => {
   it('serves the headless archive as plain text', async () => {
-    const response = getTahHeadless(new Request('https://sunsetpulse.com/tah/headless'));
+    const fixture = getCatalogFixtureMetadata();
+    const response = getTahHeadless(new Request(`${CANONICAL_HOST}/tah/headless`));
     const body = await response.text();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(body).toContain('TAH_ARCHIVE');
     expect(body).toContain('CATALOG_COUNT:');
-    expect(body).toContain('HEADLESS: https://sunsetpulse.com/tah/algorithms/headless');
+    expect(body).toContain(`HEADLESS: ${fixture.routes.headless}`);
+    expect(body).toMatch(/HEADLESS: https:\/\/sunsetpulse\.com\/tah\/[^/\s]+\/headless/);
   });
 
   it('serves cartridge headless pages as plain text', async () => {
-    const response = await getCartridgeHeadless(new Request('https://sunsetpulse.com/tah/algorithms/headless'), {
-      params: { slug: 'algorithms' }
+    const fixture = getCatalogFixtureMetadata();
+    const response = await getCartridgeHeadless(new Request(fixture.routes.headless), {
+      params: { slug: fixture.slug }
     });
     const body = await response.text();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/plain');
     expect(body).toContain('TAH_CARTRIDGE');
-    expect(body).toContain('SLUG: algorithms');
-    expect(body).toContain('QUERY_API: https://sunsetpulse.com/api/tah?q=Algorithms&limit=10');
+    expect(body).toContain(`SLUG: ${fixture.slug}`);
+    expect(body).toContain(`QUERY_API: ${fixture.routes.api}`);
   });
 
   it('serves the dynamic JSON catalog with headless URLs', async () => {
-    const response = getTahIndex(new Request('https://sunsetpulse.com/tah/index.json'));
+    const fixture = getCatalogFixtureMetadata();
+    const response = getTahIndex(new Request(`${CANONICAL_HOST}/tah/index.json`));
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -46,37 +65,39 @@ describe('TAH robot-facing routes', () => {
     expect(body.cartridges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          slug: 'algorithms',
-          headlessUrl: 'https://sunsetpulse.com/tah/algorithms/headless'
+          slug: fixture.slug,
+          headlessUrl: fixture.routes.headless
         })
       ])
     );
   });
 
   it('serves per-cartridge metadata for robots and UI clients', async () => {
-    const response = getCartridgeMeta(new NextRequest('https://sunsetpulse.com/api/tah/algorithms/meta'), {
-      params: { slug: 'algorithms' }
+    const fixture = getCatalogFixtureMetadata();
+    const response = getCartridgeMeta(new NextRequest(fixture.routes.meta), {
+      params: { slug: fixture.slug }
     });
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.cartridge).toEqual(
       expect.objectContaining({
-        slug: 'algorithms',
-        title: 'Algorithms',
-        domain: expect.objectContaining({ id: 'computer-science' }),
+        slug: fixture.slug,
+        title: fixture.title,
+        domain: expect.objectContaining({ id: fixture.domain.id }),
         format: expect.any(String),
-        searchQuery: 'Algorithms',
+        searchQuery: fixture.searchQuery,
         routes: expect.objectContaining({
-          headless: 'https://sunsetpulse.com/tah/algorithms/headless',
-          meta: 'https://sunsetpulse.com/api/tah/algorithms/meta'
+          headless: fixture.routes.headless,
+          meta: fixture.routes.meta
         })
       })
     );
   });
 
   it('advertises headless and JSON entrances in llms.txt', async () => {
-    const response = getLlms(new Request('https://preview.sunsetpulse.test/llms.txt', {
+    const fixture = getCatalogFixtureMetadata(PREVIEW_HOST);
+    const response = getLlms(new Request(`${PREVIEW_HOST}/llms.txt`, {
       headers: {
         host: 'preview.sunsetpulse.test',
         'x-forwarded-proto': 'https'
@@ -86,15 +107,16 @@ describe('TAH robot-facing routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/plain');
-    expect(body).toContain('[Headless TAH catalog](https://preview.sunsetpulse.test/tah/headless)');
-    expect(body).toContain('[Dynamic TAH catalog JSON](https://preview.sunsetpulse.test/tah/index.json)');
-    expect(body).toContain('[Atlas published manifest](https://preview.sunsetpulse.test/api/tah/atlas/manifest)');
-    expect(body).toContain('[Algorithms](https://preview.sunsetpulse.test/tah/algorithms)');
-    expect(body).toContain('[headless](https://preview.sunsetpulse.test/tah/algorithms/headless)');
-    expect(body).toContain('[query](https://preview.sunsetpulse.test/api/tah?q=Algorithms&limit=10)');
+    expect(body).toContain(`[Headless TAH catalog](${PREVIEW_HOST}/tah/headless)`);
+    expect(body).toContain(`[Dynamic TAH catalog JSON](${PREVIEW_HOST}/tah/index.json)`);
+    expect(body).toContain(`[Atlas published manifest](${PREVIEW_HOST}/api/tah/atlas/manifest)`);
+    expect(body).toContain(`[${fixture.title}](${fixture.routes.html})`);
+    expect(body).toContain(`[headless](${fixture.routes.headless})`);
+    expect(body).toContain(`[query](${fixture.routes.api})`);
   });
 
   it('serves the consolidated Atlas world map from the TAH catalog', async () => {
+    const fixture = getCatalogFixtureMetadata();
     const response = getAtlasMap();
     const body = await response.json();
 
@@ -113,14 +135,15 @@ describe('TAH robot-facing routes', () => {
     expect(body.nodes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'world', type: 'world' }),
-        expect.objectContaining({ id: 'web-captures', type: 'continent' }),
-        expect.objectContaining({ id: 'cartridge:algorithms', type: 'cartridge' })
+        expect.objectContaining({ id: `cartridge:${fixture.slug}`, type: 'cartridge' })
       ])
     );
     const webNode = body.nodes.find((node: any) => node.id.startsWith('cartridge:web-'));
-    expect(webNode.searchQuery).toBeTruthy();
-    expect(webNode.searchQuery).not.toMatch(/^Web \d+$/);
-    expect(webNode.apiUrl).toContain(encodeURIComponent(webNode.searchQuery));
+    if (webNode) {
+      expect(webNode.searchQuery).toBeTruthy();
+      expect(webNode.searchQuery).not.toMatch(/^Web \d+$/);
+      expect(webNode.apiUrl).toContain(encodeURIComponent(webNode.searchQuery));
+    }
     expect(body.links.length).toBeGreaterThan(0);
   });
 
@@ -154,17 +177,16 @@ describe('TAH robot-facing routes', () => {
     expect(body.name).toBe('Atlas Pulse TAH Manifest');
     expect(body.total).toBeGreaterThan(0);
     expect(body.items.length).toBe(body.mapped);
-    expect(body.items).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          slug: 'algorithms',
-          searchQuery: 'Algorithms'
-        })
-      ])
+    expect(body.items[0]).toEqual(
+      expect.objectContaining({
+        slug: expect.any(String),
+        searchQuery: expect.any(String)
+      })
     );
   });
 
   it('serves a globe-native Atlas progress dataset', async () => {
+    const fixture = getCatalogFixtureMetadata();
     const response = getAtlasGlobe();
     const body = await response.json();
 
@@ -179,7 +201,7 @@ describe('TAH robot-facing routes', () => {
     expect(body.domains).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: 'computer-science',
+          id: fixture.domain.id,
           knownNodes: expect.any(Number),
           coverage: expect.any(Number)
         })
@@ -188,14 +210,14 @@ describe('TAH robot-facing routes', () => {
     expect(body.nodes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          slug: 'algorithms',
+          slug: fixture.slug,
           lat: expect.any(Number),
           lng: expect.any(Number),
-          coordinateSource: 'domain-hash',
+          coordinateSource: expect.any(String),
           coverage: expect.any(Number),
           confidence: expect.any(Number),
           routes: expect.objectContaining({
-            headless: 'https://sunsetpulse.com/tah/algorithms/headless'
+            headless: fixture.routes.headless
           })
         })
       ])

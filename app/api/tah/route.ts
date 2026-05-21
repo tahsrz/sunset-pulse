@@ -29,6 +29,15 @@ export async function GET(request: NextRequest) {
     return successResponse({
       status: 'ready',
       endpoint: '/api/tah',
+      endpoints: {
+        catalog: '/api/tah',
+        search: '/api/tah?q={query}&limit=10',
+        forge: '/api/tah/forge',
+        master: '/api/tah/master',
+        masterSearch: '/api/tah/master/search?q={query}&limit=10',
+        masterSources: '/api/tah/master/sources',
+        masterPlaces: '/api/tah/master/places'
+      },
       cartridges: cartridges.map(cartridge => ({
         name: cartridge.source,
         slug: cartridge.slug,
