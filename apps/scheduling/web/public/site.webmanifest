@@ -1,0 +1,23 @@
+{
+    "name": "Cal.diy",
+    "short_name": "Cal.diy",
+    "description": "Scheduling infrastructure for absolutely everyone.",
+    "icons": [
+        {
+            "src": "/api/logo?type=android-chrome-192",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/api/logo?type=android-chrome-256",
+            "sizes": "256x256",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display_override": ["minimal-ui"],
+    "display": "standalone",
+    "scope": "/",
+    "start_url": "/"  
+}

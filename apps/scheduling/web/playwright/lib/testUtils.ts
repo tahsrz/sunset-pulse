@@ -1,0 +1,639 @@
+import { createHash } from "node:crypto";
+import EventEmitter from "node:events";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { createServer } from "node:http";
+import process from "node:process";
+import type { IntervalLimit } from "@calcom/lib/intervalLimits/intervalLimitSchema";
+import type { Prisma } from "@calcom/prisma/client";
+import { BookingStatus, SchedulingType } from "@calcom/prisma/enums";
+import type { Frame, Page, Request as PlaywrightRequest } from "@playwright/test";
+import { expect } from "@playwright/test";
+import type { Messages } from "mailhog";
+import { totp } from "otplib";
+import { v4 as uuid } from "uuid";
+import type { createEmailsFixture } from "../fixtures/emails";
+import type { CreateUsersFixture } from "../fixtures/users";
+import type { Fixtures } from "./fixtures";
+
+type Request = IncomingMessage & { body?: unknown };
+type RequestHandlerOptions = { req: Request; res: ServerResponse };
+type RequestHandler = (opts: RequestHandlerOptions) => void;
+
+export const testEmail = "test@example.com";
+export const testName = "Test Testson";
+
+export const teamEventTitle = "Team Event - 30min";
+export const teamEventSlug = "team-event-30min";
+
+export const IS_STRIPE_ENABLED = !!(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY &&
+  process.env.STRIPE_CLIENT_ID &&
+  process.env.STRIPE_PRIVATE_KEY &&
+  process.env.STRIPE_WEBHOOK_SECRET &&
+  process.env.PAYMENT_FEE_FIXED &&
+  process.env.PAYMENT_FEE_PERCENTAGE
+);
+
+export const IS_GOOGLE_CALENDAR_ENABLED = !!(
+  process.env.GOOGLE_API_CREDENTIALS &&
+  process.env.E2E_TEST_CALCOM_GCAL_KEYS &&
+  process.env.E2E_TEST_CALCOM_QA_GCAL_CREDENTIALS
+);
+
+export const IS_SENDGRID_ENABLED = !!process.env.SENDGRID_API_KEY;
+
+export function createHttpServer(opts: { requestHandler?: RequestHandler } = {}) {
+  const {
+    requestHandler = ({ res }) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.write(JSON.stringify({}));
+      res.end();
+    },
+  } = opts;
+  const eventEmitter = new EventEmitter();
+  const requestList: Request[] = [];
+
+  const waitForRequestCount = (count: number) => {
+    let resolved = false;
+    return new Promise<void>((resolve, reject) => {
+      if (requestList.length === count) {
+        resolved = true;
+        resolve();
+        return;
+      }
+
+      const pushHandler = () => {
+        if (requestList.length !== count) {
+          return;
+        }
+        eventEmitter.off("push", pushHandler);
+        resolved = true;
+        resolve();
+      };
+
+      eventEmitter.on("push", pushHandler);
+      setTimeout(() => {
+        if (resolved) return;
+        // Timeout after 10 seconds
+        reject(new Error("Timeout waiting for webhook"));
+      }, 10000);
+    });
+  };
+
+  const server = createServer((req, res) => {
+    const buffer: unknown[] = [];
+
+    req.on("data", (data) => {
+      buffer.push(data);
+    });
+    req.on("end", () => {
+      const _req: Request = req;
+      // assume all incoming request bodies are json
+      const json = buffer.length ? JSON.parse(buffer.join("")) : undefined;
+
+      _req.body = json;
+      requestList.push(_req);
+      eventEmitter.emit("push");
+      requestHandler({ req: _req, res });
+    });
+  });
+
+  // listen on random port
+  server.listen(0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const port: number = (server.address() as any).port;
+  const url = `http://localhost:${port}`;
+
+  return {
+    port,
+    close: () => server.close(),
+    requestList,
+    url,
+    waitForRequestCount,
+  };
+}
+
+export async function selectFirstAvailableTimeSlotNextMonth(page: Page | Frame) {
+  // Wait for the booker to be ready before interacting
+  const incrementMonth = page.getByTestId("incrementMonth");
+  await incrementMonth.waitFor();
+
+  // Wait for the initial schedule data to load (available days rendered in date picker).
+  // This ensures the waitForResponse listener below only catches the month-change response,
+  // not the initial page load response. Without this, column view can race: stale time slots
+  // from the current month get clicked before the new month's schedule data arrives, causing
+  // the quick availability check to permanently disable the confirm button.
+  await page.locator('[data-testid="day"][data-disabled="false"]').nth(0).waitFor();
+
+  // Listen for the getSchedule response triggered by the month change.
+  // waitForResponse is only available on Page, not Frame.
+  const scheduleResponse =
+    "waitForResponse" in page
+      ? page.waitForResponse((resp) => resp.url().includes("getSchedule") && resp.status() === 200)
+      : Promise.resolve();
+  await incrementMonth.click();
+  await scheduleResponse;
+
+  // Wait for available day to appear after month increment
+  const firstAvailableDay = page.locator('[data-testid="day"][data-disabled="false"]').nth(0);
+  await firstAvailableDay.waitFor();
+  await firstAvailableDay.click();
+
+  const firstTimeSlot = page.locator('[data-testid="time"]').nth(0);
+  await firstTimeSlot.waitFor();
+  await firstTimeSlot.click();
+}
+
+export async function selectSecondAvailableTimeSlotNextMonth(page: Page) {
+  // Wait for the booker to be ready before interacting
+  const incrementMonth = page.getByTestId("incrementMonth");
+  await incrementMonth.waitFor();
+
+  // Wait for initial schedule data to load before changing month (see selectFirstAvailableTimeSlotNextMonth)
+  await page.locator('[data-testid="day"][data-disabled="false"]').nth(0).waitFor();
+
+  // Listen for the getSchedule response triggered by the month change
+  const scheduleResponse = page.waitForResponse(
+    (resp) => resp.url().includes("getSchedule") && resp.status() === 200
+  );
+  await incrementMonth.click();
+  await scheduleResponse;
+
+  // Wait for available day to appear after month increment
+  const secondAvailableDay = page.locator('[data-testid="day"][data-disabled="false"]').nth(1);
+  await secondAvailableDay.waitFor();
+  await secondAvailableDay.click();
+
+  const firstTimeSlot = page.locator('[data-testid="time"]').nth(0);
+  await firstTimeSlot.waitFor();
+  await firstTimeSlot.click();
+}
+
+export async function bookEventOnThisPage(page: Page) {
+  await selectFirstAvailableTimeSlotNextMonth(page);
+  await bookTimeSlot(page);
+
+  // Make sure we're navigated to the success page
+  await page.waitForURL((url) => {
+    return url.pathname.startsWith("/booking");
+  });
+  await expect(page.locator("[data-testid=success-page]")).toBeVisible();
+}
+
+export async function bookOptinEvent(page: Page) {
+  await page.locator('[data-testid="event-type-link"]:has-text("Opt in")').click();
+  await bookEventOnThisPage(page);
+}
+
+export async function bookFirstEvent(page: Page) {
+  // Click first event type
+  await page.click('[data-testid="event-type-link"]');
+  await bookEventOnThisPage(page);
+}
+
+export const bookTimeSlot = async (
+  page: Page,
+  opts?: {
+    name?: string;
+    email?: string;
+    title?: string;
+    attendeePhoneNumber?: string;
+    expectedStatusCode?: number;
+    isRecurringEvent?: boolean;
+  }
+) => {
+  // --- fill form
+  await page.fill('[name="name"]', opts?.name ?? testName);
+  await page.fill('[name="email"]', opts?.email ?? testEmail);
+  if (opts?.title) {
+    await page.fill('[name="title"]', opts.title);
+  }
+  if (opts?.attendeePhoneNumber) {
+    await page.fill('[name="attendeePhoneNumber"]', opts.attendeePhoneNumber ?? "+918888888888");
+  }
+  const url = opts?.isRecurringEvent ? "/api/book/recurring-event" : "/api/book/event";
+  await submitAndWaitForResponse(page, url, {
+    action: () => page.locator('[data-testid="confirm-book-button"]').click(),
+    expectedStatusCode: opts?.expectedStatusCode,
+  });
+};
+
+export async function expectSlotNotAllowedToBook(page: Page) {
+  await page.waitForResponse((response) => {
+    return response.url().includes("/slots/isAvailable");
+  });
+  await expect(page.locator("[data-testid=slot-not-allowed-to-book]")).toBeVisible();
+}
+
+export const createNewUserEventType = async (page: Page, args: { eventTitle: string; username?: string }) => {
+  await page.click("[data-testid=new-event-type]");
+  if (args.username) {
+    await page.getByRole("button", { name: args.username }).click();
+  }
+  await page.fill("[name=title]", args.eventTitle);
+  await page.fill("[name=length]", "10");
+  await page.click("[type=submit]");
+
+  await page.waitForURL((url) => {
+    return url.pathname !== "/event-types";
+  });
+};
+
+export async function setupManagedEvent({
+  users,
+  unlockedFields,
+}: {
+  users: Fixtures["users"];
+  unlockedFields?: Record<string, boolean>;
+}) {
+  const teamMateName = "teammate-1";
+  const teamEventTitle = "Managed";
+  const adminUser = await users.create(null, {
+    hasTeam: true,
+    teammates: [{ name: teamMateName }],
+    teamEventTitle,
+    teamEventSlug: "managed",
+    schedulingType: "MANAGED",
+    addManagedEventToTeamMates: true,
+    managedEventUnlockedFields: unlockedFields,
+  });
+
+  const memberUser = users.get().find((u) => u.name === teamMateName)!;
+  const { team } = await adminUser.getFirstTeamMembership();
+  const managedEvent = await adminUser.getFirstTeamEvent(team.id, SchedulingType.MANAGED);
+  return { adminUser, memberUser, managedEvent, teamMateName, teamEventTitle, teamId: team.id };
+}
+
+export const createNewSeatedEventType = async (page: Page, args: { eventTitle: string }) => {
+  const eventTitle = args.eventTitle;
+  await createNewUserEventType(page, { eventTitle });
+  await page.waitForSelector('[data-testid="event-title"]');
+  await expect(page.getByTestId("vertical-tab-basics")).toHaveAttribute("aria-current", "page");
+  await page.locator('[data-testid="vertical-tab-event_advanced_tab_title"]').click();
+  await page.locator('[data-testid="offer-seats-toggle"]').click();
+  await page.locator('[data-testid="update-eventtype"]').click();
+};
+
+export async function gotoRoutingLink({
+  page,
+  formId,
+  queryString = "",
+}: {
+  page: Page;
+  formId?: string;
+  queryString?: string;
+}) {
+  let previewLink = null;
+  if (!formId) {
+    // Instead of clicking on the preview link, we are going to the preview link directly because the earlier opens a new tab which is a bit difficult to manage with Playwright
+    await page.locator('[data-testid="preview-button"]').click();
+    const href = await page.locator('[data-testid="open-form-in-new-tab"]').getAttribute("href");
+    if (!href) {
+      throw new Error("Preview link not found");
+    }
+    previewLink = href;
+  } else {
+    previewLink = `/forms/${formId}`;
+  }
+
+  await page.goto(`${previewLink}${queryString ? `?${queryString}` : ""}`);
+
+  // HACK: There seems to be some issue with the inputs to the form getting reset if we don't wait.
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+}
+
+export async function installAppleCalendar(page: Page) {
+  await page.goto("/apps/categories/calendar");
+  await page.click('[data-testid="app-store-app-card-apple-calendar"]');
+  await page.waitForURL("/apps/apple-calendar");
+  await page.click('[data-testid="install-app-button"]');
+}
+
+export async function getInviteLink(page: Page) {
+  const json = await submitAndWaitForJsonResponse(page, "/api/trpc/teams/createInvite?batch=1", {
+    action: () => page.locator(`[data-testid="copy-invite-link-button"]`).click(),
+  });
+  return json[0].result.data.json.inviteLink as string;
+}
+
+export async function getEmailsReceivedByUser({
+  emails,
+  userEmail,
+  waitForEmailMs = 5000,
+}: {
+  emails?: ReturnType<typeof createEmailsFixture>;
+  userEmail: string;
+  waitForEmailMs?: number;
+}): Promise<Messages | null> {
+  if (!emails) return null;
+
+  // Wait for email to be sent/received
+  await new Promise((resolve) => setTimeout(resolve, waitForEmailMs));
+
+  const matchingEmails = await emails.search(userEmail, "to");
+  if (!matchingEmails?.total) {
+    console.log(
+      `No emails received by ${userEmail}. All emails sent to:`,
+      (await emails.messages())?.items.map((e) => e.to)
+    );
+  }
+  return matchingEmails;
+}
+
+export async function expectEmailsToHaveSubject({
+  emails,
+  organizer,
+  booker,
+  eventTitle,
+}: {
+  emails?: ReturnType<typeof createEmailsFixture>;
+  organizer: { name?: string | null; email: string };
+  booker: { name: string; email: string };
+  eventTitle: string;
+}) {
+  if (!emails) return null;
+  const emailsOrganizerReceived = await getEmailsReceivedByUser({ emails, userEmail: organizer.email });
+  const emailsBookerReceived = await getEmailsReceivedByUser({ emails, userEmail: booker.email });
+
+  expect(emailsOrganizerReceived?.total).toBe(1);
+  expect(emailsBookerReceived?.total).toBe(1);
+
+  const [organizerFirstEmail] = (emailsOrganizerReceived as Messages).items;
+  const [bookerFirstEmail] = (emailsBookerReceived as Messages).items;
+  const emailSubject = `${eventTitle} between ${organizer.name ?? "Nameless"} and ${booker.name}`;
+
+  expect(organizerFirstEmail.subject).toBe(emailSubject);
+  expect(bookerFirstEmail.subject).toBe(emailSubject);
+}
+
+export const createUserWithLimits = ({
+  users,
+  slug,
+  title,
+  length,
+  bookingLimits,
+  durationLimits,
+}: {
+  users: Fixtures["users"];
+  slug: string;
+  title?: string;
+  length?: number;
+  bookingLimits?: IntervalLimit;
+  durationLimits?: IntervalLimit;
+}) => {
+  if (!bookingLimits && !durationLimits) {
+    throw new Error("Need to supply at least one of bookingLimits or durationLimits");
+  }
+
+  return users.create({
+    eventTypes: [
+      {
+        slug,
+        title: title ?? slug,
+        length: length ?? 30,
+        bookingLimits,
+        durationLimits,
+      },
+    ],
+  });
+};
+
+// this method is not used anywhere else
+// but I'm keeping it here in case we need in the future
+async function createUserWithSeatedEvent(users: Fixtures["users"]) {
+  const slug = "seats";
+  const user = await users.create({
+    name: "Seated event user",
+    eventTypes: [
+      {
+        title: "Seated event",
+        slug,
+        seatsPerTimeSlot: 10,
+        requiresConfirmation: true,
+        length: 30,
+        disableGuests: true, // should always be true for seated events
+      },
+    ],
+  });
+
+  const eventType = user.eventTypes.find((e) => e.slug === slug)!;
+  return { user, eventType };
+}
+
+export async function createUserWithSeatedEventAndAttendees(
+  fixtures: Pick<Fixtures, "users" | "bookings">,
+  attendees: Prisma.AttendeeCreateManyBookingInput[]
+) {
+  const { user, eventType } = await createUserWithSeatedEvent(fixtures.users);
+
+  const booking = await fixtures.bookings.create(user.id, user.username, eventType.id, {
+    status: BookingStatus.ACCEPTED,
+    // startTime with 1 day from now and endTime half hour after
+    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+    attendees: {
+      createMany: {
+        data: attendees,
+      },
+    },
+  });
+  return { user, eventType, booking };
+}
+
+export function generateTotpCode(email: string) {
+  const secret = createHash("md5")
+    .update(email + process.env.CALENDSO_ENCRYPTION_KEY)
+    .digest("hex");
+
+  totp.options = { step: 90 };
+  return totp.generate(secret);
+}
+
+export async function fillStripeTestCheckout(page: Page) {
+  await page.fill("[name=cardNumber]", "4242424242424242");
+  await page.fill("[name=cardExpiry]", "12/30");
+  await page.fill("[name=cardCvc]", "111");
+  await page.fill("[name=billingName]", "Stripe Stripeson");
+  await page.selectOption("[name=billingCountry]", "US");
+  await page.fill("[name=billingPostalCode]", "12345");
+  await page.click(".SubmitButton--complete-Shimmer");
+}
+
+export function goToUrlWithErrorHandling({ page, url }: { page: Page; url: string }) {
+  return new Promise<{ success: boolean; url: string }>(async (resolve) => {
+    let resolved = false;
+    const onRequestFailed = (request: PlaywrightRequest) => {
+      // Only consider it a navigation failure if it's the main document request
+      // Ignore failures for subresources like images, scripts, RSC requests, etc.
+      if (!request.isNavigationRequest() || request.frame() !== page.mainFrame()) {
+        const failedToLoadUrl = request.url();
+        console.log("goToUrlWithErrorHandling: Failed to load URL:", failedToLoadUrl);
+        return;
+      }
+      if (resolved) return;
+      resolved = true;
+      const failedToLoadUrl = request.url();
+      console.log("goToUrlWithErrorHandling: Navigation failed for URL:", failedToLoadUrl);
+      resolve({ success: false, url: failedToLoadUrl });
+    };
+    page.on("requestfailed", onRequestFailed);
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+    } catch {
+      // do nothing
+    }
+    page.off("requestfailed", onRequestFailed);
+    if (!resolved) {
+      resolved = true;
+      resolve({ success: true, url: page.url() });
+    }
+  });
+}
+
+/**
+ * Within this function's callback if a non-org domain is opened, it is considered an org domain identified from `orgSlug`
+ */
+export async function doOnOrgDomain(
+  { orgSlug, page }: { orgSlug: string | null; page: Page },
+  callback: ({
+    page,
+  }: {
+    page: Page;
+    goToUrlWithErrorHandling: (url: string) => ReturnType<typeof goToUrlWithErrorHandling>;
+  }) => Promise<any>
+) {
+  if (!orgSlug) {
+    throw new Error("orgSlug is not available");
+  }
+
+  page.setExtraHTTPHeaders({
+    "x-cal-force-slug": orgSlug,
+  });
+  const callbackResult = await callback({
+    page,
+    goToUrlWithErrorHandling: (url: string) => {
+      return goToUrlWithErrorHandling({ page, url });
+    },
+  });
+  await page.setExtraHTTPHeaders({
+    "x-cal-force-slug": "",
+  });
+  return callbackResult;
+}
+
+// When App directory is there, this is the 404 page text. We should work on fixing the 404 page as it changed due to app directory.
+export const NotFoundPageTextAppDir = "This page does not exist.";
+// export const NotFoundPageText = "ERROR 404";
+
+export async function gotoFirstEventType(page: Page) {
+  const $eventTypes = page.locator("[data-testid=event-types] > li a");
+  const firstEventTypeElement = $eventTypes.first();
+  await firstEventTypeElement.click();
+  await page.waitForURL((url) => {
+    return !!url.pathname.match(/\/event-types\/.+/);
+  });
+}
+
+export async function gotoBookingPage(page: Page) {
+  const previewLink = await page.locator("[data-testid=preview-button]").getAttribute("href");
+
+  await page.goto(previewLink ?? "");
+  await page.waitForURL((url) => {
+    return url.searchParams.get("overlayCalendar") === "true";
+  });
+}
+
+export async function saveEventType(page: Page) {
+  await submitAndWaitForResponse(page, "/api/trpc/eventTypesHeavy/update?batch=1", {
+    action: () => page.locator("[data-testid=update-eventtype]").click(),
+  });
+}
+
+/**
+ * Fastest way so far to test for saving changes and form submissions
+ * @see https://playwright.dev/docs/api/class-page#page-wait-for-response
+ */
+export async function submitAndWaitForResponse(
+  page: Page,
+  url: string,
+  { action = () => page.locator('[type="submit"]').click(), expectedStatusCode = 200 } = {}
+) {
+  const submitPromise = page.waitForResponse(url);
+  await action();
+  const response = await submitPromise;
+  expect(response.status()).toBe(expectedStatusCode);
+}
+export async function submitAndWaitForJsonResponse(
+  page: Page,
+  url: string,
+  { action = () => page.locator('[type="submit"]').click(), expectedStatusCode = 200 } = {}
+) {
+  const submitPromise = page.waitForResponse(url);
+  await action();
+  const response = await submitPromise;
+  expect(response.status()).toBe(expectedStatusCode);
+  return await response.json();
+}
+
+export async function confirmReschedule(page: Page, url = "/api/book/event") {
+  await submitAndWaitForResponse(page, url, {
+    action: () => page.locator('[data-testid="confirm-reschedule-button"]').click(),
+  });
+}
+export async function confirmBooking(page: Page, url = "/api/book/event") {
+  await submitAndWaitForResponse(page, url, {
+    action: () => page.locator('[data-testid="confirm-book-button"]').click(),
+  });
+}
+
+export async function expectPageToBeNotFound({ page, url }: { page: Page; url: string }) {
+  await page.goto(`${url}`);
+  await expect(page.getByTestId(`404-page`)).toBeVisible();
+}
+
+export async function setupOrgMember(users: CreateUsersFixture) {
+  const orgRequestedSlug = `example-${uuid()}`;
+
+  const orgMember = await users.create(undefined, {
+    hasTeam: true,
+    isOrg: true,
+    hasSubteam: true,
+    isOrgVerified: true,
+    isDnsSetup: true,
+    orgRequestedSlug,
+    schedulingType: SchedulingType.ROUND_ROBIN,
+  });
+
+  const { team: org } = await orgMember.getOrgMembership();
+  const { team } = await orgMember.getFirstTeamMembership();
+  const teamEvent = await orgMember.getFirstTeamEvent(team.id);
+  const userEvent = orgMember.eventTypes[0];
+
+  await orgMember.apiLogin();
+
+  return { orgMember, org, team, teamEvent, userEvent };
+}
+
+export async function cancelBookingFromBookingsList({
+  page,
+  nth,
+  reason,
+}: {
+  page: Page;
+  reason: string;
+  nth: number;
+}) {
+  await page.locator('[data-testid="booking-actions-dropdown"]').nth(nth).click();
+  const bookingUid = await page.locator('[data-testid="cancel"]').getAttribute("data-booking-uid");
+  // Click the cancel option in the dropdown
+  await page.locator('[data-testid="cancel"]').click();
+  await page.locator('[data-testid="cancel_reason"]').fill(reason);
+  await page.locator('[data-testid="confirm_cancel"]').click();
+  await expect(
+    page.locator('[data-testid="toast-success"]').filter({ hasText: "Booking Canceled" })
+  ).toBeVisible();
+
+  return {
+    bookingUid,
+  };
+}
