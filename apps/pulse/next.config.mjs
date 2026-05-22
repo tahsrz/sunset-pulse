@@ -22,6 +22,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['three'],
 };
 
 export default nextConfig;
