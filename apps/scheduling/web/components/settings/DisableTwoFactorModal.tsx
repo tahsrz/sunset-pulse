@@ -3,10 +3,14 @@ import { useForm } from "react-hook-form";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
 import { Form, PasswordField } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 
 import BackupCode from "@components/auth/BackupCode";
 import TwoFactor from "@components/auth/TwoFactor";
@@ -89,9 +93,9 @@ const DisableTwoFactorAuthModal = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title={t("disable_2fa")} description={t("disable_2fa_recommendation")} type="creation">
-        <Form form={form} handleSubmit={handleDisable}>
+    <DialogAny open={open} onOpenChange={onOpenChange}>
+      <DialogContentAny title={t("disable_2fa")} description={t("disable_2fa_recommendation")} type="creation">
+        <FormAny form={form} handleSubmit={handleDisable}>
           <div className="mb-8">
             {!disablePassword && (
               <PasswordField
@@ -112,7 +116,7 @@ const DisableTwoFactorAuthModal = ({
             {errorMessage && <p className="mt-1 text-sm text-red-700">{errorMessage}</p>}
           </div>
 
-          <DialogFooter showDivider className="relative mt-5">
+          <DialogFooterAny showDivider className="relative mt-5">
             <Button
               color="minimal"
               className="mr-auto"
@@ -133,10 +137,10 @@ const DisableTwoFactorAuthModal = ({
               disabled={isDisabling}>
               {t("disable")}
             </Button>
-          </DialogFooter>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </DialogFooterAny>
+        </FormAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

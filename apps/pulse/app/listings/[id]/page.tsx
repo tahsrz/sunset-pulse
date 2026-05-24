@@ -5,7 +5,7 @@ import PropertyHeaderImage from '@/components/PropertyHeaderImage';
 import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
-import LeadCaptureForm from '@/components/LeadCaptureForm';
+import PropertySidebarForms from '@/components/property/PropertySidebarForms';
 import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
@@ -78,7 +78,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
             <PropertyVerification>
               <div className='bg-white p-6 rounded-2xl shadow-sm border border-slate-100'>
                 <h4 className='text-xs font-black uppercase text-slate-400 tracking-widest mb-6'>Direct Inquiry</h4>
-                <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
+                <PropertySidebarForms propertyId={property._id} propertyName={property.name} />
               </div>
             </PropertyVerification>
           </aside>

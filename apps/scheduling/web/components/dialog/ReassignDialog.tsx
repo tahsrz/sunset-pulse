@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useInViewObserver } from "@calcom/lib/hooks/useInViewObserver";
@@ -19,8 +20,14 @@ import {
   DialogClose,
   ConfirmationDialogContent,
 } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogCloseAny = DialogClose as any;
+const ConfirmationDialogContentAny = ConfirmationDialogContent as any;
 import { TextAreaField, Form, Label, Input } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 import { RadioAreaGroup as RadioArea } from "@calcom/ui/components/radio";
+const RadioAreaAny = RadioArea as any;
 import { showToast } from "@calcom/ui/components/toast";
 import { CheckIcon, LoaderIcon } from "@coss/ui/icons";
 
@@ -68,7 +75,7 @@ export const ReassignDialog = ({
   isManagedEvent,
 }: ReassignDialog) => {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const [animationParentRef] = useAutoAnimate<HTMLFormElement>({
     duration: 150,
     easing: "ease-in-out",
@@ -160,24 +167,24 @@ export const ReassignDialog = ({
 
   return (
     <>
-      <Dialog
+      <DialogAny
         open={isOpenDialog}
-        onOpenChange={(open) => {
+        onOpenChange={(open: any) => {
           setIsOpenDialog(open);
         }}>
-        <DialogContent
+        <DialogContentAny
           title={isManagedEvent ? t("reassign_booking") : t("reassign_round_robin_host")}
           description={isManagedEvent ? t("reassign_to_another_user") : t("reassign_to_another_rr_host")}
           enableOverflow>
-          <Form form={form} handleSubmit={handleSubmit} ref={animationParentRef}>
-            <RadioArea.Group
-              onValueChange={(val) => {
+          <FormAny form={form} handleSubmit={handleSubmit} ref={animationParentRef}>
+            <RadioAreaAny.Group
+              onValueChange={(val: any) => {
                 const reassignType: ReassignType = z.nativeEnum(ReassignType).parse(val);
                 form.setValue("reassignType", reassignType);
               }}
               defaultValue={ReassignType.AUTO}
               className="mt-1 flex flex-col gap-4">
-              <RadioArea.Item
+              <RadioAreaAny.Item
                 value={ReassignType.AUTO}
                 className="w-full text-sm"
                 classNames={{ container: "w-full" }}
@@ -188,8 +195,8 @@ export const ReassignDialog = ({
                 <p>
                   {isManagedEvent ? t("auto_reassign_description") : t("round_robin_reassign_description")}
                 </p>
-              </RadioArea.Item>
-              <RadioArea.Item
+              </RadioAreaAny.Item>
+              <RadioAreaAny.Item
                 value={ReassignType.TEAM_MEMBER}
                 className="text-sm"
                 classNames={{ container: "w-full" }}
@@ -202,8 +209,8 @@ export const ReassignDialog = ({
                     ? t("specific_team_member_description")
                     : t("team_member_round_robin_reassign_description")}
                 </p>
-              </RadioArea.Item>
-            </RadioArea.Group>
+              </RadioAreaAny.Item>
+            </RadioAreaAny.Group>
 
             {watchedReassignType === ReassignType.TEAM_MEMBER && (
               <div className="mb-2">
@@ -282,8 +289,8 @@ export const ReassignDialog = ({
                 </div>
               </div>
             )}
-            <DialogFooter>
-              <DialogClose />
+            <DialogFooterAny>
+              <DialogCloseAny />
               <Button
                 type="submit"
                 data-testid="rejection-confirm"
@@ -295,15 +302,15 @@ export const ReassignDialog = ({
                 }>
                 {t("reassign")}
               </Button>
-            </DialogFooter>
-          </Form>
-        </DialogContent>
-      </Dialog>
+            </DialogFooterAny>
+          </FormAny>
+        </DialogContentAny>
+      </DialogAny>
 
-      <Dialog
+      <DialogAny
         open={confirmationModal?.show}
-        onOpenChange={(open) => setConfirmationModal({ ...confirmationModal, show: open })}>
-        <ConfirmationDialogContent
+        onOpenChange={(open: any) => setConfirmationModal({ ...confirmationModal, show: open })}>
+        <ConfirmationDialogContentAny
           variety={confirmationModal?.membersStatus === "unavailable" ? "warning" : "success"}
           title={
             confirmationModal?.membersStatus === "unavailable"
@@ -346,8 +353,8 @@ export const ReassignDialog = ({
             onChange={(e) => form.setValue("reassignReason", e.target.value)}
             required={confirmationModal?.membersStatus === "unavailable"}
           />
-        </ConfirmationDialogContent>
-      </Dialog>
+        </ConfirmationDialogContentAny>
+      </DialogAny>
     </>
   );
 };

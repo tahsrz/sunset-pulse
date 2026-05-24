@@ -16,19 +16,19 @@ interface IConnectCalendarsProps {
 
 const ConnectedCalendars = (props: IConnectCalendarsProps) => {
   const { nextStep, isPageLoading } = props;
-  const queryConnectedCalendars = trpc.viewer.calendars.connectedCalendars.useQuery({
+  const queryConnectedCalendars = (trpc as any).viewer.calendars.connectedCalendars.useQuery({
     onboarding: true,
     eventTypeId: null,
   });
   const { t } = useLocale();
-  const queryIntegrations = trpc.viewer.apps.integrations.useQuery({
+  const queryIntegrations = (trpc as any).viewer.apps.integrations.useQuery({
     variant: "calendar",
     onlyInstalled: false,
     sortByMostPopular: true,
   });
 
   const firstCalendar = queryConnectedCalendars.data?.connectedCalendars.find(
-    (item) => item.calendars && item.calendars?.length > 0
+    (item: any) => item.calendars && item.calendars?.length > 0
   );
   const disabledNextButton = firstCalendar === undefined;
   const destinationCalendar = queryConnectedCalendars.data?.destinationCalendar;
@@ -65,7 +65,7 @@ const ConnectedCalendars = (props: IConnectCalendarsProps) => {
       {firstCalendar === undefined && queryIntegrations.data && queryIntegrations.data.items.length > 0 && (
         <List className="bg-default divide-subtle border-subtle mx-1 divide-y rounded-md border p-0 dark:bg-black sm:mx-0">
           {queryIntegrations.data &&
-            queryIntegrations.data.items.map((item) => (
+            queryIntegrations.data.items.map((item: any) => (
               <li key={item.title}>
                 {item.title && item.logo && (
                   <AppConnectionItem

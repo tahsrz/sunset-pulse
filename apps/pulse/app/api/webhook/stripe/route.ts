@@ -6,6 +6,8 @@ import connectDB from '@/lib/core/database';
 import User from '@/models/User';
 import Order from '@/models/Order';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { prisma } from '@calcom/prisma';
+import { notifyStaffOfBurgerOrder } from '@/lib/twilio';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -45,11 +47,71 @@ export async function POST(req: NextRequest) {
 
     // 2. Handle Grill Food Orders
     if (metadata?.orderType === 'grill_food' && metadata?.orderId) {
-      await Order.findByIdAndUpdate(metadata.orderId, {
+      const order = await Order.findByIdAndUpdate(metadata.orderId, {
         isPaid: true,
         paymentSessionId: session.id
-      });
+      }, { new: true });
       console.log(`🍔 [STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
+
+      try {
+        // Query Cal.com shift schedule for today
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
+        const activeShiftBookings = await prisma.booking.findMany({
+          where: {
+            status: 'ACCEPTED',
+            startTime: {
+              gte: todayStart,
+              lte: todayEnd,
+            },
+            eventType: {
+              slug: {
+                in: ['grill-shift', 'register-shift'],
+              },
+            },
+          },
+          include: {
+            eventType: true,
+            user: {
+              include: {
+                verifiedNumbers: true,
+              },
+            },
+          },
+        });
+
+        let grillPhone: string | null = null;
+        let registerPhone: string | null = null;
+
+        for (const booking of activeShiftBookings) {
+          const userPhone = booking.user?.verifiedNumbers?.[0]?.phoneNumber || null;
+          if (booking.eventType?.slug === 'grill-shift') {
+            grillPhone = userPhone;
+          } else if (booking.eventType?.slug === 'register-shift') {
+            registerPhone = userPhone;
+          }
+        }
+
+        // Fallback to configured admin phone if nobody is scheduled
+        const fallbackPhone = process.env.FALLBACK_NOTIFICATION_PHONE || null;
+        if (!grillPhone && fallbackPhone) {
+          console.log(`[STRIPE_WEBHOOK] No Grill Employee scheduled. Falling back to admin phone.`);
+          grillPhone = fallbackPhone;
+        }
+        if (!registerPhone && fallbackPhone) {
+          console.log(`[STRIPE_WEBHOOK] No Register Employee scheduled. Falling back to admin phone.`);
+          registerPhone = fallbackPhone;
+        }
+
+        if (order) {
+          await notifyStaffOfBurgerOrder(order, grillPhone, registerPhone);
+        }
+      } catch (err: any) {
+        console.error('[STRIPE_WEBHOOK_STAFF_NOTIFICATION_ERROR]:', err);
+      }
     }
   }
 

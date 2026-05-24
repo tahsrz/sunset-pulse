@@ -12,6 +12,11 @@ import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components
 import { ClockIcon } from "@coss/ui/icons";
 import { showToast } from "@calcom/ui/components/toast";
 
+const DialogComponent = Dialog as any;
+const DialogContentComponent = DialogContent as any;
+const DialogHeaderComponent = DialogHeader as any;
+const DialogFooterComponent = DialogFooter as any;
+
 interface IConfirmDialogWipe {
   isOpenDialog: boolean;
   setIsOpenDialog: Dispatch<SetStateAction<boolean>>;
@@ -53,7 +58,7 @@ export const ConfirmDialog = (props: IConfirmDialogWipe) => {
   const endDate = today.endOf("day");
   const dateFormat = "ddd, MMM D, YYYY h:mm A";
 
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
 
   const rescheduleApi = useMutation({
     mutationFn: async () => {
@@ -79,14 +84,14 @@ export const ConfirmDialog = (props: IConfirmDialogWipe) => {
   });
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+    <DialogComponent open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentComponent onOpenAutoFocus={(e: any) => e.preventDefault()}>
         <div className="flex flex-row space-x-3">
           <div className="flex h-10 w-10 shrink-0 justify-center rounded-full bg-[#FAFAFA]">
             <ClockIcon className="m-auto h-5 w-5" />
           </div>
           <div className="pt-1">
-            <DialogHeader title="Wipe My Calendar" />
+            <DialogHeaderComponent title="Wipe My Calendar" />
             <p className="text-subtle mt-2 text-sm">
               This will cancel all upcoming meetings from: <br />{" "}
               <strong className="text-emphasis">
@@ -97,7 +102,7 @@ export const ConfirmDialog = (props: IConfirmDialogWipe) => {
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooterComponent>
           <Button color="secondary" onClick={() => setIsOpenDialog(false)}>
             {t("cancel")}
           </Button>
@@ -117,8 +122,8 @@ export const ConfirmDialog = (props: IConfirmDialogWipe) => {
             }}>
             {t("confirm")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogFooterComponent>
+      </DialogContentComponent>
+    </DialogComponent>
   );
 };

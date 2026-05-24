@@ -9,7 +9,7 @@ import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
 import BookmarkButton from '@/components/BookmarkButton';
 import BookingForm from '@/components/BookingForm';
-import LeadCaptureForm from '@/components/LeadCaptureForm';
+import PropertySidebarForms from '@/components/property/PropertySidebarForms';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import RecommendedProperties from '@/components/property/RecommendedProperties';
@@ -120,7 +120,7 @@ const PropertyPage: React.FC = () => {
                   {isShortTerm ? (
                     <BookingForm property={property} />
                   ) : (
-                    <LeadCaptureForm propertyId={property._id} propertyName={property.name} />
+                    <PropertySidebarForms propertyId={property._id} propertyName={property.name} />
                   )}
 
                   <RecommendedProperties currentPropertyId={property._id} type={property.type} />

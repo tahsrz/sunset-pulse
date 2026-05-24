@@ -37,6 +37,17 @@ import { Icon } from "@calcom/ui/components/icon";
 import { MeetingTimeInTimezones } from "@calcom/ui/components/popover";
 import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
+const TooltipAny = Tooltip as any;
+
+const DropdownAny = Dropdown as any;
+const DropdownItemAny = DropdownItem as any;
+const DropdownMenuCheckboxItemAny = DropdownMenuCheckboxItem as any;
+const DropdownMenuContentAny = DropdownMenuContent as any;
+const DropdownMenuItemAny = DropdownMenuItem as any;
+const DropdownMenuLabelAny = DropdownMenuLabel as any;
+const DropdownMenuSeparatorAny = DropdownMenuSeparator as any;
+const DropdownMenuTriggerAny = DropdownMenuTrigger as any;
+const DropdownMenuPortalAny = DropdownMenuPortal as any;
 
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
 
@@ -153,7 +164,7 @@ function BookingListItem(booking: BookingItemProps) {
     }
   }, [isSelected]);
 
-  const attendeeList = booking.attendees.map((attendee) => ({
+  const attendeeList = booking.attendees.map((attendee: any) => ({
     ...attendee,
     noShow: attendee.noShow || false,
   }));
@@ -171,7 +182,7 @@ function BookingListItem(booking: BookingItemProps) {
   const isTabRecurring = booking.listingStatus === "recurring";
   const isTabUnconfirmed = booking.listingStatus === "unconfirmed";
 
-  const userSeat = booking.seatsReferences.find((seat) => !!userEmail && seat.attendee?.email === userEmail);
+  const userSeat = booking.seatsReferences.find((seat: any) => !!userEmail && seat.attendee?.email === userEmail);
 
   const isAttendee = !!userSeat;
 
@@ -378,11 +389,11 @@ function BookingListItem(booking: BookingItemProps) {
                 </Badge>
               )}
               {isRescheduled && (
-                <Tooltip content={`${t("rescheduled_by")} ${booking.rescheduler}`}>
+                <TooltipAny content={`${t("rescheduled_by")} ${booking.rescheduler}`}>
                   <Badge variant="orange" className="ltr:mr-2 rtl:ml-2 sm:hidden">
                     {t("rescheduled")}
                   </Badge>
-                </Tooltip>
+                </TooltipAny>
               )}
               {recurringDates !== undefined && (
                 <div className="text-muted text-sm sm:hidden">
@@ -572,11 +583,11 @@ const BookingItemBadges = ({
         </Badge>
       )}
       {isRescheduled && (
-        <Tooltip content={`${t("rescheduled_by")} ${booking.rescheduler}`}>
+        <TooltipAny content={`${t("rescheduled_by")} ${booking.rescheduler}`}>
           <Badge variant="orange" className="ltr:mr-2 rtl:ml-2">
             {t("rescheduled")}
           </Badge>
-        </Tooltip>
+        </TooltipAny>
       )}
       {isRejected && !isRescheduled && booking.assignmentReasonSortedByCreatedAt.length === 0 && (
         <Badge variant="gray" className="ltr:mr-2 rtl:ml-2">
@@ -595,7 +606,7 @@ const BookingItemBadges = ({
         />
       )}
       {booking.report && (
-        <Tooltip
+        <TooltipAny
           content={
             <div className="text-xs">
               {(() => {
@@ -610,7 +621,7 @@ const BookingItemBadges = ({
           <Badge className="ltr:mr-2 rtl:ml-2" variant="red">
             {t("reported")}
           </Badge>
-        </Tooltip>
+        </TooltipAny>
       )}
       {booking.paid && !booking.payment[0] ? (
         <Badge className="ltr:mr-2 rtl:ml-2" variant="orange">
@@ -657,7 +668,7 @@ const RecurringBookingsTooltip = ({
     return (
       recurringDate >= now &&
       !booking.recurringInfo?.bookings[BookingStatus.CANCELLED]
-        .map((date) => date.toString())
+        .map((date: any) => date.toString())
         .includes(recurringDate.toString())
     );
   }).length;
@@ -670,12 +681,12 @@ const RecurringBookingsTooltip = ({
         booking.listingStatus === "cancelled") && (
         <div className="underline decoration-gray-400 decoration-dashed underline-offset-2">
           <div className="flex">
-            <Tooltip
+            <TooltipAny
               content={recurringDates.map((aDate, key) => {
                 const pastOrCancelled =
                   aDate < now ||
                   booking.recurringInfo?.bookings[BookingStatus.CANCELLED]
-                    .map((date) => date.toString())
+                    .map((date: any) => date.toString())
                     .includes(aDate.toString());
                 return (
                   <p key={key} className={classNames(pastOrCancelled && "line-through")}>
@@ -703,7 +714,7 @@ const RecurringBookingsTooltip = ({
                       })}
                 </p>
               </div>
-            </Tooltip>
+            </TooltipAny>
           </div>
         </div>
       )) ||
@@ -771,16 +782,16 @@ const Attendee = (
   } = attendeeProps;
   const { t } = useLocale();
 
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const [openDropdown, setOpenDropdown] = useState(false);
   const { copyToClipboard, isCopied } = useCopy();
 
-  const noShowMutation = trpc.viewer.loggedInViewerRouter.markNoShow.useMutation({
-    onSuccess: async (data) => {
+  const noShowMutation = (trpc as any).viewer.loggedInViewerRouter.markNoShow.useMutation({
+    onSuccess: async (data: any) => {
       showToast(data.message, "success");
       await utils.viewer.bookings.invalidate();
     },
-    onError: (err) => {
+    onError: (err: any) => {
       showToast(err.message, "error");
     },
   });
@@ -788,12 +799,12 @@ const Attendee = (
   const displayName = user?.name || name || user?.email || email;
 
   const isTeamMemberOrHost =
-    email === organizerEmail || eventTypeHosts?.some((host) => host.user?.email === email);
+    email === organizerEmail || eventTypeHosts?.some((host: any) => host.user?.email === email);
   const shouldHideEmail = hideOrganizerEmail && isTeamMemberOrHost;
 
   return (
-    <Dropdown open={openDropdown} onOpenChange={setOpenDropdown}>
-      <DropdownMenuTrigger asChild>
+    <DropdownAny open={openDropdown} onOpenChange={setOpenDropdown}>
+      <DropdownMenuTriggerAny asChild>
         <button
           data-testid="guest"
           onClick={(e) => e.stopPropagation()}
@@ -806,27 +817,27 @@ const Attendee = (
             <>{displayName}</>
           )}
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuContent>
+      </DropdownMenuTriggerAny>
+      <DropdownMenuPortalAny>
+        <DropdownMenuContentAny>
           {!isSmsCalEmail(email) && !shouldHideEmail && (
-            <DropdownMenuItem className="focus:outline-none">
-              <DropdownItem
+            <DropdownMenuItemAny className="focus:outline-none">
+              <DropdownItemAny
                 StartIcon="mail"
                 href={`mailto:${email}`}
-                onClick={(e) => {
+                onClick={(e: any) => {
                   setOpenDropdown(false);
                   e.stopPropagation();
                 }}>
                 <a href={`mailto:${email}`}>{t("email")}</a>
-              </DropdownItem>
-            </DropdownMenuItem>
+              </DropdownItemAny>
+            </DropdownMenuItemAny>
           )}
 
-          <DropdownMenuItem className="focus:outline-none">
-            <DropdownItem
+          <DropdownMenuItemAny className="focus:outline-none">
+            <DropdownItemAny
               StartIcon={isCopied ? "clipboard-check" : "clipboard"}
-              onClick={(e) => {
+              onClick={(e: any) => {
                 e.preventDefault();
                 const isEmailCopied = isSmsCalEmail(email);
                 copyToClipboard(isEmailCopied ? email : (phoneNumber ?? ""));
@@ -834,26 +845,26 @@ const Attendee = (
                 showToast(isEmailCopied ? t("email_copied") : t("phone_number_copied"), "success");
               }}>
               {!isCopied ? t("copy") : t("copied")}
-            </DropdownItem>
-          </DropdownMenuItem>
+            </DropdownItemAny>
+          </DropdownMenuItemAny>
 
           {isBookingInPast && (
-            <DropdownMenuItem className="focus:outline-none">
-              <DropdownItem
+            <DropdownMenuItemAny className="focus:outline-none">
+              <DropdownItemAny
                 data-testid={noShow ? "unmark-no-show" : "mark-no-show"}
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.preventDefault();
                   setOpenDropdown(false);
                   noShowMutation.mutate({ bookingUid, attendees: [{ noShow: !noShow, email }] });
                 }}
                 StartIcon={noShow ? "eye" : "eye-off"}>
                 {noShow ? t("unmark_as_no_show") : t("mark_as_no_show")}
-              </DropdownItem>
-            </DropdownMenuItem>
+              </DropdownItemAny>
+            </DropdownMenuItemAny>
           )}
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </Dropdown>
+        </DropdownMenuContentAny>
+      </DropdownMenuPortalAny>
+    </DropdownAny>
   );
 };
 
@@ -865,13 +876,13 @@ type GroupedAttendeeProps = {
 const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
   const { bookingUid, attendees } = groupedAttendeeProps;
   const { t } = useLocale();
-  const utils = trpc.useUtils();
-  const noShowMutation = trpc.viewer.loggedInViewerRouter.markNoShow.useMutation({
-    onSuccess: async (data) => {
+  const utils = (trpc as any).useUtils();
+  const noShowMutation = (trpc as any).viewer.loggedInViewerRouter.markNoShow.useMutation({
+    onSuccess: async (data: any) => {
       showToast(t(data.message), "success");
       await utils.viewer.bookings.invalidate();
     },
-    onError: (err) => {
+    onError: (err: any) => {
       showToast(err.message, "error");
     },
   });
@@ -904,19 +915,19 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
   const [openDropdown, setOpenDropdown] = useState(false);
 
   return (
-    <Dropdown open={openDropdown} onOpenChange={setOpenDropdown}>
-      <DropdownMenuTrigger asChild>
+    <DropdownAny open={openDropdown} onOpenChange={setOpenDropdown}>
+      <DropdownMenuTriggerAny asChild>
         <button
           data-testid="more-guests"
           onClick={(e) => e.stopPropagation()}
           className="radix-state-open:text-blue-500 transition hover:text-blue-500 focus:outline-none">
           {t("plus_more", { count: attendees.length - 1 })}
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-[300px]">
-        <DropdownMenuLabel className="text-xs font-medium uppercase">
+      </DropdownMenuTriggerAny>
+      <DropdownMenuContentAny className="min-w-[300px]">
+        <DropdownMenuLabelAny className="text-xs font-medium uppercase">
           {t("mark_as_no_show_title")}
-        </DropdownMenuLabel>
+        </DropdownMenuLabelAny>
         <form onSubmit={handleSubmit(onSubmit)}>
           {fields.slice(1).map((field, index) => {
             const attendee = attendees[index + 1];
@@ -930,11 +941,11 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
                 name={`attendees.${index + 1}.noShow`}
                 control={control}
                 render={({ field: { onChange, value } }) => (
-                  <DropdownMenuCheckboxItem
+                  <DropdownMenuCheckboxItemAny
                     checked={value || false}
                     onCheckedChange={onChange}
                     className="focus:outline-none"
-                    onClick={(e) => {
+                    onClick={(e: any) => {
                       e.preventDefault();
                       onChange(!value);
                     }}>
@@ -948,17 +959,17 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
                         <div>{field.email}</div>
                       )}
                     </div>
-                  </DropdownMenuCheckboxItem>
+                  </DropdownMenuCheckboxItemAny>
                 )}
               />
             );
           })}
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparatorAny />
           <div className="flex justify-end p-2">
             <Button
               data-testid="update-no-show"
               color="secondary"
-              onClick={(e) => {
+              onClick={(e: any) => {
                 e.preventDefault();
                 handleSubmit(onSubmit)();
               }}>
@@ -966,8 +977,8 @@ const GroupedAttendees = (groupedAttendeeProps: GroupedAttendeeProps) => {
             </Button>
           </div>
         </form>
-      </DropdownMenuContent>
-    </Dropdown>
+      </DropdownMenuContentAny>
+    </DropdownAny>
   );
 };
 
@@ -978,31 +989,31 @@ const GroupedGuests = ({ guests }: { guests: BookingAttendee[] }) => {
   const [selectedEmail, setSelectedEmail] = useState("");
 
   return (
-    <Dropdown
+    <DropdownAny
       open={openDropdown}
-      onOpenChange={(value) => {
+      onOpenChange={(value: any) => {
         setOpenDropdown(value);
         setSelectedEmail("");
       }}>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTriggerAny asChild>
         <button
           onClick={(e) => e.stopPropagation()}
           className="radix-state-open:text-blue-500 transition hover:text-blue-500 focus:outline-none">
           {t("plus_more", { count: guests.length - 1 })}
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-[300px]">
-        <DropdownMenuLabel className="text-xs font-medium uppercase">{t("guests")}</DropdownMenuLabel>
+      </DropdownMenuTriggerAny>
+      <DropdownMenuContentAny className="min-w-[300px]">
+        <DropdownMenuLabelAny className="text-xs font-medium uppercase">{t("guests")}</DropdownMenuLabelAny>
         {guests.slice(1).map((guest) => {
           const displayName = guest.user?.name || guest.name || guest.user?.email || guest.email;
           const hasName = guest.name || guest.user?.name;
 
           return (
-            <DropdownMenuItem key={guest.id}>
-              <DropdownItem
+            <DropdownMenuItemAny key={guest.id}>
+              <DropdownItemAny
                 className="pr-6 focus:outline-none"
                 StartIcon={selectedEmail === guest.email ? "circle-check" : undefined}
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.preventDefault();
                   setSelectedEmail(guest.email);
                 }}>
@@ -1016,11 +1027,11 @@ const GroupedGuests = ({ guests }: { guests: BookingAttendee[] }) => {
                     <div>{guest.email}</div>
                   )}
                 </div>
-              </DropdownItem>
-            </DropdownMenuItem>
+              </DropdownItemAny>
+            </DropdownMenuItemAny>
           );
         })}
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparatorAny />
         <div className="flex justify-end gap-2 p-2">
           <Link href={`mailto:${selectedEmail}`}>
             <Button
@@ -1044,8 +1055,8 @@ const GroupedGuests = ({ guests }: { guests: BookingAttendee[] }) => {
             {!isCopied ? t("copy") : t("copied")}
           </Button>
         </div>
-      </DropdownMenuContent>
-    </Dropdown>
+      </DropdownMenuContentAny>
+    </DropdownAny>
   );
 };
 
@@ -1089,7 +1100,7 @@ const DisplayAttendees = ({
         <>
           <div className="text-emphasis inline-block text-sm">&nbsp;{t("and")}&nbsp;</div>
           {attendees.length > 2 ? (
-            <Tooltip
+            <TooltipAny
               content={attendees.slice(1).map((attendee) => (
                 <p key={attendee.email}>
                   <Attendee
@@ -1107,7 +1118,7 @@ const DisplayAttendees = ({
               ) : (
                 <GroupedGuests guests={attendees} />
               )}
-            </Tooltip>
+            </TooltipAny>
           ) : (
             <Attendee
               {...attendees[1]}
@@ -1134,14 +1145,14 @@ const AssignmentReasonTooltip = ({
   const { t } = useLocale();
   const badgeTitle = assignmentReasonBadgeTitleMap(assignmentReason.reasonEnum);
   return (
-    <Tooltip content={<p>{assignmentReason.reasonString}</p>}>
+    <TooltipAny content={<p>{assignmentReason.reasonString}</p>}>
       <Badge
         className={classNames("ltr:mr-2 rtl:ml-2", onClick && "cursor-pointer hover:opacity-80")}
         variant="gray"
         onClick={onClick}>
         {t(badgeTitle)}
       </Badge>
-    </Tooltip>
+    </TooltipAny>
   );
 };
 

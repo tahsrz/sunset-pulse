@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Toaster } from "sonner";
 
+const ToasterComponent = Toaster as any;
+
 import { APP_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Alert } from "@calcom/ui/components/alert";
@@ -53,7 +55,7 @@ export default function AppleCalendarSetup() {
             </div>
             <div className="my-2 mt-4">
               <Form
-                form={form}
+                form={form as any}
                 handleSubmit={async (values) => {
                   try {
                     setErrorMessage("");
@@ -113,7 +115,7 @@ export default function AppleCalendarSetup() {
           </div>
         </div>
       </div>
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }

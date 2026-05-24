@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { Toaster } from "sonner";
 
+const ToasterComponent = Toaster as any;
+
 import AppNotInstalledMessage from "@calcom/app-store/_components/AppNotInstalledMessage";
 import { albyCredentialKeysSchema } from "@calcom/app-store/alby/lib/albyCredentialKeysSchema";
 import type { IAlbySetupProps } from "@calcom/app-store/alby/pages/setup/_getServerSideProps";
@@ -68,16 +70,16 @@ function AlbySetupCallback() {
 function AlbySetupPage(props: IAlbySetupProps) {
   const router = useRouter();
   const { t } = useLocale();
-  const integrations = trpc.viewer.apps.integrations.useQuery({ variant: "payment", appId: "alby" });
+  const integrations = (trpc as any).viewer.apps.integrations.useQuery({ variant: "payment", appId: "alby" });
   const [albyPaymentAppCredentials] = integrations.data?.items || [];
   const [credentialId] = albyPaymentAppCredentials?.userCredentialIds || [-1];
   const showContent = !!integrations.data && integrations.isSuccess && !!credentialId;
-  const saveKeysMutation = trpc.viewer.apps.updateAppCredentials.useMutation({
+  const saveKeysMutation = (trpc as any).viewer.apps.updateAppCredentials.useMutation({
     onSuccess: () => {
       showToast(t("keys_have_been_saved"), "success");
       router.push("/event-types");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       showToast(error.message, "error");
     },
   });
@@ -177,7 +179,7 @@ function AlbySetupPage(props: IAlbySetupProps) {
       ) : (
         <AppNotInstalledMessage appName="alby" />
       )}
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }

@@ -35,5 +35,5 @@ export const useBookingActionsStoreContext = <T,>(
     throw new Error("useBookingActionsStoreContext must be used within BookingActionsStoreProvider");
   }
 
-  return useStore(bookingActionsStoreContext, selector, equalityFn);
+  return (useStore as any)(bookingActionsStoreContext, selector, equalityFn);
 };

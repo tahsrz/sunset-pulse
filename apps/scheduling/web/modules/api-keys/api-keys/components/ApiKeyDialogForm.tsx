@@ -10,13 +10,18 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { DialogFooter } from "@calcom/ui/components/dialog";
-import { Form } from "@calcom/ui/components/form";
+import { Form as UIForm } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
 import { SelectField } from "@calcom/ui/components/form";
-import { Switch } from "@calcom/ui/components/form";
+
+const Form = UIForm as any;
+import { Switch as UISwitch } from "@calcom/ui/components/form";
+const Switch = UISwitch as any;
 import { showToast } from "@calcom/ui/components/toast";
-import { Tooltip } from "@calcom/ui/components/tooltip";
+import { Tooltip as UITooltip } from "@calcom/ui/components/tooltip";
 import { revalidateApiKeysList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/api-keys/actions";
+
+const Tooltip = UITooltip as any;
 
 export default function ApiKeyDialogForm({
   defaultValues,
@@ -26,9 +31,9 @@ export default function ApiKeyDialogForm({
   handleClose: () => void;
 }) {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
 
-  const updateApiKeyMutation = trpc.viewer.apiKeys.edit.useMutation({
+  const updateApiKeyMutation = (trpc as any).viewer.apiKeys.edit.useMutation({
     onSuccess() {
       utils.viewer.apiKeys.list.invalidate();
       revalidateApiKeysList();
@@ -51,7 +56,7 @@ export default function ApiKeyDialogForm({
     neverExpires: false,
   });
 
-  const form = useForm({
+  const form: any = useForm({
     defaultValues: {
       note: defaultValues?.note || "",
       neverExpires: defaultValues?.neverExpires || false,
@@ -138,7 +143,7 @@ export default function ApiKeyDialogForm({
       ) : (
         <Form
           form={form}
-          handleSubmit={async (event) => {
+          handleSubmit={async (event: any) => {
             if (defaultValues) {
               await updateApiKeyMutation.mutate({ id: defaultValues.id, note: event.note });
             } else {

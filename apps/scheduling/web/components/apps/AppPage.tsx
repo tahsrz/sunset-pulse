@@ -92,7 +92,7 @@ export const AppPage = ({
   const searchParams = useCompatSearchParams();
 
   const hasDescriptionItems = descriptionItems && descriptionItems.length > 0;
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
 
   const mutation = useAddAppMutation(null, {
     onSuccess: async (data) => {
@@ -160,7 +160,7 @@ export const AppPage = ({
    */
   const [appInstalledForAllTargets, setAppInstalledForAllTargets] = useState(false);
 
-  const appDbQuery = trpc.viewer.apps.appCredentialsByType.useQuery({ appType: type });
+  const appDbQuery = (trpc as any).viewer.apps.appCredentialsByType.useQuery({ appType: type });
 
   useEffect(
     function refactorMeWithoutEffect() {
@@ -169,7 +169,7 @@ export const AppPage = ({
       const credentials = data?.credentials || [];
       setExistingCredentials(credentials);
 
-      const hasPersonalInstall = credentials.some((c) => !!c.userId && !c.teamId);
+      const hasPersonalInstall = credentials.some((c: any) => !!c.userId && !c.teamId);
       const installedTeamIds = new Set<number>();
       for (const cred of credentials) {
         if (cred.teamId) installedTeamIds.add(cred.teamId);
@@ -186,12 +186,12 @@ export const AppPage = ({
     [appDbQuery.data, availableForTeams]
   );
 
-  const dependencyData = trpc.viewer.apps.queryForDependencies.useQuery(dependencies, {
+  const dependencyData = (trpc as any).viewer.apps.queryForDependencies.useQuery(dependencies, {
     enabled: !!dependencies,
   });
 
   const disableInstall = dependencyData.data
-    ? dependencyData.data.some((dependency) => !dependency.installed)
+    ? dependencyData.data.some((dependency: any) => !dependency.installed)
     : false;
 
   // const disableInstall = requiresGCal && !gCalInstalled.data;

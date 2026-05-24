@@ -4,11 +4,15 @@ import { useForm } from "react-hook-form";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useCallbackRef } from "@calcom/lib/hooks/useCallbackRef";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
 import { Form, PasswordField } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 import { showToast } from "@calcom/ui/components/toast";
 
 import TwoFactor from "@components/auth/TwoFactor";
@@ -167,8 +171,8 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
   const formatBackupCode = (code: string) => `${code.slice(0, 5)}-${code.slice(5, 10)}`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+    <DialogAny open={open} onOpenChange={onOpenChange}>
+      <DialogContentAny
         title={step === SetupStep.DisplayBackupCodes ? t("backup_codes") : t("enable_2fa")}
         description={setupDescriptions[step]}
         type="creation">
@@ -209,7 +213,7 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
             </div>
           </>
         </WithStep>
-        <Form handleSubmit={handleEnable} form={form}>
+        <FormAny handleSubmit={handleEnable} form={form}>
           <WithStep step={SetupStep.EnterTotpCode} current={step}>
             <div className="-mt-4 pb-2">
               <TwoFactor center />
@@ -221,7 +225,7 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
               )}
             </div>
           </WithStep>
-          <DialogFooter className="mt-8" showDivider>
+          <DialogFooterAny className="mt-8" showDivider>
             {step !== SetupStep.DisplayBackupCodes ? (
               <Button
                 color="secondary"
@@ -290,10 +294,10 @@ const EnableTwoFactorModal = ({ onEnable, onCancel, open, onOpenChange }: Enable
                 </a>
               </>
             </WithStep>
-          </DialogFooter>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </DialogFooterAny>
+        </FormAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

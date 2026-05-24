@@ -9,29 +9,30 @@
 
 import process from "node:process";
 import type { ParsedUrlQuery } from "node:querystring";
-import { FeatureProvider } from "@calcom/features/flags/context/provider";
+import { FeatureProvider as ContextFeatureProvider } from "@calcom/features/flags/context/provider";
 import { useFlags } from "@calcom/web/modules/feature-flags/hooks/useFlags";
 import { useViewerI18n } from "@components/I18nLanguageHandler";
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
 import { useNuqsParams } from "@lib/hooks/useNuqsParams";
 import type { WithLocaleProps } from "@lib/withLocale";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { TooltipProvider as RadixTooltipProvider } from "@radix-ui/react-tooltip";
 import { dir } from "i18next";
 import type { AppProps as NextAppProps, AppProps as NextJsAppProps } from "next/app";
 import type { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 import { appWithTranslation } from "next-i18next";
 import type { SSRConfig } from "next-i18next/dist/types/types";
-import { ThemeProvider } from "next-themes";
-import { NuqsAdapter } from "nuqs/adapters/next/pages";
+import { ThemeProvider as NextThemeProvider } from "next-themes";
+import { NuqsAdapter as NextNuqsAdapter } from "nuqs/adapters/next/pages";
 import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect } from "react";
 
-const I18nextAdapter = appWithTranslation<
-  NextJsAppProps<SSRConfig> & {
-    children: React.ReactNode;
-  }
->(({ children }) => <>{children}</>);
+const FeatureProvider = ContextFeatureProvider as any;
+const TooltipProvider = RadixTooltipProvider as any;
+const ThemeProvider = NextThemeProvider as any;
+const NuqsAdapter = NextNuqsAdapter as any;
+
+const I18nextAdapter = (appWithTranslation as any)(({ children }: any) => <>{children}</>);
 
 // Workaround for https://github.com/vercel/next.js/issues/8592
 export type AppProps = Omit<
@@ -72,7 +73,7 @@ const CustomI18nextProvider = (props: AppPropsWithChildren) => {
    **/
 
   const session = useSession();
-  const locale = session?.data?.user.locale ?? props.pageProps.newLocale;
+  const locale = (session?.data?.user as any)?.locale ?? props.pageProps.newLocale;
 
   useEffect(() => {
     try {

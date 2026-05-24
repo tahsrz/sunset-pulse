@@ -20,13 +20,13 @@ interface BookingConfirmParams {
 
 export function useBookingConfirmation(options: UseBookingConfirmationOptions = {}) {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const [rejectionDialogIsOpen, setRejectionDialogIsOpen] = useState(false);
 
   const { isRecurring = false, isTabRecurring = false, isTabUnconfirmed = false } = options;
 
-  const mutation = trpc.viewer.bookings.confirm.useMutation({
-    onSuccess: (data) => {
+  const mutation = (trpc as any).viewer.bookings.confirm.useMutation({
+    onSuccess: (data: any) => {
       if (data?.status === BookingStatus.REJECTED) {
         setRejectionDialogIsOpen(false);
         showToast(t("booking_rejection_success"), "success");
@@ -36,7 +36,7 @@ export function useBookingConfirmation(options: UseBookingConfirmationOptions = 
       utils.viewer.bookings.invalidate();
       utils.viewer.me.bookingUnconfirmedCount.invalidate();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       showToast(error.message || t("booking_confirmation_failed"), "error");
       utils.viewer.bookings.invalidate();
     },

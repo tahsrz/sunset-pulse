@@ -17,7 +17,7 @@ import { m } from "framer-motion";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { shallow } from "zustand/shallow";
-import i18nConfigration from "../../../../../i18n.json";
+import i18nConfigration from "../../../../i18n.json";
 import { EventDetails, EventMembers, EventMetaSkeleton, EventTitle } from "./event-meta";
 import { ScrollableWithGradients } from "./ScrollableWithGradients";
 

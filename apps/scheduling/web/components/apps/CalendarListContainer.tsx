@@ -36,14 +36,14 @@ type Props = {
 
 function CalendarList(props: Props): JSX.Element {
   const { t } = useLocale();
-  const query = trpc.viewer.apps.integrations.useQuery({ variant: "calendar", onlyInstalled: false });
+  const query = (trpc as any).viewer.apps.integrations.useQuery({ variant: "calendar", onlyInstalled: false });
 
   return (
     <QueryCell
       query={query}
-      success={({ data }) => (
+      success={({ data }: any) => (
         <List>
-          {data.items.map((item) => (
+          {data.items.map((item: any) => (
             <AppListCardWebWrapper
               title={item.name}
               key={item.name}
@@ -107,7 +107,7 @@ export function CalendarListContainer({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const onChanged = (): void => {
     Promise.allSettled([
       utils.viewer.apps.integrations.invalidate(
@@ -120,7 +120,7 @@ export function CalendarListContainer({
       revalidateSettingsCalendars(),
     ]);
   };
-  const mutation = trpc.viewer.calendars.setDestinationCalendar.useMutation({
+  const mutation = (trpc as any).viewer.calendars.setDestinationCalendar.useMutation({
     onSuccess: () => {
       utils.viewer.calendars.connectedCalendars.invalidate();
       revalidateSettingsCalendars();

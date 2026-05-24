@@ -1,11 +1,14 @@
 import type { Dispatch, SetStateAction } from "react";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { CancellationReasonRequirement } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import type { RecurringEvent } from "@calcom/types/Calendar";
 import { DialogContent, DialogHeader } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogHeaderAny = DialogHeader as any;
 import { showToast } from "@calcom/ui/components/toast";
 
 import CancelBooking from "@components/booking/CancelBooking";
@@ -72,7 +75,7 @@ export const CancelBookingDialog = (props: ICancelBookingDialog) => {
     requiresCancellationReason,
   } = props;
 
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
 
   // Get the first payment if it exists and map to expected format
   const payment =
@@ -91,9 +94,9 @@ export const CancelBookingDialog = (props: ICancelBookingDialog) => {
   };
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent enableOverflow data-testid="cancel-dialog">
-        <DialogHeader title={allRemainingBookings ? t("cancel_all_remaining") : t("cancel_event")} />
+    <DialogAny open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentAny enableOverflow data-testid="cancel-dialog">
+        <DialogHeaderAny title={allRemainingBookings ? t("cancel_all_remaining") : t("cancel_event")} />
         <CancelBooking
           renderContext="dialog"
           booking={{
@@ -120,7 +123,7 @@ export const CancelBookingDialog = (props: ICancelBookingDialog) => {
           showErrorAsToast={true}
           onCanceled={handleCanceled}
         />
-      </DialogContent>
-    </Dialog>
+      </DialogContentAny>
+    </DialogAny>
   );
 };

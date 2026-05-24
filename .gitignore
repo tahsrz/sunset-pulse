@@ -35,11 +35,10 @@ logs/
 
 # local env files
 .env
-.env.local
-.env.*.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.production
+.env.development
+.env.test
+.env*.local
 
 # vercel
 .vercel

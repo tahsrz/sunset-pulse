@@ -84,7 +84,7 @@ const EventTypeAppSettingsForm = forwardRef<HTMLButtonElement, EventTypeAppSetti
 
     return (
       <Form
-        form={formMethods}
+        form={formMethods as any}
         id={`eventtype-${eventType.id}`}
         handleSubmit={() => {
           const metadata = formMethods.getValues("metadata");
@@ -227,56 +227,58 @@ const ConfigureStepCardContent: FC<ConfigureStepCardProps> = (props) => {
   }
 
   return createPortal(
-    <div className="mt-8">
-      {fields.map((group, groupIndex) => (
-        <div key={group.fieldId}>
-          {eventTypeGroups[groupIndex].eventTypes.some((eventType) => eventType.selected === true) && (
-            <div className="mb-2 mt-4 flex items-center">
-              <Avatar
-                alt={t("app_icon", { app: group.slug })}
-                imageSrc={group.image} // if no image, use default avatar
-                size="md"
-                className="inline-flex justify-center"
-              />
-              <p className="text-subtle block pl-2">{group.slug}</p>
-            </div>
-          )}
-          <EventTypeGroup
-            groupIndex={groupIndex}
-            setUpdatedEventTypesStatus={setUpdatedEventTypesStatus}
-            submitRefs={submitRefs}
-            {...props}
-          />
-        </div>
-      ))}
-      <button form="outer-event-type-form" type="submit" className="hidden" ref={mainForSubmitRef}>
-        Save
-      </button>
-      <Button
-        className="text-md mt-6 w-full justify-center"
-        type="button"
-        data-testid="configure-step-save"
-        onClick={() => {
-          submitRefs.current.forEach((ref) => ref?.click());
-          setSubmit(true);
-        }}
-        loading={loading}>
-        {t("save")}
-      </Button>
-
-      <div className="flex w-full flex-row justify-center">
+    (
+      <div className="mt-8">
+        {fields.map((group, groupIndex) => (
+          <div key={group.fieldId}>
+            {eventTypeGroups[groupIndex].eventTypes.some((eventType) => eventType.selected === true) && (
+              <div className="mb-2 mt-4 flex items-center">
+                <Avatar
+                  alt={t("app_icon", { app: group.slug })}
+                  imageSrc={group.image} // if no image, use default avatar
+                  size="md"
+                  className="inline-flex justify-center"
+                />
+                <p className="text-subtle block pl-2">{group.slug}</p>
+              </div>
+            )}
+            <EventTypeGroup
+              groupIndex={groupIndex}
+              setUpdatedEventTypesStatus={setUpdatedEventTypesStatus}
+              submitRefs={submitRefs}
+              {...props}
+            />
+          </div>
+        ))}
+        <button form="outer-event-type-form" type="submit" className="hidden" ref={mainForSubmitRef}>
+          Save
+        </button>
         <Button
-          color="minimal"
-          data-testid="set-up-later"
-          onClick={(event) => {
-            event.preventDefault();
-            handleSetUpLater();
+          className="text-md mt-6 w-full justify-center"
+          type="button"
+          data-testid="configure-step-save"
+          onClick={() => {
+            submitRefs.current.forEach((ref) => ref?.click());
+            setSubmit(true);
           }}
-          className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
-          {t("set_up_later")}
+          loading={loading}>
+          {t("save")}
         </Button>
+
+        <div className="flex w-full flex-row justify-center">
+          <Button
+            color="minimal"
+            data-testid="set-up-later"
+            onClick={(event) => {
+              event.preventDefault();
+              handleSetUpLater();
+            }}
+            className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
+            {t("set_up_later")}
+          </Button>
+        </div>
       </div>
-    </div>,
+    ) as any,
     formPortalRef.current
   );
 };

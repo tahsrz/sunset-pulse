@@ -6,25 +6,25 @@ import {
   reminderSchema,
 } from "@calcom/trpc/server/routers/viewer/calendars/setDestinationReminder.schema";
 import { showToast } from "@calcom/ui/components/toast";
-import { DestinationCalendarSettings } from "../../../../packages/platform/atoms/destination-calendar/DestinationCalendar";
-import { AtomsWrapper } from "../../../../packages/platform/atoms/src/components/atoms-wrapper";
+import { DestinationCalendarSettings } from "../../../packages/platform/atoms/destination-calendar/DestinationCalendar";
+import { AtomsWrapper } from "../../../packages/platform/atoms/src/components/atoms-wrapper";
 export const DestinationCalendarSettingsWebWrapper = ({
   connectedCalendars,
 }: {
   connectedCalendars?: RouterOutputs["viewer"]["calendars"]["connectedCalendars"];
 }): JSX.Element | null => {
   const { t } = useLocale();
-  const calendars = trpc.viewer.calendars.connectedCalendars.useQuery(undefined, {
+  const calendars = (trpc as any).viewer.calendars.connectedCalendars.useQuery(undefined, {
     initialData: connectedCalendars,
   });
-  const utils = trpc.useUtils();
-  const mutation = trpc.viewer.calendars.setDestinationCalendar.useMutation({
+  const utils = (trpc as any).useUtils();
+  const mutation = (trpc as any).viewer.calendars.setDestinationCalendar.useMutation({
     onSuccess: () => {
       utils.viewer.calendars.connectedCalendars.invalidate();
     },
   });
 
-  const reminderMutation = trpc.viewer.calendars.setDestinationReminder.useMutation({
+  const reminderMutation = (trpc as any).viewer.calendars.setDestinationReminder.useMutation({
     onSuccess: () => {
       showToast(t("reminder_updated"), "success");
       utils.viewer.calendars.connectedCalendars.invalidate();

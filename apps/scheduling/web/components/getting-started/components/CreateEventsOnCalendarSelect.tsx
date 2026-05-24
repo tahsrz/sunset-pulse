@@ -10,8 +10,8 @@ interface ICreateEventsOnCalendarSelectProps {
 const CreateEventsOnCalendarSelect = (props: ICreateEventsOnCalendarSelectProps) => {
   const { calendar } = props;
   const { t } = useLocale();
-  const mutation = trpc.viewer.calendars.setDestinationCalendar.useMutation();
-  const connectedCalendarsQuery = trpc.viewer.calendars.connectedCalendars.useQuery();
+  const mutation = (trpc as any).viewer.calendars.setDestinationCalendar.useMutation();
+  const connectedCalendarsQuery = (trpc as any).viewer.calendars.connectedCalendars.useQuery();
 
   return (
     <>

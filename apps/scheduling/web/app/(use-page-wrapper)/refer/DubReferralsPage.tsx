@@ -8,6 +8,8 @@ import { IS_DUB_REFERRALS_ENABLED } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { showToast } from "@calcom/ui/components/toast";
 
+const DubEmbedComponent = DubEmbed as any;
+
 const fetchReferralsToken = async () => {
   try {
     const response = await fetch("/api/user/referrals-token");
@@ -54,7 +56,7 @@ export const DubReferralsPage = () => {
   const theme = resolvedTheme === "dark" ? "dark" : "light";
 
   return (
-    <DubEmbed
+    <DubEmbedComponent
       data="referrals"
       token={token}
       options={{
@@ -66,3 +68,4 @@ export const DubReferralsPage = () => {
     />
   );
 };
+

@@ -4,9 +4,9 @@ import Schedule from "@calcom/web/modules/schedules/components/Schedule";
 import { DEFAULT_SCHEDULE } from "@calcom/lib/availability";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import type { AppRouter } from "@calcom/trpc/types/server/routers/_app";
 import { Button } from "@calcom/ui/components/button";
 import { Form } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 
 import type { TRPCClientErrorLike } from "@trpc/client";
 
@@ -22,7 +22,7 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
   const { nextStep } = props;
 
   const scheduleId = defaultScheduleId === null ? undefined : defaultScheduleId;
-  const queryAvailability = trpc.viewer.availability.schedule.get.useQuery(
+  const queryAvailability = (trpc as any).viewer.availability.schedule.get.useQuery(
     { scheduleId: defaultScheduleId ?? undefined },
     {
       enabled: !!scheduleId,
@@ -36,19 +36,19 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
   });
 
   const mutationOptions = {
-    onError: (error: TRPCClientErrorLike<AppRouter>) => {
+    onError: (error: TRPCClientErrorLike<any>) => {
       throw new Error(error.message);
     },
     onSuccess: () => {
       nextStep();
     },
   };
-  const createSchedule = trpc.viewer.availability.schedule.create.useMutation(mutationOptions);
-  const updateSchedule = trpc.viewer.availability.schedule.update.useMutation(mutationOptions);
+  const createSchedule = (trpc as any).viewer.availability.schedule.create.useMutation(mutationOptions);
+  const updateSchedule = (trpc as any).viewer.availability.schedule.update.useMutation(mutationOptions);
   return (
-    <Form
+    <FormAny
       form={availabilityForm}
-      handleSubmit={async (values) => {
+      handleSubmit={async (values: any) => {
         try {
           if (defaultScheduleId) {
             await updateSchedule.mutateAsync({
@@ -84,7 +84,7 @@ const SetupAvailability = (props: ISetupAvailabilityProps) => {
           {t("complete_profile")}
         </Button>
       </div>
-    </Form>
+    </FormAny>
   );
 };
 

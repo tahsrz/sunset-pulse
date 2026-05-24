@@ -4,6 +4,7 @@ import { isSupportedCountry } from "libphonenumber-js";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
+const PhoneInputAny = PhoneInput as any;
 import "react-phone-input-2/lib/style.css";
 
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
@@ -62,7 +63,7 @@ function BasePhoneInput({
   }
 
   return (
-    <PhoneInput
+    <PhoneInputAny
       {...rest}
       value={value ? value.trim().replace(/^\+?/, "+") : undefined}
       enableSearch
@@ -114,7 +115,7 @@ function BasePhoneInputWeb({
   const defaultCountry = useDefaultCountry();
 
   return (
-    <PhoneInput
+    <PhoneInputAny
       {...rest}
       value={value ? value.trim().replace(/^\+?/, "+") : undefined}
       country={value ? undefined : defaultCountry}
@@ -158,7 +159,7 @@ function BasePhoneInputWeb({
 const useDefaultCountry = () => {
   const defaultPhoneCountryFromStore = useBookerStore((state) => state.defaultPhoneCountry);
   const [defaultCountry, setDefaultCountry] = useState<CountryCode>(defaultPhoneCountryFromStore || "us");
-  const query = trpc.viewer.public.countryCode.useQuery(undefined, {
+  const query = (trpc as any).viewer.public.countryCode.useQuery(undefined, {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: false,

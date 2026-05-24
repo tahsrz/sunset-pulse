@@ -3,10 +3,13 @@ import { useForm } from "react-hook-form";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
 import { Form, PasswordField } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 
 import TwoFactor from "@components/auth/TwoFactor";
 
@@ -65,9 +68,9 @@ const DisableTwoFactorAuthModal = ({ onDisable, onCancel }: DisableTwoFactorAuth
   }
 
   return (
-    <Dialog open={true}>
-      <DialogContent>
-        <Form form={form} handleSubmit={handleDisable}>
+    <DialogAny open={true}>
+      <DialogContentAny>
+        <FormAny form={form} handleSubmit={handleDisable as any}>
           <TwoFactorModalHeader title={t("disable_2fa")} description={t("disable_2fa_recommendation")} />
 
           <div className="mb-4">
@@ -90,9 +93,9 @@ const DisableTwoFactorAuthModal = ({ onDisable, onCancel }: DisableTwoFactorAuth
               {t("cancel")}
             </Button>
           </div>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </FormAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

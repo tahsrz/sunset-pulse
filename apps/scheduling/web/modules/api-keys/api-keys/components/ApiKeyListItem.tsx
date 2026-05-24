@@ -31,19 +31,19 @@ const ApiKeyListItem = ({
   onEditClick: () => void;
 }) => {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isExpired = apiKey?.expiresAt ? apiKey.expiresAt < new Date() : null;
   const neverExpires = apiKey?.expiresAt === null;
 
-  const deleteApiKey = trpc.viewer.apiKeys.delete.useMutation({
+  const deleteApiKey = (trpc as any).viewer.apiKeys.delete.useMutation({
     async onSuccess() {
       await utils.viewer.apiKeys.list.invalidate();
       revalidateApiKeysList();
       showToast(t("api_key_deleted"), "success");
     },
-    onError(err) {
+    onError(err: any) {
       console.error(err);
       showToast(t("something_went_wrong"), "error");
     },

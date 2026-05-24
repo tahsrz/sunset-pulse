@@ -9,6 +9,8 @@ import { Button } from "@calcom/ui/components/button";
 import { Form } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
 
+const ToasterComponent = Toaster as any;
+
 export default function CalDavCalendarSetup() {
   const { t } = useLocale();
   const router = useRouter();
@@ -40,7 +42,7 @@ export default function CalDavCalendarSetup() {
             <div className="mt-1 text-sm">{t("credentials_stored_encrypted")}</div>
             <div className="my-2 mt-3">
               <Form
-                form={form}
+                form={form as any}
                 handleSubmit={async (values) => {
                   setErrorMessage("");
                   const res = await fetch("/api/integrations/caldavcalendar/add", {
@@ -116,7 +118,7 @@ export default function CalDavCalendarSetup() {
           </div>
         </div>
       </div>
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }

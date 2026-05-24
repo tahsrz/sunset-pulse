@@ -50,12 +50,12 @@ const UserSettings = (props: IUserSettingsProps) => {
     telemetry.event(telemetryEventTypes.onboardingStarted);
   }, [telemetry]);*/
 
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const onSuccess = async () => {
     await utils.viewer.me.invalidate();
     nextStep();
   };
-  const mutation = trpc.viewer.me.updateProfile.useMutation({
+  const mutation = (trpc as any).viewer.me.updateProfile.useMutation({
     onSuccess: onSuccess,
   });
 

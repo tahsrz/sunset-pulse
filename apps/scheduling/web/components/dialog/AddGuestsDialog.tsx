@@ -3,11 +3,15 @@ import { useState } from "react";
 import { z } from "zod";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { MultiEmail } from "@calcom/ui/components/address";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogHeaderAny = DialogHeader as any;
 import { showToast } from "@calcom/ui/components/toast";
 import { TriangleAlertIcon, UserPlusIcon } from "@coss/ui/icons";
 
@@ -24,18 +28,18 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
     return uniqueEmails.size === emails.length;
   });
   const { isOpenDialog, setIsOpenDialog, bookingId } = props;
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const [multiEmailValue, setMultiEmailValue] = useState<string[]>([""]);
   const [isInvalidEmail, setIsInvalidEmail] = useState(false);
 
-  const addGuestsMutation = trpc.viewer.bookings.addGuests.useMutation({
+  const addGuestsMutation = (trpc as any).viewer.bookings.addGuests.useMutation({
     onSuccess: async () => {
       showToast(t("guests_added"), "success");
       setIsOpenDialog(false);
       setMultiEmailValue([""]);
       utils.viewer.bookings.invalidate();
     },
-    onError: (err) => {
+    onError: (err: any) => {
       const message = `${err.data?.code}: ${t(err.message)}`;
       showToast(message || t("unable_to_add_guests"), "error");
     },
@@ -55,14 +59,14 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
   };
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent enableOverflow>
+    <DialogAny open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentAny enableOverflow>
         <div className="flex flex-row md:space-x-3">
           <div className="bg-subtle hidden h-10 w-10 shrink-0 justify-center rounded-full md:flex">
             <UserPlusIcon className="m-auto h-6 w-6" />
           </div>
           <div className="w-full md:pt-1">
-            <DialogHeader title={t("additional_guests")} />
+            <DialogHeaderAny title={t("additional_guests")} />
             <div className="bg-default">
               <MultiEmail
                 label={t("add_emails")}
@@ -84,7 +88,7 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
             )}
           </div>
         </div>
-        <DialogFooter showDivider className="mt-8">
+        <DialogFooterAny showDivider className="mt-8">
           <Button
             onClick={() => {
               setMultiEmailValue([""]);
@@ -98,8 +102,8 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
           <Button data-testid="add_members" loading={addGuestsMutation.isPending} onClick={handleAdd}>
             {t("add")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogFooterAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };

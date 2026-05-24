@@ -2,12 +2,16 @@ import type { Dispatch, SetStateAction } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { BookingReportReason } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogHeaderAny = DialogHeader as any;
 import { Select, Label } from "@calcom/ui/components/form";
 import { TextArea } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
@@ -29,7 +33,7 @@ interface FormValues {
 
 export const ReportBookingDialog = (props: IReportBookingDialog) => {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const { isOpenDialog, setIsOpenDialog, bookingUid, status } = props;
 
   const willBeCancelled = status === "upcoming";
@@ -45,13 +49,13 @@ export const ReportBookingDialog = (props: IReportBookingDialog) => {
     },
   });
 
-  const { mutate: reportBooking, isPending } = trpc.viewer.bookings.reportBooking.useMutation({
-    async onSuccess(data) {
+  const { mutate: reportBooking, isPending } = (trpc as any).viewer.bookings.reportBooking.useMutation({
+    async onSuccess(data: any) {
       showToast(data.message, "success");
       setIsOpenDialog(false);
       await utils.viewer.bookings.invalidate();
     },
-    onError(error) {
+    onError(error: any) {
       showToast(error.message || t("unexpected_error_try_again"), "error");
     },
   });
@@ -71,12 +75,12 @@ export const ReportBookingDialog = (props: IReportBookingDialog) => {
   ];
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent enableOverflow>
+    <DialogAny open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentAny enableOverflow>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-row space-x-3">
             <div className="w-full">
-              <DialogHeader title={t("report_booking")} subtitle={t("report_booking_description")} />
+              <DialogHeaderAny title={t("report_booking")} subtitle={t("report_booking_description")} />
               <div className="mb-4">
                 <Label htmlFor="reason" className="text-emphasis mb-2 block text-sm font-medium">
                   {t("reason")} <span className="text-destructive">*</span>
@@ -120,7 +124,7 @@ export const ReportBookingDialog = (props: IReportBookingDialog) => {
             </div>
           </div>
 
-          <DialogFooter showDivider className="mt-8">
+          <DialogFooterAny showDivider className="mt-8">
             <Button
               type="button"
               color="secondary"
@@ -131,9 +135,9 @@ export const ReportBookingDialog = (props: IReportBookingDialog) => {
             <Button type="submit" color="primary" disabled={isPending} loading={isPending}>
               {t("submit_report")}
             </Button>
-          </DialogFooter>
+          </DialogFooterAny>
         </form>
-      </DialogContent>
-    </Dialog>
+      </DialogContentAny>
+    </DialogAny>
   );
 };

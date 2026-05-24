@@ -2,9 +2,13 @@ import type { Dispatch, SetStateAction } from "react";
 import { useState, useEffect } from "react";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogClose } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogCloseAny = DialogClose as any;
 import { TextAreaField } from "@calcom/ui/components/form";
 
 interface RejectionReasonDialogProps {
@@ -34,8 +38,8 @@ export function RejectionReasonDialog({
   };
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent
+    <DialogAny open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentAny
         title={t("rejection_reason_title")}
         description={t("rejection_reason_description")}
         enableOverflow>
@@ -53,13 +57,13 @@ export function RejectionReasonDialog({
           />
         </div>
 
-        <DialogFooter noSticky>
-          <DialogClose color="secondary" />
+        <DialogFooterAny noSticky>
+          <DialogCloseAny color="secondary" />
           <Button disabled={isPending} data-testid="rejection-confirm" onClick={handleConfirm}>
             {t("rejection_confirmation")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogFooterAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 }

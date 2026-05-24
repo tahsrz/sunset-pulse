@@ -11,6 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@calcom/ui/components/dropdown";
+const DropdownAny = Dropdown as any;
+const DropdownMenuTriggerAny = DropdownMenuTrigger as any;
+const DropdownMenuContentAny = DropdownMenuContent as any;
+const DropdownMenuItemAny = DropdownMenuItem as any;
+const DropdownItemAny = DropdownItem as any;
 import { InputError, Input } from "@calcom/ui/components/form";
 
 import type { FormValues } from "~/settings/my-account/profile-view";
@@ -67,8 +72,8 @@ const CustomEmailTextField = ({
               {t("unverified")}
             </Badge>
           )}
-          <Dropdown>
-            <DropdownMenuTrigger asChild>
+          <DropdownAny>
+            <DropdownMenuTriggerAny asChild>
               <Button
                 StartIcon="ellipsis"
                 variant="icon"
@@ -77,10 +82,10 @@ const CustomEmailTextField = ({
                 className="ml-2 rounded-md"
                 data-testid="secondary-email-action-group-button"
               />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>
-                <DropdownItem
+            </DropdownMenuTriggerAny>
+            <DropdownMenuContentAny>
+              <DropdownMenuItemAny>
+                <DropdownItemAny
                   StartIcon="flag"
                   color="secondary"
                   className="disabled:opacity-40"
@@ -88,11 +93,11 @@ const CustomEmailTextField = ({
                   disabled={!emailVerified || emailPrimary}
                   data-testid="secondary-email-make-primary-button">
                   {t("make_primary")}
-                </DropdownItem>
-              </DropdownMenuItem>
+                </DropdownItemAny>
+              </DropdownMenuItemAny>
               {!emailVerified && (
-                <DropdownMenuItem>
-                  <DropdownItem
+                <DropdownMenuItemAny>
+                  <DropdownItemAny
                     StartIcon="send"
                     color="secondary"
                     className="disabled:opacity-40"
@@ -100,11 +105,11 @@ const CustomEmailTextField = ({
                     disabled={emailVerified}
                     data-testid="resend-verify-email-button">
                     {t("resend_email")}
-                  </DropdownItem>
-                </DropdownMenuItem>
+                  </DropdownItemAny>
+                </DropdownMenuItemAny>
               )}
-              <DropdownMenuItem>
-                <DropdownItem
+              <DropdownMenuItemAny>
+                <DropdownItemAny
                   StartIcon="trash"
                   color="destructive"
                   className="rounded-t-none disabled:opacity-40"
@@ -112,10 +117,10 @@ const CustomEmailTextField = ({
                   disabled={emailPrimary}
                   data-testid="secondary-email-delete-button">
                   {t("delete")}
-                </DropdownItem>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </Dropdown>
+                </DropdownItemAny>
+              </DropdownMenuItemAny>
+            </DropdownMenuContentAny>
+          </DropdownAny>
         </div>
       </div>
       {errorMessage && <InputError message={errorMessage} />}

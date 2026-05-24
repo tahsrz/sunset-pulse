@@ -15,6 +15,15 @@ import {
 } from "@calcom/ui/components/dropdown";
 import { showToast } from "@calcom/ui/components/toast";
 
+const DropdownComponent = Dropdown as any;
+const DropdownItemComponent = DropdownItem as any;
+const DropdownMenuContentComponent = DropdownMenuContent as any;
+const DropdownMenuLabelComponent = DropdownMenuLabel as any;
+const DropdownMenuItemComponent = DropdownMenuItem as any;
+const DropdownMenuTriggerComponent = DropdownMenuTrigger as any;
+const DialogComponent = Dialog as any;
+const ConfirmationDialogContentComponent = ConfirmationDialogContent as any;
+
 type Credentials = RouterOutputs["viewer"]["apps"]["appCredentialsByType"]["credentials"];
 
 interface Props {
@@ -24,7 +33,7 @@ interface Props {
 
 export function MultiDisconnectIntegration({ credentials, onSuccess }: Props) {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const [credentialToDelete, setCredentialToDelete] = useState<{
     id: number;
     teamId: number | null;
@@ -32,7 +41,7 @@ export function MultiDisconnectIntegration({ credentials, onSuccess }: Props) {
   } | null>(null);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
 
-  const mutation = trpc.viewer.credentials.delete.useMutation({
+  const mutation = (trpc as any).viewer.credentials.delete.useMutation({
     onSuccess: () => {
       showToast(t("app_removed_successfully"), "success");
       onSuccess?.();
@@ -59,17 +68,17 @@ export function MultiDisconnectIntegration({ credentials, onSuccess }: Props) {
 
   return (
     <>
-      <Dropdown>
-        <DropdownMenuTrigger asChild>
+      <DropdownComponent>
+        <DropdownMenuTriggerComponent asChild>
           <Button color="secondary">{t("disconnect")}</Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuLabel>
+        </DropdownMenuTriggerComponent>
+        <DropdownMenuContentComponent>
+          <DropdownMenuLabelComponent>
             <div className="w-48 text-left text-xs">{t("disconnect_app_from")}</div>
-          </DropdownMenuLabel>
-          {credentials.map((cred) => (
-            <DropdownMenuItem key={cred.id}>
-              <DropdownItem
+          </DropdownMenuLabelComponent>
+          {credentials.map((cred: any) => (
+            <DropdownMenuItemComponent key={cred.id}>
+              <DropdownItemComponent
                 type="button"
                 color="destructive"
                 className="hover:bg-subtle hover:text-emphasis w-full border-0"
@@ -85,14 +94,14 @@ export function MultiDisconnectIntegration({ credentials, onSuccess }: Props) {
                 <div className="flex flex-col text-left">
                   <span>{getUserDisplayName(cred.user) || t("unnamed")}</span>
                 </div>
-              </DropdownItem>
-            </DropdownMenuItem>
+              </DropdownItemComponent>
+            </DropdownMenuItemComponent>
           ))}
-        </DropdownMenuContent>
-      </Dropdown>
+        </DropdownMenuContentComponent>
+      </DropdownComponent>
 
-      <Dialog open={confirmationDialogOpen} onOpenChange={setConfirmationDialogOpen}>
-        <ConfirmationDialogContent
+      <DialogComponent open={confirmationDialogOpen} onOpenChange={setConfirmationDialogOpen}>
+        <ConfirmationDialogContentComponent
           variety="danger"
           title={t("remove_app")}
           confirmBtnText={t("yes_remove_app")}
@@ -107,8 +116,8 @@ export function MultiDisconnectIntegration({ credentials, onSuccess }: Props) {
           <p className="mt-5">
             {t("are_you_sure_you_want_to_remove_this_app_from")} {credentialToDelete?.name || t("unnamed")}?
           </p>
-        </ConfirmationDialogContent>
-      </Dialog>
+        </ConfirmationDialogContentComponent>
+      </DialogComponent>
     </>
   );
 }

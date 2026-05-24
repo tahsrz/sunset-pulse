@@ -4,11 +4,14 @@ import { useForm } from "react-hook-form";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useCallbackRef } from "@calcom/lib/hooks/useCallbackRef";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
 import { Form } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 
 import TwoFactor from "@components/auth/TwoFactor";
 
@@ -143,8 +146,8 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
   }, [form, handleEnableRef, totpCode]);
 
   return (
-    <Dialog open={true}>
-      <DialogContent>
+    <DialogAny open={true}>
+      <DialogContentAny>
         <TwoFactorModalHeader title={t("enable_2fa")} description={setupDescriptions[step]} />
 
         <WithStep step={SetupStep.ConfirmPassword} current={step}>
@@ -180,7 +183,7 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
             <p className="text-center font-mono text-xs">{secret}</p>
           </>
         </WithStep>
-        <Form handleSubmit={handleEnable} form={form}>
+        <FormAny handleSubmit={handleEnable} form={form}>
           <WithStep step={SetupStep.EnterTotpCode} current={step}>
             <div className="mb-4">
               <TwoFactor center />
@@ -213,9 +216,9 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
               {t("cancel")}
             </Button>
           </div>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </FormAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

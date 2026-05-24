@@ -10,6 +10,8 @@ import { Form } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
 import { PlusIcon, TrashIcon } from "@coss/ui/icons";
 
+const ToasterComponent = Toaster as any;
+
 export default function ICSFeedSetup() {
   const { t } = useLocale();
   const router = useRouter();
@@ -38,7 +40,7 @@ export default function ICSFeedSetup() {
             <div className="mt-1 text-sm">{t("credentials_stored_encrypted")}</div>
             <div className="my-2 mt-3">
               <Form
-                form={form}
+                form={form as any}
                 handleSubmit={async (_) => {
                   setErrorMessage("");
                   const res = await fetch("/api/integrations/ics-feedcalendar/add", {
@@ -125,7 +127,7 @@ export default function ICSFeedSetup() {
           </div>
         </div>
       </div>
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }

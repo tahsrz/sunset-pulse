@@ -7,6 +7,7 @@
     "apps/api/v2",
     "packages/*",
     "packages/app-store/*",
+    "packages/embeds/*",
     "packages/features/*",
     "packages/platform/*",
     "packages/platform/examples/*"
@@ -14,6 +15,8 @@
   "scripts": {
     "pulse:dev": "npm run dev --workspace=apps/pulse",
     "pulse:build": "npm run build --workspace=apps/pulse",
+    "scheduling:dev": "npm run dev --workspace=apps/scheduling/web",
+    "scheduling:build": "npm run build --workspace=apps/scheduling/web",
     "test:unit": "npm run test:unit --workspace=apps/pulse",
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
@@ -22,6 +25,10 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^15.12.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.60.3",
+    "@rollup/rollup-linux-x64-musl": "4.60.3"
   },
   "overrides": {
     "react": "^19.0.0",

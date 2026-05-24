@@ -25,7 +25,7 @@ const ConnectedVideoStepInner = ({
   setAnyInstalledVideoApps: Dispatch<SetStateAction<boolean>>;
   user: RouterOutputs["viewer"]["me"]["get"];
 }) => {
-  const { data: queryConnectedVideoApps, isPending } = trpc.viewer.apps.integrations.useQuery({
+  const { data: queryConnectedVideoApps, isPending } = (trpc as any).viewer.apps.integrations.useQuery({
     variant: "conferencing",
     onlyInstalled: false,
 
@@ -41,7 +41,7 @@ const ConnectedVideoStepInner = ({
   });
 
   const hasAnyInstalledVideoApps = queryConnectedVideoApps?.items.some(
-    (item) => item.userCredentialIds.length > 0
+    (item: any) => item.userCredentialIds.length > 0
   );
 
   useEffect(() => {
@@ -61,7 +61,7 @@ const ConnectedVideoStepInner = ({
   return (
     <List className="bg-default  border-subtle divide-subtle scroll-bar mx-1 max-h-[45vh] divide-y overflow-y-scroll! rounded-md border p-0 sm:mx-0">
       {queryConnectedVideoApps?.items &&
-        queryConnectedVideoApps?.items.map((item) => {
+        queryConnectedVideoApps?.items.map((item: any) => {
           if (item.slug === "daily-video") return null; // we dont want to show daily here as it is installed by default
           return (
             <li key={item.name}>

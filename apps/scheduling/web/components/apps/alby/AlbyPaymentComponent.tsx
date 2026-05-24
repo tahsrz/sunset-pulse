@@ -13,6 +13,8 @@ import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 import z from "zod";
 
+const QRCodeComponent = QRCode as any;
+
 type PaymentPageProps = {
   payment: {
     id: number;
@@ -127,7 +129,7 @@ export const AlbyPaymentComponent = (props: IAlbyPaymentComponentProps) => {
               <Link
                 href={`lightning:${paymentRequest}`}
                 className="inline-flex items-center justify-center rounded-2xl border border-transparent bg-white p-2 font-medium text-black shadow-sm hover:brightness-95 focus:outline-none focus:ring-offset-2">
-                <QRCode size={192} value={paymentRequest} />
+                <QRCodeComponent size={192} value={paymentRequest} />
               </Link>
 
               <Button
@@ -168,7 +170,7 @@ function PaymentChecker(props: PaymentCheckerProps) {
   // TODO: subscribe rather than polling
   const searchParams = useCompatSearchParams();
   const bookingSuccessRedirect = useBookingSuccessRedirect();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const { t } = useLocale();
 
   useEffect(() => {

@@ -6,7 +6,7 @@ import localFont from "next/font/local";
 import { IconSprites } from "@calcom/ui/components/icon";
 import type { IconName } from "@calcom/ui/components/icon";
 
-import { lucideIconList } from "../../../../packages/ui/components/icon/icon-list.mjs";
+import { lucideIconList } from "../../../packages/ui/components/icon/icon-list.mjs";
 import { IconGrid } from "./IconGrid";
 
 export const dynamic = "force-static";

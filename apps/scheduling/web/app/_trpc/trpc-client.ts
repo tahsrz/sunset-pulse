@@ -38,7 +38,7 @@ const url =
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : `${process.env.NEXT_PUBLIC_WEBAPP_URL}/api/trpc`;
 
-export const trpcClient = trpc.createClient({
+export const trpcClient = (trpc as any).createClient({
   links: [
     // adds pretty logs to your console in development and logs errors in production
     loggerLink({

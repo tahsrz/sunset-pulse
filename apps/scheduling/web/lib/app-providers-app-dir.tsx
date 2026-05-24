@@ -1,19 +1,24 @@
-import { FeatureProvider } from "@calcom/features/flags/context/provider";
+import { FeatureProvider as ContextFeatureProvider } from "@calcom/features/flags/context/provider";
 import { useFlags } from "@calcom/web/modules/feature-flags/hooks/useFlags";
 import type { PageWrapperProps } from "@components/PageWrapperAppDir";
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
 import useIsThemeSupported from "@lib/hooks/useIsThemeSupported";
 import { useNuqsParams } from "@lib/hooks/useNuqsParams";
 import type { WithLocaleProps } from "@lib/withLocale";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { TooltipProvider as RadixTooltipProvider } from "@radix-ui/react-tooltip";
 import type { AppProps as NextAppProps } from "next/app";
 import type { ReadonlyURLSearchParams } from "next/navigation";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { Session } from "next-auth";
 import { useSession } from "next-auth/react";
-import { ThemeProvider } from "next-themes";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { ThemeProvider as NextThemeProvider } from "next-themes";
+import { NuqsAdapter as NextNuqsAdapter } from "nuqs/adapters/next/app";
 import { getThemeProviderProps } from "./getThemeProviderProps";
+
+const FeatureProvider = ContextFeatureProvider as any;
+const TooltipProvider = RadixTooltipProvider as any;
+const NuqsAdapter = NextNuqsAdapter as any;
+const ThemeProvider = NextThemeProvider as any;
 
 // Workaround for https://github.com/vercel/next.js/issues/8592
 export type AppProps = Omit<

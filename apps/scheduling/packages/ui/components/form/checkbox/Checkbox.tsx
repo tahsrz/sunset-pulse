@@ -1,0 +1,126 @@
+import classNames from "@calcom/ui/classNames";
+import { CheckIcon } from "@coss/ui/icons";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { useId } from "@radix-ui/react-id";
+import type { InputHTMLAttributes } from "react";
+import React, { forwardRef } from "react";
+
+type Props = InputHTMLAttributes<HTMLInputElement> & {
+  label?: React.ReactNode;
+  description?: string;
+  descriptionAsLabel?: boolean;
+  informationIconText?: string;
+  error?: boolean;
+  className?: string;
+  descriptionClassName?: string;
+  /**
+   * Accepts this special property instead of allowing description itself to be accidentally used in dangerous way.
+   */
+  descriptionAsSafeHtml?: string;
+};
+
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={classNames(
+      "border-default data-[state=checked]:bg-brand-default data-[state=checked]:text-brand peer h-4 w-4 shrink-0 rounded-[4px] border ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+      className
+    )}
+    {...props}>
+    <CheckboxPrimitive.Indicator className={classNames("flex items-center justify-center text-current")}>
+      <CheckIcon className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+
+const CheckboxField = forwardRef<HTMLInputElement, Props>(
+  ({ label, description, error, disabled, descriptionAsSafeHtml, ...rest }, ref) => {
+    const descriptionAsLabel = !label || rest.descriptionAsLabel;
+    const id = useId();
+    return (
+      <div className="block items-center sm:flex">
+        {label && (
+          <div className="min-w-48 mb-4 sm:mb-0">
+            {React.createElement(
+              descriptionAsLabel ? "div" : "label",
+              {
+                className: classNames("flex text-sm font-medium text-emphasis"),
+                ...(!descriptionAsLabel
+                  ? {
+                      htmlFor: rest.id ? rest.id : id,
+                    }
+                  : {}),
+              },
+              label
+            )}
+          </div>
+        )}
+        <div className="w-full">
+          <div className="hover:bg-subtle relative flex w-fit items-center rounded-md p-1">
+            {React.createElement(
+              descriptionAsLabel ? "label" : "div",
+              {
+                className: classNames(
+                  "relative flex items-start",
+                  !error && descriptionAsLabel ? "text-emphasis" : "text-emphasis",
+                  error && "text-error"
+                ),
+              },
+              <>
+                <div className="flex h-5 items-center">
+                  <input
+                    {...rest}
+                    ref={ref}
+                    type="checkbox"
+                    disabled={disabled}
+                    id={rest.id ? rest.id : id}
+                    className={classNames(
+                      "text-emphasis focus:ring-emphasis dark:text-muted border-default bg-default focus:bg-default active:bg-default checked:border-transparent! checked:bg-gray-800! h-4 w-4 rounded-[4px] transition focus:outline-none focus:ring-0 ltr:mr-2 rtl:ml-2",
+                      !error && disabled
+                        ? "cursor-not-allowed bg-gray-300 checked:bg-gray-300 hover:bg-gray-300 hover:checked:bg-gray-300"
+                        : "hover:bg-subtle hover:border-emphasis",
+                      error &&
+                        "border-error hover:bg-error hover:border-error checked:bg-darkerror checked:hover:border-error checked:hover:bg-darkerror",
+                      rest.className
+                    )}
+                  />
+                </div>
+                {descriptionAsSafeHtml ? (
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is sanitized via descriptionAsSafeHtml prop
+                  <span
+                    className={classNames(
+                      "text-default ml-2 text-sm [&_a]:text-blue-500",
+                      !label && "font-medium",
+                      rest.descriptionClassName
+                    )}
+                    dangerouslySetInnerHTML={{
+                      __html: descriptionAsSafeHtml,
+                    }}
+                  />
+                ) : (
+                  <span
+                    className={classNames(
+                      "text-default ml-2 text-sm",
+                      !label && "font-medium",
+                      rest.descriptionClassName
+                    )}>
+                    {description}
+                  </span>
+                )}
+              </>
+            )}
+            {/* {informationIconText && <InfoBadge content={informationIconText}></InfoBadge>} */}
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+CheckboxField.displayName = "CheckboxField";
+
+export { Checkbox, CheckboxField };

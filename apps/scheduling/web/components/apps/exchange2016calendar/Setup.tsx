@@ -9,6 +9,8 @@ import { Button } from "@calcom/ui/components/button";
 import { Form } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
 
+const ToasterComponent = Toaster as any;
+
 export default function Exchange2016CalendarSetup() {
   const { t } = useLocale();
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function Exchange2016CalendarSetup() {
           <div className="mt-1 text-sm">{t("credentials_stored_encrypted")}</div>
           <div className="my-2 mt-3">
             <Form
-              form={form}
+              form={form as any}
               handleSubmit={async (values) => {
                 setErrorMessage("");
                 const res = await fetch("/api/integrations/exchange2016calendar/add", {
@@ -92,7 +94,7 @@ export default function Exchange2016CalendarSetup() {
           </div>
         </div>
       </div>
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }

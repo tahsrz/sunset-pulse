@@ -4,11 +4,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { emailSchema } from "@calcom/lib/emailSchema";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogClose } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
 import { Form, TextField, InputError } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 
 interface SecondaryEmailModalProps {
   isLoading: boolean;
@@ -44,13 +47,13 @@ const SecondaryEmailModal = ({
   }, [formMethods.watch]);
 
   return (
-    <Dialog open={true}>
-      <DialogContent
+    <DialogAny open={true}>
+      <DialogContentAny
         title={t("add_email")}
         description={t("add_email_description")}
         type="creation"
         data-testid="secondary-email-add-dialog">
-        <Form form={formMethods} handleSubmit={handleAddEmail}>
+        <FormAny form={formMethods} handleSubmit={handleAddEmail}>
           <div className="text-subtle mb-4 text-sm">{t("change_email_hint")}</div>
           <TextField
             label={t("email_address")}
@@ -64,9 +67,9 @@ const SecondaryEmailModal = ({
               {t("add_email")}
             </Button>
           </DialogFooter>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </FormAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

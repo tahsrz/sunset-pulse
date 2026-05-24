@@ -57,7 +57,7 @@ const TourRequestForm: React.FC<TourRequestFormProps> = ({ propertyId, propertyN
         `Needs to sell first: ${formData.sellingFirst}`
       ].filter(Boolean).join('\n');
 
-      const res = await fetch('/api/tours', {
+      const res = await fetch('/api/scheduling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

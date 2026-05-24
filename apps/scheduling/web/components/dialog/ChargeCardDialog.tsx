@@ -2,10 +2,15 @@ import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogHeader, DialogClose } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogHeaderAny = DialogHeader as any;
+const DialogCloseAny = DialogClose as any;
 import { showToast } from "@calcom/ui/components/toast";
 import { CreditCardIcon, TriangleAlertIcon } from "@coss/ui/icons";
 
@@ -19,7 +24,7 @@ interface IRescheduleDialog {
 
 export const ChargeCardDialog = (props: IRescheduleDialog) => {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const { isOpenDialog, setIsOpenDialog, bookingId } = props;
   const [chargeError, setChargeError] = useState<string | null>(null);
 
@@ -39,14 +44,14 @@ export const ChargeCardDialog = (props: IRescheduleDialog) => {
   };
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent>
+    <DialogAny open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentAny>
         <div className="flex flex-row space-x-3">
           <div className=" bg-subtle flex h-10 w-10 shrink-0 justify-center rounded-full">
             <CreditCardIcon className="m-auto h-6 w-6" />
           </div>
           <div className="pt-1">
-            <DialogHeader title={t("charge_card")} />
+            <DialogHeaderAny title={t("charge_card")} />
             <p>{t("charge_card_dialog_body", currencyStringParams)}</p>
 
             {chargeError && (
@@ -56,8 +61,8 @@ export const ChargeCardDialog = (props: IRescheduleDialog) => {
               </div>
             )}
 
-            <DialogFooter>
-              <DialogClose />
+            <DialogFooterAny>
+              <DialogCloseAny />
               <Button
                 data-testid="send_request"
                 disabled={chargeCardMutation.isPending}
@@ -69,10 +74,10 @@ export const ChargeCardDialog = (props: IRescheduleDialog) => {
                 }}>
                 {t("charge_attendee", currencyStringParams)}
               </Button>
-            </DialogFooter>
+            </DialogFooterAny>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DialogContentAny>
+    </DialogAny>
   );
 };

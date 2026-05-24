@@ -37,6 +37,21 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 -- 4. RLS POLICIES
 
+-- Helper to check if a user is a realtor (SECURITY DEFINER to bypass RLS recursion on profiles)
+CREATE OR REPLACE FUNCTION public.is_realtor(user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = user_id AND role = 'realtor'
+    );
+END;
+$$;
+
 -- Profiles: Users can view their own profile, Realtors can view all profiles
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles
@@ -44,7 +59,7 @@ CREATE POLICY "Users can view own profile" ON public.profiles
 DROP POLICY IF EXISTS "Realtors can view all profiles" ON public.profiles;
 CREATE POLICY "Realtors can view all profiles" ON public.profiles
     FOR SELECT USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor')
+        public.is_realtor(auth.uid())
     );
 -- Leads: Consumers can see leads matching their email, Realtors see all
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
@@ -56,18 +71,18 @@ CREATE POLICY "Consumers see own leads" ON public.leads
 DROP POLICY IF EXISTS "Realtors see all leads" ON public.leads;
 CREATE POLICY "Realtors see all leads" ON public.leads
     FOR ALL USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor')
+        public.is_realtor(auth.uid())
     );
 -- Workflows/Sprints/Tasks: Realtor Only
 ALTER TABLE public.workflows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sprints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Realtor full access to workflows" ON public.workflows;
-CREATE POLICY "Realtor full access to workflows" ON public.workflows FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+CREATE POLICY "Realtor full access to workflows" ON public.workflows FOR ALL USING (public.is_realtor(auth.uid()));
 DROP POLICY IF EXISTS "Realtor full access to sprints" ON public.sprints;
-CREATE POLICY "Realtor full access to sprints" ON public.sprints FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+CREATE POLICY "Realtor full access to sprints" ON public.sprints FOR ALL USING (public.is_realtor(auth.uid()));
 DROP POLICY IF EXISTS "Realtor full access to tasks" ON public.tasks;
-CREATE POLICY "Realtor full access to tasks" ON public.tasks FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor'));
+CREATE POLICY "Realtor full access to tasks" ON public.tasks FOR ALL USING (public.is_realtor(auth.uid()));
 -- Collections: Users see own, Realtors see all (for recon)
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users manage own collections" ON public.collections;
@@ -76,7 +91,7 @@ CREATE POLICY "Users manage own collections" ON public.collections
 DROP POLICY IF EXISTS "Realtors view all collections" ON public.collections;
 CREATE POLICY "Realtors view all collections" ON public.collections
     FOR SELECT USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor')
+        public.is_realtor(auth.uid())
     );
 -- Comments: Users see all on property, but manage own. Realtors full access.
 ALTER TABLE public.property_comments ENABLE ROW LEVEL SECURITY;
@@ -89,12 +104,12 @@ CREATE POLICY "Users manage own comments" ON public.property_comments
 DROP POLICY IF EXISTS "Realtors manage all comments" ON public.property_comments;
 CREATE POLICY "Realtors manage all comments" ON public.property_comments
     FOR ALL USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor')
+        public.is_realtor(auth.uid())
     );
 -- Intelligence Events: Realtor Only
 ALTER TABLE public.intelligence_events ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Realtors view intelligence events" ON public.intelligence_events;
 CREATE POLICY "Realtors view intelligence events" ON public.intelligence_events
     FOR SELECT USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'realtor')
+        public.is_realtor(auth.uid())
     );

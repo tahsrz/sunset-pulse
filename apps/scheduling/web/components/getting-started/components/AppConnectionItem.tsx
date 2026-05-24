@@ -28,12 +28,12 @@ interface IAppConnectionItem {
 const AppConnectionItem = (props: IAppConnectionItem) => {
   const { title, logo, type, installed, isDefault, defaultInstall, slug } = props;
   const { t } = useLocale();
-  const utils = trpc.useUtils();
-  const setDefaultConferencingApp = trpc.viewer.apps.setDefaultConferencingApp.useMutation({
+  const utils = (trpc as any).useUtils();
+  const setDefaultConferencingApp = (trpc as any).viewer.apps.setDefaultConferencingApp.useMutation({
     onSuccess: async () => {
       await utils.viewer.me.invalidate();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       showToast(t("something_went_wrong"), "error");
       console.error(error);
     },

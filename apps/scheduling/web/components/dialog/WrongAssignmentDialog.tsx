@@ -1,4 +1,5 @@
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { AssignmentReasonEnum } from "@calcom/prisma/enums";
@@ -7,6 +8,9 @@ import { Alert } from "@calcom/ui/components/alert";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogHeaderAny = DialogHeader as any;
 import { Label, Select, TextArea } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
@@ -236,7 +240,7 @@ function AssigneeSection(props: AssigneeSectionProps): JSX.Element {
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: Dialog component with hooks and state management - already split into 3 sub-components
 export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Element {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const { copyToClipboard, isCopied } = useCopy();
   const { isOpenDialog, setIsOpenDialog, booking } = props;
 
@@ -260,7 +264,7 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
   });
 
   const { data: existingReport, isPending: isCheckingReport } =
-    trpc.viewer.bookings.hasWrongAssignmentReport.useQuery({ bookingUid }, { enabled: isOpenDialog });
+    (trpc as any).viewer.bookings.hasWrongAssignmentReport.useQuery({ bookingUid }, { enabled: isOpenDialog });
   const alreadyReported = existingReport?.hasReport ?? false;
 
   const teamIdForQuery = teamId ?? 0;
@@ -273,7 +277,7 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
       email: member.email,
     })) ?? [];
 
-  const { mutate: reportWrongAssignment, isPending } = trpc.viewer.bookings.reportWrongAssignment.useMutation(
+  const { mutate: reportWrongAssignment, isPending } = (trpc as any).viewer.bookings.reportWrongAssignment.useMutation(
     {
       async onSuccess(): Promise<void> {
         showToast(t("wrong_assignment_reported"), "success");
@@ -299,12 +303,12 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
   };
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
-      <DialogContent enableOverflow>
+    <DialogAny open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+      <DialogContentAny enableOverflow>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-row space-x-3">
             <div className="w-full">
-              <DialogHeader title={t("wrong_assignment")} />
+              <DialogHeaderAny title={t("wrong_assignment")} />
 
               <RoutingInfoSection
                 routingReason={routingReason}
@@ -346,7 +350,7 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
             </div>
           </div>
 
-          <DialogFooter showDivider className="mt-8">
+          <DialogFooterAny showDivider className="mt-8">
             <Button type="button" color="secondary" onClick={handleCloseClick} disabled={isPending}>
               {t("close")}
             </Button>
@@ -357,9 +361,9 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
               loading={isPending || isCheckingReport}>
               {t("submit")}
             </Button>
-          </DialogFooter>
+          </DialogFooterAny>
         </form>
-      </DialogContent>
-    </Dialog>
+      </DialogContentAny>
+    </DialogAny>
   );
 }

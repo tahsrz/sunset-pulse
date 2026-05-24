@@ -277,9 +277,9 @@ const useTabs = ({
   permissions?: SettingsPermissions;
 }) => {
   const session = useSession();
-  const { data: user } = trpc.viewer.me.get.useQuery({ includePasswordAdded: true });
+  const { data: user } = (trpc as any).viewer.me.get.useQuery({ includePasswordAdded: true });
   const orgBranding = null as { id?: number; slug?: string; name?: string; logoUrl?: string | null } | null;
-  const isAdmin = session.data?.user.role === UserPermissionRole.ADMIN;
+  const isAdmin = (session?.data?.user as any)?.role === UserPermissionRole.ADMIN;
 
   const processTabsMemod = useMemo(() => {
     const processedTabs = getTabs(orgBranding).map((tab) => {

@@ -3,14 +3,15 @@ import { sanitizeAuthNext } from '@/lib/core/auth_redirect';
 import { signInWithEmail, signInWithGoogle } from './actions';
 
 type LoginPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     redirect?: string;
     next?: string;
-  };
+  }>;
 };
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
-  const next = sanitizeAuthNext(searchParams?.redirect || searchParams?.next || '/');
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedParams = await searchParams;
+  const next = sanitizeAuthNext(resolvedParams?.redirect || resolvedParams?.next || '/');
 
   return (
     <LoginForm

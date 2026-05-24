@@ -11,15 +11,15 @@ import { TRPCError } from "@trpc/server";
 import { getHTTPStatusCodeFromError } from "@trpc/server/http";
 
 type Handler<T extends NextResponse | Response = NextResponse> = (
-  req: NextRequest,
+  req: any,
   { params }: { params: Promise<Params> }
 ) => Promise<T>;
 
 export const defaultResponderForAppDir = <T extends NextResponse | Response = NextResponse>(
-  handler: Handler<T>,
+  handler: any,
   endpointRoute?: string
 ) => {
-  return async (req: NextRequest, { params }: { params: Promise<Params> }) => {
+  return async (req: any, { params }: { params: Promise<Params> }) => {
     let ok = false;
     try {
       performance.mark("Start");

@@ -28,7 +28,7 @@ import WebShell from "@calcom/web/modules/shell/Shell";
 import { LoaderIcon } from "@coss/ui/icons";
 import { Suspense, useMemo, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { Shell as PlatformShell } from "../../../../../packages/platform/atoms/src/components/ui/shell";
+import { Shell as PlatformShell } from "../../../../packages/platform/atoms/src/components/ui/shell";
 import { DeleteDialog } from "./dialogs/DeleteDialog";
 
 type Props = {

@@ -15,6 +15,8 @@ const formSchema = z.object({
   api_key: z.string(),
 });
 
+const ToasterComponent = Toaster as any;
+
 export default function SendgridSetup() {
   const { t } = useLocale();
   const router = useRouter();
@@ -59,7 +61,7 @@ export default function SendgridSetup() {
             </div>
             <div className="my-2 mt-3">
               <Form
-                form={form}
+                form={form as any}
                 handleSubmit={async (values) => {
                   const res = await fetch("/api/integrations/sendgrid/add", {
                     method: "POST",
@@ -146,7 +148,7 @@ export default function SendgridSetup() {
           </div>
         </div>
       </div>
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }

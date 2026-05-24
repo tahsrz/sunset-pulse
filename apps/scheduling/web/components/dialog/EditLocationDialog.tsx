@@ -15,6 +15,7 @@ import {
   OrganizerDefaultConferencingAppType,
 } from "@calcom/app-store/locations";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import PhoneInput from "@calcom/web/components/phone-input";
 import type { LocationOption } from "@calcom/features/form/components/LocationSelect";
 import LocationSelect from "@calcom/features/form/components/LocationSelect";
@@ -22,7 +23,11 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
+const DialogFooterAny = DialogFooter as any;
+const DialogHeaderAny = DialogHeader as any;
 import { Form, Input } from "@calcom/ui/components/form";
+const FormAny = Form as any;
 import { MapPinIcon } from "@coss/ui/icons";
 
 import { QueryCell } from "../../lib/QueryCell";
@@ -92,7 +97,7 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
     teamId,
   } = props;
   const { t } = useLocale();
-  const locationsQuery = trpc.viewer.apps.locationOptions.useQuery({ teamId });
+  const locationsQuery = (trpc as any).viewer.apps.locationOptions.useQuery({ teamId });
 
   useEffect(() => {
     if (selection) {
@@ -221,11 +226,11 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
   })();
 
   return (
-    <Dialog open={isOpenDialog} onOpenChange={(open) => setShowLocationModal(open)}>
-      <DialogContent>
-        <Form
+    <DialogAny open={isOpenDialog} onOpenChange={(open: any) => setShowLocationModal(open)}>
+      <DialogContentAny>
+        <FormAny
           form={locationFormMethods}
-          handleSubmit={async (values) => {
+          handleSubmit={async (values: any) => {
             const { locationType: newLocationType } = values;
             let newLocation;
             // For the locations that require organizer to type-in some values, we need the value
@@ -261,7 +266,7 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
               <MapPinIcon className="m-auto h-6 w-6" />
             </div>
             <div className="w-full md:pt-1">
-              <DialogHeader title={t("edit_location")} />
+              <DialogHeaderAny title={t("edit_location")} />
 
               <p className="text-emphasis mb-2 ml-1 mt-6 text-sm font-bold">{t("current_location")}:</p>
               <p className="text-emphasis mb-2 ml-1 break-all text-sm">
@@ -269,7 +274,7 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
               </p>
               <QueryCell
                 query={locationsQuery}
-                success={({ data }) => {
+                success={({ data }: any) => {
                   if (!data.length) return null;
                   let locationOptions = [...data].map((option) => {
                     if (teamId) {
@@ -278,7 +283,7 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
                     }
                     return {
                       ...option,
-                      options: option.options.filter((o) => o.value !== OrganizerDefaultConferencingAppType),
+                      options: option.options.filter((o: any) => o.value !== OrganizerDefaultConferencingAppType),
                     };
                   });
 
@@ -325,7 +330,7 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
               {selectedLocation && SelectedLocationInput}
             </div>
           </div>
-          <DialogFooter showDivider className="mt-8">
+          <DialogFooterAny showDivider className="mt-8">
             <Button
               onClick={() => {
                 setShowLocationModal(false);
@@ -340,10 +345,10 @@ export const EditLocationDialog = (props: ISetLocationDialog) => {
             <Button data-testid="update-location" type="submit" disabled={isLocationUpdating}>
               {t("update")}
             </Button>
-          </DialogFooter>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </DialogFooterAny>
+        </FormAny>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

@@ -72,6 +72,49 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - Queued terminal intents persist to `/.orchestrator/terminal-intents.json` by default. Set `ORCHESTRATOR_COMMAND_QUEUE_PATH` to move the local queue store.
 - `/api/telegram/webhook` accepts Telegram updates, authorizes `AUTHORIZED_USER_ID` or `TELEGRAM_OPERATOR_CHAT_ID`, and routes `/commands`, `/status`, `/sessions`, `/tah`, `/places`, `/check`, `/cancel`, `/pack_master`, and guarded `!command` terminal intents.
 
+## 🗓️ Sunset Gas and Grill - Shift Scheduling & SMS Automation
+
+Sunset Pulse features an advanced scheduling integration for **Sunset Gas and Grill** (open Monday–Saturday 5:00 AM – 10:00 PM, Sunday 6:00 AM – 9:00 PM). It bridges Stripe payments, Cal.com scheduled shift profiles, and Twilio SMS dispatches to keep the culinary and cash operations running smoothly.
+
+### 🔄 The Operational Lifecycle (How it Syncs)
+
+```mermaid
+graph TD
+    A[Manager/Staff books 'Grill Shift' or 'Register Shift' on Cal.com] --> B[Booking written to PostgreSQL as ACCEPTED]
+    B --> C{Trigger Event}
+    
+    C -->|1. Real-time Burger Order Paid| D[Stripe Webhook checkout.session.completed received]
+    D --> E[Query today's active shift bookings in PostgreSQL]
+    E --> F[Extract assigned staff member's verified phone number]
+    F --> G[Dispatch Twilio SMS with order items: 'Fire up the grill!']
+    
+    C -->|2. Sunday Night 8:00 PM Roster| H[Trigger POST /api/scheduling/dispatch]
+    H --> I[Query upcoming Mon-Sun accepted bookings in PostgreSQL]
+    I --> J[Compile shifts chronologically per employee]
+    J --> K[SMS personalized weekly roster to each employee]
+    J --> L[SMS Master Daily Roster to Manager with unassigned alerts]
+```
+
+### 1. Real-time Order Webhook Routing
+- **File:** [route.ts](file:///C:/Users/Taz/SunsetPulse/apps/pulse/app/api/webhook/stripe/route.ts)
+- **Mechanism:** On receiving a `checkout.session.completed` event containing metadata `orderType = grill_food`, the webhook queries PostgreSQL for accepted bookings matching the custom event type slugs `grill-shift` and `register-shift` active for the current calendar day.
+- **Failover:** If no staff member is scheduled for a role, the SMS order alert falls back programmatically to the `FALLBACK_NOTIFICATION_PHONE` (the manager) to ensure no orders are missed.
+
+### 2. Sunday Night Weekly Schedule SMS Dispatcher
+- **File:** [route.ts](file:///C:/Users/Taz/SunsetPulse/apps/pulse/app/api/scheduling/dispatch/route.ts)
+- **Endpoint:** `POST /api/scheduling/dispatch` (Secure: Authorized via custom header `Authorization: Bearer <SCHEDULER_DISPATCH_SECRET>`).
+- **Date Math:** Automatically isolates the upcoming Monday `00:00:00.000` to Sunday `23:59:59.999` local timezone boundaries. Supports customizable ranges via `weekOffset` payload parameters.
+- **Master Digest:** Compiles a complete day-by-day weekly status roster and dispatches it directly to the manager. If a shift is empty for any day, it explicitly tags it with `⚠️ UNASSIGNED` as a proactive operational alert.
+
+### 3. Cal.com Database Integration Setup
+To align your scheduling database correctly, verify that:
+1. Two booking **Event Types** are configured with slugs matching exactly:
+   * **Grill Shift:** `grill-shift`
+   * **Register Shift:** `register-shift`
+2. Employee profiles have their primary mobile phone numbers entered and verified under their account profile so they map to the `verifiedNumbers` array in the database schema.
+
+---
+
 ## Data Architecture & Caching Strategy
 
 To support lightning-fast user interactions and fluid AI-agent background loops, Sunset Pulse leverages a sophisticated multi-layered caching and isolation strategy built directly on top of Next.js 14's App Router:

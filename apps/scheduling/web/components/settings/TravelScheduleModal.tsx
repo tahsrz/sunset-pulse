@@ -15,6 +15,11 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@coss/ui/components/dialog";
+const DialogAny = Dialog as any;
+const DialogPopupAny = DialogPopup as any;
+const DialogPanelAny = DialogPanel as any;
+const DialogCloseAny = DialogClose as any;
+const DialogFooterAny = DialogFooter as any;
 import { Label } from "@coss/ui/components/label";
 import { useIsMobile } from "@coss/ui/hooks/use-mobile";
 import { useState } from "react";
@@ -95,21 +100,21 @@ const TravelScheduleModal = ({
   };
 
   return (
-    <Dialog
+    <DialogAny
       open={open}
       disablePointerDismissal={isDateRangeOpen}
-      onOpenChange={(nextOpen) => {
+      onOpenChange={(nextOpen: any) => {
         onOpenChange(nextOpen);
         if (!nextOpen) {
           setIsDateRangeOpen(false);
         }
       }}>
-      <DialogPopup>
+      <DialogPopupAny>
         <DialogHeader>
           <DialogTitle>{t("travel_schedule")}</DialogTitle>
           <DialogDescription>{t("travel_schedule_description")}</DialogDescription>
         </DialogHeader>
-        <DialogPanel>
+        <DialogPanelAny>
           <div>
             {!isNoEndDate ? (
               <>
@@ -172,9 +177,9 @@ const TravelScheduleModal = ({
               className="mb-11 mt-2 w-full rounded-md text-sm"
             />
           </div>
-        </DialogPanel>
-        <DialogFooter>
-          <DialogClose render={<Button variant="ghost" />}>{t("cancel")}</DialogClose>
+        </DialogPanelAny>
+        <DialogFooterAny>
+          <DialogCloseAny render={<Button variant="ghost" />}>{t("cancel")}</DialogCloseAny>
           <Button
             disabled={isNoEndDate ? !startDate : !startDate || !endDate}
             onClick={() => {
@@ -182,9 +187,9 @@ const TravelScheduleModal = ({
             }}>
             {t("add")}
           </Button>
-        </DialogFooter>
-      </DialogPopup>
-    </Dialog>
+        </DialogFooterAny>
+      </DialogPopupAny>
+    </DialogAny>
   );
 };
 

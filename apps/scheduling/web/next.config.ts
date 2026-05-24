@@ -1,6 +1,7 @@
 import { withBotId } from "botid/next/config";
 import { config as dotenvConfig } from "dotenv";
 import type { NextConfig } from "next";
+import path from "node:path";
 import type { RouteHas } from "next/dist/lib/load-custom-routes";
 import { withAxiom } from "next-axiom";
 import i18nConfig from "@calcom/i18n/next-i18next.config";
@@ -256,7 +257,9 @@ const nextConfig = (phase: string): NextConfig => {
     images: {
       unoptimized: true,
     },
-    turbopack: {},
+    turbopack: {
+      root: path.resolve(__dirname, "../../.."),
+    },
     async rewrites() {
       const { orgSlug } = nextJsOrgRewriteConfig;
       const beforeFiles = [
@@ -660,6 +663,22 @@ const nextConfig = (phase: string): NextConfig => {
       }
 
       return redirects;
+    },
+    webpack: (config, { isServer, webpack }) => {
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource: any) => {
+          resource.request = resource.request.replace(/^node:/, "");
+        })
+      );
+
+      if (!isServer) {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          path: false,
+          process: false,
+        };
+      }
+      return config;
     },
   };
 };

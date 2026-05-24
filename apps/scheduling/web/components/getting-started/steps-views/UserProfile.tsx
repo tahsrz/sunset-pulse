@@ -33,16 +33,16 @@ const UserProfile = ({ user }: UserProfileProps) => {
     defaultValues: { bio: user?.bio || "" },
   });
 
-  const { data: eventTypes } = trpc.viewer.eventTypes.list.useQuery();
+  const { data: eventTypes } = (trpc as any).viewer.eventTypes.list.useQuery();
   const [imageSrc, setImageSrc] = useState<string>(user?.avatar || "");
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const router = useRouter();
-  const createEventType = trpc.viewer.eventTypesHeavy.create.useMutation();
+  const createEventType = (trpc as any).viewer.eventTypesHeavy.create.useMutation();
   const [firstRender, setFirstRender] = useState(true);
 
   // Create a separate mutation for avatar updates
-  const avatarMutation = trpc.viewer.me.updateProfile.useMutation({
-    onSuccess: async (data) => {
+  const avatarMutation = (trpc as any).viewer.me.updateProfile.useMutation({
+    onSuccess: async (data: any) => {
       showToast(t("your_user_profile_updated_successfully"), "success");
       setImageSrc(data.avatarUrl ?? "");
     },
@@ -52,7 +52,7 @@ const UserProfile = ({ user }: UserProfileProps) => {
   });
 
   // Original mutation remains for onboarding completion
-  const mutation = trpc.viewer.me.updateProfile.useMutation({
+  const mutation = (trpc as any).viewer.me.updateProfile.useMutation({
     onSuccess: async () => {
       try {
         if (eventTypes?.length === 0) {

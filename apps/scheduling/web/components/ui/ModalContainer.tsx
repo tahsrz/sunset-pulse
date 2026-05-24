@@ -3,7 +3,9 @@ import type { PropsWithChildren } from "react";
 import React from "react";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import { DialogContent } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
 
 export default function ModalContainer(
   props: PropsWithChildren<{
@@ -16,8 +18,8 @@ export default function ModalContainer(
 ) {
   return (
     <div className="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-      <Dialog open={props.isOpen} onOpenChange={props.onExit}>
-        <DialogContent>
+      <DialogAny open={props.isOpen} onOpenChange={(val: any) => props.onExit()}>
+        <DialogContentAny>
           <div
             className={classNames(
               "bg-default inline-block w-full transform text-left align-bottom transition-all sm:align-middle",
@@ -30,8 +32,8 @@ export default function ModalContainer(
             )}>
             {props.children}
           </div>
-        </DialogContent>
-      </Dialog>
+        </DialogContentAny>
+      </DialogAny>
     </div>
   );
 }

@@ -52,7 +52,7 @@ const billingService = {
   },
 };
 
-const handler: CustomNextApiHandler = async (body, usernameStatus, query) => {
+const handler: any = async (body: any, usernameStatus: any, query: any) => {
   const {
     email: _email,
     password,

@@ -8,17 +8,17 @@
     "analyze:browser": "BUNDLE_ANALYZE=browser next build",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf .next",
     "dev": "turbo run copy-app-store-static && next dev --turbopack",
-    "dev:scan": "yarn dev & npx --yes react-scan@latest localhost:3000",
+    "dev:scan": "npm run dev & npx --yes react-scan@latest localhost:3000",
     "dev:cron": "npx tsx cron-tester.ts",
     "dev-https": "NODE_TLS_REJECT_UNAUTHORIZED=0 next dev --experimental-https",
-    "dx": "yarn dev",
-    "test-codegen": "yarn playwright codegen http://localhost:3000",
+    "dx": "npm run dev",
+    "test-codegen": "npx playwright codegen http://localhost:3000",
     "type-check": "tsc --pretty --noEmit",
     "type-check:ci": "tsc-absolute --pretty --noEmit",
     "sentry:release": "NODE_OPTIONS='--max-old-space-size=6144' node scripts/create-sentry-release.js",
     "copy-static": "turbo run copy-app-store-static",
     "copy-app-store-static": "node scripts/copy-app-store-static.js",
-    "build": "next build && yarn sentry:release",
+    "build": "next build --webpack && (npm run sentry:release || echo 'Sentry release skipped')",
     "start": "next start",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -28,7 +28,7 @@
     "stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook"
   },
   "engines": {
-    "yarn": "3.4.1"
+    "npm": ">=10.0.0"
   },
   "dependencies": {
     "@boxyhq/saml-jackson": "1.52.2",

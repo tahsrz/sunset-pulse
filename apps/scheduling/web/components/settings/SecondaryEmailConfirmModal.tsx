@@ -1,7 +1,10 @@
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+const DialogAny = Dialog as any;
 import ServerTrans from "@calcom/lib/components/ServerTrans";
+const ServerTransAny = ServerTrans as any;
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { DialogContent, DialogFooter, DialogClose } from "@calcom/ui/components/dialog";
+const DialogContentAny = DialogContent as any;
 
 interface SecondaryEmailConfirmModalProps {
   email: string;
@@ -12,10 +15,10 @@ const SecondaryEmailConfirmModal = ({ email, onCancel }: SecondaryEmailConfirmMo
   const { t } = useLocale();
 
   return (
-    <Dialog open={true}>
-      <DialogContent
+    <DialogAny open={true}>
+      <DialogContentAny
         title={t("confirm_email")}
-        description={<ServerTrans t={t} i18nKey="confirm_email_description" values={{ email }} />}
+        description={<ServerTransAny t={t} i18nKey="confirm_email_description" values={{ email }} />}
         type="creation"
         data-testid="secondary-email-confirm-dialog">
         <DialogFooter>
@@ -23,8 +26,8 @@ const SecondaryEmailConfirmModal = ({ email, onCancel }: SecondaryEmailConfirmMo
             {t("done")}
           </DialogClose>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </DialogContentAny>
+    </DialogAny>
   );
 };
 

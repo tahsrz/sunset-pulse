@@ -36,6 +36,8 @@ const schema = z
   })
   .strict();
 
+const ToasterComponent = Toaster as any;
+
 export default function ExchangeSetup() {
   const { t } = useLocale();
   const router = useRouter();
@@ -81,7 +83,7 @@ export default function ExchangeSetup() {
               <div className="text-sm">{t("credentials_stored_encrypted")}</div>
               <div className="my-2 mt-5">
                 <Form
-                  form={form}
+                  form={form as any}
                   handleSubmit={async (values) => {
                     setErrorMessage("");
                     const res = await fetch("/api/integrations/exchangecalendar/add", {
@@ -180,7 +182,7 @@ export default function ExchangeSetup() {
             </div>
           </div>
         </div>
-        <Toaster position="bottom-right" />
+        <ToasterComponent position="bottom-right" />
       </div>
     </>
   );

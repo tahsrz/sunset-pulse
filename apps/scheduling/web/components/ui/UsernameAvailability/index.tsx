@@ -1,6 +1,5 @@
 import { IS_SELF_HOSTED, WEBSITE_URL } from "@calcom/lib/constants";
 import { trpc } from "@calcom/trpc/react";
-import type { AppRouter } from "@calcom/trpc/types/server/routers/_app";
 import useRouterQuery from "@lib/hooks/useRouterQuery";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import dynamic from "next/dynamic";
@@ -11,7 +10,7 @@ import { Controller, useForm } from "react-hook-form";
 
 interface UsernameAvailabilityFieldProps {
   onSuccessMutation?: () => void;
-  onErrorMutation?: (error: TRPCClientErrorLike<AppRouter>) => void;
+  onErrorMutation?: (error: TRPCClientErrorLike<any>) => void;
   disabled?: boolean;
 }
 
@@ -47,7 +46,7 @@ export const UsernameAvailabilityField = ({
   disabled,
 }: UsernameAvailabilityFieldProps) => {
   const searchParams = useSearchParams();
-  const [user] = trpc.viewer.me.get.useSuspenseQuery();
+  const [user] = (trpc as any).viewer.me.get.useSuspenseQuery();
   const [currentUsernameState, setCurrentUsernameState] = useState(user.username || "");
   const { username: usernameFromQuery, setQuery: setUsernameFromQuery } = useRouterQuery("username");
   const { username: currentUsername, setQuery: setCurrentUsername } =

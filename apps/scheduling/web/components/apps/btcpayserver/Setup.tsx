@@ -7,10 +7,14 @@ import { useForm } from "react-hook-form";
 import { Toaster } from "sonner";
 import { z } from "zod";
 
+const ToasterComponent = Toaster as any;
+
 import AppNotInstalledMessage from "@calcom/app-store/_components/AppNotInstalledMessage";
 import KeyField from "@calcom/app-store/btcpayserver/components/KeyInput";
 import { btcpayCredentialKeysSchema } from "@calcom/app-store/btcpayserver/lib/btcpayCredentialKeysSchema";
 import type { IBTCPaySetupProps } from "@calcom/app-store/btcpayserver/pages/setup/_getServerSideProps";
+
+const KeyFieldComponent = KeyField as any;
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -92,21 +96,21 @@ function BTCPaySetupPage(props: IBTCPaySetupProps) {
     apiKey: z.string().trim(),
     webhookSecret: z.string().optional(),
   });
-  const integrations = trpc.viewer.apps.integrations.useQuery({ variant: "payment", appId: "btcpayserver" });
+  const integrations = (trpc as any).viewer.apps.integrations.useQuery({ variant: "payment", appId: "btcpayserver" });
   const [btcPayPaymentAppCredentials] = integrations.data?.items || [];
   const [credentialId] = btcPayPaymentAppCredentials?.userCredentialIds || [-1];
   const showContent = !!integrations.data && integrations.isSuccess && !!credentialId;
 
-  const saveKeysMutation = trpc.viewer.apps.updateAppCredentials.useMutation({
+  const saveKeysMutation = (trpc as any).viewer.apps.updateAppCredentials.useMutation({
     onSuccess: () => {
       showToast(t("keys_have_been_saved"), "success");
       router.push("/event-types");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       showToast(error.message, "error");
     },
   });
-  const deleteMutation = trpc.viewer.credentials.delete.useMutation({
+  const deleteMutation = (trpc as any).viewer.credentials.delete.useMutation({
     onSuccess: () => {
       router.push("/apps/btcpayserver");
     },
@@ -257,7 +261,7 @@ function BTCPaySetupPage(props: IBTCPaySetupProps) {
                 </div>
                 <div className="w-full stack-y-4 p-4 md:p-5">
                   <div className="w-full">
-                    <KeyField
+                    <KeyFieldComponent
                       {...register("serverUrl", { required: true })}
                       id="serverUrl"
                       name="serverUrl"
@@ -275,7 +279,7 @@ function BTCPaySetupPage(props: IBTCPaySetupProps) {
                   </div>
 
                   <div className="w-full">
-                    <KeyField
+                    <KeyFieldComponent
                       {...register("storeId", { required: true })}
                       id="storeId"
                       name="storeId"
@@ -293,7 +297,7 @@ function BTCPaySetupPage(props: IBTCPaySetupProps) {
                   </div>
 
                   <div className="w-full">
-                    <KeyField
+                    <KeyFieldComponent
                       {...register("apiKey", { required: true })}
                       id="apiKey"
                       name="apiKey"
@@ -345,7 +349,7 @@ function BTCPaySetupPage(props: IBTCPaySetupProps) {
         ) : (
           <AppNotInstalledMessage appName="btcpayserver" />
         )}
-        <Toaster position="bottom-right" />
+        <ToasterComponent position="bottom-right" />
       </div>
     </>
   );

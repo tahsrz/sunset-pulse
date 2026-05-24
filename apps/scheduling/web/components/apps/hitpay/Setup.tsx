@@ -68,6 +68,10 @@ function HitPaySetupCallback() {
   );
 }
 
+const ToasterComponent = Toaster as any;
+const KeyFieldComponent = KeyField as any;
+const SwitchComponent = Switch as any;
+
 function HitPaySetupPage(props: IHitPaySetupProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [updatable, setUpdatable] = useState<boolean>(false);
@@ -100,22 +104,22 @@ function HitPaySetupPage(props: IHitPaySetupProps) {
       }),
   });
 
-  const integrations = trpc.viewer.apps.integrations.useQuery({ variant: "payment", appId: "hitpay" });
+  const integrations = (trpc as any).viewer.apps.integrations.useQuery({ variant: "payment", appId: "hitpay" });
   const [HitPayPaymentAppCredentials] = integrations.data?.items || [];
   const [credentialId] = HitPayPaymentAppCredentials?.userCredentialIds || [-1];
   const showContent = !!integrations.data && integrations.isSuccess && !!credentialId;
 
-  const saveKeysMutation = trpc.viewer.apps.updateAppCredentials.useMutation({
+  const saveKeysMutation = (trpc as any).viewer.apps.updateAppCredentials.useMutation({
     onSuccess: () => {
       showToast(t("keys_have_been_saved"), "success");
       router.push("/event-types");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       showToast(error.message, "error");
     },
   });
 
-  const deleteMutation = trpc.viewer.credentials.delete.useMutation({
+  const deleteMutation = (trpc as any).viewer.credentials.delete.useMutation({
     onSuccess: () => {
       router.push("/apps/hitpay");
     },
@@ -214,8 +218,8 @@ function HitPaySetupPage(props: IHitPaySetupProps) {
                 <div className="border-subtle flex items-center justify-between border-b p-4 md:p-5">
                   <h2 className="text-2xl font-semibold">Account Information</h2>
                   <div className="ml-auto flex items-center">
-                    <Switch
-                      onCheckedChange={(value) => SetIsSandbox(value as boolean)}
+                    <SwitchComponent
+                      onCheckedChange={(value: any) => SetIsSandbox(value as boolean)}
                       checked={isSandbox}
                       label="Sandbox"
                     />
@@ -223,7 +227,7 @@ function HitPaySetupPage(props: IHitPaySetupProps) {
                 </div>
                 <div className="w-full stack-y-4 p-4 md:p-5">
                   <div className="w-full">
-                    <KeyField
+                    <KeyFieldComponent
                       {...register("apiKey", {
                         required: true,
                       })}
@@ -243,7 +247,7 @@ function HitPaySetupPage(props: IHitPaySetupProps) {
                     )}
                   </div>
                   <div className="w-full">
-                    <KeyField
+                    <KeyFieldComponent
                       {...register("saltKey", {
                         required: true,
                       })}
@@ -295,7 +299,7 @@ function HitPaySetupPage(props: IHitPaySetupProps) {
         ) : (
           <AppNotInstalledMessage appName="hitpay" />
         )}
-        <Toaster position="bottom-right" />
+        <ToasterComponent position="bottom-right" />
       </div>
     </>
   );

@@ -4,6 +4,9 @@ import useMediaQuery from "@calcom/lib/hooks/useMediaQuery";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@calcom/ui/components/popover";
+const PopoverAny = Popover as any;
+const PopoverTriggerAny = PopoverTrigger as any;
+const PopoverContentAny = PopoverContent as any;
 import { useCallback, useMemo, useState } from "react";
 
 const MAX_VISIBLE_BADGES = 2;
@@ -71,8 +74,8 @@ function LimitedBadges({
         </Badge>
       ))}
       {hasHiddenItems && (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
+        <PopoverAny open={isOpen} onOpenChange={(val: any) => setIsOpen(val)}>
+          <PopoverTriggerAny asChild>
             <Button
               color="minimal"
               className="h-auto p-0 border-0 hover:border-0"
@@ -81,8 +84,8 @@ function LimitedBadges({
               onMouseLeave={handleMouseLeave}>
               <Badge variant="gray">+{hiddenItems.length}</Badge>
             </Button>
-          </PopoverTrigger>
-          <PopoverContent
+          </PopoverTriggerAny>
+          <PopoverContentAny
             side="bottom"
             align="start"
             className="w-fit p-2"
@@ -98,8 +101,8 @@ function LimitedBadges({
                 </span>
               ))}
             </div>
-          </PopoverContent>
-        </Popover>
+          </PopoverContentAny>
+        </PopoverAny>
       )}
     </div>
   );

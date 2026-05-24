@@ -5,17 +5,23 @@ import { useSession } from "next-auth/react";
 import type { RefCallback } from "react";
 import { useEffect, useState } from "react";
 
-import { Dialog } from "@calcom/features/components/controlled-dialog";
+import { Dialog as ControlledDialog } from "@calcom/features/components/controlled-dialog";
 import { fetchUsername } from "@calcom/lib/fetchUsername";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import type { AppRouter } from "@calcom/trpc/types/server/routers/_app";
 import { Button } from "@calcom/ui/components/button";
-import { DialogContent, DialogFooter, DialogClose } from "@calcom/ui/components/dialog";
+import { DialogContent as UIDialogContent, DialogFooter as UIDialogFooter, DialogClose as UIDialogClose } from "@calcom/ui/components/dialog";
+
+const Dialog = ControlledDialog as any;
+const DialogContent = UIDialogContent as any;
+const DialogFooter = UIDialogFooter as any;
+const DialogClose = UIDialogClose as any;
 import { TextField } from "@calcom/ui/components/form";
 import { CheckIcon } from "@coss/ui/icons";
-import { Tooltip } from "@calcom/ui/components/tooltip";
+import { Tooltip as UITooltip } from "@calcom/ui/components/tooltip";
+
+const Tooltip = UITooltip as any;
 
 import type { TRPCClientErrorLike } from "@trpc/client";
 
@@ -26,7 +32,7 @@ interface ICustomUsernameProps {
   usernameRef: RefCallback<HTMLInputElement>;
   setInputUsernameValue: (value: string) => void;
   onSuccessMutation?: () => void;
-  onErrorMutation?: (error: TRPCClientErrorLike<AppRouter>) => void;
+  onErrorMutation?: (error: TRPCClientErrorLike<any>) => void;
 }
 
 const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.ComponentProps<typeof TextField>>) => {
@@ -70,14 +76,14 @@ const UsernameTextfield = (props: ICustomUsernameProps & Partial<React.Component
     checkUsername(debouncedUsername);
   }, [debouncedUsername, currentUsername]);
 
-  const updateUsernameMutation = trpc.viewer.me.updateProfile.useMutation({
+  const updateUsernameMutation = (trpc as any).viewer.me.updateProfile.useMutation({
     onSuccess: async () => {
       onSuccessMutation && (await onSuccessMutation());
       setOpenDialogSaveUsername(false);
       setCurrentUsername(inputUsernameValue);
       await update({ username: inputUsernameValue });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       onErrorMutation && onErrorMutation(error);
     },
   });

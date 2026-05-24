@@ -7,13 +7,14 @@ import { trpc } from "./trpc";
 import { trpcClient } from "./trpc-client";
 
 type Props = {
-  children: React.ReactNode;
+  children: any;
 };
 
 export const TrpcProvider = ({ children }: Props) => {
+  const TrpcProviderComponent = (trpc as any).Provider;
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
+    <TrpcProviderComponent client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>{children as any}</QueryClientProvider>
+    </TrpcProviderComponent>
   );
 };

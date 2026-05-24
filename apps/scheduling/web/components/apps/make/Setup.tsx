@@ -12,14 +12,18 @@ import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { ClipboardIcon } from "@coss/ui/icons";
 
+const ToasterComponent = Toaster as any;
+const ServerTransComponent = ServerTrans as any;
+const TooltipComponent = Tooltip as any;
+
 const MAKE = "make";
 
 export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [newApiKeys, setNewApiKeys] = useState<Record<string, string>>({});
 
   const { t } = useLocale();
-  const utils = trpc.useUtils();
-  const integrations = trpc.viewer.apps.integrations.useQuery({ variant: "automation" });
+  const utils = (trpc as any).useUtils();
+  const integrations = (trpc as any).viewer.apps.integrations.useQuery({ variant: "automation" });
   const oldApiKey = undefined as { data?: Array<{ id: string; teamId?: number }> } | undefined;
 
   const teamsList = null as { data?: Array<{ id: number; name: string }> } | null;
@@ -112,7 +116,7 @@ export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<ty
 
               <ol className="mb-5 ml-5 mt-5 list-decimal ltr:mr-5 rtl:ml-5">
                 <li>
-                  <ServerTrans
+                  <ServerTransComponent
                     t={t}
                     i18nKey="make_setup_instructions_1"
                     components={[
@@ -140,7 +144,7 @@ export default function MakeSetup({ inviteLink }: InferGetServerSidePropsType<ty
       ) : (
         <AppNotInstalledMessage appName="make" />
       )}
-      <Toaster position="bottom-right" />
+      <ToasterComponent position="bottom-right" />
     </div>
   );
 }
@@ -153,7 +157,7 @@ const CopyApiKey = ({ apiKey }: { apiKey: string }) => {
         <code className="bg-subtle h-full w-full whitespace-pre-wrap rounded-md py-[6px] pl-2 pr-2 sm:rounded-r-none sm:pr-5">
           {apiKey}
         </code>
-        <Tooltip side="top" content={t("copy_to_clipboard")}>
+        <TooltipComponent side="top" content={t("copy_to_clipboard")}>
           <Button
             onClick={() => {
               navigator.clipboard.writeText(apiKey);
@@ -164,7 +168,7 @@ const CopyApiKey = ({ apiKey }: { apiKey: string }) => {
             <ClipboardIcon className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
             {t("copy")}
           </Button>
-        </Tooltip>
+        </TooltipComponent>
       </div>
       <div className="text-subtle mb-5 mt-2 text-sm">{t("copy_somewhere_safe")}</div>
     </div>

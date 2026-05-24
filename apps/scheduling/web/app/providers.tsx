@@ -14,7 +14,7 @@ import { GeoProvider } from "./GeoContext";
 
 type ProvidersProps = {
   isEmbed: boolean;
-  children: React.ReactNode;
+  children: any;
   nonce: string | undefined;
   country: string;
 };
@@ -26,10 +26,10 @@ export function Providers({ isEmbed, children, country }: ProvidersProps) {
       <SessionProvider>
         <TrpcProvider>
           <ToastProvider position="bottom-center">
-            {!isEmbed && !isBookingPage && <NotificationSoundHandler />}
+            {(!isEmbed && !isBookingPage && <NotificationSoundHandler />) as any}
             {/* @ts-expect-error FIXME remove this comment when upgrading typescript to v5 */}
             <CacheProvider>
-              <WebPushProvider>{children}</WebPushProvider>
+              {(<WebPushProvider>{children as any}</WebPushProvider>) as any}
             </CacheProvider>
           </ToastProvider>
         </TrpcProvider>
