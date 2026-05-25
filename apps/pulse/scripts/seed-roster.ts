@@ -5,8 +5,8 @@ import crypto from 'crypto';
 
 // Resolve environment variables from the apps/.env and apps/pulse/.env.local files
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '../../../apps/.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../../../apps/.env') });
 
 let prisma: any;
 

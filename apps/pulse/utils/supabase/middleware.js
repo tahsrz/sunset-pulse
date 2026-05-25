@@ -87,7 +87,7 @@ export async function updateSession(request, createResponse) {
       path.startsWith('/abidan/war-room') ||
       path.startsWith('/scythe') ||
       path.startsWith('/briefing') ||
-      (path.startsWith('/admin') && !localOrchestratorRoute)
+      (path.startsWith('/admin') && !localOrchestratorRoute && !path.startsWith('/admin/scheduling'))
     ) {
       return NextResponse.redirect(new URL('/login', request.url))
     }

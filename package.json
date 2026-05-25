@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "pulse:dev": "npm run dev --workspace=apps/pulse",
-    "pulse:build": "npm run build --workspace=apps/pulse",
+    "pulse:build": "npm run generate-schemas --workspace=@calcom/prisma && npm run build --workspace=apps/pulse",
     "scheduling:dev": "npm run dev --workspace=apps/scheduling/web",
     "scheduling:build": "npm run build --workspace=apps/scheduling/web",
     "test:unit": "npm run test:unit --workspace=apps/pulse",

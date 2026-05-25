@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -10,6 +10,7 @@ import logo from '@/assets/images/logo-white.png';
 import profileDefault from '@/assets/images/profile.png';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { signOut as signOutAction } from '@/app/login/actions';
 import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
 
@@ -34,6 +35,7 @@ const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { cart } = useCart() as { cart: CartItem[] };
+  const isSigningOutRef = useRef(false);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -65,6 +67,9 @@ const Navbar: React.FC = () => {
   const overflowLinks = navLinks.slice(5);
 
   useEffect(() => {
+    if (isSigningOutRef.current) {
+      return;
+    }
     let isCancelled = false;
 
     fetch('/api/auth/session', { cache: 'no-store' })
@@ -90,12 +95,23 @@ const Navbar: React.FC = () => {
 
   const handleSignOut = async () => {
     setIsProfileMenuOpen(false);
+    isSigningOutRef.current = true;
+    setServerSessionUser(null);
+    
+    try {
+      await signOutAction();
+    } catch (err) {
+      console.error('[NAVBAR] Server sign out failed:', err);
+    }
+
     const { error } = await signOut();
     if (error) {
-      console.error('[NAVBAR] Sign out failed:', error.message);
+      console.error('[NAVBAR] Client sign out failed:', error.message);
+      isSigningOutRef.current = false;
       return;
     }
-    setServerSessionUser(null);
+
+    isSigningOutRef.current = false;
     router.push('/');
     router.refresh();
   };

@@ -3,6 +3,22 @@ import { getTenantRewrite } from '@/lib/sites/tenantRouting'
 import { updateSession } from '@/utils/supabase/middleware'
 
 export async function middleware(request) {
+  const url = new URL(request.url)
+  const path = url.pathname
+  const code = url.searchParams.get('code')
+  const token_hash = url.searchParams.get('token_hash')
+
+  // Seamless Supabase auth fallback: if an auth code or token_hash lands on any route other
+  // than the callback, redirect them to /auth/callback to establish and persist their session.
+  if ((code || token_hash) && path !== '/auth/callback' && !path.startsWith('/api/') && !path.startsWith('/_next/')) {
+    const callbackUrl = new URL('/auth/callback', request.url)
+    url.searchParams.forEach((value, key) => {
+      callbackUrl.searchParams.set(key, value)
+    })
+    console.log(`[MIDDLEWARE] Redirecting auth parameters from path "${path}" to /auth/callback...`)
+    return NextResponse.redirect(callbackUrl)
+  }
+
   const tenantRewrite = getTenantRewrite(request)
 
   if (tenantRewrite) {

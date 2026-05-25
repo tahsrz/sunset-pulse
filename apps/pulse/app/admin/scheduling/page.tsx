@@ -78,6 +78,12 @@ export default function RosterManagementCenter() {
   // Roster Analytics collapse state
   const [showAnalytics, setShowAnalytics] = useState(true);
 
+  // Hourly rates states
+  const [hourlyRates, setHourlyRates] = useState<Record<string, number>>({});
+  const [editingRateUserId, setEditingRateUserId] = useState<number | null>(null);
+  const [tempRateValue, setTempRateValue] = useState<string>('');
+  const [ratesLoading, setRatesLoading] = useState(false);
+
 
   // Enroll new employee handler
   const handleEnrollStaff = async (e: React.FormEvent) => {
@@ -160,6 +166,51 @@ export default function RosterManagementCenter() {
       console.error('Failed to fetch compatibility rules', err);
     }
   }, []);
+
+  const fetchRates = useCallback(async () => {
+    try {
+      const res = await fetch('/api/scheduling/rates');
+      if (res.ok) {
+        const result = await res.json();
+        setHourlyRates(result.data?.rates || {});
+      }
+    } catch (err) {
+      console.error('Failed to fetch hourly rates', err);
+    }
+  }, []);
+
+  const handleUpdateRate = async (email: string, rateStr: string, userId: number) => {
+    const rateVal = rateStr.trim() === '' ? null : Number(rateStr);
+    if (rateVal !== null && (isNaN(rateVal) || rateVal < 0)) {
+      toast.error('Please enter a valid positive number.');
+      return;
+    }
+
+    setRatesLoading(true);
+    try {
+      const res = await fetch('/api/scheduling/rates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          rate: rateVal,
+        }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(rateVal === null ? 'Hourly rate reset to default.' : 'Hourly rate updated!');
+        setHourlyRates(result.data?.rates || {});
+        setEditingRateUserId(null);
+      } else {
+        toast.error(result.message || 'Failed to update hourly rate.');
+      }
+    } catch (err) {
+      toast.error('Network failure while updating hourly rate.');
+    } finally {
+      setRatesLoading(false);
+    }
+  };
 
   const handleAddConflict = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,7 +327,8 @@ export default function RosterManagementCenter() {
   useEffect(() => {
     fetchRoster();
     fetchConflicts();
-  }, [fetchRoster, fetchConflicts]);
+    fetchRates();
+  }, [fetchRoster, fetchConflicts, fetchRates]);
 
   const handlePredict = async () => {
     setActionLoading(true);
@@ -460,12 +512,19 @@ export default function RosterManagementCenter() {
       }, 0);
   };
 
-  // Calculate estimated wage cost for a single shift ($18.50/hr for Grill, $15.00/hr for Register)
+  // Calculate estimated wage cost for a single shift ($18.50/hr for Grill, $15.00/hr for Register, or employee custom rate)
   const calculateShiftCost = (shift: Shift) => {
     if (!shift.userId && !shift.user?.id) return 0;
     const start = new Date(shift.startTime).getTime();
     const end = new Date(shift.endTime).getTime();
     const durationHours = (end - start) / (1000 * 60 * 60);
+    
+    const userEmail = shift.user?.email || shift.userPrimaryEmail;
+    const customRate = userEmail ? hourlyRates[userEmail.toLowerCase()] : null;
+    
+    if (customRate !== null && customRate !== undefined) {
+      return durationHours * customRate;
+    }
     
     const slug = shift.eventType?.slug || 'grill-shift';
     const hourlyRate = slug === 'grill-shift' ? 18.50 : 15.00;
@@ -490,7 +549,17 @@ export default function RosterManagementCenter() {
     });
 
     const totalHours = grillHours + registerHours;
-    const projectedEarnings = grillHours * 18.50 + registerHours * 15.00;
+    
+    const userObj = users.find(u => u.id === userId);
+    const userEmail = userObj?.email;
+    const customRate = userEmail ? hourlyRates[userEmail.toLowerCase()] : null;
+
+    let projectedEarnings = 0;
+    if (customRate !== null && customRate !== undefined) {
+      projectedEarnings = totalHours * customRate;
+    } else {
+      projectedEarnings = grillHours * 18.50 + registerHours * 15.00;
+    }
 
     return {
       totalHours,
@@ -1331,6 +1400,51 @@ export default function RosterManagementCenter() {
                           </span>
                           <span className="text-[7px] text-slate-500 uppercase tracking-widest truncate">{user.email}</span>
                         </div>
+                      </div>
+
+                      {/* Inline Hourly Rate Editor */}
+                      <div className="flex items-center justify-between text-[8px] font-black uppercase pt-1 relative z-30 border-t border-white/5 mt-1" onClick={(e) => e.stopPropagation()}>
+                        <span className="text-slate-500">Hourly Rate</span>
+                        {editingRateUserId === user.id ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-slate-400 font-mono text-[9px]">$</span>
+                            <input
+                              type="text"
+                              value={tempRateValue}
+                              onChange={(e) => setTempRateValue(e.target.value)}
+                              className="w-12 bg-slate-950 border border-white/20 rounded px-1 py-0.5 text-[9px] font-mono text-white text-right focus:outline-none focus:border-orange-500"
+                              placeholder="Default"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleUpdateRate(user.email, tempRateValue, user.id)}
+                              className="bg-emerald-600/30 hover:bg-emerald-600/60 border border-emerald-500/30 text-emerald-400 px-1 py-0.5 rounded transition-colors text-[8px]"
+                              title="Save Rate"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              onClick={() => setEditingRateUserId(null)}
+                              className="bg-rose-600/30 hover:bg-rose-600/60 border border-rose-500/30 text-rose-400 px-1 py-0.5 rounded transition-colors text-[8px]"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingRateUserId(user.id);
+                              setTempRateValue(hourlyRates[user.email.toLowerCase()] !== undefined ? String(hourlyRates[user.email.toLowerCase()]) : '');
+                            }}
+                            className="text-slate-300 hover:text-orange-400 font-mono text-[9px] tracking-tight hover:underline flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 hover:border-orange-500/20"
+                            title="Click to customize hourly rate"
+                          >
+                            {hourlyRates[user.email.toLowerCase()] !== undefined 
+                              ? `$${hourlyRates[user.email.toLowerCase()].toFixed(2)}/hr` 
+                              : 'Default Rates ⚙️'}
+                          </button>
+                        )}
                       </div>
 
                       {/* Overtime Quota Progress Meter */}
