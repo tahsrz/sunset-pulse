@@ -16,7 +16,7 @@ graph TD
 
     subgraph Engines ["Core Engines"]
         KDS["Grill Kitchen Display System"]
-        Tracker["Domino's-Style Post-Order Tracker"]
+        Tracker["Post-Order Tracker"]
         Jamie["Jamie Intelligence Lead Re-Engagement"]
         Memoria["Memoria v4 Binary Cartridge Engine"]
     end
