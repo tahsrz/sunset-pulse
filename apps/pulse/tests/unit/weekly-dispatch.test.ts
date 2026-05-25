@@ -125,19 +125,21 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     expect(body.success).toBe(true);
     expect(body.data.bookingsProcessed).toBe(3);
 
-    // Should fetch bookings in correct date range (Monday 00:00:00 to Sunday 23:59:59.999 local time)
+    // Should fetch bookings in correct date range (Monday 00:00:00 to Sunday 23:59:59.999 America/Chicago time)
     expect(mockPrismaFindMany).toHaveBeenCalledTimes(1);
     const queryArgs = mockPrismaFindMany.mock.calls[0][0];
     const startObj = queryArgs.where.startTime.gte;
     const endObj = queryArgs.where.startTime.lte;
 
-    expect(startObj.getDay()).toBe(1); // 1 is Monday
-    expect(startObj.getHours()).toBe(0);
-    expect(startObj.getMinutes()).toBe(0);
+    // Convert start and end back to Chicago string parts to verify
+    const startChicagoStr = startObj.toLocaleString('en-US', { timeZone: 'America/Chicago' });
+    const endChicagoStr = endObj.toLocaleString('en-US', { timeZone: 'America/Chicago' });
 
-    expect(endObj.getDay()).toBe(0); // 0 is Sunday
-    expect(endObj.getHours()).toBe(23);
-    expect(endObj.getMilliseconds()).toBe(999);
+    expect(startChicagoStr).toContain('12:00:00 AM');
+    expect(startObj.toISOString()).toBe('2026-05-25T05:00:00.000Z'); // Monday 00:00:00 CDT is 05:00:00 UTC
+
+    expect(endChicagoStr).toContain('11:59:59 PM');
+    expect(endObj.toISOString()).toBe('2026-06-01T04:59:59.999Z'); // Sunday 23:59:59.999 CDT is next Monday 04:59:59.999 UTC
 
     // Messages sent: 2 for employees (Mark and Jane) + 1 master summary for manager
     expect(mockMessagesCreate).toHaveBeenCalledTimes(3);
