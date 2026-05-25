@@ -1,4 +1,6 @@
 import fs from 'fs';
+import { getTahIndices } from './tah_utils';
+import { extractMemoriaTerms } from './memoria_builder';
 
 export const MEMORIA_V4_MAGIC = 0x2134564d; // MV4!
 export const MEMORIA_V4_SUPPORTED_MAJOR = 4;
@@ -252,4 +254,469 @@ function numberFromU64(value: bigint, label: string) {
     throw new InvalidMemoriaV4Error(`${label} exceeds JavaScript safe integer range.`);
   }
   return Number(value);
+}
+
+export interface SectionEntry {
+  type: string;
+  version: number;
+  offset: bigint;
+  length: bigint;
+  itemCount: bigint;
+  compressionMode: number;
+}
+
+export class MemoriaV4Retriever {
+  private hatBuffer: Buffer;
+
+  constructor(hatBuffer: Buffer) {
+    this.hatBuffer = hatBuffer;
+  }
+
+  public parseSuperblock(): MemoriaV4Superblock {
+    const magic = this.hatBuffer.readUInt32LE(0);
+    if (magic !== MEMORIA_V4_MAGIC && magic !== 0x54414834) {
+      throw new Error("Invalid format or unsupported Memoria version.");
+    }
+    return parseSuperblock(this.hatBuffer);
+  }
+
+  public readSectionDirectory(offset: number, count: number): SectionEntry[] {
+    const parsedSections = parseSections(this.hatBuffer, offset, count);
+    return parsedSections.map(section => ({
+      type: String(section.type),
+      version: section.version,
+      offset: section.offset,
+      length: section.length,
+      itemCount: section.itemCount,
+      compressionMode: section.compression
+    }));
+  }
+
+  public readSources(offset: number, count: number): MemoriaV4SourceInput[] {
+    const sources: MemoriaV4SourceInput[] = [];
+    for (let index = 0; index < count; index++) {
+      const srcOffset = offset + index * 164;
+      if (srcOffset + 164 > this.hatBuffer.length) {
+        throw new Error('Read bounds exceed available buffer size during SOURCE_TABLE parsing.');
+      }
+      const sourceId = this.hatBuffer.readBigUInt64LE(srcOffset);
+      const sourceSlug = this.hatBuffer.subarray(srcOffset + 8, srcOffset + 40).toString('ascii').replace(/\0/g, '');
+      const sourceName = this.hatBuffer.subarray(srcOffset + 40, srcOffset + 72).toString('ascii').replace(/\0/g, '');
+      const sourceType = this.hatBuffer.readUInt16LE(srcOffset + 72);
+      const sourcePathHash = this.hatBuffer.readBigUInt64LE(srcOffset + 74);
+      const sourceContentHash = this.hatBuffer.subarray(srcOffset + 82, srcOffset + 114).toString('hex');
+      const importedUnixMs = this.hatBuffer.readBigUInt64LE(srcOffset + 114);
+      const shardStart = this.hatBuffer.readBigUInt64LE(srcOffset + 122);
+      const shardCount = this.hatBuffer.readBigUInt64LE(srcOffset + 130);
+      const domainId = this.hatBuffer.readBigUInt64LE(srcOffset + 138);
+      const placeId = this.hatBuffer.readBigUInt64LE(srcOffset + 146);
+
+      sources.push({
+        sourceId,
+        sourceSlug,
+        sourceName,
+        sourceType,
+        sourcePathHash,
+        sourceContentHash,
+        importedUnixMs,
+        shardStart,
+        shardCount,
+        domainId,
+        placeId
+      });
+    }
+    return sources;
+  }
+
+  public readShardIndex(offset: number, count: number) {
+    const shards: Array<Omit<MemoriaV4ShardInput, 'text'> & { payloadOffset: bigint; payloadLength: bigint; wordCount: number }> = [];
+    for (let index = 0; index < count; index++) {
+      const shardOffset = offset + index * 80;
+      if (shardOffset + 80 > this.hatBuffer.length) {
+        throw new Error('Read bounds exceed available buffer size during SHARD_INDEX parsing.');
+      }
+      const shardId = this.hatBuffer.readBigUInt64LE(shardOffset);
+      const sourceId = this.hatBuffer.readBigUInt64LE(shardOffset + 8);
+      const placeId = this.hatBuffer.readBigUInt64LE(shardOffset + 16);
+      const domainId = this.hatBuffer.readBigUInt64LE(shardOffset + 24);
+      const payloadOffset = this.hatBuffer.readBigUInt64LE(shardOffset + 32);
+      const payloadLength = this.hatBuffer.readBigUInt64LE(shardOffset + 40);
+      const payloadType = this.hatBuffer.readUInt16LE(shardOffset + 48);
+      const compression = this.hatBuffer.readUInt16LE(shardOffset + 50);
+      const wordCount = this.hatBuffer.readUInt32LE(shardOffset + 52);
+      const qualityScore = this.hatBuffer.readFloatLE(shardOffset + 56);
+
+      shards.push({
+        shardId,
+        sourceId,
+        placeId,
+        domainId,
+        payloadOffset,
+        payloadLength,
+        payloadType,
+        compression,
+        wordCount,
+        qualityScore
+      });
+    }
+    return shards;
+  }
+
+  public readPayloadMap(offset: number, count: number) {
+    const payloadMaps: Array<{ shardId: bigint; payloadOffset: bigint; payloadLength: bigint }> = [];
+    for (let index = 0; index < count; index++) {
+      const pmOffset = offset + index * 32;
+      if (pmOffset + 32 > this.hatBuffer.length) {
+        throw new Error('Read bounds exceed available buffer size during PAYLOAD_MAP parsing.');
+      }
+      const shardId = this.hatBuffer.readBigUInt64LE(pmOffset);
+      const payloadOffset = this.hatBuffer.readBigUInt64LE(pmOffset + 8);
+      const payloadLength = this.hatBuffer.readBigUInt64LE(pmOffset + 16);
+
+      payloadMaps.push({
+        shardId,
+        payloadOffset,
+        payloadLength
+      });
+    }
+    return payloadMaps;
+  }
+
+  public readPlaces(offset: number, count: number): MemoriaV4PlaceInput[] {
+    const places: MemoriaV4PlaceInput[] = [];
+    for (let index = 0; index < count; index++) {
+      const pOffset = offset + index * 128;
+      if (pOffset + 128 > this.hatBuffer.length) {
+        throw new Error('Read bounds exceed available buffer size during PLACE_TABLE parsing.');
+      }
+      const placeId = this.hatBuffer.readBigUInt64LE(pOffset);
+      const placeSlug = this.hatBuffer.subarray(pOffset + 8, pOffset + 40).toString('ascii').replace(/\0/g, '');
+      const label = this.hatBuffer.subarray(pOffset + 40, pOffset + 72).toString('utf-8').replace(/\0/g, '');
+      const lat = this.hatBuffer.readDoubleLE(pOffset + 72);
+      const lng = this.hatBuffer.readDoubleLE(pOffset + 80);
+      const placeType = this.hatBuffer.readUInt16LE(pOffset + 88);
+      const confidence = this.hatBuffer.readFloatLE(pOffset + 90);
+      const coverage = this.hatBuffer.readFloatLE(pOffset + 94);
+      const parentPlaceId = this.hatBuffer.readBigUInt64LE(pOffset + 98);
+
+      places.push({
+        placeId,
+        placeSlug,
+        label,
+        lat,
+        lng,
+        placeType,
+        confidence,
+        coverage,
+        parentPlaceId
+      });
+    }
+    return places;
+  }
+}
+
+export interface MemoriaV4PlaceInput {
+  placeId: bigint;
+  placeSlug: string;
+  label: string;
+  lat: number;
+  lng: number;
+  placeType: number;
+  confidence: number;
+  coverage: number;
+  parentPlaceId: bigint;
+  region?: string;
+  physicalAnchor?: string;
+  stage?: string;
+}
+
+export interface MemoriaV4SourceInput {
+  sourceId: bigint;
+  sourceSlug: string;
+  sourceName: string;
+  sourceType: number;
+  sourcePathHash: bigint;
+  sourceContentHash: string; // 32-byte hex string (sha256)
+  importedUnixMs: bigint;
+  shardStart: bigint;
+  shardCount: bigint;
+  domainId: bigint;
+  placeId: bigint;
+}
+
+export interface MemoriaV4ShardInput {
+  shardId: bigint;
+  sourceId: bigint;
+  placeId: bigint;
+  domainId: bigint;
+  payloadType: number;
+  compression: number;
+  qualityScore: number;
+  text: string;
+}
+
+export class MemoriaV4Builder {
+  private sources: MemoriaV4SourceInput[] = [];
+  private shards: MemoriaV4ShardInput[] = [];
+  private places: MemoriaV4PlaceInput[] = [];
+  private targetFalsePositiveRate: number;
+  private expectedElements: number;
+  private m: bigint;
+  private k: number;
+  private globalBloom: Buffer;
+
+  constructor(targetFalsePositiveRate = 0.0001, expectedElements = 5000) {
+    this.targetFalsePositiveRate = targetFalsePositiveRate;
+    this.expectedElements = expectedElements;
+
+    const n = Math.max(1, Math.floor(expectedElements));
+    const mFloat = -(n * Math.log(targetFalsePositiveRate)) / Math.pow(Math.log(2), 2);
+    this.m = BigInt(Math.ceil(mFloat / 8) * 8);
+    this.k = Math.max(1, Math.ceil((Number(this.m) / n) * Math.log(2)));
+    this.globalBloom = Buffer.alloc(Number(this.m / 8n), 0);
+  }
+
+  public addSource(source: MemoriaV4SourceInput) {
+    this.sources.push(source);
+  }
+
+  public addPlace(place: MemoriaV4PlaceInput) {
+    this.places.push(place);
+  }
+
+  public addShard(shard: MemoriaV4ShardInput) {
+    this.shards.push(shard);
+  }
+
+  public forge(): { hat: Buffer; tah: Buffer } {
+    // 1. Compile Global Bloom Filter
+    this.shards.forEach(shard => {
+      const terms = extractMemoriaTerms(shard.text);
+      terms.forEach(term => {
+        const indices = getTahIndices(term, this.m, this.k);
+        indices.forEach(idx => {
+          const byteIdx = Number(idx / 8n);
+          const bitIdx = Number(idx % 8n);
+          if (byteIdx >= 0 && byteIdx < this.globalBloom.length) {
+            this.globalBloom[byteIdx] |= (1 << bitIdx);
+          }
+        });
+      });
+    });
+
+    // 2. Prepare .tah payload store and Shard metadata
+    let currentPayloadOffset = 0;
+    const shardPayloads: Buffer[] = [];
+    const shardIndexEntries: Array<{
+      shardId: bigint;
+      sourceId: bigint;
+      placeId: bigint;
+      domainId: bigint;
+      payloadOffset: bigint;
+      payloadLength: bigint;
+      payloadType: number;
+      compression: number;
+      wordCount: number;
+      qualityScore: number;
+    }> = [];
+
+    this.shards.forEach(shard => {
+      const cleanText = shard.text
+        .replace(/\r\n/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      const payloadData = Buffer.concat([Buffer.from(cleanText, 'utf-8'), Buffer.from([0, 0])]);
+      const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
+
+      shardPayloads.push(payloadData);
+      shardIndexEntries.push({
+        shardId: shard.shardId,
+        sourceId: shard.sourceId,
+        placeId: shard.placeId,
+        domainId: shard.domainId,
+        payloadOffset: BigInt(currentPayloadOffset),
+        payloadLength: BigInt(payloadData.length),
+        payloadType: shard.payloadType,
+        compression: shard.compression,
+        wordCount,
+        qualityScore: shard.qualityScore
+      });
+
+      currentPayloadOffset += payloadData.length;
+    });
+
+    const tah = Buffer.concat(shardPayloads);
+
+    // 3. Serialize required sections contents
+    // Section 2: SOURCE_TABLE
+    const sourceTableBuffer = Buffer.alloc(this.sources.length * 164, 0);
+    this.sources.forEach((src, idx) => {
+      const rowOffset = idx * 164;
+      sourceTableBuffer.writeBigUInt64LE(src.sourceId, rowOffset);
+      
+      const slugBuf = Buffer.alloc(32, 0);
+      slugBuf.write(src.sourceSlug.slice(0, 31), 'ascii');
+      slugBuf.copy(sourceTableBuffer, rowOffset + 8);
+
+      const nameBuf = Buffer.alloc(32, 0);
+      nameBuf.write(src.sourceName.slice(0, 31), 'ascii');
+      nameBuf.copy(sourceTableBuffer, rowOffset + 40);
+
+      sourceTableBuffer.writeUInt16LE(src.sourceType, rowOffset + 72);
+      sourceTableBuffer.writeBigUInt64LE(src.sourcePathHash, rowOffset + 74);
+
+      const hashBuf = Buffer.alloc(32, 0);
+      if (src.sourceContentHash) {
+        Buffer.from(src.sourceContentHash.padEnd(64, '0').slice(0, 64), 'hex').copy(hashBuf, 0, 0, 32);
+      }
+      hashBuf.copy(sourceTableBuffer, rowOffset + 82);
+
+      sourceTableBuffer.writeBigUInt64LE(src.importedUnixMs, rowOffset + 114);
+      sourceTableBuffer.writeBigUInt64LE(src.shardStart, rowOffset + 122);
+      sourceTableBuffer.writeBigUInt64LE(src.shardCount, rowOffset + 130);
+      sourceTableBuffer.writeBigUInt64LE(src.domainId, rowOffset + 138);
+      sourceTableBuffer.writeBigUInt64LE(src.placeId, rowOffset + 146);
+    });
+
+    // Section 3: SHARD_INDEX
+    const shardIndexBuffer = Buffer.alloc(this.shards.length * 80, 0);
+    shardIndexEntries.forEach((shard, idx) => {
+      const rowOffset = idx * 80;
+      shardIndexBuffer.writeBigUInt64LE(shard.shardId, rowOffset);
+      shardIndexBuffer.writeBigUInt64LE(shard.sourceId, rowOffset + 8);
+      shardIndexBuffer.writeBigUInt64LE(shard.placeId, rowOffset + 16);
+      shardIndexBuffer.writeBigUInt64LE(shard.domainId, rowOffset + 24);
+      shardIndexBuffer.writeBigUInt64LE(shard.payloadOffset, rowOffset + 32);
+      shardIndexBuffer.writeBigUInt64LE(shard.payloadLength, rowOffset + 40);
+      shardIndexBuffer.writeUInt16LE(shard.payloadType, rowOffset + 48);
+      shardIndexBuffer.writeUInt16LE(shard.compression, rowOffset + 50);
+      shardIndexBuffer.writeUInt32LE(shard.wordCount, rowOffset + 52);
+      shardIndexBuffer.writeFloatLE(shard.qualityScore, rowOffset + 56);
+      shardIndexBuffer.writeUInt32LE(0, rowOffset + 60); // local_filter_ref
+      shardIndexBuffer.writeUInt32LE(0, rowOffset + 64); // bm25_ref
+    });
+
+    // Section 4: PAYLOAD_MAP
+    const payloadMapBuffer = Buffer.alloc(this.shards.length * 32, 0);
+    shardIndexEntries.forEach((shard, idx) => {
+      const rowOffset = idx * 32;
+      payloadMapBuffer.writeBigUInt64LE(shard.shardId, rowOffset);
+      payloadMapBuffer.writeBigUInt64LE(shard.payloadOffset, rowOffset + 8);
+      payloadMapBuffer.writeBigUInt64LE(shard.payloadLength, rowOffset + 16);
+    });
+
+    // Section 6: PLACE_TABLE
+    let placeTableBuffer: Buffer | null = null;
+    let ptOffset = 0n;
+    let ptLength = 0n;
+
+    if (this.places.length > 0) {
+      placeTableBuffer = Buffer.alloc(this.places.length * 128, 0);
+      this.places.forEach((place, idx) => {
+        const rowOffset = idx * 128;
+        placeTableBuffer!.writeBigUInt64LE(place.placeId, rowOffset);
+        
+        const slugBuf = Buffer.alloc(32, 0);
+        slugBuf.write(place.placeSlug.slice(0, 31), 'ascii');
+        slugBuf.copy(placeTableBuffer!, rowOffset + 8);
+
+        const labelBuf = Buffer.alloc(32, 0);
+        labelBuf.write(place.label.slice(0, 31), 'utf-8');
+        labelBuf.copy(placeTableBuffer!, rowOffset + 40);
+
+        placeTableBuffer!.writeDoubleLE(place.lat, rowOffset + 72);
+        placeTableBuffer!.writeDoubleLE(place.lng, rowOffset + 80);
+        placeTableBuffer!.writeUInt16LE(place.placeType, rowOffset + 88);
+        placeTableBuffer!.writeFloatLE(place.confidence, rowOffset + 90);
+        placeTableBuffer!.writeFloatLE(place.coverage, rowOffset + 94);
+        placeTableBuffer!.writeBigUInt64LE(place.parentPlaceId, rowOffset + 98);
+      });
+    }
+
+    // 4. Calculate table layouts and offset locations
+    const activeSectionsCount = placeTableBuffer ? 5 : 4;
+    const sectionDirectorySize = BigInt(activeSectionsCount * 64);
+    const gfOffset = 192n + sectionDirectorySize;
+    const gfLength = BigInt(this.globalBloom.length);
+
+    const stOffset = gfOffset + gfLength;
+    const stLength = BigInt(sourceTableBuffer.length);
+
+    const siOffset = stOffset + stLength;
+    const siLength = BigInt(shardIndexBuffer.length);
+
+    const pmOffset = siOffset + siLength;
+    const pmLength = BigInt(payloadMapBuffer.length);
+
+    let currentOffset = pmOffset + pmLength;
+
+    if (placeTableBuffer) {
+      ptOffset = currentOffset;
+      ptLength = BigInt(placeTableBuffer.length);
+      currentOffset += ptLength;
+    }
+
+    const hatByteSize = currentOffset;
+
+    const hat = Buffer.alloc(Number(hatByteSize), 0);
+
+    // 5. Serialize Superblock (192 bytes)
+    const activeSections = [
+      { type: MemoriaV4SectionType.GLOBAL_FILTER, offset: gfOffset, length: gfLength, count: 1n },
+      { type: MemoriaV4SectionType.SOURCE_TABLE, offset: stOffset, length: stLength, count: BigInt(this.sources.length) },
+      { type: MemoriaV4SectionType.SHARD_INDEX, offset: siOffset, length: siLength, count: BigInt(this.shards.length) },
+      { type: MemoriaV4SectionType.PAYLOAD_MAP, offset: pmOffset, length: pmLength, count: BigInt(this.shards.length) }
+    ];
+
+    if (placeTableBuffer) {
+      activeSections.push({
+        type: MemoriaV4SectionType.PLACE_TABLE,
+        offset: ptOffset,
+        length: ptLength,
+        count: BigInt(this.places.length)
+      });
+    }
+
+    hat.writeUInt32LE(MEMORIA_V4_MAGIC, 0);
+    hat.writeUInt16LE(MEMORIA_V4_SUPPORTED_MAJOR, 4);
+    hat.writeUInt16LE(0, 6); // versionMinor
+    hat.writeBigUInt64LE(0n, 8); // flags
+    hat.writeUInt32LE(activeSections.length, 16); // sectionCount
+    hat.writeUInt16LE(MemoriaV4HashFamily.CITYHASH64_V1, 20);
+    hat.writeUInt16LE(this.k, 22); // defaultBloomK
+    hat.writeBigUInt64LE(BigInt(this.shards.length), 24); // shardCount
+    hat.writeBigUInt64LE(BigInt(this.sources.length), 32); // sourceCount
+    hat.writeBigUInt64LE(BigInt(this.places.length), 40); // placeCount
+    hat.writeBigUInt64LE(BigInt(Date.now()), 48); // buildUnixMs
+    hat.writeBigUInt64LE(hatByteSize, 56); // hatByteSize
+    hat.writeBigUInt64LE(BigInt(tah.length), 64); // tahByteSize
+    hat.writeBigUInt64LE(192n, 88); // sectionDirectoryOffset
+
+    // 6. Serialize Section Directory
+    const writeSectionEntry = (type: number, offset: bigint, length: bigint, itemCount: bigint, entryOffset: number) => {
+      hat.writeUInt16LE(type, entryOffset);
+      hat.writeUInt16LE(1, entryOffset + 2); // version
+      hat.writeUInt16LE(MemoriaV4Compression.NONE, entryOffset + 4);
+      hat.writeUInt16LE(0, entryOffset + 6); // flags
+      hat.writeBigUInt64LE(offset, entryOffset + 8);
+      hat.writeBigUInt64LE(length, entryOffset + 16);
+      hat.writeBigUInt64LE(itemCount, entryOffset + 24);
+    };
+
+    activeSections.forEach((sec, idx) => {
+      writeSectionEntry(sec.type, sec.offset, sec.length, sec.count, 192 + idx * 64);
+    });
+
+    // 7. Write compiled section contents
+    this.globalBloom.copy(hat, Number(gfOffset));
+    sourceTableBuffer.copy(hat, Number(stOffset));
+    shardIndexBuffer.copy(hat, Number(siOffset));
+    payloadMapBuffer.copy(hat, Number(pmOffset));
+    if (placeTableBuffer) {
+      placeTableBuffer.copy(hat, Number(ptOffset));
+    }
+
+    return { hat, tah };
+  }
 }

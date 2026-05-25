@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       customer_email: sessionUser?.user?.email,
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${domain}/grill?success=true&session_id={CHECKOUT_SESSION_ID}&order_id=${orderId}`,
+      success_url: `${domain}/grill/tracker/${orderId}?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${domain}/cart?canceled=true`,
       metadata: {
         userId: sessionUser?.userId || 'guest',

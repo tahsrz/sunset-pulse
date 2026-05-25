@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { prisma } from '@calcom/prisma';
 import crypto from 'node:crypto';
-import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { getSessionUser } from '@/lib/core/getSessionUser';
+import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
+import { logEvent } from '@/lib/supabase';
 
 // Deterministic UUID v5 generator using native Node.js crypto module
 function uuidv5(name: string): string {
@@ -18,9 +20,40 @@ function uuidv5(name: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
+// GET /api/scheduling/staff - Retrieve the list of active employees
+export const GET = async (request: NextRequest) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return successResponse({ users });
+  } catch (error: any) {
+    console.error('[STAFF_GET_ERROR]:', error);
+    return errorResponse('Failed to fetch employee registry.', 500, error.message);
+  }
+};
+
 // POST /api/scheduling/staff - Enroll a new staff member (employee)
 export const POST = async (request: NextRequest) => {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || !sessionUser.userId) {
+      return unauthorizedResponse('Authentication required to modify employee registry.');
+    }
+
+    if (sessionUser.role !== 'realtor' && sessionUser.role !== 'admin') {
+      return errorResponse('Access denied. Insufficient administrative privileges.', 403);
+    }
+
     const body = await request.json();
     const { name, email, phone } = body;
 
@@ -62,6 +95,26 @@ export const POST = async (request: NextRequest) => {
       return user;
     });
 
+    // Log audit event
+    try {
+      await logEvent({
+        type: 'ROSTER_EMPLOYEE_ENROLLED',
+        description: `Enrolled new employee ${trimmedName} (${trimmedEmail}) by admin operator ${sessionUser.user.name}`,
+        actorId: sessionUser.userId,
+        actorName: sessionUser.user.name,
+        targetId: String(newUser.id),
+        severity: 'TACTICAL',
+        metadata: {
+          employeeId: newUser.id,
+          employeeName: trimmedName,
+          employeeEmail: trimmedEmail,
+          operatorEmail: sessionUser.user.email,
+        },
+      });
+    } catch (logErr) {
+      console.error('Audit log error skipped:', logErr);
+    }
+
     return successResponse({
       message: 'Employee successfully enrolled.',
       user: newUser,
@@ -79,6 +132,15 @@ export const POST = async (request: NextRequest) => {
 // DELETE /api/scheduling/staff - Remove an employee and safely unassign their shifts
 export const DELETE = async (request: NextRequest) => {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || !sessionUser.userId) {
+      return unauthorizedResponse('Authentication required to modify employee registry.');
+    }
+
+    if (sessionUser.role !== 'realtor' && sessionUser.role !== 'admin') {
+      return errorResponse('Access denied. Insufficient administrative privileges.', 403);
+    }
+
     const body = await request.json();
     const { userId } = body;
 
@@ -139,6 +201,27 @@ export const DELETE = async (request: NextRequest) => {
         where: { id: targetUserId },
       });
     });
+
+    // Log audit event
+    try {
+      await logEvent({
+        type: 'ROSTER_EMPLOYEE_DECOMMISSIONED',
+        description: `Decommissioned employee ${user.name} (${user.email}) by admin operator ${sessionUser.user.name}. ${bookings.length} shifts reverted to unassigned.`,
+        actorId: sessionUser.userId,
+        actorName: sessionUser.user.name,
+        targetId: String(targetUserId),
+        severity: 'TACTICAL',
+        metadata: {
+          employeeId: targetUserId,
+          employeeName: user.name,
+          employeeEmail: user.email,
+          revertedShiftsCount: bookings.length,
+          operatorEmail: sessionUser.user.email,
+        },
+      });
+    } catch (logErr) {
+      console.error('Audit log error skipped:', logErr);
+    }
 
     return successResponse({
       message: `Employee ${user.name} has been successfully decommissioned. ${bookings.length} shifts reverted to unassigned.`,

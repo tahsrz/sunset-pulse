@@ -2849,3 +2849,28 @@ model AttributeSyncFieldMapping {
   @@unique([integrationAttributeSyncId, attributeId])
   @@index([integrationAttributeSyncId])
 }
+
+model SmsShiftOffer {
+  id          String   @id @default(uuid())
+  bookingId   Int
+  userId      Int
+  phoneNumber String
+  status      String // PENDING, CLAIMED, EXPIRED, CANCELLED
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([phoneNumber, status])
+  @@index([bookingId])
+}
+
+model ShiftEscalation {
+  id                 String   @id @default(uuid())
+  bookingId          Int      @unique
+  status             String // PENDING, RESOLVED, EXPIRED, MANUAL_INTERVENTION
+  currentTier        Int // 1, 2, 3
+  nextEscalationTime DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([status])
+}

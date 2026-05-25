@@ -518,6 +518,16 @@ export type AttributeSyncRule = Prisma.AttributeSyncRuleModel
  */
 export type AttributeSyncFieldMapping = Prisma.AttributeSyncFieldMappingModel
 /**
+ * Model SmsShiftOffer
+ * 
+ */
+export type SmsShiftOffer = Prisma.SmsShiftOfferModel
+/**
+ * Model ShiftEscalation
+ * 
+ */
+export type ShiftEscalation = Prisma.ShiftEscalationModel
+/**
  * Model BookingTimeStatus
  * 
  */

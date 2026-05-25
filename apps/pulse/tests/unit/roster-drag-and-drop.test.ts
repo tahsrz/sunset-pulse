@@ -8,6 +8,20 @@ vi.mock('@/lib/supabase', () => ({
   logEvent: vi.fn().mockResolvedValue({}),
 }));
 
+// Mock getSessionUser
+vi.mock('@/lib/core/getSessionUser', () => ({
+  getSessionUser: vi.fn().mockResolvedValue({
+    userId: 'mock-operator-id',
+    role: 'realtor',
+    user: {
+      id: 'mock-operator-id',
+      name: 'Mock Operator',
+      email: 'mock-operator@sunsetgrill.com',
+      role: 'realtor',
+    },
+  }),
+}));
+
 const { 
   mockPrismaFindUnique, 
   mockPrismaUpdate, 

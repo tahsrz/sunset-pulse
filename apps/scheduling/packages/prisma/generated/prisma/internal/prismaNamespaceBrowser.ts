@@ -149,6 +149,8 @@ export const ModelName = {
   IntegrationAttributeSync: 'IntegrationAttributeSync',
   AttributeSyncRule: 'AttributeSyncRule',
   AttributeSyncFieldMapping: 'AttributeSyncFieldMapping',
+  SmsShiftOffer: 'SmsShiftOffer',
+  ShiftEscalation: 'ShiftEscalation',
   BookingTimeStatus: 'BookingTimeStatus',
   BookingTimeStatusDenormalized: 'BookingTimeStatusDenormalized'
 } as const
@@ -1855,6 +1857,32 @@ export const AttributeSyncFieldMappingScalarFieldEnum = {
 } as const
 
 export type AttributeSyncFieldMappingScalarFieldEnum = (typeof AttributeSyncFieldMappingScalarFieldEnum)[keyof typeof AttributeSyncFieldMappingScalarFieldEnum]
+
+
+export const SmsShiftOfferScalarFieldEnum = {
+  id: 'id',
+  bookingId: 'bookingId',
+  userId: 'userId',
+  phoneNumber: 'phoneNumber',
+  status: 'status',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type SmsShiftOfferScalarFieldEnum = (typeof SmsShiftOfferScalarFieldEnum)[keyof typeof SmsShiftOfferScalarFieldEnum]
+
+
+export const ShiftEscalationScalarFieldEnum = {
+  id: 'id',
+  bookingId: 'bookingId',
+  status: 'status',
+  currentTier: 'currentTier',
+  nextEscalationTime: 'nextEscalationTime',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShiftEscalationScalarFieldEnum = (typeof ShiftEscalationScalarFieldEnum)[keyof typeof ShiftEscalationScalarFieldEnum]
 
 
 export const BookingTimeStatusScalarFieldEnum = {

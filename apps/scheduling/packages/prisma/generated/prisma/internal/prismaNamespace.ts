@@ -490,6 +490,8 @@ export const ModelName = {
   IntegrationAttributeSync: 'IntegrationAttributeSync',
   AttributeSyncRule: 'AttributeSyncRule',
   AttributeSyncFieldMapping: 'AttributeSyncFieldMapping',
+  SmsShiftOffer: 'SmsShiftOffer',
+  ShiftEscalation: 'ShiftEscalation',
   BookingTimeStatus: 'BookingTimeStatus',
   BookingTimeStatusDenormalized: 'BookingTimeStatusDenormalized'
 } as const
@@ -507,7 +509,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "host" | "hostGroup" | "hostLocation" | "calVideoSettings" | "videoCallGuest" | "eventType" | "credential" | "destinationCalendar" | "userPassword" | "travelSchedule" | "user" | "notificationsSubscriptions" | "profile" | "team" | "creditBalance" | "creditPurchaseLog" | "creditExpenseLog" | "organizationSettings" | "membership" | "verificationToken" | "instantMeetingToken" | "bookingReference" | "attendee" | "booking" | "tracking" | "schedule" | "availability" | "selectedCalendar" | "eventTypeCustomInput" | "resetPasswordRequest" | "reminderMail" | "payment" | "webhook" | "apiKey" | "rateLimit" | "hashedLink" | "account" | "session" | "app" | "feedback" | "deployment" | "webhookScheduledTriggers" | "bookingSeat" | "verifiedNumber" | "verifiedEmail" | "feature" | "userFeatures" | "teamFeatures" | "selectedSlots" | "oAuthClient" | "accessCode" | "bookingDenormalized" | "calendarCache" | "tempOrgRedirect" | "avatar" | "outOfOfficeEntry" | "outOfOfficeReason" | "userHolidaySettings" | "holidayCache" | "platformOAuthClient" | "platformAuthorizationToken" | "accessToken" | "refreshToken" | "dSyncData" | "dSyncTeamGroupMapping" | "secondaryEmail" | "task" | "managedOrganization" | "platformBilling" | "attributeOption" | "attribute" | "attributeToUser" | "assignmentReason" | "delegationCredential" | "workspacePlatform" | "eventTypeTranslation" | "watchlist" | "watchlistAudit" | "watchlistEventAudit" | "bookingReport" | "wrongAssignmentReport" | "organizationOnboarding" | "internalNotePreset" | "filterSegment" | "userFilterSegmentPreference" | "bookingInternalNote" | "role" | "rolePermission" | "auditActor" | "bookingAudit" | "agent" | "calAiPhoneNumber" | "teamBilling" | "organizationBilling" | "seatChangeLog" | "monthlyProration" | "calendarCacheEvent" | "integrationAttributeSync" | "attributeSyncRule" | "attributeSyncFieldMapping" | "bookingTimeStatus" | "bookingTimeStatusDenormalized"
+    modelProps: "host" | "hostGroup" | "hostLocation" | "calVideoSettings" | "videoCallGuest" | "eventType" | "credential" | "destinationCalendar" | "userPassword" | "travelSchedule" | "user" | "notificationsSubscriptions" | "profile" | "team" | "creditBalance" | "creditPurchaseLog" | "creditExpenseLog" | "organizationSettings" | "membership" | "verificationToken" | "instantMeetingToken" | "bookingReference" | "attendee" | "booking" | "tracking" | "schedule" | "availability" | "selectedCalendar" | "eventTypeCustomInput" | "resetPasswordRequest" | "reminderMail" | "payment" | "webhook" | "apiKey" | "rateLimit" | "hashedLink" | "account" | "session" | "app" | "feedback" | "deployment" | "webhookScheduledTriggers" | "bookingSeat" | "verifiedNumber" | "verifiedEmail" | "feature" | "userFeatures" | "teamFeatures" | "selectedSlots" | "oAuthClient" | "accessCode" | "bookingDenormalized" | "calendarCache" | "tempOrgRedirect" | "avatar" | "outOfOfficeEntry" | "outOfOfficeReason" | "userHolidaySettings" | "holidayCache" | "platformOAuthClient" | "platformAuthorizationToken" | "accessToken" | "refreshToken" | "dSyncData" | "dSyncTeamGroupMapping" | "secondaryEmail" | "task" | "managedOrganization" | "platformBilling" | "attributeOption" | "attribute" | "attributeToUser" | "assignmentReason" | "delegationCredential" | "workspacePlatform" | "eventTypeTranslation" | "watchlist" | "watchlistAudit" | "watchlistEventAudit" | "bookingReport" | "wrongAssignmentReport" | "organizationOnboarding" | "internalNotePreset" | "filterSegment" | "userFilterSegmentPreference" | "bookingInternalNote" | "role" | "rolePermission" | "auditActor" | "bookingAudit" | "agent" | "calAiPhoneNumber" | "teamBilling" | "organizationBilling" | "seatChangeLog" | "monthlyProration" | "calendarCacheEvent" | "integrationAttributeSync" | "attributeSyncRule" | "attributeSyncFieldMapping" | "smsShiftOffer" | "shiftEscalation" | "bookingTimeStatus" | "bookingTimeStatusDenormalized"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -7911,6 +7913,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SmsShiftOffer: {
+      payload: Prisma.$SmsShiftOfferPayload<ExtArgs>
+      fields: Prisma.SmsShiftOfferFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SmsShiftOfferFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SmsShiftOfferFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>
+        }
+        findFirst: {
+          args: Prisma.SmsShiftOfferFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SmsShiftOfferFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>
+        }
+        findMany: {
+          args: Prisma.SmsShiftOfferFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>[]
+        }
+        create: {
+          args: Prisma.SmsShiftOfferCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>
+        }
+        createMany: {
+          args: Prisma.SmsShiftOfferCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SmsShiftOfferCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>[]
+        }
+        delete: {
+          args: Prisma.SmsShiftOfferDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>
+        }
+        update: {
+          args: Prisma.SmsShiftOfferUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>
+        }
+        deleteMany: {
+          args: Prisma.SmsShiftOfferDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SmsShiftOfferUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SmsShiftOfferUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>[]
+        }
+        upsert: {
+          args: Prisma.SmsShiftOfferUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SmsShiftOfferPayload>
+        }
+        aggregate: {
+          args: Prisma.SmsShiftOfferAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSmsShiftOffer>
+        }
+        groupBy: {
+          args: Prisma.SmsShiftOfferGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SmsShiftOfferGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SmsShiftOfferCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SmsShiftOfferCountAggregateOutputType> | number
+        }
+      }
+    }
+    ShiftEscalation: {
+      payload: Prisma.$ShiftEscalationPayload<ExtArgs>
+      fields: Prisma.ShiftEscalationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ShiftEscalationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ShiftEscalationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>
+        }
+        findFirst: {
+          args: Prisma.ShiftEscalationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ShiftEscalationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>
+        }
+        findMany: {
+          args: Prisma.ShiftEscalationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>[]
+        }
+        create: {
+          args: Prisma.ShiftEscalationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>
+        }
+        createMany: {
+          args: Prisma.ShiftEscalationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ShiftEscalationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>[]
+        }
+        delete: {
+          args: Prisma.ShiftEscalationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>
+        }
+        update: {
+          args: Prisma.ShiftEscalationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>
+        }
+        deleteMany: {
+          args: Prisma.ShiftEscalationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ShiftEscalationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ShiftEscalationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>[]
+        }
+        upsert: {
+          args: Prisma.ShiftEscalationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftEscalationPayload>
+        }
+        aggregate: {
+          args: Prisma.ShiftEscalationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShiftEscalation>
+        }
+        groupBy: {
+          args: Prisma.ShiftEscalationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftEscalationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ShiftEscalationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftEscalationCountAggregateOutputType> | number
+        }
+      }
+    }
     BookingTimeStatus: {
       payload: Prisma.$BookingTimeStatusPayload<ExtArgs>
       fields: Prisma.BookingTimeStatusFieldRefs
@@ -9714,6 +9864,32 @@ export const AttributeSyncFieldMappingScalarFieldEnum = {
 export type AttributeSyncFieldMappingScalarFieldEnum = (typeof AttributeSyncFieldMappingScalarFieldEnum)[keyof typeof AttributeSyncFieldMappingScalarFieldEnum]
 
 
+export const SmsShiftOfferScalarFieldEnum = {
+  id: 'id',
+  bookingId: 'bookingId',
+  userId: 'userId',
+  phoneNumber: 'phoneNumber',
+  status: 'status',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type SmsShiftOfferScalarFieldEnum = (typeof SmsShiftOfferScalarFieldEnum)[keyof typeof SmsShiftOfferScalarFieldEnum]
+
+
+export const ShiftEscalationScalarFieldEnum = {
+  id: 'id',
+  bookingId: 'bookingId',
+  status: 'status',
+  currentTier: 'currentTier',
+  nextEscalationTime: 'nextEscalationTime',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShiftEscalationScalarFieldEnum = (typeof ShiftEscalationScalarFieldEnum)[keyof typeof ShiftEscalationScalarFieldEnum]
+
+
 export const BookingTimeStatusScalarFieldEnum = {
   id: 'id',
   uid: 'uid',
@@ -10735,6 +10911,8 @@ export type GlobalOmitConfig = {
   integrationAttributeSync?: Prisma.IntegrationAttributeSyncOmit
   attributeSyncRule?: Prisma.AttributeSyncRuleOmit
   attributeSyncFieldMapping?: Prisma.AttributeSyncFieldMappingOmit
+  smsShiftOffer?: Prisma.SmsShiftOfferOmit
+  shiftEscalation?: Prisma.ShiftEscalationOmit
   bookingTimeStatus?: Prisma.BookingTimeStatusOmit
   bookingTimeStatusDenormalized?: Prisma.BookingTimeStatusDenormalizedOmit
 }

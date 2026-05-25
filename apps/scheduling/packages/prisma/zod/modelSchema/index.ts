@@ -98,5 +98,7 @@ export * from './CalendarCacheEventSchema';
 export * from './IntegrationAttributeSyncSchema';
 export * from './AttributeSyncRuleSchema';
 export * from './AttributeSyncFieldMappingSchema';
+export * from './SmsShiftOfferSchema';
+export * from './ShiftEscalationSchema';
 export * from './BookingTimeStatusSchema';
 export * from './BookingTimeStatusDenormalizedSchema';

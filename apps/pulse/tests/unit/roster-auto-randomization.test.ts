@@ -3,6 +3,29 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Mock server-only compiler guard for Vitest environment
 vi.mock('server-only', () => ({}));
 
+// Mock Supabase logEvent
+vi.mock('@/lib/supabase', () => ({
+  logEvent: vi.fn().mockResolvedValue({}),
+}));
+
+// Mock getSessionUser
+const { mockGetSessionUser } = vi.hoisted(() => ({
+  mockGetSessionUser: vi.fn().mockResolvedValue({
+    userId: 56,
+    role: 'realtor',
+    user: {
+      id: 56,
+      name: 'Taz Operator',
+      email: 'taz@sunsetgrill.com',
+      role: 'realtor',
+    },
+  }),
+}));
+
+vi.mock('@/lib/core/getSessionUser', () => ({
+  getSessionUser: mockGetSessionUser,
+}));
+
 // Mock FS module
 const { mockReadFile } = vi.hoisted(() => ({
   mockReadFile: vi.fn(),

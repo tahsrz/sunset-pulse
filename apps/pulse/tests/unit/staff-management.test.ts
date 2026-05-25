@@ -4,6 +4,25 @@ import { NextRequest } from 'next/server';
 // Mock server-only compiler guard for Vitest environment
 vi.mock('server-only', () => ({}));
 
+// Mock Supabase logEvent
+vi.mock('@/lib/supabase', () => ({
+  logEvent: vi.fn().mockResolvedValue({}),
+}));
+
+// Mock getSessionUser
+vi.mock('@/lib/core/getSessionUser', () => ({
+  getSessionUser: vi.fn().mockResolvedValue({
+    userId: 'mock-operator-id',
+    role: 'realtor',
+    user: {
+      id: 'mock-operator-id',
+      name: 'Mock Operator',
+      email: 'mock-operator@sunsetgrill.com',
+      role: 'realtor',
+    },
+  }),
+}));
+
 // Mock prisma client and operations
 const {
   mockPrismaUserCreate,

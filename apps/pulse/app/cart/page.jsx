@@ -60,10 +60,13 @@ const CartPage = () => {
         }),
       });
 
+      const orderResult = await res.json();
+
       if (res.status === 201) {
         toast.success('Order sent to the grill!');
         if (clearCart) clearCart(); // Clear the tray after successful order
-        router.push('/'); // Redirect home or to a "Thank You" page
+        const orderId = orderResult.data?.id;
+        router.push(`/grill/tracker/${orderId}`); // Redirect to tracker
       } else {
         toast.error('Something went wrong with the order.');
       }

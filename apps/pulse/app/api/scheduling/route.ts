@@ -54,11 +54,32 @@ export const GET = async (request: NextRequest) => {
             },
           },
         },
-        include: {
-          eventType: true,
+        select: {
+          id: true,
+          uid: true,
+          title: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          userId: true,
+          metadata: true,
+          eventType: {
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+            },
+          },
           user: {
-            include: {
-              verifiedNumbers: true,
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              verifiedNumbers: {
+                select: {
+                  phoneNumber: true,
+                },
+              },
             },
           },
         },
@@ -352,11 +373,32 @@ export const GET = async (request: NextRequest) => {
                   },
                 },
               },
-              include: {
-                eventType: true,
+              select: {
+                id: true,
+                uid: true,
+                title: true,
+                startTime: true,
+                endTime: true,
+                status: true,
+                userId: true,
+                metadata: true,
+                eventType: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                  },
+                },
                 user: {
-                  include: {
-                    verifiedNumbers: true,
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    verifiedNumbers: {
+                      select: {
+                        phoneNumber: true,
+                      },
+                    },
                   },
                 },
               },
@@ -369,7 +411,15 @@ export const GET = async (request: NextRequest) => {
       }
     } else {
       bookings = await prisma.booking.findMany({
-        include: {
+        select: {
+          id: true,
+          uid: true,
+          title: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          userId: true,
+          userPrimaryEmail: true,
           attendees: {
             select: {
               id: true,
@@ -395,6 +445,26 @@ export const GET = async (request: NextRequest) => {
       },
       take: 20,
     });
+
+    // In-memory filtration of draft shifts
+    const sessionUser = await getSessionUser().catch(() => null);
+    const isManager = sessionUser && (sessionUser.role === 'realtor' || sessionUser.role === 'admin');
+
+    if (bookings && Array.isArray(bookings)) {
+      if (!isManager) {
+        bookings = bookings.filter((b: any) => {
+          let meta: any = {};
+          if (b.metadata) {
+            try {
+              meta = typeof b.metadata === 'string' ? JSON.parse(b.metadata) : b.metadata;
+            } catch (e) {
+              meta = {};
+            }
+          }
+          return meta?.isDraft !== true;
+        });
+      }
+    }
 
     return successResponse({
       scheduler: {
@@ -640,8 +710,18 @@ async function checkCompatibilityConflict(userId: number, startTime: Date, endTi
 // PATCH /api/scheduling - Modify shifts (reassign or swap employees)
 export const PATCH = async (request: NextRequest) => {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || !sessionUser.userId) {
+      return unauthorizedResponse('Authentication required to modify scheduling assignments.');
+    }
+
+    // Role-Based Access Control: only realtors or admins can manage/reassign schedules
+    if (sessionUser.role !== 'realtor' && sessionUser.role !== 'admin') {
+      return errorResponse('Access denied. Insufficient administrative privileges.', 403);
+    }
+
     const body = await request.json();
-    const { action } = body;
+    const { action, allowOverlap = false } = body;
 
     if (action === 'reassign') {
       const { bookingId, userId } = body;
@@ -672,9 +752,13 @@ export const PATCH = async (request: NextRequest) => {
       const conflict = await checkCompatibilityConflict(user.id, booking.startTime, booking.endTime, [booking.id]);
       if (conflict) {
         if (conflict.selfConflict) {
-          return errorResponse(`⚠️ DOUBLE SCHEDULING CONFLICT: ${user.name} is already scheduled to work an overlapping shift (${conflict.booking.title}) on this day.`, 400);
+          if (!allowOverlap) {
+            return errorResponse(`⚠️ DOUBLE SCHEDULING CONFLICT: ${user.name} is already scheduled to work an overlapping shift (${conflict.booking.title}) on this day.`, 400, { code: 'OVERLAP_WARNING', conflict });
+          }
+          console.warn(`[OVERLAP_OVERRIDE]: Overriding double scheduling conflict for ${user.name} on shift ${bookingId}.`);
+        } else {
+          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: ${user.name} and ${conflict.otherUser.name} cannot be scheduled on the same shift.`, 400);
         }
-        return errorResponse(`⚠️ COMPATIBILITY CONFLICT: ${user.name} and ${conflict.otherUser.name} cannot be scheduled on the same shift.`, 400);
       }
 
       // 3. Recalculate idempotencyKey and title
@@ -706,9 +790,9 @@ export const PATCH = async (request: NextRequest) => {
       try {
         await logEvent({
           type: 'ROSTER_SHIFT_REASSIGNED',
-          description: `Reassigned ${title} to ${user.name}`,
-          actorId: 'admin-operations-001',
-          actorName: 'Admin Operations',
+          description: `Reassigned ${title} to ${user.name} by admin operator ${sessionUser.user.name}`,
+          actorId: sessionUser.userId,
+          actorName: sessionUser.user.name,
           targetId: String(bookingId),
           severity: 'TACTICAL',
           metadata: {
@@ -716,6 +800,7 @@ export const PATCH = async (request: NextRequest) => {
             userId,
             title,
             idempotencyKey,
+            operatorEmail: sessionUser.user.email,
           },
         });
       } catch (logErr) {
@@ -775,18 +860,26 @@ export const PATCH = async (request: NextRequest) => {
       const conflict1 = await checkCompatibilityConflict(user2.id, booking1.startTime, booking1.endTime, [booking1.id, booking2.id]);
       if (conflict1) {
         if (conflict1.selfConflict) {
-          return errorResponse(`⚠️ DOUBLE SCHEDULING CONFLICT: Swapping will put ${user2.name} on an overlapping shift (${conflict1.booking.title}) on this day.`, 400);
+          if (!allowOverlap) {
+            return errorResponse(`⚠️ DOUBLE SCHEDULING CONFLICT: Swapping will put ${user2.name} on an overlapping shift (${conflict1.booking.title}) on this day.`, 400, { code: 'OVERLAP_WARNING', conflict: conflict1 });
+          }
+          console.warn(`[OVERLAP_OVERRIDE]: Overriding double scheduling conflict for ${user2.name} on swap.`);
+        } else {
+          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user2.name} on the same shift with ${conflict1.otherUser.name}.`, 400);
         }
-        return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user2.name} on the same shift with ${conflict1.otherUser.name}.`, 400);
       }
 
       // User 1 is moving to Booking 2
       const conflict2 = await checkCompatibilityConflict(user1.id, booking2.startTime, booking2.endTime, [booking1.id, booking2.id]);
       if (conflict2) {
         if (conflict2.selfConflict) {
-          return errorResponse(`⚠️ DOUBLE SCHEDULING CONFLICT: Swapping will put ${user1.name} on an overlapping shift (${conflict2.booking.title}) on this day.`, 400);
+          if (!allowOverlap) {
+            return errorResponse(`⚠️ DOUBLE SCHEDULING CONFLICT: Swapping will put ${user1.name} on an overlapping shift (${conflict2.booking.title}) on this day.`, 400, { code: 'OVERLAP_WARNING', conflict: conflict2 });
+          }
+          console.warn(`[OVERLAP_OVERRIDE]: Overriding double scheduling conflict for ${user1.name} on swap.`);
+        } else {
+          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user1.name} on the same shift with ${conflict2.otherUser.name}.`, 400);
         }
-        return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user1.name} on the same shift with ${conflict2.otherUser.name}.`, 400);
       }
 
       // 4. Swap and update inside transaction
@@ -846,9 +939,9 @@ export const PATCH = async (request: NextRequest) => {
       try {
         await logEvent({
           type: 'ROSTER_SHIFTS_SWAPPED',
-          description: `Swapped shifts between ${user1.name} and ${user2.name}`,
-          actorId: 'admin-operations-001',
-          actorName: 'Admin Operations',
+          description: `Swapped shifts between ${user1.name} and ${user2.name} by admin operator ${sessionUser.user.name}`,
+          actorId: sessionUser.userId,
+          actorName: sessionUser.user.name,
           targetId: `${bookingId1}_${bookingId2}`,
           severity: 'TACTICAL',
           metadata: {
@@ -856,6 +949,7 @@ export const PATCH = async (request: NextRequest) => {
             bookingId2,
             userId1: user1.id,
             userId2: user2.id,
+            operatorEmail: sessionUser.user.email,
           },
         });
       } catch (logErr) {
@@ -865,6 +959,96 @@ export const PATCH = async (request: NextRequest) => {
       return successResponse({
         message: 'Shifts successfully swapped.',
         bookings: [updated1, updated2],
+      });
+
+    } else if (action === 'publish-draft') {
+      const { startDate, endDate } = body;
+      if (!startDate || !endDate) {
+        return errorResponse('Required parameters are missing (startDate, endDate).', 400);
+      }
+
+      // 1. Fetch all bookings in range
+      const bookingsInWeek = await prisma.booking.findMany({
+        where: {
+          startTime: {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          },
+          eventType: {
+            slug: {
+              in: ['grill-shift', 'register-shift'],
+            },
+          },
+        },
+        select: {
+          id: true,
+          metadata: true,
+        },
+      });
+
+      // 2. Filter drafts in-memory
+      const draftBookings = bookingsInWeek.filter((b: any) => {
+        let meta: any = {};
+        if (b.metadata) {
+          try {
+            meta = typeof b.metadata === 'string' ? JSON.parse(b.metadata) : b.metadata;
+          } catch (e) {
+            meta = {};
+          }
+        }
+        return meta?.isDraft === true;
+      });
+
+      if (draftBookings.length === 0) {
+        return successResponse({
+          message: 'No sandbox draft shifts found to publish in this date range.',
+          publishedCount: 0,
+        });
+      }
+
+      // 3. Promote each draft inside transaction
+      const updatedBookings = await prisma.$transaction(
+        draftBookings.map((b: any) => {
+          let meta: any = {};
+          try {
+            meta = typeof b.metadata === 'string' ? JSON.parse(b.metadata) : b.metadata;
+          } catch (e) {
+            meta = {};
+          }
+          // Flip isDraft to false
+          const newMeta = { ...meta, isDraft: false };
+          return prisma.booking.update({
+            where: { id: b.id },
+            data: {
+              metadata: newMeta,
+            },
+          });
+        })
+      );
+
+      // 4. Log audit event
+      try {
+        await logEvent({
+          type: 'ROSTER_DRAFT_PUBLISHED',
+          description: `Published ${updatedBookings.length} sandbox draft shifts for week of ${startDate} to ${endDate} by admin operator ${sessionUser.user.name}`,
+          actorId: sessionUser.userId,
+          actorName: sessionUser.user.name,
+          targetId: `${startDate}_${endDate}`,
+          severity: 'TACTICAL',
+          metadata: {
+            startDate,
+            endDate,
+            publishedCount: updatedBookings.length,
+            operatorEmail: sessionUser.user.email,
+          },
+        });
+      } catch (logErr) {
+        console.error('Audit log error skipped:', logErr);
+      }
+
+      return successResponse({
+        message: `Successfully promoted ${updatedBookings.length} draft shifts to live.`,
+        publishedCount: updatedBookings.length,
       });
 
     } else {

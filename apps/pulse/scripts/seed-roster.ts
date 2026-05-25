@@ -13,7 +13,7 @@ let prisma: any;
 const employees = [
   { name: 'Sierra', username: 'sierra', email: 'sierra@sunsetgrill.com', phone: '+15551110001' },
   { name: 'Beth', username: 'beth', email: 'beth@sunsetgrill.com', phone: '+15551110002' },
-  { name: 'Taz', username: 'taz', email: 'taz@sunsetgrill.com', phone: '+15551110003' },
+  { name: 'Taz', username: 'taz', email: 'taz@sunsetgrill.com', phone: '+18179805953' },
   { name: 'Angela', username: 'angela', email: 'angela@sunsetgrill.com', phone: '+15551110004' },
   { name: 'Stephanie', username: 'stephanie', email: 'stephanie@sunsetgrill.com', phone: '+15551110005' },
   { name: 'Sherrie', username: 'sherrie', email: 'sherrie@sunsetgrill.com', phone: '+15551110006' },

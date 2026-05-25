@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { MemoriaRetriever } from './memoria_retriever';
+import { readMemoriaV4Header, MemoriaV4Retriever, MemoriaV4SectionType } from './memoria_v4';
 
 export interface TahMasterPaths {
   baseName: string;
@@ -213,6 +214,45 @@ export function parsePackedShard(data: string) {
 
 function extractTahMasterPlaces() {
   const paths = assertTahMasterReady();
+  const metadata = getTahMasterMetadata();
+
+  if (metadata.format === 'memoria-v4-super-cartridge') {
+    try {
+      const header = readMemoriaV4Header(paths.hatPath);
+      const placeSec = header.sections.find(s => s.type === MemoriaV4SectionType.PLACE_TABLE);
+      if (placeSec && placeSec.length > 0n) {
+        const retriever = new MemoriaV4Retriever(fs.readFileSync(paths.hatPath));
+        const binaryPlaces = retriever.readPlaces(Number(placeSec.offset), Number(placeSec.itemCount));
+        
+        const manifest = readManifest(paths.manifestPath);
+        const manifestPlaces = manifest?.places || [];
+
+        return binaryPlaces.map(place => {
+          const mPlace = manifestPlaces.find((mp: any) => mp.placeSlug === place.placeSlug);
+          const binding = clampPercent(place.coverage);
+          return {
+            id: place.placeSlug,
+            slug: place.placeSlug,
+            label: place.label,
+            region: mPlace?.region || (place.placeType === 6 ? 'Region' : null),
+            physicalAnchor: mPlace?.physicalAnchor || null,
+            lat: place.lat || null,
+            lng: place.lng || null,
+            binding,
+            stage: mPlace?.stage || null,
+            source: mPlace?.source || null,
+            title: mPlace?.title || null,
+            searchQuery: mPlace?.searchQuery || null,
+            text: `PLACE: ${place.label} | COORDINATES: ${place.lat},${place.lng} | ATLAS_PULSE_BINDING: ${place.coverage}`
+          };
+        }).sort((a, b) => b.binding - a.binding || a.label.localeCompare(b.label));
+      }
+    } catch (err) {
+      console.warn('Failed to parse binary PLACE_TABLE, falling back to legacy:', err);
+    }
+  }
+
+  // Legacy fallback
   const shards = readMasterTextShards(paths);
   const places = new Map<string, any>();
 

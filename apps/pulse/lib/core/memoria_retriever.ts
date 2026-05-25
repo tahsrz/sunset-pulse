@@ -28,6 +28,10 @@ export class MemoriaRetriever {
   private indexOffset = 64;
   private globalBloom: Buffer = Buffer.alloc(0);
 
+  // v4 fields
+  private isV4 = false;
+  private v4ShardIndexOffset = 0;
+
   constructor(private hatPath: string) {
     if (!fs.existsSync(hatPath)) {
       throw new Error(`Header Atlas not found: ${hatPath}`);
@@ -52,6 +56,40 @@ export class MemoriaRetriever {
     }
 
     const magic = this.hatBuffer.readUInt32LE(0);
+    if (magic === 0x2134564d) { // MEMORIA_V4_MAGIC
+      this.isV4 = true;
+      const sectionCount = this.hatBuffer.readUInt32LE(16);
+      this.k = this.hatBuffer.readUInt16LE(22);
+      this.shardCount = Number(this.hatBuffer.readBigUInt64LE(24));
+      const sectionDirectoryOffset = Number(this.hatBuffer.readBigUInt64LE(88));
+
+      // Parse section directory
+      const sections: Array<{ type: number; offset: number; length: number; itemCount: number }> = [];
+      for (let index = 0; index < sectionCount; index++) {
+        const entryOffset = sectionDirectoryOffset + index * 64;
+        if (entryOffset + 64 <= this.hatBuffer.length) {
+          sections.push({
+            type: this.hatBuffer.readUInt16LE(entryOffset),
+            offset: Number(this.hatBuffer.readBigUInt64LE(entryOffset + 8)),
+            length: Number(this.hatBuffer.readBigUInt64LE(entryOffset + 16)),
+            itemCount: Number(this.hatBuffer.readBigUInt64LE(entryOffset + 24))
+          });
+        }
+      }
+
+      const gfSec = sections.find(s => s.type === 1); // GLOBAL_FILTER
+      if (gfSec) {
+        this.globalBloom = this.hatBuffer.subarray(gfSec.offset, gfSec.offset + gfSec.length);
+        this.m = BigInt(this.globalBloom.length * 8);
+      }
+
+      const siSec = sections.find(s => s.type === 3); // SHARD_INDEX
+      if (siSec) {
+        this.v4ShardIndexOffset = siSec.offset;
+      }
+      return;
+    }
+
     if (magic !== 0x54414821 && magic !== 0x48415421) {
       throw new Error(`Invalid Memoria header magic: 0x${magic.toString(16)}`);
     }
@@ -95,6 +133,10 @@ export class MemoriaRetriever {
   }
 
   public search(query: string, topN = 3): MemoriaMatch[] {
+    if (this.isV4) {
+      return this.searchV4(query, topN);
+    }
+
     const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, ' ');
     const terms = cleanQuery.split(/\s+/).map(t => t.trim()).filter(t => t.length > 2);
     const ngrams = [...terms];
@@ -159,5 +201,56 @@ export class MemoriaRetriever {
       .sort((a, b) => b.score - a.score)
       .slice(0, topN)
       .map(({ score, data }) => ({ score, data }));
+  }
+
+  private searchV4(query: string, topN = 3): MemoriaMatch[] {
+    const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, ' ');
+    const terms = cleanQuery.split(/\s+/).map(t => t.trim()).filter(t => t.length > 2);
+    if (terms.length === 0) return [];
+
+    const tahBuffer = this.loadTahBuffer();
+    const scores = new Map<number, number>();
+
+    for (let i = 0; i < this.shardCount; i++) {
+      const entryOffset = this.v4ShardIndexOffset + i * 80;
+      if (entryOffset + 80 > this.hatBuffer.length) break;
+
+      const dataOffset = Number(this.hatBuffer.readBigUInt64LE(entryOffset + 32));
+      const length = Number(this.hatBuffer.readBigUInt64LE(entryOffset + 40));
+
+      if (length <= 0 || dataOffset < 0 || dataOffset + length > tahBuffer.length) continue;
+
+      const data = tahBuffer.subarray(dataOffset, dataOffset + length).toString('utf-8').replace(/\0+$/g, '');
+      const normalizedData = data.toLowerCase();
+
+      let score = 0;
+      let termMatches = 0;
+
+      for (const term of terms) {
+        if (normalizedData.includes(term)) {
+          termMatches++;
+          score += 10;
+        }
+      }
+
+      if (termMatches > 0) {
+        const queryText = cleanQuery.trim();
+        if (queryText.length > 0 && normalizedData.includes(queryText)) {
+          score += 25;
+        }
+        scores.set(i, score);
+      }
+    }
+
+    return [...scores.entries()]
+      .map(([index, score]) => {
+        const entryOffset = this.v4ShardIndexOffset + index * 80;
+        const dataOffset = Number(this.hatBuffer.readBigUInt64LE(entryOffset + 32));
+        const length = Number(this.hatBuffer.readBigUInt64LE(entryOffset + 40));
+        const data = tahBuffer.subarray(dataOffset, dataOffset + length).toString('utf-8').replace(/\0+$/g, '');
+        return { score, data };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topN);
   }
 }
