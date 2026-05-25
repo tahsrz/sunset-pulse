@@ -8,8 +8,8 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 const { Client } = pg;
 
-const localConnectionString = process.env.DATABASE_DIRECT_URL || "postgres://postgres:postgres@localhost:54322/postgres";
-const prodConnectionString = process.env.PROD_DATABASE_DIRECT_URL;
+const localConnectionString = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:54322/postgres";
+const prodConnectionString = process.env.PROD_DATABASE_URL;
 
 const sqlStatements = [
   // 1. Lead Pipeline Stages Enum
