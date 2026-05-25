@@ -108,9 +108,3 @@ npm run test:unit
 ```
 
 ---
-
-## 🛡️ Security & Architectural Standards
-
-* **No Secrets in Code**: All environment endpoints and API keys must reside in sandbox environment buffers.
-* **Unique Constraints**: All lead operations on Supabase must utilize `{ onConflict: 'email' }` to protect database constraints.
-* **Non-Blocking Execution**: Ensure fast client polling (5s intervals) and clean WebSocket/Web-worker lifecycles to protect low-power devices.

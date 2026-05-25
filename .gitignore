@@ -50,3 +50,10 @@ next-env.d.ts
 # OS files
 Thumbs.db
 desktop.ini
+
+# scratch and playground directories
+scratch/
+temp_render/
+**/scratch/
+**/temp_render/
+
