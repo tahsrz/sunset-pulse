@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { prisma } from '@calcom/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { getChicagoWeekRange } from '@/lib/core/timezone';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,32 +15,11 @@ export async function POST(req: NextRequest) {
 
     const { weekOffset = 1, overwrite = true } = bodyPayload;
 
-    // Calculate source and target date boundaries
+    // Calculate source and target date boundaries localized to America/Chicago
     // Target week is `weekOffset` weeks ahead of current week.
     // Reference week is 1 week before the target week.
-    const today = new Date();
-    const currentDay = today.getDay(); // 0 (Sunday) to 6 (Saturday)
-    
-    // Days to next Monday
-    const daysToMonday = currentDay === 0 ? 1 : 8 - currentDay;
-
-    // Target week start: next Monday + (weekOffset - 1) * 7 days
-    const targetStart = new Date(today);
-    targetStart.setDate(today.getDate() + daysToMonday + (weekOffset - 1) * 7);
-    targetStart.setHours(0, 0, 0, 0);
-
-    const targetEnd = new Date(targetStart);
-    targetEnd.setDate(targetStart.getDate() + 6);
-    targetEnd.setHours(23, 59, 59, 999);
-
-    // Source week start: target week - 7 days
-    const sourceStart = new Date(targetStart);
-    sourceStart.setDate(targetStart.getDate() - 7);
-    sourceStart.setHours(0, 0, 0, 0);
-
-    const sourceEnd = new Date(sourceStart);
-    sourceEnd.setDate(sourceStart.getDate() + 6);
-    sourceEnd.setHours(23, 59, 59, 999);
+    const { start: targetStart, end: targetEnd } = getChicagoWeekRange(weekOffset, true);
+    const { start: sourceStart, end: sourceEnd } = getChicagoWeekRange(weekOffset - 1, true);
 
     console.log(`[ROSTER_PREDICTION] Source range: ${sourceStart.toISOString()} - ${sourceEnd.toISOString()}`);
     console.log(`[ROSTER_PREDICTION] Target range: ${targetStart.toISOString()} - ${targetEnd.toISOString()}`);

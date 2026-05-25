@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@calcom/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { sendSMS, formatWeeklyEmployeeSchedule, formatWeeklyMasterSchedule } from '@/lib/twilio';
+import { getChicagoWeekRange } from '@/lib/core/timezone';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const { weekOffset = 0 } = bodyPayload;
 
-    // 3. Compute Monday-Sunday date range
+    // 3. Compute Monday-Sunday date range localized to America/Chicago
     let startDate: Date;
     let endDate: Date;
 
@@ -34,19 +35,9 @@ export async function POST(req: NextRequest) {
       startDate = new Date(bodyPayload.startDate);
       endDate = new Date(bodyPayload.endDate);
     } else {
-      const today = new Date();
-      const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday, ...
-      
-      // Compute days to next Monday
-      const daysToMonday = currentDay === 0 ? 1 : 8 - currentDay;
-
-      startDate = new Date(today);
-      startDate.setDate(today.getDate() + daysToMonday + weekOffset * 7);
-      startDate.setHours(0, 0, 0, 0);
-
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      endDate.setHours(23, 59, 59, 999);
+      const range = getChicagoWeekRange(weekOffset + 1, true);
+      startDate = range.start;
+      endDate = range.end;
     }
 
     console.log(`[WEEKLY_DISPATCH]: Processing week of ${startDate.toISOString()} to ${endDate.toISOString()}`);

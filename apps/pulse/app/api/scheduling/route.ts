@@ -10,6 +10,13 @@ import crypto from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
+// Static JSON imports for robust production environment seeding
+import defaultEmployeesJson from '@/config/default-employees.json';
+import compatibilityRulesJson from '@/config/compatibility-rules.json';
+
+// Timezone Hardening
+import { chicagoDateTime } from '@/lib/core/timezone';
+
 // GET /api/scheduling - Retrieve scheduler information
 export const GET = async (request: NextRequest) => {
   try {
@@ -59,6 +66,307 @@ export const GET = async (request: NextRequest) => {
           startTime: 'asc',
         },
       });
+
+      // --- AUTO-RANDOMIZATION FOR NEW/UNSCHEDULED WEEKS ---
+      if (bookings.length === 0) {
+        console.log(`[AUTO_SCHEDULE] No shifts found for ${startDateParam} - ${endDateParam}. Generating randomized distribution...`);
+        
+        // A. Ensure default Event Types exist
+        let grillType = eventTypes.find((e: any) => e.slug === 'grill-shift');
+        let registerType = eventTypes.find((e: any) => e.slug === 'register-shift');
+
+        if (!grillType) {
+          grillType = await prisma.eventType.upsert({
+            where: { id: 8801 },
+            update: { title: 'Grill Shift', slug: 'grill-shift', length: 480 },
+            create: { id: 8801, title: 'Grill Shift', slug: 'grill-shift', length: 480 },
+          });
+        }
+
+        if (!registerType) {
+          registerType = await prisma.eventType.upsert({
+            where: { id: 8802 },
+            update: { title: 'Register Shift', slug: 'register-shift', length: 480 },
+            create: { id: 8802, title: 'Register Shift', slug: 'register-shift', length: 480 },
+          });
+        }
+
+        // B. Load default employees from JSON config (with static import fallback for production)
+        let defaultEmployees: any[] = [];
+        try {
+          const defaultEmployeesPath = path.resolve(process.cwd(), 'config/default-employees.json');
+          const data = await fs.readFile(defaultEmployeesPath, 'utf8');
+          defaultEmployees = JSON.parse(data);
+        } catch {
+          defaultEmployees = defaultEmployeesJson;
+        }
+
+        if (defaultEmployees.length === 0) {
+          defaultEmployees = defaultEmployeesJson;
+        }
+
+        // C. Synchronize default employees in the database
+        const seededUsers = [];
+        for (const emp of defaultEmployees) {
+          const user = await prisma.user.upsert({
+            where: { email: emp.email },
+            update: {
+              name: emp.name,
+              username: emp.username,
+              timeZone: 'America/Chicago',
+            },
+            create: {
+              email: emp.email,
+              name: emp.name,
+              username: emp.username,
+              timeZone: 'America/Chicago',
+            },
+          });
+
+          const existingNum = await prisma.verifiedNumber.findFirst({
+            where: { userId: user.id },
+          });
+          if (!existingNum) {
+            await prisma.verifiedNumber.create({
+              data: {
+                userId: user.id,
+                phoneNumber: emp.phone,
+              },
+            });
+          }
+          seededUsers.push({ ...emp, id: user.id });
+        }
+
+        // D. Fetch active users and exclusions
+        const dbUsers = await prisma.user.findMany({
+          select: { id: true, username: true, name: true, email: true },
+        });
+
+        const allUsersMap = new Map();
+        dbUsers.forEach(u => allUsersMap.set(u.email.toLowerCase(), u));
+        seededUsers.forEach(u => {
+          if (!allUsersMap.has(u.email.toLowerCase())) {
+            allUsersMap.set(u.email.toLowerCase(), u);
+          }
+        });
+        const poolUsers = Array.from(allUsersMap.values());
+
+        let conflicts: any[] = [];
+        try {
+          const configPath = path.resolve(process.cwd(), 'config/compatibility-rules.json');
+          const data = await fs.readFile(configPath, 'utf8');
+          conflicts = JSON.parse(data);
+        } catch {
+          conflicts = compatibilityRulesJson;
+        }
+
+        // E. Run Solver function
+        const generateRandomRoster = (
+          mondayDate: Date,
+          users: any[],
+          exclusions: any[],
+          maxHours: number
+        ) => {
+          const blueprints: {
+            dayOffset: number;
+            role: 'grill' | 'register';
+            startTime: Date;
+            endTime: Date;
+            hours: number;
+          }[] = [];
+
+          for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+            const isSunday = dayOffset === 6;
+            const openStart = isSunday ? 6 : 5;
+            const openEnd = 13;
+            const closeStart = 13;
+            const closeEnd = isSunday ? 21 : 22;
+
+            const baseDate = new Date(mondayDate);
+            baseDate.setDate(mondayDate.getDate() + dayOffset);
+
+            const getShiftTimes = (startHour: number, endHour: number) => {
+              const s = chicagoDateTime(baseDate, startHour);
+              const e = chicagoDateTime(baseDate, endHour);
+              return { s, e, hours: endHour - startHour };
+            };
+
+            blueprints.push({ dayOffset, role: 'grill', startTime: getShiftTimes(openStart, openEnd).s, endTime: getShiftTimes(openStart, openEnd).e, hours: getShiftTimes(openStart, openEnd).hours });
+            blueprints.push({ dayOffset, role: 'register', startTime: getShiftTimes(openStart, openEnd).s, endTime: getShiftTimes(openStart, openEnd).e, hours: getShiftTimes(openStart, openEnd).hours });
+            blueprints.push({ dayOffset, role: 'grill', startTime: getShiftTimes(closeStart, closeEnd).s, endTime: getShiftTimes(closeStart, closeEnd).e, hours: getShiftTimes(closeStart, closeEnd).hours });
+            blueprints.push({ dayOffset, role: 'register', startTime: getShiftTimes(closeStart, closeEnd).s, endTime: getShiftTimes(closeStart, closeEnd).e, hours: getShiftTimes(closeStart, closeEnd).hours });
+          }
+
+          for (let attempt = 0; attempt < 500; attempt++) {
+            const assignments: { [blueprintIndex: number]: any } = {};
+            const userHours: { [userId: number]: number } = {};
+            users.forEach(u => { userHours[u.id] = 0; });
+
+            let success = true;
+            for (let i = 0; i < blueprints.length; i++) {
+              const bp = blueprints[i];
+              const shuffledUsers = [...users].sort(() => Math.random() - 0.5);
+
+              let assignedUser = null;
+              for (const user of shuffledUsers) {
+                if (userHours[user.id] + bp.hours > maxHours) continue;
+
+                // Check self-conflict on same day (overlapping shifts)
+                let hasSelfConflict = false;
+                for (let prevIdx = 0; prevIdx < i; prevIdx++) {
+                  const prevAssigned = assignments[prevIdx];
+                  if (prevAssigned && prevAssigned.id === user.id) {
+                    const prevBp = blueprints[prevIdx];
+                    if (prevBp.dayOffset === bp.dayOffset) {
+                      const s1 = bp.startTime.getTime();
+                      const e1 = bp.endTime.getTime();
+                      const s2 = prevBp.startTime.getTime();
+                      const e2 = prevBp.endTime.getTime();
+                      if (Math.max(s1, s2) < Math.min(e1, e2)) {
+                        hasSelfConflict = true;
+                        break;
+                      }
+                    }
+                  }
+                }
+                if (hasSelfConflict) continue;
+
+                // Check compatibility rules
+                let hasExclusionConflict = false;
+                const userEmail = user.email.toLowerCase();
+                const incompatibleEmails = exclusions.reduce((emails: string[], rule: any) => {
+                  const e1 = rule.email1.trim().toLowerCase();
+                  const e2 = rule.email2.trim().toLowerCase();
+                  if (e1 === userEmail) emails.push(e2);
+                  if (e2 === userEmail) emails.push(e1);
+                  return emails;
+                }, []);
+
+                if (incompatibleEmails.length > 0) {
+                  for (let prevIdx = 0; prevIdx < i; prevIdx++) {
+                    const prevAssigned = assignments[prevIdx];
+                    if (prevAssigned) {
+                      const prevBp = blueprints[prevIdx];
+                      if (prevBp.dayOffset === bp.dayOffset) {
+                        const prevUserEmail = prevAssigned.email.toLowerCase();
+                        if (incompatibleEmails.includes(prevUserEmail)) {
+                          const s1 = bp.startTime.getTime();
+                          const e1 = bp.endTime.getTime();
+                          const s2 = prevBp.startTime.getTime();
+                          const e2 = prevBp.endTime.getTime();
+                          if (Math.max(s1, s2) < Math.min(e1, e2)) {
+                            hasExclusionConflict = true;
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                if (hasExclusionConflict) continue;
+
+                assignedUser = user;
+                break;
+              }
+
+              if (assignedUser) {
+                assignments[i] = assignedUser;
+                userHours[assignedUser.id] += bp.hours;
+              } else {
+                success = false;
+                break;
+              }
+            }
+
+            if (success) {
+              return blueprints.map((bp, idx) => ({
+                ...bp,
+                user: assignments[idx],
+              }));
+            }
+          }
+
+          return null;
+        };
+
+        // F. Run randomizer solver with graceful fallback
+        let generated = generateRandomRoster(new Date(startDateParam), poolUsers, conflicts, 40);
+        if (!generated) {
+          console.warn('[AUTO_SCHEDULE] Failed with 40-hour limit. Retrying with 60-hour limit...');
+          generated = generateRandomRoster(new Date(startDateParam), poolUsers, conflicts, 60);
+        }
+        if (!generated) {
+          console.warn('[AUTO_SCHEDULE] Failed with 60-hour limit. Retrying with no limit...');
+          generated = generateRandomRoster(new Date(startDateParam), poolUsers, conflicts, 999);
+        }
+
+        if (generated) {
+          // Double check to prevent race condition insertions
+          const doubleCheck = await prisma.booking.findFirst({
+            where: {
+              startTime: {
+                gte: new Date(startDateParam),
+                lte: new Date(endDateParam),
+              },
+              eventType: {
+                slug: {
+                  in: ['grill-shift', 'register-shift'],
+                },
+              },
+            },
+          });
+
+          if (!doubleCheck) {
+            for (const shift of generated) {
+              const eventType = shift.role === 'grill' ? grillType : registerType;
+              const title = `${eventType.title} - ${shift.user.name}`;
+              const uid = crypto.randomUUID();
+              const idempotencyKey = crypto.randomUUID();
+
+              await prisma.booking.create({
+                data: {
+                  uid,
+                  title,
+                  description: `Auto-generated ${eventType.title}`,
+                  startTime: shift.startTime,
+                  endTime: shift.endTime,
+                  status: 'ACCEPTED',
+                  userId: shift.user.id,
+                  eventTypeId: eventType.id,
+                  userPrimaryEmail: shift.user.email,
+                  idempotencyKey,
+                },
+              });
+            }
+
+            // G. Re-fetch newly created bookings
+            bookings = await prisma.booking.findMany({
+              where: {
+                startTime: {
+                  gte: new Date(startDateParam),
+                  lte: new Date(endDateParam),
+                },
+                eventType: {
+                  slug: {
+                    in: ['grill-shift', 'register-shift'],
+                  },
+                },
+              },
+              include: {
+                eventType: true,
+                user: {
+                  include: {
+                    verifiedNumbers: true,
+                  },
+                },
+              },
+              orderBy: {
+                startTime: 'asc',
+              },
+            });
+          }
+        }
+      }
     } else {
       bookings = await prisma.booking.findMany({
         include: {
@@ -281,15 +589,14 @@ async function checkCompatibilityConflict(userId: number, startTime: Date, endTi
     }
 
     // 3. Now verify Compatibility/Conflict rules loaded from config/compatibility-rules.json
-    const configPath = path.resolve(process.cwd(), 'config/compatibility-rules.json');
+    // 3. Now verify Compatibility/Conflict rules loaded from config/compatibility-rules.json (with static import fallback)
     let conflicts: any[] = [];
     try {
+      const configPath = path.resolve(process.cwd(), 'config/compatibility-rules.json');
       const data = await fs.readFile(configPath, 'utf8');
       conflicts = JSON.parse(data);
-    } catch (err: any) {
-      if (err.code !== 'ENOENT') {
-        console.error('Error reading compatibility rules:', err);
-      }
+    } catch {
+      conflicts = compatibilityRulesJson;
     }
 
     if (conflicts.length === 0) return null;

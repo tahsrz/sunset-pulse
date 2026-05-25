@@ -6,6 +6,11 @@ import path from 'path';
 import fs from 'fs/promises';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
+import { getChicagoWeekRange } from '@/lib/core/timezone';
+
+// Static JSON import for robust production fallback
+import compatibilityRulesJson from '@/config/compatibility-rules.json';
+
 // Deterministic UUID v5 generator
 function uuidv5(name: string): string {
   const namespace = Buffer.from('6ba7b8119dad11d180b400c04fd430c8', 'hex');
@@ -20,21 +25,9 @@ function uuidv5(name: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
-// Compute Monday-Sunday date range based on weekOffset
+// Compute Monday-Sunday date range based on weekOffset localized to America/Chicago
 function getWeekRange(weekOffset: number) {
-  const today = new Date();
-  const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday...
-  const daysToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-
-  const start = new Date(today);
-  start.setDate(today.getDate() + daysToMonday + weekOffset * 7);
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
+  return getChicagoWeekRange(weekOffset, false);
 }
 
 // Helper to check for compatibility and double-scheduling conflicts inside bulk operations
@@ -189,16 +182,14 @@ export async function POST(request: NextRequest) {
       const sourceRange = getWeekRange(offsetVal - 1);
       const targetRange = getWeekRange(offsetVal);
 
-      // Load compatibility exclusions
-      const configPath = path.resolve(process.cwd(), 'config/compatibility-rules.json');
+      // Load compatibility exclusions (with static import fallback)
       let conflicts: any[] = [];
       try {
+        const configPath = path.resolve(process.cwd(), 'config/compatibility-rules.json');
         const data = await fs.readFile(configPath, 'utf8');
         conflicts = JSON.parse(data);
-      } catch (err: any) {
-        if (err.code !== 'ENOENT') {
-          console.error('Error reading compatibility rules:', err);
-        }
+      } catch {
+        conflicts = compatibilityRulesJson;
       }
 
       // Fetch bookings for source and target weeks

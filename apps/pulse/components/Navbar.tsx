@@ -49,6 +49,13 @@ const Navbar: React.FC = () => {
   const isLoggedIn = Boolean(user || serverSessionUser);
   const isRealtorOrAdmin = user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin';
 
+  const loginHref = useMemo(() => {
+    if (!pathname || pathname === '/' || pathname === '/login') {
+      return '/login';
+    }
+    return `/login?redirect=${encodeURIComponent(pathname)}`;
+  }, [pathname]);
+
   const navLinks = useMemo<NavLink[]>(() => [
     { href: '/', label: 'Home', active: pathname === '/' },
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
@@ -250,7 +257,7 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <Link
-                href="/login"
+                href={loginHref}
                 className="hidden items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-50 sm:flex"
               >
                 <LogIn size={16} />
@@ -283,7 +290,7 @@ const Navbar: React.FC = () => {
             ))}
 
             {!isLoggedIn && (
-              <Link href="/login" className="mt-2 flex items-center gap-2 rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
+              <Link href={loginHref} className="mt-2 flex items-center gap-2 rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15">
                 <LogIn size={16} />
                 Login
               </Link>

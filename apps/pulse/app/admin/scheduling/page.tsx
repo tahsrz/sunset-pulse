@@ -281,21 +281,38 @@ export default function RosterManagementCenter() {
     }
   };
 
-  // Calculate Monday to Sunday dates for the selected week offset
+  // Calculate Monday to Sunday dates for the selected week offset, timezone-hardened to America/Chicago
   const getWeekRange = useCallback(() => {
-    const today = new Date();
-    const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday...
-    
-    // Days to Monday of this week
+    // 1. Get current moment in Chicago time
+    const chicagoStr = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
+    const todayInChicago = new Date(chicagoStr);
+    const currentDay = todayInChicago.getDay(); // 0 is Sunday, 1 is Monday...
+
+    // 2. Compute days to Monday of this week
     const daysToMonday = currentDay === 0 ? -6 : 1 - currentDay;
 
-    const start = new Date(today);
-    start.setDate(today.getDate() + daysToMonday + weekOffset * 7);
-    start.setHours(0, 0, 0, 0);
+    const targetMonday = new Date(todayInChicago);
+    targetMonday.setDate(todayInChicago.getDate() + daysToMonday + weekOffset * 7);
 
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
+    // 3. Helper to create absolute Date representing specific Central hour/min on targetMonday's day
+    const getCentralDate = (targetDate: Date, hour: number, minute: number = 0, seconds: number = 0, ms: number = 0) => {
+      // Use sv-SE locale to get YYYY-MM-DD
+      const datePart = targetDate.toLocaleDateString('sv-SE', { timeZone: 'America/Chicago' });
+      const localIso = `${datePart}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      const tempUtc = new Date(localIso + 'Z');
+      const testChicago = tempUtc.toLocaleString('en-US', { timeZone: 'America/Chicago' });
+      const testUtc = tempUtc.toLocaleString('en-US', { timeZone: 'UTC' });
+      const diffMs = new Date(testChicago).getTime() - new Date(testUtc).getTime();
+      const result = new Date(tempUtc.getTime() - diffMs);
+      if (ms > 0) result.setMilliseconds(ms);
+      return result;
+    };
+
+    const start = getCentralDate(targetMonday, 0, 0, 0, 0);
+
+    const targetSunday = new Date(targetMonday);
+    targetSunday.setDate(targetMonday.getDate() + 6);
+    const end = getCentralDate(targetSunday, 23, 59, 59, 999);
 
     return { start, end };
   }, [weekOffset]);

@@ -9,12 +9,8 @@ import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
 import { JamiePulseProvider } from '@/context/JamiePulseContext';
 import { VibeProvider } from '@/context/VibeContext';
-import JamieChat from '@/components/JamieChat';
 import KeybindHandler from '@/components/KeybindHandler';
-import JamieInsightsLoginToast from '@/components/JamieInsightsLoginToast';
-import JamiePulseOverlay from '@/components/JamiePulseOverlay';
-import DevPortal from '@/components/DevPortal';
-import FeedbackWidget from '@/components/FeedbackWidget';
+import ClientWidgets from '@/components/ClientWidgets';
 import { SiteConfig } from '@/models/SiteConfig';
 import connectDB from '@/lib/core/database';
 import { createClient } from '@/utils/supabase/server';
@@ -184,13 +180,8 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
                     <Footer />
                   </div>
                   
-                  <JamieChat />
-                  <FeedbackWidget />
-                  <DevPortal />
+                  <ClientWidgets />
                   <KeybindHandler />
-                  <JamieInsightsLoginToast />
-                  <JamiePulseOverlay />
-                  
                   <ToastContainer />
                 </JamiePulseProvider>
               </VibeProvider>

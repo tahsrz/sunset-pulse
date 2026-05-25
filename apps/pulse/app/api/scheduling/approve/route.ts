@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@calcom/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
+import { getChicagoWeekRange } from '@/lib/core/timezone';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,21 +16,8 @@ export async function POST(req: NextRequest) {
 
     const { weekOffset = 1 } = bodyPayload;
 
-    // Calculate target date boundaries
-    const today = new Date();
-    const currentDay = today.getDay(); // 0 (Sunday) to 6 (Saturday)
-    
-    // Days to next Monday
-    const daysToMonday = currentDay === 0 ? 1 : 8 - currentDay;
-
-    // Target week start: next Monday + (weekOffset - 1) * 7 days
-    const targetStart = new Date(today);
-    targetStart.setDate(today.getDate() + daysToMonday + (weekOffset - 1) * 7);
-    targetStart.setHours(0, 0, 0, 0);
-
-    const targetEnd = new Date(targetStart);
-    targetEnd.setDate(targetStart.getDate() + 6);
-    targetEnd.setHours(23, 59, 59, 999);
+    // Calculate target date boundaries localized to America/Chicago
+    const { start: targetStart, end: targetEnd } = getChicagoWeekRange(weekOffset, true);
 
     console.log(`[ROSTER_APPROVAL] Approving shifts for target range: ${targetStart.toISOString()} - ${targetEnd.toISOString()}`);
 
