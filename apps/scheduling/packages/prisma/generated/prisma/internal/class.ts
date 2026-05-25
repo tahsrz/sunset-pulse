@@ -28,8 +28,8 @@ const config: runtime.GetPrismaClientConfig = {
     },
     "config": {
       "moduleFormat": "cjs",
-      "importFileExtension": "",
-      "engineType": "client"
+      "engineType": "client",
+      "importFileExtension": ""
     },
     "binaryTargets": [
       {
@@ -51,6 +51,7 @@ const config: runtime.GetPrismaClientConfig = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
