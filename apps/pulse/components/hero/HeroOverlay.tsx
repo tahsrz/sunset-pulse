@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Compass, Search } from 'lucide-react';
+import { Compass, Search, Calendar } from 'lucide-react';
 import marketingCopy from '@/config/marketing_copy.json';
 
 const HeroOverlay: React.FC = () => {
@@ -25,21 +25,29 @@ const HeroOverlay: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-4 sm:flex-row">
+        <div className="flex flex-col items-center gap-4 sm:flex-row flex-wrap justify-center">
           <Link
             href="/atlas"
             className="group relative flex items-center gap-4 rounded-full px-10 py-5 waterlily-button font-black uppercase text-xl hover:scale-105"
           >
             <Compass size={24} />
             <span>{cta.button_text}</span>
-            <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </Link>
           <Link
             href="/idx"
-            className="group relative flex items-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-black uppercase text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10"
+            className="group relative flex items-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-black uppercase text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10 hover:scale-105 duration-300"
           >
             <Search size={18} />
             <span>IDX Search</span>
+          </Link>
+          <Link
+            href="/admin/scheduling"
+            className="group relative flex items-center gap-3 rounded-full border border-orange-500/30 bg-black/45 px-6 py-4 text-sm font-black uppercase text-amber-50 backdrop-blur-xl transition-all hover:border-orange-400/60 hover:bg-orange-950/20 hover:text-orange-200 hover:scale-105 duration-300"
+          >
+            <Calendar size={18} className="text-orange-400 group-hover:animate-pulse" />
+            <span>Operations Scheduler</span>
+            <div className="absolute -inset-1 rounded-full bg-orange-500/15 blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </Link>
         </div>
 
