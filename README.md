@@ -10,25 +10,33 @@ This workspace is managed as a high-speed, consolidated monorepo:
 
 ```mermaid
 graph TD
-    subgraph Frontend Applications
-        Pulse[apps/pulse - Next.js/TS/Tailwind]
+    subgraph FrontendApp ["Frontend Applications"]
+        Pulse["apps/pulse (Next.js/TS/Tailwind)"]
     end
 
-    subgraph Core Engines
-        KDS[Grill Kitchen Display System]
-        Tracker[Domino's-Style Post-Order Tracker]
-        Jamie[Jamie Intelligence Lead Re-Engagement]
-        Memoria[Memoria v4 Binary Cartridge Engine]
+    subgraph Engines ["Core Engines"]
+        KDS["Grill Kitchen Display System"]
+        Tracker["Domino's-Style Post-Order Tracker"]
+        Jamie["Jamie Intelligence Lead Re-Engagement"]
+        Memoria["Memoria v4 Binary Cartridge Engine"]
     end
 
-    subgraph Persistent Databases
-        Mongo[(MongoDB - Orders & App Logs)]
-        Postgres[(Cal.com PostgreSQL - Scheduling & Shifts)]
-        Supa[(Supabase - Leads & Authentication)]
+    subgraph DBs ["Persistent Databases"]
+        Mongo[("MongoDB (Orders & Logs)")]
+        Postgres[("Cal.com PostgreSQL (Schedules)")]
+        Supa[("Supabase (Leads & Auth)")]
     end
 
-    Pulse --> Core Engines
-    Core Engines --> Persistent Databases
+    Pulse --> KDS
+    Pulse --> Tracker
+    Pulse --> Jamie
+    Pulse --> Memoria
+
+    KDS --> Mongo
+    Tracker --> Mongo
+    Tracker --> Postgres
+    Jamie --> Supa
+    Memoria --> Postgres
 ```
 
 ### Key Folders
