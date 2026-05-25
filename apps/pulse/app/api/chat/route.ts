@@ -16,6 +16,16 @@ export async function POST(req: NextRequest) {
 
     const { messages, propertyData, isDevMode, memoryContext } = await req.json();
     
+    const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+    if (isMock) {
+      const lastUserMsg = messages?.filter((m: any) => m.role === 'user')?.slice(-1)[0];
+      const text = lastUserMsg?.content || '';
+      if (text.toLowerCase().includes('maxxing')) {
+        return new Response("Let's ROI-maxxing this property !! We are dynamically OPTIMIZING_YIELD.");
+      }
+      return new Response("Hello! I am Jamie, your AI real estate assistant. I am running in local mock mode.");
+    }
+
     // Get Jamie response
     const response = await getJamieResponse(messages, propertyData, memoryContext, isDevMode);
     

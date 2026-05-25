@@ -107,7 +107,7 @@ const GadraelRiskShield: React.FC<GadraelRiskShieldProps> = ({ property }) => {
   }, [property]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
+    <div className="gadrael-risk-shield w-full h-full flex flex-col items-center">
       <svg ref={svgRef} viewBox="0 0 600 400" className="w-full h-auto" />
       <div className="mt-6 p-4 bg-slate-600/10 border border-slate-500/20 rounded-xl w-full">
         <p className="text-[10px] text-slate-400 font-mono leading-relaxed uppercase">

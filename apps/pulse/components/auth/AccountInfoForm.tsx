@@ -72,6 +72,7 @@ const AccountInfoForm: React.FC<AccountInfoFormProps> = ({
         <FaFingerprint className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${username ? (isAvailable ? 'text-emerald-500' : 'text-red-500') : 'text-white/20'}`} size={12} />
         <input 
           type="text" 
+          name="username"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
@@ -87,6 +88,12 @@ const AccountInfoForm: React.FC<AccountInfoFormProps> = ({
           )}
         </div>
       </div>
+
+      {username && (
+        <div className={`identity-feedback text-[9px] font-mono pl-4 ${isAvailable ? 'text-emerald-500' : 'text-red-500'}`}>
+          {isAvailable ? 'Username is available' : 'Username is taken'}
+        </div>
+      )}
 
       <div className='relative'>
         <FaEnvelope className='absolute left-4 top-1/2 -translate-y-1/2 text-white/20' size={12} />

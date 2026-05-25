@@ -98,7 +98,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
   const fallbackIntelligence: IntelligenceConfig = {
     grill: {
       name: 'Sunset Gas & Grill',
-      tagline: 'Quality Meat - Friendly Service',
+      tagline: 'Fresh Never Frozen Meat | Ask Us To Look At It!',
       coordinates: [-97.766724, 33.453823],
       address: '101 S. Council, Sunset, TX 76270'
     }

@@ -78,6 +78,12 @@ export const POST = async (request: Request) => {
       return validationErrorResponse(validation.error.flatten().fieldErrors);
     }
 
+    // Check if email already registered in MongoDB
+    const existingLead = await Lead.findOne({ email: validation.data.email });
+    if (existingLead) {
+      return errorResponse('This email is already registered.', 400);
+    }
+
     //  Process Intelligence: Probability, Tags, AI Analysis
     const { leadData, probability, tags, jamieNotes, reengagementHook, leadCategory } = await processLeadIntelligence(body);
 

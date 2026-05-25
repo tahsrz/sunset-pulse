@@ -7,19 +7,20 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 type TahMetaRouteProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
-export function GET(request: NextRequest, { params }: TahMetaRouteProps) {
-  const cartridge = getPulseCartridge(params.slug);
+export async function GET(request: NextRequest, { params }: TahMetaRouteProps) {
+  const { slug } = await params;
+  const cartridge = getPulseCartridge(slug);
 
   if (!cartridge) {
     return Response.json(
       {
         error: 'TAH cartridge not found.',
-        slug: params.slug
+        slug
       },
       {
         status: 404,

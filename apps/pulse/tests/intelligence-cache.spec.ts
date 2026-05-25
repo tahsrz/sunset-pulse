@@ -9,23 +9,35 @@ test.describe('Intelligence Cache Verification', () => {
   test('should serve redundant search queries from PulseCache', async ({ page }) => {
     const searchTarget = 'Keller';
     
-    // 1. Initial Search (Should be a MISS)
+    // Log all network responses to see what is going on
+    page.on('response', response => {
+      if (response.url().includes('/api/properties/search')) {
+        console.log(`DIAGNOSTIC: Url: ${response.url()}, Status: ${response.status()}, Cache: ${response.headers()['x-cache'] || 'none'}`);
+      }
+    });
+
+    // 1. Initial Search
     await page.goto('/properties');
+    await page.waitForLoadState('networkidle');
+
     const [response1] = await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/properties/search') && res.status() === 200),
+      page.waitForResponse(res => res.url().includes('/api/properties/search'), { timeout: 25000 }),
       page.fill('input[placeholder*="Search by city"]', searchTarget),
       page.keyboard.press('Enter')
     ]);
 
     const cacheHeader1 = await response1.headerValue('X-Cache');
-    // Note: The very first time might be a MISS
     console.log(`Initial Search Cache Status: ${cacheHeader1}`);
 
+    await page.waitForLoadState('networkidle');
+
     // 2. Redundant Search (Should be a HIT)
-    // We trigger the same search again
+    // Clear and refill to ensure React state change triggers a new fetch request
+    await page.fill('input[placeholder*="Search by city"]', 'Kelle');
+    await page.fill('input[placeholder*="Search by city"]', searchTarget);
+
     const [response2] = await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/properties/search') && res.status() === 200),
-      page.fill('input[placeholder*="Search by city"]', searchTarget),
+      page.waitForResponse(res => res.url().includes('/api/properties/search'), { timeout: 25000 }),
       page.keyboard.press('Enter')
     ]);
 

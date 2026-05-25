@@ -5,8 +5,7 @@ import { isNextDynamicServerUsage } from '@/lib/core/nextDynamicError';
 /**
  * GET /api/identity/verify?username=...
  * Performs a definitive database check for username availability.
- * This is the second stage of the Identity Purifier flow, 
- * called only if the Bloom Filter returns a "Probably Taken" result.
+ * Supports mock-mode isolation.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -17,6 +16,19 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Mock Mode Interception
+    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+      const taken = ['admin', 'taz', 'jamie', 'user'];
+      const isTaken = taken.includes(username.toLowerCase());
+      return NextResponse.json({
+        success: true,
+        username,
+        isAvailable: !isTaken,
+        isDefinitive: true,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const supabase = createClient();
     
     // Check for existence in public.profiles

@@ -7,6 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import { memoryBridge } from '@/lib/memory_bridge';
 import { speak } from '@/lib/core/tts';
 
+import { useVibe } from '@/context/VibeContext';
+
 // Refactored Sub-components
 import JamieChatMinimized from './chat/JamieChatMinimized';
 import JamieChatHeader from './chat/JamieChatHeader';
@@ -37,6 +39,8 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     isVoiceEnabled,
     setVoiceEnabled
   } = useTheme();
+
+  const { setVibeFromContent } = useVibe();
 
   const [mounted, setMounted] = useState(false);
   const [localIntel, setLocalIntel] = useState(null);
@@ -113,7 +117,13 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
   const handleAction = async (messageContent: string) => {
     if (!messageContent || typeof messageContent !== 'string') return;
-    
+
+    try {
+      setVibeFromContent(messageContent);
+    } catch (e) {
+      // safe fallback
+    }
+
     // Log assistant message to memory
     await memoryBridge.logInteraction({ role: 'assistant', content: messageContent, timestamp: new Date().toISOString() });
 
@@ -320,7 +330,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         <JamieBrandingConfirm onCancel={cancelStaging} onConfirm={confirmBranding} />
       )}
 
-      <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-slate-900/[0.92] shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 hover:border-blue-500/30 animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 ${panelRadiusClass}`}>
+      <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-slate-900/90 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 hover:border-blue-500/30 animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 ${panelRadiusClass}`}>
         <JamieChatHeader 
           onMinimize={() => toggleMinimized(true)} 
           isMlsOpen={isMlsOpen}

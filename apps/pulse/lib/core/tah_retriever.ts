@@ -34,8 +34,8 @@ export class TAHRetriever {
 
     const magic = this.buffer.readUInt32LE(0);
     
-    // Support both TAH! (0x54414821) and other potential magic numbers
-    if (magic !== 0x54414821) {
+    // Support both TAH! (0x54414821) and MEM! (0x4d454d21)
+    if (magic !== 0x54414821 && magic !== 0x4d454d21) {
       const sourceName = Buffer.isBuffer(this.source) ? 'In-Memory Buffer' : path.basename(this.source);
       console.warn(`[TAH_RETRIEVER] Unexpected magic number: 0x${magic.toString(16)} for ${sourceName}`);
     }

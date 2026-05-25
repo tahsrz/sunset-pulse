@@ -70,6 +70,7 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
         </button>
         <button 
           onClick={onMinimize} 
+          aria-label="Minimize Chat"
           className="p-2 hover:bg-white/20 rounded-lg transition-colors"
         >
           <FaMinus className="text-xs" />

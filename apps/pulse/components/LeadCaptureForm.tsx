@@ -41,6 +41,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
   });
 
   const watchAll = watch();
+  console.error('[DIAGNOSTIC_RENDER]: values =', JSON.stringify(watchAll), 'errors =', JSON.stringify(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, (v as any)?.message]))));
   
   const calculateLiveProbability = (): number => {
     let score = 30;
@@ -56,10 +57,11 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
   const liveProb = calculateLiveProbability();
 
   const onSubmit = async (data: LeadFormData) => {
-    console.log('[LEAD_SUBMIT_DEBUG]: Submitting lead data:', data);
+    console.error('[LEAD_SUBMIT_DEBUG]: Submitting lead data:', JSON.stringify(data));
     // Convert budget to number
     data.budget = Number(data.budget);
     try {
+      console.error('[LEAD_SUBMIT_DEBUG]: Fetching /api/leads...');
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: {
@@ -68,15 +70,16 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
         body: JSON.stringify(data),
       });
 
-      console.log('[LEAD_SUBMIT_DEBUG]: API Response Status:', res.status);
+      console.error('[LEAD_SUBMIT_DEBUG]: API Response Status:', res.status);
 
       if (res.status === 201) {
+        console.error('[LEAD_SUBMIT_DEBUG]: Submission successful!');
         toast.success('Inquiry received! We will contact you shortly.');
         setIsSubmitted(true);
         reset();
       } else {
         const errorData = await res.json();
-        console.error('[LEAD_SUBMIT_DEBUG]: API Error Data:', errorData);
+        console.error('[LEAD_SUBMIT_DEBUG]: API Error Data:', JSON.stringify(errorData));
         toast.error(errorData.message || 'Failed to send inquiry');
       }
     } catch (error) {
@@ -89,6 +92,10 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
     return <LeadCaptureSuccess propertyName={propertyName} />;
   }
 
+  if (Object.keys(errors).length > 0) {
+    console.error('[LEAD_FORM_VALIDATION_ERRORS]:', JSON.stringify(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, (v as any)?.message]))));
+  }
+
   return (
     <div className='group relative bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] overflow-hidden'>
       <div className='absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 blur-[100px] rounded-full group-hover:bg-blue-500/20 transition-all duration-700' />
@@ -98,7 +105,15 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
         <span className='absolute -bottom-2 left-4 w-12 h-0.5 bg-blue-500/50' />
       </h3>
       
-      <form onSubmit={handleSubmit(onSubmit)} className='relative space-y-6'>
+      <form onSubmit={handleSubmit(
+        (data) => {
+          console.error('[LEAD_SUBMIT_DIAGNOSTIC_VALID]: calling onSubmit with data:', JSON.stringify(data));
+          onSubmit(data);
+        },
+        (err) => {
+          console.error('[LEAD_SUBMIT_DIAGNOSTIC_INVALID]: validation failed! Errors:', JSON.stringify(Object.fromEntries(Object.entries(err).map(([k, v]) => [k, (v as any)?.message]))));
+        }
+      )} className='relative space-y-6'>
         <LeadIntelligenceBar probability={liveProb} />
 
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -217,6 +232,9 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
         <button
           type='submit'
           disabled={isSubmitting}
+          onClick={() => {
+            console.error('[DIAGNOSTIC_CLICK]: Submit button element clicked!');
+          }}
           className='group/btn relative w-full overflow-hidden bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all duration-300 active:scale-[0.98] uppercase tracking-widest text-xs shadow-[0_10px_20px_rgba(37,99,235,0.2)]'
         >
           <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite] transition-transform' />

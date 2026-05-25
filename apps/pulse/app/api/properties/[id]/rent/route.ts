@@ -10,10 +10,10 @@ import { IntelligenceVault } from '@/lib/core/intelligenceVault';
  * GET /api/properties/[id]/rent
  * Fetches RentCast data with 30-day Grid Persistence (legal)
  */
-export const GET = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
 
     const property: any = await Property.findById(id).lean();
     if (!property) return errorResponse('Asset not found in grid.', 404);

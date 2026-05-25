@@ -9,10 +9,10 @@ import { purifyText } from '@/lib/ai/purifier';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(req.url);
     const envoyOverride = searchParams.get('envoyId');
 

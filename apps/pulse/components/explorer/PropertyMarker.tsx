@@ -49,6 +49,11 @@ const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, hoveredId, on
       }}
     >
       <div className={`relative flex flex-col items-center group cursor-pointer transition-all duration-500 ${isHovered ? 'scale-125 z-50' : 'hover:scale-110'}`}>
+        {isHovered && (
+          <div className="absolute -top-8 bg-slate-900/90 text-[8px] font-black text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/50 uppercase tracking-widest whitespace-nowrap z-50">
+            Priority target: {property.name}
+          </div>
+        )}
         {/* Organic Sunset Glow (Radial Gradient) */}
         <div 
           className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-all duration-1000 ease-out'

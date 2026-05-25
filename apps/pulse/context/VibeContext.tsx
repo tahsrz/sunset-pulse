@@ -7,6 +7,7 @@ interface VibeContextType {
   currentVibe: string;
   setVibeFromContent: (content: string) => void;
   vibeTheme: any;
+  setCurrentVibe: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const VibeContext = createContext<VibeContextType | undefined>(undefined);
@@ -37,7 +38,7 @@ export const VibeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentVibe]);
 
   return (
-    <VibeContext.Provider value={{ currentVibe, setVibeFromContent, vibeTheme }}>
+    <VibeContext.Provider value={{ currentVibe, setVibeFromContent, vibeTheme, setCurrentVibe }}>
       <div className={`vibe-simulacrum-root transition-all duration-1000 ${currentVibe}`}>
         {children}
 

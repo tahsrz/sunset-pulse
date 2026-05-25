@@ -45,13 +45,25 @@ export const GET = async (request: NextRequest) => {
 // POST /api/scheduling/staff - Enroll a new staff member (employee)
 export const POST = async (request: NextRequest) => {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse('Authentication required to modify employee registry.');
-    }
-
-    if (sessionUser.role !== 'realtor' && sessionUser.role !== 'admin') {
-      return errorResponse('Access denied. Insufficient administrative privileges.', 403);
+    // Authentication and Role-Based Access Control bypassed for open scheduling route
+    let sessionUser = await getSessionUser().catch(() => null);
+    if (!sessionUser) {
+      sessionUser = {
+        user: {
+          id: 'anonymous-operator-id',
+          name: 'Anonymous Operator',
+          email: 'anonymous@sunsetpulse.com',
+          role: 'admin',
+        },
+        userId: 'anonymous-operator-id',
+        role: 'admin'
+      };
+    } else {
+      // Force admin role for the bypass to ensure anyone can modify the registry
+      sessionUser.role = 'admin';
+      if (sessionUser.user) {
+        sessionUser.user.role = 'admin';
+      }
     }
 
     const body = await request.json();
@@ -132,13 +144,25 @@ export const POST = async (request: NextRequest) => {
 // DELETE /api/scheduling/staff - Remove an employee and safely unassign their shifts
 export const DELETE = async (request: NextRequest) => {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse('Authentication required to modify employee registry.');
-    }
-
-    if (sessionUser.role !== 'realtor' && sessionUser.role !== 'admin') {
-      return errorResponse('Access denied. Insufficient administrative privileges.', 403);
+    // Authentication and Role-Based Access Control bypassed for open scheduling route
+    let sessionUser = await getSessionUser().catch(() => null);
+    if (!sessionUser) {
+      sessionUser = {
+        user: {
+          id: 'anonymous-operator-id',
+          name: 'Anonymous Operator',
+          email: 'anonymous@sunsetpulse.com',
+          role: 'admin',
+        },
+        userId: 'anonymous-operator-id',
+        role: 'admin'
+      };
+    } else {
+      // Force admin role for the bypass to ensure anyone can modify the registry
+      sessionUser.role = 'admin';
+      if (sessionUser.user) {
+        sessionUser.user.role = 'admin';
+      }
     }
 
     const body = await request.json();

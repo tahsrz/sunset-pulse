@@ -13,10 +13,10 @@ import { createClient } from '@/utils/supabase/server';
  * GET /api/properties/[id]/recon
  * Performs localized reconnaissance with Intelligence Vault Persistence.
  */
-export const GET = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
 
     const property: any = await Property.findById(id).lean();
     if (!property) return errorResponse('Asset not found in grid.', 404);

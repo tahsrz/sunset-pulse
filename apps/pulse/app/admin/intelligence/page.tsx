@@ -120,7 +120,7 @@ export default function IntelligenceConfigPage() {
                       type="text" 
                       value={stagedConfig.grill.tagline}
                       onChange={(e) => handleUpdate({ tagline: e.target.value })}
-                      placeholder="e.g., Quality Meat • Friendly Service"
+                      placeholder="e.g., Fresh Never Frozen Meat | Ask Us To Look At It!"
                       className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition-colors"
                     />
                   </div>

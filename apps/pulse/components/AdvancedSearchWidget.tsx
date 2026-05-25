@@ -67,7 +67,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
             <input
               type='text'
               name='location'
-              placeholder='City, Address, or Zip...'
+              placeholder='Search by city, address, or zip...'
               className='w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 font-medium'
               value={filters.location}
               onChange={handleChange}

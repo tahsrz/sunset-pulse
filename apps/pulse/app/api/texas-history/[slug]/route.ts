@@ -3,19 +3,20 @@ import { getTexasPlaceHistory } from '@/lib/tah/texasPlaceHistory';
 export const dynamic = 'force-dynamic';
 
 type TexasHistoryRouteProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
-export function GET(_request: Request, { params }: TexasHistoryRouteProps) {
-  const place = getTexasPlaceHistory(params.slug);
+export async function GET(_request: Request, { params }: TexasHistoryRouteProps) {
+  const { slug } = await params;
+  const place = getTexasPlaceHistory(slug);
 
   if (!place) {
     return Response.json(
       {
         error: 'Texas place history not found.',
-        slug: params.slug
+        slug
       },
       {
         status: 404,

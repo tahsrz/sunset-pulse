@@ -8,10 +8,10 @@ import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse 
 
 
 // PUT /api/messages/:id
-export const PUT = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const PUT = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {
@@ -38,10 +38,10 @@ export const PUT = async (request: NextRequest, { params }: { params: { id: stri
 };
 
 // DELETE /api/messages/:id
-export const DELETE = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const DELETE = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const sessionUser = await getSessionUser();
 
     if (!sessionUser || !sessionUser.userId) {

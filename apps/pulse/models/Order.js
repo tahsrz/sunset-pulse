@@ -26,6 +26,9 @@ const OrderSchema = new Schema(
     user: {
       type: String,
     },
+    scheduledTime: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

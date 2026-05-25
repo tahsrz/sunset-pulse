@@ -11,18 +11,21 @@ import { prisma } from '@calcom/prisma';
  */
 export const GET = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
     await connectDB();
-    const order = await Order.findById(params.id);
+    const { id } = await params;
+    const order = await Order.findById(id);
 
     if (!order) {
       return errorResponse('Order not found.', 404);
     }
 
-    // Determine the scheduled Grill Employee at order creation time or fallback to now
-    const targetTime = order.createdAt ? new Date(order.createdAt) : new Date();
+    // Determine the scheduled Grill Employee at order's planned pickup time, fallback to order creation time, or fallback to now
+    const targetTime = order.scheduledTime 
+      ? new Date(order.scheduledTime) 
+      : (order.createdAt ? new Date(order.createdAt) : new Date());
 
     let activeGrillBooking = await prisma.booking.findFirst({
       where: {
@@ -82,10 +85,11 @@ export const GET = async (
  */
 export const PATCH = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
     await connectDB();
+    const { id } = await params;
     const { status } = await request.json();
 
     if (!['pending', 'cooking', 'completed', 'cancelled'].includes(status)) {
@@ -93,7 +97,7 @@ export const PATCH = async (
     }
 
     const order = await Order.findByIdAndUpdate(
-      params.id,
+      id,
       { status },
       { new: true }
     );
@@ -115,11 +119,12 @@ export const PATCH = async (
  */
 export const DELETE = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
     await connectDB();
-    const order = await Order.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const order = await Order.findByIdAndDelete(id);
 
     if (!order) {
       return errorResponse('Order not found.', 404);

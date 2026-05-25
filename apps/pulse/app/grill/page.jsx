@@ -12,7 +12,8 @@ import {
   FaShoppingBasket, 
   FaArrowRight, 
   FaSpinner, 
-  FaStar 
+  FaStar,
+  FaTruck
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -56,6 +57,12 @@ const GrillPage = () => {
   const filteredItems = selectedCategory === 'All'
     ? menuItems
     : menuItems.filter(item => item.category === selectedCategory);
+
+  // Extract Daisy's Picks
+  const daisyPicks = menuItems.filter(item => item.isDaisyPick);
+
+  // Extract Staff's Picks
+  const staffPicks = menuItems.filter(item => item.isStaffPick);
 
   // Directly add item from grid with simple scale feedback
   const handleQuickAdd = (e, item) => {
@@ -147,10 +154,158 @@ const GrillPage = () => {
             )}
             <span className='hidden sm:inline text-slate-600'>|</span>
             <span className='text-slate-400 font-mono text-xs uppercase tracking-widest bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-md'>
-              Est. 2026 • Local Quality
+              Est. 1986 • Local Quality
             </span>
           </div>
         </header>
+
+        {/* Local Mailbox Delivery Announcement Banner */}
+        <div className='mb-16 max-w-3xl mx-auto'>
+          <div className='relative overflow-hidden rounded-3xl border border-orange-500/20 bg-gradient-to-r from-slate-950 via-slate-900/60 to-slate-950 p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-orange-500/5 group hover:border-orange-500/35 transition-all duration-300'>
+            <div className='absolute -right-12 -bottom-12 w-32 h-32 bg-gradient-to-br from-orange-500/10 to-rose-500/10 rounded-full blur-2xl pointer-events-none animate-pulse' />
+            <div className='flex flex-col md:flex-row items-center gap-5 text-center md:text-left relative z-10'>
+              <div className='flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-rose-600/20 border border-orange-500/30 text-orange-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-md'>
+                <FaTruck size={24} className='animate-pulse' />
+              </div>
+              <div className='space-y-1.5'>
+                <h3 className='text-lg md:text-xl font-extrabold text-slate-100 uppercase tracking-wide flex flex-wrap items-center justify-center md:justify-start gap-3'>
+                  Live in Sunset?
+                  <span className='text-[10px] px-2.5 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 font-bold uppercase tracking-wider animate-pulse'>
+                    Flat Surcharge Delivery
+                  </span>
+                </h3>
+                <p className='text-sm text-slate-400 font-light leading-relaxed max-w-xl'>
+                  Engineered for neighborhood convenience. We deliver piping hot orders straight to your mailbox for a flat <strong className='text-orange-400 font-bold font-mono'>$10.00</strong> fee!
+                </p>
+              </div>
+            </div>
+            <Link
+              href='/cart'
+              className='shrink-0 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 hover:opacity-95 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-orange-500/10 hover:scale-105 active:scale-95 transition-all relative z-10 flex items-center gap-2 group'
+            >
+              Order Now
+              <FaArrowRight size={10} className='group-hover:translate-x-1 transition-transform' />
+            </Link>
+          </div>
+        </div>
+
+        {/* Daisy's Picks Section */}
+        {daisyPicks.length > 0 && (
+          <section className='mb-16 space-y-6 relative'>
+            {/* Ambient subtle glow background */}
+            <div className='absolute -left-12 -top-12 w-64 h-64 bg-orange-500/10 blur-[80px] rounded-full pointer-events-none' />
+            <div className='flex items-center gap-3 px-1'>
+              <div className='h-8 w-1 bg-gradient-to-b from-orange-500 to-rose-600 rounded-full' />
+              <div>
+                <h2 className='text-2xl font-black uppercase tracking-wider text-slate-100 flex items-center gap-2'>
+                  Daisy's Picks
+                  <span className='text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold uppercase tracking-widest animate-pulse'>
+                    Chef's Favorite
+                  </span>
+                </h2>
+                <p className='text-xs text-slate-400 font-light mt-0.5'>Hand-selected local specialties guaranteed to satisfy.</p>
+              </div>
+            </div>
+
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {daisyPicks.map((item) => (
+                <article
+                  key={`daisy-${item._id || item.id}`}
+                  onClick={() => openItemDetails(item)}
+                  className='group relative backdrop-blur-xl bg-gradient-to-b from-slate-900/40 to-slate-950/40 border border-orange-500/20 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.15)] cursor-pointer flex flex-col justify-between min-h-[11rem]'
+                >
+                  <div className='absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/40 to-transparent' />
+                  <div>
+                    <div className='flex justify-between items-start gap-4'>
+                      <h3 className='text-xl font-bold text-slate-100 group-hover:text-orange-400 transition-colors'>
+                        {item.name}
+                      </h3>
+                      <span className='text-[9px] px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-semibold uppercase tracking-wider'>
+                        Featured
+                      </span>
+                    </div>
+                    <p className='text-xs text-slate-400 mt-2 leading-relaxed font-light line-clamp-2'>
+                      {item.description || 'Crafted with premium ingredients to fuel your day.'}
+                    </p>
+                  </div>
+                  <div className='flex justify-between items-center mt-4 pt-3 border-t border-white/5'>
+                    <div>
+                      <span className='text-[9px] text-slate-500 uppercase tracking-widest font-mono block'>Featured Price</span>
+                      <p className='text-xl font-black text-white tracking-tight'>
+                        ${item.price.toFixed(2)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleQuickAdd(e, item)}
+                      className='flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white hover:bg-gradient-to-r hover:from-orange-500 hover:to-rose-600 transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg'
+                    >
+                      <FaPlus size={10} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Staff's Picks Section */}
+        {staffPicks.length > 0 && (
+          <section className='mb-16 space-y-6 relative'>
+            {/* Ambient subtle glow background */}
+            <div className='absolute -right-12 -top-12 w-64 h-64 bg-rose-500/10 blur-[80px] rounded-full pointer-events-none' />
+            <div className='flex items-center gap-3 px-1'>
+              <div className='h-8 w-1 bg-gradient-to-b from-rose-500 to-orange-500 rounded-full' />
+              <div>
+                <h2 className='text-2xl font-black uppercase tracking-wider text-slate-100 flex items-center gap-2'>
+                  Staff's Picks
+                  <span className='text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold uppercase tracking-widest animate-pulse'>
+                    Signature Meals
+                  </span>
+                </h2>
+                <p className='text-xs text-slate-400 font-light mt-0.5'>Crafted and loved by our on-duty team.</p>
+              </div>
+            </div>
+
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {staffPicks.map((item) => (
+                <article
+                  key={`staff-${item._id || item.id}`}
+                  onClick={() => openItemDetails(item)}
+                  className='group relative backdrop-blur-xl bg-gradient-to-b from-slate-900/40 to-slate-950/40 border border-rose-500/20 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-rose-500/40 hover:shadow-[0_0_25px_rgba(244,63,94,0.15)] cursor-pointer flex flex-col justify-between min-h-[11rem]'
+                >
+                  <div className='absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-rose-500/40 to-transparent' />
+                  <div>
+                    <div className='flex justify-between items-start gap-4'>
+                      <h3 className='text-xl font-bold text-slate-100 group-hover:text-rose-400 transition-colors'>
+                        {item.name}
+                      </h3>
+                      <span className='text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 font-semibold uppercase tracking-wider'>
+                        Staff Signature
+                      </span>
+                    </div>
+                    <p className='text-xs text-slate-400 mt-2 leading-relaxed font-light line-clamp-2'>
+                      {item.description || 'Crafted with premium ingredients to fuel your day.'}
+                    </p>
+                  </div>
+                  <div className='flex justify-between items-center mt-4 pt-3 border-t border-white/5'>
+                    <div>
+                      <span className='text-[9px] text-slate-500 uppercase tracking-widest font-mono block'>Signature Price</span>
+                      <p className='text-xl font-black text-white tracking-tight'>
+                        ${item.price.toFixed(2)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleQuickAdd(e, item)}
+                      className='flex items-center justify-center w-8 h-8 rounded-full bg-rose-500 text-white hover:bg-gradient-to-r hover:from-rose-500 hover:to-orange-500 transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg'
+                    >
+                      <FaPlus size={10} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Dynamic Category Tab Navigation */}
         <section className='mb-12'>

@@ -9,10 +9,19 @@ test.describe('Jamie Hallucination Cycle', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to a property page where Jamie is active
     await page.goto('/properties');
+
+    // Ensure JamieChat is open.
+    const chatInput = page.locator('input[placeholder*="Ask Jamie"]').first();
+    const openBtn = page.locator('button[aria-label="Open Jamie"]').first();
+    await page.waitForTimeout(1000); // Wait for localStorage useEffect to settle
+    if (await openBtn.isVisible()) {
+      await openBtn.click();
+    }
+    await expect(chatInput).toBeVisible({ timeout: 5000 });
   });
 
   test('should trigger vibe-maxxing UI when Jamie uses optimization keywords', async ({ page }) => {
-    const chatInput = page.locator('textarea[placeholder*="Ask Jamie"]');
+    const chatInput = page.locator('input[placeholder*="Ask Jamie"]').first();
     await chatInput.fill('Let\'s ROI-maxxing this property !!');
     await page.keyboard.press('Enter');
 

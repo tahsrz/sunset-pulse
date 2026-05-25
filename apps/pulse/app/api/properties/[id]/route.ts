@@ -9,9 +9,9 @@ import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse 
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
 
 // GET /api/properties/:id
-export const GET = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // 1. Supabase Lookup (Alpha Consolidation)
     // We check both the internal UUID and the mls_id field
@@ -41,7 +41,7 @@ export const GET = async (request: NextRequest, { params }: { params: { id: stri
 };
 
 // DELETE /api/properties/:id
-export const DELETE = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const DELETE = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const sessionUser = await getSessionUser();
     if (!sessionUser || !sessionUser.userId) {
@@ -51,7 +51,8 @@ export const DELETE = async (request: NextRequest, { params }: { params: { id: s
     const { userId } = sessionUser;
     await connectDB();
 
-    const property = await Property.findById(params.id);
+    const { id } = await params;
+    const property = await Property.findById(id);
     if (!property) return notFoundResponse('Property Asset');
 
     // Verify operator ownership (delete)
@@ -67,7 +68,7 @@ export const DELETE = async (request: NextRequest, { params }: { params: { id: s
 };
 
 // PUT /api/properties/:id
-export const PUT = async (request: NextRequest, { params }: { params: { id: string } }) => {
+export const PUT = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
     const sessionUser = await getSessionUser();
@@ -76,7 +77,7 @@ export const PUT = async (request: NextRequest, { params }: { params: { id: stri
       return unauthorizedResponse();
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { userId } = sessionUser;
     const formData = await request.formData();
 

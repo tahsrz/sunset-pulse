@@ -43,7 +43,7 @@ const SiteConfigSchema = new mongoose.Schema({
   intelligence: {
     grill: {
       name: { type: String, default: 'Sunset Gas & Grill' },
-      tagline: { type: String, default: 'Quality Meat • Friendly Service' },
+      tagline: { type: String, default: 'Fresh Never Frozen Meat | Ask Us To Look At It!' },
       coordinates: { type: [Number], default: [-97.766724, 33.453823] }, // [lng, lat]
       address: { type: String, default: '101 S. Council, Sunset, TX 76270' },
       mapUrl: { type: String }

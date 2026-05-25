@@ -10,18 +10,32 @@ type CacheEntry = {
 };
 
 export class PulseCache {
-  private static instance: Map<string, CacheEntry> = new Map();
   private static DEFAULT_TTL = 300000; // 5 Minutes in MS
+
+  private static getStore(): Map<string, CacheEntry> {
+    if (typeof globalThis !== 'undefined') {
+      if (!(globalThis as any)._pulseCache) {
+        (globalThis as any)._pulseCache = new Map();
+      }
+      return (globalThis as any)._pulseCache;
+    }
+    // Fallback for non-global environments
+    if (!(this as any)._localStore) {
+      (this as any)._localStore = new Map();
+    }
+    return (this as any)._localStore;
+  }
 
   /**
    * Retrieves data from the cache if it hasn't expired.
    */
   public static get(signature: string): any | null {
-    const entry = this.instance.get(signature);
+    const store = this.getStore();
+    const entry = store.get(signature);
     if (!entry) return null;
 
     if (Date.now() > entry.expiry) {
-      this.instance.delete(signature);
+      store.delete(signature);
       return null;
     }
 
@@ -32,15 +46,16 @@ export class PulseCache {
    * Stores data in the cache with a specific signature and TTL.
    */
   public static set(signature: string, data: any, ttl: number = this.DEFAULT_TTL): void {
-    this.instance.set(signature, {
+    const store = this.getStore();
+    store.set(signature, {
       data,
       expiry: Date.now() + ttl
     });
 
     // Simple cache eviction if it grows too large (e.g., > 1000 signatures)
-    if (this.instance.size > 1000) {
-      const firstKey = this.instance.keys().next().value;
-      if (firstKey) this.instance.delete(firstKey);
+    if (store.size > 1000) {
+      const firstKey = store.keys().next().value;
+      if (firstKey) store.delete(firstKey);
     }
   }
 
@@ -48,6 +63,6 @@ export class PulseCache {
    * Clears the entire intelligence cache.
    */
   public static purge(): void {
-    this.instance.clear();
+    this.getStore().clear();
   }
 }

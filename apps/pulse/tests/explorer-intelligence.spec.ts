@@ -11,6 +11,15 @@ test.describe('Explorer: Spatial Intelligence Grid', () => {
     await page.goto('/explorer', { waitUntil: 'domcontentloaded', timeout: 60000 });
     // Wait for the map container to exist
     await page.waitForSelector('.mapboxgl-map', { timeout: 20000 });
+
+    // Ensure JamieChat is open.
+    const chatInput = page.locator('input[placeholder*="Ask Jamie"]').first();
+    const openBtn = page.locator('button[aria-label="Open Jamie"]').first();
+    await page.waitForTimeout(1000); // Wait for localStorage useEffect to settle
+    if (await openBtn.isVisible()) {
+      await openBtn.click();
+    }
+    await expect(chatInput).toBeVisible({ timeout: 5000 });
   });
 
   test('should initialize map and render property markers', async ({ page }) => {
@@ -28,7 +37,7 @@ test.describe('Explorer: Spatial Intelligence Grid', () => {
     await expect(analysisOverlay).toBeVisible({ timeout: 15000 });
 
     // Verify Avg Rent is calculated
-    const avgRent = page.locator('text=Avg Rent');
+    const avgRent = page.locator('text=Avg Monthly Rent');
     await expect(avgRent).toBeVisible();
   });
 
@@ -60,7 +69,7 @@ test.describe('Explorer: Spatial Intelligence Grid', () => {
     await expect(jamieChat).toBeVisible();
 
     // Open chat and check for input
-    const input = page.locator('input[placeholder*="Ask Jamie"]');
+    const input = page.locator('input[placeholder*="Ask Jamie"]').first();
     await expect(input).toBeVisible();
   });
 

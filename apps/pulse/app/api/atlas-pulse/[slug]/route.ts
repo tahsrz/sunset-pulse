@@ -3,19 +3,20 @@ import { getAtlasPulsePlace } from '@/lib/tah/texasPlaceHistory';
 export const dynamic = 'force-dynamic';
 
 type AtlasPulseRouteProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
-export function GET(_request: Request, { params }: AtlasPulseRouteProps) {
-  const place = getAtlasPulsePlace(params.slug);
+export async function GET(_request: Request, { params }: AtlasPulseRouteProps) {
+  const { slug } = await params;
+  const place = getAtlasPulsePlace(slug);
 
   if (!place) {
     return Response.json(
       {
         error: 'Atlas Pulse place not found.',
-        slug: params.slug
+        slug
       },
       {
         status: 404,

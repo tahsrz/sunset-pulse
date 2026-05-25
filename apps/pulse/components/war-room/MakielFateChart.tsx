@@ -154,7 +154,7 @@ const MakielFateChart: React.FC<MakielFateChartProps> = ({ property }) => {
   }, [property, velocityData]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
+    <div className="makiel-fate-chart w-full h-full flex flex-col items-center">
       <div className="w-full flex justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-blue-500 rounded-full" />

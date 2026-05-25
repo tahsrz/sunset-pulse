@@ -53,7 +53,7 @@ export class TAHRetrieverV36 {
     const magic = hatBuffer.readUInt32LE(0);
     const version = hatBuffer.readUInt16LE(4);
     
-    if (magic !== 0x54414821) {
+    if (magic !== 0x54414821 && magic !== 0x4d454d21) {
       throw new Error(`Invalid magic number: 0x${magic.toString(16)}`);
     }
 

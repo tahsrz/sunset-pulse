@@ -23,6 +23,7 @@ export interface ProcessedLeadResult {
 export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadResult> => {
   const validation = LeadSchema.safeParse(body);
   if (!validation.success) {
+
     throw new Error('Validation failed');
   }
 
@@ -47,30 +48,41 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
   if (isRV) tags.push('RV-ASSET');
   if (leadData.budget > 500000) tags.push('PREMIUM-TIER');
 
-  // 4. Generate AI Intelligence Hooks
-  const reengagementHook = await generateHighStakesHook(leadData, property);
-
-  // Proactive Telegram Notification
-  const topHook = reengagementHook?.a || reengagementHook?.b || "New high-stakes lead detected.";
-  const notification = `🚀 *NEW LEAD ALERT*\n\n*Name:* ${leadData.name}\n*Probability:* ${probability}%\n*Top Hook:* ${topHook}\n\nView details in the Pulse Collective Command Center.`;
-  await sendTelegramNotification(notification);
-
-  // 5. Generate Jamie AI Notes
-  const propertyInfo = property 
-    ? `Property: ${property.name}, Location: ${property.location.city}, ${property.location.state}, Type: ${property.type}`
-    : 'Unknown Property';
-
-  const prompt = `Analyze this ${leadCategory} lead: ${leadData.name}. Interested in ${propertyInfo}. Budget: ${leadData.budget || 'Unknown'}. Probability: ${probability}%. Provide a professional summary of their intent.`;
-  
-  const response = await getJamieResponse([{ role: 'user', content: prompt }], property);
-  
+  // 4. Generate AI Intelligence Hooks and Jamie AI Notes
+  let reengagementHook: any;
   let jamieNotes = '';
-  if (typeof response === 'string') {
-    jamieNotes = response;
-  } else if ('content' in response && typeof response.content === 'string') {
-    jamieNotes = response.content;
+
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    console.log('[MOCK_MODE] Bypassing real AI calls and Telegram notifications in lead processing.');
+    reengagementHook = {
+      a: "The market is moving fast. Should we talk? - Jamie",
+      b: "Let's find your perfect Texas property. - Jamie"
+    };
+    jamieNotes = `MOCK_INTEL: Client ${leadData.name} has demonstrated positive intent for property ${property?.name || 'Unknown'}. Mocked Jamie AI analysis completed successfully.`;
   } else {
-    jamieNotes = JSON.stringify(response);
+    reengagementHook = await generateHighStakesHook(leadData, property);
+
+    // Proactive Telegram Notification
+    const topHook = reengagementHook?.a || reengagementHook?.b || "New high-stakes lead detected.";
+    const notification = `🚀 *NEW LEAD ALERT*\n\n*Name:* ${leadData.name}\n*Probability:* ${probability}%\n*Top Hook:* ${topHook}\n\nView details in the Pulse Collective Command Center.`;
+    await sendTelegramNotification(notification);
+
+    // 5. Generate Jamie AI Notes
+    const propertyInfo = property 
+      ? `Property: ${property.name}, Location: ${property.location.city}, ${property.location.state}, Type: ${property.type}`
+      : 'Unknown Property';
+
+    const prompt = `Analyze this ${leadCategory} lead: ${leadData.name}. Interested in ${propertyInfo}. Budget: ${leadData.budget || 'Unknown'}. Probability: ${probability}%. Provide a professional summary of their intent.`;
+    
+    const response = await getJamieResponse([{ role: 'user', content: prompt }], property);
+    
+    if (typeof response === 'string') {
+      jamieNotes = response;
+    } else if ('content' in response && typeof response.content === 'string') {
+      jamieNotes = response.content;
+    } else {
+      jamieNotes = JSON.stringify(response);
+    }
   }
 
   return {
@@ -88,6 +100,11 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
  * Hardened with conflict resolution and integrity checks.
  */
 export const syncLeadToSupabase = async (lead: any, retries = 2) => {
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    console.log(`[MOCK_MODE] Bypassing Supabase synchronization for lead: ${lead.email}`);
+    return;
+  }
+
   try {
     const payload = {
       name: lead.name,

@@ -7,7 +7,7 @@ import { handleTerminalIntentAction, type TerminalIntentAction } from '@/lib/cor
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const access = await getOperatorAccess(request.headers.get('host'));
 
   if (!access.allowed) {
@@ -15,6 +15,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
     const action = String(body?.action || '').trim() as TerminalIntentAction;
 
@@ -23,13 +24,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const result = await handleTerminalIntentAction({
-      id: params.id,
+      id,
       action,
       operator: access.user?.email || access.user?.name || access.mode
     });
 
     return successResponse({
-      endpoint: `/api/admin/orchestrator/terminal-intents/${params.id}`,
+      endpoint: `/api/admin/orchestrator/terminal-intents/${id}`,
       result,
       snapshot: getOrchestratorSnapshot(access)
     }, {}, result.ok ? 200 : 409);

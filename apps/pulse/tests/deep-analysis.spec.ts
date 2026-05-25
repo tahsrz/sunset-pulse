@@ -8,7 +8,7 @@ test.describe('Deep Analysis Recon Flow', () => {
   
   test.beforeEach(async ({ page }) => {
     // Navigate to the Intelligence Command (War Room)
-    await page.goto('/abidan');
+    await page.goto('/abidan/war-room');
   });
 
   test('should render specialized intelligence widgets for each judge', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('Deep Analysis Recon Flow', () => {
 
   test('should load and narrate the integrated daily briefing', async ({ page }) => {
     // Select the Daily Briefing node
-    await page.click('button:has-text("Daily Briefing")');
+    await page.click('button:has-text("Jamie Pulse")');
     
     // Check for Briefing Header
     const briefingHeader = page.locator('h4:has-text("North Texas Intelligence Summary")');
@@ -43,7 +43,9 @@ test.describe('Deep Analysis Recon Flow', () => {
     // Test Narration Toggle (Visual feedback only in E2E)
     const narrateBtn = page.locator('button:has-text("Narrate Brief")');
     await narrateBtn.click();
-    await expect(narrateBtn).toContainText('STOP NARRATION');
-    await expect(narrateBtn).toHaveClass(/bg-emerald-500/);
+    
+    const stopBtn = page.locator('button:has-text("STOP NARRATION")');
+    await expect(stopBtn).toBeVisible();
+    await expect(stopBtn).toHaveClass(/bg-emerald-500/);
   });
 });

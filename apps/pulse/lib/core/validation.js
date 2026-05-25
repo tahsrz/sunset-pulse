@@ -5,7 +5,7 @@ export const LeadSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   property: z.string().min(1, 'Property ID is required'),
-  budget: z.number().min(0, 'Budget must be positive').default(0).optional(),
+  budget: z.coerce.number().min(0, 'Budget must be positive').default(0).optional(),
   timeframe: z.enum(['immediate', '1-3 months', '3-6 months', '6+ months', 'unknown']).default('unknown').optional(),
   source: z.string().default('organic').optional(),
   lastActivity: z.coerce.date().default(() => new Date()).optional(),

@@ -27,8 +27,8 @@ const config: runtime.GetPrismaClientConfig = {
       "fromEnvVar": null
     },
     "config": {
-      "moduleFormat": "cjs",
       "engineType": "client",
+      "moduleFormat": "cjs",
       "importFileExtension": ""
     },
     "binaryTargets": [

@@ -5,11 +5,11 @@ import Property from '@/models/Property';
 import { successResponse, errorResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 
 // GET /api/properties/user/:userId
-export const GET = async (request: NextRequest, { params }: { params: { userId: string } }) => {
+export const GET = async (request: NextRequest, { params }: { params: Promise<{ userId: string }> }) => {
   try {
     await connectDB();
 
-    const userId = params.userId;
+    const { userId } = await params;
 
     if (!userId) {
       return validationErrorResponse('User ID is required');

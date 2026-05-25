@@ -54,34 +54,61 @@ export async function POST(req: NextRequest) {
       console.log(`🍔 [STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
 
       try {
-        // Query Cal.com shift schedule for today
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        const targetTime = order?.scheduledTime ? new Date(order.scheduledTime) : null;
+        
+        let activeShiftBookings;
+        if (targetTime) {
+          // Query Cal.com shifts active precisely at the scheduled pickup time
+          activeShiftBookings = await prisma.booking.findMany({
+            where: {
+              status: 'ACCEPTED',
+              startTime: { lte: targetTime },
+              endTime: { gte: targetTime },
+              eventType: {
+                slug: {
+                  in: ['grill-shift', 'register-shift'],
+                },
+              },
+            },
+            include: {
+              eventType: true,
+              user: {
+                include: {
+                  verifiedNumbers: true,
+                },
+              },
+            },
+          });
+        } else {
+          // Default fallback: today's shift schedule
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayEnd = new Date();
+          todayEnd.setHours(23, 59, 59, 999);
 
-        const activeShiftBookings = await prisma.booking.findMany({
-          where: {
-            status: 'ACCEPTED',
-            startTime: {
-              gte: todayStart,
-              lte: todayEnd,
-            },
-            eventType: {
-              slug: {
-                in: ['grill-shift', 'register-shift'],
+          activeShiftBookings = await prisma.booking.findMany({
+            where: {
+              status: 'ACCEPTED',
+              startTime: {
+                gte: todayStart,
+                lte: todayEnd,
+              },
+              eventType: {
+                slug: {
+                  in: ['grill-shift', 'register-shift'],
+                },
               },
             },
-          },
-          include: {
-            eventType: true,
-            user: {
-              include: {
-                verifiedNumbers: true,
+            include: {
+              eventType: true,
+              user: {
+                include: {
+                  verifiedNumbers: true,
+                },
               },
             },
-          },
-        });
+          });
+        }
 
         let grillPhone: string | null = null;
         let registerPhone: string | null = null;

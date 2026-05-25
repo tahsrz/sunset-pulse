@@ -1,56 +1,603 @@
 [
   {
-    "id": "h-01",
+    "id": "burg-01",
+    "agentId": "taz-realty-001",
     "name": "Hamburger",
     "price": 7.99,
     "category": "Burgers",
     "description": "Classic grilled beef patty on a toasted bun with standard toppings.",
-    "isBasket": false,
-    "image": "/images/grill/hamburger.jpg"
+    "isAvailable": true,
+    "isDaisyPick": false
   },
   {
-    "id": "h-02",
+    "id": "burg-02",
+    "agentId": "taz-realty-001",
     "name": "Hamburger Basket",
     "price": 9.99,
     "category": "Burgers",
-    "description": "Our classic hamburger served with a side of fries and a drink.",
-    "isBasket": true,
-    "image": "/images/grill/hamburger-basket.jpg"
+    "description": "Classic hamburger served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
   },
   {
-    "id": "c-01",
+    "id": "burg-03",
+    "agentId": "taz-realty-001",
     "name": "Cheeseburger",
     "price": 8.49,
     "category": "Burgers",
     "description": "Classic grilled beef patty topped with melted American cheese.",
-    "isBasket": false,
-    "image": "/images/grill/cheeseburger.jpg"
+    "isAvailable": true,
+    "isDaisyPick": false
   },
   {
-    "id": "c-02",
+    "id": "burg-04",
+    "agentId": "taz-realty-001",
     "name": "Cheeseburger Basket",
     "price": 10.59,
     "category": "Burgers",
-    "description": "Melted cheeseburger served with a side of fries and a drink.",
-    "isBasket": true,
-    "image": "/images/grill/cheeseburger-basket.jpg"
+    "description": "Cheeseburger served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
   },
   {
-    "id": "bc-01",
+    "id": "burg-05",
+    "agentId": "taz-realty-001",
     "name": "Bacon Cheeseburger",
-    "price": 10.99,
+    "price": 10.49,
     "category": "Burgers",
-    "description": "Beef patty topped with crispy bacon and melted cheese.",
-    "isBasket": false,
-    "image": "/images/grill/bacon-cheeseburger.jpg"
+    "description": "Sizzling beef patty topped with crispy bacon and melted cheese.",
+    "isAvailable": true,
+    "isDaisyPick": false
   },
   {
-    "id": "bc-02",
-    "name": "Bacon Cheeseburger Basket",
+    "id": "burg-06",
+    "agentId": "taz-realty-001",
+    "name": "Bacon C.B. Basket",
     "price": 13.99,
     "category": "Burgers",
-    "description": "The bacon cheeseburger experience with fries and a drink.",
-    "isBasket": true,
-    "image": "/images/grill/bacon-cheeseburger-basket.jpg"
+    "description": "Bacon cheeseburger served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "burg-07",
+    "agentId": "taz-realty-001",
+    "name": "Double Meat C.B.",
+    "price": 13.99,
+    "category": "Burgers",
+    "description": "Two grilled beef patties with double melted cheese and custom toppings.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
+    "id": "burg-08",
+    "agentId": "taz-realty-001",
+    "name": "DMCB Basket",
+    "price": 16.99,
+    "category": "Burgers",
+    "description": "Double meat cheeseburger served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "burg-09",
+    "agentId": "taz-realty-001",
+    "name": "Bacon DMCB",
+    "price": 14.99,
+    "category": "Burgers",
+    "description": "Two grilled beef patties with crispy bacon, double melted cheese, and standard toppings.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "burg-10",
+    "agentId": "taz-realty-001",
+    "name": "Bacon DMCB Basket",
+    "price": 18.99,
+    "category": "Burgers",
+    "description": "Bacon double meat cheeseburger served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "burg-11",
+    "agentId": "taz-realty-001",
+    "name": "Swiss Mushroom Burger",
+    "price": 10.49,
+    "category": "Burgers",
+    "description": "Grilled beef patty topped with sautéed savory mushrooms and melted Swiss cheese.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
+    "id": "burg-12",
+    "agentId": "taz-realty-001",
+    "name": "Swiss Mushroom Basket",
+    "price": 12.99,
+    "category": "Burgers",
+    "description": "Swiss mushroom burger served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "burg-13",
+    "agentId": "taz-realty-001",
+    "name": "Taz's Sunset Burger",
+    "price": 13.99,
+    "category": "Burgers",
+    "description": "Grilled onions, grilled jalapeños, and grilled tomatoes with crisp lettuce, topped with a perfectly rich over-easy egg and a generous dusting of cracked black pepper.",
+    "isAvailable": true,
+    "isDaisyPick": false,
+    "isStaffPick": true
+  },
+  {
+    "id": "fav-01",
+    "agentId": "taz-realty-001",
+    "name": "Patty Melt",
+    "price": 10.99,
+    "category": "Favorites",
+    "description": "Beef patty on toasted rye with grilled onions and melted Swiss cheese.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
+    "id": "fav-02",
+    "agentId": "taz-realty-001",
+    "name": "Patty Melt Basket",
+    "price": 11.99,
+    "category": "Favorites",
+    "description": "Patty melt served with golden fries and a refreshing beverage.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-03",
+    "agentId": "taz-realty-001",
+    "name": "Quesadilla (Beef or Ckn)",
+    "price": 13.99,
+    "category": "Favorites",
+    "description": "Crispy grilled flour tortilla stuffed with your choice of beef or chicken, and melted cheeses.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-04",
+    "agentId": "taz-realty-001",
+    "name": "Nacho Grande",
+    "price": 13.99,
+    "category": "Favorites",
+    "description": "Mound of tortilla chips topped with cheese sauce, beef, beans, and fresh toppings.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-05",
+    "agentId": "taz-realty-001",
+    "name": "2 Taco Plate (Beef)",
+    "price": 8.99,
+    "category": "Favorites",
+    "description": "Two seasoned beef tacos served with Mexican-style rice and savory beans.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-06",
+    "agentId": "taz-realty-001",
+    "name": "2 Taco Plate (Ckn)",
+    "price": 10.99,
+    "category": "Favorites",
+    "description": "Two seasoned chicken tacos served with Mexican-style rice and savory beans.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-07",
+    "agentId": "taz-realty-001",
+    "name": "3 Taco Plate (Beef)",
+    "price": 12.99,
+    "category": "Favorites",
+    "description": "Three seasoned beef tacos served with Mexican-style rice and savory beans.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-08",
+    "agentId": "taz-realty-001",
+    "name": "Hamburger Burrito",
+    "price": 10.99,
+    "category": "Favorites",
+    "description": "Flour tortilla rolled with seasoned ground beef, cheese, and custom sauces.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-09",
+    "agentId": "taz-realty-001",
+    "name": "Grilled Ckn Wrap (Grilled or Crispy)",
+    "price": 7.99,
+    "category": "Favorites",
+    "description": "Flour tortilla loaded with grilled or crispy chicken, lettuce, tomato, and dressing.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-10",
+    "agentId": "taz-realty-001",
+    "name": "BLT Sandwich",
+    "price": 5.99,
+    "category": "Favorites",
+    "description": "Crispy bacon, fresh lettuce, and ripe tomatoes on toasted bread.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-11",
+    "agentId": "taz-realty-001",
+    "name": "Cold Sandwich (Turkey or Ham)",
+    "price": 7.99,
+    "category": "Favorites",
+    "description": "Fresh sliced deli turkey or ham with lettuce and tomato on choice bread.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-12",
+    "agentId": "taz-realty-001",
+    "name": "Crispy Chicken or Grilled Chicken Salad",
+    "price": 14.99,
+    "category": "Favorites",
+    "description": "Your choice of crispy or grilled chicken breast served over a bed of fresh greens and garden veggies.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "fav-13",
+    "agentId": "taz-realty-001",
+    "name": "Club Sandwich",
+    "price": 14.99,
+    "category": "Favorites",
+    "description": "Triple-decker loaded with turkey, ham, crispy bacon, cheese, lettuce, and tomato.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-01",
+    "agentId": "taz-realty-001",
+    "name": "Crispito",
+    "price": 3.39,
+    "category": "Hot Box Delights",
+    "description": "Crispy rolled flour tortilla filled with seasoned beef and melted cheese.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-02",
+    "agentId": "taz-realty-001",
+    "name": "Beef & Bean Burrito",
+    "price": 3.69,
+    "category": "Hot Box Delights",
+    "description": "Classic warm flour tortilla filled with seasoned beef and refried beans.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-03",
+    "agentId": "taz-realty-001",
+    "name": "Cheese Sticks",
+    "price": 4.99,
+    "category": "Hot Box Delights",
+    "description": "Golden-fried breaded mozzarella cheese sticks served with marinara dipping sauce.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-04",
+    "agentId": "taz-realty-001",
+    "name": "Meat Pie",
+    "price": 3.99,
+    "category": "Hot Box Delights",
+    "description": "Savory southern-style meat-stuffed fried pastry pie.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-05",
+    "agentId": "taz-realty-001",
+    "name": "Chimichanga",
+    "price": 3.99,
+    "category": "Hot Box Delights",
+    "description": "Crispy deep-fried flour tortilla wrapped with seasoned meat and cheeses.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-06",
+    "agentId": "taz-realty-001",
+    "name": "Honey Crunchy Corn Dog",
+    "price": 2.49,
+    "category": "Hot Box Delights",
+    "description": "Sweet honey batter wrapped classic corn dog, golden-fried to a perfect crunch.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-07",
+    "agentId": "taz-realty-001",
+    "name": "BBQ Sandwich",
+    "price": 6.99,
+    "category": "Hot Box Delights",
+    "description": "Slow-cooked pulled pork or beef drizzled with signature sweet and smoky BBQ sauce.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-08",
+    "agentId": "taz-realty-001",
+    "name": "Hot Link (Smoke Shas)",
+    "price": 6.19,
+    "category": "Hot Box Delights",
+    "description": "Spicy and smoky hot link sausage served in a toasted split bun.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-09",
+    "agentId": "taz-realty-001",
+    "name": "Grilled Ckn",
+    "price": 8.99,
+    "category": "Hot Box Delights",
+    "description": "Savory grilled chicken breast seasoned to perfection and served on a toasted bun.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-10",
+    "agentId": "taz-realty-001",
+    "name": "Chicken Fried Steak",
+    "price": 7.99,
+    "category": "Hot Box Delights",
+    "description": "Crispy country-fried steak patty served with classic cream gravy.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-11",
+    "agentId": "taz-realty-001",
+    "name": "Spicy Chicken",
+    "price": 7.99,
+    "category": "Hot Box Delights",
+    "description": "Spicy-breaded crispy chicken breast served on a toasted bun with lettuce and mayo.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-12",
+    "agentId": "taz-realty-001",
+    "name": "Mini Tacos",
+    "price": 4.99,
+    "category": "Hot Box Delights",
+    "description": "Basket of crispy, bite-sized mini corn tacos stuffed with seasoned chicken or beef.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-13",
+    "agentId": "taz-realty-001",
+    "name": "Potato Munchers",
+    "price": 3.99,
+    "category": "Hot Box Delights",
+    "description": "Crispy golden fried potato bites stuffed with cheese and mild peppers.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-14",
+    "agentId": "taz-realty-001",
+    "name": "Jalo & Cheese Poppers",
+    "price": 4.99,
+    "category": "Hot Box Delights",
+    "description": "Golden breaded jalapeño peppers stuffed with gooey melted cheddar cheese.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-15",
+    "agentId": "taz-realty-001",
+    "name": "Jalapeno Corn Dog",
+    "price": 2.49,
+    "category": "Hot Box Delights",
+    "description": "Spicy jalapeno-infused sweet corn batter wrapped around a premium smoked hot dog.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "hot-16",
+    "agentId": "taz-realty-001",
+    "name": "Sunset Sausage on a Stick",
+    "price": 6.99,
+    "category": "Hot Box Delights",
+    "description": "Premium smoked sausage on a stick dipped in sweet corn meal batter and golden-fried.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "side-01",
+    "agentId": "taz-realty-001",
+    "name": "Fries",
+    "price": 3.99,
+    "category": "Sides",
+    "description": "Crispy, golden, salted straight-cut French fries.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "side-02",
+    "agentId": "taz-realty-001",
+    "name": "Tots",
+    "price": 4.49,
+    "category": "Sides",
+    "description": "Crispy, seasoned golden-brown tater tots.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "side-03",
+    "agentId": "taz-realty-001",
+    "name": "Onion Rings",
+    "price": 4.99,
+    "category": "Sides",
+    "description": "Thick-cut, sweet onion rings double-breaded for ultimate crunch.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
+    "id": "side-04",
+    "agentId": "taz-realty-001",
+    "name": "Lg. Cheese Fry",
+    "price": 11.99,
+    "category": "Sides",
+    "description": "Generous sharing plate of golden fries smothered in melted cheddar cheese sauce.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "side-05",
+    "agentId": "taz-realty-001",
+    "name": "Cup Nacho Cheese",
+    "price": 2.99,
+    "category": "Sides",
+    "description": "Warm, velvety, rich nacho cheese dipping sauce.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "brk-01",
+    "agentId": "taz-realty-001",
+    "name": "Bacon, Egg, and Cheese Biscuit",
+    "price": 4.29,
+    "category": "Breakfast",
+    "description": "Warm, flaky buttermilk biscuit layered with crispy bacon, fluffy folded egg, and melted American cheese.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
+    "id": "brk-02",
+    "agentId": "taz-realty-001",
+    "name": "Bacon and Egg Biscuit",
+    "price": 3.79,
+    "category": "Breakfast",
+    "description": "Warm buttermilk biscuit loaded with savory crispy bacon and fluffy folded egg.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "brk-03",
+    "agentId": "taz-realty-001",
+    "name": "Bacon and Cheese Biscuit",
+    "price": 3.49,
+    "category": "Breakfast",
+    "description": "Warm flaky buttermilk biscuit with thick-cut crispy bacon and melted American cheese.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "brk-04",
+    "agentId": "taz-realty-001",
+    "name": "Sausage, Egg, and Cheese Biscuit",
+    "price": 4.29,
+    "category": "Breakfast",
+    "description": "Flaky southern-style buttermilk biscuit stacked with a savory sausage patty, folded egg, and melted American cheese.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
+    "id": "brk-05",
+    "agentId": "taz-realty-001",
+    "name": "Sausage and Egg Biscuit",
+    "price": 3.79,
+    "category": "Breakfast",
+    "description": "Warm flaky biscuit stuffed with our signature grilled sausage patty and fluffy folded egg.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "brk-06",
+    "agentId": "taz-realty-001",
+    "name": "Sausage and Cheese Biscuit",
+    "price": 3.49,
+    "category": "Breakfast",
+    "description": "Buttermilk biscuit with grilled savory sausage patty and melted American cheese.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-01",
+    "agentId": "taz-realty-001",
+    "name": "Coke Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "Refreshing, ice-cold 20oz classic Coca-Cola bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-02",
+    "agentId": "taz-realty-001",
+    "name": "Pepsi Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "Crisp and refreshing 20oz classic Pepsi bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-03",
+    "agentId": "taz-realty-001",
+    "name": "Sprite Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "Crisp, clean, lemon-lime flavored 20oz Sprite bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-04",
+    "agentId": "taz-realty-001",
+    "name": "Diet Coke Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "Zero-calorie, crisp 20oz Diet Coke bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-05",
+    "agentId": "taz-realty-001",
+    "name": "Dr Pepper Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "A unique blend of 23 signature flavors in a 20oz bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-06",
+    "agentId": "taz-realty-001",
+    "name": "Diet Dr Pepper Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "Diet Dr Pepper with the same 23 signature flavors and zero calories in a 20oz bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "bev-07",
+    "agentId": "taz-realty-001",
+    "name": "Mountain Dew Bottle",
+    "price": 2.89,
+    "category": "Beverages",
+    "description": "Invigorating, citrus-flavored 20oz Mountain Dew bottle.",
+    "isAvailable": true,
+    "isDaisyPick": false
   }
 ]

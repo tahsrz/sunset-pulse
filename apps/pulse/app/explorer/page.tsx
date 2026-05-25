@@ -21,9 +21,13 @@ function ExplorerContent() {
     if (!selection) return;
     setLoading(true);
     try {
-      const url = selection.type === 'polygon' 
-        ? `/api/properties/search?polygon=${selection.data}`
-        : `/api/properties/search?radius=${selection.data}`;
+      let url = '';
+      if (selection.type === 'polygon') {
+        url = `/api/properties/search?polygon=${selection.data}`;
+      } else {
+        const [lat, lng, radius] = selection.data.split(',');
+        url = `/api/properties/search?center=${lng},${lat}&radius=${radius}`;
+      }
       
       const res = await fetch(url);
       const json = await res.json();
@@ -91,6 +95,18 @@ function ExplorerContent() {
     };
     initializeExplorer();
   }, [targetId, intelligence.grill.coordinates]);
+
+  // Deep-link selection sync
+  useEffect(() => {
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
+    if (lat && lng && !selection) {
+      setSelection({
+        type: 'radius',
+        data: `${lat},${lng},5`
+      });
+    }
+  }, [searchParams, selection]);
 
   // Sync selection with Jamie
   useEffect(() => {

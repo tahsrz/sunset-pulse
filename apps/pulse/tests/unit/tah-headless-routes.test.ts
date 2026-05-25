@@ -74,8 +74,8 @@ describe('TAH robot-facing routes', () => {
 
   it('serves per-cartridge metadata for robots and UI clients', async () => {
     const fixture = getCatalogFixtureMetadata();
-    const response = getCartridgeMeta(new NextRequest(fixture.routes.meta), {
-      params: { slug: fixture.slug }
+    const response = await getCartridgeMeta(new NextRequest(fixture.routes.meta), {
+      params: Promise.resolve({ slug: fixture.slug })
     });
     const body = await response.json();
 

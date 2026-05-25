@@ -8,7 +8,13 @@ import { searchEvaluator } from '@/lib/core/evaluator';
  */
 export async function POST(request: Request) {
   try {
-    const { query } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      body = {};
+    }
+    const { query } = body;
 
     if (!query) {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
@@ -18,11 +24,15 @@ export async function POST(request: Request) {
     const parsed = searchEvaluator.parse(query);
     const result = await searchEvaluator.evaluate(parsed);
 
-    return NextResponse.json({
+    const jsonString = JSON.stringify({
       success: true,
       query,
       result,
       timestamp: new Date().toISOString()
+    }, (key, value) => typeof value === 'bigint' ? value.toString() : value);
+
+    return new Response(jsonString, {
+      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error: any) {
     console.error("[API_TAH_EVAL_ERROR]", error);

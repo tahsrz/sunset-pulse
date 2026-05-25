@@ -5,16 +5,32 @@ import { isNextDynamicServerUsage } from '@/lib/core/nextDynamicError';
 
 /**
  * Generates a fresh Bloom Filter from the database.
- * This should be run after significant user growth.
+ * Supports complete mock-mode isolation.
  */
 export async function GET() {
   try {
-    const supabase = createClient();
-
-    // 1. Initialize Filter (Size 100k, 7 Probability Loops)
     const filter = new IdentityBloomFilter(100000, 7);
 
-    // 2. Fetch all usernames from public.profiles
+    // Mock Mode Interception
+    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+      filter.add('admin');
+      filter.add('taz');
+      filter.add('jamie');
+      filter.add('user');
+
+      const payload = filter.export();
+      return NextResponse.json({
+        success: true,
+        data: payload,
+        config: { size: 100000, hashCount: 7 },
+        userCount: 4,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const supabase = createClient();
+
+    // Fetch all usernames from public.profiles
     const { data: users, error } = await supabase
       .from('profiles')
       .select('username');
@@ -27,7 +43,7 @@ export async function GET() {
       });
     }
 
-    // 3. Export as Base64 for client consumption
+    // Export as Base64 for client consumption
     const payload = filter.export();
 
     return NextResponse.json({

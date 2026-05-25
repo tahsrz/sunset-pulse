@@ -35,7 +35,7 @@ const MapControls: React.FC<MapControlsProps> = ({
               onClick={() => setShowHeatmap(!showHeatmap)}
               className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showHeatmap ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
             >
-              HEATMAP
+              THERMAL
             </button>
             <button 
               onClick={() => setShowVisual(!showVisual)}
@@ -47,7 +47,7 @@ const MapControls: React.FC<MapControlsProps> = ({
               onClick={() => setShowPOIs(!showPOIs)}
               className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showPOIs ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
             >
-              POI
+              POI RECON
             </button>
           </div>
         </div>

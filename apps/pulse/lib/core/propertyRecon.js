@@ -58,12 +58,15 @@ export async function getProperties({ showFeatured = false, page = 1, pageSize =
     let properties;
     let total = 0;
 
+    const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+    const demoFilter = isMock ? {} : { is_demo: { $ne: true } };
+
     if (showFeatured) {
-      properties = await Property.find({ is_featured: true, is_demo: { $ne: true } }).lean();
+      properties = await Property.find({ is_featured: true, ...demoFilter }).lean();
     } else {
       const skip = (page - 1) * pageSize;
-      total = await Property.countDocuments({ is_demo: { $ne: true } });
-      properties = await Property.find({ is_demo: { $ne: true } }).skip(skip).limit(pageSize).lean();
+      total = await Property.countDocuments(demoFilter);
+      properties = await Property.find(demoFilter).skip(skip).limit(pageSize).lean();
     }
 
     // Aggregate Lead counts for Intelligence Model

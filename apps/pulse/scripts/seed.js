@@ -1,6 +1,6 @@
 // scripts/seed.js
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 
 const connectDB = require('../lib/core/database').default;
 const Property = require('../models/Property').default;
@@ -46,9 +46,14 @@ const seedData = async () => {
     console.log('Geocoding and sanitizing properties...');
     const sanitizedProperties = [];
     
+    let isFirst = true;
     for (const property of properties) {
       const p = { ...property };
       delete p._id;
+      if (isFirst) {
+        p._id = "650c8e2b1f4e1a2b3c4d5e6f";
+        isFirst = false;
+      }
       if (!p.owner || p.owner === "" || p.owner === "1") {
         p.owner = "650c8e2b1f4e1a2b3c4d5e6f"; // Default to valid test user
       }

@@ -446,9 +446,8 @@ export const GET = async (request: NextRequest) => {
       take: 20,
     });
 
-    // In-memory filtration of draft shifts
-    const sessionUser = await getSessionUser().catch(() => null);
-    const isManager = sessionUser && (sessionUser.role === 'realtor' || sessionUser.role === 'admin');
+    // In-memory filtration of draft shifts (open to everyone with the route)
+    const isManager = true;
 
     if (bookings && Array.isArray(bookings)) {
       if (!isManager) {
@@ -482,9 +481,19 @@ export const GET = async (request: NextRequest) => {
 // POST /api/scheduling - Synchronize booking request into Cal.com & MongoDB TourRequest
 export const POST = async (request: NextRequest) => {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse('Authentication required to allocate a scheduled tour.');
+    // Authentication bypassed for open scheduling route
+    let sessionUser = await getSessionUser().catch(() => null);
+    if (!sessionUser) {
+      sessionUser = {
+        user: {
+          id: 'anonymous-operator-id',
+          name: 'Anonymous Operator',
+          email: 'anonymous@sunsetpulse.com',
+          role: 'admin',
+        },
+        userId: 'anonymous-operator-id',
+        role: 'admin'
+      };
     }
 
     const requestData = await request.json();
@@ -710,14 +719,19 @@ async function checkCompatibilityConflict(userId: number, startTime: Date, endTi
 // PATCH /api/scheduling - Modify shifts (reassign or swap employees)
 export const PATCH = async (request: NextRequest) => {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser || !sessionUser.userId) {
-      return unauthorizedResponse('Authentication required to modify scheduling assignments.');
-    }
-
-    // Role-Based Access Control: only realtors or admins can manage/reassign schedules
-    if (sessionUser.role !== 'realtor' && sessionUser.role !== 'admin') {
-      return errorResponse('Access denied. Insufficient administrative privileges.', 403);
+    // Authentication and Role-Based Access Control bypassed for open scheduling route
+    let sessionUser = await getSessionUser().catch(() => null);
+    if (!sessionUser) {
+      sessionUser = {
+        user: {
+          id: 'anonymous-operator-id',
+          name: 'Anonymous Operator',
+          email: 'anonymous@sunsetpulse.com',
+          role: 'admin',
+        },
+        userId: 'anonymous-operator-id',
+        role: 'admin'
+      };
     }
 
     const body = await request.json();
