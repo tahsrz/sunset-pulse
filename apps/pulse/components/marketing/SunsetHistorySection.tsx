@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { FaNewspaper, FaSeedling, FaStore, FaTrain } from 'react-icons/fa';
 import { ATLAS_PULSE_STAGES, getTexasPlaceHistory } from '@/lib/tah/texasPlaceHistory';
 
@@ -49,9 +50,11 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
 
               {/* Grill Image Showcase */}
               <div className="relative mb-5 overflow-hidden rounded-lg border border-amber-500/15 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-                <img 
-                  src="/images/grill/Sunset.png" 
-                  alt="Sunset Gas & Grill Landmark" 
+                <Image
+                  src="/images/grill/Sunset.png"
+                  alt="Sunset Gas & Grill Landmark"
+                  width={800}
+                  height={352}
                   className="w-full h-44 object-cover object-center transition-transform duration-700 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
