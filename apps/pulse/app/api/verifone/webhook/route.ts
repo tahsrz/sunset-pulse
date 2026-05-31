@@ -4,11 +4,18 @@ import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
+import { requireVerifoneEnabled, requireVerifoneMode } from '@/lib/verifone/config';
 import { normalizeVerifoneEvent } from '@/lib/verifone/events';
 import { verifyVerifoneSignature } from '@/lib/verifone/signature';
 import { applyVerifoneEventToOrder } from '@/lib/verifone/stateMachine';
 
 export async function POST(req: NextRequest) {
+  const disabled = requireVerifoneEnabled();
+  if (disabled) return disabled;
+
+  const modeBlocked = requireVerifoneMode('live');
+  if (modeBlocked) return modeBlocked;
+
   const body = await req.text();
   const signature = verifyVerifoneSignature(body, req.headers);
 

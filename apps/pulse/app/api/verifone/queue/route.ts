@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import { errorResponse } from '@/lib/core/apiResponse';
+import { requireVerifoneEnabled, requireVerifoneMode } from '@/lib/verifone/config';
 
 const isAuthorizedBridge = (req: NextRequest) => {
   const configuredToken = process.env.VERIFONE_BRIDGE_TOKEN;
@@ -14,6 +15,12 @@ const isAuthorizedBridge = (req: NextRequest) => {
 };
 
 export async function GET(req: NextRequest) {
+  const disabled = requireVerifoneEnabled();
+  if (disabled) return disabled;
+
+  const modeBlocked = requireVerifoneMode('live');
+  if (modeBlocked) return modeBlocked;
+
   if (!isAuthorizedBridge(req)) {
     return errorResponse('Unauthorized Verifone bridge.', 401);
   }

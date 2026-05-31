@@ -4,8 +4,15 @@ import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
+import { requireVerifoneEnabled, requireVerifoneMode } from '@/lib/verifone/config';
 
 export async function POST(req: NextRequest) {
+  const disabled = requireVerifoneEnabled();
+  if (disabled) return disabled;
+
+  const modeBlocked = requireVerifoneMode('live');
+  if (modeBlocked) return modeBlocked;
+
   try {
     await connectDB();
 

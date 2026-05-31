@@ -4,14 +4,17 @@ import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
+import { requireVerifoneEnabled, requireVerifoneMode } from '@/lib/verifone/config';
 import { normalizeVerifoneEvent } from '@/lib/verifone/events';
 import { sha256Digest } from '@/lib/verifone/signature';
 import { applyVerifoneEventToOrder } from '@/lib/verifone/stateMachine';
 
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === 'production' && process.env.VERIFONE_ENABLE_MOCK !== 'true') {
-    return errorResponse('Verifone mock endpoint is disabled.', 404);
-  }
+  const disabled = requireVerifoneEnabled();
+  if (disabled) return disabled;
+
+  const modeBlocked = requireVerifoneMode('mock');
+  if (modeBlocked) return modeBlocked;
 
   const body = await req.text();
 
