@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     if (metadata?.orderType === 'grill_food' && metadata?.orderId) {
       const order = await Order.findByIdAndUpdate(metadata.orderId, {
         isPaid: true,
+        paymentState: 'PAID_STRIPE',
         paymentSessionId: session.id
       }, { new: true });
       console.log(`🍔 [STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);

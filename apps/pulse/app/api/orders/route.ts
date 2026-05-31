@@ -34,14 +34,21 @@ export const GET = async () => {
 export const POST = async (request: NextRequest) => {
   try {
     await connectDB();
-    const { items, totalAmount, scheduledTime } = await request.json();
+    const { items, totalAmount, scheduledTime, customerName, isPaid, paymentSessionId, paymentReference } = await request.json();
     const sessionUser = await getSessionUser();
 
     const orderData: any = {
       items,
       totalAmount,
-      status: 'pending'
+      status: 'pending',
+      isPaid: Boolean(isPaid),
+      paymentState: isPaid ? 'PAID_STRIPE' : 'UNPAID',
+      pickupCode: crypto.randomInt(100000, 999999).toString(),
     };
+
+    if (customerName) orderData.customerName = customerName;
+    if (paymentSessionId) orderData.paymentSessionId = paymentSessionId;
+    if (paymentReference) orderData.paymentReference = paymentReference;
 
     if (sessionUser && sessionUser.userId) {
       orderData.user = sessionUser.userId;

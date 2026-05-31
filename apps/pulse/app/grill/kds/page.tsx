@@ -1,13 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaFire, FaCheck, FaClock, FaExclamationTriangle, FaTrash, FaVolumeUp } from 'react-icons/fa';
+import { FaCashRegister, FaFire, FaCheck, FaClock, FaExclamationTriangle, FaTrash, FaVolumeUp } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { StaffPickupVerificationPanel, type VerifiablePickupOrder } from '@/components/orders';
 
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  ageRestricted?: boolean;
+  minimumAge?: 18 | 21;
+  restrictedCategory?: 'tobacco' | 'alcohol' | 'lotto' | 'fuel' | 'none';
 }
 
 interface Order {
@@ -16,7 +20,20 @@ interface Order {
   totalAmount: number;
   status: 'pending' | 'cooking' | 'completed' | 'cancelled';
   isPaid: boolean;
+  paymentState?: 'UNPAID' | 'PENDING_POS_TENDER' | 'PAID_STRIPE' | 'PAID_POS' | 'PAYMENT_FAILED' | 'REFUNDED' | 'VOIDED' | 'MANUAL_REVIEW';
   createdAt: string;
+  paymentSessionId?: string;
+  paymentReference?: string;
+  pickupCode?: string;
+  customerName?: string;
+  releasedAt?: string;
+  idVerifiedAt?: string;
+  posProperties?: {
+    terminalId?: string | null;
+    posTransactionId?: string | null;
+    authCode?: string | null;
+    posSyncStatus?: string;
+  };
 }
 
 const KitchenDisplaySystem = () => {
@@ -90,6 +107,100 @@ const KitchenDisplaySystem = () => {
     return diff;
   };
 
+  const updateOrderAction = async (id: string, action: 'verify-id' | 'release') => {
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+
+      if (res.ok) {
+        toast.success(action === 'verify-id' ? 'ID checkpoint verified.' : 'Pickup order released.');
+        fetchOrders();
+      } else {
+        toast.error('Order action failed.');
+      }
+    } catch (error) {
+      toast.error('Failed to update pickup verification.');
+    }
+  };
+
+  const preparePosTender = async (id: string) => {
+    try {
+      const res = await fetch('/api/verifone/transaction/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: id, terminalId: 'Register 1', bridgeId: 'kds-pi-01' }),
+      });
+
+      if (res.ok) {
+        toast.info('Order sent to Verifone register queue.');
+        fetchOrders();
+      } else {
+        const payload = await res.json().catch(() => null);
+        toast.error(payload?.message || 'Could not send order to register.');
+      }
+    } catch (error) {
+      toast.error('Register queue request failed.');
+    }
+  };
+
+  const mapPaymentState = (order: Order): VerifiablePickupOrder['paymentState'] => {
+    switch (order.paymentState) {
+      case 'PAID_STRIPE':
+        return 'paid_online';
+      case 'PAID_POS':
+        return 'paid_pos';
+      case 'PENDING_POS_TENDER':
+        return 'pending_pos';
+      case 'PAYMENT_FAILED':
+        return 'partial_issue';
+      case 'REFUNDED':
+        return 'refunded';
+      case 'VOIDED':
+        return 'voided';
+      case 'MANUAL_REVIEW':
+        return 'manual_review';
+      default:
+        return order.isPaid ? 'paid_online' : 'unpaid_counter';
+    }
+  };
+
+  const paymentBadge = (order: Order) => {
+    const paymentState = mapPaymentState(order);
+    if (paymentState === 'paid_online') return { label: 'STRIPE PAID', className: 'bg-emerald-500 text-white' };
+    if (paymentState === 'paid_pos') return { label: 'POS PAID', className: 'bg-emerald-500 text-white' };
+    if (paymentState === 'pending_pos') return { label: 'AT REGISTER', className: 'bg-cyan-500 text-slate-950' };
+    if (paymentState === 'partial_issue' || paymentState === 'manual_review') return { label: 'PAY REVIEW', className: 'bg-amber-400 text-slate-950' };
+    if (paymentState === 'refunded' || paymentState === 'voided') return { label: 'VOID/REFUND', className: 'bg-rose-500 text-white' };
+    return { label: 'COUNTER PAY', className: 'bg-slate-700 text-slate-100' };
+  };
+
+  const toVerifiableOrder = (order: Order): VerifiablePickupOrder => {
+    const shortId = order._id.slice(-6).toUpperCase();
+    return {
+      id: order._id,
+      pickupCode: order.pickupCode || shortId,
+      customerName: order.customerName,
+      paymentState: mapPaymentState(order),
+      paymentReference: order.paymentReference
+        || (order.paymentSessionId ? `Stripe ${order.paymentSessionId.slice(-8)}` : undefined)
+        || (order.posProperties?.authCode ? `Verifone ${order.posProperties.authCode}` : undefined),
+      totalAmount: order.totalAmount,
+      releasedAt: order.releasedAt,
+      idVerifiedAt: order.idVerifiedAt,
+      items: order.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        ageRestricted: item.ageRestricted,
+        minimumAge: item.minimumAge,
+        restrictedCategory: item.restrictedCategory || 'none',
+      })),
+    };
+  };
+
   return (
     <div className="min-h-screen bg-black text-white p-6 font-sans select-none">
       {/* KDS Header */}
@@ -133,6 +244,7 @@ const KitchenDisplaySystem = () => {
           {orders.map((order) => {
             const minutesElapsed = getTimeElapsed(order.createdAt);
             const isUrgent = minutesElapsed > 15;
+            const badge = paymentBadge(order);
 
             return (
               <div 
@@ -151,11 +263,9 @@ const KitchenDisplaySystem = () => {
                     <span className="font-black text-xs uppercase tracking-widest">
                       #{order._id.slice(-4).toUpperCase()}
                     </span>
-                    {order.isPaid && (
-                      <span className="bg-emerald-500 text-[8px] font-black px-2 py-0.5 rounded-full text-white animate-pulse">
-                        PAID
-                      </span>
-                    )}
+                    <span className={`${badge.className} text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse`}>
+                      {badge.label}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
                     <FaClock /> {minutesElapsed}m
@@ -175,6 +285,29 @@ const KitchenDisplaySystem = () => {
                 </div>
 
                 {/* Status Bar */}
+                <div className="px-4 pb-4">
+                  {mapPaymentState(order) === 'unpaid_counter' && (
+                    <button
+                      type="button"
+                      onClick={() => preparePosTender(order._id)}
+                      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-cyan-100 hover:bg-cyan-400/20"
+                    >
+                      <FaCashRegister /> Send To Register
+                    </button>
+                  )}
+                  {mapPaymentState(order) === 'pending_pos' && (
+                    <div className="mb-3 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-xs font-bold text-cyan-100">
+                      Awaiting Verifone tender from {order.posProperties?.terminalId || 'assigned register'}.
+                    </div>
+                  )}
+                  <StaffPickupVerificationPanel
+                    order={toVerifiableOrder(order)}
+                    onVerifyId={() => updateOrderAction(order._id, 'verify-id')}
+                    onRelease={() => updateOrderAction(order._id, 'release')}
+                    onReject={() => toast.warning('Order moved to staff review.')}
+                  />
+                </div>
+
                 <div className="p-4 bg-black/40 mt-auto grid grid-cols-2 gap-2">
                   {order.status === 'pending' ? (
                     <button 

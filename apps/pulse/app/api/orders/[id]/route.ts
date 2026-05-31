@@ -90,15 +90,36 @@ export const PATCH = async (
   try {
     await connectDB();
     const { id } = await params;
-    const { status } = await request.json();
+    const { status, action } = await request.json();
 
-    if (!['pending', 'cooking', 'completed', 'cancelled'].includes(status)) {
+    if (status && !['pending', 'cooking', 'completed', 'cancelled'].includes(status)) {
       return errorResponse('Invalid status value.', 400);
+    }
+
+    const updates: any = {};
+    if (status) updates.status = status;
+    if (action === 'verify-id') updates.idVerifiedAt = new Date();
+    if (action === 'release') {
+      const existingOrder = await Order.findById(id);
+      if (!existingOrder) {
+        return errorResponse('Order not found.', 404);
+      }
+
+      const paymentState = existingOrder.paymentState || (existingOrder.isPaid ? 'PAID_STRIPE' : 'UNPAID');
+      if (!['PAID_STRIPE', 'PAID_POS'].includes(paymentState)) {
+        return errorResponse('Order cannot be released until payment is confirmed.', 409);
+      }
+
+      updates.releasedAt = new Date();
+    }
+
+    if (!status && !action) {
+      return errorResponse('Status or action is required.', 400);
     }
 
     const order = await Order.findByIdAndUpdate(
       id,
-      { status },
+      updates,
       { new: true }
     );
 
@@ -106,7 +127,7 @@ export const PATCH = async (
       return errorResponse('Order not found.', 404);
     }
 
-    return successResponse({ message: `Order status updated to ${status}.`, order });
+    return successResponse({ message: action ? `Order action completed: ${action}.` : `Order status updated to ${status}.`, order });
   } catch (error: any) {
     console.error('[ORDER_PATCH_FAILURE]:', error);
     return errorResponse('Failed to update order status.', 500, error.message);

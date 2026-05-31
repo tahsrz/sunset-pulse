@@ -18,6 +18,7 @@ import {
   FaUtensils
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { PickupClaimCard } from '@/components/orders';
 
 const TrackerPage = ({ params }) => {
   const router = useRouter();
@@ -154,6 +155,58 @@ const TrackerPage = ({ params }) => {
   // Format order date
   const orderTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   const orderIdShort = order._id ? order._id.slice(-6).toUpperCase() : '';
+  const pickupCode = order.pickupCode || orderIdShort;
+  const mapPaymentState = (sourceOrder) => {
+    switch (sourceOrder.paymentState) {
+      case 'PAID_STRIPE':
+        return 'paid_online';
+      case 'PAID_POS':
+        return 'paid_pos';
+      case 'PENDING_POS_TENDER':
+        return 'pending_pos';
+      case 'PAYMENT_FAILED':
+        return 'partial_issue';
+      case 'REFUNDED':
+        return 'refunded';
+      case 'VOIDED':
+        return 'voided';
+      case 'MANUAL_REVIEW':
+        return 'manual_review';
+      default:
+        return sourceOrder.isPaid ? 'paid_online' : 'unpaid_counter';
+    }
+  };
+  const paymentState = mapPaymentState(order);
+  const paymentBadge = {
+    paid_online: { label: 'PAID // ONLINE', className: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' },
+    paid_pos: { label: 'PAID // REGISTER', className: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' },
+    pending_pos: { label: 'AWAITING REGISTER', className: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300' },
+    unpaid_counter: { label: 'PAY AT COUNTER', className: 'bg-amber-500/10 border-amber-500/30 text-amber-400' },
+    partial_issue: { label: 'PAYMENT REVIEW', className: 'bg-amber-500/10 border-amber-500/30 text-amber-400' },
+    refunded: { label: 'REFUNDED', className: 'bg-rose-500/10 border-rose-500/30 text-rose-400' },
+    voided: { label: 'VOIDED', className: 'bg-rose-500/10 border-rose-500/30 text-rose-400' },
+    manual_review: { label: 'MANUAL REVIEW', className: 'bg-amber-500/10 border-amber-500/30 text-amber-400' },
+  }[paymentState];
+  const claimOrder = {
+    id: order._id,
+    pickupCode,
+    customerName: order.customerName,
+    paymentState,
+    paymentReference: order.paymentReference
+      || (order.paymentSessionId ? `Stripe ${order.paymentSessionId.slice(-8)}` : undefined)
+      || (order.posProperties?.authCode ? `Verifone ${order.posProperties.authCode}` : undefined),
+    totalAmount: order.totalAmount || 0,
+    items: (order.items || []).map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      ageRestricted: item.ageRestricted,
+      minimumAge: item.minimumAge,
+      restrictedCategory: item.restrictedCategory || 'none',
+    })),
+    releasedAt: order.releasedAt,
+    idVerifiedAt: order.idVerifiedAt,
+  };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-white font-sans selection:bg-orange-500 selection:text-white pb-20">
@@ -262,6 +315,10 @@ const TrackerPage = ({ params }) => {
         
         {/* Left Column: Pizza Tracker Timeline & Sizzling Canvas */}
         <div className="lg:col-span-8 space-y-8">
+          <PickupClaimCard
+            order={claimOrder}
+            pickupWindow={order.status === 'completed' ? 'Ready now. Show this card at the counter.' : 'Show this card at the counter when your order is ready.'}
+          />
           
           {/* Tracker Card */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-md p-8 md:p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
@@ -276,15 +333,9 @@ const TrackerPage = ({ params }) => {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-500 font-mono text-xs uppercase">Payment:</span>
-                {order.isPaid ? (
-                  <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    PAID // CARD
-                  </span>
-                ) : (
-                  <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                    PAY AT COUNTER
-                  </span>
-                )}
+                <span className={`${paymentBadge.className} border text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full`}>
+                  {paymentBadge.label}
+                </span>
               </div>
             </div>
 
@@ -526,6 +577,28 @@ const TrackerPage = ({ params }) => {
               <div className="flex justify-between">
                 <span>KDS Ticket ID:</span>
                 <span className="text-slate-300 font-bold">#{order._id.slice(-8).toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Pickup Code:</span>
+                <span className="text-cyan-300 font-bold">{pickupCode}</span>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white p-3">
+                <div
+                  className="h-14 w-full"
+                  style={{
+                    background: `repeating-linear-gradient(90deg, #020617 0 3px, #fff 3px 6px, #020617 6px 8px, #fff 8px 12px)`,
+                  }}
+                  aria-label={`Barcode for pickup code ${pickupCode}`}
+                />
+                <div className="mt-2 text-center font-mono text-sm font-black tracking-[0.35em] text-slate-950">
+                  {pickupCode}
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <span>Release State:</span>
+                <span className={order.releasedAt ? 'text-emerald-500 font-bold' : 'text-amber-400 font-bold'}>
+                  {order.releasedAt ? 'Released' : 'Counter Verify'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Status Poller:</span>
