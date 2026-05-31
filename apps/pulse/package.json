@@ -15,6 +15,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "news:publish-local": "tsx scripts/publish-local-news-signals.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:unit": "node --no-warnings ../../node_modules/vitest/vitest.mjs run",

@@ -161,6 +161,10 @@ The application can run with partial configuration for local UI work, but produc
 
 Use `NEXT_PUBLIC_MOCK_MODE=true` when running local tests or development flows that should avoid live data providers.
 
+## Local News Signals
+
+Production can receive compact news packets from the local Windows machine while Ollama mini models run only on the local box. See [Local Ollama News Signals](./docs/LOCAL_NEWS_SIGNALS.md) for the endpoint, env vars, publisher script, and Task Scheduler setup.
+
 ## Testing
 
 Run the Vitest unit suite:
