@@ -15,7 +15,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Jamie AI <intelligence@sunsetpulse.com>',
+        from: 'Jamie AI <intelligence@sunsetpulse.app>',
         to: [email],
         subject: 'SUNSET PULSE // WELCOME',
         html: `
@@ -39,7 +39,7 @@ serve(async (req) => {
               </div>
             </div>
 
-            <a href="https://sunsetpulse.com/login" style="display: block; width: 100%; padding: 16px 0; background-color: #2563eb; color: #ffffff; text-decoration: none; text-align: center; border-radius: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; box-shadow: 0 10px 20px rgba(37,99,235,0.2);">
+            <a href="https://sunsetpulse.app/login" style="display: block; width: 100%; padding: 16px 0; background-color: #2563eb; color: #ffffff; text-decoration: none; text-align: center; border-radius: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; box-shadow: 0 10px 20px rgba(37,99,235,0.2);">
               Enter Management Console
             </a>
 

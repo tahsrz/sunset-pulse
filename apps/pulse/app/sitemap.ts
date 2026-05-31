@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.com';
+  const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.app';
   const now = new Date();
   const tahPages = listPulseCartridges().map(cartridge => ({
     url: `${host}/tah/${cartridge.slug}`,

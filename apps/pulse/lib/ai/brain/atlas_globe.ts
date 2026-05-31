@@ -33,7 +33,7 @@ export type AtlasGlobeNode = {
 
 const DEFAULT_ATLAS_TARGET_NODES = 1000;
 
-export function buildAtlasGlobe(host = 'https://sunsetpulse.com') {
+export function buildAtlasGlobe(host = 'https://sunsetpulse.app') {
   const generatedAt = new Date().toISOString();
   const cartridges = listPulseCartridges();
   const metadata = cartridges.map(cartridge => getCartridgeMetadata(cartridge, host));

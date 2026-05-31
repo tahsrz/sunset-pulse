@@ -35,7 +35,7 @@ export type CartridgeMetadata = {
   };
 };
 
-export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://sunsetpulse.com'): CartridgeMetadata {
+export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://sunsetpulse.app'): CartridgeMetadata {
   const header = readHeader(cartridge.path);
   const payloadPath = cartridge.type === 'hat' ? resolvePairedTahPath(cartridge.path) : cartridge.path;
   const format = classifyFormat(cartridge, header.magic);

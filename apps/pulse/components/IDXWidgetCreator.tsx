@@ -7,9 +7,9 @@ const IDXWidgetCreator = () => {
   const [copied, setCopied] = useState(false);
 
   const widgets = {
-    'Search': `<script src="https://sunsetpulse.com/widgets/search.js" data-api-key="YOUR_IDX_KEY"></script>\n<div id="sunset-pulse-search"></div>`,
-    'Grid': `<script src="https://sunsetpulse.com/widgets/grid.js" data-api-key="YOUR_IDX_KEY" data-type="RV"></script>\n<div id="sunset-pulse-grid"></div>`,
-    'Map': `<script src="https://sunsetpulse.com/widgets/map.js" data-api-key="YOUR_IDX_KEY" data-lat="33.0" data-lon="-97.0"></script>\n<div id="sunset-pulse-map"></div>`,
+    'Search': `<script src="https://sunsetpulse.app/widgets/search.js" data-api-key="YOUR_IDX_KEY"></script>\n<div id="sunset-pulse-search"></div>`,
+    'Grid': `<script src="https://sunsetpulse.app/widgets/grid.js" data-api-key="YOUR_IDX_KEY" data-type="RV"></script>\n<div id="sunset-pulse-grid"></div>`,
+    'Map': `<script src="https://sunsetpulse.app/widgets/map.js" data-api-key="YOUR_IDX_KEY" data-lat="33.0" data-lon="-97.0"></script>\n<div id="sunset-pulse-map"></div>`,
   };
 
   const handleCopy = () => {

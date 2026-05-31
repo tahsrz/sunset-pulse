@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.com';
+  const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.app';
 
   return {
     rules: {

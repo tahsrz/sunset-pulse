@@ -52,7 +52,7 @@ export const POST = async (request: NextRequest) => {
         user: {
           id: 'anonymous-operator-id',
           name: 'Anonymous Operator',
-          email: 'anonymous@sunsetpulse.com',
+          email: 'anonymous@sunsetpulse.app',
           role: 'admin',
         },
         userId: 'anonymous-operator-id',
@@ -151,7 +151,7 @@ export const DELETE = async (request: NextRequest) => {
         user: {
           id: 'anonymous-operator-id',
           name: 'Anonymous Operator',
-          email: 'anonymous@sunsetpulse.com',
+          email: 'anonymous@sunsetpulse.app',
           role: 'admin',
         },
         userId: 'anonymous-operator-id',

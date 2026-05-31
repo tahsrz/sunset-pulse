@@ -12,7 +12,7 @@ import { GET as getAtlasGlobe } from '@/app/api/tah/atlas/globe/route';
 import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 
-const CANONICAL_HOST = 'https://sunsetpulse.com';
+const CANONICAL_HOST = 'https://sunsetpulse.app';
 const PREVIEW_HOST = 'https://preview.sunsetpulse.test';
 
 function getCatalogFixture() {
@@ -36,7 +36,7 @@ describe('TAH robot-facing routes', () => {
     expect(body).toContain('TAH_ARCHIVE');
     expect(body).toContain('CATALOG_COUNT:');
     expect(body).toContain(`HEADLESS: ${fixture.routes.headless}`);
-    expect(body).toMatch(/HEADLESS: https:\/\/sunsetpulse\.com\/tah\/[^/\s]+\/headless/);
+    expect(body).toMatch(/HEADLESS: https:\/\/sunsetpulse\.app\/tah\/[^/\s]+\/headless/);
   });
 
   it('serves cartridge headless pages as plain text', async () => {
@@ -61,7 +61,7 @@ describe('TAH robot-facing routes', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('no-store');
     expect(body.dynamic).toBe(true);
-    expect(body.endpoints.headlessIndex).toBe('https://sunsetpulse.com/tah/headless');
+    expect(body.endpoints.headlessIndex).toBe('https://sunsetpulse.app/tah/headless');
     expect(body.cartridges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -148,7 +148,7 @@ describe('TAH robot-facing routes', () => {
   });
 
   it('serves progressive Atlas cartridge probes', async () => {
-    const response = getAtlasProbe(new NextRequest('https://sunsetpulse.com/api/tah/atlas/probe?cursor=0&limit=3'));
+    const response = getAtlasProbe(new NextRequest('https://sunsetpulse.app/api/tah/atlas/probe?cursor=0&limit=3'));
     const body = await response.json();
 
     expect(response.status).toBe(200);

@@ -38,7 +38,7 @@ const STAGES = [
 
 const DEFAULT_ATLAS_TARGET_CARTRIDGES = 1000;
 
-export function buildTahAtlasMap(host = 'https://sunsetpulse.com') {
+export function buildTahAtlasMap(host = 'https://sunsetpulse.app') {
   const cartridges = listPulseCartridges();
   const metadata = cartridges.map(cartridge => getCartridgeMetadata(cartridge, host));
   const domainBuckets = bucketCartridges(cartridges);

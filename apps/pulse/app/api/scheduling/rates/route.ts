@@ -74,7 +74,7 @@ export const POST = async (request: NextRequest) => {
       user: {
         id: 'anonymous-operator',
         name: 'Anonymous Operator',
-        email: 'anonymous@sunsetpulse.com'
+        email: 'anonymous@sunsetpulse.app'
       }
     };
 

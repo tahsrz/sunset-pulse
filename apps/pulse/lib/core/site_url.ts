@@ -23,5 +23,5 @@ export function siteUrlFromRequest(request?: Request | null) {
     }
   }
 
-  return process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.com';
+  return process.env.NEXT_PUBLIC_SITE_URL || 'https://sunsetpulse.app';
 }
