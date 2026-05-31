@@ -22,7 +22,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  transpilePackages: ['three'],
+  transpilePackages: ['three', '@strudel/web', '@strudel/core'],
 };
 
 export default nextConfig;
