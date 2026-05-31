@@ -44,8 +44,10 @@ interface Shift {
   user?: {
     id: number;
     name: string;
+    email?: string;
     verifiedNumbers?: Array<{ phoneNumber: string }>;
   };
+  userPrimaryEmail?: string;
 }
 
 export default function RosterManagementCenter() {

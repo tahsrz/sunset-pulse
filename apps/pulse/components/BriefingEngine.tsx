@@ -77,8 +77,8 @@ const BriefingSlide = ({
           anchorX="left"
           anchorY="top"
           lineHeight={1.4}
-          opacity={isActive ? 1 : 0.3}
         >
+          <meshBasicMaterial color="white" transparent opacity={isActive ? 1 : 0.3} />
           {slide.content}
         </Text>
 
