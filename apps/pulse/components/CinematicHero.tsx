@@ -3,6 +3,7 @@
 import React from 'react';
 import AtlasGlobeBackground from '@/components/atlas/AtlasGlobeBackground';
 import HeroOverlay from './hero/HeroOverlay';
+import HeroNewsTabs from './hero/HeroNewsTabs';
 
 const CinematicHero = () => {
   return (
@@ -15,6 +16,7 @@ const CinematicHero = () => {
       <div className="absolute inset-0 z-20 bg-gradient-to-b from-black/20 via-transparent to-[#061017]/80" />
 
       <HeroOverlay />
+      <HeroNewsTabs />
     </div>
   );
 };
