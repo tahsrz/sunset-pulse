@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/idx/hot-moving
- * Returns a "Hot Moving Special" list of MLS homes.
- * Serves from local cache if possible, otherwise triggers a sync.
+ * Returns a "Hot Moving Special" list of MLS homes
+ * Serves from local cache if possible, otherwise triggers a sync
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,22 +21,33 @@ export async function GET(request: NextRequest) {
       listing_status: 'Active' 
     })
     .sort({ updatedAt: -1 })
-    .limit(4);
+    .limit(8);
 
-    // 2. If Cache is empty, trigger a background sync and wait for it (Hybrid Edge Case)
-    if (listings.length === 0) {
-      console.log('📡 [HOT_MOVING] Cache empty. Triggering emergency Matrix sync...');
-      const syncResult = await pulseSyncWorker.syncHotListings(10);
+    // If Cache is sparse, trigger a background sync
+    if (listings.length < 4) {
+      console.log('📡 [HOT_MOVING] Cache sparse. Triggering emergency Matrix sync...');
+      await pulseSyncWorker.syncHotListings(12);
       
-      if (syncResult.success) {
-        // Fetch again after sync
-        listings = await Property.find({ 
-          source: 'MLS', 
-          listing_status: 'Active' 
-        })
-        .sort({ updatedAt: -1 })
-        .limit(4);
-      }
+      // Fetch again after sync attempt
+      listings = await Property.find({ 
+        source: 'MLS', 
+        listing_status: 'Active' 
+      })
+      .sort({ updatedAt: -1 })
+      .limit(8);
+    }
+
+    // Fallback
+    if (listings.length < 4) {
+      const internalListings = await Property.find({
+        source: 'Internal',
+        listing_status: 'Active',
+        is_featured: { $ne: true } // Don't duplicate what's likely in the "Staged" tab
+      })
+      .sort({ createdAt: -1 })
+      .limit(8 - listings.length);
+      
+      listings = [...listings, ...internalListings];
     }
 
     return successResponse({
@@ -53,7 +64,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/idx/hot-moving
- * Manual trigger for force sync.
+ * Manual trigger for force sync
  */
 export async function POST() {
   const result = await pulseSyncWorker.syncHotListings(10);
