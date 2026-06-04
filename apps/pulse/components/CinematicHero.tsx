@@ -42,5 +42,3 @@ const CinematicHero = () => {
 };
 
 export default CinematicHero;
-
-export default CinematicHero;
