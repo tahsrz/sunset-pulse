@@ -14,6 +14,7 @@ Sunset Pulse is a Next.js 14 real estate intelligence platform for property disc
 
 - Property browsing, search, saved listings, and high-performance IDX sync via Repliers.io.
 - Authenticated Matrix IDX access through `/idx` and the embedded Jamie tab MLS drawer.
+- Hero news tabs and `/api/news` for lightweight local market/headline signals.
 - Lead capture, re-engagement with Sigmoid velocity scoring, and Jamie AI hooks.
 - Neighborhood Recon & Budget Delta analysis for hyper-personalized interactions.
 - TAH Expertise retrieval (Makiel, Gadrael, etc.) from Supabase Cloud-Native storage.
@@ -161,9 +162,19 @@ The application can run with partial configuration for local UI work, but produc
 
 Use `NEXT_PUBLIC_MOCK_MODE=true` when running local tests or development flows that should avoid live data providers.
 
-## Local News Signals
+## News Signals
 
-Production can receive compact news packets from the local Windows machine while Ollama mini models run only on the local box. See [Local Ollama News Signals](./docs/LOCAL_NEWS_SIGNALS.md) for the endpoint, env vars, publisher script, and Task Scheduler setup.
+Sunset Pulse includes a lightweight news feature used by the home-page hero tabs and the `/api/news` feed.
+
+- `GET /api/news` serves the current headline packet used by the UI.
+- The preferred source is the latest local-machine signal stored in Supabase via `lib/news/signalStore.ts`.
+- Local signals are published by `scripts/publish-local-news-signals.ts`, which fetches RSS headlines and optionally enriches them with locally installed Ollama mini models.
+- The protected ingest endpoint is `POST /api/news/signals`, authorized with `NEWS_SIGNAL_SECRET` or `LOCAL_NEWS_SIGNAL_SECRET`.
+- If no local signal is available, `/api/news` falls back to Google News RSS through `lib/news/rssFeed.ts`.
+- If local Ollama mini models are available during fallback generation, `lib/news/ollamaMini.ts` can enrich the RSS items before they are returned.
+- The public article expansion page is `/news/tah`, which turns a selected headline into a TAH-style story view.
+
+This keeps production lightweight: Ollama runs only on the local Windows machine, while Vercel receives compact signed packets and serves the latest accepted packet. See [Local Ollama News Signals](./docs/LOCAL_NEWS_SIGNALS.md) for env vars, the publisher script, and Task Scheduler setup.
 
 ## Testing
 

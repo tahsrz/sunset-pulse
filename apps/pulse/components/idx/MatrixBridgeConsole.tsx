@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  FilePenLine,
   PanelRightOpen,
   Radio,
   RotateCcw,
@@ -58,7 +59,12 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
     sellerNames: '',
     propertyAddress: '',
     city: '',
-    county: ''
+    county: '',
+    mlsNumber: '',
+    listPrice: '',
+    offerPrice: '',
+    brokerage: '',
+    propertyType: ''
   });
   const router = useRouter();
 
@@ -121,11 +127,17 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
 
   const sendToContractSetup = () => {
     const params = new URLSearchParams();
+    params.set('source', 'matrix');
     if (handoff.buyerNames) params.set('buyers', handoff.buyerNames);
     if (handoff.sellerNames) params.set('sellers', handoff.sellerNames);
     if (handoff.propertyAddress) params.set('address', handoff.propertyAddress);
     if (handoff.city) params.set('city', handoff.city);
     if (handoff.county) params.set('county', handoff.county);
+    if (handoff.mlsNumber) params.set('mlsNumber', handoff.mlsNumber);
+    if (handoff.listPrice) params.set('listPrice', handoff.listPrice);
+    if (handoff.offerPrice) params.set('offerPrice', handoff.offerPrice);
+    if (handoff.brokerage) params.set('brokerage', handoff.brokerage);
+    if (handoff.propertyType) params.set('propertyType', handoff.propertyType);
     if (!handoff.city && filters.location) params.set('city', filters.location);
     router.push(`/contracts/promulgated/setup?${params.toString()}`);
   };
@@ -200,7 +212,25 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
         </div>
         {showHandoff && (
           <div className="border-b border-white/10 bg-[#0a1d2a] px-4 py-3">
-            <div className="grid gap-2 md:grid-cols-5">
+            <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-200">
+                  Offer Draft Handoff
+                </p>
+                <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300">
+                  Capture the listing details you are looking at in Matrix, then launch the promulgated-contract setup already prefilled for review.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={sendToContractSetup}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-300 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-950"
+              >
+                <FilePenLine size={13} />
+                Draft Offer
+              </button>
+            </div>
+            <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
               <input
                 value={handoff.buyerNames}
                 onChange={(event) => setHandoff((prev) => ({ ...prev, buyerNames: event.target.value }))}
@@ -231,15 +261,38 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
                 placeholder="County"
                 className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
               />
-            </div>
-            <div className="mt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={sendToContractSetup}
-                className="rounded-md bg-emerald-300 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-950"
-              >
-                Open Contract Setup
-              </button>
+              <input
+                value={handoff.mlsNumber}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, mlsNumber: event.target.value }))}
+                placeholder="MLS # / reference"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.listPrice}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, listPrice: event.target.value }))}
+                placeholder="List price"
+                inputMode="numeric"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.offerPrice}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, offerPrice: event.target.value }))}
+                placeholder="Offer price"
+                inputMode="numeric"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.brokerage}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, brokerage: event.target.value }))}
+                placeholder="Brokerage"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.propertyType}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, propertyType: event.target.value }))}
+                placeholder="Property type"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
             </div>
           </div>
         )}

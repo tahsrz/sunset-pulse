@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SunsetPulse.Tah.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+111c8a0600d95e271eda201730f5990888466760")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+33c8c68d05f656c90fafc34cdbb0573fe03e81ca")]
 [assembly: System.Reflection.AssemblyProductAttribute("SunsetPulse.Tah.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SunsetPulse.Tah.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

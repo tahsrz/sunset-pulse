@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 
 type Props = {
@@ -17,6 +18,15 @@ export default function MlsCommandWorkspace({
   onOpenContracts,
   onOpenEmail
 }: Props) {
+  const draftHref = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('source', 'mls-workspace');
+    if (buyerNames) params.set('buyers', buyerNames);
+    if (propertyAddress) params.set('address', propertyAddress);
+    if (locationHint) params.set('city', locationHint);
+    return `/contracts/promulgated/setup?${params.toString()}`;
+  }, [buyerNames, locationHint, propertyAddress]);
+
   return (
     <div className="mb-2 rounded-lg border border-cyan-200/20 bg-cyan-950/20 p-2.5">
       <p className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-200">
@@ -57,10 +67,10 @@ export default function MlsCommandWorkspace({
           Open Email Workflow
         </button>
         <Link
-          href="/contracts/promulgated/setup"
+          href={draftHref}
           className="rounded-md border border-white/20 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-white"
         >
-          Open Setup
+          Draft From Context
         </Link>
       </div>
     </div>

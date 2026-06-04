@@ -141,7 +141,9 @@ export default function PromulgatedContractSetupPage() {
       county: searchParams.get('county') || '',
       state: searchParams.get('state') || '',
       brokerage: searchParams.get('brokerage') || '',
+      mlsNumber: searchParams.get('mlsNumber') || searchParams.get('mls') || '',
       listPrice: searchParams.get('listPrice') || '',
+      offerPrice: searchParams.get('offerPrice') || '',
       yearBuilt: searchParams.get('yearBuilt') || '',
       propertyType: searchParams.get('propertyType') || searchParams.get('propertyName') || ''
     };
@@ -157,8 +159,9 @@ export default function PromulgatedContractSetupPage() {
       county: fromQuery.county || prev.county,
       state: fromQuery.state || prev.state,
       brokerage: fromQuery.brokerage || prev.brokerage,
+      mlsNumber: fromQuery.mlsNumber || prev.mlsNumber,
       listPrice: fromQuery.listPrice || prev.listPrice,
-      offerPrice: prev.offerPrice || fromQuery.listPrice,
+      offerPrice: fromQuery.offerPrice || prev.offerPrice || fromQuery.listPrice,
       yearBuilt: fromQuery.yearBuilt || prev.yearBuilt,
       propertyType: fromQuery.propertyType || prev.propertyType
     }));
@@ -166,8 +169,8 @@ export default function PromulgatedContractSetupPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    const role = user?.user_metadata?.role;
-    if (!user || (role !== 'realtor' && role !== 'admin')) {
+    const role = user?.profile?.role || user?.user_metadata?.role;
+    if (!user || (role !== 'realtor' && role !== 'operator' && role !== 'admin')) {
       router.push('/contracts/promulgated');
     }
   }, [authLoading, router, user]);
@@ -191,8 +194,8 @@ export default function PromulgatedContractSetupPage() {
     setSelectedOtherForms((current) => mergeUnique(current, recommendations.otherForms));
   }, [intake.financingType, intake.propertyType, intake.yearBuilt]);
 
-  const role = user?.user_metadata?.role;
-  const allowed = role === 'realtor' || role === 'admin';
+  const role = user?.profile?.role || user?.user_metadata?.role;
+  const allowed = role === 'realtor' || role === 'operator' || role === 'admin';
 
   const selectedBase = useMemo(
     () => TREC_PROMULGATED_CONTRACTS.find((item) => item.formId === baseContractId),
