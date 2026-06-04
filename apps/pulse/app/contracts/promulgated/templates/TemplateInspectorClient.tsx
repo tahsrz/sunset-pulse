@@ -23,9 +23,12 @@ type InspectResult = {
 };
 
 export default function TemplateInspectorClient({ registry }: { registry: TrecTemplateRegistryRow[] }) {
-  const { user } = useAuth();
-  const role = user?.user_metadata?.role;
-  const allowed = role === 'realtor' || role === 'admin';
+  const { user, loading } = useAuth();
+  const role = user?.profile?.role || user?.user_metadata?.role;
+  const localOperator =
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  const allowed = localOperator || role === 'realtor' || role === 'operator' || role === 'admin';
   const [currentOnly, setCurrentOnly] = useState(true);
   const [selectedFormId, setSelectedFormId] = useState(registry[0]?.formId || '');
   const [inspecting, setInspecting] = useState(false);
@@ -70,10 +73,18 @@ export default function TemplateInspectorClient({ registry }: { registry: TrecTe
     }
   };
 
+  if (loading) {
+    return (
+      <div className="mt-8 rounded-lg border border-cyan-300/20 bg-cyan-200/10 p-4 text-sm text-cyan-100">
+        Checking template inspection access...
+      </div>
+    );
+  }
+
   if (!allowed) {
     return (
       <div className="mt-8 rounded-lg border border-amber-300/20 bg-amber-200/10 p-4 text-sm text-amber-100">
-        Realtor or admin access is required for template inspection.
+        Realtor, operator, or admin access is required for template inspection.
       </div>
     );
   }

@@ -2,8 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFCheckBox, PDFDropdown, PDFDocument, PDFOptionList, PDFRadioGroup, PDFTextField } from 'pdf-lib';
-import { getSessionUser } from '@/lib/core/getSessionUser';
 import { getTemplateRow } from '@/lib/contracts/trecTemplateRegistry';
+import { getOperatorAccess } from '@/lib/core/operator_access';
 
 type InspectedField = {
   name: string;
@@ -14,10 +14,9 @@ type InspectedField = {
 
 export const POST = async (request: NextRequest) => {
   try {
-    const sessionUser = await getSessionUser();
-    const role = sessionUser?.role;
-    if (!sessionUser?.userId || (role !== 'realtor' && role !== 'admin')) {
-      return NextResponse.json({ error: 'Realtor or admin access required.' }, { status: 401 });
+    const access = await getOperatorAccess(request.headers.get('host'));
+    if (!access.allowed) {
+      return NextResponse.json({ error: 'Realtor, operator, or admin access required.' }, { status: 401 });
     }
 
     const formData = await request.formData();
