@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Compass, Search, Calendar } from 'lucide-react';
+import { Compass, Search, Flame } from 'lucide-react';
 import marketingCopy from '@/config/marketing_copy.json';
 
 const HeroOverlay: React.FC = () => {
@@ -28,11 +28,13 @@ const HeroOverlay: React.FC = () => {
         <div className="flex flex-col items-center gap-4 sm:flex-row flex-wrap justify-center">
           <Link
             href="/atlas"
-            className="group relative flex items-center gap-4 rounded-full px-10 py-5 waterlily-button font-black uppercase text-xl hover:scale-105"
+            className="group relative flex items-center gap-4 rounded-full px-10 py-5 waterlily-button font-black uppercase text-xl hover:scale-105 transition-transform duration-300"
           >
             <Compass size={24} />
             <span>{cta.button_text}</span>
             <div className="absolute -inset-1 rounded-full bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            {/* Hover Pulse Ring */}
+            <div className="absolute inset-0 rounded-full border-2 border-white/40 opacity-0 group-hover:animate-pulse-expand pointer-events-none" />
           </Link>
           <Link
             href="/idx"
@@ -40,14 +42,18 @@ const HeroOverlay: React.FC = () => {
           >
             <Search size={18} />
             <span>IDX Search</span>
+            {/* Hover Pulse Ring */}
+            <div className="absolute inset-0 rounded-full border border-cyan-400/50 opacity-0 group-hover:animate-pulse-expand pointer-events-none" />
           </Link>
           <Link
-            href="/admin/scheduling"
+            href="/grill"
             className="group relative flex items-center gap-3 rounded-full border border-orange-500/30 bg-black/45 px-6 py-4 text-sm font-black uppercase text-amber-50 backdrop-blur-xl transition-all hover:border-orange-400/60 hover:bg-orange-950/20 hover:text-orange-200 hover:scale-105 duration-300"
           >
-            <Calendar size={18} className="text-orange-400 group-hover:animate-pulse" />
-            <span>Operations Scheduler</span>
+            <Flame size={18} className="text-orange-400 group-hover:animate-pulse" />
+            <span>The Grill</span>
             <div className="absolute -inset-1 rounded-full bg-orange-500/15 blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            {/* Hover Pulse Ring */}
+            <div className="absolute inset-0 rounded-full border border-orange-400/50 opacity-0 group-hover:animate-pulse-expand pointer-events-none" />
           </Link>
         </div>
 
