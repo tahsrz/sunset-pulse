@@ -10,12 +10,12 @@ import ArchitectureOverview from '@/components/architecture/ArchitectureOverview
 import { getCachedProperties } from '@/lib/core/propertyRecon';
 
 /**
- * Dynamic Pocket: Fetches curated properties on the server and streams them once resolved.
+ * fetches curated properties on the server and streams them once resolved
  */
 const StagedPropertiesPocket: React.FC = async () => {
   const stagedPropertiesRaw = await getCachedProperties({ showFeatured: true });
   
-  // Force serialization to plain objects for Client Component compatibility
+  // force serialization to plain objects for Client Component compatibility
   const stagedProperties = JSON.parse(JSON.stringify(stagedPropertiesRaw));
 
   return <UnifiedPropertyStage initialStagedProperties={stagedProperties} />;

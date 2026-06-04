@@ -8,28 +8,28 @@ const IntelligenceLayer = () => {
     <section className='space-y-6'>
       <div className='flex items-center gap-4 text-rose-200'>
         <FaRobot size={32} />
-        <h2 className='text-3xl font-black uppercase tracking-tight'>Search & Market Data</h2>
+        <h2 className='text-3xl font-black uppercase tracking-tight'>Intelligence & Research</h2>
       </div>
 
       <div className='waterlily-card p-8 rounded-2xl'>
         <h3 className='text-lg font-bold mb-4 flex items-center gap-2'>
-          <FaMicrochip className='text-rose-200' /> Semantic Search Optimization
+          <FaMicrochip className='text-rose-200' /> Jamie Intelligence Engine
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-6'>
-          We use high-performance data processing to deliver precise search results. This architecture supports rapid query analysis, helping the platform identify relevant properties efficiently.
+          Our core reasoning engine, <strong>Jamie</strong>, synthesizes raw market data into actionable intelligence. By processing distributed signals—from RSS feeds to TAH cartridges—Jamie provides risk assessments, neighborhood context, and strategic recommendations.
         </p>
         <div className='bg-[#081824]/60 p-4 rounded-2xl border border-rose-200/20 mb-6'>
           <div className='flex justify-between items-center mb-2'>
-            <span className='text-[10px] font-bold text-rose-200'>SEARCH PIPELINE</span>
-            <span className='text-[10px] font-mono text-teal-100/50'>MARKET DATA MAPPING</span>
+            <span className='text-[10px] font-bold text-rose-200'>TAH MEMORIA V4</span>
+            <span className='text-[10px] font-mono text-teal-100/50'>KNOWLEDGE_CARTRIDGE_SYNC</span>
           </div>
           <div className='h-1 w-full bg-slate-800 rounded-full overflow-hidden'>
-            <div className='h-full bg-gradient-to-r from-rose-300 via-violet-300 to-teal-300 w-[95%]' />
+            <div className='h-full bg-gradient-to-r from-rose-300 via-violet-300 to-teal-300 w-[98%]' />
           </div>
         </div>
-        <h4 className='text-xs font-bold uppercase tracking-widest mb-3'>Integrated Market Feeds</h4>
+        <h4 className='text-xs font-bold uppercase tracking-widest mb-3'>LLM-Enhanced News Streams</h4>
         <p className='text-xs text-teal-100/55 leading-relaxed'>
-          Real-time market insights and property metadata are integrated into the search engine, keeping results grounded in verified, current market data.
+          Utilizing local <strong>Ollama (Gemma-2)</strong> and remote LLM orchestration, we enhance standard RSS feeds with linguistic purification, removing noise and extracting high-signal market events.
         </p>
       </div>
 

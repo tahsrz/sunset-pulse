@@ -16,43 +16,43 @@ const InfrastructureSection = () => {
           <FaLayerGroup className='text-teal-200' /> Modern Web Architecture
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-6'>
-          Built on Next.js 14 utilizing React Server Components (RSC) for optimized data delivery, combined with instant static page shells. <strong>Streaming Suspense Pockets</strong> allow critical layouts to mount instantly, concurrently streaming dynamic segments.
+          Built on Next.js 14 utilizing React Server Components (RSC) and <strong>Partial Prerendering (PPR)</strong> for extreme performance. Critical page shells mount instantly via static delivery, while dynamic <strong>Streaming Suspense Pockets</strong> hydrate data-heavy segments concurrently.
         </p>
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] font-mono'>
           <div className='bg-[#081824]/45 p-3 rounded-xl border border-teal-200/10'>
             <span className='text-teal-200 block mb-1 font-bold'>STREAMING POCKETS</span>
-            - Unblocked Page Shells<br/>
+            - Partial Prerendering (PPR)<br/>
             - Concurrent Segment Hydration<br/>
             - Zero-JS Layout Skeleton
           </div>
           <div className='bg-[#081824]/45 p-3 rounded-xl border border-violet-200/10'>
-            <span className='text-violet-200 block mb-1 font-bold'>SERVER-ONLY GATES</span>
-            - RSC Compilation Firewall<br/>
-            - Zero Browser-Bundle Leakage<br/>
-            - Enforced Key Encapsulation
+            <span className='text-violet-200 block mb-1 font-bold'>EDGE RUNTIME</span>
+            - Global News API Distribution<br/>
+            - Zero-Latency Briefing Cache<br/>
+            - Regional Middleware Routing
           </div>
         </div>
       </div>
 
       <div className='waterlily-card p-8 rounded-2xl'>
         <h3 className='text-lg font-bold mb-4 flex items-center gap-2'>
-          <FaDatabase className='text-amber-200' /> Scalable Data Persistence
+          <FaDatabase className='text-amber-200' /> Hybrid Data Persistence
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-4'>
-          Our robust database layer queries MongoDB/Mongoose directly. We optimize database reads using <strong>Granular Tag-Based Revalidation</strong>, caching server execution structures via <code>unstable_cache</code> and wiping them instantly using <code>revalidateTag</code> upon mutations.
+          A dual-engine data layer combining <strong>Supabase (PostgreSQL)</strong> for relational integrity and auth with <strong>MongoDB</strong> for flexible property metadata. We utilize <strong>Real-time Broadcasts</strong> for live inventory updates and tag-based revalidation for high-performance caching.
         </p>
         <div className='space-y-2 text-[10px] font-mono text-teal-100/55'>
           <div className='flex items-center gap-2'>
-            <span className='bg-teal-500/15 text-teal-200 px-2 py-0.5 rounded'>Properties</span> 
-            <span>Cached under 'properties' tag. Purged on POST/PATCH.</span>
+            <span className='bg-teal-500/15 text-teal-200 px-2 py-0.5 rounded'>Supabase</span> 
+            <span>Auth, Relational Leads, and Real-time Inventory Sync.</span>
           </div>
           <div className='flex items-center gap-2'>
-            <span className='bg-rose-500/15 text-rose-200 px-2 py-0.5 rounded'>Leads</span> 
-            <span>Linear sigmoid velocity scoring & re-engagement hooks.</span>
+            <span className='bg-rose-500/15 text-rose-200 px-2 py-0.5 rounded'>MongoDB</span> 
+            <span>High-volume spatial property metadata & history.</span>
           </div>
           <div className='flex items-center gap-2'>
-            <span className='bg-violet-500/15 text-violet-200 px-2 py-0.5 rounded'>System</span> 
-            <span>Dynamic TAH Expertise cartridges synced with Supabase.</span>
+            <span className='bg-violet-500/15 text-violet-200 px-2 py-0.5 rounded'>Revalidation</span> 
+            <span>Tag-based unstable_cache invalidation across Edge regions.</span>
           </div>
         </div>
       </div>

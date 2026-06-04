@@ -2,12 +2,12 @@
   "hero": {
     "title": "Sunset Pulse",
     "subtitle": "A Living Atlas For North Texas",
-    "description": "Follow place, memory, market motion, and local intelligence as they resolve into one navigable pulse."
+    "description": "Find your pulse at 101 South Council Drive."
   },
   "section_headers": {
     "value_prop": {
-      "title": "Why It Wins",
-      "tagline": "Find faster. Understand deeper. Act with confidence."
+      "title": "Why Sell With Us",
+      "tagline": "Find Faster. Swap Easier. Act With Confidence."
     },
     "featured": {
       "title": "Curated Property Opportunities",
@@ -17,52 +17,57 @@
   "features": {
     "mls_efficiency": {
       "title": "Find Better Opportunities Faster",
-      "tagline": "Live Search, Cleaner Shortlists",
-      "description": "Search regional inventory with filters that help you surface viable opportunities quickly instead of sorting through generic listing noise."
+      "tagline": "Live Search, Adjustable Algorithm",
+      "description": "Selling land? Use regional filters to find viable opportunities faster."
     },
     "spatial_search": {
       "title": "Inspect Context, Not Just Photos",
       "tagline": "Maps, Viewer, Neighborhood Context",
-      "description": "Use spatial search and immersive property views to understand location context, neighborhood momentum, and tradeoffs before you commit."
+      "description": "Use spatial search and immersive property views to understand location context before you commit."
     },
     "backend_integrity": {
       "title": "Get A Clear Recommendation",
       "tagline": "Jamie Summarizes What Matters",
-      "description": "Jamie turns scattered market inputs into one usable summary with key details, risk notes, and a practical next step."
+      "description": "Jamie turns scattered market inputs into one usable summary with key details and actionable next steps."
     }
   },
   "cta": {
     "button_text": "Enter Atlas",
-    "footer_note": "Atlas Pulse // North Texas Intelligence"
+    "footer_note": "Atlas Pulse // North Texas Heartbeat"
   },
   "faq": {
-    "title": "How The Product Works",
-    "tagline": "Plain-English Answers For The Core Workflow",
+    "title": "How The Dang Thing Work?",
+    "tagline": "Core Workflow",
     "items": [
       {
         "question": "What does Jamie actually do for me?",
-        "answer": "Jamie summarizes regional market context, highlights risks, surfaces the strongest takeaway, and points you toward the next action instead of leaving you with raw data alone.",
-        "score": 42
+        "answer": "Jamie summarizes regional market context.",
+        "score": 6
       },
       {
         "question": "Why use the Explorer instead of a normal property map?",
-        "answer": "The Explorer helps you search by area, proximity, and local context so you can spot patterns and submarkets that are easy to miss in a standard listing feed.",
-        "score": 38
+        "answer": "The Explorer helps you search by area and local context so you can spot patterns and submarkets that are easy to miss in a standard listing feed.",
+        "score": 2
       },
       {
         "question": "What is the 3D viewer for?",
-        "answer": "The viewer helps you inspect a property spatially, review useful overlays, and understand context more like a walkthrough than a static gallery.",
+        "answer": "The viewer helps you inspect a property spatially and understand context more like a walkthrough than a static gallery.",
+        "score": 3
+      },
+            {
+        "question": "Who Is The Creator?",
+        "answer": "Tahsin Noyon Reza.",
         "score": 25
       },
       {
         "question": "How do the decision tools help?",
-        "answer": "The decision tools organize the summary into practical lenses like growth outlook, risk review, local context, and final recommendation so you can move from information to judgment quickly.",
-        "score": 56
+        "answer": "The decision tools organize the summary into practical lenses like growth outlook, risk review,  and final recommendation so you can move from information to judgment quickly.",
+        "score": 3
       },
       {
         "question": "Can I save specific areas or markets to watch?",
         "answer": "Yes. You can search custom areas in the Explorer, save promising properties, and use those saved views as the start of a repeatable market review process.",
-        "score": 12
+        "score": 3
       }
     ]
   }
