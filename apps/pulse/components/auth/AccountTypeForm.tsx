@@ -8,6 +8,8 @@ interface AccountTypeFormProps {
   setRole: (role: string) => void;
   licenseId: string;
   setLicenseId: (val: string) => void;
+  rightToRepresent: boolean;
+  setRightToRepresent: (val: boolean) => void;
   loading: boolean;
   onBack: () => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -15,6 +17,7 @@ interface AccountTypeFormProps {
 
 const AccountTypeForm: React.FC<AccountTypeFormProps> = ({
   role, setRole, licenseId, setLicenseId,
+  rightToRepresent, setRightToRepresent,
   loading, onBack, onSubmit
 }) => {
   return (
@@ -61,6 +64,23 @@ const AccountTypeForm: React.FC<AccountTypeFormProps> = ({
           </div>
         </div>
       )}
+
+      <div className='space-y-4'>
+        <div 
+          onClick={() => setRightToRepresent(!rightToRepresent)}
+          className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-4 ${rightToRepresent ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-black/40 border-white/5 hover:border-white/10'}`}
+        >
+          <div className={`mt-1 h-4 w-4 rounded border flex items-center justify-center transition-all ${rightToRepresent ? 'bg-emerald-500 border-emerald-500' : 'border-white/20'}`}>
+            {rightToRepresent && <div className='h-2 w-2 bg-white rounded-full animate-pulse' />}
+          </div>
+          <div className='flex-1'>
+            <h4 className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${rightToRepresent ? 'text-emerald-400' : 'text-white/60'}`}>Right to Represent</h4>
+            <p className='text-[8px] text-white/40 leading-relaxed uppercase tracking-wider'>
+              I acknowledge that I have the right to represent my interests or am not currently under an exclusive representation agreement that would conflict with this registration.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className='flex gap-4'>
         <button 

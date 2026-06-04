@@ -20,6 +20,7 @@ const RegisterContent = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('consumer');
   const [licenseId, setLicenseId] = useState('');
+  const [rightToRepresent, setRightToRepresent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
 
@@ -38,6 +39,10 @@ const RegisterContent = () => {
       return toast.error("Professional license ID is required.");
     }
 
+    if (!rightToRepresent) {
+      return toast.error("Please acknowledge the Right to Represent disclosure.");
+    }
+
     setLoading(true);
     
     try {
@@ -51,6 +56,7 @@ const RegisterContent = () => {
             user_name: username || fullName.split(' ')[0],
             role: role,
             license_id: licenseId,
+            right_to_represent: rightToRepresent,
             isSubscribed: role === 'realtor',
             avatar_url: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(username || fullName || 'default')}`
           },
@@ -104,6 +110,7 @@ const RegisterContent = () => {
         <AccountTypeForm 
           role={role} setRole={setRole}
           licenseId={licenseId} setLicenseId={setLicenseId}
+          rightToRepresent={rightToRepresent} setRightToRepresent={setRightToRepresent}
           loading={loading}
           onBack={() => setStep(1)}
           onSubmit={handleSignup}
