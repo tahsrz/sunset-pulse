@@ -79,6 +79,17 @@ const PropertySchema = new Schema(
         type: Number,
       },
     },
+    list_price: {
+      type: Number,
+      default: null,
+      index: true,
+    },
+    price_type: {
+      type: String,
+      enum: ['sale', 'lease', 'unknown'],
+      default: 'unknown',
+      index: true,
+    },
     seller_info: {
       name: {
         type: String,

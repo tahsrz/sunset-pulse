@@ -23,8 +23,12 @@ const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, hoveredId, on
   else if (property.rv_type?.includes('Trailer') || property.rv_type?.includes('Fifth') || property.rv_type?.includes('Hauler')) RVIcon = FaTrailer;
 
   const getMarkerPriceDisplay = () => {
-    if (property.price && property.price > 0) {
-      return `$${property.price.toLocaleString()}`;
+    const primaryPrice = (property.list_price && property.list_price > 0) ? property.list_price : property.price;
+    if (primaryPrice && primaryPrice > 0) {
+      return `$${primaryPrice.toLocaleString()}`;
+    }
+    if (property.price_type === 'lease' && property.rates?.monthly) {
+      return `$${property.rates.monthly.toLocaleString()}/mo`;
     }
     if (property.rates?.monthly) {
       return `$${property.rates.monthly.toLocaleString()}/mo`;

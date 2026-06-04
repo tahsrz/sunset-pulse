@@ -16,6 +16,11 @@ function ExplorerContent() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [areaIntel, setAreaIntel] = useState({ pulseScore: 0, tourRecommendation: '' });
+  const getPrimaryPrice = (property: any) => {
+    if (property.list_price && property.list_price > 0) return property.list_price;
+    if (property.price && property.price > 0) return property.price;
+    return 0;
+  };
 
   const fetchProperties = useCallback(async () => {
     if (!selection) return;
@@ -28,10 +33,10 @@ function ExplorerContent() {
         const [lat, lng, radius] = selection.data.split(',');
         url = `/api/properties/search?center=${lng},${lat}&radius=${radius}`;
       }
-      
+
       const res = await fetch(url);
       const json = await res.json();
-      
+
       // Fix: Standardized API response uses data.data for payload
       const data = json.data || json;
       const propertyArray = Array.isArray(data) ? data : (data.properties || [data]);
@@ -41,13 +46,13 @@ function ExplorerContent() {
 
       // Calculate area-wide market context
       if (finalArray.length > 0) {
-        const totalScore = finalArray.reduce((acc: number, p: any) => 
+        const totalScore = finalArray.reduce((acc: number, p: any) =>
           acc + calculatePulseScore(p.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates), 0);
         const avgScore = Math.round(totalScore / finalArray.length);
-        
+
         setAreaIntel({
           pulseScore: avgScore,
-          tourRecommendation: finalArray.length > 1 
+          tourRecommendation: finalArray.length > 1
             ? `Suggested tour starts at ${finalArray[0].name}. A clockwise route may make the best use of daylight.`
             : 'One property is available in this area.'
         });
@@ -72,7 +77,7 @@ function ExplorerContent() {
             const json = await res.json();
             const property = json.data || json;
             setProperties([property]);
-            
+
             setAreaIntel({
               pulseScore: calculatePulseScore(property.location_geo?.coordinates || [0,0], [], intelligence.grill.coordinates),
               tourRecommendation: `Selected property: ${property.name}. Local context is available.`
@@ -132,23 +137,23 @@ function ExplorerContent() {
                 {loading ? 'Analyzing...' : `${properties.length} Results`}
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-black/40 p-3 rounded-xl border border-white/5">
                   <p className="text-[8px] text-slate-500 uppercase font-black mb-1">
-                    {properties.filter((p: any) => (p.price || 0) > 0).length >= properties.filter((p: any) => (p.rates?.monthly || 0) > 0).length 
-                      ? 'Avg Sale Price' 
+                    {properties.filter((p: any) => getPrimaryPrice(p) > 0).length >= properties.filter((p: any) => (p.rates?.monthly || 0) > 0).length
+                      ? 'Avg Sale Price'
                       : 'Avg Monthly Rent'}
                   </p>
                   <p className="text-sm font-bold text-blue-400">
-                    ${properties.length > 0 
+                    ${properties.length > 0
                       ? (() => {
-                          const sales = properties.filter((p: any) => (p.price || 0) > 0);
+                          const sales = properties.filter((p: any) => getPrimaryPrice(p) > 0);
                           const rentals = properties.filter((p: any) => (p.rates?.monthly || 0) > 0);
-                          
+
                           if (sales.length >= rentals.length && sales.length > 0) {
-                            return Math.round(sales.reduce((acc, p: any) => acc + (p.price || 0), 0) / sales.length).toLocaleString();
+                            return Math.round(sales.reduce((acc, p: any) => acc + getPrimaryPrice(p), 0) / sales.length).toLocaleString();
                           } else if (rentals.length > 0) {
                             return Math.round(rentals.reduce((acc, p: any) => acc + (p.rates.monthly || 0), 0) / rentals.length).toLocaleString();
                           }
@@ -175,7 +180,7 @@ function ExplorerContent() {
                   </p>
                 </div>
               )}
-              
+
               <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic border-t border-white/5 pt-3">
                 Selection includes {selection.type === 'polygon' ? 'a custom-defined area' : 'a radius around your point'}. Jamie can review nearby activity, local context, and property yield estimates for this area.
               </p>
@@ -208,11 +213,11 @@ function ExplorerContent() {
           <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Search Latency: &lt;10ms</span>
         </div>
       </div>
-      
+
       {/* Global Navigation Link */}
       <div className="absolute bottom-10 left-10 z-20">
-        <Link 
-          href="/properties" 
+        <Link
+          href="/properties"
           className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-blue-600 hover:text-white transition-all group"
         >
           <FaSearch className="group-hover:rotate-12 transition-transform" />

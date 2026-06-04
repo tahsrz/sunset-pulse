@@ -157,6 +157,8 @@ class RepliersMLSService {
       baths: parseInt(item.details.numBathrooms) || 0,
       square_feet: parseInt(item.details.sqft || '0') || 0,
       amenities: [],
+      list_price: listPrice,
+      price_type: isRental ? 'lease' : 'sale',
       price: !isRental ? listPrice : 0,
       rates: {
         monthly: isRental ? listPrice : 0

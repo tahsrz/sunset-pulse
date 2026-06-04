@@ -12,6 +12,7 @@ import BookingForm from '@/components/BookingForm';
 import PropertySidebarForms from '@/components/property/PropertySidebarForms';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
+import DraftOfferButton from '@/components/contracts/DraftOfferButton';
 import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -113,6 +114,7 @@ const PropertyPage: React.FC = () => {
               <div className='grid grid-cols-1 md:grid-cols-[70%_30%] w-full gap-6'>
                 <PropertyDetails property={property} rentData={rentData} />
                 <aside className='space-y-4'>
+                  {!isShortTerm && <DraftOfferButton property={property} />}
                   <BookmarkButton property={property} />
                   <ShareButtons property={property} />
                   

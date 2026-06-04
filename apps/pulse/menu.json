@@ -599,5 +599,125 @@
     "description": "Invigorating, citrus-flavored 20oz Mountain Dew bottle.",
     "isAvailable": true,
     "isDaisyPick": false
+  },
+  {
+    "id": "conv-01",
+    "agentId": "taz-realty-001",
+    "name": "Family Size Chips",
+    "price": 4.99,
+    "category": "Convenience Store",
+    "description": "Large share-size bag of classic potato chips.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-02",
+    "agentId": "taz-realty-001",
+    "name": "Trail Mix",
+    "price": 3.49,
+    "category": "Convenience Store",
+    "description": "Crunchy mix of nuts, raisins, and chocolate candies.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-03",
+    "agentId": "taz-realty-001",
+    "name": "Beef Jerky",
+    "price": 7.99,
+    "category": "Convenience Store",
+    "description": "Protein-packed original smoked beef jerky pouch.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-04",
+    "agentId": "taz-realty-001",
+    "name": "Candy Bar",
+    "price": 2.19,
+    "category": "Convenience Store",
+    "description": "Classic chocolate candy bar grab-and-go treat.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-05",
+    "agentId": "taz-realty-001",
+    "name": "Gummy Candy",
+    "price": 2.49,
+    "category": "Convenience Store",
+    "description": "Fruit-flavored gummy candy share bag.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-06",
+    "agentId": "taz-realty-001",
+    "name": "Bottled Water",
+    "price": 1.79,
+    "category": "Convenience Store",
+    "description": "Purified 20oz bottled water.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-07",
+    "agentId": "taz-realty-001",
+    "name": "Sports Drink",
+    "price": 2.99,
+    "category": "Convenience Store",
+    "description": "Electrolyte sports drink, assorted flavors.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-08",
+    "agentId": "taz-realty-001",
+    "name": "Energy Drink",
+    "price": 3.69,
+    "category": "Convenience Store",
+    "description": "16oz energy drink for a quick boost.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-09",
+    "agentId": "taz-realty-001",
+    "name": "Packaged Pastry",
+    "price": 2.79,
+    "category": "Convenience Store",
+    "description": "Sweet snack pastry, individually wrapped.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-10",
+    "agentId": "taz-realty-001",
+    "name": "Protein Bar",
+    "price": 3.29,
+    "category": "Convenience Store",
+    "description": "High-protein nutrition bar, assorted flavors.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-11",
+    "agentId": "taz-realty-001",
+    "name": "Peanuts",
+    "price": 1.99,
+    "category": "Convenience Store",
+    "description": "Salted roasted peanuts snack pack.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "conv-12",
+    "agentId": "taz-realty-001",
+    "name": "Gum or Mints",
+    "price": 1.59,
+    "category": "Convenience Store",
+    "description": "Pocket-size gum or mint freshener pack.",
+    "isAvailable": true,
+    "isDaisyPick": false
   }
 ]

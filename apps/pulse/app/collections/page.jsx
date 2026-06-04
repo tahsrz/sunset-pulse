@@ -12,6 +12,11 @@ const CollectionsPage = () => {
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const getPrimaryPrice = (property) => {
+    if (property?.list_price > 0) return property.list_price;
+    if (property?.price > 0) return property.price;
+    return 0;
+  };
 
   const fetchCollections = async () => {
     try {
@@ -106,8 +111,8 @@ const CollectionsPage = () => {
                       <FaRobot size={10} /> Jamie Reviewed
                     </div>
                     <div className='text-2xl font-black text-white'>
-                      {property.price > 0 ? (
-                        `$${property.price.toLocaleString()}`
+                      {getPrimaryPrice(property) > 0 ? (
+                        `$${getPrimaryPrice(property).toLocaleString()}`
                       ) : property.rates?.monthly ? (
                         <>
                           ${property.rates.monthly.toLocaleString()}

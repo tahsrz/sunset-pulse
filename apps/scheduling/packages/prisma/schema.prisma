@@ -58,6 +58,67 @@ enum CreationSource {
   WEBAPP @map("webapp")
 }
 
+enum WorkflowTriggerEvents {
+  BEFORE_EVENT
+  EVENT_CANCELLED
+  NEW_EVENT
+  RESCHEDULE_EVENT
+  AFTER_EVENT
+  BOOKING_REJECTED
+  BOOKING_REQUESTED
+  BOOKING_PAYMENT_INITIATED
+  BOOKING_PAID
+  BOOKING_NO_SHOW_UPDATED
+  AFTER_HOSTS_CAL_VIDEO_NO_SHOW
+  AFTER_GUESTS_CAL_VIDEO_NO_SHOW
+  FORM_SUBMITTED
+}
+
+enum WorkflowActions {
+  EMAIL_HOST
+  EMAIL_ATTENDEE
+  SMS_ATTENDEE
+  SMS_NUMBER
+  EMAIL_ADDRESS
+  WHATSAPP_ATTENDEE
+  WHATSAPP_NUMBER
+}
+
+enum TimeUnit {
+  day
+  hour
+  minute
+}
+
+enum WorkflowTemplates {
+  REMINDER
+  CUSTOM
+  CANCELLED
+  RESCHEDULED
+  COMPLETED
+  RATING
+}
+
+enum WorkflowMethods {
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum WorkflowType {
+  EVENT_TYPE
+}
+
+enum WorkflowStepAutoTranslatedField {
+  REMINDER_BODY
+  EMAIL_SUBJECT
+}
+
+enum WorkflowContactType {
+  PHONE
+  EMAIL
+}
+
 model Host {
   user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           Int
@@ -180,6 +241,8 @@ model EventType {
   team                               Team?                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId                             Int?
   hashedLink                         HashedLink[]
+  workflows                          WorkflowsOnEventTypes[]
+  aiPhoneCallConfig                  AIPhoneCallConfiguration?
   bookings                           Booking[]
   availability                       Availability[]
   webhooks                           Webhook[]
@@ -453,6 +516,9 @@ model User {
   // require email verification when someone books using your email
   requiresBookerEmailVerification Boolean? @default(false)
 
+  workflows          Workflow[]
+  whitelistWorkflows Boolean    @default(false)
+
   /// @zod.import(["import { userMetadata } from '../../zod-utils'"]).custom.use(userMetadata)
   metadata           Json?
   verified           Boolean?           @default(false)
@@ -619,6 +685,9 @@ model Team {
   agents                 Agent[]
   bookingReports         BookingReport[]
   wrongAssignmentReports WrongAssignmentReport[]
+
+  workflows          Workflow[]
+  activeOrgWorkflows WorkflowsOnTeams[]
 
   features TeamFeatures[]
 
@@ -908,6 +977,7 @@ model Booking {
   assignmentReason       AssignmentReason[]
   internalNote           BookingInternalNote[]
   creationSource         CreationSource?
+  workflowReminders      WorkflowReminder[]
   tracking               Tracking?
   expenseLogs            CreditExpenseLog[]
   report                 BookingReport?
@@ -940,6 +1010,141 @@ model Tracking {
   utm_content  String?
 
   @@unique([bookingId])
+}
+
+model Workflow {
+  id            Int                     @id @default(autoincrement())
+  name          String
+  user          User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int?
+  team          Team?                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId        Int?
+  activeOn      WorkflowsOnEventTypes[]
+  trigger       WorkflowTriggerEvents
+  time          Int?
+  timeUnit      TimeUnit?
+  steps         WorkflowStep[]
+  isActiveOnAll Boolean                 @default(false)
+  activeOnTeams WorkflowsOnTeams[]
+  type          WorkflowType            @default(EVENT_TYPE)
+  position      Int                     @default(0)
+
+  @@index([userId])
+  @@index([teamId])
+}
+
+model WorkflowStep {
+  id                        Int                        @id @default(autoincrement())
+  stepNumber                Int
+  action                    WorkflowActions
+  workflowId                Int
+  workflow                  Workflow                   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  sendTo                    String?
+  reminderBody              String?
+  emailSubject              String?
+  template                  WorkflowTemplates          @default(REMINDER)
+  workflowReminders         WorkflowReminder[]
+  numberRequired            Boolean?
+  sender                    String?
+  numberVerificationPending Boolean                    @default(true)
+  includeCalendarEvent      Boolean                    @default(false)
+  autoTranslateEnabled      Boolean                    @default(false)
+  sourceLocale              String?
+  translations              WorkflowStepTranslation[]
+  verifiedAt                DateTime?
+  agentId                   String?                    @unique
+  agent                     Agent?                     @relation("AgentWorkflowStep", fields: [agentId], references: [id], onDelete: SetNull)
+  inboundAgentId            String?                    @unique
+  inboundAgent              Agent?                     @relation("AgentInboundWorkflowStep", fields: [inboundAgentId], references: [id], onDelete: SetNull)
+
+  @@index([workflowId])
+}
+
+model WorkflowStepTranslation {
+  uid            String                          @id @default(uuid())
+  workflowStepId Int
+  workflowStep   WorkflowStep                    @relation(fields: [workflowStepId], references: [id], onDelete: Cascade)
+  field          WorkflowStepAutoTranslatedField
+  sourceLocale   String
+  targetLocale   String
+  translatedText String
+  createdAt      DateTime                        @default(now())
+  updatedAt      DateTime                        @updatedAt
+
+  @@unique([workflowStepId, field, targetLocale])
+}
+
+model WorkflowsOnEventTypes {
+  id          Int       @id @default(autoincrement())
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId  Int
+  eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  eventTypeId Int
+
+  @@unique([workflowId, eventTypeId])
+  @@index([workflowId])
+  @@index([eventTypeId])
+}
+
+model WorkflowsOnTeams {
+  id         Int      @id @default(autoincrement())
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId Int
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId     Int
+
+  @@unique([workflowId, teamId])
+  @@index([workflowId])
+  @@index([teamId])
+}
+
+model WorkflowReminder {
+  id                  Int             @id @default(autoincrement())
+  bookingUid          String?
+  booking             Booking?        @relation(fields: [bookingUid], references: [uid], onDelete: Cascade)
+  method              WorkflowMethods
+  scheduledDate       DateTime
+  referenceId         String?         @unique
+  scheduled           Boolean
+  workflowStepId      Int?
+  workflowStep        WorkflowStep?   @relation(fields: [workflowStepId], references: [id], onDelete: Cascade)
+  cancelled           Boolean?
+  seatReferenceId     String?
+  isMandatoryReminder Boolean?        @default(false)
+  retryCount          Int             @default(0)
+  uuid                String?         @unique
+
+  @@index([bookingUid])
+  @@index([workflowStepId])
+  @@index([method, scheduled, scheduledDate])
+  @@index([cancelled, scheduledDate])
+  @@index([seatReferenceId])
+}
+
+model WorkflowOptOutContact {
+  id        Int                 @id @default(autoincrement())
+  type      WorkflowContactType
+  value     String
+  optedOut  Boolean
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@unique([type, value])
+}
+
+model AIPhoneCallConfiguration {
+  id              Int       @id @default(autoincrement())
+  eventType       EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  eventTypeId     Int       @unique
+  generalPrompt   String
+  yourPhoneNumber String
+  numberToCall    String
+  guestName       String
+  enabled         Boolean   @default(false)
+  beginMessage    String?
+  llmId           String?
+
+  @@index([eventTypeId])
 }
 
 model Schedule {
@@ -2563,6 +2768,9 @@ model Agent {
 
   inboundPhoneNumbers  CalAiPhoneNumber[] @relation("InboundAgent")
   outboundPhoneNumbers CalAiPhoneNumber[] @relation("OutboundAgent")
+
+  workflowStep        WorkflowStep? @relation("AgentWorkflowStep")
+  inboundWorkflowStep WorkflowStep? @relation("AgentInboundWorkflowStep")
 
   @@index([userId])
   @@index([teamId])

@@ -9,6 +9,7 @@ import PropertySidebarForms from '@/components/property/PropertySidebarForms';
 import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
+import DraftOfferButton from '@/components/contracts/DraftOfferButton';
 import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
 
 interface ListingPageProps {
@@ -70,6 +71,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
             <div className='bg-white p-6 rounded-2xl shadow-sm border border-slate-100'>
               <h4 className='text-xs font-black uppercase text-slate-400 tracking-widest mb-6'>Agent Controls</h4>
               <div className='space-y-4'>
+                <DraftOfferButton property={property} />
                 <BookmarkButton property={property} />
                 <ShareButtons property={property} />
               </div>

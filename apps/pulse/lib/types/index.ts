@@ -23,6 +23,9 @@ export interface Property {
   square_feet?: number;
   amenities?: string[];
   price?: number;
+  list_price?: number;
+  price_type?: 'sale' | 'lease' | string;
+  year_built?: number;
   rates: {
     nightly?: number;
     weekly?: number;
@@ -51,7 +54,7 @@ export interface Property {
     electric: string;
   };
   listing_brokerage?: string;
-  }
+}
 export interface Lead {
   _id: string;
   name: string;

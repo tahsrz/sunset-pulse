@@ -59,7 +59,7 @@ export const upsertPropertyToSupabase = async (propertyData) => {
       beds: propertyData.beds,
       baths: propertyData.baths,
       sqft: propertyData.square_feet,
-      price: propertyData.rates?.monthly || 0,
+      price: (propertyData.list_price ?? propertyData.price ?? propertyData.rates?.monthly) || 0,
       image_url: propertyData.images?.[0] || null,
       last_updated: propertyData.last_updated || new Date().toISOString(),
       is_demo: propertyData.is_demo || false

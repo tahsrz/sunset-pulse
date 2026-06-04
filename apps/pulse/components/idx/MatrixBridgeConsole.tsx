@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   Copy,
@@ -51,6 +52,15 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
   const [lastAck, setLastAck] = useState('');
   const [showControls, setShowControls] = useState(false);
   const [showPayload, setShowPayload] = useState(false);
+  const [showHandoff, setShowHandoff] = useState(false);
+  const [handoff, setHandoff] = useState({
+    buyerNames: '',
+    sellerNames: '',
+    propertyAddress: '',
+    city: '',
+    county: ''
+  });
+  const router = useRouter();
 
   const targetOrigin = useMemo(() => getMatrixOrigin(matrixUrl), [matrixUrl]);
   const {
@@ -109,6 +119,17 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
     toast.success('Matrix payload copied.');
   };
 
+  const sendToContractSetup = () => {
+    const params = new URLSearchParams();
+    if (handoff.buyerNames) params.set('buyers', handoff.buyerNames);
+    if (handoff.sellerNames) params.set('sellers', handoff.sellerNames);
+    if (handoff.propertyAddress) params.set('address', handoff.propertyAddress);
+    if (handoff.city) params.set('city', handoff.city);
+    if (handoff.county) params.set('county', handoff.county);
+    if (!handoff.city && filters.location) params.set('city', filters.location);
+    router.push(`/contracts/promulgated/setup?${params.toString()}`);
+  };
+
   const statusLabel = {
     idle: 'Loading Matrix',
     loaded: 'Frame loaded',
@@ -153,6 +174,13 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
             </button>
             <button
               type="button"
+              onClick={() => setShowHandoff((prev) => !prev)}
+              className="inline-flex items-center gap-2 rounded-md border border-emerald-200/25 bg-emerald-200/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100 transition hover:bg-emerald-200/20"
+            >
+              Send to Contracts
+            </button>
+            <button
+              type="button"
               onClick={() => postCriteria('manual')}
               className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/10"
             >
@@ -170,6 +198,51 @@ const MatrixBridgeConsole: React.FC<MatrixBridgeConsoleProps> = ({ matrixUrl, pu
             </a>
           </div>
         </div>
+        {showHandoff && (
+          <div className="border-b border-white/10 bg-[#0a1d2a] px-4 py-3">
+            <div className="grid gap-2 md:grid-cols-5">
+              <input
+                value={handoff.buyerNames}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, buyerNames: event.target.value }))}
+                placeholder="Buyer name(s)"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.sellerNames}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, sellerNames: event.target.value }))}
+                placeholder="Seller name(s)"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.propertyAddress}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, propertyAddress: event.target.value }))}
+                placeholder="Property address"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.city}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, city: event.target.value }))}
+                placeholder="City"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+              <input
+                value={handoff.county}
+                onChange={(event) => setHandoff((prev) => ({ ...prev, county: event.target.value }))}
+                placeholder="County"
+                className="rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-950"
+              />
+            </div>
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={sendToContractSetup}
+                className="rounded-md bg-emerald-300 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-950"
+              >
+                Open Contract Setup
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="relative h-[calc(100dvh-220px)] min-h-[760px] bg-white">
           <iframe

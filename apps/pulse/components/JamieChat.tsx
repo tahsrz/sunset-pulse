@@ -17,6 +17,7 @@ import JamieChatInput from './chat/JamieChatInput';
 import JamieDevControls from './chat/JamieDevControls';
 import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
+import MlsCommandWorkspace from '@/components/idx/MlsCommandWorkspace';
 
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
@@ -50,7 +51,23 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
   const [isMlsOpen, setIsMlsOpen] = useState(false);
   const [mlsAccess, setMlsAccess] = useState<'checking' | 'allowed' | 'denied'>('checking');
   const [mlsFrameState, setMlsFrameState] = useState<'idle' | 'loading' | 'loaded'>('idle');
+  const [showEmailWorkflow, setShowEmailWorkflow] = useState(false);
+  const [emailSendState, setEmailSendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [emailSendMessage, setEmailSendMessage] = useState('');
+  const [emailWorkflow, setEmailWorkflow] = useState({
+    to: '',
+    subject: 'MLS Anchor Follow-Up',
+    buyerNames: '',
+    propertyAddress: '',
+    notes: ''
+  });
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [mlsWorkflow, setMlsWorkflow] = useState({
+    locationHint: '',
+    buyerNames: '',
+    propertyAddress: '',
+    county: ''
+  });
   const [tempInput, setTempInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -159,6 +176,96 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
     if (!opened) {
       window.location.assign(MATRIX_IDX_URL);
+    }
+  };
+
+  const openMlsEmailDraft = () => {
+    const recipient =
+      emailWorkflow.to ||
+      (user as any)?.email ||
+      (user as any)?.user_metadata?.email ||
+      '';
+    if (!recipient) {
+      alert('Add a recipient email first.');
+      return;
+    }
+
+    const bodyLines = [
+      'MLS Anchor Follow-Up',
+      `Date: ${new Date().toLocaleString()}`,
+      '',
+      `Buyer(s): ${emailWorkflow.buyerNames || 'N/A'}`,
+      `Property: ${emailWorkflow.propertyAddress || 'N/A'}`,
+      '',
+      'Notes:',
+      emailWorkflow.notes || 'N/A',
+      '',
+      'Generated from Sunset Pulse MLS Anchor.'
+    ];
+
+    const href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(
+      emailWorkflow.subject || 'MLS Anchor Follow-Up'
+    )}&body=${encodeURIComponent(bodyLines.join('\n'))}`;
+    window.location.href = href;
+  };
+
+  const openContractSetupFromMls = () => {
+    const params = new URLSearchParams();
+    if (mlsWorkflow.buyerNames) params.set('buyers', mlsWorkflow.buyerNames);
+    if (mlsWorkflow.propertyAddress) params.set('address', mlsWorkflow.propertyAddress);
+    if (mlsWorkflow.locationHint) params.set('city', mlsWorkflow.locationHint);
+    if (mlsWorkflow.county) params.set('county', mlsWorkflow.county);
+    window.location.assign(`/contracts/promulgated/setup?${params.toString()}`);
+  };
+
+  const sendMlsEmailNow = async () => {
+    const recipient =
+      emailWorkflow.to ||
+      (user as any)?.email ||
+      (user as any)?.user_metadata?.email ||
+      '';
+
+    if (!recipient) {
+      setEmailSendState('error');
+      setEmailSendMessage('Recipient email is required.');
+      return;
+    }
+
+    const text = [
+      'MLS Anchor Follow-Up',
+      `Date: ${new Date().toLocaleString()}`,
+      '',
+      `Buyer(s): ${emailWorkflow.buyerNames || 'N/A'}`,
+      `Property: ${emailWorkflow.propertyAddress || 'N/A'}`,
+      '',
+      'Notes:',
+      emailWorkflow.notes || 'N/A',
+      '',
+      'Generated from Sunset Pulse MLS Anchor.'
+    ].join('\n');
+
+    setEmailSendState('sending');
+    setEmailSendMessage('Sending...');
+
+    try {
+      const response = await fetch('/api/communications/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: recipient,
+          subject: emailWorkflow.subject || 'MLS Anchor Follow-Up',
+          text
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Failed to send email');
+      }
+      setEmailSendState('sent');
+      setEmailSendMessage('Email sent.');
+    } catch (error: any) {
+      setEmailSendState('error');
+      setEmailSendMessage(error?.message || 'Failed to send email.');
     }
   };
 
@@ -353,15 +460,123 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
                 </p>
               </div>
               {canViewMls && (
-                <button
-                  type="button"
-                  onClick={openMatrixIdx}
-                  className="rounded-md border border-white/10 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-teal-100 transition hover:bg-white/15"
-                >
-                  Open
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailWorkflow((prev) => !prev)}
+                    className="rounded-md border border-emerald-200/25 bg-emerald-200/15 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-100 transition hover:bg-emerald-200/20"
+                  >
+                    Email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openMatrixIdx}
+                    className="rounded-md border border-white/10 bg-white/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-teal-100 transition hover:bg-white/15"
+                  >
+                    Open
+                  </button>
+                </div>
               )}
             </div>
+            {showEmailWorkflow && canViewMls && (
+              <div className="mb-2 rounded-lg border border-emerald-200/20 bg-emerald-900/10 p-2.5">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-200">
+                  MLS Anchor Email Workflow
+                </p>
+                <div className="mt-2 grid gap-2 md:grid-cols-2">
+                  <input
+                    type="email"
+                    value={emailWorkflow.to}
+                    onChange={(event) => setEmailWorkflow((prev) => ({ ...prev, to: event.target.value }))}
+                    placeholder="Recipient email"
+                    className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                  />
+                  <input
+                    value={emailWorkflow.subject}
+                    onChange={(event) => setEmailWorkflow((prev) => ({ ...prev, subject: event.target.value }))}
+                    placeholder="Subject"
+                    className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                  />
+                  <input
+                    value={emailWorkflow.buyerNames}
+                    onChange={(event) => setEmailWorkflow((prev) => ({ ...prev, buyerNames: event.target.value }))}
+                    placeholder="Buyer name(s)"
+                    className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                  />
+                  <input
+                    value={emailWorkflow.propertyAddress}
+                    onChange={(event) => setEmailWorkflow((prev) => ({ ...prev, propertyAddress: event.target.value }))}
+                    placeholder="Property address"
+                    className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                  />
+                </div>
+                <textarea
+                  value={emailWorkflow.notes}
+                  onChange={(event) => setEmailWorkflow((prev) => ({ ...prev, notes: event.target.value }))}
+                  placeholder="Notes to include in email"
+                  className="mt-2 h-20 w-full rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                />
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={sendMlsEmailNow}
+                    disabled={emailSendState === 'sending'}
+                    className="mr-2 rounded-md border border-emerald-200/30 bg-emerald-200/20 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100 disabled:opacity-60"
+                  >
+                    {emailSendState === 'sending' ? 'Sending...' : 'Send Now'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openMlsEmailDraft}
+                    className="rounded-md bg-emerald-300 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-900"
+                  >
+                    Open Email Draft
+                  </button>
+                </div>
+                {emailSendState !== 'idle' && (
+                  <p className={`mt-2 text-[10px] font-bold ${emailSendState === 'sent' ? 'text-emerald-200' : emailSendState === 'error' ? 'text-rose-200' : 'text-slate-300'}`}>
+                    {emailSendMessage}
+                  </p>
+                )}
+              </div>
+            )}
+            {canViewMls && (
+              <MlsCommandWorkspace
+                locationHint={mlsWorkflow.locationHint}
+                buyerNames={mlsWorkflow.buyerNames}
+                propertyAddress={mlsWorkflow.propertyAddress}
+                onOpenContracts={openContractSetupFromMls}
+                onOpenEmail={() => setShowEmailWorkflow(true)}
+              />
+            )}
+            {canViewMls && (
+              <div className="mb-2 grid gap-2 md:grid-cols-4">
+                <input
+                  value={mlsWorkflow.locationHint}
+                  onChange={(event) => setMlsWorkflow((prev) => ({ ...prev, locationHint: event.target.value }))}
+                  placeholder="City/area context"
+                  className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                />
+                <input
+                  value={mlsWorkflow.buyerNames}
+                  onChange={(event) => setMlsWorkflow((prev) => ({ ...prev, buyerNames: event.target.value }))}
+                  placeholder="Buyer name(s)"
+                  className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                />
+                <input
+                  value={mlsWorkflow.propertyAddress}
+                  onChange={(event) => setMlsWorkflow((prev) => ({ ...prev, propertyAddress: event.target.value }))}
+                  placeholder="Property address"
+                  className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                />
+                <input
+                  value={mlsWorkflow.county}
+                  onChange={(event) => setMlsWorkflow((prev) => ({ ...prev, county: event.target.value }))}
+                  placeholder="County"
+                  className="rounded-md border border-white/15 bg-slate-950/70 px-2.5 py-2 text-[10px] text-white"
+                />
+              </div>
+            )}
             {isCheckingMlsAccess ? (
               <div className="flex h-72 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-[10px] font-black uppercase tracking-[0.2em] text-teal-200">
                 Checking Access

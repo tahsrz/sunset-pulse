@@ -28,6 +28,8 @@ const PUBLIC_PROPERTY_FIELDS = new Set([
   'square_feet',
   'amenities',
   'price',
+  'list_price',
+  'price_type',
   'rates',
   'images',
   'source',
@@ -117,7 +119,7 @@ export function sanitizeMlsForTahInput(property: UnknownRecord): UnknownRecord {
     beds: publicProperty.beds,
     baths: publicProperty.baths,
     square_feet: publicProperty.square_feet,
-    price: publicProperty.rates?.monthly,
+    price: publicProperty.list_price ?? publicProperty.price ?? publicProperty.rates?.monthly,
     listing_status: publicProperty.listing_status,
     last_updated: publicProperty.last_updated,
   };

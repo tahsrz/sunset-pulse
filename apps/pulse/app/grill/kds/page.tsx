@@ -36,11 +36,20 @@ interface Order {
   };
 }
 
+interface RestockRow {
+  name: string;
+  category: string;
+  unitsSold: number;
+  recommendedUnits: number;
+  urgencyScore: number;
+}
+
 const KitchenDisplaySystem = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const [restockRows, setRestockRows] = useState<RestockRow[]>([]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -56,6 +65,11 @@ const KitchenDisplaySystem = () => {
           audio.play().catch(e => console.log('Audio play failed', e));
         }
         setLastOrderCount(activeOrders.length);
+      }
+      const restockRes = await fetch('/api/inventory/restock-advice');
+      if (restockRes.ok) {
+        const restockPayload = await restockRes.json();
+        setRestockRows(restockPayload?.data?.recommendations || []);
       }
     } catch (error) {
       console.error('KDS Fetch Error:', error);
@@ -227,6 +241,31 @@ const KitchenDisplaySystem = () => {
           </div>
         </div>
       </header>
+
+      <section className="mb-8 rounded-2xl border border-amber-300/20 bg-amber-950/20 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-black uppercase tracking-[0.18em] text-amber-100">Restock Radar</h2>
+          <span className="text-xs font-bold text-amber-200/80">Today</span>
+        </div>
+        {restockRows.length === 0 ? (
+          <p className="text-sm text-slate-300">No urgent restock items from paid sales yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {restockRows.slice(0, 9).map((row) => (
+              <div key={`${row.name}-${row.category}`} className="rounded-xl border border-white/10 bg-black/25 p-3">
+                <p className="text-sm font-black text-white">{row.name}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-slate-400">{row.category}</p>
+                <p className="mt-2 text-xs text-slate-300">
+                  Sold today: <span className="font-black text-amber-200">{row.unitsSold}</span>
+                </p>
+                <p className="text-xs text-slate-300">
+                  Suggested stock-up: <span className="font-black text-emerald-200">{row.recommendedUnits}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {loading && orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-slate-800">

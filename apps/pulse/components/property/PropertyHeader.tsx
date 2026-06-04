@@ -6,6 +6,8 @@ interface PropertyHeaderProps {
 }
 
 const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
+  const primaryPrice = (property.list_price && property.list_price > 0) ? property.list_price : property.price;
+
   return (
     <div className='bg-slate-900 border border-white/10 p-8 rounded-2xl shadow-2xl text-center md:text-left overflow-hidden relative group transition-all duration-500 hover:border-blue-500/30'>
       <div className='absolute -top-24 -left-24 w-48 h-48 bg-blue-600/5 blur-[100px] rounded-full' />
@@ -20,11 +22,11 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
-        {property.price > 0 && (
+        {primaryPrice > 0 && (
           <div className='bg-slate-950/50 border border-blue-500/20 p-6 rounded-2xl transition-all hover:bg-slate-900'>
             <div className='text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2'>Sale Price</div>
             <div className='text-3xl font-black text-white italic'>
-              ${property.price.toLocaleString()}
+              ${primaryPrice.toLocaleString()}
             </div>
           </div>
         )}
