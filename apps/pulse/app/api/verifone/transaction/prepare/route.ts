@@ -5,6 +5,7 @@ import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
 import { requireVerifoneEnabled, requireVerifoneMode } from '@/lib/verifone/config';
+import { requireKdsAccess } from '@/lib/kds/access';
 
 export async function POST(req: NextRequest) {
   const disabled = requireVerifoneEnabled();
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
   if (modeBlocked) return modeBlocked;
 
   try {
+    const access = await requireKdsAccess(req);
+    if (access instanceof Response) return access;
+
     await connectDB();
 
     const body = await req.json();

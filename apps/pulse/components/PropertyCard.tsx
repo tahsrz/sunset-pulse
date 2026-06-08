@@ -23,8 +23,10 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = null }) => {
+  const popularityScore = (property as any).popularityScore || 0;
+  const yieldIntel = (property as any).yieldIntel;
   const intensity = ((property.leadCount || 0) / (property.globalAvgLeads || 5)) * 1.5;
-  const isHighIntensity = intensity > 1.2;
+  const isHighIntensity = intensity > 1.2 || popularityScore > 60;
   const isUrgent = (property.leadCount || 0) > 10;
 
   const getRateDisplay = () => {
@@ -75,7 +77,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
       
       {isHighIntensity && (
         <div className='absolute -top-2 -left-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter z-10 animate-bounce'>
-          High Intensity
+          {popularityScore > 75 ? '🔥 Trending' : 'High Intensity'}
         </div>
       )}
 

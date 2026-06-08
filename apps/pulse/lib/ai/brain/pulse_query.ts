@@ -119,7 +119,8 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
           results.push({
             source: cartridge.name,
             text: m.data,
-            score: m.score
+            score: m.score,
+            links: m.links || []
           });
         });
       }
@@ -163,7 +164,7 @@ function cartridgeTitle(file: string): string {
     .join(' ');
 }
 
-function searchCartridge(filePath: string, file: string, query: string): Array<{ score: number; data: string }> {
+function searchCartridge(filePath: string, file: string, query: string): Array<{ score: number; data: string; links?: number[] }> {
   if (file.endsWith('.hat')) {
     return new MemoriaRetriever(filePath).search(query);
   }
@@ -172,13 +173,15 @@ function searchCartridge(filePath: string, file: string, query: string): Array<{
   if (magic === 0x54414821) {
     return new TAHRetriever(filePath).search(query).map(match => ({
       score: 1.0,
-      data: match.data
+      data: match.data,
+      links: []
     }));
   }
 
   return new SwarmRetriever(filePath).search(query).map(match => ({
     score: match.score,
-    data: match.data
+    data: match.data,
+    links: []
   }));
 }
 

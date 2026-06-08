@@ -13,6 +13,8 @@ import PropertySidebarForms from '@/components/property/PropertySidebarForms';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import DraftOfferButton from '@/components/contracts/DraftOfferButton';
+import MarketIntelligence from '@/components/property/MarketIntelligence';
+import YieldIntelligenceCard from '@/components/property/YieldIntelligenceCard';
 import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -91,6 +93,7 @@ const PropertyPage: React.FC = () => {
 
   // Combine property and rent data for Jamie
   const jamieData = property ? { ...property, rentData } : null;
+  const county = property?.location?.county || (property as (Property & { county?: string }) | null)?.county;
 
   return (
     <>
@@ -112,7 +115,15 @@ const PropertyPage: React.FC = () => {
           <section className='bg-slate-900/50 border-y border-white/5'>
             <div className='container m-auto py-10 px-6'>
               <div className='grid grid-cols-1 md:grid-cols-[70%_30%] w-full gap-6'>
-                <PropertyDetails property={property} rentData={rentData} />
+                <PropertyDetails
+                  property={property}
+                  marketIntelligenceSlot={
+                    <>
+                      {rentData && <MarketIntelligence rentData={rentData} />}
+                      <YieldIntelligenceCard county={county} />
+                    </>
+                  }
+                />
                 <aside className='space-y-4'>
                   {!isShortTerm && <DraftOfferButton property={property} />}
                   <BookmarkButton property={property} />

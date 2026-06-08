@@ -2,6 +2,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { MongoClient, ObjectId } from 'mongodb';
+import runtimeSafety from '../lib/core/runtimeSafety.js';
+
+const {
+  assertDestructiveDbOperationAllowed,
+  assertNonEmptyDeleteFilter,
+  assertSafeMongoConnection,
+} = runtimeSafety;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -16,6 +23,8 @@ if (!mongoUri) {
   process.exit(1);
 }
 
+assertSafeMongoConnection(mongoUri);
+
 const client = new MongoClient(mongoUri);
 
 try {
@@ -24,7 +33,9 @@ try {
   const properties = db.collection('properties');
   const leads = db.collection('leads');
 
-  const filter = keepMls ? { source: { $ne: 'MLS' } } : {};
+  const filter = keepMls
+    ? { source: { $ne: 'MLS' }, is_demo: true }
+    : { is_demo: true };
   const docs = await properties.find(filter, { projection: { _id: 1, name: 1, source: 1, is_demo: 1 } }).toArray();
   const ids = docs.map((doc) => doc._id);
 
@@ -41,6 +52,12 @@ try {
     process.exit(0);
   }
 
+  assertNonEmptyDeleteFilter(filter, 'properties.deleteMany');
+  assertDestructiveDbOperationAllowed({
+    operation: 'properties.deleteMany',
+    scope: 'fake demo properties',
+  });
+
   const leadFilter = {
     $or: [
       { property: { $in: ids } },
@@ -48,6 +65,7 @@ try {
       { propertyId: { $in: ids.map((id) => id.toString()) } },
     ],
   };
+  assertNonEmptyDeleteFilter(leadFilter, 'leads.deleteMany');
 
   const propertyResult = await properties.deleteMany(filter);
   const leadResult = ids.every((id) => id instanceof ObjectId)

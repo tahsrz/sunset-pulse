@@ -1,10 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { getTahIndices } from './tah_utils';
+import { WebGraph } from './webgraph';
 
 export interface MemoriaMatch {
   score: number;
   data: string;
+  links: number[];
 }
 
 const TAG_TEXT = 0;
@@ -27,6 +29,12 @@ export class MemoriaRetriever {
   private bloomOffset = 64;
   private indexOffset = 64;
   private globalBloom: Buffer = Buffer.alloc(0);
+  
+  private registryOffset = 0n;
+  private registryLength = 0;
+  private linksOffset = 0n;
+  private linksLength = 0;
+  private linksData: Buffer | null = null;
 
   // v4 fields
   private isV4 = false;
@@ -98,10 +106,20 @@ export class MemoriaRetriever {
     this.m = this.hatBuffer.readBigUInt64LE(8);
     this.shardCount = this.hatBuffer.readUInt32LE(16);
     this.avgComplexity = this.hatBuffer.readUInt32LE(20) || 1;
+    
+    // v3.6 extensions
+    this.registryOffset = this.hatBuffer.readBigUint64LE(24);
+    this.registryLength = this.hatBuffer.readUInt32LE(32);
+    this.linksOffset = this.hatBuffer.readBigUint64LE(36);
+    this.linksLength = this.hatBuffer.readUInt32LE(44);
 
     const bloomSize = Number((this.m + 7n) / 8n);
     this.indexOffset = this.bloomOffset + bloomSize;
     this.globalBloom = this.hatBuffer.slice(this.bloomOffset, this.indexOffset);
+    
+    if (this.linksLength > 0 && this.linksOffset < BigInt(this.hatBuffer.length)) {
+      this.linksData = this.hatBuffer.slice(Number(this.linksOffset), Number(this.linksOffset) + this.linksLength);
+    }
   }
 
   private containsKeyword(keyword: string): boolean {
@@ -159,19 +177,19 @@ export class MemoriaRetriever {
         const tag = this.hatBuffer.readUInt8(offset);
         if (tag !== TAG_TEXT) continue;
 
-        const meta = this.hatBuffer.readUInt32LE(offset + 20);
-        const spec = this.hatBuffer.slice(offset + 24, offset + ENTRY_SIZE);
+        // Note: in v3.6+, meta/bloom are at different offsets, but we fallback to 24+ for spec
+        const spec = this.hatBuffer.slice(offset + 44, offset + ENTRY_SIZE); // v3.6 local bloom
         const matches = localIndices.every(idx => {
           const byteIdx = Number(idx / 8n);
           const bitIdx = Number(idx % 8n);
-          return (spec[byteIdx] & (1 << bitIdx)) !== 0;
+          return byteIdx < spec.length && (spec[byteIdx] & (1 << bitIdx)) !== 0;
         });
 
         if (!matches) continue;
 
         const tf = 1.0;
         const idf = Math.log((this.shardCount + 1) / 1.0);
-        let score = idf * ((tf * 2.2) / (tf + 1.2 * (0.25 + 0.75 * (meta / this.avgComplexity))));
+        let score = idf * 2.2; // Simplified score
         if (term.includes(' ')) score *= 2.0;
 
         scores.set(i, (scores.get(i) || 0) + score);
@@ -183,9 +201,18 @@ export class MemoriaRetriever {
     return [...scores.entries()]
       .map(([index, score]) => {
         const offset = this.entryOffset(index);
+        const linkCount = this.hatBuffer.readUInt16LE(offset + 1);
+        const linkOffset = this.hatBuffer.readUInt32LE(offset + 3);
+        
         const dataOffset = Number(this.hatBuffer.readBigUInt64LE(offset + 8));
         const length = this.hatBuffer.readUInt32LE(offset + 16);
         const data = tahBuffer!.slice(dataOffset, dataOffset + length).toString('utf-8').replace(/\0+$/g, '');
+        
+        let links: number[] = [];
+        if (linkCount > 0 && this.linksData) {
+          links = WebGraph.decodeLinks(this.linksData.slice(linkOffset), index, linkCount);
+        }
+
         const normalizedData = data.toLowerCase();
         const termMatches = terms.filter(term => normalizedData.includes(term)).length;
         const phraseMatch = queryText.length > 0 && normalizedData.includes(queryText);
@@ -193,6 +220,7 @@ export class MemoriaRetriever {
         return {
           score: score + termMatches * 10 + (phraseMatch ? 25 : 0),
           data,
+          links,
           termMatches,
           phraseMatch
         };
@@ -200,7 +228,7 @@ export class MemoriaRetriever {
       .filter(match => match.termMatches > 0 || match.phraseMatch)
       .sort((a, b) => b.score - a.score)
       .slice(0, topN)
-      .map(({ score, data }) => ({ score, data }));
+      .map(({ score, data, links }) => ({ score, data, links }));
   }
 
   private searchV4(query: string, topN = 3): MemoriaMatch[] {

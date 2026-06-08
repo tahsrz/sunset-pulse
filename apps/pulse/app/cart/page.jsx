@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { getDealByCode, normalizeCouponCode } from '@/lib/grill/deals';
 import { 
   FaTrash, 
   FaArrowLeft, 
@@ -17,12 +18,25 @@ import {
   FaTimes,
   FaShoppingBasket,
   FaMapMarkerAlt,
-  FaEnvelopeOpen
+  FaEnvelopeOpen,
+  FaTag
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const CartPage = () => {
-  const { cart, removeFromCart, cartTotal, clearCart } = useCart();
+  const {
+    cart,
+    removeFromCart,
+    cartSubtotal,
+    cartDiscount,
+    cartTotal,
+    couponCode,
+    appliedDeal,
+    applyCoupon,
+    removeCoupon,
+    clearCart,
+    saveLastOrder
+  } = useCart();
   const router = useRouter();
 
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
@@ -30,11 +44,37 @@ const CartPage = () => {
   const [selectedDate, setSelectedDate] = useState('today'); // 'today', 'tomorrow', 'day_after'
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null); // e.g. "12:30"
   const [isDelivery, setIsDelivery] = useState(false); // Local mailbox delivery fee flag
+  const [couponInput, setCouponInput] = useState(couponCode || '');
 
   // Reset selected timeslot when changing date to prevent out-of-bounds selections
   useEffect(() => {
     setSelectedTimeSlot(null);
   }, [selectedDate, isScheduled]);
+
+  useEffect(() => {
+    setCouponInput(couponCode || '');
+  }, [couponCode]);
+
+  const deliveryFee = isDelivery ? 10.00 : 0;
+  const displayTotal = cartTotal + deliveryFee;
+
+  const applyCouponFromInput = () => {
+    const normalized = normalizeCouponCode(couponInput);
+    if (!normalized) {
+      toast.warning('Enter a coupon code first.');
+      return;
+    }
+
+    const deal = getDealByCode(normalized);
+    if (!deal) {
+      removeCoupon();
+      toast.error('That coupon code is not active.');
+      return;
+    }
+
+    applyCoupon(normalized);
+    toast.success(`${deal.label} applied.`);
+  };
 
   // Helper to generate 15-minute timeslots between 11:00 AM and 9:00 PM
   const generateTimeSlots = () => {
@@ -103,9 +143,8 @@ const CartPage = () => {
     setIsCheckoutLoading(true);
     const scheduledTime = getScheduledDateTime();
     const checkoutItems = isDelivery 
-      ? [...cart, { id: 'delivery-fee', name: 'Mailbox Delivery Fee', price: 10.00, quantity: 1 }]
+      ? [...cart, { id: 'delivery-fee', name: 'Mailbox Delivery Fee', price: 10.00, quantity: 1, discountEligible: false }]
       : cart;
-    const checkoutTotal = cartTotal + (isDelivery ? 10.00 : 0);
 
     try {
       // 1. Create the order first in Pending state
@@ -114,7 +153,7 @@ const CartPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           items: checkoutItems, 
-          totalAmount: checkoutTotal,
+          couponCode,
           scheduledTime
         }),
       });
@@ -129,13 +168,14 @@ const CartPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           items: checkoutItems, 
-          totalAmount: checkoutTotal, 
+          couponCode,
           orderId 
         }),
       });
 
       const data = await res.json();
       if (data.url) {
+        if (saveLastOrder) saveLastOrder(checkoutItems, couponCode);
         if (clearCart) clearCart(); // Flush client cart
         window.location.href = data.url;
       } else {
@@ -157,9 +197,8 @@ const CartPage = () => {
 
     const scheduledTime = getScheduledDateTime();
     const checkoutItems = isDelivery 
-      ? [...cart, { id: 'delivery-fee', name: 'Mailbox Delivery Fee', price: 10.00, quantity: 1 }]
+      ? [...cart, { id: 'delivery-fee', name: 'Mailbox Delivery Fee', price: 10.00, quantity: 1, discountEligible: false }]
       : cart;
-    const checkoutTotal = cartTotal + (isDelivery ? 10.00 : 0);
 
     try {
       const res = await fetch('/api/orders', {
@@ -169,7 +208,7 @@ const CartPage = () => {
         },
         body: JSON.stringify({
           items: checkoutItems,
-          totalAmount: checkoutTotal,
+          couponCode,
           scheduledTime
         }),
       });
@@ -178,6 +217,7 @@ const CartPage = () => {
 
       if (res.status === 201) {
         toast.success(isScheduled ? 'Pickup scheduled successfully!' : 'Order sent to the grill!');
+        if (saveLastOrder) saveLastOrder(checkoutItems, couponCode);
         if (clearCart) clearCart(); // Clear the tray after successful order
         const orderId = orderResult.data?.id;
         router.push(`/grill/tracker/${orderId}`); // Redirect to tracker
@@ -287,8 +327,20 @@ const CartPage = () => {
 
                 <div className="pt-6 border-t border-white/5 mt-6 flex justify-between items-baseline">
                   <span className="text-xs font-mono uppercase tracking-widest text-slate-500">Items Subtotal</span>
-                  <span className="text-xl font-bold font-mono text-white">${cartTotal.toFixed(2)}</span>
+                  <span className="text-xl font-bold font-mono text-white">${cartSubtotal.toFixed(2)}</span>
                 </div>
+
+                {appliedDeal && (
+                  <div className="pt-3 border-t border-white/5 mt-3 flex justify-between items-start gap-4 text-emerald-400 animate-fadeIn">
+                    <div>
+                      <span className="block text-xs font-mono uppercase tracking-widest text-emerald-500">Deal Applied</span>
+                      <span className="block text-[10px] text-emerald-300/80 mt-1">{appliedDeal.label}</span>
+                    </div>
+                    <span className="text-lg font-bold font-mono">
+                      {cartDiscount > 0 ? `-$${cartDiscount.toFixed(2)}` : 'Reward'}
+                    </span>
+                  </div>
+                )}
 
                 {isDelivery && (
                   <div className="pt-3 border-t border-white/5 mt-3 flex justify-between items-baseline text-slate-400 animate-fadeIn">
@@ -302,7 +354,7 @@ const CartPage = () => {
                     {isDelivery ? 'Total Surcharge Price' : 'Total Amount'}
                   </span>
                   <span className="text-3xl font-black text-white tracking-tight">
-                    ${(cartTotal + (isDelivery ? 10.00 : 0)).toFixed(2)}
+                    ${displayTotal.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -459,6 +511,55 @@ const CartPage = () => {
                       {isDelivery ? 'SELECTED • +$10.00' : '+$10.00'}
                     </span>
                   </button>
+                </div>
+              </div>
+
+              {/* Coupon / Deal Option */}
+              <div className="bg-white/5 border border-white/10 backdrop-blur-md p-6 md:p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                <div className="flex items-center gap-3 pb-5 border-b border-white/5 mb-6">
+                  <FaTag className="text-emerald-400" size={16} />
+                  <h3 className="font-black uppercase tracking-widest text-xs font-sans text-slate-300">Deal Code</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
+                      placeholder="FREEDRINK"
+                      className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-mono uppercase text-white outline-none placeholder:text-slate-600 focus:border-emerald-400/40"
+                      maxLength={24}
+                    />
+                    <button
+                      onClick={applyCouponFromInput}
+                      className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-xs font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500 hover:text-white transition-all"
+                    >
+                      Apply
+                    </button>
+                  </div>
+
+                  {appliedDeal ? (
+                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">{appliedDeal.code}</div>
+                          <div className="mt-1 text-xs font-bold">{appliedDeal.description}</div>
+                        </div>
+                        <button
+                          onClick={removeCoupon}
+                          className="rounded-lg p-2 text-emerald-300 hover:bg-black/20 hover:text-white transition-colors"
+                          aria-label="Remove coupon"
+                          title="Remove coupon"
+                        >
+                          <FaTimes size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 font-serif italic">
+                      One deal code can be used per order. Try FREEDRINK during the launch week.
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -3,6 +3,7 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 
 const connectDB = require('../lib/core/database').default;
+const { assertDestructiveDbOperationAllowed } = require('../lib/core/runtimeSafety');
 const Property = require('../models/Property').default;
 const properties = require('../properties.json');
 const axios = require('axios');
@@ -34,9 +35,17 @@ const seedData = async () => {
     await connectDB();
     
     console.log('Clearing existing properties and leads...');
+    assertDestructiveDbOperationAllowed({
+      operation: 'Property.deleteMany',
+      scope: 'all seeded properties before seed',
+    });
     await Property.deleteMany(); 
     try {
       const Lead = require('../models/Lead').default;
+      assertDestructiveDbOperationAllowed({
+        operation: 'Lead.deleteMany',
+        scope: 'all seeded leads before seed',
+      });
       await Lead.deleteMany();
       console.log('Leads cleared.');
     } catch (e) {

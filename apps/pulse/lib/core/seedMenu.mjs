@@ -7,8 +7,11 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
 import connectDB from './database.js';
+import runtimeSafety from './runtimeSafety.js';
 import MenuItem from '../../models/MenuItem.js';
 import { readFile } from 'fs/promises';
+
+const { assertDestructiveDbOperationAllowed } = runtimeSafety;
 
 const seedMenu = async () => {
   try {
@@ -16,6 +19,10 @@ const seedMenu = async () => {
     const menuData = JSON.parse(
       await readFile(new URL('../../menu.json', import.meta.url))
     );
+    assertDestructiveDbOperationAllowed({
+      operation: 'MenuItem.deleteMany',
+      scope: 'all menu items before seed',
+    });
     await MenuItem.deleteMany();
     await MenuItem.insertMany(menuData);
     console.log('Menu Seeded Successfully! 🍔');

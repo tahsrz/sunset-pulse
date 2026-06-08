@@ -1,13 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { getTahIndices, getSurgicalHash } from './tah_utils';
+import { WebGraph } from './webgraph';
 
 export interface TAHShard {
   type: number;
   offset: bigint;
   length: number;
-  meta: number;
+  linkCount: number;
+  linkOffset: number;
   data: string;
+  links: number[];
 }
 
 export class TAHRetriever {
@@ -15,8 +18,14 @@ export class TAHRetriever {
   private k: number = 0;
   private m: bigint = 0n;
   private shardCount: number = 0;
+  private registryOffset: bigint = 0n;
+  private registryLength: number = 0;
+  private linksOffset: bigint = 0n;
+  private linksLength: number = 0;
+  
   private bloomFilter: Buffer | null = null;
   private shardIndex: Buffer | null = null;
+  private linksData: Buffer | null = null;
 
   constructor(private source: string | Buffer) {
     this.load();
@@ -44,9 +53,18 @@ export class TAHRetriever {
     this.m = this.buffer.readBigUint64LE(8);
     this.shardCount = this.buffer.readUInt32LE(16);
 
+    this.registryOffset = this.buffer.readBigUint64LE(24);
+    this.registryLength = this.buffer.readUInt32LE(32);
+    this.linksOffset = this.buffer.readBigUint64LE(36);
+    this.linksLength = this.buffer.readUInt32LE(44);
+
     const bloomByteSize = Number((this.m + 7n) / 8n);
     this.bloomFilter = this.buffer.slice(64, 64 + bloomByteSize);
     this.shardIndex = this.buffer.slice(64 + bloomByteSize, 64 + bloomByteSize + (this.shardCount * 80));
+    
+    if (this.linksLength > 0) {
+      this.linksData = this.buffer.slice(Number(this.linksOffset), Number(this.linksOffset) + this.linksLength);
+    }
   }
 
   public containsKeyword(keyword: string): boolean {
@@ -70,9 +88,13 @@ export class TAHRetriever {
 
     const entryOffset = index * 80;
     const type = this.shardIndex.readUInt8(entryOffset);
+    const linkCount = this.shardIndex.readUInt16LE(entryOffset + 1);
+    const linkOffset = this.shardIndex.readUInt32LE(entryOffset + 3);
+    // Pad(1) at entryOffset + 7
+    
     const offset = this.shardIndex.readBigUint64LE(entryOffset + 8);
     const length = this.shardIndex.readUInt32LE(entryOffset + 16);
-    const meta = this.shardIndex.readUInt32LE(entryOffset + 20);
+    // SourceID(2) + RegionID(2) at entryOffset + 20
     const kwHash = this.shardIndex.readBigUint64LE(entryOffset + 24);
 
     const dataBuffer = this.buffer!.slice(Number(offset), Number(offset) + length);
@@ -83,13 +105,22 @@ export class TAHRetriever {
     
     const text = dataBuffer.slice(0, textLen).toString('utf-8');
 
+    // Decode links
+    let links: number[] = [];
+    if (linkCount > 0 && this.linksData) {
+      const shardLinksData = this.linksData.slice(linkOffset);
+      links = WebGraph.decodeLinks(shardLinksData, index, linkCount);
+    }
+
     return {
       type,
       offset,
       length,
-      meta,
+      linkCount,
+      linkOffset,
+      data: text,
       kwHash,
-      data: text
+      links
     };
   }
 

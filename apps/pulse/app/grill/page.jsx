@@ -1,8 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeProvider';
+import { buildDefaultBurgerCustomization } from '@/lib/grill/orderRelay';
+import { getDealByCode, normalizeCouponCode } from '@/lib/grill/deals';
 import { 
   FaPlus, 
   FaMinus, 
@@ -18,7 +21,8 @@ import {
 import { toast } from 'react-toastify';
 
 const GrillPage = () => {
-  const { cart, addToCart, cartTotal } = useCart();
+  const searchParams = useSearchParams();
+  const { cart, addToCart, cartTotal, couponCode, applyCoupon, lastOrder, reorderLastOrder } = useCart();
   const { intelligence, agentId } = useTheme();
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +33,19 @@ const GrillPage = () => {
   const [trayPulse, setTrayPulse] = useState(false);
 
   const { grill } = intelligence;
+
+  useEffect(() => {
+    const incomingCoupon = normalizeCouponCode(searchParams.get('coupon'));
+    if (!incomingCoupon || incomingCoupon === couponCode) return;
+    const deal = getDealByCode(incomingCoupon);
+    if (!deal) return;
+
+    applyCoupon(incomingCoupon);
+    toast.success(`${deal.code} is ready in your cart.`, {
+      position: 'bottom-right',
+      autoClose: 1800,
+    });
+  }, [searchParams, couponCode, applyCoupon]);
 
   // Retrieve menu items from the MongoDB API
   useEffect(() => {
@@ -67,7 +84,10 @@ const GrillPage = () => {
   // Directly add item from grid with simple scale feedback
   const handleQuickAdd = (e, item) => {
     e.stopPropagation(); // Avoid opening the details modal
-    addToCart(item);
+    addToCart({
+      ...item,
+      customization: buildDefaultBurgerCustomization(),
+    });
     setTrayPulse(true);
     setTimeout(() => setTrayPulse(false), 300);
     toast.success(`Added ${item.name} to tray!`, {
@@ -91,7 +111,8 @@ const GrillPage = () => {
     for (let i = 0; i < modalQuantity; i++) {
       addToCart({
         ...selectedItem,
-        instructions: specialInstructions
+        instructions: specialInstructions,
+        customization: buildDefaultBurgerCustomization(specialInstructions),
       });
     }
 
@@ -103,6 +124,16 @@ const GrillPage = () => {
     });
 
     setSelectedItem(null);
+  };
+
+  const handleReorderLastOrder = () => {
+    if (!reorderLastOrder?.()) return;
+    setTrayPulse(true);
+    setTimeout(() => setTrayPulse(false), 300);
+    toast.success('Previous order restored to your tray.', {
+      position: 'bottom-right',
+      autoClose: 1800,
+    });
   };
 
   // Calculate cart items total quantity
@@ -188,6 +219,27 @@ const GrillPage = () => {
             </Link>
           </div>
         </div>
+
+        {lastOrder?.items?.length > 0 && (
+          <div className='mb-16 max-w-3xl mx-auto'>
+            <div className='rounded-3xl border border-amber-400/20 bg-amber-400/10 p-5 md:p-6 shadow-xl shadow-amber-500/5 flex flex-col md:flex-row md:items-center md:justify-between gap-5'>
+              <div>
+                <p className='text-[10px] font-black uppercase tracking-[0.22em] text-amber-300'>Previous Order</p>
+                <h2 className='mt-2 text-xl font-black text-white'>Want the same thing again?</h2>
+                <p className='mt-1 text-sm text-slate-300'>
+                  {lastOrder.items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0)} items saved from your last grill order.
+                </p>
+              </div>
+              <button
+                type='button'
+                onClick={handleReorderLastOrder}
+                className='shrink-0 rounded-2xl bg-amber-300 px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-amber-200 active:scale-95 transition-all'
+              >
+                Reorder
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Daisy's Picks Section */}
         {daisyPicks.length > 0 && (

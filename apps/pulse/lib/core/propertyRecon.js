@@ -1,7 +1,25 @@
 import { unstable_cache } from 'next/cache';
+import fs from 'fs';
+import path from 'path';
 import connectDB from './database';
 import Property from '@/models/Property';
 import Lead from '@/models/Lead';
+import { calculatePulseScore } from '../intelligence/neighborhoodIntelligence';
+
+// Load Yield Intelligence from the crunched dataset
+let yieldMap = {};
+try {
+  const yieldDataPath = path.join(process.cwd(), 'private/yield_intelligence.json');
+  if (fs.existsSync(yieldDataPath)) {
+    const rawData = JSON.parse(fs.readFileSync(yieldDataPath, 'utf8'));
+    yieldMap = rawData.reduce((acc, curr) => {
+      acc[curr.county.toLowerCase()] = curr;
+      return acc;
+    }, {});
+  }
+} catch (e) {
+  console.error('[YIELD_LOAD_ERROR]: Yield intelligence not available.', e.message);
+}
 
 /**
  * Standardize property pricing.
@@ -81,11 +99,34 @@ export async function getProperties({ showFeatured = false, page = 1, pageSize =
       return acc;
     }, {});
 
-    const propertiesWithIntelligence = properties.map(p => ({
-      ...p,
-      leadCount: leadMap[p._id.toString()] || 0,
-      globalAvgLeads: 2
-    }));
+    // Sitewide Popularity and Intelligence Integration
+    const propertiesWithIntelligence = properties.map(p => {
+      const county = p.location.city; // Using city as a rough proxy for county if county field is missing
+      const yieldData = yieldMap[county.toLowerCase()] || { cornYield: 50, wheatYield: 30 }; // Fallback yield
+      
+      const leadCount = leadMap[p._id.toString()] || 0;
+      const pulseScore = calculatePulseScore(p.location_geo?.coordinates || [0,0]);
+      
+      // Popularity Score Formula:
+      // 40% Lead Velocity (Interest)
+      // 40% Yield/Productivity (Intrinsic Value)
+      // 20% Pulse Score (Lifestyle/Amenity)
+      const normalizedYield = (yieldData.cornYield / 100) * 100; // Normalize against 100 BU/AC
+      const popularityScore = Math.round(
+        (Math.min(leadCount * 20, 100) * 0.4) + 
+        (Math.min(normalizedYield, 100) * 0.4) + 
+        (pulseScore * 0.2)
+      );
+
+      return {
+        ...p,
+        leadCount,
+        globalAvgLeads: 2,
+        pulseScore,
+        popularityScore,
+        yieldIntel: yieldData
+      };
+    });
 
     if (showFeatured) {
       return propertiesWithIntelligence.map(normalizePropertyPricing);

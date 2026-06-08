@@ -1,6 +1,6 @@
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { fetchProperty } from '@/lib/core/requests';
-import { fetchRentEstimate } from '@/lib/data/rentcast';
 import PropertyHeaderImage from '@/components/PropertyHeaderImage';
 import PropertyDetails from '@/components/PropertyDetails';
 import PropertyImages from '@/components/PropertyImages';
@@ -10,6 +10,8 @@ import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
 import ShareButtons from '@/components/ShareButtons';
 import DraftOfferButton from '@/components/contracts/DraftOfferButton';
+import MarketIntelligencePocket from '@/components/property/MarketIntelligencePocket';
+import YieldIntelligenceCard from '@/components/property/YieldIntelligenceCard';
 import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
 
 interface ListingPageProps {
@@ -27,21 +29,17 @@ export default async function ListingPage({ params }: ListingPageProps) {
     );
   }
 
-  // Fetch RentCast Data (Server Side)
   const address = `${property.location.street}, ${property.location.city}, ${property.location.state} ${property.location.zipcode}`;
-  let rentData = null;
-  try {
-    rentData = await fetchRentEstimate(address);
-  } catch (e) {
-    console.error('Market analysis failed:', e);
-  }
+  const county = property.location?.county || (property as { county?: string }).county;
 
-  const jamieData = { ...property, rentData };
+
+  // For now, JamieChat is a client component, so it won't wait for rentData if we don't pass it.
+  const jamieData = { ...property };
 
   return (
     <main className='bg-slate-50 min-h-screen pb-20'>
       <PropertyHeaderImage image={property.images[0]} />
-      
+
       <section className='bg-white border-b border-slate-200'>
         <div className='container m-auto py-6 px-6 flex justify-between items-center'>
           <Link
@@ -60,7 +58,24 @@ export default async function ListingPage({ params }: ListingPageProps) {
       <div className='container m-auto py-10 px-6'>
         <div className='grid grid-cols-1 md:grid-cols-70/30 w-full gap-8'>
           <div>
-            <PropertyDetails property={property} rentData={rentData} />
+            <PropertyDetails
+              property={property}
+              marketIntelligenceSlot={
+                <Suspense fallback={
+                  <div className="bg-slate-900 border border-blue-500/10 p-8 rounded-2xl mt-8 animate-pulse">
+                    <div className="h-6 w-48 bg-slate-800 rounded mb-4" />
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="h-20 bg-slate-800/50 rounded-xl" />
+                      <div className="h-20 bg-slate-800/50 rounded-xl" />
+                      <div className="h-20 bg-slate-800/50 rounded-xl" />
+                    </div>
+                  </div>
+                }>
+                  <MarketIntelligencePocket address={address} />
+                  <YieldIntelligenceCard county={county} />
+                </Suspense>
+              }
+            />
             <div className='mt-10'>
               <h3 className='text-xl font-bold mb-6 text-slate-800 border-b pb-4'>Property Gallery</h3>
               <PropertyImages images={property.images} />

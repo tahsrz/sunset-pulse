@@ -68,6 +68,7 @@ const Navbar: React.FC = () => {
     { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), emphasis: 'cyan', compact: true },
     { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
     { href: '/grill', label: 'Grill', active: pathname === '/grill' },
+    { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
     { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true }
   ], [isRealtorOrAdmin, pathname]);
 

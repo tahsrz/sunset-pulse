@@ -14,5 +14,6 @@ export const CARTRIDGE_DOMAINS: CartridgeDomain[] = [
   { id: 'medicine', label: 'Medical', color: '#fb7185', keywords: ['medical', 'encyclopedia'] },
   { id: 'local-world', label: 'Local World', color: '#facc15', keywords: ['dallas', 'wiki', 'local'] },
   { id: 'web-captures', label: 'Web Captures', color: '#38bdf8', keywords: ['web', 'crawl', 'site', 'url', 'internet', 'html', 'docs'] },
+  { id: 'life-sciences', label: 'Life Sciences', color: '#a3e635', keywords: ['life', 'species', 'taxon', 'catalogue', 'biological', 'taxonomy', 'animalia', 'fungi', 'plantae'] },
   { id: 'knowledge', label: 'General Knowledge', color: '#94a3b8', keywords: [] }
 ];

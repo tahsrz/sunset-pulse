@@ -28,6 +28,36 @@ import { pulse_search } from '@/lib/ai/brain/pulse_query';
 const JAMIE_PULSE_RESULT_LIMIT = 5;
 const JAMIE_PULSE_SNIPPET_LIMIT = 520;
 
+export function sanitizeJamieReply(content: string) {
+  if (!content || typeof content !== 'string') return '';
+
+  const stripped = content
+    .split(/\r?\n/)
+    .filter((line) => {
+      const normalized = line.trim().toLowerCase();
+      if (!normalized) return true;
+
+      return ![
+        /^as jamie\b/,
+        /^as your\b.*\bassistant\b/,
+        /^i am jamie\b/,
+        /^i'm jamie\b/,
+        /^my role is\b/,
+        /^my mission is\b/,
+        /^my purpose is\b/,
+        /^i am here to\b/,
+        /^i'm here to\b/,
+        /^mission:\b/,
+        /^role:\b/,
+        /^purpose:\b/,
+      ].some((pattern) => pattern.test(normalized));
+    })
+    .join('\n')
+    .trim();
+
+  return stripped || content.trim();
+}
+
 export async function getJamiePulseContext(query: string, propertyData?: any): Promise<string> {
   const cleanQuery = buildJamiePulseQuery(query, propertyData);
   if (!cleanQuery) return "";
@@ -628,9 +658,9 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
   const recognitionContext = memoryContext?.isReturning 
     ? `USER RECOGNITION: Jamie recognizes ${memoryContext.userName}. 
        Last property viewed: ${memoryContext.lastProperty}. Last significant action: ${memoryContext.lastAction}.
-       Jamie will acknowledge them appropriately.`
+       If useful, Jamie may acknowledge the user in a short natural phrase, then answer directly.`
     : `USER RECOGNITION: Jamie is meeting a new client. 
-       Jamie will introduce the platform and capabilities.`;
+       Jamie will answer directly. Do not introduce Jamie, explain the platform, or list capabilities unless the user asks.`;
 
   // Sanitize and Format Messages for Groq
   const sanitizedMessages = messages
@@ -645,7 +675,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
       messages: [
         {
           role: "system",
-          content: jamieSystemPrompt + "\n\nCRITICAL: When using search_properties, you MUST provide a brief 1-sentence natural language acknowledgment BEFORE the tool call. Example: 'I'm scanning the North Texas grid for 4-bedroom homes in Frisco under $1M now.'"
+          content: jamieSystemPrompt + "\n\nCRITICAL RESPONSE CONTRACT: Answer the user's request directly. Do not include role, mission, purpose, identity, or capability preambles. When using search_properties, provide a brief 1-sentence natural language acknowledgment BEFORE the tool call. Example: 'I'm scanning the North Texas grid for 4-bedroom homes in Frisco under $1M now.'"
         },
         {
           role: "system",
@@ -691,7 +721,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
     // Handle Tool Calls
     if (responseMessage.tool_calls) {
       // Force a fallback content if Jamie forgot to provide one despite the prompt
-      const content = responseMessage.content || `Scanning the grid for ${userInput.substring(0, 30)}...`;
+      const content = sanitizeJamieReply(responseMessage.content || `Scanning the grid for ${userInput.substring(0, 30)}...`);
       return {
         role: "assistant",
         content,
@@ -699,7 +729,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
       };
     }
 
-    return responseMessage.content;
+    return sanitizeJamieReply(responseMessage.content || "");
   } catch (error) {
     console.error("Jamie Analysis Error:", error);
     return "Jamie's local data grid is currently unavailable. I cannot sync the neighborhood data at this time.";

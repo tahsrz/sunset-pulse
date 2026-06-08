@@ -8,6 +8,8 @@ import Order from '@/models/Order';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { prisma } from '@calcom/prisma';
 import { notifyStaffOfBurgerOrder } from '@/lib/twilio';
+import { dispatchPaidOrderPhoneRelay } from '@/lib/grill/phoneRelay';
+import { sendOrderConfirmationEmail } from '@/lib/grill/orderConfirmationEmail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
   // Handle successful checkout
   if (event.type === 'checkout.session.completed') {
     await connectDB();
-    const customerEmail = session.customer_email;
+    const customerEmail = session.customer_email || session.customer_details?.email || null;
     const metadata = session.metadata;
 
     // 1. Handle Subscription Upgrades
@@ -47,14 +49,57 @@ export async function POST(req: NextRequest) {
 
     // 2. Handle Grill Food Orders
     if (metadata?.orderType === 'grill_food' && metadata?.orderId) {
+      if (session.payment_status !== 'paid') {
+        console.warn(`[STRIPE_WEBHOOK] Checkout session ${session.id} completed without paid status: ${session.payment_status}`);
+        return successResponse({ received: true, ignored: 'checkout_not_paid' });
+      }
+
+      const existingOrder = await Order.findById(metadata.orderId);
+      if (!existingOrder) {
+        console.warn(`[STRIPE_WEBHOOK] Order ${metadata.orderId} not found for paid checkout session ${session.id}.`);
+        return successResponse({ received: true, ignored: 'order_not_found' });
+      }
+
+      const wasAlreadyPaid = existingOrder.isPaid || ['PAID_STRIPE', 'PAID_POS'].includes(existingOrder.paymentState);
       const order = await Order.findByIdAndUpdate(metadata.orderId, {
         isPaid: true,
         paymentState: 'PAID_STRIPE',
-        paymentSessionId: session.id
+        paymentSessionId: session.id,
+        ...(customerEmail ? { customerEmail } : {}),
       }, { new: true });
       console.log(`🍔 [STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
 
+      if (wasAlreadyPaid) {
+        console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} was already paid. Skipping duplicate staff notification.`);
+        return successResponse({ received: true, ignored: 'already_paid' });
+      }
+
       try {
+        if (order && customerEmail && order.emailConfirmation?.status !== 'sent') {
+          const confirmationResult = await sendOrderConfirmationEmail({
+            to: customerEmail,
+            order,
+          });
+
+          if (confirmationResult.success) {
+            await Order.findByIdAndUpdate(order._id, {
+              'emailConfirmation.status': 'sent',
+              'emailConfirmation.providerId': confirmationResult.id,
+              'emailConfirmation.sentTo': customerEmail,
+              'emailConfirmation.sentAt': new Date(),
+              'emailConfirmation.updatedAt': new Date(),
+            });
+          } else {
+            await Order.findByIdAndUpdate(order._id, {
+              'emailConfirmation.status': confirmationResult.status === 503 ? 'not_configured' : 'failed',
+              'emailConfirmation.sentTo': customerEmail,
+              'emailConfirmation.lastError': confirmationResult.reason,
+              'emailConfirmation.updatedAt': new Date(),
+            });
+            console.error('[STRIPE_WEBHOOK_ORDER_CONFIRMATION_ERROR]:', confirmationResult);
+          }
+        }
+
         const targetTime = order?.scheduledTime ? new Date(order.scheduledTime) : null;
         
         let activeShiftBookings;
@@ -136,6 +181,25 @@ export async function POST(req: NextRequest) {
 
         if (order) {
           await notifyStaffOfBurgerOrder(order, grillPhone, registerPhone);
+
+          const relayPhone = process.env.PHONE_RELAY_STORE_PHONE;
+          if (relayPhone) {
+            const relayResult = await dispatchPaidOrderPhoneRelay({
+              order,
+              to: relayPhone,
+              interactive: true,
+            });
+
+            if (!relayResult.success) {
+              console.error('[STRIPE_WEBHOOK_PHONE_RELAY_ERROR]:', relayResult);
+            }
+          } else {
+            await Order.findByIdAndUpdate(order._id, {
+              'phoneRelay.status': 'not_configured',
+              'phoneRelay.lastError': 'Missing PHONE_RELAY_STORE_PHONE.',
+              'phoneRelay.updatedAt': new Date(),
+            });
+          }
         }
       } catch (err: any) {
         console.error('[STRIPE_WEBHOOK_STAFF_NOTIFICATION_ERROR]:', err);

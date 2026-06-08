@@ -14,12 +14,32 @@ const OrderSchema = new Schema(
           enum: ['tobacco', 'alcohol', 'lotto', 'fuel', 'none'],
           default: 'none',
         },
+        customization: {
+          sauces: [{ type: String }],
+          vegetables: [{ type: String }],
+          allTheWay: { type: Boolean, default: false },
+          removedVegetables: [{ type: String }],
+        },
       },
     ],
+    subtotalAmount: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
+    coupon: {
+      code: { type: String },
+      label: { type: String },
+      description: { type: String },
+      type: {
+        type: String,
+        enum: ['fixed_amount', 'percent', 'free_item', null],
+        default: null,
+      },
+      discountAmount: { type: Number, default: 0 },
+      freeItemName: { type: String },
+    },
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ['pending', 'cooking', 'completed', 'cancelled'],
+      enum: ['pending', 'cooking', 'ready', 'completed', 'cancelled'],
       default: 'pending',
     },
     isPaid: {
@@ -53,6 +73,22 @@ const OrderSchema = new Schema(
     },
     customerName: {
       type: String,
+    },
+    customerEmail: {
+      type: String,
+    },
+    emailConfirmation: {
+      status: {
+        type: String,
+        enum: ['not_started', 'not_configured', 'sent', 'failed'],
+        default: 'not_started',
+        index: true,
+      },
+      providerId: { type: String },
+      sentTo: { type: String },
+      lastError: { type: String },
+      sentAt: { type: Date },
+      updatedAt: { type: Date },
     },
     idVerifiedAt: {
       type: Date,
@@ -113,6 +149,39 @@ const OrderSchema = new Schema(
     },
     scheduledTime: {
       type: Date,
+    },
+    estimatedWaitMinutes: {
+      type: Number,
+      default: 15,
+    },
+    estimatedReadyAt: {
+      type: Date,
+    },
+    phoneRelay: {
+      status: {
+        type: String,
+        enum: [
+          'not_started',
+          'not_configured',
+          'pending',
+          'confirmed',
+          'repeat_requested',
+          'needs_human',
+          'no_input',
+          'failed',
+          'sent',
+        ],
+        default: 'not_started',
+        index: true,
+      },
+      relayId: { type: String, index: true },
+      callSid: { type: String },
+      attempts: { type: Number, default: 0 },
+      lastDigits: { type: String },
+      lastError: { type: String },
+      lastCalledAt: { type: Date },
+      confirmedAt: { type: Date },
+      updatedAt: { type: Date },
     },
   },
   {

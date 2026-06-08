@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { TahCartridgeViewData } from '@/lib/ai/brain/tah_page_data';
+import { LifeSciencesLibrary } from './LifeSciencesLibrary';
 
 type TahCartridgeViewProps = {
   data: TahCartridgeViewData;
@@ -11,6 +12,8 @@ export function TahCartridgeView({ data, mode = 'page' }: TahCartridgeViewProps)
   const isModal = mode === 'modal';
   const Shell = isModal ? 'div' : 'main';
 
+  const isLifeSciences = metadata.domain.id === 'life-sciences';
+
   return (
     <Shell className={isModal ? 'bg-[#071013] text-slate-50' : 'min-h-screen bg-[#071013] text-slate-50'}>
       {!isModal && (
@@ -21,7 +24,7 @@ export function TahCartridgeView({ data, mode = 'page' }: TahCartridgeViewProps)
       )}
 
       <section className={`${isModal ? 'px-5 py-6 sm:px-7' : 'border-b border-white/10 px-6 py-12'} bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,0.20),transparent_30%),radial-gradient(circle_at_85%_10%,rgba(244,114,182,0.18),transparent_28%),linear-gradient(135deg,#071013_0%,#12343b_48%,#43313d_100%)]`}>
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-6xl text-center md:text-left">
           <Link href="/tah" scroll={false} className="text-sm font-semibold text-cyan-200 hover:text-white">
             Back to TAH archive
           </Link>
@@ -39,10 +42,14 @@ export function TahCartridgeView({ data, mode = 'page' }: TahCartridgeViewProps)
             <Metric label="Payload" value={formatBytes(metadata.payloadByteSize)} />
             <Metric label="Hashes" value={String(metadata.hashCount)} />
           </dl>
-          <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
-            Query seed: <span className="font-mono text-cyan-100">{searchQuery}</span>
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+          
+          {!isLifeSciences && (
+            <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
+              Query seed: <span className="font-mono text-cyan-100">{searchQuery}</span>
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm font-semibold md:justify-start">
             <Link className="rounded bg-pink-300 px-4 py-2 text-slate-950" href={`/tah/${metadata.slug}/headless`}>
               Headless text
             </Link>
@@ -56,59 +63,63 @@ export function TahCartridgeView({ data, mode = 'page' }: TahCartridgeViewProps)
         </div>
       </section>
 
-      <section className={isModal ? 'px-5 py-7 sm:px-7' : 'px-6 py-10'}>
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr,320px]">
-          <div>
-            <h2 className="text-2xl font-black">Context Preview</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-              Retrieved shards from the same search layer used by `/api/tah`.
-            </p>
+      {isLifeSciences ? (
+        <LifeSciencesLibrary metadata={metadata} initialPreviews={previews} />
+      ) : (
+        <section className={isModal ? 'px-5 py-7 sm:px-7' : 'px-6 py-10'}>
+          <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr,320px]">
+            <div>
+              <h2 className="text-2xl font-black">Context Preview</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                Retrieved shards from the same search layer used by `/api/tah`.
+              </p>
 
-            <div className="mt-6 grid gap-4">
-              {previews.length > 0 ? previews.map((preview, index) => (
-                <article key={`${preview.source}:${index}`} className="rounded border border-white/10 bg-white/[0.04] p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
-                    Match score {Number(preview.score || 0).toFixed(2)}
-                  </p>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-200">
-                    {preview.text}
-                  </p>
-                </article>
-              )) : (
-                <div className="rounded border border-white/10 bg-white/[0.04] p-5 text-sm leading-6 text-slate-300">
-                  This cartridge is indexed and available through `/api/tah`, but the title query did not produce preview snippets.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <aside className="space-y-4">
-            <section className="rounded border border-white/10 bg-white/[0.04] p-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.18em] text-pink-200">Route Contract</h2>
-              <div className="mt-4 space-y-3 text-xs">
-                <RouteLink label="HTML" href={`/tah/${metadata.slug}`} />
-                <RouteLink label="Headless" href={`/tah/${metadata.slug}/headless`} />
-                <RouteLink label="Meta" href={`/api/tah/${metadata.slug}/meta`} />
-                <RouteLink label="Query" href={`/api/tah?q=${encodeURIComponent(searchQuery)}&limit=10`} />
-              </div>
-            </section>
-
-            <section className="rounded border border-white/10 bg-white/[0.04] p-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.18em] text-emerald-200">Related</h2>
-              <div className="mt-4 space-y-3">
-                {related.length > 0 ? related.map(item => (
-                  <Link key={item.slug} href={`/tah/${item.slug}`} scroll={false} className="block rounded border border-white/10 bg-black/20 p-3 transition hover:border-cyan-200/60">
-                    <p className="line-clamp-1 text-sm font-black text-white">{item.displayTitle}</p>
-                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{item.format}</p>
-                  </Link>
+              <div className="mt-6 grid gap-4">
+                {previews.length > 0 ? previews.map((preview, index) => (
+                  <article key={`${preview.source}:${index}`} className="rounded border border-white/10 bg-white/[0.04] p-5">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
+                      Match score {Number(preview.score || 0).toFixed(2)}
+                    </p>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-200">
+                      {preview.text}
+                    </p>
+                  </article>
                 )) : (
-                  <p className="text-sm leading-6 text-slate-400">No nearby cartridges are mapped yet.</p>
+                  <div className="rounded border border-white/10 bg-white/[0.04] p-5 text-sm leading-6 text-slate-300">
+                    This cartridge is indexed and available through `/api/tah`, but the title query did not produce preview snippets.
+                  </div>
                 )}
               </div>
-            </section>
-          </aside>
-        </div>
-      </section>
+            </div>
+
+            <aside className="space-y-4">
+              <section className="rounded border border-white/10 bg-white/[0.04] p-4">
+                <h2 className="text-sm font-black uppercase tracking-[0.18em] text-pink-200">Route Contract</h2>
+                <div className="mt-4 space-y-3 text-xs">
+                  <RouteLink label="HTML" href={`/tah/${metadata.slug}`} />
+                  <RouteLink label="Headless" href={`/tah/${metadata.slug}/headless`} />
+                  <RouteLink label="Meta" href={`/api/tah/${metadata.slug}/meta`} />
+                  <RouteLink label="Query" href={`/api/tah?q=${encodeURIComponent(searchQuery)}&limit=10`} />
+                </div>
+              </section>
+
+              <section className="rounded border border-white/10 bg-white/[0.04] p-4">
+                <h2 className="text-sm font-black uppercase tracking-[0.18em] text-emerald-200">Related</h2>
+                <div className="mt-4 space-y-3">
+                  {related.length > 0 ? related.map(item => (
+                    <Link key={item.slug} href={`/tah/${item.slug}`} scroll={false} className="block rounded border border-white/10 bg-black/20 p-3 transition hover:border-cyan-200/60">
+                      <p className="line-clamp-1 text-sm font-black text-white">{item.displayTitle}</p>
+                      <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{item.format}</p>
+                    </Link>
+                  )) : (
+                    <p className="text-sm leading-6 text-slate-400">No nearby cartridges are mapped yet.</p>
+                  )}
+                </div>
+              </section>
+            </aside>
+          </div>
+        </section>
+      )}
     </Shell>
   );
 }

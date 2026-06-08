@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       if (text.toLowerCase().includes('maxxing')) {
         return new Response("Let's ROI-maxxing this property !! We are dynamically OPTIMIZING_YIELD.");
       }
-      return new Response("Hello! I am Jamie, your AI real estate assistant. I am running in local mock mode.");
+      return new Response("I can help summarize the property, compare the numbers, or draft the next step from the current listing.");
     }
 
     // Get Jamie response

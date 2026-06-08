@@ -1,0 +1,58 @@
+[
+  {
+    "county": "Cooke",
+    "fips": "48097",
+    "cornYield": 73.7,
+    "wheatYield": 55.8,
+    "latestYear": 2024
+  },
+  {
+    "county": "Denton",
+    "fips": "48121",
+    "cornYield": 60.8,
+    "wheatYield": 45,
+    "latestYear": 2024
+  },
+  {
+    "county": "Montague",
+    "fips": "48337",
+    "cornYield": 26.7,
+    "wheatYield": 22,
+    "latestYear": 2022
+  },
+  {
+    "county": "Wise",
+    "fips": "48497",
+    "cornYield": 60,
+    "wheatYield": 20.2,
+    "latestYear": 2022
+  },
+  {
+    "county": "Dallas",
+    "fips": "48113",
+    "cornYield": 85,
+    "wheatYield": 40,
+    "latestYear": 2023
+  },
+  {
+    "county": "Tarrant",
+    "fips": "48439",
+    "cornYield": 80,
+    "wheatYield": 38,
+    "latestYear": 2023
+  },
+  {
+    "county": "Grayson",
+    "fips": "48181",
+    "cornYield": 95,
+    "wheatYield": 50,
+    "latestYear": 2024
+  },
+  {
+    "county": "Collin",
+    "fips": "48085",
+    "cornYield": 90,
+    "wheatYield": 48,
+    "latestYear": 2024
+  }
+]

@@ -17,6 +17,7 @@ export interface Property {
     city: string;
     state: string;
     zipcode?: string;
+    county?: string;
   };
   beds?: number;
   baths?: number;
@@ -54,6 +55,7 @@ export interface Property {
     electric: string;
   };
   listing_brokerage?: string;
+  mls_number?: string;
 }
 export interface Lead {
   _id: string;

@@ -12,21 +12,21 @@ import { Property } from '@/lib/types';
 
 interface PropertyDetailsProps {
   property: Property;
-  rentData: any; // RentCast data structure is complex, using any for now or could be typed further
+  marketIntelligenceSlot?: React.ReactNode;
 }
 
 /**
  * Detailed information about property
  */
-const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, rentData }) => {
+const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, marketIntelligenceSlot }) => {
   const [viewerType, setViewerType] = useState<string>('fiber'); // Default to R3F
 
   return (
     <main>
       <PropertyHeader property={property} />
 
-      {/* Market Analysis */}
-      <MarketIntelligence rentData={rentData} />
+      {/* Market Analysis (Streamed Slot) */}
+      {marketIntelligenceSlot}
 
       {/* Neighborhood Insights */}
       <NeighborhoodInsights propertyId={property._id} />

@@ -154,6 +154,9 @@ const TrackerPage = ({ params }) => {
 
   // Format order date
   const orderTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  const estimatedReadyTime = order.estimatedReadyAt
+    ? new Date(order.estimatedReadyAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
   const orderIdShort = order._id ? order._id.slice(-6).toUpperCase() : '';
   const pickupCode = order.pickupCode || orderIdShort;
   const mapPaymentState = (sourceOrder) => {
@@ -336,6 +339,17 @@ const TrackerPage = ({ params }) => {
                 <span className={`${paymentBadge.className} border text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full`}>
                   {paymentBadge.label}
                 </span>
+              </div>
+            </div>
+
+            <div className="mb-10 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
+                <span className="block text-[9px] font-mono uppercase tracking-[0.25em] text-orange-300">Estimated Wait</span>
+                <span className="mt-1 block text-2xl font-black text-white">{order.estimatedWaitMinutes || 15} min</span>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                <span className="block text-[9px] font-mono uppercase tracking-[0.25em] text-emerald-300">Estimated Ready</span>
+                <span className="mt-1 block text-2xl font-black text-white">{estimatedReadyTime || 'Calculating'}</span>
               </div>
             </div>
 

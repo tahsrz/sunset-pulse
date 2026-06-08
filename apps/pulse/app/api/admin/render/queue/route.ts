@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
+import { assertDestructiveDbOperationAllowed } from '@/lib/core/runtimeSafety';
 import RenderJob from '@/models/RenderJob';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 
@@ -53,6 +54,10 @@ export async function DELETE(req: NextRequest) {
     if (id) {
       await RenderJob.findByIdAndDelete(id);
     } else {
+      assertDestructiveDbOperationAllowed({
+        operation: 'RenderJob.deleteMany',
+        scope: 'render queue jobs that are not PROCESSING',
+      });
       await RenderJob.deleteMany({ status: { $ne: 'PROCESSING' } });
     }
     

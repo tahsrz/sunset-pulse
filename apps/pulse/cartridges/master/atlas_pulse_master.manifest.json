@@ -2,15 +2,15 @@
   "name": "atlas_pulse_master",
   "format": "memoria-v4-super-cartridge",
   "specTarget": "TAH_MEMORIA_V4_SPEC.md",
-  "generatedAt": "2026-05-25T03:43:10.894Z",
-  "sourceCount": 26,
+  "generatedAt": "2026-06-05T19:43:18.714Z",
+  "sourceCount": 30,
   "skippedCount": 0,
-  "shardCount": 351,
+  "shardCount": 7859,
   "stats": {
-    "bloomBits": "1312240",
+    "bloomBits": "8044656",
     "hashCount": 14,
-    "headerByteSize": 164030,
-    "payloadByteSize": 524073
+    "headerByteSize": 1005582,
+    "payloadByteSize": 3156355
   },
   "files": {
     "hat": "cartridges\\master\\atlas_pulse_master.hat",
@@ -36,6 +36,36 @@
       "sourcePathHash": "fe28e52feb966b0eb0b4944208b3c01006744340720d0de80396a1f194d004ee",
       "contentHash": "af60c37b86216d533fe07fbae119e18e0fb2ac9ead359ab18209e3224fca6a1a",
       "shardCount": 2
+    },
+    {
+      "slug": "catalogue-of-life-v3-6",
+      "name": "catalogue_of_life_v3_6.hat",
+      "title": "Catalogue Of Life V3 6",
+      "type": "hat",
+      "searchQuery": "Catalogue Of Life V3 6",
+      "sourcePathHash": "241845a066eb879e15e6db58e6a50fd32a1e3d2f2e19d0612512991bc57980d2",
+      "contentHash": "4fcee55acc01d24e2380e054ff2525e62c9f17b72db2b8b0f25b8d27ff28f2e8",
+      "shardCount": 2500
+    },
+    {
+      "slug": "dallas-community-intel",
+      "name": "dallas_community_intel.hat",
+      "title": "Dallas Community Intel",
+      "type": "hat",
+      "searchQuery": "Dallas Community Intel",
+      "sourcePathHash": "3de63ccac4b05a0acb8ef9507f1fcd976da7b6f6811787cbc5d5606fab0a28d9",
+      "contentHash": "9eeb3b96118777025e49b3931da2797b2088a45d6b23c57fe9977d4cd3d6c676",
+      "shardCount": 2500
+    },
+    {
+      "slug": "dallas-safety-intel",
+      "name": "dallas_safety_intel.hat",
+      "title": "Dallas Safety Intel",
+      "type": "hat",
+      "searchQuery": "Dallas Safety Intel",
+      "sourcePathHash": "eb313f54f88b58824ec8910c08ad4ec8ef4c48257ce600dab0f1dd5acdd34b78",
+      "contentHash": "811dae5e9099498e9685b31ec3d91ce552e0b566a1574a361e4927dbf30d8cea",
+      "shardCount": 2500
     },
     {
       "slug": "durandiel-expertise",
@@ -276,6 +306,16 @@
       "sourcePathHash": "f23b602f29fdff7f10d685cfadca571596d56fac5ebc0742d9690112a13be7e7",
       "contentHash": "c72f6ab780ed199a70b769bf28133ce00e45ad4838fb9e3c61b19c2412bc859f",
       "shardCount": 53
+    },
+    {
+      "slug": "yield-intel",
+      "name": "yield_intel.tah",
+      "title": "Yield Intel",
+      "type": "tah",
+      "searchQuery": "Yield Intel",
+      "sourcePathHash": "b014aad64f66075b912390654c57dbb0c041699bd62c4e837d791ccbbf57e65a",
+      "contentHash": "83315a6f3f4fbafc75665e78f9dd5ace6e1d4549d2281938e571a7b96252150a",
+      "shardCount": 8
     }
   ],
   "places": [

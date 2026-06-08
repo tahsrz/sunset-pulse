@@ -131,6 +131,17 @@
     "isStaffPick": true
   },
   {
+    "id": "staff-01",
+    "agentId": "taz-realty-001",
+    "name": "Sharon's Grilled Chicken Croissant",
+    "price": 10.99,
+    "category": "Favorites",
+    "description": "Grilled chicken on a croissant with mushrooms, onions, jalapenos, pepper, salt, and Cajun seasoning.",
+    "isAvailable": true,
+    "isDaisyPick": false,
+    "isStaffPick": true
+  },
+  {
     "id": "fav-01",
     "agentId": "taz-realty-001",
     "name": "Patty Melt",
@@ -168,7 +179,7 @@
     "category": "Favorites",
     "description": "Mound of tortilla chips topped with cheese sauce, beef, beans, and fresh toppings.",
     "isAvailable": true,
-    "isDaisyPick": false
+    "isDaisyPick": true
   },
   {
     "id": "fav-05",
@@ -471,6 +482,17 @@
     "isDaisyPick": false
   },
   {
+    "id": "staff-02",
+    "agentId": "taz-realty-001",
+    "name": "Shawn's Sausage Gravy Poutine",
+    "price": 12.99,
+    "category": "Sides",
+    "description": "French fries slathered in sausage gravy with grilled onions and cheese curds.",
+    "isAvailable": true,
+    "isDaisyPick": false,
+    "isStaffPick": true
+  },
+  {
     "id": "brk-01",
     "agentId": "taz-realty-001",
     "name": "Bacon, Egg, and Cheese Biscuit",
@@ -478,7 +500,7 @@
     "category": "Breakfast",
     "description": "Warm, flaky buttermilk biscuit layered with crispy bacon, fluffy folded egg, and melted American cheese.",
     "isAvailable": true,
-    "isDaisyPick": true
+    "isDaisyPick": false
   },
   {
     "id": "brk-02",
@@ -527,6 +549,16 @@
     "price": 3.49,
     "category": "Breakfast",
     "description": "Buttermilk biscuit with grilled savory sausage patty and melted American cheese.",
+    "isAvailable": true,
+    "isDaisyPick": false
+  },
+  {
+    "id": "brk-07",
+    "agentId": "taz-realty-001",
+    "name": "Southwest Burrito",
+    "price": 5.99,
+    "category": "Breakfast",
+    "description": "Warm flour tortilla rolled with eggs, cheese, peppers, onions, and Southwest-style seasoning.",
     "isAvailable": true,
     "isDaisyPick": false
   },

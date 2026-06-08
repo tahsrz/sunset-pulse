@@ -51,6 +51,91 @@ export const sendSMS = async (to, body) => {
   }
 };
 
+const escapeXml = (value) =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+/**
+ * Places an outbound voice call and reads a deterministic phone relay script.
+ * @param {string} to - Destination phone number in E.164 format
+ * @param {string} script - Plain text script to read over the call
+ */
+export const placePhoneRelayCall = async (to, script) => {
+  const fromNumber = process.env.TWILIO_FROM_NUMBER;
+  const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
+  const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
+
+  if (!fromNumber || fromNumber.includes('placeholder')) {
+    console.warn(`[TWILIO_CALL_SKIPPED]: Missing TWILIO_FROM_NUMBER. Destination: ${to}. Script: "${script}"`);
+    return { success: false, reason: 'Missing Twilio From Number configuration' };
+  }
+
+  if (currentSid.includes('placeholder') || currentToken.includes('placeholder')) {
+    console.warn(`[TWILIO_CALL_MOCKED]: Using placeholder credentials. Call simulated to ${to}: "${script}"`);
+    return { success: true, mocked: true };
+  }
+
+  const twiml = [
+    '<Response>',
+    `<Say voice="Polly.Joanna" language="en-US">${escapeXml(script)}</Say>`,
+    '</Response>',
+  ].join('');
+
+  try {
+    const client = twilio(currentSid, currentToken);
+    const call = await client.calls.create({
+      from: fromNumber,
+      to,
+      twiml,
+    });
+    console.log(`[TWILIO_CALL_PLACED]: SID: ${call.sid} to ${to}`);
+    return { success: true, sid: call.sid };
+  } catch (error) {
+    console.error(`[TWILIO_CALL_ERROR]: Failed calling ${to}. Error:`, error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Places an outbound voice call using a public TwiML URL that can collect keypad input.
+ * @param {string} to - Destination phone number in E.164 format
+ * @param {string} twimlUrl - Public URL for Twilio to request call instructions from
+ */
+export const placeInteractivePhoneRelayCall = async (to, twimlUrl) => {
+  const fromNumber = process.env.TWILIO_FROM_NUMBER;
+  const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
+  const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
+
+  if (!fromNumber || fromNumber.includes('placeholder')) {
+    console.warn(`[TWILIO_INTERACTIVE_CALL_SKIPPED]: Missing TWILIO_FROM_NUMBER. Destination: ${to}. TwiML URL: "${twimlUrl}"`);
+    return { success: false, reason: 'Missing Twilio From Number configuration' };
+  }
+
+  if (currentSid.includes('placeholder') || currentToken.includes('placeholder')) {
+    console.warn(`[TWILIO_INTERACTIVE_CALL_MOCKED]: Using placeholder credentials. Call simulated to ${to}: "${twimlUrl}"`);
+    return { success: true, mocked: true };
+  }
+
+  try {
+    const client = twilio(currentSid, currentToken);
+    const call = await client.calls.create({
+      from: fromNumber,
+      to,
+      url: twimlUrl,
+      method: 'GET',
+    });
+    console.log(`[TWILIO_INTERACTIVE_CALL_PLACED]: SID: ${call.sid} to ${to}`);
+    return { success: true, sid: call.sid };
+  } catch (error) {
+    console.error(`[TWILIO_INTERACTIVE_CALL_ERROR]: Failed calling ${to}. Error:`, error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 /**
  * Formats and dispatches order alerts to the scheduled grill and register personnel
  * @param {object} order - Mongoose Order document

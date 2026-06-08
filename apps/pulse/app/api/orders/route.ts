@@ -6,18 +6,28 @@ import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { prisma } from '@calcom/prisma';
 import crypto from 'node:crypto';
+import { requireKdsAccess } from '@/lib/kds/access';
+import { calculateEstimatedReadyAt, calculateEstimatedWaitMinutes } from '@/lib/grill/waitTime';
+import { calculateCartPricing } from '@/lib/grill/deals';
 
 /**
  * GET /api/orders
  * Retrieves active grill orders (Pending and Cooking)
  */
-export const GET = async () => {
+export const GET = async (request: NextRequest) => {
   try {
+    const access = await requireKdsAccess(request);
+    if (access instanceof Response) return access;
+
     await connectDB();
     
     // Fetch orders that are not 'completed' or 'cancelled'
-    const activeOrders = await Order.find({ 
-      status: { $in: ['pending', 'cooking'] } 
+    const activeOrders = await Order.find({
+      status: { $in: ['pending', 'cooking', 'ready'] },
+      $or: [
+        { isPaid: true },
+        { paymentState: { $in: ['PAID_STRIPE', 'PAID_POS'] } },
+      ],
     }).sort({ createdAt: 1 }); // Oldest first (FIFO)
 
     return successResponse(activeOrders);
@@ -34,21 +44,28 @@ export const GET = async () => {
 export const POST = async (request: NextRequest) => {
   try {
     await connectDB();
-    const { items, totalAmount, scheduledTime, customerName, isPaid, paymentSessionId, paymentReference } = await request.json();
+    const { items, couponCode, scheduledTime, customerName } = await request.json();
     const sessionUser = await getSessionUser();
+    const waitStartTime = scheduledTime ? new Date(scheduledTime) : new Date();
+    const estimatedWaitMinutes = calculateEstimatedWaitMinutes(items);
+    const estimatedReadyAt = calculateEstimatedReadyAt(waitStartTime, items);
+    const pricing = calculateCartPricing(items, couponCode);
 
     const orderData: any = {
       items,
-      totalAmount,
+      subtotalAmount: pricing.subtotalAmount,
+      discountAmount: pricing.discountAmount,
+      totalAmount: pricing.totalAmount,
+      coupon: pricing.appliedDeal,
       status: 'pending',
-      isPaid: Boolean(isPaid),
-      paymentState: isPaid ? 'PAID_STRIPE' : 'UNPAID',
+      isPaid: false,
+      paymentState: 'UNPAID',
       pickupCode: crypto.randomInt(100000, 999999).toString(),
+      estimatedWaitMinutes,
+      estimatedReadyAt,
     };
 
     if (customerName) orderData.customerName = customerName;
-    if (paymentSessionId) orderData.paymentSessionId = paymentSessionId;
-    if (paymentReference) orderData.paymentReference = paymentReference;
 
     if (sessionUser && sessionUser.userId) {
       orderData.user = sessionUser.userId;
@@ -66,14 +83,14 @@ export const POST = async (request: NextRequest) => {
       try {
         const orderIdShort = newOrder._id.toString().slice(-6).toUpperCase();
         const startTime = new Date(scheduledTime);
-        const endTime = new Date(startTime.getTime() + 15 * 60 * 1000); // 15-minute slot
+        const endTime = new Date(startTime.getTime() + estimatedWaitMinutes * 60 * 1000);
 
         const bookingUid = crypto.randomUUID();
         await prisma.booking.create({
           data: {
             uid: bookingUid,
             title: `🍔 Grill Order Pickup - #${orderIdShort}`,
-            description: `Scheduled pickup for customer order #${orderIdShort}. Items: ${items.map((i: any) => `${i.quantity}x ${i.name}`).join(', ')}.`,
+            description: `Scheduled pickup for customer order #${orderIdShort}. Estimated wait: ${estimatedWaitMinutes} minutes. Items: ${items.map((i: any) => `${i.quantity}x ${i.name}`).join(', ')}.`,
             startTime,
             endTime,
             status: 'ACCEPTED',

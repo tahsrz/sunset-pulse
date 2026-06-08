@@ -2,8 +2,24 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
+import OrderAudit from '@/models/OrderAudit';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { prisma } from '@calcom/prisma';
+import { getRequestAuditContext, requireKdsAccess } from '@/lib/kds/access';
+
+const VALID_STATUSES = ['pending', 'cooking', 'ready', 'completed', 'cancelled'] as const;
+const LEGAL_TRANSITIONS: Record<string, string[]> = {
+  pending: ['cooking', 'cancelled'],
+  cooking: ['ready', 'cancelled'],
+  ready: ['completed', 'cancelled'],
+  completed: [],
+  cancelled: [],
+};
+
+const isPaidForRelease = (order: any) => {
+  const paymentState = order.paymentState || (order.isPaid ? 'PAID_STRIPE' : 'UNPAID');
+  return ['PAID_STRIPE', 'PAID_POS'].includes(paymentState);
+};
 
 /**
  * GET /api/orders/[id]
@@ -88,25 +104,42 @@ export const PATCH = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
+    const access = await requireKdsAccess(request);
+    if (access instanceof Response) return access;
+
     await connectDB();
     const { id } = await params;
-    const { status, action } = await request.json();
+    const { status, action, override } = await request.json();
 
-    if (status && !['pending', 'cooking', 'completed', 'cancelled'].includes(status)) {
+    if (status && !VALID_STATUSES.includes(status)) {
       return errorResponse('Invalid status value.', 400);
+    }
+
+    const existingOrder = await Order.findById(id);
+    if (!existingOrder) {
+      return errorResponse('Order not found.', 404);
+    }
+
+    const previousStatus = existingOrder.status;
+    const actorRole = access.user?.role;
+    const managerOverride = Boolean(override && ['admin', 'operator'].includes(actorRole || ''));
+
+    if (status) {
+      const legalNextStatuses = LEGAL_TRANSITIONS[previousStatus] || [];
+      if (!legalNextStatuses.includes(status) && !managerOverride) {
+        return errorResponse(`Illegal order transition: ${previousStatus} -> ${status}.`, 409);
+      }
+
+      if (status === 'completed' && !isPaidForRelease(existingOrder) && !managerOverride) {
+        return errorResponse('Order cannot be completed until payment is confirmed.', 409);
+      }
     }
 
     const updates: any = {};
     if (status) updates.status = status;
     if (action === 'verify-id') updates.idVerifiedAt = new Date();
     if (action === 'release') {
-      const existingOrder = await Order.findById(id);
-      if (!existingOrder) {
-        return errorResponse('Order not found.', 404);
-      }
-
-      const paymentState = existingOrder.paymentState || (existingOrder.isPaid ? 'PAID_STRIPE' : 'UNPAID');
-      if (!['PAID_STRIPE', 'PAID_POS'].includes(paymentState)) {
+      if (!isPaidForRelease(existingOrder)) {
         return errorResponse('Order cannot be released until payment is confirmed.', 409);
       }
 
@@ -127,6 +160,18 @@ export const PATCH = async (
       return errorResponse('Order not found.', 404);
     }
 
+    await OrderAudit.create({
+      order: order._id,
+      action: action || 'status',
+      previousStatus,
+      nextStatus: order.status,
+      ...getRequestAuditContext(request, access),
+      metadata: {
+        requestedStatus: status || null,
+        override: managerOverride,
+      },
+    });
+
     return successResponse({ message: action ? `Order action completed: ${action}.` : `Order status updated to ${status}.`, order });
   } catch (error: any) {
     console.error('[ORDER_PATCH_FAILURE]:', error);
@@ -143,6 +188,9 @@ export const DELETE = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
+    const access = await requireKdsAccess(request);
+    if (access instanceof Response) return access;
+
     await connectDB();
     const { id } = await params;
     const order = await Order.findByIdAndDelete(id);
@@ -150,6 +198,14 @@ export const DELETE = async (
     if (!order) {
       return errorResponse('Order not found.', 404);
     }
+
+    await OrderAudit.create({
+      order: order._id,
+      action: 'delete',
+      previousStatus: order.status,
+      nextStatus: 'deleted',
+      ...getRequestAuditContext(request, access),
+    });
 
     return successResponse({ message: 'Order purged from grid.' });
   } catch (error: any) {
