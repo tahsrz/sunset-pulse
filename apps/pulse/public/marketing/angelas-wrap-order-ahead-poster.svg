@@ -1,0 +1,89 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Angela's Chicken Bacon Wrap order-ahead poster</title>
+  <desc id="desc">A Sunset Pulse counter poster with a QR code for ordering Angela's Chicken Bacon Wrap, available grilled or crispy.</desc>
+  <defs>
+    <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0c0e"/>
+      <stop offset="0.56" stop-color="#17100d"/>
+      <stop offset="1" stop-color="#08090a"/>
+    </linearGradient>
+    <linearGradient id="sunset" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd66d"/>
+      <stop offset="0.5" stop-color="#ff8a2a"/>
+      <stop offset="1" stop-color="#e1392f"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#32dce8"/>
+      <stop offset="1" stop-color="#f8d06e"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity="0.65"/>
+    </filter>
+    <pattern id="grain" width="86" height="86" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="18" r="1.2" fill="#ffffff" opacity="0.055"/>
+      <circle cx="42" cy="50" r="1" fill="#ffffff" opacity="0.045"/>
+      <circle cx="70" cy="26" r="1.4" fill="#ffffff" opacity="0.035"/>
+      <circle cx="22" cy="74" r="1" fill="#ffffff" opacity="0.04"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="1600" fill="url(#dark)"/>
+  <rect width="1200" height="1600" fill="url(#grain)"/>
+  <circle cx="1050" cy="1210" r="400" fill="#ff7b2a" opacity="0.13"/>
+  <circle cx="85" cy="1080" r="285" fill="#2dd9e7" opacity="0.08"/>
+  <rect x="52" y="52" width="1096" height="1496" rx="34" fill="none" stroke="#f3c06b" stroke-opacity="0.28" stroke-width="3"/>
+
+  <g transform="translate(600 86)" text-anchor="middle">
+    <line x1="-260" y1="0" x2="-72" y2="0" stroke="#f59b38" stroke-width="5"/>
+    <line x1="72" y1="0" x2="260" y2="0" stroke="#f59b38" stroke-width="5"/>
+    <circle cx="0" cy="0" r="46" fill="url(#sunset)"/>
+    <path d="M-45 7 H45 M-38 22 H38 M-25 37 H25" stroke="#111" stroke-width="5" opacity="0.45"/>
+    <text x="0" y="94" fill="#ff8a2a" font-family="Georgia, 'Times New Roman', serif" font-size="84" font-weight="900" letter-spacing="5">SUNSET</text>
+    <text x="0" y="148" fill="#ef3d30" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="1000" letter-spacing="8">PULSE</text>
+    <line x1="-178" y1="166" x2="-48" y2="166" stroke="#df382f" stroke-width="5"/>
+    <line x1="48" y1="166" x2="178" y2="166" stroke="#df382f" stroke-width="5"/>
+  </g>
+
+  <g transform="translate(600 340)" text-anchor="middle" filter="url(#shadow)">
+    <text x="0" y="0" fill="#fffaf0" font-family="Georgia, 'Times New Roman', serif" font-size="104" font-weight="900">Order Ahead,</text>
+    <text x="0" y="108" fill="#ff8a2a" font-family="Georgia, 'Times New Roman', serif" font-size="114" font-weight="900">Pick Up <tspan fill="#ef3d30">Hot</tspan></text>
+    <text x="0" y="210" fill="#fffaf0" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="900">at Sunset Pulse</text>
+  </g>
+
+  <g transform="translate(600 600)" text-anchor="middle">
+    <rect x="-470" y="-45" width="940" height="86" rx="43" fill="#120d09" stroke="#ff9b39" stroke-width="4"/>
+    <text x="0" y="11" fill="#ffe4af" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="1000" letter-spacing="5">ANGELA'S CHICKEN BACON WRAP</text>
+    <text x="0" y="91" fill="#aaf8ff" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="1000" letter-spacing="5">CHOOSE YOUR CHICKEN</text>
+  </g>
+
+  <g transform="translate(600 880)" text-anchor="middle" filter="url(#shadow)">
+    <rect x="-223" y="-223" width="446" height="446" rx="24" fill="#fffaf0" stroke="#ff8a2a" stroke-width="8"/>
+    <image href="sunsetpulse-app-qr.svg" x="-190" y="-190" width="380" height="380" preserveAspectRatio="xMidYMid meet"/>
+    <path d="M-360 250 H360 L330 340 H-330 Z" fill="#8d271d" stroke="#ffbd63" stroke-width="4"/>
+    <text x="0" y="308" fill="#fff5db" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="1000" letter-spacing="5">SCAN TO ORDER</text>
+  </g>
+
+  <g transform="translate(116 1250)">
+    <rect x="0" y="0" width="430" height="126" rx="22" fill="#071a20" stroke="#34dce8" stroke-width="4"/>
+    <rect x="26" y="24" width="152" height="44" rx="22" fill="#34dce8"/>
+    <text x="102" y="55" fill="#061218" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="1000" text-anchor="middle" letter-spacing="4">GRILLED</text>
+    <text x="30" y="103" fill="#fffaf0" font-family="Georgia, serif" font-size="33" font-weight="900">Chicken Breast</text>
+
+    <rect x="538" y="0" width="430" height="126" rx="22" fill="#21100a" stroke="#ff9b39" stroke-width="4"/>
+    <rect x="564" y="24" width="134" height="44" rx="22" fill="#ff8a2a"/>
+    <text x="631" y="55" fill="#180d08" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="1000" text-anchor="middle" letter-spacing="4">CRISPY</text>
+    <text x="568" y="103" fill="#fffaf0" font-family="Georgia, serif" font-size="33" font-weight="900">Two Chicken Strips</text>
+  </g>
+
+  <g transform="translate(600 1434)" text-anchor="middle">
+    <text x="0" y="0" fill="#fff1cf" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900">Flour tortilla • grilled onion • bacon • grilled bell peppers • grilled tomatoes</text>
+    <text x="0" y="40" fill="#fff1cf" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900">lettuce • cheese • ranch or honey mustard</text>
+  </g>
+
+  <g transform="translate(600 1533)" text-anchor="middle">
+    <line x1="-340" y1="0" x2="-46" y2="0" stroke="url(#cyan)" stroke-width="5"/>
+    <text x="0" y="14" fill="#ffbd63" font-family="Georgia, serif" font-size="29">★</text>
+    <line x1="46" y1="0" x2="340" y2="0" stroke="url(#cyan)" stroke-width="5"/>
+    <text x="0" y="48" fill="#fff2c7" font-family="Georgia, serif" font-size="28" font-weight="800">Sunset Grill • Fresh local pickup</text>
+  </g>
+</svg>

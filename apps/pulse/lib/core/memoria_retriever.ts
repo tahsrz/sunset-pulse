@@ -12,6 +12,7 @@ export interface MemoriaMatch {
 const TAG_TEXT = 0;
 const LOCAL_BLOOM_BITS = 448n;
 const LOCAL_BLOOM_HASHES = 4;
+const LOCAL_BLOOM_BYTES = 56;
 const ENTRY_SIZE = 80;
 
 /**
@@ -177,8 +178,7 @@ export class MemoriaRetriever {
         const tag = this.hatBuffer.readUInt8(offset);
         if (tag !== TAG_TEXT) continue;
 
-        // Note: in v3.6+, meta/bloom are at different offsets, but we fallback to 24+ for spec
-        const spec = this.hatBuffer.slice(offset + 44, offset + ENTRY_SIZE); // v3.6 local bloom
+        const spec = this.hatBuffer.slice(offset + 24, offset + 24 + LOCAL_BLOOM_BYTES);
         const matches = localIndices.every(idx => {
           const byteIdx = Number(idx / 8n);
           const bitIdx = Number(idx % 8n);

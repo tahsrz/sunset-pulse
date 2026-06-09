@@ -194,6 +194,19 @@ curl -X POST http://localhost:3001/api/grill/relay/test-call \
   -d '{"dryRun":false,"interactive":true,"orderId":"ORDER_ID","to":"+18179805953"}'
 ```
 
+### Menu Catalog Updates
+
+The live grill menu is read from MongoDB through `/api/menu`; `apps/pulse/menu.json` is seed material, not the runtime source of truth. Avoid running the full menu seed for one-off production fixes because it deletes and reinserts the whole menu.
+
+Use targeted upserts for staff-pick corrections:
+
+```bash
+cd apps/pulse
+npm run menu:upsert-angela-wrap
+```
+
+That script only upserts `staff-03` (`Angela's Chicken Bacon Wrap`) and marks it as a staff pick with the required grilled/crispy and ranch/honey mustard options.
+
 ---
 
 ## Tech Stack & Database Interoperability

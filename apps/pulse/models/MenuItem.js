@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 const { Schema, model, models } = mongoose;
-const MenuItemSchema = new Schema({
+const MenuItemSchema = new Schema({
+  id: { type: String, index: true },
   agentId: { type: String, required: true, default: 'taz-realty-001' },
   name: { type: String, required: true },
   price: { type: Number, required: true },

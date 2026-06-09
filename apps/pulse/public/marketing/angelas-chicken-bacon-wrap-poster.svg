@@ -1,0 +1,127 @@
+<svg width="1800" height="2700" viewBox="0 0 1800 2700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Angela's Chicken Bacon Wrap counter poster</title>
+  <desc id="desc">Sunset Pulse poster advertising Angela's Chicken Bacon Wrap with grilled or crispy options and a QR code placeholder.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07131a"/>
+      <stop offset="0.44" stop-color="#15100d"/>
+      <stop offset="1" stop-color="#35170a"/>
+    </linearGradient>
+    <linearGradient id="sunset" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#39e6f2"/>
+      <stop offset="0.42" stop-color="#ffda78"/>
+      <stop offset="0.75" stop-color="#ff8b38"/>
+      <stop offset="1" stop-color="#ff4d5c"/>
+    </linearGradient>
+    <linearGradient id="tortilla" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7d597"/>
+      <stop offset="0.55" stop-color="#e8b86f"/>
+      <stop offset="1" stop-color="#c47a35"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="26" stdDeviation="28" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="qrPattern" width="48" height="48" patternUnits="userSpaceOnUse">
+      <rect width="48" height="48" fill="#fffdf7"/>
+      <rect x="0" y="0" width="18" height="18" fill="#09131a"/>
+      <rect x="30" y="0" width="12" height="12" fill="#09131a"/>
+      <rect x="18" y="18" width="18" height="18" fill="#09131a"/>
+      <rect x="0" y="36" width="12" height="12" fill="#09131a"/>
+      <rect x="36" y="30" width="12" height="18" fill="#09131a"/>
+    </pattern>
+  </defs>
+
+  <rect width="1800" height="2700" fill="url(#bg)"/>
+  <circle cx="270" cy="260" r="390" fill="#ff8b38" opacity="0.16"/>
+  <circle cx="1535" cy="225" r="340" fill="#39e6f2" opacity="0.12"/>
+  <circle cx="900" cy="1280" r="730" fill="none" stroke="#9cf8ff" stroke-width="3" opacity="0.09"/>
+  <rect x="72" y="72" width="1656" height="2556" rx="56" fill="none" stroke="#f7e7c6" stroke-opacity="0.22" stroke-width="4"/>
+
+  <g transform="translate(128 120)">
+    <rect x="0" y="0" width="520" height="58" rx="29" fill="#f5c451" opacity="0.13" stroke="#ffe29b" stroke-opacity="0.45" stroke-width="2"/>
+    <text x="34" y="38" fill="#fff4c2" font-family="Georgia, serif" font-size="25" font-weight="700" letter-spacing="5">SUNSET GRILL STAFF PICK</text>
+  </g>
+
+  <g transform="translate(128 252)">
+    <text x="0" y="0" fill="#fffdf7" font-family="Georgia, 'Times New Roman', serif" font-size="148" font-weight="800" letter-spacing="0">
+      <tspan x="0" dy="0">ANGELA'S</tspan>
+      <tspan x="0" dy="146">CHICKEN BACON</tspan>
+      <tspan x="0" dy="146">WRAP</tspan>
+    </text>
+    <rect x="0" y="492" width="825" height="14" rx="7" fill="url(#sunset)"/>
+    <text x="0" y="590" fill="#ffcf75" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" letter-spacing="8">CHOOSE GRILLED OR CRISPY</text>
+  </g>
+
+  <g transform="translate(170 1010)" filter="url(#softShadow)">
+    <ellipse cx="740" cy="610" rx="610" ry="205" fill="#05090d" opacity="0.52"/>
+    <g transform="rotate(-9 740 420)">
+      <path d="M352 706 C470 393 646 212 934 142 C1108 102 1246 167 1305 280 C1193 367 1032 493 895 658 C742 840 545 876 352 706 Z" fill="url(#tortilla)" stroke="#ffe3ad" stroke-width="10"/>
+      <path d="M447 651 C558 421 721 284 951 232 C1081 203 1172 237 1237 303 C1116 393 998 503 898 632 C751 756 593 778 447 651 Z" fill="#f3c377"/>
+      <path d="M553 488 C647 388 785 320 949 286 C1039 268 1103 282 1157 318" fill="none" stroke="#9d5529" stroke-width="25" stroke-linecap="round" opacity="0.55"/>
+      <path d="M634 576 C752 451 900 374 1072 334" fill="none" stroke="#7d341d" stroke-width="31" stroke-linecap="round"/>
+      <path d="M608 533 C703 446 832 390 980 362" fill="none" stroke="#ffd36b" stroke-width="25" stroke-linecap="round"/>
+      <path d="M722 629 C827 499 950 419 1115 373" fill="none" stroke="#fef08a" stroke-width="20" stroke-linecap="round"/>
+      <path d="M541 585 C654 540 790 540 922 584" fill="none" stroke="#5fbf73" stroke-width="30" stroke-linecap="round"/>
+      <path d="M748 462 C828 434 901 427 982 443" fill="none" stroke="#e34232" stroke-width="20" stroke-linecap="round"/>
+      <path d="M838 518 C915 479 1012 449 1112 440" fill="none" stroke="#be1e2d" stroke-width="17" stroke-linecap="round"/>
+      <path d="M487 622 C612 709 750 728 895 662" fill="none" stroke="#fce3b0" stroke-width="17" stroke-linecap="round" opacity="0.75"/>
+    </g>
+    <g transform="translate(1026 162)">
+      <circle cx="152" cy="152" r="152" fill="#ff8b38" opacity="0.94"/>
+      <circle cx="152" cy="152" r="130" fill="none" stroke="#fff5d7" stroke-width="7" opacity="0.78"/>
+      <text x="152" y="135" fill="#160f0a" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" text-anchor="middle" letter-spacing="3">BACON</text>
+      <text x="152" y="189" fill="#160f0a" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" text-anchor="middle" letter-spacing="3">WRAP</text>
+    </g>
+  </g>
+
+  <g transform="translate(128 1780)">
+    <rect x="0" y="0" width="744" height="335" rx="34" fill="#08151c" stroke="#39e6f2" stroke-opacity="0.42" stroke-width="4"/>
+    <rect x="28" y="28" width="194" height="62" rx="31" fill="#39e6f2"/>
+    <text x="125" y="70" fill="#07131a" font-family="Arial, Helvetica, sans-serif" font-size="33" font-weight="900" text-anchor="middle" letter-spacing="4">GRILLED</text>
+    <text x="50" y="156" fill="#fffdf7" font-family="Georgia, serif" font-size="58" font-weight="800">Grilled Chicken Breast</text>
+    <text x="52" y="220" fill="#bfe9e9" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700">Tender, smoky, classic Sunset style.</text>
+    <text x="52" y="280" fill="#ffcf75" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" letter-spacing="5">OPTION 1</text>
+
+    <rect x="800" y="0" width="744" height="335" rx="34" fill="#1b100b" stroke="#ffb15f" stroke-opacity="0.62" stroke-width="4"/>
+    <rect x="828" y="28" width="176" height="62" rx="31" fill="#ff8b38"/>
+    <text x="916" y="70" fill="#160f0a" font-family="Arial, Helvetica, sans-serif" font-size="33" font-weight="900" text-anchor="middle" letter-spacing="4">CRISPY</text>
+    <text x="852" y="156" fill="#fffdf7" font-family="Georgia, serif" font-size="58" font-weight="800">Two Chicken Strips</text>
+    <text x="854" y="220" fill="#ffdfb5" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700">Crunchy, golden, built for ranch.</text>
+    <text x="854" y="280" fill="#39e6f2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" letter-spacing="5">OPTION 2</text>
+  </g>
+
+  <g transform="translate(128 2208)">
+    <text x="0" y="0" fill="#fff4df" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800">
+      Flour tortilla • grilled onion • bacon • grilled bell peppers
+    </text>
+    <text x="0" y="58" fill="#fff4df" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800">
+      grilled tomatoes • lettuce • cheese • ranch or honey mustard
+    </text>
+  </g>
+
+  <g transform="translate(128 2388)">
+    <rect x="0" y="0" width="990" height="150" rx="34" fill="#ff8b38"/>
+    <text x="495" y="96" fill="#130d09" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="1000" text-anchor="middle" letter-spacing="8">SCAN TO ORDER AHEAD</text>
+
+    <g transform="translate(1130 -84)">
+      <rect x="0" y="0" width="300" height="300" rx="24" fill="#fffdf7"/>
+      <rect x="23" y="23" width="254" height="254" fill="url(#qrPattern)"/>
+      <rect x="47" y="47" width="72" height="72" fill="#09131a"/>
+      <rect x="63" y="63" width="40" height="40" fill="#fffdf7"/>
+      <rect x="181" y="47" width="72" height="72" fill="#09131a"/>
+      <rect x="197" y="63" width="40" height="40" fill="#fffdf7"/>
+      <rect x="47" y="181" width="72" height="72" fill="#09131a"/>
+      <rect x="63" y="197" width="40" height="40" fill="#fffdf7"/>
+    </g>
+    <text x="1280" y="248" fill="#e8fafa" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="900" text-anchor="middle" letter-spacing="5">QR CODE</text>
+  </g>
+
+  <text x="900" y="2615" fill="#a9dfe5" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="800" text-anchor="middle" letter-spacing="6">SUNSET PULSE | ORDER AHEAD, PICK UP HOT</text>
+</svg>
