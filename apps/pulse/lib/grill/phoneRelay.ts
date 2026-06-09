@@ -82,8 +82,10 @@ export async function dispatchPaidOrderPhoneRelay({
       },
     });
 
-    const twimlUrl = `${publicBaseUrl.replace(/\/$/, '')}/api/grill/relay/twiml/${relaySession.id}`;
-    call = await placeInteractivePhoneRelayCall(to, twimlUrl);
+    const normalizedBaseUrl = publicBaseUrl.replace(/\/$/, '');
+    const twimlUrl = `${normalizedBaseUrl}/api/grill/relay/twiml/${relaySession.id}`;
+    const statusCallbackUrl = `${normalizedBaseUrl}/api/grill/relay/call-status/${relaySession.id}`;
+    call = await placeInteractivePhoneRelayCall(to, twimlUrl, statusCallbackUrl);
   } else {
     call = await placePhoneRelayCall(to, callScript.script);
   }

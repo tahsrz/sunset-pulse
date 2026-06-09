@@ -104,8 +104,9 @@ export const placePhoneRelayCall = async (to, script) => {
  * Places an outbound voice call using a public TwiML URL that can collect keypad input.
  * @param {string} to - Destination phone number in E.164 format
  * @param {string} twimlUrl - Public URL for Twilio to request call instructions from
+ * @param {string} [statusCallbackUrl] - Public URL for Twilio call lifecycle callbacks
  */
-export const placeInteractivePhoneRelayCall = async (to, twimlUrl) => {
+export const placeInteractivePhoneRelayCall = async (to, twimlUrl, statusCallbackUrl) => {
   const fromNumber = process.env.TWILIO_FROM_NUMBER;
   const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
   const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
@@ -127,6 +128,13 @@ export const placeInteractivePhoneRelayCall = async (to, twimlUrl) => {
       to,
       url: twimlUrl,
       method: 'GET',
+      ...(statusCallbackUrl
+        ? {
+            statusCallback: statusCallbackUrl,
+            statusCallbackMethod: 'POST',
+            statusCallbackEvent: ['completed'],
+          }
+        : {}),
     });
     console.log(`[TWILIO_INTERACTIVE_CALL_PLACED]: SID: ${call.sid} to ${to}`);
     return { success: true, sid: call.sid };

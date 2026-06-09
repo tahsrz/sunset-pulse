@@ -96,10 +96,8 @@ export function generatePhoneCallScript(cartItems: CartItem[], callerName = 'Jam
     return lines;
   });
   const confirmation = [
-    `Please read that back when you are ready.`,
     `It should be ${orderSummary}.`,
     ...items.map((item, index) => `${ordinal(index + 1)} one: ${formatConfirmationDetails(item)}.`),
-    `If anything sounded unclear, I can repeat it.`,
   ].join('\n');
 
   return {

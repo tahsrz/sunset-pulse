@@ -58,7 +58,7 @@ export async function GET(request: Request, context: { params: Promise<{ relayId
       '<Pause length="1" />',
       '<Say voice="Polly.Joanna" language="en-US">Press 2 to confirm the order. Press 3 to repeat the order.</Say>',
       '</Gather>',
-      '<Say voice="Polly.Joanna" language="en-US">No keypad input was received. This order has not been confirmed. Goodbye.</Say>',
+      `<Redirect method="GET">/api/grill/relay/twiml/${relayId}?section=order</Redirect>`,
       '</Response>',
     ].join(''));
   }

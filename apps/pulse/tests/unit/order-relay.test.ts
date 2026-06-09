@@ -57,11 +57,9 @@ Second cheeseburger basket:
 Sauce: mayo.
 Vegetables: pickles, lettuce, onions, and tomato.
 
-Please read that back when you are ready.
 It should be two cheeseburger baskets.
 First one: mayo and mustard, lettuce, onions, tomato, no pickles.
-Second one: mayo, pickles, lettuce, onions, and tomato.
-If anything sounded unclear, I can repeat it.`);
+Second one: mayo, pickles, lettuce, onions, and tomato.`);
   });
 
   it('defaults menu items to all the way and turns notes into structured removals', () => {

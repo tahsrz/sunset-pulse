@@ -90,18 +90,18 @@ export async function POST(request: Request, context: { params: Promise<{ relayI
   }
 
   await updateRelaySession(relayId, {
-    status: 'no_input',
+    status: 'repeat_requested',
     lastDigits: digits,
   });
   await persistRelayStatus(session, {
-    'phoneRelay.status': 'no_input',
+    'phoneRelay.status': 'repeat_requested',
     'phoneRelay.lastDigits': digits,
     'phoneRelay.updatedAt': new Date(),
   });
 
   return xmlResponse([
     '<Response>',
-    '<Say voice="Polly.Joanna" language="en-US">That input was not recognized. This order will be flagged for human follow up. Goodbye.</Say>',
+    `<Redirect method="GET">/api/grill/relay/twiml/${relayId}?section=order</Redirect>`,
     '</Response>',
   ].join(''));
 }
