@@ -7,7 +7,8 @@ const CartContext = createContext();
 const getCartLineKey = (item) => {
   const itemIdentifier = item._id || item.id;
   const customizationKey = JSON.stringify(item.customization || {});
-  return `${itemIdentifier}:${customizationKey}`;
+  const instructionsKey = String(item.instructions || '').trim().toLowerCase();
+  return `${itemIdentifier}:${customizationKey}:${instructionsKey}`;
 };
 
 export function CartProvider({ children }) {
@@ -76,8 +77,12 @@ export function CartProvider({ children }) {
   };
 
   // 4. Remove specific item from cart using the MongoDB _id
-  const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((item) => (item._id || item.id) !== id));
+  const removeFromCart = (target) => {
+    const targetKey = typeof target === 'object' ? getCartLineKey(target) : String(target);
+    setCart((prev) => prev.filter((item) => {
+      if (typeof target === 'object') return getCartLineKey(item) !== targetKey;
+      return (item._id || item.id) !== targetKey;
+    }));
   };
 
   // 5. Clear the entire tray (used after a successful order)

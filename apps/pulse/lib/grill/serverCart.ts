@@ -13,6 +13,7 @@ type ClientCartItem = {
     vegetables?: string[];
     allTheWay?: boolean;
     removedVegetables?: string[];
+    selectedOptions?: Record<string, unknown>;
   };
 };
 
@@ -59,7 +60,21 @@ function sanitizeCustomization(customization: ClientCartItem['customization']) {
     vegetables: sanitizeStringArray(customization.vegetables),
     allTheWay: Boolean(customization.allTheWay),
     removedVegetables: sanitizeStringArray(customization.removedVegetables),
+    selectedOptions: sanitizeSelectedOptions(customization.selectedOptions),
   };
+}
+
+function sanitizeSelectedOptions(selectedOptions: unknown) {
+  if (!selectedOptions || typeof selectedOptions !== 'object' || Array.isArray(selectedOptions)) return {};
+
+  return Object.fromEntries(
+    Object.entries(selectedOptions)
+      .map(([key, value]) => [
+        String(key || '').trim().slice(0, 40),
+        String(value || '').trim().slice(0, 80),
+      ])
+      .filter(([key, value]) => key && value),
+  );
 }
 
 function sanitizeInstructions(instructions: unknown) {

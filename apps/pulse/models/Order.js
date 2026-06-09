@@ -7,6 +7,7 @@ const OrderSchema = new Schema(
         name: { type: String, required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
+        instructions: { type: String },
         ageRestricted: { type: Boolean, default: false },
         minimumAge: { type: Number },
         restrictedCategory: {
@@ -19,6 +20,7 @@ const OrderSchema = new Schema(
           vegetables: [{ type: String }],
           allTheWay: { type: Boolean, default: false },
           removedVegetables: [{ type: String }],
+          selectedOptions: { type: Map, of: String },
         },
       },
     ],

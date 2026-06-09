@@ -9,6 +9,12 @@ describe('server-side grill cart sanitization', () => {
       price: 10.59,
       isAvailable: true,
     },
+    {
+      _id: 'menu-angela-wrap',
+      name: "Angela's Chicken Bacon Wrap",
+      price: 10.99,
+      isAvailable: true,
+    },
   ];
 
   it('uses server menu name and price instead of browser-supplied values', () => {
@@ -37,9 +43,41 @@ describe('server-side grill cart sanitization', () => {
           vegetables: [],
           allTheWay: true,
           removedVegetables: ['pickles'],
+          selectedOptions: {},
         },
       }),
     ]);
+  });
+
+  it('preserves structured grill item options for staff-facing tickets', () => {
+    const items = sanitizeCartItemsWithCatalog([
+      {
+        id: 'menu-angela-wrap',
+        name: 'Cheap Wrap',
+        price: 0.01,
+        quantity: 1,
+        instructions: 'light tomatoes',
+        customization: {
+          selectedOptions: {
+            chickenStyle: 'Crispy',
+            dressing: 'Honey Mustard',
+          },
+        },
+      },
+    ], catalog);
+
+    expect(items[0]).toEqual(expect.objectContaining({
+      id: 'menu-angela-wrap',
+      name: "Angela's Chicken Bacon Wrap",
+      price: 10.99,
+      instructions: 'light tomatoes',
+      customization: expect.objectContaining({
+        selectedOptions: {
+          chickenStyle: 'Crispy',
+          dressing: 'Honey Mustard',
+        },
+      }),
+    }));
   });
 
   it('rejects items that are not in the active menu catalog', () => {

@@ -249,9 +249,10 @@ const CartPage = () => {
                 <div className="divide-y divide-white/5">
                   {cart.map((item) => {
                     const itemId = item._id || item.id;
+                    const itemLineKey = `${itemId}:${JSON.stringify(item.customization || {})}:${String(item.instructions || '').trim().toLowerCase()}`;
                     return (
                       <div
-                        key={itemId}
+                        key={itemLineKey}
                         className="flex items-center justify-between py-5 group relative"
                       >
                         <div className="flex-1 pr-4">
@@ -261,6 +262,18 @@ const CartPage = () => {
                           <p className="text-xs text-slate-500 mt-1 font-serif italic">
                             ${item.price.toFixed(2)} x {item.quantity}
                           </p>
+                          {item.customization?.selectedOptions && Object.keys(item.customization.selectedOptions).length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {Object.entries(item.customization.selectedOptions).map(([key, value]) => (
+                                <span
+                                  key={`${itemId}-${key}`}
+                                  className="inline-block bg-orange-500/10 border border-orange-500/20 text-[9px] font-mono text-orange-200 rounded px-2 py-0.5"
+                                >
+                                  {key.replace(/([a-z])([A-Z])/g, '$1 $2')}: {value}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           {item.instructions && (
                             <span className="inline-block bg-white/[0.02] border border-white/5 text-[9px] font-mono text-slate-400 rounded px-2 py-0.5 mt-2 max-w-full truncate">
                               Note: "{item.instructions}"
@@ -273,7 +286,7 @@ const CartPage = () => {
                             ${(item.price * item.quantity).toFixed(2)}
                           </span>
                           <button
-                            onClick={() => removeFromCart(itemId)}
+                            onClick={() => removeFromCart(item)}
                             className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 hover:bg-red-500 hover:text-white transition-all transform hover:scale-105 active:scale-95"
                             title="Remove item"
                             aria-label="Remove item"

@@ -20,6 +20,19 @@ import {
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
+const hasRequiredOptions = (item) => Array.isArray(item?.options) && item.options.some((option) => option.required);
+
+const getDefaultSelectedOptions = (item) => {
+  if (!Array.isArray(item?.options)) return {};
+
+  return Object.fromEntries(
+    item.options.map((option) => [
+      option.key,
+      option.defaultValue || option.choices?.[0]?.value || '',
+    ]).filter(([key, value]) => key && value),
+  );
+};
+
 const GrillPage = () => {
   const searchParams = useSearchParams();
   const { cart, addToCart, cartTotal, couponCode, applyCoupon, lastOrder, reorderLastOrder } = useCart();
@@ -30,6 +43,7 @@ const GrillPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [selectedOptions, setSelectedOptions] = useState({});
   const [trayPulse, setTrayPulse] = useState(false);
 
   const { grill } = intelligence;
@@ -84,6 +98,11 @@ const GrillPage = () => {
   // Directly add item from grid with simple scale feedback
   const handleQuickAdd = (e, item) => {
     e.stopPropagation(); // Avoid opening the details modal
+    if (hasRequiredOptions(item)) {
+      openItemDetails(item);
+      return;
+    }
+
     addToCart({
       ...item,
       customization: buildDefaultBurgerCustomization(),
@@ -101,6 +120,7 @@ const GrillPage = () => {
     setSelectedItem(item);
     setModalQuantity(1);
     setSpecialInstructions('');
+    setSelectedOptions(getDefaultSelectedOptions(item));
   };
 
   // Add customized items from modal
@@ -112,7 +132,10 @@ const GrillPage = () => {
       addToCart({
         ...selectedItem,
         instructions: specialInstructions,
-        customization: buildDefaultBurgerCustomization(specialInstructions),
+        customization: {
+          ...buildDefaultBurgerCustomization(specialInstructions),
+          selectedOptions,
+        },
       });
     }
 
@@ -124,6 +147,13 @@ const GrillPage = () => {
     });
 
     setSelectedItem(null);
+  };
+
+  const handleOptionChange = (key, value) => {
+    setSelectedOptions((current) => ({
+      ...current,
+      [key]: value,
+    }));
   };
 
   const handleReorderLastOrder = () => {
@@ -506,6 +536,51 @@ const GrillPage = () => {
                   {selectedItem.description || 'Crafted with premium ingredients to fuel your day.'}
                 </p>
               </div>
+
+              {Array.isArray(selectedItem.options) && selectedItem.options.length > 0 && (
+                <div className='space-y-4'>
+                  {selectedItem.options.map((option) => (
+                    <div key={option.key} className='space-y-2'>
+                      <div className='flex items-center justify-between gap-3'>
+                        <label className='text-xs font-semibold text-slate-400 uppercase tracking-widest block'>
+                          {option.label}
+                        </label>
+                        {option.required && (
+                          <span className='text-[9px] font-black uppercase tracking-[0.16em] text-orange-400'>
+                            Required
+                          </span>
+                        )}
+                      </div>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+                        {(option.choices || []).map((choice) => {
+                          const isSelected = selectedOptions[option.key] === choice.value;
+                          return (
+                            <button
+                              key={choice.value}
+                              type='button'
+                              onClick={() => handleOptionChange(option.key, choice.value)}
+                              className={`rounded-xl border p-3 text-left transition-all ${
+                                isSelected
+                                  ? 'border-orange-400 bg-orange-500/15 text-white shadow-lg shadow-orange-500/10'
+                                  : 'border-white/10 bg-slate-950 text-slate-300 hover:border-orange-500/40 hover:bg-white/[0.03]'
+                              }`}
+                            >
+                              <span className='block text-xs font-black uppercase tracking-[0.14em]'>
+                                {choice.label}
+                              </span>
+                              {choice.description && (
+                                <span className='mt-1 block text-[11px] leading-relaxed text-slate-400'>
+                                  {choice.description}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Special Instructions Input */}
               <div className='space-y-2'>

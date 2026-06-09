@@ -6,6 +6,21 @@ const { Schema, model, models } = mongoose;
   price: { type: Number, required: true },
   description: { type: String },
   category: { type: String },
+  options: [
+    {
+      key: { type: String, required: true },
+      label: { type: String, required: true },
+      required: { type: Boolean, default: false },
+      defaultValue: { type: String },
+      choices: [
+        {
+          value: { type: String, required: true },
+          label: { type: String, required: true },
+          description: { type: String },
+        },
+      ],
+    },
+  ],
   isAvailable: { type: Boolean, default: true },
   isDaisyPick: { type: Boolean, default: false },
   isStaffPick: { type: Boolean, default: false },

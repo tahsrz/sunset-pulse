@@ -6,6 +6,7 @@ export interface BurgerCustomization {
   vegetables?: BurgerVegetable[];
   allTheWay?: boolean;
   removedVegetables?: BurgerVegetable[];
+  selectedOptions?: Record<string, string>;
 }
 
 export interface CartItem {
@@ -33,6 +34,7 @@ interface NormalizedLineItem {
   sauces: string[];
   vegetables: string[];
   removed: string[];
+  selectedOptions: Record<string, string>;
 }
 
 const ALL_THE_WAY_VEGETABLES = ['pickles', 'lettuce', 'onions', 'tomato'];
@@ -59,6 +61,7 @@ export function generateEmployeeTicket(cartItems: CartItem[]): Order {
 
   items.forEach((item) => {
     lines.push(`#${item.sequence} ${item.name}`);
+    formatOptionLines(item).forEach((line) => lines.push(line));
     lines.push(`Sauce: ${formatTitleList(item.sauces) || 'None'}`);
     lines.push(`Vegetables: ${formatTitleList(item.vegetables) || 'None'}`);
 
@@ -85,6 +88,7 @@ export function generatePhoneCallScript(cartItems: CartItem[], callerName = 'Jam
   const itemLines = items.flatMap((item, index) => {
     const lines = [
       `${ordinal(index + 1)} ${item.name.toLowerCase()}:`,
+      ...formatSpokenOptionLines(item),
       `Sauce: ${formatSpokenList(item.sauces)}.`,
       `Vegetables: ${formatSpokenList(item.vegetables)}.`,
     ];
@@ -134,7 +138,16 @@ function normalizeCustomization(customization: BurgerCustomization = {}) {
     sauces: uniqueLowercase(customization.sauces || []),
     vegetables: vegetables.filter((vegetable) => !removed.includes(vegetable)),
     removed,
+    selectedOptions: normalizeSelectedOptions(customization.selectedOptions),
   };
+}
+
+function normalizeSelectedOptions(selectedOptions: Record<string, string> = {}) {
+  return Object.fromEntries(
+    Object.entries(selectedOptions)
+      .map(([key, value]) => [humanizeOptionKey(key), String(value || '').trim()])
+      .filter(([key, value]) => key && value),
+  );
 }
 
 function hasSameItemWithDifferentCustomizations(items: NormalizedLineItem[]) {
@@ -147,6 +160,7 @@ function hasSameItemWithDifferentCustomizations(items: NormalizedLineItem[]) {
       sauces: item.sauces,
       vegetables: item.vegetables,
       removed: item.removed,
+      selectedOptions: item.selectedOptions,
     }));
     byName.set(key, customizations);
   });
@@ -217,6 +231,7 @@ function formatSpokenList(values: string[]) {
 
 function formatConfirmationDetails(item: NormalizedLineItem) {
   const details = [
+    ...Object.values(item.selectedOptions),
     formatSpokenList(item.sauces),
     item.removed.length > 0 ? item.vegetables.join(', ') : formatSpokenList(item.vegetables),
   ];
@@ -226,6 +241,22 @@ function formatConfirmationDetails(item: NormalizedLineItem) {
   }
 
   return details.join(', ');
+}
+
+function formatOptionLines(item: NormalizedLineItem) {
+  return Object.entries(item.selectedOptions).map(([key, value]) => `${key}: ${titleCase(value)}`);
+}
+
+function formatSpokenOptionLines(item: NormalizedLineItem) {
+  return Object.entries(item.selectedOptions).map(([key, value]) => `${key}: ${value.toLowerCase()}.`);
+}
+
+function humanizeOptionKey(value: string) {
+  return value
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function titleCase(value: string) {

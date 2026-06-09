@@ -100,4 +100,28 @@ Sauce: None
 Vegetables: None
 Removed: Pickles, Lettuce, Onions, Tomato`);
   });
+
+  it('includes structured item options in tickets and phone scripts', () => {
+    const cartItems: CartItem[] = [
+      {
+        id: 'angela-wrap',
+        name: "Angela's Chicken Bacon Wrap",
+        quantity: 1,
+        customization: {
+          selectedOptions: {
+            chickenStyle: 'Crispy',
+            dressing: 'Honey Mustard',
+          },
+        },
+      },
+    ];
+
+    const ticket = generateEmployeeTicket(cartItems).ticket;
+    const callScript = generatePhoneCallScript(cartItems).script;
+
+    expect(ticket).toContain('Chicken Style: Crispy');
+    expect(ticket).toContain('Dressing: Honey Mustard');
+    expect(callScript).toContain('Chicken Style: crispy.');
+    expect(callScript).toContain('Dressing: honey mustard.');
+  });
 });
