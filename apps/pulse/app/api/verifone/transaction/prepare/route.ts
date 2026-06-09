@@ -8,6 +8,10 @@ import { requireVerifoneEnabled, requireVerifoneMode } from '@/lib/verifone/conf
 import { requireKdsAccess } from '@/lib/kds/access';
 
 export async function POST(req: NextRequest) {
+  if (process.env.ENABLE_COUNTER_PAYMENT !== 'true') {
+    return errorResponse('Counter payment is disabled. Orders must be paid online.', 403);
+  }
+
   const disabled = requireVerifoneEnabled();
   if (disabled) return disabled;
 

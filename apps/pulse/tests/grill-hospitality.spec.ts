@@ -99,17 +99,10 @@ test.describe('Sunset Grill Premium Menu & Hospitality Flow', () => {
     await expect(cartItemTitle).toBeVisible();
     await expect(cartItemTitle).toContainText(firstCardName);
 
-    // Click Pay at Counter to complete checkout
-    const payAtCounterBtn = page.locator('button:has-text("Pay at Counter")');
-    await expect(payAtCounterBtn).toBeVisible();
-    await payAtCounterBtn.click();
+    await expect(page.locator('button:has-text("Pay at Counter")')).toHaveCount(0);
 
-    // Expect redirection to the live Pizza Tracker
-    await page.waitForURL('**/grill/tracker/**');
-    await page.waitForLoadState('networkidle');
-
-    // Confirm live tracker title is active
-    const trackerHeader = page.locator('span:has-text("Order Tracker")');
-    await expect(trackerHeader).toBeVisible({ timeout: 15000 });
+    const payWithCardBtn = page.locator('button#checkout-stripe-button');
+    await expect(payWithCardBtn).toBeVisible();
+    await expect(payWithCardBtn).toContainText('Pay Now with Card');
   });
 });

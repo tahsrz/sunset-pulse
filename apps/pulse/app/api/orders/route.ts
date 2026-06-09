@@ -43,8 +43,12 @@ export const GET = async (request: NextRequest) => {
  */
 export const POST = async (request: NextRequest) => {
   try {
+    const { items, couponCode, scheduledTime, customerName, checkoutIntent } = await request.json();
+    if (checkoutIntent !== 'stripe') {
+      return errorResponse('Orders must be created through Stripe checkout.', 402);
+    }
+
     await connectDB();
-    const { items, couponCode, scheduledTime, customerName } = await request.json();
     const sessionUser = await getSessionUser();
     const waitStartTime = scheduledTime ? new Date(scheduledTime) : new Date();
     const estimatedWaitMinutes = calculateEstimatedWaitMinutes(items);

@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import Stripe from 'stripe';
+import connectDB from '@/lib/core/database';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { calculateCartPricing } from '@/lib/grill/deals';
+import Order from '@/models/Order';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-12-18.acacia' as any,
@@ -11,8 +12,25 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 export async function POST(req: NextRequest) {
   try {
     const sessionUser = await getSessionUser();
-    const { items, couponCode, orderId } = await req.json();
-    const pricing = calculateCartPricing(items, couponCode);
+    const { orderId } = await req.json();
+    if (!orderId) {
+      return errorResponse('orderId is required for Stripe checkout.', 400);
+    }
+
+    await connectDB();
+    const order = await Order.findById(orderId).lean();
+    if (!order) {
+      return errorResponse('Order not found.', 404);
+    }
+
+    if (order.isPaid || ['PAID_STRIPE', 'PAID_POS'].includes(order.paymentState)) {
+      return errorResponse('Order is already paid.', 409);
+    }
+
+    const items = order.items || [];
+    if (!Array.isArray(items) || items.length === 0) {
+      return errorResponse('Order has no checkout items.', 400);
+    }
 
     const domain = process.env.NEXT_PUBLIC_DOMAIN;
     if (!domain) throw new Error('NEXT_PUBLIC_DOMAIN is not defined.');
@@ -31,14 +49,15 @@ export async function POST(req: NextRequest) {
     }));
 
     const discounts = [];
-    if (pricing.appliedDeal && pricing.discountAmount > 0) {
+    const discountAmount = Number(order.discountAmount || 0);
+    if (order.coupon?.code && discountAmount > 0) {
       const coupon = await stripe.coupons.create({
-        amount_off: Math.round(pricing.discountAmount * 100),
+        amount_off: Math.round(discountAmount * 100),
         currency: 'usd',
         duration: 'once',
-        name: pricing.appliedDeal.label,
+        name: order.coupon.label || order.coupon.code,
         metadata: {
-          code: pricing.appliedDeal.code,
+          code: order.coupon.code,
           orderId,
         },
       });
@@ -47,7 +66,9 @@ export async function POST(req: NextRequest) {
     }
 
     const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      automatic_payment_methods: {
+        enabled: true,
+      },
       customer_email: sessionUser?.user?.email,
       line_items: lineItems,
       discounts,
@@ -59,9 +80,9 @@ export async function POST(req: NextRequest) {
         orderType: 'grill_food',
         orderId: orderId, // Crucial for webhook to find the order
         items: JSON.stringify(items.map((i: any) => i.name)),
-        couponCode: pricing.appliedDeal?.code || '',
-        discountAmount: pricing.discountAmount.toFixed(2),
-        totalAmount: pricing.totalAmount.toFixed(2),
+        couponCode: order.coupon?.code || '',
+        discountAmount: discountAmount.toFixed(2),
+        totalAmount: Number(order.totalAmount || 0).toFixed(2),
       },
     });
 

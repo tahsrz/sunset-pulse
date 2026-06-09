@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { getDealByCode, normalizeCouponCode } from '@/lib/grill/deals';
 import { 
@@ -37,7 +36,6 @@ const CartPage = () => {
     clearCart,
     saveLastOrder
   } = useCart();
-  const router = useRouter();
 
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [isScheduled, setIsScheduled] = useState(false); // false = ASAP, true = Scheduled
@@ -154,7 +152,8 @@ const CartPage = () => {
         body: JSON.stringify({ 
           items: checkoutItems, 
           couponCode,
-          scheduledTime
+          scheduledTime,
+          checkoutIntent: 'stripe'
         }),
       });
       
@@ -167,66 +166,28 @@ const CartPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          items: checkoutItems, 
-          couponCode,
           orderId 
         }),
       });
 
       const data = await res.json();
-      if (data.url) {
+      const checkoutUrl = data?.data?.url || data?.url;
+      if (!res.ok) {
+        throw new Error(data?.message || 'Stripe initialization failed.');
+      }
+
+      if (checkoutUrl) {
         if (saveLastOrder) saveLastOrder(checkoutItems, couponCode);
         if (clearCart) clearCart(); // Flush client cart
-        window.location.href = data.url;
+        window.location.href = checkoutUrl;
       } else {
         toast.error('Stripe initialization failed.');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Network error during checkout.');
+      toast.error(err?.message || 'Network error during checkout.');
     } finally {
       setIsCheckoutLoading(false);
-    }
-  };
-
-  const handleCheckout = async () => {
-    if (isScheduled && !selectedTimeSlot) {
-      toast.warning('Please select a pickup time slot first.');
-      return;
-    }
-
-    const scheduledTime = getScheduledDateTime();
-    const checkoutItems = isDelivery 
-      ? [...cart, { id: 'delivery-fee', name: 'Mailbox Delivery Fee', price: 10.00, quantity: 1, discountEligible: false }]
-      : cart;
-
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: checkoutItems,
-          couponCode,
-          scheduledTime
-        }),
-      });
-
-      const orderResult = await res.json();
-
-      if (res.status === 201) {
-        toast.success(isScheduled ? 'Pickup scheduled successfully!' : 'Order sent to the grill!');
-        if (saveLastOrder) saveLastOrder(checkoutItems, couponCode);
-        if (clearCart) clearCart(); // Clear the tray after successful order
-        const orderId = orderResult.data?.id;
-        router.push(`/grill/tracker/${orderId}`); // Redirect to tracker
-      } else {
-        toast.error('Something went wrong with the order.');
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error('Could not connect to the server.');
     }
   };
 
@@ -584,16 +545,9 @@ const CartPage = () => {
                   Pay Now with Card • ${(cartTotal + (isDelivery ? 10.00 : 0)).toFixed(2)}
                 </button>
 
-                {/* Counter Pay button */}
-                <button
-                  onClick={handleCheckout}
-                  disabled={isCheckoutLoading || (isScheduled && !selectedTimeSlot)}
-                  className="w-full bg-slate-900 hover:bg-black disabled:opacity-30 text-slate-300 hover:text-white font-black uppercase tracking-widest text-xs py-4 px-6 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-3 border border-white/5 shadow-inner disabled:pointer-events-none"
-                  id="checkout-counter-button"
-                >
-                  <FaUtensils />
-                  Pay at Counter • ${(cartTotal + (isDelivery ? 10.00 : 0)).toFixed(2)}
-                </button>
+                <p className="text-center text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Secure online payment is required before the grill receives the order.
+                </p>
               </div>
 
             </div>
