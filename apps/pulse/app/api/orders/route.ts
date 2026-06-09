@@ -9,6 +9,7 @@ import crypto from 'node:crypto';
 import { requireKdsAccess } from '@/lib/kds/access';
 import { calculateEstimatedReadyAt, calculateEstimatedWaitMinutes } from '@/lib/grill/waitTime';
 import { calculateCartPricing } from '@/lib/grill/deals';
+import { resolveCartItemsFromMenu } from '@/lib/grill/serverCart';
 
 /**
  * GET /api/orders
@@ -50,13 +51,14 @@ export const POST = async (request: NextRequest) => {
 
     await connectDB();
     const sessionUser = await getSessionUser();
+    const resolvedItems = await resolveCartItemsFromMenu(items);
     const waitStartTime = scheduledTime ? new Date(scheduledTime) : new Date();
-    const estimatedWaitMinutes = calculateEstimatedWaitMinutes(items);
-    const estimatedReadyAt = calculateEstimatedReadyAt(waitStartTime, items);
-    const pricing = calculateCartPricing(items, couponCode);
+    const estimatedWaitMinutes = calculateEstimatedWaitMinutes(resolvedItems);
+    const estimatedReadyAt = calculateEstimatedReadyAt(waitStartTime, resolvedItems);
+    const pricing = calculateCartPricing(resolvedItems, couponCode);
 
     const orderData: any = {
-      items,
+      items: resolvedItems,
       subtotalAmount: pricing.subtotalAmount,
       discountAmount: pricing.discountAmount,
       totalAmount: pricing.totalAmount,

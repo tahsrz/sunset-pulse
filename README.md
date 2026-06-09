@@ -112,6 +112,8 @@ Vegetables: Pickles, Lettuce, Onions, Tomato
 Phone relay should only run after payment is complete:
 
 * `POST /api/orders` creates orders as unpaid and ignores client-supplied payment state.
+* `POST /api/orders` resolves cart item IDs against the server menu catalog before pricing, wait-time calculation, and persistence. Browser-supplied item names and prices are not trusted.
+* Unavailable or invalid menu item IDs are rejected before an order can be created.
 * `GET /api/orders` only returns paid active orders to the KDS.
 * The Stripe webhook requires `checkout.session.completed` with `payment_status === "paid"`.
 * Duplicate Stripe webhook deliveries do not re-notify staff once an order is already marked paid.
@@ -131,6 +133,12 @@ Initial launch codes:
 | `BASKET10` | Takes `10%` off eligible food items, capped at `$5.00`. |
 
 Delivery fees can be marked `discountEligible: false` and are excluded from coupon discount math.
+
+### Stripe Checkout Notes
+
+Grill checkout creates a Stripe Checkout Session from the saved server-side order, not from browser-submitted cart totals. The checkout route omits both `payment_method_types` and `automatic_payment_methods`, allowing Stripe Checkout to use the payment methods enabled in the Stripe Dashboard. This is the current path for Apple Pay and other wallet support.
+
+Subscription checkout follows the same pattern: payment-method selection is left to Stripe Dashboard settings instead of hardcoded in the route.
 
 ### Sunset Chat
 
@@ -199,6 +207,35 @@ The architecture bridges multiple data layers to maximize scalability and write 
 | **MongoDB** | Active grill orders, checkout sessions, relay state, and telemetry | Mongoose | High-throughput order logs |
 | **Memoria v4 (`.hat`/`.tah`)** | Geographic places database and metadata indexes | Custom Binary Stream Buffer | High-speed spatial lookups |
 
+### Why Prisma Helps Us Move Fast
+
+Prisma turns database schema into usable TypeScript code. Instead of hand-writing SQL every time we need users, bookings, webhooks, schedules, or related records, Prisma reads `schema.prisma` and generates a typed client:
+
+```ts
+await prisma.user.findMany()
+await prisma.booking.create({ data: bookingData })
+await prisma.webhook.update({ where, data })
+```
+
+That gives us several speed advantages:
+
+* **One schema becomes many tools**: `schema.prisma` describes models, fields, relations, indexes, and enums. From that, this repo generates Prisma client code, TypeScript types, enum exports such as `TimeUnit.MINUTE`, Zod schemas, and Kysely types.
+* **Less hand-written glue**: when we add or change a model, Prisma regenerates the client and related types instead of requiring us to manually update every database access layer.
+* **Type safety**: if a field is renamed, removed, or changed, TypeScript can catch broken code before runtime.
+* **Database migrations**: Prisma tracks database structure changes as migrations, which keeps schema evolution controlled instead of relying on one-off manual edits.
+* **Fast feature scaffolding**: if we need a real `Coupon`, `OrderPayment`, or `PhoneRelayAttempt` table, we define the model once, generate the client, and immediately get typed create/read/update functions.
+
+In this repo, Prisma primarily supports the Cal.com-style scheduling and roster data. Sunset Grill orders currently use MongoDB/Mongoose, but the Pulse production build still runs Prisma generation because the app shares the monorepo. That is why a duplicate `TimeUnit` enum in Prisma blocked the Pulse build even though the grill cart logic itself was Mongo-backed.
+
+### Latest Production Hardening
+
+* Removed the duplicate lowercase `TimeUnit` enum from both Prisma schema copies and kept the mapped uppercase enum: `DAY @map("day")`, `HOUR @map("hour")`, and `MINUTE @map("minute")`.
+* Added server-side cart sanitization in `apps/pulse/lib/grill/serverCart.ts`.
+* Updated `POST /api/orders` to use server-resolved menu item names and prices for pricing, wait time, and saved order items.
+* Kept the delivery fee fixed server-side at `$10` and non-discountable.
+* Updated Stripe Checkout routes to let Stripe Dashboard settings decide payment methods instead of sending hardcoded payment-method parameters.
+* Added regression tests for server-side cart pricing and Stripe Checkout session parameters.
+
 ---
 
 ## Getting Started
@@ -234,7 +271,7 @@ Run the focused grill relay checks:
 
 ```bash
 cd apps/pulse
-npx vitest run tests/unit/grill-wait-time.test.ts tests/unit/order-relay.test.ts tests/unit/order-relay-dtmf.test.ts tests/unit/grill-notification.test.ts
+npx vitest run tests/unit/grill-wait-time.test.ts tests/unit/order-relay.test.ts tests/unit/order-relay-dtmf.test.ts tests/unit/grill-notification.test.ts tests/unit/grill-server-cart.test.ts tests/unit/grill-checkout-stripe.test.ts
 npm run build
 ```
 

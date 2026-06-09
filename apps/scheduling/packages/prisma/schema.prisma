@@ -84,12 +84,6 @@ enum WorkflowActions {
   WHATSAPP_NUMBER
 }
 
-enum TimeUnit {
-  day
-  hour
-  minute
-}
-
 enum WorkflowTemplates {
   REMINDER
   CUSTOM

@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
 
     //  Create the Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'], // Ensure PayPal is enabled in Stripe Dashboard before adding 'paypal'
       customer_email: sessionUser.user.email,
       line_items: [
         {
