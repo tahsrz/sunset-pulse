@@ -22,7 +22,7 @@ async function persistRelayStatus(session: any, updates: Record<string, any>) {
 
 export async function POST(request: Request, context: { params: Promise<{ relayId: string }> }) {
   const { relayId } = await context.params;
-  const session = getRelaySession(relayId);
+  const session = await getRelaySession(relayId);
   const formData = await request.formData();
   const digits = String(formData.get('Digits') || '');
 
@@ -35,7 +35,7 @@ export async function POST(request: Request, context: { params: Promise<{ relayI
   }
 
   if (digits === '1') {
-    updateRelaySession(relayId, {
+    await updateRelaySession(relayId, {
       status: 'pending',
       lastDigits: digits,
     });
@@ -53,7 +53,7 @@ export async function POST(request: Request, context: { params: Promise<{ relayI
   }
 
   if (digits === '2') {
-    updateRelaySession(relayId, {
+    await updateRelaySession(relayId, {
       status: 'confirmed',
       lastDigits: digits,
     });
@@ -72,7 +72,7 @@ export async function POST(request: Request, context: { params: Promise<{ relayI
   }
 
   if (digits === '3') {
-    updateRelaySession(relayId, {
+    await updateRelaySession(relayId, {
       status: 'repeat_requested',
       lastDigits: digits,
     });
@@ -89,7 +89,7 @@ export async function POST(request: Request, context: { params: Promise<{ relayI
     ].join(''));
   }
 
-  updateRelaySession(relayId, {
+  await updateRelaySession(relayId, {
     status: 'no_input',
     lastDigits: digits,
   });

@@ -22,11 +22,13 @@ export async function dispatchPaidOrderPhoneRelay({
   to,
   callerName = 'Jamie',
   interactive = true,
+  callbackBaseUrl,
 }: {
   order: any;
   to: string;
   callerName?: string;
   interactive?: boolean;
+  callbackBaseUrl?: string;
 }) {
   if (!isPaidForPhoneRelay(order)) {
     return {
@@ -43,7 +45,7 @@ export async function dispatchPaidOrderPhoneRelay({
   let call;
 
   if (interactive) {
-    const publicBaseUrl = process.env.PHONE_RELAY_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_DOMAIN;
+    const publicBaseUrl = callbackBaseUrl || process.env.PHONE_RELAY_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_DOMAIN;
 
     if (!publicBaseUrl || !/^https?:\/\//i.test(publicBaseUrl)) {
       await Order.findByIdAndUpdate(order._id, {
@@ -63,7 +65,7 @@ export async function dispatchPaidOrderPhoneRelay({
       };
     }
 
-    relaySession = createRelaySession({
+    relaySession = await createRelaySession({
       orderId: String(order._id),
       ticket: ticket.ticket,
       callScript: callScript.script,

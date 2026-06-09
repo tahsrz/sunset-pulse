@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { to, items, orderId, callerName = 'Jamie', dryRun = true, interactive = false } = body;
+    const { to, items, orderId, callerName = 'Jamie', dryRun = true, interactive = false, callbackBaseUrl } = body;
 
     let cartItems: CartItem[];
     let paidOrder = null;
@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
       to,
       callerName,
       interactive,
+      callbackBaseUrl: typeof callbackBaseUrl === 'string' ? callbackBaseUrl : undefined,
     });
 
     if (!relay.success) {

@@ -24,7 +24,7 @@ function escapeXml(value: string) {
 
 export async function GET(request: Request, context: { params: Promise<{ relayId: string }> }) {
   const { relayId } = await context.params;
-  const session = getRelaySession(relayId);
+  const session = await getRelaySession(relayId);
   const url = new URL(request.url);
   const section = url.searchParams.get('section');
 
@@ -36,7 +36,7 @@ export async function GET(request: Request, context: { params: Promise<{ relayId
     ].join(''));
   }
 
-  updateRelaySession(relayId, {
+  await updateRelaySession(relayId, {
     attempts: session.attempts + 1,
     status: session.attempts > 0 ? 'repeat_requested' : 'pending',
   });

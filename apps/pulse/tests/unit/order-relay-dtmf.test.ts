@@ -6,7 +6,7 @@ import { createRelaySession } from '@/lib/grill/relaySessions';
 
 describe('AI phone relay keypad flow', () => {
   it('serves TwiML that gathers one keypad digit', async () => {
-    const session = createRelaySession({
+    const session = await createRelaySession({
       ticket: 'ORDER: 1 Cheeseburger Basket',
       callScript: 'Test order script.',
       madeDifferent: false,
@@ -25,7 +25,7 @@ describe('AI phone relay keypad flow', () => {
   });
 
   it('serves the order readout with confirm and repeat options', async () => {
-    const session = createRelaySession({
+    const session = await createRelaySession({
       ticket: 'ORDER: 1 Cheeseburger Basket',
       callScript: 'Test order script.',
       madeDifferent: false,
@@ -42,7 +42,7 @@ describe('AI phone relay keypad flow', () => {
   });
 
   it('skips to the order when employee presses 1', async () => {
-    const session = createRelaySession({
+    const session = await createRelaySession({
       ticket: 'ORDER: 1 Cheeseburger Basket',
       callScript: 'Test order script.',
       madeDifferent: false,
@@ -62,7 +62,7 @@ describe('AI phone relay keypad flow', () => {
   });
 
   it('marks a relay session confirmed when employee presses 2', async () => {
-    const session = createRelaySession({
+    const session = await createRelaySession({
       ticket: 'ORDER: 1 Cheeseburger Basket',
       callScript: 'Test order script.',
       madeDifferent: false,
@@ -88,7 +88,7 @@ describe('AI phone relay keypad flow', () => {
   });
 
   it('redirects to repeat when employee presses 3', async () => {
-    const session = createRelaySession({
+    const session = await createRelaySession({
       ticket: 'ORDER: 1 Cheeseburger Basket',
       callScript: 'Test order script.',
       madeDifferent: false,
