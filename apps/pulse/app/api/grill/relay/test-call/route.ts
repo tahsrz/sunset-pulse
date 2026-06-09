@@ -26,9 +26,9 @@ function validateItems(items: unknown): items is CartItem[] {
 
 export async function POST(request: NextRequest) {
   try {
-    assertTestEndpointAllowed('Phone relay test-call endpoint');
-
-    if (!isAuthorized(request)) {
+    const authorized = isAuthorized(request);
+    if (!authorized) {
+      assertTestEndpointAllowed('Phone relay test-call endpoint');
       return errorResponse('Unauthorized phone relay test request.', 401);
     }
 
