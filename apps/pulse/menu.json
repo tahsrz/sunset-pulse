@@ -362,6 +362,16 @@
     "isDaisyPick": false
   },
   {
+    "id": "hot-09a",
+    "agentId": "taz-realty-001",
+    "name": "Mom's Classic Chicken Sandwich",
+    "price": 8.99,
+    "category": "Hot Box Delights",
+    "description": "Grilled chicken with lettuce, tomato, onions, and mayo on a toasted bun.",
+    "isAvailable": true,
+    "isDaisyPick": true
+  },
+  {
     "id": "hot-10",
     "agentId": "taz-realty-001",
     "name": "Chicken Fried Steak",
@@ -530,7 +540,7 @@
     "category": "Breakfast",
     "description": "Flaky southern-style buttermilk biscuit stacked with a savory sausage patty, folded egg, and melted American cheese.",
     "isAvailable": true,
-    "isDaisyPick": true
+    "isDaisyPick": false
   },
   {
     "id": "brk-05",

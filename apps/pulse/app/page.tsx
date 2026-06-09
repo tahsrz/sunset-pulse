@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { MessageSquare, ShoppingBasket, Sparkles } from 'lucide-react';
+import { Compass, ShoppingBasket, Sparkles } from 'lucide-react';
 import InfoBoxes from '@/components/InfoBoxes';
 import UnifiedPropertyStage from '@/components/marketing/UnifiedPropertyStage';
 import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
@@ -63,34 +63,28 @@ function CounterScanActions() {
               <Sparkles size={13} />
               Scanned from Sunset?
             </p>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight text-white md:text-4xl">
-              Order food, check specials, or open the local chat.
+            <h1 className="mt-3 text-2xl font-black uppercase leading-tight tracking-[0.02em] text-white md:text-4xl">
+              Order Food or Open The Explorer
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-              For grill pickup, start with the orange button. Your cart and last order will stay on this phone.
+            <p className="mt-2 max-w-2xl text-xs font-bold uppercase leading-6 tracking-[0.14em] text-slate-400">
+              Start a grill pickup order or explore the Sunset Pulse map.
             </p>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-3 md:mt-0 md:min-w-[460px]">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 md:mt-0 md:min-w-[360px]">
             <Link
               href="/grill"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-400 px-4 py-4 text-sm font-black uppercase tracking-[0.14em] text-slate-950 shadow-lg shadow-orange-950/30 transition hover:bg-orange-300"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-400 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-orange-950/30 transition hover:bg-orange-300"
             >
               <ShoppingBasket size={17} />
               Order Food
             </Link>
             <Link
-              href="/counter"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-white/15"
+              href="/explorer"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-200/10 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-cyan-50 transition hover:bg-cyan-200/15"
             >
-              Specials
-            </Link>
-            <Link
-              href="/sunset-chat"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-200/10 px-4 py-4 text-sm font-black uppercase tracking-[0.14em] text-cyan-50 transition hover:bg-cyan-200/15"
-            >
-              <MessageSquare size={17} />
-              Chat
+              <Compass size={17} />
+              Explorer
             </Link>
           </div>
         </div>

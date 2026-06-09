@@ -138,21 +138,41 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const mapRef = useRef<MapRef>(null);
   const drawRef = useRef<any>(null);
   const directionsRef = useRef<any>(null);
+  const viewStateRef = useRef(viewState);
+
+  useEffect(() => {
+    viewStateRef.current = viewState;
+  }, [viewState]);
 
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
+
+    const settleLayout = () => {
+      window.requestAnimationFrame(() => {
+        const currentView = viewStateRef.current;
+        map.resize();
+        map.jumpTo({
+          center: [currentView.longitude, currentView.latitude],
+          zoom: currentView.zoom,
+          pitch: currentView.pitch,
+          bearing: currentView.bearing,
+        });
+      });
+    };
 
     const applyTerrain = () => {
       if (!map.getSource('mapbox-dem')) return;
       const currentTerrain = (map as any).getTerrain?.();
       if (currentTerrain?.source === 'mapbox-dem' && currentTerrain?.exaggeration === 1.5) return;
       map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      settleLayout();
     };
 
     applyTerrain();
     map.on('styledata', applyTerrain);
     map.on('sourcedata', applyTerrain);
+    map.once('idle', settleLayout);
 
     return () => {
       map.off('styledata', applyTerrain);
