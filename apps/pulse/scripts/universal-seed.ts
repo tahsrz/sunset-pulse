@@ -10,6 +10,7 @@ import connectDB from '../lib/core/database.js';
 import MenuItem from '../models/MenuItem.js';
 import Story from '../models/Story.js';
 import Vibe from '../models/Vibe.js';
+import Coupon from '../models/Coupon.js';
 // We'll import Property dynamically or as needed to avoid issues if models aren't fully ready
 import Property from '../models/Property.js';
 
@@ -103,6 +104,40 @@ async function seedVibes() {
   console.log('✅ [SEED:VIBES] Vibes initialized.');
 }
 
+async function seedCoupons() {
+  console.log('🌱 [SEED:COUPONS] Planting Promotional Codes...');
+  const coupons = [
+    {
+      code: 'FIRST10',
+      label: 'Welcome 10% Off',
+      description: '10% off your first online order!',
+      type: 'percent',
+      percentOff: 10,
+      firstOrderOnly: true,
+      maxDiscount: 10
+    },
+    {
+      code: 'BASKET10',
+      label: 'Basket 10% Off',
+      description: 'Take 10% off your order.',
+      type: 'percent',
+      percentOff: 10,
+      maxDiscount: 5
+    },
+    {
+      code: 'FREEDRINK',
+      label: 'Free Drink',
+      description: 'Free fountain drink at pickup.',
+      type: 'free_item',
+      freeItemName: 'Fountain drink'
+    }
+  ];
+  for (const coupon of coupons) {
+    await Coupon.findOneAndUpdate({ code: coupon.code }, coupon, { upsert: true });
+  }
+  console.log('✅ [SEED:COUPONS] Coupons seeded.');
+}
+
 async function seedProperties() {
   console.log('🌱 [SEED:PROPERTIES] Seeding Real Estate Listings...');
   const propertiesPath = path.resolve(__dirname, '../properties.json');
@@ -140,6 +175,7 @@ const SEEDS = {
   menu: seedMenu,
   stories: seedStories,
   vibes: seedVibes,
+  coupons: seedCoupons,
   properties: seedProperties,
   roster: seedRoster,
 };

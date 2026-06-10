@@ -55,23 +55,32 @@ const CartPage = () => {
 
   const deliveryFee = isDelivery ? 10.00 : 0;
   const displayTotal = cartTotal + deliveryFee;
+const applyCouponFromInput = async () => {
+  const normalized = normalizeCouponCode(couponInput);
+  if (!normalized) {
+    toast.warning('Enter a coupon code first.');
+    return;
+  }
 
-  const applyCouponFromInput = () => {
-    const normalized = normalizeCouponCode(couponInput);
-    if (!normalized) {
-      toast.warning('Enter a coupon code first.');
-      return;
-    }
+  try {
+    const res = await fetch('/api/coupons/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: normalized }),
+    });
+    const data = await res.json();
 
-    const deal = getDealByCode(normalized);
-    if (!deal) {
+    if (!res.ok) {
       removeCoupon();
-      toast.error('That coupon code is not active.');
+      toast.error(data.message || 'That coupon code is not active.');
       return;
     }
 
     applyCoupon(normalized);
-    toast.success(`${deal.label} applied.`);
+    toast.success(`Coupon ${normalized} applied!`);
+  } catch (error) {
+    toast.error('Connection error during coupon validation.');
+  }
   };
 
   // Helper to generate 15-minute timeslots between 11:00 AM and 9:00 PM

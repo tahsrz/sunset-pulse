@@ -81,9 +81,13 @@ export function calculateCartSubtotal(items: CartPricingItem[] = []) {
 }
 
 export function calculateCartPricing(items: CartPricingItem[] = [], couponCode?: string | null): CartPricingSummary {
+  const deal = getDealByCode(couponCode);
+  return calculatePricingWithDeal(items, deal);
+}
+
+export function calculatePricingWithDeal(items: CartPricingItem[] = [], deal?: DealDefinition | null): CartPricingSummary {
   const subtotalAmount = calculateCartSubtotal(items);
   const eligibleSubtotalAmount = calculateCartSubtotal(items.filter((item) => item.discountEligible !== false));
-  const deal = getDealByCode(couponCode);
 
   if (!deal) {
     return {

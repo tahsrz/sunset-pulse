@@ -8,8 +8,9 @@ import { prisma } from '@calcom/prisma';
 import crypto from 'node:crypto';
 import { requireKdsAccess } from '@/lib/kds/access';
 import { calculateEstimatedReadyAt, calculateEstimatedWaitMinutes } from '@/lib/grill/waitTime';
-import { calculateCartPricing } from '@/lib/grill/deals';
+import { calculatePricingWithDeal } from '@/lib/grill/deals';
 import { resolveCartItemsFromMenu } from '@/lib/grill/serverCart';
+import { validateAndFetchCoupon, getAutoFirstOrderDiscount } from '@/lib/grill/coupons';
 
 /**
  * GET /api/orders
@@ -52,10 +53,21 @@ export const POST = async (request: NextRequest) => {
     await connectDB();
     const sessionUser = await getSessionUser();
     const resolvedItems = await resolveCartItemsFromMenu(items);
+    
+    // Determine the deal to apply
+    let validatedDeal = null;
+    if (couponCode) {
+      validatedDeal = await validateAndFetchCoupon(couponCode, sessionUser?.userId);
+    } else if (sessionUser?.userId) {
+      // Auto-apply first order discount if applicable
+      validatedDeal = await getAutoFirstOrderDiscount(sessionUser.userId);
+    }
+
+    const pricing = calculatePricingWithDeal(resolvedItems, validatedDeal);
+
     const waitStartTime = scheduledTime ? new Date(scheduledTime) : new Date();
     const estimatedWaitMinutes = calculateEstimatedWaitMinutes(resolvedItems);
     const estimatedReadyAt = calculateEstimatedReadyAt(waitStartTime, resolvedItems);
-    const pricing = calculateCartPricing(resolvedItems, couponCode);
 
     const orderData: any = {
       items: resolvedItems,
