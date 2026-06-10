@@ -189,6 +189,35 @@
     "isStaffPick": true
   },
   {
+    "id": "staff-04",
+    "agentId": "taz-realty-001",
+    "name": "Beth's Veggie Omelette",
+    "price": 10.99,
+    "category": "Favorites",
+    "description": "Veggie omelette with grilled onions, bell peppers, mushrooms, tomato, and cheese. Served with ranch on the side and two slices of toast.",
+    "options": [
+      {
+        "key": "toastType",
+        "label": "Toast Type",
+        "required": true,
+        "defaultValue": "White",
+        "choices": [
+          {
+            "value": "White",
+            "label": "White Toast"
+          },
+          {
+            "value": "Wheat",
+            "label": "Wheat Toast"
+          }
+        ]
+      }
+    ],
+    "isAvailable": true,
+    "isDaisyPick": false,
+    "isStaffPick": true
+  },
+  {
     "id": "fav-01",
     "agentId": "taz-realty-001",
     "name": "Patty Melt",

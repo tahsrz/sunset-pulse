@@ -25,7 +25,8 @@
     "texas-history:forge": "tsx scripts/forge-texas-place-history.ts",
     "tah:pack-master": "tsx scripts/pack-atlas-master.ts",
     "roster:seed": "tsx scripts/seed-roster.ts",
-    "menu:upsert-angela-wrap": "tsx scripts/upsert-angela-wrap.ts"
+    "menu:upsert": "tsx scripts/upsert-menu.ts",
+    "seed": "tsx scripts/universal-seed.ts"
   },
   "dependencies": {
     "@calcom/prisma": "*",

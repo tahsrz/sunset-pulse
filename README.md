@@ -196,16 +196,45 @@ curl -X POST http://localhost:3001/api/grill/relay/test-call \
 
 ### Menu Catalog Updates
 
-The live grill menu is read from MongoDB through `/api/menu`; `apps/pulse/menu.json` is seed material, not the runtime source of truth. Avoid running the full menu seed for one-off production fixes because it deletes and reinserts the whole menu.
+The live grill menu is read from MongoDB through `/api/menu`; `apps/pulse/menu.json` is seed material, not the runtime source of truth. Avoid running the full menu seed (`lib/core/seedMenu.mjs`) for one-off production fixes because it deletes and reinserts the whole menu.
 
-Use targeted upserts for staff-pick corrections:
+#### Universal Menu Sync (Recommended)
+
+Use the universal upsert script to sync your local `menu.json` changes to the database without destroying existing data. This script uses `findOneAndUpdate` to surgically update existing IDs or insert new ones.
 
 ```bash
 cd apps/pulse
-npm run menu:upsert-angela-wrap
+
+# Sync the entire menu.json to MongoDB
+npm run menu:upsert
+
+# Sync a specific item ID only
+npx tsx scripts/upsert-menu.ts <item-id>
 ```
 
-That script only upserts `staff-03` (`Angela's Chicken Bacon Wrap`) and marks it as a staff pick with the required grilled/crispy and ranch/honey mustard options.
+This workflow ensures that `menu.json` remains the permanent record in source control while the live database receives updates safely.
+
+#### Universal Project Seeding
+
+For fresh environments or bulk data synchronization, use the universal seed tool. This consolidates multiple legacy seed scripts into a single dispatcher that supports specific domains or a full project seed.
+
+```bash
+cd apps/pulse
+
+# Seed EVERYTHING (All domains)
+npm run seed all
+
+# Seed specific domains only
+npm run seed leads       # Jamie Intelligence Leads (Supabase)
+npm run seed scythe      # Scythe Registry Patterns (Supabase)
+npm run seed menu        # Sunset Grill Menu Catalog (MongoDB)
+npm run seed stories     # Tactical Interactive Stories (MongoDB)
+npm run seed vibes       # Vibe Dictionary Parameters (MongoDB)
+npm run seed properties  # Real Estate Listings (MongoDB)
+npm run seed roster      # Grill Shift Roster (Postgres/Prisma)
+```
+
+Each seed target uses **upsert** logic where possible, making it safe to run multiple times without creating duplicate records.
 
 ---
 
