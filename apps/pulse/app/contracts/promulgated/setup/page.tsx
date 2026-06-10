@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ClipboardCopy, Download, FileDown, Mail, Sparkles } from 'lucide-react';
+import { ClipboardCopy, Download, FileDown, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   TREC_CONTRACT_ADDENDA,
