@@ -1,5 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export type ConservationProfile = {
   label: string;
@@ -193,7 +197,7 @@ function readAnimalShards(): ParsedShard[] {
 
     return shards;
   } catch (error) {
-    console.warn('[ANIMAL_OF_DAY_UNAVAILABLE]', error);
+    console.warn('[ANIMAL_OF_DAY_UNAVAILABLE] Failed to read animal shards from cartridge:', error);
     return [];
   }
 }
@@ -202,6 +206,7 @@ function resolveCartridgeBasePath() {
   const candidates = [
     path.join(process.cwd(), 'cartridges', CARTRIDGE_BASE),
     path.join(process.cwd(), 'apps', 'pulse', 'cartridges', CARTRIDGE_BASE),
+    path.resolve(__dirname, '../../cartridges', CARTRIDGE_BASE),
   ];
 
   const found = candidates.find((candidate) => fs.existsSync(`${candidate}.hat`) && fs.existsSync(`${candidate}.tah`));

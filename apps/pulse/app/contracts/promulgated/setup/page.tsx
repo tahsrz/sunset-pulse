@@ -169,8 +169,19 @@ export default function PromulgatedContractSetupPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    const role = user?.profile?.role || user?.user_metadata?.role;
-    if (!user || (role !== 'realtor' && role !== 'operator' && role !== 'admin')) {
+    
+    const currentRole = user?.profile?.role || user?.user_metadata?.role;
+    const isAllowed = currentRole === 'realtor' || currentRole === 'operator' || currentRole === 'admin';
+    
+    console.log('[CONTRACT_SETUP_AUTH]', { 
+      hasUser: !!user, 
+      role: currentRole, 
+      isAllowed, 
+      email: user?.email 
+    });
+
+    if (!user || !isAllowed) {
+      console.warn('[CONTRACT_SETUP_AUTH] Redirecting unauthorized user');
       router.push('/contracts/promulgated');
     }
   }, [authLoading, router, user]);
@@ -279,8 +290,26 @@ export default function PromulgatedContractSetupPage() {
     }));
   }
 
-  if (!allowed) {
-    return <main className="min-h-screen bg-[#071013]" />;
+  if (authLoading) {
+    return <main className="min-h-screen bg-[#071013] flex items-center justify-center text-slate-400 font-black uppercase tracking-widest text-xs">Verifying Credentials...</main>;
+  }
+
+  if (!user || !allowed) {
+    return (
+      <main className="min-h-screen bg-[#071013] flex flex-col items-center justify-center text-slate-100 p-6 text-center">
+        <div className="mb-4 h-12 w-12 rounded-full bg-amber-400/10 flex items-center justify-center text-amber-200">
+          <ShieldCheck size={24} />
+        </div>
+        <h2 className="text-xl font-black uppercase tracking-tight text-white mb-2">Access Restricted</h2>
+        <p className="max-w-md text-sm text-slate-400 mb-8 leading-relaxed">
+          The Offer Packet Copilot requires a verified Realtor or Admin account. 
+          Your current profile ({role || 'no-role'}) does not have the necessary permissions.
+        </p>
+        <Link href="/contracts/promulgated" className="rounded-full bg-cyan-400 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-950 transition hover:bg-cyan-300">
+          Return to Library
+        </Link>
+      </main>
+    );
   }
 
   return (
