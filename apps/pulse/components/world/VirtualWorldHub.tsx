@@ -254,10 +254,12 @@ function CameraFocus() {
 
 function WorldScene({
   activeEndpoint,
-  onSelect
+  onSelect,
+  onContextLost
 }: {
   activeEndpoint: WorldEndpoint;
   onSelect: (endpoint: WorldEndpoint) => void;
+  onContextLost: (event: any) => void;
 }) {
   return (
     <div className="virtual-world-canvas-frame absolute inset-0 h-full w-full">
@@ -266,6 +268,9 @@ function WorldScene({
         dpr={[1, 1.7]}
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
         camera={{ position: [0, 3.4, 8.6], fov: 48 }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', onContextLost, false);
+        }}
       >
       <color attach="background" args={['#06111c']} />
       <PerspectiveCamera makeDefault position={[0, 3.4, 8.6]} fov={48} />
@@ -305,7 +310,14 @@ const VirtualWorldHub: React.FC = () => {
   const [activeId, setActiveId] = useState(WORLD_ENDPOINTS[0].id);
   const [previews, setPreviews] = useState<Record<string, PreviewState>>({});
   const [isDeparting, setIsDeparting] = useState(false);
+  const [contextLost, setContextLost] = useState(false);
   const requestedPreviewIds = useRef<Set<string>>(new Set());
+
+  const handleContextLost = (event: any) => {
+    event.preventDefault();
+    console.warn('[WEBGL_CONTEXT_LOST] Virtual World Hub context lost.');
+    setContextLost(true);
+  };
 
   const activeEndpoint = useMemo(
     () => WORLD_ENDPOINTS.find((endpoint) => endpoint.id === activeId) || WORLD_ENDPOINTS[0],
@@ -416,7 +428,25 @@ const VirtualWorldHub: React.FC = () => {
               <p className="text-xs font-semibold text-teal-100/70">Selected Area</p>
               <p className="mt-1 text-lg font-black">{activeEndpoint.district}</p>
             </div>
-            <WorldScene activeEndpoint={activeEndpoint} onSelect={(endpoint) => setActiveId(endpoint.id)} />
+            
+            {contextLost ? (
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-lg">
+                <p className="text-teal-100 font-black uppercase tracking-widest text-xs mb-4 opacity-70">Topographic Context Lost</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="px-8 py-3 bg-teal-400 text-slate-950 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-teal-300 transition-all shadow-xl shadow-teal-900/20"
+                >
+                  Re-initialize World
+                </button>
+              </div>
+            ) : (
+              <WorldScene 
+                activeEndpoint={activeEndpoint} 
+                onSelect={(endpoint) => setActiveId(endpoint.id)} 
+                onContextLost={handleContextLost}
+              />
+            )}
+
             <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-black/30 p-4 backdrop-blur-md">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-6">
                 {WORLD_QUERY_LAUNCHES.map((query) => (

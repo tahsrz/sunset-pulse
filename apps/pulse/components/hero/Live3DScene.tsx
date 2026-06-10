@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, ContactShadows, Float, Stars } from '@react-three/drei';
 import ProceduralBuilding, { BuildingType } from './ProceduralBuilding';
@@ -60,8 +60,36 @@ const ProceduralCity = () => {
 };
 
 const Live3DScene = () => {
+  const [contextLost, setContextLost] = useState(false);
+
+  const handleContextLost = (event: any) => {
+    event.preventDefault();
+    console.warn('[WEBGL_CONTEXT_LOST] Hero Scene context lost.');
+    setContextLost(true);
+  };
+
+  if (contextLost) {
+    return (
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <p className="text-white/50 font-black uppercase tracking-widest text-[10px] mb-4">Visual Matrix Desynced</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-6 py-2 border border-white/20 text-white rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-colors"
+        >
+          Re-initialize Matrix
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <Canvas shadows dpr={[1, 2]}>
+    <Canvas 
+      shadows 
+      dpr={[1, 2]}
+      onCreated={({ gl }) => {
+        gl.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+      }}
+    >
       <PerspectiveCamera makeDefault position={[20, 15, 20]} fov={45} />
       <OrbitControls 
         enablePan={false} 
