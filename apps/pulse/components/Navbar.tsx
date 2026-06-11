@@ -69,7 +69,8 @@ const Navbar: React.FC = () => {
     { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
     { href: '/grill', label: 'Grill', active: pathname === '/grill' },
     { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
-    { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true }
+    { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true },
+    { href: '/contact', label: 'Contact', active: pathname === '/contact', emphasis: 'blue', compact: true }
   ], [isRealtorOrAdmin, pathname]);
 
   const primaryLinks = navLinks.slice(0, 5);

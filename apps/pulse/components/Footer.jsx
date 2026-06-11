@@ -9,7 +9,8 @@ const footerLinks = [
   { href: '/atlas', label: 'Atlas' },
   { href: '/idx', label: 'IDX Search' },
   { href: '/properties', label: 'Properties' },
-  { href: '/explorer', label: 'Explorer' }
+  { href: '/explorer', label: 'Explorer' },
+  { href: '/contact', label: 'Contact' }
 ];
 
 const complianceLinks = [
