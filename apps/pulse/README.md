@@ -10,6 +10,31 @@ Sunset Pulse is a Next.js 14 real estate intelligence platform for property disc
 - **Test coverage:** Vitest unit tests and Playwright browser tests.
 - **Primary focus:** TAH Memory Forge, Sigmoid Lead Maturation, and Ozriel Protocol integration.
 
+### 🏗️ System Architecture Overview
+
+```mermaid
+graph LR
+    User([User/Client]) <--> NextJS[Next.js App Router]
+    
+    subgraph "Data Layer"
+        NextJS <--> Mongo[(MongoDB/Mongoose)]
+        NextJS <--> Supa[(Supabase/PostgreSQL)]
+        NextJS <--> FS[Local JSON/TAH Files]
+    end
+    
+    subgraph "External Integrations"
+        NextJS <--> Stripe[Stripe Payments]
+        NextJS <--> Twilio[Twilio SMS/Voice]
+        NextJS <--> IDX[Repliers/NTREIS IDX]
+    end
+    
+    subgraph "Intelligence Engine"
+        NextJS <--> TAH[TAH Memory Forge]
+        NextJS <--> Jamie[Jamie AI Node]
+        Jamie <--> LLM[Groq/Ollama/OpenAI]
+    end
+```
+
 ## Core Capabilities
 
 - Property browsing, search, saved listings, and high-performance IDX sync via Repliers.io.
@@ -19,6 +44,27 @@ Sunset Pulse is a Next.js 14 real estate intelligence platform for property disc
 - Neighborhood Recon & Budget Delta analysis for hyper-personalized interactions.
 - TAH Expertise retrieval (Makiel, Gadrael, etc.) from Supabase Cloud-Native storage.
 - Visualization components for maps, 3D property views, and D3.js velocity trajectories.
+
+### 📈 Lead Sigmoid Maturation Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> New: Lead Captured
+    New --> Contacted: Sigmoid Velocity Trigger
+    Contacted --> Engaged: Neighborhood Recon Sent
+    Engaged --> Active: Tour Requested (Conversion)
+    Active --> Closed: Sale/Lease Finalized
+    
+    state Engaged {
+        [*] --> Analyzing: User Interest
+        Analyzing --> PersonalizedHook: Jamie AI Logic
+        PersonalizedHook --> Sending: SMS/Email/Chat
+    }
+
+    Engaged --> Lost: Velocity Decay (Time)
+    Active --> Lost: Manual/System Archive
+    Contacted --> Lost: No Response
+```
 
 ## Technology Stack
 
@@ -84,12 +130,12 @@ graph TD
     A[Manager/Staff books 'Grill Shift' or 'Register Shift' on Cal.com] --> B[Booking written to PostgreSQL as ACCEPTED]
     B --> C{Trigger Event}
     
-    C -->|1. Real-time Burger Order Paid| D[Stripe Webhook checkout.session.completed received]
+    C -- "1. Real-time Burger Order Paid" --> D[Stripe Webhook checkout.session.completed received]
     D --> E[Query today's active shift bookings in PostgreSQL]
     E --> F[Extract assigned staff member's verified phone number]
     F --> G[Dispatch Twilio SMS with order items: 'Fire up the grill!']
     
-    C -->|2. Sunday Night 8:00 PM Roster| H[Trigger POST /api/scheduling/dispatch]
+    C -- "2. Sunday Night 8:00 PM Roster" --> H[Trigger POST /api/scheduling/dispatch]
     H --> I[Query upcoming Mon-Sun accepted bookings in PostgreSQL]
     I --> J[Compile shifts chronologically per employee]
     J --> K[SMS personalized weekly roster to each employee]
@@ -97,12 +143,12 @@ graph TD
 ```
 
 ### 1. Real-time Order Webhook Routing
-- **File:** [route.ts](file:///C:/Users/Taz/SunsetPulse/apps/pulse/app/api/webhook/stripe/route.ts)
+- **File:** `app/api/webhook/stripe/route.ts`
 - **Mechanism:** On receiving a `checkout.session.completed` event containing metadata `orderType = grill_food`, the webhook queries PostgreSQL for accepted bookings matching the custom event type slugs `grill-shift` and `register-shift` active for the current calendar day.
 - **Failover:** If no staff member is scheduled for a role, the SMS order alert falls back programmatically to the `FALLBACK_NOTIFICATION_PHONE` (the manager) to ensure no orders are missed.
 
 ### 2. Sunday Night Weekly Schedule SMS Dispatcher
-- **File:** [route.ts](file:///C:/Users/Taz/SunsetPulse/apps/pulse/app/api/scheduling/dispatch/route.ts)
+- **File:** `app/api/scheduling/dispatch/route.ts`
 - **Endpoint:** `POST /api/scheduling/dispatch` (Secure: Authorized via custom header `Authorization: Bearer <SCHEDULER_DISPATCH_SECRET>`).
 - **Date Math:** Automatically isolates the upcoming Monday `00:00:00.000` to Sunday `23:59:59.999` local timezone boundaries. Supports customizable ranges via `weekOffset` payload parameters.
 - **Master Digest:** Compiles a complete day-by-day weekly status roster and dispatches it directly to the manager. If a shift is empty for any day, it explicitly tags it with `⚠️ UNASSIGNED` as a proactive operational alert.
