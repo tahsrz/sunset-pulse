@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import path from 'path';
 import fs from 'fs/promises';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 import { getChicagoWeekRange } from '@/lib/core/timezone';
 
@@ -124,6 +125,9 @@ async function checkConflictForBulk(
 // POST /api/scheduling/bulk - Process bulk operations
 export async function POST(request: NextRequest) {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const body = await request.json();
     const { action, weekOffset } = body;
 

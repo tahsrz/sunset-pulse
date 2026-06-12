@@ -3,9 +3,13 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/core/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { getChicagoWeekRange } from '@/lib/core/timezone';
+import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 export async function POST(req: NextRequest) {
   try {
+    const access = await requireOperatorRouteAccess(req);
+    if (isAuthResponse(access)) return access;
+
     let bodyPayload: any = {};
     try {
       bodyPayload = await req.json();

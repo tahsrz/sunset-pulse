@@ -78,7 +78,7 @@ const KitchenDisplaySystem = () => {
   const [failedFetches, setFailedFetches] = useState(0);
   const [wakeLockState, setWakeLockState] = useState<'idle' | 'active' | 'blocked'>('idle');
 
-  const getKdsHeaders = () => {
+  const getKdsHeaders = (pinOverride?: string) => {
     let deviceId = window.localStorage.getItem('sunset-kds-device-id');
     if (!deviceId) {
       deviceId = `kds-${crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
@@ -87,7 +87,7 @@ const KitchenDisplaySystem = () => {
 
     return {
       'Content-Type': 'application/json',
-      'x-kds-pin': window.localStorage.getItem('sunset-kds-pin') || '',
+      'x-kds-pin': pinOverride || window.localStorage.getItem('sunset-kds-pin') || '',
       'x-kds-device-id': deviceId,
     };
   };
@@ -170,15 +170,30 @@ const KitchenDisplaySystem = () => {
     return () => clearInterval(interval);
   }, [fetchOrders, isUnlocked]);
 
-  const unlockKds = () => {
-    const expectedPin = process.env.NEXT_PUBLIC_KDS_PIN || '7397';
-    if (pinEntry.trim() !== expectedPin) {
-      toast.error('Invalid KDS PIN.');
+  const unlockKds = async () => {
+    const submittedPin = pinEntry.trim();
+    if (!submittedPin) {
+      toast.error('Enter the KDS PIN.');
       return;
     }
-    window.localStorage.setItem('sunset-kds-unlocked', 'true');
-    window.localStorage.setItem('sunset-kds-pin', pinEntry.trim());
-    setIsUnlocked(true);
+
+    try {
+      const res = await fetch('/api/orders', {
+        headers: getKdsHeaders(submittedPin),
+      });
+
+      if (!res.ok) {
+        toast.error('Invalid KDS PIN.');
+        return;
+      }
+
+      window.localStorage.setItem('sunset-kds-unlocked', 'true');
+      window.localStorage.setItem('sunset-kds-pin', submittedPin);
+      setIsUnlocked(true);
+      setLoading(false);
+    } catch {
+      toast.error('Could not verify KDS access.');
+    }
   };
 
   const lockKds = () => {
@@ -365,7 +380,7 @@ const KitchenDisplaySystem = () => {
             Unlock Kitchen Screen
           </button>
           <p className="mt-4 text-xs text-slate-600">
-            Default local PIN is 7397. Set `NEXT_PUBLIC_KDS_PIN` for deployment.
+            PINs are verified by the server before order data is shown.
           </p>
         </section>
       </main>

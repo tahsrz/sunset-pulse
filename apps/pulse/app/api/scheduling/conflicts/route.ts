@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import fs from 'fs/promises';
 import path from 'path';
+import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 const configPath = path.resolve(process.cwd(), 'config/compatibility-rules.json');
 
@@ -30,6 +31,9 @@ async function writeConflicts(conflicts: any[]) {
 // GET /api/scheduling/conflicts - Fetch all compatibility rules
 export const GET = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const conflicts = await readConflicts();
     return successResponse({ conflicts });
   } catch (error: any) {
@@ -41,6 +45,9 @@ export const GET = async (request: NextRequest) => {
 // POST /api/scheduling/conflicts - Manage compatibility rules (add or remove)
 export const POST = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const body = await request.json();
     const { action, email1, email2 } = body;
 

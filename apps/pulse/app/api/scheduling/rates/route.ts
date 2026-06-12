@@ -1,11 +1,11 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
-import { getSessionUser } from '@/lib/core/getSessionUser';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
 import { prisma } from '@/lib/core/prisma';
 import fs from 'fs/promises';
 import path from 'path';
+import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 const configPath = path.resolve(process.cwd(), 'config/hourly-rates.json');
 
@@ -56,6 +56,9 @@ async function compileRates(): Promise<Record<string, number>> {
 // GET /api/scheduling/rates - Fetch all employee hourly rates
 export const GET = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const rates = await compileRates();
     return successResponse({ rates });
   } catch (error: any) {
@@ -67,16 +70,9 @@ export const GET = async (request: NextRequest) => {
 // POST /api/scheduling/rates - Update or delete an employee's custom hourly rate
 export const POST = async (request: NextRequest) => {
   try {
-    // Anyone is authorized to modify employee hourly rates (no authentication or role restrictions)
-    const activeSession = await getSessionUser();
-    const sessionUser = activeSession || {
-      userId: 'anonymous-operator',
-      user: {
-        id: 'anonymous-operator',
-        name: 'Anonymous Operator',
-        email: 'anonymous@sunsetpulse.app'
-      }
-    };
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+    const operator = operatorAuditUser(access);
 
     const body = await request.json();
     const { email, rate } = body;
@@ -113,15 +109,15 @@ export const POST = async (request: NextRequest) => {
       try {
         await logEvent({
           type: 'ROSTER_RATE_REMOVED',
-          description: `Removed custom hourly rate for ${trimmedEmail} by admin operator ${sessionUser.user.name}`,
-          actorId: sessionUser.userId,
-          actorName: sessionUser.user.name,
+          description: `Removed custom hourly rate for ${trimmedEmail} by operator ${operator.name}`,
+          actorId: operator.userId,
+          actorName: operator.name,
           targetId: String(user.id),
           severity: 'TACTICAL',
           metadata: {
             employeeId: user.id,
             employeeEmail: trimmedEmail,
-            operatorEmail: sessionUser.user.email,
+            operatorEmail: operator.email,
           },
         });
       } catch (logErr) {
@@ -147,16 +143,16 @@ export const POST = async (request: NextRequest) => {
     try {
       await logEvent({
         type: 'ROSTER_RATE_UPDATED',
-        description: `Updated hourly rate for ${trimmedEmail} to $${numericRate.toFixed(2)}/hr by admin operator ${sessionUser.user.name}`,
-        actorId: sessionUser.userId,
-        actorName: sessionUser.user.name,
+        description: `Updated hourly rate for ${trimmedEmail} to $${numericRate.toFixed(2)}/hr by operator ${operator.name}`,
+        actorId: operator.userId,
+        actorName: operator.name,
         targetId: String(user.id),
         severity: 'TACTICAL',
         metadata: {
           employeeId: user.id,
           employeeEmail: trimmedEmail,
           hourlyRate: numericRate,
-          operatorEmail: sessionUser.user.email,
+          operatorEmail: operator.email,
         },
       });
     } catch (logErr) {

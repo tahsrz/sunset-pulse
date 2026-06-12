@@ -4,20 +4,27 @@ import { prisma } from '@/lib/core/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { sendSMS, formatWeeklyEmployeeSchedule, formatWeeklyMasterSchedule } from '@/lib/twilio';
 import { getChicagoWeekRange } from '@/lib/core/timezone';
+import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Authorize via headers
     const authHeader = req.headers.get('Authorization') || '';
-    const secretKey = process.env.SCHEDULER_DISPATCH_SECRET || 'fallback-secret-key-12345';
-    
-    const token = authHeader.replace('Bearer ', '').trim();
-    if (token !== secretKey) {
-      console.warn('[WEEKLY_DISPATCH_UNAUTHORIZED]: Unauthorized attempt to trigger weekly dispatch.');
-      return errorResponse('Unauthorized: Invalid authorization token.', 401);
+    if (authHeader) {
+      const secretKey = process.env.SCHEDULER_DISPATCH_SECRET;
+      if (!secretKey) {
+        return errorResponse('Scheduler dispatch secret is not configured.', 503);
+      }
+
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (token !== secretKey) {
+        console.warn('[WEEKLY_DISPATCH_UNAUTHORIZED]: Unauthorized attempt to trigger weekly dispatch.');
+        return errorResponse('Unauthorized: Invalid authorization token.', 401);
+      }
+    } else {
+      const access = await requireOperatorRouteAccess(req);
+      if (isAuthResponse(access)) return access;
     }
 
-    // 2. Parse payload if any
     let bodyPayload: any = {};
     try {
       bodyPayload = await req.json();

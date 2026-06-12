@@ -396,13 +396,9 @@ export default function RosterManagementCenter() {
   const handleDispatch = async () => {
     setActionLoading(true);
     try {
-      const secret = process.env.NEXT_PUBLIC_SCHEDULER_DISPATCH_SECRET || 'fallback-secret-key-12345';
       const res = await fetch('/api/scheduling/dispatch', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${secret}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ weekOffset })
       });
       const result = await res.json();

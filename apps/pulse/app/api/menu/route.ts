@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import MenuItem from '@/models/MenuItem';
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
-import { createClient } from '@/utils/supabase/server';
+import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 
 
@@ -30,14 +30,8 @@ export const GET = async (request: NextRequest) => {
  */
 export const POST = async (request: NextRequest) => {
   try {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Simple admin check based on metadata role
-    if (!user || user.app_metadata?.role !== 'admin') {
-      // Allow for now if it's local dev or specific bypass, but logically should be protected
-      // return errorResponse('Unauthorized access.', 403);
-    }
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
 
     await connectDB();
     const body = await request.json();
@@ -63,6 +57,9 @@ export const POST = async (request: NextRequest) => {
  */
 export const PATCH = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     await connectDB();
     const body = await request.json();
     const { _id, ...updates } = body;
@@ -84,6 +81,9 @@ export const PATCH = async (request: NextRequest) => {
  */
 export const DELETE = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

@@ -6,6 +6,7 @@ import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
 import { prisma } from '@/lib/core/prisma';
+import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import crypto from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'path';
@@ -20,6 +21,9 @@ import { chicagoDateTime } from '@/lib/core/timezone';
 // GET /api/scheduling - Retrieve scheduler information
 export const GET = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const searchParams = request.nextUrl.searchParams;
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
@@ -481,19 +485,9 @@ export const GET = async (request: NextRequest) => {
 // POST /api/scheduling - Synchronize booking request into Cal.com & MongoDB TourRequest
 export const POST = async (request: NextRequest) => {
   try {
-    // Authentication bypassed for open scheduling route
-    let sessionUser = await getSessionUser().catch(() => null);
+    const sessionUser = await getSessionUser().catch(() => null);
     if (!sessionUser) {
-      sessionUser = {
-        user: {
-          id: 'anonymous-operator-id',
-          name: 'Anonymous Operator',
-          email: 'anonymous@sunsetpulse.app',
-          role: 'admin',
-        },
-        userId: 'anonymous-operator-id',
-        role: 'admin'
-      };
+      return unauthorizedResponse('Authentication required to request a tour.');
     }
 
     const requestData = await request.json();
@@ -570,7 +564,7 @@ export const POST = async (request: NextRequest) => {
             phoneNumber: userPhone || '',
           },
         },
-        userPrimaryEmail: sessionUser.email || userEmail,
+        userPrimaryEmail: sessionUser.user?.email || userEmail,
       },
     });
 
@@ -719,20 +713,9 @@ async function checkCompatibilityConflict(userId: number, startTime: Date, endTi
 // PATCH /api/scheduling - Modify shifts (reassign or swap employees)
 export const PATCH = async (request: NextRequest) => {
   try {
-    // Authentication and Role-Based Access Control bypassed for open scheduling route
-    let sessionUser = await getSessionUser().catch(() => null);
-    if (!sessionUser) {
-      sessionUser = {
-        user: {
-          id: 'anonymous-operator-id',
-          name: 'Anonymous Operator',
-          email: 'anonymous@sunsetpulse.app',
-          role: 'admin',
-        },
-        userId: 'anonymous-operator-id',
-        role: 'admin'
-      };
-    }
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+    const operator = operatorAuditUser(access);
 
     const body = await request.json();
     const { action, allowOverlap = false } = body;
@@ -804,9 +787,9 @@ export const PATCH = async (request: NextRequest) => {
       try {
         await logEvent({
           type: 'ROSTER_SHIFT_REASSIGNED',
-          description: `Reassigned ${title} to ${user.name} by admin operator ${sessionUser.user.name}`,
-          actorId: sessionUser.userId,
-          actorName: sessionUser.user.name,
+          description: `Reassigned ${title} to ${user.name} by operator ${operator.name}`,
+          actorId: operator.userId,
+          actorName: operator.name,
           targetId: String(bookingId),
           severity: 'TACTICAL',
           metadata: {
@@ -814,7 +797,7 @@ export const PATCH = async (request: NextRequest) => {
             userId,
             title,
             idempotencyKey,
-            operatorEmail: sessionUser.user.email,
+            operatorEmail: operator.email,
           },
         });
       } catch (logErr) {
@@ -953,9 +936,9 @@ export const PATCH = async (request: NextRequest) => {
       try {
         await logEvent({
           type: 'ROSTER_SHIFTS_SWAPPED',
-          description: `Swapped shifts between ${user1.name} and ${user2.name} by admin operator ${sessionUser.user.name}`,
-          actorId: sessionUser.userId,
-          actorName: sessionUser.user.name,
+          description: `Swapped shifts between ${user1.name} and ${user2.name} by operator ${operator.name}`,
+          actorId: operator.userId,
+          actorName: operator.name,
           targetId: `${bookingId1}_${bookingId2}`,
           severity: 'TACTICAL',
           metadata: {
@@ -963,7 +946,7 @@ export const PATCH = async (request: NextRequest) => {
             bookingId2,
             userId1: user1.id,
             userId2: user2.id,
-            operatorEmail: sessionUser.user.email,
+            operatorEmail: operator.email,
           },
         });
       } catch (logErr) {
@@ -1044,16 +1027,16 @@ export const PATCH = async (request: NextRequest) => {
       try {
         await logEvent({
           type: 'ROSTER_DRAFT_PUBLISHED',
-          description: `Published ${updatedBookings.length} sandbox draft shifts for week of ${startDate} to ${endDate} by admin operator ${sessionUser.user.name}`,
-          actorId: sessionUser.userId,
-          actorName: sessionUser.user.name,
+          description: `Published ${updatedBookings.length} sandbox draft shifts for week of ${startDate} to ${endDate} by operator ${operator.name}`,
+          actorId: operator.userId,
+          actorName: operator.name,
           targetId: `${startDate}_${endDate}`,
           severity: 'TACTICAL',
           metadata: {
             startDate,
             endDate,
             publishedCount: updatedBookings.length,
-            operatorEmail: sessionUser.user.email,
+            operatorEmail: operator.email,
           },
         });
       } catch (logErr) {

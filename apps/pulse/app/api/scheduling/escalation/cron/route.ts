@@ -49,7 +49,10 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Authorize trigger via headers
     const authHeader = req.headers.get('Authorization') || '';
-    const secretKey = process.env.SCHEDULER_DISPATCH_SECRET || 'fallback-secret-key-12345';
+    const secretKey = process.env.SCHEDULER_DISPATCH_SECRET;
+    if (!secretKey) {
+      return errorResponse('Scheduler dispatch secret is not configured.', 503);
+    }
     const token = authHeader.replace('Bearer ', '').trim();
 
     if (token !== secretKey) {

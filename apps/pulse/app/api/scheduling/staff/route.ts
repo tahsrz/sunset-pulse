@@ -2,9 +2,9 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/core/prisma';
 import crypto from 'node:crypto';
-import { getSessionUser } from '@/lib/core/getSessionUser';
-import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
+import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
+import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 // Deterministic UUID v5 generator using native Node.js crypto module
 function uuidv5(name: string): string {
@@ -23,6 +23,9 @@ function uuidv5(name: string): string {
 // GET /api/scheduling/staff - Retrieve the list of active employees
 export const GET = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -45,26 +48,9 @@ export const GET = async (request: NextRequest) => {
 // POST /api/scheduling/staff - Enroll a new staff member (employee)
 export const POST = async (request: NextRequest) => {
   try {
-    // Authentication and Role-Based Access Control bypassed for open scheduling route
-    let sessionUser = await getSessionUser().catch(() => null);
-    if (!sessionUser) {
-      sessionUser = {
-        user: {
-          id: 'anonymous-operator-id',
-          name: 'Anonymous Operator',
-          email: 'anonymous@sunsetpulse.app',
-          role: 'admin',
-        },
-        userId: 'anonymous-operator-id',
-        role: 'admin'
-      };
-    } else {
-      // Force admin role for the bypass to ensure anyone can modify the registry
-      sessionUser.role = 'admin';
-      if (sessionUser.user) {
-        sessionUser.user.role = 'admin';
-      }
-    }
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+    const operator = operatorAuditUser(access);
 
     const body = await request.json();
     const { name, email, phone } = body;
@@ -111,16 +97,16 @@ export const POST = async (request: NextRequest) => {
     try {
       await logEvent({
         type: 'ROSTER_EMPLOYEE_ENROLLED',
-        description: `Enrolled new employee ${trimmedName} (${trimmedEmail}) by admin operator ${sessionUser.user.name}`,
-        actorId: sessionUser.userId,
-        actorName: sessionUser.user.name,
+        description: `Enrolled new employee ${trimmedName} (${trimmedEmail}) by operator ${operator.name}`,
+        actorId: operator.userId,
+        actorName: operator.name,
         targetId: String(newUser.id),
         severity: 'TACTICAL',
         metadata: {
           employeeId: newUser.id,
           employeeName: trimmedName,
           employeeEmail: trimmedEmail,
-          operatorEmail: sessionUser.user.email,
+          operatorEmail: operator.email,
         },
       });
     } catch (logErr) {
@@ -144,26 +130,9 @@ export const POST = async (request: NextRequest) => {
 // DELETE /api/scheduling/staff - Remove an employee and safely unassign their shifts
 export const DELETE = async (request: NextRequest) => {
   try {
-    // Authentication and Role-Based Access Control bypassed for open scheduling route
-    let sessionUser = await getSessionUser().catch(() => null);
-    if (!sessionUser) {
-      sessionUser = {
-        user: {
-          id: 'anonymous-operator-id',
-          name: 'Anonymous Operator',
-          email: 'anonymous@sunsetpulse.app',
-          role: 'admin',
-        },
-        userId: 'anonymous-operator-id',
-        role: 'admin'
-      };
-    } else {
-      // Force admin role for the bypass to ensure anyone can modify the registry
-      sessionUser.role = 'admin';
-      if (sessionUser.user) {
-        sessionUser.user.role = 'admin';
-      }
-    }
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
+    const operator = operatorAuditUser(access);
 
     const body = await request.json();
     const { userId } = body;
@@ -230,9 +199,9 @@ export const DELETE = async (request: NextRequest) => {
     try {
       await logEvent({
         type: 'ROSTER_EMPLOYEE_DECOMMISSIONED',
-        description: `Decommissioned employee ${user.name} (${user.email}) by admin operator ${sessionUser.user.name}. ${bookings.length} shifts reverted to unassigned.`,
-        actorId: sessionUser.userId,
-        actorName: sessionUser.user.name,
+        description: `Decommissioned employee ${user.name} (${user.email}) by operator ${operator.name}. ${bookings.length} shifts reverted to unassigned.`,
+        actorId: operator.userId,
+        actorName: operator.name,
         targetId: String(targetUserId),
         severity: 'TACTICAL',
         metadata: {
@@ -240,7 +209,7 @@ export const DELETE = async (request: NextRequest) => {
           employeeName: user.name,
           employeeEmail: user.email,
           revertedShiftsCount: bookings.length,
-          operatorEmail: sessionUser.user.email,
+          operatorEmail: operator.email,
         },
       });
     } catch (logErr) {

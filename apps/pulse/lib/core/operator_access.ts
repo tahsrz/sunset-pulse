@@ -14,28 +14,22 @@ export type OperatorAccess = {
 
 export async function getOperatorAccess(host: string | null): Promise<OperatorAccess> {
   const local = isLocalHost(host);
-  const session = await getSessionUser();
-  const email = session?.user?.email || null;
-  const role = session?.role || session?.user?.role || 'anonymous';
-  const operatorEmail = process.env.OPERATOR_EMAIL || process.env.AUTHORIZED_EMAIL || process.env.NEXT_PUBLIC_OPERATOR_EMAIL;
-  const roleAllowed = role === 'admin' || role === 'operator' || role === 'realtor';
-  const emailAllowed = Boolean(operatorEmail && email && email.toLowerCase() === operatorEmail.toLowerCase());
 
   if (local) {
     return {
       allowed: true,
       mode: 'local',
       reason: 'Local operator access.',
-      user: session?.user
-        ? {
-            id: session.userId,
-            email,
-            role,
-            name: session.user.name || null
-          }
-        : null
+      user: null
     };
   }
+
+  const session = await getSessionUser();
+  const email = session?.user?.email || null;
+  const role = session?.role || session?.user?.role || 'anonymous';
+  const operatorEmail = process.env.OPERATOR_EMAIL || process.env.AUTHORIZED_EMAIL;
+  const roleAllowed = role === 'admin' || role === 'operator' || role === 'realtor';
+  const emailAllowed = Boolean(operatorEmail && email && email.toLowerCase() === operatorEmail.toLowerCase());
 
   if (roleAllowed || emailAllowed) {
     return {

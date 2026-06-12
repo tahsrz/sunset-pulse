@@ -4,9 +4,14 @@ import { prisma } from '@/lib/core/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
 import { getChicagoWeekRange } from '@/lib/core/timezone';
+import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 export async function POST(req: NextRequest) {
   try {
+    const access = await requireOperatorRouteAccess(req);
+    if (isAuthResponse(access)) return access;
+    const operator = operatorAuditUser(access);
+
     let bodyPayload: any = {};
     try {
       bodyPayload = await req.json();
@@ -47,15 +52,16 @@ export async function POST(req: NextRequest) {
       try {
         await logEvent({
           type: 'WEEKLY_ROSTER_APPROVED',
-          description: `Manager approved weekly shift roster for week starting ${targetStart.toLocaleDateString()}. Approved ${updateResult.count} shifts.`,
-          actorId: 'manager-admin-id',
-          actorName: 'Sunset Manager',
+          description: `${operator.name} approved weekly shift roster for week starting ${targetStart.toLocaleDateString()}. Approved ${updateResult.count} shifts.`,
+          actorId: operator.userId,
+          actorName: operator.name,
           targetId: `week-starting-${targetStart.toISOString().split('T')[0]}`,
           severity: 'TACTICAL',
           metadata: {
             approvedCount: updateResult.count,
             start: targetStart.toISOString(),
             end: targetEnd.toISOString(),
+            operatorEmail: operator.email,
           },
         });
       } catch (err: any) {

@@ -18,7 +18,7 @@ export async function requireKdsAccess(request: NextRequest): Promise<KdsAccess 
     };
   }
 
-  const configuredPin = process.env.KDS_PIN || process.env.NEXT_PUBLIC_KDS_PIN;
+  const configuredPin = process.env.KDS_PIN;
   const suppliedPin = request.headers.get('x-kds-pin') || '';
 
   if (configuredPin && suppliedPin && suppliedPin === configuredPin) {
