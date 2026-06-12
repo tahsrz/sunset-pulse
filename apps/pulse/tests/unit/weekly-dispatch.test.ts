@@ -3,12 +3,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Mock server-only compiler guard for Vitest environment
 vi.mock('server-only', () => ({}));
 
-// Mock @calcom/prisma client using vi.hoisted to prevent hoisting errors
+// Mock local Prisma client using vi.hoisted to prevent hoisting errors
 const { mockPrismaFindMany } = vi.hoisted(() => ({
   mockPrismaFindMany: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     booking: {
       findMany: mockPrismaFindMany,

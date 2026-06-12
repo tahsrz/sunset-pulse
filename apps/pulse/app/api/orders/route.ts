@@ -4,7 +4,7 @@ import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { prisma } from '@calcom/prisma';
+import { prisma } from '@/lib/core/prisma';
 import crypto from 'node:crypto';
 import { requireKdsAccess } from '@/lib/kds/access';
 import { calculateEstimatedReadyAt, calculateEstimatedWaitMinutes } from '@/lib/grill/waitTime';

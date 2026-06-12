@@ -14,7 +14,7 @@ vi.mock('fs/promises', () => ({
   },
 }));
 
-// Mock @calcom/prisma client
+// Mock local Prisma client
 const {
   mockPrismaFindMany,
   mockPrismaFindUnique,
@@ -27,7 +27,7 @@ const {
   mockPrismaTransaction: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     booking: {
       findMany: mockPrismaFindMany,

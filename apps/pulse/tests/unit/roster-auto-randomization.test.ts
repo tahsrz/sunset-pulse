@@ -50,7 +50,7 @@ const {
   mockPrismaCreate: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     eventType: {
       findMany: vi.fn().mockResolvedValue([

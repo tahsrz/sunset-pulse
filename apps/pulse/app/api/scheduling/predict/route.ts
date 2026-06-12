@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
-import { prisma } from '@calcom/prisma';
+import { prisma } from '@/lib/core/prisma';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { getChicagoWeekRange } from '@/lib/core/timezone';
 

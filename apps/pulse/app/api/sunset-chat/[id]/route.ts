@@ -6,6 +6,8 @@ import { errorResponse, successResponse } from '@/lib/core/apiResponse';
 import { requireSunsetChatModeratorAccess } from '@/lib/grill/sunsetChatModeration';
 import SunsetChatPost from '@/models/SunsetChatPost';
 
+const SunsetChatPostModel = SunsetChatPost as any;
+
 type Params = {
   params: Promise<{ id: string }>;
 };
@@ -21,13 +23,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await connectDB();
 
     if (body?.isPinned === true) {
-      await SunsetChatPost.updateMany({ isPinned: true }, {
+      await SunsetChatPostModel.updateMany({ isPinned: true }, {
         isPinned: false,
         staffActionBy: access.moderatorEmail || access.user?.name || access.user?.id || 'staff',
       });
     }
 
-    const post = await SunsetChatPost.findByIdAndUpdate(id, {
+    const post = await SunsetChatPostModel.findByIdAndUpdate(id, {
       ...(typeof body?.isPinned === 'boolean' ? { isPinned: body.isPinned } : {}),
       staffActionBy: access.moderatorEmail || access.user?.name || access.user?.id || 'staff',
     }, { new: true });
@@ -48,7 +50,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     const { id } = await params;
     await connectDB();
-    const deleted = await SunsetChatPost.findByIdAndDelete(id);
+    const deleted = await SunsetChatPostModel.findByIdAndDelete(id);
 
     if (!deleted) return errorResponse('Sunset Chat post not found.', 404);
 

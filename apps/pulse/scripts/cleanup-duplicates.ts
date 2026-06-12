@@ -18,7 +18,7 @@ import Lead from '../models/Lead.js';
 import Entity from '../models/Entity.js';
 import Booking from '../models/Booking.js';
 
-async function deduplicate(Model, uniqueKey, options = {}) {
+async function deduplicate(Model, uniqueKey, options: { normalize?: boolean } = {}) {
   const { normalize = false } = options;
   const keys = Array.isArray(uniqueKey) ? uniqueKey : [uniqueKey];
   const keyLabel = keys.join('+');

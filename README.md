@@ -70,10 +70,12 @@ graph TD
 * **Split-Shift Orchestration**: Splits shifts into morning, mid-afternoon, and closing slots with automatic overlapping shift validations.
 * **Draft Sandboxing**: Allows admins to construct upcoming weekly draft rosters in sandboxed buffers without altering active live shifts.
 * **SMS Drop & Backfill Engine**: Handles late-shift drops via Twilio auto-escalation broadcast and `/api/scheduling/sms/incoming` employee claim replies.
+* **Local Prisma Client**: Pulse now owns the minimal Prisma schema it needs at `apps/pulse/prisma/schema.prisma`, with generated client output under `apps/pulse/lib/generated/prisma`. This removes the runtime dependency on the external `@calcom/prisma` workspace package for scheduling routes and tests.
 
 ### 4. Jamie Intelligence Agent
 
 * **Lead Re-engagement Hook**: Monitors lead scores in Supabase and formulates personalized SMS and email re-engagement copy on time-decayed prospects.
+* **Chat Response Abstraction**: JamieChat routes all visible replies through `apps/pulse/lib/ai/jamieResponse.ts` so tool-call JSON, internal analysis labels, source scores, and worker metadata stay out of the normal user transcript. Dev mode still exposes raw process payloads where needed.
 
 ---
 
@@ -198,6 +200,8 @@ curl -X POST http://localhost:3001/api/grill/relay/test-call \
 
 The live grill menu is read from MongoDB through `/api/menu`; `apps/pulse/menu.json` is seed material, not the runtime source of truth. Avoid running the full menu seed (`lib/core/seedMenu.mjs`) for one-off production fixes because it deletes and reinserts the whole menu.
 
+The admin menu manager also includes a **Bulk Prices** workflow for pasting line-based price updates such as `Candy Bar 2.79`. It normalizes item names, previews exact or close matches, and applies matched price updates through the existing `/api/menu` PATCH path.
+
 #### Universal Menu Sync (Recommended)
 
 Use the universal upsert script to sync your local `menu.json` changes to the database without destroying existing data. This script uses `findOneAndUpdate` to surgically update existing IDs or insert new ones.
@@ -245,7 +249,7 @@ The architecture bridges multiple data layers to maximize scalability and write 
 | Database | Primary Role | Driver / ORM | Focus |
 | :--- | :--- | :--- | :--- |
 | **Supabase (PostgreSQL)** | Leads, authentication, global preferences | `@supabase/supabase-js` | Performance and auth integrity |
-| **Cal.com (PostgreSQL)** | Roster schedules, booking, and shift dispatches | Prisma Client | Roster scheduling and SMS webhooks |
+| **Scheduling PostgreSQL** | Roster schedules, booking, and shift dispatches | Local Pulse Prisma Client | Roster scheduling and SMS webhooks |
 | **MongoDB** | Active grill orders, checkout sessions, relay state, and telemetry | Mongoose | High-throughput order logs |
 | **Memoria v4 (`.hat`/`.tah`)** | Geographic places database and metadata indexes | Custom Binary Stream Buffer | High-speed spatial lookups |
 
@@ -267,10 +271,13 @@ That gives us several speed advantages:
 * **Database migrations**: Prisma tracks database structure changes as migrations, which keeps schema evolution controlled instead of relying on one-off manual edits.
 * **Fast feature scaffolding**: if we need a real `Coupon`, `OrderPayment`, or `PhoneRelayAttempt` table, we define the model once, generate the client, and immediately get typed create/read/update functions.
 
-In this repo, Prisma primarily supports the Cal.com-style scheduling and roster data. Sunset Grill orders currently use MongoDB/Mongoose, but the Pulse production build still runs Prisma generation because the app shares the monorepo. That is why a duplicate `TimeUnit` enum in Prisma blocked the Pulse build even though the grill cart logic itself was Mongo-backed.
+In this repo, Prisma primarily supports the Cal.com-style scheduling and roster data. Pulse now keeps the scheduling schema local in `apps/pulse/prisma/schema.prisma` and generates the client into `apps/pulse/lib/generated/prisma` during install or with `npm run prisma:generate`. Sunset Grill orders currently use MongoDB/Mongoose, while scheduling routes and roster tests use the local Prisma wrapper at `apps/pulse/lib/core/prisma.ts`.
 
 ### Latest Production Hardening
 
+* Ported Pulse scheduling database access away from the external `@calcom/prisma` workspace package and onto a local Prisma schema/client wrapper.
+* Added JamieChat response abstraction so internal analysis labels, tool-call payloads, retrieval source scores, and JSON envelopes do not bleed into normal chat replies.
+* Added a bulk price import workflow to the admin menu manager for fast line-based menu price updates.
 * Removed the duplicate lowercase `TimeUnit` enum from both Prisma schema copies and kept the mapped uppercase enum: `DAY @map("day")`, `HOUR @map("hour")`, and `MINUTE @map("minute")`.
 * Added server-side cart sanitization in `apps/pulse/lib/grill/serverCart.ts`.
 * Updated `POST /api/orders` to use server-resolved menu item names and prices for pricing, wait time, and saved order items.

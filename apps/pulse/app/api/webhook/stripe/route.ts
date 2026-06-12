@@ -6,7 +6,7 @@ import connectDB from '@/lib/core/database';
 import User from '@/models/User';
 import Order from '@/models/Order';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { prisma } from '@calcom/prisma';
+import { prisma } from '@/lib/core/prisma';
 import { notifyStaffOfBurgerOrder } from '@/lib/twilio';
 import { dispatchPaidOrderPhoneRelay } from '@/lib/grill/phoneRelay';
 import { sendOrderConfirmationEmail } from '@/lib/grill/orderConfirmationEmail';
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
               'emailConfirmation.sentAt': new Date(),
               'emailConfirmation.updatedAt': new Date(),
             });
-          } else {
+          } else if (confirmationResult.success === false) {
             await Order.findByIdAndUpdate(order._id, {
               'emailConfirmation.status': confirmationResult.status === 503 ? 'not_configured' : 'failed',
               'emailConfirmation.sentTo': customerEmail,

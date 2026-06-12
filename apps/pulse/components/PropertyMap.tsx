@@ -64,7 +64,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ property }) => {
   return (
     <Map
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-      mapLib={import('mapbox-gl')}
+      mapLib={import('mapbox-gl') as any}
       initialViewState={{
         longitude: lng,
         latitude: lat,

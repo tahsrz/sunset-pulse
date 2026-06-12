@@ -12,7 +12,7 @@ process.env.DATABASE_DIRECT_URL = "postgresql://postgres:postgres@localhost:5432
 
 async function fix() {
   try {
-    const prismaModule = await import('@calcom/prisma');
+    const prismaModule = await import('../lib/core/prisma');
     const prisma = prismaModule.prisma;
 
     console.log('🔗 [RLS_FIX] Connecting to Supabase postgres database...');

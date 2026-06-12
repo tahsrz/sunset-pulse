@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { logEvent } from '@/lib/supabase';
-import { prisma } from '@calcom/prisma';
+import { prisma } from '@/lib/core/prisma';
 import fs from 'fs/promises';
 import path from 'path';
 

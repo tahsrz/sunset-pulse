@@ -24,7 +24,7 @@ const employees = [
 
 async function seed() {
   try {
-    const prismaModule = await import('@calcom/prisma');
+    const prismaModule = await import('../lib/core/prisma');
     prisma = prismaModule.prisma;
 
     console.log('🌱 [ROSTER_SEED] Connecting to database and running seed protocol...');

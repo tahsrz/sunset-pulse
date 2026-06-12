@@ -27,7 +27,7 @@ export const POST = async (request: Request) => {
 
     const result = await sendContactEmail({ name, email, message });
 
-    if (!result.success) {
+    if (result.success === false) {
       return errorResponse(result.reason, result.status || 500);
     }
 

@@ -6,6 +6,7 @@ import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
 import { memoryBridge } from '@/lib/memory_bridge';
 import { speak } from '@/lib/core/tts';
+import { getJamieDisplayContent } from '@/lib/ai/jamieResponse';
 
 import { useVibe } from '@/context/VibeContext';
 
@@ -304,9 +305,10 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
       }
 
       const contentType = chatResponse.headers.get('content-type') || '';
-      const assistantContent = contentType.includes('application/json')
-        ? JSON.stringify(await chatResponse.json())
+      const rawAssistantResponse = contentType.includes('application/json')
+        ? await chatResponse.json()
         : await chatResponse.text();
+      const assistantContent = getJamieDisplayContent(rawAssistantResponse);
 
       setMessages([...nextMessages, { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }]);
       await handleAction(assistantContent);

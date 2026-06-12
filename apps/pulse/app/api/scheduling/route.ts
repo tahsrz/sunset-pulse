@@ -5,7 +5,7 @@ import TourRequest from '@/models/TourRequest';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
-import { prisma } from '@calcom/prisma';
+import { prisma } from '@/lib/core/prisma';
 import crypto from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'path';
@@ -544,7 +544,7 @@ export const POST = async (request: NextRequest) => {
     });
     await newTour.save();
 
-    // 2. Schedule booking into PostgreSQL Cal.com via @calcom/prisma
+    // 2. Schedule booking into PostgreSQL via the local Pulse Prisma client
     let timeString = preferredTime;
     if (!/^\d{2}:\d{2}$/.test(timeString)) {
       timeString = '10:00'; // Default to 10:00 AM if flexible/invalid format

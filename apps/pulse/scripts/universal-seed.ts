@@ -155,7 +155,7 @@ async function seedProperties() {
 async function seedRoster() {
   console.log('🌱 [SEED:ROSTER] Syncing Grill Shift Roster...');
   try {
-    const { prisma } = await import('@calcom/prisma');
+    const { prisma } = await import('../lib/core/prisma');
     // We'll just run a minimal version of the roster seed here or trigger the existing script
     // To keep this clean, let's just trigger the existing roster seed script via child_process
     // since Prisma setup in a monorepo can be tricky with direct imports

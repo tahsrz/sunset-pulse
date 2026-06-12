@@ -11,6 +11,7 @@ import {
 import { DEALS } from '@/lib/grill/deals';
 import SunsetChatPost from '@/models/SunsetChatPost';
 
+const SunsetChatPostModel = SunsetChatPost as any;
 const recentPostsByDevice = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_POSTS = 4;
@@ -19,7 +20,7 @@ export async function GET() {
   try {
     await connectDB();
     const now = new Date();
-    const posts = await SunsetChatPost.find({
+    const posts = await SunsetChatPostModel.find({
       $or: [
         { isPinned: true },
         { expiresAt: { $gt: now } },
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
-    const post = await SunsetChatPost.create({
+    const post = await SunsetChatPostModel.create({
       ...validation.value,
       expiresAt: getSunsetChatExpiresAt(),
       deviceKey,

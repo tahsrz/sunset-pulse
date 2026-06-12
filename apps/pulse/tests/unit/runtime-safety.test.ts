@@ -13,9 +13,13 @@ afterEach(() => {
   process.env = { ...originalEnv };
 });
 
+function setNodeEnv(value: NodeJS.ProcessEnv['NODE_ENV']) {
+  (process.env as Record<string, string | undefined>).NODE_ENV = value;
+}
+
 describe('runtime database safety guards', () => {
   it('blocks production-looking Mongo URIs from non-production runtimes without an override', () => {
-    process.env.NODE_ENV = 'development';
+    setNodeEnv('development');
     process.env.VERCEL_ENV = 'preview';
     delete process.env.ALLOW_PRODUCTION_DB_CONNECTION;
 
@@ -24,7 +28,7 @@ describe('runtime database safety guards', () => {
   });
 
   it('allows production-looking Mongo URIs when an explicit connection override is set', () => {
-    process.env.NODE_ENV = 'development';
+    setNodeEnv('development');
     process.env.ALLOW_PRODUCTION_DB_CONNECTION = 'true';
 
     expect(() => assertSafeMongoConnection('mongodb+srv://user:pass@cluster.example.com/sunset-prod'))
@@ -32,14 +36,14 @@ describe('runtime database safety guards', () => {
   });
 
   it('hides test endpoints in production unless explicitly enabled', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     delete process.env.ENABLE_TEST_ENDPOINTS_IN_PRODUCTION;
 
     expect(() => assertTestEndpointAllowed('test endpoint')).toThrow(/disabled in production/);
   });
 
   it('blocks destructive production DB operations without the exact confirmation phrase', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     process.env.ALLOW_PRODUCTION_DESTRUCTIVE_DB_ACTIONS = 'true';
     process.env.CONFIRM_PRODUCTION_DESTRUCTIVE_ACTION = 'wrong';
     process.env.PRODUCTION_BACKUP_REFERENCE = 'mongodb-snapshot-123';
@@ -52,7 +56,7 @@ describe('runtime database safety guards', () => {
   });
 
   it('blocks destructive production DB operations without a backup reference', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     process.env.ALLOW_PRODUCTION_DESTRUCTIVE_DB_ACTIONS = 'true';
     process.env.CONFIRM_PRODUCTION_DESTRUCTIVE_ACTION = PRODUCTION_DB_CONFIRMATION;
     delete process.env.PRODUCTION_BACKUP_REFERENCE;
@@ -65,7 +69,7 @@ describe('runtime database safety guards', () => {
   });
 
   it('blocks destructive production DB operations when the backup is stale', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     process.env.ALLOW_PRODUCTION_DESTRUCTIVE_DB_ACTIONS = 'true';
     process.env.CONFIRM_PRODUCTION_DESTRUCTIVE_ACTION = PRODUCTION_DB_CONFIRMATION;
     process.env.PRODUCTION_BACKUP_REFERENCE = 'mongodb-snapshot-123';
@@ -78,7 +82,7 @@ describe('runtime database safety guards', () => {
   });
 
   it('allows destructive production DB operations only with override envs and a fresh backup', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     process.env.ALLOW_PRODUCTION_DESTRUCTIVE_DB_ACTIONS = 'true';
     process.env.CONFIRM_PRODUCTION_DESTRUCTIVE_ACTION = PRODUCTION_DB_CONFIRMATION;
     process.env.PRODUCTION_BACKUP_REFERENCE = 'mongodb-snapshot-123';

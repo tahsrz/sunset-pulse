@@ -32,7 +32,7 @@ const {
   mockPrismaTransaction: vi.fn((p) => Promise.all(p)),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     verifiedNumber: {
       findFirst: mockPrismaVerifiedNumberFindFirst,

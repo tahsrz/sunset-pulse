@@ -34,7 +34,7 @@ const {
   mockPrismaFindMany: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     booking: {
       findUnique: mockPrismaFindUnique,

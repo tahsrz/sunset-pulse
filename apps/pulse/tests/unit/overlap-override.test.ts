@@ -44,7 +44,7 @@ const {
   mockPrismaTransaction: vi.fn((p) => Promise.all(p)),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     booking: {
       findUnique: mockPrismaBookingFindUnique,

@@ -31,6 +31,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 cms-dev.*.log
+next-dev-*.log
 .cms-bridge-state.json
 logs/
 .orchestrator/
@@ -53,6 +54,7 @@ logs/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+apps/pulse/lib/generated/prisma/
 
 # OS files
 Thumbs.db

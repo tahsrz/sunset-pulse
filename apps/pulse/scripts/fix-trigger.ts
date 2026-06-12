@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 async function main() {
-  const { prisma } = await import('@calcom/prisma');
+  const { prisma } = await import('../lib/core/prisma');
   try {
     console.log('⚡ [FIX] Connecting to production database to fix the handle_new_user trigger...');
     

@@ -17,7 +17,7 @@ const {
   mockPrismaFindFirst: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     booking: {
       findMany: mockPrismaFindMany,

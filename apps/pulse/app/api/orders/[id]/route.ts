@@ -4,7 +4,7 @@ import connectDB from '@/lib/core/database';
 import Order from '@/models/Order';
 import OrderAudit from '@/models/OrderAudit';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { prisma } from '@calcom/prisma';
+import { prisma } from '@/lib/core/prisma';
 import { getRequestAuditContext, requireKdsAccess } from '@/lib/kds/access';
 
 const VALID_STATUSES = ['pending', 'cooking', 'ready', 'completed', 'cancelled'] as const;

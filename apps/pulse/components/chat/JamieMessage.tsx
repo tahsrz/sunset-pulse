@@ -42,7 +42,7 @@ const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
         <p className="leading-relaxed font-medium whitespace-pre-wrap">{displayContent}</p>
       </div>
       
-      {!isUser && content.includes('[[') && (
+      {!isUser && isDevMode && content.includes('[[') && (
         <div className="ml-2 flex flex-col gap-1.5 w-full max-w-[80%]">
           <div className="flex items-center gap-2 text-[8px] font-black uppercase text-slate-500 tracking-widest px-1">
             <FaLayerGroup size={8} /> Internal Process Chain
@@ -59,14 +59,12 @@ const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
             })}
           </div>
           
-          {isDevMode && (
-            <div className="mt-1 p-3 bg-slate-950/80 rounded-xl border border-blue-500/30 font-mono text-[9px] text-blue-300/80 overflow-x-auto">
-              <div className="flex items-center gap-2 mb-1 text-blue-400 font-black uppercase tracking-widest">
-                <FaCogs /> [RAW_PAYLOAD]
-              </div>
-              <pre className="whitespace-pre-wrap">{content.match(/\[\[(.*?)\]\]/g)?.join('\n')}</pre>
+          <div className="mt-1 p-3 bg-slate-950/80 rounded-xl border border-blue-500/30 font-mono text-[9px] text-blue-300/80 overflow-x-auto">
+            <div className="flex items-center gap-2 mb-1 text-blue-400 font-black uppercase tracking-widest">
+              <FaCogs /> [RAW_PAYLOAD]
             </div>
-          )}
+            <pre className="whitespace-pre-wrap">{content.match(/\[\[(.*?)\]\]/g)?.join('\n')}</pre>
+          </div>
         </div>
       )}
     </div>

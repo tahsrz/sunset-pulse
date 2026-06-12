@@ -49,7 +49,7 @@ const {
   mockPrismaUserUpdate: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     user: {
       findMany: mockPrismaUserFindMany,

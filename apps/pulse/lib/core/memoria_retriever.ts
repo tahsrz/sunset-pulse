@@ -276,7 +276,7 @@ export class MemoriaRetriever {
         const dataOffset = Number(this.hatBuffer.readBigUInt64LE(entryOffset + 32));
         const length = Number(this.hatBuffer.readBigUInt64LE(entryOffset + 40));
         const data = tahBuffer.subarray(dataOffset, dataOffset + length).toString('utf-8').replace(/\0+$/g, '');
-        return { score, data };
+        return { score, data, links: [] };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, topN);

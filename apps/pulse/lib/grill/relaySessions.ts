@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import connectDB from '@/lib/core/database';
 import PhoneRelaySession from '@/models/PhoneRelaySession';
 
+const PhoneRelaySessionModel = PhoneRelaySession as any;
+
 export type RelaySessionStatus = 'pending' | 'confirmed' | 'repeat_requested' | 'needs_human' | 'no_input';
 
 export interface RelaySession {
@@ -54,7 +56,7 @@ async function persistSession(session: RelaySession) {
   if (!canPersistRelaySessions()) return;
 
   await connectDB();
-  await PhoneRelaySession.findOneAndUpdate(
+  await PhoneRelaySessionModel.findOneAndUpdate(
     { id: session.id },
     {
       $set: {
@@ -88,7 +90,7 @@ export async function createRelaySession(input: Pick<RelaySession, 'ticket' | 'c
 export async function getRelaySession(id: string) {
   if (canPersistRelaySessions()) {
     await connectDB();
-    const stored = await PhoneRelaySession.findOne({ id }).lean();
+    const stored = await PhoneRelaySessionModel.findOne({ id }).lean();
     if (stored) {
       const session = normalizeRelaySession(stored);
       sessions.set(session.id, session);

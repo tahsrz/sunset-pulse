@@ -44,7 +44,7 @@ const {
   mockPrismaTransaction: vi.fn(),
 }));
 
-vi.mock('@calcom/prisma', () => ({
+vi.mock('@/lib/core/prisma', () => ({
   prisma: {
     user: {
       create: mockPrismaUserCreate,
