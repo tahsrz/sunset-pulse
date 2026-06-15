@@ -194,6 +194,7 @@ function getCartridgeDirs(): string[] {
   const roots = [
     path.join(process.cwd(), 'cartridges'),
     path.resolve(process.cwd(), '..', 'SunsetWars', 'cartridges'),
+    path.resolve(process.cwd(), '..', '..', '..', 'SunsetWars', 'cartridges'),
     ...configuredDirs,
     '/tmp/cartridges', // Synced from Supabase
     '/tmp'

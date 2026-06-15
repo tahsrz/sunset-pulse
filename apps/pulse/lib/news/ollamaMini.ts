@@ -21,6 +21,33 @@ const DEFAULT_MANIFEST_DIR = 'C:\\Users\\Taz\\.ollama\\models\\manifests\\regist
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
 const MINI_MODEL_PREFERENCE = ['phi4-mini', 'smollm2', 'gemma4'];
 
+export const callOllama = async (prompt: string, options: { temperature?: number, num_predict?: number } = {}) => {
+  const model = chooseMiniModel();
+  if (!model) throw new Error("No Ollama mini model found.");
+
+  const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: model.name,
+      prompt,
+      stream: false,
+      options: {
+        temperature: options.temperature ?? 0.15,
+        num_predict: options.num_predict ?? 900,
+      },
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ollama call failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as OllamaGenerateResponse;
+  return data.response || '';
+};
+
 const getManifestDir = () => process.env.OLLAMA_LIBRARY_MANIFESTS || DEFAULT_MANIFEST_DIR;
 
 export const listOllamaMiniModels = (): OllamaMiniModel[] => {
@@ -113,33 +140,15 @@ export const enhancePulseNewsWithMini = async (articles: PulseNewsArticle[]): Pr
   ].join('\n');
 
   try {
-    const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: model.name,
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.15,
-          num_predict: 900,
-        },
-      }),
-      signal: AbortSignal.timeout(8500),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ollama mini failed: ${response.status}`);
-    }
-
-    const data = (await response.json()) as OllamaGenerateResponse;
-    const parsed = JSON.parse(extractJson(data.response || '')) as Array<{
+    const responseText = await callOllama(prompt);
+    const parsed = JSON.parse(extractJson(responseText)) as Array<{
       index?: number;
       summary?: string;
       category?: PulseNewsArticle['category'];
     }>;
     const patches = new Map(parsed.map((item) => [item.index, item]));
 
+    const model = chooseMiniModel();
     return {
       articles: articles.map((article, index) => {
         const patch = patches.get(index);
@@ -151,11 +160,12 @@ export const enhancePulseNewsWithMini = async (articles: PulseNewsArticle[]): Pr
           category: normalizeCategory(patch.category, article.category),
         };
       }),
-      model: model.name,
+      model: model?.name,
       status: 'enhanced',
     };
   } catch (error) {
+    const model = chooseMiniModel();
     console.warn('[PULSE_NEWS_MINI_FALLBACK]', error);
-    return { articles, model: model.name, status: 'failed' };
+    return { articles, model: model?.name, status: 'failed' };
   }
 };

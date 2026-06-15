@@ -25,6 +25,18 @@ export interface SourceMetadata {
   created_at: number;
 }
 
+export interface TAHSearchResultV36 extends TAHShardV36 {
+  source: SourceMetadata | null;
+  score: number;
+}
+
+const ENTRY_SIZE = 80;
+const TAG_TEXT = 0;
+const LOCAL_BLOOM_BITS = 288n;
+const LOCAL_BLOOM_HASHES = 4;
+const LOCAL_BLOOM_OFFSET = 44;
+const LOCAL_BLOOM_BYTES = 36;
+
 export class TAHRetrieverV36 {
   private buffer: Buffer | null = null;
   private k: number = 0;
@@ -77,37 +89,47 @@ export class TAHRetrieverV36 {
   public getShard(index: number): TAHShardV36 | null {
     if (!this.shardIndex || index >= this.shardCount) return null;
 
-    const start = index * 80;
-    const type = this.shardIndex.readUInt8(start);
-    const offset = this.shardIndex.readBigUint64LE(start + 8);
-    const length = this.shardIndex.readUInt32LE(start + 16);
-    
-    // v3.6 Specifics
-    const sourceId = this.shardIndex.readUInt16LE(start + 20);
-    const regionId = this.shardIndex.readUInt16LE(start + 22);
-    const kwHash = this.shardIndex.readBigUint64LE(start + 24);
-    const complexity = this.shardIndex.readFloatLE(start + 32);
-    const relevance = this.shardIndex.readFloatLE(start + 36);
-    const timestamp = this.shardIndex.readUInt32LE(start + 40);
+    const meta = this.getShardMeta(index);
+    if (!meta) return null;
 
-    const dataBuffer = this.buffer!.slice(Number(offset), Number(offset) + length);
+    const dataBuffer = this.buffer!.slice(Number(meta.offset), Number(meta.offset) + meta.length);
     let textLen = 0;
     while (textLen < dataBuffer.length && dataBuffer[textLen] !== 0) textLen++;
     const text = dataBuffer.slice(0, textLen).toString('utf-8');
 
     return {
-      type,
-      offset,
-      length,
-      kwHash,
+      type: meta.type,
+      offset: meta.offset,
+      length: meta.length,
+      kwHash: meta.kwHash,
       analytics: {
-        complexity,
-        relevance,
-        timestamp,
-        sourceId,
-        regionId
+        complexity: meta.complexity,
+        relevance: meta.relevance,
+        timestamp: meta.timestamp,
+        sourceId: meta.sourceId,
+        regionId: meta.regionId
       },
       data: text
+    };
+  }
+
+  private getShardMeta(index: number) {
+    if (!this.shardIndex || index < 0 || index >= this.shardCount) return null;
+
+    const start = index * ENTRY_SIZE;
+    if (start + ENTRY_SIZE > this.shardIndex.length) return null;
+
+    return {
+      type: this.shardIndex.readUInt8(start),
+      offset: this.shardIndex.readBigUint64LE(start + 8),
+      length: this.shardIndex.readUInt32LE(start + 16),
+      sourceId: this.shardIndex.readUInt16LE(start + 20),
+      regionId: this.shardIndex.readUInt16LE(start + 22),
+      kwHash: this.shardIndex.readBigUint64LE(start + 24),
+      complexity: this.shardIndex.readFloatLE(start + 32),
+      relevance: this.shardIndex.readFloatLE(start + 36),
+      timestamp: this.shardIndex.readUInt32LE(start + 40),
+      localBloom: this.shardIndex.slice(start + LOCAL_BLOOM_OFFSET, start + LOCAL_BLOOM_OFFSET + LOCAL_BLOOM_BYTES)
     };
   }
 
@@ -115,19 +137,105 @@ export class TAHRetrieverV36 {
     return this.sourceRegistry[id] || null;
   }
 
-  public search(query: string): any[] {
-    const results: any[] = [];
-    const queryHash = getSurgicalHash(query);
+  /**
+   * Performs an O(1) surgical check against the Global Bloom Filter.
+   */
+  public contains(keyword: string): boolean {
+    if (!this.bloomFilter) return true;
+    const indices = getTahIndices(keyword, this.m, this.k);
+    for (const idx of indices) {
+      const byteIdx = Number(idx / 8n);
+      const bitIdx = Number(idx % 8n);
+      if (!(this.bloomFilter[byteIdx] & (1 << bitIdx))) return false;
+    }
+    return true;
+  }
 
-    for (let i = 0; i < this.shardCount; i++) {
-      const shard = this.getShard(i);
-      if (shard && (shard.kwHash === queryHash || shard.data.toLowerCase().includes(query.toLowerCase()))) {
-        results.push({
-          ...shard,
-          source: this.getSource(shard.analytics.sourceId)
-        });
+  private localContains(localBloom: Buffer, keyword: string): boolean {
+    const indices = getTahIndices(keyword, LOCAL_BLOOM_BITS, LOCAL_BLOOM_HASHES);
+    for (const idx of indices) {
+      const byteIdx = Number(idx / 8n);
+      const bitIdx = Number(idx % 8n);
+      if (byteIdx >= localBloom.length || !(localBloom[byteIdx] & (1 << bitIdx))) {
+        return false;
       }
     }
-    return results;
+    return true;
+  }
+
+  private getSearchTerms(query: string): string[] {
+    const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, ' ');
+    const terms = cleanQuery.split(/\s+/).map(t => t.trim()).filter(t => t.length > 2);
+    const ngrams = [...terms];
+
+    for (let i = 0; i < terms.length - 1; i++) {
+      ngrams.push(`${terms[i]} ${terms[i + 1]}`);
+    }
+
+    return Array.from(new Set(ngrams));
+  }
+
+  /**
+   * The "Surgical Retrieval" path. 
+   * Pre-filters the vault via Global Bloom, scores local Bloom hits, then reads
+   * payload text only for candidate shards.
+   */
+  public search(query: string, topN: number = 3): TAHSearchResultV36[] {
+    const queryHash = getSurgicalHash(query);
+    const searchTerms = this.getSearchTerms(query);
+    const globallyPresentTerms = searchTerms.filter(term => this.contains(term));
+    
+    // O(1) Pre-check
+    if (!this.contains(query) && globallyPresentTerms.length === 0) {
+      return [];
+    }
+
+    const scores: Map<number, number> = new Map();
+
+    for (let i = 0; i < this.shardCount; i++) {
+      const meta = this.getShardMeta(i);
+      if (!meta || meta.type !== TAG_TEXT) continue;
+
+      let score = 0;
+      if (meta.kwHash === queryHash) {
+        score += 100.0; // Surgical Bullseye
+      }
+
+      for (const term of globallyPresentTerms) {
+        if (this.localContains(meta.localBloom, term)) {
+          score += term.includes(' ') ? 8.0 : 3.5;
+        }
+      }
+
+      if (score > 0) {
+        // Intelligence-Weighting
+        const complexity = isNaN(meta.complexity) ? 1.0 : meta.complexity;
+        const relevance = isNaN(meta.relevance) ? 1.0 : meta.relevance;
+        const weightedScore = score * (relevance * 2.0) + (complexity * 1.5);
+        scores.set(i, weightedScore);
+      }
+    }
+
+    const queryText = query.toLowerCase().trim();
+    const candidates = Array.from(scores.keys()).map(index => {
+      const shard = this.getShard(index);
+      if (!shard) return null;
+
+      const normalizedData = shard.data.toLowerCase();
+      const termMatches = searchTerms.filter(term => normalizedData.includes(term)).length;
+      const phraseMatch = queryText.length > 0 && normalizedData.includes(queryText);
+      const score = scores.get(index)! + (termMatches * 10) + (phraseMatch ? 25 : 0);
+
+      return {
+        ...shard,
+        source: this.getSource(shard.analytics.sourceId),
+        score
+      };
+    }).filter((result): result is TAHSearchResultV36 => Boolean(result));
+
+    return candidates
+      .filter(result => result.score >= 100 || searchTerms.some(term => result.data.toLowerCase().includes(term)))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topN);
   }
 }

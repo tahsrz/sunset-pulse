@@ -1,0 +1,295 @@
+{
+  "name": "segmented_expert_atlas",
+  "format": "segmented-expert-atlas-v1",
+  "generatedAt": "2026-06-15T18:42:26.625Z",
+  "expertCount": 400,
+  "segmentCount": 25,
+  "maxExperts": 400,
+  "sources": [
+    {
+      "slug": "medical-encyclopedia",
+      "name": "medical_encyclopedia.tah",
+      "experts": 1
+    },
+    {
+      "slug": "thelittleschemer",
+      "name": "theLittleSchemer.tah",
+      "experts": 10
+    },
+    {
+      "slug": "compilers",
+      "name": "compilers.tah",
+      "experts": 11
+    },
+    {
+      "slug": "datadesign",
+      "name": "dataDesign.tah",
+      "experts": 11
+    },
+    {
+      "slug": "sunset-wars",
+      "name": "sunset_wars.hat",
+      "experts": 10
+    },
+    {
+      "slug": "web-1779229382",
+      "name": "web_1779229382.hat",
+      "experts": 6
+    },
+    {
+      "slug": "python-core",
+      "name": "python_core.tah",
+      "experts": 10
+    },
+    {
+      "slug": "sicp",
+      "name": "sicp.tah",
+      "experts": 10
+    },
+    {
+      "slug": "operatingsystem-concept",
+      "name": "operatingSystem_concept.tah",
+      "experts": 11
+    },
+    {
+      "slug": "abidan-vault",
+      "name": "abidan_vault.tah",
+      "experts": 2
+    },
+    {
+      "slug": "cplus",
+      "name": "cPlus.tah",
+      "experts": 11
+    },
+    {
+      "slug": "categorytheory",
+      "name": "categoryTheory.tah",
+      "experts": 11
+    },
+    {
+      "slug": "operatingsystem-vital",
+      "name": "operatingSystem_vital.tah",
+      "experts": 10
+    },
+    {
+      "slug": "operatingsystem-recursive",
+      "name": "operatingSystem_recursive.tah",
+      "experts": 10
+    },
+    {
+      "slug": "operatingsystem-links",
+      "name": "operatingSystem_links.tah",
+      "experts": 10
+    },
+    {
+      "slug": "operatingsystem",
+      "name": "operatingSystem.tah",
+      "experts": 10
+    },
+    {
+      "slug": "web-1779229378",
+      "name": "web_1779229378.hat",
+      "experts": 6
+    },
+    {
+      "slug": "web-1779229372",
+      "name": "web_1779229372.hat",
+      "experts": 6
+    },
+    {
+      "slug": "architecture",
+      "name": "architecture.hat",
+      "experts": 11
+    },
+    {
+      "slug": "wiki-artificial-intelligence",
+      "name": "wiki_artificial_intelligence.hat",
+      "experts": 10
+    },
+    {
+      "slug": "wiki-dallas",
+      "name": "wiki_dallas.hat",
+      "experts": 10
+    },
+    {
+      "slug": "wiki-real-estate",
+      "name": "wiki_real_estate.hat",
+      "experts": 10
+    },
+    {
+      "slug": "algorithms",
+      "name": "algorithms.tah",
+      "experts": 11
+    },
+    {
+      "slug": "deeplearning",
+      "name": "deepLearning.tah",
+      "experts": 11
+    },
+    {
+      "slug": "sicp-expert",
+      "name": "sicp_expert.tah",
+      "experts": 10
+    },
+    {
+      "slug": "re-rasterizer",
+      "name": "re_rasterizer.hat",
+      "experts": 10
+    },
+    {
+      "slug": "unixart",
+      "name": "unixArt.tah",
+      "experts": 10
+    },
+    {
+      "slug": "sunset-pulse",
+      "name": "sunset_pulse.hat",
+      "experts": 10
+    },
+    {
+      "slug": "tarrant-deeds",
+      "name": "tarrant_deeds.tah",
+      "experts": 4
+    },
+    {
+      "slug": "sunset-wars-runtime-matrix",
+      "name": "sunset_wars_runtime_matrix.hat",
+      "experts": 10
+    },
+    {
+      "slug": "web-foundations",
+      "name": "web_foundations.tah",
+      "experts": 2
+    },
+    {
+      "slug": "texas-place-history",
+      "name": "texas_place_history.tah",
+      "experts": 1
+    },
+    {
+      "slug": "web-1779229377",
+      "name": "web_1779229377.hat",
+      "experts": 1
+    },
+    {
+      "slug": "abidan-court",
+      "name": "abidan_court.tah",
+      "experts": 6
+    },
+    {
+      "slug": "market-velocity",
+      "name": "market_velocity.tah",
+      "experts": 6
+    },
+    {
+      "slug": "texas-contracts-expertise",
+      "name": "texas_contracts_expertise.tah",
+      "experts": 8
+    },
+    {
+      "slug": "neighborhood-intel",
+      "name": "neighborhood_intel.tah",
+      "experts": 4
+    },
+    {
+      "slug": "user-memories",
+      "name": "user_memories.tah",
+      "experts": 10
+    },
+    {
+      "slug": "user-memories-unified",
+      "name": "user_memories.unified.tah",
+      "experts": 10
+    },
+    {
+      "slug": "makiel-expertise",
+      "name": "makiel_expertise.tah",
+      "experts": 3
+    },
+    {
+      "slug": "sunset-pulse-expertise",
+      "name": "sunset_pulse_expertise.tah",
+      "experts": 6
+    },
+    {
+      "slug": "polymorphic-test",
+      "name": "polymorphic_test.tah",
+      "experts": 3
+    },
+    {
+      "slug": "test-v3",
+      "name": "test_v3.tah",
+      "experts": 2
+    },
+    {
+      "slug": "gadrael-expertise",
+      "name": "gadrael_expertise.tah",
+      "experts": 2
+    },
+    {
+      "slug": "durandiel-expertise",
+      "name": "durandiel_expertise.tah",
+      "experts": 2
+    },
+    {
+      "slug": "listings-gate",
+      "name": "listings_gate.tah",
+      "experts": 1
+    },
+    {
+      "slug": "swarm-test",
+      "name": "swarm_test.tah",
+      "experts": 1
+    },
+    {
+      "slug": "yield-intel",
+      "name": "yield_intel.tah",
+      "experts": 8
+    },
+    {
+      "slug": "dallas-safety-intel",
+      "name": "dallas_safety_intel.hat",
+      "experts": 11
+    },
+    {
+      "slug": "test-v3-1",
+      "name": "test_v3_1.tah.hat",
+      "experts": 1
+    },
+    {
+      "slug": "dallas-community-intel",
+      "name": "dallas_community_intel.hat",
+      "experts": 11
+    },
+    {
+      "slug": "catalogue-of-life-v3-6",
+      "name": "catalogue_of_life_v3_6.hat",
+      "experts": 11
+    },
+    {
+      "slug": "texas-real-estate",
+      "name": "texas_real_estate.tah",
+      "experts": 1
+    },
+    {
+      "slug": "security-architect",
+      "name": "security_architect.tah",
+      "experts": 2
+    },
+    {
+      "slug": "postgres-mastery",
+      "name": "postgres_mastery.tah",
+      "experts": 2
+    },
+    {
+      "slug": "spatial-computing",
+      "name": "spatial_computing.tah",
+      "experts": 2
+    },
+    {
+      "slug": "pulse-master-v3-6",
+      "name": "pulse_master_v3_6.hat",
+      "experts": 10
+    }
+  ]
+}
