@@ -1,0 +1,23 @@
+TITLE: Listing Context Capsule
+CONCEPT: listing_context
+ALIASES: listing summary, listing angle, property facts, property highlights, sell this home, campaign hook, showing copy
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule to turn property facts into agent-ready listing summaries, showing notes, campaign hooks, seller updates, buyer highlights, and missing-data checklists.
+
+PROPERTY FACTS TO PRIORITIZE:
+- Address or area, property type, price, beds, baths, square footage, lot, parking, year built, school or district fields if provided by source data, HOA, tax, condition, updates, days on market, and showing availability.
+- Differentiators such as layout, natural light, storage, outdoor space, remodel quality, commute access, walkability notes, nearby commerce, and flexible rooms.
+- Seller constraints such as timing, occupancy, repairs, concessions, offer deadline, preferred closing, or disclosure-sensitive issues.
+
+LISTING ANGLE RULES:
+Lead with the strongest useful hook, not a pile of adjectives. Tie features to buyer use cases: daily flow, storage, commute, entertaining, maintenance, flexibility, or value position. Flag any missing property fact before writing a confident claim.
+
+LISTING CONTEXT ANCHORS:
+listing_context, listing, property, home, property facts, listing summary, listing angle, property highlights, campaign hook, marketing angle, showing notes, seller constraints, buyer-facing copy, missing facts.
+
+OUTPUT SHAPE:
+Return one primary listing angle, three supporting bullets, missing fields, and a safe short blurb.

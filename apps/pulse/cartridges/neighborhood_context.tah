@@ -1,0 +1,23 @@
+TITLE: Neighborhood Context Capsule
+CONCEPT: neighborhood_context
+ALIASES: neighborhood, area, community, nearby, local context, commute, amenities, district, place memory
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule for neighborhood explainers, area summaries, buyer relocation questions, local context, commute framing, amenities, and place-based listing support.
+
+BUYER-SAFE AREA CONTEXT:
+- Explain location through practical facts: access routes, nearby services, parks, schools only when sourced, shopping corridors, commute options, property styles, price bands, and market activity.
+- Avoid demographic claims, protected-class language, ranking people, safety promises, or unsupported school quality claims.
+- When data is missing, say what should be checked: MLS remarks, city data, school district source, local notes, map distance, or agent memory.
+
+NEIGHBORHOOD SIGNALS:
+Strong neighborhood context connects the home to daily life: grocery runs, coffee, restaurants, trails, medical, schools where sourced, transit, major roads, employment centers, local events, and nearby listings.
+
+NEIGHBORHOOD ANCHORS:
+neighborhood_context, neighborhood, area, community, nearby, local context, commute, amenities, place memory, relocation, buyer explainer, lifestyle, practical location, local notes, district source.
+
+OUTPUT SHAPE:
+Return a concise area brief, three practical buyer notes, one caution about verification, and a client-safe phrasing suggestion.

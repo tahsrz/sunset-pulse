@@ -58,6 +58,7 @@ const Navbar: React.FC = () => {
 
   const navLinks = useMemo<NavLink[]>(() => [
     { href: '/', label: 'Home', active: pathname === '/' },
+    { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
     { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
     { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },

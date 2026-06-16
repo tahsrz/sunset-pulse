@@ -49,6 +49,8 @@ export interface ExpertAtlasSearchQuery {
   minRecency?: number;
   topN?: number;
   maxSegments?: number;
+  linkExpansionDepth?: number;
+  linkExpansionLimit?: number;
 }
 
 export interface ExpertAtlasSearchResult {
@@ -75,6 +77,7 @@ export interface ExpertAtlasSearchDiagnostics {
   visitedSegments: number;
   rejectedSegments: number;
   candidateExperts: number;
+  linkedExperts?: number;
   payloadReads: number;
   routeIndex: number;
 }
@@ -155,6 +158,8 @@ type QueryPlan = {
   minRecency: number;
   topN: number;
   maxSegments: number;
+  linkExpansionDepth: number;
+  linkExpansionLimit: number;
 };
 
 export class SegmentedExpertAtlasBuilder {
@@ -334,23 +339,38 @@ export class SegmentedExpertAtlasRetriever {
       }
     }
 
-    const candidates = [...expertScores.entries()]
+    const rankedCandidates = [...expertScores.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, Math.max(plan.topN * 4, plan.topN));
+    const linkedCandidates = this.expandLinkedCandidates(rankedCandidates, plan);
+    const candidates = [...rankedCandidates, ...linkedCandidates]
+      .reduce((unique, candidate) => {
+        const existing = unique.get(candidate[0]);
+        if (!existing || candidate[1] > existing[1]) unique.set(candidate[0], candidate);
+        return unique;
+      }, new Map<number, [number, number]>())
+      .values();
 
     let payloadReads = 0;
     const results: ExpertAtlasSearchResult[] = [];
 
-    for (const [expertIndex, score] of candidates) {
+    for (const [expertIndex, score] of Array.from(candidates).sort((a, b) => b[1] - a[1])) {
       const meta = this.readExpert(expertIndex);
       const text = this.readPayload(meta);
       payloadReads++;
+      const label = this.titleMap.get(meta.expertId) || { title: `Expert ${meta.expertId}`, source: 'unknown', concepts: [] };
 
-      if (plan.terms.length && !plan.terms.some(term => text.toLowerCase().includes(term))) {
+      const finalHaystack = [
+        label.title,
+        label.source,
+        label.concepts.join(' '),
+        text.slice(0, 1200)
+      ].join(' ').toLowerCase();
+
+      if (plan.terms.length && !plan.terms.some(term => finalHaystack.includes(term))) {
         continue;
       }
 
-      const label = this.titleMap.get(meta.expertId) || { title: `Expert ${meta.expertId}`, source: 'unknown', concepts: [] };
       results.push({
         expertId: meta.expertId,
         title: label.title,
@@ -380,6 +400,7 @@ export class SegmentedExpertAtlasRetriever {
         visitedSegments: selectedSegments.visited,
         rejectedSegments: selectedSegments.rejected,
         candidateExperts: expertScores.size,
+        linkedExperts: linkedCandidates.length,
         payloadReads,
         routeIndex
       }
@@ -412,8 +433,47 @@ export class SegmentedExpertAtlasRetriever {
       minTrust: clamp01(query.minTrust ?? 0),
       minRecency: clamp01(query.minRecency ?? 0),
       topN: Math.max(1, query.topN ?? 5),
-      maxSegments: Math.max(1, query.maxSegments ?? Math.ceil(Math.sqrt(Math.max(1, this.segmentCount))) + 2)
+      maxSegments: Math.max(1, query.maxSegments ?? Math.ceil(Math.sqrt(Math.max(1, this.segmentCount))) + 2),
+      linkExpansionDepth: clampInt(query.linkExpansionDepth ?? 1, 0, 3),
+      linkExpansionLimit: clampInt(query.linkExpansionLimit ?? 8, 0, 64)
     };
+  }
+
+  private expandLinkedCandidates(seeds: Array<[number, number]>, plan: QueryPlan) {
+    if (plan.linkExpansionDepth <= 0 || plan.linkExpansionLimit <= 0) return [];
+
+    const linkedScores = new Map<number, number>();
+    const seen = new Set<number>(seeds.map(([index]) => index));
+    let frontier = seeds.slice(0, plan.topN * 2);
+
+    for (let depth = 0; depth < plan.linkExpansionDepth && frontier.length > 0; depth++) {
+      const nextFrontier: Array<[number, number]> = [];
+
+      for (const [expertIndex, seedScore] of frontier) {
+        const seedMeta = this.readExpert(expertIndex);
+        const links = this.readLinks(seedMeta).slice(0, plan.linkExpansionLimit);
+
+        for (const linkedIndex of links) {
+          if (linkedIndex < 0 || linkedIndex >= this.expertCount || seen.has(linkedIndex)) continue;
+          seen.add(linkedIndex);
+
+          const meta = this.readExpert(linkedIndex);
+          if (!this.linkedExpertMatchesPlan(meta, plan)) continue;
+
+          const score = this.scoreLinkedExpert(meta, seedMeta, seedScore, plan, depth);
+          linkedScores.set(linkedIndex, Math.max(linkedScores.get(linkedIndex) || 0, score));
+          nextFrontier.push([linkedIndex, score]);
+
+          if (linkedScores.size >= plan.linkExpansionLimit) break;
+        }
+
+        if (linkedScores.size >= plan.linkExpansionLimit) break;
+      }
+
+      frontier = nextFrontier;
+    }
+
+    return [...linkedScores.entries()];
   }
 
   private collectCandidateSegments(plan: QueryPlan, routeIndex: number) {
@@ -483,6 +543,16 @@ export class SegmentedExpertAtlasRetriever {
     return true;
   }
 
+  private linkedExpertMatchesPlan(meta: ExpertMeta, plan: QueryPlan) {
+    if ((meta.domainMask & plan.domainMask) === 0n) return false;
+    if (meta.complexity < plan.minComplexity || meta.complexity > plan.maxComplexity) return false;
+    if (meta.relevance < Math.max(0, plan.minRelevance - 0.1)) return false;
+    if (meta.trust < plan.minTrust) return false;
+    if (meta.recency < Math.max(0, plan.minRecency - 0.1)) return false;
+    if (meta.vitality <= 0) return false;
+    return true;
+  }
+
   private scoreExpert(meta: ExpertMeta, plan: QueryPlan) {
     const keyPenalty = Math.min(0.25, Number(absBigInt(meta.key - plan.key) % 100000n) / 400000);
     const complexityFit = 1 - Math.min(1, Math.abs(meta.complexity - plan.targetComplexity));
@@ -497,6 +567,24 @@ export class SegmentedExpertAtlasRetriever {
       complexityFit * 15 +
       termHits * 8 -
       keyPenalty
+    );
+  }
+
+  private scoreLinkedExpert(meta: ExpertMeta, seedMeta: ExpertMeta, seedScore: number, plan: QueryPlan, depth: number) {
+    const sharedDomain = (meta.domainMask & seedMeta.domainMask) !== 0n ? 1 : 0;
+    const complexityFit = 1 - Math.min(1, Math.abs(meta.complexity - plan.targetComplexity));
+    const termHits = plan.terms.filter(term => bloomContains(meta.bloom, term)).length;
+    const depthPenalty = depth * 8;
+
+    return (
+      seedScore * 0.55 +
+      meta.vitality * 14 +
+      meta.density * 12 +
+      meta.trust * 12 +
+      complexityFit * 10 +
+      sharedDomain * 6 +
+      termHits * 5 -
+      depthPenalty
     );
   }
 

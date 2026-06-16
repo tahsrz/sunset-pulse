@@ -1,0 +1,24 @@
+TITLE: Local Business Context Capsule
+CONCEPT: local_business_context
+ALIASES: local business, nearby shops, restaurants, commerce, services, community anchors, property story, local commerce
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule to add useful nearby commerce and community context to property stories, neighborhood explainers, relocation briefs, and listing angles.
+
+LOCAL COMMERCE SIGNALS:
+- Shops, restaurants, grocery, coffee, fitness, parks, services, medical, schools where sourced, entertainment, local employers, community centers, and small business corridors.
+- Mention local context only when it helps the client understand daily life or listing positioning.
+- Avoid pretending to know exact distances, hours, ratings, ownership, or current openings unless the source data provides them.
+- Use phrasing like "nearby options to verify" or "local context worth checking" when details are not confirmed.
+
+STORY USE:
+Local business context should support a property story without becoming filler. Good local anchors help describe convenience, weekend routines, showing talking points, buyer questions, relocation comfort, and neighborhood identity.
+
+LOCAL BUSINESS ANCHORS:
+local_business_context, local business, nearby shops, restaurants, commerce, services, community, community anchors, property story, local commerce, coffee, grocery, restaurants, services, amenities.
+
+OUTPUT SHAPE:
+Return local anchors, why they matter to a buyer, what to verify, and a safe listing/story sentence.

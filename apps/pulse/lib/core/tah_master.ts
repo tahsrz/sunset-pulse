@@ -22,6 +22,11 @@ export interface TahMasterListInput {
   offset?: number | string;
 }
 
+export interface TahFactInput {
+  date?: string | Date;
+  refresh?: string | number | boolean | null;
+}
+
 const DEFAULT_MASTER_NAME = 'atlas_pulse_master';
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
@@ -176,6 +181,49 @@ export function listTahMasterPlaces(input: TahMasterListInput = {}) {
   };
 }
 
+export function getTahFactOfDay(input: TahFactInput = {}) {
+  const paths = assertTahMasterReady();
+  const metadata = getTahMasterMetadata();
+  const shardCount = Number(metadata.shardCount || 0);
+
+  if (!shardCount) {
+    throw new Error('TAH master archive has no shards.');
+  }
+
+  const dayKey = dateKey(input.date);
+  const seedKey = input.refresh ? `${dayKey}:${String(input.refresh)}` : dayKey;
+  const startIndex = seededIndex(seedKey, shardCount);
+  const maxAttempts = Math.min(shardCount, 48);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const shardIndex = (startIndex + attempt * 997) % shardCount;
+    const rawShard = readMasterShardAtIndex(paths, shardIndex);
+    if (!rawShard) continue;
+
+    const parsed = parsePackedShard(rawShard);
+    const blurb = makeTahBlurb(parsed.text);
+    if (!blurb) continue;
+
+    return {
+      date: dayKey,
+      shardIndex,
+      source: parsed.source,
+      slug: parsed.slug,
+      title: parsed.title || parsed.searchQuery || parsed.source || 'TAH archive shard',
+      searchQuery: parsed.searchQuery,
+      blurb,
+      archive: {
+        name: metadata.name,
+        sourceCount: metadata.sourceCount,
+        shardCount: metadata.shardCount,
+        generatedAt: metadata.generatedAt
+      }
+    };
+  }
+
+  throw new Error('No readable TAH fact was found in the master archive.');
+}
+
 export function parsePackedShard(data: string) {
   const normalized = data.replace(/\r\n/g, '\n').trim();
   const lines = normalized.split('\n');
@@ -322,6 +370,107 @@ function readMasterTextShards(paths: TahMasterPaths) {
   }
 
   return shards;
+}
+
+function readMasterShardAtIndex(paths: TahMasterPaths, shardIndex: number) {
+  const hatBuffer = fs.readFileSync(paths.hatPath);
+  const tahBuffer = fs.readFileSync(paths.tahPath);
+  if (hatBuffer.length < 64 || shardIndex < 0) return null;
+
+  if (hatBuffer.readUInt32LE(0) === 0x2134564d) {
+    return readMemoriaV4ShardAtIndex(hatBuffer, tahBuffer, shardIndex);
+  }
+
+  const bloomBits = hatBuffer.readBigUInt64LE(8);
+  const shardCount = hatBuffer.readUInt32LE(16);
+  if (shardIndex >= shardCount) return null;
+
+  const indexOffset = 64 + Number((bloomBits + 7n) / 8n);
+  const entryOffset = indexOffset + shardIndex * 80;
+  if (entryOffset + 80 > hatBuffer.length) return null;
+  if (hatBuffer.readUInt8(entryOffset) !== 0) return null;
+
+  const dataOffset = Number(hatBuffer.readBigUInt64LE(entryOffset + 8));
+  const length = hatBuffer.readUInt32LE(entryOffset + 16);
+  if (length <= 0 || dataOffset < 0 || dataOffset + length > tahBuffer.length) return null;
+
+  return tahBuffer
+    .subarray(dataOffset, dataOffset + length)
+    .toString('utf-8')
+    .replace(/\0+$/g, '')
+    .trim();
+}
+
+function readMemoriaV4ShardAtIndex(hatBuffer: Buffer, tahBuffer: Buffer, shardIndex: number) {
+  const header = readMemoriaV4Header(hatBuffer);
+  const shardSection = header.sections.find(section => section.type === MemoriaV4SectionType.SHARD_INDEX);
+  if (!shardSection || shardIndex >= Number(shardSection.itemCount)) return null;
+
+  const entryOffset = Number(shardSection.offset) + shardIndex * 80;
+  if (entryOffset + 80 > hatBuffer.length) return null;
+
+  const dataOffset = Number(hatBuffer.readBigUInt64LE(entryOffset + 32));
+  const length = Number(hatBuffer.readBigUInt64LE(entryOffset + 40));
+  if (length <= 0 || dataOffset < 0 || dataOffset + length > tahBuffer.length) return null;
+
+  return tahBuffer
+    .subarray(dataOffset, dataOffset + length)
+    .toString('utf-8')
+    .replace(/\0+$/g, '')
+    .trim();
+}
+
+function makeTahBlurb(text: string) {
+  const cleaned = cleanFactText(text);
+  if (cleaned.length < 80) return null;
+
+  const sentences = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map(sentence => sentence.trim())
+    .filter(sentence => isUsefulFactSentence(sentence));
+
+  const selected = sentences.find(sentence => sentence.length >= 90 && sentence.length <= 360) || sentences[0];
+  if (!selected) return null;
+
+  return selected.length > 380 ? `${selected.slice(0, 377).trim()}...` : selected;
+}
+
+function cleanFactText(text: string) {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/^SOURCE:\s.*$/gim, '')
+    .replace(/^SLUG:\s.*$/gim, '')
+    .replace(/^TITLE:\s.*$/gim, '')
+    .replace(/^QUERY:\s.*$/gim, '')
+    .replace(/^CONTENT:\s*/gim, '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/[`*_>#-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isUsefulFactSentence(sentence: string) {
+  if (sentence.length < 70) return false;
+  if (sentence.length > 520) return false;
+  if (/^\{|\}$/.test(sentence)) return false;
+  if (/sample data/i.test(sentence)) return false;
+  if (sentence.split(/\s+/).length < 10) return false;
+  return /[a-zA-Z]/.test(sentence);
+}
+
+function dateKey(value?: string | Date) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
+  return date.toISOString().slice(0, 10);
+}
+
+function seededIndex(seed: string, modulo: number) {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index++) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash >>> 0) % modulo;
 }
 
 function parseAtlasFields(text: string) {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 
 const JamieChat = dynamic(() => import('@/components/JamieChat'), { ssr: false });
 const FeedbackWidget = dynamic(() => import('@/components/FeedbackWidget'), { ssr: false });
@@ -11,12 +12,22 @@ const JamiePulseOverlay = dynamic(() => import('@/components/JamiePulseOverlay')
 
 export default function ClientWidgets() {
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+
+  if (pathname?.startsWith('/command-center')) {
+    return (
+      <>
+        <FeedbackWidget />
+        <DevPortal />
+      </>
+    );
+  }
 
   return (
     <>

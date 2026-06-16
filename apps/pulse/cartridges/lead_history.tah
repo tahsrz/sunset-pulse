@@ -1,0 +1,25 @@
+TITLE: Lead History Capsule
+CONCEPT: lead_history
+ALIASES: hot leads, prospects, call first, text lead, buyer intent, seller lead, pipeline, last touch, lead temperature
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule for lead scoring, buyer intent, seller intent, follow-up priority, call order, and pipeline triage. It helps decide who to contact first and what message angle to use.
+
+LEAD SCORING SIGNALS:
+- Hot lead: asked about a specific property, requested a showing, gave timing, mentioned financing, replied recently, or compared areas.
+- Warm lead: saved homes, asked broad market questions, mentioned a future move, or responded after a gap.
+- Cool lead: no recent response, vague intent, browsing without timing, or only asks general curiosity questions.
+- Urgency rises when the lead gives a timeline, budget, address, lease end, relocation detail, job change, family change, or seller pressure.
+- Intent rises when the lead asks for next steps, availability, payment comfort, offer strategy, valuation, or neighborhood tradeoffs.
+
+FOLLOW-UP PRIORITY:
+Call or text first when the lead has a recent reply, clear property interest, deadline, showing request, or pricing question. Use email when the lead asks for detail, comps, market summary, or listing packet. Defer low-signal leads unless a market change creates a useful reason to reach out.
+
+LEAD HISTORY ANCHORS:
+lead_history, hot leads, prospect, buyer, seller, call first, text first, follow-up, lead priority, pipeline, buyer intent, seller intent, motivation, timing, readiness, last touch, reply, lead temperature, nurture.
+
+OUTPUT SHAPE:
+Return a ranked list with reason, best channel, message angle, and one next step. Do not invent lead facts; mark missing data as unknown.

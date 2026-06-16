@@ -25,6 +25,14 @@ build/
 *.pem
 *.tah
 *.hat
+!apps/pulse/cartridges/agent_brand.tah
+!apps/pulse/cartridges/lead_history.tah
+!apps/pulse/cartridges/listing_context.tah
+!apps/pulse/cartridges/neighborhood_context.tah
+!apps/pulse/cartridges/comps_context.tah
+!apps/pulse/cartridges/objection_scripts.tah
+!apps/pulse/cartridges/local_business_context.tah
+!apps/pulse/cartridges/market_rules.tah
 
 # debug
 npm-debug.log*
