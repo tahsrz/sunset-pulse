@@ -49,6 +49,8 @@ const DOMAIN_SYNONYMS: Record<string, string[]> = {
   local: ['nearby', 'neighborhood', 'community', 'place'],
   nearby: ['local', 'around', 'area', 'neighborhood'],
   business: ['commerce', 'shop', 'restaurant', 'service', 'local business'],
+  shop: ['business', 'commerce', 'restaurant', 'service', 'local business'],
+  shops: ['business', 'commerce', 'restaurant', 'service', 'local business'],
   commerce: ['business', 'shop', 'restaurant', 'service'],
   comps: ['comparables', 'recent sales', 'sold properties', 'valuation', 'price check'],
   comparable: ['comp', 'comps', 'recent sale', 'similar property'],
@@ -78,7 +80,8 @@ const NORMALIZATION_ALIASES: Record<string, string[]> = {
   listings: ['listing'],
   properties: ['property'],
   neighborhoods: ['neighborhood'],
-  communities: ['community']
+  communities: ['community'],
+  shops: ['shop', 'business']
 };
 
 export function expandCommandTerms(text: string, aliases: string[] = []): WeightedTerm[] {
