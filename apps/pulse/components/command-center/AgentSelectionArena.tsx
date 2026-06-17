@@ -766,19 +766,19 @@ export default function AgentSelectionArena() {
             <section className="border border-white/10 bg-black/20 p-3">
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 <Activity size={15} />
-                Answer
+                Plain Answer
               </div>
               <h3 className="mt-3 text-base font-black text-white">
-                {commandResult?.result.title || (ranCommand ? recommended.sampleOutput.title : selected.sampleOutput.title)}
+                {commandResult?.result.title ? glossaryText(commandResult.result.title) : (ranCommand ? recommended.sampleOutput.title : selected.sampleOutput.title)}
               </h3>
               {commandResult?.result.summary && (
-                <p className="mt-2 text-sm leading-6 text-slate-300">{commandResult.result.summary}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{glossaryText(commandResult.result.summary)}</p>
               )}
               <div className="mt-3 space-y-2">
                 {(commandResult?.result.actions || (ranCommand ? recommended.sampleOutput.bullets : selected.sampleOutput.bullets)).map((bullet) => (
                   <div key={bullet} className="flex gap-2 text-sm leading-5 text-slate-300">
                     <ChevronRight size={15} className="mt-0.5 shrink-0 text-cyan-200" />
-                    <span>{bullet}</span>
+                    <span>{glossaryText(bullet)}</span>
                   </div>
                 ))}
               </div>
@@ -807,7 +807,7 @@ export default function AgentSelectionArena() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-100">
                       <BookOpen size={15} />
-                      Ready-to-use Version
+                      What I Did
                     </div>
                     <h3 className="mt-2 text-base font-black text-white">{glossaryText(commandResult.result.deliverable.title)}</h3>
                     <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(commandResult.result.deliverable.sourceSummary)}</p>
@@ -864,7 +864,7 @@ export default function AgentSelectionArena() {
               <section className="border border-amber-200/20 bg-amber-300/10 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-amber-100">
                   <BookOpen size={15} />
-                  Answer Plan
+                  Behind The Scenes
                 </div>
                 <div className="mt-3 border border-white/10 bg-[#071016] p-3">
                   <div className="flex items-start justify-between gap-3">
@@ -967,7 +967,7 @@ export default function AgentSelectionArena() {
               <section className="border border-white/10 bg-black/20 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                   <Layers3 size={15} />
-                  Files Read
+                  Sources Checked
                 </div>
                 <div className="mt-3 space-y-2">
                   {commandResult.trace.selectedShards.slice(0, 3).map((shard) => (

@@ -118,6 +118,25 @@ describe('command center routing', () => {
     expect(bridge?.context).not.toContain('TAH Router');
     expect(fs.readFileSync(filePath, 'utf8')).toContain('TYPE: sunset_pulse_query_memory');
   });
+
+  it('turns Dallas 311 code concern records into a plain answer', () => {
+    process.env.PULSE_QUERY_MEMORY_DISABLED = 'true';
+
+    const response = runCommandCenterCommand({
+      command: 'Community Vitality: Code Concern CCS Status: New | Outcome: PENDING Location: 3800 S TYLER ST, DALLAS, TX, 75224, Dallas TX Reported: 2026 06 04T19:47:49.000 Coordinates: 0, 0 Service Request: 26 00243099 What does this mean?',
+      relayMode: 'briefing',
+      supervisor: true
+    });
+
+    expect(response.worker.id).toBe('dallas-community');
+    expect(response.result.title).toContain('code-compliance request');
+    expect(response.result.summary).toContain('3800 S TYLER ST');
+    expect(response.result.summary).toContain('Coordinates 0, 0');
+    expect(response.result.actions[0]).toContain('26-00243099');
+    expect(response.result.deliverable.title).toContain('Plain interpretation');
+    expect(response.result.deliverable.copyReadyText).toContain('This is a Dallas 311 code-compliance record');
+    expect(response.result.deliverable.copyReadyText).not.toContain('This answer is shaped as');
+  });
 });
 
 function restoreEnv(key: string, value: string | undefined) {

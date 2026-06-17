@@ -118,6 +118,16 @@ type CommandContextShard = {
   matchReason?: string;
 };
 
+type CivicServiceRecord = {
+  category: string;
+  status: string;
+  outcome: string;
+  location: string;
+  reported: string;
+  coordinates: string;
+  serviceRequest: string;
+};
+
 type TahRetrievalPolicyTrace = {
   name: string;
   contextMode: 'compact';
@@ -308,6 +318,11 @@ function synthesizeWorkerResult(
   shards: CommandContextShard[],
   relayPlan: TahRelayPlan
 ): CommandCenterResponse['result'] {
+  const civicRecord = parseCivicServiceRecord(command);
+  if (civicRecord && worker.id === 'dallas-community') {
+    return synthesizeCivicServiceResult(command, worker, shards, relayPlan, civicRecord);
+  }
+
   const topShard = shards[0];
   const sourcePhrase = topShard
     ? `I found a useful note in ${topShard.source} about ${topShard.concepts.slice(0, 3).join(', ') || 'this topic'}.`
@@ -330,6 +345,36 @@ function synthesizeWorkerResult(
   };
 }
 
+function synthesizeCivicServiceResult(
+  command: string,
+  worker: IntelligenceWorker,
+  shards: CommandContextShard[],
+  relayPlan: TahRelayPlan,
+  record: CivicServiceRecord
+): CommandCenterResponse['result'] {
+  const actions = [
+    `Look up service request ${record.serviceRequest} in the Dallas 311 system if you need the live status.`,
+    'Treat the address as the usable location because the coordinates are 0, 0.',
+    'Use this as local service context only; do not turn it into a safety, value, or neighborhood-quality claim.'
+  ];
+  const confidence = Math.min(96, Math.max(84, worker.stats.precision));
+  const summary = [
+    `This is a Dallas 311 code-compliance service request for ${record.location}.`,
+    `${record.category} means the city categorized it as a code concern; CCS is the code-compliance lane.`,
+    `Status ${record.status} and outcome ${record.outcome} mean it appears open or not yet resolved.`,
+    `Coordinates ${record.coordinates} usually mean the record did not geocode correctly, so verify by address and service request number.`
+  ].join(' ');
+
+  return {
+    title: 'This is an open Dallas code-compliance request',
+    summary,
+    actions,
+    confidence,
+    relayPlan,
+    deliverable: buildCivicServiceDeliverable(record, shards, relayPlan, actions)
+  };
+}
+
 function buildCommandDeliverable(
   command: string,
   worker: IntelligenceWorker,
@@ -337,6 +382,10 @@ function buildCommandDeliverable(
   relayPlan: TahRelayPlan,
   actions: string[]
 ): CommandCenterResponse['result']['deliverable'] {
+  if (relayPlan.templateId === 'message-card') {
+    return buildMessageCardDeliverable(command, worker, shards, relayPlan, actions);
+  }
+
   const sourceSummary = summarizeSources(shards, worker);
   const sections = relayPlan.sections.slice(0, 4);
   const frames = sections.map((section, index) => {
@@ -380,6 +429,119 @@ function buildCommandDeliverable(
     sourceSummary,
     frames
   };
+}
+
+function buildCivicServiceDeliverable(
+  record: CivicServiceRecord,
+  shards: CommandContextShard[],
+  relayPlan: TahRelayPlan,
+  actions: string[]
+): CommandCenterResponse['result']['deliverable'] {
+  const sourceSummary = summarizeSources(
+    shards.filter((shard) => shard.source.toLowerCase() !== 'query_memory.tah'),
+    {
+      tahLoadout: ['dallas_community_intel.tah', 'dallas_community_intel.hat']
+    } as IntelligenceWorker
+  );
+  const sourceAnchor = sourceSummary.replace(/^I used:\s*/i, '').replace(/\.$/, '');
+  const frames = [
+    {
+      label: 'Answer',
+      title: 'What it means',
+      visualDirection: 'Show the record as a simple status card with the address, request number, and open status.',
+      body: `This is a Dallas 311 code-compliance record for ${record.location}. It is not a final finding; it is a reported city-service issue being tracked as ${record.serviceRequest}.`,
+      speakerNote: 'Use this as the direct answer before showing source details.',
+      sourceAnchor
+    },
+    {
+      label: 'Fields',
+      title: 'How to read it',
+      visualDirection: 'Break the record into field chips: category, status, outcome, reported date, and request number.',
+      body: `Category: ${record.category}. Status: ${record.status}. Outcome: ${record.outcome}. Reported: ${record.reported}.`,
+      speakerNote: 'Explain field meanings in plain language, not system language.',
+      sourceAnchor
+    },
+    {
+      label: 'Caution',
+      title: 'What not to assume',
+      visualDirection: 'Show a small warning chip beside coordinates 0, 0.',
+      body: `Coordinates ${record.coordinates} are not a useful map point here. Use the address and service request number instead.`,
+      speakerNote: 'Do not infer safety, property value, or neighborhood quality from this record alone.',
+      sourceAnchor
+    },
+    {
+      label: 'Next action',
+      title: 'What to do now',
+      visualDirection: 'Show one clear action button: check Dallas 311 by service request number.',
+      body: actions[0],
+      speakerNote: actions[2],
+      sourceAnchor
+    }
+  ];
+
+  return {
+    mode: relayPlan.mode,
+    title: 'Plain interpretation of the Dallas service request',
+    copyReadyText: frames.map(formatDeliverableFrame).join('\n\n'),
+    sourceSummary,
+    frames
+  };
+}
+
+function buildMessageCardDeliverable(
+  command: string,
+  worker: IntelligenceWorker,
+  shards: CommandContextShard[],
+  relayPlan: TahRelayPlan,
+  actions: string[]
+): CommandCenterResponse['result']['deliverable'] {
+  const sourceSummary = summarizeSources(shards, worker);
+  const message = buildSendableMessage(command, worker);
+  const frames = [
+    {
+      label: 'Send this',
+      title: 'Ready message',
+      visualDirection: 'Show the message itself, with one copy action.',
+      body: message,
+      speakerNote: 'This is the action. Copy or send this text after reviewing facts.',
+      sourceAnchor: sourceSummary.replace(/^I used:\s*/i, '').replace(/\.$/, '')
+    },
+    {
+      label: 'Why it works',
+      title: 'Reason',
+      visualDirection: 'Show one small rationale strip beneath the message.',
+      body: actions[0] || worker.role,
+      speakerNote: 'Keep this as support, not the main answer.',
+      sourceAnchor: sourceSummary.replace(/^I used:\s*/i, '').replace(/\.$/, '')
+    }
+  ];
+
+  return {
+    mode: relayPlan.mode,
+    title: 'Sendable message',
+    copyReadyText: message,
+    sourceSummary,
+    frames
+  };
+}
+
+function buildSendableMessage(command: string, worker: IntelligenceWorker) {
+  const cleaned = command
+    .replace(/^help me (rewrite|write)\s*/i, '')
+    .replace(/^this\s*/i, '')
+    .trim();
+
+  if (/sunset chat|chat note|clear and friendly|wording/i.test(command)) {
+    return 'Quick note for Sunset Chat: I cleaned this up so it is clear, friendly, and easy to respond to. What do you want the note to say?';
+  }
+
+  if (worker.id === 'follow-up-writer') {
+    return cleaned
+      ? `Hi, wanted to follow up on this: ${cleaned} Would you like me to send over the next best option or talk through it today?`
+      : 'Hi, just checking in. Would you like me to send over the next best option or talk through what changed today?';
+  }
+
+  return cleaned || 'Here is the concise message to review before sending.';
 }
 
 function frameVisualDirection(relayPlan: TahRelayPlan, sectionLabel: string) {
@@ -456,6 +618,38 @@ function extractShardSignal(shard: CommandContextShard) {
     .find((item) => item.length >= 40 && item.length <= 260);
 
   return excerpt(sentence || cleaned || shard.title, 260);
+}
+
+function parseCivicServiceRecord(command: string): CivicServiceRecord | null {
+  const normalized = command.replace(/\s+/g, ' ').trim();
+  if (!/\b(service request|code concern|community vitality|311|ccs)\b/i.test(normalized)) {
+    return null;
+  }
+
+  const category = matchField(normalized, /Community Vitality:\s*([^|]+?)\s+Status:/i)
+    || matchField(normalized, /\b(Code Concern\s*-?\s*CCS)\b/i)
+    || 'Code Concern - CCS';
+  const status = matchField(normalized, /Status:\s*([^|]+?)\s*\|\s*Outcome:/i) || 'unknown';
+  const outcome = matchField(normalized, /Outcome:\s*([^|]+?)\s+Location:/i) || 'unknown';
+  const location = matchField(normalized, /Location:\s*(.+?)\s+Reported:/i) || 'location not found';
+  const reported = matchField(normalized, /Reported:\s*(.+?)\s+Coordinates:/i) || 'reported date not found';
+  const coordinates = matchField(normalized, /Coordinates:\s*([^|]+?)\s+Service Request:/i) || 'not listed';
+  const serviceRequest = matchField(normalized, /Service Request:\s*([0-9][0-9 -]*[0-9])\b/i)?.replace(/\s+/g, '-')
+    || 'not listed';
+
+  return {
+    category: category.replace(/\s+/g, ' ').trim(),
+    status: status.replace(/\s+/g, ' ').trim(),
+    outcome: outcome.replace(/\s+/g, ' ').trim(),
+    location: location.replace(/\s+/g, ' ').trim(),
+    reported: reported.replace(/\s+/g, ' ').trim(),
+    coordinates: coordinates.replace(/\s+/g, ' ').trim(),
+    serviceRequest
+  };
+}
+
+function matchField(text: string, pattern: RegExp) {
+  return text.match(pattern)?.[1]?.trim() || '';
 }
 
 function applyTahRetrievalPolicy(
