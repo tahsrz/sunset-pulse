@@ -1,0 +1,25 @@
+TITLE: Market Rules Capsule
+CONCEPT: market_rules
+ALIASES: compliance, safe language, fair housing, market rules, risk check, supervisor, verify facts, pricing caution
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule for compliance, quality checks, supervisor review, market-risk phrasing, fair-housing safety, pricing caution, and source verification.
+
+SAFE LANGUAGE RULES:
+- Do not make claims about protected classes, demographic composition, family status, religion, ethnicity, disability, or who a neighborhood is "for."
+- Do not promise safety, investment return, appreciation, loan approval, school quality, or future market outcomes.
+- Do not present estimates as certified appraisals, legal advice, financial advice, tax advice, or inspection findings.
+- Mark uncertain facts as needing verification from MLS, IDX, county records, disclosures, lender, inspector, title, survey, or official municipal source.
+- Use practical phrasing: "verify", "appears", "based on available context", "worth checking", "client-safe draft", and "not a guarantee."
+
+SUPERVISOR CHECK:
+Pass output when it is specific, sourced, client-safe, and aligned to agent voice. Revise output when it invents facts, overstates certainty, uses protected-class language, omits caveats on price, or creates legal/financial certainty.
+
+MARKET RULES ANCHORS:
+market_rules, compliance, fair housing, safe language, supervisor, risk check, verify facts, pricing caution, valuation caveat, MLS, IDX, county records, disclosure, no guarantee, client-safe.
+
+OUTPUT SHAPE:
+Return pass or revise, flagged risk, safer wording, and required verification source.

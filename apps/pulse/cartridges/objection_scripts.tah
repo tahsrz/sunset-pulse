@@ -1,0 +1,29 @@
+TITLE: Objection Scripts Capsule
+CONCEPT: objection_scripts
+ALIASES: objection, pushback, too expensive, rates, not ready, buyer concern, seller concern, response script
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule when a buyer, seller, lead, or client pushes back. It supplies advisory scripts that acknowledge the concern, clarify the decision, and offer one useful next step.
+
+RESPONSE PATTERN:
+1. Acknowledge the concern without arguing.
+2. Clarify the underlying decision: price, payment, timing, trust, inventory, repair risk, commute, or uncertainty.
+3. Give one practical option.
+4. Ask one next-step question.
+
+COMMON OBJECTIONS:
+- "It is too expensive": compare payment, concessions, alternatives, and value tradeoffs.
+- "Rates are too high": discuss payment comfort and options without promising loan outcomes.
+- "I am not ready": offer a light next step such as watchlist, valuation check, or market brief.
+- "We want to wait": identify what would change the decision: price, inventory, timing, cash, or confidence.
+- "The seller will never accept": frame offer strength, terms, and data-supported strategy.
+- "I do not want to overpay": use comps, active competition, and exit criteria.
+
+OBJECTION ANCHORS:
+objection_scripts, objection, pushback, too expensive, rates, not ready, wait, overpay, buyer concern, seller concern, response script, advisory tone, next-step question.
+
+OUTPUT SHAPE:
+Return a short response script, the likely underlying concern, a calmer alternate version, and one next question.

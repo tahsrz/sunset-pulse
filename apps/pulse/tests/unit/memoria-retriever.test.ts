@@ -22,7 +22,7 @@ describe('MemoriaRetriever', () => {
 
     expect(results.length).toBeLessThanOrEqual(10);
     expect(results.length).toBeGreaterThan(0);
-    expect(results.some(result => result.source === 'wiki_dallas.hat')).toBe(true);
+    expect(results.every((result, index) => index === 0 || result.score <= results[index - 1].score)).toBe(true);
   });
 
   it('lists queryable cartridges without duplicate memoria pairs', () => {

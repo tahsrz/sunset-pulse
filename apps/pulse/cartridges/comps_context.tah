@@ -1,0 +1,24 @@
+TITLE: Comps Context Capsule
+CONCEPT: comps_context
+ALIASES: comps, comparable sales, recent sales, valuation, price check, pricing, price posture, market movement
+DOMAIN: real_estate_agent_command_center
+TRUST: local_private
+VITALITY: high
+
+PURPOSE:
+Use this capsule for comp analysis, valuation support, pricing posture, offer strategy, recent sales summaries, and market movement talking points.
+
+COMPARABLE SALE RULES:
+- Prefer recent, nearby, similar property type, similar size, similar age or condition, and similar lot or building characteristics.
+- Lower confidence when comps are stale, far away, heavily renovated, distressed, new construction against resale, different school district, different HOA, or missing concessions.
+- Separate facts from interpretation. A comp supports a range or posture; it does not guarantee market value.
+- Mention data source limits and advise verifying MLS, county records, seller disclosures, and current active competition.
+
+PRICE POSTURE:
+Use "appears positioned above", "appears aligned with", or "may need support from condition or updates" instead of absolute valuation claims. Tie price movement to observed activity when available: days on market, price reductions, pending speed, inventory, and buyer competition.
+
+COMPS ANCHORS:
+comps_context, comps, comparable, comparable sales, recent sales, valuation, price check, pricing, price posture, market movement, active competition, sold data, stale comps, confidence, range, caveat.
+
+OUTPUT SHAPE:
+Return strongest comp signal, confidence level, pricing posture, risks, missing data, and next verification step.
