@@ -182,7 +182,12 @@ export function listTahMasterPlaces(input: TahMasterListInput = {}) {
 }
 
 export function getTahFactOfDay(input: TahFactInput = {}) {
-  const paths = assertTahMasterReady();
+  const paths = getTahMasterPaths();
+
+  if (!fs.existsSync(paths.hatPath) || !fs.existsSync(paths.tahPath)) {
+    return getLooseTahFactOfDay(input, paths);
+  }
+
   const metadata = getTahMasterMetadata();
   const shardCount = Number(metadata.shardCount || 0);
 
@@ -222,6 +227,43 @@ export function getTahFactOfDay(input: TahFactInput = {}) {
   }
 
   throw new Error('No readable TAH fact was found in the master archive.');
+}
+
+function getLooseTahFactOfDay(input: TahFactInput, paths: TahMasterPaths) {
+  const cartridges = listLooseTahFactCartridges();
+  if (!cartridges.length) {
+    throw new Error(`No TAH fact source was found. Master archive is missing at ${paths.hatPath}.`);
+  }
+
+  const dayKey = dateKey(input.date);
+  const seedKey = input.refresh ? `${dayKey}:${String(input.refresh)}` : dayKey;
+  const startIndex = seededIndex(seedKey, cartridges.length);
+
+  for (let attempt = 0; attempt < cartridges.length; attempt++) {
+    const cartridge = cartridges[(startIndex + attempt) % cartridges.length];
+    const text = readLooseTahFactText(cartridge.path);
+    const blurb = makeTahBlurb(text);
+    if (!blurb) continue;
+
+    return {
+      date: dayKey,
+      shardIndex: 0,
+      source: cartridge.name,
+      slug: slugify(cartridge.name.replace(/\.tah$/i, '')),
+      title: cartridge.name.replace(/\.tah$/i, '').replace(/[_-]+/g, ' '),
+      searchQuery: cartridge.name.replace(/\.tah$/i, '').replace(/[_-]+/g, ' '),
+      blurb,
+      archive: {
+        name: paths.baseName,
+        sourceCount: cartridges.length,
+        shardCount: cartridges.length,
+        generatedAt: null,
+        fallback: 'loose-tah-cartridges'
+      }
+    };
+  }
+
+  throw new Error('No readable TAH fact was found in loose TAH cartridges.');
 }
 
 export function parsePackedShard(data: string) {
@@ -418,6 +460,50 @@ function readMemoriaV4ShardAtIndex(hatBuffer: Buffer, tahBuffer: Buffer, shardIn
     .toString('utf-8')
     .replace(/\0+$/g, '')
     .trim();
+}
+
+function listLooseTahFactCartridges() {
+  const roots = [
+    path.join(process.cwd(), 'cartridges'),
+    path.join(process.cwd(), 'apps', 'pulse', 'cartridges')
+  ];
+  const seen = new Set<string>();
+  const cartridges: Array<{ name: string; path: string }> = [];
+
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+
+    for (const file of fs.readdirSync(root)) {
+      if (!file.endsWith('.tah')) continue;
+      if (/query_memory|\.unified|test|swarm/i.test(file)) continue;
+
+      const filePath = path.join(root, file);
+      if (seen.has(filePath)) continue;
+      seen.add(filePath);
+
+      try {
+        const stat = fs.statSync(filePath);
+        if (!stat.isFile() || stat.size <= 0 || stat.size > 512_000) continue;
+        cartridges.push({ name: file, path: filePath });
+      } catch {
+        // Skip unreadable files; the fact endpoint can still use the next capsule.
+      }
+    }
+  }
+
+  return cartridges.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function readLooseTahFactText(filePath: string) {
+  const raw = fs.readFileSync(filePath);
+  const nulIndex = raw.indexOf(0);
+  const readable = raw
+    .subarray(0, nulIndex >= 0 ? nulIndex : raw.length)
+    .toString('utf8')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, ' ')
+    .trim();
+
+  return readable;
 }
 
 function makeTahBlurb(text: string) {

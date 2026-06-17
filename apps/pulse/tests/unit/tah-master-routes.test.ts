@@ -7,6 +7,7 @@ import { GET as getMaster } from '@/app/api/tah/master/route';
 import { GET as getMasterSearch, POST as postMasterSearch } from '@/app/api/tah/master/search/route';
 import { GET as getMasterSources } from '@/app/api/tah/master/sources/route';
 import { GET as getMasterPlaces } from '@/app/api/tah/master/places/route';
+import { GET as getFactOfDay } from '@/app/api/tah/fact/route';
 import { TAHBuilder } from '@/lib/core/tah_builder';
 import { packPulseCatalog } from '@/lib/core/tah_packager';
 import type { PulseCartridge } from '@/lib/ai/brain/pulse_query';
@@ -124,6 +125,22 @@ describe('TAH master archive routes', () => {
         })
       ])
     );
+  });
+
+  it('serves a fact from loose TAH cartridges when the packed master archive is missing', async () => {
+    const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'missing-tah-master-'));
+    process.env.PULSE_MASTER_ARCHIVE_DIR = outputDir;
+    process.env.PULSE_MASTER_ARCHIVE_NAME = 'missing_master_for_fact_test';
+
+    const response = await getFactOfDay(new NextRequest('https://sunsetpulse.test/api/tah/fact?refresh=test'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.fact.archive).toEqual(expect.objectContaining({
+      fallback: 'loose-tah-cartridges'
+    }));
+    expect(body.data.fact.source).toMatch(/\.tah$/);
+    expect(body.data.fact.blurb.length).toBeGreaterThan(40);
   });
 });
 
