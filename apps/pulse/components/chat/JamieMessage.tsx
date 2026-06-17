@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { FaCogs, FaLightbulb, FaLayerGroup } from 'react-icons/fa';
+import { renderGlossaryText } from '@/components/glossary/GlossaryText';
 
 interface JamieMessageProps {
   message: {
@@ -39,7 +40,7 @@ const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
             <FaLightbulb size={8} className="text-white" />
           </div>
         )}
-        <p className="leading-relaxed font-medium whitespace-pre-wrap">{displayContent}</p>
+        <p className="leading-relaxed font-medium whitespace-pre-wrap">{renderGlossaryText(displayContent)}</p>
       </div>
       
       {!isUser && isDevMode && content.includes('[[') && (

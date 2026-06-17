@@ -132,6 +132,33 @@
   .virtual-world-canvas-frame canvas {
     display: block;
   }
+
+  .glossary-link {
+    @apply relative inline text-inherit underline decoration-transparent underline-offset-4 transition;
+  }
+
+  .glossary-link:hover,
+  .glossary-link:focus-visible {
+    @apply decoration-cyan-200/70;
+  }
+
+  .glossary-term {
+    @apply relative cursor-help border-b border-dotted border-cyan-200/70 text-cyan-100 no-underline outline-none;
+  }
+
+  .glossary-term:focus-visible {
+    @apply bg-cyan-200 px-1 text-slate-950;
+  }
+
+  .glossary-term::after {
+    content: attr(data-definition);
+    @apply pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden w-72 max-w-[80vw] -translate-x-1/2 rounded border border-cyan-200/30 bg-slate-950 px-3 py-2 text-left text-xs font-medium normal-case leading-5 tracking-normal text-slate-100 shadow-2xl shadow-black/40;
+  }
+
+  .glossary-term:hover::after,
+  .glossary-term:focus-visible::after {
+    @apply block;
+  }
 }
 
 @layer utilities {

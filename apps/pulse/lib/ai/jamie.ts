@@ -25,6 +25,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getAbidanTahContext } from '@/lib/ai/brain/abidan_tah';
 import { pulse_search } from '@/lib/ai/brain/pulse_query';
 import { sanitizeJamieReply } from '@/lib/ai/jamieResponse';
+import { buildJamieCommandBridgeContext } from '@/lib/command-center/jamieBridge';
 
 const JAMIE_PULSE_RESULT_LIMIT = 5;
 const JAMIE_PULSE_SNIPPET_LIMIT = 520;
@@ -618,6 +619,10 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
   const propertyContext = propertyData 
     ? typeof propertyData === 'string' ? propertyData : JSON.stringify(propertyData)
     : "No property data currently available for Jamie.";
+  const commandBridge = buildJamieCommandBridgeContext(userInput, {
+    relayMode: isDevMode ? 'briefing' : 'script',
+    supervisor: true
+  });
   const pulseContext = await getJamiePulseContext(userInput, propertyData);
 
   // Memory Recognition Logic
@@ -677,6 +682,12 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
         {
           role: "system",
           content: pulseContext || "No relevant private retrieval snippets were found for this turn."
+        },
+        {
+          role: "system",
+          content: commandBridge?.context
+            ? `CONNECTED_HELPER_CONTEXT:\n${commandBridge.context}\n\nJamie response rule: use this to answer more clearly. Do not say \"worker\", \"route\", \"TAH loadout\", \"query memory\", \"shard\", \"retrieval\", or expose file names unless the user explicitly asks for sources.`
+            : "CONNECTED_HELPER_CONTEXT: No helper context was available for this turn."
         },
         ...sanitizedMessages
       ],

@@ -250,8 +250,12 @@ function readCandidateProcesses(): BridgeProcess[] {
 
 function readWindowsProcesses() {
   const script = [
-    "$items = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'telegram|\\bbot\\b|\\bbridge\\b|next dev|npm run dev|3001|tsx|node' } | Select-Object ProcessId,ParentProcessId,Name,CommandLine",
-    '$items | ConvertTo-Json -Compress'
+    "try {",
+    "  $items = Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object { $_.CommandLine -match 'telegram|\\bbot\\b|\\bbridge\\b|next dev|npm run dev|3001|tsx|node' } | Select-Object ProcessId,ParentProcessId,Name,CommandLine",
+    '  $items | ConvertTo-Json -Compress',
+    "} catch {",
+    "  '[]'",
+    "}"
   ].join('; ');
   const output = execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { encoding: 'utf8', timeout: 2500 });
   return normalizeProcessJson(output);

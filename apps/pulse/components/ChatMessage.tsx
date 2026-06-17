@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { FaCogs } from 'react-icons/fa';
+import { renderGlossaryText } from '@/components/glossary/GlossaryText';
 
 interface ChatMessageProps {
   message: {
@@ -26,7 +27,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isDevMode }) => {
           ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10 border border-white/10' 
           : 'bg-slate-800 text-slate-100 border border-white/5 rounded-tl-none shadow-black/20'
       }`}>
-        <p className="leading-relaxed font-medium">{cleanContent(message.content)}</p>
+        <p className="leading-relaxed font-medium">{renderGlossaryText(cleanContent(message.content))}</p>
       </div>
       
       {/* Debug Metadata Inspector */}

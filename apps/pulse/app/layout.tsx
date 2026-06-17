@@ -71,13 +71,8 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
     );
   }
 
-  // 1. Fetch from Supabase (Primary)
-  const supabase = createClient();
-  const { data: sbConfig } = await supabase
-    .from('site_config')
-    .select('*')
-    .eq('agent_id', 'taz-realty-001')
-    .single();
+  const sbConfigLookup = await loadSupabaseSiteConfig();
+  const sbConfig = sbConfigLookup.data;
 
   // Define default branding as a fallback
   const fallbackBranding: Branding = {
@@ -126,39 +121,33 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
         ...(sbConfig.intelligence?.grill || {})
       }
     };
-  } else {
-    // 2. Fallback to MongoDB (Legacy)
-    try {
-      await connectDB();
-      const config: any = await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
-      
-      if (config) {
-        branding = {
-          ...fallbackBranding,
-          ...(config.branding || {}),
-          quadrants: {
-            ...fallbackBranding.quadrants,
-            ...(config.branding?.quadrants || {})
-          }
-        };
-        // Deep merge for grill
-        intelligence = {
-          ...fallbackIntelligence,
-          ...(config.intelligence || {}),
-          grill: {
-            ...fallbackIntelligence.grill,
-            ...(config.intelligence?.grill || {})
-          }
-        };
-      } else {
-        branding = fallbackBranding;
-        intelligence = fallbackIntelligence;
-      }
-    } catch (dbError) {
-      console.error('Failed to connect to MongoDB fallback:', dbError);
+  } else if (!sbConfigLookup.timedOut) {
+    const config: any = await loadLegacySiteConfig();
+
+    if (config) {
+      branding = {
+        ...fallbackBranding,
+        ...(config.branding || {}),
+        quadrants: {
+          ...fallbackBranding.quadrants,
+          ...(config.branding?.quadrants || {})
+        }
+      };
+      intelligence = {
+        ...fallbackIntelligence,
+        ...(config.intelligence || {}),
+        grill: {
+          ...fallbackIntelligence.grill,
+          ...(config.intelligence?.grill || {})
+        }
+      };
+    } else {
       branding = fallbackBranding;
       intelligence = fallbackIntelligence;
     }
+  } else {
+    branding = fallbackBranding;
+    intelligence = fallbackIntelligence;
   }
 
   return (
@@ -194,3 +183,82 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
 };
 
 export default MainLayout;
+
+async function loadSupabaseSiteConfig() {
+  const fallbackTimeoutMs = 1500;
+  let timedOut = false;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const siteConfigLookup = (async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('site_config')
+        .select('*')
+        .eq('agent_id', 'taz-realty-001')
+        .single();
+
+      if (error && !timedOut) {
+        console.warn('Supabase site config lookup failed; checking legacy fallback.');
+      }
+
+      return data ?? null;
+    } catch (configError) {
+      if (!timedOut) {
+        console.warn('Supabase site config lookup failed; checking legacy fallback.', configError);
+      }
+      return null;
+    }
+  })();
+
+  const timeout = new Promise<null>((resolve) => {
+    timeoutId = setTimeout(() => {
+      timedOut = true;
+      console.warn(`Supabase site config lookup timed out after ${fallbackTimeoutMs}ms; using default branding.`);
+      resolve(null);
+    }, fallbackTimeoutMs);
+  });
+
+  const config = await Promise.race([siteConfigLookup, timeout]);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+  }
+
+  return {
+    data: config,
+    timedOut
+  };
+}
+
+async function loadLegacySiteConfig() {
+  const fallbackTimeoutMs = 1500;
+  let timedOut = false;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const legacyLookup = (async () => {
+    try {
+      await connectDB();
+      return await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
+    } catch (dbError) {
+      if (!timedOut) {
+        console.error('Failed to connect to MongoDB fallback:', dbError);
+      }
+      return null;
+    }
+  })();
+
+  const timeout = new Promise<null>((resolve) => {
+    timeoutId = setTimeout(() => {
+      timedOut = true;
+      console.warn(`MongoDB site config fallback timed out after ${fallbackTimeoutMs}ms; using default branding.`);
+      resolve(null);
+    }, fallbackTimeoutMs);
+  });
+
+  const config = await Promise.race([legacyLookup, timeout]);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+  }
+
+  return config;
+}

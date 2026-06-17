@@ -68,38 +68,38 @@ const relayFormats: Record<TahRelayMode, TahRelayFormat> = {
   briefing: {
     mode: 'briefing',
     name: 'Briefing Card',
-    useWhen: 'Fast agent decision support inside the command center.',
+    useWhen: 'A fast answer the agent can act on.',
     frameLabel: 'Brief',
-    rhythm: 'Signal, meaning, action, caveat.',
-    visualDirection: 'Use one compact panel with source chips, a confidence readout, and action bullets.',
-    outputContract: ['One-sentence signal', 'Two to four bullets', 'One recommended next action', 'One caveat or verification note']
+    rhythm: 'What matters, why it matters, what to do next, what to verify.',
+    visualDirection: 'Use one compact panel with file chips, a confidence readout, and action bullets.',
+    outputContract: ['One-sentence takeaway', 'Two to four bullets', 'One next step', 'One verification note']
   },
   slideshow: {
     mode: 'slideshow',
     name: 'Slideshow Deck',
-    useWhen: 'The agent needs to explain TAH findings to a client, seller, buyer, or team.',
+    useWhen: 'The agent needs to explain the answer to a client, seller, buyer, or team.',
     frameLabel: 'Slide',
-    rhythm: 'Title slide, context slide, evidence slide, recommendation slide, caveat slide.',
+    rhythm: 'Title slide, background slide, proof slide, recommendation slide, check-next slide.',
     visualDirection: 'Use slide cards with one idea per frame, strong headings, large visual anchors, and minimal text.',
-    outputContract: ['Slide title', 'Visual direction', 'Speaker note', 'TAH source anchor']
+    outputContract: ['Slide title', 'Visual idea', 'Talking note', 'File used']
   },
   puppetshow: {
     mode: 'puppetshow',
-    name: 'Puppetshow Explainer',
-    useWhen: 'The robot should teach through characters, back-and-forth dialogue, or a memorable scene.',
+    name: 'Story Explainer',
+    useWhen: 'The answer should teach through a simple back-and-forth scene.',
     frameLabel: 'Scene',
     rhythm: 'Set the situation, let the guide explain, let the skeptic ask, close with the useful move.',
     visualDirection: 'Use simple staged scenes, character labels, prop-like data cards, and clear dialogue beats.',
-    outputContract: ['Scene setup', 'Guide line', 'Skeptic question', 'TAH-backed answer', 'Takeaway']
+    outputContract: ['Scene setup', 'Guide line', 'Question', 'File-backed answer', 'Takeaway']
   },
   'field-board': {
     mode: 'field-board',
-    name: 'Field Board',
-    useWhen: 'The agent needs a spatial, tactical, or map-like readout of the context.',
+    name: 'Map Board',
+    useWhen: 'The agent needs a map-like view of the answer.',
     frameLabel: 'Zone',
-    rhythm: 'Anchor, cluster, risk, route.',
+    rhythm: 'Main point, grouped notes, risk, next path.',
     visualDirection: 'Use map pins, lanes, zones, badges, and grouped signals instead of paragraph explanation.',
-    outputContract: ['Board zone', 'Signal cluster', 'What it means', 'Verification marker']
+    outputContract: ['Board zone', 'Grouped notes', 'What it means', 'What to verify']
   },
   script: {
     mode: 'script',
@@ -976,12 +976,12 @@ const relayTemplateList: TahRelayTemplate[] = [
     sourceTah: ['sunset_pulse.tah', 'sunset_pulse_expertise.tah'],
     purpose: 'Explain Sunset Pulse product behavior as command lanes.',
     motif: 'Command map',
-    layout: 'Command, route, worker, TAH context, result.',
-    cues: ['command lane', 'worker badge', 'TAH source'],
+    layout: 'Request, helper picked, files used, result.',
+    cues: ['request lane', 'helper badge', 'file source'],
     voice: 'Product-clear and operator-friendly.',
-    moves: ['Name command.', 'Show route.', 'Tie output to source.'],
+    moves: ['Name the request.', 'Show the helper choice.', 'Tie the answer to its files.'],
     avoid: ['marketing fluff', 'hidden routing', 'unexplained worker choice'],
-    sections: ['Command', 'Worker', 'TAH context', 'Result']
+    sections: ['Request', 'Helper picked', 'Files used', 'Result']
   }),
   template({
     id: 'sunset-wars-runtime-brief',
@@ -1111,6 +1111,16 @@ const templateByWorker: Record<string, TahRelayTemplateId> = {
   'local-commerce': 'local-map-legend',
   'agent-voice': 'agent-voice-mirror',
   'market-movement': 'market-signal-brief',
+  'seller-update': 'seller-update-card',
+  'dallas-community': 'dallas-community-pulse',
+  'dallas-safety': 'dallas-safety-framing',
+  'texas-contracts': 'texas-contract-brief',
+  'yield-intel': 'yield-intel-card',
+  'place-history': 'relocation-compass',
+  'pulse-architect': 'sunset-pulse-command-map',
+  'security-architect': 'security-threat-board',
+  'postgres-tuner': 'postgres-query-plan',
+  'spatial-designer': 'spatial-computing-scene',
   supervisor: 'supervisor-redline',
   'objection-scripts': 'objection-bridge',
   'listing-spark': 'campaign-hook-ladder'
@@ -1189,7 +1199,7 @@ function buildSourceAnchors(shards: RelayShard[]) {
     return `${shard.source}${reason}: ${concepts}`;
   });
 
-  return anchors.length ? anchors : ['No TAH source retrieved yet; mark the output draft-only.'];
+  return anchors.length ? anchors : ['No saved note was found yet; mark the answer as a draft.'];
 }
 
 function selectTahRelayFormat(worker: IntelligenceWorker, preferredMode?: TahRelayMode) {
@@ -1199,8 +1209,19 @@ function selectTahRelayFormat(worker: IntelligenceWorker, preferredMode?: TahRel
     return relayFormats.script;
   }
 
-  if (worker.id === 'neighborhood-explainer' || worker.id === 'local-commerce') {
+  if (
+    worker.id === 'neighborhood-explainer' ||
+    worker.id === 'local-commerce' ||
+    worker.id === 'dallas-community' ||
+    worker.id === 'place-history' ||
+    worker.id === 'pulse-architect' ||
+    worker.id === 'spatial-designer'
+  ) {
     return relayFormats['field-board'];
+  }
+
+  if (worker.id === 'texas-contracts' || worker.id === 'dallas-safety' || worker.id === 'security-architect' || worker.id === 'postgres-tuner') {
+    return relayFormats.briefing;
   }
 
   return relayFormats.briefing;
@@ -1208,7 +1229,7 @@ function selectTahRelayFormat(worker: IntelligenceWorker, preferredMode?: TahRel
 
 function sectionInstruction(label: string, index: number, anchors: string[], format: TahRelayFormat) {
   const anchor = anchors[Math.min(index, anchors.length - 1)];
-  return `${format.frameLabel} ${index + 1} - ${label}: ground this section in ${anchor}. Format as ${format.name.toLowerCase()}.`;
+  return `${format.frameLabel} ${index + 1} - ${label}: use ${anchor} and keep the wording plain. Format this as ${format.name.toLowerCase()}.`;
 }
 
 function buildFinalScreen(
@@ -1224,15 +1245,15 @@ function buildFinalScreen(
   }));
 
   const learned = [
-    `Learned how to frame this as ${template.name}.`,
-    `Learned which TAH sources support the explanation: ${template.sourceTah.slice(0, 3).join(', ')}.`,
-    `Learned the safe delivery shape: ${template.sections.slice(0, 3).join(' -> ')}.`
+    `This answer is shaped as ${template.name}.`,
+    `The main files behind it are ${template.sourceTah.slice(0, 3).join(', ')}.`,
+    `The useful flow is ${template.sections.slice(0, 3).join(' -> ')}.`
   ];
 
   return {
     title: `What we learned from ${template.name}`,
     frameLabel: finalFrameLabel(format),
-    instruction: `${finalFrameLabel(format)}: show where the information came from, list the TAH source cards, and close with what the user learned. Do not introduce new claims on this final screen.`,
+    instruction: `${finalFrameLabel(format)}: show where the information came from, list the files used, and close with what the user learned. Do not introduce new claims on this final screen.`,
     sourceCards: sourceCards.length
       ? sourceCards
       : anchors.map((anchor) => ({

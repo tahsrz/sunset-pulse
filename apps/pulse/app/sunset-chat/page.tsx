@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Pin, Send, ShoppingBasket, Trash2 } from 'lucide-react';
+import { Bot, MessageSquare, Pin, Send, ShoppingBasket, Sparkles, Trash2 } from 'lucide-react';
 import { SUNSET_CHAT_TAGS, SUNSET_CHAT_MAX_MESSAGE_LENGTH } from '@/lib/grill/sunsetChat';
 
 type SunsetChatPost = {
@@ -47,6 +47,9 @@ export default function SunsetChatPage() {
   }, []);
 
   const remaining = SUNSET_CHAT_MAX_MESSAGE_LENGTH - message.length;
+  const helperCommand = message.trim()
+    ? `Help me rewrite this Sunset Chat note so it is clear and friendly: ${message.trim()}`
+    : 'Help me write a clear Sunset Chat note for the grill today';
 
   async function fetchPosts() {
     const response = await fetch('/api/sunset-chat', { cache: 'no-store' });
@@ -205,6 +208,23 @@ export default function SunsetChatPage() {
         </div>
 
         <aside className="space-y-4">
+          <section className="rounded-2xl border border-cyan-200/20 bg-cyan-300/10 p-5 shadow-2xl shadow-cyan-950/10">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
+              <Bot size={15} />
+              Need help wording it?
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Send the note to the helper desk and it will use the same saved files Jamie uses.
+            </p>
+            <Link
+              href={`/command-center?command=${encodeURIComponent(helperCommand)}`}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-200 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-slate-950 transition hover:bg-cyan-100"
+            >
+              <Sparkles size={15} />
+              Ask a Helper
+            </Link>
+          </section>
+
           <section className="rounded-2xl border border-white/10 bg-white/[0.055] p-5 shadow-2xl shadow-black/25">
             <h2 className="text-lg font-black uppercase tracking-[0.16em] text-white">Post A Note</h2>
             <div className="mt-5 space-y-3">

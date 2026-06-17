@@ -54,6 +54,20 @@ export type CommandCenterResponse = {
     actions: string[];
     confidence: number;
     relayPlan: TahRelayPlan;
+    deliverable: {
+      mode: TahRelayMode;
+      title: string;
+      copyReadyText: string;
+      sourceSummary: string;
+      frames: Array<{
+        label: string;
+        title: string;
+        visualDirection: string;
+        body: string;
+        speakerNote: string;
+        sourceAnchor: string;
+      }>;
+    };
   };
   trace: {
     routeMode: 'auto' | 'manual';
@@ -296,8 +310,8 @@ function synthesizeWorkerResult(
 ): CommandCenterResponse['result'] {
   const topShard = shards[0];
   const sourcePhrase = topShard
-    ? `I found the strongest local signal in ${topShard.source}, anchored on ${topShard.concepts.slice(0, 3).join(', ') || 'matched context'}.`
-    : 'I did not find a strong local TAH match yet, so this is using the worker loadout and command intent only.';
+    ? `I found a useful note in ${topShard.source} about ${topShard.concepts.slice(0, 3).join(', ') || 'this topic'}.`
+    : 'I did not find a strong saved note yet, so I used the selected helper and its usual files.';
 
   const actions = buildActions(command, worker, shards);
   const confidence = Math.min(96, Math.max(62, Math.round(
@@ -308,11 +322,140 @@ function synthesizeWorkerResult(
 
   return {
     title: worker.sampleOutput.title,
-    summary: `${sourcePhrase} ${worker.role} Command received: "${command}".`,
+    summary: `${sourcePhrase} ${worker.role} You asked: "${command}".`,
     actions,
     confidence,
-    relayPlan
+    relayPlan,
+    deliverable: buildCommandDeliverable(command, worker, shards, relayPlan, actions)
   };
+}
+
+function buildCommandDeliverable(
+  command: string,
+  worker: IntelligenceWorker,
+  shards: CommandContextShard[],
+  relayPlan: TahRelayPlan,
+  actions: string[]
+): CommandCenterResponse['result']['deliverable'] {
+  const sourceSummary = summarizeSources(shards, worker);
+  const sections = relayPlan.sections.slice(0, 4);
+  const frames = sections.map((section, index) => {
+    const shard = shards[index % Math.max(1, shards.length)];
+    const signal = shard ? extractShardSignal(shard) : `Use ${worker.name} to answer: ${command}`;
+    const action = actions[index % actions.length] || worker.sampleOutput.bullets[index % worker.sampleOutput.bullets.length] || 'Return the next practical move.';
+    const sourceAnchor = shard
+      ? `${shard.source} / ${shard.matchReason || 'retrieved context'}`
+      : worker.tahLoadout[index % worker.tahLoadout.length] || 'worker loadout';
+
+    return {
+      label: `${relayPlan.format.frameLabel} ${index + 1}`,
+      title: section.label,
+      visualDirection: frameVisualDirection(relayPlan, section.label),
+      body: frameBodyForMode(relayPlan.mode, section.label, signal, action),
+      speakerNote: frameSpeakerNote(relayPlan.mode, section.label, signal, action, sourceAnchor),
+      sourceAnchor
+    };
+  });
+
+  frames.push({
+    label: relayPlan.finalScreen.frameLabel,
+    title: relayPlan.finalScreen.title,
+    visualDirection: 'Show where the answer came from and what to do next. Do not add new claims.',
+    body: [
+      sourceSummary,
+      relayPlan.finalScreen.learned.slice(0, 3).join(' '),
+      `Next action: ${actions[0] || 'Review the retrieved context before sending externally.'}`
+    ].join(' '),
+    speakerNote: relayPlan.finalScreen.instruction,
+    sourceAnchor: relayPlan.finalScreen.sourceCards
+      .slice(0, 4)
+      .map((card) => `${card.source} (${card.matchReason})`)
+      .join(', ')
+  });
+
+  return {
+    mode: relayPlan.mode,
+    title: `${relayPlan.templateName}: ${worker.name}`,
+    copyReadyText: frames.map(formatDeliverableFrame).join('\n\n'),
+    sourceSummary,
+    frames
+  };
+}
+
+function frameVisualDirection(relayPlan: TahRelayPlan, sectionLabel: string) {
+  return `${relayPlan.visual.motif}: ${sectionLabel}. ${relayPlan.visual.layout}`;
+}
+
+function frameBodyForMode(mode: TahRelayMode, sectionLabel: string, signal: string, action: string) {
+  if (mode === 'script') {
+    return `${sectionLabel}: "${action}" Why: ${signal}`;
+  }
+
+  if (mode === 'puppetshow') {
+    return `Guide: ${signal} Skeptic: What should the agent do? Guide: ${action}`;
+  }
+
+  if (mode === 'field-board') {
+    return `What I found: ${signal} Next step: ${action}`;
+  }
+
+  if (mode === 'slideshow') {
+    return `${signal} Next step: ${action}`;
+  }
+
+  return `${signal} Next step: ${action}`;
+}
+
+function frameSpeakerNote(mode: TahRelayMode, sectionLabel: string, signal: string, action: string, sourceAnchor: string) {
+  const prefix = mode === 'script'
+    ? 'Read this as a client-safe talk track.'
+    : mode === 'slideshow'
+      ? 'Use this as the speaker note for the slide.'
+      : 'Use this as the explanation note for the frame.';
+
+  return `${prefix} ${sectionLabel}: ${signal} Then recommend: ${action} From: ${sourceAnchor}.`;
+}
+
+function formatDeliverableFrame(frame: CommandCenterResponse['result']['deliverable']['frames'][number]) {
+  return [
+    `${frame.label}: ${frame.title}`,
+    `Visual idea: ${frame.visualDirection}`,
+    `Text: ${frame.body}`,
+    `Talking note: ${frame.speakerNote}`,
+    `From: ${frame.sourceAnchor}`
+  ].join('\n');
+}
+
+function summarizeSources(shards: CommandContextShard[], worker: IntelligenceWorker) {
+  const sourceNames = shards.length
+    ? [...new Set(shards.map((shard) => shard.source))].slice(0, 5)
+    : worker.tahLoadout.slice(0, 5);
+
+  return `I used: ${sourceNames.join(', ')}.`;
+}
+
+function extractShardSignal(shard: CommandContextShard) {
+  if (shard.source.toLowerCase() === 'query_memory.tah') {
+    const concepts = shard.concepts.slice(0, 3).join(', ');
+    return `A saved note matched this request${concepts ? ` (${concepts})` : ''}.`;
+  }
+
+  const cleaned = shard.text
+    .replace(/\r?\n/g, ' ')
+    .replace(/\b(TYPE|CREATED_AT|COMMAND|WORKER|TEMPLATE|MODE|SOURCES|LEARNED|ACTIONS|TITLE|CONCEPT|ALIASES|DOMAIN|TRUST|VITALITY|PURPOSE|OUTPUT SHAPE|SOURCE|SLUG|QUERY|CONTENT):\s*/gi, '')
+    .replace(/Learned which TAH sources support the explanation:/gi, 'Files used:')
+    .replace(/Learned how to frame this as/gi, 'Answer style:')
+    .replace(/Learned the safe delivery shape:/gi, 'Answer flow:')
+    .replace(/\bTAH sources\b/gi, 'TAH files')
+    .replace(/\bTAH context\b/gi, 'TAH files')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const sentence = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .find((item) => item.length >= 40 && item.length <= 260);
+
+  return excerpt(sentence || cleaned || shard.title, 260);
 }
 
 function applyTahRetrievalPolicy(
@@ -574,8 +717,8 @@ function buildActions(command: string, worker: IntelligenceWorker, shards: Comma
   }
 
   return [
-    worker.sampleOutput.bullets[0] || 'Route the command through the selected worker.',
-    shards[0] ? `Use ${shards[0].source} as the first context anchor.` : 'Request more context if the command needs a lead or listing.',
+    worker.sampleOutput.bullets[0] || 'Send the request to the selected helper.',
+    shards[0] ? `Use ${shards[0].source} as the first file to check.` : 'Ask for more detail if the request needs a lead or listing.',
     'Return the next action in agent-ready language.'
   ];
 }

@@ -13,6 +13,8 @@ It is built around a simple thesis: agents should not have to send every workflo
 - Supports delivery modes: briefing, slideshow, puppetshow, field-board, and script.
 - Adds a final provenance screen to every relay explaining where the information came from and what the user learned.
 - Saves local query memory to `query_memory.tah` so repeated work can reuse local context.
+- Links dense terms and acronyms to hover definitions sourced from local `.tah` cartridges.
+- Shares Command Center context with Jamie so chat answers can use the same private helper layer.
 
 ## Current Release
 
@@ -23,6 +25,14 @@ Release notes:
 - [CHANGELOG.md](CHANGELOG.md)
 - [apps/pulse/docs/releases/v0.2.0-tah-command-center.md](apps/pulse/docs/releases/v0.2.0-tah-command-center.md)
 
+Recent local additions:
+
+- Command Center helper selection now uses a professional arena-style UI with imported ClaudeCraft assets.
+- Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
+- Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
+- TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
+- Glossary terms can semantically link back to source cartridges, such as `dallas_community_intel.tah` through `/tah/dallas-community-intel`.
+
 ## Monorepo Layout
 
 ```text
@@ -31,12 +41,15 @@ SunsetPulse/
     pulse/                  Next.js app for Sunset Pulse
       app/command-center/   Agent command center route
       app/api/commands/     Command router API
+      app/api/jamie/chat/   Jamie chat alias wired to the shared helper route
       app/api/tah/          TAH catalog, fact, forge, and search APIs
       cartridges/           Local TAH inputs and generated archives
       components/           UI components
+      components/glossary/  Shared hover/link glossary renderer
       docs/                 Pulse-specific docs
       lib/command-center/   Workers, router, synonyms, relay templates, query memory
       lib/core/             TAH, Memoria, atlas, and orchestration primitives
+      lib/glossary/         Site glossary terms mapped to TAH source cartridges
   packages/                 Shared workspace packages
   assets/                   Static and generated assets
 ```
@@ -51,7 +64,9 @@ flowchart TD
   Router --> Workers["Specialized Workers"]
   Router --> Atlas["Segmented Expert Atlas"]
   Router --> Memory["Local query_memory.tah"]
+  Router --> Jamie["Jamie Chat Context"]
   Atlas --> TAH["TAH Cartridges"]
+  TAH --> Glossary["Hover Glossary + Source Links"]
   Workers --> Relay["Relay Template Planner"]
   Relay --> Output["Briefing / Slides / Puppetshow / Board / Script"]
   Output --> Final["Final Provenance Screen"]
@@ -95,6 +110,12 @@ GET  /api/commands     # relay template and format catalog
 POST /api/commands     # route a command through worker + TAH retrieval
 ```
 
+Jamie route alias:
+
+```text
+POST /api/jamie/chat   # same Jamie response path with Command Center helper context
+```
+
 Example request:
 
 ```bash
@@ -130,6 +151,38 @@ Every relay plan includes:
 - section instructions,
 - source anchors,
 - final provenance screen.
+
+## Semantic Glossary
+
+Sunset Pulse renders common acronyms and domain terms as hoverable glossary terms on knowledge-heavy surfaces.
+
+Current glossary behavior:
+
+- shows a short definition on hover or keyboard focus,
+- keeps the visible text unchanged,
+- stores the source `.tah` file on the term,
+- links known terms to their cartridge page when available.
+
+Examples:
+
+- `CCS` links to `dallas_community_intel.tah` through `/tah/dallas-community-intel`.
+- `PENDING` explains that the request is received but not closed.
+- `Service Request` explains the city tracking record behind a 311 item.
+- `TREC`, `MLS`, `IDX`, `TAH`, and `pgvector` link to their relevant knowledge cartridges.
+
+Glossary implementation:
+
+```text
+apps/pulse/lib/glossary/siteGlossary.ts
+apps/pulse/components/glossary/GlossaryText.tsx
+```
+
+Glossary-aware surfaces currently include:
+
+- Command Center answers and source excerpts,
+- TAH cartridge pages,
+- TAH library and master-search results,
+- Jamie chat messages.
 
 ## Local Query Memory
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { TahCartridgeViewData } from '@/lib/ai/brain/tah_page_data';
+import { renderGlossaryText } from '@/components/glossary/GlossaryText';
 import { LifeSciencesLibrary } from './LifeSciencesLibrary';
 
 type TahCartridgeViewProps = {
@@ -34,7 +35,7 @@ export function TahCartridgeView({ data, mode = 'page' }: TahCartridgeViewProps)
           <h1 className={`${isModal ? 'text-3xl md:text-5xl' : 'text-4xl md:text-6xl'} mt-4 font-black leading-tight`}>
             {metadata.displayTitle}
           </h1>
-          <p className="mt-5 max-w-4xl text-base leading-7 text-slate-200">{metadata.summary}</p>
+          <p className="mt-5 max-w-4xl text-base leading-7 text-slate-200">{renderGlossaryText(metadata.summary)}</p>
 
           <dl className="mt-8 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <Metric label="Format" value={metadata.format} />
@@ -81,7 +82,7 @@ export function TahCartridgeView({ data, mode = 'page' }: TahCartridgeViewProps)
                       Match score {Number(preview.score || 0).toFixed(2)}
                     </p>
                     <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-200">
-                      {preview.text}
+                      {renderGlossaryText(preview.text)}
                     </p>
                   </article>
                 )) : (

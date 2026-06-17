@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Archive, CheckSquare, Database, FilePlus2, FolderInput, Loader2, MapPinned, RefreshCw, Search, Upload, X } from 'lucide-react';
+import { renderGlossaryText } from '@/components/glossary/GlossaryText';
 import { CARTRIDGE_DOMAINS } from '@/lib/ai/brain/cartridge_domains';
 import type { CartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 
@@ -307,7 +308,7 @@ export function TahLibraryClient({ cartridges, masterArchive }: TahLibraryClient
                           <span className="rounded bg-white/10 px-2 py-1">{Math.round(result.score)} score</span>
                         </div>
                         <h3 className="mt-2 text-sm font-black text-white">{result.title || result.searchQuery || 'Master result'}</h3>
-                        <p className="mt-1 line-clamp-3 text-sm leading-6 text-slate-300">{result.text}</p>
+                        <p className="mt-1 line-clamp-3 text-sm leading-6 text-slate-300">{renderGlossaryText(result.text)}</p>
                       </article>
                     ))}
                   </div>
@@ -483,7 +484,7 @@ export function TahLibraryClient({ cartridges, masterArchive }: TahLibraryClient
                   </div>
 
                   <h3 className="mt-3 text-xl font-black leading-tight text-white">{cartridge.displayTitle}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-300">{cartridge.summary}</p>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-300">{renderGlossaryText(cartridge.summary)}</p>
                   <p className="mt-3 truncate font-mono text-xs text-cyan-100">{cartridge.source}</p>
 
                   <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">

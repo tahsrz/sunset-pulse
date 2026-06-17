@@ -1,0 +1,4 @@
+﻿ClaudeCraft visual assets imported from https://github.com/levy-street/world-of-claudecraft at main commit 8061c2718d65066a8a2b44e3e7b57ee9531b58bb.
+Repository license: MIT, Copyright (c) 2026 Levy Street.
+Bundled art credits in that repository state these UI/VFX assets are CC0/public-domain style assets, with third-party credits documented in its CREDITS.md.
+Use here is for Sunset Pulse command-center presentation art and UI accents.

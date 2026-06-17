@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   BookOpen,
@@ -9,6 +9,7 @@ import {
   Check,
   ChevronRight,
   Command,
+  Copy,
   Cpu,
   ExternalLink,
   Gauge,
@@ -21,6 +22,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
+import { renderGlossaryText as glossaryText } from '@/components/glossary/GlossaryText';
 import {
   chooseWorkerForCommand,
   intelligenceWorkers,
@@ -92,6 +94,20 @@ type CommandResponse = {
         learned: string[];
       };
       sourceAnchors: string[];
+    };
+    deliverable: {
+      mode: RelayMode;
+      title: string;
+      copyReadyText: string;
+      sourceSummary: string;
+      frames: Array<{
+        label: string;
+        title: string;
+        visualDirection: string;
+        body: string;
+        speakerNote: string;
+        sourceAnchor: string;
+      }>;
     };
   };
   trace: {
@@ -233,21 +249,53 @@ const accentClasses: Record<IntelligenceWorker['accent'], {
 const statLabels: Record<WorkerStatKey, string> = {
   speed: 'Speed',
   cost: 'Cost',
-  precision: 'Precision',
-  contextFit: 'Context'
+  precision: 'Accuracy',
+  contextFit: 'File Fit'
 };
 
 const relayModeOptions: Array<{ mode: RelayMode; label: string }> = [
   { mode: 'briefing', label: 'Brief' },
   { mode: 'slideshow', label: 'Slides' },
-  { mode: 'puppetshow', label: 'Puppet' },
-  { mode: 'field-board', label: 'Board' },
+  { mode: 'puppetshow', label: 'Story' },
+  { mode: 'field-board', label: 'Map' },
   { mode: 'script', label: 'Script' }
 ];
 
+const defaultCommand = 'Tell me who to call first this morning';
+
+const claudecraftAssets = {
+  arena: '/claudecraft/arena-poster.jpg',
+  badges: [
+    '/claudecraft/ui/emote-question.png',
+    '/claudecraft/ui/emote-point.png',
+    '/claudecraft/ui/emote-salute.png',
+    '/claudecraft/ui/emote-cheer.png'
+  ],
+  glyphs: [
+    '/claudecraft/vfx/magic-node.png',
+    '/claudecraft/vfx/light-burst.png',
+    '/claudecraft/vfx/spark.png',
+    '/claudecraft/vfx/circle.png'
+  ]
+};
+
+function assetIndexForId(id: string, count: number) {
+  return id.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0) % count;
+}
+
+function badgeForWorker(worker: IntelligenceWorker) {
+  return claudecraftAssets.badges[assetIndexForId(worker.id, claudecraftAssets.badges.length)];
+}
+
+function glyphForWorker(worker: IntelligenceWorker) {
+  return claudecraftAssets.glyphs[assetIndexForId(worker.id, claudecraftAssets.glyphs.length)];
+}
+
 export default function AgentSelectionArena() {
   const { logProtocol } = useTheme();
-  const [command, setCommand] = useState('Tell me who to call first this morning');
+  const commandInputTouched = useRef(false);
+  const [command, setCommand] = useState('');
+  const [linkedCommand, setLinkedCommand] = useState('');
   const [selectedId, setSelectedId] = useState('lead-scoring');
   const [manualSelection, setManualSelection] = useState(false);
   const [relayMode, setRelayMode] = useState<RelayMode>('briefing');
@@ -256,21 +304,24 @@ export default function AgentSelectionArena() {
   const [running, setRunning] = useState(false);
   const [commandResult, setCommandResult] = useState<CommandResponse | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [copiedDeliverable, setCopiedDeliverable] = useState(false);
   const [dailyFact, setDailyFact] = useState<TahFactResponse | null>(null);
   const [factBusy, setFactBusy] = useState(false);
   const [factError, setFactError] = useState('');
 
-  const recommended = useMemo(() => chooseWorkerForCommand(command), [command]);
+  const routingCommand = command.trim() || linkedCommand || defaultCommand;
+  const recommended = useMemo(() => chooseWorkerForCommand(routingCommand), [routingCommand]);
   const selected = commandResult
     ? intelligenceWorkers.find((worker) => worker.id === commandResult.worker.id) || recommended
     : intelligenceWorkers.find((worker) => worker.id === selectedId) || recommended;
   const voiceWorker = intelligenceWorkers.find((worker) => worker.id === 'agent-voice')!;
   const supervisorWorker = intelligenceWorkers.find((worker) => worker.id === 'supervisor')!;
   const accent = accentClasses[selected.accent];
+  const tahLoadoutCount = new Set(intelligenceWorkers.flatMap((worker) => worker.tahLoadout)).size;
 
   const teamSlots = [
-    { label: 'Router', value: 'TAH Router', icon: Command },
-    { label: 'Primary', value: selected.name, icon: selected.icon },
+    { label: 'Picker', value: manualSelection ? 'You chose' : 'Auto chose', icon: Command },
+    { label: 'Helper', value: selected.name, icon: selected.icon },
     { label: 'Voice', value: voiceWorker.name, icon: voiceWorker.icon },
     { label: 'Check', value: supervisorEnabled ? supervisorWorker.name : 'Off', icon: ShieldCheck }
   ];
@@ -296,7 +347,37 @@ export default function AgentSelectionArena() {
     loadDailyFact();
   }, []);
 
+  useEffect(() => {
+    const initialCommand = new URLSearchParams(window.location.search).get('command');
+    if (!initialCommand) return;
+    if (commandInputTouched.current) return;
+
+    const nextCommand = initialCommand.trim().slice(0, 600);
+    if (!nextCommand) return;
+
+    const nextWorker = chooseWorkerForCommand(nextCommand);
+    setLinkedCommand(nextCommand);
+    setCommand('');
+    setSelectedId(nextWorker.id);
+    setManualSelection(false);
+    setRanCommand(false);
+    setCommandResult(null);
+  }, []);
+
+  const updateCommandDraft = (nextCommand: string) => {
+    commandInputTouched.current = true;
+    const nextWorker = chooseWorkerForCommand(nextCommand);
+    setCommand(nextCommand);
+    setLinkedCommand('');
+    setSelectedId(nextWorker.id);
+    setManualSelection(false);
+    setRanCommand(false);
+    setCommandResult(null);
+    setCommandError(null);
+  };
+
   const runCommand = async () => {
+    const commandToRun = command.trim() || linkedCommand || defaultCommand;
     const workerId = manualSelection ? selectedId : recommended.id;
     setSelectedId(workerId);
     setRunning(true);
@@ -304,6 +385,7 @@ export default function AgentSelectionArena() {
     setCommandError(null);
     logProtocol('DATA', 'Command Center route requested', {
       command,
+      commandToRun,
       workerId,
       routeMode: manualSelection ? 'manual' : 'auto',
       relayMode,
@@ -315,7 +397,7 @@ export default function AgentSelectionArena() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          command,
+          command: commandToRun,
           selectedWorkerId: manualSelection ? workerId : undefined,
           relayMode,
           supervisor: supervisorEnabled
@@ -345,32 +427,51 @@ export default function AgentSelectionArena() {
     }
   };
 
+  const copyDeliverable = async () => {
+    const text = commandResult?.result.deliverable.copyReadyText;
+    if (!text) return;
+
+    await navigator.clipboard.writeText(text);
+    setCopiedDeliverable(true);
+    window.setTimeout(() => setCopiedDeliverable(false), 1800);
+  };
+
   return (
-    <section className="min-h-screen bg-[#071016] text-white">
-      <div className="border-b border-white/10 bg-[#0b1821]">
+    <section className="relative min-h-screen overflow-hidden bg-[#071016] text-white">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[440px] overflow-hidden opacity-45">
+        <img
+          src={claudecraftAssets.arena}
+          alt=""
+          className="h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#071016]/45 via-[#071016]/88 to-[#071016]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#071016] via-[#071016]/25 to-[#071016]" />
+      </div>
+
+      <div className="relative z-10 border-b border-white/10 bg-[#0b1821]/85 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 lg:flex-row lg:items-end lg:justify-between lg:px-6">
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">
               <Cpu size={16} />
-              Private Market Intelligence
+              Your Market Desk
             </div>
             <h1 className="mt-2 text-3xl font-black uppercase leading-tight text-white md:text-5xl">
-              Select Your Intelligence Team
+              Choose a Helper
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Command narrow real estate workers loaded with private TAH context.
+              Ask a focused helper to use your saved market notes, TAH files, and local context.
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-right sm:min-w-[420px]">
-            <Metric label="Workers" value="12" />
-            <Metric label="TAH Loadouts" value="8" />
-            <Metric label="Mode" value="Auto" />
+            <Metric label="Helpers" value={String(intelligenceWorkers.length)} />
+            <Metric label="Files" value={String(tahLoadoutCount)} />
+            <Metric label="Matching" value="Auto" />
           </div>
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[1fr_360px] lg:px-6">
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[1fr_360px] lg:px-6">
         <div className="min-w-0">
           <div className="border border-white/10 bg-[#0d1c27] p-3 shadow-2xl shadow-black/20">
             <div className="flex flex-col gap-3 md:flex-row">
@@ -379,10 +480,7 @@ export default function AgentSelectionArena() {
                 <input
                   value={command}
                   onChange={(event) => {
-                    setCommand(event.target.value);
-                    setManualSelection(false);
-                    setRanCommand(false);
-                    setCommandResult(null);
+                    updateCommandDraft(event.target.value);
                   }}
                   className="h-12 w-full bg-transparent text-base font-semibold text-white outline-none placeholder:text-slate-500"
                   placeholder="Tell me who to call first..."
@@ -395,7 +493,7 @@ export default function AgentSelectionArena() {
                 className="inline-flex min-h-14 items-center justify-center gap-2 border border-emerald-200/30 bg-emerald-300 px-5 text-sm font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-100"
               >
                 <Play size={17} />
-                {running ? 'Routing' : 'Run'}
+                {running ? 'Thinking' : 'Run'}
               </button>
             </div>
 
@@ -405,12 +503,7 @@ export default function AgentSelectionArena() {
                   key={item}
                   type="button"
                   onClick={() => {
-                    const next = chooseWorkerForCommand(item);
-                    setCommand(item);
-                    setSelectedId(next.id);
-                    setManualSelection(false);
-                    setRanCommand(false);
-                    setCommandResult(null);
+                    updateCommandDraft(item);
                   }}
                   className="shrink-0 border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-cyan-200/40 hover:bg-cyan-200/10 hover:text-white"
                 >
@@ -421,7 +514,7 @@ export default function AgentSelectionArena() {
 
             <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-[auto_1fr] sm:items-center">
               <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                Delivery
+                Answer Style
               </div>
               <div className="grid grid-cols-5 border border-white/10 bg-black/20">
                 {relayModeOptions.map((option) => (
@@ -451,21 +544,21 @@ export default function AgentSelectionArena() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
                   <BookOpen size={15} />
-                  TAH Fact of the Day
+                  Today's TAH Note
                 </div>
                 {dailyFact ? (
                   <>
-                    <p className="mt-2 text-sm leading-6 text-slate-200">{dailyFact.blurb}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-200">{glossaryText(dailyFact.blurb)}</p>
                     <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">
                       <span>{dailyFact.title}</span>
                       {dailyFact.source && <span>{dailyFact.source}</span>}
-                      <span>Shard {dailyFact.shardIndex}</span>
-                      <span>{dailyFact.archive.shardCount} total shards</span>
+                      <span>Note {dailyFact.shardIndex}</span>
+                      <span>{dailyFact.archive.shardCount} notes available</span>
                     </div>
                   </>
                 ) : (
                   <p className="mt-2 text-sm leading-6 text-slate-300">
-                    {factError || (factBusy ? 'Reading today\'s TAH shard...' : 'TAH fact waiting for the archive.')}
+                    {factError || (factBusy ? 'Reading today\'s TAH note...' : 'TAH note waiting for the archive.')}
                   </p>
                 )}
               </div>
@@ -478,6 +571,44 @@ export default function AgentSelectionArena() {
                 <RefreshCw size={14} className={factBusy ? 'animate-spin' : ''} />
                 Shuffle
               </button>
+            </div>
+          </section>
+
+          <section className="relative mt-4 min-h-[170px] overflow-hidden border border-white/10 bg-[#0d1c27]">
+            <img
+              src={claudecraftAssets.arena}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#071016] via-[#071016]/70 to-[#071016]/35" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#071016]/80 via-transparent to-[#071016]/30" />
+
+            <div className="relative grid gap-4 p-4 md:grid-cols-[1fr_320px] md:items-end">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100">
+                  <Zap size={15} />
+                  Current Helper
+                </div>
+                <h2 className="mt-2 max-w-2xl text-2xl font-black uppercase leading-tight text-white md:text-4xl">
+                  {selected.name}
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-200">{selected.role}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {teamSlots.map((slot) => {
+                  const SlotIcon = slot.icon;
+                  return (
+                    <div key={slot.label} className="min-h-16 border border-white/10 bg-black/45 p-2 backdrop-blur">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">{slot.label}</span>
+                        <SlotIcon size={14} className="text-amber-100" />
+                      </div>
+                      <p className="mt-2 truncate text-xs font-black text-white">{slot.value}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </section>
 
@@ -497,28 +628,13 @@ export default function AgentSelectionArena() {
               />
             ))}
           </div>
-
-          <div className="mt-4 grid gap-3 border border-white/10 bg-[#0d1c27] p-3 md:grid-cols-4">
-            {teamSlots.map((slot) => {
-              const SlotIcon = slot.icon;
-              return (
-                <div key={slot.label} className="min-h-20 border border-white/10 bg-black/20 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{slot.label}</span>
-                    <SlotIcon size={16} className="text-cyan-100" />
-                  </div>
-                  <p className="mt-3 truncate text-sm font-black text-white">{slot.value}</p>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         <aside className="border border-white/10 bg-[#0d1c27] shadow-2xl shadow-black/25">
           <div className={`border-b border-white/10 p-4 ${accent.tile}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className={`text-xs font-black uppercase tracking-[0.18em] ${accent.text}`}>{selected.slot} Worker</p>
+                <p className={`text-xs font-black uppercase tracking-[0.18em] ${accent.text}`}>{selected.slot} Helper</p>
                 <h2 className="mt-2 text-2xl font-black uppercase leading-tight text-white">{selected.name}</h2>
               </div>
               <div className={`flex h-14 w-14 shrink-0 items-center justify-center ${accent.icon}`}>
@@ -532,7 +648,7 @@ export default function AgentSelectionArena() {
             <section>
               <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 <Gauge size={15} />
-                Worker Stats
+                How This Helper Works
               </div>
               <div className="space-y-3">
                 {(Object.keys(selected.stats) as WorkerStatKey[]).map((key) => (
@@ -544,7 +660,7 @@ export default function AgentSelectionArena() {
             <section>
               <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 <Layers3 size={15} />
-                TAH Loadout
+                Files It Reads
               </div>
               <div className="space-y-2">
                 {selected.tahLoadout.map((file) => (
@@ -559,11 +675,11 @@ export default function AgentSelectionArena() {
             <section>
               <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 <Bot size={15} />
-                Model
+                AI Model
               </div>
               <div className="border border-white/10 bg-black/20 px-3 py-3">
                 <p className="text-sm font-bold text-white">{selected.model}</p>
-                <p className="mt-1 text-xs text-slate-400">Small model lane with TAH context gating</p>
+                <p className="mt-1 text-xs text-slate-400">Uses a small model with the right TAH files attached.</p>
               </div>
             </section>
 
@@ -571,7 +687,7 @@ export default function AgentSelectionArena() {
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                   <TerminalSquare size={15} />
-                  Developer Tools
+                  System Tools
                 </div>
                 <Link
                   href="/admin/orchestrator"
@@ -582,30 +698,30 @@ export default function AgentSelectionArena() {
                 </Link>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <DevMetric label="Old Route" value={commandResult?.trace.commandPost?.status || 'standby'} />
-                <DevMetric label="Queue" value={String(commandResult?.trace.commandPost?.pendingTerminalIntentCount ?? 0)} />
+                <DevMetric label="Command Post" value={commandResult?.trace.commandPost?.status || 'standby'} />
+                <DevMetric label="Waiting" value={String(commandResult?.trace.commandPost?.pendingTerminalIntentCount ?? 0)} />
                 <DevMetric
-                  label="Master"
+                  label="Archive"
                   value={commandResult?.trace.commandPost?.masterArchive?.status || 'pending'}
                 />
                 <DevMetric
-                  label="Shards"
+                  label="Notes"
                   value={String(commandResult?.trace.commandPost?.masterArchive?.shardCount ?? commandResult?.trace.atlasDiagnostics?.totalSegments ?? 0)}
                 />
                 <DevMetric
-                  label="Policy"
+                  label="Search"
                   value={commandResult?.trace.retrievalPolicy ? 'active' : 'standby'}
                 />
                 <DevMetric
-                  label="Links"
+                  label="Related"
                   value={String(commandResult?.trace.atlasDiagnostics?.linkedExperts ?? 0)}
                 />
                 <DevMetric
-                  label="Memory"
+                  label="Saved"
                   value={commandResult?.trace.queryMemory?.status || 'standby'}
                 />
                 <DevMetric
-                  label="Recalled"
+                  label="Past Notes"
                   value={String(commandResult?.trace.queryMemory?.recalled ?? 0)}
                 />
               </div>
@@ -615,7 +731,7 @@ export default function AgentSelectionArena() {
               {commandResult?.trace.commandPost?.statusProbe && (
                 <div className="mt-3 border border-white/10 bg-[#071016] p-2">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">Status Probe</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">System Check</p>
                     <span className="font-mono text-[10px] text-slate-500">{commandResult.trace.commandPost.statusProbe.action}</span>
                   </div>
                   <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-xs leading-5 text-slate-300">
@@ -629,7 +745,7 @@ export default function AgentSelectionArena() {
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                   <ShieldCheck size={15} />
-                  Supervisor
+                  Safety Check
                 </div>
                 <button
                   type="button"
@@ -650,7 +766,7 @@ export default function AgentSelectionArena() {
             <section className="border border-white/10 bg-black/20 p-3">
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 <Activity size={15} />
-                Command Output
+                Answer
               </div>
               <h3 className="mt-3 text-base font-black text-white">
                 {commandResult?.result.title || (ranCommand ? recommended.sampleOutput.title : selected.sampleOutput.title)}
@@ -673,8 +789,8 @@ export default function AgentSelectionArena() {
                     <p className="mt-1 font-mono text-lg font-black text-white">{commandResult.result.confidence}%</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Route</p>
-                    <p className="mt-1 font-mono text-lg font-black text-white">{commandResult.trace.routeMode}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Picked By</p>
+                    <p className="mt-1 font-mono text-lg font-black text-white">{formatRouteMode(commandResult.trace.routeMode)}</p>
                   </div>
                 </div>
               )}
@@ -685,41 +801,100 @@ export default function AgentSelectionArena() {
               )}
             </section>
 
+            {commandResult?.result.deliverable ? (
+              <section className="border border-emerald-200/20 bg-emerald-300/10 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-100">
+                      <BookOpen size={15} />
+                      Ready-to-use Version
+                    </div>
+                    <h3 className="mt-2 text-base font-black text-white">{glossaryText(commandResult.result.deliverable.title)}</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(commandResult.result.deliverable.sourceSummary)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="border border-emerald-200/30 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-emerald-100">
+                      {commandResult.result.deliverable.mode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={copyDeliverable}
+                      className="inline-flex h-8 items-center gap-2 border border-emerald-200/40 px-2 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-100 transition hover:bg-emerald-200 hover:text-slate-950"
+                    >
+                      {copiedDeliverable ? <Check size={13} /> : <Copy size={13} />}
+                      {copiedDeliverable ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {commandResult.result.deliverable.frames.map((frame, index) => (
+                    <div key={`${frame.label}-${frame.title}`} className="border border-white/10 bg-[#071016] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <img
+                            src={claudecraftAssets.glyphs[index % claudecraftAssets.glyphs.length]}
+                            alt=""
+                            className="mt-0.5 h-10 w-10 shrink-0 rounded-full border border-emerald-200/20 bg-black/40 object-cover p-1"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">{frame.label}</p>
+                            <p className="mt-1 text-sm font-black text-white">{glossaryText(frame.title)}</p>
+                          </div>
+                        </div>
+                        <Check size={15} className="shrink-0 text-emerald-100" />
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-slate-200">{glossaryText(frame.body)}</p>
+                      <div className="mt-3 border-t border-white/10 pt-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Visual Idea</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(frame.visualDirection)}</p>
+                      </div>
+                      <div className="mt-2 border-t border-white/10 pt-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Talking Note</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(frame.speakerNote)}</p>
+                      </div>
+                      <p className="mt-2 truncate font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500">{frame.sourceAnchor}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {commandResult?.result.relayPlan ? (
               <section className="border border-amber-200/20 bg-amber-300/10 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-amber-100">
                   <BookOpen size={15} />
-                  TAH Relay Template
+                  Answer Plan
                 </div>
                 <div className="mt-3 border border-white/10 bg-[#071016] p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-base font-black text-white">{commandResult.result.relayPlan.templateName}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-300">{commandResult.result.relayPlan.purpose}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(commandResult.result.relayPlan.purpose)}</p>
                     </div>
-                    <span className="shrink-0 border border-amber-200/30 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-amber-100">
-                      {commandResult.result.relayPlan.templateId}
+                    <span className="shrink-0 border border-amber-200/30 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-100">
+                      {formatRelayMode(commandResult.result.relayPlan.mode)}
                     </span>
                   </div>
                   <div className="mt-3 border-t border-white/10 pt-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Format</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Style</p>
                     <p className="mt-1 text-sm font-bold text-white">{commandResult.result.relayPlan.format.name}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-300">{commandResult.result.relayPlan.format.useWhen}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(commandResult.result.relayPlan.format.useWhen)}</p>
                     <div className="mt-2 grid gap-2 border-b border-white/10 pb-3 md:grid-cols-2">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Rhythm</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-200">{commandResult.result.relayPlan.format.rhythm}</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Flow</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-200">{glossaryText(commandResult.result.relayPlan.format.rhythm)}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Direction</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-200">{commandResult.result.relayPlan.format.visualDirection}</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Visual Style</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-200">{glossaryText(commandResult.result.relayPlan.format.visualDirection)}</p>
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 border-t border-white/10 pt-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Visual</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Look</p>
                     <p className="mt-1 text-sm font-bold text-white">{commandResult.result.relayPlan.visual.motif}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-300">{commandResult.result.relayPlan.visual.layout}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(commandResult.result.relayPlan.visual.layout)}</p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {commandResult.result.relayPlan.visual.cues.map((cue) => (
                         <span key={cue} className="border border-amber-200/20 bg-amber-200/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-amber-100">
@@ -733,12 +908,12 @@ export default function AgentSelectionArena() {
                   {commandResult.result.relayPlan.sections.slice(0, 4).map((section) => (
                     <div key={section.label} className="border border-white/10 bg-[#071016] px-3 py-2">
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">{section.label}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-300">{section.instruction}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-300">{glossaryText(section.instruction)}</p>
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 border border-white/10 bg-[#071016] p-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Output Contract</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">What It Includes</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {commandResult.result.relayPlan.format.outputContract.map((item) => (
                       <span key={item} className="border border-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-300">
@@ -753,17 +928,17 @@ export default function AgentSelectionArena() {
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">
                         {commandResult.result.relayPlan.finalScreen.frameLabel}
                       </p>
-                      <p className="mt-1 text-sm font-black text-white">{commandResult.result.relayPlan.finalScreen.title}</p>
+                      <p className="mt-1 text-sm font-black text-white">{glossaryText(commandResult.result.relayPlan.finalScreen.title)}</p>
                     </div>
                     <BookOpen size={16} className="shrink-0 text-emerald-100" />
                   </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-300">{commandResult.result.relayPlan.finalScreen.instruction}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-300">{glossaryText(commandResult.result.relayPlan.finalScreen.instruction)}</p>
                   <div className="mt-3 space-y-2">
-                    {commandResult.result.relayPlan.finalScreen.sourceCards.slice(0, 3).map((card) => (
-                      <div key={`${card.source}-${card.matchReason}`} className="border border-white/10 bg-[#071016] px-2 py-2">
+                    {commandResult.result.relayPlan.finalScreen.sourceCards.slice(0, 3).map((card, index) => (
+                      <div key={`${card.source}-${card.matchReason}-${index}`} className="border border-white/10 bg-[#071016] px-2 py-2">
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate font-mono text-[10px] font-black text-emerald-100">{card.source}</p>
-                          <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.1em] text-slate-500">{card.matchReason}</span>
+                          <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">{formatMatchReason(card.matchReason)}</span>
                         </div>
                         <p className="mt-1 truncate text-[10px] text-slate-400">{card.concepts.join(', ')}</p>
                       </div>
@@ -771,18 +946,18 @@ export default function AgentSelectionArena() {
                   </div>
                   <div className="mt-3 space-y-1">
                     {commandResult.result.relayPlan.finalScreen.learned.map((item) => (
-                      <p key={item} className="text-xs leading-5 text-slate-200">{item}</p>
+                      <p key={item} className="text-xs leading-5 text-slate-200">{glossaryText(item)}</p>
                     ))}
                   </div>
                 </div>
                 <div className="mt-3 grid gap-2 md:grid-cols-2">
                   <div className="border border-white/10 bg-[#071016] p-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Words</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-200">{commandResult.result.relayPlan.words.voice}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Tone</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-200">{glossaryText(commandResult.result.relayPlan.words.voice)}</p>
                   </div>
                   <div className="border border-white/10 bg-[#071016] p-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Avoid</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-200">{commandResult.result.relayPlan.words.avoid.slice(0, 2).join(', ')}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Avoids</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-200">{glossaryText(commandResult.result.relayPlan.words.avoid.slice(0, 2).join(', '))}</p>
                   </div>
                 </div>
               </section>
@@ -792,23 +967,21 @@ export default function AgentSelectionArena() {
               <section className="border border-white/10 bg-black/20 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                   <Layers3 size={15} />
-                  Retrieved TAH Context
+                  Files Read
                 </div>
                 <div className="mt-3 space-y-2">
                   {commandResult.trace.selectedShards.slice(0, 3).map((shard) => (
                     <div key={`${shard.expertId}-${shard.source}`} className="border border-white/10 bg-[#071016] p-2">
                       <div className="flex items-center justify-between gap-3">
                         <p className="truncate text-xs font-black text-cyan-100">{shard.title}</p>
-                        <span className="font-mono text-[10px] text-slate-500">{shard.score}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">match {formatMatchScore(shard.score)}</span>
                       </div>
                       <p className="mt-1 font-mono text-[10px] text-slate-500">{shard.source}</p>
-                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-300">{shard.excerpt}</p>
+                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-300">{glossaryText(shard.excerpt)}</p>
                       {shard.metrics && (
-                        <div className="mt-2 flex flex-wrap gap-1 font-mono text-[9px] uppercase tracking-[0.1em] text-slate-500">
-                          <span>{shard.metrics.contextLevel}</span>
-                          <span>{shard.metrics.matchReason}</span>
-                          <span>D {shard.metrics.density}</span>
-                          <span>V {shard.metrics.vitality}</span>
+                        <div className="mt-2 flex flex-wrap gap-1 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                          <span>{formatContextLevel(shard.metrics.contextLevel)}</span>
+                          <span>{formatMatchReason(shard.metrics.matchReason)}</span>
                         </div>
                       )}
                     </div>
@@ -816,9 +989,9 @@ export default function AgentSelectionArena() {
                 </div>
                 {commandResult.trace.atlasDiagnostics && (
                   <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">
-                    Segments {commandResult.trace.atlasDiagnostics.visitedSegments}/{commandResult.trace.atlasDiagnostics.totalSegments}
-                    {' '}Payload reads {commandResult.trace.atlasDiagnostics.payloadReads}
-                    {' '}Links {commandResult.trace.atlasDiagnostics.linkedExperts || 0}
+                    Checked {commandResult.trace.atlasDiagnostics.visitedSegments}/{commandResult.trace.atlasDiagnostics.totalSegments}
+                    {' '}Opened {commandResult.trace.atlasDiagnostics.payloadReads}
+                    {' '}Related {commandResult.trace.atlasDiagnostics.linkedExperts || 0}
                   </p>
                 )}
               </section>
@@ -828,18 +1001,18 @@ export default function AgentSelectionArena() {
               <section className="border border-cyan-200/20 bg-cyan-300/10 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-100">
                   <Layers3 size={15} />
-                  TAH Retrieval Policy
+                  How Files Were Chosen
                 </div>
                 <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">
-                  Complexity {commandResult.trace.retrievalPolicy.targetComplexity}
-                  {' '}Mode {commandResult.trace.retrievalPolicy.contextMode}
-                  {' '}Synonyms {commandResult.trace.retrievalPolicy.synonymTerms}
+                  Detail {formatDetailLevel(commandResult.trace.retrievalPolicy.targetComplexity)}
+                  {' '}View quick
+                  {' '}Related words {commandResult.trace.retrievalPolicy.synonymTerms}
                 </p>
                 <div className="mt-3 space-y-2">
                   {commandResult.trace.retrievalPolicy.stages.map((stage) => (
                     <div key={stage.name} className="border border-white/10 bg-[#071016] px-2 py-2">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">{stage.name}</p>
+                        <p className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">{formatSearchStage(stage.name)}</p>
                         <span className="font-mono text-[10px] text-slate-500">{stage.kept}/{stage.input}</span>
                       </div>
                       <div className="mt-2 h-1.5 bg-black/40">
@@ -858,12 +1031,12 @@ export default function AgentSelectionArena() {
               <section className="border border-emerald-200/20 bg-emerald-300/10 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-100">
                   <BookOpen size={15} />
-                  Local Query Memory
+                  Saved For Later
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <DevMetric label="Status" value={commandResult.trace.queryMemory.status} />
                   <DevMetric label="Saved" value={commandResult.trace.queryMemory.saved ? 'yes' : 'no'} />
-                  <DevMetric label="Recalled" value={String(commandResult.trace.queryMemory.recalled)} />
+                  <DevMetric label="Past Notes" value={String(commandResult.trace.queryMemory.recalled)} />
                 </div>
                 <p className="mt-3 break-all font-mono text-[10px] text-slate-400">{commandResult.trace.queryMemory.path}</p>
                 {commandResult.trace.queryMemory.reason && (
@@ -876,7 +1049,7 @@ export default function AgentSelectionArena() {
               <section className="border border-violet-200/20 bg-violet-300/10 p-3">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-violet-100">
                   <ShieldCheck size={15} />
-                  Supervisor Notes
+                  Safety Check Notes
                 </div>
                 <div className="mt-3 space-y-2">
                   {commandResult.trace.supervisorNotes.map((note) => (
@@ -901,6 +1074,60 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatRouteMode(mode: 'auto' | 'manual') {
+  return mode === 'manual' ? 'you' : 'auto';
+}
+
+function formatRelayMode(mode: RelayMode) {
+  const labels: Record<RelayMode, string> = {
+    briefing: 'brief',
+    slideshow: 'slides',
+    puppetshow: 'story',
+    'field-board': 'map',
+    script: 'script'
+  };
+  return labels[mode];
+}
+
+function formatMatchReason(reason: string) {
+  const normalized = reason.toLowerCase();
+  if (normalized.includes('query memory')) return 'saved note';
+  if (normalized.includes('virtual') || normalized.includes('loadout')) return 'helper file';
+  if (normalized.includes('concept')) return 'word match';
+  if (normalized.includes('policy')) return 'search match';
+  if (normalized.includes('retrieved')) return 'file match';
+  return reason.replace(/[_-]+/g, ' ');
+}
+
+function formatContextLevel(level: 'summary' | 'interface' | 'full') {
+  if (level === 'full') return 'full note';
+  if (level === 'interface') return 'focused note';
+  return 'quick note';
+}
+
+function formatMatchScore(score: number) {
+  if (score >= 100) return 'high';
+  if (score >= 60) return 'good';
+  return 'light';
+}
+
+function formatDetailLevel(value: number) {
+  if (value >= 0.75) return 'deep';
+  if (value >= 0.45) return 'medium';
+  return 'quick';
+}
+
+function formatSearchStage(name: string) {
+  const stages: Record<string, string> = {
+    'metadata filter': 'Checked file info',
+    'concept match': 'Matched words',
+    'density vitality rank': 'Ranked useful notes',
+    'compact context output': 'Kept best notes',
+    'virtual loadout fallback': 'Used helper files'
+  };
+  return stages[name] || name.replace(/[_-]+/g, ' ');
+}
+
 function DevMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-white/10 bg-[#071016] px-2 py-2">
@@ -923,16 +1150,25 @@ function WorkerTile({
 }) {
   const Icon = worker.icon;
   const accent = accentClasses[worker.accent];
+  const badge = badgeForWorker(worker);
+  const glyph = glyphForWorker(worker);
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`group relative h-[190px] border p-3 text-left shadow-lg transition hover:-translate-y-0.5 hover:border-white/25 focus:outline-none focus:ring-2 ${
+      className={`group relative h-[206px] overflow-hidden border p-3 text-left shadow-lg transition hover:-translate-y-0.5 hover:border-white/25 focus:outline-none focus:ring-2 ${
         accent.tile
       } ${selected ? `ring-2 ${accent.selected}` : 'ring-0 ring-transparent'}`}
       aria-pressed={selected}
     >
+      <img
+        src={glyph}
+        alt=""
+        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 opacity-20 blur-[1px] transition group-hover:opacity-35"
+      />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent" />
+
       {recommended && (
         <div className="absolute right-2 top-2 flex items-center gap-1 border border-emerald-200/30 bg-emerald-300 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-950">
           <Zap size={12} />
@@ -940,16 +1176,23 @@ function WorkerTile({
         </div>
       )}
 
-      <div className={`flex h-12 w-12 items-center justify-center ${accent.icon}`}>
-        <Icon size={25} />
+      <div className="relative flex items-center gap-2">
+        <div className={`flex h-12 w-12 items-center justify-center ${accent.icon}`}>
+          <Icon size={25} />
+        </div>
+        <img
+          src={badge}
+          alt=""
+          className="h-11 w-11 shrink-0 rounded-full border border-white/10 bg-black/35 object-cover p-1 shadow-lg shadow-black/30"
+        />
       </div>
 
-      <div className="mt-3 min-w-0">
+      <div className="relative mt-3 min-w-0">
         <h3 className="truncate text-base font-black uppercase leading-tight text-white">{worker.name}</h3>
         <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-300">{worker.role}</p>
       </div>
 
-      <div className="absolute bottom-3 left-3 right-3">
+      <div className="absolute bottom-3 left-3 right-3 z-10">
         <div className="flex items-center justify-between gap-2">
           <span className={`truncate text-[10px] font-black uppercase tracking-[0.14em] ${accent.text}`}>{worker.status}</span>
           <span className="font-mono text-[10px] font-bold text-slate-500">{worker.shortName}</span>
