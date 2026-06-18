@@ -20,6 +20,7 @@ describe('value guess game rules', () => {
     const result = evaluateValueGuess(415000, 415001);
 
     expect(result.wentOver).toBe(true);
+    expect(result.keepsStreak).toBe(false);
     expect(result.roundScore).toBe(0);
     expect(result.label).toBe('bust');
   });
@@ -28,6 +29,7 @@ describe('value guess game rules', () => {
     const result = evaluateValueGuess(415000, 415000);
 
     expect(result.wentOver).toBe(false);
+    expect(result.keepsStreak).toBe(true);
     expect(result.difference).toBe(0);
     expect(result.roundScore).toBe(1000);
     expect(result.label).toBe('perfect');
@@ -35,13 +37,25 @@ describe('value guess game rules', () => {
 
   it('keeps under-value guesses alive and scores by closeness', () => {
     const sharp = evaluateValueGuess(500000, 490000);
-    const wide = evaluateValueGuess(500000, 400000);
+    const wide = evaluateValueGuess(500000, 440000);
 
     expect(sharp.wentOver).toBe(false);
     expect(wide.wentOver).toBe(false);
+    expect(sharp.keepsStreak).toBe(true);
+    expect(wide.keepsStreak).toBe(true);
     expect(sharp.roundScore).toBeGreaterThan(wide.roundScore);
     expect(sharp.label).toBe('sharp');
     expect(wide.label).toBe('wide');
+  });
+
+  it('marks very low under-value guesses as misses that reset the streak', () => {
+    const result = evaluateValueGuess(525000, 250000);
+
+    expect(result.wentOver).toBe(false);
+    expect(result.keepsStreak).toBe(false);
+    expect(result.roundScore).toBe(0);
+    expect(result.label).toBe('miss');
+    expect(getNextValueGuessStreak(result, 4)).toBe(0);
   });
 
   it('totals only completed round scores', () => {
@@ -57,10 +71,12 @@ describe('value guess game rules', () => {
   it('advances streaks for safe guesses and resets on busts', () => {
     const safe = evaluateValueGuess(500000, 490000);
     const bust = evaluateValueGuess(500000, 510000);
+    const miss = evaluateValueGuess(500000, 300000);
 
     expect(getNextValueGuessStreak(safe, 0)).toBe(1);
     expect(getNextValueGuessStreak(safe, 4)).toBe(5);
     expect(getNextValueGuessStreak(bust, 4)).toBe(0);
+    expect(getNextValueGuessStreak(miss, 4)).toBe(0);
   });
 
   it('cycles through the listing deck as an endless stream', () => {
@@ -121,6 +137,13 @@ describe('value guess game rules', () => {
 
     expect(normalizePropertyForValueGuess({
       images: ['https://images.example.com/home.jpg'],
+      list_price: 625000,
+      price_type: 'sale'
+    })).toBeNull();
+
+    expect(normalizePropertyForValueGuess({
+      location: { city: 'Dallas' },
+      images: ['sample/IMG-123.jpg'],
       list_price: 625000,
       price_type: 'sale'
     })).toBeNull();

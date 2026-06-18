@@ -35,7 +35,7 @@ export default function ValueGuessGame() {
 
   const currentListing = getValueGuessStreamListing(roundIndex, listingStream);
   const totalScore = useMemo(() => getValueGuessTotal(playedRounds.map((round) => round.result)), [playedRounds]);
-  const busts = playedRounds.filter((round) => round.result.wentOver).length;
+  const misses = playedRounds.filter((round) => !round.result.keepsStreak).length;
   const visibleScore = currentResult ? totalScore + currentResult.roundScore : totalScore;
   const visibleStreak = currentResult ? getNextValueGuessStreak(currentResult, currentStreak) : currentStreak;
   const visibleBestStreak = Math.max(bestStreak, visibleStreak);
@@ -166,7 +166,7 @@ export default function ValueGuessGame() {
             <div className="mt-5 grid grid-cols-3 gap-2">
               <SummaryStat label="Current" value={String(visibleStreak)} />
               <SummaryStat label="Best" value={String(visibleBestStreak)} />
-              <SummaryStat label="Busts" value={String(busts + (currentResult?.wentOver ? 1 : 0))} />
+              <SummaryStat label="Misses" value={String(misses + (currentResult && !currentResult.keepsStreak ? 1 : 0))} />
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2">
@@ -213,9 +213,9 @@ export default function ValueGuessGame() {
           </form>
 
           {currentResult && (
-            <div className={`border p-5 ${currentResult.wentOver ? 'border-red-300/30 bg-red-500/10' : 'border-emerald-300/25 bg-emerald-500/10'}`}>
+            <div className={`border p-5 ${currentResult.keepsStreak ? 'border-emerald-300/25 bg-emerald-500/10' : 'border-red-300/30 bg-red-500/10'}`}>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-300">
-                {currentResult.wentOver ? 'Bust' : resultCopy(currentResult.label)}
+                {resultCopy(currentResult.label)}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <SummaryStat label="Actual" value={formatCurrency(currentResult.actualValue)} />
@@ -225,7 +225,7 @@ export default function ValueGuessGame() {
               </div>
               <p className="mt-4 flex items-center gap-2 text-sm font-bold text-slate-200">
                 <Flame className="h-4 w-4 text-amber-200" />
-                {currentResult.wentOver ? 'Streak reset.' : `Streak climbs to ${visibleStreak}.`}
+                {currentResult.keepsStreak ? `Streak climbs to ${visibleStreak}.` : 'Streak reset.'}
               </p>
               <button
                 type="button"
@@ -260,8 +260,8 @@ export default function ValueGuessGame() {
                         {formatCurrency(round.result.guess)} vs {formatCurrency(round.result.actualValue)}
                       </p>
                     </div>
-                    <div className={`self-center rounded px-2 py-1 text-xs font-black ${round.result.wentOver ? 'bg-red-400/15 text-red-100' : 'bg-emerald-300/15 text-emerald-100'}`}>
-                      {round.result.wentOver ? 'Bust' : `+${round.result.roundScore}`}
+                    <div className={`self-center rounded px-2 py-1 text-xs font-black ${round.result.keepsStreak ? 'bg-emerald-300/15 text-emerald-100' : 'bg-red-400/15 text-red-100'}`}>
+                      {round.result.keepsStreak ? `+${round.result.roundScore}` : resultCopy(round.result.label)}
                     </div>
                   </div>
                 ))}
@@ -318,7 +318,13 @@ function resultCopy(label: ValueGuessResult['label']) {
       return 'Sharp Read';
     case 'safe':
       return 'Safe Bid';
+    case 'wide':
+      return 'Wide, But Alive';
+    case 'miss':
+      return 'Too Low';
+    case 'bust':
+      return 'Bust';
     default:
-      return 'Under, But Wide';
+      return 'Miss';
   }
 }

@@ -105,11 +105,17 @@ class RepliersMLSService {
     console.log('📡 [REPLIERS_PULSE] Initiating Asynchronous Ingestion Stream...');
 
     while (hasMore) {
-      const repliersParams = {
+      const repliersParams: any = {
         'page': page,
         'pageSize': pageSize,
         ...params
       };
+
+      if (repliersParams.status === 'Active') {
+        repliersParams.status = 'A';
+      } else if (repliersParams.status === 'Unavailable' || repliersParams.status === 'Pending') {
+        repliersParams.status = 'U';
+      }
 
       const data = await this.fetchRepliers('', repliersParams);
       const listings = data?.listings;
@@ -168,7 +174,7 @@ class RepliersMLSService {
       images: item.images || [],
       source: 'MLS',
       mls_id: item.mlsNumber,
-      listing_status: item.status === 'A' ? 'Active' : item.status,
+      listing_status: item.status === 'A' ? 'Active' : ((item as any).standardStatus === 'Closed' ? 'Closed' : item.status),
       last_updated: item.updatedOn,
       metadata: {
         provider: 'repliers',
@@ -186,6 +192,12 @@ class RepliersMLSService {
       'pageSize': 20,
       ...params
     };
+
+    if (repliersParams.status === 'Active') {
+      repliersParams.status = 'A';
+    } else if (repliersParams.status === 'Unavailable' || repliersParams.status === 'Pending') {
+      repliersParams.status = 'U';
+    }
 
     const data = await this.fetchRepliers('', repliersParams);
     const listings = data?.listings;

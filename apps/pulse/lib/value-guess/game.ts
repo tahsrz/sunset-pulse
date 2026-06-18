@@ -19,11 +19,14 @@ export type ValueGuessResult = {
   guess: number;
   actualValue: number;
   wentOver: boolean;
+  keepsStreak: boolean;
   difference: number;
   percentOff: number;
   roundScore: number;
-  label: 'perfect' | 'sharp' | 'safe' | 'wide' | 'bust';
+  label: 'perfect' | 'sharp' | 'safe' | 'wide' | 'bust' | 'miss';
 };
+
+export const MAX_SAFE_UNDERBID_PERCENT = 0.15;
 
 export const VALUE_GUESS_DECK: ValueGuessListing[] = [
   {
@@ -114,16 +117,18 @@ export function evaluateValueGuess(actualValue: number, guess: number): ValueGue
   const difference = Math.abs(normalizedActual - normalizedGuess);
   const wentOver = normalizedGuess > normalizedActual;
   const percentOff = normalizedActual > 0 ? difference / normalizedActual : 1;
-  const roundScore = wentOver ? 0 : Math.max(0, Math.round(1000 - percentOff * 2500));
+  const keepsStreak = !wentOver && percentOff <= MAX_SAFE_UNDERBID_PERCENT;
+  const roundScore = keepsStreak ? Math.max(0, Math.round(1000 - percentOff * 2500)) : 0;
 
   return {
     guess: normalizedGuess,
     actualValue: normalizedActual,
     wentOver,
+    keepsStreak,
     difference,
     percentOff,
     roundScore,
-    label: getResultLabel(wentOver, percentOff)
+    label: getResultLabel(wentOver, keepsStreak, percentOff)
   };
 }
 
@@ -132,7 +137,7 @@ export function getValueGuessTotal(results: ValueGuessResult[]) {
 }
 
 export function getNextValueGuessStreak(result: ValueGuessResult, currentStreak: number) {
-  return result.wentOver ? 0 : Math.max(0, currentStreak) + 1;
+  return result.keepsStreak ? Math.max(0, currentStreak) + 1 : 0;
 }
 
 export function getValueGuessStreamListing(index: number, deck: ValueGuessListing[] = VALUE_GUESS_DECK) {
@@ -179,8 +184,9 @@ export function normalizePropertyForValueGuess(property: Record<string, any>): V
   };
 }
 
-function getResultLabel(wentOver: boolean, percentOff: number): ValueGuessResult['label'] {
+function getResultLabel(wentOver: boolean, keepsStreak: boolean, percentOff: number): ValueGuessResult['label'] {
   if (wentOver) return 'bust';
+  if (!keepsStreak) return 'miss';
   if (percentOff === 0) return 'perfect';
   if (percentOff <= 0.03) return 'sharp';
   if (percentOff <= 0.1) return 'safe';
@@ -205,8 +211,9 @@ function getGuessablePropertyValue(property: Record<string, any>) {
 
 function getPrimaryPropertyImage(property: Record<string, any>) {
   const images = Array.isArray(property.images) ? property.images : [];
-  const image = images.find((candidate) => typeof candidate === 'string' && candidate.trim());
-  return image ? image.trim() : '';
+  return images
+    .map((candidate) => typeof candidate === 'string' ? candidate.trim() : '')
+    .find(isUsableGameImage) || '';
 }
 
 function getOptionalNumber(value: unknown) {
@@ -218,6 +225,10 @@ function getOptionalNumber(value: unknown) {
 
 function cleanText(value: unknown) {
   return String(value || '').trim();
+}
+
+function isUsableGameImage(src: string) {
+  return src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/images/');
 }
 
 function buildPropertySignal(input: { type: string; source?: string; acreage: number | null; squareFeet: number | null; yearBuilt: number | null }) {

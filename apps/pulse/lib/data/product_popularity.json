@@ -1,0 +1,146 @@
+[
+  {
+    "name": "Coca-Cola 20oz",
+    "category": "Beverages",
+    "monthly_sales": 20122,
+    "id": "coca-cola-20oz"
+  },
+  {
+    "name": "Dr Pepper 20oz",
+    "category": "Beverages",
+    "monthly_sales": 18182,
+    "id": "dr-pepper-20oz"
+  },
+  {
+    "name": "Red Bull 8oz",
+    "category": "Beverages",
+    "monthly_sales": 13869,
+    "id": "red-bull-8oz"
+  },
+  {
+    "name": "Monster Energy Green",
+    "category": "Beverages",
+    "monthly_sales": 12892,
+    "id": "monster-energy-green"
+  },
+  {
+    "name": "Sprite 20oz",
+    "category": "Beverages",
+    "monthly_sales": 12468,
+    "id": "sprite-20oz"
+  },
+  {
+    "name": "Mountain Dew",
+    "category": "Beverages",
+    "monthly_sales": 11909,
+    "id": "mountain-dew"
+  },
+  {
+    "name": "Gatorade Cool Blue",
+    "category": "Beverages",
+    "monthly_sales": 10852,
+    "id": "gatorade-cool-blue"
+  },
+  {
+    "name": "Topo Chico",
+    "category": "Beverages",
+    "monthly_sales": 10031,
+    "id": "topo-chico"
+  },
+  {
+    "name": "Reese's Cups",
+    "category": "Candy",
+    "monthly_sales": 9193,
+    "id": "reese-s-cups"
+  },
+  {
+    "name": "M&M's Peanut",
+    "category": "Candy",
+    "monthly_sales": 8468,
+    "id": "m-m-s-peanut"
+  },
+  {
+    "name": "Snickers",
+    "category": "Candy",
+    "monthly_sales": 7813,
+    "id": "snickers"
+  },
+  {
+    "name": "Orbit Peppermint",
+    "category": "Candy",
+    "monthly_sales": 3274,
+    "id": "orbit-peppermint"
+  },
+  {
+    "name": "Sausage Kolache",
+    "category": "Grill",
+    "monthly_sales": 9229,
+    "id": "sausage-kolache"
+  },
+  {
+    "name": "Brisket Taco",
+    "category": "Grill",
+    "monthly_sales": 6765,
+    "id": "brisket-taco"
+  },
+  {
+    "name": "Breakfast Burrito",
+    "category": "Grill",
+    "monthly_sales": 6137,
+    "id": "breakfast-burrito"
+  },
+  {
+    "name": "Buc-ee's Beaver Nuggets (Competitor)",
+    "category": "Snacks",
+    "monthly_sales": 23045,
+    "id": "buc-ee-s-beaver-nuggets-competitor"
+  },
+  {
+    "name": "Takis Fuego",
+    "category": "Snacks",
+    "monthly_sales": 11935,
+    "id": "takis-fuego"
+  },
+  {
+    "name": "Cheetos Flamin' Hot",
+    "category": "Snacks",
+    "monthly_sales": 10166,
+    "id": "cheetos-flamin-hot"
+  },
+  {
+    "name": "Doritos Nacho Cheese",
+    "category": "Snacks",
+    "monthly_sales": 9518,
+    "id": "doritos-nacho-cheese"
+  },
+  {
+    "name": "Fritos Chili Cheese",
+    "category": "Snacks",
+    "monthly_sales": 6560,
+    "id": "fritos-chili-cheese"
+  },
+  {
+    "name": "Slim Jim Giant",
+    "category": "Snacks",
+    "monthly_sales": 5085,
+    "id": "slim-jim-giant"
+  },
+  {
+    "name": "Jack Link's Teriyaki",
+    "category": "Snacks",
+    "monthly_sales": 4762,
+    "id": "jack-link-s-teriyaki"
+  },
+  {
+    "name": "Zyn Wintergreen 6mg",
+    "category": "Tobacco",
+    "monthly_sales": 20526,
+    "id": "zyn-wintergreen-6mg"
+  },
+  {
+    "name": "Marlboro Red",
+    "category": "Tobacco",
+    "monthly_sales": 15210,
+    "id": "marlboro-red"
+  }
+]

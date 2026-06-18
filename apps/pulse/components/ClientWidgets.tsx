@@ -20,7 +20,12 @@ export default function ClientWidgets() {
 
   if (!mounted) return null;
 
-  if (pathname?.startsWith('/value-guess')) {
+  const focusedGameSurface =
+    pathname?.startsWith('/value-guess') ||
+    pathname?.startsWith('/location-guess') ||
+    pathname?.startsWith('/retail-clash');
+
+  if (focusedGameSurface) {
     return null;
   }
 

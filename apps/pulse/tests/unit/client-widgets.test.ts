@@ -60,18 +60,21 @@ describe('ClientWidgets operator surfaces', () => {
     expect(container).not.toHaveTextContent('jamie-pulse-overlay');
   });
 
-  it('keeps floating widgets off the value guess game', () => {
-    mockState.pathname = '/value-guess';
+  it.each(['/value-guess', '/location-guess', '/retail-clash'])(
+    'keeps floating widgets off the focused game route %s',
+    (pathname) => {
+      mockState.pathname = pathname;
 
-    const { container } = render(React.createElement(ClientWidgets));
+      const { container } = render(React.createElement(ClientWidgets));
 
-    expect(container).toBeEmptyDOMElement();
-    expect(container).not.toHaveTextContent('feedback-widget');
-    expect(container).not.toHaveTextContent('dev-portal');
-    expect(container).not.toHaveTextContent('jamie-chat');
-    expect(container).not.toHaveTextContent('jamie-insights-login-toast');
-    expect(container).not.toHaveTextContent('jamie-pulse-overlay');
-  });
+      expect(container).toBeEmptyDOMElement();
+      expect(container).not.toHaveTextContent('feedback-widget');
+      expect(container).not.toHaveTextContent('dev-portal');
+      expect(container).not.toHaveTextContent('jamie-chat');
+      expect(container).not.toHaveTextContent('jamie-insights-login-toast');
+      expect(container).not.toHaveTextContent('jamie-pulse-overlay');
+    }
+  );
 
   it('keeps Jamie widgets available on ordinary pages', async () => {
     mockState.pathname = '/idx';

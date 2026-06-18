@@ -163,9 +163,13 @@ export const enhancePulseNewsWithMini = async (articles: PulseNewsArticle[]): Pr
       model: model?.name,
       status: 'enhanced',
     };
-  } catch (error) {
+  } catch (error: any) {
     const model = chooseMiniModel();
-    console.warn('[PULSE_NEWS_MINI_FALLBACK]', error);
+    if (error.cause?.code === 'ECONNREFUSED' || error.code === 'ECONNREFUSED' || error.message.includes('fetch failed')) {
+      console.warn(`[PULSE_NEWS_MINI] Ollama service offline (${OLLAMA_HOST}). Raw news fallback engaged.`);
+    } else {
+      console.warn('[PULSE_NEWS_MINI_FALLBACK]', error.message || error);
+    }
     return { articles, model: model?.name, status: 'failed' };
   }
 };

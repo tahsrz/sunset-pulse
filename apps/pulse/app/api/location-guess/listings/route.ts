@@ -5,7 +5,7 @@ import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
 import { successResponse } from '@/lib/core/apiResponse';
 import { sanitizeMlsForPublicUse } from '@/lib/data/mlsCompliance';
-import { VALUE_GUESS_DECK, normalizePropertyForValueGuess } from '@/lib/value-guess/game';
+import { LOCATION_GUESS_DECK, normalizePropertyForLocationGuess } from '@/lib/location-guess/game';
 
 const DEFAULT_LIMIT = 60;
 const MAX_SCAN_LIMIT = 200;
@@ -18,11 +18,7 @@ export async function GET(request: NextRequest) {
     const rawProperties = await Property.find({
       is_demo: { $ne: true },
       listing_status: { $in: ['Sold', 'Closed', 'S'] },
-      $or: [
-        { price_type: 'sale', list_price: { $gte: 50000 } },
-        { price_type: 'sale', price: { $gte: 50000 } },
-        { list_price: { $gte: 50000 } }
-      ],
+      'location_geo.coordinates': { $exists: true, $type: 'array', $size: 2 },
       images: { $exists: true, $ne: [] }
     })
       .sort({ updatedAt: -1, createdAt: -1 })
@@ -30,19 +26,19 @@ export async function GET(request: NextRequest) {
       .lean();
 
     const listings = rawProperties
-      .map((property: any) => normalizePropertyForValueGuess(sanitizeMlsForPublicUse(property)))
+      .map((property: any) => normalizePropertyForLocationGuess(sanitizeMlsForPublicUse(property)))
       .filter(Boolean)
       .slice(0, limit);
 
     return successResponse({
-      listings: listings.length ? listings : VALUE_GUESS_DECK,
+      listings: listings.length ? listings : LOCATION_GUESS_DECK,
       source: listings.length ? 'property-grid' : 'curated-fallback',
       fallback: listings.length === 0
     });
   } catch (error: any) {
-    console.warn('[VALUE_GUESS_FEED_FALLBACK]', error?.message || error);
+    console.warn('[LOCATION_GUESS_FEED_FALLBACK]', error?.message || error);
     return successResponse({
-      listings: VALUE_GUESS_DECK,
+      listings: LOCATION_GUESS_DECK,
       source: 'curated-fallback',
       fallback: true
     });

@@ -26,7 +26,11 @@ export async function GET(request: NextRequest) {
     // If Cache is sparse, trigger a background sync
     if (listings.length < 4) {
       console.log('📡 [HOT_MOVING] Cache sparse. Triggering emergency Matrix sync...');
-      await pulseSyncWorker.syncHotListings(12);
+      // Sync active listings and historical sales simultaneously
+      await Promise.all([
+        pulseSyncWorker.syncHotListings(12),
+        pulseSyncWorker.syncHistoricalSales(12)
+      ]);
       
       // Fetch again after sync attempt
       listings = await Property.find({ 
@@ -67,6 +71,9 @@ export async function GET(request: NextRequest) {
  * Manual trigger for force sync
  */
 export async function POST() {
-  const result = await pulseSyncWorker.syncHotListings(10);
-  return successResponse(result);
+  const [hot, historical] = await Promise.all([
+    pulseSyncWorker.syncHotListings(10),
+    pulseSyncWorker.syncHistoricalSales(10)
+  ]);
+  return successResponse({ hot, historical });
 }
