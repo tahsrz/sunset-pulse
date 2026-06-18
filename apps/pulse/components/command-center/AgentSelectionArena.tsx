@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
 import { renderGlossaryText as glossaryText } from '@/components/glossary/GlossaryText';
+import { CommandActionPanel } from './CommandActionPanel';
+import { ParsedRecordCard } from './ParsedRecordCard';
+import type { CivicServiceRecord, CommandActionItem } from '@/lib/command-center/actionTypes';
 import {
   chooseWorkerForCommand,
   intelligenceWorkers,
@@ -49,6 +52,8 @@ type CommandResponse = {
     summary: string;
     actions: string[];
     confidence: number;
+    civicRecord?: CivicServiceRecord;
+    actionItems?: CommandActionItem[];
     relayPlan: {
       templateId: string;
       templateName: string;
@@ -305,6 +310,7 @@ export default function AgentSelectionArena() {
   const [commandResult, setCommandResult] = useState<CommandResponse | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [copiedDeliverable, setCopiedDeliverable] = useState(false);
+  const [copiedActionId, setCopiedActionId] = useState<string | null>(null);
   const [dailyFact, setDailyFact] = useState<TahFactResponse | null>(null);
   const [factBusy, setFactBusy] = useState(false);
   const [factError, setFactError] = useState('');
@@ -434,6 +440,46 @@ export default function AgentSelectionArena() {
     await navigator.clipboard.writeText(text);
     setCopiedDeliverable(true);
     window.setTimeout(() => setCopiedDeliverable(false), 1800);
+  };
+
+  const persistActionItem = async (item: CommandActionItem) => {
+    if (!commandResult) return;
+
+    try {
+      await fetch('/api/commands/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: item.kind === 'external-link',
+        body: JSON.stringify({
+          commandId: commandResult.commandId,
+          command: routingCommand,
+          workerId: commandResult.worker.id,
+          action: item
+        })
+      });
+    } catch (error) {
+      logProtocol('DATA', 'Command action memory failed', {
+        commandId: commandResult.commandId,
+        action: item.id,
+        error: error instanceof Error ? error.message : 'unknown'
+      });
+    }
+  };
+
+  const handleActionItem = async (item: CommandActionItem) => {
+    void persistActionItem(item);
+
+    if (item.kind === 'copy' && item.copyText) {
+      await navigator.clipboard.writeText(item.copyText);
+      setCopiedActionId(item.id);
+      window.setTimeout(() => setCopiedActionId(null), 1800);
+      return;
+    }
+
+    if (item.kind === 'command' && item.command) {
+      updateCommandDraft(item.command);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -800,6 +846,19 @@ export default function AgentSelectionArena() {
                 </p>
               )}
             </section>
+
+            {commandResult?.result.civicRecord ? (
+              <ParsedRecordCard record={commandResult.result.civicRecord} />
+            ) : null}
+
+            {commandResult?.result.actionItems?.length ? (
+              <CommandActionPanel
+                actions={commandResult.result.actionItems}
+                copiedActionId={copiedActionId}
+                saved={Boolean(commandResult.trace.queryMemory?.saved)}
+                onAction={handleActionItem}
+              />
+            ) : null}
 
             {commandResult?.result.deliverable ? (
               <section className="border border-emerald-200/20 bg-emerald-300/10 p-3">

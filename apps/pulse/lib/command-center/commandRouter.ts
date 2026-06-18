@@ -24,6 +24,7 @@ import {
   saveQueryMemory,
   type QueryMemoryTrace
 } from './queryMemory';
+import type { CivicServiceRecord, CommandActionItem } from './actionTypes';
 
 export type CommandCenterRequest = {
   command: string;
@@ -53,6 +54,8 @@ export type CommandCenterResponse = {
     summary: string;
     actions: string[];
     confidence: number;
+    civicRecord?: CivicServiceRecord;
+    actionItems?: CommandActionItem[];
     relayPlan: TahRelayPlan;
     deliverable: {
       mode: TahRelayMode;
@@ -116,16 +119,6 @@ type CommandContextShard = {
   vitality?: number;
   contextLevel?: 'summary' | 'interface' | 'full';
   matchReason?: string;
-};
-
-type CivicServiceRecord = {
-  category: string;
-  status: string;
-  outcome: string;
-  location: string;
-  reported: string;
-  coordinates: string;
-  serviceRequest: string;
 };
 
 type TahRetrievalPolicyTrace = {
@@ -370,9 +363,43 @@ function synthesizeCivicServiceResult(
     summary,
     actions,
     confidence,
+    civicRecord: record,
+    actionItems: buildCivicServiceActions(record),
     relayPlan,
     deliverable: buildCivicServiceDeliverable(record, shards, relayPlan, actions)
   };
+}
+
+function buildCivicServiceActions(record: CivicServiceRecord): CommandActionItem[] {
+  return [
+    {
+      id: 'open-dallas-311',
+      label: 'Open Dallas 311',
+      description: 'Open the official Dallas service-request portal and search with the copied request ID.',
+      kind: 'external-link',
+      href: record.lookupUrl
+    },
+    {
+      id: 'copy-service-request',
+      label: 'Copy Request ID',
+      description: `Copy ${record.serviceRequest} for lookup, notes, or follow-up.`,
+      kind: 'copy',
+      copyText: record.serviceRequest
+    },
+    {
+      id: 'draft-follow-up',
+      label: 'Draft Follow-Up',
+      description: 'Start a client-safe explanation using this parsed record.',
+      kind: 'command',
+      command: `Write a short client-safe explanation of Dallas 311 service request ${record.serviceRequest} at ${record.location}. Say it is a ${record.category} record with status ${record.status} and outcome ${record.outcome}. Mention that coordinates ${record.coordinates} should be verified by address.`
+    },
+    {
+      id: 'saved-context',
+      label: 'Saved Locally',
+      description: 'This run is saved to local query memory when local memory is enabled.',
+      kind: 'saved'
+    }
+  ];
 }
 
 function buildCommandDeliverable(
@@ -644,7 +671,8 @@ function parseCivicServiceRecord(command: string): CivicServiceRecord | null {
     location: location.replace(/\s+/g, ' ').trim(),
     reported: reported.replace(/\s+/g, ' ').trim(),
     coordinates: coordinates.replace(/\s+/g, ' ').trim(),
-    serviceRequest
+    serviceRequest,
+    lookupUrl: 'https://dallascrm.my.site.com/public/s/service-requests?servicerequested=all'
   };
 }
 

@@ -3,6 +3,7 @@ import path from 'path';
 import { extractMemoriaTerms } from '@/lib/core/memoria_builder';
 import type { IntelligenceWorker } from './workerRoster';
 import type { TahRelayPlan } from './relayTemplates';
+import type { SaveCommandActionInput } from './actionTypes';
 
 export type QueryMemoryShard = {
   expertId: number;
@@ -153,6 +154,41 @@ export function saveQueryMemory(input: SaveQueryMemoryInput): QueryMemoryTrace {
   }
 }
 
+export function saveCommandActionMemory(input: SaveCommandActionInput): QueryMemoryTrace {
+  const relativePath = path.relative(process.cwd(), queryMemoryPath());
+
+  if (process.env.PULSE_QUERY_MEMORY_DISABLED === 'true') {
+    return {
+      status: 'disabled',
+      path: relativePath,
+      recalled: 0,
+      saved: false,
+      reason: 'PULSE_QUERY_MEMORY_DISABLED=true'
+    };
+  }
+
+  try {
+    const filePath = queryMemoryPath();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.appendFileSync(filePath, `${formatCommandActionMemoryRecord(input)}\n`, 'utf8');
+
+    return {
+      status: 'saved',
+      path: relativePath,
+      recalled: 0,
+      saved: true
+    };
+  } catch (error) {
+    return {
+      status: 'unavailable',
+      path: relativePath,
+      recalled: 0,
+      saved: false,
+      reason: error instanceof Error ? error.message : 'action memory write failed'
+    };
+  }
+}
+
 export function queryMemoryPath() {
   return path.resolve(
     process.env.PULSE_QUERY_MEMORY_PATH || path.join(process.cwd(), 'cartridges', 'query_memory.tah')
@@ -237,6 +273,26 @@ function formatQueryMemoryRecord(record: QueryMemoryRecord) {
     `LEARNED: ${record.learned.map(escapeLine).join(' | ')}`,
     `SUMMARY: ${escapeLine(record.summary)}`,
     `ACTIONS: ${record.actions.map(escapeLine).join(' | ')}`
+  ].join('\n');
+}
+
+function formatCommandActionMemoryRecord(input: SaveCommandActionInput) {
+  return [
+    '---',
+    'TYPE: sunset_pulse_action_memory',
+    `MEMORY_ID: action_${input.commandId}_${input.action.id}_${Date.now()}`,
+    `CREATED_AT: ${new Date().toISOString()}`,
+    `COMMAND_ID: ${escapeLine(input.commandId)}`,
+    `COMMAND: ${escapeLine(input.command)}`,
+    `WORKER_ID: ${escapeLine(input.workerId || '')}`,
+    `ACTION_ID: ${escapeLine(input.action.id)}`,
+    `ACTION_KIND: ${escapeLine(input.action.kind)}`,
+    `ACTION_LABEL: ${escapeLine(input.action.label)}`,
+    `ACTION_DESCRIPTION: ${escapeLine(input.action.description)}`,
+    `ACTION_HREF: ${escapeLine(input.action.href || '')}`,
+    `ACTION_COPY_TEXT: ${escapeLine(input.action.copyText || '')}`,
+    `ACTION_COMMAND: ${escapeLine(input.action.command || '')}`,
+    'STATUS: clicked'
   ].join('\n');
 }
 

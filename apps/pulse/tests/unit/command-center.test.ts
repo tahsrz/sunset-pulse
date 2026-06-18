@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import { runCommandCenterCommand } from '@/lib/command-center/commandRouter';
 import { buildJamieCommandBridgeContext } from '@/lib/command-center/jamieBridge';
-import { queryMemoryPath, saveQueryMemory } from '@/lib/command-center/queryMemory';
+import { queryMemoryPath, saveCommandActionMemory, saveQueryMemory } from '@/lib/command-center/queryMemory';
 import { buildTahRelayPlan } from '@/lib/command-center/relayTemplates';
 import { expandCommandTerms } from '@/lib/command-center/synonyms';
 import { chooseWorkerForCommand, intelligenceWorkers } from '@/lib/command-center/workerRoster';
@@ -133,9 +133,49 @@ describe('command center routing', () => {
     expect(response.result.summary).toContain('3800 S TYLER ST');
     expect(response.result.summary).toContain('Coordinates 0, 0');
     expect(response.result.actions[0]).toContain('26-00243099');
+    expect(response.result.civicRecord).toEqual(expect.objectContaining({
+      category: 'Code Concern CCS',
+      status: 'New',
+      outcome: 'PENDING',
+      serviceRequest: '26-00243099',
+      coordinates: '0, 0'
+    }));
+    expect(response.result.actionItems?.map((item) => item.id)).toEqual([
+      'open-dallas-311',
+      'copy-service-request',
+      'draft-follow-up',
+      'saved-context'
+    ]);
+    expect(response.result.actionItems?.find((item) => item.id === 'copy-service-request')?.copyText).toBe('26-00243099');
     expect(response.result.deliverable.title).toContain('Plain interpretation');
     expect(response.result.deliverable.copyReadyText).toContain('This is a Dallas 311 code-compliance record');
     expect(response.result.deliverable.copyReadyText).not.toContain('This answer is shaped as');
+  });
+
+  it('saves command action clicks into local memory', () => {
+    const filePath = path.join(os.tmpdir(), `pulse-action-memory-${Date.now()}.tah`);
+    process.env.PULSE_QUERY_MEMORY_PATH = filePath;
+    process.env.PULSE_QUERY_MEMORY_DISABLED = 'false';
+
+    const trace = saveCommandActionMemory({
+      commandId: 'cmd_test_action',
+      command: 'Explain Dallas 311 record',
+      workerId: 'dallas-community',
+      action: {
+        id: 'copy-service-request',
+        label: 'Copy Request ID',
+        description: 'Copy the request ID.',
+        kind: 'copy',
+        copyText: '26-00243099'
+      }
+    });
+
+    const content = fs.readFileSync(filePath, 'utf8');
+    expect(trace.saved).toBe(true);
+    expect(content).toContain('TYPE: sunset_pulse_action_memory');
+    expect(content).toContain('ACTION_ID: copy-service-request');
+    expect(content).toContain('ACTION_LABEL: Copy Request ID');
+    expect(content).toContain('ACTION_COPY_TEXT: 26-00243099');
   });
 });
 
