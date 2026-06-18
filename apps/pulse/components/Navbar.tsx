@@ -62,6 +62,7 @@ const Navbar: React.FC = () => {
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
     { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
     { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
+    { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
     { href: '/properties', label: 'Properties', active: pathname === '/properties' },
     { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
     ...(isRealtorOrAdmin ? [{ href: '/lead-gen', label: 'Lead Gen', active: pathname.startsWith('/lead-gen'), emphasis: 'blue' as const }] : []),

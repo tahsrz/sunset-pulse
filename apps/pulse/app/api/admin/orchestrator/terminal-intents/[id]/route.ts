@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
-import { getOperatorAccess } from '@/lib/core/operator_access';
+import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { getOrchestratorSnapshot } from '@/lib/core/orchestrator_node';
 import { handleTerminalIntentAction, type TerminalIntentAction } from '@/lib/core/orchestrator_terminal_runner';
 
@@ -8,11 +8,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const access = await getOperatorAccess(request.headers.get('host'));
-
-  if (!access.allowed) {
-    return errorResponse('Operator access denied.', 403, access.reason);
-  }
+  const access = await requireOperatorRouteAccess(request);
+  if (isAuthResponse(access)) return access;
 
   try {
     const { id } = await params;

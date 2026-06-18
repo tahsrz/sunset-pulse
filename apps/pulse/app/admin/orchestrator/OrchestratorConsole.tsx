@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Code2,
   Database,
+  FileText,
   Globe2,
   Loader2,
   MapPinned,
@@ -20,6 +21,7 @@ import {
   RefreshCw,
   Send,
   ShieldCheck,
+  Upload,
   TerminalSquare,
   Workflow,
   XCircle
@@ -27,6 +29,7 @@ import {
 import type { OrchestratorCommandResult } from '@/lib/core/orchestrator_commands';
 import type { TerminalIntentActionResult } from '@/lib/core/orchestrator_terminal_runner';
 import type { OrchestratorBrowserCheck, OrchestratorSnapshot } from '@/lib/core/orchestrator_node';
+import type { MlsSyncRun } from '@/lib/data/mlsSyncLedger';
 
 type OrchestratorConsoleProps = {
   initialSnapshot: OrchestratorSnapshot;
@@ -39,9 +42,14 @@ export function OrchestratorConsole({ initialSnapshot }: OrchestratorConsoleProp
   const [checking, setChecking] = useState(false);
   const [sendingCommand, setSendingCommand] = useState(false);
   const [terminalBusyId, setTerminalBusyId] = useState('');
+  const [mlsSyncing, setMlsSyncing] = useState(false);
+  const [hotsheetImporting, setHotsheetImporting] = useState(false);
   const [commandText, setCommandText] = useState('/status');
+  const [mlsCity, setMlsCity] = useState('Dallas');
+  const [hotsheetText, setHotsheetText] = useState('');
   const [commandResult, setCommandResult] = useState<OrchestratorCommandResult | null>(null);
   const [terminalActionResult, setTerminalActionResult] = useState<TerminalIntentActionResult | null>(null);
+  const [mlsRunResult, setMlsRunResult] = useState<MlsSyncRun | null>(null);
   const [error, setError] = useState('');
 
   const refresh = async () => {
@@ -120,6 +128,68 @@ export function OrchestratorConsole({ initialSnapshot }: OrchestratorConsoleProp
     }
   };
 
+  const runMlsSync = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMlsSyncing(true);
+    setError('');
+    try {
+      const params = mlsCity.trim() ? { city: mlsCity.trim(), pageSize: 20 } : { pageSize: 20 };
+      const response = await fetch('/api/admin/mls/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ params }),
+        cache: 'no-store'
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || 'MLS sync failed.');
+      applyMlsRun(body.data.run);
+    } catch (err: any) {
+      setError(err.message || 'MLS sync failed.');
+    } finally {
+      setMlsSyncing(false);
+    }
+  };
+
+  const importHotsheet = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setHotsheetImporting(true);
+    setError('');
+    try {
+      const response = await fetch('/api/admin/mls/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'hotsheet',
+          label: 'Command Post hotsheet import',
+          text: hotsheetText
+        }),
+        cache: 'no-store'
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || 'Hotsheet import failed.');
+      applyMlsRun(body.data.run);
+      setHotsheetText('');
+    } catch (err: any) {
+      setError(err.message || 'Hotsheet import failed.');
+    } finally {
+      setHotsheetImporting(false);
+    }
+  };
+
+  const applyMlsRun = (run: MlsSyncRun) => {
+    setMlsRunResult(run);
+    setSnapshot(previous => ({
+      ...previous,
+      mlsSync: {
+        ...previous.mlsSync,
+        latest: run,
+        latestCompleted: run.status === 'completed' ? run : previous.mlsSync.latestCompleted,
+        runningCount: Math.max(0, previous.mlsSync.runningCount - 1),
+        recentRuns: [run, ...previous.mlsSync.recentRuns.filter(item => item.id !== run.id)].slice(0, 10)
+      }
+    }));
+  };
+
   return (
     <main className="min-h-screen bg-[#071013] px-5 py-8 text-slate-100">
       <div className="mx-auto max-w-7xl">
@@ -159,11 +229,116 @@ export function OrchestratorConsole({ initialSnapshot }: OrchestratorConsoleProp
           {error && <p className="mt-4 rounded border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">{error}</p>}
         </header>
 
-        <section className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Access" value={snapshot.access.mode} detail={snapshot.access.reason} />
           <Metric icon={<Bot className="h-5 w-5" />} label="Telegram" value={snapshot.telegram.configured ? 'Configured' : 'Needs token'} detail={`${snapshot.telegram.webhookPath} / shell ${snapshot.telegram.shellPrefix}`} />
           <Metric icon={<Database className="h-5 w-5" />} label="Master Archive" value={snapshot.masterArchive.status} detail={`${snapshot.masterArchive.sourceCount} sources / ${snapshot.masterArchive.shardCount} shards`} />
           <Metric icon={<Network className="h-5 w-5" />} label="Pending Terminal" value={String(snapshot.commandQueue.pendingTerminalIntentCount)} detail={`${snapshot.bridge.groups.length} bridge groups detected`} />
+          <Metric icon={<Upload className="h-5 w-5" />} label="MLS Sync" value={snapshot.mlsSync.latest?.status || 'idle'} detail={formatMlsRunDetail(snapshot.mlsSync.latest)} />
+        </section>
+
+        <section className="mt-6">
+          <Panel title="MLS Sync" icon={<Database className="h-5 w-5" />}>
+            <div className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
+              <div className="space-y-3">
+                <div className="rounded border border-white/10 bg-white/[0.04] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-white">Latest Run</p>
+                      <p className="mt-1 font-mono text-xs text-cyan-100">{snapshot.mlsSync.latest?.id || 'none'}</p>
+                    </div>
+                    <StatusPill status={snapshot.mlsSync.latest?.status || 'pending'} label={snapshot.mlsSync.latest?.status || 'idle'} />
+                  </div>
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    <MlsCount label="Received" value={snapshot.mlsSync.latest?.metrics.received || 0} />
+                    <MlsCount label="Synced" value={snapshot.mlsSync.latest?.metrics.synced || 0} />
+                    <MlsCount label="Skipped" value={snapshot.mlsSync.latest?.metrics.skipped || 0} />
+                    <MlsCount label="Failed" value={snapshot.mlsSync.latest?.metrics.failed || 0} />
+                  </div>
+                  {mlsRunResult && (
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      {mlsRunResult.provider} run finished with {mlsRunResult.metrics.synced} synced and {mlsRunResult.metrics.failed} failed.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-sm font-black text-white">Recent Runs</p>
+                  <div className="mt-3 space-y-2">
+                    {snapshot.mlsSync.recentRuns.length === 0 ? (
+                      <p className="text-sm text-slate-400">No MLS sync runs recorded.</p>
+                    ) : snapshot.mlsSync.recentRuns.slice(0, 4).map(run => (
+                      <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded bg-black/25 px-3 py-2">
+                        <div>
+                          <p className="font-mono text-xs text-white">{run.provider}</p>
+                          <p className="mt-1 text-xs text-slate-500">{new Date(run.startedAt).toLocaleString()}</p>
+                        </div>
+                        <StatusPill status={run.status} label={`${run.metrics.synced}/${run.metrics.received}`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <form onSubmit={runMlsSync} className="rounded border border-white/10 bg-white/[0.04] p-4">
+                  <p className="flex items-center gap-2 text-sm font-black text-white">
+                    <RefreshCw className="h-4 w-4 text-cyan-100" />
+                    Provider Sync
+                  </p>
+                  <label className="mt-4 block text-xs font-black uppercase tracking-[0.16em] text-slate-500" htmlFor="mls-city">City</label>
+                  <input
+                    id="mls-city"
+                    value={mlsCity}
+                    onChange={event => setMlsCity(event.target.value)}
+                    className="mt-2 min-h-10 w-full rounded border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-200"
+                    placeholder="Dallas"
+                  />
+                  <button
+                    type="submit"
+                    disabled={mlsSyncing}
+                    className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-200 disabled:opacity-50"
+                  >
+                    {mlsSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    Run Sync
+                  </button>
+                </form>
+
+                <form onSubmit={importHotsheet} className="rounded border border-white/10 bg-white/[0.04] p-4">
+                  <p className="flex items-center gap-2 text-sm font-black text-white">
+                    <FileText className="h-4 w-4 text-cyan-100" />
+                    Hotsheet Import
+                  </p>
+                  <textarea
+                    value={hotsheetText}
+                    onChange={event => setHotsheetText(event.target.value)}
+                    className="mt-4 min-h-28 w-full resize-y rounded border border-white/10 bg-black/35 px-3 py-2 font-mono text-xs leading-5 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-200"
+                    placeholder="Paste daily hotsheet text"
+                  />
+                  <button
+                    type="submit"
+                    disabled={hotsheetImporting || !hotsheetText.trim()}
+                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded border border-white/15 px-4 py-2 text-sm font-black text-white transition hover:border-cyan-200 disabled:opacity-50"
+                  >
+                    {hotsheetImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    Import
+                  </button>
+                </form>
+              </div>
+            </div>
+            {snapshot.mlsSync.latest?.failures?.length ? (
+              <div className="mt-4 rounded border border-red-300/20 bg-red-500/10 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-red-100">Recent MLS Failures</p>
+                <div className="mt-3 space-y-2">
+                  {snapshot.mlsSync.latest.failures.slice(0, 3).map(failure => (
+                    <p key={`${failure.at}:${failure.mls_id}:${failure.error}`} className="font-mono text-xs leading-5 text-red-100">
+                      {failure.mls_id || 'provider'}: {failure.error}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </Panel>
         </section>
 
         <section className="mt-6 grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
@@ -410,6 +585,20 @@ function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: 
       <p className="mt-2 text-sm leading-6 text-slate-400">{detail}</p>
     </div>
   );
+}
+
+function MlsCount({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded bg-black/30 p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-2 text-xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function formatMlsRunDetail(run: MlsSyncRun | null) {
+  if (!run) return 'No sync runs recorded.';
+  return `${run.provider}: ${run.metrics.synced}/${run.metrics.received} synced, ${run.metrics.failed} failed`;
 }
 
 function QueueButton({ label, icon, busy, onClick, emphasis = false }: { label: string; icon: React.ReactNode; busy: boolean; onClick: () => void; emphasis?: boolean }) {

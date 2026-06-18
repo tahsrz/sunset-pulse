@@ -116,11 +116,17 @@ export async function updateSession(request, createResponse) {
 }
 
 function isLocalRequest(request) {
+  if (process.env.NODE_ENV === 'production') {
+    return false
+  }
+
   const urlHost = request.nextUrl?.hostname
   const headerHost = request.headers.get('host') || ''
-  const hostname = (urlHost || normalizeHost(headerHost)).toLowerCase()
+  const candidates = [urlHost, normalizeHost(headerHost)]
+    .filter(Boolean)
+    .map((host) => host.toLowerCase())
 
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+  return candidates.some(isDevelopmentHost)
 }
 
 function normalizeHost(host) {
@@ -131,4 +137,42 @@ function normalizeHost(host) {
   }
 
   return host.split(':')[0]
+}
+
+function isDevelopmentHost(hostname) {
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    return true
+  }
+
+  if (hostname === '0.0.0.0' || hostname.endsWith('.local')) {
+    return true
+  }
+
+  return isPrivateIpv4(hostname) || isPrivateIpv6(hostname)
+}
+
+function isPrivateIpv4(hostname) {
+  const parts = hostname.split('.').map((part) => Number(part))
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return false
+  }
+
+  const [first, second] = parts
+  return first === 10 ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    (first === 169 && second === 254)
+}
+
+function isPrivateIpv6(hostname) {
+  if (!hostname.includes(':') || !/^[0-9a-f:]+$/.test(hostname)) {
+    return false
+  }
+
+  const firstHextet = Number.parseInt(hostname.split(':')[0], 16)
+  if (!Number.isFinite(firstHextet)) {
+    return false
+  }
+
+  return (firstHextet & 0xfe00) === 0xfc00 || (firstHextet & 0xffc0) === 0xfe80
 }

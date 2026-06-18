@@ -5,6 +5,7 @@
 
 import { gatekeeper } from '@/lib/core/gatekeeper';
 import { sanitizeMlsForPublicUse } from '@/lib/data/mlsCompliance';
+import type { MlsProviderName } from './mlsTypes';
 
 export interface RepliersProperty {
   mlsNumber: string;
@@ -36,6 +37,7 @@ export interface RepliersProperty {
 }
 
 class RepliersMLSService {
+  public readonly provider: MlsProviderName = 'repliers';
   private static instance: RepliersMLSService;
   private apiKey: string | undefined;
   private baseUrl: string = 'https://api.repliers.io/listings';

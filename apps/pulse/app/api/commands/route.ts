@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { runCommandCenterCommand, type CommandCenterRequest } from '@/lib/command-center/commandRouter';
 import { listTahRelayFormats, listTahRelayTemplates } from '@/lib/command-center/relayTemplates';
 import { getOperatorAccess } from '@/lib/core/operator_access';
+import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { getOrchestratorSnapshot } from '@/lib/core/orchestrator_node';
 import { routeOrchestratorCommand } from '@/lib/core/orchestrator_commands';
 
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
 
 async function buildCommandPostTrace(request: Request) {
   try {
-    const access = await getOperatorAccess(request.headers.get('host'));
+    const access = await getOperatorAccess(getRequestHostFromHeaders(request.headers));
 
     if (!access.allowed) {
       return {

@@ -1,20 +1,27 @@
 /**
  * MLS / IDX Bridge Service
  * Handles communication with external MLS data providers.
- * Prepared for SimplyRETS, Bridge API, or Spark.
+ * Prepared for Repliers, Bridge API, or future RESO providers.
  */
 
 import { fetchProperty } from '@/lib/core/requests';
+import { syncPropertyToIntelligenceGrid } from '@/lib/intelligence/propertySync';
 import { bridgeMlsService } from './bridgeMls';
 import { repliersMlsService } from './repliersMls';
-import { syncPropertyToIntelligenceGrid } from '@/lib/intelligence/propertySync';
+import {
+  beginMlsSyncRun,
+  finishMlsSyncRun,
+  getMlsSyncSnapshot,
+  recordMlsSyncListing,
+  type MlsSyncRun,
+} from './mlsSyncLedger';
+import type { MlsProviderAdapter, MlsProviderName, NormalizedMlsListing } from './mlsTypes';
 
 export interface MLSProperty {
   _id: string;
   source: 'Internal' | 'MLS';
   mls_id?: string;
   listing_status: string;
-  //  standardized MLS fields
 }
 
 export class MLSService {
@@ -29,24 +36,71 @@ export class MLSService {
     return MLSService.instance;
   }
 
-  private get activeMlsService() {
-    return process.env.REPLIERS_API_KEY ? repliersMlsService : bridgeMlsService;
+  private get activeMlsService(): MlsProviderAdapter {
+    return (process.env.REPLIERS_API_KEY ? repliersMlsService : bridgeMlsService) as MlsProviderAdapter;
+  }
+
+  public getActiveProviderName(): MlsProviderName {
+    return this.activeMlsService.provider || 'unknown';
+  }
+
+  public getSyncSnapshot() {
+    return getMlsSyncSnapshot();
   }
 
   /**
    * Synchronizes listings from the active stream into the local intelligence pool.
-   * This is the "Pulse Sync" - it only touches listings that passed the Gatekeeper.
+   * Each consumed stream creates a persistent sync run with per-listing metrics.
    */
-  public async *syncListingStream(params: any = {}) {
+  public async *syncListingStream(params: any = {}, options: { onRunFinished?: (run: MlsSyncRun) => void } = {}) {
+    const run = beginMlsSyncRun({
+      provider: this.getActiveProviderName(),
+      params,
+    });
     const stream = this.activeMlsService.getListingStream(params);
-    
-    for await (const property of stream) {
-      // Perform the Atomic Truth Sync (Mongo + Supabase)
-      await syncPropertyToIntelligenceGrid(property);
-      
-      console.log(`✅ [PULSE_SYNC] Synchronized: ${property.name} (${property.mls_id})`);
-      yield property;
+
+    try {
+      for await (const property of stream) {
+        try {
+          const result = await syncPropertyToIntelligenceGrid(property);
+          recordMlsSyncListing(run.id, {
+            listing: property,
+            outcome: result ? 'synced' : 'skipped',
+          });
+
+          console.log(`[PULSE_SYNC] Synchronized: ${property.name} (${property.mls_id})`);
+          yield property;
+        } catch (error) {
+          recordMlsSyncListing(run.id, {
+            listing: property,
+            outcome: 'failed',
+            error,
+          });
+          console.error(`[PULSE_SYNC_ITEM_ERROR] ${property?.mls_id || 'unknown'}:`, error);
+        }
+      }
+
+      const finished = finishMlsSyncRun(run.id);
+      if (finished) options.onRunFinished?.(finished);
+    } catch (error) {
+      const failed = finishMlsSyncRun(run.id, { status: 'failed', error });
+      if (failed) options.onRunFinished?.(failed);
+      throw error;
     }
+  }
+
+  /**
+   * Consumes the stream and returns the completed run ledger entry.
+   */
+  public async syncListings(params: any = {}): Promise<MlsSyncRun> {
+    let completedRun: MlsSyncRun | null = null;
+
+    for await (const _property of this.syncListingStream(params, { onRunFinished: (run) => { completedRun = run; } })) {
+      // The stream performs persistence and ledger recording as it is consumed.
+    }
+
+    if (!completedRun) throw new Error('MLS sync did not create a run ledger entry.');
+    return completedRun;
   }
 
   /**
@@ -58,23 +112,23 @@ export class MLSService {
     const protocol = domain.includes('vercel.app') ? 'https' : 'http';
     const internalUrl = domain.startsWith('http') ? `${domain}/api/properties` : `${protocol}://${domain}/api/properties`;
 
-    // Fetch both in parallel for maximum velocity
     const [internalRes, mlsListings] = await Promise.all([
       fetch(internalUrl, { cache: 'no-store' })
-        .then(r => (r.ok ? r.json() : { properties: [] }))
+        .then((response) => (response.ok ? response.json() : { properties: [] }))
         .catch(() => ({ properties: [] })),
-      this.activeMlsService.getListings(params)
+      this.activeMlsService.getListings(params),
     ]);
 
-    const internalListings = (internalRes.properties || []).map((p: any) => ({ ...p, source: 'Internal' }));
+    const internalListings = (internalRes.properties || []).map((property: any) => ({
+      ...property,
+      source: 'Internal' as const,
+    }));
 
-    // Merge and deduplicate if necessary (though MLS IDs should be unique)
-    const combined = [...internalListings, ...mlsListings];
+    const combined: Array<NormalizedMlsListing | any> = [...internalListings, ...mlsListings];
 
-    // Filter internal listings if city is provided and not already handled by API
     if (params.city) {
-      return combined.filter((p: any) => 
-        p.location.city.toLowerCase().includes(params.city.toLowerCase())
+      return combined.filter((property: any) =>
+        property.location?.city?.toLowerCase().includes(params.city.toLowerCase())
       );
     }
 
@@ -85,13 +139,11 @@ export class MLSService {
    * Resolves a single listing by ID, checking internal first, then active MLS.
    */
   public async getListingById(id: string) {
-    //  Try local MongoDB first (standard MongoID length is 24)
-    if (id.length === 24) { 
+    if (id.length === 24) {
       const internal = await fetchProperty(id);
       if (internal) return internal;
     }
 
-    //  Fallback to active MLS service
     return await this.activeMlsService.getListingById(id);
   }
 }

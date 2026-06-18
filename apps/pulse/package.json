@@ -12,7 +12,7 @@
     "jamie:dream": "python lib/ai/bridges/core.py",
     "ozriel:dream": "node scripts/ozriel_dream.mjs",
     "atlas:publish": "tsx scripts/publish-atlas-manifest.ts",
-    "mls:import-hotsheet": "node scripts/import-hotsheet-text.mjs",
+    "mls:import-hotsheet": "tsx scripts/import-hotsheet-text.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

@@ -2,6 +2,7 @@ import { execFileSync } from 'child_process';
 import { getTahMasterMetadata, listTahMasterPlaces, searchTahMaster } from './tah_master';
 import type { OperatorAccess } from './operator_access';
 import { getOrchestratorQueueSnapshot, type TerminalIntent } from './orchestrator_command_queue';
+import { getMlsSyncSnapshot, type MlsSyncRun } from '@/lib/data/mlsSyncLedger';
 
 export type BridgeProcess = {
   pid: number;
@@ -45,6 +46,12 @@ export type OrchestratorSnapshot = {
     pendingTerminalIntentCount: number;
     recentTerminalIntents: TerminalIntent[];
   };
+  mlsSync: {
+    latest: MlsSyncRun | null;
+    latestCompleted: MlsSyncRun | null;
+    runningCount: number;
+    recentRuns: MlsSyncRun[];
+  };
   browserChecks: Array<{ id: string; label: string; route: string; assertion: string }>;
 };
 
@@ -76,6 +83,7 @@ export type OrchestratorBrowserCheck = {
 
 export function getOrchestratorSnapshot(access: OperatorAccess): OrchestratorSnapshot {
   const masterArchive = summarizeMasterArchive(getTahMasterMetadata());
+  const mlsSync = getMlsSyncSnapshot();
 
   return {
     generatedAt: new Date().toISOString(),
@@ -114,7 +122,8 @@ export function getOrchestratorSnapshot(access: OperatorAccess): OrchestratorSna
       { id: 'telegram', label: 'Telegram Bridge', status: process.env.TELEGRAM_BOT_TOKEN ? 'ready' : 'needs_config', detail: process.env.TELEGRAM_BOT_TOKEN ? 'Bot token configured.' : 'Set TELEGRAM_BOT_TOKEN.' },
       { id: 'shell', label: 'Terminal Gateway', status: 'guarded', detail: 'Available only through explicit command mode and safety checks.' },
       { id: 'browser-check', label: 'Browser Check Runner', status: 'ready', detail: 'Runs Playwright-style route assertions without shell execution.' },
-      { id: 'atlas-places', label: 'Atlas Place Bindings', status: masterArchive.status === 'ready' ? 'ready' : 'needs_config', detail: 'Reads places from /api/tah/master/places.' }
+      { id: 'atlas-places', label: 'Atlas Place Bindings', status: masterArchive.status === 'ready' ? 'ready' : 'needs_config', detail: 'Reads places from /api/tah/master/places.' },
+      { id: 'mls-sync', label: 'MLS Sync Ledger', status: mlsSync.latest?.status === 'failed' ? 'guarded' : 'ready', detail: formatMlsSyncDetail(mlsSync.latest) }
     ],
     bridge: {
       note: 'A bridge may appear as a parent/child process pair. Group by ancestry, command line, cwd, port, and start time before reporting duplicates.',
@@ -122,12 +131,24 @@ export function getOrchestratorSnapshot(access: OperatorAccess): OrchestratorSna
     },
     masterArchive,
     commandQueue: getOrchestratorQueueSnapshot(),
+    mlsSync: {
+      latest: mlsSync.latest,
+      latestCompleted: mlsSync.latestCompleted,
+      runningCount: mlsSync.runningCount,
+      recentRuns: mlsSync.recentRuns
+    },
     browserChecks: [
       { id: 'tah-master-ready', label: 'Master archive ready', route: '/api/tah/master', assertion: 'status === ready' },
       { id: 'master-search', label: 'Master search returns Atlas Pulse', route: '/api/tah/master/search?q=Atlas%20Pulse&limit=1', assertion: 'results.length > 0' },
       { id: 'places', label: 'Atlas places extract', route: '/api/tah/master/places?limit=5', assertion: 'places include physical anchors' }
     ]
   };
+}
+
+function formatMlsSyncDetail(run: MlsSyncRun | null) {
+  if (!run) return 'No MLS sync runs recorded yet.';
+  const { received, synced, skipped, failed } = run.metrics;
+  return `${run.status}: ${synced}/${received} synced, ${skipped} skipped, ${failed} failed.`;
 }
 
 function summarizeMasterArchive(masterArchive: ReturnType<typeof getTahMasterMetadata>): OrchestratorMasterArchive {

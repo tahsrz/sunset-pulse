@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { getOperatorAccess } from '@/lib/core/operator_access';
+import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { getOrchestratorSnapshot } from '@/lib/core/orchestrator_node';
 import { OrchestratorConsole } from './OrchestratorConsole';
 
@@ -12,7 +13,7 @@ export const metadata = {
 
 export default async function OrchestratorPage() {
   const requestHeaders = await headers();
-  const access = await getOperatorAccess(requestHeaders.get('host'));
+  const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
 
   if (!access.allowed) {
     return (

@@ -4,6 +4,7 @@
  */
 
 import { gatekeeper } from '@/lib/core/gatekeeper';
+import type { MlsProviderName } from './mlsTypes';
 
 export interface BridgeProperty {
   ListingId: string;
@@ -24,6 +25,7 @@ export interface BridgeProperty {
 }
 
 class BridgeMLSService {
+  public readonly provider: MlsProviderName = 'bridge';
   private static instance: BridgeMLSService;
   private apiKey: string | undefined;
   private baseUrl: string = 'https://api.bridgeinteractive.com/v2/ntreis/listings';

@@ -15,7 +15,7 @@ export async function requireOperatorRouteAccess(request: NextRequest): Promise<
 }
 
 function getRequestHost(request: NextRequest): string | null {
-  const headerHost = request.headers.get('host');
+  const headerHost = getRequestHostFromHeaders(request.headers);
   if (headerHost) return headerHost;
 
   if (request.nextUrl?.host) return request.nextUrl.host;
@@ -25,6 +25,10 @@ function getRequestHost(request: NextRequest): string | null {
   } catch {
     return null;
   }
+}
+
+export function getRequestHostFromHeaders(requestHeaders: Pick<Headers, 'get'>): string | null {
+  return requestHeaders.get('host');
 }
 
 export function isAuthResponse(value: AuthorizedOperator | Response): value is Response {

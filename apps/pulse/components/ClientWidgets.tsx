@@ -20,7 +20,15 @@ export default function ClientWidgets() {
 
   if (!mounted) return null;
 
-  if (pathname?.startsWith('/command-center')) {
+  if (pathname?.startsWith('/value-guess')) {
+    return null;
+  }
+
+  const operatorSurface =
+    pathname?.startsWith('/command-center') ||
+    pathname?.startsWith('/admin/orchestrator');
+
+  if (operatorSurface) {
     return (
       <>
         <FeedbackWidget />
