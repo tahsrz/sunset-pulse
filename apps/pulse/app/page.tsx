@@ -1,15 +1,13 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { Compass, ShoppingBasket, Sparkles } from 'lucide-react';
+import { Compass, HeartHandshake, ShoppingBasket, Sparkles } from 'lucide-react';
 import InfoBoxes from '@/components/InfoBoxes';
 import UnifiedPropertyStage from '@/components/marketing/UnifiedPropertyStage';
 import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
-import SunsetHistorySection from '@/components/marketing/SunsetHistorySection';
 import FAQSection from '@/components/marketing/FAQSection';
 import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
 import { getCachedProperties } from '@/lib/core/propertyRecon';
 import { HomeHero, HomeWorldHub } from '@/components/home/HomeDynamicSections';
-import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 
 /**
  * fetches curated properties on the server and streams them once resolved
@@ -31,7 +29,7 @@ const HomePage: React.FC = () => {
       <div className="waterlily-surface">
         <HomeWorldHub />
         <ValuePropositionGrid />
-        <AnimalOfDaySection />
+        <FamilyStoryBand />
         
         {/* Partial Prerendering (PPR) Pocket */}
         <Suspense fallback={
@@ -42,7 +40,6 @@ const HomePage: React.FC = () => {
           <StagedPropertiesPocket />
         </Suspense>
 
-        <SunsetHistorySection />
         <InfoBoxes />
         <FAQSection />
         <ArchitectureOverview />
@@ -52,6 +49,33 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
+
+function FamilyStoryBand() {
+  return (
+    <section className="waterlily-section px-4 py-10 md:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 rounded-lg border border-amber-200/15 bg-slate-950/45 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+        <div className="max-w-2xl">
+          <p className="text-[10px] font-black uppercase tracking-[0.32em] text-amber-200">
+            Community Roots
+          </p>
+          <h2 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-white md:text-3xl">
+            Meet the Sunset family story
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-teal-50/65">
+            The local history, Grill anchor, and community-side features now live in one dedicated place.
+          </p>
+        </div>
+        <Link
+          href="/our-family"
+          className="inline-flex w-fit items-center gap-2 rounded-md border border-amber-200/25 bg-amber-300/12 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-amber-100 transition hover:border-amber-200/45 hover:bg-amber-300/18"
+        >
+          <HeartHandshake className="h-4 w-4" />
+          Our Family
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 function CounterScanActions() {
   return (

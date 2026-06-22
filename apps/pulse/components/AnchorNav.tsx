@@ -68,6 +68,7 @@ export default function AnchorNav() {
   // Group links by corners
   const tlLinks: NavLink[] = [
     { href: '/', label: 'Home', active: pathname === '/' },
+    { href: '/our-family', label: 'Our Family', active: pathname.startsWith('/our-family'), emphasis: 'emerald' },
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
     { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
   ];

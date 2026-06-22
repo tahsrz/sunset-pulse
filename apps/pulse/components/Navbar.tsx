@@ -58,6 +58,7 @@ const Navbar: React.FC = () => {
 
   const navLinks = useMemo<NavLink[]>(() => [
     { href: '/', label: 'Home', active: pathname === '/' },
+    { href: '/our-family', label: 'Our Family', active: pathname.startsWith('/our-family'), emphasis: 'emerald' },
     { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
     { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
@@ -332,6 +333,12 @@ function desktopActiveClass(emphasis?: NavLink['emphasis']) {
       return 'bg-cyan-300/15 text-cyan-100';
     case 'violet':
       return 'bg-violet-300/15 text-violet-100';
+    case 'emerald':
+      return 'bg-emerald-300/15 text-emerald-100';
+    case 'orange':
+      return 'bg-orange-300/15 text-orange-100';
+    case 'blue':
+      return 'bg-blue-300/15 text-blue-100';
     default:
       return 'bg-white/[0.12] text-white';
   }
