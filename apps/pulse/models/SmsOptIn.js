@@ -33,9 +33,22 @@ const SmsOptInSchema = new Schema(
       type: String,
       required: true,
     },
+    consentUseCases: {
+      type: [
+        {
+          id: { type: String, required: true },
+          endBusiness: { type: String, required: true },
+          label: { type: String, required: true },
+          category: { type: String, required: true },
+          consentText: { type: String, required: true },
+          consentedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
     termsVersion: {
       type: String,
-      default: '2026-06-12',
+      default: '2026-06-18-end-business-use-cases',
     },
     consentedAt: {
       type: Date,

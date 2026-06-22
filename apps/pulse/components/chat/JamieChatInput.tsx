@@ -53,14 +53,17 @@ const JamieChatInput: React.FC<JamieChatInputProps> = ({
         <input 
           className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600" 
           value={input} 
-          placeholder="Ask Jamie..." 
+          placeholder={isLoading ? 'Jamie is working...' : 'Ask Jamie...'}
           onChange={handleInputChange} 
           onKeyDown={handleKeyDown}
           autoComplete="off"
+          disabled={isLoading}
         />
         <button 
           type="submit" 
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 transition-colors"
+          aria-label="Send message to Jamie"
+          disabled={isLoading || !input.trim()}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 transition-colors hover:text-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <FaCogs className={isLoading ? 'animate-spin' : ''} />
         </button>

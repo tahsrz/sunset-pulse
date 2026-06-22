@@ -22,13 +22,16 @@ const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
   const isUser = message.role === 'user';
   const content = message.content || '';
   const cleaned = cleanContent(content);
+  const containerClass = isUser
+    ? 'items-end animate-in slide-in-from-right-5'
+    : 'items-start animate-in slide-in-from-left-5';
 
   const displayContent = cleaned || (isDevMode ? '[METADATA_ONLY_NODE]' : '');
 
   if (!displayContent && !isDevMode) return null;
 
   return (
-    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-in slide-in-from-${isUser ? 'right' : 'left'}-5 duration-300 gap-2 mb-4`}>
+    <div className={`flex flex-col ${containerClass} duration-300 gap-2 mb-4`}>
       {/* User Message or Jamie's Response */}
       <div className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm shadow-xl transition-all duration-500 hover:scale-[1.01] relative ${
         isUser 

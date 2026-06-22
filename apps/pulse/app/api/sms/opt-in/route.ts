@@ -3,17 +3,18 @@ import connectDB from '@/lib/core/database';
 import SmsOptIn from '@/models/SmsOptIn';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
-
-export const SMS_OPT_IN_CONSENT_TEXT =
-  'I agree to receive recurring automated SMS/text messages from Sunset Pulse about property updates, scheduling, grill/order updates, and local offers at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe and HELP for help. Consent is not a condition of purchase.';
+import {
+  SMS_OPT_IN_TERMS_VERSION,
+  buildSmsConsentAuditText,
+  getSelectedSmsOptInUseCases,
+} from '@/lib/sms/consent';
 
 const SmsOptInSchema = z.object({
   name: z.string().trim().max(80).optional().or(z.literal('')),
   email: z.string().trim().email('Enter a valid email address').optional().or(z.literal('')),
   phone: z.string().trim().min(7, 'Enter a valid mobile phone number'),
-  consent: z.literal(true, {
-    errorMap: () => ({ message: 'SMS consent is required.' }),
-  }),
+  useCases: z.record(z.boolean()).optional().default({}),
+  page: z.string().trim().max(120).optional().or(z.literal('')),
   source: z.string().trim().max(80).optional().or(z.literal('')),
 });
 
@@ -40,6 +41,13 @@ export async function POST(request: Request) {
       return validationErrorResponse(validation.error.flatten().fieldErrors);
     }
 
+    const selectedUseCases = getSelectedSmsOptInUseCases(validation.data.useCases);
+    if (selectedUseCases.length === 0) {
+      return validationErrorResponse({
+        useCases: ['Select at least one SMS message type to opt in.'],
+      });
+    }
+
     const phone = normalizePhone(validation.data.phone);
     if (!phone) {
       return validationErrorResponse({ phone: ['Enter a valid US mobile phone number or E.164 number.'] });
@@ -55,6 +63,14 @@ export async function POST(request: Request) {
     await connectDB();
 
     const now = new Date();
+    const consentUseCases = selectedUseCases.map((useCase) => ({
+      id: useCase.id,
+      endBusiness: useCase.endBusiness,
+      label: useCase.label,
+      category: useCase.category,
+      consentText: useCase.consentText,
+      consentedAt: now,
+    }));
     const record = await SmsOptIn.findOneAndUpdate(
       { phone },
       {
@@ -64,15 +80,17 @@ export async function POST(request: Request) {
           phone,
           status: 'opted_in',
           source: validation.data.source || 'sms-opt-in-webform',
-          consentText: SMS_OPT_IN_CONSENT_TEXT,
-          termsVersion: '2026-06-12',
+          consentText: buildSmsConsentAuditText(selectedUseCases),
+          consentUseCases,
+          termsVersion: SMS_OPT_IN_TERMS_VERSION,
           consentedAt: now,
           optedOutAt: null,
           ipAddress,
           userAgent: request.headers.get('user-agent') || '',
           metadata: {
-            page: '/sms-opt-in',
+            page: validation.data.page || '/sms-opt-in',
             submittedAt: now.toISOString(),
+            selectedUseCases: selectedUseCases.map((useCase) => useCase.id),
           },
         },
       },
@@ -83,6 +101,7 @@ export async function POST(request: Request) {
       message: 'SMS opt-in recorded.',
       phone: record.phone,
       status: record.status,
+      selectedUseCases: consentUseCases.map((useCase) => useCase.id),
       consentedAt: record.consentedAt,
     });
   } catch (error: any) {

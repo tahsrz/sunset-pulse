@@ -48,7 +48,7 @@ const FeedbackWidget = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div className={`fixed z-[70] ${isOpen ? 'bottom-20 right-4' : 'bottom-4 right-20'}`}>
       {/* Trigger Button */}
       {!isOpen && (
         <button

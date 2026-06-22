@@ -66,7 +66,7 @@ const DevPortal: React.FC = () => {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-24 z-[60] bg-slate-900/80 backdrop-blur-xl border border-blue-500/30 p-3 rounded-full text-blue-400 hover:text-blue-300 hover:border-blue-500 transition-all shadow-2xl animate-pulse"
+        className="fixed bottom-4 right-36 z-[60] bg-slate-900/80 backdrop-blur-xl border border-blue-500/30 p-3 rounded-full text-blue-400 hover:text-blue-300 hover:border-blue-500 transition-all shadow-2xl animate-pulse"
         title="Open Dev Portal"
       >
         <FaCode size={20} />
@@ -75,7 +75,7 @@ const DevPortal: React.FC = () => {
   }
 
   return (
-    <div ref={portalRef} className="fixed bottom-6 right-6 z-[60] w-[400px] h-[600px] bg-slate-950/95 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+    <div ref={portalRef} className="fixed bottom-20 right-4 z-[60] h-[min(600px,calc(100vh-7rem))] w-[calc(100vw-2rem)] max-w-[400px] bg-slate-950/95 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
       {/* Header */}
       <div className="p-6 border-b border-white/10 flex justify-between items-center bg-blue-600/5">
         <div className="flex items-center gap-3">

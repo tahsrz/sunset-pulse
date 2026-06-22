@@ -2,24 +2,53 @@
 
 import { useState } from 'react';
 import { CheckCircle2, Loader2, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { SMS_OPT_IN_USE_CASES, SmsOptInUseCaseId } from '@/lib/sms/consent';
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
 
-const consentText =
-  'I agree to receive recurring automated SMS/text messages from Sunset Pulse about property updates, scheduling, grill/order updates, and local offers at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe and HELP for help. Consent is not a condition of purchase.';
+const initialUseCases = SMS_OPT_IN_USE_CASES.reduce(
+  (acc, useCase) => ({ ...acc, [useCase.id]: false }),
+  {} as Record<SmsOptInUseCaseId, boolean>
+);
 
-export default function SmsOptInForm() {
+type SmsOptInFormProps = {
+  useCaseId?: SmsOptInUseCaseId;
+  pagePath?: string;
+  source?: string;
+};
+
+export default function SmsOptInForm({ useCaseId, pagePath = '/sms-opt-in', source = 'sms-opt-in-webform' }: SmsOptInFormProps) {
+  const visibleUseCases = useCaseId
+    ? SMS_OPT_IN_USE_CASES.filter((useCase) => useCase.id === useCaseId)
+    : SMS_OPT_IN_USE_CASES;
+  const lockedUseCase = visibleUseCases.length === 1 ? visibleUseCases[0] : null;
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [message, setMessage] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    consent: false,
+    useCases: initialUseCases,
   });
 
-  const updateField = (field: keyof typeof formData, value: string | boolean) => {
+  const selectedCount = Object.values(formData.useCases).filter(Boolean).length;
+
+  const updateField = (field: 'name' | 'email' | 'phone', value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
+    if (submitState === 'error') {
+      setSubmitState('idle');
+      setMessage('');
+    }
+  };
+
+  const updateUseCase = (id: SmsOptInUseCaseId, checked: boolean) => {
+    setFormData((current) => ({
+      ...current,
+      useCases: {
+        ...current.useCases,
+        [id]: checked,
+      },
+    }));
     if (submitState === 'error') {
       setSubmitState('idle');
       setMessage('');
@@ -37,18 +66,19 @@ export default function SmsOptInForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          source: 'sms-opt-in-webform',
+          page: pagePath,
+          source,
         }),
       });
       const payload = await response.json();
 
       if (!response.ok || payload?.error) {
-        throw new Error(payload?.details?.phone?.[0] || payload?.details?.consent?.[0] || payload?.message || 'Opt-in failed.');
+        throw new Error(payload?.details?.phone?.[0] || payload?.details?.useCases?.[0] || payload?.message || 'Opt-in failed.');
       }
 
       setSubmitState('success');
-      setMessage('You are opted in. You can reply STOP to any text message to unsubscribe.');
-      setFormData({ name: '', email: '', phone: '', consent: false });
+      setMessage('Your selected SMS opt-ins are recorded. You can reply STOP to any text message to unsubscribe.');
+      setFormData({ name: '', email: '', phone: '', useCases: initialUseCases });
     } catch (error: any) {
       setSubmitState('error');
       setMessage(error?.message || 'Could not record your opt-in. Please try again.');
@@ -82,9 +112,11 @@ export default function SmsOptInForm() {
           <MessageSquareText className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">SMS Opt-In</h1>
+          <h1 className="text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">Business SMS Opt-In</h1>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            Join Sunset Pulse text updates for property alerts, scheduling updates, order notices, and local offers.
+            {lockedUseCase
+              ? `Opt in to ${lockedUseCase.label.toLowerCase()} text messages from ${lockedUseCase.endBusiness}.`
+              : 'Choose exactly which business and message type this phone number may receive texts from.'}
           </p>
         </div>
       </div>
@@ -140,22 +172,41 @@ export default function SmsOptInForm() {
         </div>
       </div>
 
-      <label className="mt-5 flex gap-3 rounded-md border border-cyan-200/20 bg-cyan-950/30 p-4 text-sm leading-6 text-cyan-50/85">
-        <input
-          type="checkbox"
-          checked={formData.consent}
-          onChange={(event) => updateField('consent', event.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 text-cyan-400 focus:ring-cyan-300"
-          required
-          disabled={submitState === 'submitting'}
-        />
-        <span>{consentText}</span>
-      </label>
+      <div className="mt-5 space-y-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-300">
+            {lockedUseCase ? 'Required SMS Consent *' : 'Separate Business SMS Opt-Ins *'}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-slate-400">
+            {lockedUseCase
+              ? 'Confirm this single end business and message type.'
+              : 'Select each end business and message type independently.'}
+          </p>
+        </div>
+        {visibleUseCases.map((useCase) => (
+          <label key={useCase.id} className="flex gap-3 rounded-md border border-cyan-200/20 bg-cyan-950/30 p-4 text-sm leading-6 text-cyan-50/85">
+            <input
+              type="checkbox"
+              checked={formData.useCases[useCase.id]}
+              onChange={(event) => updateUseCase(useCase.id, event.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 text-cyan-400 focus:ring-cyan-300"
+              disabled={submitState === 'submitting'}
+            />
+            <span>
+              <span className="block text-xs font-black uppercase tracking-[0.14em] text-emerald-200">{useCase.endBusiness}</span>
+              <span className="block font-black uppercase tracking-[0.12em] text-cyan-100">{useCase.label}</span>
+              <span className="mt-1 block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{useCase.category}</span>
+              <span className="mt-2 block text-slate-300">{useCase.description}</span>
+              <span className="mt-2 block">{useCase.consentText}</span>
+            </span>
+          </label>
+        ))}
+      </div>
 
       <div className="mt-5 flex items-start gap-3 rounded-md border border-white/10 bg-white/[0.04] p-4">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
         <p className="text-xs leading-5 text-slate-300">
-          Your consent record stores the exact language above, phone number, submission time, source page, IP address, and browser user agent for audit purposes.
+          Your consent record stores each selected message type, exact consent language, phone number, submission time, source page, IP address, and browser user agent for audit purposes.
         </p>
       </div>
 
@@ -167,7 +218,7 @@ export default function SmsOptInForm() {
 
       <button
         type="submit"
-        disabled={submitState === 'submitting'}
+        disabled={submitState === 'submitting' || selectedCount === 0}
         className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-md bg-cyan-300 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitState === 'submitting' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}

@@ -28,6 +28,24 @@ type ChatMessage = {
   content: string;
 };
 
+function createChatMessage(role: ChatMessage['role'], content: string): ChatMessage {
+  const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return { id, role, content };
+}
+
+function normalizePersistedMessages(history: any[]): ChatMessage[] {
+  return history
+    .filter((message) => ['user', 'assistant', 'system'].includes(message?.role) && typeof message?.content === 'string')
+    .map((message) => ({
+      id: message.id || `${message.timestamp || Date.now()}-${message.role}`,
+      role: message.role,
+      content: getJamieDisplayContent(message.content),
+    }));
+}
+
 export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
   const { user, loading: authLoading } = useAuth();
   const { 
@@ -85,7 +103,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     // Hydrate history from Supabase for cross-device persistence
     const hydrateHistory = async () => {
       const history = await memoryBridge.loadInteractions();
-      setPersistentMessages(history);
+      setPersistentMessages(normalizePersistedMessages(history));
     };
     hydrateHistory();
     
@@ -276,13 +294,13 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
   const sendChatMessage = async (content: string, options?: { logUser?: boolean }) => {
     const currentInput = content.trim();
-    if (!currentInput) return;
+    if (!currentInput || isLoading) return;
 
     if (options?.logUser) {
       await memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
     }
 
-    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: currentInput };
+    const userMessage = createChatMessage('user', currentInput);
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     setInput('');
@@ -310,12 +328,12 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         : await chatResponse.text();
       const assistantContent = getJamieDisplayContent(rawAssistantResponse);
 
-      setMessages([...nextMessages, { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }]);
+      setMessages([...nextMessages, createChatMessage('assistant', assistantContent)]);
       await handleAction(assistantContent);
     } catch (error) {
       console.error('Chat API Error:', error);
-      const assistantContent = 'Assistant Logic Interrupted';
-      setMessages([...nextMessages, { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }]);
+      const assistantContent = 'Jamie hit a connection issue. Try again in a moment.';
+      setMessages([...nextMessages, createChatMessage('assistant', assistantContent)]);
       await memoryBridge.logInteraction({ role: 'assistant', content: assistantContent, timestamp: new Date().toISOString() });
     } finally {
       setIsLoading(false);
@@ -332,7 +350,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
       return;
     }
 
-    setMessages([...messages, { id: crypto.randomUUID(), role: message.role, content: message.content }]);
+    setMessages([...messages, createChatMessage(message.role, message.content)]);
   };
 
   // Sync messages from local storage or Supabase on mount
@@ -379,7 +397,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
     const currentInput = input;
     setHistoryIndex(-1);
 
@@ -394,23 +412,23 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
       });
       const security = await shieldResponse.json();
       if (security.status === 'BLOCKED') {
-        const assistantMsg = `⚠️ [NOTICE]: ${security.message}`;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
-        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
+        const assistantMsg = `Notice: ${security.message}`;
+        setMessages([...messages, createChatMessage('user', currentInput), createChatMessage('assistant', assistantMsg)]);
+        await memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
         setInput('');
         return;
       }
       if (security.status === 'RESOLVED_BY_MINI') {
         const assistantMsg = security.response;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
-        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
+        setMessages([...messages, createChatMessage('user', currentInput), createChatMessage('assistant', assistantMsg)]);
+        await memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
         setInput('');
         return;
       }
-      originalHandleSubmit(e);
+      await originalHandleSubmit(e);
     } catch (error) {
       console.error('Submission Error:', error);
-      originalHandleSubmit(e);
+      await originalHandleSubmit(e);
     }
   };
 
@@ -426,7 +444,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
   const canViewMls = Boolean(user) || mlsAccess === 'allowed';
 
   return (
-    <div className={`fixed bottom-5 top-24 ${dockSideClass} z-50 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`}>
+    <div className={`fixed bottom-24 top-20 ${dockSideClass} z-50 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:top-24 sm:w-[420px]`}>
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
 
       {localIntel && (
