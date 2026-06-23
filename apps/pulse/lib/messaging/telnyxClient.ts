@@ -26,6 +26,7 @@ export function getTelnyxClient() {
   if (!telnyxClient) {
     telnyxClient = new Telnyx({
       apiKey: process.env.TELNYX_API_KEY || '',
+      publicKey: process.env.TELNYX_PUBLIC_KEY || null,
     });
   }
 
