@@ -85,7 +85,9 @@ export async function dispatchPaidOrderPhoneRelay({
     const normalizedBaseUrl = publicBaseUrl.replace(/\/$/, '');
     const twimlUrl = `${normalizedBaseUrl}/api/grill/relay/twiml/${relaySession.id}`;
     const statusCallbackUrl = `${normalizedBaseUrl}/api/grill/relay/call-status/${relaySession.id}`;
-    call = await placeInteractivePhoneRelayCall(to, twimlUrl, statusCallbackUrl);
+    call = await placeInteractivePhoneRelayCall(to, twimlUrl, statusCallbackUrl, {
+      relayId: relaySession.id,
+    });
   } else {
     call = await placePhoneRelayCall(to, callScript.script);
   }

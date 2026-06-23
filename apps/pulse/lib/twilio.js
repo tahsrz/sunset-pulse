@@ -1,5 +1,5 @@
 import 'server-only';
-import { sendTelnyxSMS } from '@/lib/messaging/telnyxClient';
+import { getTelnyxClient, sendTelnyxSMS } from '@/lib/messaging/telnyxClient';
 
 export const twilioClient = {
   messages: {
@@ -38,18 +38,88 @@ export const sendSMS = async (to, body) => {
   return result.messageId ? { ...result, sid: result.messageId } : result;
 };
 
+function getTelnyxVoiceConfig() {
+  const connectionId = process.env.TELNYX_CONNECTION_ID || process.env.TELNYX_CALL_CONTROL_APP_ID;
+  const from = process.env.TELNYX_FROM_NUMBER;
+
+  if (!process.env.TELNYX_API_KEY || !connectionId || !from) {
+    return {
+      configured: false,
+      reason: 'Missing TELNYX_API_KEY, TELNYX_FROM_NUMBER, or TELNYX_CONNECTION_ID.',
+    };
+  }
+
+  return {
+    configured: true,
+    connectionId,
+    from,
+  };
+}
+
+function encodeClientState(state) {
+  return Buffer.from(JSON.stringify(state)).toString('base64');
+}
+
+async function placeTelnyxOutboundCall(to, clientState) {
+  const config = getTelnyxVoiceConfig();
+
+  if (!config.configured) {
+    console.warn(`[TELNYX_CALL_SKIPPED]: ${config.reason} Destination: ${to}.`);
+    return {
+      success: false,
+      reason: config.reason,
+      provider: 'telnyx',
+    };
+  }
+
+  try {
+    const response = await getTelnyxClient().calls.dial({
+      connection_id: config.connectionId,
+      from: config.from,
+      to,
+      client_state: encodeClientState(clientState),
+      answering_machine_detection: 'disabled',
+    });
+
+    const call = response.data;
+    console.log(`[TELNYX_CALL_DIALED]: Call leg ${call?.call_leg_id || 'unknown'} to ${to}`);
+
+    return {
+      success: true,
+      provider: 'telnyx',
+      id: call?.call_control_id,
+      sid: call?.call_control_id,
+      callControlId: call?.call_control_id,
+      callLegId: call?.call_leg_id,
+      callSessionId: call?.call_session_id,
+    };
+  } catch (error) {
+    console.error('[TELNYX_CALL_ERROR]:', {
+      status: error.statusCode,
+      message: error.message,
+      raw: error.rawBody,
+    });
+
+    return {
+      success: false,
+      provider: 'telnyx',
+      error: error.message,
+    };
+  }
+}
+
 /**
  * Places an outbound voice call and reads a deterministic phone relay script.
  * @param {string} to - Destination phone number in E.164 format
  * @param {string} script - Plain text script to read over the call
  */
-export const placePhoneRelayCall = async (to, script) => {
-  console.warn(`[TELNYX_CALL_SKIPPED]: Voice relay has not been migrated to Telnyx Call Control. Destination: ${to}. Script: "${script}"`);
-  return {
-    success: false,
-    reason: 'Voice relay requires a Telnyx Call Control migration.',
-    provider: 'telnyx',
-  };
+export const placePhoneRelayCall = async (to, script, options = {}) => {
+  return placeTelnyxOutboundCall(to, {
+    kind: 'order-relay',
+    interactive: false,
+    relayId: options.relayId,
+    callScript: script,
+  });
 };
 
 /**
@@ -58,13 +128,12 @@ export const placePhoneRelayCall = async (to, script) => {
  * @param {string} twimlUrl - Public URL for provider call instructions
  * @param {string} [statusCallbackUrl] - Public URL for call lifecycle callbacks
  */
-export const placeInteractivePhoneRelayCall = async (to, twimlUrl, statusCallbackUrl) => {
-  console.warn(`[TELNYX_INTERACTIVE_CALL_SKIPPED]: Voice relay has not been migrated to Telnyx Call Control. Destination: ${to}. TwiML URL: "${twimlUrl}". Status callback: "${statusCallbackUrl || ''}"`);
-  return {
-    success: false,
-    reason: 'Interactive voice relay requires a Telnyx Call Control migration.',
-    provider: 'telnyx',
-  };
+export const placeInteractivePhoneRelayCall = async (to, _twimlUrl, _statusCallbackUrl, options = {}) => {
+  return placeTelnyxOutboundCall(to, {
+    kind: 'order-relay',
+    interactive: true,
+    relayId: options.relayId,
+  });
 };
 
 /**

@@ -3,8 +3,9 @@ import { NextRequest } from 'next/server';
 
 vi.mock('server-only', () => ({}));
 
-const { mockAnswer, mockHangup, mockSpeak, mockUnsafeUnwrap, mockUnwrap } = vi.hoisted(() => ({
+const { mockAnswer, mockGatherUsingSpeak, mockHangup, mockSpeak, mockUnsafeUnwrap, mockUnwrap } = vi.hoisted(() => ({
   mockAnswer: vi.fn().mockResolvedValue({ data: { result: 'ok' } }),
+  mockGatherUsingSpeak: vi.fn().mockResolvedValue({ data: { result: 'ok' } }),
   mockHangup: vi.fn().mockResolvedValue({ data: { result: 'ok' } }),
   mockSpeak: vi.fn().mockResolvedValue({ data: { result: 'ok' } }),
   mockUnsafeUnwrap: vi.fn((body: string) => JSON.parse(body)),
@@ -20,6 +21,7 @@ vi.mock('@/lib/messaging/telnyxClient', () => ({
     calls: {
       actions: {
         answer: mockAnswer,
+        gatherUsingSpeak: mockGatherUsingSpeak,
         speak: mockSpeak,
         hangup: mockHangup,
       },
@@ -28,6 +30,7 @@ vi.mock('@/lib/messaging/telnyxClient', () => ({
 }));
 
 import { GET, POST } from '@/app/api/voice/inbound/route';
+import { createRelaySession, getRelaySession } from '@/lib/grill/relaySessions';
 
 function webhookRequest(eventType: string, payload: Record<string, unknown> = {}) {
   return new NextRequest('http://localhost/api/voice/inbound', {
@@ -47,6 +50,16 @@ function webhookRequest(eventType: string, payload: Record<string, unknown> = {}
       },
     }),
   });
+}
+
+function orderRelayState(relayId: string) {
+  return Buffer.from(
+    JSON.stringify({
+      kind: 'order-relay',
+      interactive: true,
+      relayId,
+    }),
+  ).toString('base64');
 }
 
 describe('Telnyx voice inbound webhook', () => {
@@ -120,5 +133,62 @@ describe('Telnyx voice inbound webhook', () => {
 
     expect(mockUnwrap).toHaveBeenCalledTimes(1);
     expect(mockUnsafeUnwrap).not.toHaveBeenCalled();
+  });
+
+  it('starts the order relay gather when an outbound order call is answered', async () => {
+    const session = await createRelaySession({
+      ticket: 'ORDER: 1 Cheeseburger Basket',
+      callScript: 'Test order script.',
+      madeDifferent: false,
+    });
+
+    const response = await POST(
+      webhookRequest('call.answered', {
+        client_state: orderRelayState(session.id),
+      }),
+    );
+    const body = await response.json();
+    const updated = await getRelaySession(session.id);
+
+    expect(response.status).toBe(200);
+    expect(body.action).toBe('order_relay_gathering');
+    expect(updated?.attempts).toBe(1);
+    expect(mockGatherUsingSpeak).toHaveBeenCalledWith(
+      'call-control-123',
+      expect.objectContaining({
+        payload: expect.stringContaining('Test order script.'),
+        valid_digits: '23',
+        maximum_digits: 1,
+      }),
+    );
+  });
+
+  it('confirms the order relay when Telnyx gather returns digit 2', async () => {
+    const session = await createRelaySession({
+      ticket: 'ORDER: 1 Cheeseburger Basket',
+      callScript: 'Test order script.',
+      madeDifferent: false,
+    });
+
+    const response = await POST(
+      webhookRequest('call.gather.ended', {
+        client_state: orderRelayState(session.id),
+        digits: '2',
+        status: 'valid',
+      }),
+    );
+    const body = await response.json();
+    const updated = await getRelaySession(session.id);
+
+    expect(response.status).toBe(200);
+    expect(body.action).toBe('order_relay_confirmed');
+    expect(updated?.status).toBe('confirmed');
+    expect(updated?.lastDigits).toBe('2');
+    expect(mockSpeak).toHaveBeenCalledWith(
+      'call-control-123',
+      expect.objectContaining({
+        payload: expect.stringContaining('order is confirmed'),
+      }),
+    );
   });
 });
