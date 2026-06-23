@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaSatellite, FaBrain, FaCalculator } from 'react-icons/fa';
+import { FaBrain, FaCalculator, FaPhoneAlt, FaSatellite } from 'react-icons/fa';
 import Live3DScene from '@/components/hero/Live3DScene';
 import JamieChat from '@/components/JamieChat';
 import IntelligenceRecap from '@/components/IntelligenceRecap';
@@ -10,9 +10,10 @@ import DemoHero from '@/components/demo/DemoHero';
 import SpatialRecon from '@/components/demo/SpatialRecon';
 import IntelligenceCore from '@/components/demo/IntelligenceCore';
 import ROICalculator from '@/components/demo/ROICalculator';
+import CallAssistDemo from '@/components/demo/CallAssistDemo';
 
 const DemoPage = () => {
-  const [activeStation, setActiveStation] = useState<'SPATIAL' | 'ANALYSIS' | 'ROI'>('SPATIAL');
+  const [activeStation, setActiveStation] = useState<'SPATIAL' | 'ANALYSIS' | 'CALL' | 'ROI'>('SPATIAL');
 
   const mockProperty = {
     _id: 'featured-property-001',
@@ -40,6 +41,7 @@ const DemoPage = () => {
           {[
             { id: 'SPATIAL', label: 'Spatial Analysis', icon: <FaSatellite /> },
             { id: 'ANALYSIS', label: 'Analysis Engine', icon: <FaBrain /> },
+            { id: 'CALL', label: 'Call Assist', icon: <FaPhoneAlt /> },
             { id: 'ROI', label: 'ROI Analysis', icon: <FaCalculator /> }
           ].map(s => (
             <button 
@@ -60,6 +62,7 @@ const DemoPage = () => {
         <div className='bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 shadow-2xl min-h-[600px] animate-in zoom-in-95 duration-500'>
           {activeStation === 'SPATIAL' && <SpatialRecon property={mockProperty} />}
           {activeStation === 'ANALYSIS' && <IntelligenceCore />}
+          {activeStation === 'CALL' && <CallAssistDemo />}
           {activeStation === 'ROI' && <ROICalculator />}
         </div>
 

@@ -81,6 +81,7 @@ export default function AnchorNav() {
   ];
 
   const blLinks: NavLink[] = [
+    { href: '/call-assist', label: 'Call Assist', active: pathname.startsWith('/call-assist'), emphasis: 'blue' },
     { href: '/properties', label: 'Properties', active: pathname === '/properties' },
     { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
     { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },

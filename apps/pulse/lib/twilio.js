@@ -145,6 +145,49 @@ export const placeInteractivePhoneRelayCall = async (to, twimlUrl, statusCallbac
 };
 
 /**
+ * Places a customer-first call-assist bridge call. Twilio calls the customer,
+ * requests consent through the TwiML URL, starts Media Streams when configured,
+ * then dials the agent.
+ */
+export const placeCallAssistBridgeCall = async (to, twimlUrl, statusCallbackUrl) => {
+  const fromNumber = process.env.TWILIO_FROM_NUMBER;
+  const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
+  const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
+
+  if (!fromNumber || fromNumber.includes('placeholder')) {
+    console.warn(`[TWILIO_CALL_ASSIST_SKIPPED]: Missing TWILIO_FROM_NUMBER. Destination: ${to}. TwiML URL: "${twimlUrl}"`);
+    return { success: false, reason: 'Missing Twilio From Number configuration' };
+  }
+
+  if (currentSid.includes('placeholder') || currentToken.includes('placeholder')) {
+    console.warn(`[TWILIO_CALL_ASSIST_MOCKED]: Using placeholder credentials. Call simulated to ${to}: "${twimlUrl}"`);
+    return { success: true, mocked: true, sid: `mock_call_assist_${Date.now()}` };
+  }
+
+  try {
+    const client = twilio(currentSid, currentToken);
+    const call = await client.calls.create({
+      from: fromNumber,
+      to,
+      url: twimlUrl,
+      method: 'GET',
+      ...(statusCallbackUrl
+        ? {
+            statusCallback: statusCallbackUrl,
+            statusCallbackMethod: 'POST',
+            statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+          }
+        : {}),
+    });
+    console.log(`[TWILIO_CALL_ASSIST_PLACED]: SID: ${call.sid} to ${to}`);
+    return { success: true, sid: call.sid };
+  } catch (error) {
+    console.error(`[TWILIO_CALL_ASSIST_ERROR]: Failed calling ${to}. Error:`, error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Formats and dispatches order alerts to the scheduled grill and register personnel
  * @param {object} order - Mongoose Order document
  * @param {string|null} grillPhone - Phone number of scheduled grill employee

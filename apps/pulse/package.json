@@ -10,6 +10,7 @@
     "meme:harvest": "python scripts/meme_harvester.py",
     "jamie:watcher": "node scripts/idle-dream-watcher.js",
     "jamie:dream": "python lib/ai/bridges/core.py",
+    "call-assist:media-worker": "node --no-warnings scripts/call-assist-media-worker.mjs",
     "ozriel:dream": "node scripts/ozriel_dream.mjs",
     "atlas:publish": "tsx scripts/publish-atlas-manifest.ts",
     "mls:import-hotsheet": "tsx scripts/import-hotsheet-text.ts",
@@ -77,6 +78,7 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.160.0",
     "twilio": "^5.13.1",
+    "ws": "^8.21.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

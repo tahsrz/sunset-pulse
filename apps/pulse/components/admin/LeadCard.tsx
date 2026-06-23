@@ -7,6 +7,7 @@ import {
   FaRocket, FaCrosshairs, FaCheckCircle, FaExclamationCircle
 } from 'react-icons/fa';
 import EngagementTriggerGrid from './EngagementTriggerGrid';
+import LeadCallAssistLauncher from '@/components/call-assist/LeadCallAssistLauncher';
 import { Lead } from '@/lib/types';
 
 interface LeadCardProps {
@@ -59,6 +60,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onRefreshLeads }) => {
       </div>
 
       <div className='pt-4 border-t border-white/5'>
+        {lead.phone && (
+          <div className="mb-3">
+            <LeadCallAssistLauncher lead={lead} compact />
+          </div>
+        )}
         <EngagementTriggerGrid lead={lead} onRefreshSuccess={onRefreshLeads} />
       </div>
     </div>

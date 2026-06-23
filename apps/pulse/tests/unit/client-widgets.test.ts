@@ -37,16 +37,19 @@ describe('ClientWidgets operator surfaces', () => {
     cleanup();
   });
 
-  it('keeps the global Jamie dock off the public command center', async () => {
-    mockState.pathname = '/command-center';
+  it.each(['/command-center', '/call-assist'])(
+    'keeps the global Jamie dock off the focused operator route %s',
+    async (pathname) => {
+      mockState.pathname = pathname;
 
-    const { container } = render(React.createElement(ClientWidgets));
+      const { container } = render(React.createElement(ClientWidgets));
 
-    await waitFor(() => expect(container).toHaveTextContent('feedback-widget'));
-    expect(container).toHaveTextContent('dev-portal');
-    expect(container).not.toHaveTextContent('jamie-chat');
-    expect(container).not.toHaveTextContent('jamie-pulse-overlay');
-  });
+      await waitFor(() => expect(container).toHaveTextContent('feedback-widget'));
+      expect(container).toHaveTextContent('dev-portal');
+      expect(container).not.toHaveTextContent('jamie-chat');
+      expect(container).not.toHaveTextContent('jamie-pulse-overlay');
+    }
+  );
 
   it('keeps the global Jamie dock off the admin orchestrator console', async () => {
     mockState.pathname = '/admin/orchestrator';

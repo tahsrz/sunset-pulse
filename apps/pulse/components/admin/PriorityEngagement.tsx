@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 
 import EngagementTriggerGrid from './EngagementTriggerGrid';
+import LeadCallAssistLauncher from '@/components/call-assist/LeadCallAssistLauncher';
 
 interface PriorityEngagementProps {
   topPriority: any;
@@ -49,6 +50,11 @@ const PriorityEngagement: React.FC<PriorityEngagementProps> = ({ topPriority, on
         </div>
 
         <div className='pt-2'>
+          {topPriority.phone && (
+            <div className="mb-3">
+              <LeadCallAssistLauncher lead={topPriority} />
+            </div>
+          )}
           <EngagementTriggerGrid lead={topPriority} onRefreshSuccess={onRefreshLeads} />
         </div>
 

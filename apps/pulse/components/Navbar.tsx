@@ -60,6 +60,7 @@ const Navbar: React.FC = () => {
     { href: '/', label: 'Home', active: pathname === '/' },
     { href: '/our-family', label: 'Our Family', active: pathname.startsWith('/our-family'), emphasis: 'emerald' },
     { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
+    { href: '/call-assist', label: 'Call Assist', active: pathname.startsWith('/call-assist'), emphasis: 'blue' },
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
     { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
     { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
