@@ -116,7 +116,7 @@ export default function PitchDeck() {
       milestones: [
         'Touch-interactive tap-to-select mobile layouts.',
         'Horizontal weekday single-day sliding header.',
-        'Active twilio SMS client-side notification streams.'
+        'Active Telnyx SMS client-side notification streams.'
       ]
     },
     {

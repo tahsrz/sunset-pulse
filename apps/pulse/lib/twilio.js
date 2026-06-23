@@ -1,10 +1,22 @@
 import 'server-only';
-import twilio from 'twilio';
+import { sendTelnyxSMS } from '@/lib/messaging/telnyxClient';
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
-const authToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
+export const twilioClient = {
+  messages: {
+    create: async ({ body, from, text, to }) => {
+      const result = await sendTelnyxSMS(to, body || text || '', { from });
 
-export const twilioClient = twilio(accountSid, authToken);
+      if (!result.success) {
+        throw new Error(result.error || result.reason || 'Telnyx message dispatch failed.');
+      }
+
+      return {
+        id: result.messageId,
+        sid: result.messageId,
+      };
+    },
+  },
+};
 
 /**
  * Placeholder logic for RENTCAST/JAMIE integration
@@ -12,52 +24,19 @@ export const twilioClient = twilio(accountSid, authToken);
  */
 export const sendLeadAlert = async (leadData) => {
   // Logic to notify Taz about a high-probability lead
-  console.log('Sending lead alert via Twilio:', leadData);
+  console.log('Sending lead alert via Telnyx:', leadData);
   return { success: true };
 };
 
 /**
- * Sends a generic SMS text message via Twilio Client
+ * Sends a generic SMS text message via Telnyx.
  * @param {string} to - Destination phone number in E.164 format
  * @param {string} body - Text content of the SMS
  */
 export const sendSMS = async (to, body) => {
-  const fromNumber = process.env.TWILIO_FROM_NUMBER;
-  const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
-  const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
-
-  if (!fromNumber || fromNumber.includes('placeholder')) {
-    console.warn(`[TWILIO_SMS_SKIPPED]: Missing TWILIO_FROM_NUMBER. Destination: ${to}. Content: "${body}"`);
-    return { success: false, reason: 'Missing Twilio From Number configuration' };
-  }
-
-  if (currentSid.includes('placeholder') || currentToken.includes('placeholder')) {
-    console.warn(`[TWILIO_SMS_MOCKED]: Using placeholder credentials. SMS simulated to ${to}: "${body}"`);
-    return { success: true, mocked: true };
-  }
-
-  try {
-    const client = twilio(currentSid, currentToken);
-    const message = await client.messages.create({
-      body,
-      from: fromNumber,
-      to,
-    });
-    console.log(`[TWILIO_SMS_SENT]: SID: ${message.sid} to ${to}`);
-    return { success: true, sid: message.sid };
-  } catch (error) {
-    console.error(`[TWILIO_SMS_ERROR]: Failed sending to ${to}. Error:`, error.message);
-    return { success: false, error: error.message };
-  }
+  const result = await sendTelnyxSMS(to, body);
+  return result.messageId ? { ...result, sid: result.messageId } : result;
 };
-
-const escapeXml = (value) =>
-  String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
 
 /**
  * Places an outbound voice call and reads a deterministic phone relay script.
@@ -65,83 +44,27 @@ const escapeXml = (value) =>
  * @param {string} script - Plain text script to read over the call
  */
 export const placePhoneRelayCall = async (to, script) => {
-  const fromNumber = process.env.TWILIO_FROM_NUMBER;
-  const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
-  const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
-
-  if (!fromNumber || fromNumber.includes('placeholder')) {
-    console.warn(`[TWILIO_CALL_SKIPPED]: Missing TWILIO_FROM_NUMBER. Destination: ${to}. Script: "${script}"`);
-    return { success: false, reason: 'Missing Twilio From Number configuration' };
-  }
-
-  if (currentSid.includes('placeholder') || currentToken.includes('placeholder')) {
-    console.warn(`[TWILIO_CALL_MOCKED]: Using placeholder credentials. Call simulated to ${to}: "${script}"`);
-    return { success: true, mocked: true };
-  }
-
-  const twiml = [
-    '<Response>',
-    `<Say voice="Polly.Joanna" language="en-US">${escapeXml(script)}</Say>`,
-    '</Response>',
-  ].join('');
-
-  try {
-    const client = twilio(currentSid, currentToken);
-    const call = await client.calls.create({
-      from: fromNumber,
-      to,
-      twiml,
-    });
-    console.log(`[TWILIO_CALL_PLACED]: SID: ${call.sid} to ${to}`);
-    return { success: true, sid: call.sid };
-  } catch (error) {
-    console.error(`[TWILIO_CALL_ERROR]: Failed calling ${to}. Error:`, error.message);
-    return { success: false, error: error.message };
-  }
+  console.warn(`[TELNYX_CALL_SKIPPED]: Voice relay has not been migrated to Telnyx Call Control. Destination: ${to}. Script: "${script}"`);
+  return {
+    success: false,
+    reason: 'Voice relay requires a Telnyx Call Control migration.',
+    provider: 'telnyx',
+  };
 };
 
 /**
- * Places an outbound voice call using a public TwiML URL that can collect keypad input.
+ * Places an outbound voice call using a public callback URL that can collect keypad input.
  * @param {string} to - Destination phone number in E.164 format
- * @param {string} twimlUrl - Public URL for Twilio to request call instructions from
- * @param {string} [statusCallbackUrl] - Public URL for Twilio call lifecycle callbacks
+ * @param {string} twimlUrl - Public URL for provider call instructions
+ * @param {string} [statusCallbackUrl] - Public URL for call lifecycle callbacks
  */
 export const placeInteractivePhoneRelayCall = async (to, twimlUrl, statusCallbackUrl) => {
-  const fromNumber = process.env.TWILIO_FROM_NUMBER;
-  const currentSid = process.env.TWILIO_ACCOUNT_SID || 'AC_placeholder';
-  const currentToken = process.env.TWILIO_AUTH_TOKEN || 'placeholder-token';
-
-  if (!fromNumber || fromNumber.includes('placeholder')) {
-    console.warn(`[TWILIO_INTERACTIVE_CALL_SKIPPED]: Missing TWILIO_FROM_NUMBER. Destination: ${to}. TwiML URL: "${twimlUrl}"`);
-    return { success: false, reason: 'Missing Twilio From Number configuration' };
-  }
-
-  if (currentSid.includes('placeholder') || currentToken.includes('placeholder')) {
-    console.warn(`[TWILIO_INTERACTIVE_CALL_MOCKED]: Using placeholder credentials. Call simulated to ${to}: "${twimlUrl}"`);
-    return { success: true, mocked: true };
-  }
-
-  try {
-    const client = twilio(currentSid, currentToken);
-    const call = await client.calls.create({
-      from: fromNumber,
-      to,
-      url: twimlUrl,
-      method: 'GET',
-      ...(statusCallbackUrl
-        ? {
-            statusCallback: statusCallbackUrl,
-            statusCallbackMethod: 'POST',
-            statusCallbackEvent: ['completed'],
-          }
-        : {}),
-    });
-    console.log(`[TWILIO_INTERACTIVE_CALL_PLACED]: SID: ${call.sid} to ${to}`);
-    return { success: true, sid: call.sid };
-  } catch (error) {
-    console.error(`[TWILIO_INTERACTIVE_CALL_ERROR]: Failed calling ${to}. Error:`, error.message);
-    return { success: false, error: error.message };
-  }
+  console.warn(`[TELNYX_INTERACTIVE_CALL_SKIPPED]: Voice relay has not been migrated to Telnyx Call Control. Destination: ${to}. TwiML URL: "${twimlUrl}". Status callback: "${statusCallbackUrl || ''}"`);
+  return {
+    success: false,
+    reason: 'Interactive voice relay requires a Telnyx Call Control migration.',
+    provider: 'telnyx',
+  };
 };
 
 /**

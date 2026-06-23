@@ -15,7 +15,7 @@ export default function SmsOptInPage() {
             Opt In For SMS Alerts
           </h1>
           <p className="mt-5 text-base leading-7 text-slate-300">
-            Use this form when someone wants to receive Sunset Pulse text messages. It records clear consent before any automated SMS outreach is sent through Twilio.
+            Use this form when someone wants to receive Sunset Pulse text messages. It records clear consent before any automated SMS outreach is sent through Telnyx.
           </p>
 
           <div className="mt-8 grid gap-3 text-sm leading-6 text-slate-300">

@@ -51,7 +51,7 @@ export async function dispatchPaidOrderPhoneRelay({
       await Order.findByIdAndUpdate(order._id, {
         phoneRelay: {
           status: 'not_configured',
-          lastError: 'Missing PHONE_RELAY_PUBLIC_BASE_URL or NEXT_PUBLIC_DOMAIN for interactive Twilio callbacks.',
+          lastError: 'Missing PHONE_RELAY_PUBLIC_BASE_URL or NEXT_PUBLIC_DOMAIN for interactive phone relay callbacks.',
           updatedAt: new Date(),
         },
       });
@@ -93,7 +93,7 @@ export async function dispatchPaidOrderPhoneRelay({
   if (!call.success) {
     await Order.findByIdAndUpdate(order._id, {
       'phoneRelay.status': 'failed',
-      'phoneRelay.lastError': call.error || call.reason || 'Twilio call failed.',
+      'phoneRelay.lastError': call.error || call.reason || 'Phone relay call failed.',
       'phoneRelay.updatedAt': new Date(),
     });
 

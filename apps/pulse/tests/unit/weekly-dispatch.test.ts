@@ -16,19 +16,14 @@ vi.mock('@/lib/core/prisma', () => ({
   },
 }));
 
-// Mock Twilio module using vi.hoisted
-const { mockMessagesCreate } = vi.hoisted(() => ({
-  mockMessagesCreate: vi.fn().mockResolvedValue({ sid: 'SMweeklymock123' }),
+// Mock Telnyx messaging wrapper using vi.hoisted
+const { mockSendTelnyxSMS } = vi.hoisted(() => ({
+  mockSendTelnyxSMS: vi.fn().mockResolvedValue({ success: true, messageId: 'weekly-message-123' }),
 }));
 
-vi.mock('twilio', () => {
-  const mockClient = {
-    messages: {
-      create: mockMessagesCreate,
-    },
-  };
+vi.mock('@/lib/messaging/telnyxClient', () => {
   return {
-    default: vi.fn(() => mockClient),
+    sendTelnyxSMS: mockSendTelnyxSMS,
   };
 });
 
@@ -40,9 +35,9 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     vi.clearAllMocks();
     // Configure default environment keys
     process.env.SCHEDULER_DISPATCH_SECRET = 'test-dispatch-secret-999';
-    process.env.TWILIO_FROM_NUMBER = '+18777804236';
-    process.env.TWILIO_ACCOUNT_SID = 'ACrealcredentialsid';
-    process.env.TWILIO_AUTH_TOKEN = 'realtokenhere';
+    process.env.TELNYX_FROM_NUMBER = '+18777804236';
+    process.env.TELNYX_API_KEY = 'test-telnyx-key';
+    process.env.TELNYX_MESSAGING_PROFILE_ID = 'test-profile-id';
     process.env.FALLBACK_NOTIFICATION_PHONE = '+15551112222';
     
     // Lock system time to a fixed Sunday (May 24, 2026)
@@ -142,27 +137,27 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     expect(endObj.toISOString()).toBe('2026-06-01T04:59:59.999Z'); // Sunday 23:59:59.999 CDT is next Monday 04:59:59.999 UTC
 
     // Messages sent: 2 for employees (Mark and Jane) + 1 master summary for manager
-    expect(mockMessagesCreate).toHaveBeenCalledTimes(3);
+    expect(mockSendTelnyxSMS).toHaveBeenCalledTimes(3);
 
     // Verify Mark's SMS content (should contain both shifts sorted chronologically)
-    const markCall = mockMessagesCreate.mock.calls.find(call => call[0].to === '+15551111111');
+    const markCall = mockSendTelnyxSMS.mock.calls.find(call => call[0] === '+15551111111');
     expect(markCall).toBeDefined();
-    const markBody = markCall[0].body;
+    const markBody = markCall[1];
     expect(markBody).toContain('Hello Mark');
     expect(markBody).toContain('Monday: Grill Staff');
     expect(markBody).toContain('Wednesday: Register Staff');
 
     // Verify Jane's SMS content
-    const janeCall = mockMessagesCreate.mock.calls.find(call => call[0].to === '+15552222222');
+    const janeCall = mockSendTelnyxSMS.mock.calls.find(call => call[0] === '+15552222222');
     expect(janeCall).toBeDefined();
-    const janeBody = janeCall[0].body;
+    const janeBody = janeCall[1];
     expect(janeBody).toContain('Hello Jane');
     expect(janeBody).toContain('Thursday: Grill Staff');
 
     // Verify Manager Master Digest SMS content
-    const managerCall = mockMessagesCreate.mock.calls.find(call => call[0].to === '+15551112222');
+    const managerCall = mockSendTelnyxSMS.mock.calls.find(call => call[0] === '+15551112222');
     expect(managerCall).toBeDefined();
-    const managerBody = managerCall[0].body;
+    const managerBody = managerCall[1];
     expect(managerBody).toContain('MASTER WEEKLY SCHEDULE');
     expect(managerBody).toContain('Range: May 25 - May 31, 2026');
     expect(managerBody).toContain('Monday:\n  - Grill: Mark (+15551111111)');

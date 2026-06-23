@@ -58,7 +58,7 @@ export const POST = async (request: Request) => {
       metadata: { preferredDate, preferredTime, tourType }
     });
 
-    // Notify Agent via Twilio
+    // Notify Agent via Telnyx
     await notifyTourRequest(newTour);
 
     return successResponse({ 

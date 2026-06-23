@@ -1,7 +1,7 @@
-import { twilioClient } from '@/lib/twilio';
+import { sendTelnyxSMS } from '@/lib/messaging/telnyxClient';
 
 /**
- * Basic Twilio notification utility to alert Taz when a high-probability lead is captured.
+ * Basic Telnyx notification utility to alert Taz when a high-probability lead is captured.
  * 
  * @param {Object} lead - The lead object containing probability and other details.
  */
@@ -10,14 +10,10 @@ export const notifyHighProbLead = async (lead) => {
     const message = `High-probability lead captured! Name: ${lead.name || 'Anonymous'}, Prob: ${Math.round(lead.probability * 100)}%`;
     
     try {
-      await twilioClient.messages.create({
-        body: message,
-        from: process.env.TWILIO_PHONE_NUMBER || '+1234567890',
-        to: process.env.ADMIN_PHONE_NUMBER || '+10987654321', // Taz's phone number
-      });
+      await sendTelnyxSMS(process.env.ADMIN_PHONE_NUMBER || '+10987654321', message);
       console.log('Notification sent successfully.');
     } catch (error) {
-      console.error('Failed to send Twilio notification:', error);
+      console.error('Failed to send Telnyx notification:', error);
     }
   } else {
     console.log(`Lead probability too low: ${lead.probability}. No notification sent.`);
@@ -31,13 +27,9 @@ export const notifyTourRequest = async (tourData) => {
   const message = `[RECON_REQUEST]: ${tourData.userName} requested a ${tourData.tourType} tour for ${tourData.property}. Schedule: ${tourData.preferredDate} @ ${tourData.preferredTime}`;
   
   try {
-    await twilioClient.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER || '+1234567890',
-      to: process.env.ADMIN_PHONE_NUMBER || '+10987654321', 
-    });
+    await sendTelnyxSMS(process.env.ADMIN_PHONE_NUMBER || '+10987654321', message);
     console.log('Tour request notification sent successfully.');
   } catch (error) {
-    console.error('Failed to send Twilio tour notification:', error);
+    console.error('Failed to send Telnyx tour notification:', error);
   }
 };

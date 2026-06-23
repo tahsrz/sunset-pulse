@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
           const userPhone = user.verifiedNumbers[0].phoneNumber;
           const text = `[Sunset Grill] Shift available: ${startLocalStr} ${roleType} ${timeLocalStr}. Reply ACCEPT to claim!`;
 
-          // Send Twilio SMS
+          // Send Telnyx SMS
           await sendSMS(userPhone, text);
 
           // Record ShiftOffer in DB
