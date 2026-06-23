@@ -43,32 +43,12 @@ export const GET = async (
       ? new Date(order.scheduledTime) 
       : (order.createdAt ? new Date(order.createdAt) : new Date());
 
-    let activeGrillBooking = await prisma.booking.findFirst({
-      where: {
-        startTime: { lte: targetTime },
-        endTime: { gte: targetTime },
-        eventType: {
-          slug: 'grill-shift',
-        },
-        status: 'accepted',
-      },
-      select: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            username: true,
-          },
-        },
-      },
-    });
-
-    if (!activeGrillBooking) {
-      const now = new Date();
+    let activeGrillBooking = null;
+    try {
       activeGrillBooking = await prisma.booking.findFirst({
         where: {
-          startTime: { lte: now },
-          endTime: { gte: now },
+          startTime: { lte: targetTime },
+          endTime: { gte: targetTime },
           eventType: {
             slug: 'grill-shift',
           },
@@ -84,6 +64,31 @@ export const GET = async (
           },
         },
       });
+
+      if (!activeGrillBooking) {
+        const now = new Date();
+        activeGrillBooking = await prisma.booking.findFirst({
+          where: {
+            startTime: { lte: now },
+            endTime: { gte: now },
+            eventType: {
+              slug: 'grill-shift',
+            },
+            status: 'accepted',
+          },
+          select: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                username: true,
+              },
+            },
+          },
+        });
+      }
+    } catch (scheduleError) {
+      console.warn('[ORDER_GET_SCHEDULE_LOOKUP_SKIPPED]:', scheduleError);
     }
 
     const grillEmployee = activeGrillBooking?.user?.name || 'Shaikh';
