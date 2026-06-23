@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     // 4. Query Cal.com for active bookings
     const bookings = await prisma.booking.findMany({
       where: {
-        status: 'ACCEPTED',
+        status: 'accepted',
         startTime: {
           gte: startDate,
           lte: endDate,

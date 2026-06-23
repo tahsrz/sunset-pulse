@@ -111,7 +111,7 @@ export const POST = async (request: NextRequest) => {
             description: `Scheduled pickup for customer order #${orderIdShort}. Estimated wait: ${estimatedWaitMinutes} minutes. Items: ${items.map((i: any) => `${i.quantity}x ${i.name}`).join(', ')}.`,
             startTime,
             endTime,
-            status: 'ACCEPTED',
+            status: 'accepted',
             userPrimaryEmail: sessionUser?.user?.email || 'anonymous-customer@sunsetgrill.local',
           },
         });

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Query active source bookings (accepted grill-shift and register-shift)
     const sourceBookings = await prisma.booking.findMany({
       where: {
-        status: 'ACCEPTED',
+        status: 'accepted',
         startTime: {
           gte: sourceStart,
           lte: sourceEnd,
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           eventTypeId: booking.eventTypeId,
           startTime: targetStartTime,
           status: {
-            in: ['ACCEPTED', 'PENDING'],
+            in: ['accepted', 'pending'],
           },
         },
       });

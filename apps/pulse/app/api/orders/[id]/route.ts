@@ -50,7 +50,7 @@ export const GET = async (
         eventType: {
           slug: 'grill-shift',
         },
-        status: 'ACCEPTED',
+        status: 'accepted',
       },
       select: {
         user: {
@@ -72,7 +72,7 @@ export const GET = async (
           eventType: {
             slug: 'grill-shift',
           },
-          status: 'ACCEPTED',
+          status: 'accepted',
         },
         select: {
           user: {

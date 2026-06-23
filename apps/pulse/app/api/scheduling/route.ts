@@ -355,7 +355,7 @@ export const GET = async (request: NextRequest) => {
                   description: `Auto-generated ${eventType.title}`,
                   startTime: shift.startTime,
                   endTime: shift.endTime,
-                  status: 'ACCEPTED',
+                  status: 'accepted',
                   userId: shift.user.id,
                   eventTypeId: eventType.id,
                   userPrimaryEmail: shift.user.email,
@@ -555,7 +555,7 @@ export const POST = async (request: NextRequest) => {
         description: message || `User ${userName} requested a ${tourType} tour.`,
         startTime,
         endTime,
-        status: 'ACCEPTED',
+        status: 'accepted',
         attendees: {
           create: {
             email: userEmail,
@@ -630,7 +630,7 @@ async function checkCompatibilityConflict(userId: number, startTime: Date, endTi
     const candidateBookings = await prisma.booking.findMany({
       where: {
         id: ignoreBookingIds ? { notIn: ignoreBookingIds.map(Number) } : undefined,
-        status: { in: ['ACCEPTED', 'PENDING'] },
+        status: { in: ['accepted', 'pending'] },
         eventType: {
           slug: { in: ['grill-shift', 'register-shift'] }
         },

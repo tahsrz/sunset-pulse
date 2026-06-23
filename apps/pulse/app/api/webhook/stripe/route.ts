@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
           // Query Cal.com shifts active precisely at the scheduled pickup time
           activeShiftBookings = await prisma.booking.findMany({
             where: {
-              status: 'ACCEPTED',
+              status: 'accepted',
               startTime: { lte: targetTime },
               endTime: { gte: targetTime },
               eventType: {
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
 
           activeShiftBookings = await prisma.booking.findMany({
             where: {
-              status: 'ACCEPTED',
+              status: 'accepted',
               startTime: {
                 gte: todayStart,
                 lte: todayEnd,

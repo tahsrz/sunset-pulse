@@ -16,7 +16,7 @@ async function hasConflict(userId: number, startTime: Date, endTime: Date, ignor
     const candidateBookings = await prisma.booking.findMany({
       where: {
         id: { not: ignoreBookingId },
-        status: { in: ['ACCEPTED', 'PENDING'] },
+        status: { in: ['accepted', 'pending'] },
         eventType: {
           slug: { in: ['grill-shift', 'register-shift'] }
         },

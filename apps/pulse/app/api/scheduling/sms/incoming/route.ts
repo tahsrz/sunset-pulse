@@ -40,7 +40,7 @@ async function checkCompatibilityConflict(userId: number, startTime: Date, endTi
     const candidateBookings = await prisma.booking.findMany({
       where: {
         id: ignoreBookingIds ? { notIn: ignoreBookingIds.map(Number) } : undefined,
-        status: { in: ['ACCEPTED', 'PENDING'] },
+        status: { in: ['accepted', 'pending'] },
         eventType: {
           slug: { in: ['grill-shift', 'register-shift'] }
         },
