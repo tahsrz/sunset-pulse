@@ -14,6 +14,16 @@ const MARKET_BOARDS = [
   { id: 'internal', label: 'Sunset Pulse Verified' }
 ];
 
+function normalizeListingPayload(payload: any): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.properties)) return payload.data.properties;
+  if (Array.isArray(payload?.data?.listings)) return payload.data.listings;
+  if (Array.isArray(payload?.properties)) return payload.properties;
+  if (Array.isArray(payload?.listings)) return payload.listings;
+  return [];
+}
+
 export default function ListingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,7 +48,7 @@ export default function ListingsPage() {
           cache: 'no-store'
         });
         const payload = await res.json();
-        setListings(payload.success ? payload.data : []);
+        setListings(payload.success === false ? [] : normalizeListingPayload(payload));
       } catch (error) {
         console.error('Failed to load listings:', error);
         setListings([]);

@@ -5,9 +5,14 @@ import { Property } from '@/lib/types';
 import marketingCopy from '@/config/marketing_copy.json';
 
 const FeaturedProperties: React.FC = async () => {
-  const properties: Property[] = await getProperties({
+  const propertiesRaw = await getProperties({
     showFeatured: true,
   });
+  const properties: Property[] = Array.isArray(propertiesRaw)
+    ? propertiesRaw
+    : Array.isArray((propertiesRaw as any)?.properties)
+      ? (propertiesRaw as any).properties
+      : [];
 
   if (properties.length === 0) return null;
 
