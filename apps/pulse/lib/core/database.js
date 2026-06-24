@@ -13,7 +13,9 @@ const connectDB = async () => {
   try {
     assertSafeMongoConnection(process.env.MONGODB_URI);
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected...');
+    if (process.env.MONGODB_DEBUG_LOGS === 'true') {
+      console.log('MongoDB connected...');
+    }
   } catch (error) {
     console.error('Database connection error:', error);
     throw new Error('Database connection failed');

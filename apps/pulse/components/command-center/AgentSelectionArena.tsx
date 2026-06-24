@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -485,9 +486,11 @@ export default function AgentSelectionArena() {
   return (
     <section className="relative min-h-screen overflow-hidden bg-[#071016] text-white">
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[440px] overflow-hidden opacity-45">
-        <img
+        <Image
           src={claudecraftAssets.arena}
           alt=""
+          fill
+          sizes="100vw"
           className="h-full w-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#071016]/45 via-[#071016]/88 to-[#071016]" />
@@ -621,9 +624,11 @@ export default function AgentSelectionArena() {
           </section>
 
           <section className="relative mt-4 min-h-[170px] overflow-hidden border border-white/10 bg-[#0d1c27]">
-            <img
+            <Image
               src={claudecraftAssets.arena}
               alt=""
+              fill
+              sizes="(min-width: 768px) 896px, 100vw"
               className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#071016] via-[#071016]/70 to-[#071016]/35" />
@@ -891,9 +896,11 @@ export default function AgentSelectionArena() {
                     <div key={`${frame.label}-${frame.title}`} className="border border-white/10 bg-[#071016] p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-start gap-3">
-                          <img
+                          <Image
                             src={claudecraftAssets.glyphs[index % claudecraftAssets.glyphs.length]}
                             alt=""
+                            width={40}
+                            height={40}
                             className="mt-0.5 h-10 w-10 shrink-0 rounded-full border border-emerald-200/20 bg-black/40 object-cover p-1"
                           />
                           <div className="min-w-0">
@@ -1221,9 +1228,11 @@ function WorkerTile({
       } ${selected ? `ring-2 ${accent.selected}` : 'ring-0 ring-transparent'}`}
       aria-pressed={selected}
     >
-      <img
+      <Image
         src={glyph}
         alt=""
+        width={128}
+        height={128}
         className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 opacity-20 blur-[1px] transition group-hover:opacity-35"
       />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent" />
@@ -1239,9 +1248,11 @@ function WorkerTile({
         <div className={`flex h-12 w-12 items-center justify-center ${accent.icon}`}>
           <Icon size={25} />
         </div>
-        <img
+        <Image
           src={badge}
           alt=""
+          width={44}
+          height={44}
           className="h-11 w-11 shrink-0 rounded-full border border-white/10 bg-black/35 object-cover p-1 shadow-lg shadow-black/30"
         />
       </div>

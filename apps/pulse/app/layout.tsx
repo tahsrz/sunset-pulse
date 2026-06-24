@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import '@/assets/styles/globals.css'; 
 import AnchorNav from '@/components/AnchorNav';
 import TRECConsumerNotice from '@/components/TRECConsumerNotice';
@@ -18,12 +19,41 @@ import { headers } from 'next/headers';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL('https://sunsetpulse.app'),
   title: 'Sunset Pulse | North Texas Intelligence Atlas',
   description: 'A living atlas for North Texas place memory, real estate intelligence, and market context.',
+  applicationName: 'Sunset Pulse',
   keywords: 'north texas real estate, atlas pulse, idx search, property intelligence, sunset pulse',
+  alternates: {
+    canonical: '/',
+  },
   icons: {
-    icon: '/next.svg',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/images/logo.png',
+  },
+  openGraph: {
+    title: 'Sunset Pulse | North Texas Intelligence Atlas',
+    description: 'Real estate intelligence, grill ordering, scheduling, voice relay, and local market memory in one live operations platform.',
+    url: 'https://sunsetpulse.app',
+    siteName: 'Sunset Pulse',
+    images: [
+      {
+        url: '/images/logo.png',
+        width: 512,
+        height: 512,
+        alt: 'Sunset Pulse',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Sunset Pulse',
+    description: 'North Texas intelligence atlas and operations platform.',
+    images: ['/images/logo.png'],
   },
 };
 

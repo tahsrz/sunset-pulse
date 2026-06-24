@@ -20,6 +20,7 @@ export type MiniNewsResult = {
 const DEFAULT_MANIFEST_DIR = 'C:\\Users\\Taz\\.ollama\\models\\manifests\\registry.ollama.ai\\library';
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
 const MINI_MODEL_PREFERENCE = ['phi4-mini', 'smollm2', 'gemma4'];
+const shouldLogFallback = () => process.env.NEWS_OLLAMA_DEBUG === 'true';
 
 export const callOllama = async (prompt: string, options: { temperature?: number, num_predict?: number } = {}) => {
   const model = chooseMiniModel();
@@ -165,6 +166,10 @@ export const enhancePulseNewsWithMini = async (articles: PulseNewsArticle[]): Pr
     };
   } catch (error: any) {
     const model = chooseMiniModel();
+    if (!shouldLogFallback()) {
+      return { articles, model: model?.name, status: 'failed' };
+    }
+
     if (error.cause?.code === 'ECONNREFUSED' || error.code === 'ECONNREFUSED' || error.message.includes('fetch failed')) {
       console.warn(`[PULSE_NEWS_MINI] Ollama service offline (${OLLAMA_HOST}). Raw news fallback engaged.`);
     } else {
