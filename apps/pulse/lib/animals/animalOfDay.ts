@@ -39,6 +39,37 @@ type ParsedShard = {
 
 const CARTRIDGE_BASE = 'catalogue_of_life_v3_6';
 
+const fallbackShards: ParsedShard[] = [
+  {
+    index: 0,
+    taxon: 'Eudyptes',
+    rank: 'genus',
+    path: 'Animalia > Chordata > Aves > Sphenisciformes > Spheniscidae > Eudyptes',
+    vernacular: 'Crested penguins',
+  },
+  {
+    index: 1,
+    taxon: 'Amazona',
+    rank: 'genus',
+    path: 'Animalia > Chordata > Aves > Psittaciformes > Psittacidae > Amazona',
+    vernacular: 'Amazon parrots',
+  },
+  {
+    index: 2,
+    taxon: 'Trochilidae',
+    rank: 'family',
+    path: 'Animalia > Chordata > Aves > Apodiformes > Trochilidae',
+    vernacular: 'Hummingbirds',
+  },
+  {
+    index: 3,
+    taxon: 'Asio',
+    rank: 'genus',
+    path: 'Animalia > Chordata > Aves > Strigiformes > Strigidae > Asio',
+    vernacular: 'Eared owls',
+  },
+];
+
 const profiles: Array<{ match: RegExp; profile: ConservationProfile }> = [
   {
     match: /Eudyptes|Spheniscidae|penguin/i,
@@ -172,8 +203,10 @@ function getProfileFor(shard: ParsedShard) {
 }
 
 function readAnimalShards(): ParsedShard[] {
+  const basePath = resolveCartridgeBasePath();
+  if (!basePath) return fallbackShards;
+
   try {
-    const basePath = resolveCartridgeBasePath();
     const hat = fs.readFileSync(`${basePath}.hat`);
     const tah = fs.readFileSync(`${basePath}.tah`);
     const shardCount = hat.readUInt32LE(16);
@@ -198,7 +231,7 @@ function readAnimalShards(): ParsedShard[] {
     return shards;
   } catch (error) {
     console.warn('[ANIMAL_OF_DAY_UNAVAILABLE] Failed to read animal shards from cartridge:', error);
-    return [];
+    return fallbackShards;
   }
 }
 
@@ -210,7 +243,7 @@ function resolveCartridgeBasePath() {
   ];
 
   const found = candidates.find((candidate) => fs.existsSync(`${candidate}.hat`) && fs.existsSync(`${candidate}.tah`));
-  return found || candidates[0];
+  return found || null;
 }
 
 function parseShard(text: string, index: number): ParsedShard | null {
