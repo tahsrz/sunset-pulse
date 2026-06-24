@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import '@/assets/styles/globals.css'; 
-import AnchorNav from '@/components/AnchorNav';
+import Navbar from '@/components/Navbar';
 import TRECConsumerNotice from '@/components/TRECConsumerNotice';
 import GlobalMarketPulse from '@/components/GlobalMarketPulse';
 import Footer from '@/components/Footer';
@@ -191,7 +191,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
                   <div className='flex min-h-screen flex-col bg-[#06131d]/30'>
                     <TRECConsumerNotice />
                     <GlobalMarketPulse />
-                    <AnchorNav />
+                    <Navbar />
                     <main className='flex-grow'>
                       {children}
                     </main>
