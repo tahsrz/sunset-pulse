@@ -48,7 +48,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
   const [localIntel, setLocalIntel] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [isMlsOpen, setIsMlsOpen] = useState(false);
   const [mlsAccess, setMlsAccess] = useState<'checking' | 'allowed' | 'denied'>('checking');
   const [mlsFrameState, setMlsFrameState] = useState<'idle' | 'loading' | 'loaded'>('idle');
@@ -420,13 +420,13 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} />;
   }
 
-  const dockSideClass = isLefthandMode ? 'left-0 items-start' : 'right-0 items-end';
+  const dockSideClass = isLefthandMode ? 'left-2 items-start sm:left-0' : 'right-2 items-end sm:right-0';
   const panelRadiusClass = isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
   const isCheckingMlsAccess = authLoading || mlsAccess === 'checking';
   const canViewMls = Boolean(user) || mlsAccess === 'allowed';
 
   return (
-    <div className={`fixed bottom-5 top-24 ${dockSideClass} z-50 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`}>
+    <div className={`fixed bottom-5 top-40 ${dockSideClass} z-40 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`}>
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
 
       {localIntel && (

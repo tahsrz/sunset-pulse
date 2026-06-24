@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, LogIn, LogOut, Menu, Search, User, X } from 'lucide-react';
+import { ChevronDown, Command as CommandIcon, LogIn, LogOut, Menu, Search, User, X } from 'lucide-react';
 import { FaShoppingBasket, FaShieldAlt } from 'react-icons/fa';
 import logo from '@/assets/images/logo-white.png';
 import profileDefault from '@/assets/images/profile.png';
@@ -13,6 +13,8 @@ import { useAuth } from '@/context/AuthContext';
 import { signOut as signOutAction } from '@/app/login/actions';
 import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
+import { GlobalCommandPalette, type CommandPaletteRoute } from './GlobalCommandPalette';
+import { Button } from './ui/button';
 
 interface ServerSessionUser {
   id: string;
@@ -40,6 +42,7 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [serverSessionUser, setServerSessionUser] = useState<ServerSessionUser | null>(null);
 
@@ -77,6 +80,10 @@ const Navbar: React.FC = () => {
 
   const primaryLinks = navLinks.slice(0, 5);
   const overflowLinks = navLinks.slice(5);
+  const commandRoutes = useMemo<CommandPaletteRoute[]>(
+    () => navLinks.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })),
+    [navLinks]
+  );
 
   useEffect(() => {
     if (isSigningOutRef.current) {
@@ -103,7 +110,20 @@ const Navbar: React.FC = () => {
     setIsMobileMenuOpen(false);
     setIsMoreMenuOpen(false);
     setIsProfileMenuOpen(false);
+    setIsCommandOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setIsCommandOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSignOut = async () => {
     setIsProfileMenuOpen(false);
@@ -195,6 +215,21 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-end gap-1 sm:gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="hidden rounded-full border border-white/10 bg-white/[0.045] px-3 text-slate-100 hover:bg-white/[0.09] md:inline-flex"
+              aria-label="Open command palette"
+              onClick={() => setIsCommandOpen(true)}
+            >
+              <CommandIcon size={15} />
+              <span className="hidden xl:inline">Command</span>
+              <kbd className="hidden rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-black text-slate-400 xl:inline-flex">
+                ^K
+              </kbd>
+            </Button>
+
             <Link
               href="/idx"
               className="hidden items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-2 text-xs font-black uppercase text-cyan-50 transition hover:bg-cyan-200/15 sm:flex"
@@ -303,6 +338,14 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       )}
+
+      <GlobalCommandPalette
+        open={isCommandOpen}
+        onOpenChange={setIsCommandOpen}
+        routes={commandRoutes}
+        isLoggedIn={isLoggedIn}
+        loginHref={loginHref}
+      />
 
       <InvestorBar />
     </nav>

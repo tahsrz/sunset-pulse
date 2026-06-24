@@ -10,7 +10,7 @@ interface JamieChatMinimizedProps {
 
 const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({ onOpen, isLefthandMode }) => {
   return (
-    <div className={`fixed top-1/2 ${isLefthandMode ? 'left-0' : 'right-0'} z-50 -translate-y-1/2 transition-all duration-500`}>
+    <div className={`fixed top-1/2 ${isLefthandMode ? 'left-0' : 'right-0'} z-40 -translate-y-1/2 transition-all duration-500`}>
       <button
         onClick={onOpen}
         aria-label="Open Jamie"
