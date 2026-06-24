@@ -392,7 +392,8 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: currentInput }),
       });
-      const security = await shieldResponse.json();
+      const shieldPayload = await shieldResponse.json();
+      const security = shieldPayload?.data || shieldPayload;
       if (security.status === 'BLOCKED') {
         const assistantMsg = `⚠️ [NOTICE]: ${security.message}`;
         setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
