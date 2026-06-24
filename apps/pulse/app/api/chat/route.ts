@@ -3,6 +3,7 @@ import { getJamieResponse } from '@/lib/ai/jamie';
 import { errorResponse } from '@/lib/core/apiResponse';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
+import { executeJamieToolCalls, formatPropertySearchResult } from '@/lib/ai/jamieTools';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,7 +37,17 @@ export async function POST(req: NextRequest) {
 
     // 2. Handle Structured Tool Calls (Non-streaming)
     if (response && (response as any).tool_calls) {
-      return new Response(JSON.stringify(response), {
+      const toolResults = await executeJamieToolCalls((response as any).tool_calls);
+      const firstSearchResult = toolResults.find((result: any) => result?.name === 'search_properties');
+      const content = firstSearchResult
+        ? `${(response as any).content}\n\n${formatPropertySearchResult((firstSearchResult as any).output)}`
+        : (response as any).content;
+
+      return new Response(JSON.stringify({
+        ...response,
+        content,
+        tool_results: toolResults,
+      }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }

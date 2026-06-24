@@ -26,6 +26,7 @@ type ChatMessage = {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  toolResults?: any[];
 };
 
 export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
@@ -309,8 +310,16 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
         ? await chatResponse.json()
         : await chatResponse.text();
       const assistantContent = getJamieDisplayContent(rawAssistantResponse);
+      const assistantToolResults = rawAssistantResponse && typeof rawAssistantResponse === 'object'
+        ? rawAssistantResponse.tool_results || rawAssistantResponse.toolResults
+        : undefined;
 
-      setMessages([...nextMessages, { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }]);
+      setMessages([...nextMessages, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: assistantContent,
+        toolResults: assistantToolResults,
+      }]);
       await handleAction(assistantContent);
     } catch (error) {
       console.error('Chat API Error:', error);

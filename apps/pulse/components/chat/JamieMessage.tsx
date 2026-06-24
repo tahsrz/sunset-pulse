@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { FaCogs, FaLightbulb, FaLayerGroup } from 'react-icons/fa';
 import { renderGlossaryText } from '@/components/glossary/GlossaryText';
 
@@ -9,6 +10,7 @@ interface JamieMessageProps {
     id: string;
     role: string;
     content: string;
+    toolResults?: any[];
   };
   isDevMode: boolean;
 }
@@ -16,6 +18,49 @@ interface JamieMessageProps {
 const cleanContent = (content: string) => {
   if (!content || typeof content !== 'string') return '';
   return content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
+};
+
+const formatPrice = (price?: number | null) => {
+  if (!price) return 'Price not listed';
+  return `$${price.toLocaleString()}`;
+};
+
+const JamiePropertyResultCards = ({ toolResults }: { toolResults?: any[] }) => {
+  const searchResult = toolResults?.find((result) => result?.name === 'search_properties')?.output;
+  const properties = Array.isArray(searchResult?.properties) ? searchResult.properties : [];
+  if (!properties.length) return null;
+
+  return (
+    <div className="grid w-full max-w-[92%] gap-2 sm:max-w-[86%]">
+      {properties.slice(0, 3).map((property: any) => {
+        const location = [property.city, property.state].filter(Boolean).join(', ');
+        return (
+          <Link
+            key={property.id}
+            href={property.href || `/properties/${encodeURIComponent(property.id)}`}
+            className="group rounded-xl border border-blue-400/20 bg-slate-950/80 p-3 text-left shadow-lg transition-all hover:border-blue-400/60 hover:bg-slate-900"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-black text-white">{property.name}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-200/70">
+                  {location || property.source || 'Sunset Pulse'}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-200">
+                {property.source || 'Grid'}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold text-slate-300">
+              <span>{formatPrice(property.price)}</span>
+              {property.beds ? <span>{property.beds} bed</span> : null}
+              {property.baths ? <span>{property.baths} bath</span> : null}
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
 };
 
 const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
@@ -42,6 +87,7 @@ const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
         )}
         <p className="leading-relaxed font-medium whitespace-pre-wrap">{renderGlossaryText(displayContent)}</p>
       </div>
+      {!isUser && <JamiePropertyResultCards toolResults={message.toolResults} />}
       
       {!isUser && isDevMode && content.includes('[[') && (
         <div className="ml-2 flex flex-col gap-1.5 w-full max-w-[80%]">

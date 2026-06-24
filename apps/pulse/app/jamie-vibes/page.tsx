@@ -17,6 +17,9 @@ export default function JamieVibesPage() {
         <Link href="/vibe-lab" className="rounded bg-cyan-300 px-4 py-2 text-slate-950">
           Open Vibe Lab
         </Link>
+        <Link href="/jamie-console" className="rounded border border-cyan-300/40 px-4 py-2 text-cyan-100">
+          Unified Console
+        </Link>
         <Link href="/api/jamie/briefing" className="rounded border border-white/20 px-4 py-2 text-white">
           Briefing API
         </Link>
