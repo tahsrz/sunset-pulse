@@ -92,4 +92,12 @@ describe('Sunset Gas and Grill // SMS Notification System', () => {
     expect(results[0].success).toBe(false);
     expect(results[0].error).toBe('Telnyx Network Timeout');
   });
+
+  it('rejects malformed phone numbers before dispatching to Telnyx', async () => {
+    const result = await sendSMS('9403382260', 'Test message');
+
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain('E.164');
+    expect(sendTelnyxSMS).not.toHaveBeenCalled();
+  });
 });

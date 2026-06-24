@@ -161,7 +161,7 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     expect(managerBody).toContain('MASTER WEEKLY SCHEDULE');
     expect(managerBody).toContain('Range: May 25 - May 31, 2026');
     expect(managerBody).toContain('Monday:\n  - Grill: Mark (+15551111111)');
-    expect(managerBody).toContain('Tuesday:\n  - Grill: ⚠️ UNASSIGNED\n  - Register: ⚠️ UNASSIGNED');
+    expect(managerBody).toContain('Tuesday:\n  - Grill: UNASSIGNED\n  - Register: UNASSIGNED');
     expect(managerBody).toContain('Thursday:\n  - Grill: Jane (+15552222222)');
   });
 });

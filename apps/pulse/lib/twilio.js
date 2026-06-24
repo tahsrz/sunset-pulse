@@ -1,6 +1,10 @@
 import 'server-only';
 import { getTelnyxClient, sendTelnyxSMS } from '@/lib/messaging/telnyxClient';
 
+function isE164PhoneNumber(value) {
+  return typeof value === 'string' && /^\+[1-9]\d{7,14}$/.test(value);
+}
+
 export const twilioClient = {
   messages: {
     create: async ({ body, from, text, to }) => {
@@ -34,6 +38,13 @@ export const sendLeadAlert = async (leadData) => {
  * @param {string} body - Text content of the SMS
  */
 export const sendSMS = async (to, body) => {
+  if (!isE164PhoneNumber(to)) {
+    return {
+      success: false,
+      reason: 'Destination phone number must be in E.164 format.',
+    };
+  }
+
   const result = await sendTelnyxSMS(to, body);
   return result.messageId ? { ...result, sid: result.messageId } : result;
 };
@@ -62,6 +73,14 @@ function encodeClientState(state) {
 
 async function placeTelnyxOutboundCall(to, clientState) {
   const config = getTelnyxVoiceConfig();
+
+  if (!isE164PhoneNumber(to)) {
+    return {
+      success: false,
+      provider: 'telnyx',
+      reason: 'Destination phone number must be in E.164 format.',
+    };
+  }
 
   if (!config.configured) {
     console.warn(`[TELNYX_CALL_SKIPPED]: ${config.reason} Destination: ${to}.`);
@@ -144,10 +163,10 @@ export const placeInteractivePhoneRelayCall = async (to, _twimlUrl, _statusCallb
  */
 export const notifyStaffOfBurgerOrder = async (order, grillPhone, registerPhone) => {
   const itemsSummary = order.items
-    .map((item) => `• ${item.quantity}x ${item.name}`)
+    .map((item) => `- ${item.quantity}x ${item.name}`)
     .join('\n');
 
-  const messageBody = `🍔 [NEW BURGER ORDER] 🍔\nOrder ID: #${order._id.toString().slice(-6)}\nTotal: $${order.totalAmount.toFixed(2)}\n\nItems:\n${itemsSummary}\n\n🔥 Fire up the grill! 🔥`;
+  const messageBody = `[NEW BURGER ORDER]\nOrder ID: #${order._id.toString().slice(-6)}\nTotal: $${order.totalAmount.toFixed(2)}\n\nItems:\n${itemsSummary}\n\nFire up the grill.`;
 
   const dispatches = [];
 
@@ -177,9 +196,9 @@ export const notifyStaffOfBurgerOrder = async (order, grillPhone, registerPhone)
  */
 export const formatWeeklyEmployeeSchedule = (employeeName, shifts) => {
   const shiftsSummary = shifts
-    .map((s) => `• ${s.day}: ${s.role} (${s.time})`)
+    .map((s) => `- ${s.day}: ${s.role} (${s.time})`)
     .join('\n');
-  return `📅 [YOUR WEEKLY SCHEDULE] 📅\nHello ${employeeName},\nHere are your scheduled shifts for the upcoming week:\n\n${shiftsSummary}\n\nHave a great week! 🌟`;
+  return `[YOUR WEEKLY SCHEDULE]\nHello ${employeeName},\nHere are your scheduled shifts for the upcoming week:\n\n${shiftsSummary}\n\nHave a great week!`;
 };
 
 /**
@@ -191,11 +210,10 @@ export const formatWeeklyEmployeeSchedule = (employeeName, shifts) => {
 export const formatWeeklyMasterSchedule = (rangeStr, dailyRoster) => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const daySummaries = days.map((day) => {
-    const grill = dailyRoster[day]?.grill || '⚠️ UNASSIGNED';
-    const register = dailyRoster[day]?.register || '⚠️ UNASSIGNED';
-    return `• ${day}:\n  - Grill: ${grill}\n  - Register: ${register}`;
+    const grill = dailyRoster[day]?.grill || 'UNASSIGNED';
+    const register = dailyRoster[day]?.register || 'UNASSIGNED';
+    return `- ${day}:\n  - Grill: ${grill}\n  - Register: ${register}`;
   }).join('\n');
 
-  return `📋 [MASTER WEEKLY SCHEDULE] 📋\nRange: ${rangeStr}\n\nShift Assignments:\n${daySummaries}`;
+  return `[MASTER WEEKLY SCHEDULE]\nRange: ${rangeStr}\n\nShift Assignments:\n${daySummaries}`;
 };
-

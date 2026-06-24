@@ -196,10 +196,10 @@ async function loadSupabaseSiteConfig() {
         .from('site_config')
         .select('*')
         .eq('agent_id', 'taz-realty-001')
-        .single();
+        .maybeSingle();
 
       if (error && !timedOut) {
-        console.warn('Supabase site config lookup failed; checking legacy fallback.');
+        console.warn('Supabase site config lookup failed; checking legacy fallback.', error.message);
       }
 
       return data ?? null;

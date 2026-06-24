@@ -7,6 +7,14 @@ import { gatekeeper } from '@/lib/core/gatekeeper';
 import { sanitizeMlsForPublicUse } from '@/lib/data/mlsCompliance';
 import type { MlsProviderName } from './mlsTypes';
 
+const FALLBACK_PROPERTY_IMAGES = [
+  '/images/properties/land1.jpg',
+  '/images/properties/barndo1.jpg',
+  '/images/properties/rhome1.jpg',
+  '/images/properties/ranch1.jpg',
+  '/images/properties/244ridge1.jpg',
+];
+
 export interface RepliersProperty {
   mlsNumber: string;
   status: string;
@@ -171,7 +179,7 @@ class RepliersMLSService {
       rates: {
         monthly: isRental ? listPrice : 0
       },
-      images: item.images || [],
+      images: normalizeRepliersImages(item.images, item.mlsNumber),
       source: 'MLS',
       mls_id: item.mlsNumber,
       listing_status: item.status === 'A' ? 'Active' : ((item as any).standardStatus === 'Closed' ? 'Closed' : item.status),
@@ -218,3 +226,26 @@ class RepliersMLSService {
 }
 
 export const repliersMlsService = RepliersMLSService.getInstance();
+
+function normalizeRepliersImages(images: unknown, stableKey: string) {
+  if (!Array.isArray(images)) return [fallbackImageFor(stableKey)];
+
+  const usableImages = images
+    .map((image) => typeof image === 'string' ? image.trim() : '')
+    .filter(Boolean)
+    .map((image) => {
+      if (/^https?:\/\//i.test(image)) return image;
+      if (image.startsWith('/images/')) return image;
+      if (image.startsWith('images/')) return `/${image}`;
+      return '';
+    })
+    .filter(Boolean);
+
+  return usableImages.length > 0 ? usableImages : [fallbackImageFor(stableKey)];
+}
+
+function fallbackImageFor(stableKey: string) {
+  const key = String(stableKey || '');
+  const hash = Array.from(key).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return FALLBACK_PROPERTY_IMAGES[hash % FALLBACK_PROPERTY_IMAGES.length];
+}
