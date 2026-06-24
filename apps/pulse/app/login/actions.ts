@@ -28,6 +28,12 @@ export async function signInWithEmail(
   });
 
   if (error) {
+    console.warn('[AUTH_LOGIN] Password sign-in failed:', {
+      status: error.status,
+      code: error.code,
+      message: error.message
+    });
+
     return {
       status: 'error',
       message: error.message || 'Sign in failed. Check your credentials and try again.'
@@ -50,8 +56,15 @@ export async function signInWithGoogle(formData: FormData) {
   });
 
   if (error || !data.url) {
+    console.error('[AUTH_LOGIN] Google sign-in start failed:', {
+      status: error?.status,
+      code: error?.code,
+      message: error?.message,
+      hasUrl: Boolean(data.url)
+    });
+
     const message = encodeURIComponent(error?.message || 'Google sign in failed.');
-    redirect(`/auth/auth-error?message=${message}`);
+    redirect(`/login?error=${message}&redirect=${encodeURIComponent(next)}`);
   }
 
   redirect(data.url);
@@ -75,5 +88,4 @@ export async function signOut() {
   const supabase = createClient();
   await supabase.auth.signOut();
 }
-
 

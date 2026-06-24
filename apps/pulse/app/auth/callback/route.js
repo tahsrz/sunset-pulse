@@ -18,6 +18,26 @@ export async function GET(request) {
 
   const response = NextResponse.redirect(`${origin}${next}`)
 
+  const redirectToLoginError = (message) => {
+    const loginUrl = new URL('/login', origin)
+    loginUrl.searchParams.set('error', message)
+    loginUrl.searchParams.set('redirect', next)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  if (error || error_description) {
+    console.warn('[AUTH_CALLBACK] Provider returned an error:', {
+      error,
+      description: error_description,
+    })
+    return redirectToLoginError(error_description || error || 'Authentication failed')
+  }
+
+  if (!code && !token_hash) {
+    console.warn('[AUTH_CALLBACK] Missing auth parameters. Redirecting to login for a fresh attempt.')
+    return redirectToLoginError('missing-auth-params')
+  }
+
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
@@ -118,6 +138,7 @@ export async function GET(request) {
       return response
     }
     console.error('[AUTH_CALLBACK] Code exchange failed:', exchangeError.message)
+    return redirectToLoginError(exchangeError.message || 'Authentication failed')
   }
 
   if (token_hash && type) {
@@ -130,6 +151,7 @@ export async function GET(request) {
       return response
     }
     console.error('[AUTH_CALLBACK] OTP verification failed:', verifyError.message)
+    return redirectToLoginError(verifyError.message || 'Authentication failed')
   }
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -139,5 +161,5 @@ export async function GET(request) {
     return response
   }
 
-  return NextResponse.redirect(`${origin}/auth/auth-error?message=${encodeURIComponent(error_description || 'Authentication failed')}`)
+  return redirectToLoginError('Authentication failed')
 }
