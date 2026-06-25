@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Annotation, END, START, StateGraph } from '@langchain/langgraph';
+import { Annotation, END, START, StateGraph } from '@/lib/compat/langgraphLinear';
 import {
   SegmentedExpertAtlasRetriever,
   type ExpertAtlasSearchResult,
@@ -26,6 +26,7 @@ import {
   type QueryMemoryTrace
 } from './queryMemory';
 import type { CivicServiceRecord, CommandActionItem } from './actionTypes';
+import { annotateLangfuse, traceLangfuse } from '@/lib/observability/langfuseTracing';
 
 export type CommandCenterRequest = {
   command: string;
@@ -181,7 +182,7 @@ const CommandGraphAnnotation = Annotation.Root({
 
 type CommandGraphNodeState = typeof CommandGraphAnnotation.State;
 
-const commandCenterGraph = new StateGraph(CommandGraphAnnotation)
+const commandCenterGraph = new StateGraph<CommandGraphState>(CommandGraphAnnotation)
   .addNode('route', routeCommandNode)
   .addNode('retrieve', retrieveContextNode)
   .addNode('plan', planRelayNode)
@@ -205,116 +206,297 @@ export async function runCommandCenterCommand(input: CommandCenterRequest): Prom
     throw new Error('Command is required.');
   }
 
-  const finalState = await commandCenterGraph.invoke({ input, command });
-  return finalState.response;
-}
-
-function routeCommandNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { command, input } = state;
-  const manualWorker = input.selectedWorkerId
-    ? intelligenceWorkers.find((worker) => worker.id === input.selectedWorkerId)
-    : undefined;
-  const worker = manualWorker || chooseWorkerForCommand(command);
-  const routeMode = manualWorker ? 'manual' : 'auto';
-  const commandId = `cmd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-
-  return { command, commandId, routeMode, worker };
-}
-
-function retrieveContextNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { command, worker } = state;
-  const recalledMemory = recallQueryMemories(command, worker);
-  const context = retrieveTahContext(command, worker);
-  const contextResults = mergeCommandContextShards(recalledMemory, context.results);
-
-  return {
-    recalledMemory,
-    retrievalContext: context,
-    contextResults
-  };
-}
-
-function planRelayNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { contextResults, input, worker } = state;
-  const relayPlan = buildTahRelayPlan(worker, contextResults, input.relayMode);
-
-  return { relayPlan };
-}
-
-function synthesizeResultNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { command, worker, contextResults, relayPlan } = state;
-  const result = synthesizeWorkerResult(command, worker, contextResults, relayPlan);
-
-  return { result };
-}
-
-function superviseResultNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { command, contextResults, input, result, worker } = state;
-  const supervisorNotes = input.supervisor ? superviseResult(command, worker, result, contextResults) : undefined;
-
-  return { supervisorNotes };
-}
-
-function rememberQueryNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { command, commandId, contextResults, recalledMemory, relayPlan, result, worker } = state;
-  const queryMemory = saveQueryMemory({
-    commandId,
-    command,
-    intent: inferIntent(command, worker),
-    worker,
-    relayPlan,
-    sources: contextResults.map((shard) => ({
-      source: shard.source,
-      concepts: shard.concepts,
-      matchReason: shard.matchReason
-    })),
-    summary: result.summary,
-    actions: result.actions
-  });
-  queryMemory.recalled = recalledMemory.length;
-
-  return { queryMemory };
-}
-
-function buildResponseNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
-  const { command, commandId, contextResults, queryMemory, relayPlan, result, routeMode, supervisorNotes, retrievalContext, worker } = state;
-  const response: CommandCenterResponse = {
-    commandId,
-    intent: inferIntent(command, worker),
-    worker: {
-      id: worker.id,
-      name: worker.name,
-      role: worker.role,
-      slot: worker.slot
+  return traceLangfuse(
+    'command-center.graph',
+    {
+      metadata: {
+        commandLength: command.length,
+        relayMode: input.relayMode || 'briefing',
+        supervisor: Boolean(input.supervisor),
+        routeMode: input.selectedWorkerId ? 'manual' : 'auto',
+        feature: 'command-center',
+        framework: 'langgraph'
+      }
     },
-    model: worker.model,
-    tahFiles: worker.tahLoadout,
-    result,
-    trace: {
-      routeMode,
-      selectedShards: contextResults.map((shard) => ({
-        expertId: shard.expertId,
-        title: shard.title,
-        source: shard.source,
-        score: Number(shard.score.toFixed(2)),
-        concepts: shard.concepts.slice(0, 6),
-        excerpt: excerpt(shard.text, 260),
-        metrics: shard.contextLevel ? {
-          complexity: roundMetric(shard.complexity),
-          density: roundMetric(shard.density),
-          vitality: roundMetric(shard.vitality),
-          contextLevel: shard.contextLevel,
-          matchReason: shard.matchReason || 'policy'
-        } : undefined
-      })),
-      atlasDiagnostics: retrievalContext.diagnostics,
-      retrievalPolicy: retrievalContext.policy,
-      supervisorNotes,
-      queryMemory
+    async () => {
+      const finalState = await commandCenterGraph.invoke({ input, command });
+      return finalState.response;
+    },
+    {
+      asType: 'agent',
+      propagate: {
+        metadata: {
+          feature: 'command-center',
+          framework: 'langgraph',
+          routeMode: input.selectedWorkerId ? 'manual' : 'auto',
+          relayMode: input.relayMode || 'briefing',
+          supervisor: Boolean(input.supervisor)
+        },
+        tags: ['command-center', 'langgraph'],
+        traceName: 'command-center.graph',
+        version: process.env.LANGFUSE_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || 'local'
+      }
     }
-  };
+  );
+}
 
-  return { response };
+async function routeCommandNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.route',
+    {
+      metadata: {
+        stage: 'route',
+        commandLength: state.command.length,
+        requestedWorkerId: state.input.selectedWorkerId,
+        routeMode: state.input.selectedWorkerId ? 'manual' : 'auto'
+      }
+    },
+    async () => {
+      const { command, input } = state;
+      const manualWorker = input.selectedWorkerId
+        ? intelligenceWorkers.find((worker) => worker.id === input.selectedWorkerId)
+        : undefined;
+      const worker = manualWorker || chooseWorkerForCommand(command);
+      const routeMode = manualWorker ? 'manual' : 'auto';
+      const commandId = `cmd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+      annotateLangfuse({
+        metadata: {
+          commandId,
+          workerId: worker.id,
+          workerName: worker.name,
+          routeMode
+        }
+      });
+
+      return { command, commandId, routeMode, worker };
+    }
+  );
+}
+
+async function retrieveContextNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.retrieve',
+    {
+      metadata: {
+        stage: 'retrieve',
+        workerId: state.worker.id,
+        workerTahFiles: state.worker.tahLoadout.length
+      }
+    },
+    async () => {
+      const { command, worker } = state;
+      const recalledMemory = recallQueryMemories(command, worker);
+      const context = retrieveTahContext(command, worker);
+      const contextResults = mergeCommandContextShards(recalledMemory, context.results);
+
+      annotateLangfuse({
+        metadata: {
+          recalledMemoryCount: recalledMemory.length,
+          retrievedShardCount: context.results.length,
+          mergedShardCount: contextResults.length,
+          atlasVisitedSegments: context.diagnostics?.visitedSegments,
+          atlasPayloadReads: context.diagnostics?.payloadReads,
+          retrievalStageCount: context.policy?.stages.length
+        }
+      });
+
+      return {
+        recalledMemory,
+        retrievalContext: context,
+        contextResults
+      };
+    },
+    { asType: 'retriever' }
+  );
+}
+
+async function planRelayNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.plan',
+    {
+      metadata: {
+        stage: 'plan',
+        workerId: state.worker.id,
+        requestedRelayMode: state.input.relayMode || 'briefing',
+        shardCount: state.contextResults.length
+      }
+    },
+    async () => {
+      const { contextResults, input, worker } = state;
+      const relayPlan = buildTahRelayPlan(worker, contextResults, input.relayMode);
+
+      annotateLangfuse({
+        metadata: {
+          relayMode: relayPlan.mode,
+          templateId: relayPlan.templateId,
+          templateName: relayPlan.templateName
+        }
+      });
+
+      return { relayPlan };
+    },
+    { asType: 'chain' }
+  );
+}
+
+async function synthesizeResultNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.synthesize',
+    {
+      metadata: {
+        stage: 'synthesize',
+        workerId: state.worker.id,
+        templateId: state.relayPlan.templateId,
+        shardCount: state.contextResults.length
+      }
+    },
+    async () => {
+      const { command, worker, contextResults, relayPlan } = state;
+      const result = synthesizeWorkerResult(command, worker, contextResults, relayPlan);
+
+      annotateLangfuse({
+        metadata: {
+          confidence: result.confidence,
+          actionCount: result.actions.length,
+          frameCount: result.deliverable.frames.length
+        }
+      });
+
+      return { result };
+    },
+    { asType: 'generation' }
+  );
+}
+
+async function superviseResultNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.supervise',
+    {
+      metadata: {
+        stage: 'supervise',
+        workerId: state.worker.id,
+        supervisorEnabled: Boolean(state.input.supervisor)
+      }
+    },
+    async () => {
+      const { command, contextResults, input, result, worker } = state;
+      const supervisorNotes = input.supervisor ? superviseResult(command, worker, result, contextResults) : undefined;
+
+      annotateLangfuse({
+        metadata: {
+          noteCount: supervisorNotes?.length || 0
+        }
+      });
+
+      return { supervisorNotes };
+    },
+    { asType: 'guardrail' }
+  );
+}
+
+async function rememberQueryNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.remember',
+    {
+      metadata: {
+        stage: 'remember',
+        commandId: state.commandId,
+        workerId: state.worker.id,
+        sourceCount: state.contextResults.length
+      }
+    },
+    async () => {
+      const { command, commandId, contextResults, recalledMemory, relayPlan, result, worker } = state;
+      const queryMemory = saveQueryMemory({
+        commandId,
+        command,
+        intent: inferIntent(command, worker),
+        worker,
+        relayPlan,
+        sources: contextResults.map((shard) => ({
+          source: shard.source,
+          concepts: shard.concepts,
+          matchReason: shard.matchReason
+        })),
+        summary: result.summary,
+        actions: result.actions
+      });
+      queryMemory.recalled = recalledMemory.length;
+
+      annotateLangfuse({
+        metadata: {
+          queryMemoryStatus: queryMemory.status,
+          queryMemorySaved: queryMemory.saved,
+          recalledMemoryCount: recalledMemory.length
+        }
+      });
+
+      return { queryMemory };
+    },
+    { asType: 'tool' }
+  );
+}
+
+async function buildResponseNode(state: CommandGraphNodeState): Promise<Partial<CommandGraphState>> {
+  return traceLangfuse(
+    'command-center.respond',
+    {
+      metadata: {
+        stage: 'respond',
+        commandId: state.commandId,
+        workerId: state.worker.id
+      }
+    },
+    async () => {
+      const { command, commandId, contextResults, queryMemory, result, routeMode, supervisorNotes, retrievalContext, worker } = state;
+      const response: CommandCenterResponse = {
+        commandId,
+        intent: inferIntent(command, worker),
+        worker: {
+          id: worker.id,
+          name: worker.name,
+          role: worker.role,
+          slot: worker.slot
+        },
+        model: worker.model,
+        tahFiles: worker.tahLoadout,
+        result,
+        trace: {
+          routeMode,
+          selectedShards: contextResults.map((shard) => ({
+            expertId: shard.expertId,
+            title: shard.title,
+            source: shard.source,
+            score: Number(shard.score.toFixed(2)),
+            concepts: shard.concepts.slice(0, 6),
+            excerpt: excerpt(shard.text, 260),
+            metrics: shard.contextLevel ? {
+              complexity: roundMetric(shard.complexity),
+              density: roundMetric(shard.density),
+              vitality: roundMetric(shard.vitality),
+              contextLevel: shard.contextLevel,
+              matchReason: shard.matchReason || 'policy'
+            } : undefined
+          })),
+          atlasDiagnostics: retrievalContext.diagnostics,
+          retrievalPolicy: retrievalContext.policy,
+          supervisorNotes,
+          queryMemory
+        }
+      };
+
+      annotateLangfuse({
+        metadata: {
+          selectedShardCount: response.trace.selectedShards.length,
+          atlasVisitedSegments: response.trace.atlasDiagnostics?.visitedSegments,
+          retrievalStageCount: response.trace.retrievalPolicy?.stages.length
+        }
+      });
+
+      return { response };
+    }
+  );
 }
 
 function mergeCommandContextShards(memoryShards: CommandContextShard[], retrievedShards: CommandContextShard[]) {

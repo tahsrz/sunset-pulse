@@ -31,6 +31,7 @@ export default function ClientWidgets() {
 
   const operatorSurface =
     pathname?.startsWith('/command-center') ||
+    pathname?.startsWith('/jamie-chat') ||
     pathname?.startsWith('/admin/orchestrator');
 
   if (operatorSurface) {

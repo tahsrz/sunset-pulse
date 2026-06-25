@@ -82,7 +82,7 @@ export default function AnchorNav() {
   const blLinks: NavLink[] = [
     { href: '/properties', label: 'Properties', active: pathname === '/properties' },
     { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
-    { href: '/jamie-vibes', label: 'Jamie', active: pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
+    { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
     ...(isRealtorOrAdmin ? [{ href: '/lead-gen', label: 'Lead Gen', active: pathname.startsWith('/lead-gen'), emphasis: 'blue' as const }] : []),
   ];
 

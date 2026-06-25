@@ -10,11 +10,13 @@ It is built around a simple thesis: agents should not have to send every workflo
 - Uses `.tah` cartridges as the primary structured context layer.
 - Packs large knowledge libraries into a segmented 400-expert atlas for fast retrieval.
 - Routes commands through real estate workers such as Lead Scoring, Follow-Up Writer, Neighborhood Explainer, Comp Analysis, Local Commerce, Agent Voice, and Supervisor Check.
+- Runs the Command Center workflow as a LangGraph graph with named stages for routing, retrieval, planning, synthesis, supervision, memory, and response assembly.
 - Supports delivery modes: briefing, slideshow, puppetshow, field-board, and script.
 - Adds a final provenance screen to every relay explaining where the information came from and what the user learned.
 - Saves local query memory to `query_memory.tah` so repeated work can reuse local context.
 - Links dense terms and acronyms to hover definitions sourced from local `.tah` cartridges.
 - Shares Command Center context with Jamie so chat answers can use the same private helper layer.
+- Traces Command Center graph execution with Langfuse when Langfuse environment variables are configured.
 
 ## Current Release
 
@@ -28,6 +30,17 @@ Release notes:
 Recent local additions:
 
 - Command Center helper selection now uses a professional arena-style UI with imported ClaudeCraft assets.
+- Command Center routing now runs through LangGraph instead of one flat router function.
+- Langfuse observability traces the Command Center graph and each stage with redacted, structured metadata.
+- Command Post details now collapse into the answer view instead of dominating the page.
+- Command Post access checks deny public development hosts and production localhost spoofing.
+- MarkItDown document import can convert source files into TAH-ready local cartridges.
+- LanceDB local full-text search can index `.tah` cartridges for retrieval experiments.
+- Kepler.gl Spatial Lab maps listing signals with interactive geospatial filters and layers.
+- deck.gl native signal maps add app-specific geospatial layers alongside the Kepler workbench.
+- VoltAgent adds a typed Command Center advisor with route, loadout, and roster tools.
+- SQLSync-ready command mutations stage query memory and action clicks into a local JSONL journal.
+- TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and give JamieChat a model-routing backbone.
 - Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
 - Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
 - TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
@@ -41,6 +54,10 @@ SunsetPulse/
     pulse/                  Next.js app for Sunset Pulse
       app/command-center/   Agent command center route
       app/api/commands/     Command router API
+      app/api/agents/       AI agent framework endpoints
+      app/api/sqlsync/      SQLSync-ready mutation snapshots
+      app/api/tensorzero/   TensorZero evaluation and JamieChat snapshots
+      app/api/kepler/       Kepler.gl dataset feeds
       app/api/jamie/chat/   Jamie chat alias wired to the shared helper route
       app/api/tah/          TAH catalog, fact, forge, and search APIs
       cartridges/           Local TAH inputs and generated archives
@@ -48,8 +65,14 @@ SunsetPulse/
       components/glossary/  Shared hover/link glossary renderer
       docs/                 Pulse-specific docs
       lib/command-center/   Workers, router, synonyms, relay templates, query memory
+      lib/agents/           VoltAgent and agent-framework adapters
       lib/core/             TAH, Memoria, atlas, and orchestration primitives
       lib/glossary/         Site glossary terms mapped to TAH source cartridges
+      lib/observability/    Langfuse tracing helpers
+      lib/sqlsync/          SQLSync-ready mutation journal helpers
+      lib/tensorzero/       TensorZero-ready evaluation ledgers
+      scripts/              TAH import, packing, and local index utilities
+      tensorzero/            TensorZero gateway config stubs
   packages/                 Shared workspace packages
   assets/                   Static and generated assets
 ```
@@ -60,18 +83,49 @@ SunsetPulse/
 flowchart TD
   Agent["Real Estate Agent"] --> UI["Command Center UI"]
   UI --> API["/api/commands"]
-  API --> Router["Model + TAH Router"]
-  Router --> Workers["Specialized Workers"]
-  Router --> Atlas["Segmented Expert Atlas"]
-  Router --> Memory["Local query_memory.tah"]
-  Router --> Jamie["Jamie Chat Context"]
+  API --> Graph["LangGraph Command Workflow"]
+  Graph --> Route["Route Worker"]
+  Graph --> Retrieve["Retrieve Context"]
+  Graph --> Plan["Plan Relay"]
+  Graph --> Synthesize["Synthesize Answer"]
+  Graph --> Supervise["Supervisor Check"]
+  Graph --> Remember["Remember Query"]
+  Graph --> Observe["Langfuse Tracing"]
+  API --> TZero["TensorZero Evaluation Backbone"]
+  API --> Volt["VoltAgent Advisor"]
+  API --> Kepler["Kepler Spatial Lab"]
+  Route --> Workers["Specialized Workers"]
+  Retrieve --> Atlas["Segmented Expert Atlas"]
+  Retrieve --> Memory["Local query_memory.tah"]
+  Graph --> Jamie["Jamie Chat Context"]
+  Jamie --> TZero
   Atlas --> TAH["TAH Cartridges"]
   TAH --> Glossary["Hover Glossary + Source Links"]
-  Workers --> Relay["Relay Template Planner"]
-  Relay --> Output["Briefing / Slides / Puppetshow / Board / Script"]
+  Workers --> Plan
+  Plan --> Relay["Relay Template Planner"]
+  Synthesize --> Output["Briefing / Slides / Puppetshow / Board / Script"]
+  Relay --> Output
   Output --> Final["Final Provenance Screen"]
   Final --> Agent
 ```
+
+## Integration Roadmap
+
+The current five-project integration sequence is:
+
+1. **deck.gl** - app-native WebGL layers for listing, lead, market, and TAH place signals.
+2. **VoltAgent** - TypeScript agent runtime for typed Command Center advisor tools.
+3. **SQLSync** - local-first sync contract for durable offline query memory and operator state.
+4. **TensorZero** - model gateway, workflow evaluation, and experiment loops for AI routing.
+5. **OpenLIT** - OpenTelemetry-native AI and infrastructure observability.
+
+Status:
+
+- deck.gl: started with `/spatial-lab/deck`.
+- VoltAgent: started with `/api/agents/voltagent/command-advisor` and Command Center trace integration.
+- SQLSync: started with `/api/sqlsync/command-journal` and staged Command Center memory mutations.
+- TensorZero: started with `/api/tensorzero/command-evals`, `/api/tensorzero/jamie-chat`, local workflow-eval ledgers, and `apps/pulse/tensorzero/tensorzero.toml`.
+- OpenLIT: queued for research and implementation passes.
 
 ## TAH Intelligence Layer
 
@@ -131,6 +185,92 @@ Supported `relayMode` values:
 - `puppetshow`
 - `field-board`
 - `script`
+
+## LangGraph Workflow
+
+The Command Center router now runs as a LangGraph graph instead of one flat function. The graph makes each stage observable and easier to test:
+
+- `route` chooses the worker and route mode.
+- `retrieve` recalls local query memory and pulls TAH context from the segmented expert atlas.
+- `plan` selects the relay template and delivery format.
+- `synthesize` builds the agent-ready answer.
+- `supervise` adds optional guardrail notes.
+- `remember` writes compact query memory.
+- `respond` assembles the final API response and trace payload.
+
+Implementation:
+
+```text
+apps/pulse/lib/command-center/commandRouter.ts
+```
+
+## Command Post
+
+Command Center includes a compact Command Post disclosure that links the generated answer back to the local operator console without overwhelming the primary result.
+
+Command Post surfaces:
+
+- operator console endpoint,
+- access mode and access-denied reasons,
+- master archive readiness,
+- pending terminal intent count,
+- command router modes,
+- `/status` probe results.
+
+Access rules are intentionally strict:
+
+- production requests cannot bypass protection by sending a localhost `Host` header,
+- public development hosts require authorization,
+- local/operator access can still use the console for guarded workflows.
+
+Implementation:
+
+```text
+apps/pulse/components/command-center/AgentSelectionArena.tsx
+apps/pulse/lib/core/operator_access.ts
+apps/pulse/lib/core/routeAuth.ts
+apps/pulse/app/api/admin/orchestrator/
+```
+
+## VoltAgent Advisor
+
+Sunset Pulse includes a VoltAgent-powered Command Center advisor. It is wired as a typed agent layer beside the existing LangGraph workflow, not as a replacement.
+
+Routes:
+
+```text
+GET  /api/agents/voltagent/command-advisor   # advisor status and tool list
+POST /api/agents/voltagent/command-advisor   # run the advisor directly
+POST /api/commands                           # includes trace.voltagent on command runs
+```
+
+Current tools:
+
+- `route_command` chooses the best Command Center worker.
+- `list_worker_loadout` returns that worker's TAH files and command-fit signals.
+- `summarize_command_center` reports worker, slot, and file coverage.
+
+By default, the advisor stays in standby if its provider credential is missing. It still records the route, model, tool list, and reason in the Command Post panel. To enable model-backed notes:
+
+```bash
+VOLTAGENT_COMMAND_MODEL=groq/llama-3.1-8b-instant
+GROQ_API_KEY=your_groq_key_here
+```
+
+You can force standby mode:
+
+```bash
+VOLTAGENT_COMMAND_ADVISOR_ENABLED=false
+```
+
+Implementation:
+
+```text
+apps/pulse/lib/agents/voltagentCommandAdvisor.ts
+apps/pulse/app/api/agents/voltagent/command-advisor/route.ts
+apps/pulse/app/api/commands/route.ts
+apps/pulse/components/command-center/AgentSelectionArena.tsx
+```
 
 ## Relay Templates
 
@@ -204,6 +344,7 @@ What gets saved:
 - top concepts,
 - learned recap,
 - summary and actions.
+- SQLSync-ready mutation rows for query memory and clicked command actions.
 
 Docs:
 
@@ -219,6 +360,225 @@ Use a custom memory path:
 
 ```bash
 PULSE_QUERY_MEMORY_PATH=C:\path\to\query_memory.tah
+```
+
+## SQLSync Journal
+
+Sunset Pulse now stages Command Center state changes into a SQLSync-ready local mutation journal. This is the app-side contract we can hand to a future SQLSync reducer/coordinator without changing the Command Center write path later.
+
+Route:
+
+```text
+GET /api/sqlsync/command-journal
+```
+
+Current reducer contract:
+
+- `upsert_command_query_memory`
+- `upsert_command_action_memory`
+
+Default journal path:
+
+```text
+apps/pulse/cartridges/sqlsync/command-journal.sqlsync.jsonl
+```
+
+Configure:
+
+```bash
+PULSE_SQLSYNC_CLIENT_ID=sunset-pulse-local
+PULSE_SQLSYNC_JOURNAL_DISABLED=false
+PULSE_SQLSYNC_JOURNAL_PATH=C:\path\to\command-journal.sqlsync.jsonl
+```
+
+Implementation:
+
+```text
+apps/pulse/lib/sqlsync/commandJournal.ts
+apps/pulse/app/api/sqlsync/command-journal/route.ts
+apps/pulse/lib/command-center/queryMemory.ts
+```
+
+## TensorZero Evaluations, Feedback, And JamieChat
+
+Sunset Pulse now records TensorZero-ready workflow evaluation rows and feedback rows for Command Center runs. JamieChat also records every `/api/chat` turn as a `jamie_chat` function episode, giving Jamie a model-routing and evaluation backbone before traffic is moved through a live TensorZero Gateway.
+
+Routes:
+
+```text
+GET /api/tensorzero/command-evals
+GET /api/tensorzero/jamie-chat
+GET /api/tensorzero/feedback
+POST /api/tensorzero/feedback
+```
+
+Current functions:
+
+```text
+sunset_command_center
+jamie_chat
+```
+
+Current metrics:
+
+- `command_center_quality`
+- `command_center_grounded`
+- `command_center_actionable`
+- `command_center_safety`
+- `command_center_usefulness`
+- `command_center_actionability`
+- `command_center_routing_correction`
+- `command_center_needs_improvement`
+- `jamie_response_quality`
+- `jamie_tool_success`
+- `jamie_property_grounding`
+- `jamie_conversation_safety`
+
+Feedback sources:
+
+- copying the final answer records usefulness,
+- clicking an action tile records actionability,
+- manually changing helper after a result records a routing correction,
+- re-running a command records a needs-improvement signal.
+
+Default ledger path:
+
+```text
+apps/pulse/cartridges/tensorzero/command-evaluations.tensorzero.jsonl
+apps/pulse/cartridges/tensorzero/command-feedback.tensorzero.jsonl
+apps/pulse/cartridges/tensorzero/jamie-chat.tensorzero.jsonl
+```
+
+TensorZero config stub:
+
+```text
+apps/pulse/tensorzero/tensorzero.toml
+```
+
+Configure:
+
+```bash
+TENSORZERO_PROJECT_NAME=sunset-pulse
+TENSORZERO_GATEWAY_URL=
+TENSORZERO_COMMAND_EVAL_DISABLED=false
+TENSORZERO_COMMAND_EVAL_PATH=C:\path\to\command-evaluations.tensorzero.jsonl
+TENSORZERO_FEEDBACK_DISABLED=false
+TENSORZERO_FEEDBACK_PATH=C:\path\to\command-feedback.tensorzero.jsonl
+TENSORZERO_JAMIE_CHAT_DISABLED=false
+TENSORZERO_JAMIE_CHAT_PATH=C:\path\to\jamie-chat.tensorzero.jsonl
+```
+
+The local ledgers store compact workflow evaluation metadata, metrics, and operator feedback. They avoid raw command or chat text by storing ids, fingerprints, counts, route metadata, variant names, tool names, grounding flags, and metric scores. When a TensorZero Gateway is running, these rows can map to workflow evaluation runs, inference variants, and episode-level feedback.
+
+Implementation:
+
+```text
+apps/pulse/lib/tensorzero/commandEvaluation.ts
+apps/pulse/lib/tensorzero/feedback.ts
+apps/pulse/lib/tensorzero/jamieChat.ts
+apps/pulse/app/api/tensorzero/command-evals/route.ts
+apps/pulse/app/api/tensorzero/jamie-chat/route.ts
+apps/pulse/app/api/tensorzero/feedback/route.ts
+apps/pulse/app/api/commands/route.ts
+apps/pulse/app/api/commands/actions/route.ts
+apps/pulse/app/api/chat/route.ts
+apps/pulse/components/command-center/AgentSelectionArena.tsx
+apps/pulse/components/JamieChat.tsx
+```
+
+## Langfuse Observability
+
+Sunset Pulse can trace Command Center graph runs to Langfuse. Tracing is disabled by default and turns on only when both Langfuse keys are present in the server environment.
+
+Each command creates a root `command-center.graph` agent trace with nested observations:
+
+- `command-center.route`
+- `command-center.retrieve`
+- `command-center.plan`
+- `command-center.synthesize`
+- `command-center.supervise`
+- `command-center.remember`
+- `command-center.respond`
+
+The trace payloads are deliberately conservative. They include worker IDs, route modes, relay modes, shard counts, confidence, action counts, frame counts, memory status, and atlas diagnostics. They avoid copying raw command text, retrieved excerpts, generated copy, tokens, secrets, or long source content into Langfuse.
+
+Configure Langfuse:
+
+```bash
+LANGFUSE_PUBLIC_KEY=pk-lf-your-public-key
+LANGFUSE_SECRET_KEY=sk-lf-your-secret-key
+LANGFUSE_BASE_URL=https://us.cloud.langfuse.com
+LANGFUSE_TRACING_ENVIRONMENT=development
+LANGFUSE_RELEASE=local
+```
+
+Implementation:
+
+```text
+apps/pulse/lib/observability/langfuseTracing.ts
+apps/pulse/app/api/commands/route.ts
+```
+
+## Kepler Spatial Lab
+
+Sunset Pulse includes a Kepler.gl workspace for interactive geospatial analysis of listing and market signals.
+
+Route:
+
+```text
+/spatial-lab
+```
+
+Dataset API:
+
+```text
+GET /api/kepler/listings?limit=140
+```
+
+The first dataset uses the existing mock Repliers listing feed and exposes map-ready rows with:
+
+- latitude and longitude,
+- list price, original price, estimate, and price deltas,
+- days on market,
+- beds, baths, square footage, year built, and lot size,
+- image quality and photo count,
+- status, property type, city, state, neighborhood, and brokerage.
+
+The Kepler page is intentionally isolated from the existing Explorer Map. It uses its own Redux store, loads only on the client, and includes a React 19 compatibility shim for Kepler's legacy sortable control dependency.
+
+Implementation:
+
+```text
+apps/pulse/app/spatial-lab/page.tsx
+apps/pulse/components/spatial/KeplerSpatialLabLoader.tsx
+apps/pulse/components/spatial/KeplerSpatialLab.tsx
+apps/pulse/app/api/kepler/listings/route.ts
+apps/pulse/lib/compat/reactSortableHoc.tsx
+```
+
+## deck.gl Signal Map
+
+The deck.gl signal map is the product-native counterpart to Kepler. It uses the same listing dataset feed but renders controlled layers we can turn into first-class Sunset Pulse features.
+
+Route:
+
+```text
+/spatial-lab/deck
+```
+
+Current layers:
+
+- listing signal points colored by market state,
+- price-weighted heatmap,
+- radius scaled by days on market,
+- hover card with price, DOM, bed/bath, and image-quality context.
+
+Implementation:
+
+```text
+apps/pulse/app/spatial-lab/deck/page.tsx
+apps/pulse/components/spatial/DeckListingSignalsLoader.tsx
+apps/pulse/components/spatial/DeckListingSignals.tsx
 ```
 
 ## Getting Started

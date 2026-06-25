@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
 import { memoryBridge } from '@/lib/memory_bridge';
@@ -27,9 +28,25 @@ type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
   toolResults?: any[];
+  tensorzero?: {
+    status?: string;
+    turnId?: string;
+    variantName?: string;
+    score?: number;
+    metrics?: Record<string, number | boolean>;
+  };
 };
 
-export default function JamieChat({ propertyData = null }: { propertyData?: any }) {
+type JamieChatProps = {
+  propertyData?: any;
+  mode?: 'dock' | 'workspace';
+  apiRoute?: string;
+};
+
+export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute }: JamieChatProps) {
+  const router = useRouter();
+  const isWorkspace = mode === 'workspace';
+  const chatApiRoute = apiRoute || (isWorkspace ? '/api/jamie/chat' : '/api/chat');
   const { user, loading: authLoading } = useAuth();
   const { 
     stagedBranding, 
@@ -90,14 +107,19 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     };
     hydrateHistory();
     
-    // Load minimized state from localStorage
+    if (isWorkspace) {
+      setIsMinimized(false);
+      return;
+    }
+
     const savedMinimized = localStorage.getItem('jamie_chat_minimized');
     if (savedMinimized !== null) {
       setIsMinimized(savedMinimized === 'true');
     }
-  }, []);
+  }, [isWorkspace]);
 
   const toggleMinimized = (val: boolean) => {
+    if (isWorkspace) return;
     setIsMinimized(val);
     localStorage.setItem('jamie_chat_minimized', val.toString());
   };
@@ -290,7 +312,7 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
     setIsLoading(true);
 
     try {
-      const chatResponse = await fetch('/api/chat', {
+      const chatResponse = await fetch(chatApiRoute, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -313,12 +335,16 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
       const assistantToolResults = rawAssistantResponse && typeof rawAssistantResponse === 'object'
         ? rawAssistantResponse.tool_results || rawAssistantResponse.toolResults
         : undefined;
+      const tensorzero = rawAssistantResponse && typeof rawAssistantResponse === 'object'
+        ? rawAssistantResponse.tensorzero
+        : undefined;
 
       setMessages([...nextMessages, {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: assistantContent,
         toolResults: assistantToolResults,
+        tensorzero,
       }]);
       await handleAction(assistantContent);
     } catch (error) {
@@ -426,17 +452,20 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
   if (!mounted) return null;
 
-  if (isMinimized) {
+  if (isMinimized && !isWorkspace) {
     return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} />;
   }
 
   const dockSideClass = isLefthandMode ? 'left-2 items-start sm:left-0' : 'right-2 items-end sm:right-0';
-  const panelRadiusClass = isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
+  const panelRadiusClass = isWorkspace ? 'rounded-2xl' : isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
+  const shellClass = isWorkspace
+    ? 'flex h-[calc(100vh-9rem)] min-h-[620px] w-full flex-col gap-3'
+    : `fixed bottom-5 top-40 ${dockSideClass} z-40 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`;
   const isCheckingMlsAccess = authLoading || mlsAccess === 'checking';
   const canViewMls = Boolean(user) || mlsAccess === 'allowed';
 
   return (
-    <div className={`fixed bottom-5 top-40 ${dockSideClass} z-40 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`}>
+    <div className={shellClass}>
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
 
       {localIntel && (
@@ -451,13 +480,17 @@ export default function JamieChat({ propertyData = null }: { propertyData?: any 
 
       <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-slate-900/90 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 hover:border-blue-500/30 animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 ${panelRadiusClass}`}>
         <JamieChatHeader 
-          onMinimize={() => toggleMinimized(true)} 
+          onMinimize={() => isWorkspace ? router.push('/') : toggleMinimized(true)} 
           isMlsOpen={isMlsOpen}
           onToggleMls={() => setIsMlsOpen((value) => !value)}
           isLefthandMode={isLefthandMode} 
           onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
           isVoiceEnabled={isVoiceEnabled}
           onToggleVoice={() => setVoiceEnabled(!isVoiceEnabled)}
+          isWorkspace={isWorkspace}
+          onMaximize={() => {
+            if (!isWorkspace) router.push('/jamie-chat');
+          }}
         />
 
         {isMlsOpen && (

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaRobot, FaMinus, FaExchangeAlt, FaVolumeUp, FaVolumeMute, FaHome } from 'react-icons/fa';
+import { FaRobot, FaMinus, FaExchangeAlt, FaVolumeUp, FaVolumeMute, FaHome, FaExpand, FaCompress } from 'react-icons/fa';
 
 interface JamieChatHeaderProps {
   onMinimize: () => void;
@@ -11,6 +11,8 @@ interface JamieChatHeaderProps {
   onToggleLefthand: () => void;
   isVoiceEnabled: boolean;
   onToggleVoice: () => void;
+  isWorkspace?: boolean;
+  onMaximize?: () => void;
 }
 
 const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({ 
@@ -20,7 +22,9 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
   isLefthandMode, 
   onToggleLefthand,
   isVoiceEnabled,
-  onToggleVoice
+  onToggleVoice,
+  isWorkspace = false,
+  onMaximize
 }) => {
   return (
     <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-5 text-white flex justify-between items-center shadow-lg shrink-0 relative overflow-hidden group">
@@ -64,13 +68,25 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
         <button 
           onClick={onToggleLefthand} 
           title="Toggle Lefthand Mode"
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          className={`p-2 hover:bg-white/20 rounded-lg transition-colors ${isWorkspace ? 'hidden sm:inline-flex' : ''}`}
         >
           <FaExchangeAlt className="text-[10px]" />
         </button>
+        {onMaximize && (
+          <button
+            type="button"
+            onClick={onMaximize}
+            title={isWorkspace ? 'Workspace Mode' : 'Open Jamie Workspace'}
+            aria-label={isWorkspace ? 'Jamie workspace is open' : 'Open Jamie workspace'}
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          >
+            {isWorkspace ? <FaCompress className="text-[10px]" /> : <FaExpand className="text-[10px]" />}
+          </button>
+        )}
         <button 
           onClick={onMinimize} 
-          aria-label="Minimize Chat"
+          aria-label={isWorkspace ? 'Return to docked Jamie' : 'Minimize Chat'}
+          title={isWorkspace ? 'Return to docked Jamie' : 'Minimize Chat'}
           className="p-2 hover:bg-white/20 rounded-lg transition-colors"
         >
           <FaMinus className="text-xs" />

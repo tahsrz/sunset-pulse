@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { extractMemoriaTerms } from '@/lib/core/memoria_builder';
+import { stageSqlsyncCommandMutation, type SqlsyncJournalTrace } from '@/lib/sqlsync/commandJournal';
 import type { IntelligenceWorker } from './workerRoster';
 import type { TahRelayPlan } from './relayTemplates';
 import type { SaveCommandActionInput } from './actionTypes';
@@ -25,6 +26,7 @@ export type QueryMemoryTrace = {
   recalled: number;
   saved: boolean;
   reason?: string;
+  sqlsync?: SqlsyncJournalTrace;
 };
 
 type QueryMemoryRecord = {
@@ -136,12 +138,19 @@ export function saveQueryMemory(input: SaveQueryMemoryInput): QueryMemoryTrace {
     };
 
     fs.appendFileSync(filePath, `${formatQueryMemoryRecord(record)}\n`, 'utf8');
+    const sqlsync = stageSqlsyncCommandMutation({
+      table: 'command_query_memory',
+      reducer: 'upsert_command_query_memory',
+      primaryKey: record.id,
+      payload: record
+    });
 
     return {
       status: 'saved',
       path: relativePath,
       recalled: 0,
-      saved: true
+      saved: true,
+      sqlsync
     };
   } catch (error) {
     return {
@@ -171,12 +180,31 @@ export function saveCommandActionMemory(input: SaveCommandActionInput): QueryMem
     const filePath = queryMemoryPath();
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.appendFileSync(filePath, `${formatCommandActionMemoryRecord(input)}\n`, 'utf8');
+    const sqlsync = stageSqlsyncCommandMutation({
+      table: 'command_action_memory',
+      reducer: 'upsert_command_action_memory',
+      primaryKey: `action_${input.commandId}_${input.action.id}`,
+      payload: {
+        commandId: input.commandId,
+        command: input.command,
+        workerId: input.workerId || '',
+        actionId: input.action.id,
+        actionKind: input.action.kind,
+        actionLabel: input.action.label,
+        actionDescription: input.action.description,
+        actionHref: input.action.href || '',
+        actionCopyText: input.action.copyText || '',
+        actionCommand: input.action.command || '',
+        status: 'clicked'
+      }
+    });
 
     return {
       status: 'saved',
       path: relativePath,
       recalled: 0,
-      saved: true
+      saved: true,
+      sqlsync
     };
   } catch (error) {
     return {

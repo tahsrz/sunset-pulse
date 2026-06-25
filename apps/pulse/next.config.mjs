@@ -28,6 +28,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'react-sortable-hoc': path.join(__dirname, 'lib', 'compat', 'reactSortableHoc.tsx'),
+    };
+
+    return config;
+  },
   transpilePackages: ['three', '@strudel/web', '@strudel/core'],
 };
 

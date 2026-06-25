@@ -11,6 +11,13 @@ interface JamieMessageProps {
     role: string;
     content: string;
     toolResults?: any[];
+    tensorzero?: {
+      status?: string;
+      turnId?: string;
+      variantName?: string;
+      score?: number;
+      metrics?: Record<string, number | boolean>;
+    };
   };
   isDevMode: boolean;
 }
@@ -88,6 +95,21 @@ const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
         <p className="leading-relaxed font-medium whitespace-pre-wrap">{renderGlossaryText(displayContent)}</p>
       </div>
       {!isUser && <JamiePropertyResultCards toolResults={message.toolResults} />}
+
+      {!isUser && isDevMode && message.tensorzero && (
+        <div className="ml-2 flex max-w-[86%] flex-wrap items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-950/20 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-100">
+          <span className="flex items-center gap-1 text-cyan-200">
+            <FaCogs size={9} /> TensorZero
+          </span>
+          <span>{message.tensorzero.status || 'ready'}</span>
+          <span className="font-mono normal-case tracking-normal text-cyan-100/80">
+            {message.tensorzero.variantName || 'jamie_chat'}
+          </span>
+          {typeof message.tensorzero.score === 'number' && (
+            <span>{Math.round(message.tensorzero.score)} score</span>
+          )}
+        </div>
+      )}
       
       {!isUser && isDevMode && content.includes('[[') && (
         <div className="ml-2 flex flex-col gap-1.5 w-full max-w-[80%]">

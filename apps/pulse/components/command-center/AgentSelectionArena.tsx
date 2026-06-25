@@ -158,6 +158,13 @@ type CommandResponse = {
       recalled: number;
       saved: boolean;
       reason?: string;
+      sqlsync?: {
+        status: 'staged' | 'disabled' | 'unavailable';
+        path: string;
+        mutationId?: string;
+        saved: boolean;
+        reason?: string;
+      };
     };
     commandPost?: {
       status: 'linked' | 'access_denied' | 'unavailable';
@@ -177,6 +184,49 @@ type CommandResponse = {
         action: string;
         reply: string;
       };
+    };
+    voltagent?: {
+      status: 'ready' | 'standby' | 'error';
+      framework: 'voltagent';
+      agentId: 'sunset-command-advisor';
+      model: string;
+      provider: string;
+      credentialEnv?: string;
+      reason?: string;
+      text: string;
+      tools: Array<{
+        name: string;
+        purpose: string;
+      }>;
+      route: {
+        workerId: string;
+        workerName: string;
+        routeMode: 'auto' | 'manual';
+        tahFiles: string[];
+      };
+    };
+    tensorzero?: {
+      status: 'scored' | 'disabled' | 'unavailable';
+      framework: 'tensorzero';
+      path: string;
+      evaluationId?: string;
+      projectName: string;
+      functionName: 'sunset_command_center';
+      variantName: string;
+      score?: number;
+      metrics?: {
+        command_center_quality: number;
+        command_center_grounded: boolean;
+        command_center_actionable: number;
+        command_center_safety: number;
+      };
+      gateway?: {
+        status: 'not_configured' | 'configured';
+        url?: string;
+        note: string;
+      };
+      saved: boolean;
+      reason?: string;
     };
   };
 };
@@ -302,9 +352,59 @@ export default function AgentSelectionArena() {
     }
   };
 
+  const sendTensorZeroFeedback = async (
+    result: CommandResponse | null,
+    input: {
+      metricName: 'command_center_usefulness' | 'command_center_actionability' | 'command_center_routing_correction' | 'command_center_needs_improvement';
+      value: boolean | number | string;
+      source: 'copy_answer' | 'action_click' | 'manual_helper_override' | 'rerun_command';
+      context?: Record<string, string | number | boolean | null>;
+    }
+  ) => {
+    if (!result) return;
+
+    try {
+      await fetch('/api/tensorzero/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          metricName: input.metricName,
+          value: input.value,
+          source: input.source,
+          commandId: result.commandId,
+          episodeId: result.commandId,
+          evaluationId: result.trace.tensorzero?.evaluationId,
+          workerId: result.worker.id,
+          variantName: result.trace.tensorzero?.variantName,
+          context: input.context
+        })
+      });
+    } catch (error) {
+      logProtocol('DATA', 'TensorZero feedback failed', {
+        commandId: result.commandId,
+        metricName: input.metricName,
+        error: error instanceof Error ? error.message : 'unknown'
+      });
+    }
+  };
+
   const runCommand = async () => {
     const commandToRun = command.trim() || linkedCommand || defaultCommand;
     const workerId = manualSelection ? selectedId : recommended.id;
+    const previousResult = commandResult;
+    if (previousResult) {
+      void sendTensorZeroFeedback(previousResult, {
+        metricName: 'command_center_needs_improvement',
+        value: true,
+        source: 'rerun_command',
+        context: {
+          previousWorkerId: previousResult.worker.id,
+          nextWorkerId: workerId,
+          relayMode
+        }
+      });
+    }
     setSelectedId(workerId);
     setRunning(true);
     setRanCommand(false);
@@ -359,10 +459,21 @@ export default function AgentSelectionArena() {
   };
 
   const copyDeliverable = async () => {
-    const text = commandResult?.result.deliverable.copyReadyText;
+    const result = commandResult;
+    const text = result?.result.deliverable.copyReadyText;
     if (!text) return;
 
     await navigator.clipboard.writeText(text);
+    void sendTensorZeroFeedback(result, {
+      metricName: 'command_center_usefulness',
+      value: true,
+      source: 'copy_answer',
+      context: {
+        copiedChars: text.length,
+        workerId: result.worker.id,
+        relayMode: result.result.relayPlan.mode
+      }
+    });
     setCopiedDeliverable(true);
     window.setTimeout(() => setCopiedDeliverable(false), 1800);
   };
@@ -379,7 +490,11 @@ export default function AgentSelectionArena() {
           commandId: commandResult.commandId,
           command: routingCommand,
           workerId: commandResult.worker.id,
-          action: item
+          action: item,
+          tensorzero: {
+            evaluationId: commandResult.trace.tensorzero?.evaluationId,
+            variantName: commandResult.trace.tensorzero?.variantName
+          }
         })
       });
     } catch (error) {
@@ -405,6 +520,21 @@ export default function AgentSelectionArena() {
       updateCommandDraft(item.command);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const recordManualHelperOverride = (nextWorkerId: string) => {
+    if (!commandResult || nextWorkerId === commandResult.worker.id) return;
+
+    void sendTensorZeroFeedback(commandResult, {
+      metricName: 'command_center_routing_correction',
+      value: true,
+      source: 'manual_helper_override',
+      context: {
+        previousWorkerId: commandResult.worker.id,
+        nextWorkerId,
+        recommendedWorkerId: recommended.id
+      }
+    });
   };
 
   return (
@@ -468,6 +598,7 @@ export default function AgentSelectionArena() {
                       setSelectedId(recommended.id);
                       return;
                     }
+                    recordManualHelperOverride(event.target.value);
                     setManualSelection(true);
                     setSelectedId(event.target.value);
                     setCommandResult(null);
@@ -859,6 +990,8 @@ function RelayPlanPanel({ commandResult }: { commandResult: CommandResponse }) {
 
 function CommandPostPanel({ commandResult }: { commandResult: CommandResponse | null }) {
   const commandPost = commandResult?.trace.commandPost;
+  const voltagent = commandResult?.trace.voltagent;
+  const tensorzero = commandResult?.trace.tensorzero;
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
@@ -880,6 +1013,12 @@ function CommandPostPanel({ commandResult }: { commandResult: CommandResponse | 
         <DevMetric label="Notes" value={String(commandPost?.masterArchive?.shardCount ?? commandResult?.trace.atlasDiagnostics?.totalSegments ?? 0)} />
         <DevMetric label="Search" value={commandResult?.trace.retrievalPolicy ? 'active' : 'standby'} />
         <DevMetric label="Saved" value={commandResult?.trace.queryMemory?.status || 'standby'} />
+        <DevMetric label="VoltAgent" value={voltagent?.status || 'standby'} />
+        <DevMetric label="Agent" value={voltagent?.agentId ? 'advisor' : 'none'} />
+        <DevMetric label="SQLSync" value={commandResult?.trace.queryMemory?.sqlsync?.status || 'standby'} />
+        <DevMetric label="Mutations" value={commandResult?.trace.queryMemory?.sqlsync?.saved ? 'staged' : 'none'} />
+        <DevMetric label="TensorZero" value={tensorzero?.status || 'standby'} />
+        <DevMetric label="Eval" value={typeof tensorzero?.score === 'number' ? String(tensorzero.score) : 'none'} />
       </div>
       <p className="mt-3 break-all font-mono text-[10px] text-slate-500">
         {commandPost?.endpoint || '/api/admin/orchestrator/command'}
@@ -891,6 +1030,43 @@ function CommandPostPanel({ commandResult }: { commandResult: CommandResponse | 
           </p>
           <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-xs leading-5 text-slate-300">
             {commandPost.statusProbe.reply}
+          </p>
+        </div>
+      ) : null}
+      {voltagent ? (
+        <div className="mt-3 border border-violet-200/20 bg-violet-300/10 p-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-violet-100">
+              VoltAgent Advisor
+            </p>
+            <span className="font-mono text-[10px] text-slate-400">{voltagent.model}</span>
+          </div>
+          <p className="mt-2 line-clamp-5 text-xs leading-5 text-slate-200">
+            {voltagent.text}
+          </p>
+          {voltagent.reason ? (
+            <p className="mt-2 text-[10px] leading-4 text-slate-500">
+              {voltagent.reason}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {tensorzero ? (
+        <div className="mt-3 border border-amber-200/20 bg-amber-300/10 p-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">
+              TensorZero Eval
+            </p>
+            <span className="font-mono text-[10px] text-slate-400">{tensorzero.variantName}</span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <DevMetric label="Quality" value={String(tensorzero.metrics?.command_center_quality ?? 'n/a')} />
+            <DevMetric label="Safe" value={String(tensorzero.metrics?.command_center_safety ?? 'n/a')} />
+            <DevMetric label="Action" value={String(tensorzero.metrics?.command_center_actionable ?? 'n/a')} />
+            <DevMetric label="Grounded" value={tensorzero.metrics?.command_center_grounded ? 'yes' : 'no'} />
+          </div>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500">
+            {tensorzero.gateway?.note || tensorzero.reason || tensorzero.path}
           </p>
         </div>
       ) : null}

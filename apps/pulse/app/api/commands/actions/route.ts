@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { saveCommandActionMemory } from '@/lib/command-center/queryMemory';
 import type { CommandActionKind, SaveCommandActionInput } from '@/lib/command-center/actionTypes';
+import { recordTensorZeroFeedback } from '@/lib/tensorzero/feedback';
 
 const validActionKinds = new Set<CommandActionKind>(['external-link', 'copy', 'command', 'saved']);
 
@@ -14,7 +15,23 @@ export async function POST(request: Request) {
     }
 
     const trace = saveCommandActionMemory(input);
-    return NextResponse.json({ ok: trace.saved, trace });
+    const feedback = recordTensorZeroFeedback({
+      metricName: 'command_center_actionability',
+      value: 1,
+      source: 'action_click',
+      commandId: input.commandId,
+      episodeId: input.commandId,
+      evaluationId: body?.tensorzero?.evaluationId ? String(body.tensorzero.evaluationId).slice(0, 160) : undefined,
+      workerId: input.workerId,
+      variantName: body?.tensorzero?.variantName ? String(body.tensorzero.variantName).slice(0, 220) : undefined,
+      context: {
+        actionId: input.action.id,
+        actionKind: input.action.kind,
+        actionLabel: input.action.label
+      }
+    });
+
+    return NextResponse.json({ ok: trace.saved, trace, feedback });
   } catch (error) {
     return NextResponse.json({
       ok: false,

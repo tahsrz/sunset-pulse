@@ -6,6 +6,9 @@ import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { getOrchestratorSnapshot } from '@/lib/core/orchestrator_node';
 import { routeOrchestratorCommand } from '@/lib/core/orchestrator_commands';
+import { flushLangfuse } from '@/lib/observability/langfuseTracing';
+import { runVoltagentCommandAdvisor } from '@/lib/agents/voltagentCommandAdvisor';
+import { recordTensorZeroCommandEvaluation } from '@/lib/tensorzero/commandEvaluation';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -42,17 +45,32 @@ export async function POST(request: Request) {
     }
 
     const commandResult = await runCommandCenterCommand(parsed.data as CommandCenterRequest);
-    const commandPost = await buildCommandPostTrace(request);
+    const [commandPost, voltagent, tensorzero] = await Promise.all([
+      buildCommandPostTrace(request),
+      runVoltagentCommandAdvisor({
+        request: parsed.data as CommandCenterRequest,
+        commandResult
+      }),
+      Promise.resolve(recordTensorZeroCommandEvaluation({
+        request: parsed.data as CommandCenterRequest,
+        response: commandResult
+      }))
+    ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ...commandResult,
       trace: {
         ...commandResult.trace,
-        commandPost
+        commandPost,
+        voltagent,
+        tensorzero
       }
     });
+    await flushLangfuse();
+    return response;
   } catch (error) {
     console.error('[COMMAND_CENTER_API] Command execution failed:', error);
+    await flushLangfuse();
     return NextResponse.json({
       error: 'Command execution failed.'
     }, { status: 500 });

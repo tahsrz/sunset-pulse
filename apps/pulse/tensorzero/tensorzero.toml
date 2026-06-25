@@ -1,0 +1,77 @@
+[functions.sunset_command_center]
+type = "chat"
+
+[functions.sunset_command_center.variants.langgraph_baseline]
+type = "chat_completion"
+model = "openai::gpt-4o-mini"
+
+[functions.jamie_chat]
+type = "chat"
+
+[functions.jamie_chat.variants.groq_direct_baseline]
+type = "chat_completion"
+model = "groq::llama-3.1-8b-instant"
+
+[functions.jamie_chat.variants.groq_direct_tools]
+type = "chat_completion"
+model = "groq::llama-3.1-8b-instant"
+
+[metrics.command_center_quality]
+type = "float"
+optimize = "max"
+level = "episode"
+
+[metrics.command_center_grounded]
+type = "boolean"
+optimize = "max"
+level = "episode"
+
+[metrics.command_center_actionable]
+type = "float"
+optimize = "max"
+level = "episode"
+
+[metrics.command_center_safety]
+type = "float"
+optimize = "max"
+level = "episode"
+
+[metrics.command_center_usefulness]
+type = "boolean"
+optimize = "max"
+level = "episode"
+
+[metrics.command_center_actionability]
+type = "float"
+optimize = "max"
+level = "episode"
+
+[metrics.command_center_routing_correction]
+type = "boolean"
+optimize = "min"
+level = "episode"
+
+[metrics.command_center_needs_improvement]
+type = "boolean"
+optimize = "min"
+level = "episode"
+
+[metrics.jamie_response_quality]
+type = "float"
+optimize = "max"
+level = "episode"
+
+[metrics.jamie_tool_success]
+type = "float"
+optimize = "max"
+level = "episode"
+
+[metrics.jamie_property_grounding]
+type = "boolean"
+optimize = "max"
+level = "episode"
+
+[metrics.jamie_conversation_safety]
+type = "float"
+optimize = "max"
+level = "episode"

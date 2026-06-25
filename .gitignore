@@ -45,6 +45,8 @@ logs/
 .orchestrator/
 .codex-screenshots/
 apps/pulse/.lancedb/
+apps/pulse/cartridges/sqlsync/*.jsonl
+apps/pulse/cartridges/tensorzero/*.jsonl
 
 # .NET build outputs
 **/bin/

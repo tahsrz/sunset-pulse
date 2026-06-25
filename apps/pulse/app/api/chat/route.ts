@@ -4,6 +4,7 @@ import { errorResponse } from '@/lib/core/apiResponse';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { executeJamieToolCalls, formatPropertySearchResult } from '@/lib/ai/jamieTools';
+import { recordTensorZeroJamieTurn } from '@/lib/tensorzero/jamieChat';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,44 +17,93 @@ export async function POST(req: NextRequest) {
     if (limitResponse) return limitResponse;
 
     const { messages, propertyData, isDevMode, memoryContext } = await req.json();
+    const chatMessages = Array.isArray(messages) ? messages : [];
     
     const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
     if (isMock) {
-      const lastUserMsg = messages?.filter((m: any) => m.role === 'user')?.slice(-1)[0];
+      const lastUserMsg = chatMessages?.filter((m: any) => m.role === 'user')?.slice(-1)[0];
       const text = lastUserMsg?.content || '';
+      const content = text.toLowerCase().includes('maxxing')
+        ? "Let's ROI-maxxing this property !! We are dynamically OPTIMIZING_YIELD."
+        : 'I can help summarize the property, compare the numbers, or draft the next step from the current listing.';
+      const tensorzero = recordTensorZeroJamieTurn({
+        messages: chatMessages,
+        propertyData,
+        memoryContext,
+        isDevMode,
+        response: content,
+        content
+      });
+
       if (text.toLowerCase().includes('maxxing')) {
-        return new Response("Let's ROI-maxxing this property !! We are dynamically OPTIMIZING_YIELD.");
+        return Response.json({ role: 'assistant', content, tensorzero });
       }
-      return new Response("I can help summarize the property, compare the numbers, or draft the next step from the current listing.");
+      return Response.json({ role: 'assistant', content, tensorzero });
     }
 
     // Get Jamie response
-    const response = await getJamieResponse(messages, propertyData, memoryContext, isDevMode);
+    const response = await getJamieResponse(chatMessages, propertyData, memoryContext, isDevMode);
     
     // 1. Handle Fallback/Error strings
     if (typeof response === 'string') {
-      return new Response(response);
+      const tensorzero = recordTensorZeroJamieTurn({
+        messages: chatMessages,
+        propertyData,
+        memoryContext,
+        isDevMode,
+        response,
+        content: response
+      });
+
+      return Response.json({ role: 'assistant', content: response, tensorzero });
     }
 
     // 2. Handle Structured Tool Calls (Non-streaming)
     if (response && (response as any).tool_calls) {
       const toolResults = await executeJamieToolCalls((response as any).tool_calls);
       const firstSearchResult = toolResults.find((result: any) => result?.name === 'search_properties');
+      const responseContent = typeof (response as any).content === 'string' ? (response as any).content : '';
       const content = firstSearchResult
-        ? `${(response as any).content}\n\n${formatPropertySearchResult((firstSearchResult as any).output)}`
-        : (response as any).content;
+        ? `${responseContent}\n\n${formatPropertySearchResult((firstSearchResult as any).output)}`
+        : responseContent;
+      const tensorzero = recordTensorZeroJamieTurn({
+        messages: chatMessages,
+        propertyData,
+        memoryContext,
+        isDevMode,
+        response,
+        content,
+        toolResults
+      });
 
       return new Response(JSON.stringify({
         ...response,
         content,
         tool_results: toolResults,
+        tensorzero,
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
     // 3. Fallback for unexpected non-streaming responses.
-    return new Response(JSON.stringify(response), {
+    const fallbackContent = response && typeof response === 'object' && typeof (response as any).content === 'string'
+      ? (response as any).content
+      : '';
+    const tensorzero = recordTensorZeroJamieTurn({
+      messages: chatMessages,
+      propertyData,
+      memoryContext,
+      isDevMode,
+      response,
+      content: fallbackContent
+    });
+
+    const body = response && typeof response === 'object'
+      ? { ...response, tensorzero }
+      : { role: 'assistant', content: fallbackContent, tensorzero };
+
+    return new Response(JSON.stringify(body), {
       headers: { 'Content-Type': 'application/json' }
     });
 
