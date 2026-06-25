@@ -42,6 +42,7 @@ Recent local additions:
 - SQLSync-ready command mutations stage query memory and action clicks into a local JSONL journal.
 - TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and give JamieChat a model-routing backbone.
 - assistant-ui powers a maximized JamieChat workspace at `/jamie-chat` beside the Command Center.
+- Crawl4AI adds an operator-guarded lead intelligence crawler for approved regional sites, brokerages, and public-record pages.
 - Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
 - Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
 - TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
@@ -60,6 +61,7 @@ SunsetPulse/
       app/api/sqlsync/      SQLSync-ready mutation snapshots
       app/api/tensorzero/   TensorZero evaluation and JamieChat snapshots
       app/api/kepler/       Kepler.gl dataset feeds
+      app/api/intelligence/ Lead intelligence ingestion APIs
       app/api/jamie/chat/   Jamie chat alias wired to the shared helper route
       app/api/tah/          TAH catalog, fact, forge, and search APIs
       cartridges/           Local TAH inputs and generated archives
@@ -73,8 +75,11 @@ SunsetPulse/
       lib/observability/    Langfuse tracing helpers
       lib/sqlsync/          SQLSync-ready mutation journal helpers
       lib/tensorzero/       TensorZero-ready evaluation ledgers
+      lib/lead-intel/       Crawl4AI lead intelligence ledger helpers
       scripts/              TAH import, packing, and local index utilities
       tensorzero/            TensorZero gateway config stubs
+      workers/lead-intel-crawler/
+                              Optional Python Crawl4AI worker
   packages/                 Shared workspace packages
   assets/                   Static and generated assets
 ```
@@ -101,6 +106,7 @@ flowchart TD
   Retrieve --> Memory["Local query_memory.tah"]
   Graph --> Jamie["Jamie Chat Context"]
   Jamie --> TZero
+  API --> Crawl4AI["Crawl4AI Lead Intel"]
   Atlas --> TAH["TAH Cartridges"]
   TAH --> Glossary["Hover Glossary + Source Links"]
   Workers --> Plan
@@ -495,6 +501,50 @@ apps/pulse/components/command-center/AgentSelectionArena.tsx
 apps/pulse/components/JamieChat.tsx
 ```
 
+## Crawl4AI Lead Intelligence
+
+Sunset Pulse includes a local-first Crawl4AI ingestion route for lead intelligence. It is meant for approved regional sites, brokerage pages, public records, and business profile pages that should become structured context for future lead scoring and Command Center workflows.
+
+Routes:
+
+```text
+GET  /api/intelligence/crawl-lead
+POST /api/intelligence/crawl-lead
+```
+
+The route is operator-guarded and uses an allowlist before a page is crawled. By default, rows are appended to:
+
+```text
+apps/pulse/cartridges/lead-intel/crawl-results.jsonl
+```
+
+Install the optional local worker from `apps/pulse`:
+
+```bash
+python -m pip install -r workers/lead-intel-crawler/requirements.txt
+python -m playwright install chromium
+```
+
+Configure:
+
+```bash
+LEAD_INTEL_CRAWLER_DISABLED=false
+LEAD_INTEL_ALLOWED_DOMAINS=example.com
+LEAD_INTEL_ALLOW_UNLISTED=false
+LEAD_INTEL_TRUST_REQUEST_ALLOWLIST=false
+LEAD_INTEL_PYTHON=python
+LEAD_INTEL_WORKER_PATH=
+LEAD_INTEL_LEDGER_PATH=C:\path\to\crawl-results.jsonl
+```
+
+Implementation:
+
+```text
+apps/pulse/lib/lead-intel/crawlLead.ts
+apps/pulse/app/api/intelligence/crawl-lead/route.ts
+apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py
+```
+
 ## Langfuse Observability
 
 Sunset Pulse can trace Command Center graph runs to Langfuse. Tracing is disabled by default and turns on only when both Langfuse keys are present in the server environment.
@@ -636,6 +686,7 @@ From `apps/pulse`:
 npm run tah:import-doc -- -- ./path/to/source.pdf --title "Imported Source"
 npm run tah:lancedb:index
 npm run tah:lancedb:search -- --query "pricing comps"
+npm run lead:intel:crawl -- --url https://example.com --mode both --hints "{}"
 npm run tah:pack-expert-atlas
 npm run tah:pack-master
 npm run test:unit

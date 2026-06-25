@@ -11,6 +11,7 @@ This document summarizes the AI and geospatial integrations added around the Com
 | JamieChat workspace | `/jamie-chat` | Maximized assistant-ui chat surface paired with the Command Center. |
 | Kepler Spatial Lab | `/spatial-lab` | Exploratory geospatial workbench for listing signals. |
 | deck.gl Signal Map | `/spatial-lab/deck` | App-native geospatial layer surface for productized map features. |
+| Lead Intelligence Crawler | `/api/intelligence/crawl-lead` | Operator-guarded Crawl4AI ingestion route for regional sites, brokerages, and public records. |
 
 ## Runtime Stack
 
@@ -24,6 +25,7 @@ This document summarizes the AI and geospatial integrations added around the Com
 | assistant-ui | Maximized JamieChat runtime and UI primitives. | `apps/pulse/components/chat/JamieAssistantWorkspace.tsx`, `apps/pulse/app/jamie-chat/page.tsx` |
 | Kepler.gl | Analyst-oriented spatial workbench. | `apps/pulse/components/spatial/KeplerSpatialLab.tsx` |
 | deck.gl | Product-native signal map layers. | `apps/pulse/components/spatial/DeckListingSignals.tsx` |
+| Crawl4AI | Local-first lead intelligence crawler that converts approved URLs to Markdown and compact JSON. | `apps/pulse/lib/lead-intel/crawlLead.ts`, `apps/pulse/app/api/intelligence/crawl-lead/route.ts`, `apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py` |
 
 ## Request Flow
 
@@ -42,6 +44,7 @@ flowchart LR
   Graph --> Langfuse["Langfuse Trace"]
   Graph --> TZeroCommand["TensorZero Command Eval"]
   CommandAPI --> Volt["VoltAgent Advisor"]
+  CommandAPI --> Crawl4AI["Crawl4AI Lead Intel"]
 ```
 
 ## Privacy And Local Data
@@ -52,12 +55,14 @@ Local ledgers are intentionally compact and avoid raw command or chat text.
 - SQLSync-ready rows store reducer names, primary keys, and compact payloads.
 - TensorZero-ready rows store fingerprints, ids, variant names, counts, route metadata, tool names, grounding flags, and scores.
 - Langfuse traces store stage metadata and counts, not long source excerpts or generated copy.
+- Crawl4AI lead-intel rows store operator-approved source URLs, compact metadata, capped Markdown, and compact JSON signals in a local JSONL ledger.
 
 Ignored local outputs:
 
 ```text
 apps/pulse/cartridges/sqlsync/*.jsonl
 apps/pulse/cartridges/tensorzero/*.jsonl
+apps/pulse/cartridges/lead-intel/*.jsonl
 apps/pulse/cartridges/query_memory.tah
 ```
 
@@ -83,6 +88,14 @@ TENSORZERO_FEEDBACK_DISABLED=false
 TENSORZERO_FEEDBACK_PATH=
 TENSORZERO_JAMIE_CHAT_DISABLED=false
 TENSORZERO_JAMIE_CHAT_PATH=
+
+LEAD_INTEL_CRAWLER_DISABLED=false
+LEAD_INTEL_ALLOWED_DOMAINS=example.com
+LEAD_INTEL_ALLOW_UNLISTED=false
+LEAD_INTEL_TRUST_REQUEST_ALLOWLIST=false
+LEAD_INTEL_PYTHON=python
+LEAD_INTEL_WORKER_PATH=
+LEAD_INTEL_LEDGER_PATH=
 ```
 
 ## Validation
@@ -91,6 +104,7 @@ Use these checks after changing this stack:
 
 ```bash
 npm run test:unit --workspace=apps/pulse -- tests/unit/command-center.test.ts
+npm run test:unit --workspace=apps/pulse -- tests/unit/lead-intel-crawl.test.ts
 npx tsc -p apps/pulse/tsconfig.json --noEmit --pretty false
 npm run build --workspace=apps/pulse
 ```
