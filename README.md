@@ -264,11 +264,62 @@ npm run test:e2e
 From `apps/pulse`:
 
 ```bash
+npm run tah:import-doc -- -- ./path/to/source.pdf --title "Imported Source"
+npm run tah:lancedb:index
+npm run tah:lancedb:search -- --query "pricing comps"
 npm run tah:pack-expert-atlas
 npm run tah:pack-master
 npm run test:unit
 npm run build
 ```
+
+## Import Documents Into TAH
+
+Sunset Pulse can use Microsoft MarkItDown to turn local documents into TAH-ready Markdown cartridges. This is useful for MLS PDFs, TREC forms, market reports, seller notes, spreadsheets, slide decks, and other source files that should become local Command Center context.
+
+Install the optional Python dependency once:
+
+```bash
+python -m pip install -r apps/pulse/requirements-markitdown.txt
+```
+
+Import a document from the repo root:
+
+```bash
+npm run tah:import-doc -- -- "C:\path\to\market-report.pdf" --title "Market Report" --aliases "market, comps, pricing"
+```
+
+By default, imported cartridges are written under:
+
+```text
+apps/pulse/cartridges/imports/
+```
+
+Generated `.tah` imports stay ignored by Git unless intentionally unignored.
+
+## Local LanceDB TAH Search
+
+Sunset Pulse can build a local LanceDB full-text index over `.tah` cartridges for fast BM25 retrieval experiments before routing deeper into Command Center.
+
+Build or rebuild the local index:
+
+```bash
+npm run tah:lancedb:index
+```
+
+Search it:
+
+```bash
+npm run tah:lancedb:search -- --query "seller pricing comps"
+```
+
+The default database lives at:
+
+```text
+apps/pulse/.lancedb/
+```
+
+That directory is ignored by Git because it is a generated local index. The index currently uses LanceDB full-text search; vector/hybrid embeddings can be added once the chunking shape is proven.
 
 ## Verification
 

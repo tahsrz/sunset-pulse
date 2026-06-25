@@ -1,0 +1,4 @@
+# Optional document-ingestion dependency for `npm run tah:import-doc`.
+# Install from the repo root:
+#   python -m pip install -r apps/pulse/requirements-markitdown.txt
+markitdown[all]

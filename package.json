@@ -18,6 +18,9 @@
     "tah:dev": "dotnet watch --project apps/WorldofTah run",
     "scheduling:dev": "npm run dev --workspace=apps/scheduling/web",
     "scheduling:build": "npm run build --workspace=apps/scheduling/web",
+    "tah:import-doc": "tsx apps/pulse/scripts/import-doc-to-tah.ts",
+    "tah:lancedb:index": "tsx apps/pulse/scripts/tah-lancedb.ts",
+    "tah:lancedb:search": "tsx apps/pulse/scripts/tah-lancedb-search.ts",
     "test:unit": "npm run test:unit --workspace=apps/pulse",
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },

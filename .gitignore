@@ -44,6 +44,7 @@ next-dev-*.log
 logs/
 .orchestrator/
 .codex-screenshots/
+apps/pulse/.lancedb/
 
 # .NET build outputs
 **/bin/

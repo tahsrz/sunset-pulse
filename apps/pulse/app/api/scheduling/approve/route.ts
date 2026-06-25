@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         },
       },
       data: {
-        status: 'accepted',
+        status: 'ACCEPTED',
       },
     });
 
