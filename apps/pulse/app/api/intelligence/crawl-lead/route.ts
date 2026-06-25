@@ -5,6 +5,7 @@ import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth
 import {
   crawlLeadIntelligence,
   getLeadIntelCrawlSnapshot,
+  importLeadIntelCrawlToTah,
   requestAllowlistIsTrusted,
   type LeadIntelCrawlInput,
 } from '@/lib/lead-intel/crawlLead';
@@ -20,6 +21,8 @@ const crawlRequestSchema = z.object({
   maxPages: z.number().int().min(1).max(10).optional(),
   timeoutMs: z.number().int().min(5000).max(120000).optional(),
   allowedDomains: z.array(z.string().min(1).max(255)).max(30).optional(),
+  importToTah: z.boolean().optional(),
+  tahOutputDir: z.string().max(1000).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -51,10 +54,17 @@ export async function POST(request: NextRequest) {
     }
 
     const record = await crawlLeadIntelligence(parsed.data as LeadIntelCrawlInput);
+    const tahImport = parsed.data.importToTah
+      ? importLeadIntelCrawlToTah({
+          recordId: record.id,
+          outputDir: parsed.data.tahOutputDir,
+        })
+      : null;
     return successResponse({
       endpoint: '/api/intelligence/crawl-lead',
       framework: 'crawl4ai',
       record,
+      tahImport,
     }, {}, responseStatusFor(record.status));
   } catch (error) {
     return errorResponse(

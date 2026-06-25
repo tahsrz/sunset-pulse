@@ -6,6 +6,7 @@ import {
   assertUrlAllowed,
   crawlLeadIntelligence,
   getLeadIntelCrawlSnapshot,
+  importLeadIntelCrawlToTah,
   normalizeCrawlInput,
   requestAllowlistIsTrusted,
 } from '@/lib/lead-intel/crawlLead';
@@ -82,6 +83,53 @@ describe('lead intelligence Crawl4AI ledger', () => {
       hostCounts: { 'example.com': 1 },
     });
     expect(snapshot.recent[0]?.diagnostics.note).toBe('LEAD_INTEL_CRAWLER_DISABLED=true');
+  });
+
+  it('imports completed Crawl4AI Markdown into a TAH cartridge', () => {
+    const record = {
+      id: 'lead_crawl_test',
+      createdAt: '2026-06-25T15:00:00.000Z',
+      framework: 'crawl4ai',
+      status: 'completed',
+      sourceType: 'tax_record',
+      extractionMode: 'both',
+      url: 'https://records.example.com/property/123',
+      hostname: 'records.example.com',
+      allowedBy: 'env_allowlist',
+      entityHints: { market: 'Dallas', parcel: '123' },
+      output: {
+        markdown: '# Property Record\n\nOwner: Example Holdings\n\nValue: $450,000',
+        json: { signals: { money_values: ['$450,000'] } },
+        title: 'Property Record 123',
+        description: 'A public record page.',
+        links: [],
+        sourceUrl: 'https://records.example.com/property/123',
+        wordCount: 7,
+      },
+      diagnostics: {
+        workerPath: 'workers/lead-intel-crawler/crawl4ai_worker.py',
+        pythonExecutable: 'python',
+        durationMs: 12,
+        ledgerPath: 'crawl-results.jsonl',
+      },
+    };
+    fs.writeFileSync(process.env.LEAD_INTEL_LEDGER_PATH!, `${JSON.stringify(record)}\n`, 'utf8');
+
+    const result = importLeadIntelCrawlToTah({
+      recordId: 'lead_crawl_test',
+      outputDir: path.join(tempDir, 'imports'),
+    });
+
+    expect(result).toMatchObject({
+      status: 'imported',
+      recordId: 'lead_crawl_test',
+      concept: expect.stringContaining('records_example_com'),
+    });
+    const cartridge = fs.readFileSync(path.join(process.cwd(), result.outputPath!), 'utf8');
+    expect(cartridge).toContain('SOURCE_TYPE: crawl4ai_import');
+    expect(cartridge).toContain('DOMAIN: lead_intelligence');
+    expect(cartridge).toContain('Owner: Example Holdings');
+    expect(cartridge).toContain('"money_values"');
   });
 });
 

@@ -40,9 +40,9 @@ Recent local additions:
 - deck.gl native signal maps add app-specific geospatial layers alongside the Kepler workbench.
 - VoltAgent adds a typed Command Center advisor with route, loadout, and roster tools.
 - SQLSync-ready command mutations stage query memory and action clicks into a local JSONL journal.
-- TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and give JamieChat a model-routing backbone.
+- TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and route JamieChat through a model-routing backbone.
 - assistant-ui powers a maximized JamieChat workspace at `/jamie-chat` beside the Command Center.
-- Crawl4AI adds an operator-guarded lead intelligence crawler for approved regional sites, brokerages, and public-record pages.
+- Crawl4AI adds an operator-guarded lead intelligence crawler for approved regional sites, brokerages, and public-record pages, with optional TAH cartridge import.
 - Novu adds a unified notification workflow trigger and local audit ledger for lead alerts and future staff/client messaging.
 - Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
 - Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
@@ -420,7 +420,7 @@ apps/pulse/lib/command-center/queryMemory.ts
 
 ## TensorZero Evaluations, Feedback, And JamieChat
 
-Sunset Pulse now records TensorZero-ready workflow evaluation rows and feedback rows for Command Center runs. JamieChat also records every `/api/chat` turn as a `jamie_chat` function episode, giving Jamie a model-routing and evaluation backbone before traffic is moved through a live TensorZero Gateway.
+Sunset Pulse now records TensorZero-ready workflow evaluation rows and feedback rows for Command Center runs. JamieChat also routes every `/api/chat` turn through `runTensorZeroJamieChat`, records it as a `jamie_chat` function episode, and returns backbone metadata before traffic is moved through a live TensorZero Gateway.
 
 Routes:
 
@@ -494,6 +494,7 @@ Implementation:
 ```text
 apps/pulse/lib/tensorzero/commandEvaluation.ts
 apps/pulse/lib/tensorzero/feedback.ts
+apps/pulse/lib/tensorzero/jamieBackbone.ts
 apps/pulse/lib/tensorzero/jamieChat.ts
 apps/pulse/app/api/tensorzero/command-evals/route.ts
 apps/pulse/app/api/tensorzero/jamie-chat/route.ts
@@ -516,10 +517,16 @@ GET  /api/intelligence/crawl-lead
 POST /api/intelligence/crawl-lead
 ```
 
-The route is operator-guarded and uses an allowlist before a page is crawled. By default, rows are appended to:
+The route is operator-guarded and uses an allowlist before a page is crawled. Pass `importToTah: true` to write a completed crawl into a source-grounded TAH cartridge. By default, rows are appended to:
 
 ```text
 apps/pulse/cartridges/lead-intel/crawl-results.jsonl
+```
+
+Default imported cartridge directory:
+
+```text
+apps/pulse/cartridges/imports/lead-intel/
 ```
 
 Install the optional local worker from `apps/pulse`:

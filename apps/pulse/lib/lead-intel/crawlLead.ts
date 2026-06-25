@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'node:crypto';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 
@@ -63,6 +64,17 @@ export type LeadIntelCrawlSnapshot = {
   recent: LeadIntelCrawlRecord[];
 };
 
+export type LeadIntelTahImportResult = {
+  status: 'imported' | 'skipped';
+  outputPath: string | null;
+  recordId: string | null;
+  concept: string | null;
+  title: string | null;
+  markdownChars: number;
+  writtenChars: number;
+  reason?: string;
+};
+
 type WorkerPayload = {
   status?: string;
   markdown?: string;
@@ -75,6 +87,7 @@ type WorkerPayload = {
 };
 
 const DEFAULT_LEDGER_FILE = 'crawl-results.jsonl';
+const DEFAULT_TAH_IMPORT_DIR = path.join('cartridges', 'imports', 'lead-intel');
 const DEFAULT_MAX_PAGES = 1;
 const DEFAULT_TIMEOUT_MS = 45_000;
 const MAX_RECENT_CRAWLS = 50;
@@ -182,6 +195,61 @@ export function getLeadIntelCrawlSnapshot(): LeadIntelCrawlSnapshot {
     hostCounts: countBy(records, (record) => record.hostname),
     lastCrawledAt: records.at(-1)?.createdAt || null,
     recent: records.slice(-MAX_RECENT_CRAWLS)
+  };
+}
+
+export function importLeadIntelCrawlToTah(input: {
+  recordId?: string;
+  outputDir?: string;
+  outputPath?: string;
+  maxChars?: number;
+} = {}): LeadIntelTahImportResult {
+  const filePath = leadIntelLedgerPath();
+  if (!fs.existsSync(filePath)) {
+    return skippedImport('No Crawl4AI ledger exists yet.');
+  }
+
+  const records = readLeadIntelRecords(filePath);
+  const record = input.recordId
+    ? records.find((item) => item.id === input.recordId)
+    : [...records].reverse().find((item) => item.status === 'completed' && Boolean(item.output.markdown));
+
+  if (!record) {
+    return skippedImport(input.recordId ? `No crawl record found for ${input.recordId}.` : 'No completed crawl record with Markdown was found.');
+  }
+
+  if (record.status !== 'completed') {
+    return skippedImport(`Crawl record ${record.id} is ${record.status}, not completed.`, record.id);
+  }
+
+  const markdown = compactMarkdown(record.output.markdown || '', input.maxChars || 160_000);
+  if (!markdown) {
+    return skippedImport(`Crawl record ${record.id} has no Markdown output.`, record.id);
+  }
+
+  const title = record.output.title || titleFromUrl(record.url);
+  const concept = slugify(`lead intel ${record.hostname} ${title}`);
+  const outputDir = path.resolve(input.outputDir || path.join(process.cwd(), DEFAULT_TAH_IMPORT_DIR));
+  const outputPath = path.resolve(input.outputPath || path.join(outputDir, `${concept}.tah`));
+  const cartridge = formatLeadIntelTah({
+    record,
+    title,
+    concept,
+    markdown,
+    wasTrimmed: markdown.length < (record.output.markdown || '').length,
+  });
+
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, cartridge, 'utf8');
+
+  return {
+    status: 'imported',
+    outputPath: path.relative(process.cwd(), outputPath),
+    recordId: record.id,
+    concept,
+    title,
+    markdownChars: markdown.length,
+    writtenChars: cartridge.length,
   };
 }
 
@@ -294,6 +362,61 @@ function saveLeadIntelCrawlRecord(record: LeadIntelCrawlRecord) {
   fs.appendFileSync(filePath, `${JSON.stringify(record)}\n`, 'utf8');
 }
 
+function formatLeadIntelTah(input: {
+  record: LeadIntelCrawlRecord;
+  title: string;
+  concept: string;
+  markdown: string;
+  wasTrimmed: boolean;
+}) {
+  const sourceHash = crypto
+    .createHash('sha256')
+    .update(JSON.stringify({ markdown: input.markdown, json: input.record.output.json }))
+    .digest('hex');
+  const aliases = uniqueStrings([
+    input.concept,
+    input.record.hostname,
+    input.record.sourceType,
+    ...Object.values(input.record.entityHints).map((value) => String(value || '')),
+    ...keywordsFromText(input.title),
+  ]).join(', ');
+  const trimNote = input.wasTrimmed
+    ? 'NOTE: Content was trimmed by the lead-intel TAH importer. Re-import with a larger maxChars value for full context.\n\n'
+    : '';
+
+  return [
+    `TITLE: ${input.title}`,
+    `CONCEPT: ${input.concept}`,
+    `ALIASES: ${aliases}`,
+    `DOMAIN: lead_intelligence`,
+    `TRUST: crawl4ai_operator_approved`,
+    `VITALITY: draft`,
+    `SOURCE_TYPE: crawl4ai_import`,
+    `SOURCE_URL: ${input.record.url}`,
+    `SOURCE_HOST: ${input.record.hostname}`,
+    `SOURCE_RECORD_ID: ${input.record.id}`,
+    `SOURCE_SHA256: ${sourceHash}`,
+    `IMPORTED_AT: ${new Date().toISOString()}`,
+    '',
+    'PURPOSE:',
+    'Use this crawled source as lead-intelligence context. Prefer explicit source facts over inference, preserve provenance, and flag stale or ambiguous claims.',
+    '',
+    'CRAWL METADATA:',
+    `- Source type: ${input.record.sourceType}`,
+    `- Extraction mode: ${input.record.extractionMode}`,
+    `- Crawled at: ${input.record.createdAt}`,
+    `- Description: ${input.record.output.description || 'None captured.'}`,
+    `- Word count: ${input.record.output.wordCount}`,
+    '',
+    'STRUCTURED SIGNALS:',
+    JSON.stringify(input.record.output.json || {}, null, 2),
+    '',
+    'CRAWLED MARKDOWN:',
+    `${trimNote}${input.markdown}`,
+    '',
+  ].join('\n');
+}
+
 function parseWorkerPayload(stdout: string): WorkerPayload {
   const trimmed = stdout.trim();
   if (!trimmed) return { status: 'unavailable', note: 'Crawl4AI worker returned no output.' };
@@ -379,6 +502,49 @@ function countBy<T>(items: T[], keyForItem: (item: T) => string) {
     counts[key] = (counts[key] || 0) + 1;
     return counts;
   }, {});
+}
+
+function skippedImport(reason: string, recordId: string | null = null): LeadIntelTahImportResult {
+  return {
+    status: 'skipped',
+    outputPath: null,
+    recordId,
+    concept: null,
+    title: null,
+    markdownChars: 0,
+    writtenChars: 0,
+    reason,
+  };
+}
+
+function titleFromUrl(urlValue: string) {
+  try {
+    const parsed = new URL(urlValue);
+    const lastPath = parsed.pathname.split('/').filter(Boolean).at(-1) || parsed.hostname;
+    return lastPath.replace(/[-_]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  } catch {
+    return 'Lead Intelligence Crawl';
+  }
+}
+
+function slugify(value: string) {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return slug || 'lead_intel_crawl';
+}
+
+function keywordsFromText(value: string) {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length >= 3)
+    .slice(0, 8);
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
 function isUnavailableError(error: unknown) {

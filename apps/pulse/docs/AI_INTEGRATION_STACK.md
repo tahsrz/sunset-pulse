@@ -22,11 +22,11 @@ This document summarizes the AI and geospatial integrations added around the Com
 | Langfuse | Redacted Command Center tracing when Langfuse env vars are configured. | `apps/pulse/lib/observability/langfuseTracing.ts` |
 | VoltAgent | Optional typed advisor beside the Command Center route. | `apps/pulse/lib/agents/voltagentCommandAdvisor.ts`, `apps/pulse/app/api/agents/voltagent/command-advisor/route.ts` |
 | SQLSync-ready journal | Local JSONL mutation contract for query memory and action clicks. | `apps/pulse/lib/sqlsync/commandJournal.ts`, `apps/pulse/app/api/sqlsync/command-journal/route.ts` |
-| TensorZero-ready ledgers | Local evaluation and feedback rows for command runs, actions, and JamieChat turns. | `apps/pulse/lib/tensorzero/*`, `apps/pulse/tensorzero/tensorzero.toml` |
+| TensorZero-ready backbone | Local evaluation and feedback rows for command runs, actions, and JamieChat turns. JamieChat now routes through a TensorZero-owned backbone helper before falling through to the current provider path. | `apps/pulse/lib/tensorzero/*`, `apps/pulse/tensorzero/tensorzero.toml` |
 | assistant-ui | Maximized JamieChat runtime and UI primitives. | `apps/pulse/components/chat/JamieAssistantWorkspace.tsx`, `apps/pulse/app/jamie-chat/page.tsx` |
 | Kepler.gl | Analyst-oriented spatial workbench. | `apps/pulse/components/spatial/KeplerSpatialLab.tsx` |
 | deck.gl | Product-native signal map layers. | `apps/pulse/components/spatial/DeckListingSignals.tsx` |
-| Crawl4AI | Local-first lead intelligence crawler that converts approved URLs to Markdown and compact JSON. | `apps/pulse/lib/lead-intel/crawlLead.ts`, `apps/pulse/app/api/intelligence/crawl-lead/route.ts`, `apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py` |
+| Crawl4AI | Local-first lead intelligence crawler that converts approved URLs to Markdown, compact JSON, and optional TAH cartridges. | `apps/pulse/lib/lead-intel/crawlLead.ts`, `apps/pulse/app/api/intelligence/crawl-lead/route.ts`, `apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py` |
 | Novu | Unified notification workflow trigger for lead alerts, staff ops, scheduling, and future in-app notifications. | `apps/pulse/lib/notifications/novu.ts`, `apps/pulse/app/api/notifications/novu/route.ts` |
 
 ## Request Flow
@@ -35,9 +35,10 @@ This document summarizes the AI and geospatial integrations added around the Com
 flowchart LR
   User["User"] --> Jamie["JamieChat Dock or Workspace"]
   Jamie --> ChatAPI["/api/jamie/chat"]
-  ChatAPI --> JamieCore["Jamie Core Response"]
+  ChatAPI --> JamieBackbone["TensorZero Jamie Backbone"]
+  JamieBackbone --> JamieCore["Jamie Core Response"]
   JamieCore --> Bridge["Command Center Helper Context"]
-  ChatAPI --> TZeroJamie["TensorZero jamie_chat Ledger"]
+  JamieBackbone --> TZeroJamie["TensorZero jamie_chat Ledger"]
 
   User --> CommandUI["Command Center"]
   CommandUI --> CommandAPI["/api/commands"]
@@ -119,6 +120,7 @@ Use these checks after changing this stack:
 
 ```bash
 npm run test:unit --workspace=apps/pulse -- tests/unit/command-center.test.ts
+npm run test:unit --workspace=apps/pulse -- tests/unit/jamie-tensorzero-backbone.test.ts
 npm run test:unit --workspace=apps/pulse -- tests/unit/lead-intel-crawl.test.ts
 npm run test:unit --workspace=apps/pulse -- tests/unit/novu-notifications.test.ts
 npx tsc -p apps/pulse/tsconfig.json --noEmit --pretty false
@@ -135,6 +137,7 @@ Both warnings are currently non-blocking.
 ## Next Passes
 
 - Route selected Jamie workspace commands directly into `/api/commands` as explicit assistant actions.
+- Route a configured live TensorZero Gateway from `apps/pulse/lib/tensorzero/jamieBackbone.ts` once gateway credentials and function templates are settled.
 - Replace `apps/pulse/lib/compat/langgraphLinear.ts` with the upstream `@langchain/langgraph` import after the package export issue is resolved.
-- Map local TensorZero JSONL rows to a live TensorZero Gateway.
+- Re-index imported Crawl4AI TAH cartridges into LanceDB automatically after crawl import.
 - Add OpenLIT or OpenTelemetry-native tracing once the current Langfuse/TensorZero split is stable.
