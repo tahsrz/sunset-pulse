@@ -165,6 +165,15 @@ function buildEvaluationRecord(
   projectName: string
 ): TensorZeroCommandEvaluationRecord {
   const metrics = scoreCommandResponse(response);
+  const commandId = response.commandId || `cmd_${hashId(`${request.command}:${Date.now()}`)}`;
+  const intent = response.intent || 'UNKNOWN_COMMAND';
+  const workerId = response.worker?.id || 'unknown-worker';
+  const workerName = response.worker?.name || 'Unknown Worker';
+  const routeMode = response.trace?.routeMode || (request.selectedWorkerId ? 'manual' : 'auto');
+  const relayMode = response.result?.relayPlan?.mode || request.relayMode || 'briefing';
+  const actions = Array.isArray(response.result?.actions) ? response.result.actions : [];
+  const selectedShards = Array.isArray(response.trace?.selectedShards) ? response.trace.selectedShards : [];
+  const frames = Array.isArray(response.result?.deliverable?.frames) ? response.result.deliverable.frames : [];
   const score = round(
     metrics.command_center_quality * 0.5 +
       metrics.command_center_actionable * 0.2 +
@@ -173,18 +182,18 @@ function buildEvaluationRecord(
   );
 
   return {
-    id: `t0_eval_${hashId(`${response.commandId}:${Date.now()}`)}`,
+    id: `t0_eval_${hashId(`${commandId}:${Date.now()}`)}`,
     createdAt: new Date().toISOString(),
     projectName,
     functionName: 'sunset_command_center',
     variantName: variantNameForResponse(response),
     workflowEvaluation: {
-      taskName: response.intent,
-      episodeId: response.commandId,
+      taskName: intent,
+      episodeId: commandId,
       tags: {
-        worker: response.worker.id,
-        routeMode: response.trace.routeMode,
-        relayMode: response.result.relayPlan.mode,
+        worker: workerId,
+        routeMode,
+        relayMode,
         framework: 'langgraph',
         app: 'sunset-pulse'
       }
@@ -199,27 +208,31 @@ function buildEvaluationRecord(
       selectedWorkerId: request.selectedWorkerId || null
     },
     output: {
-      commandId: response.commandId,
-      intent: response.intent,
-      workerId: response.worker.id,
-      workerName: response.worker.name,
-      routeMode: response.trace.routeMode,
-      confidence: response.result.confidence,
-      actionCount: response.result.actions.length,
-      sourceCount: response.trace.selectedShards.length,
-      frameCount: response.result.deliverable.frames.length,
-      hasSupervisorNotes: Boolean(response.trace.supervisorNotes?.length)
+      commandId,
+      intent,
+      workerId,
+      workerName,
+      routeMode,
+      confidence: response.result?.confidence || 0,
+      actionCount: actions.length,
+      sourceCount: selectedShards.length,
+      frameCount: frames.length,
+      hasSupervisorNotes: Boolean(response.trace?.supervisorNotes?.length)
     }
   };
 }
 
 function scoreCommandResponse(response: CommandCenterResponse): NonNullable<TensorZeroCommandEvaluationTrace['metrics']> {
-  const confidenceScore = clamp(response.result.confidence, 0, 100);
-  const sourceScore = response.trace.selectedShards.length ? 100 : 35;
-  const actionScore = clamp(response.result.actions.length * 28, 0, 100);
-  const frameScore = clamp(response.result.deliverable.frames.length * 32, 0, 100);
-  const supervisorScore = response.trace.supervisorNotes?.length ? 100 : response.result.confidence >= 82 ? 85 : 65;
-  const grounded = response.trace.selectedShards.length > 0 || response.trace.queryMemory?.saved === true;
+  const confidence = response.result?.confidence || 0;
+  const selectedShards = Array.isArray(response.trace?.selectedShards) ? response.trace.selectedShards : [];
+  const actions = Array.isArray(response.result?.actions) ? response.result.actions : [];
+  const frames = Array.isArray(response.result?.deliverable?.frames) ? response.result.deliverable.frames : [];
+  const confidenceScore = clamp(confidence, 0, 100);
+  const sourceScore = selectedShards.length ? 100 : 35;
+  const actionScore = clamp(actions.length * 28, 0, 100);
+  const frameScore = clamp(frames.length * 32, 0, 100);
+  const supervisorScore = response.trace?.supervisorNotes?.length ? 100 : confidence >= 82 ? 85 : 65;
+  const grounded = selectedShards.length > 0 || response.trace?.queryMemory?.saved === true;
 
   return {
     command_center_quality: round(confidenceScore * 0.55 + sourceScore * 0.25 + frameScore * 0.2),
@@ -248,9 +261,9 @@ function tensorZeroGatewayStatus(): TensorZeroCommandEvaluationTrace['gateway'] 
 function variantNameForResponse(response: CommandCenterResponse) {
   return [
     'langgraph',
-    response.trace.routeMode,
-    response.result.relayPlan.mode,
-    response.worker.id
+    response.trace?.routeMode || 'auto',
+    response.result?.relayPlan?.mode || 'briefing',
+    response.worker?.id || 'unknown-worker'
   ].join('__').replace(/[^a-z0-9_]+/gi, '_').toLowerCase();
 }
 

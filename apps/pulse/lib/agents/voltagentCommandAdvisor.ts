@@ -262,25 +262,25 @@ function routeForRequest(
   request: CommandCenterRequest,
   commandResult?: CommandCenterResponse
 ): VoltAgentCommandAdvisorResult['route'] {
-  if (commandResult) {
+  if (commandResult?.worker?.id) {
     return {
       workerId: commandResult.worker.id,
       workerName: commandResult.worker.name,
-      routeMode: commandResult.trace.routeMode,
-      tahFiles: commandResult.tahFiles
+      routeMode: commandResult.trace?.routeMode || (request.selectedWorkerId ? 'manual' : 'auto'),
+      tahFiles: Array.isArray(commandResult.tahFiles) ? commandResult.tahFiles : []
     };
   }
 
   const manualWorker = request.selectedWorkerId
     ? intelligenceWorkers.find((worker) => worker.id === request.selectedWorkerId)
     : undefined;
-  const worker = manualWorker || chooseWorkerForCommand(request.command);
+  const worker = manualWorker || chooseWorkerForCommand(request.command) || intelligenceWorkers[0];
 
   return {
-    workerId: worker.id,
-    workerName: worker.name,
+    workerId: worker?.id || 'unknown-worker',
+    workerName: worker?.name || 'Unknown Worker',
     routeMode: manualWorker ? 'manual' : 'auto',
-    tahFiles: worker.tahLoadout
+    tahFiles: worker?.tahLoadout || []
   };
 }
 
