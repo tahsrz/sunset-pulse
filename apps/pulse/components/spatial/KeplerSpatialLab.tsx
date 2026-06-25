@@ -290,7 +290,6 @@ export default function KeplerSpatialLab() {
             id={MAP_ID}
             mapboxApiAccessToken={mapboxToken}
             mint={false}
-            theme="dark"
             width={dimensions.width}
           />
         </Provider>

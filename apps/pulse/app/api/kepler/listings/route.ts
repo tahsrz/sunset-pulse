@@ -56,25 +56,36 @@ type MockListing = {
   };
 };
 
-const MOCK_LISTINGS_PATH = path.join(process.cwd(), 'lib', 'mocks', 'repliers', 'listings.json');
+const MOCK_LISTINGS_PATH = resolvePulseFilePath('lib', 'mocks', 'repliers', 'listings.json');
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const limit = clamp(Number(url.searchParams.get('limit') || 100), 1, 500);
-  const body = JSON.parse(fs.readFileSync(MOCK_LISTINGS_PATH, 'utf8')) as { listings?: MockListing[] };
-  const rows = (body.listings || [])
-    .filter((listing) => Number.isFinite(listing.map?.latitude) && Number.isFinite(listing.map?.longitude))
-    .slice(0, limit)
-    .map(toKeplerListingRow);
+  try {
+    const url = new URL(request.url);
+    const limit = clamp(Number(url.searchParams.get('limit') || 100), 1, 500);
+    const body = JSON.parse(fs.readFileSync(MOCK_LISTINGS_PATH, 'utf8')) as { listings?: MockListing[] };
+    const rows = (body.listings || [])
+      .filter((listing) => Number.isFinite(listing.map?.latitude) && Number.isFinite(listing.map?.longitude))
+      .slice(0, limit)
+      .map(toKeplerListingRow);
 
-  return NextResponse.json({
-    dataset: {
-      id: 'sunset_listing_signals',
-      label: 'Sunset Pulse listing signals',
-      rowCount: rows.length,
-      rows
-    }
-  });
+    return NextResponse.json({
+      dataset: {
+        id: 'sunset_listing_signals',
+        label: 'Sunset Pulse listing signals',
+        rowCount: rows.length,
+        rows
+      }
+    });
+  } catch (error) {
+    console.error('[KEPLER_LISTINGS_API] Failed to load listing dataset:', error);
+    return NextResponse.json(
+      {
+        error: 'Kepler listing dataset unavailable.',
+        path: path.relative(process.cwd(), MOCK_LISTINGS_PATH)
+      },
+      { status: 500 }
+    );
+  }
 }
 
 function toKeplerListingRow(listing: MockListing, index: number) {
@@ -123,4 +134,11 @@ function toKeplerListingRow(listing: MockListing, index: number) {
 function clamp(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function resolvePulseFilePath(...segments: string[]) {
+  const directPath = path.join(process.cwd(), ...segments);
+  if (fs.existsSync(directPath)) return directPath;
+
+  return path.join(process.cwd(), 'apps', 'pulse', ...segments);
 }

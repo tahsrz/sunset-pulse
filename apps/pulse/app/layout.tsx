@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import '@/assets/styles/globals.css'; 
+import 'mapbox-gl/dist/mapbox-gl.css';
 import Navbar from '@/components/Navbar';
 import TRECConsumerNotice from '@/components/TRECConsumerNotice';
 import GlobalMarketPulse from '@/components/GlobalMarketPulse';
