@@ -48,6 +48,7 @@ apps/pulse/.lancedb/
 apps/pulse/cartridges/sqlsync/*.jsonl
 apps/pulse/cartridges/tensorzero/*.jsonl
 apps/pulse/cartridges/lead-intel/*.jsonl
+apps/pulse/cartridges/notifications/*.jsonl
 
 # .NET build outputs
 **/bin/

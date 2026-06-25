@@ -43,6 +43,7 @@ Recent local additions:
 - TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and give JamieChat a model-routing backbone.
 - assistant-ui powers a maximized JamieChat workspace at `/jamie-chat` beside the Command Center.
 - Crawl4AI adds an operator-guarded lead intelligence crawler for approved regional sites, brokerages, and public-record pages.
+- Novu adds a unified notification workflow trigger and local audit ledger for lead alerts and future staff/client messaging.
 - Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
 - Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
 - TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
@@ -62,6 +63,7 @@ SunsetPulse/
       app/api/tensorzero/   TensorZero evaluation and JamieChat snapshots
       app/api/kepler/       Kepler.gl dataset feeds
       app/api/intelligence/ Lead intelligence ingestion APIs
+      app/api/notifications/ Novu notification workflow APIs
       app/api/jamie/chat/   Jamie chat alias wired to the shared helper route
       app/api/tah/          TAH catalog, fact, forge, and search APIs
       cartridges/           Local TAH inputs and generated archives
@@ -76,6 +78,7 @@ SunsetPulse/
       lib/sqlsync/          SQLSync-ready mutation journal helpers
       lib/tensorzero/       TensorZero-ready evaluation ledgers
       lib/lead-intel/       Crawl4AI lead intelligence ledger helpers
+      lib/notifications/    Novu notification workflow helpers
       scripts/              TAH import, packing, and local index utilities
       tensorzero/            TensorZero gateway config stubs
       workers/lead-intel-crawler/
@@ -107,6 +110,7 @@ flowchart TD
   Graph --> Jamie["Jamie Chat Context"]
   Jamie --> TZero
   API --> Crawl4AI["Crawl4AI Lead Intel"]
+  API --> Novu["Novu Notifications"]
   Atlas --> TAH["TAH Cartridges"]
   TAH --> Glossary["Hover Glossary + Source Links"]
   Workers --> Plan
@@ -543,6 +547,47 @@ Implementation:
 apps/pulse/lib/lead-intel/crawlLead.ts
 apps/pulse/app/api/intelligence/crawl-lead/route.ts
 apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py
+```
+
+## Novu Notification Pipeline
+
+Sunset Pulse includes a Novu-compatible notification workflow layer. It lets the app trigger named notification workflows for lead alerts, staff operations, scheduling updates, and future in-app messages through one contract instead of scattering channel-specific calls everywhere.
+
+Routes:
+
+```text
+GET  /api/notifications/novu
+POST /api/notifications/novu
+```
+
+The route is operator-guarded. If `NOVU_SECRET_KEY` is missing, triggers are recorded locally as `queued_local` so workflows can be developed and audited before connecting Novu Cloud or a self-hosted Novu instance.
+
+Default ledger:
+
+```text
+apps/pulse/cartridges/notifications/novu-events.jsonl
+```
+
+Configure:
+
+```bash
+NOVU_SECRET_KEY=
+NOVU_API_URL=https://api.novu.co
+NOVU_NOTIFICATIONS_DISABLED=false
+NOVU_LEDGER_DISABLED=false
+NOVU_LEDGER_PATH=C:\path\to\novu-events.jsonl
+NOVU_HOT_LEAD_WORKFLOW_ID=lead-hot-alert
+NOVU_OPERATOR_SUBSCRIBER_ID=sunset-operator
+NOVU_OPERATOR_EMAIL=operator@example.com
+NOVU_OPERATOR_PHONE=+15551234567
+```
+
+Implementation:
+
+```text
+apps/pulse/lib/notifications/novu.ts
+apps/pulse/app/api/notifications/novu/route.ts
+apps/pulse/lib/intelligence/leadProcessor.ts
 ```
 
 ## Langfuse Observability

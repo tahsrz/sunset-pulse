@@ -46,6 +46,7 @@ graph LR
 - Visualization components for maps, 3D property views, and D3.js velocity trajectories.
 - Command Center and JamieChat integration docs live in [`docs/AI_INTEGRATION_STACK.md`](./docs/AI_INTEGRATION_STACK.md).
 - Operator-guarded Crawl4AI ingestion can turn approved regional sites, brokerage pages, and public-record URLs into a local lead-intelligence JSONL ledger.
+- Novu-compatible notification workflows provide one trigger path for hot leads, staff operations, scheduling updates, and future in-app notifications.
 
 ### 📈 Lead Sigmoid Maturation Flow
 
@@ -121,6 +122,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - Queued terminal intents persist to `/.orchestrator/terminal-intents.json` by default. Set `ORCHESTRATOR_COMMAND_QUEUE_PATH` to move the local queue store.
 - `/api/telegram/webhook` accepts Telegram updates, authorizes `AUTHORIZED_USER_ID` or `TELEGRAM_OPERATOR_CHAT_ID`, and routes `/commands`, `/status`, `/sessions`, `/tah`, `/places`, `/check`, `/cancel`, `/pack_master`, and guarded `!command` terminal intents.
 - `/api/intelligence/crawl-lead` runs the operator-guarded Crawl4AI lead-intelligence ingestion path and writes local JSONL rows under `cartridges/lead-intel/` by default.
+- `/api/notifications/novu` triggers or locally queues Novu-compatible notification workflows, starting with hot-lead alerts from the lead processor.
 
 ## 🗓️ Sunset Gas and Grill - Shift Scheduling & SMS Automation
 

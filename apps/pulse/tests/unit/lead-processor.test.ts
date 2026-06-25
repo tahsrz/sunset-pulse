@@ -44,6 +44,10 @@ vi.mock('@/lib/communication/telegram', () => ({
   sendTelegramNotification: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock('@/lib/notifications/novu', () => ({
+  notifyHotLeadWithNovu: vi.fn(() => Promise.resolve({ status: 'queued_local' })),
+}));
+
 describe('Lead Processor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
