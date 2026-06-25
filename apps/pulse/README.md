@@ -1,6 +1,6 @@
 # Sunset Pulse
 
-Sunset Pulse is a Next.js 14 real estate intelligence platform for property discovery, lead engagement, valuation workflows, and operational analytics. The application combines a customer-facing property experience with internal intelligence tools for market analysis, lead scoring, automation, and visual content workflows.
+Sunset Pulse is a Next.js 15 real estate intelligence platform for property discovery, lead engagement, valuation workflows, and operational analytics. The application combines a customer-facing property experience with internal intelligence tools for market analysis, lead scoring, automation, and visual content workflows.
 
 ## Current Status
 
@@ -44,6 +44,7 @@ graph LR
 - Neighborhood Recon & Budget Delta analysis for hyper-personalized interactions.
 - TAH Expertise retrieval (Makiel, Gadrael, etc.) from Supabase Cloud-Native storage.
 - Visualization components for maps, 3D property views, and D3.js velocity trajectories.
+- Command Center and JamieChat integration docs live in [`docs/AI_INTEGRATION_STACK.md`](./docs/AI_INTEGRATION_STACK.md).
 
 ### 📈 Lead Sigmoid Maturation Flow
 

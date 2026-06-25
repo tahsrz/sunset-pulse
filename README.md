@@ -10,7 +10,7 @@ It is built around a simple thesis: agents should not have to send every workflo
 - Uses `.tah` cartridges as the primary structured context layer.
 - Packs large knowledge libraries into a segmented 400-expert atlas for fast retrieval.
 - Routes commands through real estate workers such as Lead Scoring, Follow-Up Writer, Neighborhood Explainer, Comp Analysis, Local Commerce, Agent Voice, and Supervisor Check.
-- Runs the Command Center workflow as a LangGraph graph with named stages for routing, retrieval, planning, synthesis, supervision, memory, and response assembly.
+- Runs the Command Center workflow as a LangGraph-shaped graph with named stages for routing, retrieval, planning, synthesis, supervision, memory, and response assembly.
 - Supports delivery modes: briefing, slideshow, puppetshow, field-board, and script.
 - Adds a final provenance screen to every relay explaining where the information came from and what the user learned.
 - Saves local query memory to `query_memory.tah` so repeated work can reuse local context.
@@ -30,7 +30,7 @@ Release notes:
 Recent local additions:
 
 - Command Center helper selection now uses a professional arena-style UI with imported ClaudeCraft assets.
-- Command Center routing now runs through LangGraph instead of one flat router function.
+- Command Center routing now runs through a LangGraph-shaped stage graph instead of one flat router function.
 - Langfuse observability traces the Command Center graph and each stage with redacted, structured metadata.
 - Command Post details now collapse into the answer view instead of dominating the page.
 - Command Post access checks deny public development hosts and production localhost spoofing.
@@ -41,6 +41,7 @@ Recent local additions:
 - VoltAgent adds a typed Command Center advisor with route, loadout, and roster tools.
 - SQLSync-ready command mutations stage query memory and action clicks into a local JSONL journal.
 - TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and give JamieChat a model-routing backbone.
+- assistant-ui powers a maximized JamieChat workspace at `/jamie-chat` beside the Command Center.
 - Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
 - Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
 - TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
@@ -53,6 +54,7 @@ SunsetPulse/
   apps/
     pulse/                  Next.js app for Sunset Pulse
       app/command-center/   Agent command center route
+      app/jamie-chat/       Maximized assistant-ui Jamie workspace
       app/api/commands/     Command router API
       app/api/agents/       AI agent framework endpoints
       app/api/sqlsync/      SQLSync-ready mutation snapshots
@@ -83,7 +85,7 @@ SunsetPulse/
 flowchart TD
   Agent["Real Estate Agent"] --> UI["Command Center UI"]
   UI --> API["/api/commands"]
-  API --> Graph["LangGraph Command Workflow"]
+  API --> Graph["LangGraph-Shaped Command Workflow"]
   Graph --> Route["Route Worker"]
   Graph --> Retrieve["Retrieve Context"]
   Graph --> Plan["Plan Relay"]
@@ -126,6 +128,10 @@ Status:
 - SQLSync: started with `/api/sqlsync/command-journal` and staged Command Center memory mutations.
 - TensorZero: started with `/api/tensorzero/command-evals`, `/api/tensorzero/jamie-chat`, local workflow-eval ledgers, and `apps/pulse/tensorzero/tensorzero.toml`.
 - OpenLIT: queued for research and implementation passes.
+
+Stack docs:
+
+- [apps/pulse/docs/AI_INTEGRATION_STACK.md](apps/pulse/docs/AI_INTEGRATION_STACK.md)
 
 ## TAH Intelligence Layer
 
@@ -186,9 +192,9 @@ Supported `relayMode` values:
 - `field-board`
 - `script`
 
-## LangGraph Workflow
+## LangGraph-Shaped Workflow
 
-The Command Center router now runs as a LangGraph graph instead of one flat function. The graph makes each stage observable and easier to test:
+The Command Center router now runs as a LangGraph-shaped graph instead of one flat function. The graph makes each stage observable and easier to test:
 
 - `route` chooses the worker and route mode.
 - `retrieve` recalls local query memory and pulls TAH context from the segmented expert atlas.
@@ -202,7 +208,10 @@ Implementation:
 
 ```text
 apps/pulse/lib/command-center/commandRouter.ts
+apps/pulse/lib/compat/langgraphLinear.ts
 ```
+
+The local adapter implements the small linear graph subset this workflow uses. It exists because the current `@langchain/langgraph` package barrel triggers a Next production-build export issue; the adapter can be removed once the upstream package path is stable for this app.
 
 ## Command Post
 
@@ -234,7 +243,7 @@ apps/pulse/app/api/admin/orchestrator/
 
 ## VoltAgent Advisor
 
-Sunset Pulse includes a VoltAgent-powered Command Center advisor. It is wired as a typed agent layer beside the existing LangGraph workflow, not as a replacement.
+Sunset Pulse includes a VoltAgent-powered Command Center advisor. It is wired as a typed agent layer beside the existing Command Center workflow, not as a replacement.
 
 Routes:
 
