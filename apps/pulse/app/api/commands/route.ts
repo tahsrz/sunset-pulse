@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const commandResult = runCommandCenterCommand(parsed.data as CommandCenterRequest);
+    const commandResult = await runCommandCenterCommand(parsed.data as CommandCenterRequest);
     const commandPost = await buildCommandPostTrace(request);
 
     return NextResponse.json({

@@ -6,18 +6,18 @@ export type JamieCommandBridgeResult = {
   command: CommandCenterResponse;
 };
 
-export function buildJamieCommandBridgeContext(
+export async function buildJamieCommandBridgeContext(
   command: string,
   options: {
     relayMode?: TahRelayMode;
     supervisor?: boolean;
   } = {}
-): JamieCommandBridgeResult | null {
+): Promise<JamieCommandBridgeResult | null> {
   try {
     const trimmed = command.trim();
     if (!trimmed) return null;
 
-    const commandResult = runCommandCenterCommand({
+    const commandResult = await runCommandCenterCommand({
       command: trimmed,
       relayMode: options.relayMode || 'briefing',
       supervisor: options.supervisor ?? true

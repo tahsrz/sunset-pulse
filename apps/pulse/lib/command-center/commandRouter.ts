@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Annotation, END, START, StateGraph } from '@langchain/langgraph';
 import {
   SegmentedExpertAtlasRetriever,
   type ExpertAtlasSearchResult,
@@ -140,24 +141,122 @@ type RetrievalPolicyResult = {
   trace: TahRetrievalPolicyTrace;
 };
 
-export function runCommandCenterCommand(input: CommandCenterRequest): CommandCenterResponse {
+type CommandRetrievalContext = {
+  results: CommandContextShard[];
+  diagnostics?: CommandCenterResponse['trace']['atlasDiagnostics'];
+  policy?: TahRetrievalPolicyTrace;
+};
+
+type CommandGraphState = {
+  input: CommandCenterRequest;
+  command: string;
+  commandId: string;
+  routeMode: 'auto' | 'manual';
+  worker: IntelligenceWorker;
+  recalledMemory: CommandContextShard[];
+  retrievalContext: CommandRetrievalContext;
+  contextResults: CommandContextShard[];
+  relayPlan: TahRelayPlan;
+  result: CommandCenterResponse['result'];
+  supervisorNotes?: string[];
+  queryMemory: QueryMemoryTrace;
+  response: CommandCenterResponse;
+};
+
+const CommandGraphAnnotation = Annotation.Root({
+  input: Annotation<CommandCenterRequest>(),
+  command: Annotation<string>(),
+  commandId: Annotation<string>(),
+  routeMode: Annotation<'auto' | 'manual'>(),
+  worker: Annotation<IntelligenceWorker>(),
+  recalledMemory: Annotation<CommandContextShard[]>(),
+  retrievalContext: Annotation<CommandRetrievalContext>(),
+  contextResults: Annotation<CommandContextShard[]>(),
+  relayPlan: Annotation<TahRelayPlan>(),
+  result: Annotation<CommandCenterResponse['result']>(),
+  supervisorNotes: Annotation<string[] | undefined>(),
+  queryMemory: Annotation<QueryMemoryTrace>(),
+  response: Annotation<CommandCenterResponse>()
+});
+
+type CommandGraphNodeState = typeof CommandGraphAnnotation.State;
+
+const commandCenterGraph = new StateGraph(CommandGraphAnnotation)
+  .addNode('route', routeCommandNode)
+  .addNode('retrieve', retrieveContextNode)
+  .addNode('plan', planRelayNode)
+  .addNode('synthesize', synthesizeResultNode)
+  .addNode('supervise', superviseResultNode)
+  .addNode('remember', rememberQueryNode)
+  .addNode('respond', buildResponseNode)
+  .addEdge(START, 'route')
+  .addEdge('route', 'retrieve')
+  .addEdge('retrieve', 'plan')
+  .addEdge('plan', 'synthesize')
+  .addEdge('synthesize', 'supervise')
+  .addEdge('supervise', 'remember')
+  .addEdge('remember', 'respond')
+  .addEdge('respond', END)
+  .compile();
+
+export async function runCommandCenterCommand(input: CommandCenterRequest): Promise<CommandCenterResponse> {
   const command = input.command.trim();
   if (!command) {
     throw new Error('Command is required.');
   }
 
+  const finalState = await commandCenterGraph.invoke({ input, command });
+  return finalState.response;
+}
+
+function routeCommandNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { command, input } = state;
   const manualWorker = input.selectedWorkerId
     ? intelligenceWorkers.find((worker) => worker.id === input.selectedWorkerId)
     : undefined;
   const worker = manualWorker || chooseWorkerForCommand(command);
   const routeMode = manualWorker ? 'manual' : 'auto';
   const commandId = `cmd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  return { command, commandId, routeMode, worker };
+}
+
+function retrieveContextNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { command, worker } = state;
   const recalledMemory = recallQueryMemories(command, worker);
   const context = retrieveTahContext(command, worker);
   const contextResults = mergeCommandContextShards(recalledMemory, context.results);
+
+  return {
+    recalledMemory,
+    retrievalContext: context,
+    contextResults
+  };
+}
+
+function planRelayNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { contextResults, input, worker } = state;
   const relayPlan = buildTahRelayPlan(worker, contextResults, input.relayMode);
+
+  return { relayPlan };
+}
+
+function synthesizeResultNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { command, worker, contextResults, relayPlan } = state;
   const result = synthesizeWorkerResult(command, worker, contextResults, relayPlan);
+
+  return { result };
+}
+
+function superviseResultNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { command, contextResults, input, result, worker } = state;
   const supervisorNotes = input.supervisor ? superviseResult(command, worker, result, contextResults) : undefined;
+
+  return { supervisorNotes };
+}
+
+function rememberQueryNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { command, commandId, contextResults, recalledMemory, relayPlan, result, worker } = state;
   const queryMemory = saveQueryMemory({
     commandId,
     command,
@@ -174,7 +273,12 @@ export function runCommandCenterCommand(input: CommandCenterRequest): CommandCen
   });
   queryMemory.recalled = recalledMemory.length;
 
-  return {
+  return { queryMemory };
+}
+
+function buildResponseNode(state: CommandGraphNodeState): Partial<CommandGraphState> {
+  const { command, commandId, contextResults, queryMemory, relayPlan, result, routeMode, supervisorNotes, retrievalContext, worker } = state;
+  const response: CommandCenterResponse = {
     commandId,
     intent: inferIntent(command, worker),
     worker: {
@@ -203,12 +307,14 @@ export function runCommandCenterCommand(input: CommandCenterRequest): CommandCen
           matchReason: shard.matchReason || 'policy'
         } : undefined
       })),
-      atlasDiagnostics: context.diagnostics,
-      retrievalPolicy: context.policy,
+      atlasDiagnostics: retrievalContext.diagnostics,
+      retrievalPolicy: retrievalContext.policy,
       supervisorNotes,
       queryMemory
     }
   };
+
+  return { response };
 }
 
 function mergeCommandContextShards(memoryShards: CommandContextShard[], retrievedShards: CommandContextShard[]) {

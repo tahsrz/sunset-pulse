@@ -52,11 +52,11 @@ describe('command center routing', () => {
     expect(buildTahRelayPlan(spatial, [{ source: 'spatial_computing.tah', title: 'Spatial', concepts: ['scene', 'interaction'] }]).templateId).toBe('spatial-computing-scene');
   });
 
-  it('runs commands through a worker, relay plan, and provenance screen without query memory', () => {
+  it('runs commands through a worker, relay plan, and provenance screen without query memory', async () => {
     process.env.PULSE_QUERY_MEMORY_DISABLED = 'true';
     process.env.PULSE_QUERY_MEMORY_PATH = path.join(os.tmpdir(), `pulse-query-memory-${Date.now()}.tah`);
 
-    const response = runCommandCenterCommand({
+    const response = await runCommandCenterCommand({
       command: 'Compare this listing with recent sales and give me a price check',
       relayMode: 'slideshow',
       supervisor: true
@@ -104,12 +104,12 @@ describe('command center routing', () => {
     expect(fs.readFileSync(filePath, 'utf8')).toContain('TYPE: sunset_pulse_query_memory');
   });
 
-  it('builds a plain Jamie helper bridge and saves the chat turn locally', () => {
+  it('builds a plain Jamie helper bridge and saves the chat turn locally', async () => {
     const filePath = path.join(os.tmpdir(), `pulse-query-memory-jamie-${Date.now()}.tah`);
     process.env.PULSE_QUERY_MEMORY_PATH = filePath;
     process.env.PULSE_QUERY_MEMORY_DISABLED = 'false';
 
-    const bridge = buildJamieCommandBridgeContext('Help me write a clear Sunset Chat note for the grill today');
+    const bridge = await buildJamieCommandBridgeContext('Help me write a clear Sunset Chat note for the grill today');
 
     expect(bridge?.command.worker.id).toBe('follow-up-writer');
     expect(bridge?.context).toContain('Helper picked:');
@@ -119,10 +119,10 @@ describe('command center routing', () => {
     expect(fs.readFileSync(filePath, 'utf8')).toContain('TYPE: sunset_pulse_query_memory');
   });
 
-  it('turns Dallas 311 code concern records into a plain answer', () => {
+  it('turns Dallas 311 code concern records into a plain answer', async () => {
     process.env.PULSE_QUERY_MEMORY_DISABLED = 'true';
 
-    const response = runCommandCenterCommand({
+    const response = await runCommandCenterCommand({
       command: 'Community Vitality: Code Concern CCS Status: New | Outcome: PENDING Location: 3800 S TYLER ST, DALLAS, TX, 75224, Dallas TX Reported: 2026 06 04T19:47:49.000 Coordinates: 0, 0 Service Request: 26 00243099 What does this mean?',
       relayMode: 'briefing',
       supervisor: true

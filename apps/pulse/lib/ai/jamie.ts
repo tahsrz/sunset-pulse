@@ -629,7 +629,7 @@ export async function getJamieResponse(messages: any[], propertyData?: any, memo
   const propertyContext = propertyData 
     ? typeof propertyData === 'string' ? propertyData : JSON.stringify(propertyData)
     : "No property data currently available for Jamie.";
-  const commandBridge = buildJamieCommandBridgeContext(userInput, {
+  const commandBridge = await buildJamieCommandBridgeContext(userInput, {
     relayMode: isDevMode ? 'briefing' : 'script',
     supervisor: true
   });
