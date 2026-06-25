@@ -3,6 +3,8 @@ import path from 'path';
 import crypto from 'node:crypto';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { TAHBuilder } from '@/lib/core/tah_builder';
+import { createTahInputsFromText } from '@/lib/core/tah_ingest';
 
 const execFileAsync = promisify(execFile);
 
@@ -67,11 +69,15 @@ export type LeadIntelCrawlSnapshot = {
 export type LeadIntelTahImportResult = {
   status: 'imported' | 'skipped';
   outputPath: string | null;
+  sourceOutputPath: string | null;
+  binaryOutputPath: string | null;
   recordId: string | null;
   concept: string | null;
   title: string | null;
   markdownChars: number;
   writtenChars: number;
+  binaryByteSize: number;
+  binaryShardCount: number;
   reason?: string;
 };
 
@@ -202,6 +208,9 @@ export function importLeadIntelCrawlToTah(input: {
   recordId?: string;
   outputDir?: string;
   outputPath?: string;
+  sourceOutputPath?: string;
+  binaryOutputPath?: string;
+  forgeBinary?: boolean;
   maxChars?: number;
 } = {}): LeadIntelTahImportResult {
   const filePath = leadIntelLedgerPath();
@@ -230,7 +239,9 @@ export function importLeadIntelCrawlToTah(input: {
   const title = record.output.title || titleFromUrl(record.url);
   const concept = slugify(`lead intel ${record.hostname} ${title}`);
   const outputDir = path.resolve(input.outputDir || path.join(process.cwd(), DEFAULT_TAH_IMPORT_DIR));
-  const outputPath = path.resolve(input.outputPath || path.join(outputDir, `${concept}.tah`));
+  const sourceOutputPath = path.resolve(input.sourceOutputPath || path.join(outputDir, `${concept}.source.md`));
+  const shouldForgeBinary = input.forgeBinary !== false;
+  const binaryOutputPath = path.resolve(input.binaryOutputPath || input.outputPath || path.join(outputDir, `${concept}.tah`));
   const cartridge = formatLeadIntelTah({
     record,
     title,
@@ -239,17 +250,28 @@ export function importLeadIntelCrawlToTah(input: {
     wasTrimmed: markdown.length < (record.output.markdown || '').length,
   });
 
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, cartridge, 'utf8');
+  fs.mkdirSync(path.dirname(sourceOutputPath), { recursive: true });
+  fs.writeFileSync(sourceOutputPath, cartridge, 'utf8');
+  const binaryStats = shouldForgeBinary
+    ? forgeLeadIntelBinaryTah({
+        cartridge,
+        outputPath: binaryOutputPath,
+        keywords: [concept, record.hostname, record.sourceType, ...Object.values(record.entityHints).map(String)],
+      })
+    : { byteSize: 0, shardCount: 0 };
 
   return {
     status: 'imported',
-    outputPath: path.relative(process.cwd(), outputPath),
+    outputPath: shouldForgeBinary ? path.relative(process.cwd(), binaryOutputPath) : null,
+    sourceOutputPath: path.relative(process.cwd(), sourceOutputPath),
+    binaryOutputPath: shouldForgeBinary ? path.relative(process.cwd(), binaryOutputPath) : null,
     recordId: record.id,
     concept,
     title,
     markdownChars: markdown.length,
     writtenChars: cartridge.length,
+    binaryByteSize: binaryStats.byteSize,
+    binaryShardCount: binaryStats.shardCount,
   };
 }
 
@@ -417,6 +439,22 @@ function formatLeadIntelTah(input: {
   ].join('\n');
 }
 
+function forgeLeadIntelBinaryTah(input: {
+  cartridge: string;
+  outputPath: string;
+  keywords: string[];
+}) {
+  const tahInputs = createTahInputsFromText(input.cartridge, uniqueStrings(input.keywords));
+  const buffer = new TAHBuilder().forge(tahInputs);
+  fs.mkdirSync(path.dirname(input.outputPath), { recursive: true });
+  fs.writeFileSync(input.outputPath, buffer);
+
+  return {
+    byteSize: buffer.length,
+    shardCount: tahInputs.length,
+  };
+}
+
 function parseWorkerPayload(stdout: string): WorkerPayload {
   const trimmed = stdout.trim();
   if (!trimmed) return { status: 'unavailable', note: 'Crawl4AI worker returned no output.' };
@@ -508,11 +546,15 @@ function skippedImport(reason: string, recordId: string | null = null): LeadInte
   return {
     status: 'skipped',
     outputPath: null,
+    sourceOutputPath: null,
+    binaryOutputPath: null,
     recordId,
     concept: null,
     title: null,
     markdownChars: 0,
     writtenChars: 0,
+    binaryByteSize: 0,
+    binaryShardCount: 0,
     reason,
   };
 }

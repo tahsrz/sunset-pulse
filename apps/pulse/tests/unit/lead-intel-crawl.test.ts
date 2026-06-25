@@ -85,7 +85,7 @@ describe('lead intelligence Crawl4AI ledger', () => {
     expect(snapshot.recent[0]?.diagnostics.note).toBe('LEAD_INTEL_CRAWLER_DISABLED=true');
   });
 
-  it('imports completed Crawl4AI Markdown into a TAH cartridge', () => {
+  it('imports completed Crawl4AI Markdown into a source file and binary TAH cartridge', () => {
     const record = {
       id: 'lead_crawl_test',
       createdAt: '2026-06-25T15:00:00.000Z',
@@ -124,12 +124,21 @@ describe('lead intelligence Crawl4AI ledger', () => {
       status: 'imported',
       recordId: 'lead_crawl_test',
       concept: expect.stringContaining('records_example_com'),
+      binaryByteSize: expect.any(Number),
+      binaryShardCount: expect.any(Number),
     });
-    const cartridge = fs.readFileSync(path.join(process.cwd(), result.outputPath!), 'utf8');
-    expect(cartridge).toContain('SOURCE_TYPE: crawl4ai_import');
-    expect(cartridge).toContain('DOMAIN: lead_intelligence');
-    expect(cartridge).toContain('Owner: Example Holdings');
-    expect(cartridge).toContain('"money_values"');
+    expect(result.sourceOutputPath).toMatch(/\.source\.md$/);
+    expect(result.outputPath).toMatch(/\.tah$/);
+
+    const source = fs.readFileSync(path.join(process.cwd(), result.sourceOutputPath!), 'utf8');
+    expect(source).toContain('SOURCE_TYPE: crawl4ai_import');
+    expect(source).toContain('DOMAIN: lead_intelligence');
+    expect(source).toContain('Owner: Example Holdings');
+    expect(source).toContain('"money_values"');
+
+    const binary = fs.readFileSync(path.join(process.cwd(), result.outputPath!));
+    expect(binary.readUInt32LE(0)).toBe(0x54414821);
+    expect(binary.readUInt32LE(16)).toBeGreaterThan(0);
   });
 });
 

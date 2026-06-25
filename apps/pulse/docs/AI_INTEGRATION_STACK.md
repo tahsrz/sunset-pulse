@@ -26,7 +26,7 @@ This document summarizes the AI and geospatial integrations added around the Com
 | assistant-ui | Maximized JamieChat runtime and UI primitives. | `apps/pulse/components/chat/JamieAssistantWorkspace.tsx`, `apps/pulse/app/jamie-chat/page.tsx` |
 | Kepler.gl | Analyst-oriented spatial workbench. | `apps/pulse/components/spatial/KeplerSpatialLab.tsx` |
 | deck.gl | Product-native signal map layers. | `apps/pulse/components/spatial/DeckListingSignals.tsx` |
-| Crawl4AI | Local-first lead intelligence crawler that converts approved URLs to Markdown, compact JSON, and optional TAH cartridges. | `apps/pulse/lib/lead-intel/crawlLead.ts`, `apps/pulse/app/api/intelligence/crawl-lead/route.ts`, `apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py` |
+| Crawl4AI | Local-first lead intelligence crawler that converts approved URLs to Markdown, compact JSON, readable `.source.md` audit files, and forged binary indexed `.tah` cartridges. | `apps/pulse/lib/lead-intel/crawlLead.ts`, `apps/pulse/app/api/intelligence/crawl-lead/route.ts`, `apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py` |
 | Novu | Unified notification workflow trigger for lead alerts, staff ops, scheduling, and future in-app notifications. | `apps/pulse/lib/notifications/novu.ts`, `apps/pulse/app/api/notifications/novu/route.ts` |
 
 ## Request Flow

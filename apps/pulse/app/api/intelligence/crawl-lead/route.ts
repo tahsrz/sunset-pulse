@@ -22,6 +22,7 @@ const crawlRequestSchema = z.object({
   timeoutMs: z.number().int().min(5000).max(120000).optional(),
   allowedDomains: z.array(z.string().min(1).max(255)).max(30).optional(),
   importToTah: z.boolean().optional(),
+  forgeBinaryTah: z.boolean().optional(),
   tahOutputDir: z.string().max(1000).optional(),
 });
 
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       ? importLeadIntelCrawlToTah({
           recordId: record.id,
           outputDir: parsed.data.tahOutputDir,
+          forgeBinary: parsed.data.forgeBinaryTah,
         })
       : null;
     return successResponse({

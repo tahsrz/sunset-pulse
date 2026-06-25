@@ -517,7 +517,7 @@ GET  /api/intelligence/crawl-lead
 POST /api/intelligence/crawl-lead
 ```
 
-The route is operator-guarded and uses an allowlist before a page is crawled. Pass `importToTah: true` to write a completed crawl into a source-grounded TAH cartridge. By default, rows are appended to:
+The route is operator-guarded and uses an allowlist before a page is crawled. Pass `importToTah: true` to write a readable `.source.md` audit file and a forged binary indexed `.tah` cartridge. By default, rows are appended to:
 
 ```text
 apps/pulse/cartridges/lead-intel/crawl-results.jsonl
@@ -527,6 +527,13 @@ Default imported cartridge directory:
 
 ```text
 apps/pulse/cartridges/imports/lead-intel/
+```
+
+For a concept such as `lead_intel_records_example_com_property_record_123`, the importer writes:
+
+```text
+lead_intel_records_example_com_property_record_123.source.md
+lead_intel_records_example_com_property_record_123.tah
 ```
 
 Install the optional local worker from `apps/pulse`:

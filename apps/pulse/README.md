@@ -46,7 +46,7 @@ graph LR
 - Visualization components for maps, 3D property views, and D3.js velocity trajectories.
 - Command Center and JamieChat integration docs live in [`docs/AI_INTEGRATION_STACK.md`](./docs/AI_INTEGRATION_STACK.md).
 - JamieChat turns route through the TensorZero-ready backbone helper before falling through to the current provider path.
-- Operator-guarded Crawl4AI ingestion can turn approved regional sites, brokerage pages, and public-record URLs into a local lead-intelligence JSONL ledger and optional TAH cartridges.
+- Operator-guarded Crawl4AI ingestion can turn approved regional sites, brokerage pages, and public-record URLs into a local lead-intelligence JSONL ledger plus optional `.source.md` audit files and binary TAH cartridges.
 - Novu-compatible notification workflows provide one trigger path for hot leads, staff operations, scheduling updates, and future in-app notifications.
 
 ### 📈 Lead Sigmoid Maturation Flow
@@ -122,7 +122,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `/api/admin/orchestrator/terminal-intents/[id]` approves, rejects, or runs queued terminal intents. Low-risk commands can run directly, medium-risk commands require approval first, and high-risk commands are manual-only.
 - Queued terminal intents persist to `/.orchestrator/terminal-intents.json` by default. Set `ORCHESTRATOR_COMMAND_QUEUE_PATH` to move the local queue store.
 - `/api/telegram/webhook` accepts Telegram updates, authorizes `AUTHORIZED_USER_ID` or `TELEGRAM_OPERATOR_CHAT_ID`, and routes `/commands`, `/status`, `/sessions`, `/tah`, `/places`, `/check`, `/cancel`, `/pack_master`, and guarded `!command` terminal intents.
-- `/api/intelligence/crawl-lead` runs the operator-guarded Crawl4AI lead-intelligence ingestion path and writes local JSONL rows under `cartridges/lead-intel/` by default. Use `importToTah: true` to create a cartridge under `cartridges/imports/lead-intel/`.
+- `/api/intelligence/crawl-lead` runs the operator-guarded Crawl4AI lead-intelligence ingestion path and writes local JSONL rows under `cartridges/lead-intel/` by default. Use `importToTah: true` to create `.source.md` provenance files and binary `.tah` cartridges under `cartridges/imports/lead-intel/`.
 - `/api/notifications/novu` triggers or locally queues Novu-compatible notification workflows, starting with hot-lead alerts from the lead processor.
 
 ## 🗓️ Sunset Gas and Grill - Shift Scheduling & SMS Automation
