@@ -28,6 +28,7 @@ const mlsFixture = {
   source: 'MLS',
   listing_status: 'Active',
   last_updated: '2026-05-18T12:00:00.000Z',
+  display_public: true,
   PrivateRemarks: 'DO NOT DISPLAY: seller is out of town',
   ShowingInstructions: 'LOCKBOX CODE 1234',
   ListAgentEmail: 'private-agent@example.test',
@@ -73,6 +74,7 @@ describe('MLS compliance sanitizer', () => {
     expect(publicListing.location.city).toBe('Keller');
     expect(publicListing.metadata.provider).toBe('reso-web-api');
     expect(publicListing.metadata.photoCount).toBe(1);
+    expect(publicListing.display_public).toBe(true);
     expect(publicListing).not.toHaveProperty('rawPayload');
     expect(serialized).not.toContain('DO NOT DISPLAY');
     expect(serialized).not.toContain('LOCKBOX CODE');

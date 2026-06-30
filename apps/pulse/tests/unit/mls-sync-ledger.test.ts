@@ -228,7 +228,7 @@ describe('MLS operator routes', () => {
     });
   });
 
-  it('runs a manual MLS sync with sanitized operator params', async () => {
+  it('runs a manual MLS sync with validated operator params', async () => {
     mockBridgeGetListingStream.mockImplementation(async function* () {
       yield makeListing('MLS-ROUTE', 'Route Street');
     });
@@ -241,8 +241,6 @@ describe('MLS operator routes', () => {
         params: {
           city: 'Dallas',
           pageSize: 1,
-          apiKey: 'should-not-pass',
-          randomUnsafeFilter: 'nope',
         },
       }),
     }));
@@ -349,6 +347,19 @@ describe('hotsheet MLS importer', () => {
         failed: 0,
       },
     });
+  });
+
+  it('rejects oversized hotsheet imports before creating a run', async () => {
+    const oversized = Array.from({ length: 501 }, (_, index) => `
+${index} Test Street
+Dallas, TX 75201
+MLS# LIMIT-${index} - Residential Sale
+Active
+$425,000
+`).join('\n');
+
+    await expect(importHotsheetText(oversized)).rejects.toThrow('500-listing import limit');
+    expect(listMlsSyncRuns()).toHaveLength(0);
   });
 });
 

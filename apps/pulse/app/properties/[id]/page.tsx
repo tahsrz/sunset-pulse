@@ -21,6 +21,9 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { Property } from '@/lib/types';
 import { logEvent } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useLocalListing } from '@/lib/powersync/useLocalListings';
+import { useSunsetPowerSync } from '@/lib/powersync/PowerSyncProvider';
+import { recordLocalPropertyView } from '@/lib/powersync/mutations';
 
 // --- Interfaces for Type Safety ---
 interface RentData {
@@ -35,10 +38,26 @@ const PropertyPage: React.FC = () => {
   const params = useParams();
   const id = params?.id as string;
   const { user } = useAuth();
+  const { listing: localListing, enabled: localEnabled } = useLocalListing(id || null);
+  const { database: localDatabase } = useSunsetPowerSync();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [rentData, setRentData] = useState<RentData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!localEnabled || !localListing || property) return;
+    setProperty(localListing as Property);
+    setLoading(false);
+  }, [localEnabled, localListing, property]);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_RECENT_PROPERTY_VIEWS_ENABLED === 'false') return;
+    if (!localEnabled || !localDatabase || !user?.id || !id) return;
+    recordLocalPropertyView(localDatabase, user.id, id).catch((error) => {
+      console.error('[POWERSYNC_RECENT_VIEW_ERROR]', error);
+    });
+  }, [id, localDatabase, localEnabled, user?.id]);
 
   useEffect(() => {
     const fetchPropertyData = async () => {

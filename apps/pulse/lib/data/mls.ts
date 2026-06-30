@@ -4,8 +4,8 @@
  * Prepared for Repliers, Bridge API, or future RESO providers.
  */
 
-import { fetchProperty } from '@/lib/core/requests';
 import { syncPropertyToIntelligenceGrid } from '@/lib/intelligence/propertySync';
+import { getListingById, searchListings } from './listingRepository';
 import { bridgeMlsService } from './bridgeMls';
 import { repliersMlsService } from './repliersMls';
 import {
@@ -13,9 +13,10 @@ import {
   finishMlsSyncRun,
   getMlsSyncSnapshot,
   recordMlsSyncListing,
+  persistMlsSyncRun,
   type MlsSyncRun,
 } from './mlsSyncLedger';
-import type { MlsProviderAdapter, MlsProviderName, NormalizedMlsListing } from './mlsTypes';
+import type { MlsProviderAdapter, MlsProviderName } from './mlsTypes';
 
 export interface MLSProperty {
   _id: string;
@@ -57,6 +58,7 @@ export class MLSService {
       provider: this.getActiveProviderName(),
       params,
     });
+    await persistMlsSyncRun(run);
     const stream = this.activeMlsService.getListingStream(params);
 
     try {
@@ -81,10 +83,16 @@ export class MLSService {
       }
 
       const finished = finishMlsSyncRun(run.id);
-      if (finished) options.onRunFinished?.(finished);
+      if (finished) {
+        await persistMlsSyncRun(finished);
+        options.onRunFinished?.(finished);
+      }
     } catch (error) {
       const failed = finishMlsSyncRun(run.id, { status: 'failed', error });
-      if (failed) options.onRunFinished?.(failed);
+      if (failed) {
+        await persistMlsSyncRun(failed);
+        options.onRunFinished?.(failed);
+      }
       throw error;
     }
   }
@@ -104,47 +112,31 @@ export class MLSService {
   }
 
   /**
-   * Fetches properties from the unified listing pool.
-   * Merges MongoDB results with live MLS stream.
+   * Compatibility read API. Customer-facing reads resolve from the canonical
+   * repository and never call an external MLS provider.
    */
   public async getListings(params: any = {}) {
-    const domain = process.env.NEXT_PUBLIC_API_DOMAIN || 'http://localhost:3000';
-    const protocol = domain.includes('vercel.app') ? 'https' : 'http';
-    const internalUrl = domain.startsWith('http') ? `${domain}/api/properties` : `${protocol}://${domain}/api/properties`;
+    return searchListings({
+      location: params.city || params.location,
+      propertyType: params.type || params.propertyType,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      beds: params.beds,
+      baths: params.bathrooms || params.baths,
+      status: params.status,
+    }, { limit: params.pageSize || params.$limit || 100 });
+  }
 
-    const [internalRes, mlsListings] = await Promise.all([
-      fetch(internalUrl, { cache: 'no-store' })
-        .then((response) => (response.ok ? response.json() : { properties: [] }))
-        .catch(() => ({ properties: [] })),
-      this.activeMlsService.getListings(params),
-    ]);
-
-    const internalListings = (internalRes.properties || []).map((property: any) => ({
-      ...property,
-      source: 'Internal' as const,
-    }));
-
-    const combined: Array<NormalizedMlsListing | any> = [...internalListings, ...mlsListings];
-
-    if (params.city) {
-      return combined.filter((property: any) =>
-        property.location?.city?.toLowerCase().includes(params.city.toLowerCase())
-      );
-    }
-
-    return combined;
+  /** Provider reads are reserved for explicit ingestion workers. */
+  public async getProviderListings(params: any = {}) {
+    return this.activeMlsService.getListings(params);
   }
 
   /**
-   * Resolves a single listing by ID, checking internal first, then active MLS.
+   * Resolves a single listing from the canonical repository.
    */
   public async getListingById(id: string) {
-    if (id.length === 24) {
-      const internal = await fetchProperty(id);
-      if (internal) return internal;
-    }
-
-    return await this.activeMlsService.getListingById(id);
+    return getListingById(id);
   }
 }
 

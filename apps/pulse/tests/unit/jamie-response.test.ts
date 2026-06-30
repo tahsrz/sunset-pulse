@@ -45,4 +45,27 @@ JAMIE_ANALYSIS_REPORT: hidden worker state
 
     expect(reply).toBe('I found a few matching options.');
   });
+
+  it('removes leaked function-call markup while preserving the visible reply', () => {
+    const reply = sanitizeJamieReply(
+      `I'm doing well, and I'm here to help with North Texas real estate.\n` +
+      `<function=search_properties>{"city":"Frisco","price_min":400000,"price_max":1000000}</function>`
+    );
+
+    expect(reply).toBe("I'm doing well, and I'm here to help with North Texas real estate.");
+    expect(reply).not.toContain('search_properties');
+    expect(reply).not.toContain('price_min');
+  });
+
+  it('drops a truncated function call through the end of the reply', () => {
+    const reply = sanitizeJamieReply(
+      `Let me search Frisco now.\n<function=search_properties>{"city":"Frisco"}`
+    );
+
+    expect(reply).toBe('Let me search Frisco now.');
+  });
+
+  it('returns an empty reply for a tool-only payload instead of restoring it', () => {
+    expect(sanitizeJamieReply('<function=search_properties>{"city":"Frisco"}</function>')).toBe('');
+  });
 });

@@ -34,6 +34,7 @@ interface ExplorerMapProps {
   results?: any[];
   hoveredId?: string | null;
   activeRouteProperty?: any;
+  onViewportChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
 }
 
 const ExplorerMap: React.FC<ExplorerMapProps> = ({ 
@@ -41,7 +42,8 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   onPropertySelect = null, 
   results = [], 
   hoveredId = null, 
-  activeRouteProperty = null 
+  activeRouteProperty = null,
+  onViewportChange,
 }) => {
   const searchParams = useSearchParams();
   const { jamieInsights } = useJamieInsights();
@@ -213,6 +215,11 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   // Handle draw control and directions initialization
   const onMapLoad = useCallback((e: any) => {
     const map = e.target;
+    const bounds = map.getBounds();
+    onViewportChange?.({
+      north: bounds.getNorth(), south: bounds.getSouth(),
+      east: bounds.getEast(), west: bounds.getWest(),
+    });
     
     // Draw Control
     const draw = new MapboxDraw({
@@ -260,7 +267,16 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     return () => {
       map.removeControl(draw);
     };
-  }, [onSelectionChange]);
+  }, [onSelectionChange, onViewportChange]);
+
+  const publishViewport = useCallback(() => {
+    const bounds = mapRef.current?.getMap().getBounds();
+    if (!bounds) return;
+    onViewportChange?.({
+      north: bounds.getNorth(), south: bounds.getSouth(),
+      east: bounds.getEast(), west: bounds.getWest(),
+    });
+  }, [onViewportChange]);
 
   const toggleDirections = useCallback((targetProperty: any) => {
     if (!mapRef.current) return;
@@ -352,6 +368,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
+        onMoveEnd={publishViewport}
         mapStyle={showVisual ? "mapbox://styles/mapbox/satellite-v9" : "mapbox://styles/mapbox/dark-v11"}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         onLoad={onMapLoad}

@@ -19,7 +19,7 @@ export class PulseSyncWorker {
       await connectDB();
       
       // 1. Fetch raw listings from Matrix API
-      const listings = await mlsService.getListings({
+      const listings = await mlsService.getProviderListings({
         pageSize: count,
         status: 'Active'
       });
@@ -69,7 +69,7 @@ export class PulseSyncWorker {
     try {
       await connectDB();
       
-      const listings = await mlsService.getListings({
+      const listings = await mlsService.getProviderListings({
         pageSize: count,
         status: 'Unavailable' // Mapped to 'U' in repliersMls
       });

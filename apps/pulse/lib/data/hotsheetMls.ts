@@ -4,6 +4,7 @@ import {
   beginMlsSyncRun,
   finishMlsSyncRun,
   recordMlsSyncListing,
+  persistMlsSyncRun,
   type MlsSyncRun,
 } from './mlsSyncLedger';
 import type { NormalizedMlsListing } from './mlsTypes';
@@ -15,14 +16,20 @@ export type HotsheetImportResult = {
   listings: NormalizedMlsListing[];
 };
 
+export const MAX_HOTSHEET_LISTINGS = 500;
+
 export async function importHotsheetFile(filePath: string): Promise<HotsheetImportResult> {
   const text = await fs.readFile(filePath, 'utf8');
   return importHotsheetText(text, { filePath });
 }
 
 export async function importHotsheetText(text: string, params: Record<string, any> = {}): Promise<HotsheetImportResult> {
-  const run = beginMlsSyncRun({ provider: 'hotsheet', params });
   const listings = parseHotsheetText(text);
+  if (listings.length > MAX_HOTSHEET_LISTINGS) {
+    throw new Error(`Hotsheet exceeds the ${MAX_HOTSHEET_LISTINGS}-listing import limit.`);
+  }
+  const run = beginMlsSyncRun({ provider: 'hotsheet', params });
+  await persistMlsSyncRun(run);
 
   try {
     for (const listing of listings) {
@@ -43,9 +50,11 @@ export async function importHotsheetText(text: string, params: Record<string, an
 
     const finished = finishMlsSyncRun(run.id);
     if (!finished) throw new Error('Hotsheet import did not create a run ledger entry.');
+    await persistMlsSyncRun(finished);
     return { run: finished, listings };
   } catch (error) {
-    finishMlsSyncRun(run.id, { status: 'failed', error });
+    const failed = finishMlsSyncRun(run.id, { status: 'failed', error });
+    if (failed) await persistMlsSyncRun(failed);
     throw error;
   }
 }
@@ -121,6 +130,7 @@ function parseEntry(lines: string[], mlsLineIndex: number, nextMlsLineIndex: num
       monthly: priceType === 'lease' ? price ?? undefined : undefined,
     },
     source: 'MLS',
+    display_public: true,
     mls_id: mlsId,
     listing_status: listingStatus,
     last_updated: hotsheetDate || new Date().toISOString().slice(0, 10),

@@ -1,71 +1,16 @@
-import fs from 'fs';
-import path from 'path';
 import { NextResponse } from 'next/server';
+import { searchListings } from '@/lib/data/listingRepository';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-type MockListing = {
-  mlsNumber?: string;
-  standardStatus?: string;
-  listPrice?: number;
-  originalPrice?: number;
-  daysOnMarket?: number;
-  simpleDaysOnMarket?: number;
-  photoCount?: number;
-  address?: {
-    area?: string;
-    city?: string;
-    neighborhood?: string;
-    state?: string;
-    streetName?: string;
-    streetNumber?: string;
-    zip?: string;
-  };
-  details?: {
-    numBathrooms?: number;
-    numBathroomsHalf?: number;
-    numBedrooms?: number;
-    propertyType?: string;
-    sqft?: string;
-    style?: string;
-    yearBuilt?: string;
-  };
-  estimate?: {
-    confidence?: number;
-    value?: number;
-  };
-  imageInsights?: {
-    summary?: {
-      quality?: {
-        qualitative?: { overall?: string };
-        quantitative?: { overall?: number };
-      };
-    };
-  };
-  lot?: {
-    acres?: number;
-    squareFeet?: number;
-  };
-  map?: {
-    latitude?: number;
-    longitude?: number;
-  };
-  office?: {
-    brokerageName?: string;
-  };
-};
-
-const MOCK_LISTINGS_PATH = resolvePulseFilePath('lib', 'mocks', 'repliers', 'listings.json');
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const limit = clamp(Number(url.searchParams.get('limit') || 100), 1, 500);
-    const body = JSON.parse(fs.readFileSync(MOCK_LISTINGS_PATH, 'utf8')) as { listings?: MockListing[] };
-    const rows = (body.listings || [])
-      .filter((listing) => Number.isFinite(listing.map?.latitude) && Number.isFinite(listing.map?.longitude))
-      .slice(0, limit)
+    const listings = await searchListings({}, { limit });
+    const rows = listings
+      .filter((listing) => listing.location_geo?.coordinates.every(Number.isFinite))
       .map(toKeplerListingRow);
 
     return NextResponse.json({
@@ -80,65 +25,54 @@ export async function GET(request: Request) {
     console.error('[KEPLER_LISTINGS_API] Failed to load listing dataset:', error);
     return NextResponse.json(
       {
-        error: 'Kepler listing dataset unavailable.',
-        path: path.relative(process.cwd(), MOCK_LISTINGS_PATH)
+        error: 'Kepler listing dataset unavailable.'
       },
       { status: 500 }
     );
   }
 }
 
-function toKeplerListingRow(listing: MockListing, index: number) {
-  const price = Number(listing.listPrice || 0);
-  const estimate = Number(listing.estimate?.value || 0);
-  const originalPrice = Number(listing.originalPrice || price);
+function toKeplerListingRow(listing: any, index: number) {
+  const metadata = listing.metadata || {};
+  const price = Number(listing.list_price ?? listing.price ?? listing.rates?.monthly ?? 0);
+  const estimate = Number(metadata.estimate || 0);
+  const originalPrice = Number(metadata.originalPrice || price);
+  const [longitude, latitude] = listing.location_geo.coordinates;
 
   return {
-    id: listing.mlsNumber || `listing-${index}`,
-    latitude: Number(listing.map?.latitude),
-    longitude: Number(listing.map?.longitude),
+    id: listing.id || `listing-${index}`,
+    latitude,
+    longitude,
     price,
     originalPrice,
     estimate,
     priceVsEstimate: estimate ? Math.round(price - estimate) : null,
     priceChange: originalPrice ? Math.round(price - originalPrice) : null,
-    daysOnMarket: Number(listing.simpleDaysOnMarket || listing.daysOnMarket || 0),
-    bedrooms: Number(listing.details?.numBedrooms || 0),
-    bathrooms: Number(listing.details?.numBathrooms || 0) + Number(listing.details?.numBathroomsHalf || 0) * 0.5,
-    sqft: Number(listing.details?.sqft || 0),
-    yearBuilt: Number(listing.details?.yearBuilt || 0),
-    lotAcres: Number(listing.lot?.acres || 0),
-    lotSquareFeet: Number(listing.lot?.squareFeet || 0),
-    photoCount: Number(listing.photoCount || 0),
-    imageQuality: Number(listing.imageInsights?.summary?.quality?.quantitative?.overall || 0),
-    estimateConfidence: Number(listing.estimate?.confidence || 0),
-    status: listing.standardStatus || 'Unknown',
-    propertyType: listing.details?.propertyType || 'Unknown',
-    style: listing.details?.style || 'Unknown',
-    qualityBand: listing.imageInsights?.summary?.quality?.qualitative?.overall || 'unknown',
-    city: listing.address?.city || 'Unknown',
-    state: listing.address?.state || 'Unknown',
-    area: listing.address?.area || 'Unknown',
-    neighborhood: listing.address?.neighborhood || 'Unknown',
-    brokerage: listing.office?.brokerageName || 'Unknown',
-    address: [
-      listing.address?.streetNumber,
-      listing.address?.streetName,
-      listing.address?.city,
-      listing.address?.state,
-      listing.address?.zip
-    ].filter(Boolean).join(' ')
+    daysOnMarket: Number(metadata.daysOnMarket || 0),
+    bedrooms: Number(listing.beds || 0),
+    bathrooms: Number(listing.baths || 0),
+    sqft: Number(listing.square_feet || 0),
+    yearBuilt: Number(metadata.yearBuilt || 0),
+    lotAcres: Number(metadata.lotAcres || 0),
+    lotSquareFeet: Number(metadata.lotSquareFeet || 0),
+    photoCount: Number(metadata.photoCount || listing.images.length || 0),
+    imageQuality: Number(metadata.imageQuality || 0),
+    estimateConfidence: Number(metadata.estimateConfidence || 0),
+    status: listing.listing_status || 'Unknown',
+    propertyType: listing.type || 'Unknown',
+    style: metadata.style || 'Unknown',
+    qualityBand: metadata.qualityBand || 'unknown',
+    city: listing.location.city || 'Unknown',
+    state: listing.location.state || 'Unknown',
+    area: metadata.area || 'Unknown',
+    neighborhood: metadata.neighborhood || 'Unknown',
+    brokerage: metadata.brokerage || 'Unknown',
+    address: [listing.location.street, listing.location.city, listing.location.state, listing.location.zipcode]
+      .filter(Boolean).join(' ')
   };
 }
 
 function clamp(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));
-}
-
-function resolvePulseFilePath(...segments: string[]) {
-  const directPath = path.join(process.cwd(), ...segments);
-  if (fs.existsSync(directPath)) return directPath;
-
-  return path.join(process.cwd(), 'apps', 'pulse', ...segments);
 }

@@ -1,10 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import connectDB from '@/lib/core/database';
-import Property from '@/models/Property';
-import { mlsService } from '@/lib/data/mls';
-import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
+import { searchListings } from '@/lib/data/listingRepository';
 
 export const jamiePropertySearchInputSchema = z.object({
   city: z.string().optional().describe("City to search in, such as Frisco or Plano."),
@@ -90,27 +87,16 @@ function summarizeProperty(property: any): JamiePropertySearchResult['properties
 export async function searchPropertiesForJamie(input: JamiePropertySearchInput): Promise<JamiePropertySearchResult> {
   const parsed = jamiePropertySearchInputSchema.parse(input);
   const params = toPropertySearchParams(parsed);
-  const { query } = buildPropertyQuery(params);
+  const listings = await searchListings({
+    location: params.location,
+    propertyType: params.propertyType,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    beds: params.beds,
+    baths: params.baths,
+  }, { limit: 6 });
 
-  await connectDB();
-
-  const [internalProperties, mlsListings] = await Promise.all([
-    Property.find(query).limit(6).lean(),
-    mlsService.getListings({
-      city: params.location,
-      type: params.propertyType === 'All' ? '' : params.propertyType,
-      minPrice: params.minPrice,
-      maxPrice: params.maxPrice,
-      beds: params.beds,
-      bathrooms: params.baths,
-      pageSize: 6,
-    }).catch((error: any) => {
-      console.warn('[JAMIE_SEARCH_MLS_FALLBACK]', error?.message || error);
-      return [];
-    }),
-  ]);
-
-  const properties = [...internalProperties, ...mlsListings]
+  const properties = listings
     .map(summarizeProperty)
     .filter((property, index, all) => all.findIndex((candidate) => candidate.id === property.id) === index)
     .slice(0, 6);

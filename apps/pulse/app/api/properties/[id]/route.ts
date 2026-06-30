@@ -1,35 +1,19 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse } from '@/lib/core/apiResponse';
 
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
+import { getListingById } from '@/lib/data/listingRepository';
 
 // GET /api/properties/:id
 export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id } = await params;
 
-    // 1. Supabase Lookup (Alpha Consolidation)
-    // We check both the internal UUID and the mls_id field
-    const { data: sbProperty, error: sbError } = await supabase
-      .from('properties')
-      .select('*')
-      .or(`id.eq.${id},mls_id.eq.${id}`)
-      .single();
-
-    if (!sbError && sbProperty) {
-      // Map Supabase flatter structure back to the shared interface if needed
-      // (Though the frontend is being updated to handle the consolidated grid)
-      return successResponse(normalizePropertyPricing(sbProperty));
-    }
-
-    // 2. MongoDB Fallback (Legacy Support)
-    await connectDB();
-    const property = await Property.findById(id).lean();
+    const property = await getListingById(id);
 
     if (!property) return notFoundResponse('Property Asset');
 

@@ -25,6 +25,12 @@ const INTERNAL_LINE_PATTERNS = [
 
 const INTERNAL_BLOCK_START = /^\s*\[(?:ACTIVE_ANALYSIS_NODES|JAMIE_DATA_AGGREGATION|JAMIE_FINAL_INSIGHTS|JAMIE_ANALYSIS_REPORT|JAMIE_PULSE_CONTEXT)\]\s*:?\s*$/i;
 
+const TOOL_CALL_BLOCK_PATTERNS = [
+  /<function\s*=\s*["']?[\w.-]+["']?\s*>[\s\S]*?(?:<\/function\s*>|$)/gi,
+  /<function(?:\s+[^>]*)?>[\s\S]*?(?:<\/function\s*>|$)/gi,
+  /<tool_call(?:\s+[^>]*)?>[\s\S]*?(?:<\/tool_call\s*>|$)/gi,
+];
+
 function extractContentFromJsonString(content: string) {
   const trimmed = content.trim();
   if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return content;
@@ -45,7 +51,11 @@ export function sanitizeJamieReply(content: string) {
   if (!content || typeof content !== 'string') return '';
 
   const parsedContent = extractContentFromJsonString(content);
-  const lines = parsedContent.split(/\r?\n/);
+  const withoutToolCalls = TOOL_CALL_BLOCK_PATTERNS.reduce(
+    (visible, pattern) => visible.replace(pattern, ''),
+    parsedContent
+  );
+  const lines = withoutToolCalls.split(/\r?\n/);
   const kept: string[] = [];
   let droppingInternalBlock = false;
 
@@ -81,7 +91,7 @@ export function sanitizeJamieReply(content: string) {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return stripped || parsedContent.trim();
+  return stripped;
 }
 
 export function getJamieDisplayContent(response: unknown, fallback = "I'm checking that now.") {

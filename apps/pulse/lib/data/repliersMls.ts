@@ -181,6 +181,7 @@ class RepliersMLSService {
       },
       images: normalizeRepliersImages(item.images, item.mlsNumber),
       source: 'MLS',
+      display_public: true,
       mls_id: item.mlsNumber,
       listing_status: item.status === 'A' ? 'Active' : ((item as any).standardStatus === 'Closed' ? 'Closed' : item.status),
       last_updated: item.updatedOn,
@@ -211,9 +212,7 @@ class RepliersMLSService {
     const listings = data?.listings;
     if (!listings || !Array.isArray(listings)) return [];
 
-    return listings
-      .filter((item: any) => gatekeeper.shouldProcessListing(item.mlsNumber, item.updatedOn))
-      .map((item: any) => this.mapRepliersToProperty(item));
+    return listings.map((item: any) => this.mapRepliersToProperty(item));
   }
 
   public async getListingById(id: string) {

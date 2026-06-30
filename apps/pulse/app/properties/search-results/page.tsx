@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import SearchHeader from '@/components/search/SearchHeader';
 import MapSection from '@/components/search/MapSection';
 import ResultsList from '@/components/search/ResultsList';
+import { useLocalViewportListings, type ViewportBounds } from '@/lib/powersync/useLocalListings';
 
 const SearchResultsPage = () => {
   const searchParams = useSearchParams();
@@ -18,6 +19,10 @@ const SearchResultsPage = () => {
   const [activeRouteProperty, setActiveRouteProperty] = useState<any>(null);
   const [savedSectors, setSavedSectors] = useState<any[]>([]);
   const [showSectorSidebar, setShowSectorSidebar] = useState(false);
+  const [viewportBounds, setViewportBounds] = useState<ViewportBounds | null>(null);
+  const [networkSettled, setNetworkSettled] = useState(false);
+  const [networkFailed, setNetworkFailed] = useState(false);
+  const { listings: localListings, enabled: localEnabled } = useLocalViewportListings(viewportBounds);
 
   const isPolygonActive = !!searchParams?.get('polygon');
 
@@ -33,11 +38,19 @@ const SearchResultsPage = () => {
     if (label) setBoundaryName(label);
   }, [searchParams]);
 
+  useEffect(() => {
+    if (!localEnabled || localListings.length === 0 || (networkSettled && !networkFailed)) return;
+    setProperties(localListings);
+    setLoading(false);
+  }, [localEnabled, localListings, networkFailed, networkSettled]);
+
   // Fetch results based on search params
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (!searchParams) return;
       setLoading(true);
+      setNetworkSettled(false);
+      setNetworkFailed(false);
       try {
         const res = await fetch(`/api/properties/search/advanced?${searchParams.toString()}`);
         const json = await res.json();
@@ -47,14 +60,16 @@ const SearchResultsPage = () => {
         setProperties(Array.isArray(propertyArray) ? propertyArray : []);
       } catch (error) {
         console.error('[FETCH_SEARCH_RESULTS_ERROR]', error);
-        setProperties([]);
+        setNetworkFailed(true);
+        if (!localEnabled) setProperties([]);
       } finally {
+        setNetworkSettled(true);
         setLoading(false);
       }
     };
 
     fetchSearchResults();
-  }, [searchParams]);
+  }, [localEnabled, searchParams]);
 
   const handleSearch = (filters: any) => {
     const params = new URLSearchParams();
@@ -151,6 +166,7 @@ const SearchResultsPage = () => {
           handleRemoveSector={handleRemoveSector}
           hoveredPropertyId={hoveredPropertyId}
           activeRouteProperty={activeRouteProperty}
+          onViewportChange={setViewportBounds}
         />
 
         <ResultsList 

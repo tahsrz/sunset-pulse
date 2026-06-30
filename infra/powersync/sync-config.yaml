@@ -1,0 +1,44 @@
+config:
+  edition: 3
+
+streams:
+  my_offline_data:
+    auto_subscribe: true
+    queries:
+      - SELECT id, user_id, property_id, name, created_at FROM collections WHERE user_id = auth.user_id()
+      - SELECT id, user_id, property_id, viewed_at FROM recent_property_views WHERE user_id = auth.user_id()
+      - SELECT id, user_id, name, criteria, created_at, updated_at FROM saved_searches WHERE user_id = auth.user_id()
+
+  viewport_properties:
+    queries:
+      - |
+        SELECT id, mls_id, name, type, description, street, city, state, zip,
+               latitude, longitude, beds, baths, sqft, price, price_type, rates,
+               amenities, images, image_url, source, listing_status, last_updated,
+               is_demo, is_featured, display_public
+        FROM properties
+        WHERE display_public = true AND deleted_at IS NULL AND is_demo = false
+          AND auth.user_id() IS NOT NULL
+          AND subscription.parameter('north') BETWEEN 25.5 AND 36.8
+          AND subscription.parameter('south') BETWEEN 25.5 AND 36.8
+          AND subscription.parameter('east') BETWEEN -106.7 AND -93.5
+          AND subscription.parameter('west') BETWEEN -106.7 AND -93.5
+          AND subscription.parameter('north') > subscription.parameter('south')
+          AND subscription.parameter('east') > subscription.parameter('west')
+          AND subscription.parameter('north') - subscription.parameter('south') <= 1.5
+          AND subscription.parameter('east') - subscription.parameter('west') <= 1.5
+          AND latitude BETWEEN subscription.parameter('south') AND subscription.parameter('north')
+          AND longitude BETWEEN subscription.parameter('west') AND subscription.parameter('east')
+
+  property_detail:
+    queries:
+      - |
+        SELECT id, mls_id, name, type, description, street, city, state, zip,
+               latitude, longitude, beds, baths, sqft, price, price_type, rates,
+               amenities, images, image_url, source, listing_status, last_updated,
+               is_demo, is_featured, display_public
+        FROM properties
+        WHERE display_public = true AND deleted_at IS NULL AND is_demo = false
+          AND auth.user_id() IS NOT NULL
+          AND (CAST(id AS TEXT) = subscription.parameter('property_id')
+               OR mls_id = subscription.parameter('property_id'))

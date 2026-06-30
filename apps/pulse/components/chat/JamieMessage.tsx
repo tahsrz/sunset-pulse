@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { FaCogs, FaLightbulb, FaLayerGroup } from 'react-icons/fa';
 import { renderGlossaryText } from '@/components/glossary/GlossaryText';
+import { sanitizeJamieReply } from '@/lib/ai/jamieResponse';
 
 interface JamieMessageProps {
   message: {
@@ -24,7 +25,9 @@ interface JamieMessageProps {
 
 const cleanContent = (content: string) => {
   if (!content || typeof content !== 'string') return '';
-  return content.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
+  return sanitizeJamieReply(content)
+    .replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '')
+    .trim();
 };
 
 const formatPrice = (price?: number | null) => {

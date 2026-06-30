@@ -1,12 +1,8 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
-import connectDB from '@/lib/core/database';
-import Property from '@/models/Property';
-import { mlsService } from '@/lib/data/mls';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import { PulseCache } from '@/utils/security/PulseCache';
-import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
+import { searchListings } from '@/lib/data/listingRepository';
 
 /**
  * GET /api/properties/search/advanced
@@ -16,10 +12,7 @@ export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
-    const includeMLS = params.includeMLS !== 'false';
-
-    // 1. Build Query & Handle Cache Signature
-    const { query, signature } = buildPropertyQuery(params);
+    const signature = JSON.stringify(Object.entries(params).sort(([a], [b]) => a.localeCompare(b)));
 
     // 2. Cache Check
     const cachedData = PulseCache.get(signature);
@@ -29,29 +22,18 @@ export const GET = async (request: NextRequest) => {
       return response;
     }
 
-    await connectDB();
-
-    // Build and Execute Internal Grid Query
-    const internalProperties = await Property.find(query).lean();
-
-    // External MLS Intelligence via Repliers.io bridge
-    let mlsProperties: any[] = [];
-    if (includeMLS) {
-      const mlsParams = {
-        city: params.location,
-        type: params.propertyType === 'All' ? '' : params.propertyType,
-        minPrice: params.minPrice,
-        maxPrice: params.maxPrice,
-        beds: params.beds,
-        bathrooms: params.baths
-      };
-      
-      const mlsData = await mlsService.getListings(mlsParams);
-      // Filter for unique external assets
-      mlsProperties = mlsData.filter((p: any) => p.source === 'MLS');
-    }
-
-    const allResults = [...internalProperties, ...mlsProperties].map(normalizePropertyPricing);
+    const allResults = await searchListings({
+      location: params.location,
+      propertyType: params.propertyType,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      beds: params.beds,
+      baths: params.baths,
+      polygon: params.polygon,
+      radius: params.radius,
+      center: params.center,
+      includeDemo: params.includeDemo === 'true',
+    }, { limit: 500 });
 
     // 3. Store in PulseCache
     PulseCache.set(signature, allResults);

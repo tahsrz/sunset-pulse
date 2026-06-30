@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import SafePropertyImage from '@/components/SafePropertyImage';
 import {
   FaBed,
   FaBath,
@@ -54,12 +54,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
   const isRV = property.type === 'RV' || property.type === 'RV Park';
   const isInternal = property.source === 'Internal' || !property.source;
 
-  const normalizeImg = (src: string) => {
-    if (!src) return '/images/property-placeholder.jpg';
-    if (src.startsWith('http') || src.startsWith('/')) return src;
-    return `/${src}`;
-  };
-
   return (
     <div className={`property-card rounded-xl shadow-md relative bg-white transition-all duration-500 ${isHighIntensity ? 'hover:scale-[1.02]' : ''}`}
       style={{
@@ -91,9 +85,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onRouteClick = nu
         </div>
       )}
 
-      <Image
-        src={normalizeImg(property.images?.[0])}
-        alt=''
+      <SafePropertyImage
+        src={property.images?.[0]}
+        alt={`${property.name} listing photo`}
         height={0}
         width={0}
         sizes='100vw'

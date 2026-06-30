@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS sunset_mls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON sunset_mls.* TO 'openresync'@'%';
+FLUSH PRIVILEGES;

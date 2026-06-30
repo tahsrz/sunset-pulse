@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { MlsProviderName, NormalizedMlsListing } from './mlsTypes';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export type MlsSyncRunStatus = 'running' | 'completed' | 'failed';
 export type MlsSyncListingOutcome = 'synced' | 'skipped' | 'failed';
@@ -142,6 +143,52 @@ export function getMlsSyncSnapshot() {
   };
 }
 
+/**
+ * Persists the in-process run snapshot to Postgres. The file ledger remains a
+ * local/test fallback, while production observability survives serverless
+ * instance recycling.
+ */
+export async function persistMlsSyncRun(run: MlsSyncRun) {
+  if (process.env.NODE_ENV === 'test' || process.env.MLS_SYNC_DB_DISABLED === 'true') return;
+
+  const { error } = await supabaseAdmin.from('mls_sync_runs').upsert({
+    id: run.id,
+    provider: run.provider,
+    status: run.status,
+    params: run.params,
+    received: run.metrics.received,
+    synced: run.metrics.synced,
+    skipped: run.metrics.skipped,
+    failed: run.metrics.failed,
+    error: run.failures[0]?.error || null,
+    started_at: run.startedAt,
+    updated_at: run.updatedAt,
+    completed_at: run.completedAt,
+    duration_ms: run.durationMs,
+  }, { onConflict: 'id' });
+
+  if (error) throw new Error(`MLS sync run persistence failed: ${error.message}`);
+
+  const { error: deleteError } = await supabaseAdmin
+    .from('mls_sync_failures')
+    .delete()
+    .eq('run_id', run.id);
+  if (deleteError) throw new Error(`MLS sync failure reset failed: ${deleteError.message}`);
+
+  if (run.failures.length) {
+    const { error: failureError } = await supabaseAdmin.from('mls_sync_failures').insert(
+      run.failures.map((failure) => ({
+        run_id: run.id,
+        mls_id: failure.mls_id,
+        name: failure.name,
+        error: failure.error,
+        occurred_at: failure.at,
+      }))
+    );
+    if (failureError) throw new Error(`MLS sync failure persistence failed: ${failureError.message}`);
+  }
+}
+
 export function resetMlsSyncLedgerForTests() {
   const state = getState();
   state.runs = [];
@@ -238,7 +285,9 @@ function normalizeFailure(input: any): MlsSyncRun['failures'][number] | null {
 }
 
 function normalizeProvider(provider: any): MlsProviderName {
-  return provider === 'repliers' || provider === 'bridge' || provider === 'hotsheet' ? provider : 'unknown';
+  return provider === 'repliers' || provider === 'bridge' || provider === 'hotsheet' || provider === 'openresync'
+    ? provider
+    : 'unknown';
 }
 
 function normalizeStatus(status: any): MlsSyncRunStatus {

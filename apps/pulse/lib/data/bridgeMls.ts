@@ -133,9 +133,16 @@ class BridgeMLSService {
       },
       images: item.Media?.map(m => m.MediaURL) || [],
       source: 'MLS',
+      display_public: true,
       mls_id: item.ListingId,
       listing_status: 'Active',
-      last_updated: item.ModificationTimestamp
+      last_updated: item.ModificationTimestamp,
+      metadata: {
+        provider: 'bridge',
+        resource: 'Property',
+        modificationTimestamp: item.ModificationTimestamp,
+        photoCount: item.Media?.length || 0,
+      }
     };
   }
 
@@ -152,9 +159,7 @@ class BridgeMLSService {
     const data = await this.fetchBridge('', bridgeParams);
     if (!data || !Array.isArray(data)) return [];
 
-    return data
-      .filter((item: any) => gatekeeper.shouldProcessListing(item.ListingId, item.ModificationTimestamp))
-      .map((item: any) => this.mapBridgeToProperty(item));
+    return data.map((item: any) => this.mapBridgeToProperty(item));
   }
 
   /**

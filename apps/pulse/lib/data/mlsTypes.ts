@@ -1,4 +1,4 @@
-export type MlsProviderName = 'repliers' | 'bridge' | 'hotsheet' | 'unknown';
+export type MlsProviderName = 'repliers' | 'bridge' | 'hotsheet' | 'openresync' | 'unknown';
 
 export type NormalizedMlsListing = {
   _id?: string;
@@ -35,6 +35,7 @@ export type NormalizedMlsListing = {
   last_updated?: string;
   is_demo?: boolean;
   is_featured?: boolean;
+  display_public?: boolean;
   metadata?: Record<string, any>;
   neighborhood_recon?: Record<string, any> | null;
 };

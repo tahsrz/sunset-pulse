@@ -7,6 +7,7 @@ import TRECConsumerNotice from '@/components/TRECConsumerNotice';
 import GlobalMarketPulse from '@/components/GlobalMarketPulse';
 import Footer from '@/components/Footer';
 import { AuthProvider } from '@/context/AuthContext';
+import { SunsetPowerSyncProvider } from '@/lib/powersync/PowerSyncProvider';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
 import { JamiePulseProvider } from '@/context/JamiePulseContext';
@@ -185,6 +186,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
     <html lang='en'>
       <body className='waterlily-surface antialiased selection:bg-cyan-200 selection:text-slate-950'>
         <AuthProvider>
+          <SunsetPowerSyncProvider>
           <CartProvider>
             <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
               <VibeProvider>
@@ -207,6 +209,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
               </VibeProvider>
             </ThemeProvider>
           </CartProvider>
+          </SunsetPowerSyncProvider>
         </AuthProvider>
       </body>
     </html>

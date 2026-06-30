@@ -1,0 +1,53 @@
+name: sunset-openresync
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${OPENRESYNC_MYSQL_ROOT_PASSWORD:-sunset-local-root}
+      MYSQL_DATABASE: openresync
+      MYSQL_USER: openresync
+      MYSQL_PASSWORD: ${OPENRESYNC_MYSQL_PASSWORD:-sunset-local-pilot}
+    ports:
+      - "${OPENRESYNC_MYSQL_PORT:-33033}:3306"
+    volumes:
+      - openresync_mysql:/var/lib/mysql
+      - ./mysql-init.sql:/docker-entrypoint-initdb.d/10-sunset-raw.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uopenresync -p$$MYSQL_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  openresync:
+    build:
+      context: .
+      args:
+        OPENRESYNC_REF: 7fedd4e06558198645ec0659296edf301aafc432
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OPENRESYNC_MYSQL_PASSWORD: ${OPENRESYNC_MYSQL_PASSWORD:-sunset-local-pilot}
+      TZ: UTC
+    ports:
+      - "${OPENRESYNC_ADMIN_PORT:-4000}:4000"
+    volumes:
+      - openresync_runtime:/runtime
+      - openresync_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:4000',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  openresync_mysql:
+  openresync_runtime:
+  openresync_logs:

@@ -23,7 +23,8 @@ export default function ClientWidgets() {
   const focusedGameSurface =
     pathname?.startsWith('/value-guess') ||
     pathname?.startsWith('/location-guess') ||
-    pathname?.startsWith('/retail-clash');
+    pathname?.startsWith('/retail-clash') ||
+    pathname?.startsWith('/pulse-quest');
 
   if (focusedGameSurface) {
     return null;

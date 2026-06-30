@@ -21,6 +21,10 @@
     "tah:import-doc": "tsx apps/pulse/scripts/import-doc-to-tah.ts",
     "tah:lancedb:index": "tsx apps/pulse/scripts/tah-lancedb.ts",
     "tah:lancedb:search": "tsx apps/pulse/scripts/tah-lancedb-search.ts",
+    "openresync:up": "docker compose --env-file infra/openresync/.env -f infra/openresync/compose.yaml up -d --build",
+    "openresync:down": "docker compose --env-file infra/openresync/.env -f infra/openresync/compose.yaml down",
+    "openresync:doctor": "npm run mls:openresync:doctor --workspace=apps/pulse",
+    "openresync:normalize": "npm run mls:openresync:normalize --workspace=apps/pulse",
     "test:unit": "npm run test:unit --workspace=apps/pulse",
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },

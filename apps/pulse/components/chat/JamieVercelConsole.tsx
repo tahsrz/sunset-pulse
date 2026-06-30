@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
+import { sanitizeJamieReply } from '@/lib/ai/jamieResponse';
 
 function partText(part: any) {
   if (typeof part?.text === 'string') return part.text;
@@ -12,14 +13,13 @@ function partText(part: any) {
 
 function ToolPart({ part }: { part: any }) {
   const output = part?.output || part?.result;
-  const input = part?.input || part?.args;
   const properties = Array.isArray(output?.properties) ? output.properties : [];
 
   return (
     <div className="mt-3 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100">
-          {String(part?.type || 'tool').replace('tool-', '')}
+          Jamie action
         </p>
         <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-[9px] font-bold uppercase text-cyan-100">
           {part?.state || (output ? 'complete' : 'running')}
@@ -31,7 +31,7 @@ function ToolPart({ part }: { part: any }) {
           {properties.slice(0, 4).map((property: any) => (
             <a
               key={property.id}
-              href={property.href || `/properties/${property.id}`}
+            href={property.href || `/properties/${encodeURIComponent(property.id)}`}
               className="rounded border border-white/10 bg-slate-950/70 p-3 transition hover:border-cyan-300/60"
             >
               <p className="truncate text-sm font-black text-white">{property.name}</p>
@@ -42,9 +42,7 @@ function ToolPart({ part }: { part: any }) {
           ))}
         </div>
       ) : (
-        <pre className="mt-3 max-h-48 overflow-auto rounded bg-slate-950/80 p-3 text-[10px] text-cyan-50/80">
-          {JSON.stringify({ input, output }, null, 2)}
-        </pre>
+        <p className="mt-3 text-xs text-cyan-50/70">Jamie completed a private tool step.</p>
       )}
     </div>
   );
@@ -53,14 +51,17 @@ function ToolPart({ part }: { part: any }) {
 function MessageParts({ message }: { message: any }) {
   const parts = Array.isArray(message.parts) ? message.parts : [];
   if (!parts.length && typeof message.content === 'string') {
-    return <p className="whitespace-pre-wrap leading-7">{message.content}</p>;
+    const content = message.role === 'assistant' ? sanitizeJamieReply(message.content) : message.content;
+    return content ? <p className="whitespace-pre-wrap leading-7">{content}</p> : null;
   }
 
   return (
     <>
       {parts.map((part: any, index: number) => {
         if (part?.type === 'text') {
-          return <p key={index} className="whitespace-pre-wrap leading-7">{partText(part)}</p>;
+          const rawText = partText(part);
+          const text = message.role === 'assistant' ? sanitizeJamieReply(rawText) : rawText;
+          return text ? <p key={index} className="whitespace-pre-wrap leading-7">{text}</p> : null;
         }
 
         if (typeof part?.type === 'string' && part.type.startsWith('tool-')) {

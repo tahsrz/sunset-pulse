@@ -34,7 +34,14 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
       if (res.ok) {
         const json = await res.json();
         // The API returns { data: { listings: [...] } }
-        setLiveProperties(json.data.listings || []);
+        const listings = Array.isArray(json.data?.listings) ? json.data.listings : [];
+        setLiveProperties(listings.filter((listing: any) => (
+          listing?.source === 'MLS'
+          && Array.isArray(listing.images)
+          && listing.images.some((image: unknown) => typeof image === 'string' && (
+            /^https:\/\//i.test(image) || image.startsWith('/images/properties/')
+          ))
+        )));
       }
     } catch (error) {
       console.error('[LIVE_FEED_ERROR]: Unable to load listings.', error);

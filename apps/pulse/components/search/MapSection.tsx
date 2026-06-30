@@ -4,6 +4,7 @@ import React from 'react';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 import ExplorerMap from '@/components/ExplorerMap';
 import SectorSidebar from './SectorSidebar';
+import PowerSyncStatusBadge from '@/components/PowerSyncStatusBadge';
 
 interface MapSectionProps {
   properties: any[];
@@ -20,6 +21,7 @@ interface MapSectionProps {
   handleRemoveSector: (id: number) => void;
   hoveredPropertyId: string | null;
   activeRouteProperty: any;
+  onViewportChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
 }
 
 const MapSection: React.FC<MapSectionProps> = ({
@@ -27,7 +29,7 @@ const MapSection: React.FC<MapSectionProps> = ({
   showSectorSidebar, setShowSectorSidebar, isPolygonActive,
   handlePolygonChange, handlePropertySelect, handleSaveBoundary,
   handleDeploySector, handleRemoveSector, hoveredPropertyId,
-  activeRouteProperty
+  activeRouteProperty, onViewportChange
 }) => {
   return (
     <div className='w-full md:w-2/5 h-[400px] md:h-full relative border-r border-white/10'>
@@ -37,7 +39,9 @@ const MapSection: React.FC<MapSectionProps> = ({
         onPropertySelect={handlePropertySelect}
         hoveredId={hoveredPropertyId}
         activeRouteProperty={activeRouteProperty}
+        onViewportChange={onViewportChange}
       />
+      <PowerSyncStatusBadge />
 
       <button 
         onClick={() => setShowSectorSidebar(!showSectorSidebar)}

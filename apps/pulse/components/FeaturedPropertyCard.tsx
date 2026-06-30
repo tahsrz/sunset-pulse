@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import SafePropertyImage from '@/components/SafePropertyImage';
 import {
   FaBed,
   FaBath,
@@ -19,12 +19,6 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property })
   const popularityScore = (property as any).popularityScore || 0;
   const yieldIntel = (property as any).yieldIntel;
 
-  const normalizeImg = (src: string) => {
-    if (!src) return '/images/property-placeholder.jpg';
-    if (src.startsWith('http') || src.startsWith('/')) return src;
-    return `/${src}`;
-  };
-
   const getRateDisplay = () => {
     const value = property.list_price || property.price || property.rates?.monthly || property.rates?.nightly || 0;
     return value ? value.toLocaleString() : 'N/A';
@@ -32,9 +26,9 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property })
 
   return (
     <div className='waterlily-card rounded-2xl relative flex flex-col md:flex-row overflow-hidden group'>
-      <Image
-        src={normalizeImg(property.images[0])}
-        alt=''
+      <SafePropertyImage
+        src={property.images?.[0]}
+        alt={`${property.name} listing photo`}
         width={0}
         height={0}
         sizes='100vw'

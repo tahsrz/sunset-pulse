@@ -36,6 +36,7 @@ const PUBLIC_PROPERTY_FIELDS = new Set([
   'mls_id',
   'listing_status',
   'last_updated',
+  'display_public',
   'metadata',
 ]);
 

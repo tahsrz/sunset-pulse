@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import { getCachedProperties } from '@/lib/core/propertyRecon';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import cloudinary from '@/config/cloudinary';
 import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 import Property from '@/models/Property';
 import connectDB from '@/lib/core/database';
+import { searchListings } from '@/lib/data/listingRepository';
 
 
 
@@ -16,7 +16,14 @@ export const GET = async (request: NextRequest) => {
     const page = request.nextUrl.searchParams.get('page') || '1';
     const pageSize = request.nextUrl.searchParams.get('pageSize') || '6';
 
-    const data = await getCachedProperties({ page: parseInt(page), pageSize: parseInt(pageSize) });
+    const parsedPage = Math.max(1, parseInt(page));
+    const parsedPageSize = Math.max(1, Math.min(100, parseInt(pageSize)));
+    const allListings = await searchListings({}, { limit: 500 });
+    const start = (parsedPage - 1) * parsedPageSize;
+    const data = {
+      total: allListings.length,
+      properties: allListings.slice(start, start + parsedPageSize),
+    };
 
     return successResponse(data);
   } catch (error: any) {
