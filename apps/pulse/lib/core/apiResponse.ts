@@ -17,13 +17,16 @@ export const successResponse = (data, metadata = {}, status = 200) => {
 };
 
 export const errorResponse = (message, status = 500, details = null) => {
-  console.error(`[API_ERROR] ${status}: ${message}`, details || '');
+  const incidentId = crypto.randomUUID();
+  const exposeDetails = status < 500;
+  console.error(`[API_ERROR] ${incidentId} ${status}: ${message}`, details || '');
   
   return new Response(
     JSON.stringify({
       error: true,
       message,
-      ...(details && { details }),
+      incidentId,
+      ...(exposeDetails && details && { details }),
       timestamp: new Date().toISOString(),
     }),
     {

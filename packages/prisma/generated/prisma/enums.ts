@@ -37,6 +37,82 @@ export const CreationSource = {
 export type CreationSource = (typeof CreationSource)[keyof typeof CreationSource]
 
 
+export const WorkflowTriggerEvents = {
+  BEFORE_EVENT: 'BEFORE_EVENT',
+  EVENT_CANCELLED: 'EVENT_CANCELLED',
+  NEW_EVENT: 'NEW_EVENT',
+  RESCHEDULE_EVENT: 'RESCHEDULE_EVENT',
+  AFTER_EVENT: 'AFTER_EVENT',
+  BOOKING_REJECTED: 'BOOKING_REJECTED',
+  BOOKING_REQUESTED: 'BOOKING_REQUESTED',
+  BOOKING_PAYMENT_INITIATED: 'BOOKING_PAYMENT_INITIATED',
+  BOOKING_PAID: 'BOOKING_PAID',
+  BOOKING_NO_SHOW_UPDATED: 'BOOKING_NO_SHOW_UPDATED',
+  AFTER_HOSTS_CAL_VIDEO_NO_SHOW: 'AFTER_HOSTS_CAL_VIDEO_NO_SHOW',
+  AFTER_GUESTS_CAL_VIDEO_NO_SHOW: 'AFTER_GUESTS_CAL_VIDEO_NO_SHOW',
+  FORM_SUBMITTED: 'FORM_SUBMITTED'
+} as const
+
+export type WorkflowTriggerEvents = (typeof WorkflowTriggerEvents)[keyof typeof WorkflowTriggerEvents]
+
+
+export const WorkflowActions = {
+  EMAIL_HOST: 'EMAIL_HOST',
+  EMAIL_ATTENDEE: 'EMAIL_ATTENDEE',
+  SMS_ATTENDEE: 'SMS_ATTENDEE',
+  SMS_NUMBER: 'SMS_NUMBER',
+  EMAIL_ADDRESS: 'EMAIL_ADDRESS',
+  WHATSAPP_ATTENDEE: 'WHATSAPP_ATTENDEE',
+  WHATSAPP_NUMBER: 'WHATSAPP_NUMBER'
+} as const
+
+export type WorkflowActions = (typeof WorkflowActions)[keyof typeof WorkflowActions]
+
+
+export const WorkflowTemplates = {
+  REMINDER: 'REMINDER',
+  CUSTOM: 'CUSTOM',
+  CANCELLED: 'CANCELLED',
+  RESCHEDULED: 'RESCHEDULED',
+  COMPLETED: 'COMPLETED',
+  RATING: 'RATING'
+} as const
+
+export type WorkflowTemplates = (typeof WorkflowTemplates)[keyof typeof WorkflowTemplates]
+
+
+export const WorkflowMethods = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  WHATSAPP: 'WHATSAPP'
+} as const
+
+export type WorkflowMethods = (typeof WorkflowMethods)[keyof typeof WorkflowMethods]
+
+
+export const WorkflowType = {
+  EVENT_TYPE: 'EVENT_TYPE'
+} as const
+
+export type WorkflowType = (typeof WorkflowType)[keyof typeof WorkflowType]
+
+
+export const WorkflowStepAutoTranslatedField = {
+  REMINDER_BODY: 'REMINDER_BODY',
+  EMAIL_SUBJECT: 'EMAIL_SUBJECT'
+} as const
+
+export type WorkflowStepAutoTranslatedField = (typeof WorkflowStepAutoTranslatedField)[keyof typeof WorkflowStepAutoTranslatedField]
+
+
+export const WorkflowContactType = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL'
+} as const
+
+export type WorkflowContactType = (typeof WorkflowContactType)[keyof typeof WorkflowContactType]
+
+
 export const CancellationReasonRequirement = {
   MANDATORY_BOTH: 'MANDATORY_BOTH',
   MANDATORY_HOST_ONLY: 'MANDATORY_HOST_ONLY',

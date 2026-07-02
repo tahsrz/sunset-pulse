@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import KeplerSpatialLabLoader from '@/components/spatial/KeplerSpatialLabLoader';
+import DeckListingSignalsLoader from '@/components/spatial/DeckListingSignalsLoader';
 
 export const metadata: Metadata = {
   title: 'Spatial Lab | Sunset Pulse',
-  description: 'Kepler.gl spatial intelligence workspace for Sunset Pulse listing and market signals.'
+  description: 'Deck.gl spatial intelligence workspace for Sunset Pulse listing and market signals.'
 };
 
 export default function SpatialLabPage() {
-  return <KeplerSpatialLabLoader />;
+  return <DeckListingSignalsLoader />;
 }

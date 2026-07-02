@@ -516,6 +516,7 @@ export type BookingWhereInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersListRelationFilter
   assignmentReason?: Prisma.AssignmentReasonListRelationFilter
   internalNote?: Prisma.BookingInternalNoteListRelationFilter
+  workflowReminders?: Prisma.WorkflowReminderListRelationFilter
   tracking?: Prisma.XOR<Prisma.TrackingNullableScalarRelationFilter, Prisma.TrackingWhereInput> | null
   expenseLogs?: Prisma.CreditExpenseLogListRelationFilter
   report?: Prisma.XOR<Prisma.BookingReportNullableScalarRelationFilter, Prisma.BookingReportWhereInput> | null
@@ -575,6 +576,7 @@ export type BookingOrderByWithRelationInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersOrderByRelationAggregateInput
   assignmentReason?: Prisma.AssignmentReasonOrderByRelationAggregateInput
   internalNote?: Prisma.BookingInternalNoteOrderByRelationAggregateInput
+  workflowReminders?: Prisma.WorkflowReminderOrderByRelationAggregateInput
   tracking?: Prisma.TrackingOrderByWithRelationInput
   expenseLogs?: Prisma.CreditExpenseLogOrderByRelationAggregateInput
   report?: Prisma.BookingReportOrderByWithRelationInput
@@ -637,6 +639,7 @@ export type BookingWhereUniqueInput = Prisma.AtLeast<{
   scheduledTriggers?: Prisma.WebhookScheduledTriggersListRelationFilter
   assignmentReason?: Prisma.AssignmentReasonListRelationFilter
   internalNote?: Prisma.BookingInternalNoteListRelationFilter
+  workflowReminders?: Prisma.WorkflowReminderListRelationFilter
   tracking?: Prisma.XOR<Prisma.TrackingNullableScalarRelationFilter, Prisma.TrackingWhereInput> | null
   expenseLogs?: Prisma.CreditExpenseLogListRelationFilter
   report?: Prisma.XOR<Prisma.BookingReportNullableScalarRelationFilter, Prisma.BookingReportWhereInput> | null
@@ -785,6 +788,7 @@ export type BookingCreateInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -840,6 +844,7 @@ export type BookingUncheckedCreateInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -894,6 +899,7 @@ export type BookingUpdateInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -949,6 +955,7 @@ export type BookingUncheckedUpdateInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -1499,6 +1506,22 @@ export type BookingUpdateOneRequiredWithoutTrackingNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.BookingUpdateToOneWithWhereWithoutTrackingInput, Prisma.BookingUpdateWithoutTrackingInput>, Prisma.BookingUncheckedUpdateWithoutTrackingInput>
 }
 
+export type BookingCreateNestedOneWithoutWorkflowRemindersInput = {
+  create?: Prisma.XOR<Prisma.BookingCreateWithoutWorkflowRemindersInput, Prisma.BookingUncheckedCreateWithoutWorkflowRemindersInput>
+  connectOrCreate?: Prisma.BookingCreateOrConnectWithoutWorkflowRemindersInput
+  connect?: Prisma.BookingWhereUniqueInput
+}
+
+export type BookingUpdateOneWithoutWorkflowRemindersNestedInput = {
+  create?: Prisma.XOR<Prisma.BookingCreateWithoutWorkflowRemindersInput, Prisma.BookingUncheckedCreateWithoutWorkflowRemindersInput>
+  connectOrCreate?: Prisma.BookingCreateOrConnectWithoutWorkflowRemindersInput
+  upsert?: Prisma.BookingUpsertWithoutWorkflowRemindersInput
+  disconnect?: Prisma.BookingWhereInput | boolean
+  delete?: Prisma.BookingWhereInput | boolean
+  connect?: Prisma.BookingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.BookingUpdateToOneWithWhereWithoutWorkflowRemindersInput, Prisma.BookingUpdateWithoutWorkflowRemindersInput>, Prisma.BookingUncheckedUpdateWithoutWorkflowRemindersInput>
+}
+
 export type BookingCreateNestedOneWithoutPaymentInput = {
   create?: Prisma.XOR<Prisma.BookingCreateWithoutPaymentInput, Prisma.BookingUncheckedCreateWithoutPaymentInput>
   connectOrCreate?: Prisma.BookingCreateOrConnectWithoutPaymentInput
@@ -1648,6 +1671,7 @@ export type BookingCreateWithoutEventTypeInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -1702,6 +1726,7 @@ export type BookingUncheckedCreateWithoutEventTypeInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -1827,6 +1852,7 @@ export type BookingCreateWithoutDestinationCalendarInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -1881,6 +1907,7 @@ export type BookingUncheckedCreateWithoutDestinationCalendarInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -1960,6 +1987,7 @@ export type BookingCreateWithoutUserInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -2014,6 +2042,7 @@ export type BookingUncheckedCreateWithoutUserInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -2077,6 +2106,7 @@ export type BookingCreateWithoutReassignByInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -2131,6 +2161,7 @@ export type BookingUncheckedCreateWithoutReassignByInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -2227,6 +2258,7 @@ export type BookingCreateWithoutExpenseLogsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutBookingInput
@@ -2281,6 +2313,7 @@ export type BookingUncheckedCreateWithoutExpenseLogsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutBookingInput
@@ -2350,6 +2383,7 @@ export type BookingUpdateWithoutExpenseLogsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutBookingNestedInput
@@ -2404,6 +2438,7 @@ export type BookingUncheckedUpdateWithoutExpenseLogsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutBookingNestedInput
@@ -2456,6 +2491,7 @@ export type BookingCreateWithoutInstantMeetingTokenInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -2510,6 +2546,7 @@ export type BookingUncheckedCreateWithoutInstantMeetingTokenInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -2579,6 +2616,7 @@ export type BookingUpdateWithoutInstantMeetingTokenInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -2633,6 +2671,7 @@ export type BookingUncheckedUpdateWithoutInstantMeetingTokenInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -2686,6 +2725,7 @@ export type BookingCreateWithoutReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -2740,6 +2780,7 @@ export type BookingUncheckedCreateWithoutReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -2809,6 +2850,7 @@ export type BookingUpdateWithoutReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -2863,6 +2905,7 @@ export type BookingUncheckedUpdateWithoutReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -2916,6 +2959,7 @@ export type BookingCreateWithoutAttendeesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -2970,6 +3014,7 @@ export type BookingUncheckedCreateWithoutAttendeesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -3039,6 +3084,7 @@ export type BookingUpdateWithoutAttendeesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -3093,6 +3139,7 @@ export type BookingUncheckedUpdateWithoutAttendeesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -3147,6 +3194,7 @@ export type BookingCreateWithoutTrackingInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutBookingInput
@@ -3201,6 +3249,7 @@ export type BookingUncheckedCreateWithoutTrackingInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutBookingInput
@@ -3270,6 +3319,7 @@ export type BookingUpdateWithoutTrackingInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutBookingNestedInput
@@ -3324,6 +3374,241 @@ export type BookingUncheckedUpdateWithoutTrackingInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
+  expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
+  report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutBookingNestedInput
+}
+
+export type BookingCreateWithoutWorkflowRemindersInput = {
+  uid: string
+  idempotencyKey?: string | null
+  userPrimaryEmail?: string | null
+  title: string
+  description?: string | null
+  customInputs?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  responses?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime: Date | string
+  endTime: Date | string
+  location?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string | null
+  status?: $Enums.BookingStatus
+  paid?: boolean
+  cancellationReason?: string | null
+  rejectionReason?: string | null
+  reassignReason?: string | null
+  dynamicEventSlugRef?: string | null
+  dynamicGroupSlugRef?: string | null
+  rescheduled?: boolean | null
+  fromReschedule?: string | null
+  recurringEventId?: string | null
+  smsReminderNumber?: string | null
+  scheduledJobs?: Prisma.BookingCreatescheduledJobsInput | string[]
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRecorded?: boolean
+  iCalUID?: string | null
+  iCalSequence?: number
+  rating?: number | null
+  ratingFeedback?: string | null
+  noShowHost?: boolean | null
+  oneTimePassword?: string | null
+  cancelledBy?: string | null
+  rescheduledBy?: string | null
+  creationSource?: $Enums.CreationSource | null
+  user?: Prisma.UserCreateNestedOneWithoutBookingsInput
+  references?: Prisma.BookingReferenceCreateNestedManyWithoutBookingInput
+  eventType?: Prisma.EventTypeCreateNestedOneWithoutBookingsInput
+  attendees?: Prisma.AttendeeCreateNestedManyWithoutBookingInput
+  payment?: Prisma.PaymentCreateNestedManyWithoutBookingInput
+  destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutBookingInput
+  reassignBy?: Prisma.UserCreateNestedOneWithoutReassignedBookingsInput
+  seatsReferences?: Prisma.BookingSeatCreateNestedManyWithoutBookingInput
+  instantMeetingToken?: Prisma.InstantMeetingTokenCreateNestedOneWithoutBookingInput
+  scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
+  assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
+  internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
+  expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
+  report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutBookingInput
+}
+
+export type BookingUncheckedCreateWithoutWorkflowRemindersInput = {
+  id?: number
+  uid: string
+  idempotencyKey?: string | null
+  userId?: number | null
+  userPrimaryEmail?: string | null
+  eventTypeId?: number | null
+  title: string
+  description?: string | null
+  customInputs?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  responses?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime: Date | string
+  endTime: Date | string
+  location?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string | null
+  status?: $Enums.BookingStatus
+  paid?: boolean
+  destinationCalendarId?: number | null
+  cancellationReason?: string | null
+  rejectionReason?: string | null
+  reassignReason?: string | null
+  reassignById?: number | null
+  dynamicEventSlugRef?: string | null
+  dynamicGroupSlugRef?: string | null
+  rescheduled?: boolean | null
+  fromReschedule?: string | null
+  recurringEventId?: string | null
+  smsReminderNumber?: string | null
+  scheduledJobs?: Prisma.BookingCreatescheduledJobsInput | string[]
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRecorded?: boolean
+  iCalUID?: string | null
+  iCalSequence?: number
+  rating?: number | null
+  ratingFeedback?: string | null
+  noShowHost?: boolean | null
+  oneTimePassword?: string | null
+  cancelledBy?: string | null
+  rescheduledBy?: string | null
+  creationSource?: $Enums.CreationSource | null
+  references?: Prisma.BookingReferenceUncheckedCreateNestedManyWithoutBookingInput
+  attendees?: Prisma.AttendeeUncheckedCreateNestedManyWithoutBookingInput
+  payment?: Prisma.PaymentUncheckedCreateNestedManyWithoutBookingInput
+  seatsReferences?: Prisma.BookingSeatUncheckedCreateNestedManyWithoutBookingInput
+  instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedCreateNestedOneWithoutBookingInput
+  scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
+  assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
+  internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
+  expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
+  report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutBookingInput
+}
+
+export type BookingCreateOrConnectWithoutWorkflowRemindersInput = {
+  where: Prisma.BookingWhereUniqueInput
+  create: Prisma.XOR<Prisma.BookingCreateWithoutWorkflowRemindersInput, Prisma.BookingUncheckedCreateWithoutWorkflowRemindersInput>
+}
+
+export type BookingUpsertWithoutWorkflowRemindersInput = {
+  update: Prisma.XOR<Prisma.BookingUpdateWithoutWorkflowRemindersInput, Prisma.BookingUncheckedUpdateWithoutWorkflowRemindersInput>
+  create: Prisma.XOR<Prisma.BookingCreateWithoutWorkflowRemindersInput, Prisma.BookingUncheckedCreateWithoutWorkflowRemindersInput>
+  where?: Prisma.BookingWhereInput
+}
+
+export type BookingUpdateToOneWithWhereWithoutWorkflowRemindersInput = {
+  where?: Prisma.BookingWhereInput
+  data: Prisma.XOR<Prisma.BookingUpdateWithoutWorkflowRemindersInput, Prisma.BookingUncheckedUpdateWithoutWorkflowRemindersInput>
+}
+
+export type BookingUpdateWithoutWorkflowRemindersInput = {
+  uid?: Prisma.StringFieldUpdateOperationsInput | string
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userPrimaryEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customInputs?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  responses?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+  paid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reassignReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dynamicEventSlugRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dynamicGroupSlugRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rescheduled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  fromReschedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recurringEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  smsReminderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scheduledJobs?: Prisma.BookingUpdatescheduledJobsInput | string[]
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRecorded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  iCalUID?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  iCalSequence?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ratingFeedback?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  noShowHost?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  oneTimePassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rescheduledBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creationSource?: Prisma.NullableEnumCreationSourceFieldUpdateOperationsInput | $Enums.CreationSource | null
+  user?: Prisma.UserUpdateOneWithoutBookingsNestedInput
+  references?: Prisma.BookingReferenceUpdateManyWithoutBookingNestedInput
+  eventType?: Prisma.EventTypeUpdateOneWithoutBookingsNestedInput
+  attendees?: Prisma.AttendeeUpdateManyWithoutBookingNestedInput
+  payment?: Prisma.PaymentUpdateManyWithoutBookingNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutBookingNestedInput
+  reassignBy?: Prisma.UserUpdateOneWithoutReassignedBookingsNestedInput
+  seatsReferences?: Prisma.BookingSeatUpdateManyWithoutBookingNestedInput
+  instantMeetingToken?: Prisma.InstantMeetingTokenUpdateOneWithoutBookingNestedInput
+  scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
+  assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
+  internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
+  expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
+  report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutBookingNestedInput
+}
+
+export type BookingUncheckedUpdateWithoutWorkflowRemindersInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  uid?: Prisma.StringFieldUpdateOperationsInput | string
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  userPrimaryEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customInputs?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  responses?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+  paid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  destinationCalendarId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reassignReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reassignById?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  dynamicEventSlugRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dynamicGroupSlugRef?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rescheduled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  fromReschedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recurringEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  smsReminderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scheduledJobs?: Prisma.BookingUpdatescheduledJobsInput | string[]
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRecorded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  iCalUID?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  iCalSequence?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ratingFeedback?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  noShowHost?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  oneTimePassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rescheduledBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creationSource?: Prisma.NullableEnumCreationSourceFieldUpdateOperationsInput | $Enums.CreationSource | null
+  references?: Prisma.BookingReferenceUncheckedUpdateManyWithoutBookingNestedInput
+  attendees?: Prisma.AttendeeUncheckedUpdateManyWithoutBookingNestedInput
+  payment?: Prisma.PaymentUncheckedUpdateManyWithoutBookingNestedInput
+  seatsReferences?: Prisma.BookingSeatUncheckedUpdateManyWithoutBookingNestedInput
+  instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedUpdateOneWithoutBookingNestedInput
+  scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
+  assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
+  internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutBookingNestedInput
@@ -3376,6 +3661,7 @@ export type BookingCreateWithoutPaymentInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -3430,6 +3716,7 @@ export type BookingUncheckedCreateWithoutPaymentInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -3499,6 +3786,7 @@ export type BookingUpdateWithoutPaymentInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -3553,6 +3841,7 @@ export type BookingUncheckedUpdateWithoutPaymentInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -3606,6 +3895,7 @@ export type BookingCreateWithoutScheduledTriggersInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenCreateNestedOneWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -3660,6 +3950,7 @@ export type BookingUncheckedCreateWithoutScheduledTriggersInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedCreateNestedOneWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -3729,6 +4020,7 @@ export type BookingUpdateWithoutScheduledTriggersInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUpdateOneWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -3783,6 +4075,7 @@ export type BookingUncheckedUpdateWithoutScheduledTriggersInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedUpdateOneWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -3836,6 +4129,7 @@ export type BookingCreateWithoutSeatsReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -3890,6 +4184,7 @@ export type BookingUncheckedCreateWithoutSeatsReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -3959,6 +4254,7 @@ export type BookingUpdateWithoutSeatsReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -4013,6 +4309,7 @@ export type BookingUncheckedUpdateWithoutSeatsReferencesInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -4066,6 +4363,7 @@ export type BookingCreateWithoutAssignmentReasonInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenCreateNestedOneWithoutBookingInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -4120,6 +4418,7 @@ export type BookingUncheckedCreateWithoutAssignmentReasonInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedCreateNestedOneWithoutBookingInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -4189,6 +4488,7 @@ export type BookingUpdateWithoutAssignmentReasonInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUpdateOneWithoutBookingNestedInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -4243,6 +4543,7 @@ export type BookingUncheckedUpdateWithoutAssignmentReasonInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedUpdateOneWithoutBookingNestedInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -4297,6 +4598,7 @@ export type BookingCreateWithoutReportInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutBookingInput
@@ -4351,6 +4653,7 @@ export type BookingUncheckedCreateWithoutReportInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutBookingInput
@@ -4420,6 +4723,7 @@ export type BookingUpdateWithoutReportInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutBookingNestedInput
@@ -4474,6 +4778,7 @@ export type BookingUncheckedUpdateWithoutReportInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutBookingNestedInput
@@ -4527,6 +4832,7 @@ export type BookingCreateWithoutWrongAssignmentReportsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -4581,6 +4887,7 @@ export type BookingUncheckedCreateWithoutWrongAssignmentReportsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
   internalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -4650,6 +4957,7 @@ export type BookingUpdateWithoutWrongAssignmentReportsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -4704,6 +5012,7 @@ export type BookingUncheckedUpdateWithoutWrongAssignmentReportsInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -4756,6 +5065,7 @@ export type BookingCreateWithoutInternalNoteInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenCreateNestedOneWithoutBookingInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportCreateNestedOneWithoutBookingInput
@@ -4810,6 +5120,7 @@ export type BookingUncheckedCreateWithoutInternalNoteInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedCreateNestedOneWithoutBookingInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedCreateNestedManyWithoutBookingInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedCreateNestedManyWithoutBookingInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedCreateNestedManyWithoutBookingInput
   tracking?: Prisma.TrackingUncheckedCreateNestedOneWithoutBookingInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedCreateNestedManyWithoutBookingInput
   report?: Prisma.BookingReportUncheckedCreateNestedOneWithoutBookingInput
@@ -4879,6 +5190,7 @@ export type BookingUpdateWithoutInternalNoteInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUpdateOneWithoutBookingNestedInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -4933,6 +5245,7 @@ export type BookingUncheckedUpdateWithoutInternalNoteInput = {
   instantMeetingToken?: Prisma.InstantMeetingTokenUncheckedUpdateOneWithoutBookingNestedInput
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -5028,6 +5341,7 @@ export type BookingUpdateWithoutEventTypeInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -5082,6 +5396,7 @@ export type BookingUncheckedUpdateWithoutEventTypeInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -5219,6 +5534,7 @@ export type BookingUpdateWithoutDestinationCalendarInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -5273,6 +5589,7 @@ export type BookingUncheckedUpdateWithoutDestinationCalendarInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -5452,6 +5769,7 @@ export type BookingUpdateWithoutUserInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -5506,6 +5824,7 @@ export type BookingUncheckedUpdateWithoutUserInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -5601,6 +5920,7 @@ export type BookingUpdateWithoutReassignByInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUpdateOneWithoutBookingNestedInput
@@ -5655,6 +5975,7 @@ export type BookingUncheckedUpdateWithoutReassignByInput = {
   scheduledTriggers?: Prisma.WebhookScheduledTriggersUncheckedUpdateManyWithoutBookingNestedInput
   assignmentReason?: Prisma.AssignmentReasonUncheckedUpdateManyWithoutBookingNestedInput
   internalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutBookingNestedInput
+  workflowReminders?: Prisma.WorkflowReminderUncheckedUpdateManyWithoutBookingNestedInput
   tracking?: Prisma.TrackingUncheckedUpdateOneWithoutBookingNestedInput
   expenseLogs?: Prisma.CreditExpenseLogUncheckedUpdateManyWithoutBookingNestedInput
   report?: Prisma.BookingReportUncheckedUpdateOneWithoutBookingNestedInput
@@ -5716,6 +6037,7 @@ export type BookingCountOutputType = {
   scheduledTriggers: number
   assignmentReason: number
   internalNote: number
+  workflowReminders: number
   expenseLogs: number
   wrongAssignmentReports: number
 }
@@ -5728,6 +6050,7 @@ export type BookingCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   scheduledTriggers?: boolean | BookingCountOutputTypeCountScheduledTriggersArgs
   assignmentReason?: boolean | BookingCountOutputTypeCountAssignmentReasonArgs
   internalNote?: boolean | BookingCountOutputTypeCountInternalNoteArgs
+  workflowReminders?: boolean | BookingCountOutputTypeCountWorkflowRemindersArgs
   expenseLogs?: boolean | BookingCountOutputTypeCountExpenseLogsArgs
   wrongAssignmentReports?: boolean | BookingCountOutputTypeCountWrongAssignmentReportsArgs
 }
@@ -5789,6 +6112,13 @@ export type BookingCountOutputTypeCountAssignmentReasonArgs<ExtArgs extends runt
  */
 export type BookingCountOutputTypeCountInternalNoteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.BookingInternalNoteWhereInput
+}
+
+/**
+ * BookingCountOutputType without action
+ */
+export type BookingCountOutputTypeCountWorkflowRemindersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WorkflowReminderWhereInput
 }
 
 /**
@@ -5859,6 +6189,7 @@ export type BookingSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   scheduledTriggers?: boolean | Prisma.Booking$scheduledTriggersArgs<ExtArgs>
   assignmentReason?: boolean | Prisma.Booking$assignmentReasonArgs<ExtArgs>
   internalNote?: boolean | Prisma.Booking$internalNoteArgs<ExtArgs>
+  workflowReminders?: boolean | Prisma.Booking$workflowRemindersArgs<ExtArgs>
   tracking?: boolean | Prisma.Booking$trackingArgs<ExtArgs>
   expenseLogs?: boolean | Prisma.Booking$expenseLogsArgs<ExtArgs>
   report?: boolean | Prisma.Booking$reportArgs<ExtArgs>
@@ -6017,6 +6348,7 @@ export type BookingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   scheduledTriggers?: boolean | Prisma.Booking$scheduledTriggersArgs<ExtArgs>
   assignmentReason?: boolean | Prisma.Booking$assignmentReasonArgs<ExtArgs>
   internalNote?: boolean | Prisma.Booking$internalNoteArgs<ExtArgs>
+  workflowReminders?: boolean | Prisma.Booking$workflowRemindersArgs<ExtArgs>
   tracking?: boolean | Prisma.Booking$trackingArgs<ExtArgs>
   expenseLogs?: boolean | Prisma.Booking$expenseLogsArgs<ExtArgs>
   report?: boolean | Prisma.Booking$reportArgs<ExtArgs>
@@ -6051,6 +6383,7 @@ export type $BookingPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     scheduledTriggers: Prisma.$WebhookScheduledTriggersPayload<ExtArgs>[]
     assignmentReason: Prisma.$AssignmentReasonPayload<ExtArgs>[]
     internalNote: Prisma.$BookingInternalNotePayload<ExtArgs>[]
+    workflowReminders: Prisma.$WorkflowReminderPayload<ExtArgs>[]
     tracking: Prisma.$TrackingPayload<ExtArgs> | null
     expenseLogs: Prisma.$CreditExpenseLogPayload<ExtArgs>[]
     report: Prisma.$BookingReportPayload<ExtArgs> | null
@@ -6518,6 +6851,7 @@ export interface Prisma__BookingClient<T, Null = never, ExtArgs extends runtime.
   scheduledTriggers<T extends Prisma.Booking$scheduledTriggersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$scheduledTriggersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WebhookScheduledTriggersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignmentReason<T extends Prisma.Booking$assignmentReasonArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$assignmentReasonArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AssignmentReasonPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   internalNote<T extends Prisma.Booking$internalNoteArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$internalNoteArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookingInternalNotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflowReminders<T extends Prisma.Booking$workflowRemindersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$workflowRemindersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowReminderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tracking<T extends Prisma.Booking$trackingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$trackingArgs<ExtArgs>>): Prisma.Prisma__TrackingClient<runtime.Types.Result.GetResult<Prisma.$TrackingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   expenseLogs<T extends Prisma.Booking$expenseLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$expenseLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CreditExpenseLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   report<T extends Prisma.Booking$reportArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Booking$reportArgs<ExtArgs>>): Prisma.Prisma__BookingReportClient<runtime.Types.Result.GetResult<Prisma.$BookingReportPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -7247,6 +7581,30 @@ export type Booking$internalNoteArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.BookingInternalNoteScalarFieldEnum | Prisma.BookingInternalNoteScalarFieldEnum[]
+}
+
+/**
+ * Booking.workflowReminders
+ */
+export type Booking$workflowRemindersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WorkflowReminder
+   */
+  select?: Prisma.WorkflowReminderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WorkflowReminder
+   */
+  omit?: Prisma.WorkflowReminderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowReminderInclude<ExtArgs> | null
+  where?: Prisma.WorkflowReminderWhereInput
+  orderBy?: Prisma.WorkflowReminderOrderByWithRelationInput | Prisma.WorkflowReminderOrderByWithRelationInput[]
+  cursor?: Prisma.WorkflowReminderWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WorkflowReminderScalarFieldEnum | Prisma.WorkflowReminderScalarFieldEnum[]
 }
 
 /**

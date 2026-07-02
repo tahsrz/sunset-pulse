@@ -129,7 +129,7 @@ npm run build --workspace=apps/pulse
 
 Known build warnings:
 
-- `@voltagent/core` emits a dynamic dependency warning.
+- The command advisor uses the existing Vercel AI SDK/Groq stack without an additional agent runtime.
 - Kepler/Redux emits minified-code warnings outside `NODE_ENV=production`.
 
 Both warnings are currently non-blocking.

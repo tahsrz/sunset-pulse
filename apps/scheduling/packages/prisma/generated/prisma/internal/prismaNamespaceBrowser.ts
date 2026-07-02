@@ -74,6 +74,14 @@ export const ModelName = {
   Attendee: 'Attendee',
   Booking: 'Booking',
   Tracking: 'Tracking',
+  Workflow: 'Workflow',
+  WorkflowStep: 'WorkflowStep',
+  WorkflowStepTranslation: 'WorkflowStepTranslation',
+  WorkflowsOnEventTypes: 'WorkflowsOnEventTypes',
+  WorkflowsOnTeams: 'WorkflowsOnTeams',
+  WorkflowReminder: 'WorkflowReminder',
+  WorkflowOptOutContact: 'WorkflowOptOutContact',
+  AIPhoneCallConfiguration: 'AIPhoneCallConfiguration',
   Schedule: 'Schedule',
   Availability: 'Availability',
   SelectedCalendar: 'SelectedCalendar',
@@ -424,6 +432,7 @@ export const UserScalarFieldEnum = {
   allowSEOIndexing: 'allowSEOIndexing',
   receiveMonthlyDigestEmail: 'receiveMonthlyDigestEmail',
   requiresBookerEmailVerification: 'requiresBookerEmailVerification',
+  whitelistWorkflows: 'whitelistWorkflows',
   metadata: 'metadata',
   verified: 'verified',
   role: 'role',
@@ -703,6 +712,122 @@ export const TrackingScalarFieldEnum = {
 } as const
 
 export type TrackingScalarFieldEnum = (typeof TrackingScalarFieldEnum)[keyof typeof TrackingScalarFieldEnum]
+
+
+export const WorkflowScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  userId: 'userId',
+  teamId: 'teamId',
+  trigger: 'trigger',
+  time: 'time',
+  timeUnit: 'timeUnit',
+  isActiveOnAll: 'isActiveOnAll',
+  type: 'type',
+  position: 'position'
+} as const
+
+export type WorkflowScalarFieldEnum = (typeof WorkflowScalarFieldEnum)[keyof typeof WorkflowScalarFieldEnum]
+
+
+export const WorkflowStepScalarFieldEnum = {
+  id: 'id',
+  stepNumber: 'stepNumber',
+  action: 'action',
+  workflowId: 'workflowId',
+  sendTo: 'sendTo',
+  reminderBody: 'reminderBody',
+  emailSubject: 'emailSubject',
+  template: 'template',
+  numberRequired: 'numberRequired',
+  sender: 'sender',
+  numberVerificationPending: 'numberVerificationPending',
+  includeCalendarEvent: 'includeCalendarEvent',
+  autoTranslateEnabled: 'autoTranslateEnabled',
+  sourceLocale: 'sourceLocale',
+  verifiedAt: 'verifiedAt',
+  agentId: 'agentId',
+  inboundAgentId: 'inboundAgentId'
+} as const
+
+export type WorkflowStepScalarFieldEnum = (typeof WorkflowStepScalarFieldEnum)[keyof typeof WorkflowStepScalarFieldEnum]
+
+
+export const WorkflowStepTranslationScalarFieldEnum = {
+  uid: 'uid',
+  workflowStepId: 'workflowStepId',
+  field: 'field',
+  sourceLocale: 'sourceLocale',
+  targetLocale: 'targetLocale',
+  translatedText: 'translatedText',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkflowStepTranslationScalarFieldEnum = (typeof WorkflowStepTranslationScalarFieldEnum)[keyof typeof WorkflowStepTranslationScalarFieldEnum]
+
+
+export const WorkflowsOnEventTypesScalarFieldEnum = {
+  id: 'id',
+  workflowId: 'workflowId',
+  eventTypeId: 'eventTypeId'
+} as const
+
+export type WorkflowsOnEventTypesScalarFieldEnum = (typeof WorkflowsOnEventTypesScalarFieldEnum)[keyof typeof WorkflowsOnEventTypesScalarFieldEnum]
+
+
+export const WorkflowsOnTeamsScalarFieldEnum = {
+  id: 'id',
+  workflowId: 'workflowId',
+  teamId: 'teamId'
+} as const
+
+export type WorkflowsOnTeamsScalarFieldEnum = (typeof WorkflowsOnTeamsScalarFieldEnum)[keyof typeof WorkflowsOnTeamsScalarFieldEnum]
+
+
+export const WorkflowReminderScalarFieldEnum = {
+  id: 'id',
+  bookingUid: 'bookingUid',
+  method: 'method',
+  scheduledDate: 'scheduledDate',
+  referenceId: 'referenceId',
+  scheduled: 'scheduled',
+  workflowStepId: 'workflowStepId',
+  cancelled: 'cancelled',
+  seatReferenceId: 'seatReferenceId',
+  isMandatoryReminder: 'isMandatoryReminder',
+  retryCount: 'retryCount',
+  uuid: 'uuid'
+} as const
+
+export type WorkflowReminderScalarFieldEnum = (typeof WorkflowReminderScalarFieldEnum)[keyof typeof WorkflowReminderScalarFieldEnum]
+
+
+export const WorkflowOptOutContactScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  value: 'value',
+  optedOut: 'optedOut',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkflowOptOutContactScalarFieldEnum = (typeof WorkflowOptOutContactScalarFieldEnum)[keyof typeof WorkflowOptOutContactScalarFieldEnum]
+
+
+export const AIPhoneCallConfigurationScalarFieldEnum = {
+  id: 'id',
+  eventTypeId: 'eventTypeId',
+  generalPrompt: 'generalPrompt',
+  yourPhoneNumber: 'yourPhoneNumber',
+  numberToCall: 'numberToCall',
+  guestName: 'guestName',
+  enabled: 'enabled',
+  beginMessage: 'beginMessage',
+  llmId: 'llmId'
+} as const
+
+export type AIPhoneCallConfigurationScalarFieldEnum = (typeof AIPhoneCallConfigurationScalarFieldEnum)[keyof typeof AIPhoneCallConfigurationScalarFieldEnum]
 
 
 export const ScheduleScalarFieldEnum = {

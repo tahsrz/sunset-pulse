@@ -21,7 +21,7 @@ export async function GET() {
   return NextResponse.json({
     data: {
       agentId: 'sunset-command-advisor',
-      framework: 'voltagent',
+      framework: 'ai-sdk',
       model: process.env.VOLTAGENT_COMMAND_MODEL || 'groq/llama-3.1-8b-instant',
       enabled: process.env.VOLTAGENT_COMMAND_ADVISOR_ENABLED !== 'false',
       endpoint: '/api/agents/voltagent/command-advisor',

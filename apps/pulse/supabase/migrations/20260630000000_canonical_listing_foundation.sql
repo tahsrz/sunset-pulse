@@ -92,10 +92,12 @@ CREATE TABLE IF NOT EXISTS public.mls_sync_failures (
 ALTER TABLE public.mls_sync_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mls_sync_failures ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role manages MLS sync runs." ON public.mls_sync_runs;
 CREATE POLICY "Service role manages MLS sync runs."
 ON public.mls_sync_runs FOR ALL TO service_role
 USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role manages MLS sync failures." ON public.mls_sync_failures;
 CREATE POLICY "Service role manages MLS sync failures."
 ON public.mls_sync_failures FOR ALL TO service_role
 USING (true) WITH CHECK (true);

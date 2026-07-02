@@ -914,6 +914,8 @@ export type EventTypeWhereInput = {
   profile?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
   team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null
   hashedLink?: Prisma.HashedLinkListRelationFilter
+  workflows?: Prisma.WorkflowsOnEventTypesListRelationFilter
+  aiPhoneCallConfig?: Prisma.XOR<Prisma.AIPhoneCallConfigurationNullableScalarRelationFilter, Prisma.AIPhoneCallConfigurationWhereInput> | null
   bookings?: Prisma.BookingListRelationFilter
   availability?: Prisma.AvailabilityListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
@@ -1023,6 +1025,8 @@ export type EventTypeOrderByWithRelationInput = {
   profile?: Prisma.ProfileOrderByWithRelationInput
   team?: Prisma.TeamOrderByWithRelationInput
   hashedLink?: Prisma.HashedLinkOrderByRelationAggregateInput
+  workflows?: Prisma.WorkflowsOnEventTypesOrderByRelationAggregateInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationOrderByWithRelationInput
   bookings?: Prisma.BookingOrderByRelationAggregateInput
   availability?: Prisma.AvailabilityOrderByRelationAggregateInput
   webhooks?: Prisma.WebhookOrderByRelationAggregateInput
@@ -1138,6 +1142,8 @@ export type EventTypeWhereUniqueInput = Prisma.AtLeast<{
   profile?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
   team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null
   hashedLink?: Prisma.HashedLinkListRelationFilter
+  workflows?: Prisma.WorkflowsOnEventTypesListRelationFilter
+  aiPhoneCallConfig?: Prisma.XOR<Prisma.AIPhoneCallConfigurationNullableScalarRelationFilter, Prisma.AIPhoneCallConfigurationWhereInput> | null
   bookings?: Prisma.BookingListRelationFilter
   availability?: Prisma.AvailabilityListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
@@ -1422,6 +1428,8 @@ export type EventTypeCreateInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -1528,6 +1536,8 @@ export type EventTypeUncheckedCreateInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -1623,6 +1633,8 @@ export type EventTypeUpdateInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -1729,6 +1741,8 @@ export type EventTypeUncheckedUpdateInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -2660,6 +2674,34 @@ export type EventTypeUpdateOneWithoutBookingsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EventTypeUpdateToOneWithWhereWithoutBookingsInput, Prisma.EventTypeUpdateWithoutBookingsInput>, Prisma.EventTypeUncheckedUpdateWithoutBookingsInput>
 }
 
+export type EventTypeCreateNestedOneWithoutWorkflowsInput = {
+  create?: Prisma.XOR<Prisma.EventTypeCreateWithoutWorkflowsInput, Prisma.EventTypeUncheckedCreateWithoutWorkflowsInput>
+  connectOrCreate?: Prisma.EventTypeCreateOrConnectWithoutWorkflowsInput
+  connect?: Prisma.EventTypeWhereUniqueInput
+}
+
+export type EventTypeUpdateOneRequiredWithoutWorkflowsNestedInput = {
+  create?: Prisma.XOR<Prisma.EventTypeCreateWithoutWorkflowsInput, Prisma.EventTypeUncheckedCreateWithoutWorkflowsInput>
+  connectOrCreate?: Prisma.EventTypeCreateOrConnectWithoutWorkflowsInput
+  upsert?: Prisma.EventTypeUpsertWithoutWorkflowsInput
+  connect?: Prisma.EventTypeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventTypeUpdateToOneWithWhereWithoutWorkflowsInput, Prisma.EventTypeUpdateWithoutWorkflowsInput>, Prisma.EventTypeUncheckedUpdateWithoutWorkflowsInput>
+}
+
+export type EventTypeCreateNestedOneWithoutAiPhoneCallConfigInput = {
+  create?: Prisma.XOR<Prisma.EventTypeCreateWithoutAiPhoneCallConfigInput, Prisma.EventTypeUncheckedCreateWithoutAiPhoneCallConfigInput>
+  connectOrCreate?: Prisma.EventTypeCreateOrConnectWithoutAiPhoneCallConfigInput
+  connect?: Prisma.EventTypeWhereUniqueInput
+}
+
+export type EventTypeUpdateOneRequiredWithoutAiPhoneCallConfigNestedInput = {
+  create?: Prisma.XOR<Prisma.EventTypeCreateWithoutAiPhoneCallConfigInput, Prisma.EventTypeUncheckedCreateWithoutAiPhoneCallConfigInput>
+  connectOrCreate?: Prisma.EventTypeCreateOrConnectWithoutAiPhoneCallConfigInput
+  upsert?: Prisma.EventTypeUpsertWithoutAiPhoneCallConfigInput
+  connect?: Prisma.EventTypeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventTypeUpdateToOneWithWhereWithoutAiPhoneCallConfigInput, Prisma.EventTypeUpdateWithoutAiPhoneCallConfigInput>, Prisma.EventTypeUncheckedUpdateWithoutAiPhoneCallConfigInput>
+}
+
 export type EventTypeCreateNestedManyWithoutScheduleInput = {
   create?: Prisma.XOR<Prisma.EventTypeCreateWithoutScheduleInput, Prisma.EventTypeUncheckedCreateWithoutScheduleInput> | Prisma.EventTypeCreateWithoutScheduleInput[] | Prisma.EventTypeUncheckedCreateWithoutScheduleInput[]
   connectOrCreate?: Prisma.EventTypeCreateOrConnectWithoutScheduleInput | Prisma.EventTypeCreateOrConnectWithoutScheduleInput[]
@@ -3000,6 +3042,8 @@ export type EventTypeCreateWithoutHostsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -3105,6 +3149,8 @@ export type EventTypeUncheckedCreateWithoutHostsInput = {
   updatedAt?: Date | string | null
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -3215,6 +3261,8 @@ export type EventTypeUpdateWithoutHostsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -3320,6 +3368,8 @@ export type EventTypeUncheckedUpdateWithoutHostsInput = {
   updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -3415,6 +3465,8 @@ export type EventTypeCreateWithoutHostGroupsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -3520,6 +3572,8 @@ export type EventTypeUncheckedCreateWithoutHostGroupsInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -3630,6 +3684,8 @@ export type EventTypeUpdateWithoutHostGroupsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -3735,6 +3791,8 @@ export type EventTypeUncheckedUpdateWithoutHostGroupsInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -3829,6 +3887,8 @@ export type EventTypeCreateWithoutCalVideoSettingsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -3934,6 +3994,8 @@ export type EventTypeUncheckedCreateWithoutCalVideoSettingsInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -4044,6 +4106,8 @@ export type EventTypeUpdateWithoutCalVideoSettingsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -4149,6 +4213,8 @@ export type EventTypeUncheckedUpdateWithoutCalVideoSettingsInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -4243,6 +4309,8 @@ export type EventTypeCreateWithoutChildrenInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -4348,6 +4416,8 @@ export type EventTypeUncheckedCreateWithoutChildrenInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -4447,6 +4517,8 @@ export type EventTypeCreateWithoutParentInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -4551,6 +4623,8 @@ export type EventTypeUncheckedCreateWithoutParentInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -4667,6 +4741,8 @@ export type EventTypeUpdateWithoutChildrenInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -4772,6 +4848,8 @@ export type EventTypeUncheckedUpdateWithoutChildrenInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -4973,6 +5051,8 @@ export type EventTypeCreateWithoutDestinationCalendarInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -5078,6 +5158,8 @@ export type EventTypeUncheckedCreateWithoutDestinationCalendarInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -5188,6 +5270,8 @@ export type EventTypeUpdateWithoutDestinationCalendarInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -5293,6 +5377,8 @@ export type EventTypeUncheckedUpdateWithoutDestinationCalendarInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -5386,6 +5472,8 @@ export type EventTypeCreateWithoutUsersInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -5491,6 +5579,8 @@ export type EventTypeUncheckedCreateWithoutUsersInput = {
   updatedAt?: Date | string | null
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -5590,6 +5680,8 @@ export type EventTypeCreateWithoutOwnerInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -5695,6 +5787,8 @@ export type EventTypeUncheckedCreateWithoutOwnerInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -5831,6 +5925,8 @@ export type EventTypeCreateWithoutProfileInput = {
   owner?: Prisma.UserCreateNestedOneWithoutOwnedEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -5936,6 +6032,8 @@ export type EventTypeUncheckedCreateWithoutProfileInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -6056,6 +6154,8 @@ export type EventTypeCreateWithoutTeamInput = {
   owner?: Prisma.UserCreateNestedOneWithoutOwnedEventTypesInput
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -6161,6 +6261,8 @@ export type EventTypeUncheckedCreateWithoutTeamInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -6282,6 +6384,8 @@ export type EventTypeCreateWithoutBookingsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutEventTypeInput
@@ -6387,6 +6491,8 @@ export type EventTypeUncheckedCreateWithoutBookingsInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutEventTypeInput
@@ -6497,6 +6603,8 @@ export type EventTypeUpdateWithoutBookingsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutEventTypeNestedInput
@@ -6602,6 +6710,852 @@ export type EventTypeUncheckedUpdateWithoutBookingsInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
+  availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutEventTypeNestedInput
+  customInputs?: Prisma.EventTypeCustomInputUncheckedUpdateManyWithoutEventTypeNestedInput
+  children?: Prisma.EventTypeUncheckedUpdateManyWithoutParentNestedInput
+  fieldTranslations?: Prisma.EventTypeTranslationUncheckedUpdateManyWithoutEventTypeNestedInput
+  selectedCalendars?: Prisma.SelectedCalendarUncheckedUpdateManyWithoutEventTypeNestedInput
+  calVideoSettings?: Prisma.CalVideoSettingsUncheckedUpdateOneWithoutEventTypeNestedInput
+  hostGroups?: Prisma.HostGroupUncheckedUpdateManyWithoutEventTypeNestedInput
+}
+
+export type EventTypeCreateWithoutWorkflowsInput = {
+  title: string
+  slug: string
+  description?: string | null
+  interfaceLanguage?: string | null
+  position?: number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length: number
+  offsetStart?: number
+  hidden?: boolean
+  useEventLevelSelectedCalendars?: boolean
+  eventName?: string | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: string | null
+  periodType?: $Enums.PeriodType
+  periodStartDate?: Date | string | null
+  periodEndDate?: Date | string | null
+  periodDays?: number | null
+  periodCountCalendarDays?: boolean | null
+  lockTimeZoneToggleOnBookingPage?: boolean
+  lockedTimeZone?: string | null
+  requiresConfirmation?: boolean
+  requiresConfirmationWillBlockSlot?: boolean
+  requiresConfirmationForFreeEmail?: boolean
+  requiresBookerEmailVerification?: boolean
+  canSendCalVideoTranscriptionEmails?: boolean
+  autoTranslateDescriptionEnabled?: boolean
+  autoTranslateInstantMeetingTitleEnabled?: boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: boolean
+  hideCalendarNotes?: boolean
+  hideCalendarEventDetails?: boolean
+  minimumBookingNotice?: number
+  beforeEventBuffer?: number
+  afterEventBuffer?: number
+  seatsPerTimeSlot?: number | null
+  onlyShowFirstAvailableSlot?: boolean
+  showOptimizedSlots?: boolean | null
+  disableCancelling?: boolean | null
+  disableRescheduling?: boolean | null
+  minimumRescheduleNotice?: number | null
+  seatsShowAttendees?: boolean | null
+  seatsShowAvailabilityCount?: boolean | null
+  schedulingType?: $Enums.SchedulingType | null
+  allowReschedulingCancelledBookings?: boolean | null
+  price?: number
+  currency?: string
+  slotInterval?: number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: string | null
+  forwardParamsSuccessRedirect?: boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: number
+  instantMeetingParameters?: Prisma.EventTypeCreateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: boolean
+  assignRRMembersUsingSegment?: boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: boolean
+  isRRWeightsEnabled?: boolean
+  maxLeadThreshold?: number | null
+  includeNoShowInRRCalculation?: boolean
+  allowReschedulingPastBookings?: boolean
+  hideOrganizerEmail?: boolean
+  maxActiveBookingsPerBooker?: number | null
+  maxActiveBookingPerBookerOfferReschedule?: boolean
+  customReplyToEmail?: string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: boolean
+  useBookerTimezone?: boolean
+  bookingRequiresAuthentication?: boolean
+  rrHostSubsetEnabled?: boolean
+  requiresCancellationReason?: $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: boolean
+  createdAt?: Date | string | null
+  updatedAt?: Date | string | null
+  hosts?: Prisma.HostCreateNestedManyWithoutEventTypeInput
+  users?: Prisma.UserCreateNestedManyWithoutEventTypesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedEventTypesInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
+  team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
+  hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
+  bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
+  availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
+  destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutEventTypeInput
+  customInputs?: Prisma.EventTypeCustomInputCreateNestedManyWithoutEventTypeInput
+  parent?: Prisma.EventTypeCreateNestedOneWithoutChildrenInput
+  children?: Prisma.EventTypeCreateNestedManyWithoutParentInput
+  schedule?: Prisma.ScheduleCreateNestedOneWithoutEventTypeInput
+  instantMeetingSchedule?: Prisma.ScheduleCreateNestedOneWithoutInstantMeetingEventsInput
+  fieldTranslations?: Prisma.EventTypeTranslationCreateNestedManyWithoutEventTypeInput
+  selectedCalendars?: Prisma.SelectedCalendarCreateNestedManyWithoutEventTypeInput
+  calVideoSettings?: Prisma.CalVideoSettingsCreateNestedOneWithoutEventTypeInput
+  secondaryEmail?: Prisma.SecondaryEmailCreateNestedOneWithoutEventTypesInput
+  restrictionSchedule?: Prisma.ScheduleCreateNestedOneWithoutRestrictionScheduleInput
+  hostGroups?: Prisma.HostGroupCreateNestedManyWithoutEventTypeInput
+}
+
+export type EventTypeUncheckedCreateWithoutWorkflowsInput = {
+  id?: number
+  title: string
+  slug: string
+  description?: string | null
+  interfaceLanguage?: string | null
+  position?: number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length: number
+  offsetStart?: number
+  hidden?: boolean
+  userId?: number | null
+  profileId?: number | null
+  teamId?: number | null
+  useEventLevelSelectedCalendars?: boolean
+  eventName?: string | null
+  parentId?: number | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: string | null
+  periodType?: $Enums.PeriodType
+  periodStartDate?: Date | string | null
+  periodEndDate?: Date | string | null
+  periodDays?: number | null
+  periodCountCalendarDays?: boolean | null
+  lockTimeZoneToggleOnBookingPage?: boolean
+  lockedTimeZone?: string | null
+  requiresConfirmation?: boolean
+  requiresConfirmationWillBlockSlot?: boolean
+  requiresConfirmationForFreeEmail?: boolean
+  requiresBookerEmailVerification?: boolean
+  canSendCalVideoTranscriptionEmails?: boolean
+  autoTranslateDescriptionEnabled?: boolean
+  autoTranslateInstantMeetingTitleEnabled?: boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: boolean
+  hideCalendarNotes?: boolean
+  hideCalendarEventDetails?: boolean
+  minimumBookingNotice?: number
+  beforeEventBuffer?: number
+  afterEventBuffer?: number
+  seatsPerTimeSlot?: number | null
+  onlyShowFirstAvailableSlot?: boolean
+  showOptimizedSlots?: boolean | null
+  disableCancelling?: boolean | null
+  disableRescheduling?: boolean | null
+  minimumRescheduleNotice?: number | null
+  seatsShowAttendees?: boolean | null
+  seatsShowAvailabilityCount?: boolean | null
+  schedulingType?: $Enums.SchedulingType | null
+  scheduleId?: number | null
+  allowReschedulingCancelledBookings?: boolean | null
+  price?: number
+  currency?: string
+  slotInterval?: number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: string | null
+  forwardParamsSuccessRedirect?: boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: number
+  instantMeetingScheduleId?: number | null
+  instantMeetingParameters?: Prisma.EventTypeCreateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: boolean
+  assignRRMembersUsingSegment?: boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: boolean
+  isRRWeightsEnabled?: boolean
+  maxLeadThreshold?: number | null
+  includeNoShowInRRCalculation?: boolean
+  allowReschedulingPastBookings?: boolean
+  hideOrganizerEmail?: boolean
+  maxActiveBookingsPerBooker?: number | null
+  maxActiveBookingPerBookerOfferReschedule?: boolean
+  customReplyToEmail?: string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: boolean
+  secondaryEmailId?: number | null
+  useBookerTimezone?: boolean
+  restrictionScheduleId?: number | null
+  bookingRequiresAuthentication?: boolean
+  rrHostSubsetEnabled?: boolean
+  requiresCancellationReason?: $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: boolean
+  createdAt?: Date | string | null
+  updatedAt?: Date | string | null
+  hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
+  hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
+  bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
+  availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
+  destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutEventTypeInput
+  customInputs?: Prisma.EventTypeCustomInputUncheckedCreateNestedManyWithoutEventTypeInput
+  children?: Prisma.EventTypeUncheckedCreateNestedManyWithoutParentInput
+  fieldTranslations?: Prisma.EventTypeTranslationUncheckedCreateNestedManyWithoutEventTypeInput
+  selectedCalendars?: Prisma.SelectedCalendarUncheckedCreateNestedManyWithoutEventTypeInput
+  calVideoSettings?: Prisma.CalVideoSettingsUncheckedCreateNestedOneWithoutEventTypeInput
+  hostGroups?: Prisma.HostGroupUncheckedCreateNestedManyWithoutEventTypeInput
+}
+
+export type EventTypeCreateOrConnectWithoutWorkflowsInput = {
+  where: Prisma.EventTypeWhereUniqueInput
+  create: Prisma.XOR<Prisma.EventTypeCreateWithoutWorkflowsInput, Prisma.EventTypeUncheckedCreateWithoutWorkflowsInput>
+}
+
+export type EventTypeUpsertWithoutWorkflowsInput = {
+  update: Prisma.XOR<Prisma.EventTypeUpdateWithoutWorkflowsInput, Prisma.EventTypeUncheckedUpdateWithoutWorkflowsInput>
+  create: Prisma.XOR<Prisma.EventTypeCreateWithoutWorkflowsInput, Prisma.EventTypeUncheckedCreateWithoutWorkflowsInput>
+  where?: Prisma.EventTypeWhereInput
+}
+
+export type EventTypeUpdateToOneWithWhereWithoutWorkflowsInput = {
+  where?: Prisma.EventTypeWhereInput
+  data: Prisma.XOR<Prisma.EventTypeUpdateWithoutWorkflowsInput, Prisma.EventTypeUncheckedUpdateWithoutWorkflowsInput>
+}
+
+export type EventTypeUpdateWithoutWorkflowsInput = {
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interfaceLanguage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length?: Prisma.IntFieldUpdateOperationsInput | number
+  offsetStart?: Prisma.IntFieldUpdateOperationsInput | number
+  hidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  useEventLevelSelectedCalendars?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eventName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  periodType?: Prisma.EnumPeriodTypeFieldUpdateOperationsInput | $Enums.PeriodType
+  periodStartDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodEndDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodCountCalendarDays?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  lockTimeZoneToggleOnBookingPage?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lockedTimeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requiresConfirmation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationWillBlockSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationForFreeEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresBookerEmailVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  canSendCalVideoTranscriptionEmails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateDescriptionEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateInstantMeetingTitleEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarNotes?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarEventDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minimumBookingNotice?: Prisma.IntFieldUpdateOperationsInput | number
+  beforeEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  afterEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  seatsPerTimeSlot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  onlyShowFirstAvailableSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showOptimizedSlots?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableCancelling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableRescheduling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  minimumRescheduleNotice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  seatsShowAttendees?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  seatsShowAvailabilityCount?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  schedulingType?: Prisma.NullableEnumSchedulingTypeFieldUpdateOperationsInput | $Enums.SchedulingType | null
+  allowReschedulingCancelledBookings?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  price?: Prisma.IntFieldUpdateOperationsInput | number
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  slotInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  forwardParamsSuccessRedirect?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  instantMeetingParameters?: Prisma.EventTypeUpdateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  assignRRMembersUsingSegment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isRRWeightsEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxLeadThreshold?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  includeNoShowInRRCalculation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowReschedulingPastBookings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideOrganizerEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxActiveBookingsPerBooker?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  maxActiveBookingPerBookerOfferReschedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  customReplyToEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  useBookerTimezone?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bookingRequiresAuthentication?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrHostSubsetEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresCancellationReason?: Prisma.NullableEnumCancellationReasonRequirementFieldUpdateOperationsInput | $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  hosts?: Prisma.HostUpdateManyWithoutEventTypeNestedInput
+  users?: Prisma.UserUpdateManyWithoutEventTypesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedEventTypesNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
+  team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
+  hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
+  bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
+  availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutEventTypeNestedInput
+  customInputs?: Prisma.EventTypeCustomInputUpdateManyWithoutEventTypeNestedInput
+  parent?: Prisma.EventTypeUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.EventTypeUpdateManyWithoutParentNestedInput
+  schedule?: Prisma.ScheduleUpdateOneWithoutEventTypeNestedInput
+  instantMeetingSchedule?: Prisma.ScheduleUpdateOneWithoutInstantMeetingEventsNestedInput
+  fieldTranslations?: Prisma.EventTypeTranslationUpdateManyWithoutEventTypeNestedInput
+  selectedCalendars?: Prisma.SelectedCalendarUpdateManyWithoutEventTypeNestedInput
+  calVideoSettings?: Prisma.CalVideoSettingsUpdateOneWithoutEventTypeNestedInput
+  secondaryEmail?: Prisma.SecondaryEmailUpdateOneWithoutEventTypesNestedInput
+  restrictionSchedule?: Prisma.ScheduleUpdateOneWithoutRestrictionScheduleNestedInput
+  hostGroups?: Prisma.HostGroupUpdateManyWithoutEventTypeNestedInput
+}
+
+export type EventTypeUncheckedUpdateWithoutWorkflowsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interfaceLanguage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length?: Prisma.IntFieldUpdateOperationsInput | number
+  offsetStart?: Prisma.IntFieldUpdateOperationsInput | number
+  hidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  useEventLevelSelectedCalendars?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eventName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  periodType?: Prisma.EnumPeriodTypeFieldUpdateOperationsInput | $Enums.PeriodType
+  periodStartDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodEndDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodCountCalendarDays?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  lockTimeZoneToggleOnBookingPage?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lockedTimeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requiresConfirmation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationWillBlockSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationForFreeEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresBookerEmailVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  canSendCalVideoTranscriptionEmails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateDescriptionEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateInstantMeetingTitleEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarNotes?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarEventDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minimumBookingNotice?: Prisma.IntFieldUpdateOperationsInput | number
+  beforeEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  afterEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  seatsPerTimeSlot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  onlyShowFirstAvailableSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showOptimizedSlots?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableCancelling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableRescheduling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  minimumRescheduleNotice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  seatsShowAttendees?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  seatsShowAvailabilityCount?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  schedulingType?: Prisma.NullableEnumSchedulingTypeFieldUpdateOperationsInput | $Enums.SchedulingType | null
+  scheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  allowReschedulingCancelledBookings?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  price?: Prisma.IntFieldUpdateOperationsInput | number
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  slotInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  forwardParamsSuccessRedirect?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  instantMeetingScheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  instantMeetingParameters?: Prisma.EventTypeUpdateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  assignRRMembersUsingSegment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isRRWeightsEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxLeadThreshold?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  includeNoShowInRRCalculation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowReschedulingPastBookings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideOrganizerEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxActiveBookingsPerBooker?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  maxActiveBookingPerBookerOfferReschedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  customReplyToEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  secondaryEmailId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  useBookerTimezone?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  restrictionScheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  bookingRequiresAuthentication?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrHostSubsetEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresCancellationReason?: Prisma.NullableEnumCancellationReasonRequirementFieldUpdateOperationsInput | $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
+  hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
+  bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
+  availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutEventTypeNestedInput
+  customInputs?: Prisma.EventTypeCustomInputUncheckedUpdateManyWithoutEventTypeNestedInput
+  children?: Prisma.EventTypeUncheckedUpdateManyWithoutParentNestedInput
+  fieldTranslations?: Prisma.EventTypeTranslationUncheckedUpdateManyWithoutEventTypeNestedInput
+  selectedCalendars?: Prisma.SelectedCalendarUncheckedUpdateManyWithoutEventTypeNestedInput
+  calVideoSettings?: Prisma.CalVideoSettingsUncheckedUpdateOneWithoutEventTypeNestedInput
+  hostGroups?: Prisma.HostGroupUncheckedUpdateManyWithoutEventTypeNestedInput
+}
+
+export type EventTypeCreateWithoutAiPhoneCallConfigInput = {
+  title: string
+  slug: string
+  description?: string | null
+  interfaceLanguage?: string | null
+  position?: number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length: number
+  offsetStart?: number
+  hidden?: boolean
+  useEventLevelSelectedCalendars?: boolean
+  eventName?: string | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: string | null
+  periodType?: $Enums.PeriodType
+  periodStartDate?: Date | string | null
+  periodEndDate?: Date | string | null
+  periodDays?: number | null
+  periodCountCalendarDays?: boolean | null
+  lockTimeZoneToggleOnBookingPage?: boolean
+  lockedTimeZone?: string | null
+  requiresConfirmation?: boolean
+  requiresConfirmationWillBlockSlot?: boolean
+  requiresConfirmationForFreeEmail?: boolean
+  requiresBookerEmailVerification?: boolean
+  canSendCalVideoTranscriptionEmails?: boolean
+  autoTranslateDescriptionEnabled?: boolean
+  autoTranslateInstantMeetingTitleEnabled?: boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: boolean
+  hideCalendarNotes?: boolean
+  hideCalendarEventDetails?: boolean
+  minimumBookingNotice?: number
+  beforeEventBuffer?: number
+  afterEventBuffer?: number
+  seatsPerTimeSlot?: number | null
+  onlyShowFirstAvailableSlot?: boolean
+  showOptimizedSlots?: boolean | null
+  disableCancelling?: boolean | null
+  disableRescheduling?: boolean | null
+  minimumRescheduleNotice?: number | null
+  seatsShowAttendees?: boolean | null
+  seatsShowAvailabilityCount?: boolean | null
+  schedulingType?: $Enums.SchedulingType | null
+  allowReschedulingCancelledBookings?: boolean | null
+  price?: number
+  currency?: string
+  slotInterval?: number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: string | null
+  forwardParamsSuccessRedirect?: boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: number
+  instantMeetingParameters?: Prisma.EventTypeCreateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: boolean
+  assignRRMembersUsingSegment?: boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: boolean
+  isRRWeightsEnabled?: boolean
+  maxLeadThreshold?: number | null
+  includeNoShowInRRCalculation?: boolean
+  allowReschedulingPastBookings?: boolean
+  hideOrganizerEmail?: boolean
+  maxActiveBookingsPerBooker?: number | null
+  maxActiveBookingPerBookerOfferReschedule?: boolean
+  customReplyToEmail?: string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: boolean
+  useBookerTimezone?: boolean
+  bookingRequiresAuthentication?: boolean
+  rrHostSubsetEnabled?: boolean
+  requiresCancellationReason?: $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: boolean
+  createdAt?: Date | string | null
+  updatedAt?: Date | string | null
+  hosts?: Prisma.HostCreateNestedManyWithoutEventTypeInput
+  users?: Prisma.UserCreateNestedManyWithoutEventTypesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedEventTypesInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
+  team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
+  hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
+  availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
+  destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutEventTypeInput
+  customInputs?: Prisma.EventTypeCustomInputCreateNestedManyWithoutEventTypeInput
+  parent?: Prisma.EventTypeCreateNestedOneWithoutChildrenInput
+  children?: Prisma.EventTypeCreateNestedManyWithoutParentInput
+  schedule?: Prisma.ScheduleCreateNestedOneWithoutEventTypeInput
+  instantMeetingSchedule?: Prisma.ScheduleCreateNestedOneWithoutInstantMeetingEventsInput
+  fieldTranslations?: Prisma.EventTypeTranslationCreateNestedManyWithoutEventTypeInput
+  selectedCalendars?: Prisma.SelectedCalendarCreateNestedManyWithoutEventTypeInput
+  calVideoSettings?: Prisma.CalVideoSettingsCreateNestedOneWithoutEventTypeInput
+  secondaryEmail?: Prisma.SecondaryEmailCreateNestedOneWithoutEventTypesInput
+  restrictionSchedule?: Prisma.ScheduleCreateNestedOneWithoutRestrictionScheduleInput
+  hostGroups?: Prisma.HostGroupCreateNestedManyWithoutEventTypeInput
+}
+
+export type EventTypeUncheckedCreateWithoutAiPhoneCallConfigInput = {
+  id?: number
+  title: string
+  slug: string
+  description?: string | null
+  interfaceLanguage?: string | null
+  position?: number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length: number
+  offsetStart?: number
+  hidden?: boolean
+  userId?: number | null
+  profileId?: number | null
+  teamId?: number | null
+  useEventLevelSelectedCalendars?: boolean
+  eventName?: string | null
+  parentId?: number | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: string | null
+  periodType?: $Enums.PeriodType
+  periodStartDate?: Date | string | null
+  periodEndDate?: Date | string | null
+  periodDays?: number | null
+  periodCountCalendarDays?: boolean | null
+  lockTimeZoneToggleOnBookingPage?: boolean
+  lockedTimeZone?: string | null
+  requiresConfirmation?: boolean
+  requiresConfirmationWillBlockSlot?: boolean
+  requiresConfirmationForFreeEmail?: boolean
+  requiresBookerEmailVerification?: boolean
+  canSendCalVideoTranscriptionEmails?: boolean
+  autoTranslateDescriptionEnabled?: boolean
+  autoTranslateInstantMeetingTitleEnabled?: boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: boolean
+  hideCalendarNotes?: boolean
+  hideCalendarEventDetails?: boolean
+  minimumBookingNotice?: number
+  beforeEventBuffer?: number
+  afterEventBuffer?: number
+  seatsPerTimeSlot?: number | null
+  onlyShowFirstAvailableSlot?: boolean
+  showOptimizedSlots?: boolean | null
+  disableCancelling?: boolean | null
+  disableRescheduling?: boolean | null
+  minimumRescheduleNotice?: number | null
+  seatsShowAttendees?: boolean | null
+  seatsShowAvailabilityCount?: boolean | null
+  schedulingType?: $Enums.SchedulingType | null
+  scheduleId?: number | null
+  allowReschedulingCancelledBookings?: boolean | null
+  price?: number
+  currency?: string
+  slotInterval?: number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: string | null
+  forwardParamsSuccessRedirect?: boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: number
+  instantMeetingScheduleId?: number | null
+  instantMeetingParameters?: Prisma.EventTypeCreateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: boolean
+  assignRRMembersUsingSegment?: boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: boolean
+  isRRWeightsEnabled?: boolean
+  maxLeadThreshold?: number | null
+  includeNoShowInRRCalculation?: boolean
+  allowReschedulingPastBookings?: boolean
+  hideOrganizerEmail?: boolean
+  maxActiveBookingsPerBooker?: number | null
+  maxActiveBookingPerBookerOfferReschedule?: boolean
+  customReplyToEmail?: string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: boolean
+  secondaryEmailId?: number | null
+  useBookerTimezone?: boolean
+  restrictionScheduleId?: number | null
+  bookingRequiresAuthentication?: boolean
+  rrHostSubsetEnabled?: boolean
+  requiresCancellationReason?: $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: boolean
+  createdAt?: Date | string | null
+  updatedAt?: Date | string | null
+  hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
+  hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
+  availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
+  destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutEventTypeInput
+  customInputs?: Prisma.EventTypeCustomInputUncheckedCreateNestedManyWithoutEventTypeInput
+  children?: Prisma.EventTypeUncheckedCreateNestedManyWithoutParentInput
+  fieldTranslations?: Prisma.EventTypeTranslationUncheckedCreateNestedManyWithoutEventTypeInput
+  selectedCalendars?: Prisma.SelectedCalendarUncheckedCreateNestedManyWithoutEventTypeInput
+  calVideoSettings?: Prisma.CalVideoSettingsUncheckedCreateNestedOneWithoutEventTypeInput
+  hostGroups?: Prisma.HostGroupUncheckedCreateNestedManyWithoutEventTypeInput
+}
+
+export type EventTypeCreateOrConnectWithoutAiPhoneCallConfigInput = {
+  where: Prisma.EventTypeWhereUniqueInput
+  create: Prisma.XOR<Prisma.EventTypeCreateWithoutAiPhoneCallConfigInput, Prisma.EventTypeUncheckedCreateWithoutAiPhoneCallConfigInput>
+}
+
+export type EventTypeUpsertWithoutAiPhoneCallConfigInput = {
+  update: Prisma.XOR<Prisma.EventTypeUpdateWithoutAiPhoneCallConfigInput, Prisma.EventTypeUncheckedUpdateWithoutAiPhoneCallConfigInput>
+  create: Prisma.XOR<Prisma.EventTypeCreateWithoutAiPhoneCallConfigInput, Prisma.EventTypeUncheckedCreateWithoutAiPhoneCallConfigInput>
+  where?: Prisma.EventTypeWhereInput
+}
+
+export type EventTypeUpdateToOneWithWhereWithoutAiPhoneCallConfigInput = {
+  where?: Prisma.EventTypeWhereInput
+  data: Prisma.XOR<Prisma.EventTypeUpdateWithoutAiPhoneCallConfigInput, Prisma.EventTypeUncheckedUpdateWithoutAiPhoneCallConfigInput>
+}
+
+export type EventTypeUpdateWithoutAiPhoneCallConfigInput = {
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interfaceLanguage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length?: Prisma.IntFieldUpdateOperationsInput | number
+  offsetStart?: Prisma.IntFieldUpdateOperationsInput | number
+  hidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  useEventLevelSelectedCalendars?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eventName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  periodType?: Prisma.EnumPeriodTypeFieldUpdateOperationsInput | $Enums.PeriodType
+  periodStartDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodEndDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodCountCalendarDays?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  lockTimeZoneToggleOnBookingPage?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lockedTimeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requiresConfirmation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationWillBlockSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationForFreeEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresBookerEmailVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  canSendCalVideoTranscriptionEmails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateDescriptionEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateInstantMeetingTitleEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarNotes?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarEventDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minimumBookingNotice?: Prisma.IntFieldUpdateOperationsInput | number
+  beforeEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  afterEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  seatsPerTimeSlot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  onlyShowFirstAvailableSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showOptimizedSlots?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableCancelling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableRescheduling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  minimumRescheduleNotice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  seatsShowAttendees?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  seatsShowAvailabilityCount?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  schedulingType?: Prisma.NullableEnumSchedulingTypeFieldUpdateOperationsInput | $Enums.SchedulingType | null
+  allowReschedulingCancelledBookings?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  price?: Prisma.IntFieldUpdateOperationsInput | number
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  slotInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  forwardParamsSuccessRedirect?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  instantMeetingParameters?: Prisma.EventTypeUpdateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  assignRRMembersUsingSegment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isRRWeightsEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxLeadThreshold?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  includeNoShowInRRCalculation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowReschedulingPastBookings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideOrganizerEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxActiveBookingsPerBooker?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  maxActiveBookingPerBookerOfferReschedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  customReplyToEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  useBookerTimezone?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bookingRequiresAuthentication?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrHostSubsetEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresCancellationReason?: Prisma.NullableEnumCancellationReasonRequirementFieldUpdateOperationsInput | $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  hosts?: Prisma.HostUpdateManyWithoutEventTypeNestedInput
+  users?: Prisma.UserUpdateManyWithoutEventTypesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedEventTypesNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
+  team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
+  hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
+  availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutEventTypeNestedInput
+  customInputs?: Prisma.EventTypeCustomInputUpdateManyWithoutEventTypeNestedInput
+  parent?: Prisma.EventTypeUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.EventTypeUpdateManyWithoutParentNestedInput
+  schedule?: Prisma.ScheduleUpdateOneWithoutEventTypeNestedInput
+  instantMeetingSchedule?: Prisma.ScheduleUpdateOneWithoutInstantMeetingEventsNestedInput
+  fieldTranslations?: Prisma.EventTypeTranslationUpdateManyWithoutEventTypeNestedInput
+  selectedCalendars?: Prisma.SelectedCalendarUpdateManyWithoutEventTypeNestedInput
+  calVideoSettings?: Prisma.CalVideoSettingsUpdateOneWithoutEventTypeNestedInput
+  secondaryEmail?: Prisma.SecondaryEmailUpdateOneWithoutEventTypesNestedInput
+  restrictionSchedule?: Prisma.ScheduleUpdateOneWithoutRestrictionScheduleNestedInput
+  hostGroups?: Prisma.HostGroupUpdateManyWithoutEventTypeNestedInput
+}
+
+export type EventTypeUncheckedUpdateWithoutAiPhoneCallConfigInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interfaceLanguage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  locations?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  length?: Prisma.IntFieldUpdateOperationsInput | number
+  offsetStart?: Prisma.IntFieldUpdateOperationsInput | number
+  hidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  useEventLevelSelectedCalendars?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eventName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  bookingFields?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  timeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  periodType?: Prisma.EnumPeriodTypeFieldUpdateOperationsInput | $Enums.PeriodType
+  periodStartDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodEndDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  periodDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodCountCalendarDays?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  lockTimeZoneToggleOnBookingPage?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lockedTimeZone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requiresConfirmation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationWillBlockSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresConfirmationForFreeEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresBookerEmailVerification?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  canSendCalVideoTranscriptionEmails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateDescriptionEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoTranslateInstantMeetingTitleEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recurringEvent?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  disableGuests?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarNotes?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideCalendarEventDetails?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  minimumBookingNotice?: Prisma.IntFieldUpdateOperationsInput | number
+  beforeEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  afterEventBuffer?: Prisma.IntFieldUpdateOperationsInput | number
+  seatsPerTimeSlot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  onlyShowFirstAvailableSlot?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showOptimizedSlots?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableCancelling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  disableRescheduling?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  minimumRescheduleNotice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  seatsShowAttendees?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  seatsShowAvailabilityCount?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  schedulingType?: Prisma.NullableEnumSchedulingTypeFieldUpdateOperationsInput | $Enums.SchedulingType | null
+  scheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  allowReschedulingCancelledBookings?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  price?: Prisma.IntFieldUpdateOperationsInput | number
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  slotInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  successRedirectUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  forwardParamsSuccessRedirect?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  durationLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isInstantEvent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  instantMeetingExpiryTimeOffsetInSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  instantMeetingScheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  instantMeetingParameters?: Prisma.EventTypeUpdateinstantMeetingParametersInput | string[]
+  assignAllTeamMembers?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  assignRRMembersUsingSegment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrSegmentQueryValue?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  useEventTypeDestinationCalendarEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isRRWeightsEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxLeadThreshold?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  includeNoShowInRRCalculation?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowReschedulingPastBookings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideOrganizerEmail?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  maxActiveBookingsPerBooker?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  maxActiveBookingPerBookerOfferReschedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  customReplyToEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTypeColor?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rescheduleWithSameRoundRobinHost?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  secondaryEmailId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  useBookerTimezone?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  restrictionScheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  bookingRequiresAuthentication?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rrHostSubsetEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  requiresCancellationReason?: Prisma.NullableEnumCancellationReasonRequirementFieldUpdateOperationsInput | $Enums.CancellationReasonRequirement | null
+  enablePerHostLocations?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
+  hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutEventTypeNestedInput
@@ -6696,6 +7650,8 @@ export type EventTypeCreateWithoutScheduleInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -6800,6 +7756,8 @@ export type EventTypeUncheckedCreateWithoutScheduleInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -6905,6 +7863,8 @@ export type EventTypeCreateWithoutInstantMeetingScheduleInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -7009,6 +7969,8 @@ export type EventTypeUncheckedCreateWithoutInstantMeetingScheduleInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -7114,6 +8076,8 @@ export type EventTypeCreateWithoutRestrictionScheduleInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -7218,6 +8182,8 @@ export type EventTypeUncheckedCreateWithoutRestrictionScheduleInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -7371,6 +8337,8 @@ export type EventTypeCreateWithoutAvailabilityInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutEventTypeInput
@@ -7476,6 +8444,8 @@ export type EventTypeUncheckedCreateWithoutAvailabilityInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutEventTypeInput
@@ -7586,6 +8556,8 @@ export type EventTypeUpdateWithoutAvailabilityInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutEventTypeNestedInput
@@ -7691,6 +8663,8 @@ export type EventTypeUncheckedUpdateWithoutAvailabilityInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutEventTypeNestedInput
@@ -7785,6 +8759,8 @@ export type EventTypeCreateWithoutSelectedCalendarsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -7890,6 +8866,8 @@ export type EventTypeUncheckedCreateWithoutSelectedCalendarsInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -8000,6 +8978,8 @@ export type EventTypeUpdateWithoutSelectedCalendarsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -8105,6 +9085,8 @@ export type EventTypeUncheckedUpdateWithoutSelectedCalendarsInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -8199,6 +9181,8 @@ export type EventTypeCreateWithoutCustomInputsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -8304,6 +9288,8 @@ export type EventTypeUncheckedCreateWithoutCustomInputsInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -8414,6 +9400,8 @@ export type EventTypeUpdateWithoutCustomInputsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -8519,6 +9507,8 @@ export type EventTypeUncheckedUpdateWithoutCustomInputsInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -8613,6 +9603,8 @@ export type EventTypeCreateWithoutWebhooksInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutEventTypeInput
@@ -8718,6 +9710,8 @@ export type EventTypeUncheckedCreateWithoutWebhooksInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutEventTypeInput
@@ -8828,6 +9822,8 @@ export type EventTypeUpdateWithoutWebhooksInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutEventTypeNestedInput
@@ -8933,6 +9929,8 @@ export type EventTypeUncheckedUpdateWithoutWebhooksInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutEventTypeNestedInput
@@ -9026,6 +10024,8 @@ export type EventTypeCreateWithoutHashedLinkInput = {
   owner?: Prisma.UserCreateNestedOneWithoutOwnedEventTypesInput
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -9131,6 +10131,8 @@ export type EventTypeUncheckedCreateWithoutHashedLinkInput = {
   updatedAt?: Date | string | null
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -9241,6 +10243,8 @@ export type EventTypeUpdateWithoutHashedLinkInput = {
   owner?: Prisma.UserUpdateOneWithoutOwnedEventTypesNestedInput
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -9346,6 +10350,8 @@ export type EventTypeUncheckedUpdateWithoutHashedLinkInput = {
   updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -9441,6 +10447,8 @@ export type EventTypeCreateWithoutSecondaryEmailInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -9545,6 +10553,8 @@ export type EventTypeUncheckedCreateWithoutSecondaryEmailInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -9666,6 +10676,8 @@ export type EventTypeCreateWithoutFieldTranslationsInput = {
   profile?: Prisma.ProfileCreateNestedOneWithoutEventTypesInput
   team?: Prisma.TeamCreateNestedOneWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutEventTypeInput
@@ -9771,6 +10783,8 @@ export type EventTypeUncheckedCreateWithoutFieldTranslationsInput = {
   hosts?: Prisma.HostUncheckedCreateNestedManyWithoutEventTypeInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutEventTypesInput
   hashedLink?: Prisma.HashedLinkUncheckedCreateNestedManyWithoutEventTypeInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedCreateNestedManyWithoutEventTypeInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedCreateNestedOneWithoutEventTypeInput
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutEventTypeInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventTypeInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutEventTypeInput
@@ -9881,6 +10895,8 @@ export type EventTypeUpdateWithoutFieldTranslationsInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -9986,6 +11002,8 @@ export type EventTypeUncheckedUpdateWithoutFieldTranslationsInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -10167,6 +11185,8 @@ export type EventTypeUpdateWithoutParentInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -10271,6 +11291,8 @@ export type EventTypeUncheckedUpdateWithoutParentInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -10539,6 +11561,8 @@ export type EventTypeUpdateWithoutUsersInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -10644,6 +11668,8 @@ export type EventTypeUncheckedUpdateWithoutUsersInput = {
   updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -10826,6 +11852,8 @@ export type EventTypeUpdateWithoutOwnerInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -10931,6 +11959,8 @@ export type EventTypeUncheckedUpdateWithoutOwnerInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -11199,6 +12229,8 @@ export type EventTypeUpdateWithoutProfileInput = {
   owner?: Prisma.UserUpdateOneWithoutOwnedEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -11304,6 +12336,8 @@ export type EventTypeUncheckedUpdateWithoutProfileInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -11572,6 +12606,8 @@ export type EventTypeUpdateWithoutTeamInput = {
   owner?: Prisma.UserUpdateOneWithoutOwnedEventTypesNestedInput
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -11677,6 +12713,8 @@ export type EventTypeUncheckedUpdateWithoutTeamInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -12120,6 +13158,8 @@ export type EventTypeUpdateWithoutScheduleInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -12224,6 +13264,8 @@ export type EventTypeUncheckedUpdateWithoutScheduleInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -12406,6 +13448,8 @@ export type EventTypeUpdateWithoutInstantMeetingScheduleInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -12510,6 +13554,8 @@ export type EventTypeUncheckedUpdateWithoutInstantMeetingScheduleInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -12692,6 +13738,8 @@ export type EventTypeUpdateWithoutRestrictionScheduleInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -12796,6 +13844,8 @@ export type EventTypeUncheckedUpdateWithoutRestrictionScheduleInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -13065,6 +14115,8 @@ export type EventTypeUpdateWithoutSecondaryEmailInput = {
   profile?: Prisma.ProfileUpdateOneWithoutEventTypesNestedInput
   team?: Prisma.TeamUpdateOneWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutEventTypeNestedInput
@@ -13169,6 +14221,8 @@ export type EventTypeUncheckedUpdateWithoutSecondaryEmailInput = {
   hosts?: Prisma.HostUncheckedUpdateManyWithoutEventTypeNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutEventTypesNestedInput
   hashedLink?: Prisma.HashedLinkUncheckedUpdateManyWithoutEventTypeNestedInput
+  workflows?: Prisma.WorkflowsOnEventTypesUncheckedUpdateManyWithoutEventTypeNestedInput
+  aiPhoneCallConfig?: Prisma.AIPhoneCallConfigurationUncheckedUpdateOneWithoutEventTypeNestedInput
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutEventTypeNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventTypeNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutEventTypeNestedInput
@@ -13277,6 +14331,7 @@ export type EventTypeCountOutputType = {
   hosts: number
   users: number
   hashedLink: number
+  workflows: number
   bookings: number
   availability: number
   webhooks: number
@@ -13291,6 +14346,7 @@ export type EventTypeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   hosts?: boolean | EventTypeCountOutputTypeCountHostsArgs
   users?: boolean | EventTypeCountOutputTypeCountUsersArgs
   hashedLink?: boolean | EventTypeCountOutputTypeCountHashedLinkArgs
+  workflows?: boolean | EventTypeCountOutputTypeCountWorkflowsArgs
   bookings?: boolean | EventTypeCountOutputTypeCountBookingsArgs
   availability?: boolean | EventTypeCountOutputTypeCountAvailabilityArgs
   webhooks?: boolean | EventTypeCountOutputTypeCountWebhooksArgs
@@ -13330,6 +14386,13 @@ export type EventTypeCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types
  */
 export type EventTypeCountOutputTypeCountHashedLinkArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.HashedLinkWhereInput
+}
+
+/**
+ * EventTypeCountOutputType without action
+ */
+export type EventTypeCountOutputTypeCountWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WorkflowsOnEventTypesWhereInput
 }
 
 /**
@@ -13481,6 +14544,8 @@ export type EventTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   profile?: boolean | Prisma.EventType$profileArgs<ExtArgs>
   team?: boolean | Prisma.EventType$teamArgs<ExtArgs>
   hashedLink?: boolean | Prisma.EventType$hashedLinkArgs<ExtArgs>
+  workflows?: boolean | Prisma.EventType$workflowsArgs<ExtArgs>
+  aiPhoneCallConfig?: boolean | Prisma.EventType$aiPhoneCallConfigArgs<ExtArgs>
   bookings?: boolean | Prisma.EventType$bookingsArgs<ExtArgs>
   availability?: boolean | Prisma.EventType$availabilityArgs<ExtArgs>
   webhooks?: boolean | Prisma.EventType$webhooksArgs<ExtArgs>
@@ -13787,6 +14852,8 @@ export type EventTypeInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   profile?: boolean | Prisma.EventType$profileArgs<ExtArgs>
   team?: boolean | Prisma.EventType$teamArgs<ExtArgs>
   hashedLink?: boolean | Prisma.EventType$hashedLinkArgs<ExtArgs>
+  workflows?: boolean | Prisma.EventType$workflowsArgs<ExtArgs>
+  aiPhoneCallConfig?: boolean | Prisma.EventType$aiPhoneCallConfigArgs<ExtArgs>
   bookings?: boolean | Prisma.EventType$bookingsArgs<ExtArgs>
   availability?: boolean | Prisma.EventType$availabilityArgs<ExtArgs>
   webhooks?: boolean | Prisma.EventType$webhooksArgs<ExtArgs>
@@ -13834,6 +14901,8 @@ export type $EventTypePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     profile: Prisma.$ProfilePayload<ExtArgs> | null
     team: Prisma.$TeamPayload<ExtArgs> | null
     hashedLink: Prisma.$HashedLinkPayload<ExtArgs>[]
+    workflows: Prisma.$WorkflowsOnEventTypesPayload<ExtArgs>[]
+    aiPhoneCallConfig: Prisma.$AIPhoneCallConfigurationPayload<ExtArgs> | null
     bookings: Prisma.$BookingPayload<ExtArgs>[]
     availability: Prisma.$AvailabilityPayload<ExtArgs>[]
     webhooks: Prisma.$WebhookPayload<ExtArgs>[]
@@ -14387,6 +15456,8 @@ export interface Prisma__EventTypeClient<T, Null = never, ExtArgs extends runtim
   profile<T extends Prisma.EventType$profileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$profileArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   team<T extends Prisma.EventType$teamArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$teamArgs<ExtArgs>>): Prisma.Prisma__TeamClient<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   hashedLink<T extends Prisma.EventType$hashedLinkArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$hashedLinkArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$HashedLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflows<T extends Prisma.EventType$workflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$workflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowsOnEventTypesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  aiPhoneCallConfig<T extends Prisma.EventType$aiPhoneCallConfigArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$aiPhoneCallConfigArgs<ExtArgs>>): Prisma.Prisma__AIPhoneCallConfigurationClient<runtime.Types.Result.GetResult<Prisma.$AIPhoneCallConfigurationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   bookings<T extends Prisma.EventType$bookingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$bookingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   availability<T extends Prisma.EventType$availabilityArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$availabilityArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvailabilityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   webhooks<T extends Prisma.EventType$webhooksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventType$webhooksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WebhookPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -15038,6 +16109,49 @@ export type EventType$hashedLinkArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.HashedLinkScalarFieldEnum | Prisma.HashedLinkScalarFieldEnum[]
+}
+
+/**
+ * EventType.workflows
+ */
+export type EventType$workflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WorkflowsOnEventTypes
+   */
+  select?: Prisma.WorkflowsOnEventTypesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WorkflowsOnEventTypes
+   */
+  omit?: Prisma.WorkflowsOnEventTypesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowsOnEventTypesInclude<ExtArgs> | null
+  where?: Prisma.WorkflowsOnEventTypesWhereInput
+  orderBy?: Prisma.WorkflowsOnEventTypesOrderByWithRelationInput | Prisma.WorkflowsOnEventTypesOrderByWithRelationInput[]
+  cursor?: Prisma.WorkflowsOnEventTypesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WorkflowsOnEventTypesScalarFieldEnum | Prisma.WorkflowsOnEventTypesScalarFieldEnum[]
+}
+
+/**
+ * EventType.aiPhoneCallConfig
+ */
+export type EventType$aiPhoneCallConfigArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AIPhoneCallConfiguration
+   */
+  select?: Prisma.AIPhoneCallConfigurationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AIPhoneCallConfiguration
+   */
+  omit?: Prisma.AIPhoneCallConfigurationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AIPhoneCallConfigurationInclude<ExtArgs> | null
+  where?: Prisma.AIPhoneCallConfigurationWhereInput
 }
 
 /**

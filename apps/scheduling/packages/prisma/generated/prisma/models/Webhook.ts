@@ -790,10 +790,6 @@ export type WebhookUpdateeventTriggersInput = {
   push?: $Enums.WebhookTriggerEvents | $Enums.WebhookTriggerEvents[]
 }
 
-export type NullableEnumTimeUnitFieldUpdateOperationsInput = {
-  set?: $Enums.TimeUnit | null
-}
-
 export type WebhookCreateNestedManyWithoutAppInput = {
   create?: Prisma.XOR<Prisma.WebhookCreateWithoutAppInput, Prisma.WebhookUncheckedCreateWithoutAppInput> | Prisma.WebhookCreateWithoutAppInput[] | Prisma.WebhookUncheckedCreateWithoutAppInput[]
   connectOrCreate?: Prisma.WebhookCreateOrConnectWithoutAppInput | Prisma.WebhookCreateOrConnectWithoutAppInput[]

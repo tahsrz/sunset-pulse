@@ -38,6 +38,18 @@ describe('PowerSync offline mutations', () => {
       ['local-id', 'user-1', 'Denton homes', '{"city":"Denton"}', expect.any(String), expect.any(String)]
     );
   });
+
+  it('rejects oversized or blank local-first values before writing them', async () => {
+    const database = db(null);
+
+    await expect(toggleLocalCollection(database as any, 'user-1', 'p'.repeat(201))).rejects.toThrow('Property ID');
+    await expect(saveLocalSearch(database as any, 'user-1', { name: '   ', criteria: {} })).rejects.toThrow('name');
+    await expect(saveLocalSearch(database as any, 'user-1', {
+      name: 'Large search',
+      criteria: { description: 'x'.repeat(16_385) },
+    })).rejects.toThrow('criteria');
+    expect(database.execute).not.toHaveBeenCalled();
+  });
 });
 
 function db(existing: { id: string } | null) {

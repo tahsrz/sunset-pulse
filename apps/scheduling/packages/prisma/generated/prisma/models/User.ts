@@ -80,6 +80,7 @@ export type UserMinAggregateOutputType = {
   allowSEOIndexing: boolean | null
   receiveMonthlyDigestEmail: boolean | null
   requiresBookerEmailVerification: boolean | null
+  whitelistWorkflows: boolean | null
   verified: boolean | null
   role: $Enums.UserPermissionRole | null
   organizationId: number | null
@@ -127,6 +128,7 @@ export type UserMaxAggregateOutputType = {
   allowSEOIndexing: boolean | null
   receiveMonthlyDigestEmail: boolean | null
   requiresBookerEmailVerification: boolean | null
+  whitelistWorkflows: boolean | null
   verified: boolean | null
   role: $Enums.UserPermissionRole | null
   organizationId: number | null
@@ -174,6 +176,7 @@ export type UserCountAggregateOutputType = {
   allowSEOIndexing: number
   receiveMonthlyDigestEmail: number
   requiresBookerEmailVerification: number
+  whitelistWorkflows: number
   metadata: number
   verified: number
   role: number
@@ -244,6 +247,7 @@ export type UserMinAggregateInputType = {
   allowSEOIndexing?: true
   receiveMonthlyDigestEmail?: true
   requiresBookerEmailVerification?: true
+  whitelistWorkflows?: true
   verified?: true
   role?: true
   organizationId?: true
@@ -291,6 +295,7 @@ export type UserMaxAggregateInputType = {
   allowSEOIndexing?: true
   receiveMonthlyDigestEmail?: true
   requiresBookerEmailVerification?: true
+  whitelistWorkflows?: true
   verified?: true
   role?: true
   organizationId?: true
@@ -338,6 +343,7 @@ export type UserCountAggregateInputType = {
   allowSEOIndexing?: true
   receiveMonthlyDigestEmail?: true
   requiresBookerEmailVerification?: true
+  whitelistWorkflows?: true
   metadata?: true
   verified?: true
   role?: true
@@ -473,6 +479,7 @@ export type UserGroupByOutputType = {
   allowSEOIndexing: boolean | null
   receiveMonthlyDigestEmail: boolean | null
   requiresBookerEmailVerification: boolean | null
+  whitelistWorkflows: boolean
   metadata: runtime.JsonValue | null
   verified: boolean | null
   role: $Enums.UserPermissionRole
@@ -544,6 +551,7 @@ export type UserWhereInput = {
   allowSEOIndexing?: Prisma.BoolNullableFilter<"User"> | boolean | null
   receiveMonthlyDigestEmail?: Prisma.BoolNullableFilter<"User"> | boolean | null
   requiresBookerEmailVerification?: Prisma.BoolNullableFilter<"User"> | boolean | null
+  whitelistWorkflows?: Prisma.BoolFilter<"User"> | boolean
   metadata?: Prisma.JsonNullableFilter<"User">
   verified?: Prisma.BoolNullableFilter<"User"> | boolean | null
   role?: Prisma.EnumUserPermissionRoleFilter<"User"> | $Enums.UserPermissionRole
@@ -567,6 +575,7 @@ export type UserWhereInput = {
   availability?: Prisma.AvailabilityListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
   destinationCalendar?: Prisma.XOR<Prisma.DestinationCalendarNullableScalarRelationFilter, Prisma.DestinationCalendarWhereInput> | null
+  workflows?: Prisma.WorkflowListRelationFilter
   apiKeys?: Prisma.ApiKeyListRelationFilter
   accounts?: Prisma.AccountListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
@@ -642,6 +651,7 @@ export type UserOrderByWithRelationInput = {
   allowSEOIndexing?: Prisma.SortOrderInput | Prisma.SortOrder
   receiveMonthlyDigestEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   requiresBookerEmailVerification?: Prisma.SortOrderInput | Prisma.SortOrder
+  whitelistWorkflows?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   verified?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
@@ -665,6 +675,7 @@ export type UserOrderByWithRelationInput = {
   availability?: Prisma.AvailabilityOrderByRelationAggregateInput
   webhooks?: Prisma.WebhookOrderByRelationAggregateInput
   destinationCalendar?: Prisma.DestinationCalendarOrderByWithRelationInput
+  workflows?: Prisma.WorkflowOrderByRelationAggregateInput
   apiKeys?: Prisma.ApiKeyOrderByRelationAggregateInput
   accounts?: Prisma.AccountOrderByRelationAggregateInput
   sessions?: Prisma.SessionOrderByRelationAggregateInput
@@ -746,6 +757,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   allowSEOIndexing?: Prisma.BoolNullableFilter<"User"> | boolean | null
   receiveMonthlyDigestEmail?: Prisma.BoolNullableFilter<"User"> | boolean | null
   requiresBookerEmailVerification?: Prisma.BoolNullableFilter<"User"> | boolean | null
+  whitelistWorkflows?: Prisma.BoolFilter<"User"> | boolean
   metadata?: Prisma.JsonNullableFilter<"User">
   verified?: Prisma.BoolNullableFilter<"User"> | boolean | null
   role?: Prisma.EnumUserPermissionRoleFilter<"User"> | $Enums.UserPermissionRole
@@ -768,6 +780,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   availability?: Prisma.AvailabilityListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
   destinationCalendar?: Prisma.XOR<Prisma.DestinationCalendarNullableScalarRelationFilter, Prisma.DestinationCalendarWhereInput> | null
+  workflows?: Prisma.WorkflowListRelationFilter
   apiKeys?: Prisma.ApiKeyListRelationFilter
   accounts?: Prisma.AccountListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
@@ -843,6 +856,7 @@ export type UserOrderByWithAggregationInput = {
   allowSEOIndexing?: Prisma.SortOrderInput | Prisma.SortOrder
   receiveMonthlyDigestEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   requiresBookerEmailVerification?: Prisma.SortOrderInput | Prisma.SortOrder
+  whitelistWorkflows?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   verified?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
@@ -899,6 +913,7 @@ export type UserScalarWhereWithAggregatesInput = {
   allowSEOIndexing?: Prisma.BoolNullableWithAggregatesFilter<"User"> | boolean | null
   receiveMonthlyDigestEmail?: Prisma.BoolNullableWithAggregatesFilter<"User"> | boolean | null
   requiresBookerEmailVerification?: Prisma.BoolNullableWithAggregatesFilter<"User"> | boolean | null
+  whitelistWorkflows?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"User">
   verified?: Prisma.BoolNullableWithAggregatesFilter<"User"> | boolean | null
   role?: Prisma.EnumUserPermissionRoleWithAggregatesFilter<"User"> | $Enums.UserPermissionRole
@@ -946,6 +961,7 @@ export type UserCreateInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -967,6 +983,7 @@ export type UserCreateInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1042,6 +1059,7 @@ export type UserUncheckedCreateInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -1065,6 +1083,7 @@ export type UserUncheckedCreateInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1137,6 +1156,7 @@ export type UserUpdateInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -1158,6 +1178,7 @@ export type UserUpdateInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1233,6 +1254,7 @@ export type UserUncheckedUpdateInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -1256,6 +1278,7 @@ export type UserUncheckedUpdateInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1329,6 +1352,7 @@ export type UserCreateManyInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -1376,6 +1400,7 @@ export type UserUpdateManyMutationInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -1422,6 +1447,7 @@ export type UserUncheckedUpdateManyInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -1500,6 +1526,7 @@ export type UserCountOrderByAggregateInput = {
   allowSEOIndexing?: Prisma.SortOrder
   receiveMonthlyDigestEmail?: Prisma.SortOrder
   requiresBookerEmailVerification?: Prisma.SortOrder
+  whitelistWorkflows?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
   verified?: Prisma.SortOrder
   role?: Prisma.SortOrder
@@ -1558,6 +1585,7 @@ export type UserMaxOrderByAggregateInput = {
   allowSEOIndexing?: Prisma.SortOrder
   receiveMonthlyDigestEmail?: Prisma.SortOrder
   requiresBookerEmailVerification?: Prisma.SortOrder
+  whitelistWorkflows?: Prisma.SortOrder
   verified?: Prisma.SortOrder
   role?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
@@ -1605,6 +1633,7 @@ export type UserMinOrderByAggregateInput = {
   allowSEOIndexing?: Prisma.SortOrder
   receiveMonthlyDigestEmail?: Prisma.SortOrder
   requiresBookerEmailVerification?: Prisma.SortOrder
+  whitelistWorkflows?: Prisma.SortOrder
   verified?: Prisma.SortOrder
   role?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
@@ -1934,6 +1963,22 @@ export type UserUpdateOneWithoutReassignedBookingsNestedInput = {
   delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReassignedBookingsInput, Prisma.UserUpdateWithoutReassignedBookingsInput>, Prisma.UserUncheckedUpdateWithoutReassignedBookingsInput>
+}
+
+export type UserCreateNestedOneWithoutWorkflowsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWorkflowsInput, Prisma.UserUncheckedCreateWithoutWorkflowsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWorkflowsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutWorkflowsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWorkflowsInput, Prisma.UserUncheckedCreateWithoutWorkflowsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWorkflowsInput
+  upsert?: Prisma.UserUpsertWithoutWorkflowsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWorkflowsInput, Prisma.UserUpdateWithoutWorkflowsInput>, Prisma.UserUncheckedUpdateWithoutWorkflowsInput>
 }
 
 export type UserCreateNestedOneWithoutSchedulesInput = {
@@ -2521,6 +2566,7 @@ export type UserCreateWithoutHostsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -2542,6 +2588,7 @@ export type UserCreateWithoutHostsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -2616,6 +2663,7 @@ export type UserUncheckedCreateWithoutHostsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -2639,6 +2687,7 @@ export type UserUncheckedCreateWithoutHostsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -2726,6 +2775,7 @@ export type UserUpdateWithoutHostsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -2747,6 +2797,7 @@ export type UserUpdateWithoutHostsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -2821,6 +2872,7 @@ export type UserUncheckedUpdateWithoutHostsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -2844,6 +2896,7 @@ export type UserUncheckedUpdateWithoutHostsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -2915,6 +2968,7 @@ export type UserCreateWithoutEventTypesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -2935,6 +2989,7 @@ export type UserCreateWithoutEventTypesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -3010,6 +3065,7 @@ export type UserUncheckedCreateWithoutEventTypesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -3032,6 +3088,7 @@ export type UserUncheckedCreateWithoutEventTypesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -3109,6 +3166,7 @@ export type UserCreateWithoutOwnedEventTypesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -3130,6 +3188,7 @@ export type UserCreateWithoutOwnedEventTypesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -3204,6 +3263,7 @@ export type UserUncheckedCreateWithoutOwnedEventTypesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -3227,6 +3287,7 @@ export type UserUncheckedCreateWithoutOwnedEventTypesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -3323,6 +3384,7 @@ export type UserScalarWhereInput = {
   allowSEOIndexing?: Prisma.BoolNullableFilter<"User"> | boolean | null
   receiveMonthlyDigestEmail?: Prisma.BoolNullableFilter<"User"> | boolean | null
   requiresBookerEmailVerification?: Prisma.BoolNullableFilter<"User"> | boolean | null
+  whitelistWorkflows?: Prisma.BoolFilter<"User"> | boolean
   metadata?: Prisma.JsonNullableFilter<"User">
   verified?: Prisma.BoolNullableFilter<"User"> | boolean | null
   role?: Prisma.EnumUserPermissionRoleFilter<"User"> | $Enums.UserPermissionRole
@@ -3381,6 +3443,7 @@ export type UserUpdateWithoutOwnedEventTypesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -3402,6 +3465,7 @@ export type UserUpdateWithoutOwnedEventTypesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -3476,6 +3540,7 @@ export type UserUncheckedUpdateWithoutOwnedEventTypesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -3499,6 +3564,7 @@ export type UserUncheckedUpdateWithoutOwnedEventTypesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -3570,6 +3636,7 @@ export type UserCreateWithoutCredentialsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -3590,6 +3657,7 @@ export type UserCreateWithoutCredentialsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -3665,6 +3733,7 @@ export type UserUncheckedCreateWithoutCredentialsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -3687,6 +3756,7 @@ export type UserUncheckedCreateWithoutCredentialsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -3775,6 +3845,7 @@ export type UserUpdateWithoutCredentialsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -3795,6 +3866,7 @@ export type UserUpdateWithoutCredentialsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -3870,6 +3942,7 @@ export type UserUncheckedUpdateWithoutCredentialsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -3892,6 +3965,7 @@ export type UserUncheckedUpdateWithoutCredentialsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -3964,6 +4038,7 @@ export type UserCreateWithoutDestinationCalendarInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -3984,6 +4059,7 @@ export type UserCreateWithoutDestinationCalendarInput = {
   selectedCalendars?: Prisma.SelectedCalendarCreateNestedManyWithoutUserInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -4059,6 +4135,7 @@ export type UserUncheckedCreateWithoutDestinationCalendarInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -4081,6 +4158,7 @@ export type UserUncheckedCreateWithoutDestinationCalendarInput = {
   selectedCalendars?: Prisma.SelectedCalendarUncheckedCreateNestedManyWithoutUserInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -4169,6 +4247,7 @@ export type UserUpdateWithoutDestinationCalendarInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -4189,6 +4268,7 @@ export type UserUpdateWithoutDestinationCalendarInput = {
   selectedCalendars?: Prisma.SelectedCalendarUpdateManyWithoutUserNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -4264,6 +4344,7 @@ export type UserUncheckedUpdateWithoutDestinationCalendarInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -4286,6 +4367,7 @@ export type UserUncheckedUpdateWithoutDestinationCalendarInput = {
   selectedCalendars?: Prisma.SelectedCalendarUncheckedUpdateManyWithoutUserNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -4358,6 +4440,7 @@ export type UserCreateWithoutPasswordInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -4378,6 +4461,7 @@ export type UserCreateWithoutPasswordInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -4453,6 +4537,7 @@ export type UserUncheckedCreateWithoutPasswordInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -4475,6 +4560,7 @@ export type UserUncheckedCreateWithoutPasswordInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -4563,6 +4649,7 @@ export type UserUpdateWithoutPasswordInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -4583,6 +4670,7 @@ export type UserUpdateWithoutPasswordInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -4658,6 +4746,7 @@ export type UserUncheckedUpdateWithoutPasswordInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -4680,6 +4769,7 @@ export type UserUncheckedUpdateWithoutPasswordInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -4752,6 +4842,7 @@ export type UserCreateWithoutTravelSchedulesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -4772,6 +4863,7 @@ export type UserCreateWithoutTravelSchedulesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -4847,6 +4939,7 @@ export type UserUncheckedCreateWithoutTravelSchedulesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -4869,6 +4962,7 @@ export type UserUncheckedCreateWithoutTravelSchedulesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -4957,6 +5051,7 @@ export type UserUpdateWithoutTravelSchedulesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -4977,6 +5072,7 @@ export type UserUpdateWithoutTravelSchedulesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -5052,6 +5148,7 @@ export type UserUncheckedUpdateWithoutTravelSchedulesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -5074,6 +5171,7 @@ export type UserUncheckedUpdateWithoutTravelSchedulesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -5146,6 +5244,7 @@ export type UserCreateWithoutNotificationsSubscriptionsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -5167,6 +5266,7 @@ export type UserCreateWithoutNotificationsSubscriptionsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -5241,6 +5341,7 @@ export type UserUncheckedCreateWithoutNotificationsSubscriptionsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -5264,6 +5365,7 @@ export type UserUncheckedCreateWithoutNotificationsSubscriptionsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -5351,6 +5453,7 @@ export type UserUpdateWithoutNotificationsSubscriptionsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -5372,6 +5475,7 @@ export type UserUpdateWithoutNotificationsSubscriptionsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -5446,6 +5550,7 @@ export type UserUncheckedUpdateWithoutNotificationsSubscriptionsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -5469,6 +5574,7 @@ export type UserUncheckedUpdateWithoutNotificationsSubscriptionsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -5540,6 +5646,7 @@ export type UserCreateWithoutProfilesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -5561,6 +5668,7 @@ export type UserCreateWithoutProfilesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -5635,6 +5743,7 @@ export type UserUncheckedCreateWithoutProfilesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -5658,6 +5767,7 @@ export type UserUncheckedCreateWithoutProfilesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -5734,6 +5844,7 @@ export type UserCreateWithoutMovedToProfileInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -5755,6 +5866,7 @@ export type UserCreateWithoutMovedToProfileInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -5829,6 +5941,7 @@ export type UserUncheckedCreateWithoutMovedToProfileInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -5851,6 +5964,7 @@ export type UserUncheckedCreateWithoutMovedToProfileInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -5939,6 +6053,7 @@ export type UserUpdateWithoutProfilesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -5960,6 +6075,7 @@ export type UserUpdateWithoutProfilesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -6034,6 +6150,7 @@ export type UserUncheckedUpdateWithoutProfilesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -6057,6 +6174,7 @@ export type UserUncheckedUpdateWithoutProfilesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -6139,6 +6257,7 @@ export type UserUpdateWithoutMovedToProfileInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -6160,6 +6279,7 @@ export type UserUpdateWithoutMovedToProfileInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -6234,6 +6354,7 @@ export type UserUncheckedUpdateWithoutMovedToProfileInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -6256,6 +6377,7 @@ export type UserUncheckedUpdateWithoutMovedToProfileInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -6328,6 +6450,7 @@ export type UserCreateWithoutOrganizationInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -6349,6 +6472,7 @@ export type UserCreateWithoutOrganizationInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -6423,6 +6547,7 @@ export type UserUncheckedCreateWithoutOrganizationInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -6445,6 +6570,7 @@ export type UserUncheckedCreateWithoutOrganizationInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -6543,6 +6669,7 @@ export type UserCreateWithoutCreditBalanceInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -6564,6 +6691,7 @@ export type UserCreateWithoutCreditBalanceInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -6638,6 +6766,7 @@ export type UserUncheckedCreateWithoutCreditBalanceInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -6661,6 +6790,7 @@ export type UserUncheckedCreateWithoutCreditBalanceInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -6748,6 +6878,7 @@ export type UserUpdateWithoutCreditBalanceInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -6769,6 +6900,7 @@ export type UserUpdateWithoutCreditBalanceInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -6843,6 +6975,7 @@ export type UserUncheckedUpdateWithoutCreditBalanceInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -6866,6 +6999,7 @@ export type UserUncheckedUpdateWithoutCreditBalanceInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -6937,6 +7071,7 @@ export type UserCreateWithoutTeamsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -6957,6 +7092,7 @@ export type UserCreateWithoutTeamsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -7032,6 +7168,7 @@ export type UserUncheckedCreateWithoutTeamsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -7054,6 +7191,7 @@ export type UserUncheckedCreateWithoutTeamsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -7142,6 +7280,7 @@ export type UserUpdateWithoutTeamsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -7162,6 +7301,7 @@ export type UserUpdateWithoutTeamsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -7237,6 +7377,7 @@ export type UserUncheckedUpdateWithoutTeamsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -7259,6 +7400,7 @@ export type UserUncheckedUpdateWithoutTeamsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -7331,6 +7473,7 @@ export type UserCreateWithoutBookingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -7351,6 +7494,7 @@ export type UserCreateWithoutBookingsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -7426,6 +7570,7 @@ export type UserUncheckedCreateWithoutBookingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -7448,6 +7593,7 @@ export type UserUncheckedCreateWithoutBookingsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -7525,6 +7671,7 @@ export type UserCreateWithoutReassignedBookingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -7546,6 +7693,7 @@ export type UserCreateWithoutReassignedBookingsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -7620,6 +7768,7 @@ export type UserUncheckedCreateWithoutReassignedBookingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -7643,6 +7792,7 @@ export type UserUncheckedCreateWithoutReassignedBookingsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -7730,6 +7880,7 @@ export type UserUpdateWithoutBookingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -7750,6 +7901,7 @@ export type UserUpdateWithoutBookingsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -7825,6 +7977,7 @@ export type UserUncheckedUpdateWithoutBookingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -7847,6 +8000,7 @@ export type UserUncheckedUpdateWithoutBookingsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -7930,6 +8084,7 @@ export type UserUpdateWithoutReassignedBookingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -7951,6 +8106,7 @@ export type UserUpdateWithoutReassignedBookingsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -8025,6 +8181,409 @@ export type UserUncheckedUpdateWithoutReassignedBookingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
+  organizationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locked?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  movedToProfileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPlatformManaged?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  smsLockState?: Prisma.EnumSMSLockStateFieldUpdateOperationsInput | $Enums.SMSLockState
+  smsLockReviewedByAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  referralLinkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creationSource?: Prisma.NullableEnumCreationSourceFieldUpdateOperationsInput | $Enums.CreationSource | null
+  autoOptInFeatures?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  password?: Prisma.UserPasswordUncheckedUpdateOneWithoutUserNestedInput
+  travelSchedules?: Prisma.TravelScheduleUncheckedUpdateManyWithoutUserNestedInput
+  eventTypes?: Prisma.EventTypeUncheckedUpdateManyWithoutUsersNestedInput
+  credentials?: Prisma.CredentialUncheckedUpdateManyWithoutUserNestedInput
+  teams?: Prisma.MembershipUncheckedUpdateManyWithoutUserNestedInput
+  bookings?: Prisma.BookingUncheckedUpdateManyWithoutUserNestedInput
+  schedules?: Prisma.ScheduleUncheckedUpdateManyWithoutUserNestedInput
+  selectedCalendars?: Prisma.SelectedCalendarUncheckedUpdateManyWithoutUserNestedInput
+  availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
+  apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  Feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
+  ownedEventTypes?: Prisma.EventTypeUncheckedUpdateManyWithoutOwnerNestedInput
+  verifiedNumbers?: Prisma.VerifiedNumberUncheckedUpdateManyWithoutUserNestedInput
+  verifiedEmails?: Prisma.VerifiedEmailUncheckedUpdateManyWithoutUserNestedInput
+  hosts?: Prisma.HostUncheckedUpdateManyWithoutUserNestedInput
+  accessCodes?: Prisma.AccessCodeUncheckedUpdateManyWithoutUserNestedInput
+  bookingRedirects?: Prisma.OutOfOfficeEntryUncheckedUpdateManyWithoutUserNestedInput
+  bookingRedirectsTo?: Prisma.OutOfOfficeEntryUncheckedUpdateManyWithoutToUserNestedInput
+  platformOAuthClients?: Prisma.PlatformOAuthClientUncheckedUpdateManyWithoutUsersNestedInput
+  AccessToken?: Prisma.AccessTokenUncheckedUpdateManyWithoutOwnerNestedInput
+  RefreshToken?: Prisma.RefreshTokenUncheckedUpdateManyWithoutOwnerNestedInput
+  PlatformAuthorizationToken?: Prisma.PlatformAuthorizationTokenUncheckedUpdateManyWithoutOwnerNestedInput
+  profiles?: Prisma.ProfileUncheckedUpdateManyWithoutUserNestedInput
+  secondaryEmails?: Prisma.SecondaryEmailUncheckedUpdateManyWithoutUserNestedInput
+  OutOfOfficeReasons?: Prisma.OutOfOfficeReasonUncheckedUpdateManyWithoutUserNestedInput
+  NotificationsSubscriptions?: Prisma.NotificationsSubscriptionsUncheckedUpdateManyWithoutUserNestedInput
+  features?: Prisma.UserFeaturesUncheckedUpdateManyWithoutUserNestedInput
+  createdAttributeToUsers?: Prisma.AttributeToUserUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedAttributeToUsers?: Prisma.AttributeToUserUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdTranslations?: Prisma.EventTypeTranslationUncheckedUpdateManyWithoutCreatorNestedInput
+  updatedTranslations?: Prisma.EventTypeTranslationUncheckedUpdateManyWithoutUpdaterNestedInput
+  reportedBookings?: Prisma.BookingReportUncheckedUpdateManyWithoutReportedByNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutReportedByNestedInput
+  reviewedWrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutReviewedByNestedInput
+  BookingInternalNote?: Prisma.BookingInternalNoteUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdOrganizationOnboardings?: Prisma.OrganizationOnboardingUncheckedUpdateManyWithoutCreatedByNestedInput
+  filterSegments?: Prisma.FilterSegmentUncheckedUpdateManyWithoutUserNestedInput
+  filterSegmentPreferences?: Prisma.UserFilterSegmentPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutUserNestedInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutUserNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput
+  oAuthClients?: Prisma.OAuthClientUncheckedUpdateManyWithoutUserNestedInput
+  holidaySettings?: Prisma.UserHolidaySettingsUncheckedUpdateOneWithoutUserNestedInput
+}
+
+export type UserCreateWithoutWorkflowsInput = {
+  uuid?: string
+  username?: string | null
+  name?: string | null
+  email: string
+  emailVerified?: Date | string | null
+  bio?: string | null
+  avatarUrl?: string | null
+  timeZone?: string
+  weekStart?: string
+  bufferTime?: number
+  hideBranding?: boolean
+  theme?: string | null
+  appTheme?: string | null
+  createdDate?: Date | string
+  trialEndsAt?: Date | string | null
+  lastActiveAt?: Date | string | null
+  defaultScheduleId?: number | null
+  completedOnboarding?: boolean
+  locale?: string | null
+  timeFormat?: number | null
+  twoFactorSecret?: string | null
+  twoFactorEnabled?: boolean
+  backupCodes?: string | null
+  identityProvider?: $Enums.IdentityProvider
+  identityProviderId?: string | null
+  invitedTo?: number | null
+  brandColor?: string | null
+  darkBrandColor?: string | null
+  allowDynamicBooking?: boolean | null
+  allowSEOIndexing?: boolean | null
+  receiveMonthlyDigestEmail?: boolean | null
+  requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  verified?: boolean | null
+  role?: $Enums.UserPermissionRole
+  locked?: boolean
+  isPlatformManaged?: boolean
+  smsLockState?: $Enums.SMSLockState
+  smsLockReviewedByAdmin?: boolean
+  referralLinkId?: string | null
+  creationSource?: $Enums.CreationSource | null
+  autoOptInFeatures?: boolean
+  password?: Prisma.UserPasswordCreateNestedOneWithoutUserInput
+  travelSchedules?: Prisma.TravelScheduleCreateNestedManyWithoutUserInput
+  eventTypes?: Prisma.EventTypeCreateNestedManyWithoutUsersInput
+  credentials?: Prisma.CredentialCreateNestedManyWithoutUserInput
+  teams?: Prisma.MembershipCreateNestedManyWithoutUserInput
+  bookings?: Prisma.BookingCreateNestedManyWithoutUserInput
+  schedules?: Prisma.ScheduleCreateNestedManyWithoutUserInput
+  selectedCalendars?: Prisma.SelectedCalendarCreateNestedManyWithoutUserInput
+  availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  Feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
+  ownedEventTypes?: Prisma.EventTypeCreateNestedManyWithoutOwnerInput
+  verifiedNumbers?: Prisma.VerifiedNumberCreateNestedManyWithoutUserInput
+  verifiedEmails?: Prisma.VerifiedEmailCreateNestedManyWithoutUserInput
+  hosts?: Prisma.HostCreateNestedManyWithoutUserInput
+  organization?: Prisma.TeamCreateNestedOneWithoutOrgUsersInput
+  accessCodes?: Prisma.AccessCodeCreateNestedManyWithoutUserInput
+  bookingRedirects?: Prisma.OutOfOfficeEntryCreateNestedManyWithoutUserInput
+  bookingRedirectsTo?: Prisma.OutOfOfficeEntryCreateNestedManyWithoutToUserInput
+  platformOAuthClients?: Prisma.PlatformOAuthClientCreateNestedManyWithoutUsersInput
+  AccessToken?: Prisma.AccessTokenCreateNestedManyWithoutOwnerInput
+  RefreshToken?: Prisma.RefreshTokenCreateNestedManyWithoutOwnerInput
+  PlatformAuthorizationToken?: Prisma.PlatformAuthorizationTokenCreateNestedManyWithoutOwnerInput
+  profiles?: Prisma.ProfileCreateNestedManyWithoutUserInput
+  movedToProfile?: Prisma.ProfileCreateNestedOneWithoutMovedFromUserInput
+  secondaryEmails?: Prisma.SecondaryEmailCreateNestedManyWithoutUserInput
+  OutOfOfficeReasons?: Prisma.OutOfOfficeReasonCreateNestedManyWithoutUserInput
+  NotificationsSubscriptions?: Prisma.NotificationsSubscriptionsCreateNestedManyWithoutUserInput
+  features?: Prisma.UserFeaturesCreateNestedManyWithoutUserInput
+  reassignedBookings?: Prisma.BookingCreateNestedManyWithoutReassignByInput
+  createdAttributeToUsers?: Prisma.AttributeToUserCreateNestedManyWithoutCreatedByInput
+  updatedAttributeToUsers?: Prisma.AttributeToUserCreateNestedManyWithoutUpdatedByInput
+  createdTranslations?: Prisma.EventTypeTranslationCreateNestedManyWithoutCreatorInput
+  updatedTranslations?: Prisma.EventTypeTranslationCreateNestedManyWithoutUpdaterInput
+  reportedBookings?: Prisma.BookingReportCreateNestedManyWithoutReportedByInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutReportedByInput
+  reviewedWrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutReviewedByInput
+  BookingInternalNote?: Prisma.BookingInternalNoteCreateNestedManyWithoutCreatedByInput
+  createdOrganizationOnboardings?: Prisma.OrganizationOnboardingCreateNestedManyWithoutCreatedByInput
+  filterSegments?: Prisma.FilterSegmentCreateNestedManyWithoutUserInput
+  filterSegmentPreferences?: Prisma.UserFilterSegmentPreferenceCreateNestedManyWithoutUserInput
+  creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutUserInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutUserInput
+  agents?: Prisma.AgentCreateNestedManyWithoutUserInput
+  oAuthClients?: Prisma.OAuthClientCreateNestedManyWithoutUserInput
+  holidaySettings?: Prisma.UserHolidaySettingsCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutWorkflowsInput = {
+  id?: number
+  uuid?: string
+  username?: string | null
+  name?: string | null
+  email: string
+  emailVerified?: Date | string | null
+  bio?: string | null
+  avatarUrl?: string | null
+  timeZone?: string
+  weekStart?: string
+  bufferTime?: number
+  hideBranding?: boolean
+  theme?: string | null
+  appTheme?: string | null
+  createdDate?: Date | string
+  trialEndsAt?: Date | string | null
+  lastActiveAt?: Date | string | null
+  defaultScheduleId?: number | null
+  completedOnboarding?: boolean
+  locale?: string | null
+  timeFormat?: number | null
+  twoFactorSecret?: string | null
+  twoFactorEnabled?: boolean
+  backupCodes?: string | null
+  identityProvider?: $Enums.IdentityProvider
+  identityProviderId?: string | null
+  invitedTo?: number | null
+  brandColor?: string | null
+  darkBrandColor?: string | null
+  allowDynamicBooking?: boolean | null
+  allowSEOIndexing?: boolean | null
+  receiveMonthlyDigestEmail?: boolean | null
+  requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  verified?: boolean | null
+  role?: $Enums.UserPermissionRole
+  organizationId?: number | null
+  locked?: boolean
+  movedToProfileId?: number | null
+  isPlatformManaged?: boolean
+  smsLockState?: $Enums.SMSLockState
+  smsLockReviewedByAdmin?: boolean
+  referralLinkId?: string | null
+  creationSource?: $Enums.CreationSource | null
+  autoOptInFeatures?: boolean
+  password?: Prisma.UserPasswordUncheckedCreateNestedOneWithoutUserInput
+  travelSchedules?: Prisma.TravelScheduleUncheckedCreateNestedManyWithoutUserInput
+  eventTypes?: Prisma.EventTypeUncheckedCreateNestedManyWithoutUsersInput
+  credentials?: Prisma.CredentialUncheckedCreateNestedManyWithoutUserInput
+  teams?: Prisma.MembershipUncheckedCreateNestedManyWithoutUserInput
+  bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutUserInput
+  schedules?: Prisma.ScheduleUncheckedCreateNestedManyWithoutUserInput
+  selectedCalendars?: Prisma.SelectedCalendarUncheckedCreateNestedManyWithoutUserInput
+  availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  Feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
+  ownedEventTypes?: Prisma.EventTypeUncheckedCreateNestedManyWithoutOwnerInput
+  verifiedNumbers?: Prisma.VerifiedNumberUncheckedCreateNestedManyWithoutUserInput
+  verifiedEmails?: Prisma.VerifiedEmailUncheckedCreateNestedManyWithoutUserInput
+  hosts?: Prisma.HostUncheckedCreateNestedManyWithoutUserInput
+  accessCodes?: Prisma.AccessCodeUncheckedCreateNestedManyWithoutUserInput
+  bookingRedirects?: Prisma.OutOfOfficeEntryUncheckedCreateNestedManyWithoutUserInput
+  bookingRedirectsTo?: Prisma.OutOfOfficeEntryUncheckedCreateNestedManyWithoutToUserInput
+  platformOAuthClients?: Prisma.PlatformOAuthClientUncheckedCreateNestedManyWithoutUsersInput
+  AccessToken?: Prisma.AccessTokenUncheckedCreateNestedManyWithoutOwnerInput
+  RefreshToken?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutOwnerInput
+  PlatformAuthorizationToken?: Prisma.PlatformAuthorizationTokenUncheckedCreateNestedManyWithoutOwnerInput
+  profiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutUserInput
+  secondaryEmails?: Prisma.SecondaryEmailUncheckedCreateNestedManyWithoutUserInput
+  OutOfOfficeReasons?: Prisma.OutOfOfficeReasonUncheckedCreateNestedManyWithoutUserInput
+  NotificationsSubscriptions?: Prisma.NotificationsSubscriptionsUncheckedCreateNestedManyWithoutUserInput
+  features?: Prisma.UserFeaturesUncheckedCreateNestedManyWithoutUserInput
+  reassignedBookings?: Prisma.BookingUncheckedCreateNestedManyWithoutReassignByInput
+  createdAttributeToUsers?: Prisma.AttributeToUserUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedAttributeToUsers?: Prisma.AttributeToUserUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdTranslations?: Prisma.EventTypeTranslationUncheckedCreateNestedManyWithoutCreatorInput
+  updatedTranslations?: Prisma.EventTypeTranslationUncheckedCreateNestedManyWithoutUpdaterInput
+  reportedBookings?: Prisma.BookingReportUncheckedCreateNestedManyWithoutReportedByInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutReportedByInput
+  reviewedWrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutReviewedByInput
+  BookingInternalNote?: Prisma.BookingInternalNoteUncheckedCreateNestedManyWithoutCreatedByInput
+  createdOrganizationOnboardings?: Prisma.OrganizationOnboardingUncheckedCreateNestedManyWithoutCreatedByInput
+  filterSegments?: Prisma.FilterSegmentUncheckedCreateNestedManyWithoutUserInput
+  filterSegmentPreferences?: Prisma.UserFilterSegmentPreferenceUncheckedCreateNestedManyWithoutUserInput
+  creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutUserInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutUserInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput
+  oAuthClients?: Prisma.OAuthClientUncheckedCreateNestedManyWithoutUserInput
+  holidaySettings?: Prisma.UserHolidaySettingsUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutWorkflowsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutWorkflowsInput, Prisma.UserUncheckedCreateWithoutWorkflowsInput>
+}
+
+export type UserUpsertWithoutWorkflowsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutWorkflowsInput, Prisma.UserUncheckedUpdateWithoutWorkflowsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutWorkflowsInput, Prisma.UserUncheckedCreateWithoutWorkflowsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutWorkflowsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutWorkflowsInput, Prisma.UserUncheckedUpdateWithoutWorkflowsInput>
+}
+
+export type UserUpdateWithoutWorkflowsInput = {
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStart?: Prisma.StringFieldUpdateOperationsInput | string
+  bufferTime?: Prisma.IntFieldUpdateOperationsInput | number
+  hideBranding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  theme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  defaultScheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  completedOnboarding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeFormat?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  backupCodes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  identityProvider?: Prisma.EnumIdentityProviderFieldUpdateOperationsInput | $Enums.IdentityProvider
+  identityProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  brandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  darkBrandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  allowDynamicBooking?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
+  locked?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPlatformManaged?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  smsLockState?: Prisma.EnumSMSLockStateFieldUpdateOperationsInput | $Enums.SMSLockState
+  smsLockReviewedByAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  referralLinkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creationSource?: Prisma.NullableEnumCreationSourceFieldUpdateOperationsInput | $Enums.CreationSource | null
+  autoOptInFeatures?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  password?: Prisma.UserPasswordUpdateOneWithoutUserNestedInput
+  travelSchedules?: Prisma.TravelScheduleUpdateManyWithoutUserNestedInput
+  eventTypes?: Prisma.EventTypeUpdateManyWithoutUsersNestedInput
+  credentials?: Prisma.CredentialUpdateManyWithoutUserNestedInput
+  teams?: Prisma.MembershipUpdateManyWithoutUserNestedInput
+  bookings?: Prisma.BookingUpdateManyWithoutUserNestedInput
+  schedules?: Prisma.ScheduleUpdateManyWithoutUserNestedInput
+  selectedCalendars?: Prisma.SelectedCalendarUpdateManyWithoutUserNestedInput
+  availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  Feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
+  ownedEventTypes?: Prisma.EventTypeUpdateManyWithoutOwnerNestedInput
+  verifiedNumbers?: Prisma.VerifiedNumberUpdateManyWithoutUserNestedInput
+  verifiedEmails?: Prisma.VerifiedEmailUpdateManyWithoutUserNestedInput
+  hosts?: Prisma.HostUpdateManyWithoutUserNestedInput
+  organization?: Prisma.TeamUpdateOneWithoutOrgUsersNestedInput
+  accessCodes?: Prisma.AccessCodeUpdateManyWithoutUserNestedInput
+  bookingRedirects?: Prisma.OutOfOfficeEntryUpdateManyWithoutUserNestedInput
+  bookingRedirectsTo?: Prisma.OutOfOfficeEntryUpdateManyWithoutToUserNestedInput
+  platformOAuthClients?: Prisma.PlatformOAuthClientUpdateManyWithoutUsersNestedInput
+  AccessToken?: Prisma.AccessTokenUpdateManyWithoutOwnerNestedInput
+  RefreshToken?: Prisma.RefreshTokenUpdateManyWithoutOwnerNestedInput
+  PlatformAuthorizationToken?: Prisma.PlatformAuthorizationTokenUpdateManyWithoutOwnerNestedInput
+  profiles?: Prisma.ProfileUpdateManyWithoutUserNestedInput
+  movedToProfile?: Prisma.ProfileUpdateOneWithoutMovedFromUserNestedInput
+  secondaryEmails?: Prisma.SecondaryEmailUpdateManyWithoutUserNestedInput
+  OutOfOfficeReasons?: Prisma.OutOfOfficeReasonUpdateManyWithoutUserNestedInput
+  NotificationsSubscriptions?: Prisma.NotificationsSubscriptionsUpdateManyWithoutUserNestedInput
+  features?: Prisma.UserFeaturesUpdateManyWithoutUserNestedInput
+  reassignedBookings?: Prisma.BookingUpdateManyWithoutReassignByNestedInput
+  createdAttributeToUsers?: Prisma.AttributeToUserUpdateManyWithoutCreatedByNestedInput
+  updatedAttributeToUsers?: Prisma.AttributeToUserUpdateManyWithoutUpdatedByNestedInput
+  createdTranslations?: Prisma.EventTypeTranslationUpdateManyWithoutCreatorNestedInput
+  updatedTranslations?: Prisma.EventTypeTranslationUpdateManyWithoutUpdaterNestedInput
+  reportedBookings?: Prisma.BookingReportUpdateManyWithoutReportedByNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutReportedByNestedInput
+  reviewedWrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutReviewedByNestedInput
+  BookingInternalNote?: Prisma.BookingInternalNoteUpdateManyWithoutCreatedByNestedInput
+  createdOrganizationOnboardings?: Prisma.OrganizationOnboardingUpdateManyWithoutCreatedByNestedInput
+  filterSegments?: Prisma.FilterSegmentUpdateManyWithoutUserNestedInput
+  filterSegmentPreferences?: Prisma.UserFilterSegmentPreferenceUpdateManyWithoutUserNestedInput
+  creditBalance?: Prisma.CreditBalanceUpdateOneWithoutUserNestedInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutUserNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput
+  oAuthClients?: Prisma.OAuthClientUpdateManyWithoutUserNestedInput
+  holidaySettings?: Prisma.UserHolidaySettingsUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutWorkflowsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStart?: Prisma.StringFieldUpdateOperationsInput | string
+  bufferTime?: Prisma.IntFieldUpdateOperationsInput | number
+  hideBranding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  theme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appTheme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trialEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  defaultScheduleId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  completedOnboarding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  locale?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeFormat?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  backupCodes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  identityProvider?: Prisma.EnumIdentityProviderFieldUpdateOperationsInput | $Enums.IdentityProvider
+  identityProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  brandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  darkBrandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  allowDynamicBooking?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -8068,6 +8627,7 @@ export type UserUncheckedUpdateWithoutReassignedBookingsInput = {
   OutOfOfficeReasons?: Prisma.OutOfOfficeReasonUncheckedUpdateManyWithoutUserNestedInput
   NotificationsSubscriptions?: Prisma.NotificationsSubscriptionsUncheckedUpdateManyWithoutUserNestedInput
   features?: Prisma.UserFeaturesUncheckedUpdateManyWithoutUserNestedInput
+  reassignedBookings?: Prisma.BookingUncheckedUpdateManyWithoutReassignByNestedInput
   createdAttributeToUsers?: Prisma.AttributeToUserUncheckedUpdateManyWithoutCreatedByNestedInput
   updatedAttributeToUsers?: Prisma.AttributeToUserUncheckedUpdateManyWithoutUpdatedByNestedInput
   createdTranslations?: Prisma.EventTypeTranslationUncheckedUpdateManyWithoutCreatorNestedInput
@@ -8119,6 +8679,7 @@ export type UserCreateWithoutSchedulesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -8139,6 +8700,7 @@ export type UserCreateWithoutSchedulesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -8214,6 +8776,7 @@ export type UserUncheckedCreateWithoutSchedulesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -8236,6 +8799,7 @@ export type UserUncheckedCreateWithoutSchedulesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -8324,6 +8888,7 @@ export type UserUpdateWithoutSchedulesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -8344,6 +8909,7 @@ export type UserUpdateWithoutSchedulesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -8419,6 +8985,7 @@ export type UserUncheckedUpdateWithoutSchedulesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -8441,6 +9008,7 @@ export type UserUncheckedUpdateWithoutSchedulesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -8513,6 +9081,7 @@ export type UserCreateWithoutAvailabilityInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -8533,6 +9102,7 @@ export type UserCreateWithoutAvailabilityInput = {
   selectedCalendars?: Prisma.SelectedCalendarCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -8608,6 +9178,7 @@ export type UserUncheckedCreateWithoutAvailabilityInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -8630,6 +9201,7 @@ export type UserUncheckedCreateWithoutAvailabilityInput = {
   selectedCalendars?: Prisma.SelectedCalendarUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -8718,6 +9290,7 @@ export type UserUpdateWithoutAvailabilityInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -8738,6 +9311,7 @@ export type UserUpdateWithoutAvailabilityInput = {
   selectedCalendars?: Prisma.SelectedCalendarUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -8813,6 +9387,7 @@ export type UserUncheckedUpdateWithoutAvailabilityInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -8835,6 +9410,7 @@ export type UserUncheckedUpdateWithoutAvailabilityInput = {
   selectedCalendars?: Prisma.SelectedCalendarUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -8907,6 +9483,7 @@ export type UserCreateWithoutSelectedCalendarsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -8927,6 +9504,7 @@ export type UserCreateWithoutSelectedCalendarsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -9002,6 +9580,7 @@ export type UserUncheckedCreateWithoutSelectedCalendarsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -9024,6 +9603,7 @@ export type UserUncheckedCreateWithoutSelectedCalendarsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -9112,6 +9692,7 @@ export type UserUpdateWithoutSelectedCalendarsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -9132,6 +9713,7 @@ export type UserUpdateWithoutSelectedCalendarsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -9207,6 +9789,7 @@ export type UserUncheckedUpdateWithoutSelectedCalendarsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -9229,6 +9812,7 @@ export type UserUncheckedUpdateWithoutSelectedCalendarsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -9301,6 +9885,7 @@ export type UserCreateWithoutWebhooksInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -9321,6 +9906,7 @@ export type UserCreateWithoutWebhooksInput = {
   selectedCalendars?: Prisma.SelectedCalendarCreateNestedManyWithoutUserInput
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -9396,6 +9982,7 @@ export type UserUncheckedCreateWithoutWebhooksInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -9418,6 +10005,7 @@ export type UserUncheckedCreateWithoutWebhooksInput = {
   selectedCalendars?: Prisma.SelectedCalendarUncheckedCreateNestedManyWithoutUserInput
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -9506,6 +10094,7 @@ export type UserUpdateWithoutWebhooksInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -9526,6 +10115,7 @@ export type UserUpdateWithoutWebhooksInput = {
   selectedCalendars?: Prisma.SelectedCalendarUpdateManyWithoutUserNestedInput
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -9601,6 +10191,7 @@ export type UserUncheckedUpdateWithoutWebhooksInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -9623,6 +10214,7 @@ export type UserUncheckedUpdateWithoutWebhooksInput = {
   selectedCalendars?: Prisma.SelectedCalendarUncheckedUpdateManyWithoutUserNestedInput
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -9695,6 +10287,7 @@ export type UserCreateWithoutApiKeysInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -9716,6 +10309,7 @@ export type UserCreateWithoutApiKeysInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   Feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
@@ -9790,6 +10384,7 @@ export type UserUncheckedCreateWithoutApiKeysInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -9813,6 +10408,7 @@ export type UserUncheckedCreateWithoutApiKeysInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   Feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
@@ -9900,6 +10496,7 @@ export type UserUpdateWithoutApiKeysInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -9921,6 +10518,7 @@ export type UserUpdateWithoutApiKeysInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   Feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
@@ -9995,6 +10593,7 @@ export type UserUncheckedUpdateWithoutApiKeysInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -10018,6 +10617,7 @@ export type UserUncheckedUpdateWithoutApiKeysInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   Feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
@@ -10089,6 +10689,7 @@ export type UserCreateWithoutAccountsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -10110,6 +10711,7 @@ export type UserCreateWithoutAccountsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   Feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
@@ -10184,6 +10786,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -10207,6 +10810,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   Feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
@@ -10294,6 +10898,7 @@ export type UserUpdateWithoutAccountsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -10315,6 +10920,7 @@ export type UserUpdateWithoutAccountsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   Feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
@@ -10389,6 +10995,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -10412,6 +11019,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   Feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
@@ -10483,6 +11091,7 @@ export type UserCreateWithoutSessionsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -10504,6 +11113,7 @@ export type UserCreateWithoutSessionsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   Feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
@@ -10578,6 +11188,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -10601,6 +11212,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   Feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
@@ -10688,6 +11300,7 @@ export type UserUpdateWithoutSessionsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -10709,6 +11322,7 @@ export type UserUpdateWithoutSessionsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   Feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
@@ -10783,6 +11397,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -10806,6 +11421,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   Feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
@@ -10877,6 +11493,7 @@ export type UserCreateWithoutFeedbackInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -10898,6 +11515,7 @@ export type UserCreateWithoutFeedbackInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -10972,6 +11590,7 @@ export type UserUncheckedCreateWithoutFeedbackInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -10995,6 +11614,7 @@ export type UserUncheckedCreateWithoutFeedbackInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -11082,6 +11702,7 @@ export type UserUpdateWithoutFeedbackInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -11103,6 +11724,7 @@ export type UserUpdateWithoutFeedbackInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -11177,6 +11799,7 @@ export type UserUncheckedUpdateWithoutFeedbackInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -11200,6 +11823,7 @@ export type UserUncheckedUpdateWithoutFeedbackInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -11271,6 +11895,7 @@ export type UserCreateWithoutVerifiedNumbersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -11292,6 +11917,7 @@ export type UserCreateWithoutVerifiedNumbersInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -11366,6 +11992,7 @@ export type UserUncheckedCreateWithoutVerifiedNumbersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -11389,6 +12016,7 @@ export type UserUncheckedCreateWithoutVerifiedNumbersInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -11476,6 +12104,7 @@ export type UserUpdateWithoutVerifiedNumbersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -11497,6 +12126,7 @@ export type UserUpdateWithoutVerifiedNumbersInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -11571,6 +12201,7 @@ export type UserUncheckedUpdateWithoutVerifiedNumbersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -11594,6 +12225,7 @@ export type UserUncheckedUpdateWithoutVerifiedNumbersInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -11665,6 +12297,7 @@ export type UserCreateWithoutVerifiedEmailsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -11686,6 +12319,7 @@ export type UserCreateWithoutVerifiedEmailsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -11760,6 +12394,7 @@ export type UserUncheckedCreateWithoutVerifiedEmailsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -11783,6 +12418,7 @@ export type UserUncheckedCreateWithoutVerifiedEmailsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -11870,6 +12506,7 @@ export type UserUpdateWithoutVerifiedEmailsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -11891,6 +12528,7 @@ export type UserUpdateWithoutVerifiedEmailsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -11965,6 +12603,7 @@ export type UserUncheckedUpdateWithoutVerifiedEmailsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -11988,6 +12627,7 @@ export type UserUncheckedUpdateWithoutVerifiedEmailsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -12059,6 +12699,7 @@ export type UserCreateWithoutFeaturesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -12080,6 +12721,7 @@ export type UserCreateWithoutFeaturesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -12154,6 +12796,7 @@ export type UserUncheckedCreateWithoutFeaturesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -12177,6 +12820,7 @@ export type UserUncheckedCreateWithoutFeaturesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -12264,6 +12908,7 @@ export type UserUpdateWithoutFeaturesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -12285,6 +12930,7 @@ export type UserUpdateWithoutFeaturesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -12359,6 +13005,7 @@ export type UserUncheckedUpdateWithoutFeaturesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -12382,6 +13029,7 @@ export type UserUncheckedUpdateWithoutFeaturesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -12453,6 +13101,7 @@ export type UserCreateWithoutOAuthClientsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -12474,6 +13123,7 @@ export type UserCreateWithoutOAuthClientsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -12548,6 +13198,7 @@ export type UserUncheckedCreateWithoutOAuthClientsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -12571,6 +13222,7 @@ export type UserUncheckedCreateWithoutOAuthClientsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -12658,6 +13310,7 @@ export type UserUpdateWithoutOAuthClientsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -12679,6 +13332,7 @@ export type UserUpdateWithoutOAuthClientsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -12753,6 +13407,7 @@ export type UserUncheckedUpdateWithoutOAuthClientsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -12776,6 +13431,7 @@ export type UserUncheckedUpdateWithoutOAuthClientsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -12847,6 +13503,7 @@ export type UserCreateWithoutAccessCodesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -12868,6 +13525,7 @@ export type UserCreateWithoutAccessCodesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -12942,6 +13600,7 @@ export type UserUncheckedCreateWithoutAccessCodesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -12965,6 +13624,7 @@ export type UserUncheckedCreateWithoutAccessCodesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -13052,6 +13712,7 @@ export type UserUpdateWithoutAccessCodesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -13073,6 +13734,7 @@ export type UserUpdateWithoutAccessCodesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -13147,6 +13809,7 @@ export type UserUncheckedUpdateWithoutAccessCodesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -13170,6 +13833,7 @@ export type UserUncheckedUpdateWithoutAccessCodesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -13241,6 +13905,7 @@ export type UserCreateWithoutBookingRedirectsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -13262,6 +13927,7 @@ export type UserCreateWithoutBookingRedirectsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -13336,6 +14002,7 @@ export type UserUncheckedCreateWithoutBookingRedirectsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -13359,6 +14026,7 @@ export type UserUncheckedCreateWithoutBookingRedirectsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -13435,6 +14103,7 @@ export type UserCreateWithoutBookingRedirectsToInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -13456,6 +14125,7 @@ export type UserCreateWithoutBookingRedirectsToInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -13530,6 +14200,7 @@ export type UserUncheckedCreateWithoutBookingRedirectsToInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -13553,6 +14224,7 @@ export type UserUncheckedCreateWithoutBookingRedirectsToInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -13640,6 +14312,7 @@ export type UserUpdateWithoutBookingRedirectsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -13661,6 +14334,7 @@ export type UserUpdateWithoutBookingRedirectsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -13735,6 +14409,7 @@ export type UserUncheckedUpdateWithoutBookingRedirectsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -13758,6 +14433,7 @@ export type UserUncheckedUpdateWithoutBookingRedirectsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -13840,6 +14516,7 @@ export type UserUpdateWithoutBookingRedirectsToInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -13861,6 +14538,7 @@ export type UserUpdateWithoutBookingRedirectsToInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -13935,6 +14613,7 @@ export type UserUncheckedUpdateWithoutBookingRedirectsToInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -13958,6 +14637,7 @@ export type UserUncheckedUpdateWithoutBookingRedirectsToInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -14029,6 +14709,7 @@ export type UserCreateWithoutOutOfOfficeReasonsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -14050,6 +14731,7 @@ export type UserCreateWithoutOutOfOfficeReasonsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -14124,6 +14806,7 @@ export type UserUncheckedCreateWithoutOutOfOfficeReasonsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -14147,6 +14830,7 @@ export type UserUncheckedCreateWithoutOutOfOfficeReasonsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -14234,6 +14918,7 @@ export type UserUpdateWithoutOutOfOfficeReasonsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -14255,6 +14940,7 @@ export type UserUpdateWithoutOutOfOfficeReasonsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -14329,6 +15015,7 @@ export type UserUncheckedUpdateWithoutOutOfOfficeReasonsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -14352,6 +15039,7 @@ export type UserUncheckedUpdateWithoutOutOfOfficeReasonsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -14423,6 +15111,7 @@ export type UserCreateWithoutHolidaySettingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -14444,6 +15133,7 @@ export type UserCreateWithoutHolidaySettingsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -14518,6 +15208,7 @@ export type UserUncheckedCreateWithoutHolidaySettingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -14541,6 +15232,7 @@ export type UserUncheckedCreateWithoutHolidaySettingsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -14628,6 +15320,7 @@ export type UserUpdateWithoutHolidaySettingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -14649,6 +15342,7 @@ export type UserUpdateWithoutHolidaySettingsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -14723,6 +15417,7 @@ export type UserUncheckedUpdateWithoutHolidaySettingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -14746,6 +15441,7 @@ export type UserUncheckedUpdateWithoutHolidaySettingsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -14817,6 +15513,7 @@ export type UserCreateWithoutPlatformOAuthClientsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -14838,6 +15535,7 @@ export type UserCreateWithoutPlatformOAuthClientsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -14912,6 +15610,7 @@ export type UserUncheckedCreateWithoutPlatformOAuthClientsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -14935,6 +15634,7 @@ export type UserUncheckedCreateWithoutPlatformOAuthClientsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -15027,6 +15727,7 @@ export type UserCreateWithoutPlatformAuthorizationTokenInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -15048,6 +15749,7 @@ export type UserCreateWithoutPlatformAuthorizationTokenInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -15122,6 +15824,7 @@ export type UserUncheckedCreateWithoutPlatformAuthorizationTokenInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -15145,6 +15848,7 @@ export type UserUncheckedCreateWithoutPlatformAuthorizationTokenInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -15232,6 +15936,7 @@ export type UserUpdateWithoutPlatformAuthorizationTokenInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -15253,6 +15958,7 @@ export type UserUpdateWithoutPlatformAuthorizationTokenInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -15327,6 +16033,7 @@ export type UserUncheckedUpdateWithoutPlatformAuthorizationTokenInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -15350,6 +16057,7 @@ export type UserUncheckedUpdateWithoutPlatformAuthorizationTokenInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -15421,6 +16129,7 @@ export type UserCreateWithoutAccessTokenInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -15442,6 +16151,7 @@ export type UserCreateWithoutAccessTokenInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -15516,6 +16226,7 @@ export type UserUncheckedCreateWithoutAccessTokenInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -15539,6 +16250,7 @@ export type UserUncheckedCreateWithoutAccessTokenInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -15626,6 +16338,7 @@ export type UserUpdateWithoutAccessTokenInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -15647,6 +16360,7 @@ export type UserUpdateWithoutAccessTokenInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -15721,6 +16435,7 @@ export type UserUncheckedUpdateWithoutAccessTokenInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -15744,6 +16459,7 @@ export type UserUncheckedUpdateWithoutAccessTokenInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -15815,6 +16531,7 @@ export type UserCreateWithoutRefreshTokenInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -15836,6 +16553,7 @@ export type UserCreateWithoutRefreshTokenInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -15910,6 +16628,7 @@ export type UserUncheckedCreateWithoutRefreshTokenInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -15933,6 +16652,7 @@ export type UserUncheckedCreateWithoutRefreshTokenInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -16020,6 +16740,7 @@ export type UserUpdateWithoutRefreshTokenInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -16041,6 +16762,7 @@ export type UserUpdateWithoutRefreshTokenInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -16115,6 +16837,7 @@ export type UserUncheckedUpdateWithoutRefreshTokenInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -16138,6 +16861,7 @@ export type UserUncheckedUpdateWithoutRefreshTokenInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -16209,6 +16933,7 @@ export type UserCreateWithoutSecondaryEmailsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -16230,6 +16955,7 @@ export type UserCreateWithoutSecondaryEmailsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -16304,6 +17030,7 @@ export type UserUncheckedCreateWithoutSecondaryEmailsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -16327,6 +17054,7 @@ export type UserUncheckedCreateWithoutSecondaryEmailsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -16414,6 +17142,7 @@ export type UserUpdateWithoutSecondaryEmailsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -16435,6 +17164,7 @@ export type UserUpdateWithoutSecondaryEmailsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -16509,6 +17239,7 @@ export type UserUncheckedUpdateWithoutSecondaryEmailsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -16532,6 +17263,7 @@ export type UserUncheckedUpdateWithoutSecondaryEmailsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -16603,6 +17335,7 @@ export type UserCreateWithoutCreatedAttributeToUsersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -16624,6 +17357,7 @@ export type UserCreateWithoutCreatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -16698,6 +17432,7 @@ export type UserUncheckedCreateWithoutCreatedAttributeToUsersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -16721,6 +17456,7 @@ export type UserUncheckedCreateWithoutCreatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -16797,6 +17533,7 @@ export type UserCreateWithoutUpdatedAttributeToUsersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -16818,6 +17555,7 @@ export type UserCreateWithoutUpdatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -16892,6 +17630,7 @@ export type UserUncheckedCreateWithoutUpdatedAttributeToUsersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -16915,6 +17654,7 @@ export type UserUncheckedCreateWithoutUpdatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -17002,6 +17742,7 @@ export type UserUpdateWithoutCreatedAttributeToUsersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -17023,6 +17764,7 @@ export type UserUpdateWithoutCreatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -17097,6 +17839,7 @@ export type UserUncheckedUpdateWithoutCreatedAttributeToUsersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -17120,6 +17863,7 @@ export type UserUncheckedUpdateWithoutCreatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -17202,6 +17946,7 @@ export type UserUpdateWithoutUpdatedAttributeToUsersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -17223,6 +17968,7 @@ export type UserUpdateWithoutUpdatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -17297,6 +18043,7 @@ export type UserUncheckedUpdateWithoutUpdatedAttributeToUsersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -17320,6 +18067,7 @@ export type UserUncheckedUpdateWithoutUpdatedAttributeToUsersInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -17391,6 +18139,7 @@ export type UserCreateWithoutCreatedTranslationsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -17412,6 +18161,7 @@ export type UserCreateWithoutCreatedTranslationsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -17486,6 +18236,7 @@ export type UserUncheckedCreateWithoutCreatedTranslationsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -17509,6 +18260,7 @@ export type UserUncheckedCreateWithoutCreatedTranslationsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -17585,6 +18337,7 @@ export type UserCreateWithoutUpdatedTranslationsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -17606,6 +18359,7 @@ export type UserCreateWithoutUpdatedTranslationsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -17680,6 +18434,7 @@ export type UserUncheckedCreateWithoutUpdatedTranslationsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -17703,6 +18458,7 @@ export type UserUncheckedCreateWithoutUpdatedTranslationsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -17790,6 +18546,7 @@ export type UserUpdateWithoutCreatedTranslationsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -17811,6 +18568,7 @@ export type UserUpdateWithoutCreatedTranslationsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -17885,6 +18643,7 @@ export type UserUncheckedUpdateWithoutCreatedTranslationsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -17908,6 +18667,7 @@ export type UserUncheckedUpdateWithoutCreatedTranslationsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -17990,6 +18750,7 @@ export type UserUpdateWithoutUpdatedTranslationsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -18011,6 +18772,7 @@ export type UserUpdateWithoutUpdatedTranslationsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -18085,6 +18847,7 @@ export type UserUncheckedUpdateWithoutUpdatedTranslationsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -18108,6 +18871,7 @@ export type UserUncheckedUpdateWithoutUpdatedTranslationsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -18179,6 +18943,7 @@ export type UserCreateWithoutReportedBookingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -18200,6 +18965,7 @@ export type UserCreateWithoutReportedBookingsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -18274,6 +19040,7 @@ export type UserUncheckedCreateWithoutReportedBookingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -18297,6 +19064,7 @@ export type UserUncheckedCreateWithoutReportedBookingsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -18384,6 +19152,7 @@ export type UserUpdateWithoutReportedBookingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -18405,6 +19174,7 @@ export type UserUpdateWithoutReportedBookingsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -18479,6 +19249,7 @@ export type UserUncheckedUpdateWithoutReportedBookingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -18502,6 +19273,7 @@ export type UserUncheckedUpdateWithoutReportedBookingsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -18573,6 +19345,7 @@ export type UserCreateWithoutWrongAssignmentReportsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -18594,6 +19367,7 @@ export type UserCreateWithoutWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -18668,6 +19442,7 @@ export type UserUncheckedCreateWithoutWrongAssignmentReportsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -18691,6 +19466,7 @@ export type UserUncheckedCreateWithoutWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -18767,6 +19543,7 @@ export type UserCreateWithoutReviewedWrongAssignmentReportsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -18788,6 +19565,7 @@ export type UserCreateWithoutReviewedWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -18862,6 +19640,7 @@ export type UserUncheckedCreateWithoutReviewedWrongAssignmentReportsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -18885,6 +19664,7 @@ export type UserUncheckedCreateWithoutReviewedWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -18972,6 +19752,7 @@ export type UserUpdateWithoutWrongAssignmentReportsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -18993,6 +19774,7 @@ export type UserUpdateWithoutWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -19067,6 +19849,7 @@ export type UserUncheckedUpdateWithoutWrongAssignmentReportsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -19090,6 +19873,7 @@ export type UserUncheckedUpdateWithoutWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -19172,6 +19956,7 @@ export type UserUpdateWithoutReviewedWrongAssignmentReportsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -19193,6 +19978,7 @@ export type UserUpdateWithoutReviewedWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -19267,6 +20053,7 @@ export type UserUncheckedUpdateWithoutReviewedWrongAssignmentReportsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -19290,6 +20077,7 @@ export type UserUncheckedUpdateWithoutReviewedWrongAssignmentReportsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -19361,6 +20149,7 @@ export type UserCreateWithoutCreatedOrganizationOnboardingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -19382,6 +20171,7 @@ export type UserCreateWithoutCreatedOrganizationOnboardingsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -19456,6 +20246,7 @@ export type UserUncheckedCreateWithoutCreatedOrganizationOnboardingsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -19479,6 +20270,7 @@ export type UserUncheckedCreateWithoutCreatedOrganizationOnboardingsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -19566,6 +20358,7 @@ export type UserUpdateWithoutCreatedOrganizationOnboardingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -19587,6 +20380,7 @@ export type UserUpdateWithoutCreatedOrganizationOnboardingsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -19661,6 +20455,7 @@ export type UserUncheckedUpdateWithoutCreatedOrganizationOnboardingsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -19684,6 +20479,7 @@ export type UserUncheckedUpdateWithoutCreatedOrganizationOnboardingsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -19755,6 +20551,7 @@ export type UserCreateWithoutFilterSegmentsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -19776,6 +20573,7 @@ export type UserCreateWithoutFilterSegmentsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -19850,6 +20648,7 @@ export type UserUncheckedCreateWithoutFilterSegmentsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -19873,6 +20672,7 @@ export type UserUncheckedCreateWithoutFilterSegmentsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -19960,6 +20760,7 @@ export type UserUpdateWithoutFilterSegmentsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -19981,6 +20782,7 @@ export type UserUpdateWithoutFilterSegmentsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -20055,6 +20857,7 @@ export type UserUncheckedUpdateWithoutFilterSegmentsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -20078,6 +20881,7 @@ export type UserUncheckedUpdateWithoutFilterSegmentsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -20149,6 +20953,7 @@ export type UserCreateWithoutFilterSegmentPreferencesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -20170,6 +20975,7 @@ export type UserCreateWithoutFilterSegmentPreferencesInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -20244,6 +21050,7 @@ export type UserUncheckedCreateWithoutFilterSegmentPreferencesInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -20267,6 +21074,7 @@ export type UserUncheckedCreateWithoutFilterSegmentPreferencesInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -20354,6 +21162,7 @@ export type UserUpdateWithoutFilterSegmentPreferencesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -20375,6 +21184,7 @@ export type UserUpdateWithoutFilterSegmentPreferencesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -20449,6 +21259,7 @@ export type UserUncheckedUpdateWithoutFilterSegmentPreferencesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -20472,6 +21283,7 @@ export type UserUncheckedUpdateWithoutFilterSegmentPreferencesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -20543,6 +21355,7 @@ export type UserCreateWithoutBookingInternalNoteInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -20564,6 +21377,7 @@ export type UserCreateWithoutBookingInternalNoteInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -20638,6 +21452,7 @@ export type UserUncheckedCreateWithoutBookingInternalNoteInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -20661,6 +21476,7 @@ export type UserUncheckedCreateWithoutBookingInternalNoteInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -20748,6 +21564,7 @@ export type UserUpdateWithoutBookingInternalNoteInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -20769,6 +21586,7 @@ export type UserUpdateWithoutBookingInternalNoteInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -20843,6 +21661,7 @@ export type UserUncheckedUpdateWithoutBookingInternalNoteInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -20866,6 +21685,7 @@ export type UserUncheckedUpdateWithoutBookingInternalNoteInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -20937,6 +21757,7 @@ export type UserCreateWithoutAgentsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -20958,6 +21779,7 @@ export type UserCreateWithoutAgentsInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -21032,6 +21854,7 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -21055,6 +21878,7 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -21142,6 +21966,7 @@ export type UserUpdateWithoutAgentsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21163,6 +21988,7 @@ export type UserUpdateWithoutAgentsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -21237,6 +22063,7 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21260,6 +22087,7 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -21331,6 +22159,7 @@ export type UserCreateWithoutCalAiPhoneNumbersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -21352,6 +22181,7 @@ export type UserCreateWithoutCalAiPhoneNumbersInput = {
   availability?: Prisma.AvailabilityCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -21426,6 +22256,7 @@ export type UserUncheckedCreateWithoutCalAiPhoneNumbersInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -21449,6 +22280,7 @@ export type UserUncheckedCreateWithoutCalAiPhoneNumbersInput = {
   availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedCreateNestedOneWithoutUserInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutUserInput
   apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -21536,6 +22368,7 @@ export type UserUpdateWithoutCalAiPhoneNumbersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21557,6 +22390,7 @@ export type UserUpdateWithoutCalAiPhoneNumbersInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -21631,6 +22465,7 @@ export type UserUncheckedUpdateWithoutCalAiPhoneNumbersInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21654,6 +22489,7 @@ export type UserUncheckedUpdateWithoutCalAiPhoneNumbersInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -21725,6 +22561,7 @@ export type UserUpdateWithoutEventTypesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21745,6 +22582,7 @@ export type UserUpdateWithoutEventTypesInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -21820,6 +22658,7 @@ export type UserUncheckedUpdateWithoutEventTypesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21842,6 +22681,7 @@ export type UserUncheckedUpdateWithoutEventTypesInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -21915,6 +22755,7 @@ export type UserUncheckedUpdateManyWithoutEventTypesInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -21963,6 +22804,7 @@ export type UserCreateManyOrganizationInput = {
   allowSEOIndexing?: boolean | null
   receiveMonthlyDigestEmail?: boolean | null
   requiresBookerEmailVerification?: boolean | null
+  whitelistWorkflows?: boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: boolean | null
   role?: $Enums.UserPermissionRole
@@ -22009,6 +22851,7 @@ export type UserUpdateWithoutOrganizationInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -22030,6 +22873,7 @@ export type UserUpdateWithoutOrganizationInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -22104,6 +22948,7 @@ export type UserUncheckedUpdateWithoutOrganizationInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -22126,6 +22971,7 @@ export type UserUncheckedUpdateWithoutOrganizationInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -22199,6 +23045,7 @@ export type UserUncheckedUpdateManyWithoutOrganizationInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -22245,6 +23092,7 @@ export type UserUpdateWithoutPlatformOAuthClientsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -22266,6 +23114,7 @@ export type UserUpdateWithoutPlatformOAuthClientsInput = {
   availability?: Prisma.AvailabilityUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -22340,6 +23189,7 @@ export type UserUncheckedUpdateWithoutPlatformOAuthClientsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -22363,6 +23213,7 @@ export type UserUncheckedUpdateWithoutPlatformOAuthClientsInput = {
   availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
   destinationCalendar?: Prisma.DestinationCalendarUncheckedUpdateOneWithoutUserNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutUserNestedInput
   apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -22435,6 +23286,7 @@ export type UserUncheckedUpdateManyWithoutPlatformOAuthClientsInput = {
   allowSEOIndexing?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   receiveMonthlyDigestEmail?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   requiresBookerEmailVerification?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  whitelistWorkflows?: Prisma.BoolFieldUpdateOperationsInput | boolean
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   verified?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   role?: Prisma.EnumUserPermissionRoleFieldUpdateOperationsInput | $Enums.UserPermissionRole
@@ -22464,6 +23316,7 @@ export type UserCountOutputType = {
   selectedCalendars: number
   availability: number
   webhooks: number
+  workflows: number
   apiKeys: number
   accounts: number
   sessions: number
@@ -22511,6 +23364,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   selectedCalendars?: boolean | UserCountOutputTypeCountSelectedCalendarsArgs
   availability?: boolean | UserCountOutputTypeCountAvailabilityArgs
   webhooks?: boolean | UserCountOutputTypeCountWebhooksArgs
+  workflows?: boolean | UserCountOutputTypeCountWorkflowsArgs
   apiKeys?: boolean | UserCountOutputTypeCountApiKeysArgs
   accounts?: boolean | UserCountOutputTypeCountAccountsArgs
   sessions?: boolean | UserCountOutputTypeCountSessionsArgs
@@ -22619,6 +23473,13 @@ export type UserCountOutputTypeCountAvailabilityArgs<ExtArgs extends runtime.Typ
  */
 export type UserCountOutputTypeCountWebhooksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.WebhookWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WorkflowWhereInput
 }
 
 /**
@@ -22901,6 +23762,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   allowSEOIndexing?: boolean
   receiveMonthlyDigestEmail?: boolean
   requiresBookerEmailVerification?: boolean
+  whitelistWorkflows?: boolean
   metadata?: boolean
   verified?: boolean
   role?: boolean
@@ -22924,6 +23786,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   availability?: boolean | Prisma.User$availabilityArgs<ExtArgs>
   webhooks?: boolean | Prisma.User$webhooksArgs<ExtArgs>
   destinationCalendar?: boolean | Prisma.User$destinationCalendarArgs<ExtArgs>
+  workflows?: boolean | Prisma.User$workflowsArgs<ExtArgs>
   apiKeys?: boolean | Prisma.User$apiKeysArgs<ExtArgs>
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -23000,6 +23863,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   allowSEOIndexing?: boolean
   receiveMonthlyDigestEmail?: boolean
   requiresBookerEmailVerification?: boolean
+  whitelistWorkflows?: boolean
   metadata?: boolean
   verified?: boolean
   role?: boolean
@@ -23050,6 +23914,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   allowSEOIndexing?: boolean
   receiveMonthlyDigestEmail?: boolean
   requiresBookerEmailVerification?: boolean
+  whitelistWorkflows?: boolean
   metadata?: boolean
   verified?: boolean
   role?: boolean
@@ -23100,6 +23965,7 @@ export type UserSelectScalar = {
   allowSEOIndexing?: boolean
   receiveMonthlyDigestEmail?: boolean
   requiresBookerEmailVerification?: boolean
+  whitelistWorkflows?: boolean
   metadata?: boolean
   verified?: boolean
   role?: boolean
@@ -23114,7 +23980,7 @@ export type UserSelectScalar = {
   autoOptInFeatures?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "username" | "name" | "email" | "emailVerified" | "bio" | "avatarUrl" | "timeZone" | "weekStart" | "bufferTime" | "hideBranding" | "theme" | "appTheme" | "createdDate" | "trialEndsAt" | "lastActiveAt" | "defaultScheduleId" | "completedOnboarding" | "locale" | "timeFormat" | "twoFactorSecret" | "twoFactorEnabled" | "backupCodes" | "identityProvider" | "identityProviderId" | "invitedTo" | "brandColor" | "darkBrandColor" | "allowDynamicBooking" | "allowSEOIndexing" | "receiveMonthlyDigestEmail" | "requiresBookerEmailVerification" | "metadata" | "verified" | "role" | "organizationId" | "locked" | "movedToProfileId" | "isPlatformManaged" | "smsLockState" | "smsLockReviewedByAdmin" | "referralLinkId" | "creationSource" | "autoOptInFeatures", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "username" | "name" | "email" | "emailVerified" | "bio" | "avatarUrl" | "timeZone" | "weekStart" | "bufferTime" | "hideBranding" | "theme" | "appTheme" | "createdDate" | "trialEndsAt" | "lastActiveAt" | "defaultScheduleId" | "completedOnboarding" | "locale" | "timeFormat" | "twoFactorSecret" | "twoFactorEnabled" | "backupCodes" | "identityProvider" | "identityProviderId" | "invitedTo" | "brandColor" | "darkBrandColor" | "allowDynamicBooking" | "allowSEOIndexing" | "receiveMonthlyDigestEmail" | "requiresBookerEmailVerification" | "whitelistWorkflows" | "metadata" | "verified" | "role" | "organizationId" | "locked" | "movedToProfileId" | "isPlatformManaged" | "smsLockState" | "smsLockReviewedByAdmin" | "referralLinkId" | "creationSource" | "autoOptInFeatures", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   password?: boolean | Prisma.User$passwordArgs<ExtArgs>
   travelSchedules?: boolean | Prisma.User$travelSchedulesArgs<ExtArgs>
@@ -23127,6 +23993,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   availability?: boolean | Prisma.User$availabilityArgs<ExtArgs>
   webhooks?: boolean | Prisma.User$webhooksArgs<ExtArgs>
   destinationCalendar?: boolean | Prisma.User$destinationCalendarArgs<ExtArgs>
+  workflows?: boolean | Prisma.User$workflowsArgs<ExtArgs>
   apiKeys?: boolean | Prisma.User$apiKeysArgs<ExtArgs>
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -23191,6 +24058,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     availability: Prisma.$AvailabilityPayload<ExtArgs>[]
     webhooks: Prisma.$WebhookPayload<ExtArgs>[]
     destinationCalendar: Prisma.$DestinationCalendarPayload<ExtArgs> | null
+    workflows: Prisma.$WorkflowPayload<ExtArgs>[]
     apiKeys: Prisma.$ApiKeyPayload<ExtArgs>[]
     accounts: Prisma.$AccountPayload<ExtArgs>[]
     sessions: Prisma.$SessionPayload<ExtArgs>[]
@@ -23268,6 +24136,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     allowSEOIndexing: boolean | null
     receiveMonthlyDigestEmail: boolean | null
     requiresBookerEmailVerification: boolean | null
+    whitelistWorkflows: boolean
     /**
      * @zod.import(["import { userMetadata } from '../../zod-utils'"]).custom.use(userMetadata)
      */
@@ -23688,6 +24557,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   availability<T extends Prisma.User$availabilityArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$availabilityArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvailabilityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   webhooks<T extends Prisma.User$webhooksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$webhooksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WebhookPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   destinationCalendar<T extends Prisma.User$destinationCalendarArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$destinationCalendarArgs<ExtArgs>>): Prisma.Prisma__DestinationCalendarClient<runtime.Types.Result.GetResult<Prisma.$DestinationCalendarPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  workflows<T extends Prisma.User$workflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   apiKeys<T extends Prisma.User$apiKeysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$apiKeysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApiKeyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   accounts<T extends Prisma.User$accountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$accountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -23789,6 +24659,7 @@ export interface UserFieldRefs {
   readonly allowSEOIndexing: Prisma.FieldRef<"User", 'Boolean'>
   readonly receiveMonthlyDigestEmail: Prisma.FieldRef<"User", 'Boolean'>
   readonly requiresBookerEmailVerification: Prisma.FieldRef<"User", 'Boolean'>
+  readonly whitelistWorkflows: Prisma.FieldRef<"User", 'Boolean'>
   readonly metadata: Prisma.FieldRef<"User", 'Json'>
   readonly verified: Prisma.FieldRef<"User", 'Boolean'>
   readonly role: Prisma.FieldRef<"User", 'UserPermissionRole'>
@@ -24448,6 +25319,30 @@ export type User$destinationCalendarArgs<ExtArgs extends runtime.Types.Extension
    */
   include?: Prisma.DestinationCalendarInclude<ExtArgs> | null
   where?: Prisma.DestinationCalendarWhereInput
+}
+
+/**
+ * User.workflows
+ */
+export type User$workflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Workflow
+   */
+  select?: Prisma.WorkflowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Workflow
+   */
+  omit?: Prisma.WorkflowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowInclude<ExtArgs> | null
+  where?: Prisma.WorkflowWhereInput
+  orderBy?: Prisma.WorkflowOrderByWithRelationInput | Prisma.WorkflowOrderByWithRelationInput[]
+  cursor?: Prisma.WorkflowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WorkflowScalarFieldEnum | Prisma.WorkflowScalarFieldEnum[]
 }
 
 /**

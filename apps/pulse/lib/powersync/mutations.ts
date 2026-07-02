@@ -1,6 +1,17 @@
 import type { PowerSyncDatabase } from '@powersync/web';
 
+const MAX_PROPERTY_ID_LENGTH = 200;
+const MAX_SAVED_SEARCH_NAME_LENGTH = 120;
+const MAX_SAVED_SEARCH_CRITERIA_BYTES = 16_384;
+
+function assertPropertyId(propertyId: string) {
+  if (!propertyId || propertyId.length > MAX_PROPERTY_ID_LENGTH) {
+    throw new Error(`Property ID must be between 1 and ${MAX_PROPERTY_ID_LENGTH} characters.`);
+  }
+}
+
 export async function toggleLocalCollection(database: PowerSyncDatabase, userId: string, propertyId: string) {
+  assertPropertyId(propertyId);
   const existing = await database.getOptional<{ id: string }>(
     'SELECT id FROM collections WHERE user_id = ? AND property_id = ? LIMIT 1',
     [userId, propertyId]
@@ -19,6 +30,7 @@ export async function toggleLocalCollection(database: PowerSyncDatabase, userId:
 }
 
 export async function recordLocalPropertyView(database: PowerSyncDatabase, userId: string, propertyId: string) {
+  assertPropertyId(propertyId);
   const existing = await database.getOptional<{ id: string }>(
     'SELECT id FROM recent_property_views WHERE user_id = ? AND property_id = ? LIMIT 1',
     [userId, propertyId]
@@ -59,12 +71,22 @@ export async function saveLocalSearch(
   userId: string,
   input: { name: string; criteria: Record<string, unknown> }
 ) {
+  const name = input.name.trim();
+  if (!name || name.length > MAX_SAVED_SEARCH_NAME_LENGTH) {
+    throw new Error(`Saved search name must be between 1 and ${MAX_SAVED_SEARCH_NAME_LENGTH} characters.`);
+  }
+
+  const criteria = JSON.stringify(input.criteria);
+  if (!criteria || new TextEncoder().encode(criteria).byteLength > MAX_SAVED_SEARCH_CRITERIA_BYTES) {
+    throw new Error(`Saved search criteria must not exceed ${MAX_SAVED_SEARCH_CRITERIA_BYTES} bytes.`);
+  }
+
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   await database.execute(
     `INSERT INTO saved_searches (id, user_id, name, criteria, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, userId, input.name, JSON.stringify(input.criteria), now, now]
+    [id, userId, name, criteria, now, now]
   );
   return id;
 }

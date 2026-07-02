@@ -48,6 +48,7 @@ export const UserSchema = z.object({
   allowSEOIndexing: z.boolean().nullable(),
   receiveMonthlyDigestEmail: z.boolean().nullable(),
   requiresBookerEmailVerification: z.boolean().nullable(),
+  whitelistWorkflows: z.boolean(),
   metadata: userMetadata.nullable(),
   verified: z.boolean().nullable(),
   organizationId: z.number().int().nullable(),

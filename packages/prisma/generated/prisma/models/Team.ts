@@ -466,6 +466,8 @@ export type TeamWhereInput = {
   agents?: Prisma.AgentListRelationFilter
   bookingReports?: Prisma.BookingReportListRelationFilter
   wrongAssignmentReports?: Prisma.WrongAssignmentReportListRelationFilter
+  workflows?: Prisma.WorkflowListRelationFilter
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsListRelationFilter
   features?: Prisma.TeamFeaturesListRelationFilter
   internalNotePresets?: Prisma.InternalNotePresetListRelationFilter
   creditBalance?: Prisma.XOR<Prisma.CreditBalanceNullableScalarRelationFilter, Prisma.CreditBalanceWhereInput> | null
@@ -540,6 +542,8 @@ export type TeamOrderByWithRelationInput = {
   agents?: Prisma.AgentOrderByRelationAggregateInput
   bookingReports?: Prisma.BookingReportOrderByRelationAggregateInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportOrderByRelationAggregateInput
+  workflows?: Prisma.WorkflowOrderByRelationAggregateInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsOrderByRelationAggregateInput
   features?: Prisma.TeamFeaturesOrderByRelationAggregateInput
   internalNotePresets?: Prisma.InternalNotePresetOrderByRelationAggregateInput
   creditBalance?: Prisma.CreditBalanceOrderByWithRelationInput
@@ -618,6 +622,8 @@ export type TeamWhereUniqueInput = Prisma.AtLeast<{
   agents?: Prisma.AgentListRelationFilter
   bookingReports?: Prisma.BookingReportListRelationFilter
   wrongAssignmentReports?: Prisma.WrongAssignmentReportListRelationFilter
+  workflows?: Prisma.WorkflowListRelationFilter
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsListRelationFilter
   features?: Prisma.TeamFeaturesListRelationFilter
   internalNotePresets?: Prisma.InternalNotePresetListRelationFilter
   creditBalance?: Prisma.XOR<Prisma.CreditBalanceNullableScalarRelationFilter, Prisma.CreditBalanceWhereInput> | null
@@ -769,6 +775,8 @@ export type TeamCreateInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -841,6 +849,8 @@ export type TeamUncheckedCreateInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -912,6 +922,8 @@ export type TeamUpdateInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -984,6 +996,8 @@ export type TeamUncheckedUpdateInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -1444,6 +1458,36 @@ export type TeamUpdateOneRequiredWithoutInstantMeetingTokensNestedInput = {
   upsert?: Prisma.TeamUpsertWithoutInstantMeetingTokensInput
   connect?: Prisma.TeamWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutInstantMeetingTokensInput, Prisma.TeamUpdateWithoutInstantMeetingTokensInput>, Prisma.TeamUncheckedUpdateWithoutInstantMeetingTokensInput>
+}
+
+export type TeamCreateNestedOneWithoutWorkflowsInput = {
+  create?: Prisma.XOR<Prisma.TeamCreateWithoutWorkflowsInput, Prisma.TeamUncheckedCreateWithoutWorkflowsInput>
+  connectOrCreate?: Prisma.TeamCreateOrConnectWithoutWorkflowsInput
+  connect?: Prisma.TeamWhereUniqueInput
+}
+
+export type TeamUpdateOneWithoutWorkflowsNestedInput = {
+  create?: Prisma.XOR<Prisma.TeamCreateWithoutWorkflowsInput, Prisma.TeamUncheckedCreateWithoutWorkflowsInput>
+  connectOrCreate?: Prisma.TeamCreateOrConnectWithoutWorkflowsInput
+  upsert?: Prisma.TeamUpsertWithoutWorkflowsInput
+  disconnect?: Prisma.TeamWhereInput | boolean
+  delete?: Prisma.TeamWhereInput | boolean
+  connect?: Prisma.TeamWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutWorkflowsInput, Prisma.TeamUpdateWithoutWorkflowsInput>, Prisma.TeamUncheckedUpdateWithoutWorkflowsInput>
+}
+
+export type TeamCreateNestedOneWithoutActiveOrgWorkflowsInput = {
+  create?: Prisma.XOR<Prisma.TeamCreateWithoutActiveOrgWorkflowsInput, Prisma.TeamUncheckedCreateWithoutActiveOrgWorkflowsInput>
+  connectOrCreate?: Prisma.TeamCreateOrConnectWithoutActiveOrgWorkflowsInput
+  connect?: Prisma.TeamWhereUniqueInput
+}
+
+export type TeamUpdateOneRequiredWithoutActiveOrgWorkflowsNestedInput = {
+  create?: Prisma.XOR<Prisma.TeamCreateWithoutActiveOrgWorkflowsInput, Prisma.TeamUncheckedCreateWithoutActiveOrgWorkflowsInput>
+  connectOrCreate?: Prisma.TeamCreateOrConnectWithoutActiveOrgWorkflowsInput
+  upsert?: Prisma.TeamUpsertWithoutActiveOrgWorkflowsInput
+  connect?: Prisma.TeamWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TeamUpdateToOneWithWhereWithoutActiveOrgWorkflowsInput, Prisma.TeamUpdateWithoutActiveOrgWorkflowsInput>, Prisma.TeamUncheckedUpdateWithoutActiveOrgWorkflowsInput>
 }
 
 export type TeamCreateNestedOneWithoutWebhooksInput = {
@@ -1934,6 +1978,8 @@ export type TeamCreateWithoutEventTypesInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -2005,6 +2051,8 @@ export type TeamUncheckedCreateWithoutEventTypesInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -2091,6 +2139,8 @@ export type TeamUpdateWithoutEventTypesInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -2162,6 +2212,8 @@ export type TeamUncheckedUpdateWithoutEventTypesInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -2232,6 +2284,8 @@ export type TeamCreateWithoutCredentialsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -2303,6 +2357,8 @@ export type TeamUncheckedCreateWithoutCredentialsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -2389,6 +2445,8 @@ export type TeamUpdateWithoutCredentialsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -2460,6 +2518,8 @@ export type TeamUncheckedUpdateWithoutCredentialsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -2530,6 +2590,8 @@ export type TeamCreateWithoutOrgUsersInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -2601,6 +2663,8 @@ export type TeamUncheckedCreateWithoutOrgUsersInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -2687,6 +2751,8 @@ export type TeamUpdateWithoutOrgUsersInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -2758,6 +2824,8 @@ export type TeamUncheckedUpdateWithoutOrgUsersInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -2828,6 +2896,8 @@ export type TeamCreateWithoutOrgProfilesInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -2899,6 +2969,8 @@ export type TeamUncheckedCreateWithoutOrgProfilesInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -2985,6 +3057,8 @@ export type TeamUpdateWithoutOrgProfilesInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -3056,6 +3130,8 @@ export type TeamUncheckedUpdateWithoutOrgProfilesInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -3126,6 +3202,8 @@ export type TeamCreateWithoutChildrenInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -3197,6 +3275,8 @@ export type TeamUncheckedCreateWithoutChildrenInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -3272,6 +3352,8 @@ export type TeamCreateWithoutParentInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -3343,6 +3425,8 @@ export type TeamUncheckedCreateWithoutParentInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -3434,6 +3518,8 @@ export type TeamUpdateWithoutChildrenInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -3505,6 +3591,8 @@ export type TeamUncheckedUpdateWithoutChildrenInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -3631,6 +3719,8 @@ export type TeamCreateWithoutCreditBalanceInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   organizationOnboarding?: Prisma.OrganizationOnboardingCreateNestedOneWithoutOrganizationInput
@@ -3702,6 +3792,8 @@ export type TeamUncheckedCreateWithoutCreditBalanceInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedCreateNestedOneWithoutOrganizationInput
@@ -3788,6 +3880,8 @@ export type TeamUpdateWithoutCreditBalanceInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUpdateOneWithoutOrganizationNestedInput
@@ -3859,6 +3953,8 @@ export type TeamUncheckedUpdateWithoutCreditBalanceInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedUpdateOneWithoutOrganizationNestedInput
@@ -3928,6 +4024,8 @@ export type TeamCreateWithoutOrganizationSettingsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -3999,6 +4097,8 @@ export type TeamUncheckedCreateWithoutOrganizationSettingsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -4085,6 +4185,8 @@ export type TeamUpdateWithoutOrganizationSettingsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -4156,6 +4258,8 @@ export type TeamUncheckedUpdateWithoutOrganizationSettingsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -4226,6 +4330,8 @@ export type TeamCreateWithoutMembersInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -4297,6 +4403,8 @@ export type TeamUncheckedCreateWithoutMembersInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -4383,6 +4491,8 @@ export type TeamUpdateWithoutMembersInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -4454,6 +4564,8 @@ export type TeamUncheckedUpdateWithoutMembersInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -4524,6 +4636,8 @@ export type TeamCreateWithoutInviteTokensInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -4595,6 +4709,8 @@ export type TeamUncheckedCreateWithoutInviteTokensInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -4681,6 +4797,8 @@ export type TeamUpdateWithoutInviteTokensInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -4752,6 +4870,8 @@ export type TeamUncheckedUpdateWithoutInviteTokensInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -4822,6 +4942,8 @@ export type TeamCreateWithoutInstantMeetingTokensInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -4893,6 +5015,8 @@ export type TeamUncheckedCreateWithoutInstantMeetingTokensInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -4979,6 +5103,8 @@ export type TeamUpdateWithoutInstantMeetingTokensInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -5050,6 +5176,620 @@ export type TeamUncheckedUpdateWithoutInstantMeetingTokensInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
+  features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
+  internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
+  creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedUpdateOneWithoutOrganizationNestedInput
+  managedOrganization?: Prisma.ManagedOrganizationUncheckedUpdateOneWithoutManagedOrganizationNestedInput
+  managedOrganizations?: Prisma.ManagedOrganizationUncheckedUpdateManyWithoutManagerOrganizationNestedInput
+  filterSegments?: Prisma.FilterSegmentUncheckedUpdateManyWithoutTeamNestedInput
+  teamBilling?: Prisma.TeamBillingUncheckedUpdateOneWithoutTeamNestedInput
+  organizationBilling?: Prisma.OrganizationBillingUncheckedUpdateOneWithoutTeamNestedInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncUncheckedUpdateManyWithoutOrganizationNestedInput
+  seatChangeLogs?: Prisma.SeatChangeLogUncheckedUpdateManyWithoutTeamNestedInput
+  monthlyProrations?: Prisma.MonthlyProrationUncheckedUpdateManyWithoutTeamNestedInput
+}
+
+export type TeamCreateWithoutWorkflowsInput = {
+  name: string
+  slug?: string | null
+  logoUrl?: string | null
+  calVideoLogo?: string | null
+  appLogo?: string | null
+  appIconLogo?: string | null
+  bio?: string | null
+  hideBranding?: boolean
+  hideTeamProfileLink?: boolean
+  isPrivate?: boolean
+  hideBookATeamMember?: boolean
+  createdAt?: Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: string | null
+  rrResetInterval?: $Enums.RRResetInterval | null
+  rrTimestampBasis?: $Enums.RRTimestampBasis
+  brandColor?: string | null
+  darkBrandColor?: string | null
+  bannerUrl?: string | null
+  timeFormat?: number | null
+  timeZone?: string
+  weekStart?: string
+  isOrganization?: boolean
+  pendingPayment?: boolean
+  isPlatform?: boolean
+  smsLockState?: $Enums.SMSLockState
+  smsLockReviewedByAdmin?: boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: boolean
+  autoOptInFeatures?: boolean
+  members?: Prisma.MembershipCreateNestedManyWithoutTeamInput
+  eventTypes?: Prisma.EventTypeCreateNestedManyWithoutTeamInput
+  verifiedNumbers?: Prisma.VerifiedNumberCreateNestedManyWithoutTeamInput
+  verifiedEmails?: Prisma.VerifiedEmailCreateNestedManyWithoutTeamInput
+  parent?: Prisma.TeamCreateNestedOneWithoutChildrenInput
+  children?: Prisma.TeamCreateNestedManyWithoutParentInput
+  orgUsers?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  inviteTokens?: Prisma.VerificationTokenCreateNestedManyWithoutTeamInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutTeamInput
+  apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutTeamInput
+  credentials?: Prisma.CredentialCreateNestedManyWithoutTeamInput
+  accessCodes?: Prisma.AccessCodeCreateNestedManyWithoutTeamInput
+  organizationSettings?: Prisma.OrganizationSettingsCreateNestedOneWithoutOrganizationInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenCreateNestedManyWithoutTeamInput
+  orgProfiles?: Prisma.ProfileCreateNestedManyWithoutOrganizationInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingCreateNestedManyWithoutTeamInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientCreateNestedManyWithoutOrganizationInput
+  createdByOAuthClient?: Prisma.PlatformOAuthClientCreateNestedOneWithoutTeamsInput
+  platformBilling?: Prisma.PlatformBillingCreateNestedOneWithoutTeamInput
+  attributes?: Prisma.AttributeCreateNestedManyWithoutTeamInput
+  delegationCredentials?: Prisma.DelegationCredentialCreateNestedManyWithoutOrganizationInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTeamInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutTeamInput
+  agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
+  bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
+  features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
+  internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
+  creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingCreateNestedOneWithoutOrganizationInput
+  managedOrganization?: Prisma.ManagedOrganizationCreateNestedOneWithoutManagedOrganizationInput
+  managedOrganizations?: Prisma.ManagedOrganizationCreateNestedManyWithoutManagerOrganizationInput
+  filterSegments?: Prisma.FilterSegmentCreateNestedManyWithoutTeamInput
+  teamBilling?: Prisma.TeamBillingCreateNestedOneWithoutTeamInput
+  organizationBilling?: Prisma.OrganizationBillingCreateNestedOneWithoutTeamInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncCreateNestedManyWithoutOrganizationInput
+  seatChangeLogs?: Prisma.SeatChangeLogCreateNestedManyWithoutTeamInput
+  monthlyProrations?: Prisma.MonthlyProrationCreateNestedManyWithoutTeamInput
+}
+
+export type TeamUncheckedCreateWithoutWorkflowsInput = {
+  id?: number
+  name: string
+  slug?: string | null
+  logoUrl?: string | null
+  calVideoLogo?: string | null
+  appLogo?: string | null
+  appIconLogo?: string | null
+  bio?: string | null
+  hideBranding?: boolean
+  hideTeamProfileLink?: boolean
+  isPrivate?: boolean
+  hideBookATeamMember?: boolean
+  createdAt?: Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: string | null
+  rrResetInterval?: $Enums.RRResetInterval | null
+  rrTimestampBasis?: $Enums.RRTimestampBasis
+  brandColor?: string | null
+  darkBrandColor?: string | null
+  bannerUrl?: string | null
+  parentId?: number | null
+  timeFormat?: number | null
+  timeZone?: string
+  weekStart?: string
+  isOrganization?: boolean
+  pendingPayment?: boolean
+  isPlatform?: boolean
+  createdByOAuthClientId?: string | null
+  smsLockState?: $Enums.SMSLockState
+  smsLockReviewedByAdmin?: boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: boolean
+  autoOptInFeatures?: boolean
+  members?: Prisma.MembershipUncheckedCreateNestedManyWithoutTeamInput
+  eventTypes?: Prisma.EventTypeUncheckedCreateNestedManyWithoutTeamInput
+  verifiedNumbers?: Prisma.VerifiedNumberUncheckedCreateNestedManyWithoutTeamInput
+  verifiedEmails?: Prisma.VerifiedEmailUncheckedCreateNestedManyWithoutTeamInput
+  children?: Prisma.TeamUncheckedCreateNestedManyWithoutParentInput
+  orgUsers?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  inviteTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutTeamInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutTeamInput
+  apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutTeamInput
+  credentials?: Prisma.CredentialUncheckedCreateNestedManyWithoutTeamInput
+  accessCodes?: Prisma.AccessCodeUncheckedCreateNestedManyWithoutTeamInput
+  organizationSettings?: Prisma.OrganizationSettingsUncheckedCreateNestedOneWithoutOrganizationInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenUncheckedCreateNestedManyWithoutTeamInput
+  orgProfiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutOrganizationInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingUncheckedCreateNestedManyWithoutTeamInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientUncheckedCreateNestedManyWithoutOrganizationInput
+  platformBilling?: Prisma.PlatformBillingUncheckedCreateNestedOneWithoutTeamInput
+  attributes?: Prisma.AttributeUncheckedCreateNestedManyWithoutTeamInput
+  delegationCredentials?: Prisma.DelegationCredentialUncheckedCreateNestedManyWithoutOrganizationInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTeamInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutTeamInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
+  bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
+  features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
+  internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
+  creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedCreateNestedOneWithoutOrganizationInput
+  managedOrganization?: Prisma.ManagedOrganizationUncheckedCreateNestedOneWithoutManagedOrganizationInput
+  managedOrganizations?: Prisma.ManagedOrganizationUncheckedCreateNestedManyWithoutManagerOrganizationInput
+  filterSegments?: Prisma.FilterSegmentUncheckedCreateNestedManyWithoutTeamInput
+  teamBilling?: Prisma.TeamBillingUncheckedCreateNestedOneWithoutTeamInput
+  organizationBilling?: Prisma.OrganizationBillingUncheckedCreateNestedOneWithoutTeamInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncUncheckedCreateNestedManyWithoutOrganizationInput
+  seatChangeLogs?: Prisma.SeatChangeLogUncheckedCreateNestedManyWithoutTeamInput
+  monthlyProrations?: Prisma.MonthlyProrationUncheckedCreateNestedManyWithoutTeamInput
+}
+
+export type TeamCreateOrConnectWithoutWorkflowsInput = {
+  where: Prisma.TeamWhereUniqueInput
+  create: Prisma.XOR<Prisma.TeamCreateWithoutWorkflowsInput, Prisma.TeamUncheckedCreateWithoutWorkflowsInput>
+}
+
+export type TeamUpsertWithoutWorkflowsInput = {
+  update: Prisma.XOR<Prisma.TeamUpdateWithoutWorkflowsInput, Prisma.TeamUncheckedUpdateWithoutWorkflowsInput>
+  create: Prisma.XOR<Prisma.TeamCreateWithoutWorkflowsInput, Prisma.TeamUncheckedCreateWithoutWorkflowsInput>
+  where?: Prisma.TeamWhereInput
+}
+
+export type TeamUpdateToOneWithWhereWithoutWorkflowsInput = {
+  where?: Prisma.TeamWhereInput
+  data: Prisma.XOR<Prisma.TeamUpdateWithoutWorkflowsInput, Prisma.TeamUncheckedUpdateWithoutWorkflowsInput>
+}
+
+export type TeamUpdateWithoutWorkflowsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calVideoLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appIconLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hideBranding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideTeamProfileLink?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPrivate?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideBookATeamMember?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rrResetInterval?: Prisma.NullableEnumRRResetIntervalFieldUpdateOperationsInput | $Enums.RRResetInterval | null
+  rrTimestampBasis?: Prisma.EnumRRTimestampBasisFieldUpdateOperationsInput | $Enums.RRTimestampBasis
+  brandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  darkBrandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeFormat?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStart?: Prisma.StringFieldUpdateOperationsInput | string
+  isOrganization?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pendingPayment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPlatform?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  smsLockState?: Prisma.EnumSMSLockStateFieldUpdateOperationsInput | $Enums.SMSLockState
+  smsLockReviewedByAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoOptInFeatures?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  members?: Prisma.MembershipUpdateManyWithoutTeamNestedInput
+  eventTypes?: Prisma.EventTypeUpdateManyWithoutTeamNestedInput
+  verifiedNumbers?: Prisma.VerifiedNumberUpdateManyWithoutTeamNestedInput
+  verifiedEmails?: Prisma.VerifiedEmailUpdateManyWithoutTeamNestedInput
+  parent?: Prisma.TeamUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.TeamUpdateManyWithoutParentNestedInput
+  orgUsers?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  inviteTokens?: Prisma.VerificationTokenUpdateManyWithoutTeamNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutTeamNestedInput
+  apiKeys?: Prisma.ApiKeyUpdateManyWithoutTeamNestedInput
+  credentials?: Prisma.CredentialUpdateManyWithoutTeamNestedInput
+  accessCodes?: Prisma.AccessCodeUpdateManyWithoutTeamNestedInput
+  organizationSettings?: Prisma.OrganizationSettingsUpdateOneWithoutOrganizationNestedInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenUpdateManyWithoutTeamNestedInput
+  orgProfiles?: Prisma.ProfileUpdateManyWithoutOrganizationNestedInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingUpdateManyWithoutTeamNestedInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientUpdateManyWithoutOrganizationNestedInput
+  createdByOAuthClient?: Prisma.PlatformOAuthClientUpdateOneWithoutTeamsNestedInput
+  platformBilling?: Prisma.PlatformBillingUpdateOneWithoutTeamNestedInput
+  attributes?: Prisma.AttributeUpdateManyWithoutTeamNestedInput
+  delegationCredentials?: Prisma.DelegationCredentialUpdateManyWithoutOrganizationNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTeamNestedInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutTeamNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
+  bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
+  features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
+  internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
+  creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingUpdateOneWithoutOrganizationNestedInput
+  managedOrganization?: Prisma.ManagedOrganizationUpdateOneWithoutManagedOrganizationNestedInput
+  managedOrganizations?: Prisma.ManagedOrganizationUpdateManyWithoutManagerOrganizationNestedInput
+  filterSegments?: Prisma.FilterSegmentUpdateManyWithoutTeamNestedInput
+  teamBilling?: Prisma.TeamBillingUpdateOneWithoutTeamNestedInput
+  organizationBilling?: Prisma.OrganizationBillingUpdateOneWithoutTeamNestedInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncUpdateManyWithoutOrganizationNestedInput
+  seatChangeLogs?: Prisma.SeatChangeLogUpdateManyWithoutTeamNestedInput
+  monthlyProrations?: Prisma.MonthlyProrationUpdateManyWithoutTeamNestedInput
+}
+
+export type TeamUncheckedUpdateWithoutWorkflowsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calVideoLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appIconLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hideBranding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideTeamProfileLink?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPrivate?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideBookATeamMember?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rrResetInterval?: Prisma.NullableEnumRRResetIntervalFieldUpdateOperationsInput | $Enums.RRResetInterval | null
+  rrTimestampBasis?: Prisma.EnumRRTimestampBasisFieldUpdateOperationsInput | $Enums.RRTimestampBasis
+  brandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  darkBrandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  timeFormat?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStart?: Prisma.StringFieldUpdateOperationsInput | string
+  isOrganization?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pendingPayment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPlatform?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdByOAuthClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  smsLockState?: Prisma.EnumSMSLockStateFieldUpdateOperationsInput | $Enums.SMSLockState
+  smsLockReviewedByAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoOptInFeatures?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  members?: Prisma.MembershipUncheckedUpdateManyWithoutTeamNestedInput
+  eventTypes?: Prisma.EventTypeUncheckedUpdateManyWithoutTeamNestedInput
+  verifiedNumbers?: Prisma.VerifiedNumberUncheckedUpdateManyWithoutTeamNestedInput
+  verifiedEmails?: Prisma.VerifiedEmailUncheckedUpdateManyWithoutTeamNestedInput
+  children?: Prisma.TeamUncheckedUpdateManyWithoutParentNestedInput
+  orgUsers?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  inviteTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutTeamNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutTeamNestedInput
+  apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutTeamNestedInput
+  credentials?: Prisma.CredentialUncheckedUpdateManyWithoutTeamNestedInput
+  accessCodes?: Prisma.AccessCodeUncheckedUpdateManyWithoutTeamNestedInput
+  organizationSettings?: Prisma.OrganizationSettingsUncheckedUpdateOneWithoutOrganizationNestedInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenUncheckedUpdateManyWithoutTeamNestedInput
+  orgProfiles?: Prisma.ProfileUncheckedUpdateManyWithoutOrganizationNestedInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingUncheckedUpdateManyWithoutTeamNestedInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientUncheckedUpdateManyWithoutOrganizationNestedInput
+  platformBilling?: Prisma.PlatformBillingUncheckedUpdateOneWithoutTeamNestedInput
+  attributes?: Prisma.AttributeUncheckedUpdateManyWithoutTeamNestedInput
+  delegationCredentials?: Prisma.DelegationCredentialUncheckedUpdateManyWithoutOrganizationNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTeamNestedInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutTeamNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
+  bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
+  features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
+  internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
+  creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedUpdateOneWithoutOrganizationNestedInput
+  managedOrganization?: Prisma.ManagedOrganizationUncheckedUpdateOneWithoutManagedOrganizationNestedInput
+  managedOrganizations?: Prisma.ManagedOrganizationUncheckedUpdateManyWithoutManagerOrganizationNestedInput
+  filterSegments?: Prisma.FilterSegmentUncheckedUpdateManyWithoutTeamNestedInput
+  teamBilling?: Prisma.TeamBillingUncheckedUpdateOneWithoutTeamNestedInput
+  organizationBilling?: Prisma.OrganizationBillingUncheckedUpdateOneWithoutTeamNestedInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncUncheckedUpdateManyWithoutOrganizationNestedInput
+  seatChangeLogs?: Prisma.SeatChangeLogUncheckedUpdateManyWithoutTeamNestedInput
+  monthlyProrations?: Prisma.MonthlyProrationUncheckedUpdateManyWithoutTeamNestedInput
+}
+
+export type TeamCreateWithoutActiveOrgWorkflowsInput = {
+  name: string
+  slug?: string | null
+  logoUrl?: string | null
+  calVideoLogo?: string | null
+  appLogo?: string | null
+  appIconLogo?: string | null
+  bio?: string | null
+  hideBranding?: boolean
+  hideTeamProfileLink?: boolean
+  isPrivate?: boolean
+  hideBookATeamMember?: boolean
+  createdAt?: Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: string | null
+  rrResetInterval?: $Enums.RRResetInterval | null
+  rrTimestampBasis?: $Enums.RRTimestampBasis
+  brandColor?: string | null
+  darkBrandColor?: string | null
+  bannerUrl?: string | null
+  timeFormat?: number | null
+  timeZone?: string
+  weekStart?: string
+  isOrganization?: boolean
+  pendingPayment?: boolean
+  isPlatform?: boolean
+  smsLockState?: $Enums.SMSLockState
+  smsLockReviewedByAdmin?: boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: boolean
+  autoOptInFeatures?: boolean
+  members?: Prisma.MembershipCreateNestedManyWithoutTeamInput
+  eventTypes?: Prisma.EventTypeCreateNestedManyWithoutTeamInput
+  verifiedNumbers?: Prisma.VerifiedNumberCreateNestedManyWithoutTeamInput
+  verifiedEmails?: Prisma.VerifiedEmailCreateNestedManyWithoutTeamInput
+  parent?: Prisma.TeamCreateNestedOneWithoutChildrenInput
+  children?: Prisma.TeamCreateNestedManyWithoutParentInput
+  orgUsers?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  inviteTokens?: Prisma.VerificationTokenCreateNestedManyWithoutTeamInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutTeamInput
+  apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutTeamInput
+  credentials?: Prisma.CredentialCreateNestedManyWithoutTeamInput
+  accessCodes?: Prisma.AccessCodeCreateNestedManyWithoutTeamInput
+  organizationSettings?: Prisma.OrganizationSettingsCreateNestedOneWithoutOrganizationInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenCreateNestedManyWithoutTeamInput
+  orgProfiles?: Prisma.ProfileCreateNestedManyWithoutOrganizationInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingCreateNestedManyWithoutTeamInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientCreateNestedManyWithoutOrganizationInput
+  createdByOAuthClient?: Prisma.PlatformOAuthClientCreateNestedOneWithoutTeamsInput
+  platformBilling?: Prisma.PlatformBillingCreateNestedOneWithoutTeamInput
+  attributes?: Prisma.AttributeCreateNestedManyWithoutTeamInput
+  delegationCredentials?: Prisma.DelegationCredentialCreateNestedManyWithoutOrganizationInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTeamInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutTeamInput
+  agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
+  bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
+  internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
+  creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingCreateNestedOneWithoutOrganizationInput
+  managedOrganization?: Prisma.ManagedOrganizationCreateNestedOneWithoutManagedOrganizationInput
+  managedOrganizations?: Prisma.ManagedOrganizationCreateNestedManyWithoutManagerOrganizationInput
+  filterSegments?: Prisma.FilterSegmentCreateNestedManyWithoutTeamInput
+  teamBilling?: Prisma.TeamBillingCreateNestedOneWithoutTeamInput
+  organizationBilling?: Prisma.OrganizationBillingCreateNestedOneWithoutTeamInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncCreateNestedManyWithoutOrganizationInput
+  seatChangeLogs?: Prisma.SeatChangeLogCreateNestedManyWithoutTeamInput
+  monthlyProrations?: Prisma.MonthlyProrationCreateNestedManyWithoutTeamInput
+}
+
+export type TeamUncheckedCreateWithoutActiveOrgWorkflowsInput = {
+  id?: number
+  name: string
+  slug?: string | null
+  logoUrl?: string | null
+  calVideoLogo?: string | null
+  appLogo?: string | null
+  appIconLogo?: string | null
+  bio?: string | null
+  hideBranding?: boolean
+  hideTeamProfileLink?: boolean
+  isPrivate?: boolean
+  hideBookATeamMember?: boolean
+  createdAt?: Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: string | null
+  rrResetInterval?: $Enums.RRResetInterval | null
+  rrTimestampBasis?: $Enums.RRTimestampBasis
+  brandColor?: string | null
+  darkBrandColor?: string | null
+  bannerUrl?: string | null
+  parentId?: number | null
+  timeFormat?: number | null
+  timeZone?: string
+  weekStart?: string
+  isOrganization?: boolean
+  pendingPayment?: boolean
+  isPlatform?: boolean
+  createdByOAuthClientId?: string | null
+  smsLockState?: $Enums.SMSLockState
+  smsLockReviewedByAdmin?: boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: boolean
+  autoOptInFeatures?: boolean
+  members?: Prisma.MembershipUncheckedCreateNestedManyWithoutTeamInput
+  eventTypes?: Prisma.EventTypeUncheckedCreateNestedManyWithoutTeamInput
+  verifiedNumbers?: Prisma.VerifiedNumberUncheckedCreateNestedManyWithoutTeamInput
+  verifiedEmails?: Prisma.VerifiedEmailUncheckedCreateNestedManyWithoutTeamInput
+  children?: Prisma.TeamUncheckedCreateNestedManyWithoutParentInput
+  orgUsers?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  inviteTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutTeamInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutTeamInput
+  apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutTeamInput
+  credentials?: Prisma.CredentialUncheckedCreateNestedManyWithoutTeamInput
+  accessCodes?: Prisma.AccessCodeUncheckedCreateNestedManyWithoutTeamInput
+  organizationSettings?: Prisma.OrganizationSettingsUncheckedCreateNestedOneWithoutOrganizationInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenUncheckedCreateNestedManyWithoutTeamInput
+  orgProfiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutOrganizationInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingUncheckedCreateNestedManyWithoutTeamInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientUncheckedCreateNestedManyWithoutOrganizationInput
+  platformBilling?: Prisma.PlatformBillingUncheckedCreateNestedOneWithoutTeamInput
+  attributes?: Prisma.AttributeUncheckedCreateNestedManyWithoutTeamInput
+  delegationCredentials?: Prisma.DelegationCredentialUncheckedCreateNestedManyWithoutOrganizationInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTeamInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutTeamInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
+  bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
+  internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
+  creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedCreateNestedOneWithoutOrganizationInput
+  managedOrganization?: Prisma.ManagedOrganizationUncheckedCreateNestedOneWithoutManagedOrganizationInput
+  managedOrganizations?: Prisma.ManagedOrganizationUncheckedCreateNestedManyWithoutManagerOrganizationInput
+  filterSegments?: Prisma.FilterSegmentUncheckedCreateNestedManyWithoutTeamInput
+  teamBilling?: Prisma.TeamBillingUncheckedCreateNestedOneWithoutTeamInput
+  organizationBilling?: Prisma.OrganizationBillingUncheckedCreateNestedOneWithoutTeamInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncUncheckedCreateNestedManyWithoutOrganizationInput
+  seatChangeLogs?: Prisma.SeatChangeLogUncheckedCreateNestedManyWithoutTeamInput
+  monthlyProrations?: Prisma.MonthlyProrationUncheckedCreateNestedManyWithoutTeamInput
+}
+
+export type TeamCreateOrConnectWithoutActiveOrgWorkflowsInput = {
+  where: Prisma.TeamWhereUniqueInput
+  create: Prisma.XOR<Prisma.TeamCreateWithoutActiveOrgWorkflowsInput, Prisma.TeamUncheckedCreateWithoutActiveOrgWorkflowsInput>
+}
+
+export type TeamUpsertWithoutActiveOrgWorkflowsInput = {
+  update: Prisma.XOR<Prisma.TeamUpdateWithoutActiveOrgWorkflowsInput, Prisma.TeamUncheckedUpdateWithoutActiveOrgWorkflowsInput>
+  create: Prisma.XOR<Prisma.TeamCreateWithoutActiveOrgWorkflowsInput, Prisma.TeamUncheckedCreateWithoutActiveOrgWorkflowsInput>
+  where?: Prisma.TeamWhereInput
+}
+
+export type TeamUpdateToOneWithWhereWithoutActiveOrgWorkflowsInput = {
+  where?: Prisma.TeamWhereInput
+  data: Prisma.XOR<Prisma.TeamUpdateWithoutActiveOrgWorkflowsInput, Prisma.TeamUncheckedUpdateWithoutActiveOrgWorkflowsInput>
+}
+
+export type TeamUpdateWithoutActiveOrgWorkflowsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calVideoLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appIconLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hideBranding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideTeamProfileLink?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPrivate?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideBookATeamMember?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rrResetInterval?: Prisma.NullableEnumRRResetIntervalFieldUpdateOperationsInput | $Enums.RRResetInterval | null
+  rrTimestampBasis?: Prisma.EnumRRTimestampBasisFieldUpdateOperationsInput | $Enums.RRTimestampBasis
+  brandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  darkBrandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeFormat?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStart?: Prisma.StringFieldUpdateOperationsInput | string
+  isOrganization?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pendingPayment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPlatform?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  smsLockState?: Prisma.EnumSMSLockStateFieldUpdateOperationsInput | $Enums.SMSLockState
+  smsLockReviewedByAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoOptInFeatures?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  members?: Prisma.MembershipUpdateManyWithoutTeamNestedInput
+  eventTypes?: Prisma.EventTypeUpdateManyWithoutTeamNestedInput
+  verifiedNumbers?: Prisma.VerifiedNumberUpdateManyWithoutTeamNestedInput
+  verifiedEmails?: Prisma.VerifiedEmailUpdateManyWithoutTeamNestedInput
+  parent?: Prisma.TeamUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.TeamUpdateManyWithoutParentNestedInput
+  orgUsers?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  inviteTokens?: Prisma.VerificationTokenUpdateManyWithoutTeamNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutTeamNestedInput
+  apiKeys?: Prisma.ApiKeyUpdateManyWithoutTeamNestedInput
+  credentials?: Prisma.CredentialUpdateManyWithoutTeamNestedInput
+  accessCodes?: Prisma.AccessCodeUpdateManyWithoutTeamNestedInput
+  organizationSettings?: Prisma.OrganizationSettingsUpdateOneWithoutOrganizationNestedInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenUpdateManyWithoutTeamNestedInput
+  orgProfiles?: Prisma.ProfileUpdateManyWithoutOrganizationNestedInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingUpdateManyWithoutTeamNestedInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientUpdateManyWithoutOrganizationNestedInput
+  createdByOAuthClient?: Prisma.PlatformOAuthClientUpdateOneWithoutTeamsNestedInput
+  platformBilling?: Prisma.PlatformBillingUpdateOneWithoutTeamNestedInput
+  attributes?: Prisma.AttributeUpdateManyWithoutTeamNestedInput
+  delegationCredentials?: Prisma.DelegationCredentialUpdateManyWithoutOrganizationNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTeamNestedInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutTeamNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
+  bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
+  internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
+  creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
+  organizationOnboarding?: Prisma.OrganizationOnboardingUpdateOneWithoutOrganizationNestedInput
+  managedOrganization?: Prisma.ManagedOrganizationUpdateOneWithoutManagedOrganizationNestedInput
+  managedOrganizations?: Prisma.ManagedOrganizationUpdateManyWithoutManagerOrganizationNestedInput
+  filterSegments?: Prisma.FilterSegmentUpdateManyWithoutTeamNestedInput
+  teamBilling?: Prisma.TeamBillingUpdateOneWithoutTeamNestedInput
+  organizationBilling?: Prisma.OrganizationBillingUpdateOneWithoutTeamNestedInput
+  integrationAttributeSyncs?: Prisma.IntegrationAttributeSyncUpdateManyWithoutOrganizationNestedInput
+  seatChangeLogs?: Prisma.SeatChangeLogUpdateManyWithoutTeamNestedInput
+  monthlyProrations?: Prisma.MonthlyProrationUpdateManyWithoutTeamNestedInput
+}
+
+export type TeamUncheckedUpdateWithoutActiveOrgWorkflowsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calVideoLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appIconLogo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hideBranding?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideTeamProfileLink?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPrivate?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideBookATeamMember?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  theme?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rrResetInterval?: Prisma.NullableEnumRRResetIntervalFieldUpdateOperationsInput | $Enums.RRResetInterval | null
+  rrTimestampBasis?: Prisma.EnumRRTimestampBasisFieldUpdateOperationsInput | $Enums.RRTimestampBasis
+  brandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  darkBrandColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  timeFormat?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStart?: Prisma.StringFieldUpdateOperationsInput | string
+  isOrganization?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pendingPayment?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isPlatform?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdByOAuthClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  smsLockState?: Prisma.EnumSMSLockStateFieldUpdateOperationsInput | $Enums.SMSLockState
+  smsLockReviewedByAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bookingLimits?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  includeManagedEventsInLimits?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoOptInFeatures?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  members?: Prisma.MembershipUncheckedUpdateManyWithoutTeamNestedInput
+  eventTypes?: Prisma.EventTypeUncheckedUpdateManyWithoutTeamNestedInput
+  verifiedNumbers?: Prisma.VerifiedNumberUncheckedUpdateManyWithoutTeamNestedInput
+  verifiedEmails?: Prisma.VerifiedEmailUncheckedUpdateManyWithoutTeamNestedInput
+  children?: Prisma.TeamUncheckedUpdateManyWithoutParentNestedInput
+  orgUsers?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  inviteTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutTeamNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutTeamNestedInput
+  apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutTeamNestedInput
+  credentials?: Prisma.CredentialUncheckedUpdateManyWithoutTeamNestedInput
+  accessCodes?: Prisma.AccessCodeUncheckedUpdateManyWithoutTeamNestedInput
+  organizationSettings?: Prisma.OrganizationSettingsUncheckedUpdateOneWithoutOrganizationNestedInput
+  instantMeetingTokens?: Prisma.InstantMeetingTokenUncheckedUpdateManyWithoutTeamNestedInput
+  orgProfiles?: Prisma.ProfileUncheckedUpdateManyWithoutOrganizationNestedInput
+  dsyncTeamGroupMapping?: Prisma.DSyncTeamGroupMappingUncheckedUpdateManyWithoutTeamNestedInput
+  platformOAuthClient?: Prisma.PlatformOAuthClientUncheckedUpdateManyWithoutOrganizationNestedInput
+  platformBilling?: Prisma.PlatformBillingUncheckedUpdateOneWithoutTeamNestedInput
+  attributes?: Prisma.AttributeUncheckedUpdateManyWithoutTeamNestedInput
+  delegationCredentials?: Prisma.DelegationCredentialUncheckedUpdateManyWithoutOrganizationNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTeamNestedInput
+  calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutTeamNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
+  bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
+  wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -5120,6 +5860,8 @@ export type TeamCreateWithoutWebhooksInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -5191,6 +5933,8 @@ export type TeamUncheckedCreateWithoutWebhooksInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -5277,6 +6021,8 @@ export type TeamUpdateWithoutWebhooksInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -5348,6 +6094,8 @@ export type TeamUncheckedUpdateWithoutWebhooksInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -5418,6 +6166,8 @@ export type TeamCreateWithoutApiKeysInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -5489,6 +6239,8 @@ export type TeamUncheckedCreateWithoutApiKeysInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -5575,6 +6327,8 @@ export type TeamUpdateWithoutApiKeysInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -5646,6 +6400,8 @@ export type TeamUncheckedUpdateWithoutApiKeysInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -5716,6 +6472,8 @@ export type TeamCreateWithoutVerifiedNumbersInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -5787,6 +6545,8 @@ export type TeamUncheckedCreateWithoutVerifiedNumbersInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -5873,6 +6633,8 @@ export type TeamUpdateWithoutVerifiedNumbersInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -5944,6 +6706,8 @@ export type TeamUncheckedUpdateWithoutVerifiedNumbersInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -6014,6 +6778,8 @@ export type TeamCreateWithoutVerifiedEmailsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -6085,6 +6851,8 @@ export type TeamUncheckedCreateWithoutVerifiedEmailsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -6171,6 +6939,8 @@ export type TeamUpdateWithoutVerifiedEmailsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -6242,6 +7012,8 @@ export type TeamUncheckedUpdateWithoutVerifiedEmailsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -6313,6 +7085,8 @@ export type TeamCreateWithoutFeaturesInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
   organizationOnboarding?: Prisma.OrganizationOnboardingCreateNestedOneWithoutOrganizationInput
@@ -6384,6 +7158,8 @@ export type TeamUncheckedCreateWithoutFeaturesInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedCreateNestedOneWithoutOrganizationInput
@@ -6470,6 +7246,8 @@ export type TeamUpdateWithoutFeaturesInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUpdateOneWithoutOrganizationNestedInput
@@ -6541,6 +7319,8 @@ export type TeamUncheckedUpdateWithoutFeaturesInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedUpdateOneWithoutOrganizationNestedInput
@@ -6610,6 +7390,8 @@ export type TeamCreateWithoutAccessCodesInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -6681,6 +7463,8 @@ export type TeamUncheckedCreateWithoutAccessCodesInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -6767,6 +7551,8 @@ export type TeamUpdateWithoutAccessCodesInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -6838,6 +7624,8 @@ export type TeamUncheckedUpdateWithoutAccessCodesInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -6908,6 +7696,8 @@ export type TeamCreateWithoutPlatformOAuthClientInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -6979,6 +7769,8 @@ export type TeamUncheckedCreateWithoutPlatformOAuthClientInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -7054,6 +7846,8 @@ export type TeamCreateWithoutCreatedByOAuthClientInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -7125,6 +7919,8 @@ export type TeamUncheckedCreateWithoutCreatedByOAuthClientInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -7216,6 +8012,8 @@ export type TeamUpdateWithoutPlatformOAuthClientInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -7287,6 +8085,8 @@ export type TeamUncheckedUpdateWithoutPlatformOAuthClientInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -7373,6 +8173,8 @@ export type TeamCreateWithoutDsyncTeamGroupMappingInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -7444,6 +8246,8 @@ export type TeamUncheckedCreateWithoutDsyncTeamGroupMappingInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -7530,6 +8334,8 @@ export type TeamUpdateWithoutDsyncTeamGroupMappingInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -7601,6 +8407,8 @@ export type TeamUncheckedUpdateWithoutDsyncTeamGroupMappingInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -7672,6 +8480,8 @@ export type TeamCreateWithoutManagedOrganizationInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -7743,6 +8553,8 @@ export type TeamUncheckedCreateWithoutManagedOrganizationInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -7818,6 +8630,8 @@ export type TeamCreateWithoutManagedOrganizationsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -7889,6 +8703,8 @@ export type TeamUncheckedCreateWithoutManagedOrganizationsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -7975,6 +8791,8 @@ export type TeamUpdateWithoutManagedOrganizationInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -8046,6 +8864,8 @@ export type TeamUncheckedUpdateWithoutManagedOrganizationInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -8127,6 +8947,8 @@ export type TeamUpdateWithoutManagedOrganizationsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -8198,6 +9020,8 @@ export type TeamUncheckedUpdateWithoutManagedOrganizationsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -8267,6 +9091,8 @@ export type TeamCreateWithoutPlatformBillingInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -8338,6 +9164,8 @@ export type TeamUncheckedCreateWithoutPlatformBillingInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -8424,6 +9252,8 @@ export type TeamUpdateWithoutPlatformBillingInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -8495,6 +9325,8 @@ export type TeamUncheckedUpdateWithoutPlatformBillingInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -8565,6 +9397,8 @@ export type TeamCreateWithoutAttributesInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -8636,6 +9470,8 @@ export type TeamUncheckedCreateWithoutAttributesInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -8722,6 +9558,8 @@ export type TeamUpdateWithoutAttributesInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -8793,6 +9631,8 @@ export type TeamUncheckedUpdateWithoutAttributesInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -8863,6 +9703,8 @@ export type TeamCreateWithoutDelegationCredentialsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -8934,6 +9776,8 @@ export type TeamUncheckedCreateWithoutDelegationCredentialsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -9020,6 +9864,8 @@ export type TeamUpdateWithoutDelegationCredentialsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -9091,6 +9937,8 @@ export type TeamUncheckedUpdateWithoutDelegationCredentialsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -9161,6 +10009,8 @@ export type TeamCreateWithoutBookingReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutTeamInput
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -9232,6 +10082,8 @@ export type TeamUncheckedCreateWithoutBookingReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutTeamInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -9318,6 +10170,8 @@ export type TeamUpdateWithoutBookingReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutTeamNestedInput
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -9389,6 +10243,8 @@ export type TeamUncheckedUpdateWithoutBookingReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutTeamNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -9459,6 +10315,8 @@ export type TeamCreateWithoutWrongAssignmentReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutTeamInput
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -9530,6 +10388,8 @@ export type TeamUncheckedCreateWithoutWrongAssignmentReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutTeamInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -9616,6 +10476,8 @@ export type TeamUpdateWithoutWrongAssignmentReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutTeamNestedInput
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -9687,6 +10549,8 @@ export type TeamUncheckedUpdateWithoutWrongAssignmentReportsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutTeamNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -9758,6 +10622,8 @@ export type TeamCreateWithoutOrganizationOnboardingInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -9829,6 +10695,8 @@ export type TeamUncheckedCreateWithoutOrganizationOnboardingInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -9915,6 +10783,8 @@ export type TeamUpdateWithoutOrganizationOnboardingInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -9986,6 +10856,8 @@ export type TeamUncheckedUpdateWithoutOrganizationOnboardingInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -10056,6 +10928,8 @@ export type TeamCreateWithoutInternalNotePresetsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
   organizationOnboarding?: Prisma.OrganizationOnboardingCreateNestedOneWithoutOrganizationInput
@@ -10127,6 +11001,8 @@ export type TeamUncheckedCreateWithoutInternalNotePresetsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedCreateNestedOneWithoutOrganizationInput
@@ -10213,6 +11089,8 @@ export type TeamUpdateWithoutInternalNotePresetsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUpdateOneWithoutOrganizationNestedInput
@@ -10284,6 +11162,8 @@ export type TeamUncheckedUpdateWithoutInternalNotePresetsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
   organizationOnboarding?: Prisma.OrganizationOnboardingUncheckedUpdateOneWithoutOrganizationNestedInput
@@ -10354,6 +11234,8 @@ export type TeamCreateWithoutFilterSegmentsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -10425,6 +11307,8 @@ export type TeamUncheckedCreateWithoutFilterSegmentsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -10511,6 +11395,8 @@ export type TeamUpdateWithoutFilterSegmentsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -10582,6 +11468,8 @@ export type TeamUncheckedUpdateWithoutFilterSegmentsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -10651,6 +11539,8 @@ export type TeamCreateWithoutRolesInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -10722,6 +11612,8 @@ export type TeamUncheckedCreateWithoutRolesInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -10808,6 +11700,8 @@ export type TeamUpdateWithoutRolesInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -10879,6 +11773,8 @@ export type TeamUncheckedUpdateWithoutRolesInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -10949,6 +11845,8 @@ export type TeamCreateWithoutAgentsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -11020,6 +11918,8 @@ export type TeamUncheckedCreateWithoutAgentsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -11106,6 +12006,8 @@ export type TeamUpdateWithoutAgentsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -11177,6 +12079,8 @@ export type TeamUncheckedUpdateWithoutAgentsInput = {
   calAiPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -11247,6 +12151,8 @@ export type TeamCreateWithoutCalAiPhoneNumbersInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -11318,6 +12224,8 @@ export type TeamUncheckedCreateWithoutCalAiPhoneNumbersInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -11404,6 +12312,8 @@ export type TeamUpdateWithoutCalAiPhoneNumbersInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -11475,6 +12385,8 @@ export type TeamUncheckedUpdateWithoutCalAiPhoneNumbersInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -11546,6 +12458,8 @@ export type TeamCreateWithoutTeamBillingInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -11617,6 +12531,8 @@ export type TeamUncheckedCreateWithoutTeamBillingInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -11703,6 +12619,8 @@ export type TeamUpdateWithoutTeamBillingInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -11774,6 +12692,8 @@ export type TeamUncheckedUpdateWithoutTeamBillingInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -11844,6 +12764,8 @@ export type TeamCreateWithoutOrganizationBillingInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -11915,6 +12837,8 @@ export type TeamUncheckedCreateWithoutOrganizationBillingInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -12001,6 +12925,8 @@ export type TeamUpdateWithoutOrganizationBillingInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -12072,6 +12998,8 @@ export type TeamUncheckedUpdateWithoutOrganizationBillingInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -12142,6 +13070,8 @@ export type TeamCreateWithoutSeatChangeLogsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -12213,6 +13143,8 @@ export type TeamUncheckedCreateWithoutSeatChangeLogsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -12299,6 +13231,8 @@ export type TeamUpdateWithoutSeatChangeLogsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -12370,6 +13304,8 @@ export type TeamUncheckedUpdateWithoutSeatChangeLogsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -12440,6 +13376,8 @@ export type TeamCreateWithoutMonthlyProrationsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -12511,6 +13449,8 @@ export type TeamUncheckedCreateWithoutMonthlyProrationsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -12597,6 +13537,8 @@ export type TeamUpdateWithoutMonthlyProrationsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -12668,6 +13610,8 @@ export type TeamUncheckedUpdateWithoutMonthlyProrationsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -12738,6 +13682,8 @@ export type TeamCreateWithoutIntegrationAttributeSyncsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceCreateNestedOneWithoutTeamInput
@@ -12809,6 +13755,8 @@ export type TeamUncheckedCreateWithoutIntegrationAttributeSyncsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutTeamInput
   bookingReports?: Prisma.BookingReportUncheckedCreateNestedManyWithoutOrganizationInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedCreateNestedManyWithoutTeamInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutTeamInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedCreateNestedManyWithoutTeamInput
   features?: Prisma.TeamFeaturesUncheckedCreateNestedManyWithoutTeamInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedCreateNestedManyWithoutTeamInput
   creditBalance?: Prisma.CreditBalanceUncheckedCreateNestedOneWithoutTeamInput
@@ -12895,6 +13843,8 @@ export type TeamUpdateWithoutIntegrationAttributeSyncsInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -12966,6 +13916,8 @@ export type TeamUncheckedUpdateWithoutIntegrationAttributeSyncsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -13070,6 +14022,8 @@ export type TeamUpdateWithoutParentInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -13141,6 +14095,8 @@ export type TeamUncheckedUpdateWithoutParentInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -13281,6 +14237,8 @@ export type TeamUpdateWithoutCreatedByOAuthClientInput = {
   agents?: Prisma.AgentUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUpdateOneWithoutTeamNestedInput
@@ -13352,6 +14310,8 @@ export type TeamUncheckedUpdateWithoutCreatedByOAuthClientInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutTeamNestedInput
   bookingReports?: Prisma.BookingReportUncheckedUpdateManyWithoutOrganizationNestedInput
   wrongAssignmentReports?: Prisma.WrongAssignmentReportUncheckedUpdateManyWithoutTeamNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutTeamNestedInput
+  activeOrgWorkflows?: Prisma.WorkflowsOnTeamsUncheckedUpdateManyWithoutTeamNestedInput
   features?: Prisma.TeamFeaturesUncheckedUpdateManyWithoutTeamNestedInput
   internalNotePresets?: Prisma.InternalNotePresetUncheckedUpdateManyWithoutTeamNestedInput
   creditBalance?: Prisma.CreditBalanceUncheckedUpdateOneWithoutTeamNestedInput
@@ -13429,6 +14389,8 @@ export type TeamCountOutputType = {
   agents: number
   bookingReports: number
   wrongAssignmentReports: number
+  workflows: number
+  activeOrgWorkflows: number
   features: number
   internalNotePresets: number
   managedOrganizations: number
@@ -13461,6 +14423,8 @@ export type TeamCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   agents?: boolean | TeamCountOutputTypeCountAgentsArgs
   bookingReports?: boolean | TeamCountOutputTypeCountBookingReportsArgs
   wrongAssignmentReports?: boolean | TeamCountOutputTypeCountWrongAssignmentReportsArgs
+  workflows?: boolean | TeamCountOutputTypeCountWorkflowsArgs
+  activeOrgWorkflows?: boolean | TeamCountOutputTypeCountActiveOrgWorkflowsArgs
   features?: boolean | TeamCountOutputTypeCountFeaturesArgs
   internalNotePresets?: boolean | TeamCountOutputTypeCountInternalNotePresetsArgs
   managedOrganizations?: boolean | TeamCountOutputTypeCountManagedOrganizationsArgs
@@ -13637,6 +14601,20 @@ export type TeamCountOutputTypeCountWrongAssignmentReportsArgs<ExtArgs extends r
 /**
  * TeamCountOutputType without action
  */
+export type TeamCountOutputTypeCountWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WorkflowWhereInput
+}
+
+/**
+ * TeamCountOutputType without action
+ */
+export type TeamCountOutputTypeCountActiveOrgWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WorkflowsOnTeamsWhereInput
+}
+
+/**
+ * TeamCountOutputType without action
+ */
 export type TeamCountOutputTypeCountFeaturesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TeamFeaturesWhereInput
 }
@@ -13744,6 +14722,8 @@ export type TeamSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   agents?: boolean | Prisma.Team$agentsArgs<ExtArgs>
   bookingReports?: boolean | Prisma.Team$bookingReportsArgs<ExtArgs>
   wrongAssignmentReports?: boolean | Prisma.Team$wrongAssignmentReportsArgs<ExtArgs>
+  workflows?: boolean | Prisma.Team$workflowsArgs<ExtArgs>
+  activeOrgWorkflows?: boolean | Prisma.Team$activeOrgWorkflowsArgs<ExtArgs>
   features?: boolean | Prisma.Team$featuresArgs<ExtArgs>
   internalNotePresets?: boolean | Prisma.Team$internalNotePresetsArgs<ExtArgs>
   creditBalance?: boolean | Prisma.Team$creditBalanceArgs<ExtArgs>
@@ -13899,6 +14879,8 @@ export type TeamInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   agents?: boolean | Prisma.Team$agentsArgs<ExtArgs>
   bookingReports?: boolean | Prisma.Team$bookingReportsArgs<ExtArgs>
   wrongAssignmentReports?: boolean | Prisma.Team$wrongAssignmentReportsArgs<ExtArgs>
+  workflows?: boolean | Prisma.Team$workflowsArgs<ExtArgs>
+  activeOrgWorkflows?: boolean | Prisma.Team$activeOrgWorkflowsArgs<ExtArgs>
   features?: boolean | Prisma.Team$featuresArgs<ExtArgs>
   internalNotePresets?: boolean | Prisma.Team$internalNotePresetsArgs<ExtArgs>
   creditBalance?: boolean | Prisma.Team$creditBalanceArgs<ExtArgs>
@@ -13951,6 +14933,8 @@ export type $TeamPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     agents: Prisma.$AgentPayload<ExtArgs>[]
     bookingReports: Prisma.$BookingReportPayload<ExtArgs>[]
     wrongAssignmentReports: Prisma.$WrongAssignmentReportPayload<ExtArgs>[]
+    workflows: Prisma.$WorkflowPayload<ExtArgs>[]
+    activeOrgWorkflows: Prisma.$WorkflowsOnTeamsPayload<ExtArgs>[]
     features: Prisma.$TeamFeaturesPayload<ExtArgs>[]
     internalNotePresets: Prisma.$InternalNotePresetPayload<ExtArgs>[]
     creditBalance: Prisma.$CreditBalancePayload<ExtArgs> | null
@@ -14430,6 +15414,8 @@ export interface Prisma__TeamClient<T, Null = never, ExtArgs extends runtime.Typ
   agents<T extends Prisma.Team$agentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$agentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   bookingReports<T extends Prisma.Team$bookingReportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$bookingReportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookingReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   wrongAssignmentReports<T extends Prisma.Team$wrongAssignmentReportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$wrongAssignmentReportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WrongAssignmentReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflows<T extends Prisma.Team$workflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$workflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activeOrgWorkflows<T extends Prisma.Team$activeOrgWorkflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$activeOrgWorkflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowsOnTeamsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   features<T extends Prisma.Team$featuresArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$featuresArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TeamFeaturesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   internalNotePresets<T extends Prisma.Team$internalNotePresetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$internalNotePresetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InternalNotePresetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   creditBalance<T extends Prisma.Team$creditBalanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Team$creditBalanceArgs<ExtArgs>>): Prisma.Prisma__CreditBalanceClient<runtime.Types.Result.GetResult<Prisma.$CreditBalancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -15501,6 +16487,54 @@ export type Team$wrongAssignmentReportsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.WrongAssignmentReportScalarFieldEnum | Prisma.WrongAssignmentReportScalarFieldEnum[]
+}
+
+/**
+ * Team.workflows
+ */
+export type Team$workflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Workflow
+   */
+  select?: Prisma.WorkflowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Workflow
+   */
+  omit?: Prisma.WorkflowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowInclude<ExtArgs> | null
+  where?: Prisma.WorkflowWhereInput
+  orderBy?: Prisma.WorkflowOrderByWithRelationInput | Prisma.WorkflowOrderByWithRelationInput[]
+  cursor?: Prisma.WorkflowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WorkflowScalarFieldEnum | Prisma.WorkflowScalarFieldEnum[]
+}
+
+/**
+ * Team.activeOrgWorkflows
+ */
+export type Team$activeOrgWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WorkflowsOnTeams
+   */
+  select?: Prisma.WorkflowsOnTeamsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WorkflowsOnTeams
+   */
+  omit?: Prisma.WorkflowsOnTeamsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowsOnTeamsInclude<ExtArgs> | null
+  where?: Prisma.WorkflowsOnTeamsWhereInput
+  orderBy?: Prisma.WorkflowsOnTeamsOrderByWithRelationInput | Prisma.WorkflowsOnTeamsOrderByWithRelationInput[]
+  cursor?: Prisma.WorkflowsOnTeamsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WorkflowsOnTeamsScalarFieldEnum | Prisma.WorkflowsOnTeamsScalarFieldEnum[]
 }
 
 /**

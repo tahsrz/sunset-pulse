@@ -1,5 +1,5 @@
-import { Agent, createTool } from '@voltagent/core';
 import { groq } from '@ai-sdk/groq';
+import { generateText, stepCountIs, tool } from 'ai';
 import { z } from 'zod';
 import { chooseWorkerForCommand, intelligenceWorkers } from '@/lib/command-center/workerRoster';
 import type { CommandCenterRequest, CommandCenterResponse } from '@/lib/command-center/commandRouter';
@@ -9,7 +9,7 @@ type VoltAgentAdvisorStatus = 'ready' | 'standby' | 'error';
 
 export type VoltAgentCommandAdvisorResult = {
   status: VoltAgentAdvisorStatus;
-  framework: 'voltagent';
+  framework: 'ai-sdk';
   agentId: 'sunset-command-advisor';
   model: string;
   provider: string;
@@ -40,10 +40,9 @@ const providerCredentialEnv: Record<string, string> = {
   xai: 'XAI_API_KEY'
 };
 
-const routeCommandTool = createTool({
-  name: 'route_command',
+const routeCommandTool = tool({
   description: 'Choose the Sunset Pulse Command Center worker that should handle a user request.',
-  parameters: z.object({
+  inputSchema: z.object({
     command: z.string().describe('The raw user command to route.'),
     selectedWorkerId: z.string().nullish().describe('A manually selected worker id, if the operator chose one.')
   }),
@@ -65,10 +64,9 @@ const routeCommandTool = createTool({
   }
 });
 
-const listWorkerLoadoutTool = createTool({
-  name: 'list_worker_loadout',
+const listWorkerLoadoutTool = tool({
   description: 'Return the TAH files, command fit, and operating stats for a Command Center worker.',
-  parameters: z.object({
+  inputSchema: z.object({
     workerId: z.string().describe('The worker id to inspect.')
   }),
   execute: async ({ workerId }) => {
@@ -94,10 +92,9 @@ const listWorkerLoadoutTool = createTool({
   }
 });
 
-const summarizeCommandCenterTool = createTool({
-  name: 'summarize_command_center',
+const summarizeCommandCenterTool = tool({
   description: 'Summarize the available Command Center worker roster for planning and routing.',
-  parameters: z.object({}),
+  inputSchema: z.object({}),
   execute: async () => {
     const slots = intelligenceWorkers.reduce<Record<string, number>>((accumulator, worker) => {
       accumulator[worker.slot] = (accumulator[worker.slot] || 0) + 1;
@@ -113,14 +110,11 @@ const summarizeCommandCenterTool = createTool({
   }
 });
 
-const advisorTools = [
-  routeCommandTool,
-  listWorkerLoadoutTool,
-  summarizeCommandCenterTool
-];
-
-let commandAdvisorAgent: Agent | null = null;
-let commandAdvisorModelKey = '';
+const advisorTools = {
+  route_command: routeCommandTool,
+  list_worker_loadout: listWorkerLoadoutTool,
+  summarize_command_center: summarizeCommandCenterTool
+};
 
 export async function runVoltagentCommandAdvisor(input: {
   request: CommandCenterRequest;
@@ -139,7 +133,7 @@ export async function runVoltagentCommandAdvisor(input: {
     {
       metadata: {
         feature: 'command-center',
-        framework: 'voltagent',
+        framework: 'ai-sdk',
         model,
         provider,
         routeMode: route.routeMode,
@@ -169,23 +163,31 @@ export async function runVoltagentCommandAdvisor(input: {
       }
 
       try {
-        const agent = getCommandAdvisorAgent(model);
-        const result = await agent.generateText(buildAdvisorPrompt(command, input.commandResult), {
-          maxSteps: 4,
+        const result = await generateText({
+          model: resolveModel(model),
+          system: [
+            'You are the AI SDK advisor inside Sunset Pulse.',
+            'Use the typed tools to understand worker routing and TAH loadouts.',
+            'Return a concise operator-facing note with: route, why this worker fits, one risk or missing input, and one next action.',
+            'Do not invent live market facts, legal advice, or private lead details.'
+          ].join(' '),
+          prompt: buildAdvisorPrompt(command, input.commandResult),
+          tools: advisorTools,
+          stopWhen: stepCountIs(4),
           maxOutputTokens: 700,
           temperature: 0.2
         });
 
         annotateLangfuse({
           metadata: {
-            voltagentStatus: 'ready',
-            voltagentToolCount: advisorTools.length
+            advisorStatus: 'ready',
+            advisorToolCount: Object.keys(advisorTools).length
           }
         });
 
         return {
           status: 'ready',
-          framework: 'voltagent',
+          framework: 'ai-sdk',
           agentId: 'sunset-command-advisor',
           model,
           provider,
@@ -198,7 +200,7 @@ export async function runVoltagentCommandAdvisor(input: {
         const message = error instanceof Error ? error.message : 'VoltAgent advisor failed.';
         return {
           status: 'error',
-          framework: 'voltagent',
+          framework: 'ai-sdk',
           agentId: 'sunset-command-advisor',
           model,
           provider,
@@ -215,11 +217,11 @@ export async function runVoltagentCommandAdvisor(input: {
       propagate: {
         metadata: {
           feature: 'command-center',
-          framework: 'voltagent',
+          framework: 'ai-sdk',
           model,
           provider
         },
-        tags: ['command-center', 'voltagent'],
+        tags: ['command-center', 'ai-sdk'],
         traceName: 'voltagent.command-advisor',
         version: process.env.LANGFUSE_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || 'local'
       }
@@ -227,35 +229,12 @@ export async function runVoltagentCommandAdvisor(input: {
   );
 }
 
-function getCommandAdvisorAgent(model: string) {
-  if (!commandAdvisorAgent || commandAdvisorModelKey !== model) {
-    commandAdvisorAgent = new Agent({
-      id: 'sunset-command-advisor',
-      name: 'Sunset Command Advisor',
-      purpose: 'Explain Command Center routing and next steps for Sunset Pulse operators.',
-      instructions: [
-        'You are the VoltAgent advisor inside Sunset Pulse.',
-        'Use the typed tools to understand worker routing and TAH loadouts.',
-        'Return a concise operator-facing note with: route, why this worker fits, one risk or missing input, and one next action.',
-        'Do not invent live market facts, legal advice, or private lead details.'
-      ].join(' '),
-      model: resolveModel(model),
-      tools: advisorTools,
-      maxSteps: 4,
-      markdown: true
-    });
-    commandAdvisorModelKey = model;
-  }
-
-  return commandAdvisorAgent;
-}
-
 function resolveModel(model: string) {
   if (model.startsWith('groq/')) {
     return groq(model.slice('groq/'.length));
   }
 
-  return model;
+  throw new Error(`Unsupported command-advisor model provider: ${model.split('/')[0] || 'unknown'}.`);
 }
 
 function routeForRequest(
@@ -293,7 +272,7 @@ function standbyResult(input: {
 }): VoltAgentCommandAdvisorResult {
   return {
     status: 'standby',
-    framework: 'voltagent',
+    framework: 'ai-sdk',
     agentId: 'sunset-command-advisor',
     model: input.model,
     provider: input.provider,
@@ -335,7 +314,7 @@ function buildAdvisorPrompt(command: string, commandResult?: CommandCenterRespon
 
 function fallbackAdvisorText(route: VoltAgentCommandAdvisorResult['route']) {
   return [
-    `VoltAgent advisor is attached to ${route.workerName} in ${route.routeMode} mode.`,
+    `The command advisor is attached to ${route.workerName} in ${route.routeMode} mode.`,
     `It can inspect route fit and TAH loadout (${route.tahFiles.slice(0, 3).join(', ') || 'none'}).`,
     'Configure a supported provider key to enable model-backed advisor notes.'
   ].join(' ');

@@ -17,6 +17,32 @@ CREATE TABLE IF NOT EXISTS public.saved_searches (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Enforce the same storage bounds used by the offline client. NOT VALID keeps
+-- rollout safe if a legacy row is oversized while still protecting new writes.
+ALTER TABLE public.collections
+  DROP CONSTRAINT IF EXISTS collections_property_id_size_check;
+ALTER TABLE public.collections
+  ADD CONSTRAINT collections_property_id_size_check
+  CHECK (char_length(property_id) BETWEEN 1 AND 200) NOT VALID;
+
+ALTER TABLE public.recent_property_views
+  DROP CONSTRAINT IF EXISTS recent_property_views_property_id_size_check;
+ALTER TABLE public.recent_property_views
+  ADD CONSTRAINT recent_property_views_property_id_size_check
+  CHECK (char_length(property_id) BETWEEN 1 AND 200) NOT VALID;
+
+ALTER TABLE public.saved_searches
+  DROP CONSTRAINT IF EXISTS saved_searches_name_size_check;
+ALTER TABLE public.saved_searches
+  ADD CONSTRAINT saved_searches_name_size_check
+  CHECK (char_length(btrim(name)) BETWEEN 1 AND 120) NOT VALID;
+
+ALTER TABLE public.saved_searches
+  DROP CONSTRAINT IF EXISTS saved_searches_criteria_size_check;
+ALTER TABLE public.saved_searches
+  ADD CONSTRAINT saved_searches_criteria_size_check
+  CHECK (octet_length(criteria::text) <= 16384) NOT VALID;
+
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.recent_property_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_searches ENABLE ROW LEVEL SECURITY;

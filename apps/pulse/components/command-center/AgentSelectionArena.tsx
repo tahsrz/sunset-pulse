@@ -187,7 +187,7 @@ type CommandResponse = {
     };
     voltagent?: {
       status: 'ready' | 'standby' | 'error';
-      framework: 'voltagent';
+      framework: 'ai-sdk';
       agentId: 'sunset-command-advisor';
       model: string;
       provider: string;

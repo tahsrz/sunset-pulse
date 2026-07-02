@@ -23,5 +23,8 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Audit Production Dependencies
+        run: npm run security:audit:prod
+
       - name: Run Unit Tests
         run: npm run test:unit

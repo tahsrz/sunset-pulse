@@ -232,7 +232,7 @@ model EventType {
   profileId Int?
   profile   Profile? @relation(fields: [profileId], references: [id])
 
-  team                               Team?                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team                               Team?                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId                             Int?
   hashedLink                         HashedLink[]
   workflows                          WorkflowsOnEventTypes[]
@@ -241,29 +241,29 @@ model EventType {
   availability                       Availability[]
   webhooks                           Webhook[]
   destinationCalendar                DestinationCalendar?
-  useEventLevelSelectedCalendars     Boolean                @default(false)
+  useEventLevelSelectedCalendars     Boolean                   @default(false)
   eventName                          String?
   customInputs                       EventTypeCustomInput[]
   parentId                           Int?
-  parent                             EventType?             @relation("managed_eventtype", fields: [parentId], references: [id], onDelete: Cascade)
-  children                           EventType[]            @relation("managed_eventtype")
+  parent                             EventType?                @relation("managed_eventtype", fields: [parentId], references: [id], onDelete: Cascade)
+  children                           EventType[]               @relation("managed_eventtype")
   /// @zod.import(["import { eventTypeBookingFields } from '../../zod-utils'"]).custom.use(eventTypeBookingFields)
   bookingFields                      Json?
   timeZone                           String?
-  periodType                         PeriodType             @default(UNLIMITED)
+  periodType                         PeriodType                @default(UNLIMITED)
   /// @zod.import(["import { coerceToDate } from '../../zod-utils'"]).custom.use(coerceToDate)
   periodStartDate                    DateTime?
   /// @zod.import(["import { coerceToDate } from '../../zod-utils'"]).custom.use(coerceToDate)
   periodEndDate                      DateTime?
   periodDays                         Int?
   periodCountCalendarDays            Boolean?
-  lockTimeZoneToggleOnBookingPage    Boolean                @default(false)
+  lockTimeZoneToggleOnBookingPage    Boolean                   @default(false)
   lockedTimeZone                     String?
-  requiresConfirmation               Boolean                @default(false)
-  requiresConfirmationWillBlockSlot  Boolean                @default(false)
-  requiresConfirmationForFreeEmail   Boolean                @default(false)
-  requiresBookerEmailVerification    Boolean                @default(false)
-  canSendCalVideoTranscriptionEmails Boolean                @default(true)
+  requiresConfirmation               Boolean                   @default(false)
+  requiresConfirmationWillBlockSlot  Boolean                   @default(false)
+  requiresConfirmationForFreeEmail   Boolean                   @default(false)
+  requiresBookerEmailVerification    Boolean                   @default(false)
+  canSendCalVideoTranscriptionEmails Boolean                   @default(true)
 
   autoTranslateDescriptionEnabled          Boolean                @default(false)
   autoTranslateInstantMeetingTitleEnabled  Boolean                @default(true)
@@ -1028,28 +1028,28 @@ model Workflow {
 }
 
 model WorkflowStep {
-  id                        Int                        @id @default(autoincrement())
+  id                        Int                       @id @default(autoincrement())
   stepNumber                Int
   action                    WorkflowActions
   workflowId                Int
-  workflow                  Workflow                   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow                  Workflow                  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   sendTo                    String?
   reminderBody              String?
   emailSubject              String?
-  template                  WorkflowTemplates          @default(REMINDER)
+  template                  WorkflowTemplates         @default(REMINDER)
   workflowReminders         WorkflowReminder[]
   numberRequired            Boolean?
   sender                    String?
-  numberVerificationPending Boolean                    @default(true)
-  includeCalendarEvent      Boolean                    @default(false)
-  autoTranslateEnabled      Boolean                    @default(false)
+  numberVerificationPending Boolean                   @default(true)
+  includeCalendarEvent      Boolean                   @default(false)
+  autoTranslateEnabled      Boolean                   @default(false)
   sourceLocale              String?
   translations              WorkflowStepTranslation[]
   verifiedAt                DateTime?
-  agentId                   String?                    @unique
-  agent                     Agent?                     @relation("AgentWorkflowStep", fields: [agentId], references: [id], onDelete: SetNull)
-  inboundAgentId            String?                    @unique
-  inboundAgent              Agent?                     @relation("AgentInboundWorkflowStep", fields: [inboundAgentId], references: [id], onDelete: SetNull)
+  agentId                   String?                   @unique
+  agent                     Agent?                    @relation("AgentWorkflowStep", fields: [agentId], references: [id], onDelete: SetNull)
+  inboundAgentId            String?                   @unique
+  inboundAgent              Agent?                    @relation("AgentInboundWorkflowStep", fields: [inboundAgentId], references: [id], onDelete: SetNull)
 
   @@index([workflowId])
 }

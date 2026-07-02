@@ -148,9 +148,9 @@ export default function DeckListingSignals() {
           <div className="flex flex-col gap-3 sm:items-end">
             <Link
               className="inline-flex items-center justify-center border border-cyan-300/40 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-100 transition hover:border-cyan-200 hover:bg-cyan-300 hover:text-slate-950"
-              href="/spatial-lab"
+              href="/listings"
             >
-              Open Kepler Workbench
+              Browse Listings
             </Link>
             <div className="flex flex-wrap items-center gap-2">
               <Metric icon={<Rows3 size={16} />} label="Rows" value={String(metrics.rows)} />

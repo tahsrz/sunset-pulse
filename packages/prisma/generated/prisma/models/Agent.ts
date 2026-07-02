@@ -272,6 +272,8 @@ export type AgentWhereInput = {
   team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberListRelationFilter
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberListRelationFilter
+  workflowStep?: Prisma.XOR<Prisma.WorkflowStepNullableScalarRelationFilter, Prisma.WorkflowStepWhereInput> | null
+  inboundWorkflowStep?: Prisma.XOR<Prisma.WorkflowStepNullableScalarRelationFilter, Prisma.WorkflowStepWhereInput> | null
 }
 
 export type AgentOrderByWithRelationInput = {
@@ -289,6 +291,8 @@ export type AgentOrderByWithRelationInput = {
   team?: Prisma.TeamOrderByWithRelationInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberOrderByRelationAggregateInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberOrderByRelationAggregateInput
+  workflowStep?: Prisma.WorkflowStepOrderByWithRelationInput
+  inboundWorkflowStep?: Prisma.WorkflowStepOrderByWithRelationInput
 }
 
 export type AgentWhereUniqueInput = Prisma.AtLeast<{
@@ -309,6 +313,8 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<{
   team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberListRelationFilter
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberListRelationFilter
+  workflowStep?: Prisma.XOR<Prisma.WorkflowStepNullableScalarRelationFilter, Prisma.WorkflowStepWhereInput> | null
+  inboundWorkflowStep?: Prisma.XOR<Prisma.WorkflowStepNullableScalarRelationFilter, Prisma.WorkflowStepWhereInput> | null
 }, "id" | "providerAgentId">
 
 export type AgentOrderByWithAggregationInput = {
@@ -358,6 +364,8 @@ export type AgentCreateInput = {
   team?: Prisma.TeamCreateNestedOneWithoutAgentsInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutInboundAgentInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentUncheckedCreateInput = {
@@ -373,6 +381,8 @@ export type AgentUncheckedCreateInput = {
   updatedAt?: Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutInboundAgentInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentUpdateInput = {
@@ -388,6 +398,8 @@ export type AgentUpdateInput = {
   team?: Prisma.TeamUpdateOneWithoutAgentsNestedInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutInboundAgentNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateInput = {
@@ -403,6 +415,8 @@ export type AgentUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutInboundAgentNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentCreateManyInput = {
@@ -450,6 +464,11 @@ export type AgentListRelationFilter = {
 
 export type AgentOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type AgentNullableScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput | null
+  isNot?: Prisma.AgentWhereInput | null
 }
 
 export type AgentCountOrderByAggregateInput = {
@@ -503,11 +522,6 @@ export type AgentSumOrderByAggregateInput = {
   teamId?: Prisma.SortOrder
   inboundEventTypeId?: Prisma.SortOrder
   outboundEventTypeId?: Prisma.SortOrder
-}
-
-export type AgentNullableScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput | null
-  isNot?: Prisma.AgentWhereInput | null
 }
 
 export type AgentCreateNestedManyWithoutUserInput = {
@@ -594,6 +608,38 @@ export type AgentUncheckedUpdateManyWithoutTeamNestedInput = {
   deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
 }
 
+export type AgentCreateNestedOneWithoutWorkflowStepInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutWorkflowStepInput>
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutWorkflowStepInput
+  connect?: Prisma.AgentWhereUniqueInput
+}
+
+export type AgentCreateNestedOneWithoutInboundWorkflowStepInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutInboundWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutInboundWorkflowStepInput>
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutInboundWorkflowStepInput
+  connect?: Prisma.AgentWhereUniqueInput
+}
+
+export type AgentUpdateOneWithoutWorkflowStepNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutWorkflowStepInput>
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutWorkflowStepInput
+  upsert?: Prisma.AgentUpsertWithoutWorkflowStepInput
+  disconnect?: Prisma.AgentWhereInput | boolean
+  delete?: Prisma.AgentWhereInput | boolean
+  connect?: Prisma.AgentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutWorkflowStepInput, Prisma.AgentUpdateWithoutWorkflowStepInput>, Prisma.AgentUncheckedUpdateWithoutWorkflowStepInput>
+}
+
+export type AgentUpdateOneWithoutInboundWorkflowStepNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutInboundWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutInboundWorkflowStepInput>
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutInboundWorkflowStepInput
+  upsert?: Prisma.AgentUpsertWithoutInboundWorkflowStepInput
+  disconnect?: Prisma.AgentWhereInput | boolean
+  delete?: Prisma.AgentWhereInput | boolean
+  connect?: Prisma.AgentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutInboundWorkflowStepInput, Prisma.AgentUpdateWithoutInboundWorkflowStepInput>, Prisma.AgentUncheckedUpdateWithoutInboundWorkflowStepInput>
+}
+
 export type AgentCreateNestedOneWithoutInboundPhoneNumbersInput = {
   create?: Prisma.XOR<Prisma.AgentCreateWithoutInboundPhoneNumbersInput, Prisma.AgentUncheckedCreateWithoutInboundPhoneNumbersInput>
   connectOrCreate?: Prisma.AgentCreateOrConnectWithoutInboundPhoneNumbersInput
@@ -638,6 +684,8 @@ export type AgentCreateWithoutUserInput = {
   team?: Prisma.TeamCreateNestedOneWithoutAgentsInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutInboundAgentInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentUncheckedCreateWithoutUserInput = {
@@ -652,6 +700,8 @@ export type AgentUncheckedCreateWithoutUserInput = {
   updatedAt?: Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutInboundAgentInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentCreateOrConnectWithoutUserInput = {
@@ -708,6 +758,8 @@ export type AgentCreateWithoutTeamInput = {
   user?: Prisma.UserCreateNestedOneWithoutAgentsInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutInboundAgentInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentUncheckedCreateWithoutTeamInput = {
@@ -722,6 +774,8 @@ export type AgentUncheckedCreateWithoutTeamInput = {
   updatedAt?: Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutInboundAgentInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentCreateOrConnectWithoutTeamInput = {
@@ -750,6 +804,166 @@ export type AgentUpdateManyWithWhereWithoutTeamInput = {
   data: Prisma.XOR<Prisma.AgentUpdateManyMutationInput, Prisma.AgentUncheckedUpdateManyWithoutTeamInput>
 }
 
+export type AgentCreateWithoutWorkflowStepInput = {
+  id?: string
+  name: string
+  providerAgentId: string
+  inboundEventTypeId?: number | null
+  outboundEventTypeId?: number | null
+  enabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutAgentsInput
+  team?: Prisma.TeamCreateNestedOneWithoutAgentsInput
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutInboundAgentInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutOutboundAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutInboundAgentInput
+}
+
+export type AgentUncheckedCreateWithoutWorkflowStepInput = {
+  id?: string
+  name: string
+  userId?: number | null
+  teamId?: number | null
+  providerAgentId: string
+  inboundEventTypeId?: number | null
+  outboundEventTypeId?: number | null
+  enabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutInboundAgentInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutOutboundAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutInboundAgentInput
+}
+
+export type AgentCreateOrConnectWithoutWorkflowStepInput = {
+  where: Prisma.AgentWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentCreateWithoutWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutWorkflowStepInput>
+}
+
+export type AgentCreateWithoutInboundWorkflowStepInput = {
+  id?: string
+  name: string
+  providerAgentId: string
+  inboundEventTypeId?: number | null
+  outboundEventTypeId?: number | null
+  enabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutAgentsInput
+  team?: Prisma.TeamCreateNestedOneWithoutAgentsInput
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutInboundAgentInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutAgentInput
+}
+
+export type AgentUncheckedCreateWithoutInboundWorkflowStepInput = {
+  id?: string
+  name: string
+  userId?: number | null
+  teamId?: number | null
+  providerAgentId: string
+  inboundEventTypeId?: number | null
+  outboundEventTypeId?: number | null
+  enabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutInboundAgentInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutAgentInput
+}
+
+export type AgentCreateOrConnectWithoutInboundWorkflowStepInput = {
+  where: Prisma.AgentWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentCreateWithoutInboundWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutInboundWorkflowStepInput>
+}
+
+export type AgentUpsertWithoutWorkflowStepInput = {
+  update: Prisma.XOR<Prisma.AgentUpdateWithoutWorkflowStepInput, Prisma.AgentUncheckedUpdateWithoutWorkflowStepInput>
+  create: Prisma.XOR<Prisma.AgentCreateWithoutWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutWorkflowStepInput>
+  where?: Prisma.AgentWhereInput
+}
+
+export type AgentUpdateToOneWithWhereWithoutWorkflowStepInput = {
+  where?: Prisma.AgentWhereInput
+  data: Prisma.XOR<Prisma.AgentUpdateWithoutWorkflowStepInput, Prisma.AgentUncheckedUpdateWithoutWorkflowStepInput>
+}
+
+export type AgentUpdateWithoutWorkflowStepInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  providerAgentId?: Prisma.StringFieldUpdateOperationsInput | string
+  inboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutAgentsNestedInput
+  team?: Prisma.TeamUpdateOneWithoutAgentsNestedInput
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutInboundAgentNestedInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutOutboundAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUpdateOneWithoutInboundAgentNestedInput
+}
+
+export type AgentUncheckedUpdateWithoutWorkflowStepInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  providerAgentId?: Prisma.StringFieldUpdateOperationsInput | string
+  inboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutInboundAgentNestedInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutOutboundAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutInboundAgentNestedInput
+}
+
+export type AgentUpsertWithoutInboundWorkflowStepInput = {
+  update: Prisma.XOR<Prisma.AgentUpdateWithoutInboundWorkflowStepInput, Prisma.AgentUncheckedUpdateWithoutInboundWorkflowStepInput>
+  create: Prisma.XOR<Prisma.AgentCreateWithoutInboundWorkflowStepInput, Prisma.AgentUncheckedCreateWithoutInboundWorkflowStepInput>
+  where?: Prisma.AgentWhereInput
+}
+
+export type AgentUpdateToOneWithWhereWithoutInboundWorkflowStepInput = {
+  where?: Prisma.AgentWhereInput
+  data: Prisma.XOR<Prisma.AgentUpdateWithoutInboundWorkflowStepInput, Prisma.AgentUncheckedUpdateWithoutInboundWorkflowStepInput>
+}
+
+export type AgentUpdateWithoutInboundWorkflowStepInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  providerAgentId?: Prisma.StringFieldUpdateOperationsInput | string
+  inboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutAgentsNestedInput
+  team?: Prisma.TeamUpdateOneWithoutAgentsNestedInput
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutInboundAgentNestedInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUpdateOneWithoutAgentNestedInput
+}
+
+export type AgentUncheckedUpdateWithoutInboundWorkflowStepInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  providerAgentId?: Prisma.StringFieldUpdateOperationsInput | string
+  inboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outboundEventTypeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutInboundAgentNestedInput
+  outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutAgentNestedInput
+}
+
 export type AgentCreateWithoutInboundPhoneNumbersInput = {
   id?: string
   name: string
@@ -762,6 +976,8 @@ export type AgentCreateWithoutInboundPhoneNumbersInput = {
   user?: Prisma.UserCreateNestedOneWithoutAgentsInput
   team?: Prisma.TeamCreateNestedOneWithoutAgentsInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentUncheckedCreateWithoutInboundPhoneNumbersInput = {
@@ -776,6 +992,8 @@ export type AgentUncheckedCreateWithoutInboundPhoneNumbersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutOutboundAgentInput
+  workflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentCreateOrConnectWithoutInboundPhoneNumbersInput = {
@@ -795,6 +1013,8 @@ export type AgentCreateWithoutOutboundPhoneNumbersInput = {
   user?: Prisma.UserCreateNestedOneWithoutAgentsInput
   team?: Prisma.TeamCreateNestedOneWithoutAgentsInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberCreateNestedManyWithoutInboundAgentInput
+  workflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentUncheckedCreateWithoutOutboundPhoneNumbersInput = {
@@ -809,6 +1029,8 @@ export type AgentUncheckedCreateWithoutOutboundPhoneNumbersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedCreateNestedManyWithoutInboundAgentInput
+  workflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutAgentInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedCreateNestedOneWithoutInboundAgentInput
 }
 
 export type AgentCreateOrConnectWithoutOutboundPhoneNumbersInput = {
@@ -839,6 +1061,8 @@ export type AgentUpdateWithoutInboundPhoneNumbersInput = {
   user?: Prisma.UserUpdateOneWithoutAgentsNestedInput
   team?: Prisma.TeamUpdateOneWithoutAgentsNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateWithoutInboundPhoneNumbersInput = {
@@ -853,6 +1077,8 @@ export type AgentUncheckedUpdateWithoutInboundPhoneNumbersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUpsertWithoutOutboundPhoneNumbersInput = {
@@ -878,6 +1104,8 @@ export type AgentUpdateWithoutOutboundPhoneNumbersInput = {
   user?: Prisma.UserUpdateOneWithoutAgentsNestedInput
   team?: Prisma.TeamUpdateOneWithoutAgentsNestedInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutInboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateWithoutOutboundPhoneNumbersInput = {
@@ -892,6 +1120,8 @@ export type AgentUncheckedUpdateWithoutOutboundPhoneNumbersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutInboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentCreateManyUserInput = {
@@ -918,6 +1148,8 @@ export type AgentUpdateWithoutUserInput = {
   team?: Prisma.TeamUpdateOneWithoutAgentsNestedInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutInboundAgentNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateWithoutUserInput = {
@@ -932,6 +1164,8 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutInboundAgentNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateManyWithoutUserInput = {
@@ -970,6 +1204,8 @@ export type AgentUpdateWithoutTeamInput = {
   user?: Prisma.UserUpdateOneWithoutAgentsNestedInput
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutInboundAgentNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateWithoutTeamInput = {
@@ -984,6 +1220,8 @@ export type AgentUncheckedUpdateWithoutTeamInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   inboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutInboundAgentNestedInput
   outboundPhoneNumbers?: Prisma.CalAiPhoneNumberUncheckedUpdateManyWithoutOutboundAgentNestedInput
+  workflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutAgentNestedInput
+  inboundWorkflowStep?: Prisma.WorkflowStepUncheckedUpdateOneWithoutInboundAgentNestedInput
 }
 
 export type AgentUncheckedUpdateManyWithoutTeamInput = {
@@ -1053,6 +1291,8 @@ export type AgentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   team?: boolean | Prisma.Agent$teamArgs<ExtArgs>
   inboundPhoneNumbers?: boolean | Prisma.Agent$inboundPhoneNumbersArgs<ExtArgs>
   outboundPhoneNumbers?: boolean | Prisma.Agent$outboundPhoneNumbersArgs<ExtArgs>
+  workflowStep?: boolean | Prisma.Agent$workflowStepArgs<ExtArgs>
+  inboundWorkflowStep?: boolean | Prisma.Agent$inboundWorkflowStepArgs<ExtArgs>
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
@@ -1105,6 +1345,8 @@ export type AgentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   team?: boolean | Prisma.Agent$teamArgs<ExtArgs>
   inboundPhoneNumbers?: boolean | Prisma.Agent$inboundPhoneNumbersArgs<ExtArgs>
   outboundPhoneNumbers?: boolean | Prisma.Agent$outboundPhoneNumbersArgs<ExtArgs>
+  workflowStep?: boolean | Prisma.Agent$workflowStepArgs<ExtArgs>
+  inboundWorkflowStep?: boolean | Prisma.Agent$inboundWorkflowStepArgs<ExtArgs>
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AgentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1123,6 +1365,8 @@ export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     team: Prisma.$TeamPayload<ExtArgs> | null
     inboundPhoneNumbers: Prisma.$CalAiPhoneNumberPayload<ExtArgs>[]
     outboundPhoneNumbers: Prisma.$CalAiPhoneNumberPayload<ExtArgs>[]
+    workflowStep: Prisma.$WorkflowStepPayload<ExtArgs> | null
+    inboundWorkflowStep: Prisma.$WorkflowStepPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1533,6 +1777,8 @@ export interface Prisma__AgentClient<T, Null = never, ExtArgs extends runtime.Ty
   team<T extends Prisma.Agent$teamArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$teamArgs<ExtArgs>>): Prisma.Prisma__TeamClient<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   inboundPhoneNumbers<T extends Prisma.Agent$inboundPhoneNumbersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$inboundPhoneNumbersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CalAiPhoneNumberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   outboundPhoneNumbers<T extends Prisma.Agent$outboundPhoneNumbersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$outboundPhoneNumbersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CalAiPhoneNumberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workflowStep<T extends Prisma.Agent$workflowStepArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$workflowStepArgs<ExtArgs>>): Prisma.Prisma__WorkflowStepClient<runtime.Types.Result.GetResult<Prisma.$WorkflowStepPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  inboundWorkflowStep<T extends Prisma.Agent$inboundWorkflowStepArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$inboundWorkflowStepArgs<ExtArgs>>): Prisma.Prisma__WorkflowStepClient<runtime.Types.Result.GetResult<Prisma.$WorkflowStepPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2051,6 +2297,44 @@ export type Agent$outboundPhoneNumbersArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.CalAiPhoneNumberScalarFieldEnum | Prisma.CalAiPhoneNumberScalarFieldEnum[]
+}
+
+/**
+ * Agent.workflowStep
+ */
+export type Agent$workflowStepArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WorkflowStep
+   */
+  select?: Prisma.WorkflowStepSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WorkflowStep
+   */
+  omit?: Prisma.WorkflowStepOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowStepInclude<ExtArgs> | null
+  where?: Prisma.WorkflowStepWhereInput
+}
+
+/**
+ * Agent.inboundWorkflowStep
+ */
+export type Agent$inboundWorkflowStepArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WorkflowStep
+   */
+  select?: Prisma.WorkflowStepSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WorkflowStep
+   */
+  omit?: Prisma.WorkflowStepOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkflowStepInclude<ExtArgs> | null
+  where?: Prisma.WorkflowStepWhereInput
 }
 
 /**

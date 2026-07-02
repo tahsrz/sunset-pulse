@@ -165,6 +165,46 @@ export type Booking = Prisma.BookingModel
  */
 export type Tracking = Prisma.TrackingModel
 /**
+ * Model Workflow
+ * 
+ */
+export type Workflow = Prisma.WorkflowModel
+/**
+ * Model WorkflowStep
+ * 
+ */
+export type WorkflowStep = Prisma.WorkflowStepModel
+/**
+ * Model WorkflowStepTranslation
+ * 
+ */
+export type WorkflowStepTranslation = Prisma.WorkflowStepTranslationModel
+/**
+ * Model WorkflowsOnEventTypes
+ * 
+ */
+export type WorkflowsOnEventTypes = Prisma.WorkflowsOnEventTypesModel
+/**
+ * Model WorkflowsOnTeams
+ * 
+ */
+export type WorkflowsOnTeams = Prisma.WorkflowsOnTeamsModel
+/**
+ * Model WorkflowReminder
+ * 
+ */
+export type WorkflowReminder = Prisma.WorkflowReminderModel
+/**
+ * Model WorkflowOptOutContact
+ * 
+ */
+export type WorkflowOptOutContact = Prisma.WorkflowOptOutContactModel
+/**
+ * Model AIPhoneCallConfiguration
+ * 
+ */
+export type AIPhoneCallConfiguration = Prisma.AIPhoneCallConfigurationModel
+/**
  * Model Schedule
  * 
  */
