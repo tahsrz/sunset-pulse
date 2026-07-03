@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional, getSchemaPath } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsDate, IsOptional, IsArray, IsBoolean, IsInt, IsString, ValidateNested } from "class-validator";
 
@@ -103,7 +103,10 @@ export class ScheduleOutput {
   @ApiProperty({ type: [AvailabilityModel] })
   schedule!: AvailabilityModel[];
 
-  @ApiProperty({ type: [[TimeRange]] })
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { $ref: getSchemaPath(TimeRange) } },
+  })
   availability!: TimeRange[][];
 
   @IsString()

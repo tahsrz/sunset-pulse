@@ -1,4 +1,3 @@
-import { ExecutionContext } from "@nestjs/common";
 import { createParamDecorator } from "@nestjs/common";
 
 import type { Team } from "@calcom/prisma/client";
@@ -6,8 +5,7 @@ import type { Team } from "@calcom/prisma/client";
 export type GetTeamReturnType = Team;
 
 export const GetTeam = createParamDecorator<
-  keyof GetTeamReturnType | (keyof GetTeamReturnType)[],
-  ExecutionContext
+  keyof GetTeamReturnType | (keyof GetTeamReturnType)[]
 >((data, ctx) => {
   const request = ctx.switchToHttp().getRequest();
   const team = request.team as GetTeamReturnType;

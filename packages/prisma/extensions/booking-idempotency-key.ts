@@ -29,7 +29,7 @@ export function bookingIdempotencyKeyExtension() {
             const idempotencyKey = generateIdempotencyKey({
               startTime: args.data.startTime,
               endTime: args.data.endTime,
-              userId: args.data.user?.connect?.id || args.data.userId,
+              userId: args.data.user?.connect?.id ?? args.data.userId ?? undefined,
               reassignedById: args.data.reassignById,
             });
             args.data.idempotencyKey = idempotencyKey;

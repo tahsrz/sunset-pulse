@@ -1,4 +1,3 @@
-import { ExecutionContext } from "@nestjs/common";
 import { createParamDecorator } from "@nestjs/common";
 
 import type { Membership } from "@calcom/prisma/client";
@@ -6,8 +5,7 @@ import type { Membership } from "@calcom/prisma/client";
 export type GetMembershipReturnType = Membership;
 
 export const GetMembership = createParamDecorator<
-  keyof GetMembershipReturnType | (keyof GetMembershipReturnType)[],
-  ExecutionContext
+  keyof GetMembershipReturnType | (keyof GetMembershipReturnType)[]
 >((data, ctx) => {
   const request = ctx.switchToHttp().getRequest();
   const membership = request.membership as GetMembershipReturnType;

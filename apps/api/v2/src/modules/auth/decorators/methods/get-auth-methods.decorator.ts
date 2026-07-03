@@ -1,7 +1,7 @@
 import { AuthMethods } from "@/lib/enums/auth-methods";
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { createParamDecorator } from "@nestjs/common";
 
-export const GetAuthMethod = createParamDecorator<unknown, ExecutionContext>((_data, ctx) => {
+export const GetAuthMethod = createParamDecorator<unknown, AuthMethods>((_data, ctx) => {
   const request = ctx.switchToHttp().getRequest();
   const authMethod = request.authMethod as AuthMethods;
 

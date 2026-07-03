@@ -1,3 +1,4 @@
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { ApiAuthGuardRequest, ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 import { OAuthClientRepository } from "@/modules/oauth-clients/oauth-client.repository";
 import { UsersService } from "@/modules/users/services/users.service";
@@ -18,7 +19,7 @@ export class OAuthClientGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<ApiAuthGuardRequest>();
     const organizationId = this.getOrganizationId(context);
     const user: ApiAuthGuardUser = request.user;
-    const oAuthClientId = request.params.clientId;
+    const oAuthClientId = getStringRouteParam(request.params.clientId);
 
     if (!oAuthClientId) {
       throw new ForbiddenException("OAuthClientGuard - No OAuth client associated with the request.");

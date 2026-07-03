@@ -1,3 +1,4 @@
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 import { OAuthClientRepository } from "@/modules/oauth-clients/oauth-client.repository";
 import { UsersService } from "@/modules/users/services/users.service";
@@ -27,8 +28,8 @@ export class IsOAuthClientWebhookGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { webhook: Webhook; oAuthClient: PlatformOAuthClient }>();
     const user = request.user as ApiAuthGuardUser;
-    const webhookId = request.params.webhookId;
-    const oAuthClientId = request.params.clientId;
+    const webhookId = getStringRouteParam(request.params.webhookId);
+    const oAuthClientId = getStringRouteParam(request.params.clientId);
     const organizationId = this.usersService.getUserMainOrgId(user);
 
     if (!user) {

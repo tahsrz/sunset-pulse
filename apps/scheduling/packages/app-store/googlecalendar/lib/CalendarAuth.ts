@@ -26,6 +26,7 @@ import { getGoogleAppKeys } from "./getGoogleAppKeys";
 
 type DelegatedTo = NonNullable<CredentialForCalendarServiceWithEmail["delegatedTo"]>;
 const log = logger.getSubLogger({ prefix: ["app-store/googlecalendar/lib/CalendarAuth"] });
+type CalendarAuthOption = NonNullable<ConstructorParameters<typeof calendar_v3.Calendar>[0]>["auth"];
 
 class MyGoogleOAuth2Client extends OAuth2Client {
   constructor(client_id: string, client_secret: string, redirect_uri: string) {
@@ -302,7 +303,9 @@ export class CalendarAuth {
     }
 
     return new calendar_v3.Calendar({
-      auth: googleAuthClient,
+      // npm workspaces can materialize duplicate copies of the same Google Auth version.
+      // The classes are runtime-compatible but nominally distinct because they contain private fields.
+      auth: googleAuthClient as unknown as CalendarAuthOption,
     });
   }
 }

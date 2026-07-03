@@ -1,4 +1,5 @@
 import { EventTypesRepository_2024_06_14 } from "@/platform/event-types/event-types_2024_06_14/event-types.repository";
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 import { WebhooksService } from "@/modules/webhooks/services/webhooks.service";
 import {
@@ -25,11 +26,17 @@ export class IsUserEventTypeWebhookGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { webhook: Webhook } & { eventType: EventType }>();
     const user = request.user as ApiAuthGuardUser;
-    const webhookId = request.params.webhookId;
-    const eventTypeId = request.params.eventTypeId;
+    const webhookId = getStringRouteParam(request.params.webhookId);
+    const eventTypeId = getStringRouteParam(request.params.eventTypeId);
 
     if (!user) {
       throw new ForbiddenException("IsUserEventTypeWebhookGuard - No user associated with the request.");
+    }
+
+    if (webhookId && !eventTypeId) {
+      throw new BadRequestException(
+        "IsUserEventTypeWebhookGuard - eventTypeId parameter not specified in the request"
+      );
     }
 
     if (eventTypeId) {
@@ -45,7 +52,7 @@ export class IsUserEventTypeWebhookGuard implements CanActivate {
       request.eventType = eventType;
     }
 
-    if (webhookId) {
+    if (webhookId && eventTypeId) {
       const webhook = await this.webhooksService.getWebhookById(webhookId);
       if (!webhook.eventTypeId) {
         throw new BadRequestException(

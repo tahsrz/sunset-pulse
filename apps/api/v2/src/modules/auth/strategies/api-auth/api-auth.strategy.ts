@@ -1,5 +1,6 @@
 import { sha256Hash, isApiKey, stripApiKey } from "@/lib/api-key";
 import { AuthMethods } from "@/lib/enums/auth-methods";
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { isOriginAllowed } from "@/lib/is-origin-allowed/is-origin-allowed";
 import { BaseStrategy } from "@/lib/passport/strategies/types";
 import { ApiKeysRepository } from "@/modules/api-keys/api-keys-repository";
@@ -56,7 +57,7 @@ export class ApiAuthStrategy extends PassportStrategy(BaseStrategy, "api-auth") 
     try {
       const { params } = request;
       const oAuthClientSecret = request.get(X_CAL_SECRET_KEY);
-      const oAuthClientId = params.clientId || request.get(X_CAL_CLIENT_ID);
+      const oAuthClientId = getStringRouteParam(params.clientId) || request.get(X_CAL_CLIENT_ID);
       const bearerToken = request.get("Authorization")?.replace("Bearer ", "");
 
       const allowedMethods = request.allowedAuthMethods;

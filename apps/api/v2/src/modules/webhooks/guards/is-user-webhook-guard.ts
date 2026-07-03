@@ -1,3 +1,4 @@
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 import { WebhooksService } from "@/modules/webhooks/services/webhooks.service";
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
@@ -12,7 +13,7 @@ export class IsUserWebhookGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request & { webhook: Webhook }>();
     const user = request.user as ApiAuthGuardUser;
-    const webhookId = request.params.webhookId;
+    const webhookId = getStringRouteParam(request.params.webhookId);
 
     if (!user) {
       throw new ForbiddenException("IsUserWebhookGuard - No user associated with the request.");

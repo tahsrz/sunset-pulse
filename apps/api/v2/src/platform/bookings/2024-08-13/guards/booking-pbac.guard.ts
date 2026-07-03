@@ -1,3 +1,4 @@
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 import { PrismaReadService } from "@/modules/prisma/prisma-read.service";
 import {
@@ -29,7 +30,7 @@ export class BookingPbacGuard implements CanActivate {
         Request & { user?: ApiAuthGuardUser; pbacAuthorizedRequest?: boolean }
       >();
     const user = request.user;
-    const bookingUid = request.params.bookingUid;
+    const bookingUid = getStringRouteParam(request.params.bookingUid);
 
     if (!user) {
       throw new UnauthorizedException();

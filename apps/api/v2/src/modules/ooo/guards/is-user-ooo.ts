@@ -1,3 +1,4 @@
+import { getStringRouteParam } from "@/lib/http/route-params";
 import { UserOOORepository } from "@/modules/ooo/repositories/ooo.repository";
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from "@nestjs/common";
 import { Request } from "express";
@@ -8,8 +9,8 @@ export class IsUserOOO implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const oooId: string = request.params.oooId;
-    const userId: string = request.params.userId;
+    const oooId = getStringRouteParam(request.params.oooId);
+    const userId = getStringRouteParam(request.params.userId);
 
     if (!userId) {
       throw new ForbiddenException("No user id found in request params.");

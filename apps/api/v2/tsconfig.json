@@ -34,7 +34,11 @@
       "@calcom/platform-libraries/errors": ["../../../packages/platform/libraries/errors.ts"],
       "@calcom/platform-libraries/calendars": ["../../../packages/platform/libraries/calendars.ts"],
       "@calcom/platform-libraries/tasker": ["../../../packages/platform/libraries/tasker.ts"],
-      "@calcom/platform-libraries/pbac": ["../../../packages/platform/libraries/pbac.ts"]
+      "@calcom/platform-libraries/pbac": ["../../../packages/platform/libraries/pbac.ts"],
+      "kysely/helpers/postgres": ["../../../node_modules/kysely/dist/helpers/postgres.d.ts"],
+      "@lingo.dev/sdk": ["../../../node_modules/@lingo.dev/sdk/dist/index.d.ts"],
+      "react": ["../../../apps/scheduling/web/node_modules/@types/react/index.d.ts"],
+      "react/*": ["../../../apps/scheduling/web/node_modules/@types/react/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

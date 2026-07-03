@@ -1,4 +1,3 @@
-import { ExecutionContext } from "@nestjs/common";
 import { createParamDecorator } from "@nestjs/common";
 
 import type { Webhook } from "@calcom/prisma/client";
@@ -6,8 +5,7 @@ import type { Webhook } from "@calcom/prisma/client";
 export type GetWebhookReturnType = Webhook;
 
 export const GetWebhook = createParamDecorator<
-  keyof GetWebhookReturnType | (keyof GetWebhookReturnType)[],
-  ExecutionContext
+  keyof GetWebhookReturnType | (keyof GetWebhookReturnType)[]
 >((data, ctx) => {
   const request = ctx.switchToHttp().getRequest();
   const webhook = request.webhook as GetWebhookReturnType;

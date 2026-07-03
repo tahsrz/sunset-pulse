@@ -1,11 +1,10 @@
 import { LINGO_DOT_DEV_API_KEY } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
-import type { LocaleCode } from "@lingo.dev/_spec";
-import { ReplexicaEngine as LingoDotDevEngine } from "lingo.dev/sdk";
+import { createClient } from "@lingo.dev/sdk";
 
 export class LingoDotDevService {
   private static engine = LINGO_DOT_DEV_API_KEY
-    ? new LingoDotDevEngine({
+    ? createClient({
         apiKey: LINGO_DOT_DEV_API_KEY,
       })
     : null;
@@ -32,12 +31,13 @@ export class LingoDotDevService {
     }
 
     try {
-      const result = await LingoDotDevService.engine.localizeText(text, {
+      const result = await LingoDotDevService.engine.localize({
         sourceLocale,
         targetLocale,
+        data: { text },
       });
 
-      return result;
+      return typeof result.data.text === "string" ? result.data.text : null;
     } catch (error) {
       logger.error(`LingoDotDevEngine.localizeText() failed for targetLocale: ${targetLocale} - ${error}`);
       return null;
@@ -62,13 +62,16 @@ export class LingoDotDevService {
     }
 
     try {
-      const result = await LingoDotDevService.engine.batchLocalizeText(text, {
-        // TODO: LocaleCode is hacky, use our locale mapping instead.
-        sourceLocale: sourceLocale as LocaleCode,
-        targetLocales: targetLocales as LocaleCode[],
-      });
-
-      return result;
+      return await Promise.all(
+        targetLocales.map(async (targetLocale) => {
+          const result = await LingoDotDevService.engine!.localize({
+            sourceLocale,
+            targetLocale,
+            data: { text },
+          });
+          return typeof result.data.text === "string" ? result.data.text : text;
+        })
+      );
     } catch (error) {
       logger.error(`LingoDotDevEngine.batchLocalizeText() failed: ${error}`);
       return [];
@@ -93,15 +96,13 @@ export class LingoDotDevService {
     }
 
     try {
-      const result = await LingoDotDevService.engine.localizeChat(
-        texts.map((text) => ({ name: "NO_NAME", text: text.trim() })),
-        {
-          sourceLocale,
-          targetLocale,
-        }
-      );
+      const data = Object.fromEntries(texts.map((text, index) => [`text_${index}`, text.trim()]));
+      const result = await LingoDotDevService.engine.localize({ sourceLocale, targetLocale, data });
 
-      return result.map((chat: { name: string; text: string }) => chat.text);
+      return texts.map((text, index) => {
+        const localized = result.data[`text_${index}`];
+        return typeof localized === "string" ? localized : text;
+      });
     } catch (error) {
       logger.error(`LingoDotDevEngine.localizeTexts() failed: ${error}`);
       return texts;
