@@ -126,7 +126,18 @@ export function listingToRow(input: Record<string, any>) {
 }
 
 export function hasUsableRemoteListingImage(input: { images?: unknown; image_url?: unknown }) {
-  return normalizeImages(input.images, input.image_url).some((image) => /^https:\/\//i.test(image));
+  return getUsableRemoteListingImages(input).length > 0;
+}
+
+export function getUsableRemoteListingImages(input: { images?: unknown; image_url?: unknown }) {
+  return normalizeImages(input.images, input.image_url).filter((image) => {
+    try {
+      const url = new URL(image);
+      return url.protocol === 'https:' && Boolean(url.hostname);
+    } catch {
+      return false;
+    }
+  });
 }
 
 function normalizeImages(images: unknown, imageUrl: unknown) {
