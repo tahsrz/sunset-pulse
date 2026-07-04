@@ -21,7 +21,9 @@
     "declarationDir": "types/react",
     "moduleResolution": "node",
     "paths": {
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      "react": ["../../apps/scheduling/web/node_modules/@types/react/index.d.ts"],
+      "react/*": ["../../apps/scheduling/web/node_modules/@types/react/*"]
     }
   }
 }

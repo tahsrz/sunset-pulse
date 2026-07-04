@@ -22,5 +22,5 @@ export const getCachedHasTeamPlan = unstable_cache(
 );
 
 export const revalidateHasTeamPlan = async () => {
-  revalidateTag(CACHE_TAGS.HAS_TEAM_PLAN, "max");
+  revalidateTag(CACHE_TAGS.HAS_TEAM_PLAN);
 };

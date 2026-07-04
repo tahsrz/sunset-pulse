@@ -10,7 +10,11 @@ import {
   getBookerSizeClassNames,
   useBookerResizeAnimation,
 } from "@calcom/features/bookings/Booker/config";
-import framerFeatures from "@calcom/features/bookings/Booker/framer-features";
+import framerFeatures, {
+  AnimatePresence,
+  LazyMotion,
+  m,
+} from "@calcom/features/bookings/Booker/framer-features";
 import type { BookerProps } from "@calcom/features/bookings/Booker/types";
 import { isBookingDryRun } from "@calcom/features/bookings/Booker/utils/isBookingDryRun";
 import { isTimeSlotAvailable } from "@calcom/features/bookings/Booker/utils/isTimeslotAvailable";
@@ -32,7 +36,6 @@ import { UnpublishedEntity } from "@calcom/ui/components/unpublished-entity";
 import TurnstileCaptcha from "@calcom/web/modules/auth/components/Turnstile";
 import { useSkipConfirmStep } from "@calcom/web/modules/bookings/hooks/useSkipConfirmStep";
 import { useNonEmptyScheduleDays } from "@calcom/web/modules/schedules/hooks/useNonEmptyScheduleDays";
-import { AnimatePresence, LazyMotion, m } from "framer-motion";
 import { useEffect, useMemo, useRef } from "react";
 import StickyBox from "react-sticky-box";
 import { Toaster } from "sonner";

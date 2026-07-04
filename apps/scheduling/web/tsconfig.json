@@ -9,9 +9,17 @@
       "@lib/*": ["lib/*"],
       "@server/*": ["server/*"],
       "@prisma/client/*": ["@calcom/prisma/client/*"],
-      "@calcom/testing/*": ["../../packages/testing/src/*"],
+      "@calcom/testing/*": ["../../../packages/testing/src/*"],
       "@calcom/repository/*": ["@calcom/lib/server/repository/*"],
-      "@coss/ui/*": ["../../packages/coss-ui/src/*"]
+      "@coss/ui/*": ["../../packages/coss-ui/src/*"],
+      "react": ["node_modules/@types/react/index.d.ts"],
+      "react/*": ["node_modules/@types/react/*"],
+      "react-dom": ["node_modules/@types/react-dom/index.d.ts"],
+      "react-dom/*": ["node_modules/@types/react-dom/*"],
+      "react-hook-form": ["../../../packages/ui/node_modules/react-hook-form/dist/index.d.ts"],
+      "react-hook-form/*": ["../../../packages/ui/node_modules/react-hook-form/*"],
+      "@lingo.dev/sdk": ["../../../node_modules/@lingo.dev/sdk/dist/index.d.ts"],
+      "kysely/helpers/postgres": ["../../../node_modules/kysely/dist/helpers/postgres.d.ts"]
     },
     "plugins": [
       {
@@ -23,11 +31,11 @@
   },
   "include": [
     /* Find a way to not require this - App files don't belong here. */
-    "../../packages/app-store/routing-forms/env.d.ts",
+    "../../../packages/app-store/routing-forms/env.d.ts",
     "next-env.d.ts",
-    "../../packages/trpc/types/router.d.ts",
-    "../../packages/types/*.d.ts",
-    "../../packages/types/next-auth.d.ts",
+    "../../../packages/trpc/types/**/*.d.ts",
+    "../../../packages/types/*.d.ts",
+    "../../../packages/types/next-auth.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

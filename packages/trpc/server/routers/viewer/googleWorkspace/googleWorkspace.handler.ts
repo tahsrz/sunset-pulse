@@ -7,6 +7,8 @@ import { prisma } from "@calcom/prisma";
 
 import type { TrpcSessionUser } from "../../../types";
 
+type DirectoryAuthOption = NonNullable<ConstructorParameters<typeof admin_directory_v1.Admin>[0]>["auth"];
+
 type CheckForGCalOptions = {
   ctx: {
     user: NonNullable<TrpcSessionUser>;
@@ -57,7 +59,8 @@ export const getUsersFromGWorkspace = async ({ ctx }: CheckForGCalOptions) => {
 
   // Create a new instance of the Admin SDK directory API
   const directory = new admin_directory_v1.Admin({
-    auth: oAuth2Client,
+    // The monorepo can install duplicate copies of Google Auth with identical runtime APIs.
+    auth: oAuth2Client as unknown as DirectoryAuthOption,
   });
   const { data } = await directory.users.list({
     maxResults: 200, // Up this if we ever need to get more than 200 users

@@ -9,7 +9,13 @@
     "../types/window.d.ts",
     "./server"
   ],
-  "exclude": ["**/node_modules/**", "./react", "./server/**/*.test.ts", "./server/**/*.spec.ts"],
+  "exclude": [
+    "**/node_modules/**",
+    "./react",
+    "./server/**/*.test.ts",
+    "./server/**/*.spec.ts",
+    "./server/**/*.integration-test.ts"
+  ],
   "compilerOptions": {
     "isolatedModules": false,
     "noEmit": false,
@@ -21,7 +27,11 @@
     "declarationDir": "types/server",
     "moduleResolution": "node",
     "paths": {
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      "@lingo.dev/sdk": ["../../node_modules/@lingo.dev/sdk/dist/index.d.ts"],
+      "kysely/helpers/postgres": ["../../node_modules/kysely/dist/helpers/postgres.d.ts"],
+      "react": ["../../apps/scheduling/web/node_modules/@types/react/index.d.ts"],
+      "react/*": ["../../apps/scheduling/web/node_modules/@types/react/*"]
     }
   }
 }

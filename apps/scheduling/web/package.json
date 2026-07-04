@@ -18,7 +18,7 @@
     "sentry:release": "NODE_OPTIONS='--max-old-space-size=6144' node scripts/create-sentry-release.js",
     "copy-static": "turbo run copy-app-store-static",
     "copy-app-store-static": "node scripts/copy-app-store-static.js",
-    "build": "next build --webpack && (npm run sentry:release || echo 'Sentry release skipped')",
+    "build": "next build && (npm run sentry:release || echo 'Sentry release skipped')",
     "start": "next start",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -91,6 +91,7 @@
     "classnames": "2.3.2",
     "dompurify": "3.4.11",
     "entities": "4.5.0",
+    "framer-motion": "10.12.8",
     "handlebars": "4.7.9",
     "i18next": "23.2.3",
     "ical.js": "1.5.0",
@@ -146,7 +147,8 @@
     "superjson": "1.9.1",
     "turndown": "7.2.0",
     "uuid": "11.1.1",
-    "zod": "3.25.76"
+    "zod": "3.25.76",
+    "zustand": "4.5.2"
   },
   "devDependencies": {
     "@babel/core": "7.26.10",

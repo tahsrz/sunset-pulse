@@ -22,7 +22,10 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.10",
     "@calcom/tsconfig": "*",
+    "node-ical": "0.26.1",
     "prismock": "1.35.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.16",
+    "vitest-fetch-mock": "0.4.5",
+    "vitest-mock-extended": "4.0.0"
   }
 }
