@@ -13,6 +13,7 @@ vi.mock('@/lib/data/listingRepository', () => ({
 
 import { PulseCache } from '@/utils/security/PulseCache';
 import { GET as advancedSearchGET } from '@/app/api/properties/search/advanced/route';
+import { GET as discoveryGET } from '@/app/api/properties/discover/route';
 import { GET as propertyDetailGET } from '@/app/api/properties/[id]/route';
 import { GET as keplerGET } from '@/app/api/kepler/listings/route';
 
@@ -36,8 +37,10 @@ const listing = {
   images: ['https://example.test/front.jpg'],
   source: 'MLS',
   listing_status: 'Active',
+  last_updated: new Date().toISOString(),
   is_demo: false,
   is_featured: false,
+  display_public: true,
   metadata: { daysOnMarket: 5 },
 };
 
@@ -71,6 +74,22 @@ describe('canonical listing read surfaces', () => {
 
     expect(mockGetListingById).toHaveBeenCalledWith(listing.id);
     expect(body.data).toMatchObject({ id: listing.id, _id: listing.id, images: listing.images });
+  });
+
+  it('exposes image-qualified MLS discovery with pagination metadata', async () => {
+    const response = await discoveryGET(new Request(
+      'http://localhost:3000/api/properties/discover?city=Fort%20Worth&pageSize=10'
+    ));
+    const body = await response.json();
+
+    expect(mockSearchListings).toHaveBeenCalledWith(expect.objectContaining({
+      location: 'Fort Worth',
+      source: 'MLS',
+      status: 'Active',
+    }), { limit: 500, includeLegacy: false });
+    expect(body.data).toHaveLength(1);
+    expect(body.pagination).toMatchObject({ page: 1, pageSize: 10, total: 1 });
+    expect(response.headers.get('X-Cache')).toBe('MISS');
   });
 
   it('builds the spatial dataset from the same repository listing', async () => {
