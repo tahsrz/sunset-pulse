@@ -76,6 +76,7 @@ export default function AnchorNav() {
     { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
     { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
     { href: '/location-guess', label: 'Geo Guess', active: pathname.startsWith('/location-guess'), emphasis: 'orange' },
+    { href: '/play-jamie', label: 'Play Jamie', active: pathname.startsWith('/play-jamie'), emphasis: 'violet' },
     { href: '/retail-clash', label: 'Retail Clash', active: pathname.startsWith('/retail-clash'), emphasis: 'orange' },
   ];
 

@@ -60,7 +60,7 @@ describe('ClientWidgets operator surfaces', () => {
     expect(container).not.toHaveTextContent('jamie-pulse-overlay');
   });
 
-  it.each(['/value-guess', '/location-guess', '/retail-clash'])(
+  it.each(['/value-guess', '/location-guess', '/play-jamie/chess', '/retail-clash'])(
     'keeps floating widgets off the focused game route %s',
     (pathname) => {
       mockState.pathname = pathname;

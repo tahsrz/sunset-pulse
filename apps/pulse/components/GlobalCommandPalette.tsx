@@ -8,6 +8,7 @@ import {
   Bot,
   Building2,
   Command,
+  Gamepad2,
   Home,
   type LucideIcon,
   LogIn,
@@ -214,6 +215,7 @@ function buildActions(routes: CommandPaletteRoute[], isLoggedIn: boolean, loginH
 
 function iconForRoute(href: string) {
   if (href === '/') return Home;
+  if (href.includes('play-jamie')) return Gamepad2;
   if (href.includes('command')) return Sparkles;
   if (href.includes('chat') || href.includes('jamie')) return Bot;
   if (href.includes('cart') || href.includes('grill')) return ShoppingBasket;
