@@ -17,7 +17,7 @@ It is built around a simple thesis: agents should not have to send every workflo
 - Links dense terms and acronyms to hover definitions sourced from local `.tah` cartridges.
 - Shares Command Center context with Jamie so chat answers can use the same private helper layer.
 - Serves image-qualified, fresh MLS inventory through one validated discovery engine shared by Jamie and the public API.
-- Opens a local-first Play Jamie game room with complete legal chess and a responsive falling-block game.
+- Opens a local-first Play Jamie game room with complete legal chess, responsive falling blocks, heads-up Texas Hold'em, and beach volleyball.
 - Traces Command Center graph execution with Langfuse when Langfuse environment variables are configured.
 
 ## Current Release
@@ -35,6 +35,8 @@ Recent local additions:
 - `/api/properties/discover` provides validated filters, map bounds, radius search, sorting, pagination, and cache metadata over the canonical MLS cache.
 - `/play-jamie/chess` adds token-free browser chess with legal move enforcement, promotion, undo, match history, persistent records, and local Jamie commentary.
 - `/play-jamie/tetris` adds a token-free falling-block game with fair piece bags, ghost placement, levels, touch controls, and persistent high scores.
+- `/play-jamie/poker` adds token-free heads-up Texas Hold'em with virtual chips, real hand ranking, lightweight betting, hand logs, and persistent local records.
+- `/play-jamie/volley` adds token-free beach volleyball with local physics, jump timing, Jamie defense, touch controls, and persistent match records.
 - Command Center helper selection now uses a professional arena-style UI with imported ClaudeCraft assets.
 - Command Center routing now runs through a LangGraph-shaped stage graph instead of one flat router function.
 - Langfuse observability traces the Command Center graph and each stage with redacted, structured metadata.
@@ -63,7 +65,7 @@ SunsetPulse/
     pulse/                  Next.js app for Sunset Pulse
       app/command-center/   Agent command center route
       app/jamie-chat/       Maximized assistant-ui Jamie workspace
-      app/play-jamie/       Jamie game room, chess, and Block Drop routes
+      app/play-jamie/       Jamie game room, chess, Block Drop, poker, and volley routes
       app/api/commands/     Command router API
       app/api/agents/       AI agent framework endpoints
       app/api/sqlsync/      SQLSync-ready mutation snapshots
@@ -779,6 +781,8 @@ The Play Jamie room provides local, deterministic games that do not spend model 
 /play-jamie         # game catalog
 /play-jamie/chess   # complete chess match
 /play-jamie/tetris  # responsive falling-block game
+/play-jamie/poker   # heads-up Texas Hold'em table
+/play-jamie/volley  # beach volleyball rally game
 ```
 
 Chess currently includes:
@@ -792,6 +796,10 @@ Chess currently includes:
 The reusable opponent and rules layer lives in `apps/pulse/lib/jamie-games/chess.ts`; the board remains a Sunset Pulse component rather than importing a second UI system.
 
 Block Drop includes seven-piece bag randomization, wall-aware rotation, ghost placement, keyboard and touch controls, progressive levels, local high scores, and deterministic engine tests. Its rules layer lives in `apps/pulse/lib/jamie-games/tetris.ts`.
+
+Texas Hold'em includes a local 52-card deck, virtual-chip antes, check/call/bet/fold actions, Jamie call/fold/bet decisions, real five-card hand evaluation from seven-card Hold'em boards, showdown labels, hand logs, and browser-persisted win/loss/tie records. Its rules layer lives in `apps/pulse/lib/jamie-games/poker.ts`.
+
+Sunset Volley includes local side-view ball physics, jump timing, wall and net collisions, first-to-seven scoring, Jamie positioning AI, touch controls, and browser-persisted match records. Its rules layer lives in `apps/pulse/lib/jamie-games/volley.ts`.
 
 ## Getting Started
 
