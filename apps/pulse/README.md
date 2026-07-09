@@ -224,12 +224,20 @@ After the Supabase migration is applied, use `/admin/hot-list` to:
 - preview accepted/rejected listings before publishing;
 - save the list that powers the homepage curated inventory.
 
+The public `/tour-studio` page renders the saved hot list as an ordered buyer-facing tour plan with listing cards,
+individual map links, and a Google Maps route link for the current stops.
+
 Environment variables remain useful as local/bootstrap fallback values when no saved Supabase hot list exists:
 
 ```bash
-TOUR_HOT_LIST_MLS_IDS=NTREIS-123,NTREIS-456
+TOUR_HOT_LIST_MLS_IDS=21255035,21177832
 TOUR_HOT_LIST_ADDRESSES=100 Sunset Lane, Frisco, TX|200 Lake Road, Dallas, TX
 ```
+
+The checked-in default MLS fallback currently targets two public sale listings:
+
+- `21255035` — 15306 Trails End Dr, Dallas, TX 75248
+- `21177832` — 13656 County Road 238, Clyde, TX 79510
 
 Rules enforced by `lib/data/tourHotList.ts`:
 

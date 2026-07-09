@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockSearchListings, mockGetListingById, mockGetStoredTourHotList } = vi.hoisted(() => ({
+const { mockSearchListings, mockGetListingById, mockGetStoredTourHotList, mockTourHotListConfig } = vi.hoisted(() => ({
   mockSearchListings: vi.fn(),
   mockGetListingById: vi.fn(),
   mockGetStoredTourHotList: vi.fn(),
+  mockTourHotListConfig: {
+    addresses: [] as string[],
+    mlsIds: [] as string[],
+    fallbackLimit: 10,
+  },
 }));
 
 vi.mock('@/lib/data/listingRepository', () => ({
@@ -13,6 +18,10 @@ vi.mock('@/lib/data/listingRepository', () => ({
 
 vi.mock('@/lib/data/tourHotListStore', () => ({
   getStoredTourHotList: mockGetStoredTourHotList,
+}));
+
+vi.mock('@/config/tour_hot_list', () => ({
+  tourHotListConfig: mockTourHotListConfig,
 }));
 
 vi.mock('server-only', () => ({}));
@@ -27,6 +36,9 @@ describe('Tour Studio hot list', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetStoredTourHotList.mockResolvedValue(null);
+    mockTourHotListConfig.addresses = [];
+    mockTourHotListConfig.mlsIds = [];
+    mockTourHotListConfig.fallbackLimit = 10;
     delete process.env.TOUR_HOT_LIST_ADDRESSES;
     delete process.env.TOUR_HOT_LIST_MLS_IDS;
   });
@@ -66,6 +78,7 @@ describe('Tour Studio hot list', () => {
 
   it('uses the saved operator hot list before env/config targets', async () => {
     process.env.TOUR_HOT_LIST_MLS_IDS = 'ENV-MLS';
+    mockTourHotListConfig.mlsIds = ['CONFIG-MLS'];
     mockGetStoredTourHotList.mockResolvedValue({
       id: 'default',
       targets: [{ kind: 'mlsId', value: 'SAVED-MLS' }],
@@ -83,6 +96,7 @@ describe('Tour Studio hot list', () => {
 
     expect(mockGetListingById).toHaveBeenCalledWith('SAVED-MLS');
     expect(mockGetListingById).not.toHaveBeenCalledWith('ENV-MLS');
+    expect(mockGetListingById).not.toHaveBeenCalledWith('CONFIG-MLS');
     expect(result.listings.map((item) => item.id)).toEqual(['saved']);
   });
 
