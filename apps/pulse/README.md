@@ -214,6 +214,38 @@ The application can run with partial configuration for local UI work, but produc
 
 Use `NEXT_PUBLIC_MOCK_MODE=true` when running local tests or development flows that should avoid live data providers.
 
+### Tour Studio hot list
+
+The homepage curated inventory resolves from the canonical MLS-backed listing repository instead of legacy dummy featured data. The production source of truth is the operator-managed `/admin/hot-list` page, backed by `public.tour_hot_lists`.
+
+After the Supabase migration is applied, use `/admin/hot-list` to:
+
+- paste MLS IDs or backend-provided addresses;
+- preview accepted/rejected listings before publishing;
+- save the list that powers the homepage curated inventory.
+
+Environment variables remain useful as local/bootstrap fallback values when no saved Supabase hot list exists:
+
+```bash
+TOUR_HOT_LIST_MLS_IDS=NTREIS-123,NTREIS-456
+TOUR_HOT_LIST_ADDRESSES=100 Sunset Lane, Frisco, TX|200 Lake Road, Dallas, TX
+```
+
+Rules enforced by `lib/data/tourHotList.ts`:
+
+- only `source: "MLS"` listings are returned;
+- listings must be active/coming-soon style statuses;
+- listings must have a secure remote image URL;
+- legacy Mongo/dummy listings are not used for the homepage fallback.
+
+Resolution order:
+
+1. saved Supabase hot list from `/admin/hot-list`;
+2. backend env/config fallback targets;
+3. first active MLS listings with secure remote images.
+
+This keeps the public property grid from rendering image-less dummy inventory.
+
 ## News Signals
 
 Sunset Pulse includes a lightweight news feature used by the home-page hero tabs and the `/api/news` feed.

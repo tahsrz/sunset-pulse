@@ -1,18 +1,11 @@
 import React from 'react';
-import { getProperties } from '@/lib/core/propertyRecon';
 import FeaturedPropertyCard from './FeaturedPropertyCard';
 import { Property } from '@/lib/types';
 import marketingCopy from '@/config/marketing_copy.json';
+import { getTourHotList } from '@/lib/data/tourHotList';
 
 const FeaturedProperties: React.FC = async () => {
-  const propertiesRaw = await getProperties({
-    showFeatured: true,
-  });
-  const properties: Property[] = Array.isArray(propertiesRaw)
-    ? propertiesRaw
-    : Array.isArray((propertiesRaw as any)?.properties)
-      ? (propertiesRaw as any).properties
-      : [];
+  const properties = (await getTourHotList({ limit: 10 })).listings as Property[];
 
   if (properties.length === 0) return null;
 
