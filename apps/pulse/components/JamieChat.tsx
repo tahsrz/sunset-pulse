@@ -49,6 +49,9 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const chatApiRoute = apiRoute || (isWorkspace ? '/api/jamie/chat' : '/api/chat');
   const { user, loading: authLoading } = useAuth();
   const { 
+    agentId,
+    branding,
+    assistantProfile,
     stagedBranding, 
     confirmBranding, 
     cancelStaging, 
@@ -320,6 +323,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           propertyData,
           isDevMode,
           memoryContext,
+          agentId,
         }),
       });
 
@@ -453,7 +457,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   if (!mounted) return null;
 
   if (isMinimized && !isWorkspace) {
-    return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} />;
+    return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} assistantName={assistantProfile.displayName} />;
   }
 
   const dockSideClass = isLefthandMode ? 'left-2 items-start sm:left-0' : 'right-2 items-end sm:right-0';
@@ -487,6 +491,8 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
           isVoiceEnabled={isVoiceEnabled}
           onToggleVoice={() => setVoiceEnabled(!isVoiceEnabled)}
+          assistantName={assistantProfile.displayName}
+          assistantRoleLabel={assistantProfile.roleLabel}
           isWorkspace={isWorkspace}
           onMaximize={() => {
             if (!isWorkspace) router.push('/jamie-chat');
@@ -657,7 +663,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
               <div className="rounded-lg border border-teal-100/20 bg-slate-900 p-5 text-center">
                 <p className="text-sm font-bold text-white">Log in to view MLS listings.</p>
                 <p className="mt-2 text-xs leading-5 text-slate-400">
-                  Matrix IDX search is available to authenticated Sunset Pulse users.
+                  Matrix IDX search is available to authenticated {branding.siteName || 'Sunset Pulse'} users.
                 </p>
                 <Link
                   href="/login?redirect=/idx"
@@ -686,6 +692,8 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           suggestions={suggestions}
           onSelectSuggestion={(q) => { append({ role: 'user', content: q }); setSuggestions([]); }}
           isDevMode={isDevMode}
+          assistantName={assistantProfile.displayName}
+          placeholder={assistantProfile.placeholder}
         />
       </div>
     </div>

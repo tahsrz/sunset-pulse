@@ -37,7 +37,8 @@
     "lead:intel:crawl": "python workers/lead-intel-crawler/crawl4ai_worker.py",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "menu:upsert": "tsx scripts/upsert-menu.ts",
-    "seed": "tsx scripts/universal-seed.ts"
+    "seed": "tsx scripts/universal-seed.ts",
+    "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",

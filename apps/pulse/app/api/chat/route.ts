@@ -3,6 +3,7 @@ import { errorResponse } from '@/lib/core/apiResponse';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { runTensorZeroJamieChat } from '@/lib/tensorzero/jamieBackbone';
+import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,12 +15,15 @@ export async function POST(req: NextRequest) {
     const limitResponse = await applyApiRateLimit(rateLimitToken, 10);
     if (limitResponse) return limitResponse;
 
-    const { messages, propertyData, isDevMode, memoryContext } = await req.json();
+    const body = await req.json();
+    const { messages, propertyData, isDevMode, memoryContext } = body;
+    const agentId = getAgentIdFromInput({ agentId: body.agentId });
     const result = await runTensorZeroJamieChat({
       messages,
       propertyData,
       memoryContext,
       isDevMode,
+      agentId,
       isMock: process.env.NEXT_PUBLIC_MOCK_MODE === 'true',
     });
 

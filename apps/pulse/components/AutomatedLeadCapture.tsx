@@ -1,13 +1,16 @@
 'use client';
 import { useState } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaBolt } from 'react-icons/fa';
+import { useTheme } from '@/context/ThemeProvider';
 
 const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
+  const { agentId, agentProfile, integrationProfile } = useTheme();
+  const agentLabel = [agentProfile.displayName, agentProfile.brokerageName].filter(Boolean).join(' | ');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    message: 'I would like more information about this property. Tahsin Reza | Lion Drive Realty.',
+    message: `I would like more information about this property. ${agentLabel}.`,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -28,7 +31,8 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           ...formData,
           property: propertyId,
           source: 'Automated Form',
-          agent_email: 'tahsin.reza817@gmail.com',
+          agent_email: integrationProfile.leadEmail || agentProfile.email,
+          agent_id: agentId,
           // Simulated behavioral data for the Pulse Scoring Engine
           views: 5,
           chatMinutes: 2,
@@ -54,7 +58,9 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
           <FaBolt className='text-white text-2xl' />
         </div>
         <h3 className='text-xl font-black text-slate-900 uppercase tracking-tighter'>Inquiry Received</h3>
-        <p className='text-slate-600 mt-2 font-medium text-sm'>A Lion Drive Realty agent will reach out shortly.</p>
+        <p className='text-slate-600 mt-2 font-medium text-sm'>
+          {agentProfile.brokerageName || 'Your agent'} will reach out shortly.
+        </p>
       </div>
     );
   }

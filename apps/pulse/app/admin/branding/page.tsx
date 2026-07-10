@@ -12,6 +12,7 @@ const FONTS = ['Inter', 'Roboto Mono', 'Space Grotesk', 'Outfit', 'System-ui'];
 
 export default function BrandingConfigPage() {
   const { 
+    agentId,
     branding, 
     stagedBranding, 
     stageBranding, 
@@ -38,7 +39,7 @@ export default function BrandingConfigPage() {
       const { error } = await supabase
         .from('site_config')
         .upsert({
-          agent_id: 'taz-realty-001',
+          agent_id: agentId,
           branding: activeBranding,
           updated_at: new Date().toISOString()
         }, { onConflict: 'agent_id' });

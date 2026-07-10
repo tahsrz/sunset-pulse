@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { sanitizeJamieReply } from '@/lib/ai/jamieResponse';
+import { useTheme } from '@/context/ThemeProvider';
 
 function partText(part: any) {
   if (typeof part?.text === 'string') return part.text;
@@ -12,6 +13,7 @@ function partText(part: any) {
 }
 
 function ToolPart({ part }: { part: any }) {
+  const { assistantProfile, branding } = useTheme();
   const output = part?.output || part?.result;
   const properties = Array.isArray(output?.properties) ? output.properties : [];
 
@@ -19,7 +21,7 @@ function ToolPart({ part }: { part: any }) {
     <div className="mt-3 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100">
-          Jamie action
+          {assistantProfile.toolActionLabel}
         </p>
         <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-[9px] font-bold uppercase text-cyan-100">
           {part?.state || (output ? 'complete' : 'running')}
@@ -36,13 +38,13 @@ function ToolPart({ part }: { part: any }) {
             >
               <p className="truncate text-sm font-black text-white">{property.name}</p>
               <p className="mt-1 text-xs text-slate-300">
-                {[property.city, property.state].filter(Boolean).join(', ') || property.source || 'Sunset Pulse'}
+                {[property.city, property.state].filter(Boolean).join(', ') || property.source || branding.siteName || 'Sunset Pulse'}
               </p>
             </a>
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-cyan-50/70">Jamie completed a private tool step.</p>
+        <p className="mt-3 text-xs text-cyan-50/70">{assistantProfile.displayName} completed a private tool step.</p>
       )}
     </div>
   );
@@ -75,6 +77,7 @@ function MessageParts({ message }: { message: any }) {
 }
 
 export default function JamieVercelConsole() {
+  const { assistantProfile } = useTheme();
   const [input, setInput] = useState('');
   const transport = useMemo(() => new DefaultChatTransport({ api: '/api/jamie/vercel-chat' }), []);
   const { messages, sendMessage, status, error } = useChat({ transport });
@@ -92,9 +95,9 @@ export default function JamieVercelConsole() {
     <section className="w-full rounded-xl border border-white/10 bg-slate-950/80 shadow-2xl">
       <div className="border-b border-white/10 p-4">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Vercel AI SDK Surface</p>
-        <h2 className="mt-2 text-2xl font-black text-white">Jamie Unified Console</h2>
+        <h2 className="mt-2 text-2xl font-black text-white">{assistantProfile.displayName} Unified Console</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-          This route uses the shared Jamie agent tools through AI SDK streaming, so property search can become one bot core across the floating widget and the Vercel-style assistant.
+          This route uses the shared assistant tools through AI SDK streaming, so property search can become one bot core across the floating widget and the Vercel-style assistant.
         </p>
       </div>
 
@@ -116,7 +119,7 @@ export default function JamieVercelConsole() {
           </div>
         ))}
 
-        {isBusy ? <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">Jamie is working...</p> : null}
+        {isBusy ? <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200">{assistantProfile.displayName} is {assistantProfile.statusLabel}...</p> : null}
         {error ? <p className="rounded border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-100">{error.message}</p> : null}
       </div>
 
@@ -124,7 +127,7 @@ export default function JamieVercelConsole() {
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Ask Jamie to search, compare, or explain..."
+          placeholder={`Ask ${assistantProfile.displayName} to search, compare, or explain...`}
           className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
         />
         <button

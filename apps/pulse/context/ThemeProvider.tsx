@@ -5,6 +5,17 @@ import { useAuth } from '@/context/AuthContext';
 import { ABIDAN_DATA, AbidanCharacter } from '@/constants/abidan';
 import { toast } from 'react-toastify';
 import { supabase } from '@/lib/supabase';
+import {
+  FALLBACK_AGENT_ID,
+  type AgentProfile,
+  type AssistantProfile,
+  type ComplianceProfile,
+  type IntegrationProfile,
+  mergeAgentProfile,
+  mergeAssistantProfile,
+  mergeComplianceProfile,
+  mergeIntegrationProfile,
+} from '@/lib/sites/agentConfig';
 
 interface QuadrantStyle {
   background: string;
@@ -14,6 +25,7 @@ interface QuadrantStyle {
 interface Branding {
   primaryColor: string;
   fontFamily: string;
+  siteName?: string;
   borderRadius: string;
   navBackground?: string;
   mainBackground?: string;
@@ -55,6 +67,14 @@ interface GhostDeckConfig {
 
 interface ThemeContextType {
   agentId: string;
+  agentProfile: AgentProfile;
+  assistantProfile: AssistantProfile;
+  complianceProfile: ComplianceProfile;
+  integrationProfile: IntegrationProfile;
+  setAgentProfile: React.Dispatch<React.SetStateAction<AgentProfile>>;
+  setAssistantProfile: React.Dispatch<React.SetStateAction<AssistantProfile>>;
+  setComplianceProfile: React.Dispatch<React.SetStateAction<ComplianceProfile>>;
+  setIntegrationProfile: React.Dispatch<React.SetStateAction<IntegrationProfile>>;
   branding: Branding;
   setBranding: React.Dispatch<React.SetStateAction<Branding>>;
   stagedBranding: Branding | null;
@@ -112,11 +132,19 @@ export function ThemeProvider({
   children, 
   branding: initialBranding,
   intelligence: initialIntelligence,
-  agentId = 'taz-realty-001'
+  agentProfile: initialAgentProfile,
+  assistantProfile: initialAssistantProfile,
+  complianceProfile: initialComplianceProfile,
+  integrationProfile: initialIntegrationProfile,
+  agentId = FALLBACK_AGENT_ID
 }: { 
   children: ReactNode; 
   branding: Branding;
   intelligence?: IntelligenceConfig;
+  agentProfile?: Partial<AgentProfile>;
+  assistantProfile?: Partial<AssistantProfile>;
+  complianceProfile?: Partial<ComplianceProfile>;
+  integrationProfile?: Partial<IntegrationProfile>;
   agentId?: string;
 }) {
   const { user } = useAuth();
@@ -133,6 +161,11 @@ export function ThemeProvider({
     }
     return base;
   });
+
+  const [agentProfile, setAgentProfile] = useState<AgentProfile>(() => mergeAgentProfile(initialAgentProfile));
+  const [assistantProfile, setAssistantProfile] = useState<AssistantProfile>(() => mergeAssistantProfile(initialAssistantProfile));
+  const [complianceProfile, setComplianceProfile] = useState<ComplianceProfile>(() => mergeComplianceProfile(initialComplianceProfile));
+  const [integrationProfile, setIntegrationProfile] = useState<IntegrationProfile>(() => mergeIntegrationProfile(initialIntegrationProfile));
   
   const [stagedBranding, setStagedBranding] = useState<Branding | null>(null);
   const [isDevMode, setDevModeState] = useState(false);
@@ -233,6 +266,18 @@ export function ThemeProvider({
             grill: { ...defaultIntelligence.grill, ...prev.grill, ...payload.new.intelligence.grill }
           }));
         }
+        if (payload.new.agent_profile) {
+          setAgentProfile(prev => mergeAgentProfile({ ...prev, ...payload.new.agent_profile }));
+        }
+        if (payload.new.assistant_profile) {
+          setAssistantProfile(prev => mergeAssistantProfile({ ...prev, ...payload.new.assistant_profile }));
+        }
+        if (payload.new.compliance_profile) {
+          setComplianceProfile(prev => mergeComplianceProfile({ ...prev, ...payload.new.compliance_profile }));
+        }
+        if (payload.new.integration_profile) {
+          setIntegrationProfile(prev => mergeIntegrationProfile({ ...prev, ...payload.new.integration_profile }));
+        }
       })
       .subscribe();
 
@@ -331,6 +376,14 @@ export function ThemeProvider({
   return (
     <ThemeContext.Provider value={{ 
       agentId,
+      agentProfile,
+      assistantProfile,
+      complianceProfile,
+      integrationProfile,
+      setAgentProfile,
+      setAssistantProfile,
+      setComplianceProfile,
+      setIntegrationProfile,
       branding, 
       setBranding,
       stagedBranding, 

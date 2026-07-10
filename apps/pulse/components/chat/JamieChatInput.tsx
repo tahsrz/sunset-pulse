@@ -13,6 +13,8 @@ interface JamieChatInputProps {
   suggestions: string[];
   onSelectSuggestion: (q: string) => void;
   isDevMode: boolean;
+  assistantName?: string;
+  placeholder?: string;
 }
 
 const VIBES = [
@@ -29,10 +31,12 @@ const JamieChatInput: React.FC<JamieChatInputProps> = ({
   suggestions,
   onSelectSuggestion,
   isDevMode,
+  assistantName = 'Jamie',
+  placeholder,
 }) => {
   return (
     <form onSubmit={handleSubmit} className="p-6 bg-slate-950/50 border-t border-white/5 shrink-0">
-      <JamieSuggestions items={suggestions} onSelect={onSelectSuggestion} />
+      <JamieSuggestions items={suggestions} onSelect={onSelectSuggestion} assistantName={assistantName} />
 
       {isDevMode && (
         <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -53,7 +57,7 @@ const JamieChatInput: React.FC<JamieChatInputProps> = ({
         <input 
           className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-600" 
           value={input} 
-          placeholder="Ask Jamie..." 
+          placeholder={placeholder || `Ask ${assistantName}...`} 
           onChange={handleInputChange} 
           onKeyDown={handleKeyDown}
           autoComplete="off"
