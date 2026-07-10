@@ -18,7 +18,7 @@
     "tah:import-doc": "tsx scripts/import-doc-to-tah.ts",
     "tah:lancedb:index": "tsx scripts/tah-lancedb.ts",
     "tah:lancedb:search": "tsx scripts/tah-lancedb-search.ts",
-    "build": "next build",
+    "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
     "news:publish-local": "tsx scripts/publish-local-news-signals.ts",
