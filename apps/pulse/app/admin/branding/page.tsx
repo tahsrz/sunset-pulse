@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { useTheme } from '@/context/ThemeProvider';
 import { FaPaintBrush, FaSave, FaUndo, FaFont, FaFillDrip, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -52,6 +53,9 @@ export default function BrandingConfigPage() {
   });
   const missingProfileChecks = profileChecks.filter((check) => !check.complete);
   const canPublishProfile = missingProfileChecks.length === 0;
+  const publicSiteUrl = getPublicAgentSiteUrl(agentId);
+  const firstHotListMlsId = integrationProfile.hotListMlsIds?.[0];
+  const publicListingUrl = firstHotListMlsId ? `${publicSiteUrl}/properties/${encodeURIComponent(firstHotListMlsId)}` : null;
 
   const handleUpdate = (updates: any) => {
     stageBranding(updates);
@@ -119,7 +123,7 @@ export default function BrandingConfigPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-mono pb-24">
       <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-end mb-12 border-b border-blue-500/30 pb-6">
+        <header className="flex flex-col justify-between gap-6 mb-12 border-b border-blue-500/30 pb-6 lg:flex-row lg:items-end">
           <div>
             <div className="flex items-center gap-2 text-blue-500 mb-2">
               <FaPaintBrush />
@@ -127,7 +131,31 @@ export default function BrandingConfigPage() {
             </div>
             <h1 className="text-4xl font-black uppercase italic tracking-tighter text-blue-50">Identity Architect</h1>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/admin/agent-leads"
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/70 px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all"
+            >
+              Lead Inbox
+            </Link>
+            <a
+              href={publicSiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/70 px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all"
+            >
+              Preview Site
+            </a>
+            {publicListingUrl ? (
+              <a
+                href={publicListingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/70 px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all"
+              >
+                Preview Listing
+              </a>
+            ) : null}
             {stagedBranding && (
               <button 
                 onClick={cancelStaging}
@@ -442,6 +470,17 @@ function buildProfileChecks({
 
 function isPresent(value: unknown): boolean {
   return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+}
+
+function getPublicAgentSiteUrl(agentId: string) {
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'sunsetpulse.app';
+  const subdomain = getPreviewSubdomain(agentId);
+  return `https://${subdomain}.${rootDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
+}
+
+function getPreviewSubdomain(agentId: string) {
+  if (agentId === 'taz-realty-001') return 'taz';
+  return agentId.replace(/-site$/, '').replace(/_/g, '-');
 }
 
 function ProfileReadinessPanel({ checks }: { checks: ProfileCheckItem[] }) {
