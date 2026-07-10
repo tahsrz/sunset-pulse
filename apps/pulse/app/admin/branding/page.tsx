@@ -17,6 +17,12 @@ import type {
 const PRESET_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0f172a'];
 const FONTS = ['Inter', 'Roboto Mono', 'Space Grotesk', 'Outfit', 'System-ui'];
 
+type ProfileCheckItem = {
+  label: string;
+  detail: string;
+  complete: boolean;
+};
+
 export default function BrandingConfigPage() {
   const { 
     agentId,
@@ -37,6 +43,15 @@ export default function BrandingConfigPage() {
 
   const [saving, setSaving] = useState(false);
   const activeBranding = stagedBranding || branding;
+  const profileChecks = buildProfileChecks({
+    branding: activeBranding,
+    agentProfile,
+    assistantProfile,
+    complianceProfile,
+    integrationProfile,
+  });
+  const missingProfileChecks = profileChecks.filter((check) => !check.complete);
+  const canPublishProfile = missingProfileChecks.length === 0;
 
   const handleUpdate = (updates: any) => {
     stageBranding(updates);
@@ -49,6 +64,11 @@ export default function BrandingConfigPage() {
   };
 
   const saveToSupabase = async () => {
+    if (!canPublishProfile) {
+      toast.error(`Profile is not publish-ready yet: ${missingProfileChecks[0]?.label || 'missing required fields'}.`);
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
@@ -56,6 +76,7 @@ export default function BrandingConfigPage() {
         .upsert({
           agent_id: agentId,
           owner_name: agentProfile.displayName,
+          status: 'active',
           branding: activeBranding,
           agent_profile: agentProfile,
           assistant_profile: assistantProfile,
@@ -117,11 +138,12 @@ export default function BrandingConfigPage() {
             )}
             <button 
               onClick={saveToSupabase}
-              disabled={saving}
+              disabled={saving || !canPublishProfile}
               className="flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+              title={canPublishProfile ? 'Publish this agent profile' : 'Complete the publish checklist before committing public changes'}
             >
               {saving ? <FaCheckCircle className="animate-pulse" /> : <FaSave />}
-              {saving ? 'Transmitting...' : 'Commit to Public'}
+              {saving ? 'Transmitting...' : canPublishProfile ? 'Commit to Public' : 'Complete Checklist'}
             </button>
           </div>
         </header>
@@ -134,6 +156,8 @@ export default function BrandingConfigPage() {
             </p>
           </div>
         )}
+
+        <ProfileReadinessPanel checks={profileChecks} />
 
         <section className="mb-8 rounded-3xl border border-cyan-400/20 bg-cyan-950/20 p-6 shadow-[0_0_40px_rgba(34,211,238,0.08)]">
           <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -352,6 +376,126 @@ export default function BrandingConfigPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function buildProfileChecks({
+  branding,
+  agentProfile,
+  assistantProfile,
+  complianceProfile,
+  integrationProfile,
+}: {
+  branding: { siteName?: string; primaryColor?: string; fontFamily?: string };
+  agentProfile: AgentProfile;
+  assistantProfile: AssistantProfile;
+  complianceProfile: ComplianceProfile;
+  integrationProfile: IntegrationProfile;
+}): ProfileCheckItem[] {
+  const contactRoutes = [agentProfile.email, integrationProfile.leadEmail, agentProfile.phone].filter(isPresent);
+
+  return [
+    {
+      label: 'Public site name',
+      detail: 'Used in the tenant header, page metadata, and public agent-site footer.',
+      complete: isPresent(branding.siteName),
+    },
+    {
+      label: 'Agent identity',
+      detail: 'Agent name and brokerage must be present before this can look like a real agent site.',
+      complete: isPresent(agentProfile.displayName) && isPresent(agentProfile.brokerageName),
+    },
+    {
+      label: 'Local markets',
+      detail: 'At least one market is required for hero copy and local positioning.',
+      complete: Array.isArray(agentProfile.markets) && agentProfile.markets.some(isPresent),
+    },
+    {
+      label: 'Lead contact route',
+      detail: 'Add agent email, lead email, or phone so public CTAs do not dead-end.',
+      complete: contactRoutes.length > 0,
+    },
+    {
+      label: 'Assistant identity',
+      detail: 'Assistant name and placeholder keep Jamie/assistant copy agent-specific.',
+      complete: isPresent(assistantProfile.displayName) && isPresent(assistantProfile.placeholder),
+    },
+    {
+      label: 'MLS configuration',
+      detail: 'Provider plus at least one hot-list MLS ID are required for image-backed featured listings.',
+      complete: isPresent(integrationProfile.mlsProvider) && Boolean(integrationProfile.hotListMlsIds?.length),
+    },
+    {
+      label: 'Compliance copy',
+      detail: 'Jurisdiction, MLS disclaimer, and footer disclaimer must exist before publishing.',
+      complete: isPresent(complianceProfile.jurisdiction)
+        && isPresent(complianceProfile.mlsDisclaimer)
+        && isPresent(complianceProfile.footerDisclaimer),
+    },
+    {
+      label: 'Visual identity',
+      detail: 'Primary color and font family are required for the generated public shell.',
+      complete: isPresent(branding.primaryColor) && isPresent(branding.fontFamily),
+    },
+  ];
+}
+
+function isPresent(value: unknown): boolean {
+  return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+}
+
+function ProfileReadinessPanel({ checks }: { checks: ProfileCheckItem[] }) {
+  const completeCount = checks.filter((check) => check.complete).length;
+  const isReady = completeCount === checks.length;
+
+  return (
+    <section className={`mb-8 rounded-3xl border p-5 ${
+      isReady
+        ? 'border-emerald-400/30 bg-emerald-950/20'
+        : 'border-amber-400/30 bg-amber-950/20'
+    }`}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${isReady ? 'text-emerald-300' : 'text-amber-300'}`}>
+            Publish Readiness
+          </p>
+          <h2 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-white">
+            {isReady ? 'Profile can publish' : `${completeCount}/${checks.length} requirements complete`}
+          </h2>
+          <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-300">
+            This gate keeps unfinished SaaS agent sites from being pushed public with missing contact, compliance, or MLS listing setup.
+          </p>
+        </div>
+        <div className={`rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest ${
+          isReady ? 'bg-emerald-400 text-emerald-950' : 'bg-amber-400 text-amber-950'
+        }`}>
+          {isReady ? 'Ready' : 'Blocked'}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {checks.map((check) => (
+          <div
+            key={check.label}
+            className={`rounded-2xl border p-4 ${
+              check.complete
+                ? 'border-emerald-400/20 bg-emerald-500/10'
+                : 'border-amber-400/20 bg-slate-950/60'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {check.complete ? (
+                <FaCheckCircle className="shrink-0 text-emerald-300" />
+              ) : (
+                <FaExclamationTriangle className="shrink-0 text-amber-300" />
+              )}
+              <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-100">{check.label}</h3>
+            </div>
+            <p className="mt-2 text-[11px] leading-5 text-slate-400">{check.detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
