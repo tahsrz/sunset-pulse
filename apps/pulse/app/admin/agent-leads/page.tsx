@@ -4,6 +4,7 @@ import { ArrowUpRight, Inbox, Mail, MapPin, Phone, ShieldAlert, UserRound } from
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
 
 export const dynamic = 'force-dynamic';
@@ -320,8 +321,7 @@ function normalizeStatusFilter(value: string | undefined): StatusFilter {
 }
 
 function getTenantPreviewUrl(site: string) {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'sunsetpulse.app';
-  return `https://${site}.${rootDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
+  return getPublicAgentSiteUrl({ subdomain: site });
 }
 
 function formatDate(value: string) {

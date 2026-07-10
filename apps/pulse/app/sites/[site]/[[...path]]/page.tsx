@@ -43,6 +43,13 @@ export async function generateMetadata({ params }: TenantPageProps) {
   }
 
   const tenantSite = await getAgentTenantSite(params.site, { limit: 3 });
+  if (!tenantSite.isPublished) {
+    return {
+      title: 'Agent site unavailable | Sunset Pulse',
+      description: 'This agent site is not published yet.',
+    };
+  }
+
   const pathSegments = params.path || [];
 
   if (pathSegments[0] === 'properties' && pathSegments[1]) {
@@ -84,6 +91,10 @@ export default async function TenantSitePage({ params }: TenantPageProps) {
   }
 
   const tenantSite = await getAgentTenantSite(params.site, { limit: 6 });
+  if (!tenantSite.isPublished) {
+    notFound();
+  }
+
   const pathSegments = params.path || [];
   const sections = new Set(
     tenantSite.sections

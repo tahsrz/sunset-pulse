@@ -14,6 +14,7 @@ import type {
   ComplianceProfile,
   IntegrationProfile,
 } from '@/lib/sites/agentConfig';
+import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 
 const PRESET_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0f172a'];
 const FONTS = ['Inter', 'Roboto Mono', 'Space Grotesk', 'Outfit', 'System-ui'];
@@ -53,7 +54,7 @@ export default function BrandingConfigPage() {
   });
   const missingProfileChecks = profileChecks.filter((check) => !check.complete);
   const canPublishProfile = missingProfileChecks.length === 0;
-  const publicSiteUrl = getPublicAgentSiteUrl(agentId);
+  const publicSiteUrl = getPublicAgentSiteUrl({ agentId });
   const firstHotListMlsId = integrationProfile.hotListMlsIds?.[0];
   const publicListingUrl = firstHotListMlsId ? `${publicSiteUrl}/properties/${encodeURIComponent(firstHotListMlsId)}` : null;
 
@@ -470,17 +471,6 @@ function buildProfileChecks({
 
 function isPresent(value: unknown): boolean {
   return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
-}
-
-function getPublicAgentSiteUrl(agentId: string) {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'sunsetpulse.app';
-  const subdomain = getPreviewSubdomain(agentId);
-  return `https://${subdomain}.${rootDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
-}
-
-function getPreviewSubdomain(agentId: string) {
-  if (agentId === 'taz-realty-001') return 'taz';
-  return agentId.replace(/-site$/, '').replace(/_/g, '-');
 }
 
 function ProfileReadinessPanel({ checks }: { checks: ProfileCheckItem[] }) {

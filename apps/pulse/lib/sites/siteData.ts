@@ -12,11 +12,15 @@ import {
   mergeComplianceProfile,
   mergeIntegrationProfile,
 } from '@/lib/sites/agentConfig';
+import { getAgentSiteSubdomain, getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import { SiteConfig } from '@/models/SiteConfig';
 
 export type TenantSite = {
   site: string;
   agentId: string;
+  subdomain?: string;
+  customDomain?: string;
+  publicUrl: string;
   siteName: string;
   title: string;
   subtitle: string;
@@ -24,6 +28,8 @@ export type TenantSite = {
   fontFamily: string;
   backgroundImage?: string;
   status: 'active' | 'draft' | 'suspended';
+  isConfigured: boolean;
+  isPublished: boolean;
   ownerName: string;
   agentProfile: AgentProfile;
   assistantProfile: AssistantProfile;
@@ -108,17 +114,26 @@ function normalizeTenantSite(site: string, config: any, fallback: TenantSite): T
   const assistantProfile = mergeAssistantProfile(config.assistant_profile || config.assistantProfile);
   const complianceProfile = mergeComplianceProfile(config.compliance_profile || config.complianceProfile);
   const integrationProfile = mergeIntegrationProfile(config.integration_profile || config.integrationProfile);
+  const agentId = config.agent_id || config.agentId || fallback.agentId;
+  const subdomain = config.subdomain || fallback.subdomain || getAgentSiteSubdomain(agentId, site);
+  const customDomain = config.custom_domain || config.customDomain || undefined;
+  const status = config.status || fallback.status;
 
   return {
-    site,
-    agentId: config.agent_id || config.agentId || fallback.agentId,
+    site: subdomain || site,
+    agentId,
+    subdomain,
+    customDomain,
+    publicUrl: getPublicAgentSiteUrl({ agentId, subdomain, customDomain }),
     siteName: branding.siteName || fallback.siteName,
     title: hero.title || `${agentProfile.displayName}'s local home search`,
     subtitle: hero.subtitle || `Explore listings, request tours, and get market context from ${assistantProfile.displayName}.`,
     primaryColor: branding.primaryColor || fallback.primaryColor,
     fontFamily: branding.fontFamily || fallback.fontFamily,
     backgroundImage: hero.backgroundImage,
-    status: config.status || fallback.status,
+    status,
+    isConfigured: true,
+    isPublished: status === 'active',
     ownerName: config.owner_name || config.ownerName || agentProfile.displayName || fallback.ownerName,
     agentProfile,
     assistantProfile,
@@ -132,16 +147,21 @@ function createFallbackTenantSite(site: string): TenantSite {
   const title = toTitleCase(site);
   const agentProfile = mergeAgentProfile({ displayName: title, brokerageName: `${title} Realty` });
   const assistantProfile = mergeAssistantProfile();
+  const subdomain = getAgentSiteSubdomain(`${site}-site`, site);
 
   return {
-    site,
+    site: subdomain,
     agentId: `${site}-site`,
+    subdomain,
+    publicUrl: getPublicAgentSiteUrl({ agentId: `${site}-site`, subdomain }),
     siteName: `${title} Homes`,
     title: `${title}'s local home search`,
     subtitle: `Listings, neighborhood context, and ${assistantProfile.displayName}-powered market support in one place.`,
     primaryColor: '#22d3ee',
     fontFamily: 'Inter',
-    status: 'active',
+    status: 'draft',
+    isConfigured: false,
+    isPublished: false,
     ownerName: title,
     agentProfile,
     assistantProfile,

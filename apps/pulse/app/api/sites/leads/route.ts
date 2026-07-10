@@ -6,6 +6,7 @@ import { errorResponse, successResponse, validationErrorResponse } from '@/lib/c
 import { supabaseAdmin } from '@/lib/supabase';
 import { notifyAgentSiteLead } from '@/lib/sites/agentLeadNotification';
 import { getTenantSite } from '@/lib/sites/siteData';
+import { getTenantFromHost } from '@/lib/sites/tenantRouting';
 
 const leadSchema = z.object({
   agentId: z.string().trim().min(1).max(80),
@@ -43,11 +44,22 @@ export async function POST(request: Request) {
       return successResponse({ accepted: true });
     }
 
-    const rateLimitResponse = await applyApiRateLimit(`agent-site-lead:${input.agentId}:${ip}`, 5);
+    const tenantFromHost = getTenantFromHost(
+      request.headers.get('x-forwarded-host') ||
+      request.headers.get('host') ||
+      null,
+    );
+    const requestedSite = tenantFromHost || input.site;
+    const tenantSite = await getTenantSite(requestedSite);
+
+    if (!tenantSite.isPublished) {
+      return errorResponse('This agent site is not accepting inquiries yet.', 404);
+    }
+
+    const agentId = tenantSite.agentId || input.agentId;
+    const rateLimitResponse = await applyApiRateLimit(`agent-site-lead:${agentId}:${ip}`, 5);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const tenantSite = await getTenantSite(input.site);
-    const agentId = tenantSite.agentId || input.agentId;
     const siteName = input.siteName || tenantSite.siteName;
     const leadEmail = input.email.toLowerCase();
     const metadata = {
@@ -60,7 +72,7 @@ export async function POST(request: Request) {
       .from('agent_site_leads')
       .insert({
         agent_id: agentId,
-        site: input.site,
+        site: tenantSite.site,
         site_name: siteName,
         listing_id: input.listing?.id || null,
         listing_mls_id: input.listing?.mlsId || null,
@@ -115,7 +127,7 @@ export async function POST(request: Request) {
       accepted: true,
       id: data?.id,
       agentId,
-      site: input.site,
+      site: tenantSite.site,
       notification: notification.status,
     }, 201);
   } catch (error: any) {
