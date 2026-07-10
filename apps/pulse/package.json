@@ -113,6 +113,7 @@
     "telnyx": "^6.83.0",
     "three": "^0.160.0",
     "three-stdlib": "^2.36.1",
+    "typescript": "^6.0.2",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
   },
@@ -135,7 +136,6 @@
     "tailwindcss": "^3.3.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.0",
-    "typescript": "6.0.2",
     "vitest": "^3.2.4"
   }
 }
