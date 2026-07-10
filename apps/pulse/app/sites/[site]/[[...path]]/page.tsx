@@ -9,7 +9,6 @@ import {
   Bot,
   Building2,
   Home,
-  Mail,
   MapPin,
   Phone,
   Ruler,
@@ -20,6 +19,7 @@ import {
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
 import { getListingById } from '@/lib/data/listingRepository';
 import { getAgentTenantSite } from '@/lib/sites/siteData';
+import AgentLeadForm from '@/components/sites/AgentLeadForm';
 
 type TenantPageProps = {
   params: {
@@ -322,9 +322,7 @@ function AgentListingDetail({ site, listing }: { site: Awaited<ReturnType<typeof
     listing.location.state,
     listing.location.zipcode,
   ].filter(Boolean).join(', ');
-  const email = site.integrationProfile.leadEmail || site.agentProfile.email;
-  const subject = encodeURIComponent(`Question about ${listing.name}`);
-  const body = encodeURIComponent(`Hi ${site.agentProfile.displayName},\n\nI would like more information about ${listing.name}${listing.mls_id ? ` (MLS ${listing.mls_id})` : ''}.\n\n`);
+  const defaultMessage = `I would like more information about ${listing.name}${listing.mls_id ? ` (MLS ${listing.mls_id})` : ''}.`;
 
   return (
     <article>
@@ -358,16 +356,6 @@ function AgentListingDetail({ site, listing }: { site: Awaited<ReturnType<typeof
                 <StatBox label="Sqft" value={listing.square_feet ? listing.square_feet.toLocaleString() : '—'} />
               </div>
               <div className="mt-5 grid gap-2">
-                {email ? (
-                  <a
-                    href={`mailto:${email}?subject=${subject}&body=${body}`}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-slate-950 transition hover:-translate-y-0.5"
-                    style={{ backgroundColor: site.primaryColor }}
-                  >
-                    <Mail size={17} />
-                    Ask {site.agentProfile.displayName}
-                  </a>
-                ) : null}
                 {site.agentProfile.phone ? (
                   <a
                     href={`tel:${site.agentProfile.phone}`}
@@ -439,6 +427,23 @@ function AgentListingDetail({ site, listing }: { site: Awaited<ReturnType<typeof
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-xs leading-6 text-slate-400">
               {site.complianceProfile.mlsDisclaimer}
             </div>
+            <div className="mt-5">
+              <AgentLeadForm
+                agentId={site.agentId}
+                site={site.site}
+                siteName={site.siteName}
+                agentName={site.agentProfile.displayName}
+                primaryColor={site.primaryColor}
+                source="agent_site_listing"
+                compact
+                defaultMessage={defaultMessage}
+                listing={{
+                  id: listing.id,
+                  mlsId: listing.mls_id || undefined,
+                  name: listing.name,
+                }}
+              />
+            </div>
           </aside>
         </div>
       </section>
@@ -480,10 +485,6 @@ function AboutAgent({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSi
 }
 
 function ContactAgent({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSite>> }) {
-  const email = site.integrationProfile.leadEmail || site.agentProfile.email;
-  const subject = encodeURIComponent(`Question from ${site.siteName}`);
-  const body = encodeURIComponent(`Hi ${site.agentProfile.displayName},\n\nI would like help with a property search.\n\n`);
-
   return (
     <section id="contact" className="px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 md:grid-cols-[minmax(0,1fr)_360px] md:p-8">
@@ -496,16 +497,16 @@ function ContactAgent({ site }: { site: Awaited<ReturnType<typeof getAgentTenant
         </div>
 
         <div className="grid gap-3">
-          {email ? (
-            <a
-              href={`mailto:${email}?subject=${subject}&body=${body}`}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-slate-950 transition hover:-translate-y-0.5"
-              style={{ backgroundColor: site.primaryColor }}
-            >
-              <Mail size={17} />
-              Email Agent
-            </a>
-          ) : null}
+          <AgentLeadForm
+            agentId={site.agentId}
+            site={site.site}
+            siteName={site.siteName}
+            agentName={site.agentProfile.displayName}
+            primaryColor={site.primaryColor}
+            source="agent_site_contact"
+            compact
+            defaultMessage="I would like help with a property search."
+          />
           {site.agentProfile.phone ? (
             <a
               href={`tel:${site.agentProfile.phone}`}
