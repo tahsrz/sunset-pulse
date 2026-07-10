@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 import { supabaseAdmin } from '@/lib/supabase';
+import { notifyAgentSiteLead } from '@/lib/sites/agentLeadNotification';
 import { getTenantSite } from '@/lib/sites/siteData';
 
 const leadSchema = z.object({
@@ -49,6 +50,11 @@ export async function POST(request: Request) {
     const agentId = tenantSite.agentId || input.agentId;
     const siteName = input.siteName || tenantSite.siteName;
     const leadEmail = input.email.toLowerCase();
+    const metadata = {
+      tenantAgentName: tenantSite.agentProfile.displayName,
+      tenantBrokerage: tenantSite.agentProfile.brokerageName,
+      submittedAt: new Date().toISOString(),
+    };
 
     const { data, error } = await supabaseAdmin
       .from('agent_site_leads')
@@ -66,11 +72,7 @@ export async function POST(request: Request) {
         phone: input.phone || null,
         preferred_contact: input.preferredContact,
         message: input.message,
-        metadata: {
-          tenantAgentName: tenantSite.agentProfile.displayName,
-          tenantBrokerage: tenantSite.agentProfile.brokerageName,
-          submittedAt: new Date().toISOString(),
-        },
+        metadata,
       })
       .select('id')
       .single();
@@ -80,14 +82,55 @@ export async function POST(request: Request) {
       return errorResponse('Failed to save lead inquiry.', 500);
     }
 
+    const notification = await notifyAgentSiteLead({
+      leadId: data.id,
+      site: tenantSite,
+      inquiry: {
+        name: input.name,
+        email: leadEmail,
+        phone: input.phone || null,
+        preferredContact: input.preferredContact,
+        message: input.message,
+        source: input.source,
+        pagePath: input.pagePath || null,
+        listing: input.listing,
+      },
+    });
+
+    if (notification.status !== 'sent') {
+      console.warn('[AGENT_SITE_LEAD_NOTIFICATION]', notification.status, notification.reason);
+    }
+
+    await supabaseAdmin
+      .from('agent_site_leads')
+      .update({
+        metadata: {
+          ...metadata,
+          notification: summarizeNotification(notification),
+        },
+      })
+      .eq('id', data.id);
+
     return successResponse({
       accepted: true,
       id: data?.id,
       agentId,
       site: input.site,
+      notification: notification.status,
     }, 201);
   } catch (error: any) {
     console.error('[AGENT_SITE_LEAD_ROUTE_ERROR]', error);
     return errorResponse('Failed to submit lead inquiry.', 500, error?.message);
   }
+}
+
+function summarizeNotification(notification: Awaited<ReturnType<typeof notifyAgentSiteLead>>) {
+  return {
+    status: notification.status,
+    provider: notification.status === 'sent' ? notification.provider : 'resend',
+    id: notification.status === 'sent' ? notification.id : null,
+    reason: notification.status === 'sent' ? undefined : notification.reason,
+    recipientCount: notification.recipients.length,
+    attemptedAt: new Date().toISOString(),
+  };
 }
