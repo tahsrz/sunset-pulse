@@ -30,6 +30,9 @@
     "test:unit": "npm run test:unit --workspace=apps/pulse",
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
+  "dependencies": {
+    "typescript": "^5.9.3"
+  },
   "devDependencies": {
     "next": "^15.5.16",
     "react": "^19.0.0",

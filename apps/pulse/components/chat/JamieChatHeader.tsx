@@ -11,6 +11,8 @@ interface JamieChatHeaderProps {
   onToggleLefthand: () => void;
   isVoiceEnabled: boolean;
   onToggleVoice: () => void;
+  assistantName?: string;
+  assistantRoleLabel?: string;
   isWorkspace?: boolean;
   onMaximize?: () => void;
 }
@@ -23,6 +25,8 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
   onToggleLefthand,
   isVoiceEnabled,
   onToggleVoice,
+  assistantName = 'Jamie',
+  assistantRoleLabel = 'Analyst Online',
   isWorkspace = false,
   onMaximize
 }) => {
@@ -35,13 +39,13 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
           <FaRobot className="text-lg" />
         </div>
         <div>
-          <h3 className="font-black tracking-[0.1em] uppercase text-sm italic">Jamie</h3>
+          <h3 className="font-black tracking-[0.1em] uppercase text-sm italic">{assistantName}</h3>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </span>
-            <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">Analyst Online</p>
+            <p className="text-[8px] opacity-70 font-bold uppercase tracking-widest">{assistantRoleLabel}</p>
           </div>
         </div>
       </div>
@@ -60,7 +64,7 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
         </button>
         <button 
           onClick={onToggleVoice} 
-          title={isVoiceEnabled ? "Mute Jamie" : "Unmute Jamie"}
+          title={isVoiceEnabled ? `Mute ${assistantName}` : `Unmute ${assistantName}`}
           className="p-2 hover:bg-white/20 rounded-lg transition-colors"
         >
           {isVoiceEnabled ? <FaVolumeUp className="text-[10px]" /> : <FaVolumeMute className="text-[10px] text-white/50" />}
@@ -76,8 +80,8 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
           <button
             type="button"
             onClick={onMaximize}
-            title={isWorkspace ? 'Workspace Mode' : 'Open Jamie Workspace'}
-            aria-label={isWorkspace ? 'Jamie workspace is open' : 'Open Jamie workspace'}
+            title={isWorkspace ? 'Workspace Mode' : `Open ${assistantName} Workspace`}
+            aria-label={isWorkspace ? `${assistantName} workspace is open` : `Open ${assistantName} workspace`}
             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
           >
             {isWorkspace ? <FaCompress className="text-[10px]" /> : <FaExpand className="text-[10px]" />}
@@ -85,8 +89,8 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
         )}
         <button 
           onClick={onMinimize} 
-          aria-label={isWorkspace ? 'Return to docked Jamie' : 'Minimize Chat'}
-          title={isWorkspace ? 'Return to docked Jamie' : 'Minimize Chat'}
+          aria-label={isWorkspace ? `Return to docked ${assistantName}` : 'Minimize Chat'}
+          title={isWorkspace ? `Return to docked ${assistantName}` : 'Minimize Chat'}
           className="p-2 hover:bg-white/20 rounded-lg transition-colors"
         >
           <FaMinus className="text-xs" />

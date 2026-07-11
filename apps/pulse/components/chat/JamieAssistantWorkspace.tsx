@@ -15,6 +15,7 @@ import {
 } from '@assistant-ui/react';
 import { ArrowUp, Bot, Command, Loader2, Maximize2, RotateCcw, Send, Sparkles, TerminalSquare } from 'lucide-react';
 import { getJamieDisplayContent } from '@/lib/ai/jamieResponse';
+import { useTheme } from '@/context/ThemeProvider';
 
 type JamieAssistantWorkspaceProps = {
   apiRoute?: string;
@@ -29,6 +30,7 @@ export default function JamieAssistantWorkspace({
   memoryContext,
   isDevMode = false
 }: JamieAssistantWorkspaceProps) {
+  const { agentId, assistantProfile } = useTheme();
   const modelAdapter = useMemo<ChatModelAdapter>(() => ({
     async run({ messages, abortSignal }) {
       const response = await fetch(apiRoute, {
@@ -38,7 +40,8 @@ export default function JamieAssistantWorkspace({
           messages: toJamieMessages(messages),
           propertyData,
           memoryContext,
-          isDevMode
+          isDevMode,
+          agentId,
         }),
         signal: abortSignal
       });
@@ -63,7 +66,7 @@ export default function JamieAssistantWorkspace({
         }
       };
     }
-  }), [apiRoute, isDevMode, memoryContext, propertyData]);
+  }), [agentId, apiRoute, isDevMode, memoryContext, propertyData]);
 
   const runtime = useLocalRuntime(modelAdapter);
 
@@ -76,7 +79,7 @@ export default function JamieAssistantWorkspace({
               <Bot size={18} />
             </div>
             <div>
-              <p className="text-sm font-black text-white">Jamie Workspace</p>
+              <p className="text-sm font-black text-white">{assistantProfile.displayName} Workspace</p>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/70">assistant-ui runtime</p>
             </div>
           </div>
@@ -93,7 +96,7 @@ export default function JamieAssistantWorkspace({
               href="/api/tensorzero/jamie-chat"
               className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 font-bold text-slate-200 transition hover:bg-white/[0.07]"
             >
-              <span className="flex items-center gap-2"><TerminalSquare size={14} /> Jamie Traces</span>
+              <span className="flex items-center gap-2"><TerminalSquare size={14} /> {assistantProfile.displayName} Traces</span>
               <ArrowUp size={13} className="rotate-45" />
             </Link>
           </div>
@@ -108,22 +111,22 @@ export default function JamieAssistantWorkspace({
           </div>
         </aside>
 
-        <Thread />
+        <Thread assistantName={assistantProfile.displayName} />
       </section>
     </AssistantRuntimeProvider>
   );
 }
 
-function Thread() {
+function Thread({ assistantName }: { assistantName: string }) {
   return (
     <ThreadPrimitive.Root className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))]">
       <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-cyan-200" />
-            <h1 className="truncate text-lg font-black text-white">JamieChat</h1>
+            <h1 className="truncate text-lg font-black text-white">{assistantName} Chat</h1>
           </div>
-          <p className="mt-1 text-xs text-slate-400">Maximized workspace with assistant-ui state, Jamie API routing, and Command Center context.</p>
+          <p className="mt-1 text-xs text-slate-400">Maximized workspace with assistant-ui state, assistant API routing, and Command Center context.</p>
         </div>
         <Link
           href="/"
@@ -139,9 +142,9 @@ function Thread() {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10 text-cyan-100">
               <Bot size={24} />
             </div>
-            <h2 className="mt-5 text-2xl font-black text-white">Jamie is ready.</h2>
+            <h2 className="mt-5 text-2xl font-black text-white">{assistantName} is ready.</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-              Ask a property question, draft a client note, or hand off a messy task. This route keeps Jamie connected to the same helper layer as the Command Center.
+              Ask a property question, draft a client note, or hand off a messy task. This route keeps {assistantName} connected to the same helper layer as the Command Center.
             </p>
           </div>
         </ThreadPrimitive.Empty>
@@ -149,7 +152,7 @@ function Thread() {
         <ThreadPrimitive.Messages components={{ Message }} />
 
         <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-6 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pb-4 pt-8">
-          <Composer />
+          <Composer assistantName={assistantName} />
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
@@ -187,11 +190,11 @@ function MessageText() {
   return <MessagePartPrimitive.Text component="p" className="whitespace-pre-wrap leading-6" />;
 }
 
-function Composer() {
+function Composer({ assistantName }: { assistantName: string }) {
   return (
     <ComposerPrimitive.Root className="mx-auto flex max-w-4xl items-end gap-3 rounded-2xl border border-cyan-200/20 bg-slate-900/95 p-3 shadow-[0_18px_50px_rgba(2,8,23,0.45)]">
       <ComposerPrimitive.Input
-        placeholder="Ask Jamie, or describe the command-center task..."
+        placeholder={`Ask ${assistantName}, or describe the command-center task...`}
         submitMode="enter"
         rows={1}
         className="max-h-44 min-h-12 flex-1 resize-none bg-transparent px-2 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-500"

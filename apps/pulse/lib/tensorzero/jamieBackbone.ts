@@ -8,6 +8,7 @@ type JamieBackboneInput = {
   memoryContext?: unknown;
   isDevMode?: boolean;
   isMock?: boolean;
+  agentId?: string | null;
 };
 
 type JamieBackboneResult = {
@@ -37,7 +38,9 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
     return { body: { role: 'assistant', content, tensorzero } };
   }
 
-  const response = await getJamieResponse(chatMessages, input.propertyData, input.memoryContext, isDevMode);
+  const response = await getJamieResponse(chatMessages, input.propertyData, input.memoryContext, isDevMode, {
+    agentId: input.agentId,
+  });
 
   if (typeof response === 'string') {
     const tensorzero = recordBackboneTurn({

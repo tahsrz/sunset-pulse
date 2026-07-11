@@ -6,6 +6,7 @@ import { TourRequestSchema } from '@/lib/core/validation';
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 import { logEvent } from '@/lib/supabase';
 import { notifyTourRequest } from '@/lib/core/notifications';
+import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 
 
 
@@ -17,6 +18,7 @@ export const POST = async (request: Request) => {
   try {
     await connectDB();
     const body = await request.json();
+    const agentId = getAgentIdFromInput({ agentId: body.agentId });
 
     // Validate Input
     const validation = TourRequestSchema.safeParse(body);
@@ -42,7 +44,7 @@ export const POST = async (request: Request) => {
       preferredTime,
       tourType,
       message,
-      agentId: 'taz-realty-001'
+      agentId
     });
 
     await newTour.save();

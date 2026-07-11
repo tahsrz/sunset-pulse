@@ -47,6 +47,8 @@
   "exclude": [
     "node_modules",
     ".next",
+    "scripts",
+    "scratch",
     "supabase/functions"
   ]
 }

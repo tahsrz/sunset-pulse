@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { FaCogs, FaLightbulb, FaLayerGroup } from 'react-icons/fa';
 import { renderGlossaryText } from '@/components/glossary/GlossaryText';
 import { sanitizeJamieReply } from '@/lib/ai/jamieResponse';
+import { useTheme } from '@/context/ThemeProvider';
 
 interface JamieMessageProps {
   message: {
@@ -36,6 +37,8 @@ const formatPrice = (price?: number | null) => {
 };
 
 const JamiePropertyResultCards = ({ toolResults }: { toolResults?: any[] }) => {
+  const { branding } = useTheme();
+  const siteName = branding.siteName || 'Sunset Pulse';
   const searchResult = toolResults?.find((result) => result?.name === 'search_properties')?.output;
   const properties = Array.isArray(searchResult?.properties) ? searchResult.properties : [];
   if (!properties.length) return null;
@@ -54,7 +57,7 @@ const JamiePropertyResultCards = ({ toolResults }: { toolResults?: any[] }) => {
               <div className="min-w-0">
                 <p className="truncate text-xs font-black text-white">{property.name}</p>
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-200/70">
-                  {location || property.source || 'Sunset Pulse'}
+                  {location || property.source || siteName}
                 </p>
               </div>
               <span className="shrink-0 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-200">

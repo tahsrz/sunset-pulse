@@ -54,6 +54,22 @@ const SiteConfigSchema = new mongoose.Schema({
     visible: { type: Boolean, default: true },
     order: { type: Number }
   }],
+  agentProfile: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  assistantProfile: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  complianceProfile: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  integrationProfile: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   jamieSystemPrompt: { type: String },
   activeEnvoyId: { type: String, default: 'ENVOY-JAMIE' },
   abidanPrompts: {

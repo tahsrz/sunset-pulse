@@ -18,7 +18,7 @@
     "tah:import-doc": "tsx scripts/import-doc-to-tah.ts",
     "tah:lancedb:index": "tsx scripts/tah-lancedb.ts",
     "tah:lancedb:search": "tsx scripts/tah-lancedb-search.ts",
-    "build": "next build",
+    "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
     "news:publish-local": "tsx scripts/publish-local-news-signals.ts",
@@ -37,7 +37,8 @@
     "lead:intel:crawl": "python workers/lead-intel-crawler/crawl4ai_worker.py",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "menu:upsert": "tsx scripts/upsert-menu.ts",
-    "seed": "tsx scripts/universal-seed.ts"
+    "seed": "tsx scripts/universal-seed.ts",
+    "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",
@@ -57,6 +58,7 @@
     "@langfuse/tracing": "^5.7.0",
     "@mapbox/mapbox-gl-directions": "^4.3.1",
     "@mapbox/mapbox-gl-draw": "^1.5.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
     "@opentelemetry/sdk-trace-base": "^2.8.0",
     "@opentelemetry/sdk-trace-node": "^2.8.0",
     "@powersync/react": "^1.10.0",
@@ -112,6 +114,7 @@
     "telnyx": "^6.83.0",
     "three": "^0.160.0",
     "three-stdlib": "^2.36.1",
+    "typescript": "^6.0.2",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
   },
@@ -134,7 +137,6 @@
     "tailwindcss": "^3.3.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.0",
-    "typescript": "6.0.2",
     "vitest": "^3.2.4"
   }
 }

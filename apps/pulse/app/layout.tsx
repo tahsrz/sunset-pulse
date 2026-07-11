@@ -20,6 +20,7 @@ import { createClient } from '@/utils/supabase/server';
 import { headers } from 'next/headers';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getAgentIdFromHeaders } from '@/lib/sites/agentConfig';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sunsetpulse.app'),
@@ -91,6 +92,7 @@ interface IntelligenceConfig {
 const MainLayout = async ({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) => {
   const requestHeaders = await headers();
   const tenantSite = requestHeaders.get('x-sunset-tenant');
+  const activeAgentId = getAgentIdFromHeaders(requestHeaders);
 
   if (tenantSite) {
     return (
@@ -103,7 +105,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
     );
   }
 
-  const sbConfigLookup = await loadSupabaseSiteConfig();
+  const sbConfigLookup = await loadSupabaseSiteConfig(activeAgentId);
   const sbConfig = sbConfigLookup.data;
 
   // Define default branding as a fallback
@@ -133,6 +135,10 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
 
   let branding: Branding;
   let intelligence: IntelligenceConfig;
+  let agentProfile: any = undefined;
+  let assistantProfile: any = undefined;
+  let complianceProfile: any = undefined;
+  let integrationProfile: any = undefined;
   
   if (sbConfig) {
     // Merge Supabase branding with fallback
@@ -153,8 +159,12 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
         ...(sbConfig.intelligence?.grill || {})
       }
     };
+    agentProfile = sbConfig.agent_profile;
+    assistantProfile = sbConfig.assistant_profile;
+    complianceProfile = sbConfig.compliance_profile;
+    integrationProfile = sbConfig.integration_profile;
   } else if (!sbConfigLookup.timedOut) {
-    const config: any = await loadLegacySiteConfig();
+    const config: any = await loadLegacySiteConfig(activeAgentId);
 
     if (config) {
       branding = {
@@ -173,6 +183,10 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
           ...(config.intelligence?.grill || {})
         }
       };
+      agentProfile = config.agentProfile || config.agent_profile;
+      assistantProfile = config.assistantProfile || config.assistant_profile;
+      complianceProfile = config.complianceProfile || config.compliance_profile;
+      integrationProfile = config.integrationProfile || config.integration_profile;
     } else {
       branding = fallbackBranding;
       intelligence = fallbackIntelligence;
@@ -188,7 +202,15 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
         <AuthProvider>
           <SunsetPowerSyncProvider>
           <CartProvider>
-            <ThemeProvider branding={branding} intelligence={intelligence} agentId={sbConfig?.agent_id || 'taz-realty-001'}>
+            <ThemeProvider
+              branding={branding}
+              intelligence={intelligence}
+              agentProfile={agentProfile}
+              assistantProfile={assistantProfile}
+              complianceProfile={complianceProfile}
+              integrationProfile={integrationProfile}
+              agentId={sbConfig?.agent_id || activeAgentId}
+            >
               <VibeProvider>
                 <JamiePulseProvider>
                   <div className='flex min-h-screen flex-col bg-[#06131d]/30'>
@@ -218,7 +240,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
 
 export default MainLayout;
 
-async function loadSupabaseSiteConfig() {
+async function loadSupabaseSiteConfig(agentId: string) {
   const fallbackTimeoutMs = 1500;
   let timedOut = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -229,7 +251,7 @@ async function loadSupabaseSiteConfig() {
       const { data, error } = await supabase
         .from('site_config')
         .select('*')
-        .eq('agent_id', 'taz-realty-001')
+        .eq('agent_id', agentId)
         .maybeSingle();
 
       if (error && !timedOut) {
@@ -264,7 +286,7 @@ async function loadSupabaseSiteConfig() {
   };
 }
 
-async function loadLegacySiteConfig() {
+async function loadLegacySiteConfig(agentId: string) {
   const fallbackTimeoutMs = 1500;
   let timedOut = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -272,7 +294,7 @@ async function loadLegacySiteConfig() {
   const legacyLookup = (async () => {
     try {
       await connectDB();
-      return await SiteConfig.findOne({ agentId: 'taz-realty-001' }).lean();
+      return await SiteConfig.findOne({ agentId }).lean();
     } catch (dbError) {
       if (!timedOut) {
         console.error('Failed to connect to MongoDB fallback:', dbError);

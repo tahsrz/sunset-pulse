@@ -57,6 +57,42 @@ Recent local additions:
 - TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
 - Glossary terms can semantically link back to source cartridges, such as `dallas_community_intel.tah` through `/tah/dallas-community-intel`.
 
+## SaaS Agent Sites - WIP
+
+Sunset Pulse is being expanded from a single-agent command center into a repeatable SaaS website layer for real estate sales agents. The goal is that a new agent can get a clean public site, branded assistant, MLS-backed listing surface, and lead path without cloning or rewriting the app.
+
+Planned public URL shape:
+
+```text
+{agent}.sunsetpulse.app
+{agent}.sunsetpulse.app/properties/{mlsId}
+```
+
+Current WIP features:
+
+- **Swappable agent profiles**: each site can load agent name, brokerage, license, markets, contact info, headshot, assistant name, and compliance copy from profile data.
+- **Subdomain tenant routing**: tenant routes are being shaped around clean subdomains such as `taz.sunsetpulse.app` or future custom agent subdomains.
+- **Stripped public website shell**: public agent sites remove internal Command Center, dev controls, lab tools, and Taz-specific copy so the page feels like the agent's own consumer site.
+- **MLS hot-list publishing**: agent profiles can carry curated MLS IDs for featured homes, starting with Tour Studio / hot-list listings.
+- **Image-backed listing rule**: public featured cards are filtered to active MLS-style listings with usable remote images so the homepage never opens with blank dummy property cards.
+- **Agent-branded property detail pages**: listing cards route to `/properties/:id` inside the same tenant shell, with listing photos, price, beds, baths, square footage, notes, highlights, agent CTA, and MLS disclaimer.
+- **Lead routing per agent**: contact links prefer the profile's lead email, with fallback to the agent email and phone.
+- **Compliance profiles**: MLS disclaimers, footer disclaimers, jurisdiction, and equal-housing style settings are moving into per-agent profile fields.
+- **Assistant profile separation**: Jamie can be renamed or repositioned per agent while still using the same shared assistant infrastructure.
+- **Supabase-backed profile fields**: site configuration now has JSON profile slots for agent, assistant, compliance, and integrations.
+- **Migration and seed tooling**: profile migrations and an upsert script exist so default and future agent profiles can be inserted without hand-editing rows.
+
+Near-term SaaS backlog:
+
+- Build an admin flow for creating/editing agent profiles without touching SQL.
+- Add custom-domain mapping once the subdomain flow is stable.
+- Add per-agent listing source controls for MLS provider, hot-list IDs, and default market filters.
+- Add per-agent lead capture forms instead of relying only on `mailto:` and `tel:` CTAs.
+- Add branded OG images and SEO metadata per agent/listing.
+- Add a profile completeness checker so an agent site cannot publish with missing contact, compliance, or image-backed listing data.
+- Add visual QA for `/{agent}` and `/properties/{mlsId}` routes before pushing.
+- Add billing/package flags for SaaS tiers once the product surface settles.
+
 ## Monorepo Layout
 
 ```text

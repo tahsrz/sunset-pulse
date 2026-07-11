@@ -7,15 +7,15 @@ import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
 import SunsetHistorySection from '@/components/marketing/SunsetHistorySection';
 import FAQSection from '@/components/marketing/FAQSection';
 import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
-import { getCachedProperties } from '@/lib/core/propertyRecon';
 import { HomeHero, HomeWorldHub } from '@/components/home/HomeDynamicSections';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
+import { getTourHotList } from '@/lib/data/tourHotList';
 
 /**
  * fetches curated properties on the server and streams them once resolved
  */
 const StagedPropertiesPocket: React.FC = async () => {
-  const stagedPropertiesRaw = await getCachedProperties({ showFeatured: true });
+  const stagedPropertiesRaw = (await getTourHotList({ limit: 10 })).listings;
   
   // force serialization to plain objects for Client Component compatibility
   const stagedProperties = JSON.parse(JSON.stringify(stagedPropertiesRaw));

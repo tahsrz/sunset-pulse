@@ -10,6 +10,7 @@ import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@
 import crypto from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'path';
+import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 
 // Static JSON imports for robust production environment seeding
 import defaultEmployeesJson from '@/config/default-employees.json';
@@ -502,6 +503,7 @@ export const POST = async (request: NextRequest) => {
       tourType = 'in-person', // "in-person" | "video" | "virtual"
       message = '',
     } = requestData;
+    const agentId = getAgentIdFromInput({ agentId: requestData.agentId });
 
     if (!preferredDate || !preferredTime || !userEmail || !userName) {
       return errorResponse('Required scheduling parameters are missing (preferredDate, preferredTime, userEmail, userName).', 400);
@@ -534,7 +536,7 @@ export const POST = async (request: NextRequest) => {
       preferredTime,
       tourType: mappedTourType,
       message,
-      agentId: 'taz-realty-001',
+      agentId,
     });
     await newTour.save();
 

@@ -5,14 +5,15 @@ import React from 'react';
 interface ZakarielProps {
   items: string[];
   onSelect: (item: string) => void;
+  assistantName?: string;
 }
 
-const Zakariel: React.FC<ZakarielProps> = ({ items, onSelect }) => {
+const Zakariel: React.FC<ZakarielProps> = ({ items, onSelect, assistantName = 'Jamie' }) => {
   if (items.length === 0) return null;
 
   return (
     <div className="mb-4 animate-in slide-in-from-bottom-2 duration-500">
-      <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] mb-2 ml-1">Ask Jamie To</p>
+      <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] mb-2 ml-1">Ask {assistantName} To</p>
       <div className="flex flex-wrap gap-2">
         {items.map((q, i) => (
           <button
