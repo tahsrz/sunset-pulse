@@ -16,6 +16,8 @@ It is built around a simple thesis: agents should not have to send every workflo
 - Saves local query memory to `query_memory.tah` so repeated work can reuse local context.
 - Links dense terms and acronyms to hover definitions sourced from local `.tah` cartridges.
 - Shares Command Center context with Jamie so chat answers can use the same private helper layer.
+- Serves image-qualified, fresh MLS inventory through one validated discovery engine shared by Jamie and the public API.
+- Opens a local-first Play Jamie game room with complete legal chess, responsive falling blocks, heads-up Texas Hold'em, and beach volleyball.
 - Traces Command Center graph execution with Langfuse when Langfuse environment variables are configured.
 
 ## Current Release
@@ -29,11 +31,12 @@ Release notes:
 
 Recent local additions:
 
-- WIP SaaS agent-site foundation turns Sunset Pulse into a swappable public website layer for individual sales agents.
-- Tenant routing supports clean agent subdomains such as `agent.sunsetpulse.app`, backed by agent profiles instead of hardcoded Taz Realty copy.
-- Agent profiles now carry branding, assistant, compliance, and integration settings for per-agent site generation.
-- Public agent homepages can render image-backed MLS hot-list listings instead of dummy property cards.
-- Agent-site listing detail pages keep users inside the agent-branded shell at `/properties/:id`.
+- MLS discovery now enforces public, active, non-demo, recently synchronized listings with valid HTTPS media before results reach Jamie or the API.
+- `/api/properties/discover` provides validated filters, map bounds, radius search, sorting, pagination, and cache metadata over the canonical MLS cache.
+- `/play-jamie/chess` adds token-free browser chess with legal move enforcement, promotion, undo, match history, persistent records, and local Jamie commentary.
+- `/play-jamie/tetris` adds a token-free falling-block game with fair piece bags, ghost placement, levels, touch controls, and persistent high scores.
+- `/play-jamie/poker` adds token-free heads-up Texas Hold'em with virtual chips, real hand ranking, lightweight betting, hand logs, and persistent local records.
+- `/play-jamie/volley` adds token-free beach volleyball with local physics, jump timing, Jamie defense, touch controls, and persistent match records.
 - Command Center helper selection now uses a professional arena-style UI with imported ClaudeCraft assets.
 - Command Center routing now runs through a LangGraph-shaped stage graph instead of one flat router function.
 - Langfuse observability traces the Command Center graph and each stage with redacted, structured metadata.
@@ -98,11 +101,14 @@ SunsetPulse/
     pulse/                  Next.js app for Sunset Pulse
       app/command-center/   Agent command center route
       app/jamie-chat/       Maximized assistant-ui Jamie workspace
+      app/play-jamie/       Jamie game room, chess, Block Drop, poker, and volley routes
       app/api/commands/     Command router API
       app/api/agents/       AI agent framework endpoints
       app/api/sqlsync/      SQLSync-ready mutation snapshots
       app/api/tensorzero/   TensorZero evaluation and JamieChat snapshots
       app/api/kepler/       Kepler.gl dataset feeds
+      app/api/properties/discover/
+                            Image-qualified MLS discovery API
       app/api/intelligence/ Lead intelligence ingestion APIs
       app/api/notifications/ Novu notification workflow APIs
       app/api/jamie/chat/   Jamie chat alias wired to the shared helper route
@@ -120,6 +126,8 @@ SunsetPulse/
       lib/tensorzero/       TensorZero-ready evaluation ledgers
       lib/lead-intel/       Crawl4AI lead intelligence ledger helpers
       lib/notifications/    Novu notification workflow helpers
+      lib/data/             Canonical listing contract, repository, MLS sync, and discovery engine
+      lib/jamie-games/      Local game rules, opponents, and commentary
       scripts/              TAH import, packing, and local index utilities
       tensorzero/            TensorZero gateway config stubs
       workers/lead-intel-crawler/
@@ -152,6 +160,9 @@ flowchart TD
   Jamie --> TZero
   API --> Crawl4AI["Crawl4AI Lead Intel"]
   API --> Novu["Novu Notifications"]
+  Agent --> Discovery["MLS Discovery API"]
+  Discovery --> Listings["Canonical Supabase MLS Cache"]
+  Discovery --> Jamie
   Atlas --> TAH["TAH Cartridges"]
   TAH --> Glossary["Hover Glossary + Source Links"]
   Workers --> Plan
@@ -161,6 +172,64 @@ flowchart TD
   Output --> Final["Final Provenance Screen"]
   Final --> Agent
 ```
+
+## MLS Discovery Engine
+
+Sunset Pulse reads customer-facing inventory from its local canonical MLS cache rather than querying an external MLS provider during page requests. The shared discovery engine powers both Jamie property searches and the public discovery API:
+
+```text
+GET /api/properties/discover
+```
+
+A listing is eligible only when it is:
+
+- sourced from MLS ingestion,
+- explicitly approved for public display,
+- active, non-demo, and not deleted,
+- synchronized within the freshness window (30 days by default),
+- backed by at least one well-formed HTTPS image URL.
+
+Local placeholders and malformed or insecure image URLs are removed from discovery results. This gives every downstream consumer the same image guarantee without triggering remote media checks during a request.
+
+Supported query parameters:
+
+| Parameter | Purpose |
+| --- | --- |
+| `location`, `city`, `zipcode` | Address or market text match |
+| `propertyType`, `propertyTypes` | One or more types; repeat or comma-separate values |
+| `priceMin`, `priceMax` | Inclusive price range (`minPrice` and `maxPrice` are aliases) |
+| `bedsMin`, `bedsMax`, `bathsMin`, `sqftMin` | Minimum/maximum property attributes |
+| `bounds=west,south,east,north` | Map viewport filter, including antimeridian-aware bounds |
+| `center=longitude,latitude` + `radiusMiles` | Radius filter and distance calculation |
+| `sort` | `newest`, `price_asc`, `price_desc`, or `distance` |
+| `page`, `pageSize` | Page controls; page size is capped at 100 |
+| `maxAgeHours` | Override the default freshness window, up to one year |
+
+Example:
+
+```bash
+curl "http://127.0.0.1:3000/api/properties/discover?city=Frisco&propertyType=Single%20Family&priceMin=500000&priceMax=900000&bedsMin=4&pageSize=12"
+```
+
+The response includes `data`, normalized `criteria`, and pagination metadata. `candidateLimitReached` tells clients when the current 500-listing safety window was exhausted, so the UI can avoid presenting a capped total as an exact market-wide count.
+
+Key implementation files:
+
+```text
+apps/pulse/lib/data/listingDiscovery.ts
+apps/pulse/lib/data/listingRepository.ts
+apps/pulse/lib/data/listingContract.ts
+apps/pulse/app/api/properties/discover/route.ts
+apps/pulse/lib/ai/jamieTools.ts
+```
+
+Database query support is defined in:
+
+```text
+apps/pulse/supabase/migrations/20260704000000_listing_discovery_indexes.sql
+```
+
+Deploy that migration through the normal Supabase migration pipeline before releasing the discovery endpoint. It adds partial indexes for the eligible MLS feed, freshness ordering, price filters, and city/type filters.
 
 ## Integration Roadmap
 
@@ -740,6 +809,34 @@ apps/pulse/components/spatial/DeckListingSignalsLoader.tsx
 apps/pulse/components/spatial/DeckListingSignals.tsx
 ```
 
+## Play Jamie
+
+The Play Jamie room provides local, deterministic games that do not spend model tokens or require an AI-provider connection.
+
+```text
+/play-jamie         # game catalog
+/play-jamie/chess   # complete chess match
+/play-jamie/tetris  # responsive falling-block game
+/play-jamie/poker   # heads-up Texas Hold'em table
+/play-jamie/volley  # beach volleyball rally game
+```
+
+Chess currently includes:
+
+- legal move, castling, en passant, promotion, check, mate, and draw enforcement through `chess.js`,
+- Friendly, Sharp, and Merciless Jamie opponent profiles,
+- click and keyboard-operable board controls with legal-target highlighting,
+- side selection, full-turn undo, captured material, and algebraic move history,
+- local Jamie commentary and a browser-persisted win/draw/loss record.
+
+The reusable opponent and rules layer lives in `apps/pulse/lib/jamie-games/chess.ts`; the board remains a Sunset Pulse component rather than importing a second UI system.
+
+Block Drop includes seven-piece bag randomization, wall-aware rotation, ghost placement, keyboard and touch controls, progressive levels, local high scores, and deterministic engine tests. Its rules layer lives in `apps/pulse/lib/jamie-games/tetris.ts`.
+
+Texas Hold'em includes a local 52-card deck, virtual-chip antes, check/call/bet/fold actions, Jamie call/fold/bet decisions, real five-card hand evaluation from seven-card Hold'em boards, showdown labels, hand logs, and browser-persisted win/loss/tie records. Its rules layer lives in `apps/pulse/lib/jamie-games/poker.ts`.
+
+Sunset Volley includes local side-view ball physics, jump timing, wall and net collisions, first-to-seven scoring, Jamie positioning AI, touch controls, and browser-persisted match records. Its rules layer lives in `apps/pulse/lib/jamie-games/volley.ts`.
+
 ## Getting Started
 
 Install dependencies:
@@ -847,7 +944,17 @@ Common local checks:
 
 ```bash
 npx tsc -p apps/pulse/tsconfig.json --noEmit --pretty false
+npm exec --workspace apps/pulse -- vitest run tests/unit/listing-discovery.test.ts tests/unit/listing-read-surfaces.test.ts tests/unit/jamie-tools.test.ts
+npm run test:unit
+npm run security:audit:prod
+npm run build --workspace apps/pulse
 npm run tah:pack-expert-atlas --workspace=apps/pulse
+```
+
+Smoke-test MLS discovery:
+
+```bash
+curl "http://127.0.0.1:3000/api/properties/discover?city=Frisco&pageSize=6"
 ```
 
 Smoke-test the command route:

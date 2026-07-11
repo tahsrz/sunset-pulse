@@ -1,7 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
-import { searchListings } from '@/lib/data/listingRepository';
+import { discoverListings } from '@/lib/data/listingDiscovery';
 
 export const jamiePropertySearchInputSchema = z.object({
   city: z.string().optional().describe("City to search in, such as Frisco or Plano."),
@@ -87,22 +87,25 @@ function summarizeProperty(property: any): JamiePropertySearchResult['properties
 export async function searchPropertiesForJamie(input: JamiePropertySearchInput): Promise<JamiePropertySearchResult> {
   const parsed = jamiePropertySearchInputSchema.parse(input);
   const params = toPropertySearchParams(parsed);
-  const listings = await searchListings({
+  const discovery = await discoverListings({
     location: params.location,
-    propertyType: params.propertyType,
-    minPrice: params.minPrice,
-    maxPrice: params.maxPrice,
-    beds: params.beds,
-    baths: params.baths,
-  }, { limit: 6 });
+    propertyTypes: parsed.property_types,
+    priceMin: parsed.price_min,
+    priceMax: parsed.price_max,
+    bedsMin: parsed.beds_min,
+    bedsMax: parsed.beds_max,
+    bathsMin: parsed.full_baths_min,
+    sqftMin: parsed.sqft_min,
+    pageSize: 6,
+  });
 
-  const properties = listings
+  const properties = discovery.listings
     .map(summarizeProperty)
     .filter((property, index, all) => all.findIndex((candidate) => candidate.id === property.id) === index)
     .slice(0, 6);
 
   return {
-    total: properties.length,
+    total: discovery.pagination.total,
     criteria: params,
     properties,
   };

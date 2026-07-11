@@ -15,6 +15,8 @@ export type ListingSearch = {
   beds?: string | number;
   baths?: string | number;
   status?: string;
+  source?: 'Internal' | 'MLS';
+  updatedSince?: string;
   polygon?: string;
   radius?: string | number;
   center?: string;
@@ -71,6 +73,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number): P
     .select('*')
     .is('deleted_at', null)
     .eq('display_public', true)
+    .order('last_updated', { ascending: false })
     .limit(limit);
 
   const location = filters.city || filters.location;
@@ -80,6 +83,8 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number): P
   }
   if (filters.propertyType && filters.propertyType !== 'All') query = query.eq('type', filters.propertyType);
   if (filters.status) query = query.eq('listing_status', filters.status);
+  if (filters.source) query = query.eq('source', filters.source);
+  if (filters.updatedSince) query = query.gte('last_updated', filters.updatedSince);
   if (!filters.includeDemo) query = query.eq('is_demo', false);
   if (filters.minPrice) query = query.gte('price', Number(filters.minPrice));
   if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice));
