@@ -192,14 +192,14 @@ function MessageText() {
 
 function Composer({ assistantName }: { assistantName: string }) {
   return (
-    <ComposerPrimitive.Root className="mx-auto flex max-w-4xl items-end gap-3 rounded-2xl border border-cyan-200/20 bg-slate-900/95 p-3 shadow-[0_18px_50px_rgba(2,8,23,0.45)]">
+    <ComposerPrimitive.Root className="mx-auto grid w-full max-w-4xl grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-3 rounded-2xl border border-cyan-200/20 bg-slate-900/95 p-3 shadow-[0_18px_50px_rgba(2,8,23,0.45)]">
       <ComposerPrimitive.Input
         placeholder={`Ask ${assistantName}, or describe the command-center task...`}
         submitMode="enter"
-        rows={1}
-        className="max-h-44 min-h-12 flex-1 resize-none bg-transparent px-2 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
+        rows={2}
+        className="min-h-14 w-full min-w-0 resize-none appearance-none border-0 bg-transparent px-2 py-2 text-sm leading-6 text-white shadow-none outline-none ring-0 placeholder:text-slate-500 focus:border-0 focus:outline-none focus:ring-0"
       />
-      <ComposerPrimitive.Cancel className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-200 transition hover:bg-white/[0.09] data-[disabled]:hidden sm:inline-flex">
+      <ComposerPrimitive.Cancel className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-200 transition hover:bg-white/[0.09] data-[disabled]:hidden 2xl:inline-flex">
         <RotateCcw size={16} />
       </ComposerPrimitive.Cancel>
       <ComposerPrimitive.Send className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-300 text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40">
