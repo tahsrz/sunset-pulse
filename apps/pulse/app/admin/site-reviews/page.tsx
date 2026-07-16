@@ -33,6 +33,8 @@ type SiteReviewRow = {
   billing_profile: {
     billingStatus?: string;
     trialEndsAt?: string;
+    gracePeriodEndsAt?: string;
+    billingStatusChangedAt?: string;
   } | null;
   review_profile: {
     status?: string;
@@ -40,6 +42,15 @@ type SiteReviewRow = {
     requestedBy?: string;
     notes?: string;
   } | null;
+  provisioning_audit?: Array<{
+    id?: string;
+    occurredAt?: string;
+    action?: string;
+    status?: string;
+    message?: string;
+    billingStatus?: string;
+    siteStatus?: string;
+  }> | null;
   updated_at?: string | null;
 };
 
@@ -68,7 +79,7 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
 
   const { data, error } = await supabaseAdmin
     .from('site_config')
-    .select('agent_id, owner_name, subdomain, custom_domain, status, subscription_tier, branding, agent_profile, billing_profile, review_profile, updated_at')
+    .select('agent_id, owner_name, subdomain, custom_domain, status, subscription_tier, branding, agent_profile, billing_profile, review_profile, provisioning_audit, updated_at')
     .order('updated_at', { ascending: false })
     .limit(100);
   const rows = ((data || []) as SiteReviewRow[])
@@ -79,6 +90,7 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
   const savedCount = rows.filter((row) => row.review_profile?.status === 'setup_saved').length;
   const approvedCount = rows.filter((row) => row.review_profile?.status === 'approved').length;
   const changesCount = rows.filter((row) => row.review_profile?.status === 'changes_requested').length;
+  const pastDueCount = rows.filter((row) => row.billing_profile?.billingStatus === 'past_due').length;
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
@@ -109,7 +121,7 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
             <MetricCard label="Saved" value={savedCount.toString()} />
             <MetricCard label="Approved" value={approvedCount.toString()} />
             <MetricCard label="Changes" value={changesCount.toString()} />
-            <MetricCard label="Agents" value={new Set(rows.map((row) => row.agent_id)).size.toString()} />
+            <MetricCard label="Past Due" value={pastDueCount.toString()} />
           </div>
         </header>
 
@@ -146,6 +158,7 @@ function ReviewCard({ row }: { row: SiteReviewRow }) {
     customDomain: row.custom_domain,
   });
   const reviewStatus = row.review_profile?.status || 'setup_saved';
+  const latestAudit = row.provisioning_audit?.[0];
 
   return (
     <article className="rounded-[2rem] border border-cyan-300/20 bg-slate-900/50 p-5 shadow-2xl shadow-black/10">
@@ -157,7 +170,7 @@ function ReviewCard({ row }: { row: SiteReviewRow }) {
               {row.status || 'draft'} · {row.subscription_tier || 'site'}
             </span>
             <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">
-              {row.billing_profile?.billingStatus || 'billing unknown'}
+              Billing: {formatBillingStatus(row.billing_profile?.billingStatus)}
             </span>
           </div>
           <h2 className="mt-5 text-2xl font-black text-white">{row.branding?.siteName || row.owner_name || row.agent_id}</h2>
@@ -168,7 +181,20 @@ function ReviewCard({ row }: { row: SiteReviewRow }) {
             <Info label="Agent ID" value={row.agent_id} />
             <Info label="Subdomain" value={row.subdomain || 'Pending'} />
             <Info label="Requested" value={formatDate(row.review_profile?.requestedAt || row.updated_at)} />
+            <Info label="Trial Ends" value={formatDate(row.billing_profile?.trialEndsAt, 'Not set')} />
+            <Info label="Grace Ends" value={formatDate(row.billing_profile?.gracePeriodEndsAt, 'No grace')} />
+            <Info label="Billing Changed" value={formatDate(row.billing_profile?.billingStatusChangedAt, 'No change')} />
           </dl>
+          {latestAudit ? (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Latest Audit Event</p>
+              <p className="mt-2 text-sm font-black text-white">{latestAudit.action || 'Provisioning event'}</p>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{latestAudit.message || 'No audit message.'}</p>
+              <p className="mt-2 font-mono text-[10px] text-slate-600">
+                {[latestAudit.status, latestAudit.billingStatus, latestAudit.siteStatus, formatDate(latestAudit.occurredAt, '')].filter(Boolean).join(' / ')}
+              </p>
+            </div>
+          ) : null}
         </div>
         <div className="grid content-start gap-3">
           <div className="flex flex-wrap gap-3">
@@ -227,12 +253,19 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function formatDate(value?: string | null) {
-  if (!value) return 'Not requested';
+function formatDate(value?: string | null, fallback = 'Not requested') {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return fallback;
+
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-  }).format(new Date(value));
+  }).format(date);
+}
+
+function formatBillingStatus(value?: string | null) {
+  return (value || 'unknown').replace(/_/g, ' ');
 }

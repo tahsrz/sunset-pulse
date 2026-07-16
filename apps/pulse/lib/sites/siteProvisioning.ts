@@ -9,7 +9,13 @@ import {
   type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
 import { readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
-import { notifyBuyerSiteProvisioned } from '@/lib/sites/siteLifecycleNotifications';
+import {
+  notifyBuyerSiteBillingUpdate,
+  notifyBuyerSiteProvisioned,
+  notifyOperatorSiteBillingUpdate,
+} from '@/lib/sites/siteLifecycleNotifications';
+
+const PAST_DUE_GRACE_DAYS = 7;
 
 export type PaidAgentSiteProvisioningInput = {
   agentId?: string | null;
@@ -139,6 +145,7 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
   }
 
   const kit = normalizeLaunchKit(existingRow, agentId);
+  const billingStatusChangedAt = new Date().toISOString();
   const suspendedKit = appendProvisioningAuditEvent(normalizeLaunchKit({
     ...kit,
     status: 'suspended',
@@ -147,6 +154,8 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
       stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
       stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
       billingStatus: 'canceled',
+      gracePeriodEndsAt: '',
+      billingStatusChangedAt,
     },
   }, agentId), {
     action: 'customer.subscription.deleted',
@@ -164,9 +173,17 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
     email: normalizeEmail(input.email),
     userId: input.userId,
   });
+  const summary = getLaunchKitSummary(suspendedKit);
+  await notifyBillingStatusChange({
+    kit: suspendedKit,
+    email: input.email,
+    status: 'canceled',
+    previousStatus: kit.billingProfile.billingStatus,
+    publicUrl: summary.publicUrl,
+  });
 
   return {
-    ...getLaunchKitSummary(suspendedKit),
+    ...summary,
     savedStores,
   };
 }
@@ -181,6 +198,10 @@ export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProv
   const kit = normalizeLaunchKit(existingRow, agentId);
   const billingStatus = normalizeBillingStatus(input.billingStatus) || kit.billingProfile.billingStatus || 'unknown';
   const trialEndsAt = normalizeIsoDate(input.trialEndsAt) || kit.billingProfile.trialEndsAt || '';
+  const billingStatusChangedAt = billingStatus !== kit.billingProfile.billingStatus
+    ? new Date().toISOString()
+    : kit.billingProfile.billingStatusChangedAt || '';
+  const gracePeriodEndsAt = resolveGracePeriodEndsAt(kit, billingStatus);
   const nextKitBase = normalizeLaunchKit({
     ...kit,
     billingProfile: {
@@ -188,6 +209,8 @@ export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProv
       stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
       stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
       trialEndsAt,
+      gracePeriodEndsAt,
+      billingStatusChangedAt,
       billingStatus,
     },
   }, agentId);
@@ -211,9 +234,20 @@ export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProv
     email: normalizeEmail(input.email),
     userId: input.userId,
   });
+  const summary = getLaunchKitSummary(nextKit);
+  if (shouldNotifyBillingStatus(kit.billingProfile.billingStatus, billingStatus)) {
+    await notifyBillingStatusChange({
+      kit: nextKit,
+      email: input.email,
+      status: billingStatus,
+      previousStatus: kit.billingProfile.billingStatus,
+      gracePeriodEndsAt,
+      publicUrl: summary.publicUrl,
+    });
+  }
 
   return {
-    ...getLaunchKitSummary(nextKit),
+    ...summary,
     savedStores,
   };
 }
@@ -271,7 +305,13 @@ function resolveSiteStatusForBilling(
     return 'suspended';
   }
 
-  if (billingStatus === 'past_due' || billingStatus === 'incomplete') {
+  if (billingStatus === 'past_due') {
+    return isWithinGracePeriod(kit.billingProfile.gracePeriodEndsAt)
+      ? kit.status
+      : 'draft';
+  }
+
+  if (billingStatus === 'incomplete') {
     return 'draft';
   }
 
@@ -295,6 +335,61 @@ function normalizeIsoDate(value: unknown) {
 
 function dateDaysFromNow(days: number) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function resolveGracePeriodEndsAt(
+  kit: AgentLaunchKit,
+  billingStatus: AgentLaunchKit['billingProfile']['billingStatus'],
+) {
+  if (billingStatus !== 'past_due') return '';
+  if (kit.billingProfile.billingStatus === 'past_due' && kit.billingProfile.gracePeriodEndsAt) {
+    return kit.billingProfile.gracePeriodEndsAt;
+  }
+  if (isWithinGracePeriod(kit.billingProfile.gracePeriodEndsAt)) {
+    return kit.billingProfile.gracePeriodEndsAt || '';
+  }
+
+  return dateDaysFromNow(PAST_DUE_GRACE_DAYS);
+}
+
+function isWithinGracePeriod(value?: string) {
+  if (!value) return false;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) && date.getTime() > Date.now();
+}
+
+function shouldNotifyBillingStatus(
+  previousStatus: AgentLaunchKit['billingProfile']['billingStatus'],
+  nextStatus: AgentLaunchKit['billingProfile']['billingStatus'],
+) {
+  if (previousStatus === nextStatus) return false;
+  return nextStatus === 'past_due'
+    || nextStatus === 'unpaid'
+    || nextStatus === 'canceled'
+    || nextStatus === 'incomplete'
+    || ((nextStatus === 'active' || nextStatus === 'trialing')
+      && (previousStatus === 'past_due' || previousStatus === 'unpaid' || previousStatus === 'canceled' || previousStatus === 'incomplete'));
+}
+
+async function notifyBillingStatusChange(input: {
+  kit: AgentLaunchKit;
+  email?: string | null;
+  status: AgentLaunchKit['billingProfile']['billingStatus'];
+  previousStatus?: AgentLaunchKit['billingProfile']['billingStatus'];
+  gracePeriodEndsAt?: string;
+  publicUrl?: string;
+}) {
+  const [buyerResult, operatorResult] = await Promise.all([
+    notifyBuyerSiteBillingUpdate(input),
+    notifyOperatorSiteBillingUpdate(input),
+  ]);
+
+  if (buyerResult.status === 'failed') {
+    console.warn('[SITE_BILLING_BUYER_EMAIL_FAILED]', buyerResult.reason);
+  }
+  if (operatorResult.status === 'failed') {
+    console.warn('[SITE_BILLING_OPERATOR_EMAIL_FAILED]', operatorResult.reason);
+  }
 }
 
 function normalizeEmail(value: unknown) {

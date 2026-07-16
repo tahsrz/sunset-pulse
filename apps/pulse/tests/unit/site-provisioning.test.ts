@@ -4,11 +4,20 @@ import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
 const storeMocks = vi.hoisted(() => ({
   readSiteConfig: vi.fn(),
   saveSiteConfig: vi.fn(),
+  notifyBuyerSiteProvisioned: vi.fn(),
+  notifyBuyerSiteBillingUpdate: vi.fn(),
+  notifyOperatorSiteBillingUpdate: vi.fn(),
 }));
 
 vi.mock('@/lib/sites/siteConfigStore', () => ({
   readSiteConfig: storeMocks.readSiteConfig,
   saveSiteConfig: storeMocks.saveSiteConfig,
+}));
+
+vi.mock('@/lib/sites/siteLifecycleNotifications', () => ({
+  notifyBuyerSiteProvisioned: storeMocks.notifyBuyerSiteProvisioned,
+  notifyBuyerSiteBillingUpdate: storeMocks.notifyBuyerSiteBillingUpdate,
+  notifyOperatorSiteBillingUpdate: storeMocks.notifyOperatorSiteBillingUpdate,
 }));
 
 import {
@@ -23,6 +32,9 @@ describe('site provisioning', () => {
     vi.clearAllMocks();
     storeMocks.readSiteConfig.mockResolvedValue(null);
     storeMocks.saveSiteConfig.mockResolvedValue(['supabase', 'mongo']);
+    storeMocks.notifyBuyerSiteProvisioned.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
+    storeMocks.notifyBuyerSiteBillingUpdate.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
+    storeMocks.notifyOperatorSiteBillingUpdate.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
   });
 
   it('creates a draft launch kit from paid Stripe checkout metadata', async () => {
@@ -123,10 +135,62 @@ describe('site provisioning', () => {
     );
   });
 
-  it('moves a past-due site back to draft billing state', async () => {
+  it('keeps a past-due live site active during the grace window', async () => {
     storeMocks.readSiteConfig.mockResolvedValue({
       ...createReadyApprovedKit('broker-one'),
       status: 'active',
+    });
+
+    const result = await updateProvisionedAgentSiteBilling({
+      agentId: 'broker-one',
+      email: 'agent@example.test',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'past_due',
+      source: 'stripe-subscription-updated',
+    });
+
+    expect(result?.kit.status).toBe('active');
+    expect(result?.kit.billingProfile.billingStatus).toBe('past_due');
+    expect(result?.kit.billingProfile.gracePeriodEndsAt).toBeTruthy();
+    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'customer.subscription.updated',
+      billingStatus: 'past_due',
+      siteStatus: 'active',
+    }));
+    expect(result?.readyToPublish).toBe(false);
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: 'broker-one',
+        status: 'active',
+        billingProfile: expect.objectContaining({
+          billingStatus: 'past_due',
+          gracePeriodEndsAt: expect.any(String),
+        }),
+      }),
+      expect.objectContaining({ role: 'stripe-subscription-updated' }),
+    );
+    expect(storeMocks.notifyBuyerSiteBillingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'past_due',
+      previousStatus: 'active',
+      email: 'agent@example.test',
+      gracePeriodEndsAt: expect.any(String),
+    }));
+    expect(storeMocks.notifyOperatorSiteBillingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'past_due',
+      previousStatus: 'active',
+      gracePeriodEndsAt: expect.any(String),
+    }));
+  });
+
+  it('moves a past-due site to draft after the grace window expires', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createReadyApprovedKit('broker-one'),
+      status: 'active',
+      billingProfile: {
+        billingStatus: 'past_due',
+        stripeSubscriptionId: 'sub_123',
+        gracePeriodEndsAt: new Date(Date.now() - 60_000).toISOString(),
+      },
     });
 
     const result = await updateProvisionedAgentSiteBilling({
@@ -137,21 +201,8 @@ describe('site provisioning', () => {
     });
 
     expect(result?.kit.status).toBe('draft');
-    expect(result?.kit.billingProfile.billingStatus).toBe('past_due');
-    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
-      action: 'customer.subscription.updated',
-      billingStatus: 'past_due',
-      siteStatus: 'draft',
-    }));
-    expect(result?.readyToPublish).toBe(false);
-    expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
-      expect.objectContaining({
-        agentId: 'broker-one',
-        status: 'draft',
-        billingProfile: expect.objectContaining({ billingStatus: 'past_due' }),
-      }),
-      expect.objectContaining({ role: 'stripe-subscription-updated' }),
-    );
+    expect(result?.kit.billingProfile.gracePeriodEndsAt).toBeTruthy();
+    expect(storeMocks.notifyBuyerSiteBillingUpdate).not.toHaveBeenCalled();
   });
 
   it('reactivates an approved ready site when subscription billing recovers', async () => {
@@ -161,6 +212,7 @@ describe('site provisioning', () => {
       billingProfile: {
         billingStatus: 'past_due',
         stripeSubscriptionId: 'sub_123',
+        gracePeriodEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       },
     });
 
@@ -173,7 +225,12 @@ describe('site provisioning', () => {
 
     expect(result?.kit.status).toBe('active');
     expect(result?.kit.billingProfile.billingStatus).toBe('active');
+    expect(result?.kit.billingProfile.gracePeriodEndsAt).toBe('');
     expect(result?.readyToPublish).toBe(true);
+    expect(storeMocks.notifyBuyerSiteBillingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'active',
+      previousStatus: 'past_due',
+    }));
   });
 });
 
