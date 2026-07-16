@@ -257,8 +257,22 @@ describe('Command Post middleware bypass', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 
+  it('allows anonymous development Launch Kit requests from localhost', async () => {
+    const response = await updateSession(makeNextRequest('http://localhost:3010/admin/launch-kit'), testNextResponse);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+  });
+
   it('redirects anonymous development /admin/orchestrator requests from public hosts', async () => {
     const response = await updateSession(makeNextRequest('https://preview.sunsetpulse.test/admin/orchestrator'), testNextResponse);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://preview.sunsetpulse.test/login');
+  });
+
+  it('redirects anonymous development Launch Kit requests from public hosts', async () => {
+    const response = await updateSession(makeNextRequest('https://preview.sunsetpulse.test/admin/launch-kit'), testNextResponse);
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('https://preview.sunsetpulse.test/login');

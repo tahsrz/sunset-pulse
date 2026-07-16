@@ -102,6 +102,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <AdminPillLink href="/admin/launch-kit" label="Launch Kit" />
               <AdminPillLink href="/admin/branding" label="Agent Profiles" />
               <AdminPillLink href="/admin/hot-list" label="Hot List" />
             </div>

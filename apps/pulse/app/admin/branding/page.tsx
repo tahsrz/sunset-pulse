@@ -134,6 +134,12 @@ export default function BrandingConfigPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
+              href="/admin/launch-kit"
+              className="flex items-center gap-2 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200 px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all border border-cyan-300/20"
+            >
+              Launch Kit
+            </Link>
+            <Link
               href="/admin/agent-leads"
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/70 px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all"
             >

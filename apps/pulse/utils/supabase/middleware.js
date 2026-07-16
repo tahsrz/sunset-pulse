@@ -31,7 +31,7 @@ export async function updateSession(request, createResponse) {
   // Protected routes and role-based redirection
   const url = new URL(request.url)
   const path = url.pathname
-  const localOrchestratorRoute = path.startsWith('/admin/orchestrator') && isLocalRequest(request)
+  const localAdminRoute = path.startsWith('/admin') && isLocalRequest(request)
   const needsRole =
     path.startsWith('/dashboard') ||
     path.startsWith('/api/leads/reengage') ||
@@ -56,7 +56,7 @@ export async function updateSession(request, createResponse) {
       path.startsWith('/abidan/war-room') ||
       path.startsWith('/scythe') ||
       path.startsWith('/briefing') ||
-      (path.startsWith('/admin') && !localOrchestratorRoute && !path.startsWith('/admin/scheduling'))
+      (path.startsWith('/admin') && !localAdminRoute && !path.startsWith('/admin/scheduling'))
     ) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
