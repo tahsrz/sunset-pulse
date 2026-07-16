@@ -86,6 +86,8 @@ export type LaunchKitBillingProfile = {
   stripeSubscriptionId?: string;
   stripeCheckoutSessionId?: string;
   trialEndsAt?: string;
+  gracePeriodEndsAt?: string;
+  billingStatusChangedAt?: string;
   billingStatus: 'unknown' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete';
 };
 
@@ -157,6 +159,8 @@ const billingProfileSchema = z.object({
   stripeSubscriptionId: optionalStringSchema,
   stripeCheckoutSessionId: optionalStringSchema,
   trialEndsAt: optionalStringSchema,
+  gracePeriodEndsAt: optionalStringSchema,
+  billingStatusChangedAt: optionalStringSchema,
   billingStatus: z.enum(['unknown', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete']).default('unknown'),
 });
 const reviewProfileSchema = z.object({
@@ -337,6 +341,8 @@ export function normalizeLaunchKit(input: unknown, fallbackAgentId?: string | nu
       stripeSubscriptionId: billingProfile.stripeSubscriptionId || billingProfile.stripe_subscription_id || fallback.billingProfile.stripeSubscriptionId || '',
       stripeCheckoutSessionId: billingProfile.stripeCheckoutSessionId || billingProfile.stripe_checkout_session_id || fallback.billingProfile.stripeCheckoutSessionId || '',
       trialEndsAt: billingProfile.trialEndsAt || billingProfile.trial_ends_at || fallback.billingProfile.trialEndsAt || '',
+      gracePeriodEndsAt: billingProfile.gracePeriodEndsAt || billingProfile.grace_period_ends_at || fallback.billingProfile.gracePeriodEndsAt || '',
+      billingStatusChangedAt: billingProfile.billingStatusChangedAt || billingProfile.billing_status_changed_at || fallback.billingProfile.billingStatusChangedAt || '',
       billingStatus: billingProfile.billingStatus || billingProfile.billing_status || fallback.billingProfile.billingStatus || 'unknown',
     },
     reviewProfile: {
