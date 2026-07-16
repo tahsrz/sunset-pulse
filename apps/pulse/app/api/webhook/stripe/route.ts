@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+
 import { NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
@@ -10,6 +11,11 @@ import { prisma } from '@/lib/core/prisma';
 import { notifyStaffOfBurgerOrder } from '@/lib/twilio';
 import { dispatchPaidOrderPhoneRelay } from '@/lib/grill/phoneRelay';
 import { sendOrderConfirmationEmail } from '@/lib/grill/orderConfirmationEmail';
+import {
+  completeStripeWebhookEvent,
+  claimStripeWebhookEvent,
+  failStripeWebhookEvent,
+} from '@/lib/billing/stripeWebhookLedger';
 import {
   provisionPaidAgentSite,
   suspendProvisionedAgentSite,
@@ -36,6 +42,39 @@ export async function POST(req: NextRequest) {
     return errorResponse(`Webhook Error: ${err.message}`, 400);
   }
 
+  let claim;
+  try {
+    claim = await claimStripeWebhookEvent(event);
+  } catch (error: any) {
+    console.error('[STRIPE_WEBHOOK_LEDGER_CLAIM_ERROR]:', error);
+    return errorResponse('Stripe webhook ledger is unavailable.', 503, error?.message || null);
+  }
+
+  if (!claim.shouldProcess) {
+    console.log(`[STRIPE_WEBHOOK] Duplicate event ${claim.eventId} ignored.`);
+    return successResponse({
+      received: true,
+      ignored: claim.reason || 'duplicate_event',
+      eventId: claim.eventId,
+    });
+  }
+
+  try {
+    const result = await processStripeEvent(event);
+    await completeStripeWebhookEvent(claim.eventId, claim.stores);
+    return successResponse({
+      received: true,
+      eventId: claim.eventId,
+      ...result,
+    });
+  } catch (error: any) {
+    await failStripeWebhookEvent(claim.eventId, claim.stores, error);
+    console.error('[STRIPE_WEBHOOK_PROCESSING_ERROR]:', error);
+    return errorResponse('Stripe webhook processing failed.', 500, error?.message || null);
+  }
+}
+
+async function processStripeEvent(event: Stripe.Event) {
   const session = event.data.object as Stripe.Checkout.Session;
 
   // Handle successful checkout
@@ -49,7 +88,7 @@ export async function POST(req: NextRequest) {
       await User.findOneAndUpdate({ email: customerEmail }, {
         subscriptionExpires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       });
-      console.log(`✅ [STRIPE_WEBHOOK] User ${customerEmail} upgraded to Premium.`);
+      console.log(`[STRIPE_WEBHOOK] User ${customerEmail} upgraded to Premium.`);
     }
 
     // 2. Provision paid agent sites
@@ -79,13 +118,13 @@ export async function POST(req: NextRequest) {
     if (metadata?.orderType === 'grill_food' && metadata?.orderId) {
       if (session.payment_status !== 'paid') {
         console.warn(`[STRIPE_WEBHOOK] Checkout session ${session.id} completed without paid status: ${session.payment_status}`);
-        return successResponse({ received: true, ignored: 'checkout_not_paid' });
+        return { ignored: 'checkout_not_paid' };
       }
 
       const existingOrder = await Order.findById(metadata.orderId);
       if (!existingOrder) {
         console.warn(`[STRIPE_WEBHOOK] Order ${metadata.orderId} not found for paid checkout session ${session.id}.`);
-        return successResponse({ received: true, ignored: 'order_not_found' });
+        return { ignored: 'order_not_found' };
       }
 
       const wasAlreadyPaid = existingOrder.isPaid || ['PAID_STRIPE', 'PAID_POS'].includes(existingOrder.paymentState);
@@ -95,11 +134,11 @@ export async function POST(req: NextRequest) {
         paymentSessionId: session.id,
         ...(customerEmail ? { customerEmail } : {}),
       }, { new: true });
-      console.log(`🍔 [STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
+      console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
 
       if (wasAlreadyPaid) {
         console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} was already paid. Skipping duplicate staff notification.`);
-        return successResponse({ received: true, ignored: 'already_paid' });
+        return { ignored: 'already_paid' };
       }
 
       try {
@@ -129,7 +168,7 @@ export async function POST(req: NextRequest) {
         }
 
         const targetTime = order?.scheduledTime ? new Date(order.scheduledTime) : null;
-        
+
         let activeShiftBookings: any[] = [];
         try {
           if (targetTime) {
@@ -203,11 +242,11 @@ export async function POST(req: NextRequest) {
         // Fallback to configured admin phone if nobody is scheduled
         const fallbackPhone = process.env.FALLBACK_NOTIFICATION_PHONE || null;
         if (!grillPhone && fallbackPhone) {
-          console.log(`[STRIPE_WEBHOOK] No Grill Employee scheduled. Falling back to admin phone.`);
+          console.log('[STRIPE_WEBHOOK] No Grill Employee scheduled. Falling back to admin phone.');
           grillPhone = fallbackPhone;
         }
         if (!registerPhone && fallbackPhone) {
-          console.log(`[STRIPE_WEBHOOK] No Register Employee scheduled. Falling back to admin phone.`);
+          console.log('[STRIPE_WEBHOOK] No Register Employee scheduled. Falling back to admin phone.');
           registerPhone = fallbackPhone;
         }
 
@@ -239,7 +278,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Handle subscription deletion/cancellation
   if (event.type === 'customer.subscription.updated') {
     const subscription = event.data.object as Stripe.Subscription;
     const metadata = subscription.metadata;
@@ -293,10 +331,10 @@ export async function POST(req: NextRequest) {
         console.error('[STRIPE_WEBHOOK_SITE_SUSPENSION_ERROR]:', error);
       }
     }
-    console.log(`📡 [STRIPE_WEBHOOK] Subscription ${subscription.id} deleted.`);
+    console.log(`[STRIPE_WEBHOOK] Subscription ${subscription.id} deleted.`);
   }
 
-  return successResponse({ received: true });
+  return {};
 }
 
 function isAgentSiteCheckout(session: Stripe.Checkout.Session) {

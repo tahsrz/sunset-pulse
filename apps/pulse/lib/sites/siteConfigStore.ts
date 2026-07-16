@@ -35,6 +35,22 @@ export async function readSiteConfigByOwnerUser(userId?: string | null) {
   return readMongoSiteConfigByOwnerUser(normalizedUserId);
 }
 
+export async function readExpiredPastDueSiteConfigs(nowIso = new Date().toISOString(), limit = 50) {
+  const rowsByAgentId = new Map<string, unknown>();
+
+  for (const row of await readSupabaseExpiredPastDueSiteConfigs(nowIso, limit)) {
+    const agentId = typeof (row as any)?.agent_id === 'string' ? (row as any).agent_id : '';
+    if (agentId) rowsByAgentId.set(agentId, row);
+  }
+
+  for (const row of await readMongoExpiredPastDueSiteConfigs(nowIso, limit)) {
+    const agentId = typeof (row as any)?.agentId === 'string' ? (row as any).agentId : '';
+    if (agentId && !rowsByAgentId.has(agentId)) rowsByAgentId.set(agentId, row);
+  }
+
+  return Array.from(rowsByAgentId.values()).slice(0, limit);
+}
+
 export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
   const savedStores: string[] = [];
 
@@ -145,5 +161,40 @@ async function readMongoSiteConfigByOwnerUser(userId: string) {
   } catch (error) {
     console.warn('[SITE_CONFIG_MONGO_OWNER_READ_FALLBACK]', error);
     return null;
+  }
+}
+
+async function readSupabaseExpiredPastDueSiteConfigs(nowIso: string, limit: number) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('site_config')
+      .select('*')
+      .filter('billing_profile->>billingStatus', 'eq', 'past_due')
+      .filter('billing_profile->>gracePeriodEndsAt', 'lt', nowIso)
+      .order('updated_at', { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      console.warn('[SITE_CONFIG_SUPABASE_EXPIRED_GRACE_READ]', error.message);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.warn('[SITE_CONFIG_SUPABASE_EXPIRED_GRACE_READ_FALLBACK]', error);
+    return [];
+  }
+}
+
+async function readMongoExpiredPastDueSiteConfigs(nowIso: string, limit: number) {
+  try {
+    await connectDB();
+    return await SiteConfig.find({
+      'billingProfile.billingStatus': 'past_due',
+      'billingProfile.gracePeriodEndsAt': { $lt: nowIso },
+    }).sort({ updatedAt: 1 }).limit(limit).lean();
+  } catch (error) {
+    console.warn('[SITE_CONFIG_MONGO_EXPIRED_GRACE_READ_FALLBACK]', error);
+    return [];
   }
 }
