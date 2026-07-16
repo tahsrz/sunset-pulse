@@ -18,6 +18,9 @@ const webhookMocks = vi.hoisted(() => {
     notifyStaffOfBurgerOrder: vi.fn(),
     dispatchPaidOrderPhoneRelay: vi.fn(),
     sendOrderConfirmationEmail: vi.fn(),
+    claimStripeWebhookEvent: vi.fn(),
+    completeStripeWebhookEvent: vi.fn(),
+    failStripeWebhookEvent: vi.fn(),
   };
 });
 
@@ -72,6 +75,12 @@ vi.mock('@/lib/grill/orderConfirmationEmail', () => ({
   sendOrderConfirmationEmail: webhookMocks.sendOrderConfirmationEmail,
 }));
 
+vi.mock('@/lib/billing/stripeWebhookLedger', () => ({
+  claimStripeWebhookEvent: webhookMocks.claimStripeWebhookEvent,
+  completeStripeWebhookEvent: webhookMocks.completeStripeWebhookEvent,
+  failStripeWebhookEvent: webhookMocks.failStripeWebhookEvent,
+}));
+
 vi.mock('@/lib/sites/siteProvisioning', () => ({
   provisionPaidAgentSite: webhookMocks.provisionPaidAgentSite,
   suspendProvisionedAgentSite: webhookMocks.suspendProvisionedAgentSite,
@@ -113,6 +122,13 @@ describe('Stripe webhook site provisioning', () => {
       readiness: [],
       readyToPublish: false,
     }));
+    webhookMocks.claimStripeWebhookEvent.mockResolvedValue({
+      shouldProcess: true,
+      eventId: 'evt_123',
+      stores: ['supabase', 'mongo'],
+    });
+    webhookMocks.completeStripeWebhookEvent.mockResolvedValue(undefined);
+    webhookMocks.failStripeWebhookEvent.mockResolvedValue(undefined);
   });
 
   it('provisions an agent site from a completed subscription checkout', async () => {
@@ -134,19 +150,37 @@ describe('Stripe webhook site provisioning', () => {
       stripeCheckoutSessionId: 'cs_site_123',
       source: 'stripe-checkout',
     }));
+    expect(webhookMocks.completeStripeWebhookEvent).toHaveBeenCalledWith('evt_123', ['supabase', 'mongo']);
   });
 
-  it('keeps duplicate completed checkout events on the same provisioning key', async () => {
+  it('skips duplicate Stripe events after the first ledger claim', async () => {
     webhookMocks.constructEvent.mockReturnValue(siteCheckoutEvent());
+    webhookMocks.claimStripeWebhookEvent
+      .mockResolvedValueOnce({
+        shouldProcess: true,
+        eventId: 'evt_123',
+        stores: ['supabase', 'mongo'],
+      })
+      .mockResolvedValueOnce({
+        shouldProcess: false,
+        reason: 'duplicate_event',
+        eventId: 'evt_123',
+        stores: ['supabase', 'mongo'],
+      });
 
     await POST(webhookRequest());
-    await POST(webhookRequest());
+    const duplicateResponse = await POST(webhookRequest());
+    const duplicateBody = await duplicateResponse.json();
 
-    expect(webhookMocks.provisionPaidAgentSite).toHaveBeenCalledTimes(2);
+    expect(webhookMocks.provisionPaidAgentSite).toHaveBeenCalledTimes(1);
     expect(webhookMocks.provisionPaidAgentSite.mock.calls.map((call) => call[0].stripeCheckoutSessionId)).toEqual([
       'cs_site_123',
-      'cs_site_123',
     ]);
+    expect(duplicateBody.data).toEqual(expect.objectContaining({
+      received: true,
+      ignored: 'duplicate_event',
+      eventId: 'evt_123',
+    }));
   });
 
   it('suspends an agent site when the Stripe subscription is deleted', async () => {
@@ -274,7 +308,9 @@ describe('Stripe webhook site provisioning', () => {
 
 function siteCheckoutEvent() {
   return {
+    id: 'evt_123',
     type: 'checkout.session.completed',
+    livemode: false,
     data: {
       object: {
         id: 'cs_site_123',

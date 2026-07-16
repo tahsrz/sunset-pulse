@@ -8,7 +8,7 @@ import {
   type AgentLaunchKitResponse,
   type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
-import { readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
+import { readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import {
   notifyBuyerSiteBillingUpdate,
   notifyBuyerSiteProvisioned,
@@ -34,6 +34,19 @@ export type PaidAgentSiteProvisioningInput = {
 export type PaidAgentSiteProvisioningResult = AgentLaunchKitResponse & {
   created: boolean;
   savedStores: string[];
+};
+
+export type ExpirePastDueGracePeriodsResult = {
+  scanned: number;
+  expired: number;
+  skipped: number;
+  processed: Array<{
+    agentId: string;
+    status: 'expired' | 'skipped';
+    reason?: string;
+    siteStatus?: AgentLaunchKit['status'];
+    savedStores?: string[];
+  }>;
 };
 
 export async function provisionPaidAgentSite(
@@ -252,6 +265,76 @@ export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProv
   };
 }
 
+export async function expirePastDueGracePeriods(input: {
+  now?: Date;
+  limit?: number;
+  source?: string;
+} = {}): Promise<ExpirePastDueGracePeriodsResult> {
+  const now = input.now || new Date();
+  const nowIso = now.toISOString();
+  const rows = await readExpiredPastDueSiteConfigs(nowIso, input.limit || 50);
+  const processed: ExpirePastDueGracePeriodsResult['processed'] = [];
+
+  for (const row of rows) {
+    const kit = normalizeLaunchKit(row);
+    const gracePeriodEndsAt = kit.billingProfile.gracePeriodEndsAt || '';
+
+    if (kit.billingProfile.billingStatus !== 'past_due') {
+      processed.push({ agentId: kit.agentId, status: 'skipped', reason: 'billing_not_past_due' });
+      continue;
+    }
+
+    if (!gracePeriodEndsAt || isWithinGracePeriod(gracePeriodEndsAt, now)) {
+      processed.push({ agentId: kit.agentId, status: 'skipped', reason: 'grace_not_expired' });
+      continue;
+    }
+
+    if (kit.status === 'draft') {
+      processed.push({ agentId: kit.agentId, status: 'skipped', reason: 'already_draft', siteStatus: kit.status });
+      continue;
+    }
+
+    const expiredKit = appendProvisioningAuditEvent(normalizeLaunchKit({
+      ...kit,
+      status: 'draft',
+      billingProfile: {
+        ...kit.billingProfile,
+        billingStatus: 'past_due',
+        gracePeriodEndsAt,
+      },
+    }, kit.agentId), {
+      action: 'billing.grace_period.expired',
+      source: input.source || 'site-billing-grace-cron',
+      status: 'succeeded',
+      message: `Past-due grace window expired on ${gracePeriodEndsAt}; site moved to draft.`,
+      actor: 'system-cron',
+      stripeCustomerId: kit.billingProfile.stripeCustomerId || '',
+      stripeSubscriptionId: kit.billingProfile.stripeSubscriptionId || '',
+      billingStatus: 'past_due',
+      siteStatus: 'draft',
+    });
+
+    const savedStores = await saveSiteConfig(expiredKit, {
+      role: input.source || 'site-billing-grace-cron',
+      userId: kit.ownerId,
+    });
+
+    processed.push({
+      agentId: kit.agentId,
+      status: 'expired',
+      siteStatus: 'draft',
+      savedStores,
+    });
+  }
+
+  return {
+    scanned: rows.length,
+    expired: processed.filter((item) => item.status === 'expired').length,
+    skipped: processed.filter((item) => item.status === 'skipped').length,
+    processed,
+  };
+}
+
 export function resolveProvisionedAgentId(input: PaidAgentSiteProvisioningInput) {
   const explicitAgentId = normalizeAgentId(input.agentId);
   if (explicitAgentId) return explicitAgentId;
@@ -352,10 +435,10 @@ function resolveGracePeriodEndsAt(
   return dateDaysFromNow(PAST_DUE_GRACE_DAYS);
 }
 
-function isWithinGracePeriod(value?: string) {
+function isWithinGracePeriod(value?: string, now = new Date()) {
   if (!value) return false;
   const date = new Date(value);
-  return Number.isFinite(date.getTime()) && date.getTime() > Date.now();
+  return Number.isFinite(date.getTime()) && date.getTime() > now.getTime();
 }
 
 function shouldNotifyBillingStatus(

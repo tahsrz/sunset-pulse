@@ -8,5 +8,11 @@
       "destination": "/",
       "permanent": true
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/billing/grace-expiry/cron",
+      "schedule": "0 12 * * *"
+    }
   ]
 }

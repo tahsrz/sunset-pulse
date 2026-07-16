@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import type { ReactNode } from 'react';
 import { ArrowUpRight, ClipboardList, ShieldAlert } from 'lucide-react';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
@@ -58,6 +59,8 @@ type SiteReviewsPageProps = {
   searchParams?: {
     agentId?: string;
     status?: string;
+    billing?: string;
+    grace?: string;
   };
 };
 
@@ -82,15 +85,21 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
     .select('agent_id, owner_name, subdomain, custom_domain, status, subscription_tier, branding, agent_profile, billing_profile, review_profile, provisioning_audit, updated_at')
     .order('updated_at', { ascending: false })
     .limit(100);
-  const rows = ((data || []) as SiteReviewRow[])
+  const allRows = ((data || []) as SiteReviewRow[])
     .filter((row) => row.review_profile?.status && row.review_profile.status !== 'not_started')
-    .filter((row) => !searchParams?.agentId || row.agent_id === searchParams.agentId)
-    .filter((row) => !searchParams?.status || row.review_profile?.status === searchParams.status);
-  const requestedCount = rows.filter((row) => row.review_profile?.status === 'requested').length;
-  const savedCount = rows.filter((row) => row.review_profile?.status === 'setup_saved').length;
-  const approvedCount = rows.filter((row) => row.review_profile?.status === 'approved').length;
-  const changesCount = rows.filter((row) => row.review_profile?.status === 'changes_requested').length;
-  const pastDueCount = rows.filter((row) => row.billing_profile?.billingStatus === 'past_due').length;
+    .filter((row) => !searchParams?.agentId || row.agent_id === searchParams.agentId);
+  const rows = allRows
+    .filter((row) => !searchParams?.status || row.review_profile?.status === searchParams.status)
+    .filter((row) => !searchParams?.billing || row.billing_profile?.billingStatus === searchParams.billing)
+    .filter((row) => searchParams?.grace !== 'expiring_soon' || isGraceExpiringSoon(row));
+  const requestedCount = allRows.filter((row) => row.review_profile?.status === 'requested').length;
+  const savedCount = allRows.filter((row) => row.review_profile?.status === 'setup_saved').length;
+  const approvedCount = allRows.filter((row) => row.review_profile?.status === 'approved').length;
+  const changesCount = allRows.filter((row) => row.review_profile?.status === 'changes_requested').length;
+  const pastDueCount = allRows.filter((row) => row.billing_profile?.billingStatus === 'past_due').length;
+  const unpaidCount = allRows.filter((row) => row.billing_profile?.billingStatus === 'unpaid').length;
+  const canceledCount = allRows.filter((row) => row.billing_profile?.billingStatus === 'canceled').length;
+  const graceSoonCount = allRows.filter(isGraceExpiringSoon).length;
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
@@ -122,6 +131,23 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
             <MetricCard label="Approved" value={approvedCount.toString()} />
             <MetricCard label="Changes" value={changesCount.toString()} />
             <MetricCard label="Past Due" value={pastDueCount.toString()} />
+          </div>
+
+          <div className="mt-6 grid gap-4 xl:grid-cols-2">
+            <FilterGroup label="Review">
+              <FilterLink href={reviewQueueHref(searchParams, { status: '' })} active={!searchParams?.status} label="All" count={allRows.length} />
+              <FilterLink href={reviewQueueHref(searchParams, { status: 'requested' })} active={searchParams?.status === 'requested'} label="Requested" count={requestedCount} />
+              <FilterLink href={reviewQueueHref(searchParams, { status: 'setup_saved' })} active={searchParams?.status === 'setup_saved'} label="Saved" count={savedCount} />
+              <FilterLink href={reviewQueueHref(searchParams, { status: 'approved' })} active={searchParams?.status === 'approved'} label="Approved" count={approvedCount} />
+              <FilterLink href={reviewQueueHref(searchParams, { status: 'changes_requested' })} active={searchParams?.status === 'changes_requested'} label="Changes" count={changesCount} />
+            </FilterGroup>
+            <FilterGroup label="Billing">
+              <FilterLink href={reviewQueueHref(searchParams, { billing: '', grace: '' })} active={!searchParams?.billing && !searchParams?.grace} label="All" count={allRows.length} />
+              <FilterLink href={reviewQueueHref(searchParams, { billing: 'past_due', grace: '' })} active={searchParams?.billing === 'past_due'} label="Past Due" count={pastDueCount} />
+              <FilterLink href={reviewQueueHref(searchParams, { billing: 'unpaid', grace: '' })} active={searchParams?.billing === 'unpaid'} label="Unpaid" count={unpaidCount} />
+              <FilterLink href={reviewQueueHref(searchParams, { billing: 'canceled', grace: '' })} active={searchParams?.billing === 'canceled'} label="Canceled" count={canceledCount} />
+              <FilterLink href={reviewQueueHref(searchParams, { billing: '', grace: 'expiring_soon' })} active={searchParams?.grace === 'expiring_soon'} label="Grace Soon" count={graceSoonCount} />
+            </FilterGroup>
           </div>
         </header>
 
@@ -223,6 +249,31 @@ function AdminPillLink({ href, label }: { href: string; label: string }) {
   );
 }
 
+function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-4">
+      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function FilterLink({ href, active, label, count }: { href: string; active: boolean; label: string; count: number }) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition ${
+        active
+          ? 'border-cyan-200 bg-cyan-200 text-slate-950'
+          : 'border-white/10 bg-slate-950/40 text-slate-300 hover:bg-white/10'
+      }`}
+    >
+      <span>{label}</span>
+      <span className={`rounded-full px-2 py-0.5 font-mono text-[10px] ${active ? 'bg-slate-950/15' : 'bg-white/10'}`}>{count}</span>
+    </Link>
+  );
+}
+
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
@@ -268,4 +319,36 @@ function formatDate(value?: string | null, fallback = 'Not requested') {
 
 function formatBillingStatus(value?: string | null) {
   return (value || 'unknown').replace(/_/g, ' ');
+}
+
+function isGraceExpiringSoon(row: SiteReviewRow) {
+  if (row.billing_profile?.billingStatus !== 'past_due') return false;
+  const graceEndsAt = row.billing_profile?.gracePeriodEndsAt;
+  if (!graceEndsAt) return false;
+  const graceTime = new Date(graceEndsAt).getTime();
+  if (!Number.isFinite(graceTime)) return false;
+  const now = Date.now();
+  const twoDays = 48 * 60 * 60 * 1000;
+  return graceTime > now && graceTime <= now + twoDays;
+}
+
+function reviewQueueHref(
+  current: SiteReviewsPageProps['searchParams'],
+  patch: Partial<NonNullable<SiteReviewsPageProps['searchParams']>>,
+) {
+  const params = new URLSearchParams();
+  const next = {
+    agentId: current?.agentId || '',
+    status: current?.status || '',
+    billing: current?.billing || '',
+    grace: current?.grace || '',
+    ...patch,
+  };
+
+  for (const [key, value] of Object.entries(next)) {
+    if (value) params.set(key, value);
+  }
+
+  const query = params.toString();
+  return query ? `/admin/site-reviews?${query}` : '/admin/site-reviews';
 }

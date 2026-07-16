@@ -3,6 +3,7 @@ import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
 
 const storeMocks = vi.hoisted(() => ({
   readSiteConfig: vi.fn(),
+  readExpiredPastDueSiteConfigs: vi.fn(),
   saveSiteConfig: vi.fn(),
   notifyBuyerSiteProvisioned: vi.fn(),
   notifyBuyerSiteBillingUpdate: vi.fn(),
@@ -11,6 +12,7 @@ const storeMocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/sites/siteConfigStore', () => ({
   readSiteConfig: storeMocks.readSiteConfig,
+  readExpiredPastDueSiteConfigs: storeMocks.readExpiredPastDueSiteConfigs,
   saveSiteConfig: storeMocks.saveSiteConfig,
 }));
 
@@ -21,6 +23,7 @@ vi.mock('@/lib/sites/siteLifecycleNotifications', () => ({
 }));
 
 import {
+  expirePastDueGracePeriods,
   provisionPaidAgentSite,
   resolveProvisionedAgentId,
   suspendProvisionedAgentSite,
@@ -31,6 +34,7 @@ describe('site provisioning', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeMocks.readSiteConfig.mockResolvedValue(null);
+    storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([]);
     storeMocks.saveSiteConfig.mockResolvedValue(['supabase', 'mongo']);
     storeMocks.notifyBuyerSiteProvisioned.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
     storeMocks.notifyBuyerSiteBillingUpdate.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
@@ -231,6 +235,48 @@ describe('site provisioning', () => {
       status: 'active',
       previousStatus: 'past_due',
     }));
+  });
+
+  it('expires active past-due grace windows into draft status', async () => {
+    const expiredGrace = new Date(Date.now() - 60_000).toISOString();
+    storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([{
+      ...createReadyApprovedKit('broker-one'),
+      status: 'active',
+      billingProfile: {
+        billingStatus: 'past_due',
+        stripeSubscriptionId: 'sub_123',
+        gracePeriodEndsAt: expiredGrace,
+      },
+    }]);
+
+    const result = await expirePastDueGracePeriods({
+      now: new Date(),
+      source: 'site-billing-grace-cron',
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      scanned: 1,
+      expired: 1,
+      skipped: 0,
+    }));
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: 'broker-one',
+        status: 'draft',
+        billingProfile: expect.objectContaining({
+          billingStatus: 'past_due',
+          gracePeriodEndsAt: expiredGrace,
+        }),
+        provisioningAudit: expect.arrayContaining([
+          expect.objectContaining({
+            action: 'billing.grace_period.expired',
+            billingStatus: 'past_due',
+            siteStatus: 'draft',
+          }),
+        ]),
+      }),
+      expect.objectContaining({ role: 'site-billing-grace-cron' }),
+    );
   });
 });
 
