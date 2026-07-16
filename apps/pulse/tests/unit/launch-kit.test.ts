@@ -60,6 +60,19 @@ describe('launchKit', () => {
         leadEmail: 'leads@example.test',
         hotListMlsIds: ['NTREIS-1'],
       },
+      provisioning_audit: [
+        {
+          id: 'evt_old',
+          occurredAt: '2026-07-16T15:00:00.000Z',
+          action: 'checkout.session.completed',
+          source: 'stripe-checkout',
+          status: 'succeeded',
+          message: 'Stripe checkout provisioned a new draft agent site.',
+          stripeCheckoutSessionId: 'cs_test_123',
+          billingStatus: 'trialing',
+          siteStatus: 'draft',
+        },
+      ],
     });
 
     expect(kit.agentId).toBe('broker-one');
@@ -71,6 +84,10 @@ describe('launchKit', () => {
     expect(kit.branding.visualLoci).toEqual(expect.objectContaining({ name: 'Forest' }));
     expect(kit.agentProfile.displayName).toBe('Broker One');
     expect(kit.integrationProfile.hotListMlsIds).toEqual(['NTREIS-1']);
+    expect(kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'checkout.session.completed',
+      stripeCheckoutSessionId: 'cs_test_123',
+    }));
   });
 
   it('falls back incomplete visual loci to a valid launch-kit default', () => {
@@ -118,9 +135,11 @@ describe('launchKit', () => {
 
     expect(supabaseRecord.agent_id).toBe(kit.agentId);
     expect(supabaseRecord.branding.visualLoci?.name).toBe('Dark Mode');
+    expect(supabaseRecord.provisioning_audit).toEqual(kit.provisioningAudit);
     expect(supabaseRecord.last_modified_by).toBe('operator@example.test');
     expect(supabaseRecord.sections.map((section) => section.type)).toContain('featured_listings');
     expect(mongoRecord.agentId).toBe(kit.agentId);
+    expect(mongoRecord.provisioningAudit).toEqual(kit.provisioningAudit);
     expect(mongoRecord.lastModifiedBy).toBe('local');
   });
 

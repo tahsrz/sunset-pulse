@@ -40,12 +40,23 @@ describe('site provisioning', () => {
     expect(result.kit.subscriptionTier).toBe('atlas');
     expect(result.kit.agentProfile.displayName).toBe('Mina Patel');
     expect(result.kit.integrationProfile.leadEmail).toBe('mina@example.test');
+    expect(result.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'checkout.session.completed',
+      source: 'stripe-webhook',
+      status: 'succeeded',
+      stripeCheckoutSessionId: 'cs_test_123',
+      billingStatus: 'trialing',
+      siteStatus: 'draft',
+    }));
     expect(result.publicUrl).toContain(`${result.kit.subdomain}.sunsetpulse.app`);
     expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
       expect.objectContaining({
         agentId: result.kit.agentId,
         status: 'draft',
         subscriptionTier: 'atlas',
+        provisioningAudit: expect.arrayContaining([
+          expect.objectContaining({ action: 'checkout.session.completed' }),
+        ]),
       }),
       expect.objectContaining({ role: 'stripe-webhook', email: 'mina@example.test' }),
     );
@@ -101,6 +112,11 @@ describe('site provisioning', () => {
     });
 
     expect(result?.kit.status).toBe('suspended');
+    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'customer.subscription.deleted',
+      billingStatus: 'canceled',
+      siteStatus: 'suspended',
+    }));
     expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
       expect.objectContaining({ agentId: 'broker-one', status: 'suspended' }),
       expect.objectContaining({ role: 'stripe-webhook' }),
@@ -122,6 +138,11 @@ describe('site provisioning', () => {
 
     expect(result?.kit.status).toBe('draft');
     expect(result?.kit.billingProfile.billingStatus).toBe('past_due');
+    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'customer.subscription.updated',
+      billingStatus: 'past_due',
+      siteStatus: 'draft',
+    }));
     expect(result?.readyToPublish).toBe(false);
     expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
       expect.objectContaining({

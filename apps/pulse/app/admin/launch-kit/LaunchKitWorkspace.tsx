@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   ArrowUpRight,
   CheckCircle2,
+  Clock3,
   ClipboardList,
   Palette,
   ExternalLink,
@@ -494,6 +495,42 @@ export function LaunchKitWorkspace() {
                 </a>
               </div>
             </section>
+
+            <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-2xl">
+              <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300">
+                <Clock3 size={14} />
+                Provisioning Audit
+              </p>
+              <div className="mt-4 space-y-3">
+                {(kit.provisioningAudit || []).length > 0 ? (
+                  kit.provisioningAudit.slice(0, 8).map((event) => (
+                    <div key={event.id} className="border-l border-cyan-300/30 pl-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
+                          event.status === 'succeeded'
+                            ? 'bg-emerald-300/10 text-emerald-200'
+                            : event.status === 'failed'
+                              ? 'bg-red-300/10 text-red-200'
+                              : 'bg-cyan-300/10 text-cyan-200'
+                        }`}>
+                          {event.status}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500">{formatAuditDate(event.occurredAt)}</span>
+                      </div>
+                      <p className="mt-2 text-xs font-black text-slate-100">{event.action}</p>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-400">{event.message}</p>
+                      <p className="mt-1 truncate font-mono text-[10px] text-slate-600">
+                        {[event.stripeCheckoutSessionId, event.stripeSubscriptionId, event.billingStatus, event.siteStatus].filter(Boolean).join(' / ') || event.source}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs leading-6 text-slate-500">
+                    No Stripe provisioning events have been recorded for this site yet.
+                  </p>
+                )}
+              </div>
+            </section>
           </aside>
         </div>
       </div>
@@ -620,4 +657,17 @@ function LocusSwatch({ label, color }: { label: string; color: string }) {
 function normalizeHexColor(value?: string) {
   const color = value?.trim();
   return color && /^#[0-9a-f]{6}$/i.test(color) ? color : null;
+}
+
+function formatAuditDate(value?: string) {
+  if (!value) return 'pending';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'pending';
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }

@@ -6,6 +6,7 @@ import {
   normalizeLaunchKit,
   type AgentLaunchKit,
   type AgentLaunchKitResponse,
+  type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
 import { readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import { notifyBuyerSiteProvisioned } from '@/lib/sites/siteLifecycleNotifications';
@@ -51,10 +52,12 @@ export async function provisionPaidAgentSite(
     ? baseKit.integrationProfile.leadEmail || email || undefined
     : email || baseKit.integrationProfile.leadEmail;
 
-  const billingStatus = normalizeBillingStatus(input.billingStatus) || baseKit.billingProfile.billingStatus || 'trialing';
+  const billingStatus = normalizeBillingStatus(input.billingStatus)
+    || (existing ? baseKit.billingProfile.billingStatus : 'trialing')
+    || 'trialing';
   const trialEndsAt = normalizeIsoDate(input.trialEndsAt) || baseKit.billingProfile.trialEndsAt || dateDaysFromNow(90);
 
-  const kit = normalizeLaunchKit({
+  const kit = appendProvisioningAuditEvent(normalizeLaunchKit({
     ...baseKit,
     ownerId: baseKit.ownerId || input.userId || '',
     ownerName,
@@ -91,7 +94,18 @@ export async function provisionPaidAgentSite(
       ...baseKit.reviewProfile,
       status: 'not_started',
     },
-  }, agentId);
+  }, agentId), {
+    action: 'checkout.session.completed',
+    source: input.source || 'stripe-webhook',
+    status: 'succeeded',
+    message: existing ? 'Stripe checkout refreshed an existing agent site.' : 'Stripe checkout provisioned a new draft agent site.',
+    actor: 'stripe-webhook',
+    stripeCheckoutSessionId: input.stripeCheckoutSessionId || '',
+    stripeCustomerId: input.stripeCustomerId || '',
+    stripeSubscriptionId: input.stripeSubscriptionId || '',
+    billingStatus,
+    siteStatus: existing && baseKit.status === 'active' ? 'active' : 'draft',
+  });
 
   const savedStores = await saveSiteConfig(kit, {
     role: input.source || 'stripe-webhook',
@@ -125,7 +139,7 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
   }
 
   const kit = normalizeLaunchKit(existingRow, agentId);
-  const suspendedKit = normalizeLaunchKit({
+  const suspendedKit = appendProvisioningAuditEvent(normalizeLaunchKit({
     ...kit,
     status: 'suspended',
     billingProfile: {
@@ -134,7 +148,17 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
       stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
       billingStatus: 'canceled',
     },
-  }, agentId);
+  }, agentId), {
+    action: 'customer.subscription.deleted',
+    source: input.source || 'stripe-webhook',
+    status: 'succeeded',
+    message: 'Stripe subscription ended; agent site access was suspended.',
+    actor: 'stripe-webhook',
+    stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
+    stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
+    billingStatus: 'canceled',
+    siteStatus: 'suspended',
+  });
   const savedStores = await saveSiteConfig(suspendedKit, {
     role: input.source || 'stripe-webhook',
     email: normalizeEmail(input.email),
@@ -168,10 +192,20 @@ export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProv
     },
   }, agentId);
   const nextStatus = resolveSiteStatusForBilling(nextKitBase, billingStatus);
-  const nextKit = normalizeLaunchKit({
+  const nextKit = appendProvisioningAuditEvent(normalizeLaunchKit({
     ...nextKitBase,
     status: nextStatus,
-  }, agentId);
+  }, agentId), {
+    action: 'customer.subscription.updated',
+    source: input.source || 'stripe-subscription',
+    status: 'succeeded',
+    message: `Stripe subscription status changed to ${billingStatus}; site status is ${nextStatus}.`,
+    actor: 'stripe-webhook',
+    stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
+    stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
+    billingStatus,
+    siteStatus: nextStatus,
+  });
   const savedStores = await saveSiteConfig(nextKit, {
     role: input.source || 'stripe-subscription',
     email: normalizeEmail(input.email),
@@ -307,4 +341,42 @@ function firstString(...values: Array<unknown>) {
   }
 
   return '';
+}
+
+function appendProvisioningAuditEvent(
+  kit: AgentLaunchKit,
+  event: Omit<LaunchKitProvisioningAuditEvent, 'id' | 'occurredAt'> & {
+    id?: string;
+    occurredAt?: string;
+  },
+) {
+  const occurredAt = normalizeIsoDate(event.occurredAt) || new Date().toISOString();
+  const auditEvent: LaunchKitProvisioningAuditEvent = {
+    id: event.id || createAuditEventId(event.action, occurredAt),
+    occurredAt,
+    action: event.action,
+    source: event.source,
+    status: event.status,
+    message: event.message,
+    actor: event.actor,
+    stripeCheckoutSessionId: event.stripeCheckoutSessionId,
+    stripeCustomerId: event.stripeCustomerId,
+    stripeSubscriptionId: event.stripeSubscriptionId,
+    billingStatus: event.billingStatus,
+    siteStatus: event.siteStatus,
+    savedStores: event.savedStores,
+  };
+
+  return normalizeLaunchKit({
+    ...kit,
+    provisioningAudit: [
+      auditEvent,
+      ...(kit.provisioningAudit || []),
+    ].slice(0, 80),
+  }, kit.agentId);
+}
+
+function createAuditEventId(action: string, occurredAt: string) {
+  const seed = `${action}:${occurredAt}:${Math.random().toString(36).slice(2)}`;
+  return createHash('sha1').update(seed).digest('hex').slice(0, 16);
 }

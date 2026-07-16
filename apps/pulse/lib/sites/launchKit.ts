@@ -69,6 +69,7 @@ export type AgentLaunchKit = {
   integrationProfile: IntegrationProfile;
   billingProfile: LaunchKitBillingProfile;
   reviewProfile: LaunchKitReviewProfile;
+  provisioningAudit: LaunchKitProvisioningAuditEvent[];
 };
 
 export type AgentLaunchKitResponse = {
@@ -95,6 +96,22 @@ export type LaunchKitReviewProfile = {
   reviewedAt?: string;
   reviewedBy?: string;
   notes?: string;
+};
+
+export type LaunchKitProvisioningAuditEvent = {
+  id: string;
+  occurredAt: string;
+  action: string;
+  source: string;
+  status: 'received' | 'succeeded' | 'failed' | 'skipped';
+  message: string;
+  actor?: string;
+  stripeCheckoutSessionId?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  billingStatus?: LaunchKitBillingProfile['billingStatus'];
+  siteStatus?: AgentLaunchKit['status'];
+  savedStores?: string[];
 };
 
 export type LaunchKitPublishGate = {
@@ -149,6 +166,21 @@ const reviewProfileSchema = z.object({
   reviewedAt: optionalStringSchema,
   reviewedBy: optionalStringSchema,
   notes: optionalStringSchema,
+});
+const provisioningAuditEventSchema = z.object({
+  id: z.string().trim().min(1).max(120),
+  occurredAt: optionalStringSchema,
+  action: z.string().trim().min(1).max(120),
+  source: z.string().trim().min(1).max(120),
+  status: z.enum(['received', 'succeeded', 'failed', 'skipped']).default('received'),
+  message: z.string().trim().min(1).max(500),
+  actor: optionalStringSchema,
+  stripeCheckoutSessionId: optionalStringSchema,
+  stripeCustomerId: optionalStringSchema,
+  stripeSubscriptionId: optionalStringSchema,
+  billingStatus: z.enum(['unknown', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete']).optional(),
+  siteStatus: statusSchema.optional(),
+  savedStores: z.array(z.string().trim().min(1).max(40)).max(8).optional(),
 });
 
 export const agentLaunchKitSchema = z.object({
@@ -206,6 +238,7 @@ export const agentLaunchKitSchema = z.object({
   }),
   billingProfile: billingProfileSchema,
   reviewProfile: reviewProfileSchema,
+  provisioningAudit: z.array(provisioningAuditEventSchema).max(80).default([]),
 });
 
 export function createDefaultLaunchKit(agentIdInput?: string | null): AgentLaunchKit {
@@ -253,6 +286,7 @@ export function createDefaultLaunchKit(agentIdInput?: string | null): AgentLaunc
     reviewProfile: {
       status: 'not_started',
     },
+    provisioningAudit: [],
   };
 }
 
@@ -269,6 +303,7 @@ export function normalizeLaunchKit(input: unknown, fallbackAgentId?: string | nu
   const subdomain = normalizeTenantSlug(value.subdomain) || getAgentSiteSubdomain(agentId);
   const billingProfile = value.billingProfile || value.billing_profile || fallback.billingProfile;
   const reviewProfile = value.reviewProfile || value.review_profile || fallback.reviewProfile;
+  const provisioningAudit = value.provisioningAudit || value.provisioning_audit || fallback.provisioningAudit;
 
   return agentLaunchKitSchema.parse({
     agentId,
@@ -312,6 +347,7 @@ export function normalizeLaunchKit(input: unknown, fallbackAgentId?: string | nu
       reviewedBy: reviewProfile.reviewedBy || reviewProfile.reviewed_by || fallback.reviewProfile.reviewedBy || '',
       notes: reviewProfile.notes || fallback.reviewProfile.notes || '',
     },
+    provisioningAudit: normalizeProvisioningAudit(provisioningAudit),
   }) as AgentLaunchKit;
 }
 
@@ -397,6 +433,7 @@ export function toSiteConfigSupabaseRecord(kit: AgentLaunchKit, updatedBy: unkno
     integration_profile: kit.integrationProfile,
     billing_profile: kit.billingProfile,
     review_profile: kit.reviewProfile,
+    provisioning_audit: kit.provisioningAudit,
     sections: defaultAgentSiteSections,
     last_modified_by: getUpdatedByLabel(updatedBy),
     updated_at: new Date().toISOString(),
@@ -420,6 +457,7 @@ export function toSiteConfigMongoRecord(kit: AgentLaunchKit, updatedBy: unknown)
     integrationProfile: kit.integrationProfile,
     billingProfile: kit.billingProfile,
     reviewProfile: kit.reviewProfile,
+    provisioningAudit: kit.provisioningAudit,
     sections: defaultAgentSiteSections,
     lastModifiedBy: getUpdatedByLabel(updatedBy),
   };
@@ -463,4 +501,23 @@ function trimOptionalString(value: unknown) {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : '';
+}
+
+function normalizeProvisioningAudit(value: unknown): LaunchKitProvisioningAuditEvent[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((event) => provisioningAuditEventSchema.safeParse(event))
+    .filter((result): result is z.SafeParseSuccess<LaunchKitProvisioningAuditEvent> => result.success)
+    .map((result) => ({
+      ...result.data,
+      occurredAt: normalizeAuditDate(result.data.occurredAt),
+    }))
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    .slice(0, 80);
+}
+
+function normalizeAuditDate(value?: string) {
+  const date = value ? new Date(value) : new Date();
+  return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString();
 }
