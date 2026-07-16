@@ -273,7 +273,11 @@ const accentClasses: Record<IntelligenceWorker['accent'], string> = {
   blue: 'border-sky-300/30 bg-sky-300/10 text-sky-100'
 };
 
-export default function AgentSelectionArena() {
+type AgentSelectionArenaProps = {
+  embedded?: boolean;
+};
+
+export default function AgentSelectionArena({ embedded = false }: AgentSelectionArenaProps) {
   const { logProtocol } = useTheme();
   const commandInputTouched = useRef(false);
   const answerRef = useRef<HTMLElement | null>(null);
@@ -538,22 +542,22 @@ export default function AgentSelectionArena() {
   };
 
   return (
-    <main className="min-h-screen bg-[#071016] text-white">
+    <main className={embedded ? 'h-full min-h-0 overflow-y-auto bg-[#071016] text-white' : 'min-h-screen bg-[#071016] text-white'}>
       <section className="border-b border-white/10 bg-[#0b1821]">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-5 md:flex-row md:items-end md:justify-between lg:px-6">
+        <div className={embedded ? 'flex flex-col gap-4 px-5 py-5' : 'mx-auto flex max-w-6xl flex-col gap-4 px-4 py-5 md:flex-row md:items-end md:justify-between lg:px-6'}>
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-100">
               <Sparkles size={15} />
               Command Center
             </div>
-            <h1 className="mt-2 text-3xl font-black uppercase leading-tight md:text-5xl">
+            <h1 className={embedded ? 'mt-2 text-4xl font-black uppercase leading-[0.96]' : 'mt-2 text-3xl font-black uppercase leading-tight md:text-5xl'}>
               Ask. Get The Answer.
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               The helper choice, files, trace, and Command Post details are still here, but the answer gets the front seat.
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-right sm:min-w-[330px]">
+          <div className={embedded ? 'grid grid-cols-3 gap-2 text-right' : 'grid grid-cols-3 gap-2 text-right sm:min-w-[330px]'}>
             <Metric label="Helpers" value={String(intelligenceWorkers.length)} />
             <Metric label="Files" value={String(tahLoadoutCount)} />
             <Metric label="Mode" value={manualSelection ? 'Manual' : 'Auto'} />
@@ -561,12 +565,12 @@ export default function AgentSelectionArena() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-5 lg:px-6">
+      <section className={embedded ? 'px-5 py-5' : 'mx-auto max-w-6xl px-4 py-5 lg:px-6'}>
         <form onSubmit={submitCommand} className="border border-cyan-200/20 bg-[#0d1c27] p-3 shadow-2xl shadow-black/20">
           <label className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
             Command
           </label>
-          <div className="mt-2 grid gap-3 md:grid-cols-[1fr_auto]">
+          <div className={embedded ? 'mt-2 grid gap-3' : 'mt-2 grid gap-3 md:grid-cols-[1fr_auto]'}>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-4 text-cyan-200" size={19} />
               <textarea
@@ -586,8 +590,8 @@ export default function AgentSelectionArena() {
             </button>
           </div>
 
-          <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <div className={embedded ? 'mt-3 grid gap-3' : 'mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'}>
+            <div className={embedded ? 'grid gap-2' : 'grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'}>
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Helper</span>
                 <select
@@ -604,7 +608,7 @@ export default function AgentSelectionArena() {
                     setCommandResult(null);
                     setRanCommand(false);
                   }}
-                  className="h-10 border border-white/10 bg-black/25 px-3 text-sm font-bold text-white outline-none focus:border-cyan-200/50"
+                  className="h-10 min-w-0 border border-white/10 bg-black/25 px-3 text-sm font-bold text-white outline-none focus:border-cyan-200/50"
                 >
                   <option value="auto">Auto: {recommended.name}</option>
                   {intelligenceWorkers.map((worker) => (
@@ -614,7 +618,7 @@ export default function AgentSelectionArena() {
                   ))}
                 </select>
               </label>
-              <label className="flex min-h-10 items-center justify-between gap-3 border border-white/10 bg-black/25 px-3 sm:mt-6">
+              <label className={embedded ? 'flex min-h-10 items-center justify-between gap-3 border border-white/10 bg-black/25 px-3' : 'flex min-h-10 items-center justify-between gap-3 border border-white/10 bg-black/25 px-3 sm:mt-6'}>
                 <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-300">Safety Check</span>
                 <input
                   type="checkbox"
@@ -647,7 +651,7 @@ export default function AgentSelectionArena() {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div className={embedded ? 'mt-3 flex flex-wrap gap-2 pb-1' : 'mt-3 flex gap-2 overflow-x-auto pb-1'}>
             {primaryQuickCommands.map((item) => (
               <button
                 key={item}
@@ -695,7 +699,7 @@ export default function AgentSelectionArena() {
           )}
         </section>
 
-        <section className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className={embedded ? 'mt-4 grid gap-4' : 'mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]'}>
           <div className="space-y-3">
             {commandResult ? (
               <>

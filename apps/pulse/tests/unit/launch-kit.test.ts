@@ -32,6 +32,19 @@ describe('launchKit', () => {
         siteName: 'Broker One Homes',
         primaryColor: '#0f766e',
         fontFamily: 'Inter',
+        mainBackground: '#052e2b',
+        navBackground: '#134e4a',
+        quadrants: {
+          topLeft: { background: '#052e2b', color: '#ccfbf1' },
+          topRight: { background: '#134e4a', color: '#ffffff' },
+          bottomLeft: { background: '#134e4a', color: '#ffffff' },
+          bottomRight: { background: '#052e2b', color: '#ccfbf1' },
+        },
+        visualLoci: {
+          source: 'dictionary',
+          name: 'Forest',
+          sourceId: 'Forest',
+        },
       },
       hero: {
         title: 'Broker One local search',
@@ -53,8 +66,29 @@ describe('launchKit', () => {
     expect(kit.ownerName).toBe('Broker One');
     expect(kit.customDomain).toBe('broker.example.test');
     expect(kit.subscriptionTier).toBe('atlas');
+    expect(kit.branding.mainBackground).toBe('#052e2b');
+    expect(kit.branding.quadrants?.topLeft.background).toBe('#052e2b');
+    expect(kit.branding.visualLoci).toEqual(expect.objectContaining({ name: 'Forest' }));
     expect(kit.agentProfile.displayName).toBe('Broker One');
     expect(kit.integrationProfile.hotListMlsIds).toEqual(['NTREIS-1']);
+  });
+
+  it('falls back incomplete visual loci to a valid launch-kit default', () => {
+    const kit = normalizeLaunchKit({
+      ...createDefaultLaunchKit(),
+      branding: {
+        siteName: 'Partial Visual Homes',
+        primaryColor: '#0f766e',
+        fontFamily: 'Inter',
+        quadrants: {
+          topLeft: { background: 'not-a-color' },
+        },
+      },
+    });
+
+    expect(kit.branding.quadrants?.topLeft.background).toBe('#0f172a');
+    expect(kit.branding.quadrants?.topLeft.color).toBe('#f8fafc');
+    expect(kit.branding.quadrants?.bottomRight.background).toBe('#0f172a');
   });
 
   it('trims optional URL inputs and accepts cleared optional fields', () => {
@@ -83,10 +117,40 @@ describe('launchKit', () => {
     const mongoRecord = toSiteConfigMongoRecord(kit, { role: 'local' });
 
     expect(supabaseRecord.agent_id).toBe(kit.agentId);
+    expect(supabaseRecord.branding.visualLoci?.name).toBe('Dark Mode');
     expect(supabaseRecord.last_modified_by).toBe('operator@example.test');
     expect(supabaseRecord.sections.map((section) => section.type)).toContain('featured_listings');
     expect(mongoRecord.agentId).toBe(kit.agentId);
     expect(mongoRecord.lastModifiedBy).toBe('local');
+  });
+
+  it('requires billing and operator approval before a kit is publishable', () => {
+    const incompleteGate = getLaunchKitSummary(normalizeLaunchKit({
+      ...createDefaultLaunchKit('Broker-One'),
+      integrationProfile: {
+        ...createDefaultLaunchKit('Broker-One').integrationProfile,
+        hotListMlsIds: ['NTREIS-1'],
+      },
+    }));
+
+    expect(incompleteGate.readyToPublish).toBe(false);
+    expect(incompleteGate.publishGate.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'billing', complete: false }),
+      expect.objectContaining({ key: 'review', complete: false }),
+    ]));
+
+    const approvedGate = getLaunchKitSummary(normalizeLaunchKit({
+      ...incompleteGate.kit,
+      billingProfile: {
+        billingStatus: 'trialing',
+        trialEndsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      reviewProfile: {
+        status: 'approved',
+      },
+    }));
+
+    expect(approvedGate.readyToPublish).toBe(true);
   });
 
   it('parses comma and newline separated hot-list inputs', () => {

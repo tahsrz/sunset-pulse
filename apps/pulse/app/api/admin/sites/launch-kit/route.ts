@@ -9,11 +9,8 @@ import {
   createDefaultLaunchKit,
   getLaunchKitSummary,
   normalizeLaunchKit,
-  toSiteConfigMongoRecord,
-  toSiteConfigSupabaseRecord,
 } from '@/lib/sites/launchKit';
-import { supabaseAdmin } from '@/lib/supabase';
-import { SiteConfig } from '@/models/SiteConfig';
+import { readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -62,9 +59,9 @@ export async function PUT(request: NextRequest) {
 
     if (kit.status === 'active' && !summary.readyToPublish) {
       return errorResponse(
-        'Launch kit is not ready to publish.',
+        'Launch kit is not buyer-safe to publish.',
         400,
-        summary.readiness.filter((check) => !check.complete),
+        summary.publishGate.checks.filter((check) => !check.complete),
       );
     }
 
@@ -84,88 +81,6 @@ export async function PUT(request: NextRequest) {
       status === 500 ? error.message : null
     );
   }
-}
-
-async function readSiteConfig(agentId?: string) {
-  if (agentId) {
-    const supabaseRow = await readSupabaseSiteConfig(agentId);
-    if (supabaseRow) return supabaseRow;
-
-    const mongoRow = await readMongoSiteConfig(agentId);
-    if (mongoRow) return mongoRow;
-  }
-
-  const fallback = createDefaultLaunchKit(agentId);
-  const fallbackSupabaseRow = await readSupabaseSiteConfig(fallback.agentId);
-  if (fallbackSupabaseRow) return fallbackSupabaseRow;
-
-  return readMongoSiteConfig(fallback.agentId);
-}
-
-async function readSupabaseSiteConfig(agentId: string) {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('site_config')
-      .select('*')
-      .eq('agent_id', agentId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn('[LAUNCH_KIT_SUPABASE_READ]', error.message);
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.warn('[LAUNCH_KIT_SUPABASE_READ_FALLBACK]', error);
-    return null;
-  }
-}
-
-async function readMongoSiteConfig(agentId: string) {
-  try {
-    await connectDB();
-    return await SiteConfig.findOne({ agentId }).lean();
-  } catch (error) {
-    console.warn('[LAUNCH_KIT_MONGO_READ_FALLBACK]', error);
-    return null;
-  }
-}
-
-async function saveSiteConfig(kit: ReturnType<typeof normalizeLaunchKit>, updatedBy: unknown) {
-  const savedStores: string[] = [];
-
-  try {
-    const { error } = await supabaseAdmin
-      .from('site_config')
-      .upsert(toSiteConfigSupabaseRecord(kit, updatedBy), { onConflict: 'agent_id' });
-
-    if (error) {
-      console.warn('[LAUNCH_KIT_SUPABASE_WRITE]', error.message);
-    } else {
-      savedStores.push('supabase');
-    }
-  } catch (error) {
-    console.warn('[LAUNCH_KIT_SUPABASE_WRITE_FALLBACK]', error);
-  }
-
-  try {
-    await connectDB();
-    await SiteConfig.findOneAndUpdate(
-      { agentId: kit.agentId },
-      toSiteConfigMongoRecord(kit, updatedBy),
-      { upsert: true, new: true }
-    );
-    savedStores.push('mongo');
-  } catch (error) {
-    console.warn('[LAUNCH_KIT_MONGO_WRITE]', error);
-  }
-
-  if (savedStores.length === 0) {
-    throw new Error('No site config store accepted the launch-kit update.');
-  }
-
-  return savedStores;
 }
 
 class RequestBodyError extends Error {

@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   CheckCircle2,
   ClipboardList,
+  Palette,
   ExternalLink,
   Loader2,
   Rocket,
@@ -15,16 +16,39 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
+import { VIBE_DICTIONARY } from '@/constants/vibes';
 import {
   createDefaultLaunchKit,
   getLaunchKitSummary,
   parseListInput,
   type AgentLaunchKit,
   type AgentLaunchKitResponse,
+  type LaunchKitBranding,
+  type LaunchKitQuadrants,
 } from '@/lib/sites/launchKit';
 import { getAgentSiteSubdomain } from '@/lib/sites/siteUrls';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type VibeDictionaryPreset = {
+  primaryColor: string;
+  mainBackground?: string;
+  navBackground?: string;
+  quadrants?: LaunchKitQuadrants;
+};
+type SavedVibe = {
+  vibeId: string;
+  name: string;
+  description?: string;
+  linguisticLogic?: {
+    tone?: string;
+    pacing?: string;
+  };
+  visualParameters?: {
+    meshColor?: string;
+  };
+};
+
+const DICTIONARY_PRESETS = Object.entries(VIBE_DICTIONARY as Record<string, VibeDictionaryPreset>);
 
 export function LaunchKitWorkspace() {
   const [agentIdLookup, setAgentIdLookup] = useState('taz-realty-001');
@@ -33,6 +57,8 @@ export function LaunchKitWorkspace() {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [savedVibes, setSavedVibes] = useState<SavedVibe[]>([]);
+  const [vibeLoading, setVibeLoading] = useState(true);
 
   const summary = useMemo(() => getLaunchKitSummary(kit), [kit]);
   const previewUrl = publicUrl || summary.publicUrl;
@@ -42,8 +68,23 @@ export function LaunchKitWorkspace() {
 
   useEffect(() => {
     void loadKit(agentIdLookup);
+    void loadVibeDictionary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadVibeDictionary() {
+    setVibeLoading(true);
+
+    try {
+      const response = await fetch('/api/jamie/vibes', { cache: 'no-store' });
+      const payload = await response.json();
+      setSavedVibes(Array.isArray(payload.vibes) ? payload.vibes : []);
+    } catch {
+      setSavedVibes([]);
+    } finally {
+      setVibeLoading(false);
+    }
+  }
 
   async function loadKit(agentId = agentIdLookup) {
     setLoading(true);
@@ -112,6 +153,51 @@ export function LaunchKitWorkspace() {
     });
   }
 
+  function updateBranding(updates: Partial<LaunchKitBranding>) {
+    updateKit({
+      branding: {
+        ...kit.branding,
+        ...updates,
+      },
+    });
+  }
+
+  function applyDictionaryPreset(name: string, preset: VibeDictionaryPreset) {
+    updateBranding({
+      primaryColor: preset.primaryColor,
+      mainBackground: preset.mainBackground,
+      navBackground: preset.navBackground,
+      quadrants: preset.quadrants,
+      visualLoci: {
+        source: 'dictionary',
+        name,
+        sourceId: name,
+      },
+    });
+  }
+
+  function applySavedVibe(vibe: SavedVibe) {
+    const color = normalizeHexColor(vibe.visualParameters?.meshColor) || kit.branding.primaryColor;
+    updateBranding({
+      primaryColor: color,
+      mainBackground: '#020617',
+      navBackground: '#000000',
+      quadrants: {
+        topLeft: { background: '#000000', color },
+        topRight: { background: '#020617', color: '#ffffff' },
+        bottomLeft: { background: '#020617', color: '#ffffff' },
+        bottomRight: { background: '#000000', color },
+      },
+      visualLoci: {
+        source: 'extracted',
+        name: vibe.name || 'Extracted Vibe',
+        sourceId: vibe.vibeId,
+        tone: vibe.linguisticLogic?.tone || '',
+        pacing: vibe.linguisticLogic?.pacing || '',
+      },
+    });
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-24 text-slate-100 md:px-8">
       <div className="mx-auto max-w-7xl">
@@ -132,8 +218,8 @@ export function LaunchKitWorkspace() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/admin/branding" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-white/70 transition hover:bg-white/10">
-                Identity Architect
+              <Link href="/vibe-lab" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-white/70 transition hover:bg-white/10">
+                Vibe Lab
               </Link>
               <Link href="/admin/hot-list" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-white/70 transition hover:bg-white/10">
                 Hot List
@@ -196,8 +282,10 @@ export function LaunchKitWorkspace() {
                   onChange={(status) => updateKit({ status: status as AgentLaunchKit['status'] })}
                 />
                 <Field label="Site Name" value={kit.branding.siteName} onChange={(siteName) => updateKit({ branding: { ...kit.branding, siteName } })} />
-                <Field label="Primary Color" value={kit.branding.primaryColor} onChange={(primaryColor) => updateKit({ branding: { ...kit.branding, primaryColor } })} />
-                <Field label="Font Family" value={kit.branding.fontFamily} onChange={(fontFamily) => updateKit({ branding: { ...kit.branding, fontFamily } })} />
+                <Field label="Primary Color" value={kit.branding.primaryColor} onChange={(primaryColor) => updateBranding({ primaryColor })} />
+                <Field label="Font Family" value={kit.branding.fontFamily} onChange={(fontFamily) => updateBranding({ fontFamily })} />
+                <Field label="Main Background" value={kit.branding.mainBackground || ''} onChange={(mainBackground) => updateBranding({ mainBackground: mainBackground || undefined })} />
+                <Field label="Nav Background" value={kit.branding.navBackground || ''} onChange={(navBackground) => updateBranding({ navBackground: navBackground || undefined })} />
                 <SelectField
                   label="Subscription Tier"
                   value={kit.subscriptionTier}
@@ -212,7 +300,95 @@ export function LaunchKitWorkspace() {
               </div>
             </Panel>
 
-            <Panel title="2. Agent profile" icon={<ClipboardList size={16} />}>
+            <Panel title="2. Vibe dictionary loci" icon={<Palette size={16} />}>
+              <div className="grid gap-4 md:grid-cols-[1fr_220px]">
+                <div>
+                  <p className="text-xs leading-6 text-slate-400">
+                    Apply a visual locus from the fixed dictionary or a saved extracted vibe. Launch Kit stores the color, background,
+                    quadrant, and source metadata with the agent site config.
+                  </p>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {DICTIONARY_PRESETS.map(([name, preset]) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => applyDictionaryPreset(name, preset)}
+                        className={`flex min-h-16 items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                          kit.branding.visualLoci?.sourceId === name
+                            ? 'border-cyan-300/60 bg-cyan-300/10'
+                            : 'border-white/10 bg-slate-950/70 hover:border-cyan-300/30'
+                        }`}
+                      >
+                        <span className="h-8 w-8 shrink-0 rounded-xl border border-white/10" style={{ backgroundColor: preset.primaryColor }} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-xs font-black uppercase tracking-widest text-white">{name}</span>
+                          <span className="mt-1 block font-mono text-[10px] text-slate-500">{preset.primaryColor}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">Active Locus</p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <LocusSwatch label="Primary" color={kit.branding.primaryColor} />
+                    <LocusSwatch label="Main" color={kit.branding.mainBackground || '#0f172a'} />
+                    <LocusSwatch label="Nav" color={kit.branding.navBackground || '#1e293b'} />
+                    <LocusSwatch label="Accent" color={kit.branding.quadrants?.topLeft?.color || kit.branding.primaryColor} />
+                  </div>
+                  <p className="mt-4 truncate text-sm font-black text-white">{kit.branding.visualLoci?.name || 'Manual'}</p>
+                  <p className="mt-1 text-[11px] uppercase tracking-widest text-slate-500">
+                    {kit.branding.visualLoci?.source || 'custom'} loci
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Saved extracted vibes</p>
+                  <Link href="/vibe-lab" className="text-[10px] font-black uppercase tracking-widest text-cyan-200 hover:text-cyan-100">
+                    Open Vibe Lab
+                  </Link>
+                </div>
+                {vibeLoading ? (
+                  <p className="text-xs text-slate-500">Loading saved vibes...</p>
+                ) : savedVibes.length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {savedVibes.slice(0, 6).map((vibe) => {
+                      const color = normalizeHexColor(vibe.visualParameters?.meshColor) || '#22d3ee';
+                      return (
+                        <button
+                          key={vibe.vibeId}
+                          type="button"
+                          onClick={() => applySavedVibe(vibe)}
+                          className={`rounded-2xl border p-4 text-left transition ${
+                            kit.branding.visualLoci?.sourceId === vibe.vibeId
+                              ? 'border-cyan-300/60 bg-cyan-300/10'
+                              : 'border-white/10 bg-slate-950/70 hover:border-cyan-300/30'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-black uppercase tracking-widest text-white">{vibe.name}</p>
+                              <p className="mt-2 line-clamp-2 text-[11px] leading-5 text-slate-500">{vibe.description || 'Saved visual language.'}</p>
+                            </div>
+                            <span className="h-8 w-8 shrink-0 rounded-xl border border-white/10" style={{ backgroundColor: color }} />
+                          </div>
+                          <p className="mt-3 text-[10px] uppercase tracking-widest text-slate-500">
+                            {[vibe.linguisticLogic?.tone, vibe.linguisticLogic?.pacing].filter(Boolean).join(' / ') || 'adaptive'}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">No extracted vibes saved yet. Vibe Lab can populate this dictionary.</p>
+                )}
+              </div>
+            </Panel>
+
+            <Panel title="3. Agent profile" icon={<ClipboardList size={16} />}>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Owner Name" value={kit.ownerName} onChange={(ownerName) => updateKit({ ownerName })} />
                 <Field label="Display Name" value={kit.agentProfile.displayName} onChange={(displayName) => updateKit({ agentProfile: { ...kit.agentProfile, displayName } })} />
@@ -231,7 +407,7 @@ export function LaunchKitWorkspace() {
               />
             </Panel>
 
-            <Panel title="3. Assistant, leads, and MLS" icon={<ArrowUpRight size={16} />}>
+            <Panel title="4. Assistant, leads, and MLS" icon={<ArrowUpRight size={16} />}>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Assistant Name" value={kit.assistantProfile.displayName} onChange={(displayName) => updateKit({ assistantProfile: { ...kit.assistantProfile, displayName } })} />
                 <Field label="Assistant Role" value={kit.assistantProfile.roleLabel} onChange={(roleLabel) => updateKit({ assistantProfile: { ...kit.assistantProfile, roleLabel } })} />
@@ -252,7 +428,7 @@ export function LaunchKitWorkspace() {
               />
             </Panel>
 
-            <Panel title="4. Compliance" icon={<ShieldCheck size={16} />}>
+            <Panel title="5. Compliance" icon={<ShieldCheck size={16} />}>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Jurisdiction" value={kit.complianceProfile.jurisdiction} onChange={(jurisdiction) => updateKit({ complianceProfile: { ...kit.complianceProfile, jurisdiction } })} />
                 <label className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-300">
@@ -430,4 +606,18 @@ function StatusCard({ label, value, tone }: { label: string; value: string; tone
       <p className="mt-2 truncate text-xl font-black uppercase tracking-tight">{value}</p>
     </div>
   );
+}
+
+function LocusSwatch({ label, color }: { label: string; color: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-2">
+      <span className="block h-9 rounded-lg border border-white/10" style={{ backgroundColor: color }} />
+      <span className="mt-2 block truncate text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</span>
+    </div>
+  );
+}
+
+function normalizeHexColor(value?: string) {
+  const color = value?.trim();
+  return color && /^#[0-9a-f]{6}$/i.test(color) ? color : null;
 }

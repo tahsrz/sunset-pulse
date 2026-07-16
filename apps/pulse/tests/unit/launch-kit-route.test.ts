@@ -87,7 +87,7 @@ describe('admin launch-kit route', () => {
     );
   });
 
-  it('rejects active publish when readiness checks are incomplete', async () => {
+  it('rejects active publish when buyer-safe checks are incomplete', async () => {
     const kit = {
       ...createDefaultLaunchKit('Broker-One'),
       status: 'active',
@@ -97,9 +97,11 @@ describe('admin launch-kit route', () => {
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body.message).toBe('Launch kit is not ready to publish.');
+    expect(body.message).toBe('Launch kit is not buyer-safe to publish.');
     expect(body.details).toEqual(expect.arrayContaining([
       expect.objectContaining({ key: 'hotList' }),
+      expect.objectContaining({ key: 'billing' }),
+      expect.objectContaining({ key: 'review' }),
     ]));
     expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
   });

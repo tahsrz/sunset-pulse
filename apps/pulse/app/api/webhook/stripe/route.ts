@@ -10,6 +10,7 @@ import { prisma } from '@/lib/core/prisma';
 import { notifyStaffOfBurgerOrder } from '@/lib/twilio';
 import { dispatchPaidOrderPhoneRelay } from '@/lib/grill/phoneRelay';
 import { sendOrderConfirmationEmail } from '@/lib/grill/orderConfirmationEmail';
+import { provisionPaidAgentSite, suspendProvisionedAgentSite } from '@/lib/sites/siteProvisioning';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -42,12 +43,35 @@ export async function POST(req: NextRequest) {
     // 1. Handle Subscription Upgrades
     if (!metadata?.orderType && customerEmail) {
       await User.findOneAndUpdate({ email: customerEmail }, {
-        subscriptionExpires: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000), //  1 month
+        subscriptionExpires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       });
       console.log(`✅ [STRIPE_WEBHOOK] User ${customerEmail} upgraded to Premium.`);
     }
 
-    // 2. Handle Grill Food Orders
+    // 2. Provision paid agent sites
+    if (isAgentSiteCheckout(session)) {
+      try {
+        const provisionedSite = await provisionPaidAgentSite({
+          agentId: metadata?.agentId,
+          userId: metadata?.userId || session.client_reference_id,
+          ownerName: metadata?.ownerName,
+          email: customerEmail,
+          subscriptionTier: metadata?.subscriptionTier,
+          stripeCustomerId: stripeId(session.customer),
+          stripeSubscriptionId: stripeId(session.subscription),
+          stripeCheckoutSessionId: session.id,
+          source: 'stripe-checkout',
+        });
+
+        console.log(
+          `[STRIPE_WEBHOOK] Agent site ${provisionedSite.kit.agentId} ${provisionedSite.created ? 'provisioned' : 'refreshed'} from checkout ${session.id}.`,
+        );
+      } catch (error) {
+        console.error('[STRIPE_WEBHOOK_SITE_PROVISIONING_ERROR]:', error);
+      }
+    }
+
+    // 3. Handle Grill Food Orders
     if (metadata?.orderType === 'grill_food' && metadata?.orderId) {
       if (session.payment_status !== 'paid') {
         console.warn(`[STRIPE_WEBHOOK] Checkout session ${session.id} completed without paid status: ${session.payment_status}`);
@@ -215,8 +239,45 @@ export async function POST(req: NextRequest) {
   if (event.type === 'customer.subscription.deleted') {
     await connectDB();
     const subscription = event.data.object as Stripe.Subscription;
+    const metadata = subscription.metadata;
+
+    if (isAgentSiteSubscription(subscription)) {
+      try {
+        const suspendedSite = await suspendProvisionedAgentSite({
+          agentId: metadata?.agentId,
+          userId: metadata?.userId,
+          ownerName: metadata?.ownerName,
+          subscriptionTier: metadata?.subscriptionTier,
+          stripeCustomerId: stripeId(subscription.customer),
+          stripeSubscriptionId: subscription.id,
+          source: 'stripe-subscription',
+        });
+
+        if (suspendedSite) {
+          console.log(`[STRIPE_WEBHOOK] Agent site ${suspendedSite.kit.agentId} suspended after subscription ${subscription.id} ended.`);
+        }
+      } catch (error) {
+        console.error('[STRIPE_WEBHOOK_SITE_SUSPENSION_ERROR]:', error);
+      }
+    }
     console.log(`📡 [STRIPE_WEBHOOK] Subscription ${subscription.id} deleted.`);
   }
 
   return successResponse({ received: true });
+}
+
+function isAgentSiteCheckout(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata || {};
+  return metadata.productType === 'agent_site' || (!metadata.orderType && session.mode === 'subscription');
+}
+
+function isAgentSiteSubscription(subscription: Stripe.Subscription) {
+  const metadata = subscription.metadata || {};
+  return metadata.productType === 'agent_site' || Boolean(metadata.agentId);
+}
+
+function stripeId(value: string | { id?: string } | null) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value.id || '';
 }

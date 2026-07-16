@@ -8,6 +8,10 @@ export async function middleware(request) {
   const code = url.searchParams.get('code')
   const token_hash = url.searchParams.get('token_hash')
 
+  if (path === '/admin/branding') {
+    return NextResponse.redirect(new URL('/admin/launch-kit', request.url))
+  }
+
   // Seamless Supabase auth fallback: if an auth code or token_hash lands on any route other
   // than the callback, redirect them to /auth/callback to establish and persist their session.
   if ((code || token_hash) && path !== '/auth/callback' && !path.startsWith('/api/') && !path.startsWith('/_next/')) {

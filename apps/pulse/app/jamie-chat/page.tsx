@@ -21,7 +21,7 @@ export default function JamieChatWorkspacePage() {
         <div className="grid min-h-[760px] gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
           <JamieAssistantWorkspace apiRoute="/api/jamie/chat" isDevMode />
           <section className="min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80">
-            <AgentSelectionArena />
+            <AgentSelectionArena embedded />
           </section>
         </div>
       </div>

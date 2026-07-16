@@ -96,7 +96,7 @@ const PremiumPage: React.FC = () => {
         <div className="bg-gradient-to-b from-blue-600 to-blue-800 p-1 rounded-[3rem] shadow-2xl shadow-blue-500/20 max-w-md mx-auto relative">
           {/* Trial Badge */}
           <div className="absolute -top-6 -right-6 bg-orange-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-2xl shadow-xl animate-pulse z-10 rotate-12 border-4 border-slate-950">
-            30 Days Free
+            90 Days Free
           </div>
 
           <div className="bg-slate-950 rounded-[2.8rem] p-10">
@@ -107,7 +107,7 @@ const PremiumPage: React.FC = () => {
                 <span className="text-slate-500 font-bold mb-1">/mo</span>
               </div>
               <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-4">
-                Risk-Free: 1 Month Trial Included
+                Risk-Free: 90 Day Trial Included
               </p>
             </div>
 

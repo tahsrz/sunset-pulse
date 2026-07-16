@@ -70,6 +70,14 @@ const SiteConfigSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
+  billingProfile: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  reviewProfile: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   jamieSystemPrompt: { type: String },
   activeEnvoyId: { type: String, default: 'ENVOY-JAMIE' },
   abidanPrompts: {
