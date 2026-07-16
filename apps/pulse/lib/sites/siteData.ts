@@ -13,6 +13,7 @@ import {
   mergeIntegrationProfile,
 } from '@/lib/sites/agentConfig';
 import { getAgentSiteSubdomain, getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
+import { getSiteReadinessChecks } from '@/lib/sites/siteReadiness';
 import { SiteConfig } from '@/models/SiteConfig';
 
 export type TenantSite = {
@@ -118,6 +119,22 @@ function normalizeTenantSite(site: string, config: any, fallback: TenantSite): T
   const subdomain = config.subdomain || fallback.subdomain || getAgentSiteSubdomain(agentId, site);
   const customDomain = config.custom_domain || config.customDomain || undefined;
   const status = config.status || fallback.status;
+  const billingProfile = config.billing_profile || config.billingProfile || {};
+  const reviewProfile = config.review_profile || config.reviewProfile || {};
+  const readiness = getSiteReadinessChecks({
+    siteName: branding.siteName || fallback.siteName,
+    agentProfile,
+    complianceProfile,
+    integrationProfile,
+  });
+  const isBillingCurrent = billingProfile.billingStatus === 'active' || (
+    billingProfile.billingStatus === 'trialing'
+    && (!billingProfile.trialEndsAt || new Date(billingProfile.trialEndsAt).getTime() > Date.now())
+  );
+  const isBuyerSafePublished = status === 'active'
+    && isBillingCurrent
+    && reviewProfile.status === 'approved'
+    && readiness.every((check) => check.complete);
 
   return {
     site: subdomain || site,
@@ -133,7 +150,7 @@ function normalizeTenantSite(site: string, config: any, fallback: TenantSite): T
     backgroundImage: hero.backgroundImage,
     status,
     isConfigured: true,
-    isPublished: status === 'active',
+    isPublished: isBuyerSafePublished,
     ownerName: config.owner_name || config.ownerName || agentProfile.displayName || fallback.ownerName,
     agentProfile,
     assistantProfile,
