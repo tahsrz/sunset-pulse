@@ -14,6 +14,7 @@ const webhookMocks = vi.hoisted(() => {
     orderFindByIdAndUpdate: vi.fn(),
     provisionPaidAgentSite: vi.fn(),
     suspendProvisionedAgentSite: vi.fn(),
+    updateProvisionedAgentSiteBilling: vi.fn(),
     notifyStaffOfBurgerOrder: vi.fn(),
     dispatchPaidOrderPhoneRelay: vi.fn(),
     sendOrderConfirmationEmail: vi.fn(),
@@ -74,6 +75,7 @@ vi.mock('@/lib/grill/orderConfirmationEmail', () => ({
 vi.mock('@/lib/sites/siteProvisioning', () => ({
   provisionPaidAgentSite: webhookMocks.provisionPaidAgentSite,
   suspendProvisionedAgentSite: webhookMocks.suspendProvisionedAgentSite,
+  updateProvisionedAgentSiteBilling: webhookMocks.updateProvisionedAgentSiteBilling,
 }));
 
 import { POST } from '@/app/api/webhook/stripe/route';
@@ -101,6 +103,16 @@ describe('Stripe webhook site provisioning', () => {
       readiness: [],
       readyToPublish: false,
     });
+    webhookMocks.updateProvisionedAgentSiteBilling.mockImplementation(async (input) => ({
+      kit: {
+        agentId: input.agentId || 'broker-one',
+        billingProfile: { billingStatus: input.billingStatus || 'unknown' },
+      },
+      savedStores: ['supabase', 'mongo'],
+      publicUrl: 'https://broker-one.sunsetpulse.app',
+      readiness: [],
+      readyToPublish: false,
+    }));
   });
 
   it('provisions an agent site from a completed subscription checkout', async () => {
@@ -162,6 +174,64 @@ describe('Stripe webhook site provisioning', () => {
       stripeCustomerId: 'cus_123',
       stripeSubscriptionId: 'sub_123',
       source: 'stripe-subscription',
+    }));
+  });
+
+  it('updates an agent site when Stripe subscription status changes', async () => {
+    webhookMocks.constructEvent.mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_123',
+          customer: 'cus_123',
+          status: 'past_due',
+          trial_end: 1784227200,
+          metadata: {
+            productType: 'agent_site',
+            agentId: 'broker-one',
+            userId: 'user-1',
+            subscriptionTier: 'atlas',
+          },
+        },
+      },
+    });
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(200);
+    expect(webhookMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
+      agentId: 'broker-one',
+      userId: 'user-1',
+      subscriptionTier: 'atlas',
+      stripeCustomerId: 'cus_123',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'past_due',
+      trialEndsAt: '2026-07-16T18:40:00.000Z',
+      source: 'stripe-subscription-updated',
+    }));
+  });
+
+  it('maps terminal Stripe subscription updates to unpaid billing state', async () => {
+    webhookMocks.constructEvent.mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_123',
+          customer: 'cus_123',
+          status: 'incomplete_expired',
+          metadata: {
+            productType: 'agent_site',
+            agentId: 'broker-one',
+          },
+        },
+      },
+    });
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(200);
+    expect(webhookMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
+      billingStatus: 'unpaid',
     }));
   });
 

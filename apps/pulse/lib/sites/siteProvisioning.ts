@@ -147,6 +147,43 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
   };
 }
 
+export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProvisioningInput) {
+  const agentId = resolveProvisionedAgentId(input);
+  const existingRow = await readSiteConfig(agentId);
+  if (!existingRow) {
+    return null;
+  }
+
+  const kit = normalizeLaunchKit(existingRow, agentId);
+  const billingStatus = normalizeBillingStatus(input.billingStatus) || kit.billingProfile.billingStatus || 'unknown';
+  const trialEndsAt = normalizeIsoDate(input.trialEndsAt) || kit.billingProfile.trialEndsAt || '';
+  const nextKitBase = normalizeLaunchKit({
+    ...kit,
+    billingProfile: {
+      ...kit.billingProfile,
+      stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
+      stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
+      trialEndsAt,
+      billingStatus,
+    },
+  }, agentId);
+  const nextStatus = resolveSiteStatusForBilling(nextKitBase, billingStatus);
+  const nextKit = normalizeLaunchKit({
+    ...nextKitBase,
+    status: nextStatus,
+  }, agentId);
+  const savedStores = await saveSiteConfig(nextKit, {
+    role: input.source || 'stripe-subscription',
+    email: normalizeEmail(input.email),
+    userId: input.userId,
+  });
+
+  return {
+    ...getLaunchKitSummary(nextKit),
+    savedStores,
+  };
+}
+
 export function resolveProvisionedAgentId(input: PaidAgentSiteProvisioningInput) {
   const explicitAgentId = normalizeAgentId(input.agentId);
   if (explicitAgentId) return explicitAgentId;
@@ -190,6 +227,30 @@ function normalizeBillingStatus(value: unknown): AgentLaunchKit['billingProfile'
   }
 
   return null;
+}
+
+function resolveSiteStatusForBilling(
+  kit: AgentLaunchKit,
+  billingStatus: AgentLaunchKit['billingProfile']['billingStatus'],
+): AgentLaunchKit['status'] {
+  if (billingStatus === 'canceled' || billingStatus === 'unpaid') {
+    return 'suspended';
+  }
+
+  if (billingStatus === 'past_due' || billingStatus === 'incomplete') {
+    return 'draft';
+  }
+
+  if (billingStatus === 'active' || billingStatus === 'trialing') {
+    const summary = getLaunchKitSummary(kit);
+    if (kit.reviewProfile.status === 'approved' && summary.readyToPublish) {
+      return 'active';
+    }
+
+    return kit.status === 'suspended' ? 'draft' : kit.status;
+  }
+
+  return kit.status;
 }
 
 function normalizeIsoDate(value: unknown) {

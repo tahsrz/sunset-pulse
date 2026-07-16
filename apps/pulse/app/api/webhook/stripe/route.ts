@@ -10,7 +10,11 @@ import { prisma } from '@/lib/core/prisma';
 import { notifyStaffOfBurgerOrder } from '@/lib/twilio';
 import { dispatchPaidOrderPhoneRelay } from '@/lib/grill/phoneRelay';
 import { sendOrderConfirmationEmail } from '@/lib/grill/orderConfirmationEmail';
-import { provisionPaidAgentSite, suspendProvisionedAgentSite } from '@/lib/sites/siteProvisioning';
+import {
+  provisionPaidAgentSite,
+  suspendProvisionedAgentSite,
+  updateProvisionedAgentSiteBilling,
+} from '@/lib/sites/siteProvisioning';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -236,6 +240,35 @@ export async function POST(req: NextRequest) {
   }
 
   // Handle subscription deletion/cancellation
+  if (event.type === 'customer.subscription.updated') {
+    const subscription = event.data.object as Stripe.Subscription;
+    const metadata = subscription.metadata;
+
+    if (isAgentSiteSubscription(subscription)) {
+      try {
+        const updatedSite = await updateProvisionedAgentSiteBilling({
+          agentId: metadata?.agentId,
+          userId: metadata?.userId,
+          ownerName: metadata?.ownerName,
+          subscriptionTier: metadata?.subscriptionTier,
+          stripeCustomerId: stripeId(subscription.customer),
+          stripeSubscriptionId: subscription.id,
+          trialEndsAt: stripeTimestampToIso(subscription.trial_end),
+          billingStatus: mapStripeSubscriptionStatus(subscription.status),
+          source: 'stripe-subscription-updated',
+        });
+
+        if (updatedSite) {
+          console.log(
+            `[STRIPE_WEBHOOK] Agent site ${updatedSite.kit.agentId} billing updated to ${updatedSite.kit.billingProfile.billingStatus}.`,
+          );
+        }
+      } catch (error) {
+        console.error('[STRIPE_WEBHOOK_SITE_BILLING_UPDATE_ERROR]:', error);
+      }
+    }
+  }
+
   if (event.type === 'customer.subscription.deleted') {
     await connectDB();
     const subscription = event.data.object as Stripe.Subscription;
@@ -280,4 +313,21 @@ function stripeId(value: string | { id?: string } | null) {
   if (!value) return '';
   if (typeof value === 'string') return value;
   return value.id || '';
+}
+
+function stripeTimestampToIso(value?: number | null) {
+  if (!value) return '';
+  const date = new Date(value * 1000);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : '';
+}
+
+function mapStripeSubscriptionStatus(status?: Stripe.Subscription.Status | string | null) {
+  if (status === 'trialing') return 'trialing';
+  if (status === 'active') return 'active';
+  if (status === 'past_due') return 'past_due';
+  if (status === 'canceled') return 'canceled';
+  if (status === 'unpaid') return 'unpaid';
+  if (status === 'incomplete') return 'incomplete';
+  if (status === 'incomplete_expired' || status === 'paused') return 'unpaid';
+  return 'unknown';
 }

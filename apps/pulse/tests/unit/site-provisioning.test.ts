@@ -15,6 +15,7 @@ import {
   provisionPaidAgentSite,
   resolveProvisionedAgentId,
   suspendProvisionedAgentSite,
+  updateProvisionedAgentSiteBilling,
 } from '@/lib/sites/siteProvisioning';
 
 describe('site provisioning', () => {
@@ -105,4 +106,76 @@ describe('site provisioning', () => {
       expect.objectContaining({ role: 'stripe-webhook' }),
     );
   });
+
+  it('moves a past-due site back to draft billing state', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createReadyApprovedKit('broker-one'),
+      status: 'active',
+    });
+
+    const result = await updateProvisionedAgentSiteBilling({
+      agentId: 'broker-one',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'past_due',
+      source: 'stripe-subscription-updated',
+    });
+
+    expect(result?.kit.status).toBe('draft');
+    expect(result?.kit.billingProfile.billingStatus).toBe('past_due');
+    expect(result?.readyToPublish).toBe(false);
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: 'broker-one',
+        status: 'draft',
+        billingProfile: expect.objectContaining({ billingStatus: 'past_due' }),
+      }),
+      expect.objectContaining({ role: 'stripe-subscription-updated' }),
+    );
+  });
+
+  it('reactivates an approved ready site when subscription billing recovers', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createReadyApprovedKit('broker-one'),
+      status: 'draft',
+      billingProfile: {
+        billingStatus: 'past_due',
+        stripeSubscriptionId: 'sub_123',
+      },
+    });
+
+    const result = await updateProvisionedAgentSiteBilling({
+      agentId: 'broker-one',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'active',
+      source: 'stripe-subscription-updated',
+    });
+
+    expect(result?.kit.status).toBe('active');
+    expect(result?.kit.billingProfile.billingStatus).toBe('active');
+    expect(result?.readyToPublish).toBe(true);
+  });
 });
+
+function createReadyApprovedKit(agentId: string) {
+  const kit = createDefaultLaunchKit(agentId);
+
+  return {
+    ...kit,
+    agentProfile: {
+      ...kit.agentProfile,
+      email: 'agent@example.test',
+    },
+    integrationProfile: {
+      ...kit.integrationProfile,
+      leadEmail: 'leads@example.test',
+      hotListMlsIds: ['NTREIS-1'],
+    },
+    billingProfile: {
+      billingStatus: 'active',
+      stripeSubscriptionId: 'sub_123',
+    },
+    reviewProfile: {
+      status: 'approved',
+    },
+  };
+}
