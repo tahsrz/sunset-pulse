@@ -100,8 +100,9 @@ function BuyerSiteSetupClient() {
     };
   }, [sessionId]);
 
-  const readiness = data?.readiness || [];
+  const readiness = useMemo(() => data?.readiness || [], [data?.readiness]);
   const completeCount = useMemo(() => readiness.filter((check) => check.complete).length, [readiness]);
+  const billingNeedsAttention = needsBillingAttention(data?.kit.billingProfile.billingStatus || 'unknown');
 
   async function saveSetup(requestReview = false) {
     if (!form || !sessionId) return;
@@ -290,6 +291,34 @@ function BuyerSiteSetupClient() {
           </div>
 
           <aside className="h-fit border border-white/10 bg-white/[0.04] p-5">
+            <div className={`mb-5 border p-4 text-xs leading-5 ${billingNeedsAttention ? 'border-amber-300/25 bg-amber-300/10 text-amber-100' : 'border-white/10 bg-slate-950/60 text-slate-300'}`}>
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-black uppercase tracking-[0.14em]">
+                  Billing: {formatBillingStatus(data.kit.billingProfile.billingStatus)}
+                </p>
+                <CreditCard size={16} className={billingNeedsAttention ? 'text-amber-100' : 'text-cyan-200'} />
+              </div>
+              <p className="mt-2">{billingStatusMessage(data.kit)}</p>
+              {data.kit.billingProfile.trialEndsAt ? (
+                <p className="mt-3 text-slate-400">Trial ends: {formatShortDate(data.kit.billingProfile.trialEndsAt)}</p>
+              ) : null}
+              {data.kit.billingProfile.gracePeriodEndsAt ? (
+                <p className="mt-1 text-slate-400">Grace ends: {formatShortDate(data.kit.billingProfile.gracePeriodEndsAt)}</p>
+              ) : null}
+              <button
+                type="button"
+                onClick={openBillingPortal}
+                disabled={portalLoading}
+                className={`mt-4 inline-flex w-full items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-[0.14em] disabled:opacity-50 ${
+                  billingNeedsAttention
+                    ? 'bg-amber-200 text-slate-950'
+                    : 'border border-white/15 text-white'
+                }`}
+              >
+                {portalLoading ? <Loader2 className="animate-spin" size={14} /> : <CreditCard size={14} />}
+                {billingNeedsAttention ? 'Fix Billing' : 'Manage Billing'}
+              </button>
+            </div>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-black tracking-tight">Publish Readiness</h2>
               <ShieldCheck size={20} className="text-cyan-200" />
@@ -428,4 +457,38 @@ function payloadFromForm(form: SetupForm) {
       crmTag: form.crmTag,
     },
   };
+}
+
+function needsBillingAttention(status: string) {
+  return status === 'past_due' || status === 'unpaid' || status === 'canceled' || status === 'incomplete';
+}
+
+function formatBillingStatus(status: string) {
+  return (status || 'unknown').replace(/_/g, ' ');
+}
+
+function billingStatusMessage(kit: AgentLaunchKit) {
+  const status = kit.billingProfile.billingStatus;
+  if (status === 'trialing') return 'Your 90-day trial is active. Setup can continue while operator review is pending.';
+  if (status === 'active') return 'Billing is current. Publishing depends on buyer-safe setup and operator approval.';
+  if (status === 'past_due') return kit.billingProfile.gracePeriodEndsAt
+    ? 'Payment needs attention. Your site may stay live during grace, but publishing and review changes stay locked.'
+    : 'Payment needs attention. Publishing and review changes are locked until billing recovers.';
+  if (status === 'unpaid') return 'Billing is unpaid. Your site is suspended until payment recovers.';
+  if (status === 'canceled') return 'The subscription ended. Restart billing to restore site access.';
+  if (status === 'incomplete') return 'Checkout is incomplete. Finish billing before launch.';
+  return 'Billing is being reviewed by Sunset Pulse.';
+}
+
+function formatShortDate(value?: string) {
+  if (!value) return 'Not set';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Not set';
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
 }

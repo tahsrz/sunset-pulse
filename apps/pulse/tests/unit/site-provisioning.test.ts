@@ -7,7 +7,9 @@ const storeMocks = vi.hoisted(() => ({
   saveSiteConfig: vi.fn(),
   notifyBuyerSiteProvisioned: vi.fn(),
   notifyBuyerSiteBillingUpdate: vi.fn(),
+  notifyBuyerSiteGraceExpired: vi.fn(),
   notifyOperatorSiteBillingUpdate: vi.fn(),
+  notifyOperatorSiteGraceExpired: vi.fn(),
 }));
 
 vi.mock('@/lib/sites/siteConfigStore', () => ({
@@ -19,7 +21,9 @@ vi.mock('@/lib/sites/siteConfigStore', () => ({
 vi.mock('@/lib/sites/siteLifecycleNotifications', () => ({
   notifyBuyerSiteProvisioned: storeMocks.notifyBuyerSiteProvisioned,
   notifyBuyerSiteBillingUpdate: storeMocks.notifyBuyerSiteBillingUpdate,
+  notifyBuyerSiteGraceExpired: storeMocks.notifyBuyerSiteGraceExpired,
   notifyOperatorSiteBillingUpdate: storeMocks.notifyOperatorSiteBillingUpdate,
+  notifyOperatorSiteGraceExpired: storeMocks.notifyOperatorSiteGraceExpired,
 }));
 
 import {
@@ -38,7 +42,9 @@ describe('site provisioning', () => {
     storeMocks.saveSiteConfig.mockResolvedValue(['supabase', 'mongo']);
     storeMocks.notifyBuyerSiteProvisioned.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
     storeMocks.notifyBuyerSiteBillingUpdate.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
+    storeMocks.notifyBuyerSiteGraceExpired.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
     storeMocks.notifyOperatorSiteBillingUpdate.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
+    storeMocks.notifyOperatorSiteGraceExpired.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
   });
 
   it('creates a draft launch kit from paid Stripe checkout metadata', async () => {
@@ -277,6 +283,19 @@ describe('site provisioning', () => {
       }),
       expect.objectContaining({ role: 'site-billing-grace-cron' }),
     );
+    expect(storeMocks.notifyBuyerSiteGraceExpired).toHaveBeenCalledWith(expect.objectContaining({
+      kit: expect.objectContaining({
+        agentId: 'broker-one',
+        status: 'draft',
+      }),
+    }));
+    expect(storeMocks.notifyOperatorSiteGraceExpired).toHaveBeenCalledWith(expect.objectContaining({
+      kit: expect.objectContaining({
+        agentId: 'broker-one',
+        status: 'draft',
+      }),
+      publicUrl: expect.any(String),
+    }));
   });
 });
 

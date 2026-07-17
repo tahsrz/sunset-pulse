@@ -11,7 +11,9 @@ import {
 import { readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import {
   notifyBuyerSiteBillingUpdate,
+  notifyBuyerSiteGraceExpired,
   notifyBuyerSiteProvisioned,
+  notifyOperatorSiteGraceExpired,
   notifyOperatorSiteBillingUpdate,
 } from '@/lib/sites/siteLifecycleNotifications';
 
@@ -318,6 +320,26 @@ export async function expirePastDueGracePeriods(input: {
       role: input.source || 'site-billing-grace-cron',
       userId: kit.ownerId,
     });
+    const summary = getLaunchKitSummary(expiredKit);
+    const [buyerEmail, operatorEmail] = await Promise.all([
+      notifyBuyerSiteGraceExpired({
+        kit: expiredKit,
+        setupUrl: expiredKit.billingProfile.stripeCheckoutSessionId
+          ? `/onboarding/site/setup?session_id=${encodeURIComponent(expiredKit.billingProfile.stripeCheckoutSessionId)}`
+          : undefined,
+      }),
+      notifyOperatorSiteGraceExpired({
+        kit: expiredKit,
+        publicUrl: summary.publicUrl,
+      }),
+    ]);
+
+    if (buyerEmail.status === 'failed') {
+      console.warn('[SITE_GRACE_EXPIRED_BUYER_EMAIL_FAILED]', buyerEmail.reason);
+    }
+    if (operatorEmail.status === 'failed') {
+      console.warn('[SITE_GRACE_EXPIRED_OPERATOR_EMAIL_FAILED]', operatorEmail.reason);
+    }
 
     processed.push({
       agentId: kit.agentId,

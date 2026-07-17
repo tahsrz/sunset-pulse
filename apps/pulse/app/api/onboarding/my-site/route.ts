@@ -30,6 +30,8 @@ export async function GET(_request: NextRequest) {
         reviewStatus: kit.reviewProfile.status,
         billingStatus: kit.billingProfile.billingStatus,
         trialEndsAt: kit.billingProfile.trialEndsAt,
+        gracePeriodEndsAt: kit.billingProfile.gracePeriodEndsAt,
+        billingStatusChangedAt: kit.billingProfile.billingStatusChangedAt,
         ...summary,
       },
     });
