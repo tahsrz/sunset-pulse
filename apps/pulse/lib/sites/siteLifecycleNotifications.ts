@@ -132,11 +132,11 @@ export async function notifyBuyerSiteBillingUpdate(input: {
     ],
     active: [
       `${input.kit.branding.siteName} billing is active again.`,
-      `If the site is approved and buyer-safe, it can return to live status automatically.`,
+      billingRecoveryLine(input.kit),
     ],
     trialing: [
       `${input.kit.branding.siteName} is back in trialing billing status.`,
-      `Your site remains eligible while the trial is current and operator review is approved.`,
+      billingRecoveryLine(input.kit),
     ],
     unknown: [
       `${input.kit.branding.siteName} billing changed to an unknown state.`,
@@ -177,9 +177,9 @@ export async function notifyOperatorSiteBillingUpdate(input: {
 
   return sendLifecycleEmail({
     recipients,
-    subject: `Billing ${input.status}: ${input.kit.branding.siteName}`,
+    subject: billingOperatorSubject(input.kit, input.status),
     text: [
-      `Agent site billing changed.`,
+      operatorBillingIntro(input.kit, input.status),
       ``,
       `Site: ${input.kit.branding.siteName}`,
       `Agent ID: ${input.kit.agentId}`,
@@ -195,6 +195,45 @@ export async function notifyOperatorSiteBillingUpdate(input: {
       `Launch Kit: ${absoluteUrl(`/admin/launch-kit?agentId=${encodeURIComponent(input.kit.agentId)}`)}`,
     ].filter(Boolean).join('\n'),
     idempotencyKey: `site-billing-operator-${input.kit.agentId}-${input.status}-${input.gracePeriodEndsAt || input.kit.billingProfile.billingStatusChangedAt || 'latest'}`,
+  });
+}
+
+export async function notifyOperatorStripeWebhookFailure(input: {
+  eventId: string;
+  eventType: string;
+  objectId?: string;
+  livemode?: boolean;
+  stores?: string[];
+  error: unknown;
+}): Promise<SiteLifecycleEmailResult> {
+  const recipients = uniqueEmails([
+    process.env.STRIPE_WEBHOOK_ALERT_EMAIL,
+    process.env.SITE_LIFECYCLE_TO_EMAIL,
+    process.env.SITE_REVIEW_NOTIFICATION_EMAIL,
+    process.env.AGENT_LEAD_NOTIFICATION_EMAIL,
+    process.env.OPERATOR_EMAIL,
+    process.env.ADMIN_EMAIL,
+  ]);
+  const errorMessage = getErrorMessage(input.error);
+
+  return sendLifecycleEmail({
+    recipients,
+    subject: `Stripe webhook failed: ${input.eventType}`,
+    text: [
+      `A claimed Stripe webhook failed during processing and was marked failed in the webhook ledger.`,
+      ``,
+      `Event ID: ${input.eventId}`,
+      `Event type: ${input.eventType}`,
+      input.objectId ? `Object ID: ${input.objectId}` : '',
+      `Mode: ${input.livemode ? 'live' : 'test'}`,
+      input.stores?.length ? `Ledger stores: ${input.stores.join(', ')}` : '',
+      `Error: ${errorMessage}`,
+      ``,
+      `Next steps: inspect the Stripe webhook ledger, fix the underlying processing issue, then replay the event from Stripe if needed.`,
+      `Stripe webhook endpoint: ${absoluteUrl('/api/webhook/stripe')}`,
+      `Admin review queue: ${absoluteUrl('/admin/site-reviews')}`,
+    ].filter(Boolean).join('\n'),
+    idempotencyKey: `stripe-webhook-failed-${input.eventId}-${hashText(errorMessage)}`,
   });
 }
 
@@ -340,6 +379,32 @@ function billingSubject(kit: AgentLaunchKit, status: AgentLaunchKit['billingProf
   return `${kit.branding.siteName} billing update`;
 }
 
+function billingOperatorSubject(kit: AgentLaunchKit, status: AgentLaunchKit['billingProfile']['billingStatus']) {
+  if (status === 'active' || status === 'trialing') {
+    return `Billing recovered: ${kit.branding.siteName}`;
+  }
+
+  return `Billing ${status}: ${kit.branding.siteName}`;
+}
+
+function billingRecoveryLine(kit: AgentLaunchKit) {
+  if (kit.status === 'active') {
+    return `Your site has returned live because billing recovered and the buyer-safe launch checks are approved.`;
+  }
+
+  return `Your site is billing-current, but it remains in draft until setup and operator approval are complete.`;
+}
+
+function operatorBillingIntro(kit: AgentLaunchKit, status: AgentLaunchKit['billingProfile']['billingStatus']) {
+  if (status === 'active' || status === 'trialing') {
+    return kit.status === 'active'
+      ? `Billing recovered and the site returned live.`
+      : `Billing recovered, but the site stayed draft pending setup or operator approval.`;
+  }
+
+  return `Agent site billing changed.`;
+}
+
 function formatDate(value: string) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return value;
@@ -363,4 +428,19 @@ function uniqueEmails(values: Array<string | undefined | null>) {
   }
 
   return Array.from(seen);
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message.slice(0, 1000);
+  if (typeof error === 'string') return error.slice(0, 1000);
+  return 'Unknown Stripe webhook processing failure.';
+}
+
+function hashText(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash).toString(36);
 }

@@ -21,6 +21,7 @@ const webhookMocks = vi.hoisted(() => {
     claimStripeWebhookEvent: vi.fn(),
     completeStripeWebhookEvent: vi.fn(),
     failStripeWebhookEvent: vi.fn(),
+    notifyOperatorStripeWebhookFailure: vi.fn(),
   };
 });
 
@@ -87,6 +88,10 @@ vi.mock('@/lib/sites/siteProvisioning', () => ({
   updateProvisionedAgentSiteBilling: webhookMocks.updateProvisionedAgentSiteBilling,
 }));
 
+vi.mock('@/lib/sites/siteLifecycleNotifications', () => ({
+  notifyOperatorStripeWebhookFailure: webhookMocks.notifyOperatorStripeWebhookFailure,
+}));
+
 import { POST } from '@/app/api/webhook/stripe/route';
 
 describe('Stripe webhook site provisioning', () => {
@@ -129,6 +134,7 @@ describe('Stripe webhook site provisioning', () => {
     });
     webhookMocks.completeStripeWebhookEvent.mockResolvedValue(undefined);
     webhookMocks.failStripeWebhookEvent.mockResolvedValue(undefined);
+    webhookMocks.notifyOperatorStripeWebhookFailure.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
   });
 
   it('provisions an agent site from a completed subscription checkout', async () => {
@@ -331,6 +337,32 @@ describe('Stripe webhook site provisioning', () => {
     expect(response.status).toBe(200);
     expect(webhookMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
       billingStatus: 'unpaid',
+    }));
+  });
+
+  it('alerts operators when a claimed Stripe webhook fails processing', async () => {
+    const processingError = new Error('database unavailable');
+    webhookMocks.constructEvent.mockReturnValue(subscriptionDeletedEvent('evt_deleted'));
+    webhookMocks.claimStripeWebhookEvent.mockResolvedValue({
+      shouldProcess: true,
+      eventId: 'evt_deleted',
+      stores: ['supabase'],
+    });
+    webhookMocks.connectDB.mockRejectedValue(processingError);
+
+    const response = await POST(webhookRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.message).toBe('Stripe webhook processing failed.');
+    expect(webhookMocks.failStripeWebhookEvent).toHaveBeenCalledWith('evt_deleted', ['supabase'], processingError);
+    expect(webhookMocks.notifyOperatorStripeWebhookFailure).toHaveBeenCalledWith(expect.objectContaining({
+      eventId: 'evt_deleted',
+      eventType: 'customer.subscription.deleted',
+      objectId: 'sub_123',
+      livemode: false,
+      stores: ['supabase'],
+      error: processingError,
     }));
   });
 
