@@ -21,6 +21,7 @@ import {
   suspendProvisionedAgentSite,
   updateProvisionedAgentSiteBilling,
 } from '@/lib/sites/siteProvisioning';
+import { notifyOperatorStripeWebhookFailure } from '@/lib/sites/siteLifecycleNotifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     await failStripeWebhookEvent(claim.eventId, claim.stores, error);
+    await alertOperatorOfWebhookFailure(event, claim.eventId, claim.stores, error);
     console.error('[STRIPE_WEBHOOK_PROCESSING_ERROR]:', error);
     return errorResponse('Stripe webhook processing failed.', 500, error?.message || null);
   }
@@ -368,4 +370,29 @@ function mapStripeSubscriptionStatus(status?: Stripe.Subscription.Status | strin
   if (status === 'incomplete') return 'incomplete';
   if (status === 'incomplete_expired' || status === 'paused') return 'unpaid';
   return 'unknown';
+}
+
+async function alertOperatorOfWebhookFailure(
+  event: Stripe.Event,
+  eventId: string,
+  stores: string[],
+  error: unknown,
+) {
+  try {
+    const object = event.data?.object as { id?: string } | undefined;
+    const result = await notifyOperatorStripeWebhookFailure({
+      eventId,
+      eventType: event.type,
+      objectId: typeof object?.id === 'string' ? object.id : undefined,
+      livemode: event.livemode,
+      stores,
+      error,
+    });
+
+    if (result.status === 'failed') {
+      console.warn('[STRIPE_WEBHOOK_FAILURE_ALERT_FAILED]', result.reason);
+    }
+  } catch (alertError) {
+    console.warn('[STRIPE_WEBHOOK_FAILURE_ALERT_ERROR]', alertError);
+  }
 }
