@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { AlertTriangle, ArrowUpRight, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, Rocket, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, CheckCircle2, Circle, Clock3, CreditCard, Loader2, RefreshCw, Rocket, ShieldCheck } from 'lucide-react';
 import type { AgentLaunchKitResponse } from '@/lib/sites/launchKit';
 
 type OnboardingResponse = AgentLaunchKitResponse & {
@@ -12,6 +12,24 @@ type OnboardingResponse = AgentLaunchKitResponse & {
   trialDays: number;
   setupUrl: string;
   previewPath: string;
+  buyerStatus?: {
+    payment: {
+      state: 'received' | 'action_needed';
+      stripePaymentStatus: string;
+    };
+    provisioning: {
+      state: 'site_ready' | 'site_reconciled' | 'setup_saved';
+      siteStatus: string;
+    };
+    trial: {
+      state: string;
+      verified: boolean;
+      daysExpected: number;
+      daysObserved: number | null;
+      endsAt: string;
+    };
+    actionNeeded: boolean;
+  };
 };
 
 export default function SiteOnboardingPage() {
@@ -116,6 +134,7 @@ function SiteOnboardingClient() {
 
   const completeCount = data.readiness.filter((check) => check.complete).length;
   const isPublished = data.kit.status === 'active';
+  const buyerSteps = getBuyerSteps(data);
 
   return (
     <OnboardingShell>
@@ -124,7 +143,7 @@ function SiteOnboardingClient() {
           <div>
             <div className="inline-flex items-center gap-2 border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
               <Rocket size={14} />
-              90 Day Trial Active
+              {data.buyerStatus?.trial.verified ? '90 Day Trial Verified' : 'Site Checkout Received'}
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight md:text-6xl">
               {data.kit.branding.siteName} is in draft.
@@ -152,9 +171,25 @@ function SiteOnboardingClient() {
         </header>
 
         <section className="grid gap-5 py-8 md:grid-cols-3">
-          <StatusPanel label="Site" value={data.kit.status} detail={data.publicUrl} />
-          <StatusPanel label="Owner" value={data.kit.ownerName} detail={data.kit.agentProfile.email || data.kit.integrationProfile.leadEmail || 'Lead email pending'} />
+          <StatusPanel label="Payment" value={formatPaymentStatus(data.buyerStatus?.payment.stripePaymentStatus)} detail={data.buyerStatus?.actionNeeded ? 'Billing needs attention' : 'Stripe checkout returned successfully'} />
+          <StatusPanel label="Trial" value={data.buyerStatus?.trial.verified ? 'Verified' : formatBillingStatus(data.kit.billingProfile.billingStatus)} detail={data.buyerStatus?.trial.endsAt ? `Ends ${formatShortDate(data.buyerStatus.trial.endsAt)}` : `${data.trialDays} day trial expected`} />
           <StatusPanel label="Checklist" value={`${completeCount}/${data.readiness.length}`} detail={data.readyToPublish ? 'Ready to publish' : 'Needs setup'} />
+        </section>
+
+        <section className="border-y border-white/10 py-6">
+          <div className="grid gap-3 md:grid-cols-3">
+            {buyerSteps.map((step) => (
+              <div key={step.label} className="flex min-h-28 items-start gap-4 bg-white/[0.035] p-5">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center border ${step.complete ? 'border-emerald-300/40 bg-emerald-300/10 text-emerald-200' : 'border-amber-300/40 bg-amber-300/10 text-amber-100'}`}>
+                  {step.complete ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{step.label}</p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-100">{step.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="grid gap-6 pb-12 lg:grid-cols-[1.1fr_0.9fr]">
@@ -178,11 +213,15 @@ function SiteOnboardingClient() {
           </div>
 
           <div className="border border-white/10 bg-slate-900/80 p-6">
-            <h2 className="text-xl font-black tracking-tight">Launch Kit Snapshot</h2>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-black tracking-tight">Launch Kit Snapshot</h2>
+              <CreditCard className="text-cyan-200" size={22} />
+            </div>
             <dl className="mt-6 space-y-4 text-sm">
               <SnapshotRow label="Agent ID" value={data.kit.agentId} />
               <SnapshotRow label="Subdomain" value={data.kit.subdomain} />
               <SnapshotRow label="Tier" value={data.kit.subscriptionTier} />
+              <SnapshotRow label="Billing" value={formatBillingStatus(data.kit.billingProfile.billingStatus)} />
               <SnapshotRow label="Assistant" value={data.kit.assistantProfile.displayName} />
               <SnapshotRow label="MLS" value={data.kit.integrationProfile.mlsProvider || 'Pending'} />
             </dl>
@@ -246,4 +285,53 @@ function SnapshotRow({ label, value }: { label: string; value: string }) {
       <dd className="text-right font-black text-slate-100">{value}</dd>
     </div>
   );
+}
+
+function getBuyerSteps(data: OnboardingResponse) {
+  const buyerStatus = data.buyerStatus;
+
+  return [
+    {
+      label: 'Payment',
+      complete: buyerStatus?.payment.state === 'received',
+      detail: buyerStatus?.actionNeeded
+        ? 'Stripe says billing needs attention before launch can continue.'
+        : `Checkout status: ${formatPaymentStatus(buyerStatus?.payment.stripePaymentStatus || 'unknown')}.`,
+    },
+    {
+      label: 'Provisioning',
+      complete: Boolean(buyerStatus?.provisioning.state),
+      detail: buyerStatus?.provisioning.state === 'site_reconciled'
+        ? 'The return page restored the site workspace after checkout.'
+        : 'Your site workspace is ready for setup.',
+    },
+    {
+      label: 'Trial',
+      complete: Boolean(buyerStatus?.trial.verified),
+      detail: buyerStatus?.trial.endsAt
+        ? `${buyerStatus.trial.daysExpected} day trial ends ${formatShortDate(buyerStatus.trial.endsAt)}.`
+        : `${data.trialDays} day trial expected once Stripe confirms the subscription.`,
+    },
+  ];
+}
+
+function formatPaymentStatus(value = 'unknown') {
+  if (value === 'no_payment_required') return 'Trial Started';
+  if (value === 'paid') return 'Paid';
+  if (value === 'unpaid') return 'Unpaid';
+  return value.replace(/_/g, ' ') || 'Unknown';
+}
+
+function formatBillingStatus(value: string) {
+  return value.replace(/_/g, ' ') || 'Unknown';
+}
+
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'date pending';
+  return new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 }

@@ -91,8 +91,62 @@ describe('site onboarding route', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(onboardingMocks.retrieveSession).toHaveBeenCalledWith('cs_site_123', {
+      expand: ['subscription'],
+    });
     expect(body.data.setupUrl).toBe('/onboarding/site/setup?session_id=cs_site_123');
     expect(body.data.setupUrl).not.toContain('/admin/');
+  });
+
+  it('verifies the 90-day Stripe trial from the expanded checkout subscription', async () => {
+    const created = 1784235600;
+    const trialEnd = created + 90 * 24 * 60 * 60;
+    onboardingMocks.readSiteConfig.mockResolvedValue(null);
+    onboardingMocks.retrieveSession.mockResolvedValue({
+      id: 'cs_site_123',
+      mode: 'subscription',
+      created,
+      payment_status: 'no_payment_required',
+      client_reference_id: 'user-1',
+      customer: 'cus_123',
+      subscription: {
+        id: 'sub_123',
+        status: 'trialing',
+        trial_end: trialEnd,
+      },
+      customer_email: 'buyer@example.test',
+      metadata: {
+        productType: 'agent_site',
+        userId: 'user-1',
+        agentId: 'broker-one',
+        subscriptionTier: 'atlas',
+      },
+    });
+    onboardingMocks.provisionPaidAgentSite.mockResolvedValue({
+      ...mockSummary(createDefaultLaunchKit('broker-one')),
+      created: true,
+      savedStores: ['supabase', 'mongo'],
+    });
+
+    const response = await GET(request('http://localhost/api/onboarding/site?session_id=cs_site_123'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.buyerStatus.trial).toEqual(expect.objectContaining({
+      verified: true,
+      daysExpected: 90,
+      daysObserved: 90,
+      endsAt: new Date(trialEnd * 1000).toISOString(),
+    }));
+    expect(body.data.buyerStatus.payment).toEqual(expect.objectContaining({
+      state: 'received',
+      stripePaymentStatus: 'no_payment_required',
+    }));
+    expect(onboardingMocks.provisionPaidAgentSite).toHaveBeenCalledWith(expect.objectContaining({
+      billingStatus: 'trialing',
+      trialEndsAt: new Date(trialEnd * 1000).toISOString(),
+      stripeSubscriptionId: 'sub_123',
+    }));
   });
 
   it('reconciles a launch kit when the Stripe webhook has not written it yet', async () => {

@@ -26,6 +26,17 @@ const PremiumPage: React.FC = () => {
       });
 
       const payload = await res.json();
+      if (!res.ok || payload?.error) {
+        const setupUrl = payload?.details?.site?.setupUrl;
+        if (res.status === 409 && setupUrl) {
+          toast.info('You already have a site. Opening your setup workspace.');
+          window.location.href = setupUrl;
+          return;
+        }
+
+        throw new Error(payload?.message || 'Failed to initiate checkout.');
+      }
+
       const checkout = payload?.data || payload;
       const { sessionId, url } = checkout || {};
       
@@ -39,9 +50,9 @@ const PremiumPage: React.FC = () => {
         const { error } = await (stripe as any).redirectToCheckout({ sessionId });
         if (error) toast.error(error.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Checkout Error:', err);
-      toast.error('Failed to initiate checkout.');
+      toast.error(err?.message || 'Failed to initiate checkout.');
     } finally {
       setLoading(false);
     }

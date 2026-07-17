@@ -4,10 +4,15 @@ import { z } from 'zod';
 import { errorResponse, successResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { getLaunchKitSummary, normalizeLaunchKit } from '@/lib/sites/launchKit';
-import { provisionPaidAgentSite, resolveProvisionedAgentId } from '@/lib/sites/siteProvisioning';
+import { provisionPaidAgentSite, resolveProvisionedAgentId, updateProvisionedAgentSiteBilling } from '@/lib/sites/siteProvisioning';
 import { readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import { getStripeClient } from '@/lib/stripeClient';
 import { notifyOperatorSiteSetupSaved } from '@/lib/sites/siteLifecycleNotifications';
+import {
+  getSiteCheckoutBillingSnapshot,
+  SITE_SUBSCRIPTION_TRIAL_DAYS,
+  stripeId,
+} from '@/lib/billing/siteSubscriptionCheckout';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -72,15 +77,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { row, session, summary } = await loadOwnedOnboardingSession(request, sessionUser);
+    const { row, session, summary, billingSnapshot } = await loadOwnedOnboardingSession(request, sessionUser);
     const kit = summary.kit;
 
     return successResponse({
       status: row ? 'ready' : 'reconciled',
       sessionId: session.id,
-      trialDays: 90,
+      trialDays: SITE_SUBSCRIPTION_TRIAL_DAYS,
       setupUrl: `/onboarding/site/setup?session_id=${encodeURIComponent(session.id)}`,
       previewPath: `/sites/${encodeURIComponent(kit.subdomain)}`,
+      buyerStatus: buildBuyerStatus(kit, row ? 'site_ready' : 'site_reconciled', billingSnapshot),
       ...summary,
     });
   } catch (error: any) {
@@ -171,9 +177,10 @@ export async function PUT(request: NextRequest) {
     return successResponse({
       status: 'saved',
       sessionId: session.id,
-      trialDays: 90,
+      trialDays: SITE_SUBSCRIPTION_TRIAL_DAYS,
       setupUrl: `/onboarding/site/setup?session_id=${encodeURIComponent(session.id)}`,
       previewPath: `/sites/${encodeURIComponent(kit.subdomain)}`,
+      buyerStatus: buildBuyerStatus(kit, 'setup_saved'),
       savedStores,
       emailNotification: emailResult,
       ...updatedSummary,
@@ -192,7 +199,9 @@ export async function PUT(request: NextRequest) {
 
 async function loadOwnedOnboardingSession(request: NextRequest, sessionUser: any) {
   const sessionId = request.nextUrl.searchParams.get('session_id') || '';
-  const session = await getStripeClient().checkout.sessions.retrieve(sessionId);
+  const session = await getStripeClient().checkout.sessions.retrieve(sessionId, {
+    expand: ['subscription'],
+  });
   if (!isAgentSiteCheckout(session)) {
     throw new OnboardingError('Checkout session is not an agent-site subscription.', 400);
   }
@@ -203,6 +212,7 @@ async function loadOwnedOnboardingSession(request: NextRequest, sessionUser: any
   }
 
   const customerEmail = session.customer_email || session.customer_details?.email || sessionUser.user.email || '';
+  const billingSnapshot = getSiteCheckoutBillingSnapshot(session);
   const provisioningInput = {
     agentId: session.metadata?.agentId,
     userId: sessionUser.userId,
@@ -210,17 +220,29 @@ async function loadOwnedOnboardingSession(request: NextRequest, sessionUser: any
     email: customerEmail,
     subscriptionTier: session.metadata?.subscriptionTier,
     stripeCustomerId: stripeId(session.customer),
-    stripeSubscriptionId: stripeId(session.subscription),
+    stripeSubscriptionId: billingSnapshot.stripeSubscriptionId || stripeId(session.subscription),
     stripeCheckoutSessionId: session.id,
+    trialEndsAt: billingSnapshot.trialEndsAt,
+    billingStatus: billingSnapshot.billingStatus,
     source: 'checkout-onboarding',
   };
   const agentId = resolveProvisionedAgentId(provisioningInput);
   const row = await readSiteConfig(agentId);
-  const summary = row
+  let summary = row
     ? getLaunchKitSummary(normalizeLaunchKit(row, agentId))
     : await provisionPaidAgentSite(provisioningInput);
 
-  return { row, session, summary };
+  if (row && shouldRefreshBillingFromStripe(summary.kit, billingSnapshot)) {
+    const updatedSummary = await updateProvisionedAgentSiteBilling({
+      ...provisioningInput,
+      source: 'checkout-onboarding-reconcile',
+    });
+    if (updatedSummary) {
+      summary = updatedSummary;
+    }
+  }
+
+  return { row, session, summary, billingSnapshot };
 }
 
 function isAgentSiteCheckout(session: Stripe.Checkout.Session) {
@@ -228,16 +250,56 @@ function isAgentSiteCheckout(session: Stripe.Checkout.Session) {
   return metadata.productType === 'agent_site' || (!metadata.orderType && session.mode === 'subscription');
 }
 
-function stripeId(value: string | { id?: string } | null) {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  return value.id || '';
-}
-
 class OnboardingError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
   }
+}
+
+function shouldRefreshBillingFromStripe(
+  kit: ReturnType<typeof normalizeLaunchKit>,
+  billingSnapshot: ReturnType<typeof getSiteCheckoutBillingSnapshot>,
+) {
+  if (!billingSnapshot.billingStatus && !billingSnapshot.trialEndsAt) {
+    return false;
+  }
+
+  return (
+    (billingSnapshot.billingStatus && billingSnapshot.billingStatus !== kit.billingProfile.billingStatus)
+    || (billingSnapshot.trialEndsAt && billingSnapshot.trialEndsAt !== kit.billingProfile.trialEndsAt)
+  );
+}
+
+function buildBuyerStatus(
+  kit: ReturnType<typeof normalizeLaunchKit>,
+  provisioningStatus: 'site_ready' | 'site_reconciled' | 'setup_saved',
+  billingSnapshot?: ReturnType<typeof getSiteCheckoutBillingSnapshot>,
+) {
+  const billingStatus = billingSnapshot?.billingStatus || kit.billingProfile.billingStatus;
+  const trialEndsAt = billingSnapshot?.trialEndsAt || kit.billingProfile.trialEndsAt || '';
+  const billingNeedsAttention = billingStatus === 'past_due'
+    || billingStatus === 'canceled'
+    || billingStatus === 'unpaid'
+    || billingStatus === 'incomplete';
+
+  return {
+    payment: {
+      state: billingNeedsAttention ? 'action_needed' : 'received',
+      stripePaymentStatus: billingSnapshot?.checkoutPaymentStatus || 'unknown',
+    },
+    provisioning: {
+      state: provisioningStatus,
+      siteStatus: kit.status,
+    },
+    trial: {
+      state: billingStatus === 'trialing' ? 'verified' : billingStatus,
+      verified: billingSnapshot?.trialVerified || (billingStatus === 'trialing' && Boolean(trialEndsAt)),
+      daysExpected: SITE_SUBSCRIPTION_TRIAL_DAYS,
+      daysObserved: billingSnapshot?.trialDaysObserved ?? null,
+      endsAt: trialEndsAt,
+    },
+    actionNeeded: billingNeedsAttention,
+  };
 }
 
 function trimOptionalString(value: unknown) {
