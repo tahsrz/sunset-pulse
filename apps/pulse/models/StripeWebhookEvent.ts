@@ -16,6 +16,7 @@ const StripeWebhookEventSchema = new mongoose.Schema({
   completedAt: { type: Date },
   failedAt: { type: Date },
   errorMessage: { type: String, default: '' },
+  duplicateCount: { type: Number, default: 0 },
 }, {
   timestamps: true,
 });
