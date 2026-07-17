@@ -224,6 +224,20 @@ describe('site provisioning', () => {
         stripeSubscriptionId: 'sub_123',
         gracePeriodEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       },
+      provisioningAudit: [
+        {
+          id: 'evt_past_due',
+          occurredAt: new Date(Date.now() - 60_000).toISOString(),
+          action: 'customer.subscription.updated',
+          source: 'stripe-subscription-updated',
+          status: 'succeeded',
+          message: 'Stripe subscription status changed to past_due; site status is active.',
+          actor: 'stripe-webhook',
+          stripeSubscriptionId: 'sub_123',
+          billingStatus: 'past_due',
+          siteStatus: 'active',
+        },
+      ],
     });
 
     const result = await updateProvisionedAgentSiteBilling({
@@ -240,6 +254,61 @@ describe('site provisioning', () => {
     expect(storeMocks.notifyBuyerSiteBillingUpdate).toHaveBeenCalledWith(expect.objectContaining({
       status: 'active',
       previousStatus: 'past_due',
+    }));
+  });
+
+  it('keeps a recovered approved site in draft when billing interrupted draft setup', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createReadyApprovedKit('broker-one'),
+      status: 'draft',
+      billingProfile: {
+        billingStatus: 'past_due',
+        stripeSubscriptionId: 'sub_123',
+        gracePeriodEndsAt: new Date(Date.now() - 60_000).toISOString(),
+      },
+      provisioningAudit: [
+        {
+          id: 'evt_grace_expired',
+          occurredAt: new Date(Date.now() - 30_000).toISOString(),
+          action: 'billing.grace_period.expired',
+          source: 'site-billing-grace-cron',
+          status: 'succeeded',
+          message: 'Past-due grace window expired; site moved to draft.',
+          actor: 'system-cron',
+          stripeSubscriptionId: 'sub_123',
+          billingStatus: 'past_due',
+          siteStatus: 'draft',
+        },
+        {
+          id: 'evt_past_due',
+          occurredAt: new Date(Date.now() - 60_000).toISOString(),
+          action: 'customer.subscription.updated',
+          source: 'stripe-subscription-updated',
+          status: 'succeeded',
+          message: 'Stripe subscription status changed to past_due; site status is draft.',
+          actor: 'stripe-webhook',
+          stripeSubscriptionId: 'sub_123',
+          billingStatus: 'past_due',
+          siteStatus: 'draft',
+        },
+      ],
+    });
+
+    const result = await updateProvisionedAgentSiteBilling({
+      agentId: 'broker-one',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'active',
+      source: 'stripe-subscription-updated',
+    });
+
+    expect(result?.kit.status).toBe('draft');
+    expect(result?.kit.billingProfile.billingStatus).toBe('active');
+    expect(result?.kit.billingProfile.gracePeriodEndsAt).toBe('');
+    expect(result?.readyToPublish).toBe(true);
+    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'customer.subscription.updated',
+      billingStatus: 'active',
+      siteStatus: 'draft',
     }));
   });
 

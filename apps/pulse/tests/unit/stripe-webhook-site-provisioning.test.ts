@@ -183,6 +183,71 @@ describe('Stripe webhook site provisioning', () => {
     }));
   });
 
+  it('replays agent subscription lifecycle events while the ledger skips duplicates', async () => {
+    webhookMocks.constructEvent
+      .mockReturnValueOnce(subscriptionUpdatedEvent('evt_past_due', 'past_due'))
+      .mockReturnValueOnce(subscriptionUpdatedEvent('evt_past_due', 'past_due'))
+      .mockReturnValueOnce(subscriptionUpdatedEvent('evt_active', 'active'))
+      .mockReturnValueOnce(subscriptionUpdatedEvent('evt_unpaid', 'unpaid'))
+      .mockReturnValueOnce(subscriptionDeletedEvent('evt_deleted'));
+    webhookMocks.claimStripeWebhookEvent
+      .mockResolvedValueOnce({
+        shouldProcess: true,
+        eventId: 'evt_past_due',
+        stores: ['supabase', 'mongo'],
+      })
+      .mockResolvedValueOnce({
+        shouldProcess: false,
+        reason: 'duplicate_event',
+        eventId: 'evt_past_due',
+        stores: ['supabase', 'mongo'],
+      })
+      .mockResolvedValueOnce({
+        shouldProcess: true,
+        eventId: 'evt_active',
+        stores: ['supabase', 'mongo'],
+      })
+      .mockResolvedValueOnce({
+        shouldProcess: true,
+        eventId: 'evt_unpaid',
+        stores: ['supabase', 'mongo'],
+      })
+      .mockResolvedValueOnce({
+        shouldProcess: true,
+        eventId: 'evt_deleted',
+        stores: ['supabase', 'mongo'],
+      });
+
+    const responses = [
+      await POST(webhookRequest()),
+      await POST(webhookRequest()),
+      await POST(webhookRequest()),
+      await POST(webhookRequest()),
+      await POST(webhookRequest()),
+    ];
+    const duplicateBody = await responses[1].json();
+
+    expect(responses.map((response) => response.status)).toEqual([200, 200, 200, 200, 200]);
+    expect(duplicateBody.data).toEqual(expect.objectContaining({
+      received: true,
+      ignored: 'duplicate_event',
+      eventId: 'evt_past_due',
+    }));
+    expect(webhookMocks.updateProvisionedAgentSiteBilling.mock.calls.map((call) => call[0].billingStatus)).toEqual([
+      'past_due',
+      'active',
+      'unpaid',
+    ]);
+    expect(webhookMocks.suspendProvisionedAgentSite).toHaveBeenCalledTimes(1);
+    expect(webhookMocks.completeStripeWebhookEvent.mock.calls.map((call) => call[0])).toEqual([
+      'evt_past_due',
+      'evt_active',
+      'evt_unpaid',
+      'evt_deleted',
+    ]);
+    expect(webhookMocks.failStripeWebhookEvent).not.toHaveBeenCalled();
+  });
+
   it('suspends an agent site when the Stripe subscription is deleted', async () => {
     webhookMocks.constructEvent.mockReturnValue({
       type: 'customer.subscription.deleted',
@@ -324,6 +389,47 @@ function siteCheckoutEvent() {
           userId: 'user-1',
           agentId: 'broker-one',
           ownerName: 'Broker One',
+          subscriptionTier: 'atlas',
+        },
+      },
+    },
+  };
+}
+
+function subscriptionUpdatedEvent(id: string, status: string) {
+  return {
+    id,
+    type: 'customer.subscription.updated',
+    livemode: false,
+    data: {
+      object: {
+        id: 'sub_123',
+        customer: 'cus_123',
+        status,
+        metadata: {
+          productType: 'agent_site',
+          agentId: 'broker-one',
+          userId: 'user-1',
+          subscriptionTier: 'atlas',
+        },
+      },
+    },
+  };
+}
+
+function subscriptionDeletedEvent(id: string) {
+  return {
+    id,
+    type: 'customer.subscription.deleted',
+    livemode: false,
+    data: {
+      object: {
+        id: 'sub_123',
+        customer: 'cus_123',
+        metadata: {
+          productType: 'agent_site',
+          agentId: 'broker-one',
+          userId: 'user-1',
           subscriptionTier: 'atlas',
         },
       },
