@@ -12,6 +12,44 @@ type StripeWebhookClaimResult = {
   stores: string[];
 };
 
+export type StripeWebhookLedgerEvent = {
+  eventId: string;
+  eventType: string;
+  objectId: string;
+  livemode: boolean;
+  status: StripeWebhookEventStatus;
+  receivedAt: string;
+  completedAt: string;
+  failedAt: string;
+  errorMessage: string;
+  duplicateCount: number;
+  stores: string[];
+};
+
+export async function listStripeWebhookEvents(input: {
+  objectIds?: string[];
+  limit?: number;
+} = {}): Promise<StripeWebhookLedgerEvent[]> {
+  const limit = Math.min(Math.max(input.limit || 25, 1), 100);
+  const objectIds = Array.from(new Set((input.objectIds || []).map(normalizeEventId).filter(Boolean)));
+  const events = new Map<string, StripeWebhookLedgerEvent>();
+
+  for (const event of await listSupabaseEvents({ objectIds, limit })) {
+    events.set(event.eventId, event);
+  }
+
+  for (const event of await listMongoEvents({ objectIds, limit })) {
+    const existing = events.get(event.eventId);
+    events.set(event.eventId, existing
+      ? { ...existing, stores: Array.from(new Set([...existing.stores, ...event.stores])) }
+      : event);
+  }
+
+  return Array.from(events.values())
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .slice(0, limit);
+}
+
 export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<StripeWebhookClaimResult> {
   const eventId = normalizeEventId(event.id);
   if (!eventId) {
@@ -54,6 +92,72 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
     eventId,
     stores,
   };
+}
+
+async function listSupabaseEvents(input: { objectIds: string[]; limit: number }) {
+  try {
+    let query = supabaseAdmin
+      .from('stripe_webhook_events')
+      .select('event_id, event_type, object_id, livemode, status, received_at, completed_at, failed_at, error_message, duplicate_count')
+      .order('received_at', { ascending: false })
+      .limit(input.limit);
+
+    if (input.objectIds.length) {
+      query = query.in('object_id', input.objectIds);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_LIST]', error.message);
+      return [];
+    }
+
+    return (data || []).map((row: any): StripeWebhookLedgerEvent => ({
+      eventId: row.event_id || '',
+      eventType: row.event_type || '',
+      objectId: row.object_id || '',
+      livemode: Boolean(row.livemode),
+      status: normalizeLedgerStatus(row.status),
+      receivedAt: normalizeIso(row.received_at),
+      completedAt: normalizeIso(row.completed_at),
+      failedAt: normalizeIso(row.failed_at),
+      errorMessage: row.error_message || '',
+      duplicateCount: Number(row.duplicate_count || 0),
+      stores: ['supabase'],
+    })).filter((event) => event.eventId);
+  } catch (error) {
+    console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_LIST_FALLBACK]', error);
+    return [];
+  }
+}
+
+async function listMongoEvents(input: { objectIds: string[]; limit: number }) {
+  try {
+    await connectDB();
+    const query = input.objectIds.length ? { objectId: { $in: input.objectIds } } : {};
+    const rows = await StripeWebhookEvent
+      .find(query)
+      .sort({ receivedAt: -1 })
+      .limit(input.limit)
+      .lean();
+
+    return rows.map((row: any): StripeWebhookLedgerEvent => ({
+      eventId: row.eventId || '',
+      eventType: row.eventType || '',
+      objectId: row.objectId || '',
+      livemode: Boolean(row.livemode),
+      status: normalizeLedgerStatus(row.status),
+      receivedAt: normalizeIso(row.receivedAt),
+      completedAt: normalizeIso(row.completedAt),
+      failedAt: normalizeIso(row.failedAt),
+      errorMessage: row.errorMessage || '',
+      duplicateCount: Number(row.duplicateCount || 0),
+      stores: ['mongo'],
+    })).filter((event) => event.eventId);
+  } catch (error) {
+    console.warn('[STRIPE_WEBHOOK_LEDGER_MONGO_LIST_FALLBACK]', error);
+    return [];
+  }
 }
 
 export async function completeStripeWebhookEvent(eventId: string, stores: string[]) {
@@ -280,6 +384,17 @@ function toLedgerRecord(event: Stripe.Event) {
 
 function normalizeEventId(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeLedgerStatus(value: unknown): StripeWebhookEventStatus {
+  if (value === 'processing' || value === 'succeeded' || value === 'failed') return value;
+  return 'processing';
+}
+
+function normalizeIso(value: unknown) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isFinite(date.getTime()) ? date.toISOString() : '';
 }
 
 function getErrorMessage(error: unknown) {

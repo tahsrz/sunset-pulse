@@ -8,6 +8,7 @@ import { getSiteProvisioningObservability, type SiteProvisioningObservability } 
 import { supabaseAdmin } from '@/lib/supabase';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import ReviewActions from './ReviewActions';
+import StripeEventReconciliationPanel from './StripeEventReconciliationPanel';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -289,6 +290,7 @@ function ReviewCard({ row }: { row: SiteReviewRow }) {
             </a>
           </div>
           <ReviewActions agentId={row.agent_id} defaultNotes={row.review_profile?.notes || ''} />
+          <StripeEventReconciliationPanel agentId={row.agent_id} />
         </div>
       </div>
     </article>
