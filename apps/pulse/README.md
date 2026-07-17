@@ -78,6 +78,7 @@ stateDiagram-v2
 - **Testing:** Vitest, Testing Library, Playwright
 - **Payments and messaging:** Stripe, Twilio, Telegram integrations IAP WIP
 - **Media workflows:** FFmpeg-oriented render pipeline, local visual assets, and segmentation support
+- **Stripe site operations:** Checkout, webhook replay, ledger inspection, billing recovery, and grace cron steps live in [`docs/STRIPE_SITE_PROVISIONING_RUNBOOK.md`](./docs/STRIPE_SITE_PROVISIONING_RUNBOOK.md).
 
 ## MLS / IDX Access
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowUpRight, CheckCircle2, Circle, Loader2, Rocket, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, Rocket, ShieldCheck } from 'lucide-react';
 import type { AgentLaunchKitResponse } from '@/lib/sites/launchKit';
 
 type OnboardingResponse = AgentLaunchKitResponse & {
@@ -28,54 +28,86 @@ function SiteOnboardingClient() {
   const [data, setData] = useState<OnboardingResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadOnboarding() {
+  const loadOnboarding = useCallback(async (cancelledRef?: { cancelled: boolean }) => {
       if (!sessionId) {
         setError('Checkout session missing.');
         setLoading(false);
         return;
       }
 
+      setLoading(true);
+      setError('');
+      setAttempts((current) => current + 1);
+
       try {
-        const response = await fetch(`/api/onboarding/site?session_id=${encodeURIComponent(sessionId)}`);
+        const response = await fetch(`/api/onboarding/site?session_id=${encodeURIComponent(sessionId)}`, {
+          cache: 'no-store',
+        });
         const body = await response.json();
 
         if (!response.ok || body.error) {
           throw new Error(body.message || 'Site onboarding is unavailable.');
         }
 
-        if (!cancelled) setData(body.data);
+        if (!cancelledRef?.cancelled) setData(body.data);
       } catch (loadError: any) {
-        if (!cancelled) setError(loadError.message || 'Site onboarding is unavailable.');
+        if (!cancelledRef?.cancelled) setError(loadError.message || 'Site onboarding is unavailable.');
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelledRef?.cancelled) setLoading(false);
       }
-    }
+    },
+    [sessionId],
+  );
 
-    loadOnboarding();
+  useEffect(() => {
+    const cancelledRef = { cancelled: false };
+    loadOnboarding(cancelledRef);
 
     return () => {
-      cancelled = true;
+      cancelledRef.cancelled = true;
     };
-  }, [sessionId]);
+  }, [loadOnboarding]);
 
-  if (loading) return <OnboardingShell loading />;
+  if (loading) return <OnboardingShell loading sessionId={sessionId} attempts={attempts} />;
 
   if (error || !data) {
     return (
       <OnboardingShell>
         <section className="mx-auto max-w-3xl px-6 py-16">
-          <div className="border border-rose-400/30 bg-rose-950/30 p-8 text-rose-50">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-rose-200">Checkout received</p>
-            <h1 className="mt-4 text-3xl font-black tracking-tight">Site onboarding needs a refresh.</h1>
-            <p className="mt-3 text-sm leading-6 text-rose-100/80">{error || 'Try opening the checkout success link again.'}</p>
-            <Link href="/premium" className="mt-6 inline-flex items-center gap-2 bg-white px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-slate-950">
-              Back to Premium
-              <ArrowUpRight size={16} />
-            </Link>
+          <div className="border border-amber-300/30 bg-amber-300/10 p-8 text-amber-50">
+            <div className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em] text-amber-100">
+              <Clock3 size={16} />
+              Payment Received
+            </div>
+            <h1 className="mt-4 text-3xl font-black tracking-tight">Provisioning is still catching up.</h1>
+            <p className="mt-3 text-sm leading-6 text-amber-50/85">
+              Stripe returned you successfully, but the site workspace is not ready to display yet. This usually clears after the checkout webhook and launch-kit write finish.
+            </p>
+            {error ? (
+              <div className="mt-5 flex items-start gap-3 border border-amber-200/20 bg-slate-950/50 p-4 text-sm leading-6 text-amber-50/80">
+                <AlertTriangle className="mt-0.5 shrink-0 text-amber-200" size={18} />
+                <p>{error}</p>
+              </div>
+            ) : null}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => loadOnboarding()}
+                className="inline-flex items-center gap-2 bg-amber-200 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-slate-950"
+              >
+                <RefreshCw size={16} />
+                Retry Setup
+              </button>
+              <Link href="/dashboard" className="inline-flex items-center gap-2 border border-white/15 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white">
+                Open Dashboard
+                <ArrowUpRight size={16} />
+              </Link>
+            </div>
+            <p className="mt-6 text-xs font-bold leading-5 text-amber-100/70">
+              If this keeps showing after a minute, contact Sunset Pulse support with checkout session {sessionId || 'from your receipt'}.
+            </p>
           </div>
         </section>
       </OnboardingShell>
@@ -161,14 +193,35 @@ function SiteOnboardingClient() {
   );
 }
 
-function OnboardingShell({ children, loading = false }: { children?: React.ReactNode; loading?: boolean }) {
+function OnboardingShell({
+  children,
+  loading = false,
+  sessionId = '',
+  attempts = 0,
+}: {
+  children?: React.ReactNode;
+  loading?: boolean;
+  sessionId?: string;
+  attempts?: number;
+}) {
   return (
     <div className="min-h-screen bg-[#071013] text-white">
       {loading ? (
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="flex items-center gap-3 text-sm font-black uppercase tracking-[0.18em] text-cyan-100">
-            <Loader2 className="animate-spin" size={18} />
-            Preparing Site
+        <div className="flex min-h-screen items-center justify-center px-6">
+          <div className="max-w-md border border-cyan-300/20 bg-cyan-300/10 p-8 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center border border-cyan-200/30 bg-slate-950/40">
+              <Loader2 className="animate-spin text-cyan-100" size={20} />
+            </div>
+            <p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-cyan-100">
+              Payment Received
+            </p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight">Preparing your site workspace.</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Stripe is confirming the checkout and Sunset Pulse is reconciling the launch kit. Keep this tab open while provisioning finishes.
+            </p>
+            <p className="mt-4 truncate text-xs font-bold text-slate-500">
+              {sessionId ? `Session ${sessionId}` : 'Waiting for checkout session'}{attempts > 1 ? ` / attempt ${attempts}` : ''}
+            </p>
           </div>
         </div>
       ) : children}
