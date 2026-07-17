@@ -25,7 +25,9 @@ const PremiumPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const { sessionId, url } = await res.json();
+      const payload = await res.json();
+      const checkout = payload?.data || payload;
+      const { sessionId, url } = checkout || {};
       
       if (url) {
         window.location.href = url;
