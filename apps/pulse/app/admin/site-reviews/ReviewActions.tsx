@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { CheckCircle2, Loader2, MessageSquareWarning, SearchCheck } from 'lucide-react';
+import { CheckCircle2, Loader2, MessageSquareWarning, RotateCcw, SearchCheck } from 'lucide-react';
 
 type ReviewAction = 'mark_in_review' | 'request_changes' | 'approve_publish';
 
@@ -11,6 +11,7 @@ export default function ReviewActions({ agentId, defaultNotes = '' }: { agentId:
   const router = useRouter();
   const [notes, setNotes] = useState(defaultNotes);
   const [pendingAction, setPendingAction] = useState<ReviewAction | null>(null);
+  const [pendingBillingRecheck, setPendingBillingRecheck] = useState(false);
   const [error, setError] = useState('');
 
   async function submit(action: ReviewAction) {
@@ -40,6 +41,30 @@ export default function ReviewActions({ agentId, defaultNotes = '' }: { agentId:
     }
   }
 
+  async function recheckBilling() {
+    setPendingBillingRecheck(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/admin/sites/billing-recheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId }),
+      });
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(body.message || 'Billing recheck failed.');
+      }
+
+      router.refresh();
+    } catch (actionError: any) {
+      setError(actionError?.message || 'Billing recheck failed.');
+    } finally {
+      setPendingBillingRecheck(false);
+    }
+  }
+
   return (
     <div className="grid gap-3">
       <textarea
@@ -54,6 +79,15 @@ export default function ReviewActions({ agentId, defaultNotes = '' }: { agentId:
         <p className="rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-xs font-bold leading-5 text-red-100">{error}</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={recheckBilling}
+          disabled={pendingAction !== null || pendingBillingRecheck}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-300/25 bg-blue-300/10 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-blue-100 transition disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {pendingBillingRecheck ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+          Recheck Billing
+        </button>
         <ActionButton
           label="In Review"
           action="mark_in_review"
