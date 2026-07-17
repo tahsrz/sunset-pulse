@@ -9,6 +9,7 @@ const authMocks = vi.hoisted(() => ({
 
 const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
+  info: vi.fn(),
 }));
 
 vi.mock('@/context/AuthContext', () => ({
@@ -31,6 +32,7 @@ describe('Premium checkout UI', () => {
   beforeEach(() => {
     authMocks.user = { id: 'user-1', email: 'buyer@example.test' };
     toastMocks.error.mockReset();
+    toastMocks.info.mockReset();
     vi.stubGlobal('fetch', vi.fn());
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -49,6 +51,8 @@ describe('Premium checkout UI', () => {
 
   it('redirects a signed-in buyer using the standard checkout response envelope', async () => {
     vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
       json: async () => ({
         success: true,
         data: {
@@ -78,5 +82,31 @@ describe('Premium checkout UI', () => {
 
     expect(fetch).not.toHaveBeenCalled();
     expect(toastMocks.error).toHaveBeenCalledWith('Please login to upgrade to Premium.');
+  });
+
+  it('opens existing setup when checkout is blocked by an active site subscription', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        error: true,
+        message: 'You already have a site subscription.',
+        details: {
+          reason: 'existing_site_subscription',
+          site: {
+            setupUrl: '/onboarding/site/setup?session_id=cs_existing_site',
+          },
+        },
+      }),
+    } as Response);
+
+    render(<PremiumPage />);
+    fireEvent.click(screen.getByRole('button', { name: /claim your site/i }));
+
+    await waitFor(() => {
+      expect(window.location.href).toBe('/onboarding/site/setup?session_id=cs_existing_site');
+    });
+    expect(toastMocks.info).toHaveBeenCalledWith('You already have a site. Opening your setup workspace.');
+    expect(toastMocks.error).not.toHaveBeenCalled();
   });
 });

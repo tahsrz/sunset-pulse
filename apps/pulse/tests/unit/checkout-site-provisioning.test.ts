@@ -58,6 +58,7 @@ vi.mock('@/lib/sites/siteLifecycleNotifications', () => ({
 
 import { POST } from '@/app/api/checkout/route';
 import { GET as getMySite } from '@/app/api/onboarding/my-site/route';
+import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
 import { provisionPaidAgentSite } from '@/lib/sites/siteProvisioning';
 
 describe('site subscription checkout', () => {
@@ -94,6 +95,7 @@ describe('site subscription checkout', () => {
 
     expect(response.status).toBe(200);
     expect(body.data.url).toBe('https://checkout.stripe.test/site');
+    expect(body.data.trialDays).toBe(90);
     expect(stripeMocks.checkoutSessionCreate).toHaveBeenCalledTimes(1);
 
     const params = stripeMocks.checkoutSessionCreate.mock.calls[0][0];
@@ -109,6 +111,35 @@ describe('site subscription checkout', () => {
       subscriptionTier: 'atlas',
     }));
     expect(params.subscription_data.metadata).toEqual(params.metadata);
+  });
+
+  it('blocks duplicate checkout when the buyer already has a billable site subscription', async () => {
+    siteStoreMocks.savedKit = {
+      ...createDefaultLaunchKit('broker-one'),
+      ownerId: 'user-1',
+      status: 'draft',
+      billingProfile: {
+        ...createDefaultLaunchKit('broker-one').billingProfile,
+        userId: 'user-1',
+        billingStatus: 'trialing',
+        stripeCheckoutSessionId: 'cs_existing_site',
+      },
+    };
+
+    const response = await POST(jsonRequest({
+      agentId: 'Broker-Two',
+      ownerName: 'Broker Two',
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.message).toContain('already have a site subscription');
+    expect(body.details.site).toEqual(expect.objectContaining({
+      agentId: 'broker-one',
+      billingStatus: 'trialing',
+      setupUrl: '/onboarding/site/setup?session_id=cs_existing_site',
+    }));
+    expect(stripeMocks.checkoutSessionCreate).not.toHaveBeenCalled();
   });
 
   it('carries a buyer from checkout metadata to provisioned onboarding site state', async () => {
