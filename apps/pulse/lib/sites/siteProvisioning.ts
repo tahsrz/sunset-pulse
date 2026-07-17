@@ -229,7 +229,7 @@ export async function updateProvisionedAgentSiteBilling(input: PaidAgentSiteProv
       billingStatus,
     },
   }, agentId);
-  const nextStatus = resolveSiteStatusForBilling(nextKitBase, billingStatus);
+  const nextStatus = resolveSiteStatusForBilling(nextKitBase, billingStatus, kit);
   const nextKit = appendProvisioningAuditEvent(normalizeLaunchKit({
     ...nextKitBase,
     status: nextStatus,
@@ -405,6 +405,7 @@ function normalizeBillingStatus(value: unknown): AgentLaunchKit['billingProfile'
 function resolveSiteStatusForBilling(
   kit: AgentLaunchKit,
   billingStatus: AgentLaunchKit['billingProfile']['billingStatus'],
+  previousKit: AgentLaunchKit = kit,
 ): AgentLaunchKit['status'] {
   if (billingStatus === 'canceled' || billingStatus === 'unpaid') {
     return 'suspended';
@@ -421,15 +422,73 @@ function resolveSiteStatusForBilling(
   }
 
   if (billingStatus === 'active' || billingStatus === 'trialing') {
-    const summary = getLaunchKitSummary(kit);
-    if (kit.reviewProfile.status === 'approved' && summary.readyToPublish) {
-      return 'active';
+    const recoveredStatus = resolveRecoveredSiteStatus(previousKit, kit);
+    if (recoveredStatus) {
+      return recoveredStatus;
     }
 
-    return kit.status === 'suspended' ? 'draft' : kit.status;
+    if (previousKit.status === 'suspended') {
+      return 'draft';
+    }
+
+    return previousKit.status;
   }
 
   return kit.status;
+}
+
+function resolveRecoveredSiteStatus(
+  previousKit: AgentLaunchKit,
+  recoveredKit: AgentLaunchKit,
+): AgentLaunchKit['status'] | null {
+  const summary = getLaunchKitSummary(recoveredKit);
+  if (!summary.readyToPublish) {
+    return previousKit.status === 'suspended' ? 'draft' : previousKit.status;
+  }
+
+  const interruptedStatus = findLatestBillingInterruptedSiteStatus(previousKit);
+  if (interruptedStatus === 'active') {
+    return 'active';
+  }
+
+  if (interruptedStatus === 'draft') {
+    return 'draft';
+  }
+
+  if (previousKit.status === 'active') {
+    return 'active';
+  }
+
+  if (previousKit.status === 'suspended') {
+    return 'draft';
+  }
+
+  return null;
+}
+
+function findLatestBillingInterruptedSiteStatus(kit: AgentLaunchKit) {
+  for (const event of kit.provisioningAudit || []) {
+    if (
+      event.action === 'customer.subscription.updated'
+      && isBillingInterruptionStatus(event.billingStatus)
+      && event.siteStatus
+    ) {
+      return event.siteStatus;
+    }
+
+    if (
+      event.action === 'customer.subscription.deleted'
+      && event.siteStatus === 'active'
+    ) {
+      return 'active';
+    }
+  }
+
+  return null;
+}
+
+function isBillingInterruptionStatus(value?: AgentLaunchKit['billingProfile']['billingStatus']) {
+  return value === 'past_due' || value === 'unpaid' || value === 'canceled' || value === 'incomplete';
 }
 
 function normalizeIsoDate(value: unknown) {
