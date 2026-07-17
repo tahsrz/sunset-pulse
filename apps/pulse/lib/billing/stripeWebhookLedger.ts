@@ -20,6 +20,7 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
 
   const existing = await findExistingEvent(eventId);
   if (existing) {
+    await recordDuplicateStripeWebhookEvent(eventId, existing.stores);
     return {
       shouldProcess: false,
       reason: 'duplicate_event',
@@ -32,12 +33,14 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
   const record = toLedgerRecord(event);
   const supabaseResult = await insertSupabaseEvent(record);
   if (supabaseResult === 'duplicate') {
+    await recordDuplicateStripeWebhookEvent(eventId, ['supabase']);
     return { shouldProcess: false, reason: 'duplicate_event', eventId, stores: ['supabase'] };
   }
   if (supabaseResult === 'inserted') stores.push('supabase');
 
   const mongoResult = await insertMongoEvent(record);
   if (mongoResult === 'duplicate') {
+    await recordDuplicateStripeWebhookEvent(eventId, ['mongo', ...stores]);
     return { shouldProcess: false, reason: 'duplicate_event', eventId, stores: ['mongo', ...stores] };
   }
   if (mongoResult === 'inserted') stores.push('mongo');
@@ -95,6 +98,56 @@ async function findExistingEvent(eventId: string) {
   return stores.length ? { stores } : null;
 }
 
+async function recordDuplicateStripeWebhookEvent(eventId: string, stores: string[]) {
+  const updates = [];
+
+  if (stores.includes('supabase')) {
+    updates.push(incrementSupabaseDuplicateCount(eventId));
+  }
+
+  if (stores.includes('mongo')) {
+    updates.push(incrementMongoDuplicateCount(eventId));
+  }
+
+  await Promise.all(updates);
+}
+
+async function incrementSupabaseDuplicateCount(eventId: string) {
+  try {
+    const { data, error: readError } = await supabaseAdmin
+      .from('stripe_webhook_events')
+      .select('duplicate_count')
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (readError) {
+      console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_DUPLICATE_READ]', readError.message);
+      return;
+    }
+
+    const current = Number(data?.duplicate_count || 0);
+    const { error } = await supabaseAdmin
+      .from('stripe_webhook_events')
+      .update({ duplicate_count: current + 1 })
+      .eq('event_id', eventId);
+
+    if (error) {
+      console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_DUPLICATE_UPDATE]', error.message);
+    }
+  } catch (error) {
+    console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_DUPLICATE_FALLBACK]', error);
+  }
+}
+
+async function incrementMongoDuplicateCount(eventId: string) {
+  try {
+    await connectDB();
+    await StripeWebhookEvent.updateOne({ eventId }, { $inc: { duplicateCount: 1 } });
+  } catch (error) {
+    console.warn('[STRIPE_WEBHOOK_LEDGER_MONGO_DUPLICATE_UPDATE]', error);
+  }
+}
+
 async function insertSupabaseEvent(record: ReturnType<typeof toLedgerRecord>) {
   try {
     const { error } = await supabaseAdmin
@@ -106,6 +159,7 @@ async function insertSupabaseEvent(record: ReturnType<typeof toLedgerRecord>) {
         livemode: record.livemode,
         status: 'processing',
         received_at: record.receivedAt.toISOString(),
+        duplicate_count: 0,
       });
 
     if (!error) return 'inserted';
@@ -128,6 +182,7 @@ async function insertMongoEvent(record: ReturnType<typeof toLedgerRecord>) {
       livemode: record.livemode,
       status: 'processing',
       receivedAt: record.receivedAt,
+      duplicateCount: 0,
     });
     return 'inserted';
   } catch (error: any) {

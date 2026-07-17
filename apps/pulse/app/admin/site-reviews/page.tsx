@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
-import { ArrowUpRight, ClipboardList, ShieldAlert } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, ClipboardList, ShieldAlert } from 'lucide-react';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
+import { getSiteProvisioningObservability, type SiteProvisioningObservability } from '@/lib/billing/siteProvisioningObservability';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import ReviewActions from './ReviewActions';
@@ -100,6 +101,7 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
   const unpaidCount = allRows.filter((row) => row.billing_profile?.billingStatus === 'unpaid').length;
   const canceledCount = allRows.filter((row) => row.billing_profile?.billingStatus === 'canceled').length;
   const graceSoonCount = allRows.filter(isGraceExpiringSoon).length;
+  const observability = await getSiteProvisioningObservability(allRows);
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
@@ -132,6 +134,8 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
             <MetricCard label="Changes" value={changesCount.toString()} />
             <MetricCard label="Past Due" value={pastDueCount.toString()} />
           </div>
+
+          <ProvisioningObservabilityStrip observability={observability} />
 
           <div className="mt-6 grid gap-4 xl:grid-cols-2">
             <FilterGroup label="Review">
@@ -174,6 +178,57 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
         )}
       </div>
     </main>
+  );
+}
+
+function ProvisioningObservabilityStrip({ observability }: { observability: SiteProvisioningObservability }) {
+  const hasWebhookAttention = !observability.webhooks.available
+    || observability.webhooks.failed > 0
+    || observability.webhooks.staleProcessing > 0;
+  const latestFailure = observability.webhooks.latestFailure;
+
+  return (
+    <section className="mt-6 rounded-3xl border border-white/10 bg-slate-900/60 p-4">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`grid h-10 w-10 place-items-center rounded-2xl border ${hasWebhookAttention ? 'border-amber-300/30 bg-amber-300/10 text-amber-100' : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100'}`}>
+            {hasWebhookAttention ? <AlertTriangle size={18} /> : <Activity size={18} />}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Payment To Site Observability</p>
+            <h2 className="text-lg font-black text-white">
+              {hasWebhookAttention ? 'Provisioning needs attention' : 'Provisioning pipeline looks steady'}
+            </h2>
+          </div>
+        </div>
+        <p className="text-xs font-bold text-slate-500">
+          {observability.windows.recentDays}d window / stale after {observability.windows.staleProcessingMinutes}m
+        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <Signal label="Webhook Failures" value={observability.webhooks.available ? observability.webhooks.failed : 'n/a'} tone={observability.webhooks.failed > 0 || !observability.webhooks.available ? 'warn' : 'ok'} />
+        <Signal label="Stale Processing" value={observability.webhooks.available ? observability.webhooks.staleProcessing : 'n/a'} tone={observability.webhooks.staleProcessing > 0 || !observability.webhooks.available ? 'warn' : 'ok'} />
+        <Signal label="Duplicates Blocked" value={observability.webhooks.available ? observability.webhooks.duplicates : 'n/a'} tone="neutral" />
+        <Signal label="Sites Provisioned" value={observability.sites.recentProvisioned} tone="ok" />
+        <Signal label="Billing Recovered" value={observability.sites.recentRecovered} tone="ok" />
+        <Signal label="Grace Expired" value={observability.sites.graceExpired} tone={observability.sites.graceExpired > 0 ? 'warn' : 'neutral'} />
+      </div>
+
+      {!observability.webhooks.available ? (
+        <p className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100">
+          Stripe webhook ledger unavailable: {observability.webhooks.error}
+        </p>
+      ) : latestFailure ? (
+        <p className="mt-4 rounded-2xl border border-red-300/20 bg-red-300/10 p-3 text-xs leading-5 text-red-100">
+          Latest failure: {latestFailure.eventType || latestFailure.eventId} / {formatDate(latestFailure.failedAt, 'time unknown')} / {latestFailure.message}
+        </p>
+      ) : (
+        <p className="mt-4 text-xs leading-5 text-slate-500">
+          {observability.webhooks.totalRecent} recent webhook events, {observability.webhooks.succeeded} succeeded, {observability.sites.graceExpiringSoon} grace window ending within 48 hours.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -279,6 +334,21 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
       <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/45">{label}</p>
       <p className="mt-2 text-3xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function Signal({ label, value, tone }: { label: string; value: number | string; tone: 'ok' | 'warn' | 'neutral' }) {
+  const toneClass = tone === 'ok'
+    ? 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100'
+    : tone === 'warn'
+      ? 'border-amber-300/25 bg-amber-300/10 text-amber-100'
+      : 'border-white/10 bg-slate-950/50 text-slate-200';
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClass}`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-70">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
     </div>
   );
 }
