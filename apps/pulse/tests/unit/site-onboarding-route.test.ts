@@ -95,6 +95,31 @@ describe('site onboarding route', () => {
     expect(body.data.setupUrl).not.toContain('/admin/');
   });
 
+  it('reconciles a launch kit when the Stripe webhook has not written it yet', async () => {
+    onboardingMocks.readSiteConfig.mockResolvedValue(null);
+    onboardingMocks.provisionPaidAgentSite.mockResolvedValue({
+      ...mockSummary(createDefaultLaunchKit('broker-one')),
+      created: true,
+      savedStores: ['supabase', 'mongo'],
+    });
+
+    const response = await GET(request('http://localhost/api/onboarding/site?session_id=cs_site_123'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.status).toBe('reconciled');
+    expect(body.data.setupUrl).toBe('/onboarding/site/setup?session_id=cs_site_123');
+    expect(onboardingMocks.provisionPaidAgentSite).toHaveBeenCalledWith(expect.objectContaining({
+      agentId: 'broker-one',
+      userId: 'user-1',
+      email: 'buyer@example.test',
+      stripeCustomerId: 'cus_123',
+      stripeSubscriptionId: 'sub_123',
+      stripeCheckoutSessionId: 'cs_site_123',
+      source: 'checkout-onboarding',
+    }));
+  });
+
   it('saves only buyer-safe setup fields and preserves protected site controls', async () => {
     const response = await PUT(request('http://localhost/api/onboarding/site?session_id=cs_site_123', {
       method: 'PUT',
@@ -160,4 +185,17 @@ function request(url: string, init: { method?: string; body?: unknown } = {}) {
     headers: init.body ? { 'Content-Type': 'application/json' } : undefined,
     body: init.body ? JSON.stringify(init.body) : undefined,
   });
+}
+
+function mockSummary(kit: ReturnType<typeof createDefaultLaunchKit>) {
+  return {
+    kit,
+    publicUrl: `https://${kit.subdomain}.sunsetpulse.app`,
+    readiness: [],
+    readyToPublish: false,
+    publishGate: {
+      allowed: false,
+      checks: [],
+    },
+  };
 }
