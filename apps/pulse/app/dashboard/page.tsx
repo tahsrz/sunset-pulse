@@ -72,6 +72,8 @@ interface MySiteSummary {
   reviewStatus: string;
   billingStatus: string;
   trialEndsAt?: string;
+  gracePeriodEndsAt?: string;
+  billingStatusChangedAt?: string;
   publicUrl: string;
   readyToPublish: boolean;
   kit: {
@@ -201,6 +203,7 @@ const DashboardPage: React.FC = () => {
 
   const topPriority = leads.length > 0 ? leads.reduce((prev, current) => 
     (prev.probability > current.probability) ? prev : current, leads[0]) : null;
+  const billingNeedsAttention = mySite ? needsBillingAttention(mySite.billingStatus) : false;
 
   const groupedLeads = leads.reduce<Record<string, { name: string; monthlyRate: number; leads: Lead[] }>>((acc, lead) => {
     const propId = lead.property?._id || 'unknown';
@@ -233,12 +236,24 @@ const DashboardPage: React.FC = () => {
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">My Site</p>
               <h2 className="mt-2 text-lg font-black text-white">{mySite.kit.branding.siteName}</h2>
               <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-                {mySite.kit.status} · {mySite.billingStatus} · {mySite.reviewStatus}
+                {mySite.kit.status} · {formatBillingStatus(mySite.billingStatus)} · {mySite.reviewStatus}
               </p>
             </div>
             <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-black uppercase text-slate-300">
               {mySite.readyToPublish ? 'Ready' : 'Setup'}
             </span>
+          </div>
+          <div className={`mt-4 border p-3 text-xs leading-5 ${billingNeedsAttention ? 'border-amber-300/25 bg-amber-300/10 text-amber-100' : 'border-white/10 bg-slate-900/60 text-slate-300'}`}>
+            <p className="font-black uppercase tracking-[0.14em]">
+              Billing: {formatBillingStatus(mySite.billingStatus)}
+            </p>
+            <p className="mt-1">{billingStatusMessage(mySite)}</p>
+            {mySite.trialEndsAt ? (
+              <p className="mt-2 text-slate-400">Trial ends: {formatShortDate(mySite.trialEndsAt)}</p>
+            ) : null}
+            {mySite.gracePeriodEndsAt ? (
+              <p className="mt-1 text-slate-400">Grace ends: {formatShortDate(mySite.gracePeriodEndsAt)}</p>
+            ) : null}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link href={mySite.setupUrl} className="inline-flex items-center gap-2 bg-cyan-300 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-slate-950">
@@ -255,10 +270,14 @@ const DashboardPage: React.FC = () => {
               type="button"
               onClick={openBillingPortal}
               disabled={billingLoading}
-              className="inline-flex items-center gap-2 border border-white/15 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white disabled:opacity-50"
+              className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.12em] disabled:opacity-50 ${
+                billingNeedsAttention
+                  ? 'border-amber-200 bg-amber-200 text-slate-950'
+                  : 'border-white/15 text-white'
+              }`}
             >
               {billingLoading ? <Loader2 className="animate-spin" size={13} /> : <CreditCard size={13} />}
-              Billing
+              {billingNeedsAttention ? 'Fix Billing' : 'Billing'}
             </button>
           </div>
         </aside>
@@ -306,3 +325,36 @@ const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
+
+function needsBillingAttention(status: string) {
+  return status === 'past_due' || status === 'unpaid' || status === 'canceled' || status === 'incomplete';
+}
+
+function formatBillingStatus(status: string) {
+  return (status || 'unknown').replace(/_/g, ' ');
+}
+
+function billingStatusMessage(site: MySiteSummary) {
+  if (site.billingStatus === 'trialing') return 'Your 90-day trial is active. Keep setup moving while review checks finish.';
+  if (site.billingStatus === 'active') return 'Billing is current. Publishing depends on buyer-safe setup and operator approval.';
+  if (site.billingStatus === 'past_due') return site.gracePeriodEndsAt
+    ? 'Payment needs attention. Your site may stay live during grace, but publishing stays locked.'
+    : 'Payment needs attention. Publishing is locked until billing recovers.';
+  if (site.billingStatus === 'unpaid') return 'Billing is unpaid and the site is suspended until payment recovers.';
+  if (site.billingStatus === 'canceled') return 'The subscription ended. Restart billing to restore site access.';
+  if (site.billingStatus === 'incomplete') return 'Checkout is incomplete. Finish billing before launch.';
+  return 'Billing is being reviewed by Sunset Pulse.';
+}
+
+function formatShortDate(value?: string) {
+  if (!value) return 'Not set';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Not set';
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}

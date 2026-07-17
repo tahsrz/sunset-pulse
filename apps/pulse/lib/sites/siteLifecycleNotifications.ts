@@ -198,6 +198,70 @@ export async function notifyOperatorSiteBillingUpdate(input: {
   });
 }
 
+export async function notifyBuyerSiteGraceExpired(input: {
+  kit: AgentLaunchKit;
+  email?: string | null;
+  setupUrl?: string;
+  billingPortalUrl?: string;
+}): Promise<SiteLifecycleEmailResult> {
+  const recipients = uniqueEmails([input.email, input.kit.agentProfile.email, input.kit.integrationProfile.leadEmail]);
+  const portalUrl = input.billingPortalUrl || absoluteUrl('/dashboard');
+  const setupUrl = input.setupUrl || absoluteUrl(`/onboarding/site/setup?session_id=${encodeURIComponent(input.kit.billingProfile.stripeCheckoutSessionId || '')}`);
+
+  return sendLifecycleEmail({
+    recipients,
+    subject: `${input.kit.branding.siteName} grace window ended`,
+    text: [
+      `${input.kit.branding.siteName} has moved back to draft because the past-due grace window ended.`,
+      ``,
+      `Site: ${input.kit.branding.siteName}`,
+      `Agent ID: ${input.kit.agentId}`,
+      `Billing status: ${input.kit.billingProfile.billingStatus}`,
+      input.kit.billingProfile.gracePeriodEndsAt ? `Grace ended: ${formatDate(input.kit.billingProfile.gracePeriodEndsAt)}` : '',
+      ``,
+      `Fix billing: ${portalUrl}`,
+      input.kit.billingProfile.stripeCheckoutSessionId ? `Review setup: ${setupUrl}` : '',
+      ``,
+      `Once billing recovers, Sunset Pulse can restore publishing eligibility after buyer-safe checks pass.`,
+    ].filter(Boolean).join('\n'),
+    idempotencyKey: `site-grace-expired-buyer-${input.kit.agentId}-${input.kit.billingProfile.gracePeriodEndsAt || 'latest'}`,
+  });
+}
+
+export async function notifyOperatorSiteGraceExpired(input: {
+  kit: AgentLaunchKit;
+  publicUrl?: string;
+}): Promise<SiteLifecycleEmailResult> {
+  const recipients = uniqueEmails([
+    process.env.SITE_LIFECYCLE_TO_EMAIL,
+    process.env.SITE_REVIEW_NOTIFICATION_EMAIL,
+    process.env.AGENT_LEAD_NOTIFICATION_EMAIL,
+    process.env.OPERATOR_EMAIL,
+    process.env.ADMIN_EMAIL,
+  ]);
+  const latestAudit = input.kit.provisioningAudit?.[0];
+
+  return sendLifecycleEmail({
+    recipients,
+    subject: `Grace expired: ${input.kit.branding.siteName}`,
+    text: [
+      `A past-due agent site grace window expired and the site was moved to draft.`,
+      ``,
+      `Site: ${input.kit.branding.siteName}`,
+      `Agent ID: ${input.kit.agentId}`,
+      `Owner: ${input.kit.ownerName}`,
+      `Site status: ${input.kit.status}`,
+      `Billing status: ${input.kit.billingProfile.billingStatus}`,
+      input.kit.billingProfile.gracePeriodEndsAt ? `Grace ended: ${formatDate(input.kit.billingProfile.gracePeriodEndsAt)}` : '',
+      input.publicUrl ? `Public URL: ${input.publicUrl}` : '',
+      latestAudit ? `Latest audit: ${latestAudit.action} / ${latestAudit.message}` : '',
+      `Review queue: ${absoluteUrl('/admin/site-reviews?billing=past_due')}`,
+      `Launch Kit: ${absoluteUrl(`/admin/launch-kit?agentId=${encodeURIComponent(input.kit.agentId)}`)}`,
+    ].filter(Boolean).join('\n'),
+    idempotencyKey: `site-grace-expired-operator-${input.kit.agentId}-${input.kit.billingProfile.gracePeriodEndsAt || 'latest'}`,
+  });
+}
+
 async function sendLifecycleEmail(input: {
   recipients: string[];
   subject: string;
