@@ -3,6 +3,26 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 
+type StripePayloadSnapshot = {
+  objectType?: string;
+  objectId?: string;
+  customerId?: string;
+  subscriptionId?: string;
+  checkoutSessionId?: string;
+  invoiceId?: string;
+  paymentIntentId?: string;
+  paymentStatus?: string;
+  subscriptionStatus?: string;
+  mode?: string;
+  billingReason?: string;
+  collectionMethod?: string;
+  amountDue?: number | null;
+  amountPaid?: number | null;
+  currency?: string;
+  metadata?: Record<string, string>;
+  eventCreatedAt?: string;
+};
+
 type StripeLedgerEvent = {
   eventId: string;
   eventType: string;
@@ -14,6 +34,7 @@ type StripeLedgerEvent = {
   failedAt: string;
   errorMessage: string;
   duplicateCount: number;
+  payloadSnapshot: StripePayloadSnapshot | null;
   stores: string[];
 };
 
@@ -117,6 +138,7 @@ export default function StripeEventReconciliationPanel({ agentId }: { agentId: s
                 </div>
                 <p className="mt-2 truncate font-mono text-[10px] text-slate-500">{event.eventId}</p>
                 <p className="mt-1 truncate font-mono text-[10px] text-slate-600">{event.objectId || 'No object id'} / {formatShortDate(event.receivedAt)}</p>
+                <SnapshotSummary snapshot={event.payloadSnapshot} />
                 {event.errorMessage ? (
                   <p className="mt-2 line-clamp-2 text-xs leading-5 text-red-100/80">{event.errorMessage}</p>
                 ) : null}
@@ -138,10 +160,66 @@ export default function StripeEventReconciliationPanel({ agentId }: { agentId: s
   );
 }
 
+function SnapshotSummary({ snapshot }: { snapshot: StripePayloadSnapshot | null }) {
+  if (!snapshot) return null;
+
+  const status = firstPresent([
+    snapshot.subscriptionStatus && `Subscription ${snapshot.subscriptionStatus}`,
+    snapshot.paymentStatus && `Payment ${snapshot.paymentStatus}`,
+    snapshot.mode,
+  ]);
+  const objectLink = firstPresent([
+    snapshot.subscriptionId && `Sub ${snapshot.subscriptionId}`,
+    snapshot.checkoutSessionId && `Checkout ${snapshot.checkoutSessionId}`,
+    snapshot.invoiceId && `Invoice ${snapshot.invoiceId}`,
+    snapshot.customerId && `Customer ${snapshot.customerId}`,
+  ]);
+  const amountPaid = formatAmount(snapshot.amountPaid, snapshot.currency);
+  const amountDue = formatAmount(snapshot.amountDue, snapshot.currency);
+  const billing = firstPresent([
+    amountPaid && `Paid ${amountPaid}`,
+    amountDue && `Due ${amountDue}`,
+    snapshot.billingReason,
+  ]);
+  const metadata = [
+    snapshot.metadata?.agentId,
+    snapshot.metadata?.productType,
+    snapshot.metadata?.subscriptionTier,
+  ].filter(Boolean).join(' / ');
+  const chips = [status, objectLink, billing, metadata].filter(Boolean);
+
+  if (!chips.length) return null;
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {chips.map((chip) => (
+        <span key={chip} className="max-w-full truncate rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-400">
+          {chip}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function StatusIcon({ status }: { status: StripeLedgerEvent['status'] }) {
   if (status === 'succeeded') return <CheckCircle2 size={14} className="shrink-0 text-emerald-300" />;
   if (status === 'failed') return <AlertTriangle size={14} className="shrink-0 text-red-300" />;
   return <Loader2 size={14} className="shrink-0 text-amber-200" />;
+}
+
+function firstPresent(values: Array<string | false | undefined>) {
+  return values.find((value): value is string => Boolean(value)) || '';
+}
+
+function formatAmount(value: number | null | undefined, currency: string | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  const majorUnits = value / 100;
+  const normalizedCurrency = currency && /^[a-z]{3}$/i.test(currency) ? currency : 'usd';
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: normalizedCurrency,
+  }).format(majorUnits);
 }
 
 function formatShortDate(value: string) {
