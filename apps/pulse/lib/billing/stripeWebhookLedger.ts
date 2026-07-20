@@ -12,6 +12,76 @@ type StripeWebhookClaimResult = {
   stores: string[];
 };
 
+export type StripeWebhookPayloadSnapshot = {
+  objectType: string;
+  objectId: string;
+  customerId: string;
+  subscriptionId: string;
+  checkoutSessionId: string;
+  invoiceId: string;
+  paymentIntentId: string;
+  paymentStatus: string;
+  subscriptionStatus: string;
+  mode: string;
+  billingReason: string;
+  collectionMethod: string;
+  amountDue: number | null;
+  amountPaid: number | null;
+  currency: string;
+  livemode: boolean;
+  metadata: Record<string, string>;
+  eventCreatedAt: string;
+};
+
+export type StripeWebhookLedgerEvent = {
+  eventId: string;
+  eventType: string;
+  objectId: string;
+  livemode: boolean;
+  status: StripeWebhookEventStatus;
+  receivedAt: string;
+  completedAt: string;
+  failedAt: string;
+  errorMessage: string;
+  duplicateCount: number;
+  payloadSnapshot: StripeWebhookPayloadSnapshot | null;
+  stores: string[];
+};
+
+const SAFE_METADATA_KEYS = new Set([
+  'agentId',
+  'orderId',
+  'orderType',
+  'productType',
+  'siteId',
+  'subscriptionTier',
+  'userId',
+]);
+
+export async function listStripeWebhookEvents(input: {
+  objectIds?: string[];
+  limit?: number;
+} = {}): Promise<StripeWebhookLedgerEvent[]> {
+  const limit = Math.min(Math.max(input.limit || 25, 1), 100);
+  const objectIds = Array.from(new Set((input.objectIds || []).map(normalizeEventId).filter(Boolean)));
+  const events = new Map<string, StripeWebhookLedgerEvent>();
+
+  for (const event of await listSupabaseEvents({ objectIds, limit })) {
+    events.set(event.eventId, event);
+  }
+
+  for (const event of await listMongoEvents({ objectIds, limit })) {
+    const existing = events.get(event.eventId);
+    events.set(event.eventId, existing
+      ? { ...existing, stores: Array.from(new Set([...existing.stores, ...event.stores])) }
+      : event);
+  }
+
+  return Array.from(events.values())
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .slice(0, limit);
+}
+
 export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<StripeWebhookClaimResult> {
   const eventId = normalizeEventId(event.id);
   if (!eventId) {
@@ -54,6 +124,74 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
     eventId,
     stores,
   };
+}
+
+async function listSupabaseEvents(input: { objectIds: string[]; limit: number }) {
+  try {
+    let query = supabaseAdmin
+      .from('stripe_webhook_events')
+      .select('event_id, event_type, object_id, livemode, status, received_at, completed_at, failed_at, error_message, duplicate_count, payload_snapshot')
+      .order('received_at', { ascending: false })
+      .limit(input.limit);
+
+    if (input.objectIds.length) {
+      query = query.in('object_id', input.objectIds);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_LIST]', error.message);
+      return [];
+    }
+
+    return (data || []).map((row: any): StripeWebhookLedgerEvent => ({
+      eventId: row.event_id || '',
+      eventType: row.event_type || '',
+      objectId: row.object_id || '',
+      livemode: Boolean(row.livemode),
+      status: normalizeLedgerStatus(row.status),
+      receivedAt: normalizeIso(row.received_at),
+      completedAt: normalizeIso(row.completed_at),
+      failedAt: normalizeIso(row.failed_at),
+      errorMessage: row.error_message || '',
+      duplicateCount: Number(row.duplicate_count || 0),
+      payloadSnapshot: normalizePayloadSnapshot(row.payload_snapshot),
+      stores: ['supabase'],
+    })).filter((event) => event.eventId);
+  } catch (error) {
+    console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_LIST_FALLBACK]', error);
+    return [];
+  }
+}
+
+async function listMongoEvents(input: { objectIds: string[]; limit: number }) {
+  try {
+    await connectDB();
+    const query = input.objectIds.length ? { objectId: { $in: input.objectIds } } : {};
+    const rows = await StripeWebhookEvent
+      .find(query)
+      .sort({ receivedAt: -1 })
+      .limit(input.limit)
+      .lean();
+
+    return rows.map((row: any): StripeWebhookLedgerEvent => ({
+      eventId: row.eventId || '',
+      eventType: row.eventType || '',
+      objectId: row.objectId || '',
+      livemode: Boolean(row.livemode),
+      status: normalizeLedgerStatus(row.status),
+      receivedAt: normalizeIso(row.receivedAt),
+      completedAt: normalizeIso(row.completedAt),
+      failedAt: normalizeIso(row.failedAt),
+      errorMessage: row.errorMessage || '',
+      duplicateCount: Number(row.duplicateCount || 0),
+      payloadSnapshot: normalizePayloadSnapshot(row.payloadSnapshot),
+      stores: ['mongo'],
+    })).filter((event) => event.eventId);
+  } catch (error) {
+    console.warn('[STRIPE_WEBHOOK_LEDGER_MONGO_LIST_FALLBACK]', error);
+    return [];
+  }
 }
 
 export async function completeStripeWebhookEvent(eventId: string, stores: string[]) {
@@ -160,6 +298,7 @@ async function insertSupabaseEvent(record: ReturnType<typeof toLedgerRecord>) {
         status: 'processing',
         received_at: record.receivedAt.toISOString(),
         duplicate_count: 0,
+        payload_snapshot: record.payloadSnapshot,
       });
 
     if (!error) return 'inserted';
@@ -183,6 +322,7 @@ async function insertMongoEvent(record: ReturnType<typeof toLedgerRecord>) {
       status: 'processing',
       receivedAt: record.receivedAt,
       duplicateCount: 0,
+      payloadSnapshot: record.payloadSnapshot,
     });
     return 'inserted';
   } catch (error: any) {
@@ -275,11 +415,125 @@ function toLedgerRecord(event: Stripe.Event) {
     objectId: typeof object?.id === 'string' ? object.id : '',
     livemode: Boolean(event.livemode),
     receivedAt: new Date(),
+    payloadSnapshot: buildPayloadSnapshot(event),
   };
 }
 
 function normalizeEventId(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function buildPayloadSnapshot(event: Stripe.Event): StripeWebhookPayloadSnapshot {
+  const object = toPlainObject(event.data?.object);
+  const objectId = stripeId(object.id);
+  const objectType = stripeText(object.object);
+  const invoiceId = objectType === 'invoice' ? objectId : stripeId(object.invoice);
+  const checkoutSessionId = objectType === 'checkout.session' ? objectId : stripeId(object.checkout_session);
+  const subscriptionId = firstNonEmpty([
+    objectType === 'subscription' ? objectId : '',
+    stripeId(object.subscription),
+    stripeId(toPlainObject(object.parent).subscription_details?.subscription),
+  ]);
+
+  return normalizePayloadSnapshot({
+    objectType,
+    objectId,
+    customerId: stripeId(object.customer),
+    subscriptionId,
+    checkoutSessionId,
+    invoiceId,
+    paymentIntentId: stripeId(object.payment_intent),
+    paymentStatus: stripeText(object.payment_status),
+    subscriptionStatus: stripeText(object.status),
+    mode: stripeText(object.mode),
+    billingReason: stripeText(object.billing_reason),
+    collectionMethod: stripeText(object.collection_method),
+    amountDue: stripeNumber(object.amount_due),
+    amountPaid: stripeNumber(object.amount_paid),
+    currency: stripeText(object.currency).toLowerCase(),
+    livemode: Boolean(event.livemode),
+    metadata: sanitizeMetadata(object.metadata),
+    eventCreatedAt: normalizeStripeCreatedAt(event.created),
+  })!;
+}
+
+function normalizePayloadSnapshot(value: unknown): StripeWebhookPayloadSnapshot | null {
+  if (!value || typeof value !== 'object') return null;
+  const snapshot = value as Record<string, unknown>;
+
+  return {
+    objectType: stripeText(snapshot.objectType),
+    objectId: stripeText(snapshot.objectId),
+    customerId: stripeText(snapshot.customerId),
+    subscriptionId: stripeText(snapshot.subscriptionId),
+    checkoutSessionId: stripeText(snapshot.checkoutSessionId),
+    invoiceId: stripeText(snapshot.invoiceId),
+    paymentIntentId: stripeText(snapshot.paymentIntentId),
+    paymentStatus: stripeText(snapshot.paymentStatus),
+    subscriptionStatus: stripeText(snapshot.subscriptionStatus),
+    mode: stripeText(snapshot.mode),
+    billingReason: stripeText(snapshot.billingReason),
+    collectionMethod: stripeText(snapshot.collectionMethod),
+    amountDue: stripeNumber(snapshot.amountDue),
+    amountPaid: stripeNumber(snapshot.amountPaid),
+    currency: stripeText(snapshot.currency).toLowerCase(),
+    livemode: Boolean(snapshot.livemode),
+    metadata: sanitizeMetadata(snapshot.metadata),
+    eventCreatedAt: normalizeIso(snapshot.eventCreatedAt),
+  };
+}
+
+function sanitizeMetadata(value: unknown) {
+  if (!value || typeof value !== 'object') return {};
+  const metadata = value as Record<string, unknown>;
+  const safe: Record<string, string> = {};
+
+  for (const key of SAFE_METADATA_KEYS) {
+    const raw = metadata[key];
+    if (typeof raw !== 'string') continue;
+    const trimmed = raw.trim();
+    if (trimmed) safe[key] = trimmed.slice(0, 120);
+  }
+
+  return safe;
+}
+
+function toPlainObject(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' ? value as Record<string, any> : {};
+}
+
+function stripeId(value: unknown) {
+  if (typeof value === 'string') return value.trim().slice(0, 120);
+  if (value && typeof value === 'object') return stripeId((value as { id?: unknown }).id);
+  return '';
+}
+
+function stripeText(value: unknown) {
+  return typeof value === 'string' ? value.trim().slice(0, 120) : '';
+}
+
+function stripeNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function firstNonEmpty(values: string[]) {
+  return values.find(Boolean) || '';
+}
+
+function normalizeStripeCreatedAt(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  return new Date(value * 1000).toISOString();
+}
+
+function normalizeLedgerStatus(value: unknown): StripeWebhookEventStatus {
+  if (value === 'processing' || value === 'succeeded' || value === 'failed') return value;
+  return 'processing';
+}
+
+function normalizeIso(value: unknown) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isFinite(date.getTime()) ? date.toISOString() : '';
 }
 
 function getErrorMessage(error: unknown) {

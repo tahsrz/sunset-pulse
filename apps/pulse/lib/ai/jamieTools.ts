@@ -3,18 +3,23 @@ import { z } from 'zod';
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
 import { discoverListings } from '@/lib/data/listingDiscovery';
 
+const positiveInteger = z.union([
+  z.number().int().positive(),
+  z.string().trim().regex(/^\d+$/),
+]).transform((value) => Number(value));
+
 export const jamiePropertySearchInputSchema = z.object({
   city: z.string().optional().describe("City to search in, such as Frisco or Plano."),
   zipcode: z.string().optional().describe("5-digit ZIP code."),
   neighborhood: z.string().optional().describe("Specific neighborhood name."),
   property_types: z.array(z.string()).optional().describe("Property types to include."),
   property_sub_types: z.array(z.string()).optional().describe("Property sub-types to include."),
-  price_min: z.coerce.number().int().positive().optional().describe("Minimum price in USD."),
-  price_max: z.coerce.number().int().positive().optional().describe("Maximum price in USD."),
-  beds_min: z.coerce.number().int().positive().optional().describe("Minimum bedrooms."),
-  beds_max: z.coerce.number().int().positive().optional().describe("Maximum bedrooms."),
-  full_baths_min: z.coerce.number().int().positive().optional().describe("Minimum bathrooms."),
-  sqft_min: z.coerce.number().int().positive().optional().describe("Minimum square footage."),
+  price_min: positiveInteger.optional().describe("Minimum price in USD."),
+  price_max: positiveInteger.optional().describe("Maximum price in USD."),
+  beds_min: positiveInteger.optional().describe("Minimum bedrooms."),
+  beds_max: positiveInteger.optional().describe("Maximum bedrooms."),
+  full_baths_min: positiveInteger.optional().describe("Minimum bathrooms."),
+  sqft_min: positiveInteger.optional().describe("Minimum square footage."),
   pool: z.enum(['Yes', 'No', '']).optional().describe("Pool preference."),
   construction_status: z.array(z.string()).optional().describe("Construction statuses."),
 });

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getUsableRemoteListingImages, type Listing } from './listingContract';
-import { searchListings, type ListingSearch } from './listingRepository';
+import { getListingById, searchListings, type ListingSearch } from './listingRepository';
 
 const MAX_CANDIDATES = 500;
 const DEFAULT_MAX_AGE_HOURS = 24 * 30;
@@ -100,9 +100,22 @@ export type ListingDiscoveryResult = {
 };
 
 type DiscoveryDependencies = {
+  getById?: typeof getListingById;
   search?: typeof searchListings;
   now?: () => Date;
 };
+
+export async function discoverListingById(
+  id: string,
+  dependencies: DiscoveryDependencies = {},
+): Promise<DiscoveryListing | null> {
+  const listing = await (dependencies.getById || getListingById)(id);
+  if (!listing) return null;
+
+  const now = (dependencies.now || (() => new Date()))();
+  const criteria = listingDiscoveryInputSchema.parse({ pageSize: 1 });
+  return qualifyListing(listing, criteria, now);
+}
 
 export async function discoverListings(
   rawInput: ListingDiscoveryInput = {},

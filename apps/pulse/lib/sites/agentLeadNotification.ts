@@ -66,7 +66,7 @@ export async function notifyAgentSiteLead(input: AgentLeadNotificationInput): Pr
     };
   }
 
-  const from = process.env.RESEND_FROM_EMAIL || 'Sunset Pulse <no-reply@sunsetpulse.ai>';
+  const from = process.env.RESEND_FROM_EMAIL || 'Sunset Pulse <no-reply@sunsetpulse.app>';
   const subject = buildLeadNotificationSubject(input);
   const text = buildLeadNotificationText(input);
 

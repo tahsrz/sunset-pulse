@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { normalizeListing, type Listing } from '@/lib/data/listingContract';
 import {
+  discoverListingById,
   discoverListings,
   listingDiscoveryInputSchema,
   parseListingDiscoverySearchParams,
@@ -9,6 +10,18 @@ import {
 const NOW = new Date('2026-07-04T12:00:00.000Z');
 
 describe('MLS listing discovery engine', () => {
+  it('applies the public MLS eligibility contract to direct listing context', async () => {
+    const eligible = listing('direct');
+    const getById = vi.fn()
+      .mockResolvedValueOnce(eligible)
+      .mockResolvedValueOnce(listing('private-direct', { display_public: false }));
+
+    await expect(discoverListingById('direct', { getById, now: () => NOW }))
+      .resolves.toMatchObject({ id: 'direct', image_url: 'https://cdn.example.test/direct.jpg' });
+    await expect(discoverListingById('private-direct', { getById, now: () => NOW }))
+      .resolves.toBeNull();
+  });
+
   it('only returns fresh, public, active MLS listings with secure remote images', async () => {
     const eligible = listing('eligible', {
       images: ['/local-placeholder.jpg', 'https://cdn.example.test/eligible.jpg'],

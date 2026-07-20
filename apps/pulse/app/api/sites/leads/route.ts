@@ -2,11 +2,13 @@ export const dynamic = 'force-dynamic';
 
 import { z } from 'zod';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
+import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
+import { discoverListingById } from '@/lib/data/listingDiscovery';
 import { supabaseAdmin } from '@/lib/supabase';
 import { notifyAgentSiteLead } from '@/lib/sites/agentLeadNotification';
 import { getTenantSite } from '@/lib/sites/siteData';
-import { getTenantFromHost } from '@/lib/sites/tenantRouting';
+import { getFirstPartySiteFromHost, getTenantFromHost } from '@/lib/sites/tenantRouting';
 
 const leadSchema = z.object({
   agentId: z.string().trim().min(1).max(80),
@@ -24,13 +26,24 @@ const leadSchema = z.object({
     mlsId: z.string().trim().max(80).optional(),
     name: z.string().trim().max(240).optional(),
   }).optional(),
+  consent: z.literal(true).optional(),
   company: z.string().max(120).optional(),
 });
 
 export async function POST(request: Request) {
   try {
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const isJamieRequest = getFirstPartySiteFromHost(host) === 'jamie';
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
-    const rawBody = await request.json();
+    const body = await request.text();
+    if (body.length > 32_000) return errorResponse('The request body is too large.', 413);
+
+    let rawBody: unknown;
+    try {
+      rawBody = JSON.parse(body);
+    } catch {
+      return errorResponse('A valid JSON request body is required.', 400);
+    }
     const validation = leadSchema.safeParse(rawBody);
 
     if (!validation.success) {
@@ -39,33 +52,63 @@ export async function POST(request: Request) {
 
     const input = validation.data;
 
+    if (isJamieRequest && input.consent !== true) {
+      return validationErrorResponse({ consent: ['Consent is required before Jamie can send an inquiry.'] });
+    }
+    if (!isJamieRequest && input.source === 'jamie_public_guide') {
+      return validationErrorResponse({ source: ['Jamie guide inquiries must originate on the Jamie site.'] });
+    }
+
     // Honeypot: treat bots as a no-op success so the public form does not reveal the trap.
     if (input.company) {
       return successResponse({ accepted: true });
     }
 
-    const tenantFromHost = getTenantFromHost(
-      request.headers.get('x-forwarded-host') ||
-      request.headers.get('host') ||
-      null,
-    );
+    const tenantFromHost = getTenantFromHost(host);
     const requestedSite = tenantFromHost || input.site;
+
+    if (isJamieRequest) {
+      const rateLimitResponse = await applyPublicApiRateLimit(request, 'jamie-public-handoff', 5);
+      if (rateLimitResponse) return rateLimitResponse;
+    }
+
     const tenantSite = await getTenantSite(requestedSite);
 
     if (!tenantSite.isPublished) {
       return errorResponse('This agent site is not accepting inquiries yet.', 404);
     }
 
-    const agentId = tenantSite.agentId || input.agentId;
-    const rateLimitResponse = await applyApiRateLimit(`agent-site-lead:${agentId}:${ip}`, 5);
-    if (rateLimitResponse) return rateLimitResponse;
+    const agentId = tenantSite.agentId;
+    if (!isJamieRequest) {
+      const rateLimitResponse = await applyApiRateLimit(`agent-site-lead:${agentId}:${ip}`, 5);
+      if (rateLimitResponse) return rateLimitResponse;
+    }
 
-    const siteName = input.siteName || tenantSite.siteName;
+    const listing = isJamieRequest
+      ? await resolveVerifiedJamieListing(input.listing)
+      : input.listing;
+    if (isJamieRequest && input.listing && !listing) {
+      return validationErrorResponse({ listing: ['The listing is not available for a verified public handoff.'] });
+    }
+
+    const source = isJamieRequest ? 'jamie_public_guide' : input.source;
+    const siteName = isJamieRequest ? tenantSite.siteName : input.siteName || tenantSite.siteName;
     const leadEmail = input.email.toLowerCase();
     const metadata = {
       tenantAgentName: tenantSite.agentProfile.displayName,
       tenantBrokerage: tenantSite.agentProfile.brokerageName,
       submittedAt: new Date().toISOString(),
+      ...(isJamieRequest ? {
+        publicGuideConsent: {
+          granted: true,
+          policyVersion: '2026-07-20',
+          scope: 'agent_inquiry',
+        },
+        publicGuideContext: {
+          listingVerified: Boolean(listing),
+          tenantVerified: true,
+        },
+      } : {}),
     };
 
     const { data, error } = await supabaseAdmin
@@ -74,10 +117,10 @@ export async function POST(request: Request) {
         agent_id: agentId,
         site: tenantSite.site,
         site_name: siteName,
-        listing_id: input.listing?.id || null,
-        listing_mls_id: input.listing?.mlsId || null,
-        listing_name: input.listing?.name || null,
-        source: input.source,
+        listing_id: listing?.id || null,
+        listing_mls_id: listing?.mlsId || null,
+        listing_name: listing?.name || null,
+        source,
         page_path: input.pagePath || null,
         name: input.name,
         email: leadEmail,
@@ -103,9 +146,9 @@ export async function POST(request: Request) {
         phone: input.phone || null,
         preferredContact: input.preferredContact,
         message: input.message,
-        source: input.source,
+        source,
         pagePath: input.pagePath || null,
-        listing: input.listing,
+        listing,
       },
     });
 
@@ -134,6 +177,21 @@ export async function POST(request: Request) {
     console.error('[AGENT_SITE_LEAD_ROUTE_ERROR]', error);
     return errorResponse('Failed to submit lead inquiry.', 500, error?.message);
   }
+}
+
+async function resolveVerifiedJamieListing(listing: z.infer<typeof leadSchema>['listing']) {
+  if (!listing) return undefined;
+  const requestedId = listing.id || listing.mlsId;
+  if (!requestedId) return null;
+
+  const verified = await discoverListingById(requestedId);
+  if (!verified) return null;
+
+  return {
+    id: verified.id,
+    mlsId: verified.mls_id || undefined,
+    name: verified.name,
+  };
 }
 
 function summarizeNotification(notification: Awaited<ReturnType<typeof notifyAgentSiteLead>>) {

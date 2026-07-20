@@ -8,6 +8,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   process.env = { ...originalEnv };
   delete process.env.RESEND_API_KEY;
+  delete process.env.RESEND_FROM_EMAIL;
   delete process.env.AGENT_LEAD_NOTIFICATION_EMAIL;
   delete process.env.OPERATOR_EMAIL;
   delete process.env.ADMIN_EMAIL;
@@ -40,7 +41,6 @@ describe('agent site lead notifications', () => {
 
   it('sends a Resend email to lead email before agent fallback', async () => {
     process.env.RESEND_API_KEY = 'resend-key';
-    process.env.RESEND_FROM_EMAIL = 'Sunset Pulse <alerts@sunsetpulse.app>';
     process.env.NEXT_PUBLIC_DOMAIN = 'https://sunsetpulse.test';
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
@@ -79,7 +79,7 @@ describe('agent site lead notifications', () => {
 
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(body).toMatchObject({
-      from: 'Sunset Pulse <alerts@sunsetpulse.app>',
+      from: 'Sunset Pulse <no-reply@sunsetpulse.app>',
       to: ['leads@example.com', 'agent@example.com'],
       reply_to: 'buyer@example.com',
     });
