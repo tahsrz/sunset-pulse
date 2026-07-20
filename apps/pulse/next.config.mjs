@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -20,7 +21,7 @@ export const securityHeaders = [
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self' https://checkout.stripe.com",
-      "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+      `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ''} https://js.stripe.com`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
@@ -28,7 +29,7 @@ export const securityHeaders = [
       "worker-src 'self' blob:",
       "child-src 'self' blob:",
       "frame-src 'self' https://ntrdd.mlsmatrix.com https://js.stripe.com https://hooks.stripe.com",
-      'upgrade-insecure-requests',
+      ...(isDevelopment ? [] : ['upgrade-insecure-requests']),
     ].join('; '),
   },
   {

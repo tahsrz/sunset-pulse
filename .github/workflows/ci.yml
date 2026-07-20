@@ -47,3 +47,32 @@ jobs:
 
       - name: Run Unit Tests
         run: npm run test:unit
+
+  jamie-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_MOCK_MODE: 'true'
+      NEXT_PUBLIC_ROOT_DOMAIN: localhost
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Jamie Public Guide E2E
+        run: npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts --reporter=line

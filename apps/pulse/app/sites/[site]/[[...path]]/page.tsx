@@ -1,5 +1,6 @@
 ﻿import Link from 'next/link';
 import { headers } from 'next/headers';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import {
@@ -8,7 +9,9 @@ import {
   BedDouble,
   Bot,
   Building2,
+  Compass,
   Home,
+  Library,
   MapPin,
   Phone,
   Ruler,
@@ -18,31 +21,50 @@ import {
 } from 'lucide-react';
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
 import { getListingById } from '@/lib/data/listingRepository';
+import { getPublicGuideCuration } from '@/lib/ai/publicGuideCuration';
+import { publicGuideContextInputSchema, type PublicGuideContext } from '@/lib/ai/publicGuideContract';
+import { resolvePublicGuideContext } from '@/lib/ai/publicGuideContext';
 import { getAgentTenantSite } from '@/lib/sites/siteData';
+import { getJamieGuideUrl, getPublicRootOrigin } from '@/lib/sites/siteUrls';
 import AgentLeadForm from '@/components/sites/AgentLeadForm';
+import { JamieGuideLoader } from '@/components/chat/JamieGuideLoader';
 
 type TenantPageProps = {
-  params: {
+  params: Promise<{
     site: string;
     path?: string[];
-  };
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function generateMetadata({ params }: TenantPageProps) {
+  const { site: siteSlug, path = [] } = await params;
   const headerStore = await headers();
   const routedTenant = headerStore.get('x-sunset-tenant');
 
-  if (routedTenant !== params.site) {
+  if (routedTenant !== siteSlug) {
     return {
       title: 'Sunset Pulse',
       description: 'A living atlas for real estate intelligence, place memory, and market context.',
     };
   }
 
-  const tenantSite = await getAgentTenantSite(params.site, { limit: 3 });
+  if (isJamieGuideSite(siteSlug)) {
+    return {
+      title: 'Jamie | Guide to Sunset Pulse',
+      description: 'Ask Jamie questions about homes, markets, tools, local context, and the paths through Sunset Pulse.',
+      openGraph: {
+        title: 'Jamie | Guide to Sunset Pulse',
+        description: 'A guide at the threshold of Sunset Pulse.',
+        type: 'website',
+      },
+    };
+  }
+
+  const tenantSite = await getAgentTenantSite(siteSlug, { limit: 3 });
   if (!tenantSite.isPublished) {
     return {
       title: 'Agent site unavailable | Sunset Pulse',
@@ -50,10 +72,8 @@ export async function generateMetadata({ params }: TenantPageProps) {
     };
   }
 
-  const pathSegments = params.path || [];
-
-  if (pathSegments[0] === 'properties' && pathSegments[1]) {
-    const listing = await getListingById(decodeURIComponent(pathSegments[1]));
+  if (path[0] === 'properties' && path[1]) {
+    const listing = await getListingById(decodeURIComponent(path[1]));
 
     if (listing && hasUsableRemoteListingImage(listing)) {
       const location = [listing.location.city, listing.location.state].filter(Boolean).join(', ');
@@ -82,29 +102,51 @@ export async function generateMetadata({ params }: TenantPageProps) {
   };
 }
 
-export default async function TenantSitePage({ params }: TenantPageProps) {
+export default async function TenantSitePage({ params, searchParams }: TenantPageProps) {
+  const { site: siteSlug, path = [] } = await params;
   const headerStore = await headers();
   const routedTenant = headerStore.get('x-sunset-tenant');
 
-  if (routedTenant !== params.site) {
+  if (routedTenant !== siteSlug) {
     notFound();
   }
 
-  const tenantSite = await getAgentTenantSite(params.site, { limit: 6 });
+  if (isJamieGuideSite(siteSlug)) {
+    if (path.length > 0) {
+      notFound();
+    }
+
+    const query = searchParams ? await searchParams : {};
+    const contextValidation = publicGuideContextInputSchema.safeParse({
+      listingId: firstSearchParam(query.listing),
+      siteSlug: firstSearchParam(query.site),
+    });
+    const requestHost = headerStore.get('x-forwarded-host')
+      || headerStore.get('x-sunset-tenant-host')
+      || headerStore.get('host');
+    const protocol = headerStore.get('x-forwarded-proto');
+    const rootOrigin = getPublicRootOrigin({ requestHost, protocol });
+    const context = contextValidation.success
+      ? await resolvePublicGuideContext(contextValidation.data, { requestHost, protocol, rootOrigin })
+      : null;
+
+    return <JamieGuideSite context={context} />;
+  }
+
+  const tenantSite = await getAgentTenantSite(siteSlug, { limit: 6 });
   if (!tenantSite.isPublished) {
     notFound();
   }
 
-  const pathSegments = params.path || [];
   const sections = new Set(
     tenantSite.sections
       .filter((section) => section.visible !== false)
       .map((section) => section.type),
   );
 
-  if (pathSegments.length > 0) {
-    if (pathSegments[0] === 'properties' && pathSegments[1]) {
-      const listing = await getListingById(decodeURIComponent(pathSegments[1]));
+  if (path.length > 0) {
+    if (path[0] === 'properties' && path[1]) {
+      const listing = await getListingById(decodeURIComponent(path[1]));
 
       if (!listing || !hasUsableRemoteListingImage(listing)) {
         notFound();
@@ -113,7 +155,16 @@ export default async function TenantSitePage({ params }: TenantPageProps) {
       return (
         <main className="min-h-screen bg-[#061017] text-white" style={{ fontFamily: tenantSite.fontFamily }}>
           <AgentSiteHeader site={tenantSite} />
-          <AgentListingDetail site={tenantSite} listing={listing} />
+          <AgentListingDetail
+            site={tenantSite}
+            listing={listing}
+            jamieGuideUrl={getJamieGuideUrl({
+              listingId: listing.mls_id || listing.id,
+              site: tenantSite.site,
+              requestHost: headerStore.get('x-forwarded-host') || headerStore.get('x-sunset-tenant-host') || headerStore.get('host'),
+              protocol: headerStore.get('x-forwarded-proto'),
+            })}
+          />
           <AgentSiteFooter site={tenantSite} />
         </main>
       );
@@ -144,6 +195,129 @@ export default async function TenantSitePage({ params }: TenantPageProps) {
 
       <AgentSiteFooter site={tenantSite} />
     </main>
+  );
+}
+
+function JamieGuideSite({ context }: { context: PublicGuideContext | null }) {
+  const curation = getPublicGuideCuration();
+  const guideTopics = [
+    {
+      title: 'Homes and Places',
+      body: 'Ask about neighborhoods, listings, price ranges, schools, commutes, tradeoffs, and what a home is really asking you to notice.',
+    },
+    {
+      title: 'Agent Work',
+      body: 'Ask about follow-up structure, objections, comp questions, listing copy, or market moves without sharing private client details.',
+    },
+    {
+      title: 'Sunset Pulse',
+      body: 'Ask what the Command Center does, what TAH means, how agent sites work, or which part of the system to use for a specific job.',
+    },
+    {
+      title: 'Thinking Out Loud',
+      body: 'Use the page as a quiet crossing point: ask for explanations, options, critique, plans, names, positioning, or a fresh angle.',
+    },
+  ];
+
+  return (
+    <main className="min-h-screen bg-[#05070c] text-white">
+      <section className="relative min-h-[520px] overflow-hidden border-b border-white/10">
+        <Image
+          src="/images/properties/ranch1.jpg"
+          alt=""
+          fill
+          priority
+          unoptimized
+          sizes="100vw"
+          className="object-cover object-center opacity-80"
+        />
+        <div className="absolute inset-0 bg-[#05070c]/75" />
+        <div className="relative mx-auto flex min-h-[520px] max-w-7xl items-end px-4 py-10 sm:px-6 lg:px-8">
+          <div className="max-w-4xl pb-4">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-200/20 bg-sky-200/10 px-3 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-sky-100">
+              <Compass size={14} />
+              jamie.sunsetpulse.app
+            </div>
+            <h1 className="max-w-4xl text-balance text-5xl font-black leading-[0.92] sm:text-7xl lg:text-8xl">
+              Jamie
+            </h1>
+            <p className="mt-4 text-2xl font-black text-sky-100 sm:text-3xl">Your guide at the threshold of Sunset Pulse.</p>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
+              Ask him about homes, markets, decisions, tools, weird half-formed ideas, or the path through Sunset Pulse. He does not need you to know which room you are in before he can help you walk through it.
+            </p>
+            <div className="mt-9 grid grid-cols-2 gap-3 sm:flex sm:flex-row">
+              <a
+                href="#ask"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-300 px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-slate-950 transition hover:-translate-y-0.5 hover:bg-sky-200"
+              >
+                Ask Jamie
+                <ArrowRight size={17} />
+              </a>
+              <a
+                href="#ways"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-white transition hover:bg-white/15"
+              >
+                What To Ask
+                <Library size={17} />
+              </a>
+            </div>
+            <div className="mt-8 hidden max-w-3xl gap-3 sm:grid sm:grid-cols-3">
+              <GuideSignal label="Role" value="Guide, interpreter, question partner" />
+              <GuideSignal label="Good For" value="Homes, strategy, product, decisions" />
+              <GuideSignal label="Style" value="Plain answers with useful next steps" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ways" className="border-b border-white/10 px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-100/50">Ways through</p>
+              <h2 className="mt-3 text-4xl font-black text-white">Ask from wherever you are.</h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-400">
+              Jamie's subdomain is not an agent landing page. It is the guide room: open-ended, useful, and allowed to route curiosity into the right part of the product.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {guideTopics.map((topic) => (
+              <article key={topic.title} className="rounded-lg border border-white/10 bg-white/[0.045] p-5">
+                <h3 className="text-lg font-black text-white">{topic.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{topic.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="ask" className="px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-100/50">Jamie's route today</p>
+            <h3 className="mt-3 text-xl font-black text-white">{curation.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{curation.body}</p>
+            <a href="#ask" className="mt-5 inline-flex items-center gap-2 text-sm font-black text-sky-200 hover:text-white">
+              Start this path <ArrowRight size={15} />
+            </a>
+          </aside>
+          <div className="min-h-[720px]">
+            <JamieGuideLoader initialContext={context} featuredPrompt={curation.prompt} />
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function GuideSignal({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.055] p-3">
+      <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-sky-100/50">{label}</span>
+      <span className="mt-1 block text-sm font-bold text-slate-100">{value}</span>
+    </div>
   );
 }
 
@@ -324,7 +498,15 @@ function AgentListingCard({ listing, color }: { listing: Listing; color: string 
   );
 }
 
-function AgentListingDetail({ site, listing }: { site: Awaited<ReturnType<typeof getAgentTenantSite>>; listing: Listing }) {
+function AgentListingDetail({
+  site,
+  listing,
+  jamieGuideUrl,
+}: {
+  site: Awaited<ReturnType<typeof getAgentTenantSite>>;
+  listing: Listing;
+  jamieGuideUrl: string;
+}) {
   const images = listing.images.length ? listing.images : [listing.image_url].filter(Boolean) as string[];
   const heroImage = images[0];
   const location = [
@@ -435,6 +617,13 @@ function AgentListingDetail({ site, listing }: { site: Awaited<ReturnType<typeof
             <p className="mt-5 text-sm leading-7 text-slate-300">
               Ask {site.assistantProfile.displayName} for context, then connect directly with {site.agentProfile.displayName} for showing details, offer strategy, and local guidance.
             </p>
+            <a
+              href={jamieGuideUrl}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-sky-200/25 bg-sky-200/10 px-4 py-3 text-sm font-black text-sky-100 transition hover:bg-sky-200/15 hover:text-white"
+            >
+              <Compass size={16} />
+              Ask Jamie about this home
+            </a>
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-xs leading-6 text-slate-400">
               {site.complianceProfile.mlsDisclaimer}
             </div>
@@ -613,4 +802,12 @@ function StatBox({ label, value }: { label: string; value: string | number }) {
 function formatPrice(price?: number | null) {
   if (!price) return 'Price on request';
   return `$${price.toLocaleString()}`;
+}
+
+function isJamieGuideSite(site: string) {
+  return site.trim().toLowerCase() === 'jamie';
+}
+
+function firstSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

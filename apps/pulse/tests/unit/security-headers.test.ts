@@ -7,6 +7,7 @@ describe('application security headers', () => {
 
     expect(headers['Content-Security-Policy']).toContain("object-src 'none'");
     expect(headers['Content-Security-Policy']).toContain("frame-ancestors 'none'");
+    expect(headers['Content-Security-Policy']).not.toContain("'unsafe-eval'");
     expect(headers['Permissions-Policy']).toContain('camera=()');
     expect(headers['Access-Control-Allow-Origin']).toBeUndefined();
     expect(headers['Access-Control-Allow-Credentials']).toBeUndefined();

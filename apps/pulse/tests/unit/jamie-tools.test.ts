@@ -6,7 +6,11 @@ vi.mock('@/lib/data/listingDiscovery', () => ({
   discoverListings: mockDiscoverListings,
 }));
 
-import { formatPropertySearchResult, searchPropertiesForJamie } from '@/lib/ai/jamieTools';
+import {
+  formatPropertySearchResult,
+  jamiePropertySearchInputSchema,
+  searchPropertiesForJamie,
+} from '@/lib/ai/jamieTools';
 
 describe('Jamie tools', () => {
   beforeEach(() => {
@@ -46,6 +50,14 @@ describe('Jamie tools', () => {
     });
 
     expect(summary).toContain('did not find matching active listings');
+  });
+
+  it('normalizes common numeric-string tool arguments', () => {
+    expect(jamiePropertySearchInputSchema.parse({
+      city: 'Frisco',
+      beds_min: '3',
+      price_max: '750000',
+    })).toMatchObject({ beds_min: 3, price_max: 750000 });
   });
 
   it('uses the shared image-qualified discovery engine', async () => {

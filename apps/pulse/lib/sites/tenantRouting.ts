@@ -1,5 +1,7 @@
 const DEFAULT_ROOT_DOMAIN = 'sunsetpulse.app';
 
+const FIRST_PARTY_SUBDOMAINS = new Set(['jamie']);
+
 const RESERVED_SUBDOMAINS = new Set([
   'admin',
   'api',
@@ -13,6 +15,7 @@ const RESERVED_SUBDOMAINS = new Set([
   'docs',
   'login',
   'mail',
+  'jamie',
   'premium',
   'register',
   'static',
@@ -43,6 +46,7 @@ const TENANT_REWRITE_BYPASS_PREFIXES = [
 export type TenantRewrite = {
   tenant: string;
   hostname: string;
+  kind: 'first-party' | 'tenant';
   url: URL;
 };
 
@@ -52,7 +56,8 @@ export function getTenantRewrite(request: {
   url: string;
 }): TenantRewrite | null {
   const hostname = getRequestHostname(request);
-  const tenant = getTenantFromHost(hostname);
+  const firstPartySite = getFirstPartySiteFromHost(hostname);
+  const tenant = firstPartySite || getTenantFromHost(hostname);
 
   if (!tenant || shouldBypassTenantRewrite(request.nextUrl?.pathname || new URL(request.url).pathname)) {
     return null;
@@ -65,36 +70,26 @@ export function getTenantRewrite(request: {
   return {
     tenant,
     hostname,
+    kind: firstPartySite ? 'first-party' : 'tenant',
     url,
   };
 }
 
+export function getFirstPartySiteFromHost(host: string | null | undefined): 'jamie' | null {
+  const subdomain = getSubdomainFromHost(normalizeHostname(host));
+  return subdomain && FIRST_PARTY_SUBDOMAINS.has(subdomain) ? 'jamie' : null;
+}
+
 export function getTenantFromHost(host: string | null | undefined): string | null {
   const hostname = normalizeHostname(host);
-  if (!hostname || isLoopbackHost(hostname)) return null;
-
-  const localhostTenant = getLocalhostTenant(hostname);
-  if (localhostTenant) return localhostTenant;
-
-  const rootDomains = getRootDomains();
-
-  for (const rootDomain of rootDomains) {
-    if (hostname === rootDomain || hostname === `www.${rootDomain}`) continue;
-    if (!hostname.endsWith(`.${rootDomain}`)) continue;
-
-    const subdomain = hostname.slice(0, -(rootDomain.length + 1));
-    if (!subdomain || subdomain.includes('.')) continue;
-
-    return normalizeTenantSlug(subdomain);
-  }
-
-  return null;
+  const subdomain = getSubdomainFromHost(hostname);
+  return subdomain ? normalizeTenantSlug(subdomain) : null;
 }
 
 export function normalizeHostname(host: string | null | undefined): string {
   if (!host) return '';
 
-  const withoutProtocol = host.trim().replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
+  const withoutProtocol = host.trim().split(',')[0].replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
   if (!withoutProtocol) return '';
 
   if (withoutProtocol.startsWith('[')) {
@@ -137,13 +132,23 @@ function getRootDomains(): string[] {
   );
 }
 
-function getLocalhostTenant(hostname: string): string | null {
-  if (!hostname.endsWith('.localhost')) return null;
+function getSubdomainFromHost(hostname: string): string | null {
+  if (!hostname || isLoopbackHost(hostname)) return null;
 
-  const subdomain = hostname.slice(0, -'.localhost'.length);
-  if (!subdomain || subdomain.includes('.')) return null;
+  if (hostname.endsWith('.localhost')) {
+    const subdomain = hostname.slice(0, -'.localhost'.length);
+    return subdomain && !subdomain.includes('.') ? subdomain : null;
+  }
 
-  return normalizeTenantSlug(subdomain);
+  for (const rootDomain of getRootDomains()) {
+    if (hostname === rootDomain || hostname === `www.${rootDomain}`) continue;
+    if (!hostname.endsWith(`.${rootDomain}`)) continue;
+
+    const subdomain = hostname.slice(0, -(rootDomain.length + 1));
+    return subdomain && !subdomain.includes('.') ? subdomain : null;
+  }
+
+  return null;
 }
 
 function normalizeTenantSlug(value: string): string | null {

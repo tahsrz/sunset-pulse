@@ -30,6 +30,7 @@ export async function middleware(request) {
       const requestHeaders = getForwardedRequestHeaders(request)
       requestHeaders.set('x-sunset-tenant', tenantRewrite.tenant)
       requestHeaders.set('x-sunset-tenant-host', tenantRewrite.hostname)
+      requestHeaders.set('x-sunset-site-kind', tenantRewrite.kind)
 
       return NextResponse.rewrite(tenantRewrite.url, {
         request: {
@@ -50,6 +51,7 @@ function getForwardedRequestHeaders(request) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.delete('x-sunset-tenant')
   requestHeaders.delete('x-sunset-tenant-host')
+  requestHeaders.delete('x-sunset-site-kind')
   return requestHeaders
 }
 

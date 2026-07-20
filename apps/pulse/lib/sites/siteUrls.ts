@@ -18,6 +18,46 @@ export function getPublicAgentSiteUrl(input: {
   return `https://${subdomain}.${rootDomain}`;
 }
 
+export function getPublicRootOrigin(input: {
+  requestHost?: string | null;
+  protocol?: string | null;
+  rootDomain?: string | null;
+} = {}) {
+  const local = getLocalRequestOrigin(input.requestHost, input.protocol);
+  if (local) return local.rootOrigin;
+
+  return `https://${normalizeRootDomain(input.rootDomain || process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN)}`;
+}
+
+export function getPublicSubdomainOrigin(
+  subdomain: string,
+  input: {
+    requestHost?: string | null;
+    protocol?: string | null;
+    rootDomain?: string | null;
+  } = {},
+) {
+  const normalizedSubdomain = normalizeTenantSlug(subdomain);
+  if (!normalizedSubdomain) throw new Error('A valid public subdomain is required.');
+
+  const local = getLocalRequestOrigin(input.requestHost, input.protocol);
+  if (local) return `${local.protocol}//${normalizedSubdomain}.localhost${local.port}`;
+
+  return `https://${normalizedSubdomain}.${normalizeRootDomain(input.rootDomain || process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN)}`;
+}
+
+export function getJamieGuideUrl(input: {
+  listingId?: string | null;
+  site?: string | null;
+  requestHost?: string | null;
+  protocol?: string | null;
+}) {
+  const url = new URL(getPublicSubdomainOrigin('jamie', input));
+  if (input.listingId) url.searchParams.set('listing', input.listingId);
+  if (input.site) url.searchParams.set('site', input.site);
+  return url.toString();
+}
+
 export function getAgentSiteSubdomain(agentId?: string | null, configuredSubdomain?: string | null) {
   const subdomain = normalizeTenantSlug(configuredSubdomain);
   if (subdomain) return subdomain;
@@ -49,4 +89,15 @@ function normalizeHostname(value?: string | null) {
   const withoutProtocol = (value || '').trim().replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
   if (!withoutProtocol) return '';
   return withoutProtocol.split(':')[0];
+}
+
+function getLocalRequestOrigin(requestHost?: string | null, requestedProtocol?: string | null) {
+  const rawHost = (requestHost || '').trim().split(',')[0].replace(/^https?:\/\//i, '').split('/')[0];
+  const hostname = rawHost.split(':')[0].toLowerCase();
+  if (hostname !== 'localhost' && !hostname.endsWith('.localhost')) return null;
+
+  const portMatch = rawHost.match(/:(\d+)$/);
+  const port = portMatch ? `:${portMatch[1]}` : '';
+  const protocol = requestedProtocol?.split(',')[0].trim() === 'https' ? 'https:' : 'http:';
+  return { port, protocol, rootOrigin: `${protocol}//localhost${port}` };
 }
