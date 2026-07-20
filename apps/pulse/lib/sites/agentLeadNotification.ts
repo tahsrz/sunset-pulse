@@ -1,4 +1,8 @@
 import type { TenantSite } from '@/lib/sites/siteData';
+import {
+  getPublicGuideNextStepLabel,
+  type PublicGuideHandoffBrief,
+} from '@/lib/ai/publicGuideHandoffContract';
 
 export type AgentLeadNotificationInput = {
   leadId: string;
@@ -16,6 +20,7 @@ export type AgentLeadNotificationInput = {
       mlsId?: string;
       name?: string;
     };
+    guideBrief?: PublicGuideHandoffBrief;
   };
 };
 
@@ -135,6 +140,7 @@ function buildLeadNotificationText(input: AgentLeadNotificationInput) {
   const listingUrl = input.inquiry.listing?.mlsId || input.inquiry.listing?.id
     ? `${adminBaseUrl}/properties/${encodeURIComponent(input.inquiry.listing.mlsId || input.inquiry.listing.id || '')}`
     : null;
+  const guideBriefLines = buildGuideBriefLines(input.inquiry.guideBrief);
 
   return [
     `New agent-site lead captured by Sunset Pulse.`,
@@ -160,12 +166,42 @@ function buildLeadNotificationText(input: AgentLeadNotificationInput) {
     ``,
     `Message`,
     input.inquiry.message,
+    ...guideBriefLines,
     ``,
     `Admin Inbox: ${adminInboxUrl}`,
     ``,
     `---`,
     `This notification was generated from the public SaaS agent-site lead form.`,
   ].filter((line): line is string => line !== null).join('\n');
+}
+
+function buildGuideBriefLines(brief?: PublicGuideHandoffBrief) {
+  if (!brief) return [];
+  const criteria = formatGuideSearchCriteria(brief);
+
+  return [
+    ``,
+    `Jamie Handoff Brief`,
+    `Summary: ${brief.summary}`,
+    `Requested Next Step: ${getPublicGuideNextStepLabel(brief.statedNextStep)}`,
+    criteria ? `Search Criteria: ${criteria}` : `Search Criteria: None stated`,
+    `Discussed Listings: ${brief.discussedListingIds.join(', ') || 'None verified'}`,
+    `Conversation Turns Considered: ${brief.conversationTurnCount}`,
+    `Raw Transcript Stored: No`,
+  ];
+}
+
+function formatGuideSearchCriteria(brief: PublicGuideHandoffBrief) {
+  const criteria = brief.searchCriteria;
+  return [
+    criteria.locations.length ? `locations ${criteria.locations.join(', ')}` : null,
+    criteria.priceMin !== null ? `minimum $${criteria.priceMin.toLocaleString()}` : null,
+    criteria.priceMax !== null ? `maximum $${criteria.priceMax.toLocaleString()}` : null,
+    criteria.bedsMin !== null ? `${criteria.bedsMin}+ beds` : null,
+    criteria.bathsMin !== null ? `${criteria.bathsMin}+ baths` : null,
+    criteria.propertyTypes.length ? `types ${criteria.propertyTypes.join(', ')}` : null,
+    criteria.priorities.length ? `priorities ${criteria.priorities.join(', ')}` : null,
+  ].filter(Boolean).join('; ');
 }
 
 function getPublicBaseUrl() {

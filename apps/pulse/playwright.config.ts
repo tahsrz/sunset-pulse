@@ -49,6 +49,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 300000, // 5 Minutes
     env: {
+      JAMIE_PUBLIC_GUIDE_E2E_FIXTURE: 'true',
       NEXT_PUBLIC_MOCK_MODE: 'true',
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',

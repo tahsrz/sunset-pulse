@@ -1,15 +1,18 @@
 import { z } from 'zod';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { errorResponse, notFoundResponse, validationErrorResponse } from '@/lib/core/apiResponse';
-import { PUBLIC_GUIDE_ACTION_IDS } from '@/lib/ai/publicGuideContract';
-import { recordPublicGuideEvent } from '@/lib/ai/publicGuideTelemetry';
+import {
+  PUBLIC_GUIDE_ACTION_IDS,
+  PUBLIC_GUIDE_CLIENT_EVENT_NAMES,
+} from '@/lib/ai/publicGuideContract';
+import { schedulePublicGuideEvent } from '@/lib/ai/publicGuideTelemetry';
 import { getFirstPartySiteFromHost } from '@/lib/sites/tenantRouting';
 
 export const dynamic = 'force-dynamic';
 
 const eventSchema = z.object({
   actionId: z.enum(PUBLIC_GUIDE_ACTION_IDS).optional(),
-  event: z.enum(['action_click', 'handoff_open', 'handoff_submit']),
+  event: z.enum(PUBLIC_GUIDE_CLIENT_EVENT_NAMES),
   hasAgentContext: z.boolean().optional(),
   hasListingContext: z.boolean().optional(),
   sessionId: z.string().trim().min(8).max(160),
@@ -36,6 +39,6 @@ export async function POST(request: Request) {
   const validation = eventSchema.safeParse(rawBody);
   if (!validation.success) return validationErrorResponse(validation.error.flatten());
 
-  await recordPublicGuideEvent({ ...validation.data, event: validation.data.event! });
+  schedulePublicGuideEvent({ ...validation.data, event: validation.data.event! });
   return new Response(null, { status: 204 });
 }

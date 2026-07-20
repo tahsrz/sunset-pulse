@@ -1,6 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { z } from 'zod';
+import { buildPublicGuideHandoffBrief } from '@/lib/ai/publicGuideHandoff';
+import { publicGuideHandoffInputSchema } from '@/lib/ai/publicGuideHandoffContract';
+import {
+  hashPublicGuideSessionId,
+  schedulePublicGuideEvent,
+} from '@/lib/ai/publicGuideTelemetry';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
@@ -26,6 +32,7 @@ const leadSchema = z.object({
     mlsId: z.string().trim().max(80).optional(),
     name: z.string().trim().max(240).optional(),
   }).optional(),
+  guide: publicGuideHandoffInputSchema.optional(),
   consent: z.literal(true).optional(),
   company: z.string().max(120).optional(),
 });
@@ -55,8 +62,14 @@ export async function POST(request: Request) {
     if (isJamieRequest && input.consent !== true) {
       return validationErrorResponse({ consent: ['Consent is required before Jamie can send an inquiry.'] });
     }
+    if (isJamieRequest && !input.guide) {
+      return validationErrorResponse({ guide: ['Jamie handoff context is required.'] });
+    }
     if (!isJamieRequest && input.source === 'jamie_public_guide') {
       return validationErrorResponse({ source: ['Jamie guide inquiries must originate on the Jamie site.'] });
+    }
+    if (!isJamieRequest && input.guide) {
+      return validationErrorResponse({ guide: ['Jamie guide context is only accepted on the Jamie site.'] });
     }
 
     // Honeypot: treat bots as a no-op success so the public form does not reveal the trap.
@@ -91,9 +104,20 @@ export async function POST(request: Request) {
       return validationErrorResponse({ listing: ['The listing is not available for a verified public handoff.'] });
     }
 
+    const verifiedDiscussedListingIds = input.guide
+      ? await resolveVerifiedJamieListingIds(input.guide.discussedListingIds, listing)
+      : listing ? [listing.mlsId || listing.id].filter((id): id is string => Boolean(id)) : [];
+    const guideBrief = input.guide
+      ? await buildPublicGuideHandoffBrief({
+          handoff: input.guide,
+          verifiedListingIds: verifiedDiscussedListingIds,
+        })
+      : null;
+
     const source = isJamieRequest ? 'jamie_public_guide' : input.source;
     const siteName = isJamieRequest ? tenantSite.siteName : input.siteName || tenantSite.siteName;
     const leadEmail = input.email.toLowerCase();
+    const pagePath = isJamieRequest ? getJamieSourcePagePath(request) : input.pagePath || null;
     const metadata = {
       tenantAgentName: tenantSite.agentProfile.displayName,
       tenantBrokerage: tenantSite.agentProfile.brokerageName,
@@ -107,7 +131,12 @@ export async function POST(request: Request) {
         publicGuideContext: {
           listingVerified: Boolean(listing),
           tenantVerified: true,
+          discussedListingCount: verifiedDiscussedListingIds.length,
+          sessionIdHash: input.guide ? hashPublicGuideSessionId(input.guide.sessionId) : null,
+          sourceHost: 'jamie',
+          sourcePagePath: pagePath,
         },
+        ...(guideBrief ? { publicGuideBrief: guideBrief } : {}),
       } : {}),
     };
 
@@ -121,7 +150,7 @@ export async function POST(request: Request) {
         listing_mls_id: listing?.mlsId || null,
         listing_name: listing?.name || null,
         source,
-        page_path: input.pagePath || null,
+        page_path: pagePath,
         name: input.name,
         email: leadEmail,
         phone: input.phone || null,
@@ -147,13 +176,24 @@ export async function POST(request: Request) {
         preferredContact: input.preferredContact,
         message: input.message,
         source,
-        pagePath: input.pagePath || null,
+        pagePath,
         listing,
+        guideBrief: guideBrief || undefined,
       },
     });
 
     if (notification.status !== 'sent') {
       console.warn('[AGENT_SITE_LEAD_NOTIFICATION]', notification.status, notification.reason);
+    }
+
+    if (input.guide) {
+      schedulePublicGuideEvent({
+        event: 'handoff_completed',
+        actionId: 'contact_agent',
+        sessionId: input.guide.sessionId,
+        hasAgentContext: true,
+        hasListingContext: Boolean(listing),
+      });
     }
 
     await supabaseAdmin
@@ -192,6 +232,39 @@ async function resolveVerifiedJamieListing(listing: z.infer<typeof leadSchema>['
     mlsId: verified.mls_id || undefined,
     name: verified.name,
   };
+}
+
+async function resolveVerifiedJamieListingIds(
+  listingIds: string[],
+  entryListing?: { id?: string; mlsId?: string } | null,
+) {
+  const entryIds = entryListing
+    ? [entryListing.id, entryListing.mlsId].filter((id): id is string => Boolean(id))
+    : [];
+  const candidates = Array.from(new Set(listingIds))
+    .filter((id) => !entryIds.includes(id))
+    .slice(0, 8);
+  const verified = await Promise.all(candidates.map((id) => discoverListingById(id)));
+
+  return Array.from(new Set([
+    ...(entryListing ? [entryListing.mlsId || entryListing.id] : []),
+    ...verified
+      .flatMap((listing) => listing ? [listing.mls_id || listing.id] : []),
+  ].filter((id): id is string => Boolean(id)))).slice(0, 8);
+}
+
+function getJamieSourcePagePath(request: Request) {
+  const referer = request.headers.get('referer');
+  if (!referer) return null;
+
+  try {
+    const source = new URL(referer);
+    const requestHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    if (source.host !== requestHost) return null;
+    return source.pathname.slice(0, 500);
+  } catch {
+    return null;
+  }
 }
 
 function summarizeNotification(notification: Awaited<ReturnType<typeof notifyAgentSiteLead>>) {

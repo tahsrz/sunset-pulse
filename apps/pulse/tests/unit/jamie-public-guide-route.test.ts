@@ -4,9 +4,10 @@ vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   applyPublicApiRateLimit: vi.fn(),
-  recordPublicGuideEvent: vi.fn(),
+  classifyPublicGuideIntent: vi.fn(),
   resolvePublicGuideContext: vi.fn(),
   runPublicJamieGuide: vi.fn(),
+  schedulePublicGuideEvent: vi.fn(),
 }));
 
 vi.mock('@/lib/core/publicApiRateLimit', () => ({
@@ -22,7 +23,8 @@ vi.mock('@/lib/ai/publicGuideContext', () => ({
 }));
 
 vi.mock('@/lib/ai/publicGuideTelemetry', () => ({
-  recordPublicGuideEvent: mocks.recordPublicGuideEvent,
+  classifyPublicGuideIntent: mocks.classifyPublicGuideIntent,
+  schedulePublicGuideEvent: mocks.schedulePublicGuideEvent,
 }));
 
 import { POST } from '@/app/api/jamie/guide/route';
@@ -38,7 +40,7 @@ const validBody = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.applyPublicApiRateLimit.mockResolvedValue(null);
-  mocks.recordPublicGuideEvent.mockResolvedValue(undefined);
+  mocks.classifyPublicGuideIntent.mockReturnValue('product');
   mocks.resolvePublicGuideContext.mockResolvedValue(null);
   mocks.runPublicJamieGuide.mockResolvedValue({
     actions: [{
@@ -74,7 +76,11 @@ describe('Jamie public guide route', () => {
       context: null,
       rootOrigin: 'https://sunsetpulse.app',
     });
-    expect(mocks.recordPublicGuideEvent).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'question_asked',
+      intentCategory: 'product',
+    }));
+    expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(expect.objectContaining({
       event: 'guide_response',
       hasAgentContext: false,
       hasListingContext: false,

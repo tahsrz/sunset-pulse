@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, KeyboardEvent, useMemo, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import Link from 'next/link';
@@ -36,10 +36,15 @@ import type {
   PublicGuideAction,
   PublicGuideActionId,
   PublicGuideAgent,
+  PublicGuideClientEventName,
   PublicGuideContext,
   PublicGuideListing,
   PublicGuideUIMessage,
 } from '@/lib/ai/publicGuideContract';
+import {
+  PUBLIC_GUIDE_NEXT_STEPS,
+  type PublicGuideHandoffInput,
+} from '@/lib/ai/publicGuideHandoffContract';
 
 const GUIDE_STARTERS = [
   'Find homes in Frisco under $750,000',
@@ -49,7 +54,7 @@ const GUIDE_STARTERS = [
 ];
 
 type TrackGuideEvent = (
-  event: 'action_click' | 'handoff_open' | 'handoff_submit',
+  event: PublicGuideClientEventName,
   actionId?: PublicGuideActionId,
 ) => void;
 
@@ -81,6 +86,21 @@ export function JamieGuideWorkspace({
   );
   const { messages, sendMessage, status, error, stop } = useChat<PublicGuideUIMessage>({ transport });
   const isBusy = status === 'submitted' || status === 'streaming';
+  const hasAgentContext = Boolean(initialContext?.agent);
+  const hasListingContext = Boolean(initialContext?.listing);
+  const handoffSnapshot = useMemo(
+    () => buildHandoffSnapshot(messages, initialContext?.listing),
+    [initialContext?.listing, messages],
+  );
+
+  useEffect(() => {
+    postGuideEvent({
+      event: 'guide_opened',
+      sessionId: analyticsSessionId,
+      hasAgentContext,
+      hasListingContext,
+    });
+  }, [analyticsSessionId, hasAgentContext, hasListingContext]);
 
   const send = (text: string) => {
     const prompt = text.trim();
@@ -101,17 +121,12 @@ export function JamieGuideWorkspace({
   };
 
   const trackGuideEvent: TrackGuideEvent = (event, actionId) => {
-    void fetch('/api/jamie/guide/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      keepalive: true,
-      body: JSON.stringify({
-        event,
-        actionId,
-        sessionId: analyticsSessionId,
-        hasAgentContext: Boolean(initialContext?.agent),
-        hasListingContext: Boolean(initialContext?.listing),
-      }),
+    postGuideEvent({
+      event,
+      actionId,
+      sessionId: analyticsSessionId,
+      hasAgentContext,
+      hasListingContext,
     });
   };
 
@@ -227,6 +242,9 @@ export function JamieGuideWorkspace({
       <GuideHandoffPanel
         agent={initialContext.agent}
         listing={initialContext.listing}
+        conversation={handoffSnapshot.conversation}
+        discussedListingIds={handoffSnapshot.discussedListingIds}
+        sessionId={analyticsSessionId}
         onClose={() => setHandoffOpen(false)}
         onSubmitted={() => trackGuideEvent('handoff_submit', 'contact_agent')}
       />
@@ -268,7 +286,7 @@ function GuideMessage({
           }
 
           if (part.type === 'data-listings') {
-            return <GuideListings key={`${message.id}-listings-${index}`} data={part.data} />;
+            return <GuideListings key={`${message.id}-listings-${index}`} data={part.data} onTrack={onTrack} />;
           }
 
           if (part.type === 'data-actions') {
@@ -309,7 +327,7 @@ function GuideContextBar({ context, onTrack }: { context: PublicGuideContext; on
         {listing ? (
           <a
             href={listing.href}
-            onClick={() => onTrack('action_click', 'view_listing')}
+            onClick={() => onTrack('listing_opened', 'view_listing')}
             className="inline-flex items-center gap-1.5 font-black text-sky-200 hover:text-white"
           >
             View home <ExternalLink size={13} />
@@ -363,7 +381,7 @@ function GuideActions({
           <a
             key={action.id}
             href={action.href}
-            onClick={() => onTrack('action_click', action.id)}
+            onClick={() => onTrack(action.id === 'view_listing' ? 'listing_opened' : 'action_click', action.id)}
             className="flex min-h-16 items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-3 transition hover:border-sky-200/30 hover:bg-sky-200/10"
           >
             {content}
@@ -382,17 +400,25 @@ function GuideActionIcon({ actionId }: { actionId: PublicGuideActionId }) {
   return <Search size={15} />;
 }
 
-function GuideListings({ data }: { data: PublicGuideDataParts['listings'] }) {
+function GuideListings({ data, onTrack }: {
+  data: PublicGuideDataParts['listings'];
+  onTrack: TrackGuideEvent;
+}) {
   if (!data.properties.length) return null;
 
   return (
     <div className="grid gap-3 pt-1 sm:grid-cols-2">
-      {data.properties.map((property) => <GuideListingCard key={property.id} property={property} />)}
+      {data.properties.map((property) => (
+        <GuideListingCard key={property.id} property={property} onTrack={onTrack} />
+      ))}
     </div>
   );
 }
 
-function GuideListingCard({ property }: { property: PublicGuideListing }) {
+function GuideListingCard({ property, onTrack }: {
+  property: PublicGuideListing;
+  onTrack: TrackGuideEvent;
+}) {
   const location = [property.city, property.state].filter(Boolean).join(', ');
   const details = [
     property.beds ? `${property.beds} bd` : null,
@@ -402,6 +428,7 @@ function GuideListingCard({ property }: { property: PublicGuideListing }) {
   return (
     <a
       href={property.href}
+      onClick={() => onTrack('listing_opened', 'view_listing')}
       className="group/listing overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] transition hover:border-sky-200/35 hover:bg-white/[0.07]"
     >
       {property.image ? (
@@ -444,14 +471,20 @@ function GuideSources({ data }: { data: PublicGuideDataParts['sources'] }) {
 
 function GuideHandoffPanel({
   agent,
+  conversation,
+  discussedListingIds,
   listing,
   onClose,
   onSubmitted,
+  sessionId,
 }: {
   agent: PublicGuideAgent;
+  conversation: PublicGuideHandoffInput['conversation'];
+  discussedListingIds: string[];
   listing?: PublicGuideListing;
   onClose: () => void;
   onSubmitted: () => void;
+  sessionId: string;
 }) {
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -472,7 +505,6 @@ function GuideHandoffPanel({
           site: agent.site,
           siteName: agent.siteName,
           source: 'jamie_public_guide',
-          pagePath: window.location.pathname,
           name: String(data.get('name') || ''),
           email: String(data.get('email') || ''),
           phone: String(data.get('phone') || ''),
@@ -481,6 +513,12 @@ function GuideHandoffPanel({
           company: String(data.get('company') || ''),
           consent: data.get('consent') === 'on',
           listing: listing ? { id: listing.id, mlsId: listing.mlsId, name: listing.name } : undefined,
+          guide: {
+            conversation,
+            discussedListingIds,
+            nextStep: String(data.get('nextStep') || (listing ? 'discuss_listing' : 'refine_search')),
+            sessionId,
+          },
         }),
       });
       const result = await response.json().catch(() => ({}));
@@ -501,7 +539,7 @@ function GuideHandoffPanel({
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-100/50">Private agent handoff</p>
           <h2 className="mt-2 text-xl font-black text-white">Send {agent.agentName} an inquiry</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Only the form below is sent to {agent.siteName}. Jamie's public conversation is not attached.
+            Your form and a compact Jamie brief can go to {agent.siteName}. The raw public conversation is never attached or stored with the lead.
           </p>
         </div>
         <button
@@ -538,6 +576,18 @@ function GuideHandoffPanel({
             </label>
           </div>
           <label className="block">
+            <span className="mb-2 block text-xs font-black text-slate-300">What should happen next?</span>
+            <select
+              name="nextStep"
+              defaultValue={listing ? 'discuss_listing' : 'refine_search'}
+              className="h-11 w-full rounded-lg border border-white/10 bg-[#050b12] px-3 text-sm text-white outline-none focus:border-sky-200/45"
+            >
+              {PUBLIC_GUIDE_NEXT_STEPS.map((nextStep) => (
+                <option key={nextStep.id} value={nextStep.id}>{nextStep.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
             <span className="mb-2 block text-xs font-black text-slate-300">Message</span>
             <textarea
               name="message"
@@ -551,7 +601,7 @@ function GuideHandoffPanel({
           </label>
           <label className="flex items-start gap-3 text-xs leading-5 text-slate-400">
             <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 accent-sky-300" />
-            <span>I consent to send these contact details and this message to {agent.agentName}. No public chat transcript will be included.</span>
+            <span>I consent to send these contact details, this message, and a compact summary of my stated needs to {agent.agentName}. No raw public chat transcript will be sent or stored with the lead.</span>
           </label>
           {errorMessage ? <p className="text-sm font-bold text-red-200" aria-live="polite">{errorMessage}</p> : null}
           <button
@@ -567,6 +617,51 @@ function GuideHandoffPanel({
       )}
     </section>
   );
+}
+
+function buildHandoffSnapshot(
+  messages: PublicGuideUIMessage[],
+  entryListing?: PublicGuideListing,
+): Pick<PublicGuideHandoffInput, 'conversation' | 'discussedListingIds'> {
+  const conversation = messages
+    .filter((message) => message.role === 'user' || message.role === 'assistant')
+    .map((message) => ({
+      role: message.role as 'user' | 'assistant',
+      text: message.parts
+        .filter((part) => part.type === 'text')
+        .map((part) => part.text.trim())
+        .filter(Boolean)
+        .join('\n')
+        .slice(0, 2000),
+    }))
+    .filter((message) => message.text.length > 0)
+    .slice(-12);
+  const discussedListingIds = messages.flatMap((message) => message.parts.flatMap((part) => (
+    part.type === 'data-listings' ? part.data.properties.map((listing) => listing.mlsId || listing.id) : []
+  )));
+
+  return {
+    conversation,
+    discussedListingIds: Array.from(new Set([
+      ...(entryListing ? [entryListing.mlsId || entryListing.id] : []),
+      ...discussedListingIds,
+    ])).slice(0, 8),
+  };
+}
+
+function postGuideEvent(input: {
+  actionId?: PublicGuideActionId;
+  event: PublicGuideClientEventName;
+  hasAgentContext: boolean;
+  hasListingContext: boolean;
+  sessionId: string;
+}) {
+  void fetch('/api/jamie/guide/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    keepalive: true,
+    body: JSON.stringify(input),
+  }).catch(() => undefined);
 }
 
 function HandoffInput({

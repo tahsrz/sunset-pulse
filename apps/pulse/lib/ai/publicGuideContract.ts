@@ -87,7 +87,16 @@ export const PUBLIC_GUIDE_ACTION_IDS = [
   'view_listing',
 ] as const;
 
+export const PUBLIC_GUIDE_CLIENT_EVENT_NAMES = [
+  'action_click',
+  'guide_opened',
+  'handoff_open',
+  'handoff_submit',
+  'listing_opened',
+] as const;
+
 export type PublicGuideActionId = typeof PUBLIC_GUIDE_ACTION_IDS[number];
+export type PublicGuideClientEventName = typeof PUBLIC_GUIDE_CLIENT_EVENT_NAMES[number];
 
 export type PublicGuideAction = {
   description: string;

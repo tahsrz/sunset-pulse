@@ -7,7 +7,10 @@ import { errorResponse, notFoundResponse, validationErrorResponse } from '@/lib/
 import { publicGuideRequestSchema, type PublicGuideUIMessage } from '@/lib/ai/publicGuideContract';
 import { runPublicJamieGuide } from '@/lib/ai/publicGuide';
 import { resolvePublicGuideContext } from '@/lib/ai/publicGuideContext';
-import { recordPublicGuideEvent } from '@/lib/ai/publicGuideTelemetry';
+import {
+  classifyPublicGuideIntent,
+  schedulePublicGuideEvent,
+} from '@/lib/ai/publicGuideTelemetry';
 import { getFirstPartySiteFromHost } from '@/lib/sites/tenantRouting';
 import { getPublicRootOrigin } from '@/lib/sites/siteUrls';
 
@@ -38,6 +41,12 @@ export async function POST(request: Request) {
   if (!validation.success) {
     return validationErrorResponse(validation.error.flatten());
   }
+  const userMessage = validation.data.messages
+    .slice()
+    .reverse()
+    .find((message) => message.role === 'user')
+    ?.parts.filter((part) => part.type === 'text').map((part) => part.text || '').join('\n') || '';
+  const intentCategory = classifyPublicGuideIntent(userMessage);
 
   const stream = createUIMessageStream<PublicGuideUIMessage>({
     execute: async ({ writer }) => {
@@ -51,6 +60,13 @@ export async function POST(request: Request) {
           protocol,
           rootOrigin,
         });
+        const eventContext = {
+          sessionId: validation.data.analyticsSessionId,
+          hasAgentContext: Boolean(resolvedContext?.agent),
+          hasListingContext: Boolean(resolvedContext?.listing),
+          intentCategory,
+        };
+        schedulePublicGuideEvent({ event: 'question_asked', ...eventContext });
         const result = await runPublicJamieGuide(validation.data, { context: resolvedContext, rootOrigin });
         const textId = `jamie-guide-${crypto.randomUUID()}`;
 
@@ -83,15 +99,26 @@ export async function POST(request: Request) {
           data: { items: result.sources },
         });
 
-        await recordPublicGuideEvent({
+        schedulePublicGuideEvent({
           event: 'guide_response',
-          sessionId: validation.data.analyticsSessionId,
+          ...eventContext,
           durationMs: Date.now() - startedAt,
-          hasAgentContext: Boolean(resolvedContext?.agent),
-          hasListingContext: Boolean(resolvedContext?.listing),
           outcome: result.outcome,
           usedListingData: result.usedListingData,
         });
+        if (result.outcome === 'listing_search') {
+          schedulePublicGuideEvent({ event: 'tool_used', ...eventContext, toolId: 'search_properties' });
+        }
+        if (result.actions.some((action) => action.id === 'contact_agent')) {
+          schedulePublicGuideEvent({ event: 'handoff_offered', ...eventContext, actionId: 'contact_agent' });
+        }
+        if (result.outcome === 'listing_unverified' || result.outcome === 'safe_fallback') {
+          schedulePublicGuideEvent({
+            event: 'unanswered_question',
+            ...eventContext,
+            outcome: result.outcome,
+          });
+        }
       } catch (error) {
         console.error('[JAMIE_PUBLIC_GUIDE_ERROR]', error);
         const textId = `jamie-guide-error-${crypto.randomUUID()}`;
@@ -102,12 +129,13 @@ export async function POST(request: Request) {
           delta: 'I cannot reach the public guide service right now. No listing details were returned. Please try again shortly.',
         });
         writer.write({ type: 'text-end', id: textId });
-        await recordPublicGuideEvent({
+        schedulePublicGuideEvent({
           event: 'guide_error',
           sessionId: validation.data.analyticsSessionId,
           durationMs: Date.now() - startedAt,
           hasAgentContext: Boolean(resolvedContext?.agent),
           hasListingContext: Boolean(resolvedContext?.listing),
+          intentCategory,
         });
       }
     },
