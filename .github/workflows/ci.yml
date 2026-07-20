@@ -56,6 +56,8 @@ jobs:
       NEXT_PUBLIC_ROOT_DOMAIN: localhost
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: ci-anon-key
       SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
       STRIPE_SECRET_KEY: sk_test_ci_build_only
       GROQ_API_KEY: groq-ci-build-only
