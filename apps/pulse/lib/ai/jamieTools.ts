@@ -3,25 +3,37 @@ import { z } from 'zod';
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
 import { discoverListings } from '@/lib/data/listingDiscovery';
 
-const positiveInteger = z.union([
+const optionalPositiveInteger = z.union([
   z.number().int().positive(),
   z.string().trim().regex(/^\d+$/),
-]).transform((value) => Number(value));
+  z.literal(''),
+]).optional().transform((value) => value === '' || value === undefined ? undefined : Number(value));
+
+const optionalStringList = z.union([
+  z.array(z.string()),
+  z.string(),
+]).optional().transform((value) => {
+  if (value === undefined) return undefined;
+  const values = (Array.isArray(value) ? value : [value])
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return values.length ? values : undefined;
+});
 
 export const jamiePropertySearchInputSchema = z.object({
   city: z.string().optional().describe("City to search in, such as Frisco or Plano."),
   zipcode: z.string().optional().describe("5-digit ZIP code."),
   neighborhood: z.string().optional().describe("Specific neighborhood name."),
-  property_types: z.array(z.string()).optional().describe("Property types to include."),
-  property_sub_types: z.array(z.string()).optional().describe("Property sub-types to include."),
-  price_min: positiveInteger.optional().describe("Minimum price in USD."),
-  price_max: positiveInteger.optional().describe("Maximum price in USD."),
-  beds_min: positiveInteger.optional().describe("Minimum bedrooms."),
-  beds_max: positiveInteger.optional().describe("Maximum bedrooms."),
-  full_baths_min: positiveInteger.optional().describe("Minimum bathrooms."),
-  sqft_min: positiveInteger.optional().describe("Minimum square footage."),
+  property_types: optionalStringList.describe("Property types to include."),
+  property_sub_types: optionalStringList.describe("Property sub-types to include."),
+  price_min: optionalPositiveInteger.describe("Minimum price in USD."),
+  price_max: optionalPositiveInteger.describe("Maximum price in USD."),
+  beds_min: optionalPositiveInteger.describe("Minimum bedrooms."),
+  beds_max: optionalPositiveInteger.describe("Maximum bedrooms."),
+  full_baths_min: optionalPositiveInteger.describe("Minimum bathrooms."),
+  sqft_min: optionalPositiveInteger.describe("Minimum square footage."),
   pool: z.enum(['Yes', 'No', '']).optional().describe("Pool preference."),
-  construction_status: z.array(z.string()).optional().describe("Construction statuses."),
+  construction_status: optionalStringList.describe("Construction statuses."),
 });
 
 export type JamiePropertySearchInput = z.infer<typeof jamiePropertySearchInputSchema>;
