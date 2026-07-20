@@ -1,6 +1,26 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { ArrowUpRight, ClipboardList, Inbox, Mail, MapPin, Phone, ShieldAlert, UserRound } from 'lucide-react';
+import {
+  ArrowUpRight,
+  BarChart3,
+  CircleHelp,
+  ClipboardList,
+  Inbox,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldAlert,
+  Target,
+  UserRound,
+} from 'lucide-react';
+import {
+  loadPublicGuideConversionAnalytics,
+  type PublicGuideConversionAnalytics,
+} from '@/lib/ai/publicGuideAnalytics';
+import {
+  PUBLIC_GUIDE_DISPOSITIONS,
+  readPublicGuideDisposition,
+} from '@/lib/ai/publicGuideConversionContract';
 import {
   getPublicGuideNextStepLabel,
   publicGuideHandoffBriefSchema,
@@ -81,7 +101,16 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
     query = query.eq('status', statusFilter);
   }
 
-  const { data, error } = await query;
+  const [leadResult, analyticsResult] = await Promise.all([
+    query,
+    loadPublicGuideConversionAnalytics()
+      .then((analytics) => ({ analytics, failed: false }))
+      .catch((analyticsError) => {
+        console.warn('[JAMIE_PUBLIC_GUIDE_ANALYTICS]', analyticsError);
+        return { analytics: null, failed: true };
+      }),
+  ]);
+  const { data, error } = leadResult;
   const leads = (data || []) as AgentSiteLead[];
   const newestLead = leads[0];
   const listingLeadCount = leads.filter((lead) => lead.listing_mls_id || lead.listing_id).length;
@@ -146,6 +175,11 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
           </nav>
         </header>
 
+        <PublicGuideConversionPanel
+          analytics={analyticsResult.analytics}
+          failed={analyticsResult.failed}
+        />
+
         {error ? (
           <section className="rounded-3xl border border-red-400/25 bg-red-500/10 p-6">
             <div className="flex items-center gap-3 text-red-200">
@@ -201,20 +235,23 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
   const publicSiteHref = getTenantPreviewUrl(lead.site);
   const guideBriefResult = publicGuideHandoffBriefSchema.safeParse(lead.metadata?.publicGuideBrief);
   const guideBrief = guideBriefResult.success ? guideBriefResult.data : null;
+  const guideDisposition = lead.source === 'jamie_public_guide'
+    ? readPublicGuideDisposition(lead.metadata)
+    : undefined;
 
   return (
-    <article className={`rounded-[2rem] border p-5 shadow-2xl shadow-black/10 ${
+    <article className={`min-w-0 overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-black/10 ${
       status === 'archived'
         ? 'border-slate-700/50 bg-slate-900/25 opacity-80'
         : status === 'reviewed'
           ? 'border-emerald-400/20 bg-emerald-950/10'
           : 'border-cyan-300/20 bg-slate-900/50'
     }`}>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div>
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
-            <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
+            <span className="max-w-full break-all rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
               {lead.source || 'agent_site'}
             </span>
             <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">
@@ -230,14 +267,14 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
               <UserRound size={21} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-2xl font-black text-white">{lead.name}</h2>
-              <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+              <h2 className="break-words text-2xl font-black text-white">{lead.name}</h2>
+              <p className="mt-1 break-all text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                 {lead.site_name || lead.site} · {lead.agent_id}
               </p>
             </div>
           </div>
 
-          <p className="mt-5 whitespace-pre-wrap rounded-3xl border border-white/10 bg-slate-950/60 p-5 text-sm leading-7 text-slate-300">
+          <p className="mt-5 whitespace-pre-wrap break-words rounded-3xl border border-white/10 bg-slate-950/60 p-5 text-sm leading-7 text-slate-300">
             {lead.message}
           </p>
 
@@ -251,12 +288,12 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
           ) : null}
         </div>
 
-        <aside className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+        <aside className="min-w-0 rounded-3xl border border-white/10 bg-slate-950/50 p-5">
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/45">Contact</p>
           <div className="mt-4 grid gap-2">
             <a
               href={`mailto:${lead.email}?subject=${encodeURIComponent(`Sunset Pulse lead from ${lead.name}`)}`}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+              className="inline-flex min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold text-white transition hover:bg-white/10"
             >
               <Mail size={16} />
               <span className="truncate">{lead.email}</span>
@@ -304,10 +341,123 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
             </a>
           ) : null}
 
-          <AgentLeadActions leadId={lead.id} status={status} internalNote={lead.internal_note} />
+          <AgentLeadActions
+            leadId={lead.id}
+            status={status}
+            internalNote={lead.internal_note}
+            publicGuideDisposition={guideDisposition}
+          />
         </aside>
       </div>
     </article>
+  );
+}
+
+function PublicGuideConversionPanel({
+  analytics,
+  failed,
+}: {
+  analytics: PublicGuideConversionAnalytics | null;
+  failed: boolean;
+}) {
+  if (!analytics) {
+    return failed ? (
+      <section className="mb-8 border-y border-amber-300/20 bg-amber-300/[0.04] px-1 py-5 text-sm text-amber-100">
+        Jamie conversion signals are temporarily unavailable. The lead inbox remains operational.
+      </section>
+    ) : null;
+  }
+
+  return (
+    <section className="mb-8 border-y border-cyan-300/15 py-7">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-cyan-200">
+            <BarChart3 size={17} />
+            <h2 className="text-xs font-black uppercase tracking-[0.2em]">Jamie Conversion</h2>
+          </div>
+          <p className="mt-2 text-sm text-slate-500">Unique guide sessions over the last {analytics.windowDays} days.</p>
+        </div>
+        <div className="sm:text-right">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/45">Opened to handoff</p>
+          <p className="mt-1 text-3xl font-black text-white">
+            {analytics.conversionRate === null ? 'No data' : `${analytics.conversionRate}%`}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid border-l border-t border-white/10 sm:grid-cols-5">
+        {analytics.funnel.map((stage) => (
+          <div key={stage.id} className="min-w-0 border-b border-r border-white/10 px-4 py-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{stage.label}</p>
+            <div className="mt-2 flex items-baseline justify-between gap-2">
+              <span className="text-2xl font-black text-white">{stage.sessions}</span>
+              <span className="text-[10px] font-bold text-cyan-200/60">
+                {stage.reachRate === null ? '-' : `${stage.reachRate}%`}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-slate-300">
+            <CircleHelp size={16} />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.18em]">Unanswered Categories</h3>
+          </div>
+          {analytics.unanswered.length ? (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[560px] border-collapse text-left text-xs">
+                <thead className="border-b border-white/10 text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
+                  <tr>
+                    <th className="py-2 pr-4">Category</th>
+                    <th className="py-2 pr-4">Questions</th>
+                    <th className="py-2 pr-4">Sessions</th>
+                    <th className="py-2 pr-4">Outcome</th>
+                    <th className="py-2">Latest</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.unanswered.map((item) => (
+                    <tr key={item.category} className="border-b border-white/[0.06] text-slate-300">
+                      <td className="py-3 pr-4 font-bold text-white">{formatIntentCategory(item.category)}</td>
+                      <td className="py-3 pr-4">{item.count}</td>
+                      <td className="py-3 pr-4">{item.sessions}</td>
+                      <td className="py-3 pr-4">{item.outcomes.join(', ') || 'Unknown'}</td>
+                      <td className="py-3 text-slate-500">{formatDateTime(item.latestAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="mt-3 border-t border-white/10 py-5 text-sm text-slate-600">No unanswered categories in this window.</p>
+          )}
+          <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
+            Category totals only; question text is not retained.
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <Target size={16} />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.18em]">Lead Outcomes</h3>
+          </div>
+          <dl className="mt-3 border-t border-white/10">
+            {PUBLIC_GUIDE_DISPOSITIONS.map((disposition) => (
+              <div key={disposition.id} className="flex items-center justify-between border-b border-white/[0.06] py-2.5 text-xs">
+                <dt className="text-slate-500">{disposition.label}</dt>
+                <dd className="font-black text-white">{analytics.dispositionCounts[disposition.id]}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-3 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
+            {analytics.leadCount} Jamie handoffs
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -393,4 +543,11 @@ function formatDateTime(value: string) {
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function formatIntentCategory(value: string) {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

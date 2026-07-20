@@ -5,14 +5,17 @@ import { after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { PublicGuideActionId, PublicGuideOutcome } from '@/lib/ai/publicGuideContract';
 
-export type PublicGuideIntentCategory =
-  | 'buying_process'
-  | 'listing_fact'
-  | 'listing_search'
-  | 'location_comparison'
-  | 'product'
-  | 'selling_process'
-  | 'other';
+export const PUBLIC_GUIDE_INTENT_CATEGORIES = [
+  'buying_process',
+  'listing_fact',
+  'listing_search',
+  'location_comparison',
+  'product',
+  'selling_process',
+  'other',
+] as const;
+
+export type PublicGuideIntentCategory = typeof PUBLIC_GUIDE_INTENT_CATEGORIES[number];
 
 export type PublicGuideTelemetryEvent = {
   actionId?: PublicGuideActionId;
