@@ -60,6 +60,32 @@ describe('Jamie tools', () => {
     })).toMatchObject({ beds_min: 3, price_max: 750000 });
   });
 
+  it('normalizes empty and scalar optional fields emitted by the guide model', () => {
+    expect(jamiePropertySearchInputSchema.parse({
+      city: 'Frisco',
+      property_types: 'Single Family',
+      property_sub_types: '',
+      price_min: '',
+      price_max: '750000',
+      beds_min: '3',
+      beds_max: '',
+      full_baths_min: '',
+      sqft_min: '',
+      construction_status: '',
+    })).toEqual({
+      city: 'Frisco',
+      property_types: ['Single Family'],
+      property_sub_types: undefined,
+      price_min: undefined,
+      price_max: 750000,
+      beds_min: 3,
+      beds_max: undefined,
+      full_baths_min: undefined,
+      sqft_min: undefined,
+      construction_status: undefined,
+    });
+  });
+
   it('uses the shared image-qualified discovery engine', async () => {
     mockDiscoverListings.mockResolvedValue({
       listings: [{
