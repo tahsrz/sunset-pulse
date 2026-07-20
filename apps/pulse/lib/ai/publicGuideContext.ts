@@ -41,6 +41,9 @@ async function resolveAgent(
   siteSlug: string,
   options: ContextResolutionOptions,
 ): Promise<PublicGuideAgent | null> {
+  const e2eAgent = resolveE2eAgentFixture(siteSlug, options);
+  if (e2eAgent) return e2eAgent;
+
   const site = await getTenantSite(siteSlug);
   if (!site.isPublished) return null;
 
@@ -59,6 +62,32 @@ async function resolveAgent(
     publicUrl,
     site: site.site,
     siteName: site.siteName,
+  };
+}
+
+function resolveE2eAgentFixture(
+  siteSlug: string,
+  options: ContextResolutionOptions,
+): PublicGuideAgent | null {
+  if (
+    process.env.JAMIE_PUBLIC_GUIDE_E2E_FIXTURE !== 'true'
+    || process.env.VERCEL_ENV === 'production'
+    || siteSlug !== 'jamie-e2e-agent'
+  ) {
+    return null;
+  }
+
+  return {
+    agentId: 'jamie-e2e-agent-id',
+    agentName: 'Jamie E2E Agent',
+    brokerageName: 'Sunset Pulse Test Realty',
+    primaryColor: '#67e8f9',
+    publicUrl: getPublicSubdomainOrigin(siteSlug, {
+      requestHost: options.requestHost,
+      protocol: options.protocol,
+    }),
+    site: siteSlug,
+    siteName: 'Jamie E2E Homes',
   };
 }
 
