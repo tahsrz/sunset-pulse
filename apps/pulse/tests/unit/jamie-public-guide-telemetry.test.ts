@@ -2,14 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({ after: vi.fn(), rpc: vi.fn() }));
 
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { rpc: mocks.rpc } }));
+vi.mock('next/server', () => ({ after: mocks.after }));
 
-import { recordPublicGuideEvent } from '@/lib/ai/publicGuideTelemetry';
+import {
+  classifyPublicGuideIntent,
+  recordPublicGuideEvent,
+  schedulePublicGuideEvent,
+} from '@/lib/ai/publicGuideTelemetry';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.after.mockImplementation((callback: () => unknown) => callback());
   mocks.rpc.mockResolvedValue({ error: null });
 });
 
@@ -34,10 +40,30 @@ describe('Jamie public guide telemetry', () => {
         durationMs: 120_000,
         hasAgentContext: true,
         hasListingContext: true,
+        intentCategory: null,
         outcome: 'context_fact',
+        toolId: null,
         usedListingData: true,
       },
     }));
     expect(JSON.stringify(mocks.rpc.mock.calls[0][1])).not.toContain('browser-session-123');
+  });
+
+  it('schedules lifecycle events after the response and categorizes intent without prompt storage', async () => {
+    schedulePublicGuideEvent({
+      event: 'question_asked',
+      sessionId: 'browser-session-456',
+      intentCategory: classifyPublicGuideIntent('Find a condo under $700k'),
+    });
+
+    expect(mocks.after).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith(
+      'log_intelligence_event',
+      expect.objectContaining({
+        p_target_id: 'listing_search',
+        p_metadata: expect.objectContaining({ intentCategory: 'listing_search' }),
+      }),
+    ));
+    expect(JSON.stringify(mocks.rpc.mock.calls[0][1])).not.toContain('Find a condo');
   });
 });

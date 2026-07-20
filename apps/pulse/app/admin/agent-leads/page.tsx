@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { ArrowUpRight, Inbox, Mail, MapPin, Phone, ShieldAlert, UserRound } from 'lucide-react';
+import { ArrowUpRight, ClipboardList, Inbox, Mail, MapPin, Phone, ShieldAlert, UserRound } from 'lucide-react';
+import {
+  getPublicGuideNextStepLabel,
+  publicGuideHandoffBriefSchema,
+  type PublicGuideHandoffBrief,
+} from '@/lib/ai/publicGuideHandoffContract';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -194,6 +199,8 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
     ? `/properties/${encodeURIComponent(lead.listing_mls_id || lead.listing_id || '')}`
     : null;
   const publicSiteHref = getTenantPreviewUrl(lead.site);
+  const guideBriefResult = publicGuideHandoffBriefSchema.safeParse(lead.metadata?.publicGuideBrief);
+  const guideBrief = guideBriefResult.success ? guideBriefResult.data : null;
 
   return (
     <article className={`rounded-[2rem] border p-5 shadow-2xl shadow-black/10 ${
@@ -233,6 +240,8 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
           <p className="mt-5 whitespace-pre-wrap rounded-3xl border border-white/10 bg-slate-950/60 p-5 text-sm leading-7 text-slate-300">
             {lead.message}
           </p>
+
+          {guideBrief ? <PublicGuideBrief brief={guideBrief} /> : null}
 
           {lead.internal_note ? (
             <div className="mt-4 rounded-3xl border border-amber-300/20 bg-amber-300/10 p-4">
@@ -300,6 +309,51 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
       </div>
     </article>
   );
+}
+
+function PublicGuideBrief({ brief }: { brief: PublicGuideHandoffBrief }) {
+  const criteria = formatGuideSearchCriteria(brief);
+
+  return (
+    <section className="mt-5 border-y border-cyan-300/15 py-5">
+      <div className="flex items-center gap-2 text-cyan-200">
+        <ClipboardList size={16} />
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">Jamie Handoff Brief</h3>
+      </div>
+      <p className="mt-3 text-sm leading-7 text-slate-200">{brief.summary}</p>
+      <dl className="mt-4 grid gap-4 text-xs sm:grid-cols-2">
+        <div>
+          <dt className="font-black uppercase tracking-[0.14em] text-cyan-100/45">Requested next step</dt>
+          <dd className="mt-1 text-slate-300">{getPublicGuideNextStepLabel(brief.statedNextStep)}</dd>
+        </div>
+        <div>
+          <dt className="font-black uppercase tracking-[0.14em] text-cyan-100/45">Search criteria</dt>
+          <dd className="mt-1 text-slate-300">{criteria || 'None stated'}</dd>
+        </div>
+        <div>
+          <dt className="font-black uppercase tracking-[0.14em] text-cyan-100/45">Discussed listings</dt>
+          <dd className="mt-1 break-words text-slate-300">{brief.discussedListingIds.join(', ') || 'None verified'}</dd>
+        </div>
+        <div>
+          <dt className="font-black uppercase tracking-[0.14em] text-cyan-100/45">Privacy</dt>
+          <dd className="mt-1 text-slate-300">{brief.conversationTurnCount} turns summarized; raw transcript not stored</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+function formatGuideSearchCriteria(brief: PublicGuideHandoffBrief) {
+  const criteria = brief.searchCriteria;
+  return [
+    ...criteria.locations,
+    criteria.priceMin !== null ? `from $${criteria.priceMin.toLocaleString()}` : null,
+    criteria.priceMax !== null ? `up to $${criteria.priceMax.toLocaleString()}` : null,
+    criteria.bedsMin !== null ? `${criteria.bedsMin}+ beds` : null,
+    criteria.bathsMin !== null ? `${criteria.bathsMin}+ baths` : null,
+    ...criteria.propertyTypes,
+    ...criteria.priorities,
+  ].filter(Boolean).join(' / ');
 }
 
 function StatusBadge({ status }: { status: LeadStatus }) {

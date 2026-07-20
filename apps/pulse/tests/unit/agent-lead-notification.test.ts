@@ -61,6 +61,24 @@ describe('agent site lead notifications', () => {
           mlsId: '21177832',
           name: '13656 County Road 238',
         },
+        guideBrief: {
+          schemaVersion: 1,
+          summary: 'Visitor is comparing a verified listing with a three-bedroom Frisco search.',
+          searchCriteria: {
+            locations: ['Frisco'],
+            priceMin: null,
+            priceMax: 750000,
+            bedsMin: 3,
+            bathsMin: null,
+            propertyTypes: [],
+            priorities: ['commute'],
+          },
+          discussedListingIds: ['21177832'],
+          statedNextStep: 'schedule_tour',
+          conversationTurnCount: 4,
+          generatedBy: 'model',
+          transcriptStored: false,
+        },
       }),
     });
 
@@ -85,6 +103,9 @@ describe('agent site lead notifications', () => {
     });
     expect(body.subject).toContain('New Taz Homes lead');
     expect(body.text).toContain('MLS ID: 21177832');
+    expect(body.text).toContain('Jamie Handoff Brief');
+    expect(body.text).toContain('Requested Next Step: Plan a tour');
+    expect(body.text).toContain('Raw Transcript Stored: No');
     expect(body.text).toContain('Admin Inbox: https://sunsetpulse.test/admin/agent-leads');
   });
 
@@ -150,6 +171,9 @@ function makeSite(input: { leadEmail?: string; agentEmail?: string } = {}): Tena
       hotListMlsIds: ['21177832'],
     },
     sections: [],
+    publicUrl: 'https://taz.sunsetpulse.test',
+    isConfigured: true,
+    isPublished: true,
   };
 }
 

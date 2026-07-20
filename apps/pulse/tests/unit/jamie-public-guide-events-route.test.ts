@@ -4,18 +4,17 @@ vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   applyPublicApiRateLimit: vi.fn(),
-  recordPublicGuideEvent: vi.fn(),
+  schedulePublicGuideEvent: vi.fn(),
 }));
 
 vi.mock('@/lib/core/publicApiRateLimit', () => ({ applyPublicApiRateLimit: mocks.applyPublicApiRateLimit }));
-vi.mock('@/lib/ai/publicGuideTelemetry', () => ({ recordPublicGuideEvent: mocks.recordPublicGuideEvent }));
+vi.mock('@/lib/ai/publicGuideTelemetry', () => ({ schedulePublicGuideEvent: mocks.schedulePublicGuideEvent }));
 
 import { POST } from '@/app/api/jamie/guide/events/route';
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.applyPublicApiRateLimit.mockResolvedValue(null);
-  mocks.recordPublicGuideEvent.mockResolvedValue(undefined);
 });
 
 describe('Jamie public guide event route', () => {
@@ -33,7 +32,7 @@ describe('Jamie public guide event route', () => {
     }));
 
     expect(response.status).toBe(204);
-    expect(mocks.recordPublicGuideEvent).toHaveBeenCalledWith(event);
+    expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(event);
   });
 
   it('rejects arbitrary event names, destinations, and extra visitor content', async () => {
@@ -49,6 +48,6 @@ describe('Jamie public guide event route', () => {
     }));
 
     expect(response.status).toBe(400);
-    expect(mocks.recordPublicGuideEvent).not.toHaveBeenCalled();
+    expect(mocks.schedulePublicGuideEvent).not.toHaveBeenCalled();
   });
 });
