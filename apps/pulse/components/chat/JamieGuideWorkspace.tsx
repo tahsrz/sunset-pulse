@@ -39,12 +39,15 @@ import type {
   PublicGuideClientEventName,
   PublicGuideContext,
   PublicGuideListing,
+  PublicGuideSource,
   PublicGuideUIMessage,
 } from '@/lib/ai/publicGuideContract';
 import {
   PUBLIC_GUIDE_NEXT_STEPS,
   type PublicGuideHandoffInput,
 } from '@/lib/ai/publicGuideHandoffContract';
+
+type PublicGuideMessagePart = PublicGuideUIMessage['parts'][number];
 
 const GUIDE_STARTERS = [
   'Find homes in Frisco under $750,000',
@@ -262,6 +265,8 @@ function GuideMessage({
   onHandoff: () => void;
   onTrack: TrackGuideEvent;
 }) {
+  const parts = safeArray<PublicGuideMessagePart>(message.parts);
+
   return (
     <Message from={message.role}>
       <MessageContent
@@ -269,7 +274,7 @@ function GuideMessage({
           ? 'rounded-lg bg-sky-300 px-4 py-3 font-bold text-slate-950'
           : 'w-full gap-4 overflow-visible text-slate-100'}
       >
-        {message.parts.map((part, index) => {
+        {parts.map((part, index) => {
           if (part.type === 'text') {
             return message.role === 'assistant' ? (
               <MessageResponse
@@ -348,9 +353,12 @@ function GuideActions({
   onHandoff: () => void;
   onTrack: TrackGuideEvent;
 }) {
+  const safeActions = safeArray<PublicGuideAction>(actions);
+  if (!safeActions.length) return null;
+
   return (
     <div className="grid gap-2 pt-1 sm:grid-cols-2">
-      {actions.map((action) => {
+      {safeActions.map((action) => {
         const content = (
           <>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-200/10 text-sky-200">
@@ -404,11 +412,12 @@ function GuideListings({ data, onTrack }: {
   data: PublicGuideDataParts['listings'];
   onTrack: TrackGuideEvent;
 }) {
-  if (!data.properties.length) return null;
+  const properties = safeArray<PublicGuideListing>(data?.properties);
+  if (!properties.length) return null;
 
   return (
     <div className="grid gap-3 pt-1 sm:grid-cols-2">
-      {data.properties.map((property) => (
+      {properties.map((property) => (
         <GuideListingCard key={property.id} property={property} onTrack={onTrack} />
       ))}
     </div>
@@ -456,9 +465,12 @@ function GuideListingCard({ property, onTrack }: {
 }
 
 function GuideSources({ data }: { data: PublicGuideDataParts['sources'] }) {
+  const sources = safeArray<PublicGuideSource>(data?.items);
+  if (!sources.length) return null;
+
   return (
     <div className="flex min-w-0 flex-wrap gap-2 border-t border-white/10 pt-3 text-[11px] text-slate-400">
-      {data.items.map((source) => (
+      {sources.map((source) => (
         <span key={`${source.label}-${source.detail}`} className="inline-flex min-w-0 flex-wrap items-center gap-1.5 break-words">
           <ShieldCheck size={12} className="text-emerald-300" />
           <strong className="text-slate-300">{source.label}</strong>
@@ -627,7 +639,7 @@ function buildHandoffSnapshot(
     .filter((message) => message.role === 'user' || message.role === 'assistant')
     .map((message) => ({
       role: message.role as 'user' | 'assistant',
-      text: message.parts
+      text: safeArray<PublicGuideMessagePart>(message.parts)
         .filter((part) => part.type === 'text')
         .map((part) => part.text.trim())
         .filter(Boolean)
@@ -636,8 +648,10 @@ function buildHandoffSnapshot(
     }))
     .filter((message) => message.text.length > 0)
     .slice(-12);
-  const discussedListingIds = messages.flatMap((message) => message.parts.flatMap((part) => (
-    part.type === 'data-listings' ? part.data.properties.map((listing) => listing.mlsId || listing.id) : []
+  const discussedListingIds = messages.flatMap((message) => safeArray<PublicGuideMessagePart>(message.parts).flatMap((part) => (
+    part.type === 'data-listings'
+      ? safeArray<PublicGuideListing>(part.data?.properties).map((listing) => listing.mlsId || listing.id)
+      : []
   )));
 
   return {
@@ -693,4 +707,8 @@ function HandoffInput({
 
 function formatPrice(price?: number | null) {
   return price ? `$${price.toLocaleString()}` : 'Price on request';
+}
+
+function safeArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : [];
 }

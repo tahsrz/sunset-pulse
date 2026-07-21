@@ -4,7 +4,13 @@ import {
 } from 'ai';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { errorResponse, notFoundResponse, validationErrorResponse } from '@/lib/core/apiResponse';
-import { publicGuideRequestSchema, type PublicGuideUIMessage } from '@/lib/ai/publicGuideContract';
+import {
+  publicGuideRequestSchema,
+  type PublicGuideAction,
+  type PublicGuideListing,
+  type PublicGuideSource,
+  type PublicGuideUIMessage,
+} from '@/lib/ai/publicGuideContract';
 import { runPublicJamieGuide } from '@/lib/ai/publicGuide';
 import { resolvePublicGuideContext } from '@/lib/ai/publicGuideContext';
 import {
@@ -74,29 +80,33 @@ export async function POST(request: Request) {
         writer.write({ type: 'text-delta', id: textId, delta: result.content });
         writer.write({ type: 'text-end', id: textId });
 
+        const listings = safeArray<PublicGuideListing>(result.listings);
+        const actions = safeArray<PublicGuideAction>(result.actions);
+        const sources = safeArray<PublicGuideSource>(result.sources);
+
         if (result.usedListingData) {
           writer.write({
             type: 'data-listings',
             id: `jamie-listings-${crypto.randomUUID()}`,
             data: {
-              properties: result.listings,
+              properties: listings,
               disclaimer: result.content.split('\n\n').slice(-1)[0],
             },
           });
         }
 
-        if (result.actions?.length) {
+        if (actions.length) {
           writer.write({
             type: 'data-actions',
             id: `jamie-actions-${crypto.randomUUID()}`,
-            data: { items: result.actions },
+            data: { items: actions },
           });
         }
 
         writer.write({
           type: 'data-sources',
           id: `jamie-sources-${crypto.randomUUID()}`,
-          data: { items: result.sources },
+          data: { items: sources },
         });
 
         schedulePublicGuideEvent({
@@ -109,7 +119,7 @@ export async function POST(request: Request) {
         if (result.outcome === 'listing_search') {
           schedulePublicGuideEvent({ event: 'tool_used', ...eventContext, toolId: 'search_properties' });
         }
-        if (result.actions.some((action) => action.id === 'contact_agent')) {
+        if (actions.some((action) => action.id === 'contact_agent')) {
           schedulePublicGuideEvent({ event: 'handoff_offered', ...eventContext, actionId: 'contact_agent' });
         }
         if (result.outcome === 'listing_unverified' || result.outcome === 'safe_fallback') {
@@ -148,4 +158,8 @@ export async function POST(request: Request) {
       'X-Robots-Tag': 'noindex',
     },
   });
+}
+
+function safeArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : [];
 }
