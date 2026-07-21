@@ -25,6 +25,13 @@ import { getPublicGuideCuration } from '@/lib/ai/publicGuideCuration';
 import { publicGuideContextInputSchema, type PublicGuideContext } from '@/lib/ai/publicGuideContract';
 import { resolvePublicGuideContext } from '@/lib/ai/publicGuideContext';
 import { getAgentTenantSite } from '@/lib/sites/siteData';
+import {
+  safeAgentMarkets,
+  safeListingAmenities,
+  safeListingImages,
+  safeSiteFeaturedListings,
+  safeSiteSections,
+} from '@/lib/sites/siteRenderGuards';
 import { getJamieGuideUrl, getPublicRootOrigin } from '@/lib/sites/siteUrls';
 import AgentLeadForm from '@/components/sites/AgentLeadForm';
 import { JamieGuideLoader } from '@/components/chat/JamieGuideLoader';
@@ -77,6 +84,7 @@ export async function generateMetadata({ params }: TenantPageProps) {
 
     if (listing && hasUsableRemoteListingImage(listing)) {
       const location = [listing.location.city, listing.location.state].filter(Boolean).join(', ');
+      const listingImages = safeListingImages(listing);
 
       return {
         title: `${listing.name} | ${tenantSite.siteName}`,
@@ -84,7 +92,7 @@ export async function generateMetadata({ params }: TenantPageProps) {
         openGraph: {
           title: `${listing.name} | ${tenantSite.siteName}`,
           description: listing.description || tenantSite.subtitle,
-          images: listing.image_url ? [listing.image_url] : listing.images.slice(0, 1),
+          images: listing.image_url ? [listing.image_url] : listingImages.slice(0, 1),
           type: 'website',
         },
       };
@@ -139,7 +147,7 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
   }
 
   const sections = new Set(
-    tenantSite.sections
+    safeSiteSections(tenantSite)
       .filter((section) => section.visible !== false)
       .map((section) => section.type),
   );
@@ -350,7 +358,9 @@ function AgentSiteHeader({ site }: { site: Awaited<ReturnType<typeof getAgentTen
 }
 
 function AgentHero({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSite>> }) {
-  const marketLabel = site.agentProfile.markets.join(' • ') || 'Local market';
+  const markets = safeAgentMarkets(site);
+  const featuredListings = safeSiteFeaturedListings(site);
+  const marketLabel = markets.join(' • ') || 'Local market';
 
   return (
     <section className="relative overflow-hidden border-b border-white/10">
@@ -408,7 +418,7 @@ function AgentHero({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSit
             <div className="mt-6 grid gap-3">
               <SignalRow icon={<Building2 size={18} />} label="Brokerage" value={site.agentProfile.brokerageName} color={site.primaryColor} />
               <SignalRow icon={<Sparkles size={18} />} label="Assistant" value={site.assistantProfile.displayName} color={site.primaryColor} />
-              <SignalRow icon={<Search size={18} />} label="Featured homes" value={`${site.featuredListings.length} image-backed MLS picks`} color={site.primaryColor} />
+              <SignalRow icon={<Search size={18} />} label="Featured homes" value={`${featuredListings.length} image-backed MLS picks`} color={site.primaryColor} />
               <SignalRow icon={<ShieldCheck size={18} />} label="MLS provider" value={site.integrationProfile.mlsProvider || 'MLS'} color={site.primaryColor} />
             </div>
 
@@ -425,6 +435,8 @@ function AgentHero({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSit
 }
 
 function FeaturedListings({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSite>> }) {
+  const featuredListings = safeSiteFeaturedListings(site);
+
   return (
     <section id="featured" className="border-b border-white/10 px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -438,9 +450,9 @@ function FeaturedListings({ site }: { site: Awaited<ReturnType<typeof getAgentTe
           </p>
         </div>
 
-        {site.featuredListings.length > 0 ? (
+        {featuredListings.length > 0 ? (
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {site.featuredListings.map((listing) => (
+            {featuredListings.map((listing) => (
               <AgentListingCard key={listing.id} listing={listing} color={site.primaryColor} />
             ))}
           </div>
@@ -456,7 +468,7 @@ function FeaturedListings({ site }: { site: Awaited<ReturnType<typeof getAgentTe
 }
 
 function AgentListingCard({ listing, color }: { listing: Listing; color: string }) {
-  const image = listing.image_url || listing.images[0];
+  const image = listing.image_url || safeListingImages(listing)[0];
   const location = [listing.location.city, listing.location.state].filter(Boolean).join(', ');
   const detailHref = `/properties/${encodeURIComponent(listing.mls_id || listing.id)}`;
 
@@ -507,7 +519,8 @@ function AgentListingDetail({
   listing: Listing;
   jamieGuideUrl: string;
 }) {
-  const images = listing.images.length ? listing.images : [listing.image_url].filter(Boolean) as string[];
+  const images = safeListingImages(listing);
+  const amenities = safeListingAmenities(listing);
   const heroImage = images[0];
   const location = [
     listing.location.street,
@@ -591,11 +604,11 @@ function AgentListingDetail({
               {listing.description || 'Property details are available through the listing agent.'}
             </p>
 
-            {listing.amenities.length > 0 ? (
+            {amenities.length > 0 ? (
               <div className="mt-8">
                 <h2 className="text-xl font-black text-white">Highlights</h2>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {listing.amenities.slice(0, 18).map((amenity) => (
+                  {amenities.slice(0, 18).map((amenity) => (
                     <span key={amenity} className="rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-xs font-bold text-cyan-50/80">
                       {amenity}
                     </span>
@@ -652,6 +665,8 @@ function AgentListingDetail({
 }
 
 function AboutAgent({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSite>> }) {
+  const markets = safeAgentMarkets(site);
+
   return (
     <section id="about" className="border-b border-white/10 px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -669,10 +684,10 @@ function AboutAgent({ site }: { site: Awaited<ReturnType<typeof getAgentTenantSi
           <h2 className="mt-3 text-4xl font-black tracking-tight text-white">A simpler path from search to showing.</h2>
           <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">
             {site.agentProfile.displayName} helps buyers and sellers move from online discovery to real decisions with focused listing picks,
-            fast follow-up, and local market context across {site.agentProfile.markets.join(', ') || 'the local market'}.
+            fast follow-up, and local market context across {markets.join(', ') || 'the local market'}.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
-            {site.agentProfile.markets.map((market) => (
+            {markets.map((market) => (
               <span key={market} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-cyan-50/75">
                 {market}
               </span>

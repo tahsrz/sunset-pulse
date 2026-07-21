@@ -101,10 +101,11 @@ export async function getAgentTenantSite(site: string, options: { limit?: number
       { limit: options.limit || 6 },
     )
     : await getTourHotList({ limit: options.limit || 6 });
+  const listings = Array.isArray(result.listings) ? result.listings : [];
 
   return {
     ...tenantSite,
-    featuredListings: result.listings.filter(hasUsableRemoteListingImage),
+    featuredListings: listings.filter(hasUsableRemoteListingImage),
   };
 }
 
