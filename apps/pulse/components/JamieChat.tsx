@@ -11,7 +11,6 @@ import { getJamieDisplayContent } from '@/lib/ai/jamieResponse';
 
 import { useVibe } from '@/context/VibeContext';
 
-// Refactored Sub-components
 import JamieChatMinimized from './chat/JamieChatMinimized';
 import JamieChatHeader from './chat/JamieChatHeader';
 import JamieChatMessageList from './chat/JamieChatMessageList';
@@ -48,14 +47,14 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const isWorkspace = mode === 'workspace';
   const chatApiRoute = apiRoute || (isWorkspace ? '/api/jamie/chat' : '/api/chat');
   const { user, loading: authLoading } = useAuth();
-  const { 
+  const {
     agentId,
     branding,
     assistantProfile,
-    stagedBranding, 
-    confirmBranding, 
-    cancelStaging, 
-    isDevMode, 
+    stagedBranding,
+    confirmBranding,
+    cancelStaging,
+    isDevMode,
     setDevMode,
     isLefthandMode,
     setLefthandMode,
@@ -102,14 +101,14 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   useEffect(() => {
     setMounted(true);
     setMemoryContext(memoryBridge.getGreetingContext());
-    
+
     // Hydrate history from Supabase for cross-device persistence
     const hydrateHistory = async () => {
       const history = await memoryBridge.loadInteractions();
       setPersistentMessages(history);
     };
     hydrateHistory();
-    
+
     if (isWorkspace) {
       setIsMinimized(false);
       return;
@@ -327,35 +326,62 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         }),
       });
 
-      if (!chatResponse.ok) {
-        throw new Error(await chatResponse.text());
+      const contentType = chatResponse.headers.get('content-type') || '';
+      let responseData: any;
+
+      if (contentType.includes('application/json')) {
+        responseData = await chatResponse.json();
+      } else {
+        responseData = await chatResponse.text();
       }
 
-      const contentType = chatResponse.headers.get('content-type') || '';
-      const rawAssistantResponse = contentType.includes('application/json')
-        ? await chatResponse.json()
-        : await chatResponse.text();
-      const assistantContent = getJamieDisplayContent(rawAssistantResponse);
-      const assistantToolResults = rawAssistantResponse && typeof rawAssistantResponse === 'object'
-        ? rawAssistantResponse.tool_results || rawAssistantResponse.toolResults
-        : undefined;
-      const tensorzero = rawAssistantResponse && typeof rawAssistantResponse === 'object'
-        ? rawAssistantResponse.tensorzero
-        : undefined;
 
-      setMessages([...nextMessages, {
+      if (!chatResponse.ok || (typeof responseData === 'object' && responseData?.error)) {
+        const errorMessage =
+          (typeof responseData === 'object' && responseData?.message) ||
+          (typeof responseData === 'string' ? responseData : 'Chat session failed.');
+        throw new Error(errorMessage);
+      }
+
+      const assistantContent = getJamieDisplayContent(responseData);
+      const assistantToolResults =
+        responseData && typeof responseData === 'object'
+          ? responseData.tool_results || responseData.toolResults
+          : undefined;
+      const tensorzero =
+        responseData && typeof responseData === 'object' ? responseData.tensorzero : undefined;
+
+      const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: assistantContent,
         toolResults: assistantToolResults,
         tensorzero,
-      }]);
+      };
+
+      setMessages([...nextMessages, assistantMessage]);
       await handleAction(assistantContent);
-    } catch (error) {
-      console.error('Chat API Error:', error);
-      const assistantContent = 'Assistant Logic Interrupted';
-      setMessages([...nextMessages, { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }]);
-      await memoryBridge.logInteraction({ role: 'assistant', content: assistantContent, timestamp: new Date().toISOString() });
+    } catch (error: any) {
+      console.error('[JamieChat] API Error:', error);
+
+      const errorMessage =
+        typeof error === 'string'
+          ? error
+          : error?.message || 'Assistant Logic Interrupted';
+
+      const fallbackMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `⚠️ ${errorMessage}`,
+      };
+
+      setMessages([...nextMessages, fallbackMessage]);
+
+      await memoryBridge.logInteraction({
+        role: 'assistant',
+        content: fallbackMessage.content,
+        timestamp: new Date().toISOString(),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -381,7 +407,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     }
   }, [mounted, persistentMessages, messages.length]);
 
-  const userMessages = React.useMemo(() => 
+  const userMessages = React.useMemo(() =>
     messages.filter(m => m.role === 'user').map(m => m.content),
     [messages]
   );
@@ -390,7 +416,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     if (e.key === 'ArrowUp') {
       if (userMessages.length === 0) return;
       e.preventDefault();
-      
+
       let newIndex;
       if (historyIndex === -1) {
         setTempInput(input);
@@ -398,7 +424,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       } else {
         newIndex = Math.max(0, historyIndex - 1);
       }
-      
+
       setHistoryIndex(newIndex);
       setInput(userMessages[newIndex]);
     } else if (e.key === 'ArrowDown') {
@@ -418,12 +444,27 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim()) return;
-    const currentInput = input;
+    const currentInput = input.trim();
+    if (!currentInput) return;
+
+    setInput('');
     setHistoryIndex(-1);
 
-    // Log user interaction BEFORE sending
-    await memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
+    const userMsgId = crypto.randomUUID();
+    const userMessage: ChatMessage = {
+      id: userMsgId,
+      role: 'user',
+      content: currentInput,
+    };
+
+    // Immediately reflect user message in the UI
+    setMessages((prev) => [...prev, userMessage]);
+
+    await memoryBridge.logInteraction({
+      role: 'user',
+      content: currentInput,
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       const shieldResponse = await fetch('/api/jamie/shield', {
@@ -431,34 +472,41 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: currentInput }),
       });
-      const shieldPayload = await shieldResponse.json();
-      const security = shieldPayload?.data || shieldPayload;
-      if (security.status === 'BLOCKED') {
-        const assistantMsg = `⚠️ [NOTICE]: ${security.message}`;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
-        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
-        setInput('');
-        return;
+
+      if (shieldResponse.ok) {
+        const shieldPayload = await shieldResponse.json();
+        const security = shieldPayload?.data || shieldPayload;
+
+        if (security?.status === 'BLOCKED' || security?.status === 'RESOLVED_BY_MINI') {
+          const assistantMsg =
+            security.status === 'BLOCKED'
+              ? `⚠️ [NOTICE]: ${security.message}`
+              : security.response;
+
+          // Append ONLY the assistant response (user message is already rendered)
+          setMessages((prev) => [
+            ...prev,
+            { id: crypto.randomUUID(), role: 'assistant', content: assistantMsg },
+          ]);
+
+          await memoryBridge.logInteraction({
+            role: 'assistant',
+            content: assistantMsg,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Post-processing (TTS, Intel Cards, Vibe Context)
+          await handleAction(assistantMsg);
+          return;
+        }
       }
-      if (security.status === 'RESOLVED_BY_MINI') {
-        const assistantMsg = security.response;
-        setMessages([...messages, { id: Date.now().toString(), role: 'user', content: currentInput }, { id: (Date.now() + 1).toString(), role: 'assistant', content: assistantMsg }]);
-        memoryBridge.logInteraction({ role: 'assistant', content: assistantMsg, timestamp: new Date().toISOString() });
-        setInput('');
-        return;
-      }
-      originalHandleSubmit(e);
     } catch (error) {
-      console.error('Submission Error:', error);
-      originalHandleSubmit(e);
+      console.error('[Shield] Bypassed error:', error);
     }
+
+    // Since user message & memory log are already handled above, pass flags accordingly:
+    await sendChatMessage(currentInput, { skipUserLog: true, skipUserAppend: true });
   };
-
-  if (!mounted) return null;
-
-  if (isMinimized && !isWorkspace) {
-    return <JamieChatMinimized onOpen={() => toggleMinimized(false)} isLefthandMode={isLefthandMode} assistantName={assistantProfile.displayName} />;
-  }
 
   const dockSideClass = isLefthandMode ? 'left-2 items-start sm:left-0' : 'right-2 items-end sm:right-0';
   const panelRadiusClass = isWorkspace ? 'rounded-2xl' : isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
@@ -483,12 +531,12 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       )}
 
       <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-slate-900/90 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500 hover:border-blue-500/30 animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 ${panelRadiusClass}`}>
-        <JamieChatHeader 
-          onMinimize={() => isWorkspace ? router.push('/') : toggleMinimized(true)} 
+        <JamieChatHeader
+          onMinimize={() => isWorkspace ? router.push('/') : toggleMinimized(true)}
           isMlsOpen={isMlsOpen}
           onToggleMls={() => setIsMlsOpen((value) => !value)}
-          isLefthandMode={isLefthandMode} 
-          onToggleLefthand={() => setLefthandMode(!isLefthandMode)} 
+          isLefthandMode={isLefthandMode}
+          onToggleLefthand={() => setLefthandMode(!isLefthandMode)}
           isVoiceEnabled={isVoiceEnabled}
           onToggleVoice={() => setVoiceEnabled(!isVoiceEnabled)}
           assistantName={assistantProfile.displayName}
@@ -676,14 +724,14 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           </div>
         )}
 
-        <JamieChatMessageList 
-          messages={messages} 
-          isDevMode={isDevMode} 
-          analytics={analytics} 
-          isLoading={isLoading} 
+        <JamieChatMessageList
+          messages={messages}
+          isDevMode={isDevMode}
+          analytics={analytics}
+          isLoading={isLoading}
         />
 
-        <JamieChatInput 
+        <JamieChatInput
           input={input}
           handleInputChange={handleInputChange}
           handleSubmit={handleSubmit}
