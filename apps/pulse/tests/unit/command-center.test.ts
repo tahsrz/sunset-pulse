@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import { runCommandCenterCommand } from '@/lib/command-center/commandRouter';
 import { buildJamieCommandBridgeContext } from '@/lib/command-center/jamieBridge';
-import { queryMemoryPath, saveCommandActionMemory, saveQueryMemory } from '@/lib/command-center/queryMemory';
+import { queryMemoryPath, recallQueryMemories, saveCommandActionMemory, saveQueryMemory } from '@/lib/command-center/queryMemory';
 import { getSqlsyncCommandJournalSnapshot, sqlsyncCommandJournalPath } from '@/lib/sqlsync/commandJournal';
 import { getTensorZeroCommandEvaluationSnapshot, recordTensorZeroCommandEvaluation } from '@/lib/tensorzero/commandEvaluation';
 import { getTensorZeroFeedbackSnapshot, recordTensorZeroFeedback } from '@/lib/tensorzero/feedback';
@@ -12,6 +12,9 @@ import { getTensorZeroJamieChatSnapshot, recordTensorZeroJamieTurn } from '@/lib
 import { buildTahRelayPlan } from '@/lib/command-center/relayTemplates';
 import { expandCommandTerms } from '@/lib/command-center/synonyms';
 import { chooseWorkerForCommand, intelligenceWorkers } from '@/lib/command-center/workerRoster';
+import { runWorkflowOperation, summarizeWorkflowAttempts } from '@/lib/command-center/workflowReliability';
+import { classifyCommandIntent } from '@/lib/command-center/intentClassifier';
+import { extractListingFacts } from '@/lib/command-center/listingExtractor';
 
 const previousMemoryDisabled = process.env.PULSE_QUERY_MEMORY_DISABLED;
 const previousMemoryPath = process.env.PULSE_QUERY_MEMORY_PATH;
@@ -23,6 +26,20 @@ const previousTensorZeroFeedbackDisabled = process.env.TENSORZERO_FEEDBACK_DISAB
 const previousTensorZeroFeedbackPath = process.env.TENSORZERO_FEEDBACK_PATH;
 const previousTensorZeroJamieDisabled = process.env.TENSORZERO_JAMIE_CHAT_DISABLED;
 const previousTensorZeroJamiePath = process.env.TENSORZERO_JAMIE_CHAT_PATH;
+
+const pastedListingText = [
+  'MLS # 20654321',
+  'List Price $485,000',
+  '1234 Cedar Springs Dr, Dallas, TX 75204',
+  'Single Family Residential',
+  '4 beds 3 baths 2,418 sq ft',
+  'Year Built 1998',
+  'Lot Size 0.21 acres',
+  'Public Remarks: Updated home with open kitchen, mature trees, covered patio, flexible office, and quick access to nearby shops and commute routes.',
+  'Features: hardwood floors, quartz counters, two-car garage, fenced backyard, recent roof, and energy-efficient windows.',
+].join('\n');
+
+const longPastedListingText = `${pastedListingText}\n${'Additional broker remarks and room-level details. '.repeat(40)}`;
 
 afterEach(() => {
   restoreEnv('PULSE_QUERY_MEMORY_DISABLED', previousMemoryDisabled);
@@ -38,6 +55,75 @@ afterEach(() => {
 });
 
 describe('command center routing', () => {
+  it('retries workflow operations and records recovered attempts', async () => {
+    let attempts = 0;
+    const operation = await runWorkflowOperation({
+      node: 'test',
+      operation: 'flaky-tool',
+      maxAttempts: 2
+    }, () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error('temporary failure');
+      return 'ok';
+    });
+
+    expect(operation.value).toBe('ok');
+    expect(operation.trace).toEqual(expect.objectContaining({
+      node: 'test',
+      operation: 'flaky-tool',
+      status: 'success',
+      attempts: 2,
+      retried: true,
+      recovered: true
+    }));
+    expect(summarizeWorkflowAttempts([operation.trace])).toEqual(expect.objectContaining({
+      status: 'ok',
+      retriedOperations: 1
+    }));
+  });
+
+  it('falls back after exhausted workflow retries', async () => {
+    const operation = await runWorkflowOperation({
+      node: 'test',
+      operation: 'offline-tool',
+      maxAttempts: 2,
+      fallback: () => 'fallback',
+      fallbackLabel: 'safe fallback'
+    }, () => {
+      throw new Error('offline');
+    });
+
+    expect(operation.value).toBe('fallback');
+    expect(operation.trace).toEqual(expect.objectContaining({
+      status: 'fallback',
+      attempts: 2,
+      retried: true,
+      recovered: true,
+      fallback: 'safe fallback',
+      error: 'offline'
+    }));
+    expect(summarizeWorkflowAttempts([operation.trace])).toEqual(expect.objectContaining({
+      status: 'degraded',
+      fallbackOperations: 1
+    }));
+  });
+
+  it('marks returned fallback results as degraded workflow attempts', async () => {
+    const operation = await runWorkflowOperation({
+      node: 'test',
+      operation: 'soft-fallback-tool',
+      fallbackResult: (value: { status: string }) => value.status === 'unavailable' ? 'tool unavailable' : false
+    }, () => ({ status: 'unavailable' }));
+
+    expect(operation.trace).toEqual(expect.objectContaining({
+      status: 'fallback',
+      attempts: 1,
+      recovered: true,
+      fallback: 'tool unavailable'
+    }));
+    expect(summarizeWorkflowAttempts([operation.trace]).status).toBe('degraded');
+  });
+
   it('uses domain synonyms when picking narrow workers', () => {
     const terms = expandCommandTerms('Which nearby shops help tell the property story?');
     const worker = chooseWorkerForCommand('Which nearby shops help tell the property story?');
@@ -53,6 +139,32 @@ describe('command center routing', () => {
     expect(chooseWorkerForCommand('Prepare a seller update from market velocity').id).toBe('seller-update');
     expect(chooseWorkerForCommand('Check rural farm yield context for this ranch').id).toBe('yield-intel');
     expect(chooseWorkerForCommand('Tell the local history of Sunset Texas').id).toBe('place-history');
+  });
+
+  it('recognizes a raw pasted listing instead of routing it as a lead command', () => {
+    const worker = chooseWorkerForCommand(pastedListingText);
+    const classification = classifyCommandIntent(pastedListingText);
+    const listingFacts = extractListingFacts(pastedListingText);
+
+    expect(worker.id).toBe('listing-summary');
+    expect(classification).toEqual(expect.objectContaining({
+      intent: 'listing_analysis',
+      workerId: 'listing-summary',
+      requiresListingParse: true,
+    }));
+    expect(listingFacts).toEqual(expect.objectContaining({
+      isListingLike: true,
+      mlsId: '20654321',
+      price: '$485,000',
+      beds: '4',
+      baths: '3',
+      sqft: '2,418',
+    }));
+  });
+
+  it('does not use lead scoring as the ambiguous fallback worker', () => {
+    expect(chooseWorkerForCommand('Can you clean this up?').id).toBe('follow-up-writer');
+    expect(chooseWorkerForCommand('zzzzzz '.repeat(50)).id).toBe('listing-summary');
   });
 
   it('routes developer cartridges to operator workers and relay templates', () => {
@@ -72,6 +184,18 @@ describe('command center routing', () => {
     expect(buildTahRelayPlan(spatial, [{ source: 'spatial_computing.tah', title: 'Spatial', concepts: ['scene', 'interaction'] }]).templateId).toBe('spatial-computing-scene');
   });
 
+  it('keeps common-source relay fallbacks scoped to the selected worker', () => {
+    const neighborhood = intelligenceWorkers.find((candidate) => candidate.id === 'neighborhood-explainer')!;
+    const plan = buildTahRelayPlan(neighborhood, [{
+      source: 'agent_brand.tah',
+      title: 'Agent Brand',
+      concepts: ['tone'],
+      matchReason: 'common source'
+    }]);
+
+    expect(plan.templateId).toBe('neighborhood-field-guide');
+  });
+
   it('runs commands through a worker, relay plan, and provenance screen without query memory', async () => {
     process.env.PULSE_QUERY_MEMORY_DISABLED = 'true';
     process.env.PULSE_QUERY_MEMORY_PATH = path.join(os.tmpdir(), `pulse-query-memory-${Date.now()}.tah`);
@@ -89,11 +213,23 @@ describe('command center routing', () => {
     expect(response.result.deliverable.copyReadyText).toContain('Visual idea:');
     expect(response.result.deliverable.copyReadyText).toContain('From:');
     expect(response.result.relayPlan.finalScreen.sourceCards.length).toBeGreaterThan(0);
-    expect(response.result.relayPlan.finalScreen.learned.join(' ')).toContain('main files');
+    expect(response.result.relayPlan.finalScreen.learned.join(' ')).toContain('main context');
     expect(response.trace.queryMemory).toEqual(expect.objectContaining({
       status: 'disabled',
       saved: false,
       recalled: 0
+    }));
+    expect(response.trace.workflow).toEqual(expect.objectContaining({
+      failedOperations: 0
+    }));
+    expect(response.trace.workflow?.attempts.map((attempt) => attempt.operation)).toEqual(expect.arrayContaining([
+      'query-memory-recall',
+      'atlas-context-retrieval',
+      'worker-result',
+      'query-memory-save'
+    ]));
+    expect(response.trace.progress?.find((item) => item.id === 'supervisor')).toEqual(expect.objectContaining({
+      status: 'queued'
     }));
     expect(fs.existsSync(queryMemoryPath())).toBe(false);
   });
@@ -141,6 +277,96 @@ describe('command center routing', () => {
     }));
   });
 
+  it('does not recall stale same-worker memory without command overlap', () => {
+    const filePath = path.join(os.tmpdir(), `pulse-query-memory-stale-${Date.now()}.tah`);
+    process.env.PULSE_QUERY_MEMORY_PATH = filePath;
+    process.env.PULSE_QUERY_MEMORY_DISABLED = 'false';
+
+    const worker = intelligenceWorkers.find((candidate) => candidate.id === 'follow-up-writer')!;
+    const relayPlan = buildTahRelayPlan(worker, [], 'script');
+    saveQueryMemory({
+      commandId: 'cmd_stale_follow_up',
+      command: 'Write a buyer follow-up about financing timing',
+      intent: 'FOLLOW_UP',
+      worker,
+      relayPlan,
+      sources: [{ source: 'lead_history.tah', concepts: ['lead', 'buyer'], matchReason: 'test' }],
+      summary: 'A financing follow-up was prepared.',
+      actions: ['Ask about loan timing.']
+    });
+
+    expect(recallQueryMemories('Rewrite this sentence so it sounds warmer', worker)).toEqual([]);
+    expect(recallQueryMemories('Write another buyer financing follow-up', worker).length).toBe(1);
+  });
+
+  it('handles pasted listing text longer than the old short command limit', async () => {
+    process.env.PULSE_QUERY_MEMORY_DISABLED = 'true';
+    process.env.PULSE_QUERY_MEMORY_PATH = path.join(os.tmpdir(), `pulse-query-memory-listing-${Date.now()}.tah`);
+
+    expect(longPastedListingText.length).toBeGreaterThan(600);
+
+    const response = await runCommandCenterCommand({
+      command: longPastedListingText,
+      relayMode: 'briefing',
+      supervisor: true,
+    });
+
+    expect(response.worker.id).toBe('listing-summary');
+    expect(response.result.summary).toContain('pasted listing');
+    expect(response.result.summary.length).toBeLessThan(600);
+    expect(response.intent).toBe('listing_analysis');
+    expect(response.trace.classification).toEqual(expect.objectContaining({
+      intent: 'listing_analysis',
+      workerId: 'listing-summary',
+      requiresListingParse: true,
+    }));
+    expect(response.trace.listingFacts).toEqual(expect.objectContaining({
+      isListingLike: true,
+      price: '$485,000',
+      beds: '4',
+      baths: '3',
+      sqft: '2,418',
+    }));
+    expect(response.trace.contextBudget).toEqual(expect.objectContaining({
+      intent: 'listing_analysis',
+      totalKept: expect.any(Number),
+      estimatedChars: expect.any(Number),
+    }));
+    expect(response.trace.progress?.map((item) => item.id)).toEqual([
+      'classified',
+      'worker',
+      'listing',
+      'context',
+      'answer',
+      'supervisor',
+    ]);
+  });
+
+  it('keeps internal TAH language out of user-facing command output', async () => {
+    process.env.PULSE_QUERY_MEMORY_DISABLED = 'true';
+
+    const response = await runCommandCenterCommand({
+      command: pastedListingText,
+      relayMode: 'briefing',
+      supervisor: true,
+    });
+    const visibleOutput = [
+      response.result.summary,
+      response.result.deliverable.copyReadyText,
+      response.result.deliverable.sourceSummary,
+      response.result.relayPlan.finalScreen.title,
+      response.result.relayPlan.finalScreen.instruction,
+      response.result.relayPlan.finalScreen.learned.join(' '),
+      response.result.relayPlan.finalScreen.sourceCards.map((card) => `${card.source} ${card.matchReason}`).join(' '),
+    ].join('\n');
+
+    expect(visibleOutput).not.toMatch(/\bcapsule\b/i);
+    expect(visibleOutput).not.toMatch(/TAH Router/i);
+    expect(visibleOutput).not.toMatch(/\b[a-z0-9_]+\.(tah|hat)\b/i);
+    expect(visibleOutput).toContain('Listing details');
+    expect(visibleOutput).toContain('main context');
+  });
+
   it('builds a plain Jamie helper bridge and saves the chat turn locally', async () => {
     const filePath = path.join(os.tmpdir(), `pulse-query-memory-jamie-${Date.now()}.tah`);
     process.env.PULSE_QUERY_MEMORY_PATH = filePath;
@@ -150,7 +376,7 @@ describe('command center routing', () => {
 
     expect(bridge?.command.worker.id).toBe('follow-up-writer');
     expect(bridge?.context).toContain('Helper picked:');
-    expect(bridge?.context).toContain('Files to lean on:');
+    expect(bridge?.context).toContain('Context to lean on:');
     expect(bridge?.context).toContain('saved locally');
     expect(bridge?.context).not.toContain('TAH Router');
     expect(fs.readFileSync(filePath, 'utf8')).toContain('TYPE: sunset_pulse_query_memory');

@@ -10,54 +10,70 @@ import {
 } from '@/lib/sites/launchKit';
 
 export async function readSiteConfig(agentId?: string | null) {
-  if (agentId) {
-    const supabaseRow = await readSupabaseSiteConfig(agentId);
-    if (supabaseRow) return supabaseRow;
+  const targetAgentId = agentId || createDefaultLaunchKit(agentId).agentId;
+  const [supabaseRow, mongoRow] = await Promise.all([
+    readSupabaseSiteConfig(targetAgentId),
+    readMongoSiteConfig(targetAgentId),
+  ]);
 
-    const mongoRow = await readMongoSiteConfig(agentId);
-    if (mongoRow) return mongoRow;
-  }
-
-  const fallback = createDefaultLaunchKit(agentId);
-  const fallbackSupabaseRow = await readSupabaseSiteConfig(fallback.agentId);
-  if (fallbackSupabaseRow) return fallbackSupabaseRow;
-
-  return readMongoSiteConfig(fallback.agentId);
+  return chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
 }
 
 export async function readSiteConfigByOwnerUser(userId?: string | null) {
   const normalizedUserId = String(userId || '').trim();
   if (!normalizedUserId) return null;
 
-  const supabaseRow = await readSupabaseSiteConfigByOwnerUser(normalizedUserId);
-  if (supabaseRow) return supabaseRow;
+  const [supabaseRow, mongoRow] = await Promise.all([
+    readSupabaseSiteConfigByOwnerUser(normalizedUserId),
+    readMongoSiteConfigByOwnerUser(normalizedUserId),
+  ]);
 
-  return readMongoSiteConfigByOwnerUser(normalizedUserId);
+  return chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
+}
+
+export async function readSiteConfigByStripeSubscriptionId(subscriptionId?: string | null) {
+  const normalizedSubscriptionId = String(subscriptionId || '').trim();
+  if (!normalizedSubscriptionId) return null;
+
+  const [supabaseRow, mongoRow] = await Promise.all([
+    readSupabaseSiteConfigByStripeSubscriptionId(normalizedSubscriptionId),
+    readMongoSiteConfigByStripeSubscriptionId(normalizedSubscriptionId),
+  ]);
+
+  return chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
 }
 
 export async function readExpiredPastDueSiteConfigs(nowIso = new Date().toISOString(), limit = 50) {
-  const rowsByAgentId = new Map<string, unknown>();
+  const candidateAgentIds = new Set<string>();
 
   for (const row of await readSupabaseExpiredPastDueSiteConfigs(nowIso, limit)) {
-    const agentId = typeof (row as any)?.agent_id === 'string' ? (row as any).agent_id : '';
-    if (agentId) rowsByAgentId.set(agentId, row);
+    const agentId = getSiteConfigAgentId(row);
+    if (agentId) candidateAgentIds.add(agentId);
   }
 
   for (const row of await readMongoExpiredPastDueSiteConfigs(nowIso, limit)) {
-    const agentId = typeof (row as any)?.agentId === 'string' ? (row as any).agentId : '';
-    if (agentId && !rowsByAgentId.has(agentId)) rowsByAgentId.set(agentId, row);
+    const agentId = getSiteConfigAgentId(row);
+    if (agentId) candidateAgentIds.add(agentId);
   }
 
-  return Array.from(rowsByAgentId.values()).slice(0, limit);
+  const currentRows = await Promise.all(
+    Array.from(candidateAgentIds).map((candidateAgentId) => readSiteConfig(candidateAgentId)),
+  );
+
+  return currentRows
+    .filter((row) => isExpiredPastDueSiteConfig(row, nowIso))
+    .sort((a, b) => getGracePeriodEndsAtMs(a) - getGracePeriodEndsAtMs(b))
+    .slice(0, limit);
 }
 
 export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
   const savedStores: string[] = [];
+  const updatedAt = new Date().toISOString();
 
   try {
     const { error } = await supabaseAdmin
       .from('site_config')
-      .upsert(toSiteConfigSupabaseRecord(kit, updatedBy), { onConflict: 'agent_id' });
+      .upsert(toSiteConfigSupabaseRecord(kit, updatedBy, updatedAt), { onConflict: 'agent_id' });
 
     if (error) {
       console.warn('[SITE_CONFIG_SUPABASE_WRITE]', error.message);
@@ -72,7 +88,7 @@ export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
     await connectDB();
     await SiteConfig.findOneAndUpdate(
       { agentId: kit.agentId },
-      toSiteConfigMongoRecord(kit, updatedBy),
+      toSiteConfigMongoRecord(kit, updatedBy, updatedAt),
       { upsert: true, new: true },
     );
     savedStores.push('mongo');
@@ -116,6 +132,10 @@ async function readSupabaseSiteConfigByOwnerUser(userId: string) {
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    if (ownerResult.error) {
+      console.warn('[SITE_CONFIG_SUPABASE_OWNER_ID_READ]', ownerResult.error.message);
+    }
 
     if (ownerResult.data && !ownerResult.error) return ownerResult.data;
 
@@ -164,6 +184,40 @@ async function readMongoSiteConfigByOwnerUser(userId: string) {
   }
 }
 
+async function readSupabaseSiteConfigByStripeSubscriptionId(subscriptionId: string) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('site_config')
+      .select('*')
+      .filter('billing_profile->>stripeSubscriptionId', 'eq', subscriptionId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[SITE_CONFIG_SUPABASE_STRIPE_SUBSCRIPTION_READ]', error.message);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.warn('[SITE_CONFIG_SUPABASE_STRIPE_SUBSCRIPTION_READ_FALLBACK]', error);
+    return null;
+  }
+}
+
+async function readMongoSiteConfigByStripeSubscriptionId(subscriptionId: string) {
+  try {
+    await connectDB();
+    return await SiteConfig.findOne({
+      'billingProfile.stripeSubscriptionId': subscriptionId,
+    }).sort({ updatedAt: -1 }).lean();
+  } catch (error) {
+    console.warn('[SITE_CONFIG_MONGO_STRIPE_SUBSCRIPTION_READ_FALLBACK]', error);
+    return null;
+  }
+}
+
 async function readSupabaseExpiredPastDueSiteConfigs(nowIso: string, limit: number) {
   try {
     const { data, error } = await supabaseAdmin
@@ -197,4 +251,72 @@ async function readMongoExpiredPastDueSiteConfigs(nowIso: string, limit: number)
     console.warn('[SITE_CONFIG_MONGO_EXPIRED_GRACE_READ_FALLBACK]', error);
     return [];
   }
+}
+
+function chooseFreshestSiteConfigRow<TSupabase, TMongo>(supabaseRow: TSupabase | null, mongoRow: TMongo | null) {
+  if (!supabaseRow) return mongoRow;
+  if (!mongoRow) return supabaseRow;
+
+  const supabaseFreshness = getSiteConfigFreshnessMs(supabaseRow);
+  const mongoFreshness = getSiteConfigFreshnessMs(mongoRow);
+
+  if (mongoFreshness !== null && (supabaseFreshness === null || mongoFreshness > supabaseFreshness)) {
+    return mongoRow;
+  }
+
+  return supabaseRow;
+}
+
+function getSiteConfigAgentId(row: unknown) {
+  const value = row as any;
+  return typeof value?.agent_id === 'string' ? value.agent_id : typeof value?.agentId === 'string' ? value.agentId : '';
+}
+
+function getSiteConfigFreshnessMs(row: unknown) {
+  const value = row as any;
+  const times = [
+    toTime(value?.updated_at),
+    toTime(value?.updatedAt),
+    getLatestProvisioningAuditMs(value?.provisioning_audit || value?.provisioningAudit),
+  ].filter((time): time is number => time !== null);
+
+  if (times.length === 0) return null;
+  return Math.max(...times);
+}
+
+function getLatestProvisioningAuditMs(value: unknown) {
+  if (!Array.isArray(value)) return null;
+
+  const times = value
+    .map((event) => toTime((event as any)?.occurredAt))
+    .filter((time): time is number => time !== null);
+
+  if (times.length === 0) return null;
+  return Math.max(...times);
+}
+
+function isExpiredPastDueSiteConfig(row: unknown, nowIso: string) {
+  if (!row) return false;
+  const billingProfile = (row as any)?.billing_profile || (row as any)?.billingProfile || {};
+  if (billingProfile.billingStatus !== 'past_due') return false;
+
+  const gracePeriodEndsAt = toTime(billingProfile.gracePeriodEndsAt);
+  const now = toTime(nowIso);
+  return gracePeriodEndsAt !== null && now !== null && gracePeriodEndsAt < now;
+}
+
+function getGracePeriodEndsAtMs(row: unknown) {
+  const billingProfile = (row as any)?.billing_profile || (row as any)?.billingProfile || {};
+  return toTime(billingProfile.gracePeriodEndsAt) || Number.MAX_SAFE_INTEGER;
+}
+
+function toTime(value: unknown) {
+  if (value instanceof Date) {
+    const time = value.getTime();
+    return Number.isFinite(time) ? time : null;
+  }
+
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
 }

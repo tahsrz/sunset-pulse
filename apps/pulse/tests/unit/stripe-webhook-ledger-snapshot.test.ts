@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const ledgerMocks = vi.hoisted(() => ({
   connectDB: vi.fn(),
   supabaseInserts: [] as any[],
+  supabaseUpdates: [] as any[],
   mongoCreates: [] as any[],
   supabaseAdmin: {
     from: vi.fn(),
@@ -32,6 +33,7 @@ describe('Stripe webhook ledger payload snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ledgerMocks.supabaseInserts.length = 0;
+    ledgerMocks.supabaseUpdates.length = 0;
     ledgerMocks.mongoCreates.length = 0;
     ledgerMocks.connectDB.mockResolvedValue(undefined);
     ledgerMocks.StripeWebhookEvent.findOne.mockReturnValue({
@@ -52,6 +54,12 @@ describe('Stripe webhook ledger payload snapshots', () => {
       insert: vi.fn(async (payload) => {
         ledgerMocks.supabaseInserts.push(payload);
         return { error: null };
+      }),
+      update: vi.fn((payload) => {
+        ledgerMocks.supabaseUpdates.push(payload);
+        return {
+          eq: vi.fn(async () => ({ error: null })),
+        };
       }),
     });
   });
@@ -110,5 +118,34 @@ describe('Stripe webhook ledger payload snapshots', () => {
     expect(JSON.stringify(supabaseSnapshot)).not.toContain('Jamie Buyer');
     expect(JSON.stringify(supabaseSnapshot)).not.toContain('123 Main Street');
     expect(JSON.stringify(supabaseSnapshot)).not.toContain('secretNote');
+  });
+
+  it('settles a freshly inserted Supabase claim when Mongo reports the event as duplicate', async () => {
+    ledgerMocks.StripeWebhookEvent.create.mockRejectedValueOnce({ code: 11000 });
+
+    const claim = await claimStripeWebhookEvent({
+      id: 'evt_partial_duplicate',
+      type: 'checkout.session.completed',
+      livemode: false,
+      created: 1784318400,
+      data: {
+        object: {
+          id: 'cs_partial_duplicate',
+          object: 'checkout.session',
+          metadata: {},
+        },
+      },
+    } as any);
+
+    expect(claim).toEqual({
+      shouldProcess: false,
+      reason: 'duplicate_event',
+      eventId: 'evt_partial_duplicate',
+      stores: ['mongo', 'supabase'],
+    });
+    expect(ledgerMocks.supabaseUpdates).toContainEqual(expect.objectContaining({
+      status: 'succeeded',
+      error_message: 'Duplicate event already claimed by another webhook ledger store.',
+    }));
   });
 });

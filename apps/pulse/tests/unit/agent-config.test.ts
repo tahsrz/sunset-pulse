@@ -13,7 +13,7 @@ describe('agentConfig', () => {
   });
 
   it('uses a configured public default agent id', () => {
-    expect(getDefaultAgentId({ NEXT_PUBLIC_DEFAULT_AGENT_ID: 'Agent-One' } as NodeJS.ProcessEnv)).toBe('agent-one');
+    expect(getDefaultAgentId({ NEXT_PUBLIC_DEFAULT_AGENT_ID: 'Agent-One' } as unknown as NodeJS.ProcessEnv)).toBe('agent-one');
   });
 
   it('normalizes valid ids and rejects unsafe ids', () => {
@@ -26,7 +26,7 @@ describe('agentConfig', () => {
     expect(
       getAgentIdFromInput(
         { agentId: 'Listing-Pro' },
-        { NEXT_PUBLIC_DEFAULT_AGENT_ID: 'default-agent' } as NodeJS.ProcessEnv,
+        { NEXT_PUBLIC_DEFAULT_AGENT_ID: 'default-agent' } as unknown as NodeJS.ProcessEnv,
       ),
     ).toBe('listing-pro');
   });

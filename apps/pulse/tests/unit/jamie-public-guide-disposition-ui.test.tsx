@@ -30,8 +30,20 @@ describe('Jamie public guide disposition UI', () => {
   it('submits only a fixed selected lead outcome', async () => {
     render(
       <AgentLeadActions
-        leadId="11111111-1111-4111-8111-111111111111"
-        status="new"
+        lead={{
+          id: '11111111-1111-4111-8111-111111111111',
+          agent_id: 'broker-one',
+          site: 'broker-one',
+          name: 'Jamie Lead',
+          email: 'lead@example.test',
+          phone: '',
+          message: '',
+          source: 'jamie_public_guide',
+          status: 'new',
+          internal_note: '',
+          metadata: {},
+          created_at: '2026-07-24T12:00:00.000Z',
+        }}
         publicGuideDisposition="unassigned"
       />,
     );

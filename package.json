@@ -31,7 +31,7 @@
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
   "dependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "6.0.2"
   },
   "devDependencies": {
     "next": "^15.5.16",

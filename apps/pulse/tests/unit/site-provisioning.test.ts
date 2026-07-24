@@ -36,6 +36,7 @@ import {
 
 describe('site provisioning', () => {
   beforeEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     storeMocks.readSiteConfig.mockResolvedValue(null);
     storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([]);
@@ -125,6 +126,72 @@ describe('site provisioning', () => {
     expect(result.kit.integrationProfile.leadEmail).toBe('leads@example.test');
   });
 
+  it('refreshes interrupted billing from checkout when Stripe status is missing', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-23T12:00:00.000Z'));
+    const existing = {
+      ...createDefaultLaunchKit('broker-one'),
+      ownerId: 'user-1',
+      billingProfile: {
+        userId: 'user-1',
+        billingStatus: 'canceled',
+        stripeCustomerId: 'cus_old',
+        stripeSubscriptionId: 'sub_old',
+        trialEndsAt: '2026-06-01T00:00:00.000Z',
+      },
+    };
+    storeMocks.readSiteConfig.mockResolvedValue(existing);
+
+    const result = await provisionPaidAgentSite({
+      agentId: 'broker-one',
+      userId: 'user-1',
+      stripeCustomerId: 'cus_old',
+      stripeSubscriptionId: 'sub_new',
+      stripeCheckoutSessionId: 'cs_new',
+    });
+
+    expect(result.kit.billingProfile.billingStatus).toBe('trialing');
+    expect(result.kit.billingProfile.trialEndsAt).toBe('2026-10-21T12:00:00.000Z');
+    expect(result.kit.billingProfile.stripeSubscriptionId).toBe('sub_new');
+  });
+
+  it('rejects existing-site checkout refreshes from a different owner', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createDefaultLaunchKit('broker-one'),
+      ownerId: 'user-1',
+      billingProfile: {
+        userId: 'user-1',
+        billingStatus: 'active',
+        stripeCustomerId: 'cus_123',
+      },
+    });
+
+    await expect(provisionPaidAgentSite({
+      agentId: 'broker-one',
+      userId: 'user-2',
+      stripeCustomerId: 'cus_456',
+      stripeSubscriptionId: 'sub_new',
+    })).rejects.toThrow('Stripe checkout user does not own the existing agent site.');
+    expect(storeMocks.saveSiteConfig).not.toHaveBeenCalled();
+  });
+
+  it('does not fail provisioning after a successful save when buyer notification throws', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    storeMocks.notifyBuyerSiteProvisioned.mockRejectedValue(new Error('email offline'));
+
+    const result = await provisionPaidAgentSite({
+      userId: 'user_123',
+      ownerName: 'Mina Patel',
+      email: 'mina@example.test',
+      stripeCheckoutSessionId: 'cs_test_123',
+    });
+
+    expect(result.created).toBe(true);
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('[SITE_PROVISIONING_BUYER_EMAIL_THROWN]', expect.any(Error));
+    warnSpy.mockRestore();
+  });
+
   it('suspends an existing provisioned site when the subscription ends', async () => {
     storeMocks.readSiteConfig.mockResolvedValue(createDefaultLaunchKit('broker-one'));
 
@@ -138,6 +205,7 @@ describe('site provisioning', () => {
       action: 'customer.subscription.deleted',
       billingStatus: 'canceled',
       siteStatus: 'suspended',
+      previousSiteStatus: 'draft',
     }));
     expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(
       expect.objectContaining({ agentId: 'broker-one', status: 'suspended' }),
@@ -257,6 +325,64 @@ describe('site provisioning', () => {
     }));
   });
 
+  it('reactivates a ready site when billing recovers after subscription deletion', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createReadyApprovedKit('broker-one'),
+      status: 'suspended',
+      billingProfile: {
+        billingStatus: 'canceled',
+        stripeSubscriptionId: 'sub_123',
+      },
+      provisioningAudit: [
+        {
+          id: 'evt_deleted',
+          occurredAt: new Date(Date.now() - 60_000).toISOString(),
+          action: 'customer.subscription.deleted',
+          source: 'stripe-subscription',
+          status: 'succeeded',
+          message: 'Stripe subscription ended; agent site access was suspended.',
+          actor: 'stripe-webhook',
+          stripeSubscriptionId: 'sub_123',
+          billingStatus: 'canceled',
+          previousSiteStatus: 'active',
+          siteStatus: 'suspended',
+        },
+      ],
+    });
+
+    const result = await updateProvisionedAgentSiteBilling({
+      agentId: 'broker-one',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'active',
+      source: 'stripe-subscription-updated',
+    });
+
+    expect(result?.kit.status).toBe('active');
+    expect(result?.kit.billingProfile.billingStatus).toBe('active');
+  });
+
+  it('does not fail billing updates after a successful save when notifications throw', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    storeMocks.notifyBuyerSiteBillingUpdate.mockRejectedValue(new Error('email offline'));
+    storeMocks.readSiteConfig.mockResolvedValue({
+      ...createReadyApprovedKit('broker-one'),
+      status: 'active',
+    });
+
+    const result = await updateProvisionedAgentSiteBilling({
+      agentId: 'broker-one',
+      email: 'agent@example.test',
+      stripeSubscriptionId: 'sub_123',
+      billingStatus: 'past_due',
+      source: 'stripe-subscription-updated',
+    });
+
+    expect(result?.kit.billingProfile.billingStatus).toBe('past_due');
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('[SITE_BILLING_NOTIFICATION_THROWN]', expect.any(Error));
+    warnSpy.mockRestore();
+  });
+
   it('keeps a recovered approved site in draft when billing interrupted draft setup', async () => {
     storeMocks.readSiteConfig.mockResolvedValue({
       ...createReadyApprovedKit('broker-one'),
@@ -365,6 +491,31 @@ describe('site provisioning', () => {
       }),
       publicUrl: expect.any(String),
     }));
+  });
+
+  it('does not fail grace expiration after a successful save when notifications throw', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const expiredGrace = new Date(Date.now() - 60_000).toISOString();
+    storeMocks.notifyBuyerSiteGraceExpired.mockRejectedValue(new Error('email offline'));
+    storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([{
+      ...createReadyApprovedKit('broker-one'),
+      status: 'active',
+      billingProfile: {
+        billingStatus: 'past_due',
+        stripeSubscriptionId: 'sub_123',
+        gracePeriodEndsAt: expiredGrace,
+      },
+    }]);
+
+    const result = await expirePastDueGracePeriods({
+      now: new Date(),
+      source: 'site-billing-grace-cron',
+    });
+
+    expect(result.expired).toBe(1);
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('[SITE_GRACE_EXPIRED_NOTIFICATION_THROWN]', expect.any(Error));
+    warnSpy.mockRestore();
   });
 });
 

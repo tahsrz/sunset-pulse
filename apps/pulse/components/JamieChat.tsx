@@ -299,17 +299,20 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     setInput(event.target.value);
   };
 
-  const sendChatMessage = async (content: string, options?: { logUser?: boolean }) => {
+  const sendChatMessage = async (
+    content: string,
+    options?: { logUser?: boolean; skipUserLog?: boolean; skipUserAppend?: boolean }
+  ) => {
     const currentInput = content.trim();
     if (!currentInput) return;
 
-    if (options?.logUser) {
+    if (options?.logUser && !options.skipUserLog) {
       await memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
     }
 
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: currentInput };
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    const nextMessages = options?.skipUserAppend ? messages : [...messages, userMessage];
+    if (!options?.skipUserAppend) setMessages(nextMessages);
     setInput('');
     setIsLoading(true);
 

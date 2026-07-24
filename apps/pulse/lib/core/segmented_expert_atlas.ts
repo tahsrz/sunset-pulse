@@ -306,8 +306,16 @@ export class SegmentedExpertAtlasRetriever {
       ? tahSource
       : fs.readFileSync(tahSource || pairedTahPath(String(hatSource)));
 
+    if (this.hat.length < EXPERT_ATLAS_HEADER_SIZE) {
+      throw new Error('Invalid segmented expert atlas header.');
+    }
+
     if (this.hat.readUInt32LE(0) !== EXPERT_ATLAS_MAGIC) {
       throw new Error('Invalid segmented expert atlas header.');
+    }
+
+    if (this.hat.readUInt16LE(4) !== EXPERT_ATLAS_VERSION) {
+      throw new Error('Unsupported segmented expert atlas version.');
     }
 
     this.expertCount = this.hat.readUInt32LE(8);
@@ -319,11 +327,27 @@ export class SegmentedExpertAtlasRetriever {
     this.titleLength = this.hat.readUInt32LE(48);
     this.linkOffset = Number(this.hat.readBigUInt64LE(56));
     this.linkLength = this.hat.readUInt32LE(64);
+    this.validateLayout();
     this.loadTitleMap();
   }
 
   public search(query: ExpertAtlasSearchQuery): ExpertAtlasSearchResponse {
     const plan = this.buildQueryPlan(query);
+    if (this.expertCount === 0 || this.segmentCount === 0) {
+      return {
+        results: [],
+        diagnostics: {
+          totalSegments: this.segmentCount,
+          visitedSegments: 0,
+          rejectedSegments: 0,
+          candidateExperts: 0,
+          linkedExperts: 0,
+          payloadReads: 0,
+          routeIndex: -1
+        }
+      };
+    }
+
     const routeIndex = this.findRouteSegment(plan.key);
     const selectedSegments = this.collectCandidateSegments(plan, routeIndex);
     const expertScores = new Map<number, number>();
@@ -589,6 +613,10 @@ export class SegmentedExpertAtlasRetriever {
   }
 
   private readSegment(index: number): SegmentMeta {
+    if (index < 0 || index >= this.segmentCount) {
+      throw new Error(`Segmented expert atlas segment ${index} is out of range.`);
+    }
+
     const offset = this.segmentOffset + index * EXPERT_ATLAS_SEGMENT_SIZE;
     return {
       keyMin: this.hat.readBigUInt64LE(offset),
@@ -607,6 +635,10 @@ export class SegmentedExpertAtlasRetriever {
   }
 
   private readExpert(index: number): ExpertMeta {
+    if (index < 0 || index >= this.expertCount) {
+      throw new Error(`Segmented expert atlas expert ${index} is out of range.`);
+    }
+
     const offset = this.expertOffset + index * EXPERT_ATLAS_ENTRY_SIZE;
     return {
       expertId: this.hat.readUInt32LE(offset),
@@ -646,6 +678,10 @@ export class SegmentedExpertAtlasRetriever {
 
   private readPayload(meta: ExpertMeta) {
     const start = Number(meta.payloadOffset);
+    if (!Number.isSafeInteger(start) || start < 0 || start + meta.payloadLength > this.tah.length) {
+      throw new Error(`Segmented expert atlas payload for expert ${meta.expertId} is out of range.`);
+    }
+
     const data = this.tah.slice(start, start + meta.payloadLength);
     return data.toString('utf-8').replace(/\0+$/g, '').trim();
   }
@@ -659,6 +695,20 @@ export class SegmentedExpertAtlasRetriever {
       source: row.source,
       concepts: row.concepts || []
     }));
+  }
+
+  private validateLayout() {
+    const segmentTableLength = this.segmentCount * EXPERT_ATLAS_SEGMENT_SIZE;
+    const expertTableLength = this.expertCount * EXPERT_ATLAS_ENTRY_SIZE;
+
+    assertHatRange(this.segmentOffset, segmentTableLength, this.hat.length, 'segment table');
+    assertHatRange(this.expertOffset, expertTableLength, this.hat.length, 'expert table');
+    assertHatRange(this.linkOffset, this.linkLength, this.hat.length, 'link table');
+    assertHatRange(this.titleOffset, this.titleLength, this.hat.length, 'title table');
+
+    if (this.segmentSize < 1) {
+      throw new Error('Invalid segmented expert atlas segment size.');
+    }
   }
 }
 
@@ -1116,6 +1166,19 @@ function compareBigInt(a: bigint, b: bigint) {
 
 function absBigInt(value: bigint) {
   return value < 0n ? -value : value;
+}
+
+function assertHatRange(offset: number, length: number, totalLength: number, label: string) {
+  const end = offset + length;
+  if (
+    !Number.isSafeInteger(offset)
+    || !Number.isSafeInteger(length)
+    || offset < EXPERT_ATLAS_HEADER_SIZE
+    || length < 0
+    || end > totalLength
+  ) {
+    throw new Error(`Invalid segmented expert atlas ${label} range.`);
+  }
 }
 
 function clamp01(value: number) {

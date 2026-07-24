@@ -153,7 +153,7 @@ function listing(id: string, overrides: Record<string, any> = {}) {
     amenities: [],
     price: 650000,
     list_price: 650000,
-    price_type: 'sale',
+    price_type: 'sale' as const,
     rates: {},
     images: overrides.images ?? ['https://cdn.example.test/default.jpg'],
     image_url: overrides.images?.[0] || null,

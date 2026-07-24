@@ -5,6 +5,7 @@ import { stageSqlsyncCommandMutation, type SqlsyncJournalTrace } from '@/lib/sql
 import type { IntelligenceWorker } from './workerRoster';
 import type { TahRelayPlan } from './relayTemplates';
 import type { SaveCommandActionInput } from './actionTypes';
+import type { CommandIntent } from './intentClassifier';
 
 export type QueryMemoryShard = {
   expertId: number;
@@ -64,44 +65,63 @@ const MEMORY_SOURCE = 'query_memory.tah';
 const MAX_RECALL = 3;
 const MAX_RECORDS_TO_SCAN = 80;
 
-export function recallQueryMemories(command: string, worker: IntelligenceWorker): QueryMemoryShard[] {
+export function recallQueryMemories(
+  command: string,
+  worker: IntelligenceWorker,
+  options: { intent?: CommandIntent | string; maxRecall?: number } = {}
+): QueryMemoryShard[] {
   if (process.env.PULSE_QUERY_MEMORY_DISABLED === 'true') return [];
 
   const filePath = queryMemoryPath();
   if (!fs.existsSync(filePath)) return [];
 
-  const queryTerms = new Set([
-    ...extractMemoriaTerms(command),
+  const commandTerms = new Set(
+    extractMemoriaTerms(command)
+      .map((term) => term.toLowerCase())
+      .filter((term) => term.length > 2)
+  );
+  const supportTerms = new Set([
     ...worker.tahLoadout.flatMap((file) => file.replace(/\.tah$/i, '').split(/[_-]+/)),
     worker.id
   ].map((term) => term.toLowerCase()).filter(Boolean));
 
   const records = readQueryMemoryRecords(filePath).slice(-MAX_RECORDS_TO_SCAN);
+  const targetIntent = String(options.intent || '').toLowerCase();
+  const maxRecall = Math.max(1, Math.min(options.maxRecall || MAX_RECALL, 6));
+
   return records
     .map((record, index) => {
-      const haystack = [
+      const contentHaystack = [
         record.command,
         record.intent,
+        record.learned.join(' '),
+        record.summary,
+        record.actions.join(' ')
+      ].join(' ').toLowerCase();
+      const supportHaystack = [
+        contentHaystack,
         record.workerId,
         record.workerName,
         record.relayTemplate,
         record.relayMode,
         record.sources.join(' '),
-        record.concepts.join(' '),
-        record.learned.join(' '),
-        record.summary,
-        record.actions.join(' ')
+        record.concepts.join(' ')
       ].join(' ').toLowerCase();
 
-      const overlap = [...queryTerms].filter((term) => haystack.includes(term));
-      const workerBoost = record.workerId === worker.id ? 10 : 0;
-      const score = overlap.length * 14 + workerBoost + Math.min(10, record.sources.length * 2);
+      const commandOverlap = [...commandTerms].filter((term) => contentHaystack.includes(term));
+      const supportOverlap = [...supportTerms].filter((term) => supportHaystack.includes(term));
+      const sameIntent = Boolean(targetIntent && record.intent.toLowerCase() === targetIntent);
+      const sameWorker = record.workerId === worker.id;
+      const workerBoost = sameWorker && commandOverlap.length ? 8 : 0;
+      const intentBoost = sameIntent ? 14 : 0;
+      const intentPenalty = targetIntent && record.intent && !sameIntent ? 10 : 0;
+      const score = commandOverlap.length * 24 + Math.min(12, supportOverlap.length * 3) + workerBoost + intentBoost - intentPenalty;
 
-      return { record, score, overlap, index };
+      return { record, score, commandOverlap, sameIntent, sameWorker, index };
     })
-    .filter((item) => item.score >= 24)
+    .filter((item) => item.commandOverlap.length > 0 && item.score >= 30 && (!targetIntent || item.sameIntent || item.sameWorker || item.score >= 44))
     .sort((a, b) => b.score - a.score || b.index - a.index)
-    .slice(0, MAX_RECALL)
+    .slice(0, maxRecall)
     .map((item, index) => memoryRecordToShard(item.record, item.score, index));
 }
 

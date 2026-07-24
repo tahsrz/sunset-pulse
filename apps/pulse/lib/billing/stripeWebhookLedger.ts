@@ -111,6 +111,7 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
   const mongoResult = await insertMongoEvent(record);
   if (mongoResult === 'duplicate') {
     await recordDuplicateStripeWebhookEvent(eventId, ['mongo', ...stores]);
+    await settleDuplicateStripeWebhookStores(eventId, stores);
     return { shouldProcess: false, reason: 'duplicate_event', eventId, stores: ['mongo', ...stores] };
   }
   if (mongoResult === 'inserted') stores.push('mongo');
@@ -248,6 +249,16 @@ async function recordDuplicateStripeWebhookEvent(eventId: string, stores: string
   }
 
   await Promise.all(updates);
+}
+
+async function settleDuplicateStripeWebhookStores(eventId: string, stores: string[]) {
+  if (!stores.length) return;
+
+  await updateStripeWebhookEvent(eventId, stores, {
+    status: 'succeeded',
+    completedAt: new Date(),
+    errorMessage: 'Duplicate event already claimed by another webhook ledger store.',
+  });
 }
 
 async function incrementSupabaseDuplicateCount(eventId: string) {

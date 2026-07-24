@@ -19,6 +19,7 @@ const updateLeadSchema = z.discriminatedUnion('action', [
     disposition: publicGuideDispositionIdSchema,
   }).strict(),
 ]);
+type LeadUpdateAction = z.infer<typeof updateLeadSchema>;
 
 export async function PATCH(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
@@ -116,47 +117,42 @@ export async function PATCH(request: NextRequest) {
 }
 
 function buildLeadUpdate(
-  data: z.infer<typeof updateLeadSchema>,
+  data: LeadUpdateAction,
   now: string,
   existingStatus?: string | null,
 ) {
-  if (data.action === 'set_status') {
-    return {
-      status: data.status,
-      ...(data.status === 'archived' ? { archived_at: now } : { archived_at: null }),
-      ...(data.status !== 'new' && !existingStatus ? { reviewed_at: now } : {}),
-    };
+  switch (data.action) {
+    case 'set_status':
+      return {
+        status: data.status,
+        ...(data.status === 'archived' ? { archived_at: now } : { archived_at: null }),
+        ...(data.status !== 'new' && !existingStatus ? { reviewed_at: now } : {}),
+      };
+    case 'review':
+      return {
+        status: 'contacted',
+        reviewed_at: now,
+        archived_at: null,
+      };
+    case 'archive':
+      return {
+        status: 'archived',
+        archived_at: now,
+      };
+    case 'restore':
+      return {
+        status: 'new',
+        archived_at: null,
+      };
+    case 'disposition':
+      return existingStatus === 'new' ? { status: 'contacted', reviewed_at: now } : {};
+    case 'note':
+      return {
+        internal_note: data.note || '',
+      };
+    default:
+      return {};
   }
-
-  if (data.action === 'review') {
-    return {
-      status: 'contacted',
-      reviewed_at: now,
-      archived_at: null,
-    };
-  }
-
-  if (data.action === 'archive') {
-    return {
-      status: 'archived',
-      archived_at: now,
-    };
-  }
-
-  if (data.action === 'restore') {
-    return {
-      status: 'new',
-      archived_at: null,
-    };
-  }
-
-  if (data.action === 'disposition') {
-    return existingStatus === 'new' ? { status: 'contacted', reviewed_at: now } : {};
-  }
-
-  return {
-    internal_note: data.note || '',
-  };
 }
 
 function warnDispositionEvent(error: unknown) {

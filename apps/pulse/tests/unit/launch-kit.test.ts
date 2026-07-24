@@ -141,6 +141,7 @@ describe('launchKit', () => {
     expect(mongoRecord.agentId).toBe(kit.agentId);
     expect(mongoRecord.provisioningAudit).toEqual(kit.provisioningAudit);
     expect(mongoRecord.lastModifiedBy).toBe('local');
+    expect(mongoRecord.updatedAt).toEqual(expect.any(String));
   });
 
   it('requires billing and operator approval before a kit is publishable', () => {

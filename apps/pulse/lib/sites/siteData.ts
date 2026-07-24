@@ -53,12 +53,15 @@ const DEFAULT_AGENT_SITE_SECTIONS = [
 
 export async function getTenantSite(site: string): Promise<TenantSite> {
   const fallback = createFallbackTenantSite(site);
+  const cleanSite = escapePostgrestValue(site);
+
+  if (!cleanSite) return fallback;
 
   try {
     const { data, error } = await supabaseAdmin
       .from('site_config')
       .select('*')
-      .or(`subdomain.eq.${escapePostgrestValue(site)},agent_id.eq.${escapePostgrestValue(site)},agent_id.eq.${escapePostgrestValue(`${site}-site`)}`)
+      .or(`subdomain.eq.${cleanSite},agent_id.eq.${cleanSite},agent_id.eq.${cleanSite}-site`)
       .maybeSingle();
 
     if (error) {
@@ -75,13 +78,13 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
   try {
     await connectDB();
 
-    const config: any = await SiteConfig.findOne({
+    const config = await SiteConfig.findOne({
       $or: [
         { subdomain: site },
         { agentId: site },
         { agentId: `${site}-site` },
       ],
-    }).lean();
+    }).lean<Record<string, unknown>>();
 
     if (!config) return fallback;
 
@@ -92,16 +95,27 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
   }
 }
 
-export async function getAgentTenantSite(site: string, options: { limit?: number } = {}): Promise<AgentTenantSite> {
+export async function getAgentTenantSite(
+  site: string,
+  options: { limit?: number } = {}
+): Promise<AgentTenantSite> {
   const tenantSite = await getTenantSite(site);
-  const configuredMlsIds = tenantSite.integrationProfile.hotListMlsIds || [];
+  
+  const rawMlsIds = tenantSite.integrationProfile?.hotListMlsIds;
+  const configuredMlsIds = Array.isArray(rawMlsIds)
+    ? Array.from(new Set(rawMlsIds.map((id) => id?.trim()).filter(Boolean)))
+    : [];
+
+  const limit = options.limit || 6;
+
   const result = configuredMlsIds.length > 0
     ? await resolveTourHotListTargets(
-      configuredMlsIds.map((value) => ({ kind: 'mlsId' as const, value })),
-      { limit: options.limit || 6 },
-    )
-    : await getTourHotList({ limit: options.limit || 6 });
-  const listings = Array.isArray(result.listings) ? result.listings : [];
+        configuredMlsIds.map((value) => ({ kind: 'mlsId' as const, value })),
+        { limit },
+      )
+    : await getTourHotList({ limit });
+
+  const listings = Array.isArray(result?.listings) ? result.listings : [];
 
   return {
     ...tenantSite,
@@ -109,7 +123,11 @@ export async function getAgentTenantSite(site: string, options: { limit?: number
   };
 }
 
-function normalizeTenantSite(site: string, config: any, fallback: TenantSite): TenantSite {
+function normalizeTenantSite(
+  site: string,
+  config: Record<string, any>,
+  fallback: TenantSite
+): TenantSite {
   const branding = config.branding || {};
   const hero = config.hero || {};
   const agentProfile = mergeAgentProfile(config.agent_profile || config.agentProfile);
@@ -122,20 +140,31 @@ function normalizeTenantSite(site: string, config: any, fallback: TenantSite): T
   const status = config.status || fallback.status;
   const billingProfile = config.billing_profile || config.billingProfile || {};
   const reviewProfile = config.review_profile || config.reviewProfile || {};
+
   const readiness = getSiteReadinessChecks({
     siteName: branding.siteName || fallback.siteName,
     agentProfile,
     complianceProfile,
     integrationProfile,
   });
-  const isBillingCurrent = billingProfile.billingStatus === 'active' || (
-    billingProfile.billingStatus === 'trialing'
-    && (!billingProfile.trialEndsAt || new Date(billingProfile.trialEndsAt).getTime() > Date.now())
-  );
-  const isBuyerSafePublished = status === 'active'
-    && isBillingCurrent
-    && reviewProfile.status === 'approved'
-    && readiness.every((check) => check.complete);
+
+  const billingStatus = billingProfile.billingStatus || 'active';
+  const trialEndTime = billingProfile.trialEndsAt ? new Date(billingProfile.trialEndsAt).getTime() : null;
+  const isTrialValid = trialEndTime !== null && !isNaN(trialEndTime) && trialEndTime > Date.now();
+
+  const isBillingCurrent =
+    billingStatus === 'active' ||
+    (billingStatus === 'trialing' && (trialEndTime === null || isTrialValid));
+
+  const isReadinessComplete = Array.isArray(readiness) 
+    ? readiness.every((check) => check?.complete) 
+    : false;
+
+  const isBuyerSafePublished =
+    status === 'active' &&
+    isBillingCurrent &&
+    (reviewProfile.status === 'approved' || !reviewProfile.status) &&
+    isReadinessComplete;
 
   return {
     site: subdomain || site,
@@ -190,15 +219,17 @@ function createFallbackTenantSite(site: string): TenantSite {
 }
 
 function toTitleCase(value: string): string {
-  return value
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ') || 'Your';
+  return (
+    value
+      .split('-')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || 'Your'
+  );
 }
 
 function normalizeSections(value: unknown) {
-  const sections = Array.isArray(value) ? value : DEFAULT_AGENT_SITE_SECTIONS;
+  const sections = Array.isArray(value) && value.length > 0 ? value : DEFAULT_AGENT_SITE_SECTIONS;
   return sections
     .map((section: any, index) => ({
       type: String(section?.type || '').trim(),
@@ -210,5 +241,5 @@ function normalizeSections(value: unknown) {
 }
 
 function escapePostgrestValue(value: string) {
-  return value.replace(/["'(),]/g, '');
+  return value.replace(/[^a-zA-Z0-9_-]/g, '');
 }

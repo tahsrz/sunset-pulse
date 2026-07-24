@@ -22,6 +22,8 @@ import {
   updateProvisionedAgentSiteBilling,
 } from '@/lib/sites/siteProvisioning';
 import { notifyOperatorStripeWebhookFailure } from '@/lib/sites/siteLifecycleNotifications';
+import { acceptsSiteCheckoutPaymentStatus, getSiteCheckoutBillingSnapshot } from '@/lib/billing/siteSubscriptionCheckout';
+import { readSiteConfigByStripeSubscriptionId } from '@/lib/sites/siteConfigStore';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -86,7 +88,7 @@ async function processStripeEvent(event: Stripe.Event) {
     const metadata = session.metadata;
 
     // 1. Handle Subscription Upgrades
-    if (!metadata?.orderType && customerEmail) {
+    if (!metadata?.orderType && metadata?.productType !== 'agent_site' && customerEmail) {
       await User.findOneAndUpdate({ email: customerEmail }, {
         subscriptionExpires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       });
@@ -95,25 +97,30 @@ async function processStripeEvent(event: Stripe.Event) {
 
     // 2. Provision paid agent sites
     if (isAgentSiteCheckout(session)) {
-      try {
-        const provisionedSite = await provisionPaidAgentSite({
-          agentId: metadata?.agentId,
-          userId: metadata?.userId || session.client_reference_id,
-          ownerName: metadata?.ownerName,
-          email: customerEmail,
-          subscriptionTier: metadata?.subscriptionTier,
-          stripeCustomerId: stripeId(session.customer),
-          stripeSubscriptionId: stripeId(session.subscription),
-          stripeCheckoutSessionId: session.id,
-          source: 'stripe-checkout',
-        });
-
-        console.log(
-          `[STRIPE_WEBHOOK] Agent site ${provisionedSite.kit.agentId} ${provisionedSite.created ? 'provisioned' : 'refreshed'} from checkout ${session.id}.`,
-        );
-      } catch (error) {
-        console.error('[STRIPE_WEBHOOK_SITE_PROVISIONING_ERROR]:', error);
+      const siteSession = await retrieveCheckoutSessionWithSubscription(session);
+      const billingSnapshot = getSiteCheckoutBillingSnapshot(siteSession);
+      if (!acceptsSiteCheckoutPaymentStatus(siteSession)) {
+        console.warn(`[STRIPE_WEBHOOK] Agent site checkout ${siteSession.id} completed without accepted payment status: ${siteSession.payment_status}`);
+        return { ignored: 'site_checkout_payment_not_accepted' };
       }
+
+      const provisionedSite = await provisionPaidAgentSite({
+        agentId: metadata?.agentId,
+        userId: metadata?.userId || siteSession.client_reference_id,
+        ownerName: metadata?.ownerName,
+        email: customerEmail,
+        subscriptionTier: metadata?.subscriptionTier,
+        stripeCustomerId: stripeId(siteSession.customer),
+        stripeSubscriptionId: billingSnapshot.stripeSubscriptionId || stripeId(siteSession.subscription),
+        stripeCheckoutSessionId: siteSession.id,
+        trialEndsAt: billingSnapshot.trialEndsAt,
+        billingStatus: billingSnapshot.billingStatus || undefined,
+        source: 'stripe-checkout',
+      });
+
+      console.log(
+        `[STRIPE_WEBHOOK] Agent site ${provisionedSite.kit.agentId} ${provisionedSite.created ? 'provisioned' : 'refreshed'} from checkout ${siteSession.id}.`,
+      );
     }
 
     // 3. Handle Grill Food Orders
@@ -123,25 +130,29 @@ async function processStripeEvent(event: Stripe.Event) {
         return { ignored: 'checkout_not_paid' };
       }
 
-      const existingOrder = await Order.findById(metadata.orderId);
-      if (!existingOrder) {
-        console.warn(`[STRIPE_WEBHOOK] Order ${metadata.orderId} not found for paid checkout session ${session.id}.`);
-        return { ignored: 'order_not_found' };
-      }
-
-      const wasAlreadyPaid = existingOrder.isPaid || ['PAID_STRIPE', 'PAID_POS'].includes(existingOrder.paymentState);
-      const order = await Order.findByIdAndUpdate(metadata.orderId, {
+      const order = await Order.findOneAndUpdate({
+        _id: metadata.orderId,
+        isPaid: { $ne: true },
+        paymentState: { $nin: ['PAID_STRIPE', 'PAID_POS'] },
+      }, {
         isPaid: true,
         paymentState: 'PAID_STRIPE',
         paymentSessionId: session.id,
         ...(customerEmail ? { customerEmail } : {}),
       }, { new: true });
-      console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
 
-      if (wasAlreadyPaid) {
-        console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} was already paid. Skipping duplicate staff notification.`);
-        return { ignored: 'already_paid' };
+      if (!order) {
+        const existingOrder = await Order.findById(metadata.orderId);
+        if (existingOrder) {
+          console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} was already paid. Skipping duplicate staff notification.`);
+          return { ignored: 'already_paid' };
+        }
+
+        console.warn(`[STRIPE_WEBHOOK] Order ${metadata.orderId} not found for paid checkout session ${session.id}.`);
+        return { ignored: 'order_not_found' };
       }
+
+      console.log(`[STRIPE_WEBHOOK] Order ${metadata.orderId} marked as PAID.`);
 
       try {
         if (order && customerEmail && order.emailConfirmation?.status !== 'sent') {
@@ -282,56 +293,52 @@ async function processStripeEvent(event: Stripe.Event) {
 
   if (event.type === 'customer.subscription.updated') {
     const subscription = event.data.object as Stripe.Subscription;
-    const metadata = subscription.metadata;
+    const context = await resolveAgentSiteSubscriptionContext(subscription);
 
-    if (isAgentSiteSubscription(subscription)) {
-      try {
-        const updatedSite = await updateProvisionedAgentSiteBilling({
-          agentId: metadata?.agentId,
-          userId: metadata?.userId,
-          ownerName: metadata?.ownerName,
-          subscriptionTier: metadata?.subscriptionTier,
-          stripeCustomerId: stripeId(subscription.customer),
-          stripeSubscriptionId: subscription.id,
-          trialEndsAt: stripeTimestampToIso(subscription.trial_end),
-          billingStatus: mapStripeSubscriptionStatus(subscription.status),
-          source: 'stripe-subscription-updated',
-        });
+    if (context.isAgentSite) {
+      const updatedSite = await updateProvisionedAgentSiteBilling({
+        agentId: context.agentId,
+        userId: context.userId,
+        ownerName: context.ownerName,
+        subscriptionTier: context.subscriptionTier,
+        stripeCustomerId: stripeId(subscription.customer),
+        stripeSubscriptionId: subscription.id,
+        trialEndsAt: stripeTimestampToIso(subscription.trial_end),
+        billingStatus: mapStripeSubscriptionStatus(subscription.status),
+        source: 'stripe-subscription-updated',
+      });
 
-        if (updatedSite) {
-          console.log(
-            `[STRIPE_WEBHOOK] Agent site ${updatedSite.kit.agentId} billing updated to ${updatedSite.kit.billingProfile.billingStatus}.`,
-          );
-        }
-      } catch (error) {
-        console.error('[STRIPE_WEBHOOK_SITE_BILLING_UPDATE_ERROR]:', error);
+      if (!updatedSite) {
+        throw new Error(`No provisioned agent site matched subscription ${subscription.id}.`);
       }
+
+      console.log(
+        `[STRIPE_WEBHOOK] Agent site ${updatedSite.kit.agentId} billing updated to ${updatedSite.kit.billingProfile.billingStatus}.`,
+      );
     }
   }
 
   if (event.type === 'customer.subscription.deleted') {
     await connectDB();
     const subscription = event.data.object as Stripe.Subscription;
-    const metadata = subscription.metadata;
+    const context = await resolveAgentSiteSubscriptionContext(subscription);
 
-    if (isAgentSiteSubscription(subscription)) {
-      try {
-        const suspendedSite = await suspendProvisionedAgentSite({
-          agentId: metadata?.agentId,
-          userId: metadata?.userId,
-          ownerName: metadata?.ownerName,
-          subscriptionTier: metadata?.subscriptionTier,
-          stripeCustomerId: stripeId(subscription.customer),
-          stripeSubscriptionId: subscription.id,
-          source: 'stripe-subscription',
-        });
+    if (context.isAgentSite) {
+      const suspendedSite = await suspendProvisionedAgentSite({
+        agentId: context.agentId,
+        userId: context.userId,
+        ownerName: context.ownerName,
+        subscriptionTier: context.subscriptionTier,
+        stripeCustomerId: stripeId(subscription.customer),
+        stripeSubscriptionId: subscription.id,
+        source: 'stripe-subscription',
+      });
 
-        if (suspendedSite) {
-          console.log(`[STRIPE_WEBHOOK] Agent site ${suspendedSite.kit.agentId} suspended after subscription ${subscription.id} ended.`);
-        }
-      } catch (error) {
-        console.error('[STRIPE_WEBHOOK_SITE_SUSPENSION_ERROR]:', error);
+      if (!suspendedSite) {
+        throw new Error(`No provisioned agent site matched subscription ${subscription.id}.`);
       }
+
+      console.log(`[STRIPE_WEBHOOK] Agent site ${suspendedSite.kit.agentId} suspended after subscription ${subscription.id} ended.`);
     }
     console.log(`[STRIPE_WEBHOOK] Subscription ${subscription.id} deleted.`);
   }
@@ -341,12 +348,37 @@ async function processStripeEvent(event: Stripe.Event) {
 
 function isAgentSiteCheckout(session: Stripe.Checkout.Session) {
   const metadata = session.metadata || {};
-  return metadata.productType === 'agent_site' || (!metadata.orderType && session.mode === 'subscription');
+  return metadata.productType === 'agent_site';
 }
 
 function isAgentSiteSubscription(subscription: Stripe.Subscription) {
   const metadata = subscription.metadata || {};
   return metadata.productType === 'agent_site' || Boolean(metadata.agentId);
+}
+
+async function resolveAgentSiteSubscriptionContext(subscription: Stripe.Subscription) {
+  const metadata = subscription.metadata || {};
+  const siteRow = await readSiteConfigByStripeSubscriptionId(subscription.id);
+  const rowBillingProfile = siteConfigBillingProfile(siteRow);
+
+  return {
+    isAgentSite: isAgentSiteSubscription(subscription) || Boolean(siteRow),
+    agentId: metadata.agentId || siteConfigText(siteRow, 'agent_id', 'agentId'),
+    userId: metadata.userId || siteConfigText(siteRow, 'owner_id', 'ownerId') || siteConfigText(rowBillingProfile, 'userId', 'user_id'),
+    ownerName: metadata.ownerName || siteConfigText(siteRow, 'owner_name', 'ownerName'),
+    subscriptionTier: metadata.subscriptionTier || siteConfigText(siteRow, 'subscription_tier', 'subscriptionTier'),
+  };
+}
+
+function siteConfigBillingProfile(row: unknown) {
+  const value = row as any;
+  return value?.billing_profile || value?.billingProfile || {};
+}
+
+function siteConfigText(row: unknown, snakeKey: string, camelKey: string) {
+  const value = row as any;
+  const text = value?.[camelKey] || value?.[snakeKey];
+  return typeof text === 'string' ? text : '';
 }
 
 function stripeId(value: string | { id?: string } | null) {
@@ -359,6 +391,16 @@ function stripeTimestampToIso(value?: number | null) {
   if (!value) return '';
   const date = new Date(value * 1000);
   return Number.isFinite(date.getTime()) ? date.toISOString() : '';
+}
+
+async function retrieveCheckoutSessionWithSubscription(session: Stripe.Checkout.Session) {
+  if (session.subscription && typeof session.subscription !== 'string') {
+    return session;
+  }
+
+  return stripe.checkout.sessions.retrieve(session.id, {
+    expand: ['subscription'],
+  });
 }
 
 function mapStripeSubscriptionStatus(status?: Stripe.Subscription.Status | string | null) {

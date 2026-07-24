@@ -25,8 +25,109 @@ import {
   saveQueryMemory,
   type QueryMemoryTrace
 } from './queryMemory';
+import {
+  runWorkflowOperation,
+  summarizeWorkflowAttempts,
+  type WorkflowOperationTrace
+} from './workflowReliability';
+import {
+  classifyCommandIntent,
+  type CommandIntentClassification
+} from './intentClassifier';
+import {
+  extractListingFacts,
+  formatListingFactsBrief,
+  summarizeListingFacts,
+  type ListingFacts
+} from './listingExtractor';
+import {
+  budgetCommandContext,
+  type ContextBudgetTrace
+} from './contextBudget';
 import type { CivicServiceRecord, CommandActionItem } from './actionTypes';
 import { annotateLangfuse, traceLangfuse } from '@/lib/observability/langfuseTracing';
+
+const COMMAND_CENTER_CONFIG = {
+  atlas: {
+    basePath: path.join(process.cwd(), 'cartridges', 'expert-atlas', 'segmented_expert_atlas'),
+    allDomainMask: (1n << 64n) - 1n,
+    minTrust: 0.5,
+    defaultTopN: 8,
+    searchMaxSegments: 12,
+    loadoutMaxSegments: 25,
+    linkExpansionDepth: 1,
+    linkExpansionLimit: 10,
+  },
+  scoring: {
+    precisionWeight: 0.45,
+    contextFitWeight: 0.35,
+    baseConfidenceWithShards: 18,
+    baseConfidenceWithoutShards: 4,
+    minConfidence: 62,
+    maxConfidence: 96,
+    civicMinConfidence: 84,
+  },
+  retry: {
+    contextAttempts: 2,
+    memoryAttempts: 2,
+    synthesisAttempts: 2,
+    supervisorAttempts: 2,
+    delayMs: 25,
+  },
+  policy: {
+    supervisorSpread: 0.45,
+    workerSpread: 0.35,
+    maxShardsToSelect: 4,
+    weightedMatchThreshold: 1.4,
+    densityWeight: 18,
+    vitalityWeight: 24,
+    conceptMatchWeight: 8,
+    conceptOverlapWeight: 10,
+    loadoutBonusScore: 96,
+  },
+} as const;
+
+const WORKER_DOMAIN_MARKERS: Record<string, string[]> = {
+  'lead-scoring': ['lead', 'prospect', 'buyer', 'client', 'contact', 'lead_history', 'agent', 'pipeline'],
+  'buyer-intent': ['lead', 'buyer', 'intent', 'motivation', 'lead_history', 'objection_scripts'],
+  'follow-up-writer': ['lead', 'buyer', 'seller', 'client', 'follow', 'message', 'agent', 'agent_brand', 'objection_scripts'],
+  'listing-summary': ['listing', 'property', 'home', 'listing_context', 'agent_brand', 'comps_context'],
+  'listing-spark': ['listing', 'property', 'campaign', 'hook', 'local_business', 'agent_brand'],
+  'comp-analysis': ['comps', 'comparable', 'valuation', 'price', 'pricing', 'listing_context', 'comps_context', 'texas_real_estate'],
+  'neighborhood-explainer': ['neighborhood', 'community', 'local', 'place', 'area', 'texas_place_history', 'dallas', 'tarrant'],
+  'local-commerce': ['local', 'commerce', 'business', 'shop', 'restaurant', 'community', 'texas_place_history', 'dallas', 'tarrant'],
+  'market-movement': ['market', 'trend', 'movement', 'comps_context', 'neighborhood_context', 'texas_real_estate', 'dallas', 'tarrant'],
+  'agent-voice': ['agent', 'voice', 'brand', 'tone', 'agent_brand', 'objection_scripts'],
+  'objection-scripts': ['objection', 'pushback', 'buyer', 'seller', 'agent_brand', 'objection_scripts'],
+  supervisor: ['market_rules', 'agent_brand', 'compliance', 'risk', 'safe language'],
+};
+
+const COMMON_DOMAIN_MARKERS = ['agent_brand', 'market_rules'];
+
+const FRIENDLY_SOURCE_NAMES: Record<string, string> = {
+  'lead_history.tah': 'Lead notes',
+  'market_rules.tah': 'Review guidance',
+  'agent_brand.tah': 'Agent voice',
+  'listing_context.tah': 'Listing details',
+  'neighborhood_context.tah': 'Neighborhood context',
+  'neighborhood_intel.tah': 'Neighborhood context',
+  'local_business_context.tah': 'Nearby business context',
+  'comps_context.tah': 'Pricing context',
+  'objection_scripts.tah': 'Response ideas',
+  'market_velocity.tah': 'Market movement',
+  'dallas_community_intel.tah': 'Dallas community records',
+  'dallas_community_intel.hat': 'Dallas community records',
+  'dallas_safety_intel.tah': 'Dallas public-safety context',
+  'texas_contracts_expertise.tah': 'Texas contract guidance',
+  'texas_real_estate.tah': 'Texas real-estate guidance',
+  'yield_intel.tah': 'Rural land context',
+  'texas_place_history.tah': 'Texas place history',
+  'sunset_pulse_expertise.tah': 'Sunset Pulse system notes',
+  'security_architect.tah': 'Security review notes',
+  'postgres_mastery.tah': 'Database performance notes',
+  'spatial_computing.tah': 'Spatial design notes',
+  'query_memory.tah': 'Saved conversation memory',
+};
 
 export type CommandCenterRequest = {
   command: string;
@@ -101,13 +202,22 @@ export type CommandCenterResponse = {
       routeIndex: number;
     };
     retrievalPolicy?: TahRetrievalPolicyTrace;
+    contextBudget?: ContextBudgetTrace;
+    classification?: CommandIntentClassification;
+    listingFacts?: ListingFacts;
+    progress?: CommandWorkflowProgressEvent[];
     supervisorNotes?: string[];
     queryMemory?: QueryMemoryTrace;
+    workflow?: ReturnType<typeof summarizeWorkflowAttempts>;
   };
 };
 
-const ATLAS_BASE = path.join(process.cwd(), 'cartridges', 'expert-atlas', 'segmented_expert_atlas');
-const ALL_DOMAIN_MASK = (1n << 64n) - 1n;
+type CommandWorkflowProgressEvent = {
+  id: string;
+  label: string;
+  status: 'complete' | 'queued' | 'skipped';
+  detail?: string;
+};
 
 type CommandContextShard = {
   expertId: number;
@@ -152,15 +262,19 @@ type CommandGraphState = {
   input: CommandCenterRequest;
   command: string;
   commandId: string;
+  classification: CommandIntentClassification;
+  listingFacts?: ListingFacts;
   routeMode: 'auto' | 'manual';
   worker: IntelligenceWorker;
   recalledMemory: CommandContextShard[];
   retrievalContext: CommandRetrievalContext;
   contextResults: CommandContextShard[];
+  contextBudget: ContextBudgetTrace;
   relayPlan: TahRelayPlan;
   result: CommandCenterResponse['result'];
   supervisorNotes?: string[];
   queryMemory: QueryMemoryTrace;
+  workflowAttempts: WorkflowOperationTrace[];
   response: CommandCenterResponse;
 };
 
@@ -168,15 +282,19 @@ const CommandGraphAnnotation = Annotation.Root({
   input: Annotation<CommandCenterRequest>(),
   command: Annotation<string>(),
   commandId: Annotation<string>(),
+  classification: Annotation<CommandIntentClassification>(),
+  listingFacts: Annotation<ListingFacts | undefined>(),
   routeMode: Annotation<'auto' | 'manual'>(),
   worker: Annotation<IntelligenceWorker>(),
   recalledMemory: Annotation<CommandContextShard[]>(),
   retrievalContext: Annotation<CommandRetrievalContext>(),
   contextResults: Annotation<CommandContextShard[]>(),
+  contextBudget: Annotation<ContextBudgetTrace>(),
   relayPlan: Annotation<TahRelayPlan>(),
   result: Annotation<CommandCenterResponse['result']>(),
   supervisorNotes: Annotation<string[] | undefined>(),
   queryMemory: Annotation<QueryMemoryTrace>(),
+  workflowAttempts: Annotation<WorkflowOperationTrace[]>(),
   response: Annotation<CommandCenterResponse>()
 });
 
@@ -253,23 +371,30 @@ async function routeCommandNode(state: CommandGraphNodeState): Promise<Partial<C
     },
     async () => {
       const { command, input } = state;
+      const classification = classifyCommandIntent(command, input.selectedWorkerId);
       const manualWorker = input.selectedWorkerId
         ? intelligenceWorkers.find((worker) => worker.id === input.selectedWorkerId)
         : undefined;
-      const worker = manualWorker || chooseWorkerForCommand(command);
-      const routeMode = manualWorker ? 'manual' : 'auto';
+      const classifiedWorker = intelligenceWorkers.find((worker) => worker.id === classification.workerId);
+      const worker = manualWorker || classifiedWorker || chooseWorkerForCommand(command);
+      const routeMode: 'auto' | 'manual' = manualWorker ? 'manual' : 'auto';
       const commandId = `cmd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      const listingFacts = classification.listingFacts?.isListingLike ? classification.listingFacts : undefined;
 
       annotateLangfuse({
         metadata: {
           commandId,
+          intent: classification.intent,
+          intentConfidence: classification.confidence,
+          intentReason: classification.reason,
+          listingSignalCount: classification.listingFacts?.signalCount || 0,
           workerId: worker.id,
           workerName: worker.name,
           routeMode
         }
       });
 
-      return { command, commandId, routeMode, worker };
+      return { command, commandId, classification, listingFacts, routeMode, worker, workflowAttempts: [] };
     }
   );
 }
@@ -285,26 +410,66 @@ async function retrieveContextNode(state: CommandGraphNodeState): Promise<Partia
       }
     },
     async () => {
-      const { command, worker } = state;
-      const recalledMemory = recallQueryMemories(command, worker);
-      const context = retrieveTahContext(command, worker);
-      const contextResults = mergeCommandContextShards(recalledMemory, context.results);
+      const { command, classification, listingFacts, worker } = state;
+      const workflowAttempts = [...(state.workflowAttempts || [])];
+      const retrievalCommand = retrievalTextForCommand(command, listingFacts);
+      const recalled = await runWorkflowOperation<CommandContextShard[]>({
+        node: 'retrieve',
+        operation: 'query-memory-recall',
+        maxAttempts: COMMAND_CENTER_CONFIG.retry.memoryAttempts,
+        delayMs: COMMAND_CENTER_CONFIG.retry.delayMs,
+        fallback: () => [],
+        fallbackLabel: 'skip query memory recall',
+        onError: (err) => console.warn('[COMMAND_CENTER] Memory recall degraded:', err)
+      }, () => classification.requiresMemory ? recallQueryMemories(command, worker, { intent: classification.intent }) : []);
+      const retrieved = await runWorkflowOperation<CommandRetrievalContext>({
+        node: 'retrieve',
+        operation: 'atlas-context-retrieval',
+        maxAttempts: COMMAND_CENTER_CONFIG.retry.contextAttempts,
+        delayMs: COMMAND_CENTER_CONFIG.retry.delayMs,
+        fallback: () => ({ results: buildVirtualTahContext(command, worker) }),
+        fallbackLabel: 'virtual context',
+        fallbackResult: (context) => context.results.some((shard) => /fallback|virtual/i.test(shard.matchReason || ''))
+          ? 'virtual context'
+          : false,
+        onError: (err) => console.error('[COMMAND_CENTER] Context retrieval error:', err)
+      }, () => classification.requiresAtlas ? retrieveTahContext(retrievalCommand, worker) : { results: [] });
+      workflowAttempts.push(recalled.trace, retrieved.trace);
+
+      const listingShard = listingFacts ? [listingFactsToContextShard(listingFacts)] : [];
+      const budgeted = budgetCommandContext({
+        intent: classification.intent,
+        memoryShards: recalled.value,
+        atlasShards: [...listingShard, ...retrieved.value.results],
+      });
+      const recalledMemory = budgeted.memoryShards;
+      const context = {
+        ...retrieved.value,
+        results: budgeted.atlasShards,
+      };
+      const contextResults = budgeted.mergedShards;
 
       annotateLangfuse({
         metadata: {
           recalledMemoryCount: recalledMemory.length,
           retrievedShardCount: context.results.length,
           mergedShardCount: contextResults.length,
+          contextBudgetChars: budgeted.trace.estimatedChars,
+          contextBudgetTotalKept: budgeted.trace.totalKept,
           atlasVisitedSegments: context.diagnostics?.visitedSegments,
           atlasPayloadReads: context.diagnostics?.payloadReads,
-          retrievalStageCount: context.policy?.stages.length
+          retrievalStageCount: context.policy?.stages.length,
+          workflowStatus: summarizeWorkflowAttempts(workflowAttempts).status,
+          workflowRetryCount: workflowAttempts.filter((attempt) => attempt.retried).length
         }
       });
 
       return {
         recalledMemory,
         retrievalContext: context,
-        contextResults
+        contextResults,
+        contextBudget: budgeted.trace,
+        workflowAttempts
       };
     },
     { asType: 'retriever' }
@@ -352,18 +517,40 @@ async function synthesizeResultNode(state: CommandGraphNodeState): Promise<Parti
       }
     },
     async () => {
-      const { command, worker, contextResults, relayPlan } = state;
-      const result = synthesizeWorkerResult(command, worker, contextResults, relayPlan);
+      const { command, worker, contextResults, relayPlan, listingFacts } = state;
+      const workflowAttempts = [...(state.workflowAttempts || [])];
+      const synthesized = await runWorkflowOperation<CommandCenterResponse['result']>({
+        node: 'synthesize',
+        operation: 'worker-result',
+        maxAttempts: COMMAND_CENTER_CONFIG.retry.synthesisAttempts,
+        delayMs: COMMAND_CENTER_CONFIG.retry.delayMs,
+        fallbackLabel: 'graceful worker result',
+        fallback: () => {
+          const fallbackActions = buildActions(command, worker, contextResults, listingFacts);
+          return {
+            title: worker.sampleOutput.title,
+            summary: `Processed the request with ${worker.name}. Request: "${commandDisplayText(command)}".`,
+            actions: fallbackActions,
+            confidence: COMMAND_CENTER_CONFIG.scoring.minConfidence,
+            relayPlan,
+            deliverable: buildCommandDeliverable(command, worker, contextResults, relayPlan, fallbackActions)
+          };
+        },
+        onError: (err) => console.error('[COMMAND_CENTER] Synthesis failed:', err)
+      }, () => synthesizeWorkerResult(command, worker, contextResults, relayPlan, listingFacts));
+      workflowAttempts.push(synthesized.trace);
+      const result = synthesized.value;
 
       annotateLangfuse({
         metadata: {
           confidence: result.confidence,
           actionCount: result.actions.length,
-          frameCount: result.deliverable.frames.length
+          frameCount: result.deliverable.frames.length,
+          workflowStatus: summarizeWorkflowAttempts(workflowAttempts).status
         }
       });
 
-      return { result };
+      return { result, workflowAttempts };
     },
     { asType: 'generation' }
   );
@@ -381,15 +568,24 @@ async function superviseResultNode(state: CommandGraphNodeState): Promise<Partia
     },
     async () => {
       const { command, contextResults, input, result, worker } = state;
-      const supervisorNotes = input.supervisor ? superviseResult(command, worker, result, contextResults) : undefined;
+      const workflowAttempts = [...(state.workflowAttempts || [])];
+      let supervisorNotes: string[] | undefined;
+
+      if (input.supervisor) {
+        supervisorNotes = [
+          'Supervisor review queued asynchronously; review before external transmission.',
+          ...superviseResult(command, worker, result, contextResults).slice(0, 2)
+        ];
+      }
 
       annotateLangfuse({
         metadata: {
-          noteCount: supervisorNotes?.length || 0
+          noteCount: supervisorNotes?.length || 0,
+          workflowStatus: summarizeWorkflowAttempts(workflowAttempts).status
         }
       });
 
-      return { supervisorNotes };
+      return { supervisorNotes, workflowAttempts };
     },
     { asType: 'guardrail' }
   );
@@ -407,32 +603,59 @@ async function rememberQueryNode(state: CommandGraphNodeState): Promise<Partial<
       }
     },
     async () => {
-      const { command, commandId, contextResults, recalledMemory, relayPlan, result, worker } = state;
-      const queryMemory = saveQueryMemory({
-        commandId,
-        command,
-        intent: inferIntent(command, worker),
-        worker,
-        relayPlan,
-        sources: contextResults.map((shard) => ({
-          source: shard.source,
-          concepts: shard.concepts,
-          matchReason: shard.matchReason
-        })),
-        summary: result.summary,
-        actions: result.actions
+      const { command, commandId, classification, contextResults, recalledMemory, relayPlan, result, worker } = state;
+      const workflowAttempts = [...(state.workflowAttempts || [])];
+      const remembered = await runWorkflowOperation<QueryMemoryTrace>({
+        node: 'remember',
+        operation: 'query-memory-save',
+        maxAttempts: COMMAND_CENTER_CONFIG.retry.memoryAttempts,
+        delayMs: COMMAND_CENTER_CONFIG.retry.delayMs,
+        fallbackLabel: 'memory unavailable trace',
+        fallback: (err) => ({
+          status: 'unavailable',
+          path: path.relative(
+            process.cwd(),
+            path.resolve(process.env.PULSE_QUERY_MEMORY_PATH || path.join(process.cwd(), 'cartridges', 'query_memory.tah'))
+          ),
+          recalled: recalledMemory.length,
+          saved: false,
+          reason: err instanceof Error ? err.message : 'query memory write failed',
+        }),
+        onError: (err) => console.warn('[COMMAND_CENTER] Memory persistence degraded:', err)
+      }, () => {
+        const trace = saveQueryMemory({
+          commandId,
+          command,
+          intent: classification.intent,
+          worker,
+          relayPlan,
+          sources: contextResults.map((shard) => ({
+            source: shard.source,
+            concepts: shard.concepts,
+            matchReason: shard.matchReason
+          })),
+          summary: result.summary,
+          actions: result.actions
+        });
+        trace.recalled = recalledMemory.length;
+        if (trace.status === 'unavailable') {
+          throw new Error(trace.reason || 'query memory write failed');
+        }
+        return trace;
       });
-      queryMemory.recalled = recalledMemory.length;
+      workflowAttempts.push(remembered.trace);
+      const queryMemory = remembered.value;
 
       annotateLangfuse({
         metadata: {
           queryMemoryStatus: queryMemory.status,
           queryMemorySaved: queryMemory.saved,
-          recalledMemoryCount: recalledMemory.length
+          recalledMemoryCount: recalledMemory.length,
+          workflowStatus: summarizeWorkflowAttempts(workflowAttempts).status
         }
       });
 
-      return { queryMemory };
+      return { queryMemory, workflowAttempts };
     },
     { asType: 'tool' }
   );
@@ -449,10 +672,25 @@ async function buildResponseNode(state: CommandGraphNodeState): Promise<Partial<
       }
     },
     async () => {
-      const { command, commandId, contextResults, queryMemory, result, routeMode, supervisorNotes, retrievalContext, worker } = state;
+      const {
+        command,
+        commandId,
+        classification,
+        contextBudget,
+        contextResults,
+        listingFacts,
+        queryMemory,
+        result,
+        routeMode,
+        supervisorNotes,
+        retrievalContext,
+        worker,
+        workflowAttempts
+      } = state;
+      const workflow = summarizeWorkflowAttempts(workflowAttempts || []);
       const response: CommandCenterResponse = {
         commandId,
-        intent: inferIntent(command, worker),
+        intent: classification.intent,
         worker: {
           id: worker.id,
           name: worker.name,
@@ -481,8 +719,13 @@ async function buildResponseNode(state: CommandGraphNodeState): Promise<Partial<
           })),
           atlasDiagnostics: retrievalContext.diagnostics,
           retrievalPolicy: retrievalContext.policy,
+          contextBudget,
+          classification,
+          listingFacts,
+          progress: buildProgressEvents(classification, contextBudget, Boolean(supervisorNotes?.length)),
           supervisorNotes,
-          queryMemory
+          queryMemory,
+          workflow
         }
       };
 
@@ -490,7 +733,10 @@ async function buildResponseNode(state: CommandGraphNodeState): Promise<Partial<
         metadata: {
           selectedShardCount: response.trace.selectedShards.length,
           atlasVisitedSegments: response.trace.atlasDiagnostics?.visitedSegments,
-          retrievalStageCount: response.trace.retrievalPolicy?.stages.length
+          retrievalStageCount: response.trace.retrievalPolicy?.stages.length,
+          workflowStatus: workflow.status,
+          workflowFallbackOperations: workflow.fallbackOperations,
+          workflowRetriedOperations: workflow.retriedOperations
         }
       });
 
@@ -509,9 +755,84 @@ function mergeCommandContextShards(memoryShards: CommandContextShard[], retrieve
   }).slice(0, 6);
 }
 
-function retrieveTahContext(command: string, worker: IntelligenceWorker) {
-  const hatPath = `${ATLAS_BASE}.hat`;
-  const tahPath = `${ATLAS_BASE}.tah`;
+function retrievalTextForCommand(command: string, listingFacts?: ListingFacts) {
+  const listingBrief = formatListingFactsBrief(listingFacts);
+  return listingBrief ? `${command}\n\n${listingBrief}` : command;
+}
+
+function listingFactsToContextShard(facts: ListingFacts): CommandContextShard {
+  return {
+    expertId: 870001,
+    title: 'Structured pasted listing facts',
+    source: 'pasted_listing',
+    score: 118,
+    concepts: [
+      'listing',
+      facts.mlsId ? 'mls' : '',
+      facts.price ? 'price' : '',
+      facts.address ? 'address' : '',
+      facts.missingFields.length ? 'missing fields' : '',
+    ].filter(Boolean),
+    text: formatListingFactsBrief(facts),
+    complexity: 0.36,
+    density: 0.92,
+    vitality: 0.86,
+    contextLevel: 'full',
+    matchReason: 'structured listing extraction'
+  };
+}
+
+function buildProgressEvents(
+  classification: CommandIntentClassification,
+  contextBudget: ContextBudgetTrace | undefined,
+  supervisorQueued: boolean
+): CommandWorkflowProgressEvent[] {
+  return [
+    {
+      id: 'classified',
+      label: 'Classified',
+      status: 'complete',
+      detail: `${classification.intent} (${classification.confidence}%)`
+    },
+    {
+      id: 'worker',
+      label: 'Worker selected',
+      status: 'complete',
+      detail: classification.workerId
+    },
+    {
+      id: 'listing',
+      label: 'Listing extracted',
+      status: classification.requiresListingParse
+        ? classification.listingFacts?.isListingLike ? 'complete' : 'skipped'
+        : 'skipped',
+      detail: classification.listingFacts?.isListingLike
+        ? `${classification.listingFacts.signalCount} listing signals`
+        : 'No pasted listing detected'
+    },
+    {
+      id: 'context',
+      label: 'Context budgeted',
+      status: contextBudget ? 'complete' : 'skipped',
+      detail: contextBudget ? `${contextBudget.totalKept} shards, ${contextBudget.estimatedChars} chars` : undefined
+    },
+    {
+      id: 'answer',
+      label: 'Answer generated',
+      status: 'complete'
+    },
+    {
+      id: 'supervisor',
+      label: 'Supervisor review',
+      status: supervisorQueued ? 'queued' : 'skipped',
+      detail: supervisorQueued ? 'Non-blocking review note attached' : 'Safety check off'
+    }
+  ];
+}
+
+function retrieveTahContext(command: string, worker: IntelligenceWorker): CommandRetrievalContext {
+  const hatPath = `${COMMAND_CENTER_CONFIG.atlas.basePath}.hat`;
+  const tahPath = `${COMMAND_CENTER_CONFIG.atlas.basePath}.tah`;
 
   if (!fs.existsSync(hatPath) || !fs.existsSync(tahPath)) {
     return { results: buildVirtualTahContext(command, worker), diagnostics: undefined };
@@ -533,11 +854,11 @@ function retrieveTahContext(command: string, worker: IntelligenceWorker) {
       targetComplexity: policyProfile.targetComplexity,
       minComplexity: policyProfile.minComplexity,
       maxComplexity: policyProfile.maxComplexity,
-      topN: 8,
-      maxSegments: 12,
-      minTrust: 0.5,
-      linkExpansionDepth: 1,
-      linkExpansionLimit: 10
+      topN: COMMAND_CENTER_CONFIG.atlas.defaultTopN,
+      maxSegments: COMMAND_CENTER_CONFIG.atlas.searchMaxSegments,
+      minTrust: COMMAND_CENTER_CONFIG.atlas.minTrust,
+      linkExpansionDepth: COMMAND_CENTER_CONFIG.atlas.linkExpansionDepth,
+      linkExpansionLimit: COMMAND_CENTER_CONFIG.atlas.linkExpansionLimit
     });
     const loadoutText = expandedTextForSearch([
       worker.tahLoadout.join(' '),
@@ -546,15 +867,15 @@ function retrieveTahContext(command: string, worker: IntelligenceWorker) {
     ].join(' '));
     const loadoutResponse = retriever.search({
       text: loadoutText,
-      domainMask: ALL_DOMAIN_MASK,
+      domainMask: COMMAND_CENTER_CONFIG.atlas.allDomainMask,
       targetComplexity: policyProfile.targetComplexity,
       minComplexity: policyProfile.minComplexity,
       maxComplexity: policyProfile.maxComplexity,
-      topN: 8,
-      maxSegments: 25,
-      minTrust: 0.5,
-      linkExpansionDepth: 1,
-      linkExpansionLimit: 10
+      topN: COMMAND_CENTER_CONFIG.atlas.defaultTopN,
+      maxSegments: COMMAND_CENTER_CONFIG.atlas.loadoutMaxSegments,
+      minTrust: COMMAND_CENTER_CONFIG.atlas.minTrust,
+      linkExpansionDepth: COMMAND_CENTER_CONFIG.atlas.linkExpansionDepth,
+      linkExpansionLimit: COMMAND_CENTER_CONFIG.atlas.linkExpansionLimit
     });
     const mergedResults = mergeAtlasResults(response.results, loadoutResponse.results);
     const policyResult = applyTahRetrievalPolicy(mergedResults, worker, expandedSearchText, policyProfile);
@@ -565,7 +886,7 @@ function retrieveTahContext(command: string, worker: IntelligenceWorker) {
         ...policyResult.trace,
         stages: [
           ...policyResult.trace.stages,
-        stage('virtual loadout fallback', mergedResults.length, finalResults.length)
+        stage('saved context fallback', mergedResults.length, finalResults.length)
       ]
     };
 
@@ -597,7 +918,8 @@ function synthesizeWorkerResult(
   command: string,
   worker: IntelligenceWorker,
   shards: CommandContextShard[],
-  relayPlan: TahRelayPlan
+  relayPlan: TahRelayPlan,
+  listingFacts?: ListingFacts
 ): CommandCenterResponse['result'] {
   const civicRecord = parseCivicServiceRecord(command);
   if (civicRecord && worker.id === 'dallas-community') {
@@ -606,19 +928,27 @@ function synthesizeWorkerResult(
 
   const topShard = shards[0];
   const sourcePhrase = topShard
-    ? `I found a useful note in ${topShard.source} about ${topShard.concepts.slice(0, 3).join(', ') || 'this topic'}.`
-    : 'I did not find a strong saved note yet, so I used the selected helper and its usual files.';
+    ? `I found useful context in ${sourceDisplayName(topShard.source)} about ${topShard.concepts.slice(0, 3).join(', ') || 'this topic'}.`
+    : 'I did not find a strong saved note yet, so I used the selected helper and its standard context.';
 
-  const actions = buildActions(command, worker, shards);
-  const confidence = Math.min(96, Math.max(62, Math.round(
-    worker.stats.precision * 0.45 +
-    worker.stats.contextFit * 0.35 +
-    (shards.length ? 18 : 4)
-  )));
+  const actions = buildActions(command, worker, shards, listingFacts);
+  const confidence = Math.min(
+    COMMAND_CENTER_CONFIG.scoring.maxConfidence,
+    Math.max(
+      COMMAND_CENTER_CONFIG.scoring.minConfidence,
+      Math.round(
+        worker.stats.precision * COMMAND_CENTER_CONFIG.scoring.precisionWeight +
+        worker.stats.contextFit * COMMAND_CENTER_CONFIG.scoring.contextFitWeight +
+        (shards.length ? COMMAND_CENTER_CONFIG.scoring.baseConfidenceWithShards : COMMAND_CENTER_CONFIG.scoring.baseConfidenceWithoutShards)
+      )
+    )
+  );
 
   return {
     title: worker.sampleOutput.title,
-    summary: `${sourcePhrase} ${worker.role} You asked: "${command}".`,
+    summary: listingFacts?.isListingLike
+      ? buildListingSummary(sourcePhrase, worker, listingFacts)
+      : `${sourcePhrase} ${worker.role} Request: "${commandDisplayText(command)}".`,
     actions,
     confidence,
     relayPlan,
@@ -638,7 +968,10 @@ function synthesizeCivicServiceResult(
     'Treat the address as the usable location because the coordinates are 0, 0.',
     'Use this as local service context only; do not turn it into a safety, value, or neighborhood-quality claim.'
   ];
-  const confidence = Math.min(96, Math.max(84, worker.stats.precision));
+  const confidence = Math.min(
+    COMMAND_CENTER_CONFIG.scoring.maxConfidence,
+    Math.max(COMMAND_CENTER_CONFIG.scoring.civicMinConfidence, worker.stats.precision)
+  );
   const summary = [
     `This is a Dallas 311 code-compliance service request for ${record.location}.`,
     `${record.category} means the city categorized it as a code concern; CCS is the code-compliance lane.`,
@@ -656,6 +989,18 @@ function synthesizeCivicServiceResult(
     relayPlan,
     deliverable: buildCivicServiceDeliverable(record, shards, relayPlan, actions)
   };
+}
+
+function buildListingSummary(sourcePhrase: string, worker: IntelligenceWorker, facts: ListingFacts) {
+  const factSummary = summarizeListingFacts(facts) || 'pasted listing details';
+  const featurePhrase = facts.features.length
+    ? ` Notable extracted features: ${facts.features.slice(0, 5).join(', ')}.`
+    : '';
+  const missingPhrase = facts.missingFields.length
+    ? ` Verify missing fields before public copy: ${facts.missingFields.join(', ')}.`
+    : '';
+
+  return `${sourcePhrase} ${worker.role} I extracted ${factSummary}.${featurePhrase}${missingPhrase}`;
 }
 
 function buildCivicServiceActions(record: CivicServiceRecord): CommandActionItem[] {
@@ -705,11 +1050,11 @@ function buildCommandDeliverable(
   const sections = relayPlan.sections.slice(0, 4);
   const frames = sections.map((section, index) => {
     const shard = shards[index % Math.max(1, shards.length)];
-    const signal = shard ? extractShardSignal(shard) : `Use ${worker.name} to answer: ${command}`;
+    const signal = shard ? extractShardSignal(shard) : `Use ${worker.name} to answer: ${commandDisplayText(command)}`;
     const action = actions[index % actions.length] || worker.sampleOutput.bullets[index % worker.sampleOutput.bullets.length] || 'Return the next practical move.';
     const sourceAnchor = shard
-      ? `${shard.source} / ${shard.matchReason || 'retrieved context'}`
-      : worker.tahLoadout[index % worker.tahLoadout.length] || 'worker loadout';
+      ? `${sourceDisplayName(shard.source)} / ${sourceReasonDisplayName(shard.matchReason || 'retrieved context')}`
+      : sourceDisplayName(worker.tahLoadout[index % worker.tahLoadout.length]) || 'helper context';
 
     return {
       label: `${relayPlan.format.frameLabel} ${index + 1}`,
@@ -733,7 +1078,7 @@ function buildCommandDeliverable(
     speakerNote: relayPlan.finalScreen.instruction,
     sourceAnchor: relayPlan.finalScreen.sourceCards
       .slice(0, 4)
-      .map((card) => `${card.source} (${card.matchReason})`)
+      .map((card) => `${sourceDisplayName(card.source)} (${sourceReasonDisplayName(card.matchReason)})`)
       .join(', ')
   });
 
@@ -758,7 +1103,7 @@ function buildCivicServiceDeliverable(
       tahLoadout: ['dallas_community_intel.tah', 'dallas_community_intel.hat']
     } as IntelligenceWorker
   );
-  const sourceAnchor = sourceSummary.replace(/^I used:\s*/i, '').replace(/\.$/, '');
+  const sourceAnchor = sourceSummary.replace(/^Sources checked:\s*/i, '').replace(/\.$/, '');
   const frames = [
     {
       label: 'Answer',
@@ -819,7 +1164,7 @@ function buildMessageCardDeliverable(
       visualDirection: 'Show the message itself, with one copy action.',
       body: message,
       speakerNote: 'This is the action. Copy or send this text after reviewing facts.',
-      sourceAnchor: sourceSummary.replace(/^I used:\s*/i, '').replace(/\.$/, '')
+      sourceAnchor: sourceSummary.replace(/^Sources checked:\s*/i, '').replace(/\.$/, '')
     },
     {
       label: 'Why it works',
@@ -827,7 +1172,7 @@ function buildMessageCardDeliverable(
       visualDirection: 'Show one small rationale strip beneath the message.',
       body: actions[0] || worker.role,
       speakerNote: 'Keep this as support, not the main answer.',
-      sourceAnchor: sourceSummary.replace(/^I used:\s*/i, '').replace(/\.$/, '')
+      sourceAnchor: sourceSummary.replace(/^Sources checked:\s*/i, '').replace(/\.$/, '')
     }
   ];
 
@@ -905,10 +1250,34 @@ function formatDeliverableFrame(frame: CommandCenterResponse['result']['delivera
 
 function summarizeSources(shards: CommandContextShard[], worker: IntelligenceWorker) {
   const sourceNames = shards.length
-    ? [...new Set(shards.map((shard) => shard.source))].slice(0, 5)
-    : worker.tahLoadout.slice(0, 5);
+    ? [...new Set(shards.map((shard) => shard.source))].slice(0, 5).map(sourceDisplayName)
+    : worker.tahLoadout.slice(0, 5).map(sourceDisplayName);
 
-  return `I used: ${sourceNames.join(', ')}.`;
+  return `Sources checked: ${sourceNames.join(', ')}.`;
+}
+
+export function sourceDisplayName(source?: string): string {
+  const normalized = String(source || '').trim();
+  if (!normalized) return 'Saved context';
+  if (FRIENDLY_SOURCE_NAMES[normalized]) return FRIENDLY_SOURCE_NAMES[normalized];
+
+  return normalized
+    .replace(/\.(tah|hat)$/i, '')
+    .replace(/^wiki_/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase()) || 'Saved context';
+}
+
+function sourceReasonDisplayName(reason?: string): string {
+  const normalized = String(reason || '').toLowerCase();
+  if (normalized.includes('query memory')) return 'saved note';
+  if (normalized.includes('virtual') || normalized.includes('loadout') || normalized.includes('fallback')) return 'saved context';
+  if (normalized.includes('concept')) return 'related topic';
+  if (normalized.includes('term')) return 'word match';
+  if (normalized.includes('retrieved') || normalized.includes('policy')) return 'search match';
+  return reason || 'context';
 }
 
 function extractShardSignal(shard: CommandContextShard) {
@@ -920,11 +1289,11 @@ function extractShardSignal(shard: CommandContextShard) {
   const cleaned = shard.text
     .replace(/\r?\n/g, ' ')
     .replace(/\b(TYPE|CREATED_AT|COMMAND|WORKER|TEMPLATE|MODE|SOURCES|LEARNED|ACTIONS|TITLE|CONCEPT|ALIASES|DOMAIN|TRUST|VITALITY|PURPOSE|OUTPUT SHAPE|SOURCE|SLUG|QUERY|CONTENT):\s*/gi, '')
-    .replace(/Learned which TAH sources support the explanation:/gi, 'Files used:')
+    .replace(/Learned which TAH sources support the explanation:/gi, 'Sources used:')
     .replace(/Learned how to frame this as/gi, 'Answer style:')
     .replace(/Learned the safe delivery shape:/gi, 'Answer flow:')
-    .replace(/\bTAH sources\b/gi, 'TAH files')
-    .replace(/\bTAH context\b/gi, 'TAH files')
+    .replace(/\bTAH sources\b/gi, 'saved sources')
+    .replace(/\bTAH context\b/gi, 'saved context')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -979,7 +1348,7 @@ function applyTahRetrievalPolicy(
 
   const metadataFiltered = results.filter((result) => {
     if (/^web_\d+/i.test(result.source)) return false;
-    if (result.trust < 0.5 || result.vitality <= 0) return false;
+    if (result.trust < COMMAND_CENTER_CONFIG.atlas.minTrust || result.vitality <= 0) return false;
     return result.complexity >= profile.minComplexity && result.complexity <= profile.maxComplexity;
   }).filter((result) => isCommandCenterDomainCandidate(result, worker));
   stages.push(stage('metadata filter', results.length, metadataFiltered.length));
@@ -1003,14 +1372,14 @@ function applyTahRetrievalPolicy(
       weightedMatchScore,
       conceptOverlap,
       loadoutMatch,
-      kept: weightedMatchScore >= 1.4 || conceptOverlap > 0 || loadoutMatch
+      kept: weightedMatchScore >= COMMAND_CENTER_CONFIG.policy.weightedMatchThreshold || conceptOverlap > 0 || loadoutMatch
     };
   }).filter((item) => item.kept);
   stages.push(stage('concept match', metadataFiltered.length, conceptMatched.length));
 
   const scored = conceptMatched.map((item) => {
-    const densityVitalityScore = item.result.density * 18 + item.result.vitality * 24;
-    const conceptScore = item.weightedMatchScore * 8 + item.conceptOverlap * 10 + (item.loadoutMatch ? 96 : 0);
+    const densityVitalityScore = item.result.density * COMMAND_CENTER_CONFIG.policy.densityWeight + item.result.vitality * COMMAND_CENTER_CONFIG.policy.vitalityWeight;
+    const conceptScore = item.weightedMatchScore * COMMAND_CENTER_CONFIG.policy.conceptMatchWeight + item.conceptOverlap * COMMAND_CENTER_CONFIG.policy.conceptOverlapWeight + (item.loadoutMatch ? COMMAND_CENTER_CONFIG.policy.loadoutBonusScore : 0);
     const complexityFit = (1 - Math.min(1, Math.abs(item.result.complexity - profile.targetComplexity))) * 12;
     const policyScore = item.result.score + densityVitalityScore + conceptScore + complexityFit;
 
@@ -1019,9 +1388,9 @@ function applyTahRetrievalPolicy(
       policyScore
     };
   }).sort((a, b) => b.policyScore - a.policyScore);
-  stages.push(stage('density vitality rank', conceptMatched.length, Math.min(scored.length, 4)));
+  stages.push(stage('density vitality rank', conceptMatched.length, Math.min(scored.length, COMMAND_CENTER_CONFIG.policy.maxShardsToSelect)));
 
-  const selected = scored.slice(0, 4).map((item, index) => ({
+  const selected = scored.slice(0, COMMAND_CENTER_CONFIG.policy.maxShardsToSelect).map((item, index) => ({
     expertId: item.result.expertId,
     title: item.result.title,
     source: item.result.source,
@@ -1046,7 +1415,7 @@ function applyTahRetrievalPolicy(
       name: 'metadata -> concept -> density/vitality -> linked -> compact',
       contextMode: 'compact',
       targetComplexity: roundMetric(profile.targetComplexity),
-      linkedExpansionDepth: 1,
+      linkedExpansionDepth: COMMAND_CENTER_CONFIG.atlas.linkExpansionDepth,
       synonymTerms: workerTerms.length,
       stages
     }
@@ -1094,23 +1463,7 @@ function isDisallowedSourceForWorker(source: string, worker: IntelligenceWorker)
 }
 
 function commandCenterMarkersForWorker(worker: IntelligenceWorker) {
-  const common = ['agent_brand', 'market_rules'];
-  const byWorker: Record<string, string[]> = {
-    'lead-scoring': ['lead', 'prospect', 'buyer', 'client', 'contact', 'lead_history', 'agent', 'pipeline'],
-    'buyer-intent': ['lead', 'buyer', 'intent', 'motivation', 'lead_history', 'objection_scripts'],
-    'follow-up-writer': ['lead', 'buyer', 'seller', 'client', 'follow', 'message', 'agent', 'agent_brand', 'objection_scripts'],
-    'listing-summary': ['listing', 'property', 'home', 'listing_context', 'agent_brand', 'comps_context'],
-    'listing-spark': ['listing', 'property', 'campaign', 'hook', 'local_business', 'agent_brand'],
-    'comp-analysis': ['comps', 'comparable', 'valuation', 'price', 'pricing', 'listing_context', 'comps_context', 'texas_real_estate'],
-    'neighborhood-explainer': ['neighborhood', 'community', 'local', 'place', 'area', 'texas_place_history', 'dallas', 'tarrant'],
-    'local-commerce': ['local', 'commerce', 'business', 'shop', 'restaurant', 'community', 'texas_place_history', 'dallas', 'tarrant'],
-    'market-movement': ['market', 'trend', 'movement', 'comps_context', 'neighborhood_context', 'texas_real_estate', 'dallas', 'tarrant'],
-    'agent-voice': ['agent', 'voice', 'brand', 'tone', 'agent_brand', 'objection_scripts'],
-    'objection-scripts': ['objection', 'pushback', 'buyer', 'seller', 'agent_brand', 'objection_scripts'],
-    supervisor: ['market_rules', 'agent_brand', 'compliance', 'risk', 'safe language']
-  };
-
-  return [...common, ...(byWorker[worker.id] || [])];
+  return [...COMMON_DOMAIN_MARKERS, ...(WORKER_DOMAIN_MARKERS[worker.id] || [])];
 }
 
 function buildPolicyProfile(searchText: string, worker: IntelligenceWorker) {
@@ -1118,7 +1471,9 @@ function buildPolicyProfile(searchText: string, worker: IntelligenceWorker) {
   const loadoutComplexity = Math.min(1, worker.tahLoadout.length / 6);
   const commandComplexity = Math.min(1, termCount / 18);
   const targetComplexity = clamp01(commandComplexity * 0.6 + loadoutComplexity * 0.4);
-  const spread = worker.slot === 'Supervisor' ? 0.45 : 0.35;
+  const spread = worker.slot === 'Supervisor'
+    ? COMMAND_CENTER_CONFIG.policy.supervisorSpread
+    : COMMAND_CENTER_CONFIG.policy.workerSpread;
 
   return {
     targetComplexity,
@@ -1165,26 +1520,26 @@ function buildVirtualTahContext(command: string, worker: IntelligenceWorker): Co
     density: 0.65,
     vitality: 0.6,
     contextLevel: contextLevelForRank(index),
-    matchReason: 'virtual loadout'
+    matchReason: 'saved context fallback'
   }));
 }
 
 function virtualTahText(file: string, worker: IntelligenceWorker, command: string) {
-  const capsules: Record<string, string> = {
-    'lead_history.tah': 'Lead history capsule: recent inquiry timing, buyer intent notes, preferred channel, last touch, and next-step readiness.',
-    'market_rules.tah': 'Market rules capsule: safe real estate language, current market talking points, pricing caution, and agent-ready compliance boundaries.',
-    'agent_brand.tah': 'Agent brand capsule: preferred tone, local expertise, short direct calls to action, and phrases that sound like the agent.',
-    'listing_context.tah': 'Listing context capsule: property facts, differentiators, missing fields, seller constraints, and buyer-facing highlights.',
-    'neighborhood_context.tah': 'Neighborhood context capsule: area memory, lifestyle notes, commute context, local amenities, and buyer-safe explanations.',
-    'local_business_context.tah': 'Local business capsule: nearby commerce, restaurants, services, and community details that support property storytelling.',
-    'comps_context.tah': 'Comps context capsule: comparable properties, price posture, recent movement, confidence notes, and valuation caveats.',
-    'objection_scripts.tah': 'Objection scripts capsule: buyer and seller pushback patterns, advisory responses, and next-step questions.'
+  const fallbackContext: Record<string, string> = {
+    'lead_history.tah': 'Lead notes: recent interest, buyer intent, preferred contact method, last touch, and likely next step.',
+    'market_rules.tah': 'Review guidance: safe real-estate wording, market talking points, pricing cautions, and claim boundaries.',
+    'agent_brand.tah': 'Agent voice: preferred tone, local expertise, short calls to action, and phrases that sound natural for the agent.',
+    'listing_context.tah': 'Listing details: property facts, strongest selling points, missing fields, seller constraints, and buyer-facing highlights.',
+    'neighborhood_context.tah': 'Neighborhood context: area notes, lifestyle details, commute context, nearby amenities, and buyer-safe explanations.',
+    'local_business_context.tah': 'Nearby business context: restaurants, shops, services, and community details that can support property storytelling.',
+    'comps_context.tah': 'Pricing context: comparable properties, price posture, recent movement, confidence notes, and valuation cautions.',
+    'objection_scripts.tah': 'Response ideas: common buyer and seller concerns, helpful replies, and practical next-step questions.',
   };
 
-  return `${capsules[file] || 'TAH capsule: private structured context for this worker.'} Worker: ${worker.name}. Command: ${command}`;
+  return `${fallbackContext[file] || 'General background for this helper.'} Helper: ${worker.name}. Request: ${commandDisplayText(command)}`;
 }
 
-function buildActions(command: string, worker: IntelligenceWorker, shards: CommandContextShard[]) {
+function buildActions(command: string, worker: IntelligenceWorker, shards: CommandContextShard[], listingFacts?: ListingFacts) {
   const lower = command.toLowerCase();
   if (worker.id === 'lead-scoring' || lower.includes('call first')) {
     return [
@@ -1203,6 +1558,17 @@ function buildActions(command: string, worker: IntelligenceWorker, shards: Comma
   }
 
   if (worker.id === 'listing-summary' || worker.id === 'listing-spark') {
+    if (listingFacts?.isListingLike) {
+      const missing = listingFacts.missingFields.length
+        ? ` Missing fields to verify: ${listingFacts.missingFields.join(', ')}.`
+        : '';
+      return [
+        `Lead with the strongest verified hook from the pasted listing.${missing}`,
+        'Use the extracted facts first, then add agent voice and nearby context only where supported.',
+        'Flag any unsupported or missing facts before turning this into public copy.'
+      ];
+    }
+
     return [
       'Pick the strongest listing hook before writing long-form copy.',
       'Blend listing context with agent brand and nearby market context.',
@@ -1257,6 +1623,13 @@ function inferIntent(command: string, worker: IntelligenceWorker) {
   const normalized = command.toLowerCase();
   const matched = worker.commandFit.find((phrase) => normalized.includes(phrase));
   return (matched || worker.name).toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+}
+
+function commandDisplayText(command: string): string {
+  const cleaned = command.replace(/\s+/g, ' ').trim();
+  const listingSummary = summarizeListingFacts(extractListingFacts(cleaned));
+  if (listingSummary) return listingSummary;
+  return excerpt(cleaned, 280);
 }
 
 function excerpt(text: string, length: number) {

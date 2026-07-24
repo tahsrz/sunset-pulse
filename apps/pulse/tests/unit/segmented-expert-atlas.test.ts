@@ -12,6 +12,26 @@ import {
 import type { PulseCartridge } from '@/lib/ai/brain/pulse_query';
 
 describe('Segmented expert atlas', () => {
+  it('returns an empty response for an empty atlas instead of reading missing segments', () => {
+    const builder = new SegmentedExpertAtlasBuilder({ segmentSize: 16 });
+    const { hat, tah } = builder.forge();
+    const retriever = new SegmentedExpertAtlasRetriever(hat, tah);
+
+    const response = retriever.search({
+      text: 'anything',
+      topN: 3,
+    });
+
+    expect(response.results).toEqual([]);
+    expect(response.diagnostics).toEqual(expect.objectContaining({
+      totalSegments: 0,
+      visitedSegments: 0,
+      candidateExperts: 0,
+      payloadReads: 0,
+      routeIndex: -1,
+    }));
+  });
+
   it('routes through a 400-expert population by pruning metadata segments before reading payloads', () => {
     const architectureMask = domainMaskForLabel('architecture cache cpu');
     const medicalMask = domainMaskForLabel('medical clinical diagnosis');
