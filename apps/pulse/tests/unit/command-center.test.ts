@@ -342,6 +342,14 @@ describe('command center routing', () => {
       totalKept: expect.any(Number),
       estimatedChars: expect.any(Number),
     }));
+    expect(response.trace.retrievalPolicy).toEqual(expect.objectContaining({
+      name: 'structured listing fast path',
+      linkedExpansionDepth: 0,
+    }));
+    expect(response.trace.retrievalPolicy?.stages.map((stage) => stage.name)).toContain('atlas traversal skipped');
+    expect(response.trace.workflow?.attempts.find((attempt) => attempt.operation === 'atlas-context-retrieval')).toEqual(
+      expect.objectContaining({ status: 'success' })
+    );
     expect(response.trace.progress?.map((item) => item.id)).toEqual([
       'classified',
       'worker',

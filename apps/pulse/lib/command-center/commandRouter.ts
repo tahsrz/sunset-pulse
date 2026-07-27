@@ -103,6 +103,8 @@ const WORKER_DOMAIN_MARKERS: Record<string, string[]> = {
 };
 
 const COMMON_DOMAIN_MARKERS = ['agent_brand', 'market_rules'];
+const STRUCTURED_LISTING_FAST_PATH_POLICY = 'structured listing fast path';
+const STRUCTURED_LISTING_FAST_PATH_MIN_CONFIDENCE = 80;
 
 const FRIENDLY_SOURCE_NAMES: Record<string, string> = {
   'lead_history.tah': 'Lead notes',
@@ -413,6 +415,7 @@ async function retrieveContextNode(state: CommandGraphNodeState): Promise<Partia
       const { command, classification, listingFacts, worker } = state;
       const workflowAttempts = [...(state.workflowAttempts || [])];
       const retrievalCommand = retrievalTextForCommand(command, listingFacts);
+      const structuredListingFastPath = shouldUseStructuredListingFastPath(classification, listingFacts);
       const recalled = await runWorkflowOperation<CommandContextShard[]>({
         node: 'retrieve',
         operation: 'query-memory-recall',
@@ -429,11 +432,16 @@ async function retrieveContextNode(state: CommandGraphNodeState): Promise<Partia
         delayMs: COMMAND_CENTER_CONFIG.retry.delayMs,
         fallback: () => ({ results: buildVirtualTahContext(command, worker) }),
         fallbackLabel: 'virtual context',
-        fallbackResult: (context) => context.results.some((shard) => /fallback|virtual/i.test(shard.matchReason || ''))
+        fallbackResult: (context) => context.policy?.name === STRUCTURED_LISTING_FAST_PATH_POLICY
+          ? false
+          : context.results.some((shard) => /fallback|virtual/i.test(shard.matchReason || ''))
           ? 'virtual context'
           : false,
         onError: (err) => console.error('[COMMAND_CENTER] Context retrieval error:', err)
-      }, () => classification.requiresAtlas ? retrieveTahContext(retrievalCommand, worker) : { results: [] });
+      }, () => {
+        if (structuredListingFastPath) return retrieveStructuredListingContext(retrievalCommand, worker, listingFacts);
+        return classification.requiresAtlas ? retrieveTahContext(retrievalCommand, worker) : { results: [] };
+      });
       workflowAttempts.push(recalled.trace, retrieved.trace);
 
       const listingShard = listingFacts ? [listingFactsToContextShard(listingFacts)] : [];
@@ -458,6 +466,7 @@ async function retrieveContextNode(state: CommandGraphNodeState): Promise<Partia
           contextBudgetTotalKept: budgeted.trace.totalKept,
           atlasVisitedSegments: context.diagnostics?.visitedSegments,
           atlasPayloadReads: context.diagnostics?.payloadReads,
+          structuredListingFastPath,
           retrievalStageCount: context.policy?.stages.length,
           workflowStatus: summarizeWorkflowAttempts(workflowAttempts).status,
           workflowRetryCount: workflowAttempts.filter((attempt) => attempt.retried).length
@@ -779,6 +788,44 @@ function listingFactsToContextShard(facts: ListingFacts): CommandContextShard {
     vitality: 0.86,
     contextLevel: 'full',
     matchReason: 'structured listing extraction'
+  };
+}
+
+function shouldUseStructuredListingFastPath(
+  classification: CommandIntentClassification,
+  listingFacts?: ListingFacts
+) {
+  return classification.intent === 'listing_analysis' &&
+    Boolean(listingFacts?.isListingLike) &&
+    (listingFacts?.confidence || 0) >= STRUCTURED_LISTING_FAST_PATH_MIN_CONFIDENCE &&
+    classification.requiresAtlas;
+}
+
+function retrieveStructuredListingContext(
+  command: string,
+  worker: IntelligenceWorker,
+  listingFacts?: ListingFacts
+): CommandRetrievalContext {
+  const capsules = buildVirtualTahContext(command, worker).map((shard) => ({
+    ...shard,
+    score: Math.max(shard.score, 76),
+    matchReason: 'structured listing context'
+  }));
+
+  return {
+    results: capsules,
+    policy: {
+      name: STRUCTURED_LISTING_FAST_PATH_POLICY,
+      contextMode: 'compact',
+      targetComplexity: 0.36,
+      linkedExpansionDepth: 0,
+      synonymTerms: 0,
+      stages: [
+        stage('structured listing facts', listingFacts?.isListingLike ? 1 : 0, listingFacts?.isListingLike ? 1 : 0),
+        stage('local capsule loadout', worker.tahLoadout.length, capsules.length),
+        stage('atlas traversal skipped', 0, 0)
+      ]
+    }
   };
 }
 
