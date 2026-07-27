@@ -1,5 +1,7 @@
 import 'server-only';
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import connectDB from '@/lib/core/database';
 import { ListingIntake } from '@/models/ListingIntake';
@@ -256,6 +258,13 @@ type MockListingIntakeGlobal = typeof globalThis & {
 export function resetMockListingIntakesForTests() {
   const globalStore = globalThis as MockListingIntakeGlobal;
   globalStore.__sunsetPulseMockListingIntakes = new Map();
+  if (process.env.PULSE_MOCK_LISTING_INTAKE_PATH) {
+    writeMockListingIntakes(globalStore.__sunsetPulseMockListingIntakes);
+  }
+}
+
+export function mockListingIntakeStorePath() {
+  return process.env.PULSE_MOCK_LISTING_INTAKE_PATH || path.join(process.cwd(), '.pulse-local', 'listing_intakes.json');
 }
 
 function createMockListingIntake(snapshot: ListingIntakeSnapshot, ownerId: string, actor: string) {
@@ -272,6 +281,7 @@ function createMockListingIntake(snapshot: ListingIntakeSnapshot, ownerId: strin
     propertyApplications: [],
   };
   getMockListingIntakes().set(intakeId, record);
+  persistMockListingIntakes();
   return serializeListingIntake(record);
 }
 
@@ -303,6 +313,7 @@ function updateMockListingIntake(
     updatedAt: new Date(),
     history: [...record.history.slice(-24), buildHistoryEntry(snapshot, nextVersion, action, actor, new Date())],
   });
+  persistMockListingIntakes();
   return serializeListingIntake(record);
 }
 
@@ -330,6 +341,7 @@ function beginMockListingIntakePropertyApplication(input: ListingIntakePropertyA
   }];
   record.version += 1;
   record.updatedAt = now;
+  persistMockListingIntakes();
   return serializeListingIntake(record);
 }
 
@@ -351,15 +363,46 @@ function completeMockListingIntakePropertyApplication(input: {
   application.failureReason = input.failureReason || null;
   application.completedAt = new Date();
   record.updatedAt = new Date();
+  persistMockListingIntakes();
   return serializeListingIntake(record);
 }
 
 function getMockListingIntakes() {
   const globalStore = globalThis as MockListingIntakeGlobal;
   if (!globalStore.__sunsetPulseMockListingIntakes) {
-    globalStore.__sunsetPulseMockListingIntakes = new Map();
+    globalStore.__sunsetPulseMockListingIntakes = readMockListingIntakes();
   }
   return globalStore.__sunsetPulseMockListingIntakes;
+}
+
+function persistMockListingIntakes() {
+  writeMockListingIntakes(getMockListingIntakes());
+}
+
+function readMockListingIntakes() {
+  const filePath = mockListingIntakeStorePath();
+  if (!fs.existsSync(filePath)) return new Map<string, MockListingIntakeRecord>();
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const records: MockListingIntakeRecord[] = Array.isArray(parsed?.intakes)
+      ? parsed.intakes.filter(isMockListingIntakeRecord)
+      : [];
+    return new Map<string, MockListingIntakeRecord>(records.map((record) => [record.intakeId, record]));
+  } catch {
+    return new Map<string, MockListingIntakeRecord>();
+  }
+}
+
+function writeMockListingIntakes(intakes: Map<string, MockListingIntakeRecord>) {
+  const filePath = mockListingIntakeStorePath();
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify({ intakes: [...intakes.values()] }, null, 2), 'utf8');
+}
+
+function isMockListingIntakeRecord(value: unknown): value is MockListingIntakeRecord {
+  const record = value as Partial<MockListingIntakeRecord>;
+  return Boolean(record?.intakeId && record?.ownerId && record?.version && record?.approvedFacts && record?.drafts);
 }
 
 function cloneSnapshot(snapshot: ListingIntakeSnapshot): ListingIntakeSnapshot {

@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
-    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    if (clientMockSessionsEnabled()) {
       const getMockSession = async () => {
         setLoading(true);
         try {
@@ -165,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading,
     signOut: async () => {
-      if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+      if (clientMockSessionsEnabled()) {
         await fetch('/api/auth/session', { method: 'DELETE', cache: 'no-store' });
         setSession(null);
         setUser(null);
@@ -219,6 +219,14 @@ function mockAuthUser(user: any): AuthUser {
       is_subscribed: metadata.isSubscribed,
     },
   } as AuthUser;
+}
+
+function clientMockSessionsEnabled() {
+  if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_ALLOW_PRODUCTION_MOCK_AUTH !== 'dangerously_allow_mock_auth') {
+    return false;
+  }
+
+  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true' || process.env.NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED === 'true';
 }
 
 function mockAuthSession(user: AuthUser): Session {

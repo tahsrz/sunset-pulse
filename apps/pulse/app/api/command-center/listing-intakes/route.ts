@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
   if (isAuthResponse(access)) return access;
 
   try {
-    const parsed = snapshotSchema.safeParse(await request.json());
+    const body = await safeJson(request);
+    if (body === undefined) return errorResponse('Invalid JSON listing intake request.', 400);
+
+    const parsed = snapshotSchema.safeParse(body);
     if (!parsed.success) return errorResponse('Invalid listing intake.', 400, parsed.error.flatten());
 
     const snapshot = parsed.data as ListingIntakeSnapshot;
@@ -46,5 +49,13 @@ export async function POST(request: NextRequest) {
       return errorResponse('Listing intake is not ready to publish.', 400, error.blockers);
     }
     return errorResponse('Failed to save listing intake.', 500);
+  }
+}
+
+async function safeJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
   }
 }

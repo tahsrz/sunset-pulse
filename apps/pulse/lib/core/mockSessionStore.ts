@@ -27,7 +27,11 @@ export type MockSessionRecord = {
 };
 
 export function mockSessionsEnabled() {
-  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true' || process.env.PULSE_MOCK_AUTH_ENABLED === 'true';
+  if (process.env.NODE_ENV === 'production' && process.env.PULSE_ALLOW_PRODUCTION_MOCK_AUTH !== 'dangerously_allow_mock_auth') {
+    return false;
+  }
+
+  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true' || process.env.NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED === 'true';
 }
 
 export function mockSessionStorePath() {

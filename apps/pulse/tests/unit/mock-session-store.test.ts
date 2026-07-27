@@ -11,12 +11,16 @@ import {
 } from '@/lib/core/mockSessionStore';
 
 const previousMockMode = process.env.NEXT_PUBLIC_MOCK_MODE;
-const previousMockAuth = process.env.PULSE_MOCK_AUTH_ENABLED;
+const previousMockAuth = process.env.NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED;
+const previousAllowProductionMockAuth = process.env.PULSE_ALLOW_PRODUCTION_MOCK_AUTH;
+const previousNodeEnv = process.env.NODE_ENV;
 const previousPath = process.env.PULSE_MOCK_SESSION_PATH;
 
 afterEach(() => {
   restoreEnv('NEXT_PUBLIC_MOCK_MODE', previousMockMode);
-  restoreEnv('PULSE_MOCK_AUTH_ENABLED', previousMockAuth);
+  restoreEnv('NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED', previousMockAuth);
+  restoreEnv('PULSE_ALLOW_PRODUCTION_MOCK_AUTH', previousAllowProductionMockAuth);
+  restoreEnv('NODE_ENV', previousNodeEnv);
   restoreEnv('PULSE_MOCK_SESSION_PATH', previousPath);
   vi.useRealTimers();
 });
@@ -53,6 +57,23 @@ describe('mock session store', () => {
 
     expect(clearMockSession(session.token)).toBe(true);
     expect(readMockSession(session.token)).toBeNull();
+  });
+
+  it('refuses mock sessions in production unless the explicit danger override is set', () => {
+    const filePath = path.join(os.tmpdir(), `pulse-mock-session-production-${Date.now()}.json`);
+    vi.stubEnv('NODE_ENV', 'production');
+    process.env.NEXT_PUBLIC_MOCK_MODE = 'true';
+    process.env.PULSE_MOCK_SESSION_PATH = filePath;
+
+    const session = createMockSession({ email: 'admin@example.com' });
+
+    expect(readMockSession(session.token)).toBeNull();
+
+    process.env.PULSE_ALLOW_PRODUCTION_MOCK_AUTH = 'dangerously_allow_mock_auth';
+    expect(readMockSession(session.token)).toEqual(expect.objectContaining({
+      token: session.token,
+      role: 'admin',
+    }));
   });
 });
 

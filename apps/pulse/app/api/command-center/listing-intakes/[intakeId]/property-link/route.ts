@@ -52,7 +52,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (isAuthResponse(access)) return access;
   const id = paramsSchema.safeParse(await params);
   if (!id.success) return errorResponse('Invalid listing intake id.', 400);
-  const parsed = applySchema.safeParse(await request.json());
+  const body = await safeJson(request);
+  if (body === undefined) return errorResponse('Invalid JSON canonical listing update request.', 400);
+
+  const parsed = applySchema.safeParse(body);
   if (!parsed.success) return errorResponse('Invalid canonical listing update.', 400, parsed.error.flatten());
 
   try {
@@ -79,4 +82,12 @@ function handoffErrorResponse(error: unknown, fallback: string) {
   if (error instanceof ListingIntakeConflictError || error instanceof CanonicalListingConflictError) return errorResponse(error.message, 409);
   if (error instanceof ListingIntakePublishGateError || error instanceof CanonicalListingApplyError) return errorResponse(error.message, 400);
   return errorResponse(fallback, 500);
+}
+
+async function safeJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
 }

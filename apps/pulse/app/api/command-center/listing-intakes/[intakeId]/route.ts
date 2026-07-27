@@ -53,7 +53,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!id.success) return errorResponse('Invalid listing intake id.', 400);
 
   try {
-    const parsed = updateSchema.safeParse(await request.json());
+    const body = await safeJson(request);
+    if (body === undefined) return errorResponse('Invalid JSON listing intake update request.', 400);
+
+    const parsed = updateSchema.safeParse(body);
     if (!parsed.success) return errorResponse('Invalid listing intake update.', 400, parsed.error.flatten());
     const { expectedVersion, ...snapshot } = parsed.data;
     const actor = operatorAuditUser(access);
@@ -75,5 +78,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (error instanceof ListingIntakeConflictError) return errorResponse(error.message, 409);
     if (error instanceof ListingIntakePublishGateError) return errorResponse('Listing intake is not ready to publish.', 400, error.blockers);
     return errorResponse('Failed to update listing intake.', 500);
+  }
+}
+
+async function safeJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
   }
 }
