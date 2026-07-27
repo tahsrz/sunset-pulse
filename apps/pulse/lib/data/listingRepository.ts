@@ -5,6 +5,11 @@ import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import Property from '@/models/Property';
 import { listingToRow, normalizeListing, type Listing } from './listingContract';
 import { withRetry } from '@/lib/core/withRetry';
+import {
+  listMockCanonicalProperties,
+  readMockCanonicalProperty,
+  upsertMockCanonicalProperty,
+} from '@/lib/mocks/canonicalProperties';
 
 export type ListingSearch = {
   location?: string;
@@ -28,12 +33,17 @@ export async function searchListings(
   options: { limit?: number; includeLegacy?: boolean } = {}
 ): Promise<Listing[]> {
   const limit = clamp(options.limit || 100, 1, 500);
+  if (isMockMode()) return searchMockListings(filters).slice(0, limit);
   const canonical = await searchCanonicalListings(filters, limit);
   const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit);
   return deduplicateListings([...canonical, ...legacy]).slice(0, limit);
 }
 
 export async function getListingById(id: string): Promise<Listing | null> {
+  if (isMockMode()) {
+    const property = readMockCanonicalProperty(id);
+    return property ? normalizeListing(property) : null;
+  }
   const canonical = await getCanonicalListing(id);
   if (canonical) return canonical;
 
@@ -50,6 +60,7 @@ export async function getListingById(id: string): Promise<Listing | null> {
 }
 
 export async function upsertCanonicalListing(input: Record<string, any>): Promise<Listing> {
+  if (isMockMode()) return normalizeListing(upsertMockCanonicalProperty(input));
   const row = listingToRow(input);
   return withRetry(async () => {
     const { data, error } = await supabaseAdmin
@@ -65,6 +76,43 @@ export async function upsertCanonicalListing(input: Record<string, any>): Promis
       console.warn('[CANONICAL_LISTING_RETRY]', { mlsId: row.mls_id, attempt, delayMs, error: formatError(error) });
     },
   });
+}
+
+function searchMockListings(filters: ListingSearch) {
+  return listMockCanonicalProperties()
+    .map((property) => normalizeListing(property))
+    .filter((listing) => {
+      const location = String(filters.city || filters.location || '').trim().toLowerCase();
+      const propertyType = String(filters.propertyType || '').trim().toLowerCase();
+      const minimumBeds = numberFilter(filters.beds);
+      const minimumBaths = numberFilter(filters.baths);
+      const minimumPrice = numberFilter(filters.minPrice);
+      const maximumPrice = numberFilter(filters.maxPrice);
+      const price = listing.list_price ?? listing.price ?? 0;
+      const searchable = [
+        listing.name,
+        listing.description,
+        listing.location.street,
+        listing.location.city,
+        listing.location.state,
+        listing.location.zipcode,
+        listing.mls_id,
+      ].join(' ').toLowerCase();
+
+      if (location && !searchable.includes(location)) return false;
+      if (propertyType && propertyType !== 'all' && listing.type.toLowerCase() !== propertyType) return false;
+      if (filters.status && listing.listing_status !== filters.status) return false;
+      if (filters.source && listing.source !== filters.source) return false;
+      if (minimumBeds !== null && Number(listing.beds || 0) < minimumBeds) return false;
+      if (minimumBaths !== null && Number(listing.baths || 0) < minimumBaths) return false;
+      if (minimumPrice !== null && price < minimumPrice) return false;
+      if (maximumPrice !== null && price > maximumPrice) return false;
+      return true;
+    });
+}
+
+function isMockMode() {
+  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }
 
 async function searchCanonicalListings(filters: ListingSearch, limit: number): Promise<Listing[]> {
@@ -152,6 +200,12 @@ function isUuid(value: string) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function numberFilter(value: string | number | undefined) {
+  if (value === undefined || value === '' || value === 'Any') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function formatError(error: unknown) {

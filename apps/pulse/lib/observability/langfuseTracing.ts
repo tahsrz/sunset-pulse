@@ -13,6 +13,7 @@ let processor: LangfuseSpanProcessor | null = null;
 let initialized = false;
 
 export function isLangfuseEnabled() {
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') return false;
   return Boolean(process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY);
 }
 

@@ -11,6 +11,8 @@ import {
 
 export async function readSiteConfig(agentId?: string | null) {
   const targetAgentId = agentId || createDefaultLaunchKit(agentId).agentId;
+  if (isMockMode()) return readMockSiteConfig(targetAgentId);
+
   const [supabaseRow, mongoRow] = await Promise.all([
     readSupabaseSiteConfig(targetAgentId),
     readMongoSiteConfig(targetAgentId),
@@ -22,6 +24,7 @@ export async function readSiteConfig(agentId?: string | null) {
 export async function readSiteConfigByOwnerUser(userId?: string | null) {
   const normalizedUserId = String(userId || '').trim();
   if (!normalizedUserId) return null;
+  if (isMockMode()) return readMockSiteConfigByOwnerUser(normalizedUserId);
 
   const [supabaseRow, mongoRow] = await Promise.all([
     readSupabaseSiteConfigByOwnerUser(normalizedUserId),
@@ -34,6 +37,7 @@ export async function readSiteConfigByOwnerUser(userId?: string | null) {
 export async function readSiteConfigByStripeSubscriptionId(subscriptionId?: string | null) {
   const normalizedSubscriptionId = String(subscriptionId || '').trim();
   if (!normalizedSubscriptionId) return null;
+  if (isMockMode()) return readMockSiteConfigByStripeSubscriptionId(normalizedSubscriptionId);
 
   const [supabaseRow, mongoRow] = await Promise.all([
     readSupabaseSiteConfigByStripeSubscriptionId(normalizedSubscriptionId),
@@ -44,6 +48,8 @@ export async function readSiteConfigByStripeSubscriptionId(subscriptionId?: stri
 }
 
 export async function readExpiredPastDueSiteConfigs(nowIso = new Date().toISOString(), limit = 50) {
+  if (isMockMode()) return [];
+
   const candidateAgentIds = new Set<string>();
 
   for (const row of await readSupabaseExpiredPastDueSiteConfigs(nowIso, limit)) {
@@ -67,6 +73,11 @@ export async function readExpiredPastDueSiteConfigs(nowIso = new Date().toISOStr
 }
 
 export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
+  if (isMockMode()) {
+    saveMockSiteConfig(kit, updatedBy);
+    return ['mock'];
+  }
+
   const savedStores: string[] = [];
   const updatedAt = new Date().toISOString();
 
@@ -319,4 +330,52 @@ function toTime(value: unknown) {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const time = new Date(value).getTime();
   return Number.isFinite(time) ? time : null;
+}
+
+type MockSiteConfigGlobal = typeof globalThis & {
+  __sunsetPulseMockSiteConfigs?: Map<string, AgentLaunchKit>;
+};
+
+function readMockSiteConfig(agentId: string) {
+  const kit = getMockSiteConfigMap().get(agentId) || createDefaultLaunchKit(agentId);
+  return toSiteConfigSupabaseRecord(kit, { role: 'mock' }, new Date().toISOString());
+}
+
+function readMockSiteConfigByOwnerUser(userId: string) {
+  const kit = Array.from(getMockSiteConfigMap().values()).find((row) => (
+    row.ownerId === userId || row.billingProfile.userId === userId
+  ));
+  return kit ? toSiteConfigSupabaseRecord(kit, { role: 'mock' }, new Date().toISOString()) : null;
+}
+
+function readMockSiteConfigByStripeSubscriptionId(subscriptionId: string) {
+  const kit = Array.from(getMockSiteConfigMap().values()).find((row) => (
+    row.billingProfile.stripeSubscriptionId === subscriptionId
+  ));
+  return kit ? toSiteConfigSupabaseRecord(kit, { role: 'mock' }, new Date().toISOString()) : null;
+}
+
+function saveMockSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
+  const updatedAt = new Date().toISOString();
+  getMockSiteConfigMap().set(kit.agentId, {
+    ...kit,
+    provisioningAudit: kit.provisioningAudit,
+    billingProfile: {
+      ...kit.billingProfile,
+      billingStatusChangedAt: kit.billingProfile.billingStatusChangedAt || updatedAt,
+    },
+  });
+  void updatedBy;
+}
+
+function getMockSiteConfigMap() {
+  const globalStore = globalThis as MockSiteConfigGlobal;
+  if (!globalStore.__sunsetPulseMockSiteConfigs) {
+    globalStore.__sunsetPulseMockSiteConfigs = new Map();
+  }
+  return globalStore.__sunsetPulseMockSiteConfigs;
+}
+
+function isMockMode() {
+  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }

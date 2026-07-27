@@ -126,6 +126,7 @@ export async function runVoltagentCommandAdvisor(input: {
   const provider = model.split('/')[0] || 'unknown';
   const credentialEnv = providerCredentialEnv[provider];
   const missingCredential = credentialEnv && !hasConfiguredSecret(process.env[credentialEnv]);
+  const mockMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
   const disabled = process.env.VOLTAGENT_COMMAND_ADVISOR_ENABLED === 'false';
 
   return traceLangfuse(
@@ -138,10 +139,20 @@ export async function runVoltagentCommandAdvisor(input: {
         provider,
         routeMode: route.routeMode,
         workerId: route.workerId,
-        enabled: !disabled && !missingCredential
+        enabled: !mockMode && !disabled && !missingCredential
       }
     },
     async () => {
+      if (mockMode) {
+        return standbyResult({
+          model,
+          provider,
+          credentialEnv,
+          route,
+          reason: 'Mock mode is enabled, so the VoltAgent advisor did not call a model.'
+        });
+      }
+
       if (disabled) {
         return standbyResult({
           model,

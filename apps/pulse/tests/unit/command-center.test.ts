@@ -313,7 +313,12 @@ describe('command center routing', () => {
 
     expect(response.worker.id).toBe('listing-summary');
     expect(response.result.summary).toContain('pasted listing');
+    expect(response.result.summary).toContain('Strongest likely angles');
     expect(response.result.summary.length).toBeLessThan(600);
+    expect(response.result.deliverable.title).toContain('Listing intake');
+    expect(response.result.deliverable.copyReadyText).toContain('Parsed facts');
+    expect(response.result.deliverable.copyReadyText).toContain('Copy starter');
+    expect(response.result.deliverable.copyReadyText).toContain('Validation');
     expect(response.intent).toBe('listing_analysis');
     expect(response.trace.classification).toEqual(expect.objectContaining({
       intent: 'listing_analysis',
@@ -327,6 +332,11 @@ describe('command center routing', () => {
       baths: '3',
       sqft: '2,418',
     }));
+    expect(response.trace.listingFacts?.hooks).toEqual(expect.arrayContaining([
+      'Updated interior and finish story',
+      'Outdoor living angle',
+    ]));
+    expect(response.trace.listingFacts?.confidence).toBeGreaterThanOrEqual(80);
     expect(response.trace.contextBudget).toEqual(expect.objectContaining({
       intent: 'listing_analysis',
       totalKept: expect.any(Number),

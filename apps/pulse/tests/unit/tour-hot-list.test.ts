@@ -41,6 +41,7 @@ describe('Tour Studio hot list', () => {
     mockTourHotListConfig.fallbackLimit = 10;
     delete process.env.TOUR_HOT_LIST_ADDRESSES;
     delete process.env.TOUR_HOT_LIST_MLS_IDS;
+    vi.unstubAllEnvs();
   });
 
   it('parses backend-controlled MLS IDs and address lists without comma-splitting addresses', () => {
@@ -98,6 +99,23 @@ describe('Tour Studio hot list', () => {
     expect(mockGetListingById).not.toHaveBeenCalledWith('ENV-MLS');
     expect(mockGetListingById).not.toHaveBeenCalledWith('CONFIG-MLS');
     expect(result.listings.map((item) => item.id)).toEqual(['saved']);
+  });
+
+  it('uses local fixture listings in mock mode instead of production configured targets', async () => {
+    vi.stubEnv('NEXT_PUBLIC_MOCK_MODE', 'true');
+    mockTourHotListConfig.mlsIds = ['PRODUCTION-MLS'];
+    mockSearchListings.mockResolvedValue([
+      listing('mock-local', {
+        mls_id: 'MOCK-FTW-418',
+        images: ['https://cdn.example.test/mock.jpg'],
+      }),
+    ]);
+
+    const result = await getTourHotList({ limit: 3 });
+
+    expect(result.listings.map((item) => item.mls_id)).toEqual(['MOCK-FTW-418']);
+    expect(mockGetStoredTourHotList).not.toHaveBeenCalled();
+    expect(mockGetListingById).not.toHaveBeenCalledWith('PRODUCTION-MLS');
   });
 
   it('resolves configured MLS IDs in order and rejects listings without MLS images', async () => {

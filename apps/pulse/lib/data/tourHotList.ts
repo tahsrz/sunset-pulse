@@ -35,15 +35,19 @@ const ACTIVE_STATUSES = new Set([
 ]);
 
 export async function getTourHotList(options: { limit?: number } = {}): Promise<TourHotListResult> {
+  const limit = clamp(options.limit ?? tourHotListConfig.fallbackLimit, 1, 24);
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    return getFallbackMlsHotList(limit);
+  }
+
   const stored = await getStoredTourHotList();
   const storedTargets = stored?.targets || [];
   if (storedTargets.length > 0) {
     return resolveTourHotListTargets(storedTargets, {
-      limit: options.limit ?? stored?.limit ?? tourHotListConfig.fallbackLimit,
+      limit: options.limit ?? stored?.limit ?? limit,
     });
   }
 
-  const limit = clamp(options.limit ?? tourHotListConfig.fallbackLimit, 1, 24);
   const targets = getConfiguredTourHotListTargets();
   if (targets.length === 0) {
     return getFallbackMlsHotList(limit);

@@ -241,6 +241,10 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
 export default MainLayout;
 
 async function loadSupabaseSiteConfig(agentId: string) {
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    return { data: null, timedOut: true };
+  }
+
   const fallbackTimeoutMs = 1500;
   let timedOut = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -287,6 +291,10 @@ async function loadSupabaseSiteConfig(agentId: string) {
 }
 
 async function loadLegacySiteConfig(agentId: string) {
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    return null;
+  }
+
   const fallbackTimeoutMs = 1500;
   let timedOut = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;

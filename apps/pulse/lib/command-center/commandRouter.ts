@@ -533,7 +533,7 @@ async function synthesizeResultNode(state: CommandGraphNodeState): Promise<Parti
             actions: fallbackActions,
             confidence: COMMAND_CENTER_CONFIG.scoring.minConfidence,
             relayPlan,
-            deliverable: buildCommandDeliverable(command, worker, contextResults, relayPlan, fallbackActions)
+            deliverable: buildCommandDeliverable(command, worker, contextResults, relayPlan, fallbackActions, listingFacts)
           };
         },
         onError: (err) => console.error('[COMMAND_CENTER] Synthesis failed:', err)
@@ -952,7 +952,7 @@ function synthesizeWorkerResult(
     actions,
     confidence,
     relayPlan,
-    deliverable: buildCommandDeliverable(command, worker, shards, relayPlan, actions)
+    deliverable: buildCommandDeliverable(command, worker, shards, relayPlan, actions, listingFacts)
   };
 }
 
@@ -996,11 +996,14 @@ function buildListingSummary(sourcePhrase: string, worker: IntelligenceWorker, f
   const featurePhrase = facts.features.length
     ? ` Notable extracted features: ${facts.features.slice(0, 5).join(', ')}.`
     : '';
+  const hookPhrase = facts.hooks.length
+    ? ` Strongest likely angles: ${facts.hooks.slice(0, 3).join('; ')}.`
+    : '';
   const missingPhrase = facts.missingFields.length
     ? ` Verify missing fields before public copy: ${facts.missingFields.join(', ')}.`
     : '';
 
-  return `${sourcePhrase} ${worker.role} I extracted ${factSummary}.${featurePhrase}${missingPhrase}`;
+  return `${sourcePhrase} ${worker.role} I extracted ${factSummary}.${featurePhrase}${hookPhrase}${missingPhrase}`;
 }
 
 function buildCivicServiceActions(record: CivicServiceRecord): CommandActionItem[] {
@@ -1040,8 +1043,13 @@ function buildCommandDeliverable(
   worker: IntelligenceWorker,
   shards: CommandContextShard[],
   relayPlan: TahRelayPlan,
-  actions: string[]
+  actions: string[],
+  listingFacts?: ListingFacts
 ): CommandCenterResponse['result']['deliverable'] {
+  if (listingFacts?.isListingLike && (worker.id === 'listing-summary' || worker.id === 'listing-spark' || worker.id === 'comp-analysis' || worker.id === 'seller-update')) {
+    return buildListingIntakeDeliverable(command, worker, shards, relayPlan, actions, listingFacts);
+  }
+
   if (relayPlan.templateId === 'message-card') {
     return buildMessageCardDeliverable(command, worker, shards, relayPlan, actions);
   }
@@ -1089,6 +1097,118 @@ function buildCommandDeliverable(
     sourceSummary,
     frames
   };
+}
+
+function buildListingIntakeDeliverable(
+  command: string,
+  worker: IntelligenceWorker,
+  shards: CommandContextShard[],
+  relayPlan: TahRelayPlan,
+  actions: string[],
+  facts: ListingFacts
+): CommandCenterResponse['result']['deliverable'] {
+  const sourceSummary = [
+    `Listing intake extracted ${facts.extractedFields.length} fields with ${facts.confidence}% confidence.`,
+    summarizeSources(shards, worker)
+  ].join(' ');
+  const factLine = [
+    facts.address,
+    facts.price,
+    facts.beds ? `${facts.beds} beds` : '',
+    facts.baths ? `${facts.baths} baths` : '',
+    facts.sqft ? `${facts.sqft} sqft` : '',
+    facts.yearBuilt ? `built ${facts.yearBuilt}` : '',
+    facts.lotSize ? `${facts.lotSize} lot` : '',
+  ].filter(Boolean).join(' | ');
+  const hooks = facts.hooks.length
+    ? facts.hooks
+    : ['Use verified listing facts first, then add agent voice only where supported.'];
+  const missing = facts.missingFields.length
+    ? `Missing fields to verify: ${facts.missingFields.join(', ')}.`
+    : 'Core listing fields are present; still verify MLS status before publishing.';
+  const warnings = facts.warnings.length
+    ? facts.warnings.join(' ')
+    : 'No parser warnings, but listing status and pricing should still be verified against the source system.';
+  const safeCopy = buildListingCopyDraft(facts);
+  const sourceAnchor = shards[0]
+    ? `${sourceDisplayName(shards[0].source)} / ${sourceReasonDisplayName(shards[0].matchReason || 'structured extraction')}`
+    : 'Pasted listing / structured extraction';
+  const frames = [
+    {
+      label: `${relayPlan.format.frameLabel} 1`,
+      title: 'Parsed facts',
+      visualDirection: 'Show the listing as a compact fact grid with address, price, specs, status, and confidence.',
+      body: `Listing intake: ${factLine || 'Only partial listing facts were found.'} Confidence: ${facts.confidence}%.`,
+      speakerNote: `Start from extracted facts only. ${missing}`,
+      sourceAnchor
+    },
+    {
+      label: `${relayPlan.format.frameLabel} 2`,
+      title: 'Likely hooks',
+      visualDirection: 'Group marketing angles as editable chips, with no unsupported claims added.',
+      body: hooks.slice(0, 4).join(' | '),
+      speakerNote: 'Use these as angle candidates, not final claims, until source fields are verified.',
+      sourceAnchor
+    },
+    {
+      label: `${relayPlan.format.frameLabel} 3`,
+      title: 'Copy starter',
+      visualDirection: 'Show a short editable copy block beside the verified facts.',
+      body: safeCopy,
+      speakerNote: 'This is draft copy. Keep exact claims tied to extracted fields.',
+      sourceAnchor
+    },
+    {
+      label: `${relayPlan.format.frameLabel} 4`,
+      title: 'Validation',
+      visualDirection: 'Show missing fields and parser warnings as review tasks before publish.',
+      body: `${missing} ${warnings}`,
+      speakerNote: actions[0] || 'Verify missing facts before public marketing.',
+      sourceAnchor
+    },
+    {
+      label: relayPlan.finalScreen.frameLabel,
+      title: relayPlan.finalScreen.title,
+      visualDirection: 'Show where the listing answer came from and what to do next.',
+      body: [
+        sourceSummary,
+        `Next action: ${actions[0] || 'Review the extracted listing fields before publishing.'}`
+      ].join(' '),
+      speakerNote: relayPlan.finalScreen.instruction,
+      sourceAnchor: relayPlan.finalScreen.sourceCards
+        .slice(0, 4)
+        .map((card) => `${sourceDisplayName(card.source)} (${sourceReasonDisplayName(card.matchReason)})`)
+        .join(', ') || sourceAnchor
+    }
+  ];
+
+  return {
+    mode: relayPlan.mode,
+    title: `Listing intake: ${worker.name}`,
+    copyReadyText: frames.map(formatDeliverableFrame).join('\n\n'),
+    sourceSummary,
+    frames
+  };
+}
+
+function buildListingCopyDraft(facts: ListingFacts) {
+  const lead = facts.address
+    ? `For ${facts.address}, lead with the clearest verified facts`
+    : 'Lead with the clearest verified listing facts';
+  const specs = [
+    facts.price,
+    facts.beds ? `${facts.beds} beds` : '',
+    facts.baths ? `${facts.baths} baths` : '',
+    facts.sqft ? `${facts.sqft} sqft` : '',
+  ].filter(Boolean).join(', ');
+  const featureLine = facts.features.length
+    ? ` Standout details include ${facts.features.slice(0, 4).join(', ')}.`
+    : '';
+  const hookLine = facts.hooks[0]
+    ? ` The strongest first angle is ${facts.hooks[0].toLowerCase()}.`
+    : '';
+
+  return `${lead}${specs ? `: ${specs}` : ''}.${featureLine}${hookLine} Verify missing fields before this becomes public copy.`;
 }
 
 function buildCivicServiceDeliverable(

@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
-import { successResponse, errorResponse } from '@/lib/core/apiResponse';
+import { successResponse } from '@/lib/core/apiResponse';
 import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
+import { filterMockSearchProperties } from '@/lib/mocks/propertySearch';
 import { PulseCache } from '@/utils/security/PulseCache';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +14,19 @@ export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
-    
+
     // 1. Build Query & Handle Cache Signature
     const { query, signature } = buildPropertyQuery(params);
+
+    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+      const response = successResponse(filterMockSearchProperties(params), {
+        signature,
+        cached: false,
+        source: 'mock',
+      });
+      response.headers.set('X-Cache', 'MOCK');
+      return response;
+    }
 
     // 2. Cache Check
     const cachedData = PulseCache.get(signature);
@@ -37,6 +48,10 @@ export const GET = async (request: NextRequest) => {
     return response;
   } catch (error: any) {
     console.error('[API_SEARCH_ERROR]', error.message);
-    return errorResponse('Grid search failed.', 500, error.message);
+    return successResponse([], {
+      cached: false,
+      source: 'unavailable',
+      warning: 'Property search is temporarily unavailable. No listings were returned.',
+    });
   }
 };
