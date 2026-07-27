@@ -39,7 +39,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await safeJson(request);
+    if (body === undefined) {
+      return NextResponse.json({
+        error: 'Invalid JSON command request.',
+      }, { status: 400 });
+    }
+
     const parsed = CommandRequestSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -66,6 +72,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       error: 'Command execution failed.'
     }, { status: 500 });
+  }
+}
+
+async function safeJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
   }
 }
 

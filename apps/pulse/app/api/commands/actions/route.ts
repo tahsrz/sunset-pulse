@@ -7,7 +7,11 @@ const validActionKinds = new Set<CommandActionKind>(['external-link', 'copy', 'c
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await safeJson(request);
+    if (body === undefined) {
+      return NextResponse.json({ ok: false, error: 'Invalid JSON command action request.' }, { status: 400 });
+    }
+
     const input = normalizeActionInput(body);
     const validationError = validateActionInput(input);
 
@@ -32,7 +36,15 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ ok: trace.saved, trace, feedback });
+    const feedbackSaved = feedback.saved !== false;
+    const ok = trace.saved && feedbackSaved;
+
+    return NextResponse.json({
+      ok,
+      status: ok ? 'saved' : trace.saved ? 'partial' : 'unavailable',
+      trace,
+      feedback,
+    });
   } catch (error) {
     return NextResponse.json({
       ok: false,
@@ -91,4 +103,12 @@ function isSafeActionHref(href?: string) {
 
 function cleanText(value: unknown, maxLength: number) {
   return String(value || '').trim().slice(0, maxLength);
+}
+
+async function safeJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
 }

@@ -19,7 +19,20 @@ describe('command action memory route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     actionRouteMocks.saveCommandActionMemory.mockReturnValue({ saved: true, attempts: [] });
-    actionRouteMocks.recordTensorZeroFeedback.mockReturnValue({ recorded: true });
+    actionRouteMocks.recordTensorZeroFeedback.mockReturnValue({ saved: true });
+  });
+
+  it('returns a bad request for malformed JSON', async () => {
+    const response = await POST(new Request('http://localhost/api/commands/actions', {
+      method: 'POST',
+      body: '{broken',
+      headers: { 'content-type': 'application/json' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe('Invalid JSON command action request.');
+    expect(actionRouteMocks.saveCommandActionMemory).not.toHaveBeenCalled();
   });
 
   it('rejects unsafe external-link actions before saving memory', async () => {
@@ -71,6 +84,7 @@ describe('command action memory route', () => {
 
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
+    expect(body.status).toBe('saved');
     expect(actionRouteMocks.saveCommandActionMemory).toHaveBeenCalledWith(expect.objectContaining({
       commandId: 'cmd_123',
       command: 'copy this',
@@ -83,6 +97,33 @@ describe('command action memory route', () => {
       metricName: 'command_center_actionability',
       value: 1,
     }));
+  });
+
+  it('reports partial success when action memory saves but feedback does not', async () => {
+    actionRouteMocks.recordTensorZeroFeedback.mockReturnValue({
+      saved: false,
+      status: 'unavailable',
+      reason: 'feedback store unavailable',
+    });
+
+    const response = await POST(jsonRequest({
+      commandId: 'cmd_123',
+      command: 'copy this',
+      workerId: 'service',
+      action: {
+        id: 'copy-service-request',
+        label: 'Copy',
+        kind: 'copy',
+        copyText: '26-00243099',
+      },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(false);
+    expect(body.status).toBe('partial');
+    expect(body.trace.saved).toBe(true);
+    expect(body.feedback.saved).toBe(false);
   });
 });
 
