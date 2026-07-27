@@ -46,7 +46,7 @@ export type CommandSupervisorProcessResult = {
 
 export function commandSupervisorReviewPath() {
   const configured = process.env.PULSE_COMMAND_SUPERVISOR_REVIEW_PATH;
-  return configured || path.join(process.cwd(), 'cartridges', 'command_supervisor_reviews.jsonl');
+  return configured || path.join(process.cwd(), '.pulse-local', 'command_supervisor_reviews.jsonl');
 }
 
 export function createCommandSupervisorReview(input: {

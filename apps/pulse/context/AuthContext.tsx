@@ -92,6 +92,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
+    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+      const getMockSession = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch('/api/auth/session', { cache: 'no-store' });
+          const body = await response.json();
+          if (!isMounted) return;
+
+          if (body?.authenticated && body.user) {
+            const authUser = mockAuthUser(body.user);
+            setUser(authUser);
+            setSession(mockAuthSession(authUser));
+          } else {
+            setUser(null);
+            setSession(null);
+          }
+        } catch (error) {
+          console.error('[AUTH_CONTEXT] Mock session fetch error:', error);
+          if (isMounted) {
+            setUser(null);
+            setSession(null);
+          }
+        } finally {
+          if (isMounted) setLoading(false);
+        }
+      };
+
+      getMockSession();
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
     // Check active sessions and sets the user
     const getSession = async () => {
       setLoading(true);
@@ -130,7 +164,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     user,
     loading,
-    signOut: () => supabase.auth.signOut(),
+    signOut: async () => {
+      if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+        await fetch('/api/auth/session', { method: 'DELETE', cache: 'no-store' });
+        setSession(null);
+        setUser(null);
+        return { error: null };
+      }
+
+      return supabase.auth.signOut();
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -143,3 +186,48 @@ export const useAuth = () => {
   }
   return context;
 };
+
+function mockAuthUser(user: any): AuthUser {
+  const metadata = {
+    ...(user.user_metadata || {}),
+    avatar_url: user.image || user.user_metadata?.avatar_url,
+    full_name: user.name || user.user_metadata?.full_name,
+    role: user.role || user.user_metadata?.role || 'consumer',
+    isSubscribed: Boolean(user.isSubscribed || user.user_metadata?.isSubscribed),
+  };
+
+  return {
+    id: user.id,
+    aud: 'authenticated',
+    role: 'authenticated',
+    email: user.email,
+    email_confirmed_at: new Date().toISOString(),
+    phone: '',
+    confirmed_at: new Date().toISOString(),
+    last_sign_in_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: metadata,
+    identities: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_anonymous: false,
+    profile: {
+      id: user.id,
+      full_name: user.name,
+      avatar_url: user.image,
+      role: metadata.role,
+      is_subscribed: metadata.isSubscribed,
+    },
+  } as AuthUser;
+}
+
+function mockAuthSession(user: AuthUser): Session {
+  return {
+    access_token: 'mock-access-token',
+    refresh_token: 'mock-refresh-token',
+    expires_in: 60 * 60 * 24 * 7,
+    expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+    token_type: 'bearer',
+    user,
+  };
+}

@@ -18,6 +18,12 @@ afterEach(() => {
 });
 
 describe('command supervisor reviews', () => {
+  it('keeps the default review queue in ignored local app storage', () => {
+    delete process.env.PULSE_COMMAND_SUPERVISOR_REVIEW_PATH;
+
+    expect(commandSupervisorReviewPath()).toBe(path.join(process.cwd(), '.pulse-local', 'command_supervisor_reviews.jsonl'));
+  });
+
   it('queues compact JSONL review records for async follow-up', () => {
     const filePath = path.join(os.tmpdir(), `pulse-command-supervisor-${Date.now()}.jsonl`);
     process.env.PULSE_COMMAND_SUPERVISOR_REVIEW_PATH = filePath;
