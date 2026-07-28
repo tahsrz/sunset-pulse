@@ -44,7 +44,7 @@ export default function AgentConsole() {
   const [copied, setCopied] = useState(false);
   const [savedResult, setSavedResult] = useState(false);
   const [preferences, setPreferences] = useState<AgentPreferences>(defaultPreferences);
-  const [preferencesOpen, setPreferencesOpen] = useState(true);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [savedExamples, setSavedExamples] = useState<SavedExample[]>([]);
 
   const selectedJob = useMemo(
@@ -72,14 +72,28 @@ export default function AgentConsole() {
     const restoredPreferences = restoreAgentPreferences(localStorage.getItem(preferencesStorageKey));
     if (restoredPreferences) {
       setPreferences(restoredPreferences);
-      setPreferencesOpen(false);
-    } else {
-      setPreferencesOpen(true);
     }
 
     const restoredExamples = restoreSavedExamples(localStorage.getItem(savedExamplesStorageKey));
     setSavedExamples(restoredExamples);
   }, []);
+
+  const selectJob = (jobId: string, trackSelection = true) => {
+    const nextJob = starterJobs.find((job) => job.id === jobId) || starterJobs[0];
+    setSelectedJobId(nextJob.id);
+    setResult(null);
+    setError(null);
+    if (trackSelection) {
+      trackAgentConsoleEvent({
+        event: 'job_selected',
+        hasInput: Boolean(draft.trim()),
+        inputLength: draft.trim().length,
+        jobId: nextJob.id,
+        savedExampleCount: savedExamples.filter((example) => example.jobId === nextJob.id).length,
+        workerId: nextJob.workerId,
+      });
+    }
+  };
 
   const runAgentJob = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -257,94 +271,7 @@ export default function AgentConsole() {
       </section>
 
       <section className="px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="grid content-start gap-4">
-            <nav className="grid content-start gap-2" aria-label="Agent jobs">
-              {starterJobs.map((job) => {
-                const Icon = job.icon;
-                const active = selectedJob.id === job.id;
-                return (
-                  <button
-                    key={job.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedJobId(job.id);
-                      setResult(null);
-                      setError(null);
-                      trackAgentConsoleEvent({
-                        event: 'job_selected',
-                        hasInput: Boolean(draft.trim()),
-                        inputLength: draft.trim().length,
-                        jobId: job.id,
-                        savedExampleCount: savedExamples.filter((example) => example.jobId === job.id).length,
-                        workerId: job.workerId,
-                      });
-                    }}
-                    className={`grid min-h-20 grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border px-3 py-3 text-left transition ${
-                      active
-                        ? 'border-[#185b4d] bg-[#185b4d] text-white shadow-sm'
-                        : 'border-[#c9d3ca] bg-white text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]'
-                    }`}
-                  >
-                    <span className={`mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md ${
-                      active ? 'bg-white/15 text-white' : 'bg-[#eef5f1] text-[#185b4d]'
-                    }`}>
-                      <Icon size={18} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-bold">{job.label}</span>
-                        {job.priorityLabel ? (
-                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                            active ? 'bg-white/15 text-white' : 'bg-[#e9f3ee] text-[#185b4d]'
-                          }`}>
-                            {job.priorityLabel}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className={`mt-1 block text-xs leading-5 ${active ? 'text-white/80' : 'text-[#5a6963]'}`}>
-                        {job.description}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {recentExamples.length ? (
-              <section className="rounded-md border border-[#c9d3ca] bg-white p-3 shadow-sm">
-                <p className="text-sm font-semibold text-[#24312f]">Recent outputs</p>
-                <div className="mt-3 grid gap-2">
-                  {recentExamples.map((example) => (
-                    <button
-                      key={example.id}
-                      type="button"
-                      onClick={() => {
-                        const matchingJob = starterJobs.find((job) => job.id === example.jobId);
-                        setSelectedJobId(matchingJob?.id || starterJobs[0].id);
-                        setDraft(example.input);
-                        setResult(null);
-                        setError(null);
-                        trackAgentConsoleEvent({
-                          event: 'recent_output_used',
-                          hasInput: true,
-                          inputLength: example.input.length,
-                          jobId: example.jobId,
-                          resultLength: example.output.length,
-                          workerId: matchingJob?.workerId,
-                        });
-                      }}
-                      className="min-w-0 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3 text-left hover:border-[#789184] hover:bg-[#eef5f1]"
-                    >
-                      <span className="block truncate text-sm font-semibold text-[#17201f]">{example.title}</span>
-                      <span className="mt-1 line-clamp-2 text-xs leading-5 text-[#5a6963]">{example.input}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-          </aside>
-
+        <div className="mx-auto grid max-w-4xl gap-5">
           <div className="grid gap-5">
             <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4 shadow-sm">
               {preferencesOpen ? (
@@ -425,9 +352,23 @@ export default function AgentConsole() {
 
             <form onSubmit={runAgentJob} className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
               <div className="mb-4 flex flex-col gap-3 border-b border-[#e3e8e3] pb-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-[#517268]">{selectedJob.outputLabel}</p>
-                  <h2 className="mt-1 text-2xl font-bold text-[#111817]">{selectedJob.label}</h2>
+                  <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-2xl font-bold text-[#111817]">{selectedJob.label}</h2>
+                    <label className="grid gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#517268] sm:w-56">
+                      Workflow
+                      <select
+                        value={selectedJob.id}
+                        onChange={(event) => selectJob(event.target.value)}
+                        className="h-10 rounded-md border border-[#b9c6bd] bg-[#fbfcf8] px-3 text-sm font-bold normal-case tracking-normal text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
+                      >
+                        {starterJobs.map((job) => (
+                          <option key={job.id} value={job.id}>{job.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                   <p className="mt-1 max-w-2xl text-sm leading-6 text-[#4c5a55]">{selectedJob.description}</p>
                 </div>
                 <span className="inline-flex h-8 shrink-0 items-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#4c5a55]">
@@ -476,6 +417,40 @@ export default function AgentConsole() {
               </div>
             </form>
 
+            {recentExamples.length ? (
+              <section className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-[#24312f]">Recent outputs</p>
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  {recentExamples.map((example) => {
+                    const matchingJob = starterJobs.find((job) => job.id === example.jobId);
+                    return (
+                      <button
+                        key={example.id}
+                        type="button"
+                        onClick={() => {
+                          selectJob(example.jobId, false);
+                          setDraft(example.input);
+                          trackAgentConsoleEvent({
+                            event: 'recent_output_used',
+                            hasInput: true,
+                            inputLength: example.input.length,
+                            jobId: example.jobId,
+                            resultLength: example.output.length,
+                            workerId: matchingJob?.workerId,
+                          });
+                        }}
+                        className="min-w-0 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3 text-left hover:border-[#789184] hover:bg-[#eef5f1]"
+                      >
+                        <span className="block text-xs font-semibold text-[#517268]">{matchingJob?.label || 'Saved'}</span>
+                        <span className="mt-1 block truncate text-sm font-semibold text-[#17201f]">{example.title}</span>
+                        <span className="mt-1 line-clamp-2 text-xs leading-5 text-[#5a6963]">{example.input}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
             {selectedExamples.length ? (
               <section className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
                 <p className="text-sm font-semibold text-[#24312f]">Saved examples</p>
@@ -491,16 +466,16 @@ export default function AgentConsole() {
                           <button
                             type="button"
                             onClick={() => {
+                              const matchingJob = starterJobs.find((job) => job.id === example.jobId);
+                              selectJob(example.jobId, false);
                               setDraft(example.input);
-                              setResult(null);
-                              setError(null);
                               trackAgentConsoleEvent({
                                 event: 'saved_example_used',
                                 hasInput: true,
                                 inputLength: example.input.length,
                                 jobId: example.jobId,
                                 resultLength: example.output.length,
-                                workerId: selectedJob.workerId,
+                                workerId: matchingJob?.workerId,
                               });
                             }}
                             className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
