@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { FaChartLine, FaChartBar, FaTimes, FaBolt } from 'react-icons/fa';
 import { useTheme } from '@/context/ThemeProvider';
 import { useProperties } from '@/hooks/useProperties';
@@ -14,7 +15,13 @@ const RandomChart = dynamic(() => import('./RandomChart'), {
 const GlobalMarketPulse = () => {
   const [activeChart, setActiveChart] = useState(null);
   const { isAdvancedMode } = useTheme();
-  const { properties } = useProperties();
+  const pathname = usePathname();
+  const lightweightSurface =
+    pathname?.startsWith('/command-center') ||
+    pathname?.startsWith('/jamie-chat') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/pulse-quest');
+  const { properties } = useProperties({}, { enabled: !lightweightSurface });
 
   // Calculate dynamic Global Yield based on active properties
   const globalYield = useMemo(() => {
