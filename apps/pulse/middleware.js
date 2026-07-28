@@ -49,6 +49,7 @@ export async function middleware(request) {
 
 function getForwardedRequestHeaders(request) {
   const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-sunset-pathname', new URL(request.url).pathname)
   requestHeaders.delete('x-sunset-tenant')
   requestHeaders.delete('x-sunset-tenant-host')
   requestHeaders.delete('x-sunset-site-kind')

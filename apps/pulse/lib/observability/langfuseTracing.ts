@@ -118,7 +118,9 @@ export async function flushLangfuse() {
   try {
     await processor?.forceFlush();
   } catch (error) {
-    console.warn('[LANGFUSE] Failed to flush traces:', error);
+    if (process.env.LANGFUSE_LOG_FLUSH_FAILURES === 'true') {
+      console.warn('[LANGFUSE] Failed to flush traces:', error);
+    }
   }
 }
 

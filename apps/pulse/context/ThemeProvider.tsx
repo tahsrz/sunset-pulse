@@ -1,10 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ABIDAN_DATA, AbidanCharacter } from '@/constants/abidan';
 import { toast } from 'react-toastify';
 import { supabase } from '@/lib/supabase';
+import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
 import {
   FALLBACK_AGENT_ID,
   type AgentProfile,
@@ -148,6 +150,7 @@ export function ThemeProvider({
   agentId?: string;
 }) {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [branding, setBranding] = useState<Branding>(() => {
     const base = { ...defaultBranding, ...initialBranding };
     base.quadrants = { ...defaultBranding.quadrants, ...initialBranding?.quadrants };
@@ -241,6 +244,8 @@ export function ThemeProvider({
       if (found) setSelectedAbidanState(found);
     }
 
+    if (isLightweightGlobalSurface(pathname)) return;
+
     const channel = supabase
       .channel('public:site_config')
       .on('postgres_changes', { 
@@ -284,7 +289,7 @@ export function ThemeProvider({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, agentId]);
+  }, [user, agentId, pathname]);
 
   const setSelectedAbidan = (abidan: AbidanCharacter) => {
     setSelectedAbidanState(abidan);

@@ -1011,7 +1011,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
           </section>
         ) : null}
 
-        <section ref={answerRef} className="mt-4 scroll-mt-4">
+        <section ref={answerRef} className="mt-4 scroll-mt-28 md:scroll-mt-32">
           {commandResult ? (
             <AnswerPanel
               commandResult={commandResult}
