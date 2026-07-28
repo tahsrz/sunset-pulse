@@ -559,29 +559,33 @@ function ResultPanel({
   onCopy: () => void;
   onSave: () => void;
 }) {
+  const primaryAction = result.result.actions[0];
+  const supportingActions = result.result.actions.slice(1, 3);
+
   return (
     <div className="grid gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-[#517268]">{result.worker.name}</p>
           <h2 className="mt-1 text-2xl font-bold text-[#111817]">{result.result.deliverable.title || result.result.title}</h2>
+          <p className="mt-1 text-sm leading-6 text-[#4c5a55]">Ready for the next client touch.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:items-end">
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#b94f35] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#963d28] focus:outline-none focus:ring-2 focus:ring-[#d9785e]"
           >
             <Copy size={16} />
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? 'Copied' : 'Copy to send'}
           </button>
           <button
             type="button"
             onClick={onSave}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
           >
             <Save size={16} />
-            {saved ? 'Saved' : 'Save'}
+            {saved ? 'Saved' : 'Save example'}
           </button>
         </div>
       </div>
@@ -590,17 +594,26 @@ function ResultPanel({
         {result.result.deliverable.copyReadyText}
       </div>
 
-      {result.result.actions.length ? (
-        <div>
-          <p className="text-sm font-semibold text-[#24312f]">Next</p>
-          <ul className="mt-2 grid gap-2">
-            {result.result.actions.slice(0, 3).map((action) => (
-              <li key={action} className="flex gap-2 text-sm leading-6 text-[#33413d]">
-                <CheckCircle2 className="mt-1 shrink-0 text-[#517268]" size={16} />
-                <span>{action}</span>
-              </li>
-            ))}
-          </ul>
+      {primaryAction ? (
+        <div className="rounded-md border border-[#c9d3ca] bg-[#fbfcf8] p-3">
+          <p className="text-sm font-semibold text-[#24312f]">Suggested next step</p>
+          <p className="mt-2 flex gap-2 text-sm leading-6 text-[#33413d]">
+            <CheckCircle2 className="mt-1 shrink-0 text-[#517268]" size={16} />
+            <span>{primaryAction}</span>
+          </p>
+          {supportingActions.length ? (
+            <details className="mt-3 border-t border-[#e3e8e3] pt-3">
+              <summary className="cursor-pointer text-sm font-semibold text-[#4c5a55]">More options</summary>
+              <ul className="mt-2 grid gap-2">
+                {supportingActions.map((action) => (
+                  <li key={action} className="flex gap-2 text-sm leading-6 text-[#4c5a55]">
+                    <CheckCircle2 className="mt-1 shrink-0 text-[#789184]" size={16} />
+                    <span>{action}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </div>
       ) : null}
 
