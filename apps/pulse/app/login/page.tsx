@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { FaGoogle } from 'react-icons/fa';
+import { MessageSquareText } from 'lucide-react';
 import { LoginForm, LoginHeader, LoginPanel } from '@/app/login/LoginForm';
 import { sanitizeAuthNext } from '@/lib/core/auth_redirect';
 import { signInWithEmail, signInWithGoogle } from './actions';
@@ -20,6 +22,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <LoginPanel>
       <LoginHeader />
+      <Link
+        href="/agent"
+        className="mb-6 flex items-center justify-center gap-2 rounded-2xl border border-emerald-200/20 bg-emerald-300 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-emerald-200"
+      >
+        <MessageSquareText size={15} />
+        Agent Console
+      </Link>
       {errorMessage ? (
         <p className="mb-6 rounded-2xl border border-red-300/25 bg-red-500/10 px-4 py-3 text-xs font-semibold leading-relaxed text-red-100">
           {errorMessage}

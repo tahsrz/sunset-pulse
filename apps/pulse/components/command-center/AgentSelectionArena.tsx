@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Gauge,
   Layers3,
+  MessageSquareText,
   Pencil,
   Play,
   RefreshCw,
@@ -879,10 +880,21 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
               The helper choice, files, trace, and Command Post details are still here, but the answer gets the front seat.
             </p>
           </div>
-          <div className={embedded ? 'grid grid-cols-3 gap-2 text-right' : 'grid grid-cols-3 gap-2 text-right sm:min-w-[330px]'}>
-            <Metric label="Helpers" value={String(intelligenceWorkers.length)} />
-            <Metric label="Sources" value={String(sourceLoadoutCount)} />
-            <Metric label="Mode" value={manualSelection ? 'Manual' : 'Auto'} />
+          <div className={embedded ? 'grid grid-cols-3 gap-2 text-right' : 'grid gap-3 sm:min-w-[330px]'}>
+            {!embedded ? (
+              <Link
+                href="/agent"
+                className="inline-flex min-h-10 items-center justify-center gap-2 border border-emerald-200/25 bg-emerald-300 px-4 text-xs font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-emerald-200"
+              >
+                <MessageSquareText size={15} />
+                Agent Console
+              </Link>
+            ) : null}
+            <div className="grid grid-cols-3 gap-2 text-right">
+              <Metric label="Helpers" value={String(intelligenceWorkers.length)} />
+              <Metric label="Sources" value={String(sourceLoadoutCount)} />
+              <Metric label="Mode" value={manualSelection ? 'Manual' : 'Auto'} />
+            </div>
           </div>
         </div>
       </section>
