@@ -24,6 +24,7 @@
     "typescript": "6.0.2"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "next": "^15.5.21",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
