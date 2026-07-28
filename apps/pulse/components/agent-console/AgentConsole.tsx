@@ -7,160 +7,30 @@ import {
   CheckCircle2,
   Clipboard,
   Copy,
-  FileText,
-  MessageSquareText,
   Save,
   Send,
-  ShieldCheck,
   Sparkles,
   Trash2,
-  UserRound,
 } from 'lucide-react';
-
-type RelayMode = 'briefing' | 'slideshow' | 'puppetshow' | 'field-board' | 'script';
-
-type StarterJob = {
-  id: string;
-  label: string;
-  icon: typeof MessageSquareText;
-  workerId: string;
-  relayMode: RelayMode;
-  prompt: string;
-  placeholder: string;
-  example: string;
-};
-
-type CommandProgressEvent = {
-  id: string;
-  label: string;
-  status: 'pending' | 'running' | 'complete' | 'error' | string;
-  detail?: string;
-};
-
-type CommandResponse = {
-  commandId: string;
-  worker: {
-    id: string;
-    name: string;
-    role: string;
-  };
-  result: {
-    title: string;
-    summary: string;
-    actions: string[];
-    confidence: number;
-    deliverable: {
-      title: string;
-      copyReadyText: string;
-      sourceSummary: string;
-    };
-  };
-  trace?: {
-    selectedShards?: Array<{
-      title: string;
-      source: string;
-      excerpt: string;
-    }>;
-    progress?: CommandProgressEvent[];
-  };
-};
-
-type AgentPreferences = {
-  agentName: string;
-  market: string;
-  tone: string;
-  cta: string;
-};
-
-type SavedExample = {
-  id: string;
-  jobId: string;
-  title: string;
-  input: string;
-  output: string;
-  createdAt: string;
-};
-
-const starterJobs: StarterJob[] = [
-  {
-    id: 'lead-follow-up',
-    label: 'Follow Up',
-    icon: MessageSquareText,
-    workerId: 'follow-up-writer',
-    relayMode: 'script',
-    prompt: 'Write a concise, client-ready real estate follow-up. Use the agent voice layer, reference only supplied facts, and end with one natural next step.',
-    placeholder: 'Paste the lead note, last message, or situation...',
-    example: 'Buyer toured Oak Cliff bungalow last weekend. Liked the kitchen and yard, worried about commute. Follow up today.',
-  },
-  {
-    id: 'listing-copy',
-    label: 'Listing Copy',
-    icon: FileText,
-    workerId: 'listing-spark',
-    relayMode: 'briefing',
-    prompt: 'Turn these property facts into listing copy. Lead with the strongest verified hook, keep claims grounded, and include one polished version plus a softer alternate angle.',
-    placeholder: 'Paste listing facts, MLS notes, photos notes, or seller context...',
-    example: '3 bed, 2 bath, updated kitchen, mature trees, near downtown Denton. Seller wants warm but not overhyped copy.',
-  },
-  {
-    id: 'objection-reply',
-    label: 'Objection Reply',
-    icon: ShieldCheck,
-    workerId: 'objection-scripts',
-    relayMode: 'script',
-    prompt: 'Write a calm reply to this buyer or seller objection. Stay advisory, avoid pressure, and give one practical next-step question.',
-    placeholder: 'Paste the objection or concern...',
-    example: 'Buyer says rates are too high and wants to wait six months before looking again.',
-  },
-  {
-    id: 'property-summary',
-    label: 'Property Summary',
-    icon: Clipboard,
-    workerId: 'listing-summary',
-    relayMode: 'briefing',
-    prompt: 'Summarize this property for a real estate client. Separate verified facts from missing details, and make the next action obvious.',
-    placeholder: 'Paste property details, a listing description, or notes...',
-    example: 'MLS notes: renovated ranch, 0.4 acre lot, new roof 2024, no seller disclosure attached yet.',
-  },
-  {
-    id: 'agent-voice',
-    label: 'Sound Like Me',
-    icon: UserRound,
-    workerId: 'agent-voice',
-    relayMode: 'script',
-    prompt: 'Rewrite this in the agent brand voice. Make it concise, useful, local, confident, warm, and remove generic AI phrasing.',
-    placeholder: 'Paste the draft that should sound more like you...',
-    example: 'I wanted to reach out and see if you had any questions about the property we discussed previously.',
-  },
-];
-
-const idleProgress: CommandProgressEvent[] = [
-  { id: 'ready', label: 'Ready', status: 'complete', detail: 'Choose a job and run it.' },
-];
-
-const preferencesStorageKey = 'sunset_agent_console_preferences';
-const savedExamplesStorageKey = 'sunset_agent_console_examples';
-
-const defaultPreferences: AgentPreferences = {
-  agentName: '',
-  market: 'North Texas',
-  tone: 'Warm, direct, local',
-  cta: 'Ask for a quick reply',
-};
-
-const toneOptions = [
-  'Warm, direct, local',
-  'Polished and concise',
-  'Friendly and casual',
-  'Calm and advisory',
-];
-
-const ctaOptions = [
-  'Ask for a quick reply',
-  'Offer to send more detail',
-  'Ask to schedule a showing',
-  'Offer a short call',
-];
+import {
+  ctaOptions,
+  defaultPreferences,
+  idleProgress,
+  preferencesStorageKey,
+  savedExamplesStorageKey,
+  starterJobs,
+  toneOptions,
+  type AgentPreferences,
+  type CommandProgressEvent,
+  type CommandResponse,
+  type SavedExample,
+} from './agentConsoleConfig';
+import {
+  formatAgentPreferences,
+  normalizePreferences,
+  restoreAgentPreferences,
+  restoreSavedExamples,
+} from './agentConsoleStorage';
 
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
@@ -184,6 +54,11 @@ export default function AgentConsole() {
   const selectedExamples = useMemo(
     () => savedExamples.filter((example) => example.jobId === selectedJob.id).slice(0, 3),
     [savedExamples, selectedJob.id],
+  );
+
+  const recentExamples = useMemo(
+    () => savedExamples.slice(0, 3),
+    [savedExamples],
   );
 
   useEffect(() => {
@@ -307,32 +182,77 @@ export default function AgentConsole() {
       </section>
 
       <section className="px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <nav className="grid content-start gap-2" aria-label="Agent jobs">
-            {starterJobs.map((job) => {
-              const Icon = job.icon;
-              const active = selectedJob.id === job.id;
-              return (
-                <button
-                  key={job.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedJobId(job.id);
-                    setResult(null);
-                    setError(null);
-                  }}
-                  className={`flex min-h-14 items-center gap-3 rounded-md border px-3 text-left text-sm font-semibold transition ${
-                    active
-                      ? 'border-[#185b4d] bg-[#185b4d] text-white shadow-sm'
-                      : 'border-[#c9d3ca] bg-white text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]'
-                  }`}
-                >
-                  <Icon size={18} />
-                  {job.label}
-                </button>
-              );
-            })}
-          </nav>
+        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="grid content-start gap-4">
+            <nav className="grid content-start gap-2" aria-label="Agent jobs">
+              {starterJobs.map((job) => {
+                const Icon = job.icon;
+                const active = selectedJob.id === job.id;
+                return (
+                  <button
+                    key={job.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedJobId(job.id);
+                      setResult(null);
+                      setError(null);
+                    }}
+                    className={`grid min-h-20 grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border px-3 py-3 text-left transition ${
+                      active
+                        ? 'border-[#185b4d] bg-[#185b4d] text-white shadow-sm'
+                        : 'border-[#c9d3ca] bg-white text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]'
+                    }`}
+                  >
+                    <span className={`mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md ${
+                      active ? 'bg-white/15 text-white' : 'bg-[#eef5f1] text-[#185b4d]'
+                    }`}>
+                      <Icon size={18} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-bold">{job.label}</span>
+                        {job.priorityLabel ? (
+                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                            active ? 'bg-white/15 text-white' : 'bg-[#e9f3ee] text-[#185b4d]'
+                          }`}>
+                            {job.priorityLabel}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={`mt-1 block text-xs leading-5 ${active ? 'text-white/80' : 'text-[#5a6963]'}`}>
+                        {job.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {recentExamples.length ? (
+              <section className="rounded-md border border-[#c9d3ca] bg-white p-3 shadow-sm">
+                <p className="text-sm font-semibold text-[#24312f]">Recent outputs</p>
+                <div className="mt-3 grid gap-2">
+                  {recentExamples.map((example) => (
+                    <button
+                      key={example.id}
+                      type="button"
+                      onClick={() => {
+                        const matchingJob = starterJobs.find((job) => job.id === example.jobId);
+                        setSelectedJobId(matchingJob?.id || starterJobs[0].id);
+                        setDraft(example.input);
+                        setResult(null);
+                        setError(null);
+                      }}
+                      className="min-w-0 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3 text-left hover:border-[#789184] hover:bg-[#eef5f1]"
+                    >
+                      <span className="block truncate text-sm font-semibold text-[#17201f]">{example.title}</span>
+                      <span className="mt-1 line-clamp-2 text-xs leading-5 text-[#5a6963]">{example.input}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </aside>
 
           <div className="grid gap-5">
             <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4 shadow-sm">
@@ -395,10 +315,10 @@ export default function AgentConsole() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[#17201f]">
-                      {preferences.agentName.trim() || 'Agent'} · {preferences.market}
+                      {preferences.agentName.trim() || 'Agent'} - {preferences.market}
                     </p>
                     <p className="mt-1 text-sm leading-6 text-[#4c5a55]">
-                      {preferences.tone} · {preferences.cta}
+                      {preferences.tone} - {preferences.cta}
                     </p>
                   </div>
                   <button
@@ -413,8 +333,18 @@ export default function AgentConsole() {
             </section>
 
             <form onSubmit={runAgentJob} className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
+              <div className="mb-4 flex flex-col gap-3 border-b border-[#e3e8e3] pb-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#517268]">{selectedJob.outputLabel}</p>
+                  <h2 className="mt-1 text-2xl font-bold text-[#111817]">{selectedJob.label}</h2>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-[#4c5a55]">{selectedJob.description}</p>
+                </div>
+                <span className="inline-flex h-8 shrink-0 items-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#4c5a55]">
+                  {selectedExamples.length ? `${selectedExamples.length} saved` : 'Ready'}
+                </span>
+              </div>
               <label htmlFor="agent-console-input" className="text-sm font-semibold text-[#24312f]">
-                {selectedJob.label}
+                {selectedJob.inputLabel}
               </label>
               <textarea
                 id="agent-console-input"
@@ -691,74 +621,4 @@ function upsertProgressEvent(current: CommandProgressEvent[], next: CommandProgr
   const clone = current.slice();
   clone[index] = next;
   return clone;
-}
-
-function normalizePreferences(preferences: AgentPreferences): AgentPreferences {
-  return {
-    agentName: preferences.agentName.trim(),
-    market: preferences.market.trim() || defaultPreferences.market,
-    tone: preferences.tone.trim() || defaultPreferences.tone,
-    cta: preferences.cta.trim() || defaultPreferences.cta,
-  };
-}
-
-function formatAgentPreferences(preferences: AgentPreferences) {
-  const normalized = normalizePreferences(preferences);
-  return [
-    `Agent name: ${normalized.agentName || 'Not provided'}`,
-    `Market: ${normalized.market}`,
-    `Tone: ${normalized.tone}`,
-    `Preferred CTA: ${normalized.cta}`,
-  ].join('\n');
-}
-
-function restoreAgentPreferences(value: string | null): AgentPreferences | null {
-  if (!value) return null;
-
-  try {
-    const parsed = JSON.parse(value) as Partial<AgentPreferences>;
-    if (!parsed || typeof parsed !== 'object') return null;
-
-    return normalizePreferences({
-      agentName: typeof parsed.agentName === 'string' ? parsed.agentName : '',
-      market: typeof parsed.market === 'string' ? parsed.market : defaultPreferences.market,
-      tone: typeof parsed.tone === 'string' ? parsed.tone : defaultPreferences.tone,
-      cta: typeof parsed.cta === 'string' ? parsed.cta : defaultPreferences.cta,
-    });
-  } catch {
-    return null;
-  }
-}
-
-function restoreSavedExamples(value: string | null): SavedExample[] {
-  if (!value) return [];
-
-  try {
-    const parsed = JSON.parse(value) as Partial<SavedExample>[];
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.flatMap((example) => {
-      if (
-        typeof example?.id !== 'string'
-        || typeof example.jobId !== 'string'
-        || typeof example.title !== 'string'
-        || typeof example.input !== 'string'
-        || typeof example.output !== 'string'
-        || typeof example.createdAt !== 'string'
-      ) {
-        return [];
-      }
-
-      return [{
-        id: example.id,
-        jobId: example.jobId,
-        title: example.title,
-        input: example.input,
-        output: example.output,
-        createdAt: example.createdAt,
-      }];
-    }).slice(0, 12);
-  } catch {
-    return [];
-  }
 }
