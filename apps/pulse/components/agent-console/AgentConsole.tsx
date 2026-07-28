@@ -53,13 +53,16 @@ export default function AgentConsole() {
   );
 
   const selectedExamples = useMemo(
-    () => savedExamples.filter((example) => example.jobId === selectedJob.id).slice(0, 3),
+    () => savedExamples.filter((example) => example.jobId === selectedJob.id),
     [savedExamples, selectedJob.id],
   );
 
-  const recentExamples = useMemo(
-    () => savedExamples.slice(0, 3),
-    [savedExamples],
+  const exampleLibrary = useMemo(
+    () => [
+      ...savedExamples.filter((example) => example.jobId === selectedJob.id),
+      ...savedExamples.filter((example) => example.jobId !== selectedJob.id),
+    ].slice(0, 5),
+    [savedExamples, selectedJob.id],
   );
 
   useEffect(() => {
@@ -241,13 +244,30 @@ export default function AgentConsole() {
     });
   };
 
+  const useSavedExample = (example: SavedExample) => {
+    const matchingJob = starterJobs.find((job) => job.id === example.jobId);
+    selectJob(example.jobId, false);
+    setDraft(example.input);
+    setResult(null);
+    setError(null);
+    trackAgentConsoleEvent({
+      event: 'saved_example_used',
+      hasInput: true,
+      inputLength: example.input.length,
+      jobId: example.jobId,
+      resultLength: example.output.length,
+      workerId: matchingJob?.workerId,
+    });
+  };
+
   const copySavedExample = async (example: SavedExample) => {
+    const matchingJob = starterJobs.find((job) => job.id === example.jobId);
     await navigator.clipboard.writeText(example.output);
     trackAgentConsoleEvent({
       event: 'saved_example_copied',
       jobId: example.jobId,
       resultLength: example.output.length,
-      workerId: selectedJob.workerId,
+      workerId: matchingJob?.workerId,
     });
   };
 
@@ -421,92 +441,58 @@ export default function AgentConsole() {
               </div>
             </form>
 
-            {recentExamples.length ? (
-              <section className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
-                <p className="text-sm font-semibold text-[#24312f]">Recent outputs</p>
-                <div className="mt-3 grid gap-2 md:grid-cols-3">
-                  {recentExamples.map((example) => {
+            {exampleLibrary.length ? (
+              <details className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
+                <summary className="cursor-pointer text-sm font-semibold text-[#24312f]">
+                  Saved examples
+                  <span className="ml-2 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2 py-1 text-xs text-[#4c5a55]">
+                    {savedExamples.length}
+                  </span>
+                </summary>
+                <div className="mt-3 grid gap-2">
+                  {exampleLibrary.map((example) => {
                     const matchingJob = starterJobs.find((job) => job.id === example.jobId);
+                    const isCurrentJob = example.jobId === selectedJob.id;
                     return (
-                      <button
-                        key={example.id}
-                        type="button"
-                        onClick={() => {
-                          selectJob(example.jobId, false);
-                          setDraft(example.input);
-                          trackAgentConsoleEvent({
-                            event: 'recent_output_used',
-                            hasInput: true,
-                            inputLength: example.input.length,
-                            jobId: example.jobId,
-                            resultLength: example.output.length,
-                            workerId: matchingJob?.workerId,
-                          });
-                        }}
-                        className="min-w-0 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3 text-left hover:border-[#789184] hover:bg-[#eef5f1]"
-                      >
-                        <span className="block text-xs font-semibold text-[#517268]">{matchingJob?.label || 'Saved'}</span>
-                        <span className="mt-1 block truncate text-sm font-semibold text-[#17201f]">{example.title}</span>
-                        <span className="mt-1 line-clamp-2 text-xs leading-5 text-[#5a6963]">{example.input}</span>
-                      </button>
+                      <div key={example.id} className="rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#517268]">
+                              {isCurrentJob ? 'This workflow' : matchingJob?.label || 'Saved'}
+                            </p>
+                            <p className="truncate text-sm font-semibold text-[#17201f]">{example.title}</p>
+                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#4c5a55]">{example.input}</p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => useSavedExample(example)}
+                              className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
+                            >
+                              Use
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void copySavedExample(example)}
+                              className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
+                            >
+                              Copy
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Delete saved example"
+                              onClick={() => deleteSavedExample(example.id)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e2b8ad] bg-white text-[#8a2e20] hover:bg-[#fff4f1]"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-              </section>
-            ) : null}
-
-            {selectedExamples.length ? (
-              <section className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
-                <p className="text-sm font-semibold text-[#24312f]">Saved examples</p>
-                <div className="mt-3 grid gap-2">
-                  {selectedExamples.map((example) => (
-                    <div key={example.id} className="rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#17201f]">{example.title}</p>
-                          <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#4c5a55]">{example.input}</p>
-                        </div>
-                        <div className="flex shrink-0 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const matchingJob = starterJobs.find((job) => job.id === example.jobId);
-                              selectJob(example.jobId, false);
-                              setDraft(example.input);
-                              trackAgentConsoleEvent({
-                                event: 'saved_example_used',
-                                hasInput: true,
-                                inputLength: example.input.length,
-                                jobId: example.jobId,
-                                resultLength: example.output.length,
-                                workerId: matchingJob?.workerId,
-                              });
-                            }}
-                            className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
-                          >
-                            Use
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void copySavedExample(example)}
-                            className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
-                          >
-                            Copy
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Delete saved example"
-                            onClick={() => deleteSavedExample(example.id)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e2b8ad] bg-white text-[#8a2e20] hover:bg-[#fff4f1]"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+              </details>
             ) : null}
 
             <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4" aria-live="polite">
