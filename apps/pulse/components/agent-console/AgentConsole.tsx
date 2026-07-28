@@ -274,23 +274,11 @@ export default function AgentConsole() {
   return (
     <main className="min-h-screen bg-[#f6f7f2] text-[#17201f]">
       <section className="border-b border-[#c9d3ca] bg-[#fffdf7] px-4 pt-24 pb-5 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mx-auto max-w-4xl">
           <div>
             <p className="text-sm font-semibold text-[#517268]">Sunset Pulse</p>
             <h1 className="mt-1 text-3xl font-bold text-[#111817] sm:text-4xl">Agent Console</h1>
           </div>
-          <Link
-            href="/command-center"
-            onClick={() => trackAgentConsoleEvent({
-              event: 'advanced_opened',
-              jobId: selectedJob.id,
-              workerId: selectedJob.workerId,
-            })}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
-          >
-            <Sparkles size={16} />
-            Advanced
-          </Link>
         </div>
       </section>
 
@@ -527,6 +515,21 @@ export default function AgentConsole() {
                 </div>
               )}
             </section>
+
+            <div className="flex justify-center">
+              <Link
+                href="/command-center"
+                onClick={() => trackAgentConsoleEvent({
+                  event: 'advanced_opened',
+                  jobId: selectedJob.id,
+                  workerId: selectedJob.workerId,
+                })}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold text-[#517268] hover:bg-[#eef5f1] hover:text-[#24312f] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+              >
+                <Sparkles size={14} />
+                Full Command Center
+              </Link>
+            </div>
           </div>
         </div>
       </section>
