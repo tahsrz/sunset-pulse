@@ -107,7 +107,11 @@ export default function AgentConsole() {
     setCopied(false);
     setSavedResult(false);
     setCurrentInput(trimmed);
-    setProgress([{ id: 'submitted', label: 'Submitted', status: 'complete', detail: selectedJob.label }]);
+    setProgress([
+      { id: 'submitted', label: 'Request received', status: 'complete', detail: selectedJob.label },
+      { id: 'voice', label: 'Applying your voice', status: 'running', detail: preferences.tone },
+      { id: 'draft', label: 'Drafting answer', status: 'pending', detail: selectedJob.outputLabel },
+    ]);
     trackAgentConsoleEvent({
       event: 'run_submitted',
       hasInput: true,
@@ -507,13 +511,11 @@ export default function AgentConsole() {
 
             <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4" aria-live="polite">
               {running ? (
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 h-3 w-3 rounded-full bg-[#d8a647]" />
-                  <div>
-                    <p className="font-semibold text-[#17201f]">Working</p>
-                    <ProgressList progress={progress} />
-                  </div>
-                </div>
+                <RunningResultPreview
+                  jobLabel={selectedJob.label}
+                  outputLabel={selectedJob.outputLabel}
+                  progress={progress}
+                />
               ) : error ? (
                 <div className="flex items-start gap-3 text-[#8a2e20]">
                   <AlertCircle className="mt-1 shrink-0" size={18} />
@@ -618,13 +620,58 @@ function ResultPanel({
   );
 }
 
+function RunningResultPreview({
+  jobLabel,
+  outputLabel,
+  progress,
+}: {
+  jobLabel: string;
+  outputLabel: string;
+  progress: CommandProgressEvent[];
+}) {
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[#517268]">Jamie is drafting</p>
+          <h2 className="mt-1 text-2xl font-bold text-[#111817]">{outputLabel}</h2>
+          <p className="mt-1 text-sm leading-6 text-[#4c5a55]">
+            Keeping this focused on {jobLabel.toLowerCase()} and your saved voice baseline.
+          </p>
+        </div>
+        <span className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-[#d8dfd9] bg-white px-2.5 text-xs font-semibold text-[#4c5a55]">
+          Drafting
+        </span>
+      </div>
+
+      <div className="rounded-md border border-[#d8dfd9] bg-white p-4">
+        <div className="grid animate-pulse gap-3">
+          <span className="h-3 w-11/12 rounded bg-[#dce4de]" />
+          <span className="h-3 w-10/12 rounded bg-[#dce4de]" />
+          <span className="h-3 w-8/12 rounded bg-[#dce4de]" />
+          <span className="mt-2 h-3 w-9/12 rounded bg-[#e8ede8]" />
+          <span className="h-3 w-7/12 rounded bg-[#e8ede8]" />
+        </div>
+      </div>
+
+      <div className="rounded-md border border-[#d8dfd9] bg-white p-3">
+        <p className="text-sm font-semibold text-[#24312f]">Progress</p>
+        <ProgressList progress={progress} />
+      </div>
+    </div>
+  );
+}
+
 function ProgressList({ progress }: { progress: CommandProgressEvent[] }) {
   return (
     <ul className="mt-2 grid gap-1 text-sm leading-6 text-[#4c5a55]">
       {progress.slice(-4).map((item) => (
-        <li key={item.id}>
-          <span className="font-semibold text-[#24312f]">{item.label}</span>
-          {item.detail ? `: ${item.detail}` : null}
+        <li key={item.id} className="flex gap-2">
+          <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${progressDotClass(item.status)}`} />
+          <span>
+            <span className="font-semibold text-[#24312f]">{formatProgressLabel(item)}</span>
+            {item.detail ? `: ${formatProgressDetail(item.detail)}` : null}
+          </span>
         </li>
       ))}
     </ul>
@@ -702,4 +749,25 @@ function upsertProgressEvent(current: CommandProgressEvent[], next: CommandProgr
   const clone = current.slice();
   clone[index] = next;
   return clone;
+}
+
+function formatProgressLabel(item: CommandProgressEvent) {
+  const normalized = item.label.trim().toLowerCase();
+  if (normalized === 'submitted') return 'Request received';
+  if (normalized.includes('advisor') || normalized.includes('route')) return 'Choosing the right worker';
+  if (normalized.includes('supervisor')) return 'Checking the answer';
+  if (normalized.includes('complete')) return 'Answer ready';
+  if (normalized.includes('error')) return 'Needs attention';
+  return item.label;
+}
+
+function formatProgressDetail(detail: string) {
+  return detail.length > 90 ? `${detail.slice(0, 87)}...` : detail;
+}
+
+function progressDotClass(status: CommandProgressEvent['status']) {
+  if (status === 'complete') return 'bg-[#517268]';
+  if (status === 'error') return 'bg-[#b94f35]';
+  if (status === 'running') return 'bg-[#d8a647]';
+  return 'bg-[#c9d3ca]';
 }
