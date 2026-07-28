@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -9,9 +9,11 @@ import {
   Copy,
   FileText,
   MessageSquareText,
+  Save,
   Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
   UserRound,
 } from 'lucide-react';
 
@@ -61,6 +63,22 @@ type CommandResponse = {
     }>;
     progress?: CommandProgressEvent[];
   };
+};
+
+type AgentPreferences = {
+  agentName: string;
+  market: string;
+  tone: string;
+  cta: string;
+};
+
+type SavedExample = {
+  id: string;
+  jobId: string;
+  title: string;
+  input: string;
+  output: string;
+  createdAt: string;
 };
 
 const starterJobs: StarterJob[] = [
@@ -120,19 +138,66 @@ const idleProgress: CommandProgressEvent[] = [
   { id: 'ready', label: 'Ready', status: 'complete', detail: 'Choose a job and run it.' },
 ];
 
+const preferencesStorageKey = 'sunset_agent_console_preferences';
+const savedExamplesStorageKey = 'sunset_agent_console_examples';
+
+const defaultPreferences: AgentPreferences = {
+  agentName: '',
+  market: 'North Texas',
+  tone: 'Warm, direct, local',
+  cta: 'Ask for a quick reply',
+};
+
+const toneOptions = [
+  'Warm, direct, local',
+  'Polished and concise',
+  'Friendly and casual',
+  'Calm and advisory',
+];
+
+const ctaOptions = [
+  'Ask for a quick reply',
+  'Offer to send more detail',
+  'Ask to schedule a showing',
+  'Offer a short call',
+];
+
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
   const [draft, setDraft] = useState('');
+  const [currentInput, setCurrentInput] = useState('');
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CommandResponse | null>(null);
   const [progress, setProgress] = useState<CommandProgressEvent[]>(idleProgress);
   const [copied, setCopied] = useState(false);
+  const [savedResult, setSavedResult] = useState(false);
+  const [preferences, setPreferences] = useState<AgentPreferences>(defaultPreferences);
+  const [preferencesOpen, setPreferencesOpen] = useState(true);
+  const [savedExamples, setSavedExamples] = useState<SavedExample[]>([]);
 
   const selectedJob = useMemo(
     () => starterJobs.find((job) => job.id === selectedJobId) || starterJobs[0],
     [selectedJobId],
   );
+
+  const selectedExamples = useMemo(
+    () => savedExamples.filter((example) => example.jobId === selectedJob.id).slice(0, 3),
+    [savedExamples, selectedJob.id],
+  );
+
+  useEffect(() => {
+    const restoredPreferences = restoreAgentPreferences(localStorage.getItem(preferencesStorageKey));
+    if (restoredPreferences) {
+      setPreferences(restoredPreferences);
+      setPreferencesOpen(false);
+    } else {
+      setPreferencesOpen(true);
+    }
+
+    const restoredExamples = restoreSavedExamples(localStorage.getItem(savedExamplesStorageKey));
+    setSavedExamples(restoredExamples);
+  }, []);
 
   const runAgentJob = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -143,6 +208,8 @@ export default function AgentConsole() {
     setError(null);
     setResult(null);
     setCopied(false);
+    setSavedResult(false);
+    setCurrentInput(trimmed);
     setProgress([{ id: 'submitted', label: 'Submitted', status: 'complete', detail: selectedJob.label }]);
 
     try {
@@ -153,7 +220,7 @@ export default function AgentConsole() {
           Accept: 'text/event-stream',
         },
         body: JSON.stringify({
-          command: `${selectedJob.prompt}\n\nInput:\n${trimmed}`,
+          command: `${selectedJob.prompt}\n\nAgent voice baseline:\n${formatAgentPreferences(preferences)}\n\nInput:\n${trimmed}`,
           selectedWorkerId: selectedJob.workerId,
           relayMode: selectedJob.relayMode,
           supervisor: true,
@@ -177,6 +244,13 @@ export default function AgentConsole() {
     }
   };
 
+  const savePreferences = () => {
+    const nextPreferences = normalizePreferences(preferences);
+    setPreferences(nextPreferences);
+    localStorage.setItem(preferencesStorageKey, JSON.stringify(nextPreferences));
+    setPreferencesOpen(false);
+  };
+
   const copyResult = async () => {
     const text = result?.result.deliverable.copyReadyText;
     if (!text) return;
@@ -184,6 +258,34 @@ export default function AgentConsole() {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const saveResultExample = () => {
+    const output = result?.result.deliverable.copyReadyText.trim();
+    if (!output || !currentInput.trim()) return;
+
+    const nextExample: SavedExample = {
+      id: crypto.randomUUID(),
+      jobId: selectedJob.id,
+      title: result?.result.deliverable.title || selectedJob.label,
+      input: currentInput.trim(),
+      output,
+      createdAt: new Date().toISOString(),
+    };
+    const nextExamples = [nextExample, ...savedExamples].slice(0, 12);
+    setSavedExamples(nextExamples);
+    localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
+    setSavedResult(true);
+  };
+
+  const deleteSavedExample = (id: string) => {
+    const nextExamples = savedExamples.filter((example) => example.id !== id);
+    setSavedExamples(nextExamples);
+    localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
+  };
+
+  const copySavedExample = async (example: SavedExample) => {
+    await navigator.clipboard.writeText(example.output);
   };
 
   return (
@@ -233,6 +335,83 @@ export default function AgentConsole() {
           </nav>
 
           <div className="grid gap-5">
+            <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4 shadow-sm">
+              {preferencesOpen ? (
+                <div className="grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
+                      Agent name
+                      <input
+                        value={preferences.agentName}
+                        onChange={(event) => setPreferences((current) => ({ ...current, agentName: event.target.value }))}
+                        className="h-10 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-medium text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
+                        placeholder="Your name"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
+                      Market
+                      <input
+                        value={preferences.market}
+                        onChange={(event) => setPreferences((current) => ({ ...current, market: event.target.value }))}
+                        className="h-10 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-medium text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
+                        placeholder="North Texas"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
+                      Tone
+                      <select
+                        value={preferences.tone}
+                        onChange={(event) => setPreferences((current) => ({ ...current, tone: event.target.value }))}
+                        className="h-10 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-medium text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
+                      >
+                        {toneOptions.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
+                      CTA
+                      <select
+                        value={preferences.cta}
+                        onChange={(event) => setPreferences((current) => ({ ...current, cta: event.target.value }))}
+                        className="h-10 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-medium text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
+                      >
+                        {ctaOptions.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={savePreferences}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#185b4d] px-4 text-sm font-bold text-white hover:bg-[#13483d] focus:outline-none focus:ring-2 focus:ring-[#8ab6a8] sm:w-fit"
+                  >
+                    <Save size={16} />
+                    Save Voice
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#17201f]">
+                      {preferences.agentName.trim() || 'Agent'} · {preferences.market}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-[#4c5a55]">
+                      {preferences.tone} · {preferences.cta}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPreferencesOpen(true)}
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+                  >
+                    Edit Voice
+                  </button>
+                </div>
+              )}
+            </section>
+
             <form onSubmit={runAgentJob} className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
               <label htmlFor="agent-console-input" className="text-sm font-semibold text-[#24312f]">
                 {selectedJob.label}
@@ -269,6 +448,52 @@ export default function AgentConsole() {
               </div>
             </form>
 
+            {selectedExamples.length ? (
+              <section className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-[#24312f]">Saved examples</p>
+                <div className="mt-3 grid gap-2">
+                  {selectedExamples.map((example) => (
+                    <div key={example.id} className="rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[#17201f]">{example.title}</p>
+                          <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#4c5a55]">{example.input}</p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraft(example.input);
+                              setResult(null);
+                              setError(null);
+                            }}
+                            className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
+                          >
+                            Use
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void copySavedExample(example)}
+                            className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
+                          >
+                            Copy
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Delete saved example"
+                            onClick={() => deleteSavedExample(example.id)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e2b8ad] bg-white text-[#8a2e20] hover:bg-[#fff4f1]"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4" aria-live="polite">
               {running ? (
                 <div className="flex items-start gap-3">
@@ -284,7 +509,13 @@ export default function AgentConsole() {
                   <p className="text-sm font-semibold leading-6">{error}</p>
                 </div>
               ) : result ? (
-                <ResultPanel result={result} copied={copied} onCopy={copyResult} />
+                <ResultPanel
+                  result={result}
+                  copied={copied}
+                  saved={savedResult}
+                  onCopy={copyResult}
+                  onSave={saveResultExample}
+                />
               ) : (
                 <div className="flex items-start gap-3 text-[#4c5a55]">
                   <CheckCircle2 className="mt-1 shrink-0 text-[#517268]" size={18} />
@@ -305,11 +536,15 @@ export default function AgentConsole() {
 function ResultPanel({
   result,
   copied,
+  saved,
   onCopy,
+  onSave,
 }: {
   result: CommandResponse;
   copied: boolean;
+  saved: boolean;
   onCopy: () => void;
+  onSave: () => void;
 }) {
   return (
     <div className="grid gap-4">
@@ -318,14 +553,24 @@ function ResultPanel({
           <p className="text-sm font-semibold text-[#517268]">{result.worker.name}</p>
           <h2 className="mt-1 text-2xl font-bold text-[#111817]">{result.result.deliverable.title || result.result.title}</h2>
         </div>
-        <button
-          type="button"
-          onClick={onCopy}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
-        >
-          <Copy size={16} />
-          {copied ? 'Copied' : 'Copy'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onCopy}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+          >
+            <Copy size={16} />
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+          >
+            <Save size={16} />
+            {saved ? 'Saved' : 'Save'}
+          </button>
+        </div>
       </div>
 
       <div className="whitespace-pre-wrap rounded-md border border-[#d8dfd9] bg-white p-4 text-base leading-7 text-[#17201f]">
@@ -446,4 +691,74 @@ function upsertProgressEvent(current: CommandProgressEvent[], next: CommandProgr
   const clone = current.slice();
   clone[index] = next;
   return clone;
+}
+
+function normalizePreferences(preferences: AgentPreferences): AgentPreferences {
+  return {
+    agentName: preferences.agentName.trim(),
+    market: preferences.market.trim() || defaultPreferences.market,
+    tone: preferences.tone.trim() || defaultPreferences.tone,
+    cta: preferences.cta.trim() || defaultPreferences.cta,
+  };
+}
+
+function formatAgentPreferences(preferences: AgentPreferences) {
+  const normalized = normalizePreferences(preferences);
+  return [
+    `Agent name: ${normalized.agentName || 'Not provided'}`,
+    `Market: ${normalized.market}`,
+    `Tone: ${normalized.tone}`,
+    `Preferred CTA: ${normalized.cta}`,
+  ].join('\n');
+}
+
+function restoreAgentPreferences(value: string | null): AgentPreferences | null {
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value) as Partial<AgentPreferences>;
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    return normalizePreferences({
+      agentName: typeof parsed.agentName === 'string' ? parsed.agentName : '',
+      market: typeof parsed.market === 'string' ? parsed.market : defaultPreferences.market,
+      tone: typeof parsed.tone === 'string' ? parsed.tone : defaultPreferences.tone,
+      cta: typeof parsed.cta === 'string' ? parsed.cta : defaultPreferences.cta,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function restoreSavedExamples(value: string | null): SavedExample[] {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value) as Partial<SavedExample>[];
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.flatMap((example) => {
+      if (
+        typeof example?.id !== 'string'
+        || typeof example.jobId !== 'string'
+        || typeof example.title !== 'string'
+        || typeof example.input !== 'string'
+        || typeof example.output !== 'string'
+        || typeof example.createdAt !== 'string'
+      ) {
+        return [];
+      }
+
+      return [{
+        id: example.id,
+        jobId: example.jobId,
+        title: example.title,
+        input: example.input,
+        output: example.output,
+        createdAt: example.createdAt,
+      }];
+    }).slice(0, 12);
+  } catch {
+    return [];
+  }
 }
