@@ -18,6 +18,10 @@ import {
   type PublicGuideConversionAnalytics,
 } from '@/lib/ai/publicGuideAnalytics';
 import {
+  loadAgentConsoleConversionAnalytics,
+  type AgentConsoleConversionAnalytics,
+} from '@/lib/agent-console/analytics';
+import {
   PUBLIC_GUIDE_DISPOSITIONS,
   readPublicGuideDisposition,
 } from '@/lib/ai/publicGuideConversionContract';
@@ -102,12 +106,18 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
     query = query.eq('status', statusFilter);
   }
 
-  const [leadResult, analyticsResult] = await Promise.all([
+  const [leadResult, analyticsResult, agentConsoleAnalyticsResult] = await Promise.all([
     query,
     loadPublicGuideConversionAnalytics()
       .then((analytics) => ({ analytics, failed: false }))
       .catch((analyticsError) => {
         console.warn('[JAMIE_PUBLIC_GUIDE_ANALYTICS]', analyticsError);
+        return { analytics: null, failed: true };
+      }),
+    loadAgentConsoleConversionAnalytics()
+      .then((analytics) => ({ analytics, failed: false }))
+      .catch((analyticsError) => {
+        console.warn('[AGENT_CONSOLE_ANALYTICS]', analyticsError);
         return { analytics: null, failed: true };
       }),
   ]);
@@ -179,6 +189,11 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
         <PublicGuideConversionPanel
           analytics={analyticsResult.analytics}
           failed={analyticsResult.failed}
+        />
+
+        <AgentConsoleConversionPanel
+          analytics={agentConsoleAnalyticsResult.analytics}
+          failed={agentConsoleAnalyticsResult.failed}
         />
 
         {error ? (
@@ -461,6 +476,129 @@ function PublicGuideConversionPanel({
         </div>
       </div>
     </section>
+  );
+}
+
+function AgentConsoleConversionPanel({
+  analytics,
+  failed,
+}: {
+  analytics: AgentConsoleConversionAnalytics | null;
+  failed: boolean;
+}) {
+  if (!analytics) {
+    return failed ? (
+      <section className="mb-8 border-y border-amber-300/20 bg-amber-300/[0.04] px-1 py-5 text-sm text-amber-100">
+        Agent Console conversion signals are temporarily unavailable. Lead intake remains operational.
+      </section>
+    ) : null;
+  }
+
+  return (
+    <section className="mb-8 border-y border-emerald-300/15 py-7">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-emerald-200">
+            <BarChart3 size={17} />
+            <h2 className="text-xs font-black uppercase tracking-[0.2em]">Agent Console Funnel</h2>
+          </div>
+          <p className="mt-2 text-sm text-slate-500">Unique console sessions over the last {analytics.windowDays} days.</p>
+        </div>
+        <div className="grid gap-3 text-left sm:grid-cols-3 lg:min-w-[460px]">
+          <MiniRate label="Open to completion" value={analytics.conversionRate} />
+          <MiniRate label="Submit to completion" value={analytics.completionRate} />
+          <MiniRate label="Reuse after completion" value={analytics.reuseRate} />
+        </div>
+      </div>
+
+      <div className="mt-6 grid border-l border-t border-white/10 sm:grid-cols-3 xl:grid-cols-6">
+        {analytics.funnel.map((stage) => (
+          <div key={stage.id} className="min-w-0 border-b border-r border-white/10 px-4 py-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{stage.label}</p>
+            <div className="mt-2 flex items-baseline justify-between gap-2">
+              <span className="text-2xl font-black text-white">{stage.sessions}</span>
+              <span className="text-[10px] font-bold text-emerald-200/60">
+                {stage.reachRate === null ? '-' : `${stage.reachRate}%`}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-slate-300">
+            <Target size={16} />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.18em]">Top Console Jobs</h3>
+          </div>
+          {analytics.jobs.length ? (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[620px] border-collapse text-left text-xs">
+                <thead className="border-b border-white/10 text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
+                  <tr>
+                    <th className="py-2 pr-4">Job</th>
+                    <th className="py-2 pr-4">Selected</th>
+                    <th className="py-2 pr-4">Submitted</th>
+                    <th className="py-2 pr-4">Completed</th>
+                    <th className="py-2 pr-4">Reused</th>
+                    <th className="py-2">Latest</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.jobs.map((job) => (
+                    <tr key={job.jobId} className="border-b border-white/[0.06] text-slate-300">
+                      <td className="py-3 pr-4 font-bold text-white">{job.label}</td>
+                      <td className="py-3 pr-4">{job.selectedSessions}</td>
+                      <td className="py-3 pr-4">{job.submittedSessions}</td>
+                      <td className="py-3 pr-4">{job.completedSessions}</td>
+                      <td className="py-3 pr-4">{job.reusedSessions}</td>
+                      <td className="py-3 text-slate-500">{formatDateTime(job.latestAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="mt-3 border-t border-white/10 py-5 text-sm text-slate-600">No Agent Console events in this window.</p>
+          )}
+          <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
+            Counts are session-level aggregates; console input text is not retained.
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 text-slate-300">
+            <CircleHelp size={16} />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.18em]">Run Health</h3>
+          </div>
+          <dl className="mt-3 border-t border-white/10">
+            <MetricRow label="Opened" value={analytics.openedSessions} />
+            <MetricRow label="Submitted" value={analytics.submittedSessions} />
+            <MetricRow label="Completed" value={analytics.completedSessions} />
+            <MetricRow label="Copied or saved" value={analytics.reusedSessions} />
+            <MetricRow label="Failed" value={analytics.failedSessions} />
+          </dl>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MiniRate({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div className="border border-white/10 bg-white/[0.035] px-4 py-3">
+      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-100/45">{label}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value === null ? 'No data' : `${value}%`}</p>
+    </div>
+  );
+}
+
+function MetricRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between border-b border-white/[0.06] py-2.5 text-xs">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="font-black text-white">{value}</dd>
+    </div>
   );
 }
 
