@@ -21,7 +21,7 @@ import { headers } from 'next/headers';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getAgentIdFromHeaders } from '@/lib/sites/agentConfig';
-import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
+import { isLightweightGlobalSurface, isMinimalChromeSurface } from '@/lib/navigation/focusedSurfaces';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sunsetpulse.app'),
@@ -102,6 +102,18 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
         <body className='waterlily-surface antialiased selection:bg-cyan-200 selection:text-slate-950'>
           {children}
           {modal}
+        </body>
+      </html>
+    );
+  }
+
+  if (isMinimalChromeSurface(requestPathname)) {
+    return (
+      <html lang='en'>
+        <body className='antialiased selection:bg-emerald-200 selection:text-stone-950'>
+          {children}
+          {modal}
+          <ToastContainer />
         </body>
       </html>
     );
