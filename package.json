@@ -2,19 +2,11 @@
   "name": "sunset-pulse-monorepo",
   "private": true,
   "workspaces": [
-    "apps/pulse",
-    "apps/scheduling/web",
-    "apps/api/v2",
-    "packages/*",
-    "packages/app-store/*",
-    "packages/embeds/*",
-    "packages/features/*",
-    "packages/platform/*",
-    "packages/platform/examples/*"
+    "apps/pulse"
   ],
   "scripts": {
     "pulse:dev": "npm run dev --workspace=apps/pulse",
-    "pulse:build": "npm run generate-schemas --workspace=@calcom/prisma && npm run build --workspace=apps/pulse",
+    "pulse:build": "npm run build --workspace=apps/pulse",
     "tah:dev": "dotnet watch --project apps/WorldofTah run",
     "scheduling:dev": "npm run dev --workspace=apps/scheduling/web",
     "scheduling:build": "npm run build --workspace=apps/scheduling/web",
