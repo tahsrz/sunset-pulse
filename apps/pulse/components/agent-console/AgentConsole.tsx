@@ -399,18 +399,10 @@ export default function AgentConsole() {
                   {selectedExamples.length ? `${selectedExamples.length} saved` : 'Ready'}
                 </span>
               </div>
-              <label htmlFor="agent-console-input" className="text-sm font-semibold text-[#24312f]">
-                {selectedJob.inputLabel}
-              </label>
-              <textarea
-                id="agent-console-input"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder={selectedJob.placeholder}
-                className="mt-2 min-h-44 w-full resize-y rounded-md border border-[#b9c6bd] bg-[#fbfcf8] p-3 text-base leading-7 text-[#17201f] outline-none placeholder:text-[#6f7d76] focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
-              />
-
-              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <label htmlFor="agent-console-input" className="text-sm font-semibold text-[#24312f]">
+                  {selectedJob.inputLabel}
+                </label>
                 <button
                   type="button"
                   onClick={() => {
@@ -425,15 +417,25 @@ export default function AgentConsole() {
                       workerId: selectedJob.workerId,
                     });
                   }}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#c9d3ca] bg-[#fffdf7] px-3 text-sm font-semibold text-[#24312f] hover:border-[#d8a647] focus:outline-none focus:ring-2 focus:ring-[#d8a647]"
+                  className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184] sm:w-fit"
                 >
-                  <Clipboard size={16} />
-                  Example
+                  <Clipboard size={14} />
+                  Use example
                 </button>
+              </div>
+              <textarea
+                id="agent-console-input"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder={selectedJob.placeholder}
+                className="mt-2 min-h-44 w-full resize-y rounded-md border border-[#b9c6bd] bg-[#fbfcf8] p-3 text-base leading-7 text-[#17201f] outline-none placeholder:text-[#6f7d76] focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
+              />
+
+              <div className="mt-3 flex justify-end">
                 <button
                   type="submit"
                   disabled={!draft.trim() || running}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#b94f35] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#963d28] focus:outline-none focus:ring-2 focus:ring-[#d9785e] disabled:cursor-not-allowed disabled:bg-[#b6bdb8]"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#b94f35] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#963d28] focus:outline-none focus:ring-2 focus:ring-[#d9785e] disabled:cursor-not-allowed disabled:bg-[#b6bdb8] sm:w-auto"
                 >
                   <Send size={16} />
                   {running ? 'Working' : 'Run Jamie'}
