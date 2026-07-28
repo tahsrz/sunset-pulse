@@ -31,6 +31,7 @@ import {
   restoreAgentPreferences,
   restoreSavedExamples,
 } from './agentConsoleStorage';
+import { trackAgentConsoleEvent } from './agentConsoleEvents';
 
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
@@ -62,6 +63,12 @@ export default function AgentConsole() {
   );
 
   useEffect(() => {
+    trackAgentConsoleEvent({
+      event: 'console_opened',
+      jobId: selectedJob.id,
+      workerId: selectedJob.workerId,
+    });
+
     const restoredPreferences = restoreAgentPreferences(localStorage.getItem(preferencesStorageKey));
     if (restoredPreferences) {
       setPreferences(restoredPreferences);
@@ -78,6 +85,7 @@ export default function AgentConsole() {
     event.preventDefault();
     const trimmed = draft.trim();
     if (!trimmed || running) return;
+    const startedAt = Date.now();
 
     setRunning(true);
     setError(null);
@@ -86,6 +94,14 @@ export default function AgentConsole() {
     setSavedResult(false);
     setCurrentInput(trimmed);
     setProgress([{ id: 'submitted', label: 'Submitted', status: 'complete', detail: selectedJob.label }]);
+    trackAgentConsoleEvent({
+      event: 'run_submitted',
+      hasInput: true,
+      inputLength: trimmed.length,
+      jobId: selectedJob.id,
+      savedExampleCount: selectedExamples.length,
+      workerId: selectedJob.workerId,
+    });
 
     try {
       const response = await fetch('/api/commands', {
@@ -112,8 +128,26 @@ export default function AgentConsole() {
       });
       setResult(commandResult);
       setProgress(commandResult.trace?.progress || [{ id: 'complete', label: 'Complete', status: 'complete' }]);
+      trackAgentConsoleEvent({
+        commandId: commandResult.commandId,
+        durationMs: Date.now() - startedAt,
+        event: 'run_completed',
+        hasInput: true,
+        inputLength: trimmed.length,
+        jobId: selectedJob.id,
+        resultLength: commandResult.result.deliverable.copyReadyText.length,
+        workerId: selectedJob.workerId,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Jamie could not finish that job.');
+      trackAgentConsoleEvent({
+        durationMs: Date.now() - startedAt,
+        event: 'run_failed',
+        hasInput: true,
+        inputLength: trimmed.length,
+        jobId: selectedJob.id,
+        workerId: selectedJob.workerId,
+      });
     } finally {
       setRunning(false);
     }
@@ -124,6 +158,12 @@ export default function AgentConsole() {
     setPreferences(nextPreferences);
     localStorage.setItem(preferencesStorageKey, JSON.stringify(nextPreferences));
     setPreferencesOpen(false);
+    trackAgentConsoleEvent({
+      event: 'voice_saved',
+      hasInput: Boolean(nextPreferences.agentName || nextPreferences.market),
+      jobId: selectedJob.id,
+      workerId: selectedJob.workerId,
+    });
   };
 
   const copyResult = async () => {
@@ -132,6 +172,13 @@ export default function AgentConsole() {
 
     await navigator.clipboard.writeText(text);
     setCopied(true);
+    trackAgentConsoleEvent({
+      commandId: result?.commandId,
+      event: 'result_copied',
+      jobId: selectedJob.id,
+      resultLength: text.length,
+      workerId: selectedJob.workerId,
+    });
     window.setTimeout(() => setCopied(false), 1600);
   };
 
@@ -151,16 +198,39 @@ export default function AgentConsole() {
     setSavedExamples(nextExamples);
     localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
     setSavedResult(true);
+    trackAgentConsoleEvent({
+      commandId: result?.commandId,
+      event: 'result_saved',
+      hasInput: true,
+      inputLength: currentInput.trim().length,
+      jobId: selectedJob.id,
+      resultLength: output.length,
+      savedExampleCount: nextExamples.length,
+      workerId: selectedJob.workerId,
+    });
   };
 
   const deleteSavedExample = (id: string) => {
+    const deletedExample = savedExamples.find((example) => example.id === id);
     const nextExamples = savedExamples.filter((example) => example.id !== id);
     setSavedExamples(nextExamples);
     localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
+    trackAgentConsoleEvent({
+      event: 'saved_example_deleted',
+      jobId: deletedExample?.jobId || selectedJob.id,
+      savedExampleCount: nextExamples.length,
+      workerId: selectedJob.workerId,
+    });
   };
 
   const copySavedExample = async (example: SavedExample) => {
     await navigator.clipboard.writeText(example.output);
+    trackAgentConsoleEvent({
+      event: 'saved_example_copied',
+      jobId: example.jobId,
+      resultLength: example.output.length,
+      workerId: selectedJob.workerId,
+    });
   };
 
   return (
@@ -173,6 +243,11 @@ export default function AgentConsole() {
           </div>
           <Link
             href="/command-center"
+            onClick={() => trackAgentConsoleEvent({
+              event: 'advanced_opened',
+              jobId: selectedJob.id,
+              workerId: selectedJob.workerId,
+            })}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
           >
             <Sparkles size={16} />
@@ -196,6 +271,14 @@ export default function AgentConsole() {
                       setSelectedJobId(job.id);
                       setResult(null);
                       setError(null);
+                      trackAgentConsoleEvent({
+                        event: 'job_selected',
+                        hasInput: Boolean(draft.trim()),
+                        inputLength: draft.trim().length,
+                        jobId: job.id,
+                        savedExampleCount: savedExamples.filter((example) => example.jobId === job.id).length,
+                        workerId: job.workerId,
+                      });
                     }}
                     className={`grid min-h-20 grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border px-3 py-3 text-left transition ${
                       active
@@ -242,6 +325,14 @@ export default function AgentConsole() {
                         setDraft(example.input);
                         setResult(null);
                         setError(null);
+                        trackAgentConsoleEvent({
+                          event: 'recent_output_used',
+                          hasInput: true,
+                          inputLength: example.input.length,
+                          jobId: example.jobId,
+                          resultLength: example.output.length,
+                          workerId: matchingJob?.workerId,
+                        });
                       }}
                       className="min-w-0 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3 text-left hover:border-[#789184] hover:bg-[#eef5f1]"
                     >
@@ -361,6 +452,13 @@ export default function AgentConsole() {
                     setDraft(selectedJob.example);
                     setResult(null);
                     setError(null);
+                    trackAgentConsoleEvent({
+                      event: 'example_loaded',
+                      hasInput: true,
+                      inputLength: selectedJob.example.length,
+                      jobId: selectedJob.id,
+                      workerId: selectedJob.workerId,
+                    });
                   }}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#c9d3ca] bg-[#fffdf7] px-3 text-sm font-semibold text-[#24312f] hover:border-[#d8a647] focus:outline-none focus:ring-2 focus:ring-[#d8a647]"
                 >
@@ -396,6 +494,14 @@ export default function AgentConsole() {
                               setDraft(example.input);
                               setResult(null);
                               setError(null);
+                              trackAgentConsoleEvent({
+                                event: 'saved_example_used',
+                                hasInput: true,
+                                inputLength: example.input.length,
+                                jobId: example.jobId,
+                                resultLength: example.output.length,
+                                workerId: selectedJob.workerId,
+                              });
                             }}
                             className="inline-flex h-9 items-center rounded-md border border-[#b9c6bd] bg-white px-3 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1]"
                           >
