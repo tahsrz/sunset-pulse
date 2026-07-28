@@ -1,9 +1,15 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { buildAuthCallbackUrl, sanitizeAuthNext } from '@/lib/core/auth_redirect';
+import {
+  MOCK_SESSION_COOKIE,
+  clearMockSession,
+  createMockSession,
+  mockSessionsEnabled
+} from '@/lib/core/mockSessionStore';
 import type { OptimisticMutationState } from '@/lib/forms/optimisticMutation';
 
 export async function signInWithEmail(
@@ -19,6 +25,19 @@ export async function signInWithEmail(
       status: 'error',
       message: 'Email and password are required.'
     };
+  }
+
+  if (mockSessionsEnabled()) {
+    const session = createMockSession({ email });
+    const cookieStore = await cookies();
+    cookieStore.set(MOCK_SESSION_COOKIE, session.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      expires: new Date(session.expiresAt)
+    });
+    redirect(next);
   }
 
   const supabase = createClient();
@@ -85,7 +104,20 @@ async function getServerAuthOrigin() {
 }
 
 export async function signOut() {
+  if (mockSessionsEnabled()) {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(MOCK_SESSION_COOKIE)?.value;
+    clearMockSession(token);
+    cookieStore.set(MOCK_SESSION_COOKIE, '', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 0
+    });
+    return;
+  }
+
   const supabase = createClient();
   await supabase.auth.signOut();
 }
-

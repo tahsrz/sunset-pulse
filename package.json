@@ -2,22 +2,12 @@
   "name": "sunset-pulse-monorepo",
   "private": true,
   "workspaces": [
-    "apps/pulse",
-    "apps/scheduling/web",
-    "apps/api/v2",
-    "packages/*",
-    "packages/app-store/*",
-    "packages/embeds/*",
-    "packages/features/*",
-    "packages/platform/*",
-    "packages/platform/examples/*"
+    "apps/pulse"
   ],
   "scripts": {
     "pulse:dev": "npm run dev --workspace=apps/pulse",
-    "pulse:build": "npm run generate-schemas --workspace=@calcom/prisma && npm run build --workspace=apps/pulse",
+    "pulse:build": "npm run build --workspace=apps/pulse",
     "tah:dev": "dotnet watch --project apps/WorldofTah run",
-    "scheduling:dev": "npm run dev --workspace=apps/scheduling/web",
-    "scheduling:build": "npm run build --workspace=apps/scheduling/web",
     "tah:import-doc": "tsx apps/pulse/scripts/import-doc-to-tah.ts",
     "tah:lancedb:index": "tsx apps/pulse/scripts/tah-lancedb.ts",
     "tah:lancedb:search": "tsx apps/pulse/scripts/tah-lancedb-search.ts",
@@ -31,10 +21,11 @@
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
   "dependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "6.0.2"
   },
   "devDependencies": {
-    "next": "^15.5.16",
+    "@testing-library/dom": "^10.4.1",
+    "next": "^15.5.21",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^15.12.0"
@@ -51,7 +42,7 @@
       "react": "18.2.0",
       "react-dom": "18.2.0"
     },
-    "@hono/node-server": "2.0.3",
+    "@hono/node-server": "2.0.11",
     "@babel/core": "7.29.7",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@nestjs/platform-express": {
@@ -72,14 +63,14 @@
     "body-parser": {
       "qs": "6.15.3"
     },
-    "brace-expansion": "2.1.2",
+    "brace-expansion": "5.0.8",
     "cookie": "1.1.1",
     "defu": "6.1.7",
-    "dompurify": "3.4.11",
+    "dompurify": "3.4.12",
     "effect": "3.21.2",
     "engine.io": "6.6.7",
     "esbuild": "0.28.1",
-    "fast-uri": "3.1.2",
+    "fast-uri": "3.1.4",
     "fast-xml-parser": "5.8.0",
     "file-type": "22.0.1",
     "follow-redirects": "1.16.0",
@@ -100,25 +91,27 @@
     "minimatch": "9.0.9",
     "nanoid": "3.3.11",
     "next-auth": {
+      ".": "4.24.15",
       "nodemailer": "9.0.3"
     },
     "next": {
-      "postcss": "8.5.16"
+      "postcss": "8.5.23"
     },
     "node-forge": "1.4.0",
     "nodemailer": "9.0.3",
     "phin": "3.7.1",
     "picomatch": "2.3.2",
-    "postcss": "8.5.16",
+    "postcss": "8.5.23",
     "protobufjs": "7.6.4",
     "protocol-buffers-schema": "3.6.1",
     "qs": "6.15.3",
     "shell-quote": "1.9.0",
     "systeminformation": "5.31.17",
-    "tar": "7.5.19",
+    "tar": "7.5.22",
     "tmp": "0.2.5",
     "uuid": "11.1.1",
     "ws": "8.21.0",
-    "yaml": "2.9.0"
+    "yaml": "2.9.0",
+    "sharp": "0.35.3"
   }
 }

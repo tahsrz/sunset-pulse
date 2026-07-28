@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
+import { isFocusedGameSurface, isOperatorSurface } from '@/lib/navigation/focusedSurfaces';
 
 const JamieChat = dynamic(() => import('@/components/JamieChat'), { ssr: false });
 const FeedbackWidget = dynamic(() => import('@/components/FeedbackWidget'), { ssr: false });
@@ -20,23 +21,11 @@ export default function ClientWidgets() {
 
   if (!mounted) return null;
 
-  const focusedGameSurface =
-    pathname?.startsWith('/value-guess') ||
-    pathname?.startsWith('/location-guess') ||
-    pathname?.startsWith('/play-jamie') ||
-    pathname?.startsWith('/retail-clash') ||
-    pathname?.startsWith('/pulse-quest');
-
-  if (focusedGameSurface) {
+  if (isFocusedGameSurface(pathname)) {
     return null;
   }
 
-  const operatorSurface =
-    pathname?.startsWith('/command-center') ||
-    pathname?.startsWith('/jamie-chat') ||
-    pathname?.startsWith('/admin/orchestrator');
-
-  if (operatorSurface) {
+  if (isOperatorSurface(pathname)) {
     return (
       <>
         <FeedbackWidget />

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
+import { createDefaultLaunchKit, type AgentLaunchKit } from '@/lib/sites/launchKit';
 
 const recheckMocks = vi.hoisted(() => ({
   retrieve: vi.fn(),
@@ -40,7 +40,7 @@ describe('site billing Stripe recheck', () => {
       customer: 'cus_123',
       trial_end: 1784227200,
     }));
-    const kit = {
+    const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       ownerId: 'user_123',
       subscriptionTier: 'atlas',
@@ -81,7 +81,7 @@ describe('site billing Stripe recheck', () => {
         subscription({ id: 'sub_active', status: 'trialing', customer: 'cus_123' }),
       ],
     });
-    const kit = {
+    const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       billingProfile: {
         billingStatus: 'canceled',
@@ -96,6 +96,37 @@ describe('site billing Stripe recheck', () => {
     expect(result.stripeSubscriptionId).toBe('sub_active');
     expect(recheckMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
       billingStatus: 'trialing',
+      stripeSubscriptionId: 'sub_active',
+    }));
+  });
+
+  it('prefers a newer active customer subscription over a stored canceled subscription', async () => {
+    recheckMocks.retrieve.mockResolvedValue(subscription({
+      id: 'sub_canceled',
+      status: 'canceled',
+      customer: 'cus_123',
+    }));
+    recheckMocks.list.mockResolvedValue({
+      data: [
+        subscription({ id: 'sub_canceled', status: 'canceled', customer: 'cus_123' }),
+        subscription({ id: 'sub_active', status: 'active', customer: 'cus_123' }),
+      ],
+    });
+    const kit: AgentLaunchKit = {
+      ...createDefaultLaunchKit('broker-one'),
+      billingProfile: {
+        billingStatus: 'canceled',
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_canceled',
+      },
+    };
+
+    const result = await recheckSiteBillingFromStripe({ kit });
+
+    expect(result.selectedBy).toBe('customer_subscription');
+    expect(result.stripeSubscriptionId).toBe('sub_active');
+    expect(recheckMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
+      billingStatus: 'active',
       stripeSubscriptionId: 'sub_active',
     }));
   });

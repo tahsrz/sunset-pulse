@@ -61,6 +61,10 @@ export async function provisionPaidAgentSite(
     ? normalizeLaunchKit(existingRow, agentId)
     : createDefaultLaunchKit(agentId);
 
+  if (existing) {
+    assertCanRefreshExistingSiteFromCheckout(baseKit, input);
+  }
+
   const email = normalizeEmail(input.email);
   const ownerName = existing
     ? baseKit.ownerName
@@ -73,10 +77,8 @@ export async function provisionPaidAgentSite(
     ? baseKit.integrationProfile.leadEmail || email || undefined
     : email || baseKit.integrationProfile.leadEmail;
 
-  const billingStatus = normalizeBillingStatus(input.billingStatus)
-    || (existing ? baseKit.billingProfile.billingStatus : 'trialing')
-    || 'trialing';
-  const trialEndsAt = normalizeIsoDate(input.trialEndsAt) || baseKit.billingProfile.trialEndsAt || dateDaysFromNow(90);
+  const billingStatus = resolveCheckoutBillingStatus(baseKit, existing, input.billingStatus);
+  const trialEndsAt = resolveCheckoutTrialEndsAt(baseKit, existing, billingStatus, input.trialEndsAt);
 
   const kit = appendProvisioningAuditEvent(normalizeLaunchKit({
     ...baseKit,
@@ -135,14 +137,7 @@ export async function provisionPaidAgentSite(
   });
 
   if (!existing) {
-    const emailResult = await notifyBuyerSiteProvisioned({
-      kit,
-      email,
-      setupUrl: `/onboarding/site/setup?session_id=${encodeURIComponent(input.stripeCheckoutSessionId || '')}`,
-    });
-    if (emailResult.status === 'failed') {
-      console.warn('[SITE_PROVISIONING_BUYER_EMAIL_FAILED]', emailResult.reason);
-    }
+    await notifyBuyerSiteProvisionedSafely(kit, email, input.stripeCheckoutSessionId);
   }
 
   return {
@@ -181,6 +176,7 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
     stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
     stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
     billingStatus: 'canceled',
+    previousSiteStatus: kit.status,
     siteStatus: 'suspended',
   });
   const savedStores = await saveSiteConfig(suspendedKit, {
@@ -321,25 +317,7 @@ export async function expirePastDueGracePeriods(input: {
       userId: kit.ownerId,
     });
     const summary = getLaunchKitSummary(expiredKit);
-    const [buyerEmail, operatorEmail] = await Promise.all([
-      notifyBuyerSiteGraceExpired({
-        kit: expiredKit,
-        setupUrl: expiredKit.billingProfile.stripeCheckoutSessionId
-          ? `/onboarding/site/setup?session_id=${encodeURIComponent(expiredKit.billingProfile.stripeCheckoutSessionId)}`
-          : undefined,
-      }),
-      notifyOperatorSiteGraceExpired({
-        kit: expiredKit,
-        publicUrl: summary.publicUrl,
-      }),
-    ]);
-
-    if (buyerEmail.status === 'failed') {
-      console.warn('[SITE_GRACE_EXPIRED_BUYER_EMAIL_FAILED]', buyerEmail.reason);
-    }
-    if (operatorEmail.status === 'failed') {
-      console.warn('[SITE_GRACE_EXPIRED_OPERATOR_EMAIL_FAILED]', operatorEmail.reason);
-    }
+    await notifyGraceExpiredSafely(expiredKit, summary.publicUrl);
 
     processed.push({
       agentId: kit.agentId,
@@ -478,6 +456,13 @@ function findLatestBillingInterruptedSiteStatus(kit: AgentLaunchKit) {
 
     if (
       event.action === 'customer.subscription.deleted'
+      && event.previousSiteStatus
+    ) {
+      return event.previousSiteStatus;
+    }
+
+    if (
+      event.action === 'customer.subscription.deleted'
       && event.siteStatus === 'active'
     ) {
       return 'active';
@@ -543,17 +528,113 @@ async function notifyBillingStatusChange(input: {
   gracePeriodEndsAt?: string;
   publicUrl?: string;
 }) {
-  const [buyerResult, operatorResult] = await Promise.all([
-    notifyBuyerSiteBillingUpdate(input),
-    notifyOperatorSiteBillingUpdate(input),
-  ]);
+  try {
+    const [buyerResult, operatorResult] = await Promise.all([
+      notifyBuyerSiteBillingUpdate(input),
+      notifyOperatorSiteBillingUpdate(input),
+    ]);
 
-  if (buyerResult.status === 'failed') {
-    console.warn('[SITE_BILLING_BUYER_EMAIL_FAILED]', buyerResult.reason);
+    if (buyerResult.status === 'failed') {
+      console.warn('[SITE_BILLING_BUYER_EMAIL_FAILED]', buyerResult.reason);
+    }
+    if (operatorResult.status === 'failed') {
+      console.warn('[SITE_BILLING_OPERATOR_EMAIL_FAILED]', operatorResult.reason);
+    }
+  } catch (error) {
+    console.warn('[SITE_BILLING_NOTIFICATION_THROWN]', error);
   }
-  if (operatorResult.status === 'failed') {
-    console.warn('[SITE_BILLING_OPERATOR_EMAIL_FAILED]', operatorResult.reason);
+}
+
+async function notifyBuyerSiteProvisionedSafely(
+  kit: AgentLaunchKit,
+  email: string,
+  stripeCheckoutSessionId?: string | null,
+) {
+  try {
+    const emailResult = await notifyBuyerSiteProvisioned({
+      kit,
+      email,
+      setupUrl: `/onboarding/site/setup?session_id=${encodeURIComponent(stripeCheckoutSessionId || '')}`,
+    });
+    if (emailResult.status === 'failed') {
+      console.warn('[SITE_PROVISIONING_BUYER_EMAIL_FAILED]', emailResult.reason);
+    }
+  } catch (error) {
+    console.warn('[SITE_PROVISIONING_BUYER_EMAIL_THROWN]', error);
   }
+}
+
+async function notifyGraceExpiredSafely(kit: AgentLaunchKit, publicUrl: string) {
+  try {
+    const [buyerEmail, operatorEmail] = await Promise.all([
+      notifyBuyerSiteGraceExpired({
+        kit,
+        setupUrl: kit.billingProfile.stripeCheckoutSessionId
+          ? `/onboarding/site/setup?session_id=${encodeURIComponent(kit.billingProfile.stripeCheckoutSessionId)}`
+          : undefined,
+      }),
+      notifyOperatorSiteGraceExpired({
+        kit,
+        publicUrl,
+      }),
+    ]);
+
+    if (buyerEmail.status === 'failed') {
+      console.warn('[SITE_GRACE_EXPIRED_BUYER_EMAIL_FAILED]', buyerEmail.reason);
+    }
+    if (operatorEmail.status === 'failed') {
+      console.warn('[SITE_GRACE_EXPIRED_OPERATOR_EMAIL_FAILED]', operatorEmail.reason);
+    }
+  } catch (error) {
+    console.warn('[SITE_GRACE_EXPIRED_NOTIFICATION_THROWN]', error);
+  }
+}
+
+function resolveCheckoutBillingStatus(
+  baseKit: AgentLaunchKit,
+  existing: boolean,
+  value?: string | null,
+) {
+  const inputStatus = normalizeBillingStatus(value);
+  if (inputStatus) return inputStatus;
+  if (!existing) return 'trialing';
+  if (isBillingInterruptionStatus(baseKit.billingProfile.billingStatus)) return 'trialing';
+  return baseKit.billingProfile.billingStatus || 'trialing';
+}
+
+function resolveCheckoutTrialEndsAt(
+  baseKit: AgentLaunchKit,
+  existing: boolean,
+  billingStatus: AgentLaunchKit['billingProfile']['billingStatus'],
+  value?: string | null,
+) {
+  const inputTrialEndsAt = normalizeIsoDate(value);
+  if (inputTrialEndsAt) return inputTrialEndsAt;
+  if (billingStatus === 'trialing' && (!existing || isBillingInterruptionStatus(baseKit.billingProfile.billingStatus))) {
+    return dateDaysFromNow(90);
+  }
+  return baseKit.billingProfile.trialEndsAt || (billingStatus === 'trialing' ? dateDaysFromNow(90) : '');
+}
+
+function assertCanRefreshExistingSiteFromCheckout(
+  kit: AgentLaunchKit,
+  input: PaidAgentSiteProvisioningInput,
+) {
+  const existingUserId = normalizeIdentityId(kit.ownerId) || normalizeIdentityId(kit.billingProfile.userId);
+  const inputUserId = normalizeIdentityId(input.userId);
+  if (existingUserId && inputUserId !== existingUserId) {
+    throw new Error('Stripe checkout user does not own the existing agent site.');
+  }
+
+  const existingCustomerId = normalizeIdentityId(kit.billingProfile.stripeCustomerId);
+  const inputCustomerId = normalizeIdentityId(input.stripeCustomerId);
+  if (existingCustomerId && inputCustomerId && inputCustomerId !== existingCustomerId) {
+    throw new Error('Stripe checkout customer does not match the existing agent site.');
+  }
+}
+
+function normalizeIdentityId(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function normalizeEmail(value: unknown) {
@@ -623,6 +704,7 @@ function appendProvisioningAuditEvent(
     stripeSubscriptionId: event.stripeSubscriptionId,
     billingStatus: event.billingStatus,
     siteStatus: event.siteStatus,
+    previousSiteStatus: event.previousSiteStatus,
     savedStores: event.savedStores,
   };
 

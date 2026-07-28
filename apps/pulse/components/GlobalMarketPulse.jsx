@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { FaChartLine, FaChartBar, FaTimes, FaBolt } from 'react-icons/fa';
 import { useTheme } from '@/context/ThemeProvider';
 import { useProperties } from '@/hooks/useProperties';
+import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
 
 // Dynamically import the heavy D3 engine
 const RandomChart = dynamic(() => import('./RandomChart'), {
@@ -14,7 +16,8 @@ const RandomChart = dynamic(() => import('./RandomChart'), {
 const GlobalMarketPulse = () => {
   const [activeChart, setActiveChart] = useState(null);
   const { isAdvancedMode } = useTheme();
-  const { properties } = useProperties();
+  const pathname = usePathname();
+  const { properties } = useProperties({}, { enabled: !isLightweightGlobalSurface(pathname) });
 
   // Calculate dynamic Global Yield based on active properties
   const globalYield = useMemo(() => {

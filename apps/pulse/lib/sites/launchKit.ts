@@ -113,6 +113,7 @@ export type LaunchKitProvisioningAuditEvent = {
   stripeSubscriptionId?: string;
   billingStatus?: LaunchKitBillingProfile['billingStatus'];
   siteStatus?: AgentLaunchKit['status'];
+  previousSiteStatus?: AgentLaunchKit['status'];
   savedStores?: string[];
 };
 
@@ -184,6 +185,7 @@ const provisioningAuditEventSchema = z.object({
   stripeSubscriptionId: optionalStringSchema,
   billingStatus: z.enum(['unknown', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete']).optional(),
   siteStatus: statusSchema.optional(),
+  previousSiteStatus: statusSchema.optional(),
   savedStores: z.array(z.string().trim().min(1).max(40)).max(8).optional(),
 });
 
@@ -422,7 +424,7 @@ export function parseListInput(value: string): string[] {
     .filter(Boolean);
 }
 
-export function toSiteConfigSupabaseRecord(kit: AgentLaunchKit, updatedBy: unknown) {
+export function toSiteConfigSupabaseRecord(kit: AgentLaunchKit, updatedBy: unknown, updatedAt = new Date().toISOString()) {
   return {
     agent_id: kit.agentId,
     owner_id: kit.ownerId || kit.billingProfile.userId || null,
@@ -442,11 +444,11 @@ export function toSiteConfigSupabaseRecord(kit: AgentLaunchKit, updatedBy: unkno
     provisioning_audit: kit.provisioningAudit,
     sections: defaultAgentSiteSections,
     last_modified_by: getUpdatedByLabel(updatedBy),
-    updated_at: new Date().toISOString(),
+    updated_at: updatedAt,
   };
 }
 
-export function toSiteConfigMongoRecord(kit: AgentLaunchKit, updatedBy: unknown) {
+export function toSiteConfigMongoRecord(kit: AgentLaunchKit, updatedBy: unknown, updatedAt = new Date().toISOString()) {
   return {
     agentId: kit.agentId,
     ownerId: kit.ownerId || kit.billingProfile.userId || undefined,
@@ -466,6 +468,7 @@ export function toSiteConfigMongoRecord(kit: AgentLaunchKit, updatedBy: unknown)
     provisioningAudit: kit.provisioningAudit,
     sections: defaultAgentSiteSections,
     lastModifiedBy: getUpdatedByLabel(updatedBy),
+    updatedAt,
   };
 }
 

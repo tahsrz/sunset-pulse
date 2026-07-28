@@ -7,8 +7,11 @@ import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@
 import { supabaseAdmin } from '@/lib/supabase';
 
 const leadIdSchema = z.string().uuid();
+const pipelineStatusSchema = z.enum(['new', 'contacted', 'touring', 'nurture', 'closed', 'archived']);
+
 const updateLeadSchema = z.discriminatedUnion('action', [
   z.object({ id: leadIdSchema, action: z.enum(['review', 'archive', 'restore']) }).strict(),
+  z.object({ id: leadIdSchema, action: z.literal('set_status'), status: pipelineStatusSchema }).strict(),
   z.object({ id: leadIdSchema, action: z.literal('note'), note: z.string().trim().max(2000).optional() }).strict(),
   z.object({
     id: leadIdSchema,
@@ -16,6 +19,7 @@ const updateLeadSchema = z.discriminatedUnion('action', [
     disposition: publicGuideDispositionIdSchema,
   }).strict(),
 ]);
+type LeadUpdateAction = z.infer<typeof updateLeadSchema>;
 
 export async function PATCH(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
@@ -30,7 +34,6 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { id, action } = parsed.data;
-  const note = action === 'note' ? parsed.data.note : undefined;
   const now = new Date().toISOString();
   const auditUser = operatorAuditUser(access);
 
@@ -48,15 +51,28 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Lead disposition is only available for Jamie handoffs.' }, { status: 400 });
   }
 
-  const update = buildLeadUpdate(action, now, note, existing?.status);
+  const update = buildLeadUpdate(parsed.data, now, existing?.status);
+  const existingMetadata = ((existing?.metadata || {}) as Record<string, unknown>);
+  const existingAuditTrail = Array.isArray(existingMetadata.auditTrail) ? existingMetadata.auditTrail : [];
+
+  const auditEntry = {
+    id: `audit-${Date.now()}`,
+    action: action === 'set_status' ? `status_changed:${parsed.data.status}` : action,
+    timestamp: now,
+    actor: auditUser.email || auditUser.name || auditUser.userId || 'Operator',
+    previousStatus: existing?.status || 'new',
+    newStatus: update.status || existing?.status || 'new',
+    note: action === 'note' ? parsed.data.note : undefined,
+  };
 
   const metadata = {
-    ...((existing?.metadata || {}) as Record<string, unknown>),
+    ...existingMetadata,
     lastOperatorAction: {
       action,
       at: now,
       by: auditUser,
     },
+    auditTrail: [auditEntry, ...existingAuditTrail].slice(0, 30),
     ...(action === 'disposition' ? {
       publicGuideDisposition: {
         value: parsed.data.disposition,
@@ -101,40 +117,42 @@ export async function PATCH(request: NextRequest) {
 }
 
 function buildLeadUpdate(
-  action: z.infer<typeof updateLeadSchema>['action'],
+  data: LeadUpdateAction,
   now: string,
-  note?: string,
   existingStatus?: string | null,
 ) {
-  if (action === 'review') {
-    return {
-      status: 'reviewed',
-      reviewed_at: now,
-      archived_at: null,
-    };
+  switch (data.action) {
+    case 'set_status':
+      return {
+        status: data.status,
+        ...(data.status === 'archived' ? { archived_at: now } : { archived_at: null }),
+        ...(data.status !== 'new' && !existingStatus ? { reviewed_at: now } : {}),
+      };
+    case 'review':
+      return {
+        status: 'contacted',
+        reviewed_at: now,
+        archived_at: null,
+      };
+    case 'archive':
+      return {
+        status: 'archived',
+        archived_at: now,
+      };
+    case 'restore':
+      return {
+        status: 'new',
+        archived_at: null,
+      };
+    case 'disposition':
+      return existingStatus === 'new' ? { status: 'contacted', reviewed_at: now } : {};
+    case 'note':
+      return {
+        internal_note: data.note || '',
+      };
+    default:
+      return {};
   }
-
-  if (action === 'archive') {
-    return {
-      status: 'archived',
-      archived_at: now,
-    };
-  }
-
-  if (action === 'restore') {
-    return {
-      status: 'new',
-      archived_at: null,
-    };
-  }
-
-  if (action === 'disposition') {
-    return existingStatus === 'new' ? { status: 'reviewed', reviewed_at: now } : {};
-  }
-
-  return {
-    internal_note: note || '',
-  };
 }
 
 function warnDispositionEvent(error: unknown) {

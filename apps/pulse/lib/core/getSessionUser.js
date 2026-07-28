@@ -1,5 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { isNextDynamicServerUsage } from '@/lib/core/nextDynamicError';
+import { cookies } from 'next/headers';
+import {
+  MOCK_SESSION_COOKIE,
+  mockSessionsEnabled,
+  readMockSession,
+  toSessionUser
+} from '@/lib/core/mockSessionStore';
 
 /**
  * MIGRATION_NOTE: Transitioned from NextAuth to Supabase Auth.
@@ -7,6 +14,12 @@ import { isNextDynamicServerUsage } from '@/lib/core/nextDynamicError';
  */
 export const getSessionUser = async () => {
   try {
+    if (mockSessionsEnabled()) {
+      const cookieStore = await cookies();
+      const mockSession = readMockSession(cookieStore.get(MOCK_SESSION_COOKIE)?.value);
+      if (mockSession) return toSessionUser(mockSession);
+    }
+
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -40,6 +53,7 @@ export const getSessionUser = async () => {
         customKeybind: profile?.custom_keybind || 'P'
       },
       userId: user.id,
+      email: user.email,
       role: profile?.role || 'consumer'
     };
   } catch (error) {

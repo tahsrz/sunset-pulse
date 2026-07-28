@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { PowerSyncContext } from '@powersync/react';
 import {
   PowerSyncDatabase,
@@ -9,6 +10,7 @@ import {
   WASQLiteVFS,
 } from '@powersync/web';
 import { useAuth } from '@/context/AuthContext';
+import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
 import { SunsetPowerSyncConnector } from './connector';
 import { SunsetPowerSyncSchema } from './schema';
 
@@ -57,8 +59,10 @@ function getPowerSyncDatabase() {
 
 export function SunsetPowerSyncProvider({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
+  const pathname = usePathname();
   const enabled = process.env.NEXT_PUBLIC_POWERSYNC_ENABLED === 'true'
-    && Boolean(process.env.NEXT_PUBLIC_POWERSYNC_URL);
+    && Boolean(process.env.NEXT_PUBLIC_POWERSYNC_URL)
+    && !isLightweightGlobalSurface(pathname);
   const [database, setDatabase] = useState<PowerSyncDatabase | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);

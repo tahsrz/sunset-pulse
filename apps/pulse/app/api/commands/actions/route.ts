@@ -7,11 +7,16 @@ const validActionKinds = new Set<CommandActionKind>(['external-link', 'copy', 'c
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const input = normalizeActionInput(body);
+    const body = await safeJson(request);
+    if (body === undefined) {
+      return NextResponse.json({ ok: false, error: 'Invalid JSON command action request.' }, { status: 400 });
+    }
 
-    if (!input.commandId || !input.command || !input.action.id || !input.action.label || !validActionKinds.has(input.action.kind)) {
-      return NextResponse.json({ ok: false, error: 'Missing action memory fields.' }, { status: 400 });
+    const input = normalizeActionInput(body);
+    const validationError = validateActionInput(input);
+
+    if (validationError) {
+      return NextResponse.json({ ok: false, error: validationError }, { status: 400 });
     }
 
     const trace = saveCommandActionMemory(input);
@@ -31,7 +36,15 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ ok: trace.saved, trace, feedback });
+    const feedbackSaved = feedback.saved !== false;
+    const ok = trace.saved && feedbackSaved;
+
+    return NextResponse.json({
+      ok,
+      status: ok ? 'saved' : trace.saved ? 'partial' : 'unavailable',
+      trace,
+      feedback,
+    });
   } catch (error) {
     return NextResponse.json({
       ok: false,
@@ -42,17 +55,60 @@ export async function POST(request: Request) {
 
 function normalizeActionInput(body: any): SaveCommandActionInput {
   return {
-    commandId: String(body?.commandId || '').slice(0, 120),
-    command: String(body?.command || '').slice(0, 900),
-    workerId: body?.workerId ? String(body.workerId).slice(0, 120) : undefined,
+    commandId: cleanText(body?.commandId, 120),
+    command: cleanText(body?.command, 900),
+    workerId: body?.workerId ? cleanText(body.workerId, 120) : undefined,
     action: {
-      id: String(body?.action?.id || '').slice(0, 120),
-      label: String(body?.action?.label || '').slice(0, 160),
-      description: String(body?.action?.description || '').slice(0, 500),
-      kind: String(body?.action?.kind || '') as CommandActionKind,
-      href: body?.action?.href ? String(body.action.href).slice(0, 600) : undefined,
-      copyText: body?.action?.copyText ? String(body.action.copyText).slice(0, 500) : undefined,
-      command: body?.action?.command ? String(body.action.command).slice(0, 900) : undefined
+      id: cleanText(body?.action?.id, 120),
+      label: cleanText(body?.action?.label, 160),
+      description: cleanText(body?.action?.description, 500),
+      kind: cleanText(body?.action?.kind, 40) as CommandActionKind,
+      href: body?.action?.href ? cleanText(body.action.href, 600) : undefined,
+      copyText: body?.action?.copyText ? cleanText(body.action.copyText, 500) : undefined,
+      command: body?.action?.command ? cleanText(body.action.command, 900) : undefined
     }
   };
+}
+
+function validateActionInput(input: SaveCommandActionInput) {
+  if (!input.commandId || !input.command || !input.action.id || !input.action.label || !validActionKinds.has(input.action.kind)) {
+    return 'Missing action memory fields.';
+  }
+
+  if (input.action.kind === 'external-link' && !isSafeActionHref(input.action.href)) {
+    return 'External link actions require a safe http(s) href.';
+  }
+
+  if (input.action.kind === 'copy' && !input.action.copyText) {
+    return 'Copy actions require copy text.';
+  }
+
+  if (input.action.kind === 'command' && !input.action.command) {
+    return 'Command actions require a follow-up command.';
+  }
+
+  return '';
+}
+
+function isSafeActionHref(href?: string) {
+  if (!href) return false;
+
+  try {
+    const parsed = new URL(href);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function cleanText(value: unknown, maxLength: number) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
+async function safeJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
 }

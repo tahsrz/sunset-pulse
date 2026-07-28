@@ -56,7 +56,7 @@ describe('Jamie public guide disposition route', () => {
       error: null,
     });
     mocks.updateSingle.mockResolvedValue({
-      data: { id: LEAD_ID, status: 'reviewed' },
+      data: { id: LEAD_ID, status: 'contacted' },
       error: null,
     });
     mocks.rpc.mockResolvedValue({ error: null });
@@ -67,7 +67,7 @@ describe('Jamie public guide disposition route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'reviewed',
+      status: 'contacted',
       reviewed_at: expect.any(String),
       metadata: expect.objectContaining({
         publicGuideBrief: { schemaVersion: 1 },

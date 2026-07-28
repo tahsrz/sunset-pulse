@@ -24,6 +24,10 @@ export type SaveTourHotListInput = {
 const HOT_LIST_ID = 'default';
 
 export async function getStoredTourHotList(): Promise<StoredTourHotList | null> {
+  if (isMockMode()) {
+    return readMockStoredHotList();
+  }
+
   try {
     const { data, error } = await supabaseAdmin
       .from('tour_hot_lists')
@@ -58,6 +62,10 @@ export async function saveStoredTourHotList(input: SaveTourHotListInput): Promis
     updated_by: input.updatedBy || {},
     updated_at: new Date().toISOString(),
   };
+
+  if (isMockMode()) {
+    return saveMockStoredHotList(row);
+  }
 
   const { data, error } = await supabaseAdmin
     .from('tour_hot_lists')
@@ -129,4 +137,24 @@ function isMissingHotListTableError(error: unknown) {
 
 function formatError(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+type MockTourHotListGlobal = typeof globalThis & {
+  __sunsetPulseMockTourHotList?: StoredTourHotList | null;
+};
+
+function readMockStoredHotList() {
+  const globalStore = globalThis as MockTourHotListGlobal;
+  return globalStore.__sunsetPulseMockTourHotList || null;
+}
+
+function saveMockStoredHotList(row: Record<string, any>) {
+  const stored = rowToStoredHotList(row);
+  const globalStore = globalThis as MockTourHotListGlobal;
+  globalStore.__sunsetPulseMockTourHotList = stored;
+  return stored;
+}
+
+function isMockMode() {
+  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }

@@ -103,6 +103,11 @@ const SiteConfigSchema = new mongoose.Schema({
     personalityPreset: { type: String, enum: ['Aggressive', 'Supportive', 'Mysterious', 'Custom'], default: 'Aggressive' }
   },
   lastModifiedBy: { type: String, default: 'Jamie' }
-});
+}, { timestamps: true });
+
+SiteConfigSchema.index({ ownerId: 1, updatedAt: -1 });
+SiteConfigSchema.index({ 'billingProfile.userId': 1, updatedAt: -1 });
+SiteConfigSchema.index({ 'billingProfile.stripeSubscriptionId': 1, updatedAt: -1 });
+SiteConfigSchema.index({ 'billingProfile.billingStatus': 1, 'billingProfile.gracePeriodEndsAt': 1, updatedAt: 1 });
 
 export const SiteConfig: Model<any> = mongoose.models.SiteConfig || mongoose.model('SiteConfig', SiteConfigSchema);

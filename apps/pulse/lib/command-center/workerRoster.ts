@@ -465,15 +465,57 @@ export const intelligenceWorkers: IntelligenceWorker[] = [
 
 export function chooseWorkerForCommand(command: string) {
   const normalized = expandedTextForSearch(command).toLowerCase();
+  const listingPaste = detectListingPaste(normalized);
   const expandedTerms = expandCommandTerms(command);
   const scored = intelligenceWorkers.map((worker) => {
     const score = worker.commandFit.reduce((total, phrase) => total + (normalized.includes(phrase) ? 3 : 0), 0) +
       worker.name.toLowerCase().split(/\s+/).reduce((total, term) => total + (normalized.includes(term) ? 1 : 0), 0) +
-      scoreTermMatches(worker.commandFit.join(' '), expandedTerms);
+      scoreTermMatches(worker.commandFit.join(' '), expandedTerms) +
+      listingPasteWorkerBoost(worker.id, normalized, listingPaste);
     return { worker, score };
   });
+  const sorted = scored.sort((a, b) => b.score - a.score);
 
-  return scored.sort((a, b) => b.score - a.score)[0]?.score > 0
-    ? scored.sort((a, b) => b.score - a.score)[0].worker
-    : intelligenceWorkers[0];
+  return sorted[0]?.score > 0
+    ? sorted[0].worker
+    : fallbackWorkerForAmbiguousCommand(command);
+}
+
+function fallbackWorkerForAmbiguousCommand(command: string) {
+  const fallbackId = command.trim().length > 240 ? 'listing-summary' : 'follow-up-writer';
+  return intelligenceWorkers.find((worker) => worker.id === fallbackId) || intelligenceWorkers[0];
+}
+
+function detectListingPaste(normalized: string) {
+  const signals = [
+    /\bmls\s*(#|number|no\.?)?\b/i,
+    /\b(list\s*price|price|offered at)\b/i,
+    /\b(beds?|bedrooms?)\b/i,
+    /\b(baths?|bathrooms?)\b/i,
+    /\b(sq\s*ft|square feet|sqft)\b/i,
+    /\b(acres?|lot size)\b/i,
+    /\b(year built|built in)\b/i,
+    /\b(single family|townhouse|condo|residential)\b/i,
+    /\b\d{3,6}\s+[a-z0-9 .'-]+\s+(st|street|ave|avenue|rd|road|dr|drive|ln|lane|ct|court|cir|circle|trl|trail|way|blvd|boulevard)\b/i,
+  ];
+
+  return signals.reduce((count, pattern) => count + (pattern.test(normalized) ? 1 : 0), 0) >= 3;
+}
+
+function listingPasteWorkerBoost(workerId: string, normalized: string, listingPaste: boolean) {
+  if (!listingPaste) return 0;
+
+  if (workerId === 'comp-analysis' && /\b(comps?|compare|valuation|price check|worth|underpriced|overpriced)\b/i.test(normalized)) {
+    return 12;
+  }
+
+  if (workerId === 'listing-spark' && /\b(campaign|hook|marketing|angle|social|ad copy|story)\b/i.test(normalized)) {
+    return 10;
+  }
+
+  if (workerId === 'spatial-designer' && /\b(3d|spatial|tour|scene|visual|map)\b/i.test(normalized)) {
+    return 10;
+  }
+
+  return workerId === 'listing-summary' ? 9 : 0;
 }

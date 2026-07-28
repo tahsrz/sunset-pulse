@@ -1,7 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
 import { JamieBriefing, normalizeJamieBriefing } from '@/lib/types/jamieBriefing';
 
 interface JamiePulseContextType {
@@ -14,6 +16,7 @@ interface JamiePulseContextType {
 const JamiePulseContext = createContext<JamiePulseContextType | undefined>(undefined);
 
 export function JamiePulseProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [latestBriefing, setLatestBriefing] = useState<JamieBriefing | null>(null);
   const [showOverlay, setShowOverlay] = useState(false);
 
@@ -26,6 +29,8 @@ export function JamiePulseProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (isLightweightGlobalSurface(pathname)) return;
+
     // Listen for new briefings in Supabase
     const channel = supabase
       .channel('public:daily_briefings')
@@ -45,7 +50,7 @@ export function JamiePulseProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <JamiePulseContext.Provider value={{ 

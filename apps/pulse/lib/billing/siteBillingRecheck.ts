@@ -53,14 +53,19 @@ export async function recheckSiteBillingFromStripe(input: {
 async function findStripeSubscriptionForKit(kit: AgentLaunchKit) {
   const stripe = getStripeClient();
   const storedSubscriptionId = kit.billingProfile.stripeSubscriptionId;
+  let storedSubscription: Stripe.Subscription | null = null;
 
   if (storedSubscriptionId) {
     const subscription = await stripe.subscriptions.retrieve(storedSubscriptionId);
-    if (!isDeletedSubscription(subscription)) return subscription;
+    if (!isDeletedSubscription(subscription)) {
+      storedSubscription = subscription as Stripe.Subscription;
+      if (isPreferredRestorableSubscription(storedSubscription)) return storedSubscription;
+    }
   }
 
-  const customerId = kit.billingProfile.stripeCustomerId;
+  const customerId = kit.billingProfile.stripeCustomerId || stripeId(storedSubscription?.customer || null);
   if (!customerId) {
+    if (storedSubscription) return storedSubscription;
     throw new Error('This site does not have a Stripe subscription or customer to recheck.');
   }
 
@@ -69,7 +74,10 @@ async function findStripeSubscriptionForKit(kit: AgentLaunchKit) {
     status: 'all',
     limit: 10,
   });
-  const candidate = chooseRestorableSubscription(subscriptions.data);
+  const candidate = chooseRestorableSubscription(uniqueSubscriptions([
+    ...subscriptions.data,
+    ...(storedSubscription ? [storedSubscription] : []),
+  ]));
   if (!candidate) {
     throw new Error('No Stripe subscription was found for this site customer.');
   }
@@ -77,13 +85,25 @@ async function findStripeSubscriptionForKit(kit: AgentLaunchKit) {
   return candidate;
 }
 
+function isPreferredRestorableSubscription(subscription: Stripe.Subscription) {
+  return subscription.status === 'active' || subscription.status === 'trialing';
+}
+
 function chooseRestorableSubscription(subscriptions: Stripe.Subscription[]) {
-  return subscriptions.find((subscription) => subscription.status === 'active' || subscription.status === 'trialing')
+  return subscriptions.find(isPreferredRestorableSubscription)
     || subscriptions.find((subscription) => subscription.status === 'past_due')
     || subscriptions.find((subscription) => subscription.status === 'unpaid' || subscription.status === 'incomplete')
     || subscriptions.find((subscription) => subscription.status === 'canceled')
     || subscriptions[0]
     || null;
+}
+
+function uniqueSubscriptions(subscriptions: Stripe.Subscription[]) {
+  const unique = new Map<string, Stripe.Subscription>();
+  for (const subscription of subscriptions) {
+    if (subscription?.id && !unique.has(subscription.id)) unique.set(subscription.id, subscription);
+  }
+  return Array.from(unique.values());
 }
 
 function normalizeStripeSubscriptionStatus(status: Stripe.Subscription.Status | string | null | undefined): AgentLaunchKit['billingProfile']['billingStatus'] | null {

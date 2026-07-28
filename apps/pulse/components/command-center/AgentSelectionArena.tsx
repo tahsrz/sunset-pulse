@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Gauge,
   Layers3,
+  Pencil,
   Play,
   RefreshCw,
   Search,
@@ -35,6 +36,7 @@ type RelayMode = 'briefing' | 'slideshow' | 'puppetshow' | 'field-board' | 'scri
 
 type CommandResponse = {
   commandId: string;
+  commandText?: string;
   intent: string;
   worker: {
     id: string;
@@ -151,7 +153,74 @@ type CommandResponse = {
         rejected: number;
       }>;
     };
+    contextBudget?: {
+      intent: string;
+      maxMemoryShards: number;
+      maxAtlasShards: number;
+      maxTotalShards: number;
+      maxCharsPerShard: number;
+      maxTokensPerShard?: number;
+      configSource?: 'default' | 'env';
+      memoryInput: number;
+      atlasInput: number;
+      memoryKept: number;
+      atlasKept: number;
+      totalKept: number;
+      estimatedChars: number;
+      estimatedTokens?: number;
+    };
+    classification?: {
+      intent: string;
+      confidence: number;
+      workerId: string;
+      reason: string;
+      requiresListingParse: boolean;
+      requiresMemory: boolean;
+      requiresAtlas: boolean;
+    };
+    listingFacts?: {
+      isListingLike: boolean;
+      signalCount: number;
+      confidence: number;
+      extractedFields: string[];
+      mlsId?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+      price?: string;
+      beds?: string;
+      baths?: string;
+      sqft?: string;
+      lotSize?: string;
+      yearBuilt?: string;
+      propertyType?: string;
+      status?: string;
+      daysOnMarket?: string;
+      hoaFee?: string;
+      parking?: string;
+      brokerage?: string;
+      remarks?: string;
+      features: string[];
+      hooks: string[];
+      warnings: string[];
+      missingFields: string[];
+    };
+    progress?: Array<{
+      id: string;
+      label: string;
+      status: 'complete' | 'queued' | 'skipped';
+      detail?: string;
+    }>;
     supervisorNotes?: string[];
+    supervisorReview?: {
+      status: 'queued' | 'succeeded' | 'failed' | 'disabled' | 'unavailable';
+      path: string;
+      reviewId?: string;
+      severity?: 'info' | 'warning' | 'error';
+      findingCount?: number;
+      reason?: string;
+    };
     queryMemory?: {
       status: 'saved' | 'disabled' | 'unavailable';
       path: string;
@@ -166,6 +235,8 @@ type CommandResponse = {
         reason?: string;
       };
     };
+    workflow?: WorkflowTrace;
+    postWorkflow?: WorkflowTrace;
     commandPost?: {
       status: 'linked' | 'access_denied' | 'unavailable';
       endpoint: string;
@@ -186,19 +257,19 @@ type CommandResponse = {
       };
     };
     voltagent?: {
-      status: 'ready' | 'standby' | 'error';
-      framework: 'ai-sdk';
-      agentId: 'sunset-command-advisor';
-      model: string;
-      provider: string;
+      status: 'ready' | 'standby' | 'error' | 'unavailable';
+      framework: 'ai-sdk' | 'voltagent';
+      agentId?: 'sunset-command-advisor';
+      model?: string;
+      provider?: string;
       credentialEnv?: string;
       reason?: string;
-      text: string;
-      tools: Array<{
+      text?: string;
+      tools?: Array<{
         name: string;
         purpose: string;
       }>;
-      route: {
+      route?: {
         workerId: string;
         workerName: string;
         routeMode: 'auto' | 'manual';
@@ -208,11 +279,11 @@ type CommandResponse = {
     tensorzero?: {
       status: 'scored' | 'disabled' | 'unavailable';
       framework: 'tensorzero';
-      path: string;
+      path?: string;
       evaluationId?: string;
-      projectName: string;
-      functionName: 'sunset_command_center';
-      variantName: string;
+      projectName?: string;
+      functionName?: 'sunset_command_center';
+      variantName?: string;
       score?: number;
       metrics?: {
         command_center_quality: number;
@@ -229,6 +300,72 @@ type CommandResponse = {
       reason?: string;
     };
   };
+};
+
+type WorkflowTrace = {
+  status: 'ok' | 'degraded';
+  attempts: Array<{
+    node: string;
+    operation: string;
+    status: 'success' | 'fallback' | 'failed';
+    attempts: number;
+    retried: boolean;
+    recovered: boolean;
+    durationMs: number;
+    error?: string;
+    fallback?: string;
+  }>;
+  failedOperations: number;
+  fallbackOperations: number;
+  retriedOperations: number;
+};
+
+type CommandProgressEvent = NonNullable<CommandResponse['trace']['progress']>[number];
+type CommandSupervisorReviewUiTrace = NonNullable<CommandResponse['trace']['supervisorReview']>;
+type ListingFactsTrace = NonNullable<CommandResponse['trace']['listingFacts']>;
+
+type ListingReviewDraft = {
+  address: string;
+  price: string;
+  beds: string;
+  baths: string;
+  sqft: string;
+  propertyType: string;
+  status: string;
+  mlsId: string;
+  daysOnMarket: string;
+  hoaFee: string;
+  yearBuilt: string;
+  lotSize: string;
+  parking: string;
+  brokerage: string;
+  remarks: string;
+  features: string;
+};
+
+type ListingReviewFieldKey = keyof ListingReviewDraft;
+type ListingCopyVariant = 'mls' | 'social' | 'buyer';
+type ListingCopyDrafts = Record<ListingCopyVariant, string>;
+type SavedListingIntake = {
+  intakeId: string;
+  version: number;
+  publishStatus: 'review' | 'ready';
+};
+
+type CanonicalListingComparison = {
+  property: {
+    id: string;
+    mlsId: string | null;
+    name: string | null;
+    lastUpdated: string | null;
+  };
+  differences: Array<{
+    field: string;
+    label: string;
+    intakeValue: string | null;
+    canonicalValue: string | null;
+    differs: boolean;
+  }>;
 };
 
 type TahFactResponse = {
@@ -256,6 +393,32 @@ const relayModeOptions: Array<{ mode: RelayMode; label: string }> = [
 ];
 
 const defaultCommand = 'Tell me who to call first this morning';
+const commandMaxLength = 20000;
+
+const listingReviewFields: Array<{ key: ListingReviewFieldKey; label: string; multiline?: boolean }> = [
+  { key: 'address', label: 'Address' },
+  { key: 'price', label: 'Price' },
+  { key: 'beds', label: 'Beds' },
+  { key: 'baths', label: 'Baths' },
+  { key: 'sqft', label: 'Square feet' },
+  { key: 'propertyType', label: 'Property type' },
+  { key: 'status', label: 'Status' },
+  { key: 'mlsId', label: 'MLS' },
+  { key: 'daysOnMarket', label: 'Days on market' },
+  { key: 'hoaFee', label: 'HOA' },
+  { key: 'yearBuilt', label: 'Year built' },
+  { key: 'lotSize', label: 'Lot size' },
+  { key: 'parking', label: 'Parking' },
+  { key: 'brokerage', label: 'Brokerage' },
+  { key: 'remarks', label: 'Remarks', multiline: true },
+  { key: 'features', label: 'Features', multiline: true },
+];
+
+const listingCopyVariants: Array<{ id: ListingCopyVariant; label: string; ariaLabel: string }> = [
+  { id: 'mls', label: 'MLS Summary', ariaLabel: 'MLS summary draft' },
+  { id: 'social', label: 'Social Caption', ariaLabel: 'Social caption draft' },
+  { id: 'buyer', label: 'Buyer Message', ariaLabel: 'Buyer message draft' },
+];
 
 const statLabels: Record<WorkerStatKey, string> = {
   speed: 'Speed',
@@ -291,25 +454,31 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
   const [running, setRunning] = useState(false);
   const [commandResult, setCommandResult] = useState<CommandResponse | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [liveProgress, setLiveProgress] = useState<CommandProgressEvent[]>([]);
   const [copiedDeliverable, setCopiedDeliverable] = useState(false);
   const [copiedActionId, setCopiedActionId] = useState<string | null>(null);
   const [dailyFact, setDailyFact] = useState<TahFactResponse | null>(null);
   const [factBusy, setFactBusy] = useState(false);
   const [factError, setFactError] = useState('');
+  const [hydrated, setHydrated] = useState(false);
 
   const routingCommand = command.trim() || linkedCommand || defaultCommand;
   const recommended = useMemo(() => chooseWorkerForCommand(routingCommand), [routingCommand]);
   const selected = commandResult
     ? intelligenceWorkers.find((worker) => worker.id === commandResult.worker.id) || recommended
     : intelligenceWorkers.find((worker) => worker.id === selectedId) || recommended;
-  const tahLoadoutCount = new Set(intelligenceWorkers.flatMap((worker) => worker.tahLoadout)).size;
+  const sourceLoadoutCount = new Set(intelligenceWorkers.flatMap((worker) => worker.tahLoadout)).size;
   const primaryQuickCommands = quickCommands.slice(0, 6);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     const initialCommand = new URLSearchParams(window.location.search).get('command');
     if (!initialCommand || commandInputTouched.current) return;
 
-    const nextCommand = initialCommand.trim().slice(0, 600);
+    const nextCommand = initialCommand.trim().slice(0, commandMaxLength);
     if (!nextCommand) return;
 
     const nextWorker = chooseWorkerForCommand(nextCommand);
@@ -319,6 +488,35 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     setManualSelection(false);
     setRanCommand(false);
     setCommandResult(null);
+  }, []);
+
+  useEffect(() => {
+    const intakeId = new URLSearchParams(window.location.search).get('intake');
+    if (!intakeId || commandInputTouched.current) return;
+    let cancelled = false;
+
+    void fetch(`/api/command-center/listing-intakes/${intakeId}`)
+      .then(safeJson)
+      .then((body) => {
+        const savedCommand = body?.data?.intake?.sourceCommand;
+        if (cancelled || typeof savedCommand !== 'string' || !savedCommand.trim()) return;
+        const nextCommand = savedCommand.trim().slice(0, commandMaxLength);
+        const nextWorker = chooseWorkerForCommand(nextCommand);
+        commandInputTouched.current = true;
+        setCommand(nextCommand);
+        setLinkedCommand('');
+        setSelectedId(nextWorker.id);
+        setManualSelection(false);
+        setRanCommand(false);
+        setCommandResult(null);
+        setCommandError(null);
+        setLiveProgress([]);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -337,6 +535,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     setRanCommand(false);
     setCommandResult(null);
     setCommandError(null);
+    setLiveProgress([]);
   };
 
   const loadDailyFact = async (refresh = false) => {
@@ -393,9 +592,9 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     }
   };
 
-  const runCommand = async () => {
-    const commandToRun = command.trim() || linkedCommand || defaultCommand;
-    const workerId = manualSelection ? selectedId : recommended.id;
+  const runCommand = async (forcedWorkerId?: string, commandOverride?: string) => {
+    const commandToRun = commandOverride || command.trim() || linkedCommand || defaultCommand;
+    const workerId = forcedWorkerId || (manualSelection ? selectedId : recommended.id);
     const previousResult = commandResult;
     if (previousResult) {
       void sendTensorZeroFeedback(previousResult, {
@@ -413,6 +612,13 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     setRunning(true);
     setRanCommand(false);
     setCommandError(null);
+    setCommandResult(null);
+    setLiveProgress([{
+      id: 'submitted',
+      label: 'Submitted',
+      status: 'complete',
+      detail: manualSelection || forcedWorkerId ? 'Manual helper route' : 'Auto helper route',
+    }]);
     logProtocol('DATA', 'Command Center route requested', {
       command,
       commandToRun,
@@ -425,22 +631,31 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     try {
       const response = await fetch('/api/commands', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+        },
         body: JSON.stringify({
           command: commandToRun,
-          selectedWorkerId: manualSelection ? workerId : undefined,
+          selectedWorkerId: manualSelection || forcedWorkerId ? workerId : undefined,
           relayMode,
           supervisor: supervisorEnabled
         })
       });
 
-      const body = await response.json();
       if (!response.ok) {
+        const body = await safeJson(response);
         throw new Error(body?.error || 'Command failed.');
       }
 
-      setCommandResult(body as CommandResponse);
+      const body = await readCommandStream(response, (event) => {
+        setLiveProgress((current) => upsertProgressEvent(current, event));
+      });
+      const finalResult = { ...(body as CommandResponse), commandText: commandToRun };
+      setCommandResult(finalResult);
+      setLiveProgress(finalResult.trace.progress || []);
       setRanCommand(true);
+      if (supervisorEnabled) void requestSupervisorReview(finalResult, commandToRun);
       logProtocol('DATA', 'Command Center route completed', {
         commandId: body.commandId,
         worker: body.worker?.id,
@@ -492,7 +707,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
         keepalive: item.kind === 'external-link',
         body: JSON.stringify({
           commandId: commandResult.commandId,
-          command: routingCommand,
+          command: commandResult.commandText || routingCommand,
           workerId: commandResult.worker.id,
           action: item,
           tensorzero: {
@@ -541,6 +756,113 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     });
   };
 
+  const rerunWithWorker = (nextWorkerId: string) => {
+    if (!nextWorkerId || nextWorkerId === commandResult?.worker.id) return;
+    recordManualHelperOverride(nextWorkerId);
+    setManualSelection(true);
+    setSelectedId(nextWorkerId);
+    void runCommand(nextWorkerId);
+  };
+
+  const rerunWithApprovedListing = (draft: ListingReviewDraft) => {
+    const commandOverride = buildApprovedListingCommand(draft);
+    const currentWorkerId = commandResult?.worker.id;
+    commandInputTouched.current = true;
+    setCommand(commandOverride);
+    setLinkedCommand('');
+    if (currentWorkerId) {
+      setManualSelection(true);
+      setSelectedId(currentWorkerId);
+    }
+    void runCommand(currentWorkerId, commandOverride);
+  };
+
+  const requestSupervisorReview = async (result: CommandResponse, commandToRun: string) => {
+    try {
+      const response = await fetch('/api/commands/supervisor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          commandId: result.commandId,
+          command: commandToRun,
+          workerId: result.worker.id,
+          workerName: result.worker.name,
+          intent: result.intent,
+          summary: result.result.summary,
+          selectedShards: result.trace.selectedShards.map((shard) => ({
+            source: shard.source,
+            title: shard.title,
+            score: shard.score,
+          })),
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error || 'Supervisor review failed.');
+      const queuedTrace = body.trace as CommandResponse['trace']['supervisorReview'];
+      setCommandResult((current) => current?.commandId === result.commandId
+        ? {
+          ...current,
+          trace: {
+            ...current.trace,
+            supervisorReview: queuedTrace,
+          },
+        }
+        : current);
+      if (queuedTrace?.status === 'queued') {
+        void processSupervisorReviews(result.commandId, queuedTrace);
+      }
+    } catch (error) {
+      logProtocol('DATA', 'Supervisor review queue failed', {
+        commandId: result.commandId,
+        error: error instanceof Error ? error.message : 'unknown',
+      });
+    }
+  };
+
+  const processSupervisorReviews = async (
+    commandId: string,
+    queuedTrace: CommandSupervisorReviewUiTrace
+  ) => {
+    try {
+      const response = await fetch('/api/commands/supervisor', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({ limit: 5 }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error || 'Supervisor processing failed.');
+      const processed = (body.snapshot?.recent || []).find((review: {
+        id?: string;
+        status?: CommandSupervisorReviewUiTrace['status'];
+        severity?: CommandSupervisorReviewUiTrace['severity'];
+        findings?: unknown[];
+      }) => review.id === queuedTrace.reviewId);
+      if (!processed) return;
+
+      setCommandResult((current) => current?.commandId === commandId
+        ? {
+          ...current,
+          trace: {
+            ...current.trace,
+            supervisorReview: {
+              ...queuedTrace,
+              status: processed.status || queuedTrace.status,
+              severity: processed.severity,
+              findingCount: Array.isArray(processed.findings) ? processed.findings.length : undefined,
+            },
+          },
+        }
+        : current);
+    } catch (error) {
+      logProtocol('DATA', 'Supervisor review process failed', {
+        commandId,
+        error: error instanceof Error ? error.message : 'unknown',
+      });
+    }
+  };
+
   return (
     <main className={embedded ? 'h-full min-h-0 overflow-y-auto bg-[#071016] text-white' : 'min-h-screen bg-[#071016] text-white'}>
       <section className="border-b border-white/10 bg-[#0b1821]">
@@ -559,7 +881,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
           </div>
           <div className={embedded ? 'grid grid-cols-3 gap-2 text-right' : 'grid grid-cols-3 gap-2 text-right sm:min-w-[330px]'}>
             <Metric label="Helpers" value={String(intelligenceWorkers.length)} />
-            <Metric label="Files" value={String(tahLoadoutCount)} />
+            <Metric label="Sources" value={String(sourceLoadoutCount)} />
             <Metric label="Mode" value={manualSelection ? 'Manual' : 'Auto'} />
           </div>
         </div>
@@ -574,6 +896,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-4 text-cyan-200" size={19} />
               <textarea
+                aria-label="Command"
                 value={command || linkedCommand}
                 onChange={(event) => updateCommandDraft(event.target.value)}
                 className="min-h-[72px] w-full resize-y border border-white/10 bg-black/25 py-3 pl-10 pr-3 text-base font-semibold leading-6 text-white outline-none placeholder:text-slate-500 focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/20"
@@ -582,7 +905,8 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
             </div>
             <button
               type="submit"
-              disabled={running}
+              aria-label="Run command"
+              disabled={!hydrated || running}
               className="inline-flex min-h-[72px] items-center justify-center gap-2 border border-emerald-200/30 bg-emerald-300 px-6 text-sm font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-70"
             >
               <Play size={17} />
@@ -595,6 +919,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Helper</span>
                 <select
+                  aria-label="Helper"
                   value={manualSelection ? selectedId : 'auto'}
                   onChange={(event) => {
                     if (event.target.value === 'auto') {
@@ -669,11 +994,12 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
           <section className="mt-4 border border-cyan-200/20 bg-cyan-300/10 p-4" aria-live="polite">
             <div className="flex items-start gap-3">
               <RefreshCw size={18} className="mt-1 shrink-0 animate-spin text-cyan-100" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-100">Building answer</p>
                 <p className="mt-1 text-sm leading-6 text-slate-300">
-                  Routing to {manualSelection ? selected.name : recommended.name}, reading the attached TAH files, and checking the output.
+                  Routing to {manualSelection ? selected.name : recommended.name}, reading saved context, and checking the output.
                 </p>
+                <CommandProgressRail progress={liveProgress} />
               </div>
             </div>
           </section>
@@ -685,7 +1011,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
           </section>
         ) : null}
 
-        <section ref={answerRef} className="mt-4 scroll-mt-4">
+        <section ref={answerRef} className="mt-4 scroll-mt-28 md:scroll-mt-32">
           {commandResult ? (
             <AnswerPanel
               commandResult={commandResult}
@@ -693,6 +1019,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
               copiedActionId={copiedActionId}
               onCopyDeliverable={copyDeliverable}
               onActionItem={handleActionItem}
+              onRerunWithWorker={rerunWithWorker}
             />
           ) : (
             <ReadyPanel selected={selected} ranCommand={ranCommand} />
@@ -704,7 +1031,11 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
             {commandResult ? (
               <>
                 <Disclosure title="Sources And Search Trace" icon={Layers3} defaultOpen>
-                  <SourcesAndTrace commandResult={commandResult} />
+                  <SourcesAndTrace
+                    commandResult={commandResult}
+                    onRerunWithApprovedListing={rerunWithApprovedListing}
+                    running={running}
+                  />
                 </Disclosure>
                 <Disclosure title="Deliverable Frames" icon={BookOpen}>
                   <DeliverableFrames commandResult={commandResult} />
@@ -739,28 +1070,103 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
   );
 }
 
+async function safeJson(response: Response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function readCommandStream(
+  response: Response,
+  onProgress: (event: CommandProgressEvent) => void
+): Promise<CommandResponse> {
+  if (!response.body) {
+    return response.json() as Promise<CommandResponse>;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let result: CommandResponse | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() || '';
+
+    for (const part of parts) {
+      const event = parseServerSentEvent(part);
+      if (!event) continue;
+      if (event.event === 'progress') {
+        onProgress(event.data as CommandProgressEvent);
+      } else if (event.event === 'result') {
+        result = event.data as CommandResponse;
+      } else if (event.event === 'error') {
+        const errorData = event.data as { error?: string };
+        throw new Error(errorData.error || 'Command failed.');
+      }
+    }
+
+    if (done) break;
+  }
+
+  if (!result) throw new Error('Command stream ended without a result.');
+  return result;
+}
+
+function parseServerSentEvent(chunk: string) {
+  const lines = chunk.split(/\r?\n/g);
+  const event = lines.find((line) => line.startsWith('event:'))?.slice('event:'.length).trim();
+  const data = lines
+    .filter((line) => line.startsWith('data:'))
+    .map((line) => line.slice('data:'.length).trim())
+    .join('\n');
+
+  if (!event || !data) return null;
+
+  try {
+    return { event, data: JSON.parse(data) as unknown };
+  } catch {
+    return null;
+  }
+}
+
+function upsertProgressEvent(current: CommandProgressEvent[], next: CommandProgressEvent) {
+  const index = current.findIndex((item) => item.id === next.id);
+  if (index === -1) return [...current, next];
+
+  const clone = current.slice();
+  clone[index] = next;
+  return clone;
+}
+
 function AnswerPanel({
   commandResult,
   copiedDeliverable,
   copiedActionId,
   onCopyDeliverable,
-  onActionItem
+  onActionItem,
+  onRerunWithWorker
 }: {
   commandResult: CommandResponse;
   copiedDeliverable: boolean;
   copiedActionId: string | null;
   onCopyDeliverable: () => void;
   onActionItem: (item: CommandActionItem) => Promise<void>;
+  onRerunWithWorker: (workerId: string) => void;
 }) {
   return (
-    <div className="border border-emerald-200/25 bg-[#0d1c27] p-4 shadow-2xl shadow-black/20">
+    <div data-testid="command-answer" className="border border-emerald-200/25 bg-[#0d1c27] p-4 shadow-2xl shadow-black/20">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="border border-emerald-200/30 bg-emerald-300/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">
               Answer
             </span>
-            <span className="border border-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+            <span data-testid="command-answer-worker" className="border border-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
               {commandResult.worker.name}
             </span>
             <span className="border border-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
@@ -783,6 +1189,9 @@ function AnswerPanel({
           {copiedDeliverable ? 'Copied' : 'Copy'}
         </button>
       </div>
+
+      <CommandProgressRail progress={commandResult.trace.progress || []} />
+      <RoutingCorrectionPanel commandResult={commandResult} onRerunWithWorker={onRerunWithWorker} />
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         {commandResult.result.actions.map((action) => (
@@ -811,6 +1220,80 @@ function AnswerPanel({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function CommandProgressRail({ progress }: { progress: CommandProgressEvent[] }) {
+  if (!progress.length) return null;
+
+  return (
+    <div data-testid="command-progress-rail" className="mt-4 grid gap-2 border border-white/10 bg-black/20 p-3 md:grid-cols-6">
+      {progress.map((item) => (
+        <div key={item.id} className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+              item.status === 'complete'
+                ? 'bg-emerald-300'
+                : item.status === 'queued'
+                  ? 'bg-amber-300'
+                  : 'bg-slate-600'
+            }`} />
+            <p className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-slate-300">
+              {item.label}
+            </p>
+          </div>
+          {item.detail ? (
+            <p className="mt-1 truncate text-[10px] text-slate-500">{item.detail}</p>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RoutingCorrectionPanel({
+  commandResult,
+  onRerunWithWorker,
+}: {
+  commandResult: CommandResponse;
+  onRerunWithWorker: (workerId: string) => void;
+}) {
+  const [nextWorkerId, setNextWorkerId] = useState(commandResult.worker.id);
+  const currentWorker = commandResult.worker.id;
+
+  useEffect(() => {
+    setNextWorkerId(commandResult.worker.id);
+  }, [commandResult.commandId, commandResult.worker.id]);
+
+  return (
+    <div data-testid="routing-correction" className="mt-3 flex flex-col gap-2 border border-white/10 bg-black/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Wrong Helper?</p>
+        <p className="mt-1 text-xs leading-5 text-slate-300">Switch the route and rerun the same command.</p>
+      </div>
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+        <select
+          aria-label="Rerun with helper"
+          value={nextWorkerId}
+          onChange={(event) => setNextWorkerId(event.target.value)}
+          className="min-h-9 min-w-0 border border-white/10 bg-[#071016] px-2 text-xs font-bold text-white outline-none transition focus:border-cyan-200/50"
+        >
+          {intelligenceWorkers.map((worker) => (
+            <option key={worker.id} value={worker.id}>{worker.name}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          aria-label="Rerun command with selected helper"
+          disabled={nextWorkerId === currentWorker}
+          onClick={() => onRerunWithWorker(nextWorkerId)}
+          className="inline-flex min-h-9 items-center justify-center gap-2 border border-cyan-200/30 px-3 text-xs font-black uppercase tracking-[0.12em] text-cyan-100 transition hover:bg-cyan-200 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <RefreshCw size={13} />
+          Rerun
+        </button>
+      </div>
     </div>
   );
 }
@@ -900,9 +1383,87 @@ function HelperDirectory({
   );
 }
 
-function SourcesAndTrace({ commandResult }: { commandResult: CommandResponse }) {
+function SourcesAndTrace({
+  commandResult,
+  onRerunWithApprovedListing,
+  running,
+}: {
+  commandResult: CommandResponse;
+  onRerunWithApprovedListing: (draft: ListingReviewDraft) => void;
+  running: boolean;
+}) {
+  const [copiedTrace, setCopiedTrace] = useState(false);
+  const timingRows = collectWorkflowTimings(commandResult);
+  const listingFacts = commandResult.trace.listingFacts;
+
+  const copyTrace = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(buildCommandTraceExport(commandResult), null, 2));
+    setCopiedTrace(true);
+    window.setTimeout(() => setCopiedTrace(false), 1600);
+  };
+
   return (
     <div className="space-y-3">
+      {commandResult.trace.classification || commandResult.trace.contextBudget ? (
+        <div className="grid gap-2 md:grid-cols-4">
+          <TraceChip label="Intent" value={commandResult.trace.classification?.intent || commandResult.intent} />
+          <TraceChip label="Confidence" value={`${commandResult.trace.classification?.confidence ?? commandResult.result.confidence}%`} />
+          <TraceChip label="Context" value={`${commandResult.trace.contextBudget?.totalKept ?? commandResult.trace.selectedShards.length} kept`} />
+          <TraceChip
+            label="Budget"
+            value={`${commandResult.trace.contextBudget?.estimatedTokens ?? 0} tokens`}
+          />
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-2 border border-white/10 bg-black/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Trace Export</p>
+          <p className="mt-1 text-xs leading-5 text-slate-300">
+            Copy classification, context budget, selected sources, retries, and timing.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={copyTrace}
+          className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 border border-cyan-200/30 px-3 text-xs font-black uppercase tracking-[0.12em] text-cyan-100 transition hover:bg-cyan-200 hover:text-slate-950"
+        >
+          {copiedTrace ? <Check size={13} /> : <Copy size={13} />}
+          {copiedTrace ? 'Copied' : 'Copy JSON'}
+        </button>
+      </div>
+
+      {timingRows.length ? (
+        <div className="border border-white/10 bg-black/20 p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Node Timing</p>
+          <div className="mt-2 grid gap-2 md:grid-cols-3">
+            {timingRows.map((row) => (
+              <div key={`${row.phase}-${row.node}-${row.operation}`} className="border border-white/10 bg-[#071016] px-2 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                    {formatTimingName(row.operation)}
+                  </p>
+                  <span className="font-mono text-[10px] text-slate-400">{row.durationMs}ms</span>
+                </div>
+                <p className="mt-1 truncate text-[10px] text-slate-500">
+                  {row.phase} / {row.status}{row.retried ? ' / retried' : ''}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {listingFacts?.isListingLike ? (
+        <ListingReviewPanel
+          key={commandResult.commandId}
+          listingFacts={listingFacts}
+          sourceCommand={commandResult.commandText || ''}
+          onApplyAndRerun={onRerunWithApprovedListing}
+          running={running}
+        />
+      ) : null}
+
       {commandResult.trace.selectedShards.length ? (
         <div className="grid gap-2 md:grid-cols-3">
           {commandResult.trace.selectedShards.slice(0, 6).map((shard) => (
@@ -947,6 +1508,15 @@ function SourcesAndTrace({ commandResult }: { commandResult: CommandResponse }) 
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function TraceChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black/20 px-3 py-2">
+      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-xs font-black text-cyan-100">{value}</p>
     </div>
   );
 }
@@ -996,6 +1566,9 @@ function CommandPostPanel({ commandResult }: { commandResult: CommandResponse | 
   const commandPost = commandResult?.trace.commandPost;
   const voltagent = commandResult?.trace.voltagent;
   const tensorzero = commandResult?.trace.tensorzero;
+  const workflow = commandResult?.trace.workflow;
+  const postWorkflow = commandResult?.trace.postWorkflow;
+  const supervisorReview = commandResult?.trace.supervisorReview;
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
@@ -1017,6 +1590,10 @@ function CommandPostPanel({ commandResult }: { commandResult: CommandResponse | 
         <DevMetric label="Notes" value={String(commandPost?.masterArchive?.shardCount ?? commandResult?.trace.atlasDiagnostics?.totalSegments ?? 0)} />
         <DevMetric label="Search" value={commandResult?.trace.retrievalPolicy ? 'active' : 'standby'} />
         <DevMetric label="Saved" value={commandResult?.trace.queryMemory?.status || 'standby'} />
+        <DevMetric label="Workflow" value={workflow?.status || 'standby'} />
+        <DevMetric label="Retries" value={String((workflow?.retriedOperations || 0) + (postWorkflow?.retriedOperations || 0))} />
+        <DevMetric label="Supervisor" value={formatSupervisorStatus(supervisorReview)} />
+        <DevMetric label="Findings" value={String(supervisorReview?.findingCount ?? 0)} />
         <DevMetric label="VoltAgent" value={voltagent?.status || 'standby'} />
         <DevMetric label="Agent" value={voltagent?.agentId ? 'advisor' : 'none'} />
         <DevMetric label="SQLSync" value={commandResult?.trace.queryMemory?.sqlsync?.status || 'standby'} />
@@ -1043,10 +1620,10 @@ function CommandPostPanel({ commandResult }: { commandResult: CommandResponse | 
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-violet-100">
               VoltAgent Advisor
             </p>
-            <span className="font-mono text-[10px] text-slate-400">{voltagent.model}</span>
+            <span className="font-mono text-[10px] text-slate-400">{voltagent.model || voltagent.status}</span>
           </div>
           <p className="mt-2 line-clamp-5 text-xs leading-5 text-slate-200">
-            {voltagent.text}
+            {voltagent.text || 'Advisor unavailable for this run.'}
           </p>
           {voltagent.reason ? (
             <p className="mt-2 text-[10px] leading-4 text-slate-500">
@@ -1139,6 +1716,525 @@ function Disclosure({
   );
 }
 
+function ListingReviewPanel({
+  listingFacts,
+  sourceCommand,
+  onApplyAndRerun,
+  running,
+}: {
+  listingFacts: ListingFactsTrace;
+  sourceCommand: string;
+  onApplyAndRerun: (draft: ListingReviewDraft) => void;
+  running: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(() => createListingReviewDraft(listingFacts));
+  const listingFactRows = [
+    { label: 'Address', value: draft.address },
+    { label: 'Price', value: draft.price },
+    {
+      label: 'Specs',
+      value: [
+        draft.beds ? `${draft.beds} beds` : '',
+        draft.baths ? `${draft.baths} baths` : '',
+        draft.sqft ? `${draft.sqft} sqft` : '',
+      ].filter(Boolean).join(' | '),
+    },
+    { label: 'Status', value: draft.status },
+    { label: 'Type', value: draft.propertyType },
+    { label: 'MLS', value: draft.mlsId },
+    { label: 'Days on market', value: draft.daysOnMarket },
+    { label: 'HOA', value: draft.hoaFee },
+    { label: 'Year built', value: draft.yearBuilt },
+    { label: 'Lot', value: draft.lotSize },
+    { label: 'Parking', value: draft.parking },
+    { label: 'Brokerage', value: draft.brokerage },
+  ].filter((fact) => Boolean(fact.value));
+
+  return (
+    <div data-testid="extracted-listing" className="border border-emerald-200/20 bg-emerald-300/10 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">Extracted Listing</p>
+          <p className="mt-1 text-xs leading-5 text-emerald-50/80">Review parsed facts before publishing or sending copy.</p>
+        </div>
+        <div className="flex shrink-0 gap-2 text-[10px] font-black uppercase tracking-[0.12em]">
+          <span className="border border-emerald-100/20 bg-emerald-950/30 px-2 py-1 text-emerald-100">{listingFacts.confidence}% confidence</span>
+          <span className="border border-emerald-100/20 bg-emerald-950/30 px-2 py-1 text-emerald-100">{listingFacts.extractedFields.length} fields</span>
+        </div>
+      </div>
+
+      {editing ? (
+        <form
+          data-testid="listing-review-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onApplyAndRerun(draft);
+          }}
+          className="mt-3"
+        >
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {listingReviewFields.map((field) => (
+              <label key={field.key} className={field.multiline ? 'grid gap-1 lg:col-span-3' : 'grid gap-1'}>
+                <span className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-100/70">{field.label}</span>
+                {field.multiline ? (
+                  <textarea
+                    aria-label={`Approved ${field.label}`}
+                    value={draft[field.key]}
+                    onChange={(event) => setDraft((current) => ({ ...current, [field.key]: event.target.value }))}
+                    className="min-h-20 w-full resize-y border border-emerald-100/20 bg-[#091b1c] px-3 py-2 text-sm leading-5 text-slate-100 outline-none focus:border-emerald-100/60 focus:ring-2 focus:ring-emerald-100/20"
+                  />
+                ) : (
+                  <input
+                    aria-label={`Approved ${field.label}`}
+                    value={draft[field.key]}
+                    onChange={(event) => setDraft((current) => ({ ...current, [field.key]: event.target.value }))}
+                    className="h-10 min-w-0 border border-emerald-100/20 bg-[#091b1c] px-3 text-sm text-slate-100 outline-none focus:border-emerald-100/60 focus:ring-2 focus:ring-emerald-100/20"
+                  />
+                )}
+              </label>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(createListingReviewDraft(listingFacts));
+                setEditing(false);
+              }}
+              className="inline-flex min-h-9 items-center justify-center border border-white/10 px-3 text-xs font-black uppercase tracking-[0.12em] text-slate-200 transition hover:bg-white/10"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={running}
+              className="inline-flex min-h-9 items-center justify-center gap-2 border border-emerald-200/30 bg-emerald-300 px-3 text-xs font-black uppercase tracking-[0.12em] text-slate-950 transition hover:bg-emerald-200 disabled:cursor-wait disabled:opacity-70"
+            >
+              <RefreshCw size={13} />
+              Apply facts and rerun
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <dl className="mt-3 grid gap-px overflow-hidden border border-emerald-100/15 bg-emerald-100/15 sm:grid-cols-2 lg:grid-cols-3">
+            {listingFactRows.map((fact) => (
+              <div key={fact.label} className="min-w-0 bg-[#091b1c] px-3 py-2">
+                <dt className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-100/70">{fact.label}</dt>
+                <dd className="mt-1 break-words text-xs leading-5 text-slate-100">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex min-h-9 items-center justify-center gap-2 border border-emerald-100/25 px-3 text-xs font-black uppercase tracking-[0.12em] text-emerald-50 transition hover:bg-emerald-100 hover:text-slate-950"
+            >
+              <Pencil size={13} />
+              Edit facts
+            </button>
+          </div>
+        </>
+      )}
+
+      {listingFacts.hooks.length ? (
+        <div data-testid="listing-hooks" className="mt-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">Likely hooks</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {listingFacts.hooks.map((hook) => (
+              <span key={hook} className="border border-emerald-100/20 bg-emerald-950/30 px-2 py-1 text-xs leading-5 text-emerald-50">{hook}</span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <ListingCopyPackage listingFacts={listingFacts} sourceCommand={sourceCommand} />
+
+      {listingFacts.warnings.length || listingFacts.missingFields.length ? (
+        <div data-testid="listing-validation" className="mt-3 border border-amber-200/20 bg-amber-300/10 px-3 py-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-100">Validation before publish</p>
+          {listingFacts.missingFields.length ? <p className="mt-1 text-xs leading-5 text-amber-50">Missing: {listingFacts.missingFields.join(', ')}</p> : null}
+          {listingFacts.warnings.map((warning) => <p key={warning} className="mt-1 text-xs leading-5 text-amber-50">{warning}</p>)}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ListingCopyPackage({ listingFacts, sourceCommand }: { listingFacts: ListingFactsTrace; sourceCommand: string }) {
+  const [activeVariant, setActiveVariant] = useState<ListingCopyVariant>('mls');
+  const [drafts, setDrafts] = useState<ListingCopyDrafts>(() => buildListingCopyDrafts(listingFacts));
+  const [copiedVariant, setCopiedVariant] = useState<ListingCopyVariant | null>(null);
+  const [savedIntake, setSavedIntake] = useState<SavedListingIntake | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const activeConfig = listingCopyVariants.find((variant) => variant.id === activeVariant) || listingCopyVariants[0];
+  const publishBlockers = [
+    ...listingFacts.missingFields.map((field) => `Missing ${field}`),
+    ...listingFacts.warnings,
+  ];
+
+  const copyDraft = async () => {
+    await navigator.clipboard.writeText(drafts[activeVariant]);
+    setCopiedVariant(activeVariant);
+    window.setTimeout(() => setCopiedVariant(null), 1600);
+  };
+
+  const saveIntake = async (publishStatus: 'review' | 'ready') => {
+    setSaving(true);
+    setSaveError('');
+    const snapshot = {
+      sourceCommand: sourceCommand || buildApprovedListingCommand(createListingReviewDraft(listingFacts)),
+      approvedFacts: listingFacts,
+      drafts,
+      publishStatus,
+      warnings: listingFacts.warnings,
+      missingFields: listingFacts.missingFields,
+    };
+
+    try {
+      const response = await fetch(savedIntake
+        ? `/api/command-center/listing-intakes/${savedIntake.intakeId}`
+        : '/api/command-center/listing-intakes', {
+        method: savedIntake ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(savedIntake ? { ...snapshot, expectedVersion: savedIntake.version } : snapshot),
+      });
+      const body = await safeJson(response);
+      if (!response.ok) throw new Error(body?.message || 'Unable to save listing intake.');
+      const intake = body?.data?.intake as SavedListingIntake | undefined;
+      if (!intake?.intakeId) throw new Error('Listing intake save returned no id.');
+      setSavedIntake(intake);
+      const url = new URL(window.location.href);
+      url.searchParams.set('intake', intake.intakeId);
+      window.history.replaceState({}, '', url);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Unable to save listing intake.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section data-testid="listing-copy-package" className="mt-3 border border-cyan-200/20 bg-cyan-300/10 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">Listing Package</p>
+        <button
+          type="button"
+          onClick={copyDraft}
+          className="inline-flex min-h-8 shrink-0 items-center justify-center gap-2 border border-cyan-100/30 px-3 text-xs font-black uppercase tracking-[0.1em] text-cyan-50 transition hover:bg-cyan-100 hover:text-slate-950"
+        >
+          {copiedVariant === activeVariant ? <Check size={13} /> : <Copy size={13} />}
+          {copiedVariant === activeVariant ? 'Copied' : `Copy ${activeConfig.label}`}
+        </button>
+      </div>
+      <div role="tablist" aria-label="Listing package drafts" className="mt-3 grid grid-cols-3 border border-cyan-100/20 bg-[#091b1c]">
+        {listingCopyVariants.map((variant) => (
+          <button
+            key={variant.id}
+            type="button"
+            role="tab"
+            aria-selected={activeVariant === variant.id}
+            aria-controls={`listing-copy-${variant.id}`}
+            onClick={() => setActiveVariant(variant.id)}
+            className={`min-h-9 border-r border-cyan-100/15 px-2 text-[10px] font-black uppercase tracking-[0.1em] transition last:border-r-0 ${
+              activeVariant === variant.id
+                ? 'bg-cyan-200 text-slate-950'
+                : 'text-slate-300 hover:bg-cyan-200/10 hover:text-white'
+            }`}
+          >
+            {variant.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        id={`listing-copy-${activeVariant}`}
+        aria-label={activeConfig.ariaLabel}
+        value={drafts[activeVariant]}
+        onChange={(event) => setDrafts((current) => ({ ...current, [activeVariant]: event.target.value }))}
+        className="mt-3 min-h-32 w-full resize-y border border-cyan-100/20 bg-[#091b1c] px-3 py-2 text-sm leading-6 text-slate-100 outline-none focus:border-cyan-100/60 focus:ring-2 focus:ring-cyan-100/20"
+      />
+      <div className="mt-3 flex flex-col gap-2 border-t border-cyan-100/15 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 text-xs leading-5 text-cyan-50/80">
+          {savedIntake ? (
+            <Link href={`/command-center?intake=${savedIntake.intakeId}`} className="font-bold text-cyan-100 underline decoration-cyan-100/40 underline-offset-2">
+              Saved intake v{savedIntake.version} / {savedIntake.publishStatus}
+            </Link>
+          ) : (
+            <span>{publishBlockers.length ? `${publishBlockers.length} validation item${publishBlockers.length === 1 ? '' : 's'} remain` : 'Ready for review'}</span>
+          )}
+          {saveError ? <p className="mt-1 text-rose-100">{saveError}</p> : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void saveIntake('review')}
+            className="inline-flex min-h-9 items-center justify-center border border-cyan-100/30 px-3 text-xs font-black uppercase tracking-[0.1em] text-cyan-50 transition hover:bg-cyan-100 hover:text-slate-950 disabled:cursor-wait disabled:opacity-70"
+          >
+            {saving ? 'Saving' : savedIntake ? 'Update Intake' : 'Save Intake'}
+          </button>
+          <button
+            type="button"
+            disabled={saving || publishBlockers.length > 0}
+            onClick={() => void saveIntake('ready')}
+            className="inline-flex min-h-9 items-center justify-center border border-emerald-100/30 px-3 text-xs font-black uppercase tracking-[0.1em] text-emerald-50 transition hover:bg-emerald-100 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            Mark Ready
+          </button>
+        </div>
+      </div>
+      {savedIntake ? (
+        <CanonicalListingHandoff
+          listingFacts={listingFacts}
+          savedIntake={savedIntake}
+          onIntakeChanged={setSavedIntake}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function CanonicalListingHandoff({
+  listingFacts,
+  savedIntake,
+  onIntakeChanged,
+}: {
+  listingFacts: ListingFactsTrace;
+  savedIntake: SavedListingIntake;
+  onIntakeChanged: (intake: SavedListingIntake) => void;
+}) {
+  const [propertyReference, setPropertyReference] = useState(listingFacts.mlsId || '');
+  const [comparison, setComparison] = useState<CanonicalListingComparison | null>(null);
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  const compare = async () => {
+    const reference = propertyReference.trim();
+    if (!reference) {
+      setError('Enter the canonical listing ID or MLS number to compare it.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await fetch(`/api/command-center/listing-intakes/${savedIntake.intakeId}/property-link?property=${encodeURIComponent(reference)}`);
+      const body = await safeJson(response);
+      if (!response.ok) throw new Error(body?.message || 'Unable to compare the canonical listing.');
+      const nextComparison = body?.data?.comparison as CanonicalListingComparison | undefined;
+      if (!nextComparison?.property?.id) throw new Error('The comparison returned no canonical listing.');
+      setComparison(nextComparison);
+      setSelectedFields(nextComparison.differences.filter((difference) => difference.differs).map((difference) => difference.field));
+    } catch (caught) {
+      setComparison(null);
+      setSelectedFields([]);
+      setError(caught instanceof Error ? caught.message : 'Unable to compare the canonical listing.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleField = (field: string) => {
+    setSelectedFields((current) => current.includes(field)
+      ? current.filter((value) => value !== field)
+      : [...current, field]);
+  };
+
+  const applySelectedFields = async () => {
+    if (!comparison || !selectedFields.length) return;
+    setLoading(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await fetch(`/api/command-center/listing-intakes/${savedIntake.intakeId}/property-link`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId: comparison.property.id,
+          expectedPropertyLastUpdated: comparison.property.lastUpdated,
+          expectedIntakeVersion: savedIntake.version,
+          fields: selectedFields,
+        }),
+      });
+      const body = await safeJson(response);
+      if (!response.ok) throw new Error(body?.message || 'Unable to apply the selected fields.');
+      const intake = body?.data?.intake as SavedListingIntake | undefined;
+      if (!intake?.intakeId) throw new Error('The canonical update completed without a refreshed intake.');
+      onIntakeChanged(intake);
+      setComparison(null);
+      setSelectedFields([]);
+      setNotice('Selected fields applied to the canonical listing and recorded in the intake audit.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to apply the selected fields.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const changedFields = comparison?.differences.filter((difference) => difference.differs) || [];
+
+  return (
+    <section data-testid="canonical-listing-handoff" className="mt-3 border-t border-cyan-100/15 pt-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">Canonical Listing Handoff</p>
+        <span className={`text-[10px] font-bold uppercase tracking-[0.1em] ${savedIntake.publishStatus === 'ready' ? 'text-emerald-100' : 'text-amber-100'}`}>
+          {savedIntake.publishStatus === 'ready' ? 'Ready to apply' : 'Mark intake ready to apply'}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <input
+          aria-label="Canonical listing ID or MLS number"
+          value={propertyReference}
+          onChange={(event) => setPropertyReference(event.target.value)}
+          placeholder="Canonical listing ID or MLS number"
+          className="min-h-9 min-w-0 flex-1 border border-cyan-100/20 bg-[#091b1c] px-3 text-sm text-slate-100 outline-none focus:border-cyan-100/60 focus:ring-2 focus:ring-cyan-100/20"
+        />
+        <button
+          type="button"
+          onClick={() => void compare()}
+          disabled={loading}
+          className="inline-flex min-h-9 shrink-0 items-center justify-center border border-cyan-100/30 px-3 text-xs font-black uppercase tracking-[0.1em] text-cyan-50 transition hover:bg-cyan-100 hover:text-slate-950 disabled:cursor-wait disabled:opacity-70"
+        >
+          {loading ? 'Working' : 'Compare'}
+        </button>
+      </div>
+      {error ? <p className="mt-2 text-xs leading-5 text-rose-100">{error}</p> : null}
+      {notice ? <p className="mt-2 text-xs leading-5 text-emerald-100">{notice}</p> : null}
+      {comparison ? (
+        <div className="mt-3 border border-cyan-100/20 bg-[#091b1c]">
+          <div className="border-b border-cyan-100/15 px-3 py-2 text-xs text-cyan-50/80">
+            {comparison.property.name || 'Canonical listing'}{comparison.property.mlsId ? ` / MLS ${comparison.property.mlsId}` : ''}
+          </div>
+          {changedFields.length ? (
+            <div className="divide-y divide-cyan-100/10">
+              {changedFields.map((difference) => (
+                <label key={difference.field} className="grid cursor-pointer gap-2 px-3 py-2 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] sm:items-start">
+                  <input
+                    type="checkbox"
+                    aria-label={`Apply ${difference.label}`}
+                    checked={selectedFields.includes(difference.field)}
+                    onChange={() => toggleField(difference.field)}
+                    className="mt-1 h-4 w-4 accent-cyan-200"
+                  />
+                  <span className="min-w-0 text-xs leading-5 text-cyan-50">
+                    <span className="block font-black uppercase tracking-[0.08em] text-cyan-100">{difference.label}</span>
+                    <span className="block break-words text-slate-300">Intake: {difference.intakeValue || 'Not supplied'}</span>
+                  </span>
+                  <span className="min-w-0 break-words text-xs leading-5 text-slate-400">Canonical: {difference.canonicalValue || 'Not supplied'}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="px-3 py-3 text-xs leading-5 text-emerald-100">The approved intake already matches the supported canonical fields.</p>
+          )}
+          {changedFields.length ? (
+            <div className="flex flex-col gap-2 border-t border-cyan-100/15 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-5 text-cyan-50/70">Only checked differences are applied. The canonical row is rechecked before the update.</p>
+              <button
+                type="button"
+                disabled={loading || savedIntake.publishStatus !== 'ready' || !selectedFields.length}
+                onClick={() => void applySelectedFields()}
+                className="inline-flex min-h-9 shrink-0 items-center justify-center border border-emerald-100/30 px-3 text-xs font-black uppercase tracking-[0.1em] text-emerald-50 transition hover:bg-emerald-100 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                Apply Selected ({selectedFields.length})
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function createListingReviewDraft(facts: ListingFactsTrace): ListingReviewDraft {
+  return {
+    address: facts.address || [facts.city, facts.state, facts.zip].filter(Boolean).join(', '),
+    price: facts.price || '',
+    beds: facts.beds || '',
+    baths: facts.baths || '',
+    sqft: facts.sqft || '',
+    propertyType: facts.propertyType || '',
+    status: facts.status || '',
+    mlsId: facts.mlsId || '',
+    daysOnMarket: facts.daysOnMarket || '',
+    hoaFee: facts.hoaFee || '',
+    yearBuilt: facts.yearBuilt || '',
+    lotSize: facts.lotSize || '',
+    parking: facts.parking || '',
+    brokerage: facts.brokerage || '',
+    remarks: facts.remarks || '',
+    features: facts.features.join(', '),
+  };
+}
+
+function buildApprovedListingCommand(draft: ListingReviewDraft) {
+  const facts = [
+    ['Address', draft.address],
+    ['Price', draft.price],
+    ['Beds', draft.beds],
+    ['Baths', draft.baths],
+    ['Square Feet', draft.sqft],
+    ['Property Type', draft.propertyType],
+    ['Status', draft.status],
+    ['MLS', draft.mlsId],
+    ['Days on Market', draft.daysOnMarket],
+    ['HOA', draft.hoaFee],
+    ['Year Built', draft.yearBuilt],
+    ['Lot Size', draft.lotSize],
+    ['Parking', draft.parking],
+    ['Brokerage', draft.brokerage],
+    ['Public Remarks', draft.remarks],
+    ['Features', draft.features],
+  ].filter(([, value]) => value.trim());
+
+  return [
+    'Create a review-ready listing summary and draft marketing copy from the approved facts below.',
+    'Treat these approved facts as authoritative. Do not add unsupported claims.',
+    '',
+    'APPROVED_LISTING_FACTS:',
+    ...facts.map(([label, value]) => `${label}: ${value.trim()}`),
+  ].join('\n');
+}
+
+function buildListingCopyDrafts(facts: ListingFactsTrace): ListingCopyDrafts {
+  const address = facts.address || [facts.city, facts.state, facts.zip].filter(Boolean).join(', ');
+  const subject = address || facts.propertyType || 'This property';
+  const specs = [
+    facts.price ? `listed at ${facts.price}` : '',
+    facts.beds ? `${facts.beds} beds` : '',
+    facts.baths ? `${facts.baths} baths` : '',
+    facts.sqft ? `${facts.sqft} sqft` : '',
+  ].filter(Boolean).join(', ');
+  const features = facts.features.slice(0, 4).join(', ');
+  const status = facts.status ? `Status: ${facts.status}.` : '';
+  const socialLead = address ? `Property spotlight: ${address}.` : 'Property details are ready.';
+  const specsSentence = specs ? `${subject}${address && specs ? ' is ' : ': '}${specs}.` : `${subject}.`;
+  const featuresSentence = features ? `Verified highlights include ${features}.` : '';
+  const remarksSentence = facts.remarks ? facts.remarks.trim() : '';
+
+  return {
+    mls: [specsSentence, status, featuresSentence, remarksSentence].filter(Boolean).join(' '),
+    social: [
+      socialLead,
+      specs ? `Verified details: ${specs}.` : '',
+      featuresSentence,
+      'Reach out for current availability and a closer look.',
+    ].filter(Boolean).join(' '),
+    buyer: [
+      `Take a closer look at ${subject}.`,
+      specs ? `The approved listing details include ${specs}.` : '',
+      featuresSentence,
+      'Reply for current availability or to plan a showing.',
+    ].filter(Boolean).join(' '),
+  };
+}
+
 function DetailBlock({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
     <div className="border border-white/10 bg-black/20 p-3">
@@ -1174,7 +2270,7 @@ function StatBar({ label, value }: { label: string; value: number }) {
 
 function DevMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-[#071016] px-2 py-2">
+    <div data-testid={`dev-metric-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="border border-white/10 bg-[#071016] px-2 py-2">
       <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
       <p className="mt-1 truncate font-mono text-xs font-black text-white">{value}</p>
     </div>
@@ -1207,4 +2303,57 @@ function formatSearchStage(name: string) {
     'virtual loadout fallback': 'Used helper files'
   };
   return stages[name] || name.replace(/[_-]+/g, ' ');
+}
+
+function buildCommandTraceExport(commandResult: CommandResponse) {
+  return {
+    commandId: commandResult.commandId,
+    intent: commandResult.intent,
+    commandText: commandResult.commandText,
+    worker: commandResult.worker,
+    model: commandResult.model,
+    tahFiles: commandResult.tahFiles,
+    confidence: commandResult.result.confidence,
+    classification: commandResult.trace.classification,
+    listingFacts: commandResult.trace.listingFacts,
+    contextBudget: commandResult.trace.contextBudget,
+    progress: commandResult.trace.progress,
+    selectedShards: commandResult.trace.selectedShards.map((shard) => ({
+      source: shard.source,
+      title: shard.title,
+      score: shard.score,
+      concepts: shard.concepts,
+      matchReason: shard.metrics?.matchReason,
+    })),
+    workflow: commandResult.trace.workflow,
+    postWorkflow: commandResult.trace.postWorkflow,
+    supervisorReview: commandResult.trace.supervisorReview,
+    commandPost: commandResult.trace.commandPost,
+    voltagent: commandResult.trace.voltagent ? {
+      status: commandResult.trace.voltagent.status,
+      framework: commandResult.trace.voltagent.framework,
+      model: commandResult.trace.voltagent.model,
+      provider: commandResult.trace.voltagent.provider,
+      reason: commandResult.trace.voltagent.reason,
+    } : undefined,
+    tensorzero: commandResult.trace.tensorzero,
+  };
+}
+
+function collectWorkflowTimings(commandResult: CommandResponse) {
+  return [
+    ...(commandResult.trace.workflow?.attempts || []).map((attempt) => ({ ...attempt, phase: 'main' })),
+    ...(commandResult.trace.postWorkflow?.attempts || []).map((attempt) => ({ ...attempt, phase: 'post' })),
+  ].sort((left, right) => right.durationMs - left.durationMs);
+}
+
+function formatTimingName(name: string) {
+  return name.replace(/[_-]+/g, ' ');
+}
+
+function formatSupervisorStatus(review?: CommandSupervisorReviewUiTrace) {
+  if (!review) return 'standby';
+  if (review.status === 'succeeded' && review.severity === 'warning') return 'warnings';
+  if (review.status === 'succeeded') return 'passed';
+  return review.status;
 }

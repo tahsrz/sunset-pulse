@@ -1083,10 +1083,10 @@ const relayTemplateList: TahRelayTemplate[] = [
   }),
   template({
     id: 'tah-source-card',
-    name: 'TAH Source Card',
+    name: 'Source Summary Card',
     category: 'system',
     sourceTah: ['any .tah file'],
-    purpose: 'Default explanation pattern for any retrieved TAH source.',
+    purpose: 'Default explanation pattern for any saved context source.',
     motif: 'Source card',
     layout: 'Source, concepts, summary, action, and caveat.',
     cues: ['source badge', 'concept chips', 'confidence meter'],
@@ -1182,21 +1182,30 @@ function findTemplateForSources(worker: IntelligenceWorker, shards: RelayShard[]
   if (!shards.length) return undefined;
   const workerDefault = relayTemplates[templateByWorker[worker.id] || 'tah-source-card'];
   const sources = new Set(shards.map((shard) => shard.source.toLowerCase()));
+  const workerLoadout = new Set(worker.tahLoadout.map((source) => source.toLowerCase()));
+  const commonSources = new Set(['agent_brand.tah', 'market_rules.tah', 'query_memory.tah']);
 
   if (workerDefault.sourceTah.some((source) => sources.has(source.toLowerCase()))) {
     return workerDefault;
   }
 
-  return relayTemplateList.find((item) =>
-    item.sourceTah.some((source) => sources.has(source.toLowerCase()))
-  );
+  return relayTemplateList
+    .map((item) => {
+      const matchingSources = item.sourceTah
+        .map((source) => source.toLowerCase())
+        .filter((source) => sources.has(source) && workerLoadout.has(source) && !commonSources.has(source));
+
+      return { item, matchingSources };
+    })
+    .filter((candidate) => candidate.matchingSources.length > 0)
+    .sort((a, b) => b.matchingSources.length - a.matchingSources.length)[0]?.item;
 }
 
 function buildSourceAnchors(shards: RelayShard[]) {
   const anchors = shards.slice(0, 3).map((shard) => {
     const concepts = shard.concepts.slice(0, 3).join(', ') || 'matched context';
-    const reason = shard.matchReason ? ` via ${shard.matchReason}` : '';
-    return `${shard.source}${reason}: ${concepts}`;
+    const reason = shard.matchReason ? ` via ${friendlyRelayReason(shard.matchReason)}` : '';
+    return `${friendlyRelaySourceName(shard.source)}${reason}: ${concepts}`;
   });
 
   return anchors.length ? anchors : ['No saved note was found yet; mark the answer as a draft.'];
@@ -1239,21 +1248,21 @@ function buildFinalScreen(
   format: TahRelayFormat
 ): TahRelayPlan['finalScreen'] {
   const sourceCards = shards.slice(0, 4).map((shard) => ({
-    source: shard.source,
+    source: friendlyRelaySourceName(shard.source),
     concepts: shard.concepts.slice(0, 5),
-    matchReason: shard.matchReason || 'policy'
+    matchReason: friendlyRelayReason(shard.matchReason || 'policy')
   }));
 
   const learned = [
     `This answer is shaped as ${template.name}.`,
-    `The main files behind it are ${template.sourceTah.slice(0, 3).join(', ')}.`,
+    `The main context behind it is ${template.sourceTah.slice(0, 3).map(friendlyRelaySourceName).join(', ')}.`,
     `The useful flow is ${template.sections.slice(0, 3).join(' -> ')}.`
   ];
 
   return {
     title: `What we learned from ${template.name}`,
     frameLabel: finalFrameLabel(format),
-    instruction: `${finalFrameLabel(format)}: show where the information came from, list the files used, and close with what the user learned. Do not introduce new claims on this final screen.`,
+    instruction: `${finalFrameLabel(format)}: show where the information came from, list the context used, and close with what the user learned. Do not introduce new claims on this final screen.`,
     sourceCards: sourceCards.length
       ? sourceCards
       : anchors.map((anchor) => ({
@@ -1263,6 +1272,27 @@ function buildFinalScreen(
       })),
     learned
   };
+}
+
+function friendlyRelaySourceName(source: string) {
+  if (/any\s+\.tah\s+file/i.test(source)) return 'Saved context';
+  return source
+    .replace(/\.(tah|hat)$/i, '')
+    .replace(/^wiki_/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function friendlyRelayReason(reason: string) {
+  const normalized = String(reason || '').toLowerCase();
+  if (normalized.includes('query memory')) return 'saved note';
+  if (normalized.includes('loadout') || normalized.includes('fallback') || normalized.includes('virtual')) return 'saved context';
+  if (normalized.includes('concept')) return 'related topic';
+  if (normalized.includes('term')) return 'word match';
+  if (normalized.includes('policy')) return 'search match';
+  return reason.replace(/[_-]+/g, ' ');
 }
 
 function finalFrameLabel(format: TahRelayFormat) {

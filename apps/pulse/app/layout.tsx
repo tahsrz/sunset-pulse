@@ -21,6 +21,7 @@ import { headers } from 'next/headers';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getAgentIdFromHeaders } from '@/lib/sites/agentConfig';
+import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sunsetpulse.app'),
@@ -93,6 +94,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
   const requestHeaders = await headers();
   const tenantSite = requestHeaders.get('x-sunset-tenant');
   const activeAgentId = getAgentIdFromHeaders(requestHeaders);
+  const requestPathname = requestHeaders.get('x-sunset-pathname');
 
   if (tenantSite) {
     return (
@@ -105,7 +107,9 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
     );
   }
 
-  const sbConfigLookup = await loadSupabaseSiteConfig(activeAgentId);
+  const sbConfigLookup = isLightweightGlobalSurface(requestPathname)
+    ? { data: null, timedOut: true }
+    : await loadSupabaseSiteConfig(activeAgentId);
   const sbConfig = sbConfigLookup.data;
 
   // Define default branding as a fallback
@@ -241,6 +245,10 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
 export default MainLayout;
 
 async function loadSupabaseSiteConfig(agentId: string) {
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    return { data: null, timedOut: true };
+  }
+
   const fallbackTimeoutMs = 1500;
   let timedOut = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -287,6 +295,10 @@ async function loadSupabaseSiteConfig(agentId: string) {
 }
 
 async function loadLegacySiteConfig(agentId: string) {
+  if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
+    return null;
+  }
+
   const fallbackTimeoutMs = 1500;
   let timedOut = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;

@@ -35,7 +35,9 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Email Us</p>
-                    <p className="text-white font-bold">admin@sunsetpulse.ai</p>
+                    <a href="mailto:tahsrz@gmail.com" className="text-white font-bold hover:text-blue-300 transition-colors">
+                      tahsrz@gmail.com
+                    </a>
                   </div>
                 </div>
 
@@ -55,7 +57,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Location</p>
-                    <p className="text-white font-bold">Sunset Pulse Headquarters<br />Dallas-Fort Worth, TX</p>
+                    <p className="text-white font-bold">101 S Council<br />Sunset, TX</p>
                   </div>
                 </div>
               </div>

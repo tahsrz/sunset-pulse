@@ -1,4 +1,4 @@
-import { runCommandCenterCommand, type CommandCenterResponse } from './commandRouter';
+import { runCommandCenterCommand, sourceDisplayName, type CommandCenterResponse } from './commandRouter';
 import type { TahRelayMode } from './relayTemplates';
 
 export type JamieCommandBridgeResult = {
@@ -34,14 +34,14 @@ export async function buildJamieCommandBridgeContext(
 }
 
 function formatJamieCommandContext(result: CommandCenterResponse) {
-  const files = result.tahFiles.slice(0, 4).join(', ');
+  const sourcesToLeanOn = result.tahFiles.slice(0, 4).map(sourceDisplayName).join(', ');
   const actions = result.result.actions.slice(0, 3).map((action) => `- ${action}`).join('\n');
   const sources = result.trace.selectedShards
     .slice(0, 4)
     .map((shard) => {
       const reason = plainReason(shard.metrics?.matchReason || shard.source);
       const concepts = shard.concepts.slice(0, 3).join(', ');
-      return `- ${shard.source}${concepts ? ` (${concepts})` : ''}: ${reason}`;
+      return `- ${sourceDisplayName(shard.source)}${concepts ? ` (${concepts})` : ''}: ${reason}`;
     })
     .join('\n');
 
@@ -49,10 +49,10 @@ function formatJamieCommandContext(result: CommandCenterResponse) {
     'Private helper note for Jamie. Use this silently as background, not as visible labels.',
     `Helper picked: ${result.worker.name}.`,
     `Why this helper fits: ${result.worker.role}`,
-    `Files to lean on: ${files || 'none listed'}.`,
+    `Context to lean on: ${sourcesToLeanOn || 'none listed'}.`,
     `Plain summary: ${result.result.summary}`,
     actions ? `Useful next steps:\n${actions}` : '',
-    sources ? `Files and saved notes found:\n${sources}` : '',
+    sources ? `Saved context found:\n${sources}` : '',
     result.trace.queryMemory?.saved ? 'This chat turn was saved locally for later context.' : 'This chat turn was not saved locally.'
   ].filter(Boolean).join('\n');
 }

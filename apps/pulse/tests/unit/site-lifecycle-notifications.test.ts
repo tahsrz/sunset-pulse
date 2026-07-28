@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
+import { createDefaultLaunchKit, type AgentLaunchKit } from '@/lib/sites/launchKit';
 import {
   notifyBuyerSiteBillingUpdate,
   notifyOperatorSiteBillingUpdate,
@@ -21,7 +21,7 @@ describe('site lifecycle notifications', () => {
   });
 
   it('tells the buyer when recovered billing returned the site live', async () => {
-    const kit = {
+    const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       status: 'active',
       agentProfile: {
@@ -47,7 +47,7 @@ describe('site lifecycle notifications', () => {
   });
 
   it('tells the buyer when recovered billing stayed draft', async () => {
-    const kit = {
+    const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       status: 'draft',
       agentProfile: {
@@ -72,7 +72,7 @@ describe('site lifecycle notifications', () => {
   });
 
   it('summarizes recovered draft state for operators', async () => {
-    const kit = {
+    const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       status: 'draft',
       billingProfile: {

@@ -29,6 +29,7 @@ import {
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
+import type { LeadStatus as PipelineLeadStatus } from '@/lib/sites/leadOperatingSystem';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
 
@@ -40,7 +41,7 @@ export const metadata = {
   description: 'Operator inbox for public SaaS agent-site lead submissions.',
 };
 
-type LeadStatus = 'new' | 'reviewed' | 'archived';
+type LeadStatus = PipelineLeadStatus | 'reviewed';
 type StatusFilter = LeadStatus | 'active' | 'all';
 
 type AgentSiteLead = {
@@ -342,9 +343,11 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
           ) : null}
 
           <AgentLeadActions
-            leadId={lead.id}
-            status={status}
-            internalNote={lead.internal_note}
+            lead={{
+              ...lead,
+              status: toPipelineLeadStatus(status),
+              internal_note: lead.internal_note,
+            }}
             publicGuideDisposition={guideDisposition}
           />
         </aside>
@@ -509,6 +512,10 @@ function formatGuideSearchCriteria(brief: PublicGuideHandoffBrief) {
 function StatusBadge({ status }: { status: LeadStatus }) {
   const styles = {
     new: 'border-cyan-300/25 bg-cyan-300/10 text-cyan-100',
+    contacted: 'border-blue-300/25 bg-blue-300/10 text-blue-100',
+    touring: 'border-purple-300/25 bg-purple-300/10 text-purple-100',
+    nurture: 'border-amber-300/25 bg-amber-300/10 text-amber-100',
+    closed: 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100',
     reviewed: 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100',
     archived: 'border-slate-400/20 bg-slate-400/10 text-slate-300',
   };
@@ -521,8 +528,21 @@ function StatusBadge({ status }: { status: LeadStatus }) {
 }
 
 function normalizeStatusFilter(value: string | undefined): StatusFilter {
-  if (value === 'new' || value === 'reviewed' || value === 'archived' || value === 'all') return value;
+  if (
+    value === 'new'
+    || value === 'contacted'
+    || value === 'touring'
+    || value === 'nurture'
+    || value === 'closed'
+    || value === 'reviewed'
+    || value === 'archived'
+    || value === 'all'
+  ) return value;
   return 'active';
+}
+
+function toPipelineLeadStatus(status: LeadStatus): PipelineLeadStatus {
+  return status === 'reviewed' ? 'contacted' : status;
 }
 
 function getTenantPreviewUrl(site: string) {
