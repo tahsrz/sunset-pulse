@@ -16,7 +16,6 @@ import {
   ctaOptions,
   defaultPreferences,
   preferencesStorageKey,
-  savedExamplesStorageKey,
   starterJobs,
   toneOptions,
   type AgentPreferences,
@@ -28,7 +27,6 @@ import {
 import {
   normalizePreferences,
   restoreAgentPreferences,
-  restoreSavedExamples,
 } from './agentConsoleStorage';
 import { trackAgentConsoleEvent } from './agentConsoleEvents';
 import {
@@ -37,23 +35,30 @@ import {
   progressDotClass,
 } from './agentConsoleProgress';
 import { useAgentConsoleRun } from './useAgentConsoleRun';
+import { useAgentConsoleSavedExamples } from './useAgentConsoleSavedExamples';
 
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
   const [draft, setDraft] = useState('');
   const [preferences, setPreferences] = useState<AgentPreferences>(defaultPreferences);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const [savedExamples, setSavedExamples] = useState<SavedExample[]>([]);
 
   const selectedJob = useMemo(
     () => starterJobs.find((job) => job.id === selectedJobId) || starterJobs[0],
     [selectedJobId],
   );
 
-  const selectedExamples = useMemo(
-    () => savedExamples.filter((example) => example.jobId === selectedJob.id),
-    [savedExamples, selectedJob.id],
-  );
+  const {
+    copySavedExample,
+    deleteSavedExample,
+    exampleLibrary,
+    getSavedExampleCount,
+    loadSavedExample,
+    saveResultExample: saveCurrentResultExample,
+    savedExamples,
+    selectedExamples,
+  } = useAgentConsoleSavedExamples(selectedJob);
+
   const {
     copied,
     copyResult,
@@ -72,14 +77,6 @@ export default function AgentConsole() {
     selectedJob,
   });
 
-  const exampleLibrary = useMemo(
-    () => [
-      ...savedExamples.filter((example) => example.jobId === selectedJob.id),
-      ...savedExamples.filter((example) => example.jobId !== selectedJob.id),
-    ].slice(0, 5),
-    [savedExamples, selectedJob.id],
-  );
-
   useEffect(() => {
     trackAgentConsoleEvent({
       event: 'console_opened',
@@ -91,9 +88,6 @@ export default function AgentConsole() {
     if (restoredPreferences) {
       setPreferences(restoredPreferences);
     }
-
-    const restoredExamples = restoreSavedExamples(localStorage.getItem(savedExamplesStorageKey));
-    setSavedExamples(restoredExamples);
   }, []);
 
   const selectJob = (jobId: string, trackSelection = true) => {
@@ -106,7 +100,7 @@ export default function AgentConsole() {
         hasInput: Boolean(draft.trim()),
         inputLength: draft.trim().length,
         jobId: nextJob.id,
-        savedExampleCount: savedExamples.filter((example) => example.jobId === nextJob.id).length,
+        savedExampleCount: getSavedExampleCount(nextJob.id),
         workerId: nextJob.workerId,
       });
     }
@@ -147,70 +141,18 @@ export default function AgentConsole() {
   };
 
   const saveResultExample = () => {
-    const output = result?.result.deliverable.copyReadyText.trim();
-    if (!output || !currentInput.trim()) return;
-
-    const nextExample: SavedExample = {
-      id: crypto.randomUUID(),
-      jobId: selectedJob.id,
-      title: result?.result.deliverable.title || selectedJob.label,
-      input: currentInput.trim(),
-      output,
-      createdAt: new Date().toISOString(),
-    };
-    const nextExamples = [nextExample, ...savedExamples].slice(0, 12);
-    setSavedExamples(nextExamples);
-    localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
-    markResultSaved();
-    trackAgentConsoleEvent({
-      commandId: result?.commandId,
-      event: 'result_saved',
-      hasInput: true,
-      inputLength: currentInput.trim().length,
-      jobId: selectedJob.id,
-      resultLength: output.length,
-      savedExampleCount: nextExamples.length,
-      workerId: selectedJob.workerId,
-    });
-  };
-
-  const deleteSavedExample = (id: string) => {
-    const deletedExample = savedExamples.find((example) => example.id === id);
-    const nextExamples = savedExamples.filter((example) => example.id !== id);
-    setSavedExamples(nextExamples);
-    localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
-    trackAgentConsoleEvent({
-      event: 'saved_example_deleted',
-      jobId: deletedExample?.jobId || selectedJob.id,
-      savedExampleCount: nextExamples.length,
-      workerId: selectedJob.workerId,
+    saveCurrentResultExample({
+      currentInput,
+      onSaved: markResultSaved,
+      result,
     });
   };
 
   const useSavedExample = (example: SavedExample) => {
-    const matchingJob = starterJobs.find((job) => job.id === example.jobId);
-    selectJob(example.jobId, false);
-    setDraft(example.input);
+    const loadedExample = loadSavedExample(example);
+    selectJob(loadedExample.jobId, false);
+    setDraft(loadedExample.input);
     resetRunOutput();
-    trackAgentConsoleEvent({
-      event: 'saved_example_used',
-      hasInput: true,
-      inputLength: example.input.length,
-      jobId: example.jobId,
-      resultLength: example.output.length,
-      workerId: matchingJob?.workerId,
-    });
-  };
-
-  const copySavedExample = async (example: SavedExample) => {
-    const matchingJob = starterJobs.find((job) => job.id === example.jobId);
-    await navigator.clipboard.writeText(example.output);
-    trackAgentConsoleEvent({
-      event: 'saved_example_copied',
-      jobId: example.jobId,
-      resultLength: example.output.length,
-      workerId: matchingJob?.workerId,
-    });
   };
 
   return (
