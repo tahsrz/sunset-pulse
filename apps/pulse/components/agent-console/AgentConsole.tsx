@@ -34,11 +34,9 @@ export default function AgentConsole() {
   const {
     copySavedExample,
     deleteSavedExample,
-    exampleLibrary,
     getSavedExampleCount,
     loadSavedExample,
     saveResultExample: saveCurrentResultExample,
-    savedExamples,
     selectedExamples,
   } = useAgentConsoleSavedExamples(selectedJob);
 
@@ -164,12 +162,11 @@ export default function AgentConsole() {
             />
 
             <AgentConsoleSavedExamplesLibrary
-              examples={exampleLibrary}
+              examples={selectedExamples}
               onCopy={copySavedExample}
               onDelete={deleteSavedExample}
               onUse={handleUseSavedExample}
-              selectedJobId={selectedJob.id}
-              totalCount={savedExamples.length}
+              totalCount={selectedExamples.length}
             />
 
             <AgentConsoleOutputPanel

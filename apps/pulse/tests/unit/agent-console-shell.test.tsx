@@ -1,8 +1,12 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import AgentConsole from '../../components/agent-console/AgentConsole';
-import type { CommandResponse } from '../../components/agent-console/agentConsoleConfig';
+import {
+  savedExamplesStorageKey,
+  type CommandResponse,
+  type SavedExample,
+} from '../../components/agent-console/agentConsoleConfig';
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
@@ -32,6 +36,24 @@ const commandResponse: CommandResponse = {
       sourceSummary: 'Fixture',
     },
   },
+};
+
+const savedFollowUp: SavedExample = {
+  id: 'saved-follow-up',
+  jobId: 'lead-follow-up',
+  title: 'Follow up',
+  input: 'Lead note',
+  output: 'Follow up output',
+  createdAt: '2026-07-28T00:00:00.000Z',
+};
+
+const savedListing: SavedExample = {
+  id: 'saved-listing',
+  jobId: 'listing-copy',
+  title: 'Listing copy',
+  input: 'Listing facts',
+  output: 'Listing output',
+  createdAt: '2026-07-28T00:01:00.000Z',
 };
 
 function streamResultResponse(result: CommandResponse) {
@@ -64,5 +86,24 @@ describe('AgentConsole shell', () => {
 
     expect(await screen.findByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Full Command Center' })).toHaveAttribute('href', '/command-center');
+  });
+
+  it('scopes saved examples to the selected workflow', async () => {
+    localStorage.setItem(savedExamplesStorageKey, JSON.stringify([savedListing, savedFollowUp]));
+
+    render(<AgentConsole />);
+
+    expect(await screen.findByText('Saved examples')).toBeInTheDocument();
+    expect(screen.getByText('Lead note')).toBeInTheDocument();
+    expect(screen.queryByText('Listing facts')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Workflow'), { target: { value: 'listing-copy' } });
+
+    expect(await screen.findByText('Listing facts')).toBeInTheDocument();
+    expect(screen.queryByText('Lead note')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Workflow'), { target: { value: 'objection-reply' } });
+
+    await waitFor(() => expect(screen.queryByText('Saved examples')).not.toBeInTheDocument());
   });
 });
