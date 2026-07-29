@@ -7,9 +7,14 @@ const focusedGamePrefixes = [
 ];
 
 const operatorSurfacePrefixes = [
+  '/agent',
   '/command-center',
   '/jamie-chat',
   '/admin',
+];
+
+const minimalChromeSurfacePrefixes = [
+  '/agent',
 ];
 
 export function isFocusedGameSurface(pathname?: string | null) {
@@ -22,6 +27,10 @@ export function isOperatorSurface(pathname?: string | null) {
 
 export function isLightweightGlobalSurface(pathname?: string | null) {
   return isFocusedGameSurface(pathname) || isOperatorSurface(pathname);
+}
+
+export function isMinimalChromeSurface(pathname?: string | null) {
+  return matchesPrefix(pathname, minimalChromeSurfacePrefixes);
 }
 
 function matchesPrefix(pathname: string | null | undefined, prefixes: string[]) {

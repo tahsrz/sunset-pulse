@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, CreditCard, Loader2 } from 'lucide-react';
+import { ArrowUpRight, CreditCard, Loader2, MessageSquareText } from 'lucide-react';
 import Spinner from '@/components/Spinner';
 import { supabase } from '@/lib/supabase';
 import StrategicOverview from '@/components/admin/StrategicOverview';
@@ -218,7 +218,20 @@ const DashboardPage: React.FC = () => {
     return acc;
   }, {});
 
-  if (loading) return <Spinner loading={loading} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white">
+        <Link
+          href="/agent"
+          className="absolute left-4 top-20 z-20 inline-flex items-center gap-2 border border-emerald-200/25 bg-emerald-300 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-slate-950 shadow-2xl shadow-black/30 transition hover:bg-emerald-200"
+        >
+          <MessageSquareText size={15} />
+          Agent Console
+        </Link>
+        <Spinner loading={loading} />
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen bg-slate-950 text-white relative overflow-hidden font-sans selection:bg-blue-600 selection:text-white'>
@@ -228,6 +241,14 @@ const DashboardPage: React.FC = () => {
       <DemoController onRefreshLeads={fetchLeads} />
 
       <PipelineOverlay isOpen={showPipeline} onClose={() => setShowPipeline(false)} />
+
+      <Link
+        href="/agent"
+        className="absolute left-4 top-20 z-20 inline-flex items-center gap-2 border border-emerald-200/25 bg-emerald-300 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-slate-950 shadow-2xl shadow-black/30 transition hover:bg-emerald-200"
+      >
+        <MessageSquareText size={15} />
+        Agent Console
+      </Link>
 
       {mySite ? (
         <aside className="absolute right-4 top-20 z-20 w-[min(360px,calc(100vw-2rem))] border border-cyan-300/20 bg-slate-950/90 p-4 shadow-2xl shadow-black/30 backdrop-blur">
