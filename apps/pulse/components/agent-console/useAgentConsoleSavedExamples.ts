@@ -29,14 +29,6 @@ export function useAgentConsoleSavedExamples(selectedJob: StarterJob) {
     [savedExamples, selectedJob.id],
   );
 
-  const exampleLibrary = useMemo(
-    () => [
-      ...savedExamples.filter((example) => example.jobId === selectedJob.id),
-      ...savedExamples.filter((example) => example.jobId !== selectedJob.id),
-    ].slice(0, 5),
-    [savedExamples, selectedJob.id],
-  );
-
   const persistExamples = (nextExamples: SavedExample[]) => {
     setSavedExamples(nextExamples);
     localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
@@ -121,7 +113,6 @@ export function useAgentConsoleSavedExamples(selectedJob: StarterJob) {
   return {
     copySavedExample,
     deleteSavedExample,
-    exampleLibrary,
     getSavedExampleCount,
     loadSavedExample,
     saveResultExample,
