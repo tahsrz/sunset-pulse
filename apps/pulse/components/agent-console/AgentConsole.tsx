@@ -328,36 +328,17 @@ export default function AgentConsole() {
               totalCount={savedExamples.length}
             />
 
-            <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4" aria-live="polite">
-              {running ? (
-                <RunningResultPreview
-                  jobLabel={selectedJob.label}
-                  outputLabel={selectedJob.outputLabel}
-                  progress={progress}
-                />
-              ) : error ? (
-                <div className="flex items-start gap-3 text-[#8a2e20]">
-                  <AlertCircle className="mt-1 shrink-0" size={18} />
-                  <p className="text-sm font-semibold leading-6">{error}</p>
-                </div>
-              ) : result ? (
-                <ResultPanel
-                  result={result}
-                  copied={copied}
-                  saved={savedResult}
-                  onCopy={copyResult}
-                  onSave={saveResultExample}
-                />
-              ) : (
-                <div className="flex items-start gap-3 text-[#4c5a55]">
-                  <CheckCircle2 className="mt-1 shrink-0 text-[#517268]" size={18} />
-                  <div>
-                    <p className="font-semibold text-[#17201f]">Ready</p>
-                    <p className="mt-1 text-sm leading-6">Jamie will return one client-ready answer and the next action.</p>
-                  </div>
-                </div>
-              )}
-            </section>
+            <OutputPanel
+              copied={copied}
+              error={error}
+              onCopy={copyResult}
+              onSave={saveResultExample}
+              progress={progress}
+              result={result}
+              running={running}
+              saved={savedResult}
+              selectedJob={selectedJob}
+            />
 
             <div className="flex justify-center">
               <Link
@@ -610,6 +591,61 @@ function SavedExamplesLibrary({
         })}
       </div>
     </details>
+  );
+}
+
+function OutputPanel({
+  copied,
+  error,
+  onCopy,
+  onSave,
+  progress,
+  result,
+  running,
+  saved,
+  selectedJob,
+}: {
+  copied: boolean;
+  error: string | null;
+  onCopy: () => void;
+  onSave: () => void;
+  progress: CommandProgressEvent[];
+  result: CommandResponse | null;
+  running: boolean;
+  saved: boolean;
+  selectedJob: StarterJob;
+}) {
+  return (
+    <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4" aria-live="polite">
+      {running ? (
+        <RunningResultPreview
+          jobLabel={selectedJob.label}
+          outputLabel={selectedJob.outputLabel}
+          progress={progress}
+        />
+      ) : error ? (
+        <div className="flex items-start gap-3 text-[#8a2e20]">
+          <AlertCircle className="mt-1 shrink-0" size={18} />
+          <p className="text-sm font-semibold leading-6">{error}</p>
+        </div>
+      ) : result ? (
+        <ResultPanel
+          result={result}
+          copied={copied}
+          saved={saved}
+          onCopy={onCopy}
+          onSave={onSave}
+        />
+      ) : (
+        <div className="flex items-start gap-3 text-[#4c5a55]">
+          <CheckCircle2 className="mt-1 shrink-0 text-[#517268]" size={18} />
+          <div>
+            <p className="font-semibold text-[#17201f]">Ready</p>
+            <p className="mt-1 text-sm leading-6">Jamie will return one client-ready answer and the next action.</p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
