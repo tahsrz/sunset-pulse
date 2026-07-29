@@ -8,6 +8,7 @@ const AGENT_CONSOLE_EVENT_TYPES = AGENT_CONSOLE_EVENT_NAMES.map((event) => `AGEN
 
 const FUNNEL_STAGES = [
   { id: 'opened', label: 'Console opened', eventTypes: ['AGENT_CONSOLE_CONSOLE_OPENED'] },
+  { id: 'quickStart', label: 'Quick start loaded', eventTypes: ['AGENT_CONSOLE_QUICK_START_LOADED'] },
   { id: 'voice', label: 'Voice saved', eventTypes: ['AGENT_CONSOLE_VOICE_SAVED'] },
   { id: 'example', label: 'Example loaded', eventTypes: ['AGENT_CONSOLE_EXAMPLE_LOADED'] },
   { id: 'submitted', label: 'Run submitted', eventTypes: ['AGENT_CONSOLE_RUN_SUBMITTED'] },

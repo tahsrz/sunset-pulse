@@ -7,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const AGENT_CONSOLE_EVENT_NAMES = [
   'console_opened',
   'job_selected',
+  'quick_start_loaded',
   'voice_saved',
   'example_loaded',
   'run_submitted',

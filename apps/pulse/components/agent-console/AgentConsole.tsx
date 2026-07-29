@@ -101,6 +101,18 @@ export default function AgentConsole() {
     });
   };
 
+  const handleQuickStart = () => {
+    setDraft(selectedJob.example);
+    resetRunOutput();
+    trackAgentConsoleEvent({
+      event: 'quick_start_loaded',
+      hasInput: true,
+      inputLength: selectedJob.example.length,
+      jobId: selectedJob.id,
+      workerId: selectedJob.workerId,
+    });
+  };
+
   const handleSaveResultExample = () => {
     saveCurrentResultExample({
       currentInput,
@@ -115,6 +127,8 @@ export default function AgentConsole() {
     setDraft(loadedExample.input);
     resetRunOutput();
   };
+
+  const showQuickStart = !draft.trim() && !result && !running && selectedExamples.length === 0;
 
   return (
     <main className="min-h-screen bg-[#f6f7f2] text-[#17201f]">
@@ -136,6 +150,7 @@ export default function AgentConsole() {
               onExampleLoad={handleLoadSelectedJobExample}
               onPreferenceChange={updatePreference}
               onPreferencesOpen={openPreferences}
+              onQuickStart={handleQuickStart}
               onRun={handleSubmitAgentJob}
               onSavePreferences={savePreferences}
               onSelectJob={handleSelectJob}
@@ -144,6 +159,7 @@ export default function AgentConsole() {
               running={running}
               selectedExamplesCount={selectedExamples.length}
               selectedJob={selectedJob}
+              showQuickStart={showQuickStart}
             />
 
             <AgentConsoleSavedExamplesLibrary

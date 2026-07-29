@@ -1,7 +1,7 @@
 'use client';
 
 import { type FormEvent } from 'react';
-import { Clipboard, Save, Send } from 'lucide-react';
+import { Clipboard, Save, Send, Sparkles } from 'lucide-react';
 import {
   ctaOptions,
   starterJobs,
@@ -16,6 +16,7 @@ export function AgentConsoleWorkflowForm({
   onExampleLoad,
   onPreferenceChange,
   onPreferencesOpen,
+  onQuickStart,
   onRun,
   onSavePreferences,
   onSelectJob,
@@ -24,12 +25,14 @@ export function AgentConsoleWorkflowForm({
   running,
   selectedExamplesCount,
   selectedJob,
+  showQuickStart,
 }: {
   draft: string;
   onDraftChange: (value: string) => void;
   onExampleLoad: () => void;
   onPreferenceChange: (field: keyof AgentPreferences, value: string) => void;
   onPreferencesOpen: () => void;
+  onQuickStart: () => void;
   onRun: (event: FormEvent<HTMLFormElement>) => void;
   onSavePreferences: () => void;
   onSelectJob: (jobId: string) => void;
@@ -38,6 +41,7 @@ export function AgentConsoleWorkflowForm({
   running: boolean;
   selectedExamplesCount: number;
   selectedJob: StarterJob;
+  showQuickStart: boolean;
 }) {
   return (
     <form onSubmit={onRun} className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
@@ -132,10 +136,30 @@ export function AgentConsoleWorkflowForm({
             )}
           </div>
         </div>
-        <span className="inline-flex h-8 shrink-0 items-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#4c5a55]">
+        <span className="inline-flex h-8 shrink-0 self-start items-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#4c5a55]">
           {selectedExamplesCount ? `${selectedExamplesCount} saved` : 'Ready'}
         </span>
       </div>
+      {showQuickStart ? (
+        <div className="mb-4 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#24312f]">Start faster</p>
+              <p className="mt-1 text-sm leading-6 text-[#4c5a55]">
+                Load a proven example, run Jamie, then copy the finished message.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onQuickStart}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#185b4d] px-4 text-sm font-bold text-white hover:bg-[#13483d] focus:outline-none focus:ring-2 focus:ring-[#8ab6a8] sm:w-fit"
+            >
+              <Sparkles size={16} />
+              Start with example
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <label htmlFor="agent-console-input" className="text-sm font-semibold text-[#24312f]">
           {selectedJob.inputLabel}
