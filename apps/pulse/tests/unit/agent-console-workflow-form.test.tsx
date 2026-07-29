@@ -79,4 +79,16 @@ describe('AgentConsoleWorkflowForm', () => {
 
     expect(screen.getByText('2 saved')).toBeInTheDocument();
   });
+
+  it('keeps voice settings collapsed into one compact action', () => {
+    const onPreferencesOpen = vi.fn();
+
+    renderWorkflowForm({ onPreferencesOpen });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Voice: Warm, direct, local' }));
+
+    expect(onPreferencesOpen).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Agent in North Texas - Warm, direct, local')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tune Voice' })).not.toBeInTheDocument();
+  });
 });
