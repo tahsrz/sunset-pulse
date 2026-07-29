@@ -13,33 +13,70 @@ describe('AgentConsoleWorkflowForm', () => {
     vi.clearAllMocks();
   });
 
+  const renderWorkflowForm = (
+    overrides: Partial<React.ComponentProps<typeof AgentConsoleWorkflowForm>> = {},
+  ) => render(
+    <AgentConsoleWorkflowForm
+      draft=""
+      onDraftChange={vi.fn()}
+      onExampleLoad={vi.fn()}
+      onPreferenceChange={vi.fn()}
+      onPreferencesOpen={vi.fn()}
+      onQuickStart={vi.fn()}
+      onRun={vi.fn()}
+      onSavePreferences={vi.fn()}
+      onSelectJob={vi.fn()}
+      preferences={defaultPreferences}
+      preferencesOpen={false}
+      running={false}
+      selectedExamplesCount={0}
+      selectedJob={starterJobs[0]}
+      showQuickStart={false}
+      {...overrides}
+    />,
+  );
+
   it('bundles tone and CTA into one voice style choice', () => {
     const onPreferenceChange = vi.fn();
 
-    render(
-      <AgentConsoleWorkflowForm
-        draft=""
-        onDraftChange={vi.fn()}
-        onExampleLoad={vi.fn()}
-        onPreferenceChange={onPreferenceChange}
-        onPreferencesOpen={vi.fn()}
-        onQuickStart={vi.fn()}
-        onRun={vi.fn()}
-        onSavePreferences={vi.fn()}
-        onSelectJob={vi.fn()}
-        preferences={defaultPreferences}
-        preferencesOpen
-        running={false}
-        selectedExamplesCount={0}
-        selectedJob={starterJobs[0]}
-        showQuickStart={false}
-      />,
-    );
+    renderWorkflowForm({
+      onPreferenceChange,
+      preferencesOpen: true,
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /Advisory call/i }));
 
     expect(onPreferenceChange).toHaveBeenCalledWith('tone', 'Calm and advisory');
     expect(onPreferenceChange).toHaveBeenCalledWith('cta', 'Offer a short call');
     expect(screen.queryByLabelText('CTA')).not.toBeInTheDocument();
+  });
+
+  it('keeps the header badge hidden until saved examples exist', () => {
+    const { rerender } = renderWorkflowForm();
+
+    expect(screen.queryByText('Ready')).not.toBeInTheDocument();
+    expect(screen.queryByText('2 saved')).not.toBeInTheDocument();
+
+    rerender(
+      <AgentConsoleWorkflowForm
+        draft=""
+        onDraftChange={vi.fn()}
+        onExampleLoad={vi.fn()}
+        onPreferenceChange={vi.fn()}
+        onPreferencesOpen={vi.fn()}
+        onQuickStart={vi.fn()}
+        onRun={vi.fn()}
+        onSavePreferences={vi.fn()}
+        onSelectJob={vi.fn()}
+        preferences={defaultPreferences}
+        preferencesOpen={false}
+        running={false}
+        selectedExamplesCount={2}
+        selectedJob={starterJobs[0]}
+        showQuickStart={false}
+      />,
+    );
+
+    expect(screen.getByText('2 saved')).toBeInTheDocument();
   });
 });
