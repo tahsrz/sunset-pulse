@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -38,6 +39,8 @@ export function AgentConsoleOutputPanel({
   saved: boolean;
   selectedJob: StarterJob;
 }) {
+  if (!running && !error && !result) return null;
+
   return (
     <section className="rounded-md border border-[#c9d3ca] bg-[#fffdf7] p-4" aria-live="polite">
       {running ? (
@@ -59,15 +62,7 @@ export function AgentConsoleOutputPanel({
           onCopy={onCopy}
           onSave={onSave}
         />
-      ) : (
-        <div className="flex items-start gap-3 text-[#4c5a55]">
-          <CheckCircle2 className="mt-1 shrink-0 text-[#517268]" size={18} />
-          <div>
-            <p className="font-semibold text-[#17201f]">Ready</p>
-            <p className="mt-1 text-sm leading-6">Jamie will return one client-ready answer and the next action.</p>
-          </div>
-        </div>
-      )}
+      ) : null}
     </section>
   );
 }
