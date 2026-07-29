@@ -15,7 +15,6 @@ import {
 import {
   ctaOptions,
   defaultPreferences,
-  idleProgress,
   preferencesStorageKey,
   savedExamplesStorageKey,
   starterJobs,
@@ -27,30 +26,21 @@ import {
   type StarterJob,
 } from './agentConsoleConfig';
 import {
-  formatAgentPreferences,
   normalizePreferences,
   restoreAgentPreferences,
   restoreSavedExamples,
 } from './agentConsoleStorage';
-import { readCommandStream } from './agentConsoleCommandStream';
 import { trackAgentConsoleEvent } from './agentConsoleEvents';
 import {
   formatProgressDetail,
   formatProgressLabel,
   progressDotClass,
-  upsertProgressEvent,
 } from './agentConsoleProgress';
+import { useAgentConsoleRun } from './useAgentConsoleRun';
 
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
   const [draft, setDraft] = useState('');
-  const [currentInput, setCurrentInput] = useState('');
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<CommandResponse | null>(null);
-  const [progress, setProgress] = useState<CommandProgressEvent[]>(idleProgress);
-  const [copied, setCopied] = useState(false);
-  const [savedResult, setSavedResult] = useState(false);
   const [preferences, setPreferences] = useState<AgentPreferences>(defaultPreferences);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [savedExamples, setSavedExamples] = useState<SavedExample[]>([]);
@@ -64,6 +54,23 @@ export default function AgentConsole() {
     () => savedExamples.filter((example) => example.jobId === selectedJob.id),
     [savedExamples, selectedJob.id],
   );
+  const {
+    copied,
+    copyResult,
+    currentInput,
+    error,
+    markResultSaved,
+    progress,
+    resetRunOutput,
+    result,
+    runAgentJob,
+    running,
+    savedResult,
+  } = useAgentConsoleRun({
+    preferences,
+    selectedExamplesCount: selectedExamples.length,
+    selectedJob,
+  });
 
   const exampleLibrary = useMemo(
     () => [
@@ -92,8 +99,7 @@ export default function AgentConsole() {
   const selectJob = (jobId: string, trackSelection = true) => {
     const nextJob = starterJobs.find((job) => job.id === jobId) || starterJobs[0];
     setSelectedJobId(nextJob.id);
-    setResult(null);
-    setError(null);
+    resetRunOutput();
     if (trackSelection) {
       trackAgentConsoleEvent({
         event: 'job_selected',
@@ -106,80 +112,9 @@ export default function AgentConsole() {
     }
   };
 
-  const runAgentJob = async (event: FormEvent<HTMLFormElement>) => {
+  const submitAgentJob = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const trimmed = draft.trim();
-    if (!trimmed || running) return;
-    const startedAt = Date.now();
-
-    setRunning(true);
-    setError(null);
-    setResult(null);
-    setCopied(false);
-    setSavedResult(false);
-    setCurrentInput(trimmed);
-    setProgress([
-      { id: 'submitted', label: 'Request received', status: 'complete', detail: selectedJob.label },
-      { id: 'voice', label: 'Applying your voice', status: 'running', detail: preferences.tone },
-      { id: 'draft', label: 'Drafting answer', status: 'pending', detail: selectedJob.outputLabel },
-    ]);
-    trackAgentConsoleEvent({
-      event: 'run_submitted',
-      hasInput: true,
-      inputLength: trimmed.length,
-      jobId: selectedJob.id,
-      savedExampleCount: selectedExamples.length,
-      workerId: selectedJob.workerId,
-    });
-
-    try {
-      const response = await fetch('/api/commands', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: JSON.stringify({
-          command: `${selectedJob.prompt}\n\nAgent voice baseline:\n${formatAgentPreferences(preferences)}\n\nInput:\n${trimmed}`,
-          selectedWorkerId: selectedJob.workerId,
-          relayMode: selectedJob.relayMode,
-          supervisor: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const body = await safeJson(response);
-        throw new Error(body?.error || 'Jamie could not finish that job.');
-      }
-
-      const commandResult = await readCommandStream(response, (event) => {
-        setProgress((current) => upsertProgressEvent(current, event));
-      });
-      setResult(commandResult);
-      setProgress(commandResult.trace?.progress || [{ id: 'complete', label: 'Complete', status: 'complete' }]);
-      trackAgentConsoleEvent({
-        commandId: commandResult.commandId,
-        durationMs: Date.now() - startedAt,
-        event: 'run_completed',
-        hasInput: true,
-        inputLength: trimmed.length,
-        jobId: selectedJob.id,
-        resultLength: commandResult.result.deliverable.copyReadyText.length,
-        workerId: selectedJob.workerId,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Jamie could not finish that job.');
-      trackAgentConsoleEvent({
-        durationMs: Date.now() - startedAt,
-        event: 'run_failed',
-        hasInput: true,
-        inputLength: trimmed.length,
-        jobId: selectedJob.id,
-        workerId: selectedJob.workerId,
-      });
-    } finally {
-      setRunning(false);
-    }
+    await runAgentJob(draft);
   };
 
   const savePreferences = () => {
@@ -201,8 +136,7 @@ export default function AgentConsole() {
 
   const loadSelectedJobExample = () => {
     setDraft(selectedJob.example);
-    setResult(null);
-    setError(null);
+    resetRunOutput();
     trackAgentConsoleEvent({
       event: 'example_loaded',
       hasInput: true,
@@ -210,22 +144,6 @@ export default function AgentConsole() {
       jobId: selectedJob.id,
       workerId: selectedJob.workerId,
     });
-  };
-
-  const copyResult = async () => {
-    const text = result?.result.deliverable.copyReadyText;
-    if (!text) return;
-
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    trackAgentConsoleEvent({
-      commandId: result?.commandId,
-      event: 'result_copied',
-      jobId: selectedJob.id,
-      resultLength: text.length,
-      workerId: selectedJob.workerId,
-    });
-    window.setTimeout(() => setCopied(false), 1600);
   };
 
   const saveResultExample = () => {
@@ -243,7 +161,7 @@ export default function AgentConsole() {
     const nextExamples = [nextExample, ...savedExamples].slice(0, 12);
     setSavedExamples(nextExamples);
     localStorage.setItem(savedExamplesStorageKey, JSON.stringify(nextExamples));
-    setSavedResult(true);
+    markResultSaved();
     trackAgentConsoleEvent({
       commandId: result?.commandId,
       event: 'result_saved',
@@ -273,8 +191,7 @@ export default function AgentConsole() {
     const matchingJob = starterJobs.find((job) => job.id === example.jobId);
     selectJob(example.jobId, false);
     setDraft(example.input);
-    setResult(null);
-    setError(null);
+    resetRunOutput();
     trackAgentConsoleEvent({
       event: 'saved_example_used',
       hasInput: true,
@@ -316,7 +233,7 @@ export default function AgentConsole() {
               onExampleLoad={loadSelectedJobExample}
               onPreferenceChange={updatePreference}
               onPreferencesOpen={() => setPreferencesOpen(true)}
-              onRun={runAgentJob}
+              onRun={submitAgentJob}
               onSavePreferences={savePreferences}
               onSelectJob={selectJob}
               preferences={preferences}
@@ -799,12 +716,4 @@ function ProgressList({ progress }: { progress: CommandProgressEvent[] }) {
       ))}
     </ul>
   );
-}
-
-async function safeJson(response: Response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
 }
