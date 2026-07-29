@@ -1,13 +1,12 @@
 'use client';
 
-import { type FormEvent } from 'react';
+import React, { type FormEvent } from 'react';
 import { Clipboard, Save, Send, Sparkles } from 'lucide-react';
 import {
-  ctaOptions,
   starterJobs,
-  toneOptions,
   type AgentPreferences,
   type StarterJob,
+  voiceStyleOptions,
 } from './agentConsoleConfig';
 
 export function AgentConsoleWorkflowForm({
@@ -43,6 +42,8 @@ export function AgentConsoleWorkflowForm({
   selectedJob: StarterJob;
   showQuickStart: boolean;
 }) {
+  const voiceSummary = `${preferences.agentName.trim() || 'Agent'} in ${preferences.market} - ${preferences.tone}`;
+
   return (
     <form onSubmit={onRun} className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 border-b border-[#e3e8e3] pb-4 sm:flex-row sm:items-start sm:justify-between">
@@ -67,6 +68,12 @@ export function AgentConsoleWorkflowForm({
           <div className="mt-3 border-t border-[#e3e8e3] pt-3">
             {preferencesOpen ? (
               <div className="grid gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#24312f]">Sound like me</p>
+                  <p className="mt-1 text-sm leading-6 text-[#4c5a55]">
+                    Set the basics once. Jamie applies this voice to every workflow.
+                  </p>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
                     Agent name
@@ -86,31 +93,34 @@ export function AgentConsoleWorkflowForm({
                       placeholder="North Texas"
                     />
                   </label>
-                  <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
-                    Tone
-                    <select
-                      value={preferences.tone}
-                      onChange={(event) => onPreferenceChange('tone', event.target.value)}
-                      className="h-10 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-medium text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
-                    >
-                      {toneOptions.map((option) => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="grid gap-1 text-sm font-semibold text-[#24312f]">
-                    CTA
-                    <select
-                      value={preferences.cta}
-                      onChange={(event) => onPreferenceChange('cta', event.target.value)}
-                      className="h-10 rounded-md border border-[#b9c6bd] bg-white px-3 text-sm font-medium text-[#17201f] outline-none focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
-                    >
-                      {ctaOptions.map((option) => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
+                <fieldset className="grid gap-2">
+                  <legend className="text-sm font-semibold text-[#24312f]">Voice style</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {voiceStyleOptions.map((option) => {
+                      const selected = preferences.tone === option.tone && preferences.cta === option.cta;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => {
+                            onPreferenceChange('tone', option.tone);
+                            onPreferenceChange('cta', option.cta);
+                          }}
+                          className={`rounded-md border p-3 text-left focus:outline-none focus:ring-2 focus:ring-[#8ab6a8] ${
+                            selected
+                              ? 'border-[#185b4d] bg-[#eef5f1] text-[#17201f]'
+                              : 'border-[#d8dfd9] bg-white text-[#24312f] hover:border-[#789184] hover:bg-[#fbfcf8]'
+                          }`}
+                        >
+                          <span className="block text-sm font-bold">{option.label}</span>
+                          <span className="mt-1 block text-sm leading-6 text-[#4c5a55]">{option.description}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
                 <button
                   type="button"
                   onClick={onSavePreferences}
@@ -123,14 +133,14 @@ export function AgentConsoleWorkflowForm({
             ) : (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm leading-6 text-[#4c5a55]">
-                  <span className="font-semibold text-[#24312f]">Voice</span>: {preferences.agentName.trim() || 'Agent'} - {preferences.market} - {preferences.tone}
+                  <span className="font-semibold text-[#24312f]">Voice</span>: {voiceSummary}
                 </p>
                 <button
                   type="button"
                   onClick={onPreferencesOpen}
                   className="inline-flex h-8 items-center justify-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184] sm:w-fit"
                 >
-                  Edit Voice
+                  Tune Voice
                 </button>
               </div>
             )}

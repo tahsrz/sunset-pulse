@@ -158,16 +158,33 @@ export const defaultPreferences: AgentPreferences = {
   cta: 'Ask for a quick reply',
 };
 
-export const toneOptions = [
-  'Warm, direct, local',
-  'Polished and concise',
-  'Friendly and casual',
-  'Calm and advisory',
-];
-
-export const ctaOptions = [
-  'Ask for a quick reply',
-  'Offer to send more detail',
-  'Ask to schedule a showing',
-  'Offer a short call',
-];
+export const voiceStyleOptions = [
+  {
+    id: 'direct-local',
+    label: 'Direct local',
+    description: 'Warm local wording with one easy reply.',
+    tone: 'Warm, direct, local',
+    cta: 'Ask for a quick reply',
+  },
+  {
+    id: 'polished-detail',
+    label: 'Polished detail',
+    description: 'Tighter copy that offers useful follow-up detail.',
+    tone: 'Polished and concise',
+    cta: 'Offer to send more detail',
+  },
+  {
+    id: 'showing-ready',
+    label: 'Showing ready',
+    description: 'Friendly copy that moves toward a showing.',
+    tone: 'Friendly and casual',
+    cta: 'Ask to schedule a showing',
+  },
+  {
+    id: 'advisory-call',
+    label: 'Advisory call',
+    description: 'Calm guidance that opens a short conversation.',
+    tone: 'Calm and advisory',
+    cta: 'Offer a short call',
+  },
+] as const;
