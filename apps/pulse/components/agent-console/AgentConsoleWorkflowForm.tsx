@@ -146,9 +146,11 @@ export function AgentConsoleWorkflowForm({
             )}
           </div>
         </div>
-        <span className="inline-flex h-8 shrink-0 self-start items-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#4c5a55]">
-          {selectedExamplesCount ? `${selectedExamplesCount} saved` : 'Ready'}
-        </span>
+        {selectedExamplesCount ? (
+          <span className="inline-flex h-8 shrink-0 self-start items-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#4c5a55]">
+            {selectedExamplesCount} saved
+          </span>
+        ) : null}
       </div>
       {showQuickStart ? (
         <div className="mb-4 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3">
