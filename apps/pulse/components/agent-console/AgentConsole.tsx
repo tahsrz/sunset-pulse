@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import React, { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import {
   starterJobs,
@@ -129,6 +129,7 @@ export default function AgentConsole() {
   };
 
   const showQuickStart = !draft.trim() && !result && !running && selectedExamples.length === 0;
+  const showAdvancedLink = Boolean(result) && !running;
 
   return (
     <main className="min-h-screen bg-[#f6f7f2] text-[#17201f]">
@@ -183,20 +184,22 @@ export default function AgentConsole() {
               selectedJob={selectedJob}
             />
 
-            <div className="flex justify-center">
-              <Link
-                href="/command-center"
-                onClick={() => trackAgentConsoleEvent({
-                  event: 'advanced_opened',
-                  jobId: selectedJob.id,
-                  workerId: selectedJob.workerId,
-                })}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold text-[#517268] hover:bg-[#eef5f1] hover:text-[#24312f] focus:outline-none focus:ring-2 focus:ring-[#789184]"
-              >
-                <Sparkles size={14} />
-                Full Command Center
-              </Link>
-            </div>
+            {showAdvancedLink ? (
+              <div className="flex justify-center">
+                <Link
+                  href="/command-center"
+                  onClick={() => trackAgentConsoleEvent({
+                    event: 'advanced_opened',
+                    jobId: selectedJob.id,
+                    workerId: selectedJob.workerId,
+                  })}
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold text-[#517268] hover:bg-[#eef5f1] hover:text-[#24312f] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+                >
+                  <Sparkles size={14} />
+                  Full Command Center
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
