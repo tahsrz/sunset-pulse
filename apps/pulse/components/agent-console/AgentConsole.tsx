@@ -68,7 +68,7 @@ export default function AgentConsole() {
     });
   }, []);
 
-  const selectJob = (jobId: string, trackSelection = true) => {
+  const handleSelectJob = (jobId: string, trackSelection = true) => {
     const nextJob = starterJobs.find((job) => job.id === jobId) || starterJobs[0];
     setSelectedJobId(nextJob.id);
     resetRunOutput();
@@ -84,12 +84,12 @@ export default function AgentConsole() {
     }
   };
 
-  const submitAgentJob = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitAgentJob = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await runAgentJob(draft);
   };
 
-  const loadSelectedJobExample = () => {
+  const handleLoadSelectedJobExample = () => {
     setDraft(selectedJob.example);
     resetRunOutput();
     trackAgentConsoleEvent({
@@ -101,7 +101,7 @@ export default function AgentConsole() {
     });
   };
 
-  const saveResultExample = () => {
+  const handleSaveResultExample = () => {
     saveCurrentResultExample({
       currentInput,
       onSaved: markResultSaved,
@@ -109,9 +109,9 @@ export default function AgentConsole() {
     });
   };
 
-  const useSavedExample = (example: SavedExample) => {
+  const handleUseSavedExample = (example: SavedExample) => {
     const loadedExample = loadSavedExample(example);
-    selectJob(loadedExample.jobId, false);
+    handleSelectJob(loadedExample.jobId, false);
     setDraft(loadedExample.input);
     resetRunOutput();
   };
@@ -133,12 +133,12 @@ export default function AgentConsole() {
             <AgentConsoleWorkflowForm
               draft={draft}
               onDraftChange={setDraft}
-              onExampleLoad={loadSelectedJobExample}
+              onExampleLoad={handleLoadSelectedJobExample}
               onPreferenceChange={updatePreference}
               onPreferencesOpen={openPreferences}
-              onRun={submitAgentJob}
+              onRun={handleSubmitAgentJob}
               onSavePreferences={savePreferences}
-              onSelectJob={selectJob}
+              onSelectJob={handleSelectJob}
               preferences={preferences}
               preferencesOpen={preferencesOpen}
               running={running}
@@ -150,7 +150,7 @@ export default function AgentConsole() {
               examples={exampleLibrary}
               onCopy={copySavedExample}
               onDelete={deleteSavedExample}
-              onUse={useSavedExample}
+              onUse={handleUseSavedExample}
               selectedJobId={selectedJob.id}
               totalCount={savedExamples.length}
             />
@@ -159,7 +159,7 @@ export default function AgentConsole() {
               copied={copied}
               error={error}
               onCopy={copyResult}
-              onSave={saveResultExample}
+              onSave={handleSaveResultExample}
               progress={progress}
               result={result}
               running={running}

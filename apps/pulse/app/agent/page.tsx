@@ -1,4 +1,4 @@
-import AgentConsole from '@/components/agent-console/AgentConsole';
+import { AgentConsole } from '@/components/agent-console';
 
 export const metadata = {
   title: 'Agent Console | Sunset Pulse',
