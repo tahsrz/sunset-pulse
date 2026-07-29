@@ -14,8 +14,6 @@ import {
 } from 'lucide-react';
 import {
   ctaOptions,
-  defaultPreferences,
-  preferencesStorageKey,
   starterJobs,
   toneOptions,
   type AgentPreferences,
@@ -24,29 +22,31 @@ import {
   type SavedExample,
   type StarterJob,
 } from './agentConsoleConfig';
-import {
-  normalizePreferences,
-  restoreAgentPreferences,
-} from './agentConsoleStorage';
 import { trackAgentConsoleEvent } from './agentConsoleEvents';
 import {
   formatProgressDetail,
   formatProgressLabel,
   progressDotClass,
 } from './agentConsoleProgress';
+import { useAgentConsolePreferences } from './useAgentConsolePreferences';
 import { useAgentConsoleRun } from './useAgentConsoleRun';
 import { useAgentConsoleSavedExamples } from './useAgentConsoleSavedExamples';
 
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
   const [draft, setDraft] = useState('');
-  const [preferences, setPreferences] = useState<AgentPreferences>(defaultPreferences);
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   const selectedJob = useMemo(
     () => starterJobs.find((job) => job.id === selectedJobId) || starterJobs[0],
     [selectedJobId],
   );
+  const {
+    openPreferences,
+    preferences,
+    preferencesOpen,
+    savePreferences,
+    updatePreference,
+  } = useAgentConsolePreferences(selectedJob);
 
   const {
     copySavedExample,
@@ -83,11 +83,6 @@ export default function AgentConsole() {
       jobId: selectedJob.id,
       workerId: selectedJob.workerId,
     });
-
-    const restoredPreferences = restoreAgentPreferences(localStorage.getItem(preferencesStorageKey));
-    if (restoredPreferences) {
-      setPreferences(restoredPreferences);
-    }
   }, []);
 
   const selectJob = (jobId: string, trackSelection = true) => {
@@ -109,23 +104,6 @@ export default function AgentConsole() {
   const submitAgentJob = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await runAgentJob(draft);
-  };
-
-  const savePreferences = () => {
-    const nextPreferences = normalizePreferences(preferences);
-    setPreferences(nextPreferences);
-    localStorage.setItem(preferencesStorageKey, JSON.stringify(nextPreferences));
-    setPreferencesOpen(false);
-    trackAgentConsoleEvent({
-      event: 'voice_saved',
-      hasInput: Boolean(nextPreferences.agentName || nextPreferences.market),
-      jobId: selectedJob.id,
-      workerId: selectedJob.workerId,
-    });
-  };
-
-  const updatePreference = (field: keyof AgentPreferences, value: string) => {
-    setPreferences((current) => ({ ...current, [field]: value }));
   };
 
   const loadSelectedJobExample = () => {
@@ -174,7 +152,7 @@ export default function AgentConsole() {
               onDraftChange={setDraft}
               onExampleLoad={loadSelectedJobExample}
               onPreferenceChange={updatePreference}
-              onPreferencesOpen={() => setPreferencesOpen(true)}
+              onPreferencesOpen={openPreferences}
               onRun={submitAgentJob}
               onSavePreferences={savePreferences}
               onSelectJob={selectJob}
