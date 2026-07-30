@@ -91,4 +91,21 @@ describe('AgentConsoleWorkflowForm', () => {
     expect(screen.queryByText('Agent in North Texas - Warm, direct, local')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tune Voice' })).not.toBeInTheDocument();
   });
+
+  it('hides the secondary example button while quick start is visible', () => {
+    renderWorkflowForm({ showQuickStart: true });
+
+    expect(screen.getByRole('button', { name: 'Start with example' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Use example' })).not.toBeInTheDocument();
+  });
+
+  it('restores the secondary example button after quick start is gone', () => {
+    const onExampleLoad = vi.fn();
+
+    renderWorkflowForm({ onExampleLoad, showQuickStart: false });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use example' }));
+
+    expect(onExampleLoad).toHaveBeenCalledTimes(1);
+  });
 });
