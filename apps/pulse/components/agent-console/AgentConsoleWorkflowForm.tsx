@@ -31,7 +31,7 @@ export function AgentConsoleWorkflowForm({
   onExampleLoad: () => void;
   onPreferenceChange: (field: keyof AgentPreferences, value: string) => void;
   onPreferencesOpen: () => void;
-  onQuickStart: () => void;
+  onQuickStart: () => void | Promise<void>;
   onRun: (event: FormEvent<HTMLFormElement>) => void;
   onSavePreferences: () => void;
   onSelectJob: (jobId: string) => void;
@@ -158,11 +158,11 @@ export function AgentConsoleWorkflowForm({
             </div>
             <button
               type="button"
-              onClick={onQuickStart}
+              onClick={() => void onQuickStart()}
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#185b4d] px-4 text-sm font-bold text-white hover:bg-[#13483d] focus:outline-none focus:ring-2 focus:ring-[#8ab6a8] sm:w-fit"
             >
               <Sparkles size={16} />
-              Start with example
+              Run example
             </button>
           </div>
         </div>

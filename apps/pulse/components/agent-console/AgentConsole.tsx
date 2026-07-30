@@ -99,16 +99,19 @@ export default function AgentConsole() {
     });
   };
 
-  const handleQuickStart = () => {
-    setDraft(selectedJob.example);
+  const handleQuickStart = async () => {
+    const example = selectedJob.example;
+
+    setDraft(example);
     resetRunOutput();
     trackAgentConsoleEvent({
       event: 'quick_start_loaded',
       hasInput: true,
-      inputLength: selectedJob.example.length,
+      inputLength: example.length,
       jobId: selectedJob.id,
       workerId: selectedJob.workerId,
     });
+    await runAgentJob(example);
   };
 
   const handleSaveResultExample = () => {

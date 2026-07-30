@@ -81,11 +81,24 @@ describe('AgentConsole shell', () => {
 
     expect(screen.queryByRole('link', { name: 'Full Command Center' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start with example' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Run Jamie' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run example' }));
 
     expect(await screen.findByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Full Command Center' })).toHaveAttribute('href', '/command-center');
+  });
+
+  it('runs the starter example from quick start with one click', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(streamResultResponse(commandResponse));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<AgentConsole />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run example' }));
+
+    expect(await screen.findByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Run example' })).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue(/Buyer toured Oak Cliff bungalow/)).toBeInTheDocument();
   });
 
   it('scopes saved examples to the selected workflow', async () => {
