@@ -95,7 +95,7 @@ describe('AgentConsoleWorkflowForm', () => {
   it('hides the secondary example button while quick start is visible', () => {
     renderWorkflowForm({ showQuickStart: true });
 
-    expect(screen.getByRole('button', { name: 'Start with example' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run example' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Use example' })).not.toBeInTheDocument();
   });
 
