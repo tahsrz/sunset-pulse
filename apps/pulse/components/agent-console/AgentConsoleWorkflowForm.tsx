@@ -42,7 +42,7 @@ export function AgentConsoleWorkflowForm({
   selectedJob: StarterJob;
   showQuickStart: boolean;
 }) {
-  const voiceSummary = `${preferences.agentName.trim() || 'Agent'} in ${preferences.market} - ${preferences.tone}`;
+  const voiceButtonLabel = `Voice: ${preferences.tone}`;
 
   return (
     <form onSubmit={onRun} className="rounded-md border border-[#c9d3ca] bg-white p-4 shadow-sm">
@@ -131,18 +131,13 @@ export function AgentConsoleWorkflowForm({
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm leading-6 text-[#4c5a55]">
-                  <span className="font-semibold text-[#24312f]">Voice</span>: {voiceSummary}
-                </p>
-                <button
-                  type="button"
-                  onClick={onPreferencesOpen}
-                  className="inline-flex h-8 items-center justify-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184] sm:w-fit"
-                >
-                  Tune Voice
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onPreferencesOpen}
+                className="inline-flex h-8 max-w-full items-center justify-center rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+              >
+                <span className="truncate">{voiceButtonLabel}</span>
+              </button>
             )}
           </div>
         </div>
