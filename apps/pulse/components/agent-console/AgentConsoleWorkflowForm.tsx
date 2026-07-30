@@ -171,14 +171,16 @@ export function AgentConsoleWorkflowForm({
         <label htmlFor="agent-console-input" className="text-sm font-semibold text-[#24312f]">
           {selectedJob.inputLabel}
         </label>
-        <button
-          type="button"
-          onClick={onExampleLoad}
-          className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184] sm:w-fit"
-        >
-          <Clipboard size={14} />
-          Use example
-        </button>
+        {showQuickStart ? null : (
+          <button
+            type="button"
+            onClick={onExampleLoad}
+            className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-[#d8dfd9] bg-[#fbfcf8] px-2.5 text-xs font-semibold text-[#24312f] hover:border-[#789184] hover:bg-[#eef5f1] focus:outline-none focus:ring-2 focus:ring-[#789184] sm:w-fit"
+          >
+            <Clipboard size={14} />
+            Use example
+          </button>
+        )}
       </div>
       <textarea
         id="agent-console-input"
