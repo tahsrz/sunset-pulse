@@ -99,13 +99,25 @@ describe('AgentConsoleWorkflowForm', () => {
     expect(screen.queryByRole('button', { name: 'Use example' })).not.toBeInTheDocument();
   });
 
+  it('hides the manual run button while quick start is visible', () => {
+    renderWorkflowForm({ showQuickStart: true });
+
+    expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
+  });
+
   it('restores the secondary example button after quick start is gone', () => {
     const onExampleLoad = vi.fn();
 
-    renderWorkflowForm({ onExampleLoad, showQuickStart: false });
+    renderWorkflowForm({ draft: starterJobs[0].example, onExampleLoad, showQuickStart: false });
 
     fireEvent.click(screen.getByRole('button', { name: 'Use example' }));
 
     expect(onExampleLoad).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores the manual run button after quick start is gone', () => {
+    renderWorkflowForm({ draft: 'Lead is ready for a follow up.', showQuickStart: false });
+
+    expect(screen.getByRole('button', { name: 'Run Jamie' })).toBeInTheDocument();
   });
 });
