@@ -93,11 +93,14 @@ describe('AgentConsole shell', () => {
 
     render(<AgentConsole />);
 
+    expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('button', { name: 'Run example' }));
 
     expect(await screen.findByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Run example' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run Jamie' })).toBeInTheDocument();
     expect(screen.getByDisplayValue(/Buyer toured Oak Cliff bungalow/)).toBeInTheDocument();
   });
 

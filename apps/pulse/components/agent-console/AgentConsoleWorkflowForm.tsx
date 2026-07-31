@@ -190,16 +190,18 @@ export function AgentConsoleWorkflowForm({
         className="mt-2 min-h-44 w-full resize-y rounded-md border border-[#b9c6bd] bg-[#fbfcf8] p-3 text-base leading-7 text-[#17201f] outline-none placeholder:text-[#6f7d76] focus:border-[#185b4d] focus:ring-2 focus:ring-[#8ab6a8]"
       />
 
-      <div className="mt-3 flex justify-end">
-        <button
-          type="submit"
-          disabled={!draft.trim() || running}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#b94f35] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#963d28] focus:outline-none focus:ring-2 focus:ring-[#d9785e] disabled:cursor-not-allowed disabled:bg-[#b6bdb8] sm:w-auto"
-        >
-          <Send size={16} />
-          {running ? 'Working' : 'Run Jamie'}
-        </button>
-      </div>
+      {showQuickStart ? null : (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="submit"
+            disabled={!draft.trim() || running}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#b94f35] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#963d28] focus:outline-none focus:ring-2 focus:ring-[#d9785e] disabled:cursor-not-allowed disabled:bg-[#b6bdb8] sm:w-auto"
+          >
+            <Send size={16} />
+            {running ? 'Working' : 'Run Jamie'}
+          </button>
+        </div>
+      )}
     </form>
   );
 }
