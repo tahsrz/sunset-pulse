@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import {
   starterJobs,
   type SavedExample,
@@ -18,6 +18,7 @@ import { useAgentConsoleSavedExamples } from './useAgentConsoleSavedExamples';
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
   const [draft, setDraft] = useState('');
+  const [manualInputOpen, setManualInputOpen] = useState(false);
 
   const selectedJob = useMemo(
     () => starterJobs.find((job) => job.id === selectedJobId) || starterJobs[0],
@@ -88,6 +89,7 @@ export default function AgentConsole() {
   };
 
   const handleLoadSelectedJobExample = () => {
+    setManualInputOpen(true);
     setDraft(selectedJob.example);
     resetRunOutput();
     trackAgentConsoleEvent({
@@ -102,6 +104,7 @@ export default function AgentConsole() {
   const handleQuickStart = async () => {
     const example = selectedJob.example;
 
+    setManualInputOpen(false);
     setDraft(example);
     resetRunOutput();
     trackAgentConsoleEvent({
@@ -124,17 +127,65 @@ export default function AgentConsole() {
 
   const handleUseSavedExample = (example: SavedExample) => {
     const loadedExample = loadSavedExample(example);
+    setManualInputOpen(true);
     handleSelectJob(loadedExample.jobId, false);
     setDraft(loadedExample.input);
     resetRunOutput();
   };
 
-  const showQuickStart = !draft.trim() && !result && !running && selectedExamples.length === 0;
+  const showQuickStart = !manualInputOpen && !draft.trim() && !result && !running;
   const showAdvancedLink = Boolean(result) && !running;
+  const showResultFirst = Boolean(result) && !running && !error;
+
+  const workflowForm = (
+    <AgentConsoleWorkflowForm
+      draft={draft}
+      onDraftChange={setDraft}
+      onExampleLoad={handleLoadSelectedJobExample}
+      onManualStart={() => setManualInputOpen(true)}
+      onPreferenceChange={updatePreference}
+      onPreferencesOpen={openPreferences}
+      onQuickStart={handleQuickStart}
+      onRun={handleSubmitAgentJob}
+      onSavePreferences={savePreferences}
+      onSelectJob={handleSelectJob}
+      preferences={preferences}
+      preferencesOpen={preferencesOpen}
+      running={running}
+      selectedExamplesCount={selectedExamples.length}
+      selectedJob={selectedJob}
+      showQuickStart={showQuickStart}
+      variant={showResultFirst ? 'drawer' : 'default'}
+    />
+  );
+
+  const savedExamplesLibrary = (
+    <AgentConsoleSavedExamplesLibrary
+      examples={selectedExamples}
+      onCopy={copySavedExample}
+      onDelete={deleteSavedExample}
+      onUse={handleUseSavedExample}
+      totalCount={selectedExamples.length}
+    />
+  );
+
+  const outputPanel = (
+    <AgentConsoleOutputPanel
+      copied={copied}
+      error={error}
+      onCopy={copyResult}
+      onSave={handleSaveResultExample}
+      progress={progress}
+      result={result}
+      running={running}
+      saved={savedResult}
+      selectedJob={selectedJob}
+    />
+  );
 
   return (
     <main className="min-h-screen bg-[#f6f7f2] text-[#17201f]">
-      <section className="border-b border-[#c9d3ca] bg-[#fffdf7] px-4 pt-24 pb-5 sm:px-6 lg:px-8">
+      <section className="border-b border-[#c9d3ca] bg-[#fffdf7] px-4 pt-12 pb-5 sm:px-6 sm:pt-16 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <div>
             <p className="text-sm font-semibold text-[#517268]">Sunset Pulse</p>
@@ -146,43 +197,29 @@ export default function AgentConsole() {
       <section className="px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-4xl gap-5">
           <div className="grid gap-5">
-            <AgentConsoleWorkflowForm
-              draft={draft}
-              onDraftChange={setDraft}
-              onExampleLoad={handleLoadSelectedJobExample}
-              onPreferenceChange={updatePreference}
-              onPreferencesOpen={openPreferences}
-              onQuickStart={handleQuickStart}
-              onRun={handleSubmitAgentJob}
-              onSavePreferences={savePreferences}
-              onSelectJob={handleSelectJob}
-              preferences={preferences}
-              preferencesOpen={preferencesOpen}
-              running={running}
-              selectedExamplesCount={selectedExamples.length}
-              selectedJob={selectedJob}
-              showQuickStart={showQuickStart}
-            />
-
-            <AgentConsoleSavedExamplesLibrary
-              examples={selectedExamples}
-              onCopy={copySavedExample}
-              onDelete={deleteSavedExample}
-              onUse={handleUseSavedExample}
-              totalCount={selectedExamples.length}
-            />
-
-            <AgentConsoleOutputPanel
-              copied={copied}
-              error={error}
-              onCopy={copyResult}
-              onSave={handleSaveResultExample}
-              progress={progress}
-              result={result}
-              running={running}
-              saved={savedResult}
-              selectedJob={selectedJob}
-            />
+            {showResultFirst ? (
+              <>
+                {outputPanel}
+                <details className="group">
+                  <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border border-[#c9d3ca] bg-white px-4 py-3 text-sm font-semibold text-[#24312f] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#789184]">
+                    <span>Adjust draft</span>
+                    <ChevronDown
+                      size={16}
+                      className="text-[#517268] transition-transform group-open:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </summary>
+                  <div className="mt-3">{workflowForm}</div>
+                </details>
+                {savedExamplesLibrary}
+              </>
+            ) : (
+              <>
+                {workflowForm}
+                {savedExamplesLibrary}
+                {outputPanel}
+              </>
+            )}
 
             {showAdvancedLink ? (
               <div className="flex justify-center">

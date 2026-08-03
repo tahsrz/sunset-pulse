@@ -64,4 +64,10 @@ describe('AgentConsoleOutputPanel', () => {
     expect(screen.getByRole('button', { name: 'Save for later' })).toBeInTheDocument();
     expect(screen.getByText(result.result.deliverable.copyReadyText)).toBeInTheDocument();
   });
+
+  it('turns the save action into confirmation after the result is saved', () => {
+    renderOutputPanel({ result, saved: true });
+
+    expect(screen.getByRole('button', { name: 'Saved for later' })).toBeDisabled();
+  });
 });
