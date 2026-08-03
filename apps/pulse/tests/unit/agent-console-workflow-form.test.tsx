@@ -105,6 +105,12 @@ describe('AgentConsoleWorkflowForm', () => {
     expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
   });
 
+  it('hides the voice action while quick start is visible', () => {
+    renderWorkflowForm({ showQuickStart: true });
+
+    expect(screen.queryByRole('button', { name: 'Voice: Warm, direct, local' })).not.toBeInTheDocument();
+  });
+
   it('restores the secondary example button after quick start is gone', () => {
     const onExampleLoad = vi.fn();
 
@@ -119,5 +125,19 @@ describe('AgentConsoleWorkflowForm', () => {
     renderWorkflowForm({ draft: 'Lead is ready for a follow up.', showQuickStart: false });
 
     expect(screen.getByRole('button', { name: 'Run Jamie' })).toBeInTheDocument();
+  });
+
+  it('restores the voice action after quick start is gone', () => {
+    const onPreferencesOpen = vi.fn();
+
+    renderWorkflowForm({
+      draft: 'Lead is ready for a follow up.',
+      onPreferencesOpen,
+      showQuickStart: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Voice: Warm, direct, local' }));
+
+    expect(onPreferencesOpen).toHaveBeenCalledTimes(1);
   });
 });
