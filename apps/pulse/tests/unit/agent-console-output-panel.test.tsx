@@ -61,6 +61,7 @@ describe('AgentConsoleOutputPanel', () => {
     renderOutputPanel({ result });
 
     expect(screen.getByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save for later' })).toBeInTheDocument();
     expect(screen.getByText(result.result.deliverable.copyReadyText)).toBeInTheDocument();
   });
 });
