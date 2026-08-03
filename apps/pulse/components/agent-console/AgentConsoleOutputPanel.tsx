@@ -103,7 +103,8 @@ function ResultPanel({
           <button
             type="button"
             onClick={onSave}
-            className="inline-flex h-8 items-center justify-center gap-1.5 px-2 text-xs font-semibold text-[#517268] hover:text-[#24312f] focus:outline-none focus:ring-2 focus:ring-[#789184]"
+            disabled={saved}
+            className="inline-flex h-8 items-center justify-center gap-1.5 px-2 text-xs font-semibold text-[#517268] hover:text-[#24312f] focus:outline-none focus:ring-2 focus:ring-[#789184] disabled:cursor-default disabled:text-[#789184] disabled:hover:text-[#789184]"
           >
             <Save size={14} />
             {saved ? 'Saved for later' : 'Save for later'}

@@ -81,7 +81,7 @@ describe('AgentConsole shell', () => {
 
     expect(screen.queryByRole('link', { name: 'Full Command Center' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run example' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create draft' }));
 
     expect(await screen.findByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Full Command Center' })).toHaveAttribute('href', '/command-center');
@@ -94,13 +94,33 @@ describe('AgentConsole shell', () => {
     render(<AgentConsole />);
 
     expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voice: Warm, direct, local' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Lead context')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run example' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create draft' }));
 
-    expect(await screen.findByRole('button', { name: 'Copy to send' })).toBeInTheDocument();
+    const copyButton = await screen.findByRole('button', { name: 'Copy to send' });
+    expect(copyButton).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Run example' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Run Jamie' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Create draft' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Voice: Warm, direct, local' })).not.toBeVisible();
+    expect(screen.getByRole('button', { name: 'Update draft' })).not.toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
+
+    const editSummary = screen.getByText('Adjust draft').closest('summary');
+    expect(editSummary).toBeInTheDocument();
+    expect(copyButton.compareDocumentPosition(editSummary!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(editSummary!);
+
+    const voiceButton = screen.getByRole('button', { name: 'Voice: Warm, direct, local' });
+    const runButton = screen.getByRole('button', { name: 'Update draft' });
+    expect(voiceButton).toBeInTheDocument();
+    expect(runButton).toBeInTheDocument();
+    expect(copyButton.compareDocumentPosition(voiceButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(copyButton.compareDocumentPosition(runButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Use example' })).toBeInTheDocument();
     expect(screen.getByDisplayValue(/Buyer toured Oak Cliff bungalow/)).toBeInTheDocument();
   });
 
@@ -110,8 +130,19 @@ describe('AgentConsole shell', () => {
     render(<AgentConsole />);
 
     expect(await screen.findByText('Saved examples')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create draft' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Write my own' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Use example' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Run Jamie' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Lead context')).not.toBeInTheDocument();
     expect(screen.getByText('Lead note')).toBeInTheDocument();
     expect(screen.queryByText('Listing facts')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Write my own' }));
+
+    expect(screen.getByLabelText('Lead context')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Use example' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run Jamie' })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Workflow'), { target: { value: 'listing-copy' } });
 
