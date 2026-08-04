@@ -519,6 +519,16 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const isCheckingMlsAccess = authLoading || mlsAccess === 'checking';
   const canViewMls = Boolean(user) || mlsAccess === 'allowed';
 
+  if (!isWorkspace && isMinimized) {
+    return (
+      <JamieChatMinimized
+        onOpen={() => toggleMinimized(false)}
+        isLefthandMode={isLefthandMode}
+        assistantName={assistantProfile.displayName}
+      />
+    );
+  }
+
   return (
     <div className={shellClass}>
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
