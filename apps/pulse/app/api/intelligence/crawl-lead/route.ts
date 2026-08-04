@@ -17,13 +17,22 @@ const crawlRequestSchema = z.object({
   url: z.string().url().max(2048),
   sourceType: z.enum(['brokerage', 'regional_site', 'tax_record', 'business_profile', 'other']).optional(),
   entityHints: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  extractionSchema: z.object({
+    name: z.string().trim().min(1).max(120),
+    baseSelector: z.string().trim().min(1).max(500),
+    fields: z.array(z.object({
+      name: z.string().regex(/^[A-Za-z][A-Za-z0-9_]*$/).max(80),
+      selector: z.string().trim().min(1).max(500),
+      type: z.enum(['text', 'attribute']),
+      attribute: z.string().regex(/^[A-Za-z_:][-A-Za-z0-9_:.]*$/).max(80).optional(),
+    }).strict()).min(1).max(20),
+  }).strict().optional(),
   extractionMode: z.enum(['markdown', 'json', 'both']).optional(),
   maxPages: z.number().int().min(1).max(10).optional(),
   timeoutMs: z.number().int().min(5000).max(120000).optional(),
   allowedDomains: z.array(z.string().min(1).max(255)).max(30).optional(),
   importToTah: z.boolean().optional(),
   forgeBinaryTah: z.boolean().optional(),
-  tahOutputDir: z.string().max(1000).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -58,7 +67,6 @@ export async function POST(request: NextRequest) {
     const tahImport = parsed.data.importToTah
       ? importLeadIntelCrawlToTah({
           recordId: record.id,
-          outputDir: parsed.data.tahOutputDir,
           forgeBinary: parsed.data.forgeBinaryTah,
         })
       : null;

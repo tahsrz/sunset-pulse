@@ -63,6 +63,9 @@ apps/pulse/.pulse-local/
 .env.development
 .env.test
 .env*.local
+.venv-lead-intel/
+.lead-intel-runtime/
+apps/pulse/cartridges/lead-intel/tad/
 
 # vercel
 .vercel
