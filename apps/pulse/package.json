@@ -6,6 +6,8 @@
     "dev": "next dev",
     "dev:mock": "set NEXT_PUBLIC_MOCK_MODE=true && next dev",
     "leads:decay": "node scripts/decay-leads.mjs",
+    "leads:discover:tad": "tsx scripts/run-tad-lead-discovery.ts",
+    "leads:discover:tad:commit": "tsx scripts/run-tad-lead-discovery.ts --commit",
     "properties:clear-fakes": "node scripts/clear-fake-properties.mjs",
     "meme:harvest": "python scripts/meme_harvester.py",
     "jamie:watcher": "node scripts/idle-dream-watcher.js",
