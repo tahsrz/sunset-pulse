@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { Compass, MessageSquareText, ShoppingBasket, Sparkles } from 'lucide-react';
+import { Compass, DatabaseZap, MessageSquareText, ShoppingBasket, Sparkles } from 'lucide-react';
+import { headers } from 'next/headers';
 import InfoBoxes from '@/components/InfoBoxes';
 import UnifiedPropertyStage from '@/components/marketing/UnifiedPropertyStage';
 import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
@@ -10,6 +11,8 @@ import ArchitectureOverview from '@/components/architecture/ArchitectureOverview
 import { HomeHero, HomeWorldHub } from '@/components/home/HomeDynamicSections';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 import { getTourHotList } from '@/lib/data/tourHotList';
+import { getOperatorAccess } from '@/lib/core/operator_access';
+import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 
 /**
  * fetches curated properties on the server and streams them once resolved
@@ -23,10 +26,12 @@ const StagedPropertiesPocket: React.FC = async () => {
   return <UnifiedPropertyStage initialStagedProperties={stagedProperties} />;
 };
 
-const HomePage: React.FC = () => {
+const HomePage = async () => {
+  const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
+
   return (
     <>
-      <CounterScanActions />
+      <CounterScanActions showLeadOperations={access.allowed} />
       <HomeHero />
       <div className="waterlily-surface">
         <HomeWorldHub />
@@ -53,7 +58,7 @@ const HomePage: React.FC = () => {
 
 export default HomePage;
 
-function CounterScanActions() {
+function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolean }) {
   return (
     <section className="relative z-30 border-b border-cyan-200/15 bg-[#07131a] px-4 py-4 text-white shadow-2xl shadow-black/30 md:px-8">
       <div className="mx-auto max-w-6xl">
@@ -71,7 +76,7 @@ function CounterScanActions() {
             </p>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-3 md:mt-0 md:min-w-[520px]">
+          <div className={`mt-4 grid gap-2 sm:grid-cols-2 md:mt-0 ${showLeadOperations ? 'md:min-w-[680px] md:grid-cols-4' : 'md:min-w-[520px] md:grid-cols-3'}`}>
             <Link
               href="/agent"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-300 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-200"
@@ -93,6 +98,13 @@ function CounterScanActions() {
               <Compass size={17} />
               Explorer
             </Link>
+            {showLeadOperations ? <Link
+              href="/admin/research-desk"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-emerald-200/10 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-emerald-50 transition hover:bg-emerald-200/15"
+            >
+              <DatabaseZap size={17} />
+              Lead Operations
+            </Link> : null}
           </div>
         </div>
       </div>

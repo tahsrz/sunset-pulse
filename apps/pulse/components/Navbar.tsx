@@ -15,6 +15,7 @@ import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
 import { GlobalCommandPalette, type CommandPaletteRoute } from './GlobalCommandPalette';
 import { Button } from './ui/button';
+import LeadIntakeDrawer from '@/components/admin/LeadIntakeDrawer';
 
 interface ServerSessionUser {
   id: string;
@@ -50,7 +51,7 @@ const Navbar: React.FC = () => {
   const profileImage = user?.profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || serverSessionUser?.image || profileDefault;
   const sessionRole = user?.user_metadata?.role || serverSessionUser?.role;
   const isLoggedIn = Boolean(user || serverSessionUser);
-  const isRealtorOrAdmin = user?.user_metadata?.role === 'realtor' || user?.user_metadata?.role === 'admin';
+  const canOperateLeads = ['realtor', 'operator', 'admin'].includes(sessionRole || '');
 
   const loginHref = useMemo(() => {
     if (!pathname || pathname === '/' || pathname === '/login') {
@@ -63,6 +64,7 @@ const Navbar: React.FC = () => {
     { href: '/', label: 'Home', active: pathname === '/' },
     { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent'), emphasis: 'emerald' },
     { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
+    ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine'), emphasis: 'emerald' as const }] : []),
     { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
     { href: '/spatial-lab', label: 'Spatial', active: pathname.startsWith('/spatial-lab'), emphasis: 'teal' },
     { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
@@ -71,7 +73,7 @@ const Navbar: React.FC = () => {
     { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
     { href: '/properties', label: 'Properties', active: pathname === '/properties' },
     { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
-    ...(isRealtorOrAdmin ? [{ href: '/lead-gen', label: 'Lead Gen', active: pathname.startsWith('/lead-gen'), emphasis: 'blue' as const }] : []),
+    ...(canOperateLeads ? [{ href: '/admin/lead-engine', label: 'Lead Engine', active: pathname.startsWith('/admin/lead-engine'), emphasis: 'blue' as const }] : []),
     { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), emphasis: 'emerald', compact: true },
     { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), emphasis: 'cyan', compact: true },
     { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
@@ -79,7 +81,7 @@ const Navbar: React.FC = () => {
     { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
     { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true },
     { href: '/contact', label: 'Contact', active: pathname === '/contact', emphasis: 'blue', compact: true }
-  ], [isRealtorOrAdmin, pathname]);
+  ], [canOperateLeads, pathname]);
 
   const primaryLinks = navLinks.slice(0, 5);
   const overflowLinks = navLinks.slice(5);
@@ -218,6 +220,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-end gap-1 sm:gap-2">
+            {pathname?.startsWith('/admin') ? <LeadIntakeDrawer /> : null}
             <Button
               type="button"
               variant="ghost"
