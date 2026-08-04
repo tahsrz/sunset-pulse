@@ -1,8 +1,8 @@
 'use client';
 
+import React from 'react';
 import { Trash2 } from 'lucide-react';
 import {
-  starterJobs,
   type SavedExample,
 } from './agentConsoleConfig';
 
@@ -11,14 +11,12 @@ export function AgentConsoleSavedExamplesLibrary({
   onCopy,
   onDelete,
   onUse,
-  selectedJobId,
   totalCount,
 }: {
   examples: SavedExample[];
   onCopy: (example: SavedExample) => void | Promise<void>;
   onDelete: (id: string) => void;
   onUse: (example: SavedExample) => void;
-  selectedJobId: string;
   totalCount: number;
 }) {
   if (!examples.length) return null;
@@ -33,15 +31,10 @@ export function AgentConsoleSavedExamplesLibrary({
       </summary>
       <div className="mt-3 grid gap-2">
         {examples.map((example) => {
-          const matchingJob = starterJobs.find((job) => job.id === example.jobId);
-          const isCurrentJob = example.jobId === selectedJobId;
           return (
             <div key={example.id} className="rounded-md border border-[#d8dfd9] bg-[#fbfcf8] p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#517268]">
-                    {isCurrentJob ? 'This workflow' : matchingJob?.label || 'Saved'}
-                  </p>
                   <p className="truncate text-sm font-semibold text-[#17201f]">{example.title}</p>
                   <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#4c5a55]">{example.input}</p>
                 </div>

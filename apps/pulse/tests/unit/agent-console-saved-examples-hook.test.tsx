@@ -59,17 +59,13 @@ describe('useAgentConsoleSavedExamples', () => {
     vi.clearAllMocks();
   });
 
-  it('restores saved examples and orders the current workflow first', async () => {
+  it('restores saved examples and exposes the current workflow matches', async () => {
     localStorage.setItem(savedExamplesStorageKey, JSON.stringify([savedListing, savedFollowUp]));
 
     const { result } = renderHook(() => useAgentConsoleSavedExamples(starterJobs[0]));
 
     await waitFor(() => expect(result.current.savedExamples).toHaveLength(2));
     expect(result.current.selectedExamples).toEqual([savedFollowUp]);
-    expect(result.current.exampleLibrary.map((example) => example.id)).toEqual([
-      'saved-follow-up',
-      'saved-listing',
-    ]);
     expect(result.current.getSavedExampleCount('lead-follow-up')).toBe(1);
   });
 
