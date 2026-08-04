@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'node:crypto';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { TAHBuilder } from '@/lib/core/tah_builder';
@@ -17,10 +19,24 @@ export type LeadIntelSourceType =
 
 export type LeadIntelExtractionMode = 'markdown' | 'json' | 'both';
 
+export type LeadIntelCssExtractionField = {
+  name: string;
+  selector: string;
+  type: 'text' | 'attribute';
+  attribute?: string;
+};
+
+export type LeadIntelCssExtractionSchema = {
+  name: string;
+  baseSelector: string;
+  fields: LeadIntelCssExtractionField[];
+};
+
 export type LeadIntelCrawlInput = {
   url: string;
   sourceType?: LeadIntelSourceType;
   entityHints?: Record<string, string | number | boolean | null | undefined>;
+  extractionSchema?: LeadIntelCssExtractionSchema;
   extractionMode?: LeadIntelExtractionMode;
   maxPages?: number;
   timeoutMs?: number;
@@ -38,6 +54,7 @@ export type LeadIntelCrawlRecord = {
   hostname: string;
   allowedBy: 'env_allowlist' | 'request_allowlist' | 'unlisted_local_override';
   entityHints: Record<string, string | number | boolean | null>;
+  extractionSchema?: LeadIntelCssExtractionSchema;
   output: {
     markdown?: string;
     json?: unknown;
@@ -130,6 +147,7 @@ export async function crawlLeadIntelligence(input: LeadIntelCrawlInput): Promise
   }
 
   try {
+    await assertHostnameResolvesPublic(safety.hostname);
     const { stdout } = await execFileAsync(
       pythonExecutable,
       [
@@ -137,7 +155,10 @@ export async function crawlLeadIntelligence(input: LeadIntelCrawlInput): Promise
         '--url', normalized.url,
         '--mode', normalized.extractionMode,
         '--max-pages', String(normalized.maxPages),
-        '--hints', JSON.stringify(normalized.entityHints)
+        '--hints', JSON.stringify({
+          ...normalized.entityHints,
+          extraction_schema: normalized.extractionSchema
+        })
       ],
       {
         cwd: process.cwd(),
@@ -150,6 +171,10 @@ export async function crawlLeadIntelligence(input: LeadIntelCrawlInput): Promise
       }
     );
     const payload = parseWorkerPayload(stdout);
+    if (payload.sourceUrl) {
+      const finalSafety = assertUrlAllowed(payload.sourceUrl, normalized.allowedDomains);
+      await assertHostnameResolvesPublic(finalSafety.hostname);
+    }
     const record = buildRecord({
       input: normalized,
       status: workerStatusFor(payload.status),
@@ -164,7 +189,7 @@ export async function crawlLeadIntelligence(input: LeadIntelCrawlInput): Promise
   } catch (error) {
     const record = buildRecord({
       input: normalized,
-      status: isUnavailableError(error) ? 'unavailable' : 'failed',
+      status: isBlockedSafetyError(error) ? 'blocked' : isUnavailableError(error) ? 'unavailable' : 'failed',
       safety,
       workerPath,
       pythonExecutable,
@@ -294,6 +319,7 @@ export function normalizeCrawlInput(input: LeadIntelCrawlInput): Required<LeadIn
     url: String(input.url || '').trim(),
     sourceType: input.sourceType || 'other',
     entityHints: sanitizeHints(input.entityHints || {}),
+    extractionSchema: sanitizeExtractionSchema(input.extractionSchema || defaultRealEstateExtractionSchema()),
     extractionMode: input.extractionMode || 'both',
     maxPages: clampInteger(input.maxPages || DEFAULT_MAX_PAGES, 1, 10),
     timeoutMs: clampInteger(input.timeoutMs || DEFAULT_TIMEOUT_MS, 5_000, 120_000),
@@ -359,6 +385,7 @@ function buildRecord(input: {
     hostname: input.safety.hostname,
     allowedBy: input.safety.allowedBy,
     entityHints: sanitizeHints(input.input.entityHints),
+    extractionSchema: input.input.extractionSchema,
     output: {
       markdown: markdown || undefined,
       json: input.payload.json,
@@ -439,6 +466,19 @@ function formatLeadIntelTah(input: {
   ].join('\n');
 }
 
+export async function assertHostnameResolvesPublic(hostname: string) {
+  if (isIP(hostname)) {
+    if (isPrivateIpAddress(hostname)) throw new Error('Crawler hostname resolves to a private or reserved address.');
+    return;
+  }
+
+  const addresses = await lookup(hostname, { all: true, verbatim: true });
+  if (!addresses.length) throw new Error('Crawler hostname did not resolve to a public address.');
+  if (addresses.some((entry) => isPrivateIpAddress(entry.address))) {
+    throw new Error('Crawler hostname resolves to a private or reserved address.');
+  }
+}
+
 function forgeLeadIntelBinaryTah(input: {
   cartridge: string;
   outputPath: string;
@@ -455,13 +495,22 @@ function forgeLeadIntelBinaryTah(input: {
   };
 }
 
-function parseWorkerPayload(stdout: string): WorkerPayload {
+export function parseWorkerPayload(stdout: string): WorkerPayload {
   const trimmed = stdout.trim();
   if (!trimmed) return { status: 'unavailable', note: 'Crawl4AI worker returned no output.' };
 
   try {
     return JSON.parse(trimmed) as WorkerPayload;
   } catch {
+    const lines = trimmed.split(/\r?\n/g).map((line) => line.trim()).filter(Boolean);
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+      try {
+        const candidate = JSON.parse(lines[index]) as WorkerPayload;
+        if (candidate && typeof candidate === 'object' && typeof candidate.status === 'string') return candidate;
+      } catch {
+        // Continue looking for the worker's final JSON line.
+      }
+    }
     return {
       status: 'unavailable',
       note: 'Crawl4AI worker returned non-JSON output.',
@@ -559,6 +608,51 @@ function skippedImport(reason: string, recordId: string | null = null): LeadInte
   };
 }
 
+export function defaultRealEstateExtractionSchema(): LeadIntelCssExtractionSchema {
+  return {
+    name: 'Property Lead Records',
+    baseSelector: '.property-card, .listing-item, tr.property-row, .search-result-item',
+    fields: [
+      { name: 'property_address', selector: '.address, .property-address, td.situs-address', type: 'text' },
+      { name: 'owner_name', selector: '.owner, .owner-name, td.owner-heading', type: 'text' },
+      { name: 'market_value', selector: '.price, .market-value, td.total-value', type: 'text' },
+      { name: 'parcel_id', selector: '.parcel-id, .account-num, td.account-id', type: 'text' },
+      { name: 'detail_link', selector: 'a', type: 'attribute', attribute: 'href' }
+    ]
+  };
+}
+
+function sanitizeExtractionSchema(schema: LeadIntelCssExtractionSchema): LeadIntelCssExtractionSchema {
+  if (!schema || typeof schema !== 'object') throw new Error('A valid extraction schema is required.');
+  const name = compact(String(schema.name || 'Property Lead Records'), 120);
+  const baseSelector = compact(String(schema.baseSelector || ''), 500);
+  if (!baseSelector || !Array.isArray(schema.fields) || !schema.fields.length || schema.fields.length > 20) {
+    throw new Error('Extraction schemas require a base selector and 1 to 20 fields.');
+  }
+
+  const names = new Set<string>();
+  const fields = schema.fields.map((field) => {
+    const fieldName = compact(String(field?.name || ''), 80);
+    const selector = compact(String(field?.selector || ''), 500);
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(fieldName) || !selector || !['text', 'attribute'].includes(field.type)) {
+      throw new Error('Extraction schema fields contain an invalid name, selector, or type.');
+    }
+    if (names.has(fieldName)) throw new Error('Extraction schema field names must be unique.');
+    names.add(fieldName);
+
+    if (field.type === 'attribute') {
+      const attribute = compact(String(field.attribute || ''), 80);
+      if (!/^[A-Za-z_:][-A-Za-z0-9_:.]*$/.test(attribute)) {
+        throw new Error('Attribute extraction fields require a valid attribute name.');
+      }
+      return { name: fieldName, selector, type: 'attribute' as const, attribute };
+    }
+    return { name: fieldName, selector, type: 'text' as const };
+  });
+
+  return { name, baseSelector, fields };
+}
+
 function titleFromUrl(urlValue: string) {
   try {
     const parsed = new URL(urlValue);
@@ -594,7 +688,33 @@ function isUnavailableError(error: unknown) {
   return /ENOENT|crawl4ai|No module named|not found|returned no output/i.test(error.message);
 }
 
-function workerStatusFor(status: WorkerPayload['status']): LeadIntelCrawlRecord['status'] {
+function isBlockedSafetyError(error: unknown) {
+  return error instanceof Error && /private or reserved|not in the lead-intel crawl allowlist|credentials/i.test(error.message);
+}
+
+function isPrivateIpAddress(value: string) {
+  const normalized = value.toLowerCase().replace(/^\[|\]$/g, '');
+  if (normalized.startsWith('::ffff:')) return isPrivateIpAddress(normalized.slice(7));
+
+  if (isIP(normalized) === 6) {
+    return normalized === '::1' || normalized === '::' || normalized.startsWith('fc') || normalized.startsWith('fd') || normalized.startsWith('fe8') || normalized.startsWith('fe9') || normalized.startsWith('fea') || normalized.startsWith('feb');
+  }
+
+  if (isIP(normalized) !== 4) return true;
+  const [first, second] = normalized.split('.').map(Number);
+  return first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    (first === 198 && (second === 18 || second === 19)) ||
+    first >= 224;
+}
+
+export function workerStatusFor(status: WorkerPayload['status']): LeadIntelCrawlRecord['status'] {
+  if (status === 'blocked') return 'blocked';
   if (status === 'unavailable') return 'unavailable';
   if (status === 'failed') return 'failed';
   return 'completed';
