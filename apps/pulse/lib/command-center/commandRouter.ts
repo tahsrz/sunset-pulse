@@ -1363,12 +1363,42 @@ function buildSendableMessage(command: string, worker: IntelligenceWorker) {
   }
 
   if (worker.id === 'follow-up-writer') {
-    return cleaned
-      ? `Hi, wanted to follow up on this: ${cleaned} Would you like me to send over the next best option or talk through it today?`
-      : 'Hi, just checking in. Would you like me to send over the next best option or talk through what changed today?';
+    return buildClientReadyFollowUp(command);
   }
 
   return cleaned || 'Here is the concise message to review before sending.';
+}
+
+export function buildClientReadyFollowUp(command: string) {
+  const input = extractCustomerInput(command)
+    .replace(/\bFollow up (?:today|tomorrow|this week)\.?/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!input) {
+    return 'Hi, just checking in. Would you send me a quick reply when you have a moment?';
+  }
+
+  const tourNote = input.match(
+    /^Buyer toured (.+?) (last weekend|this weekend|yesterday|last week)\.\s*Liked (?:the )?(.+?),\s*worried about (?:the )?(.+?)[.!]?$/i,
+  );
+
+  if (tourNote) {
+    const [, property, timing, liked, concern] = tourNote;
+    return `Hi, I wanted to follow up after you toured the ${property} ${timing}. You mentioned liking the ${liked}, and I know the ${concern} was still a concern. Would you like me to send over another option to compare?`;
+  }
+
+  return `Hi, I wanted to follow up about our last conversation. Would you send me a quick reply when you have a moment?`;
+}
+
+function extractCustomerInput(command: string) {
+  const structuredInput = command.match(/(?:^|\n)Input:\s*\n([\s\S]*)$/i)?.[1];
+  if (structuredInput) return structuredInput.trim();
+
+  return command
+    .replace(/^help me (rewrite|write)\s*/i, '')
+    .replace(/^this\s*/i, '')
+    .trim();
 }
 
 function frameVisualDirection(relayPlan: TahRelayPlan, sectionLabel: string) {

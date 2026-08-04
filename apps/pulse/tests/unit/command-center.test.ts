@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { runCommandCenterCommand } from '@/lib/command-center/commandRouter';
+import { buildClientReadyFollowUp, runCommandCenterCommand } from '@/lib/command-center/commandRouter';
 import { buildJamieCommandBridgeContext } from '@/lib/command-center/jamieBridge';
 import { queryMemoryPath, recallQueryMemories, saveCommandActionMemory, saveQueryMemory } from '@/lib/command-center/queryMemory';
 import { getSqlsyncCommandJournalSnapshot, sqlsyncCommandJournalPath } from '@/lib/sqlsync/commandJournal';
@@ -55,6 +55,26 @@ afterEach(() => {
 });
 
 describe('command center routing', () => {
+  it('keeps agent instructions and input labels out of client-ready follow-ups', () => {
+    const command = [
+      'Write a concise, client-ready real estate follow-up. Use the agent voice layer, reference only supplied facts, and end with one natural next step.',
+      '',
+      'Agent voice baseline:',
+      'Agent name: Not provided',
+      'Market: North Texas',
+      'Tone: Warm, direct, local',
+      'Preferred CTA: Ask for a quick reply',
+      '',
+      'Input:',
+      'Buyer toured Oak Cliff bungalow last weekend. Liked the kitchen and yard, worried about commute. Follow up today.',
+    ].join('\n');
+
+    const result = buildClientReadyFollowUp(command);
+
+    expect(result).toBe('Hi, I wanted to follow up after you toured the Oak Cliff bungalow last weekend. You mentioned liking the kitchen and yard, and I know the commute was still a concern. Would you like me to send over another option to compare?');
+    expect(result).not.toMatch(/Agent voice baseline|Preferred CTA|Input:|Write a concise/i);
+  });
+
   it('retries workflow operations and records recovered attempts', async () => {
     let attempts = 0;
     const operation = await runWorkflowOperation({
