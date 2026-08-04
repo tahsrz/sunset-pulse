@@ -8,7 +8,9 @@ import {
   getLeadIntelCrawlSnapshot,
   importLeadIntelCrawlToTah,
   normalizeCrawlInput,
+  parseWorkerPayload,
   requestAllowlistIsTrusted,
+  workerStatusFor,
 } from '@/lib/lead-intel/crawlLead';
 
 const originalEnv = { ...process.env };
@@ -27,6 +29,43 @@ afterEach(() => {
 });
 
 describe('lead intelligence Crawl4AI safety', () => {
+  it('preserves blocked worker results and tolerates a leading log line', () => {
+    expect(workerStatusFor('blocked')).toBe('blocked');
+    expect(parseWorkerPayload('crawl dependency notice\n{"status":"blocked","note":"403 Forbidden"}'))
+      .toMatchObject({ status: 'blocked', note: '403 Forbidden' });
+  });
+
+  it('normalizes a bounded CSS extraction schema', () => {
+    const normalized = normalizeCrawlInput({
+      url: 'https://example.com',
+      extractionSchema: {
+        name: 'County results',
+        baseSelector: 'table#results tbody tr',
+        fields: [
+          { name: 'owner_name', selector: 'td:nth-child(2)', type: 'text' },
+          { name: 'detail_link', selector: 'a', type: 'attribute', attribute: 'href' },
+        ],
+      },
+    });
+
+    expect(normalized.extractionSchema.fields).toHaveLength(2);
+    expect(normalized.extractionSchema.fields[1]).toMatchObject({ type: 'attribute', attribute: 'href' });
+  });
+
+  it('rejects duplicate or unsupported extraction fields', () => {
+    expect(() => normalizeCrawlInput({
+      url: 'https://example.com',
+      extractionSchema: {
+        name: 'Bad schema',
+        baseSelector: 'tr',
+        fields: [
+          { name: 'owner', selector: 'td', type: 'text' },
+          { name: 'owner', selector: 'td + td', type: 'text' },
+        ],
+      },
+    })).toThrow(/unique/);
+  });
+
   it('blocks private and local hosts before worker execution', () => {
     expect(() => assertUrlAllowed('http://127.0.0.1:3000/admin')).toThrow(/Private/);
     expect(() => assertUrlAllowed('http://localhost:3000/admin')).toThrow(/Private/);
