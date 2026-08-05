@@ -19,6 +19,7 @@ import JamieDevControls from './chat/JamieDevControls';
 import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 import MlsCommandWorkspace from '@/components/idx/MlsCommandWorkspace';
+import { useJamieWakeListening } from './chat/useJamieWakeListening';
 
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
@@ -59,7 +60,10 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     isLefthandMode,
     setLefthandMode,
     isVoiceEnabled,
-    setVoiceEnabled
+    setVoiceEnabled,
+    isWakeListeningEnabled,
+    setWakeListeningEnabled,
+    isGuardedJamieEnabled,
   } = useTheme();
 
   const { setVibeFromContent } = useVibe();
@@ -93,6 +97,8 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const wakeQueryRef = React.useRef<(query: string) => void>(() => undefined);
+  const wakeListening = useJamieWakeListening(isWakeListeningEnabled, (query) => wakeQueryRef.current(query));
 
   // Recognition Context for returning users - safely handled after mount
   const [memoryContext, setMemoryContext] = useState<any>(null);
@@ -326,6 +332,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           isDevMode,
           memoryContext,
           agentId,
+          personaMode: isGuardedJamieEnabled ? 'guarded_real_estate' : 'general',
         }),
       });
 
@@ -389,6 +396,16 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       setIsLoading(false);
     }
   };
+
+  wakeQueryRef.current = (query: string) => {
+    if (!isLoading) void sendChatMessage(query, { logUser: true });
+  };
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (isWakeListeningEnabled && wakeListening.status === 'off') void wakeListening.start();
+    if (!isWakeListeningEnabled && wakeListening.status !== 'off') wakeListening.stop();
+  }, [mounted, isWakeListeningEnabled, wakeListening.status, wakeListening.start, wakeListening.stop]);
 
   const originalHandleSubmit = async (_event?: React.FormEvent<HTMLFormElement>) => {
     await sendChatMessage(input);
@@ -532,6 +549,16 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   return (
     <div className={shellClass}>
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
+      <div className="flex items-center gap-2 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+        <span className={`h-2 w-2 rounded-full ${wakeListening.status === 'listening' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+        <span>{wakeListening.status === 'listening' ? 'Listening for Pull that up' : wakeListening.status === 'requesting' ? 'Requesting microphone' : 'Microphone off'}</span>
+        {wakeListening.status !== 'listening' && isWakeListeningEnabled ? (
+          <button type="button" onClick={() => void wakeListening.start()} className="rounded border border-white/15 px-2 py-1 text-white">Enable</button>
+        ) : null}
+        {wakeListening.status === 'listening' ? (
+          <button type="button" onClick={() => { setWakeListeningEnabled(false); wakeListening.stop(); }} className="rounded border border-white/15 px-2 py-1 text-white">Stop</button>
+        ) : null}
+      </div>
 
       {localIntel && (
         <div className="animate-in fade-in zoom-in duration-500">

@@ -9,6 +9,7 @@ type JamieBackboneInput = {
   isDevMode?: boolean;
   isMock?: boolean;
   agentId?: string | null;
+  personaMode?: 'general' | 'guarded_real_estate';
 };
 
 type JamieBackboneResult = {
@@ -40,6 +41,7 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
 
   const response = await getJamieResponse(chatMessages, input.propertyData, input.memoryContext, isDevMode, {
     agentId: input.agentId,
+    personaMode: input.personaMode,
   });
 
   if (typeof response === 'string') {
