@@ -94,7 +94,9 @@ export function sanitizeJamieReply(content: string) {
   return stripped;
 }
 
-export function getJamieDisplayContent(response: unknown, fallback = "I'm checking that now.") {
+export const JAMIE_EMPTY_REPLY = "I couldn't complete that request from the available information. Try rephrasing it or add the property, lead, or market details you want me to use.";
+
+export function getJamieDisplayContent(response: unknown, fallback = JAMIE_EMPTY_REPLY) {
   if (typeof response === 'string') return sanitizeJamieReply(response);
 
   if (response && typeof response === 'object') {
