@@ -1,97 +1,64 @@
 # Sunset Pulse
 
-Sunset Pulse is a real estate agent command center powered by local TAH intelligence.
+Sunset Pulse is a real estate command center built around local TAH intelligence.
 
-It is built around a simple thesis: agents should not have to send every workflow to one giant model. Sunset Pulse turns real estate knowledge into compact `.tah` command files, routes narrow commands to specialized workers, and remembers useful context locally so future queries cost fewer tokens.
+Instead of sending every task to a massive remote model, Sunset Pulse packages domain knowledge into compact `.tah` cartridges. It routes commands to targeted AI workers and keeps query memory on your local machine so future lookups remain fast and token-efficient.
 
 ## What It Does
 
-- Lets agents command specialized AI workers instead of chatting with one generic model.
-- Uses `.tah` cartridges as the primary structured context layer.
-- Packs large knowledge libraries into a segmented 400-expert atlas for fast retrieval.
-- Routes commands through real estate workers such as Lead Scoring, Follow-Up Writer, Neighborhood Explainer, Comp Analysis, Local Commerce, Agent Voice, and Supervisor Check.
-- Runs the Command Center workflow as a LangGraph-shaped graph with named stages for routing, retrieval, planning, synthesis, supervision, memory, and response assembly.
-- Supports delivery modes: briefing, slideshow, puppetshow, field-board, and script.
-- Adds a final provenance screen to every relay explaining where the information came from and what the user learned.
-- Saves local query memory to `query_memory.tah` so repeated work can reuse local context.
-- Links dense terms and acronyms to hover definitions sourced from local `.tah` cartridges.
-- Shares Command Center context with Jamie so chat answers can use the same private helper layer.
-- Serves image-qualified, fresh MLS inventory through one validated discovery engine shared by Jamie and the public API.
-- Opens a local-first Play Jamie game room with complete legal chess, responsive falling blocks, heads-up Texas Hold'em, and beach volleyball.
-- Traces Command Center graph execution with Langfuse when Langfuse environment variables are configured.
+- Gives agents specialized AI workers to run targeted tasks instead of chatting with a single generic bot.
+- Uses binary `.tah` cartridges as the primary structured context layer.
+- Packs large domain libraries into a 400-expert atlas for quick sub-millisecond retrieval.
+- Routes commands through dedicated workers including Lead Scoring, Follow-Up Writer, Neighborhood Explainer, Comp Analysis, Local Commerce, Agent Voice, and Supervisor Check.
+- Runs the Command Center engine through an observable LangGraph-style workflow with distinct stages for routing, context retrieval, planning, synthesis, supervision, local memory, and response formatting.
+- Offers five distinct output modes: briefing, slideshow, puppetshow, field-board, and script.
+- Includes a provenance summary on every result showing exactly where the data originated.
+- Saves query memory to a local `query_memory.tah` cartridge so repeated queries reuse context automatically.
+- Integrates hover definitions for acronyms and terms directly from local `.tah` cartridges.
+- Shares Command Center context with Jamie so chat responses use the same background helper notes.
+- Delivers image-verified MLS inventory through a shared discovery engine for Jamie and the public API.
+- Features a local Play Jamie game room with complete legal chess, falling blocks, heads-up Texas Hold'em, and beach volleyball.
 
 ## Current Release
 
-Current local release: **v0.2.0 - TAH Command Center**
+Current local release: **v0.3.0 - Research Desk**
 
-Release notes:
+Recent additions:
+Research Desk WIP eliminates data entry bottlenecks so agents spend less time filling out web forms and more time working with clients. Instead of forcing someone to manually enter 15 fields for every prospective lead, the engine accepts unstructured text, parses it asynchronously, verifies the facts, and routes the lead to the correct pipeline stage.
 
-- [CHANGELOG.md](CHANGELOG.md)
-- [apps/pulse/docs/releases/v0.2.0-tah-command-center.md](apps/pulse/docs/releases/v0.2.0-tah-command-center.md)
+Single Table Design:
+The underlying schema relies on clear Enum state transitions (such as research, new, and contacted). This allows incoming leads to move seamlessly from an unverified Investigation Desk into an active sales pipeline via basic state updates while keeping attachments, property records, and notes intact.
 
-Recent local additions:
+## SaaS Agent Sites (WIP)
 
-- MLS discovery now enforces public, active, non-demo, recently synchronized listings with valid HTTPS media before results reach Jamie or the API.
-- `/api/properties/discover` provides validated filters, map bounds, radius search, sorting, pagination, and cache metadata over the canonical MLS cache.
-- `/play-jamie/chess` adds token-free browser chess with legal move enforcement, promotion, undo, match history, persistent records, and local Jamie commentary.
-- `/play-jamie/tetris` adds a token-free falling-block game with fair piece bags, ghost placement, levels, touch controls, and persistent high scores.
-- `/play-jamie/poker` adds token-free heads-up Texas Hold'em with virtual chips, real hand ranking, lightweight betting, hand logs, and persistent local records.
-- `/play-jamie/volley` adds token-free beach volleyball with local physics, jump timing, Jamie defense, touch controls, and persistent match records.
-- Command Center helper selection now uses a professional arena-style UI with imported ClaudeCraft assets.
-- Command Center routing now runs through a LangGraph-shaped stage graph instead of one flat router function.
-- Langfuse observability traces the Command Center graph and each stage with redacted, structured metadata.
-- Command Post details now collapse into the answer view instead of dominating the page.
-- Command Post access checks deny public development hosts and production localhost spoofing.
-- MarkItDown document import can convert source files into TAH-ready local cartridges.
-- LanceDB local full-text search can index `.tah` cartridges for retrieval experiments.
-- Kepler.gl Spatial Lab maps listing signals with interactive geospatial filters and layers.
-- deck.gl native signal maps add app-specific geospatial layers alongside the Kepler workbench.
-- VoltAgent adds a typed Command Center advisor with route, loadout, and roster tools.
-- SQLSync-ready command mutations stage query memory and action clicks into a local JSONL journal.
-- TensorZero-ready workflow evaluation and feedback records score Command Center runs, capture useful operator behavior, and route JamieChat through a model-routing backbone.
-- assistant-ui powers a maximized JamieChat workspace at `/jamie-chat` beside the Command Center.
-- Crawl4AI adds an operator-guarded lead intelligence crawler for approved regional sites, brokerages, and public-record pages, with optional TAH cartridge import.
-- Novu adds a unified notification workflow trigger and local audit ledger for lead alerts and future staff/client messaging.
-- Sunset Chat can hand a note-writing request into Command Center without pre-filling messy input text.
-- Jamie chat routes now share the Command Center helper context through `/api/jamie/chat`.
-- TAH glossary terms such as `CCS`, `PENDING`, `Service Request`, `TREC`, `MLS`, `IDX`, and `pgvector` show hover definitions.
-- Glossary terms can semantically link back to source cartridges, such as `dallas_community_intel.tah` through `/tah/dallas-community-intel`.
+Sunset Pulse is expanding from an individual agent command center into a multi-tenant platform for real estate agents. New agents will be able to launch branded consumer sites with an AI assistant, fresh MLS listings, and lead capture without editing code.
 
-## SaaS Agent Sites - WIP
-
-Sunset Pulse is being expanded from a single-agent command center into a repeatable SaaS website layer for real estate sales agents. The goal is that a new agent can get a clean public site, branded assistant, MLS-backed listing surface, and lead path without cloning or rewriting the app.
-
-Planned public URL shape:
-
+Target URL structure:
 ```text
 {agent}.sunsetpulse.app
 {agent}.sunsetpulse.app/properties/{mlsId}
 ```
 
-Current WIP features:
+Current progress:
+- **Swappable agent profiles**: Loads agent names, brokerage info, licenses, market areas, photos, assistant names, and compliance text from profile records.
+- **Subdomain tenant routing**: Directs traffic based on subdomains like `taz.sunsetpulse.app`.
+- **Clean public shell**: Hides internal command center tools and developer utilities on public consumer pages.
+- **MLS hot-list publishing**: Lets agents feature specific MLS IDs on their homepage.
+- **Image validation rule**: Filters out listings with missing or broken image links so cards never render blank.
+- **Branded detail pages**: Renders listing photos, price, specs, agent callouts, and disclaimers at `/properties/:id`.
+- **Lead routing**: Directs inquiries to the agent's preferred contact email and phone.
+- **Compliance controls**: Manages footers, MLS disclaimers, and equal-housing copy per agent profile.
+- **Custom assistant branding**: Allows renaming or re-skinning Jamie for individual agent brands.
+- **Supabase configuration**: Stores agent, assistant, compliance, and integration settings in structured JSON fields.
+- **Seed scripts**: Includes automated scripts to insert or update agent profiles without hand-editing SQL tables.
 
-- **Swappable agent profiles**: each site can load agent name, brokerage, license, markets, contact info, headshot, assistant name, and compliance copy from profile data.
-- **Subdomain tenant routing**: tenant routes are being shaped around clean subdomains such as `taz.sunsetpulse.app` or future custom agent subdomains.
-- **Stripped public website shell**: public agent sites remove internal Command Center, dev controls, lab tools, and Taz-specific copy so the page feels like the agent's own consumer site.
-- **MLS hot-list publishing**: agent profiles can carry curated MLS IDs for featured homes, starting with Tour Studio / hot-list listings.
-- **Image-backed listing rule**: public featured cards are filtered to active MLS-style listings with usable remote images so the homepage never opens with blank dummy property cards.
-- **Agent-branded property detail pages**: listing cards route to `/properties/:id` inside the same tenant shell, with listing photos, price, beds, baths, square footage, notes, highlights, agent CTA, and MLS disclaimer.
-- **Lead routing per agent**: contact links prefer the profile's lead email, with fallback to the agent email and phone.
-- **Compliance profiles**: MLS disclaimers, footer disclaimers, jurisdiction, and equal-housing style settings are moving into per-agent profile fields.
-- **Assistant profile separation**: Jamie can be renamed or repositioned per agent while still using the same shared assistant infrastructure.
-- **Supabase-backed profile fields**: site configuration now has JSON profile slots for agent, assistant, compliance, and integrations.
-- **Migration and seed tooling**: profile migrations and an upsert script exist so default and future agent profiles can be inserted without hand-editing rows.
-
-Near-term SaaS backlog:
-
-- Build an admin flow for creating/editing agent profiles without touching SQL.
-- Add custom-domain mapping once the subdomain flow is stable.
-- Add per-agent listing source controls for MLS provider, hot-list IDs, and default market filters.
-- Add per-agent lead capture forms instead of relying only on `mailto:` and `tel:` CTAs.
-- Add branded OG images and SEO metadata per agent/listing.
-- Add a profile completeness checker so an agent site cannot publish with missing contact, compliance, or image-backed listing data.
-- Add visual QA for `/{agent}` and `/properties/{mlsId}` routes before pushing.
-- Add billing/package flags for SaaS tiers once the product surface settles.
+Backlog:
+- Admin UI for editing agent profiles without running database scripts.
+- Custom domain mapping for agent subdomains.
+- Per-agent MLS source controls and default filter settings.
+- Branded lead capture forms to complement standard email and phone links.
+- Automated social preview images and meta tags for listings.
+- Completeness checker to prevent publishing incomplete agent profiles.
 
 ## Monorepo Layout
 
@@ -131,7 +98,7 @@ SunsetPulse/
       scripts/              TAH import, packing, and local index utilities
       tensorzero/            TensorZero gateway config stubs
       workers/lead-intel-crawler/
-                              Optional Python Crawl4AI worker
+                               Optional Python Crawl4AI worker
   packages/                 Shared workspace packages
   assets/                   Static and generated assets
 ```
@@ -175,46 +142,39 @@ flowchart TD
 
 ## MLS Discovery Engine
 
-Sunset Pulse reads customer-facing inventory from its local canonical MLS cache rather than querying an external MLS provider during page requests. The shared discovery engine powers both Jamie property searches and the public discovery API:
+Sunset Pulse serves property search queries from a local canonical MLS cache. This avoids making slow external API calls during page loads. Both Jamie and the public discovery API rely on this shared engine:
 
 ```text
 GET /api/properties/discover
 ```
 
-A listing is eligible only when it is:
+A property listing is eligible for discovery only when it meets four strict criteria:
+- Sourced from active MLS sync data.
+- Explicitly marked active, non-demo, and approved for public display.
+- Updated within the designated freshness window (30 days by default).
+- Accompanied by at least one valid HTTPS photo URL.
 
-- sourced from MLS ingestion,
-- explicitly approved for public display,
-- active, non-demo, and not deleted,
-- synchronized within the freshness window (30 days by default),
-- backed by at least one well-formed HTTPS image URL.
-
-Local placeholders and malformed or insecure image URLs are removed from discovery results. This gives every downstream consumer the same image guarantee without triggering remote media checks during a request.
-
-Supported query parameters:
+Query parameters:
 
 | Parameter | Purpose |
 | --- | --- |
 | `location`, `city`, `zipcode` | Address or market text match |
 | `propertyType`, `propertyTypes` | One or more types; repeat or comma-separate values |
 | `priceMin`, `priceMax` | Inclusive price range (`minPrice` and `maxPrice` are aliases) |
-| `bedsMin`, `bedsMax`, `bathsMin`, `sqftMin` | Minimum/maximum property attributes |
+| `bedsMin`, `bedsMax`, `bathsMin`, `sqftMin` | Minimum or maximum property attributes |
 | `bounds=west,south,east,north` | Map viewport filter, including antimeridian-aware bounds |
 | `center=longitude,latitude` + `radiusMiles` | Radius filter and distance calculation |
 | `sort` | `newest`, `price_asc`, `price_desc`, or `distance` |
-| `page`, `pageSize` | Page controls; page size is capped at 100 |
-| `maxAgeHours` | Override the default freshness window, up to one year |
+| `page`, `pageSize` | Page controls (capped at 100 per page) |
+| `maxAgeHours` | Override default freshness window up to 8760 hours (one year) |
 
-Example:
+Example query:
 
 ```bash
 curl "http://127.0.0.1:3000/api/properties/discover?city=Frisco&propertyType=Single%20Family&priceMin=500000&priceMax=900000&bedsMin=4&pageSize=12"
 ```
 
-The response includes `data`, normalized `criteria`, and pagination metadata. `candidateLimitReached` tells clients when the current 500-listing safety window was exhausted, so the UI can avoid presenting a capped total as an exact market-wide count.
-
-Key implementation files:
-
+Key code files:
 ```text
 apps/pulse/lib/data/listingDiscovery.ts
 apps/pulse/lib/data/listingRepository.ts
@@ -223,39 +183,33 @@ apps/pulse/app/api/properties/discover/route.ts
 apps/pulse/lib/ai/jamieTools.ts
 ```
 
-Database query support is defined in:
-
+Run database migrations before launching:
 ```text
 apps/pulse/supabase/migrations/20260704000000_listing_discovery_indexes.sql
 ```
 
-Deploy that migration through the normal Supabase migration pipeline before releasing the discovery endpoint. It adds partial indexes for the eligible MLS feed, freshness ordering, price filters, and city/type filters.
-
 ## Integration Roadmap
 
-The current five-project integration sequence is:
+The app combines five core technology integrations:
 
-1. **deck.gl** - app-native WebGL layers for listing, lead, market, and TAH place signals.
-2. **VoltAgent** - TypeScript agent runtime for typed Command Center advisor tools.
-3. **SQLSync** - local-first sync contract for durable offline query memory and operator state.
-4. **TensorZero** - model gateway, workflow evaluation, and experiment loops for AI routing.
-5. **OpenLIT** - OpenTelemetry-native AI and infrastructure observability.
+1. **deck.gl**: High-performance WebGL layers for mapping listings, leads, and market signals.
+2. **VoltAgent**: Typed agent runtime for managing Command Center tools.
+3. **SQLSync**: Offline-first synchronization for local query memory and operator state.
+4. **TensorZero**: Model gateway, evaluation framework, and prompt iteration tools.
+5. **OpenLIT**: OpenTelemetry observability for tracking model and app performance.
 
-Status:
+Status update:
+- deck.gl is live at `/spatial-lab/deck`.
+- VoltAgent runs at `/api/agents/voltagent/command-advisor`.
+- SQLSync is integrated at `/api/sqlsync/command-journal`.
+- TensorZero records metrics at `/api/tensorzero/command-evals`.
+- OpenLIT tracing is queued for upcoming work.
 
-- deck.gl: started with `/spatial-lab/deck`.
-- VoltAgent: started with `/api/agents/voltagent/command-advisor` and Command Center trace integration.
-- SQLSync: started with `/api/sqlsync/command-journal` and staged Command Center memory mutations.
-- TensorZero: started with `/api/tensorzero/command-evals`, `/api/tensorzero/jamie-chat`, local workflow-eval ledgers, and `apps/pulse/tensorzero/tensorzero.toml`.
-- OpenLIT: queued for research and implementation passes.
-
-Stack docs:
-
-- [apps/pulse/docs/AI_INTEGRATION_STACK.md](apps/pulse/docs/AI_INTEGRATION_STACK.md)
+Read the stack documentation at [apps/pulse/docs/AI_INTEGRATION_STACK.md](apps/pulse/docs/AI_INTEGRATION_STACK.md).
 
 ## TAH Intelligence Layer
 
-TAH files are compact knowledge capsules. The command center currently includes first-party capsules such as:
+TAH files store focused domain knowledge. The system comes pre-loaded with several built-in cartridges:
 
 - `agent_brand.tah`
 - `lead_history.tah`
@@ -266,94 +220,78 @@ TAH files are compact knowledge capsules. The command center currently includes 
 - `local_business_context.tah`
 - `market_rules.tah`
 
-The app can also pack many local and upstream cartridges into:
+You can also bundle broader context libraries into a master atlas:
 
 ```text
 apps/pulse/cartridges/expert-atlas/segmented_expert_atlas.hat
 apps/pulse/cartridges/expert-atlas/segmented_expert_atlas.tah
 ```
 
-The expert atlas uses segmented metadata so retrieval can start near the middle of the index and quickly reject irrelevant shards by domain, complexity, density, vitality, and concept links.
+The expert atlas index allows the retriever to jump to relevant segments instantly and filter out non-matching shards based on domain masks, density scores, and concept links.
 
 ## Command Center
 
-Route:
-
+Web interface:
 ```text
 /command-center
 ```
 
-API:
-
+API routes:
 ```text
-GET  /api/commands     # relay template and format catalog
-POST /api/commands     # route a command through worker + TAH retrieval
-```
-
-Jamie route alias:
-
-```text
-POST /api/jamie/chat   # same Jamie response path with Command Center helper context
+GET  /api/commands     # Get available templates and output formats
+POST /api/commands     # Route a command through worker logic and TAH retrieval
+POST /api/jamie/chat   # Send chat queries using shared Command Center context
 ```
 
 Example request:
-
 ```bash
 curl -X POST http://127.0.0.1:3002/api/commands \
   -H "Content-Type: application/json" \
   -d "{\"command\":\"Explain the community and nearby shops\",\"relayMode\":\"slideshow\",\"supervisor\":true}"
 ```
 
-Supported `relayMode` values:
-
+Supported relay modes:
 - `briefing`
 - `slideshow`
 - `puppetshow`
 - `field-board`
 - `script`
 
-## LangGraph-Shaped Workflow
+## LangGraph Workflow
 
-The Command Center router now runs as a LangGraph-shaped graph instead of one flat function. The graph makes each stage observable and easier to test:
+The command router uses a LangGraph node graph to keep execution transparent and testable. Each step handles a specific responsibility:
 
-- `route` chooses the worker and route mode.
-- `retrieve` recalls local query memory and pulls TAH context from the segmented expert atlas.
-- `plan` selects the relay template and delivery format.
-- `synthesize` builds the agent-ready answer.
-- `supervise` adds optional guardrail notes.
-- `remember` writes compact query memory.
-- `respond` assembles the final API response and trace payload.
+- `route`: Selects the appropriate worker and routing style.
+- `retrieve`: Reads local query memory and pulls TAH context from the expert atlas.
+- `plan`: Chooses the relay template and presentation format.
+- `synthesize`: Generates the structured answer.
+- `supervise`: Runs compliance and quality checks.
+- `remember`: Writes the result to local query memory.
+- `respond`: Formats the final JSON response payload.
 
 Implementation:
-
 ```text
 apps/pulse/lib/command-center/commandRouter.ts
 apps/pulse/lib/compat/langgraphLinear.ts
 ```
 
-The local adapter implements the small linear graph subset this workflow uses. It exists because the current `@langchain/langgraph` package barrel triggers a Next production-build export issue; the adapter can be removed once the upstream package path is stable for this app.
-
 ## Command Post
 
-Command Center includes a compact Command Post disclosure that links the generated answer back to the local operator console without overwhelming the primary result.
+The Command Post panel provides quick links back to the operator console without cluttering the main UI.
 
-Command Post surfaces:
+Monitored telemetry:
+- Operator console endpoint status.
+- Access modes and permission checks.
+- Master archive readiness.
+- Pending task counts.
+- Command router state.
+- Health check results from `/status`.
 
-- operator console endpoint,
-- access mode and access-denied reasons,
-- master archive readiness,
-- pending terminal intent count,
-- command router modes,
-- `/status` probe results.
+Security rules:
+- Production instances block header spoofing attempts.
+- Development servers enforce host authorization.
 
-Access rules are intentionally strict:
-
-- production requests cannot bypass protection by sending a localhost `Host` header,
-- public development hosts require authorization,
-- local/operator access can still use the console for guarded workflows.
-
-Implementation:
-
+Code references:
 ```text
 apps/pulse/components/command-center/AgentSelectionArena.tsx
 apps/pulse/lib/core/operator_access.ts
@@ -363,177 +301,123 @@ apps/pulse/app/api/admin/orchestrator/
 
 ## VoltAgent Advisor
 
-Sunset Pulse includes a VoltAgent-powered Command Center advisor. It is wired as a typed agent layer beside the existing Command Center workflow, not as a replacement.
+A VoltAgent command advisor assists with worker routing and tool selection.
 
-Routes:
-
+Endpoints:
 ```text
-GET  /api/agents/voltagent/command-advisor   # advisor status and tool list
-POST /api/agents/voltagent/command-advisor   # run the advisor directly
-POST /api/commands                           # includes trace.voltagent on command runs
+GET  /api/agents/voltagent/command-advisor   # View advisor status and available tools
+POST /api/agents/voltagent/command-advisor   # Execute advisor logic directly
 ```
 
-Current tools:
+Available tools:
+- `route_command`: Matches incoming prompts with the right worker.
+- `list_worker_loadout`: Returns active TAH cartridges for a worker.
+- `summarize_command_center`: Reports system coverage and active worker slots.
+- `evaluate_worker_fit`: Calculates confidence scores for potential worker choices.
 
-- `route_command` chooses the best Command Center worker.
-- `list_worker_loadout` returns that worker's TAH files and command-fit signals.
-- `summarize_command_center` reports worker, slot, and file coverage.
-
-By default, the advisor stays in standby if its provider credential is missing. It still records the route, model, tool list, and reason in the Command Post panel. To enable model-backed notes:
-
+Enable model-backed recommendations:
 ```bash
 VOLTAGENT_COMMAND_MODEL=groq/llama-3.1-8b-instant
 GROQ_API_KEY=your_groq_key_here
 ```
 
-You can force standby mode:
-
+Turn off the advisor:
 ```bash
 VOLTAGENT_COMMAND_ADVISOR_ENABLED=false
 ```
 
-Implementation:
-
-```text
-apps/pulse/lib/agents/voltagentCommandAdvisor.ts
-apps/pulse/app/api/agents/voltagent/command-advisor/route.ts
-apps/pulse/app/api/commands/route.ts
-apps/pulse/components/command-center/AgentSelectionArena.tsx
-```
-
 ## Relay Templates
 
-Relay templates tell the robot how to explain what it learned from TAH files.
+Relay templates guide how retrieved TAH information is transformed into final deliverables.
 
-The catalog currently contains **68 content templates** and **5 delivery formats**.
+The catalog includes 68 content templates and 5 output formats. See [apps/pulse/docs/TAH_RELAY_TEMPLATE_CATALOG.md](apps/pulse/docs/TAH_RELAY_TEMPLATE_CATALOG.md) for complete details.
 
-Docs:
-
-- [apps/pulse/docs/TAH_RELAY_TEMPLATE_CATALOG.md](apps/pulse/docs/TAH_RELAY_TEMPLATE_CATALOG.md)
-
-Every relay plan includes:
-
-- selected content template,
-- delivery format,
-- visual motif and layout,
-- wording guidance,
-- section instructions,
-- source anchors,
-- final provenance screen.
+Each plan configures:
+- Content template and delivery format.
+- Visual layout and formatting rules.
+- Wording guidelines and section notes.
+- Source anchors and provenance details.
 
 ## Semantic Glossary
 
-Sunset Pulse renders common acronyms and domain terms as hoverable glossary terms on knowledge-heavy surfaces.
+Acronyms and industry terms automatically display hover definitions powered by TAH cartridges.
 
-Current glossary behavior:
+Glossary features:
+- Displays a short definition on hover or focus.
+- Preserves original text formatting in the document.
+- Maps terms to their source `.tah` cartridge.
+- Links terms directly to dedicated cartridge pages.
 
-- shows a short definition on hover or keyboard focus,
-- keeps the visible text unchanged,
-- stores the source `.tah` file on the term,
-- links known terms to their cartridge page when available.
+Supported glossary locations:
+- Command Center answers and excerpts.
+- TAH library pages.
+- Master search results.
+- Jamie chat messages.
 
-Examples:
-
-- `CCS` links to `dallas_community_intel.tah` through `/tah/dallas-community-intel`.
-- `PENDING` explains that the request is received but not closed.
-- `Service Request` explains the city tracking record behind a 311 item.
-- `TREC`, `MLS`, `IDX`, `TAH`, and `pgvector` link to their relevant knowledge cartridges.
-
-Glossary implementation:
-
+Code paths:
 ```text
 apps/pulse/lib/glossary/siteGlossary.ts
 apps/pulse/components/glossary/GlossaryText.tsx
 ```
 
-Glossary-aware surfaces currently include:
-
-- Command Center answers and source excerpts,
-- TAH cartridge pages,
-- TAH library and master-search results,
-- Jamie chat messages.
-
 ## Local Query Memory
 
-Sunset Pulse saves compact local memory records after command-center queries:
+Sunset Pulse records query details locally after every command execution:
 
 ```text
 apps/pulse/cartridges/query_memory.tah
 ```
 
-This file is intentionally ignored by Git. It stays local to the user machine.
+This file stays on your local machine and is excluded from Git.
 
-What gets saved:
+Stored fields:
+- Prompt text, intent, and selected worker.
+- Relay template and display mode.
+- Source TAH files used in the response.
+- Key concepts, summary notes, and suggested actions.
 
-- command,
-- intent,
-- worker,
-- relay template and mode,
-- source TAH files used,
-- top concepts,
-- learned recap,
-- summary and actions.
-- SQLSync-ready mutation rows for query memory and clicked command actions.
-
-Docs:
-
-- [apps/pulse/docs/TAH_QUERY_MEMORY.md](apps/pulse/docs/TAH_QUERY_MEMORY.md)
-
-Disable query memory:
-
+Disable memory saving:
 ```bash
 PULSE_QUERY_MEMORY_DISABLED=true
 ```
 
-Use a custom memory path:
-
+Set a custom memory location:
 ```bash
 PULSE_QUERY_MEMORY_PATH=C:\path\to\query_memory.tah
 ```
 
+Read the guide at [apps/pulse/docs/TAH_QUERY_MEMORY.md](apps/pulse/docs/TAH_QUERY_MEMORY.md).
+
 ## SQLSync Journal
 
-Sunset Pulse now stages Command Center state changes into a SQLSync-ready local mutation journal. This is the app-side contract we can hand to a future SQLSync reducer/coordinator without changing the Command Center write path later.
+Command Center mutations are logged to a SQLSync mutation journal. This provides an offline-first contract for future data synchronization.
 
-Route:
-
+Journal endpoint:
 ```text
 GET /api/sqlsync/command-journal
 ```
 
-Current reducer contract:
-
+Supported mutation actions:
 - `upsert_command_query_memory`
 - `upsert_command_action_memory`
 
-Default journal path:
-
+Journal path:
 ```text
 apps/pulse/cartridges/sqlsync/command-journal.sqlsync.jsonl
 ```
 
-Configure:
-
+Environment settings:
 ```bash
 PULSE_SQLSYNC_CLIENT_ID=sunset-pulse-local
 PULSE_SQLSYNC_JOURNAL_DISABLED=false
 PULSE_SQLSYNC_JOURNAL_PATH=C:\path\to\command-journal.sqlsync.jsonl
 ```
 
-Implementation:
+## TensorZero Evaluations and Feedback
 
-```text
-apps/pulse/lib/sqlsync/commandJournal.ts
-apps/pulse/app/api/sqlsync/command-journal/route.ts
-apps/pulse/lib/command-center/queryMemory.ts
-```
+The app logs evaluation data and user feedback for every Command Center query and JamieChat turn.
 
-## TensorZero Evaluations, Feedback, And JamieChat
-
-Sunset Pulse now records TensorZero-ready workflow evaluation rows and feedback rows for Command Center runs. JamieChat also routes every `/api/chat` turn through `runTensorZeroJamieChat`, records it as a `jamie_chat` function episode, and returns backbone metadata before traffic is moved through a live TensorZero Gateway.
-
-Routes:
-
+Endpoints:
 ```text
 GET /api/tensorzero/command-evals
 GET /api/tensorzero/jamie-chat
@@ -541,197 +425,61 @@ GET /api/tensorzero/feedback
 POST /api/tensorzero/feedback
 ```
 
-Current functions:
+Tracked functions:
+- `sunset_command_center`
+- `jamie_chat`
 
-```text
-sunset_command_center
-jamie_chat
-```
+User feedback triggers:
+- Copying an answer records usefulness.
+- Clicking an action item records actionability.
+- Manually changing workers records a routing correction.
+- Re-running a command signals that the answer needed improvement.
 
-Current metrics:
-
-- `command_center_quality`
-- `command_center_grounded`
-- `command_center_actionable`
-- `command_center_safety`
-- `command_center_usefulness`
-- `command_center_actionability`
-- `command_center_routing_correction`
-- `command_center_needs_improvement`
-- `jamie_response_quality`
-- `jamie_tool_success`
-- `jamie_property_grounding`
-- `jamie_conversation_safety`
-
-Feedback sources:
-
-- copying the final answer records usefulness,
-- clicking an action tile records actionability,
-- manually changing helper after a result records a routing correction,
-- re-running a command records a needs-improvement signal.
-
-Default ledger path:
-
+Config files and ledgers:
 ```text
 apps/pulse/cartridges/tensorzero/command-evaluations.tensorzero.jsonl
 apps/pulse/cartridges/tensorzero/command-feedback.tensorzero.jsonl
 apps/pulse/cartridges/tensorzero/jamie-chat.tensorzero.jsonl
-```
-
-TensorZero config stub:
-
-```text
 apps/pulse/tensorzero/tensorzero.toml
-```
-
-Configure:
-
-```bash
-TENSORZERO_PROJECT_NAME=sunset-pulse
-TENSORZERO_GATEWAY_URL=
-TENSORZERO_COMMAND_EVAL_DISABLED=false
-TENSORZERO_COMMAND_EVAL_PATH=C:\path\to\command-evaluations.tensorzero.jsonl
-TENSORZERO_FEEDBACK_DISABLED=false
-TENSORZERO_FEEDBACK_PATH=C:\path\to\command-feedback.tensorzero.jsonl
-TENSORZERO_JAMIE_CHAT_DISABLED=false
-TENSORZERO_JAMIE_CHAT_PATH=C:\path\to\jamie-chat.tensorzero.jsonl
-```
-
-The local ledgers store compact workflow evaluation metadata, metrics, and operator feedback. They avoid raw command or chat text by storing ids, fingerprints, counts, route metadata, variant names, tool names, grounding flags, and metric scores. When a TensorZero Gateway is running, these rows can map to workflow evaluation runs, inference variants, and episode-level feedback.
-
-Implementation:
-
-```text
-apps/pulse/lib/tensorzero/commandEvaluation.ts
-apps/pulse/lib/tensorzero/feedback.ts
-apps/pulse/lib/tensorzero/jamieBackbone.ts
-apps/pulse/lib/tensorzero/jamieChat.ts
-apps/pulse/app/api/tensorzero/command-evals/route.ts
-apps/pulse/app/api/tensorzero/jamie-chat/route.ts
-apps/pulse/app/api/tensorzero/feedback/route.ts
-apps/pulse/app/api/commands/route.ts
-apps/pulse/app/api/commands/actions/route.ts
-apps/pulse/app/api/chat/route.ts
-apps/pulse/components/command-center/AgentSelectionArena.tsx
-apps/pulse/components/JamieChat.tsx
 ```
 
 ## Crawl4AI Lead Intelligence
 
-Sunset Pulse includes a local-first Crawl4AI ingestion route for lead intelligence. It is meant for approved regional sites, brokerage pages, public records, and business profile pages that should become structured context for future lead scoring and Command Center workflows.
+An operator endpoint allows crawling approved real estate pages to create structured TAH cartridges for lead scoring.
 
-Routes:
-
+Endpoints:
 ```text
 GET  /api/intelligence/crawl-lead
 POST /api/intelligence/crawl-lead
 ```
 
-The route is operator-guarded and uses an allowlist before a page is crawled. Pass `importToTah: true` to write a readable `.source.md` audit file and a forged binary indexed `.tah` cartridge. By default, rows are appended to:
+Setting `importToTah: true` generates both a human-readable audit file (`.source.md`) and a binary `.tah` cartridge under `apps/pulse/cartridges/imports/lead-intel/`.
 
-```text
-apps/pulse/cartridges/lead-intel/crawl-results.jsonl
-```
-
-Default imported cartridge directory:
-
-```text
-apps/pulse/cartridges/imports/lead-intel/
-```
-
-For a concept such as `lead_intel_records_example_com_property_record_123`, the importer writes:
-
-```text
-lead_intel_records_example_com_property_record_123.source.md
-lead_intel_records_example_com_property_record_123.tah
-```
-
-Install the optional local worker from `apps/pulse`:
-
+Install crawler dependencies:
 ```bash
 python -m pip install -r workers/lead-intel-crawler/requirements.txt
 python -m playwright install chromium
 ```
 
-Configure:
+## Novu Notifications
 
-```bash
-LEAD_INTEL_CRAWLER_DISABLED=false
-LEAD_INTEL_ALLOWED_DOMAINS=example.com
-LEAD_INTEL_ALLOW_UNLISTED=false
-LEAD_INTEL_TRUST_REQUEST_ALLOWLIST=false
-LEAD_INTEL_PYTHON=python
-LEAD_INTEL_WORKER_PATH=
-LEAD_INTEL_LEDGER_PATH=C:\path\to\crawl-results.jsonl
-```
+Sunset Pulse uses a unified Novu notification adapter to send lead alerts, scheduling updates, and system events.
 
-Implementation:
-
-```text
-apps/pulse/lib/lead-intel/crawlLead.ts
-apps/pulse/app/api/intelligence/crawl-lead/route.ts
-apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py
-```
-
-## Novu Notification Pipeline
-
-Sunset Pulse includes a Novu-compatible notification workflow layer. It lets the app trigger named notification workflows for lead alerts, staff operations, scheduling updates, and future in-app messages through one contract instead of scattering channel-specific calls everywhere.
-
-Routes:
-
+Endpoints:
 ```text
 GET  /api/notifications/novu
 POST /api/notifications/novu
 ```
 
-The route is operator-guarded. If `NOVU_SECRET_KEY` is missing, triggers are recorded locally as `queued_local` so workflows can be developed and audited before connecting Novu Cloud or a self-hosted Novu instance.
-
-Default ledger:
-
-```text
-apps/pulse/cartridges/notifications/novu-events.jsonl
-```
-
-Configure:
-
-```bash
-NOVU_SECRET_KEY=
-NOVU_API_URL=https://api.novu.co
-NOVU_NOTIFICATIONS_DISABLED=false
-NOVU_LEDGER_DISABLED=false
-NOVU_LEDGER_PATH=C:\path\to\novu-events.jsonl
-NOVU_HOT_LEAD_WORKFLOW_ID=lead-hot-alert
-NOVU_OPERATOR_SUBSCRIBER_ID=sunset-operator
-NOVU_OPERATOR_EMAIL=operator@example.com
-NOVU_OPERATOR_PHONE=+15551234567
-```
-
-Implementation:
-
-```text
-apps/pulse/lib/notifications/novu.ts
-apps/pulse/app/api/notifications/novu/route.ts
-apps/pulse/lib/intelligence/leadProcessor.ts
-```
+If `NOVU_SECRET_KEY` is not provided, events are safely queued to a local ledger file (`apps/pulse/cartridges/notifications/novu-events.jsonl`) for inspection during development.
 
 ## Langfuse Observability
 
-Sunset Pulse can trace Command Center graph runs to Langfuse. Tracing is disabled by default and turns on only when both Langfuse keys are present in the server environment.
+You can trace Command Center runs to Langfuse by setting your API keys in the environment.
 
-Each command creates a root `command-center.graph` agent trace with nested observations:
+Each request generates a root `command-center.graph` trace containing sub-spans for every stage of execution. Trace payloads record execution metrics, worker choices, and diagnostic data without exposing private prompt text or model outputs.
 
-- `command-center.route`
-- `command-center.retrieve`
-- `command-center.plan`
-- `command-center.synthesize`
-- `command-center.supervise`
-- `command-center.remember`
-- `command-center.respond`
-
-The trace payloads are deliberately conservative. They include worker IDs, route modes, relay modes, shard counts, confidence, action counts, frame counts, memory status, and atlas diagnostics. They avoid copying raw command text, retrieved excerpts, generated copy, tokens, secrets, or long source content into Langfuse.
-
-Configure Langfuse:
-
+Environment configuration:
 ```bash
 LANGFUSE_PUBLIC_KEY=pk-lf-your-public-key
 LANGFUSE_SECRET_KEY=sk-lf-your-secret-key
@@ -740,136 +488,67 @@ LANGFUSE_TRACING_ENVIRONMENT=development
 LANGFUSE_RELEASE=local
 ```
 
-Implementation:
-
-```text
-apps/pulse/lib/observability/langfuseTracing.ts
-apps/pulse/app/api/commands/route.ts
-```
-
 ## Kepler Spatial Lab
 
-Sunset Pulse includes a Kepler.gl workspace for interactive geospatial analysis of listing and market signals.
+An interactive Kepler.gl lab enables visual analysis of property listings and market trends.
 
-Route:
+Access the workspace at `/spatial-lab`. Data is loaded from `/api/kepler/listings?limit=140`.
 
-```text
-/spatial-lab
-```
-
-Dataset API:
-
-```text
-GET /api/kepler/listings?limit=140
-```
-
-The first dataset uses the existing mock Repliers listing feed and exposes map-ready rows with:
-
-- latitude and longitude,
-- list price, original price, estimate, and price deltas,
-- days on market,
-- beds, baths, square footage, year built, and lot size,
-- image quality and photo count,
-- status, property type, city, state, neighborhood, and brokerage.
-
-The Kepler page is intentionally isolated from the existing Explorer Map. It uses its own Redux store, loads only on the client, and includes a React 19 compatibility shim for Kepler's legacy sortable control dependency.
-
-Implementation:
-
-```text
-apps/pulse/app/spatial-lab/page.tsx
-apps/pulse/components/spatial/KeplerSpatialLabLoader.tsx
-apps/pulse/components/spatial/KeplerSpatialLab.tsx
-apps/pulse/app/api/kepler/listings/route.ts
-apps/pulse/lib/compat/reactSortableHoc.tsx
-```
+Exposed fields:
+- Geographic coordinates (latitude and longitude).
+- List price, original price, valuation, and price deltas.
+- Days on market, square footage, beds, baths, and year built.
+- Image quality score, listing status, neighborhood, and brokerage.
 
 ## deck.gl Signal Map
 
-The deck.gl signal map is the product-native counterpart to Kepler. It uses the same listing dataset feed but renders controlled layers we can turn into first-class Sunset Pulse features.
+The native deck.gl signal map provides a custom WebGL mapping surface for real estate signals at `/spatial-lab/deck`.
 
-Route:
-
-```text
-/spatial-lab/deck
-```
-
-Current layers:
-
-- listing signal points colored by market state,
-- price-weighted heatmap,
-- radius scaled by days on market,
-- hover card with price, DOM, bed/bath, and image-quality context.
-
-Implementation:
-
-```text
-apps/pulse/app/spatial-lab/deck/page.tsx
-apps/pulse/components/spatial/DeckListingSignalsLoader.tsx
-apps/pulse/components/spatial/DeckListingSignals.tsx
-```
+Active map layers:
+- Market state point markers.
+- Price-weighted heatmap visualization.
+- Days-on-market radius indicators.
+- Interactive hover cards showing price, specs, and photo quality.
 
 ## Play Jamie
 
-The Play Jamie room provides local, deterministic games that do not spend model tokens or require an AI-provider connection.
+Play Jamie features deterministic, offline games that require no external API keys or token costs.
 
+Game routes:
 ```text
-/play-jamie         # game catalog
-/play-jamie/chess   # complete chess match
-/play-jamie/tetris  # responsive falling-block game
-/play-jamie/poker   # heads-up Texas Hold'em table
-/play-jamie/volley  # beach volleyball rally game
+/play-jamie         # Game catalog
+/play-jamie/chess   # Complete chess game
+/play-jamie/tetris  # Falling block puzzle game
+/play-jamie/poker   # Heads-up Texas Hold'em
+/play-jamie/volley  # Beach volleyball arcade game
 ```
 
-Chess currently includes:
-
-- legal move, castling, en passant, promotion, check, mate, and draw enforcement through `chess.js`,
-- Friendly, Sharp, and Merciless Jamie opponent profiles,
-- click and keyboard-operable board controls with legal-target highlighting,
-- side selection, full-turn undo, captured material, and algebraic move history,
-- local Jamie commentary and a browser-persisted win/draw/loss record.
-
-The reusable opponent and rules layer lives in `apps/pulse/lib/jamie-games/chess.ts`; the board remains a Sunset Pulse component rather than importing a second UI system.
-
-Block Drop includes seven-piece bag randomization, wall-aware rotation, ghost placement, keyboard and touch controls, progressive levels, local high scores, and deterministic engine tests. Its rules layer lives in `apps/pulse/lib/jamie-games/tetris.ts`.
-
-Texas Hold'em includes a local 52-card deck, virtual-chip antes, check/call/bet/fold actions, Jamie call/fold/bet decisions, real five-card hand evaluation from seven-card Hold'em boards, showdown labels, hand logs, and browser-persisted win/loss/tie records. Its rules layer lives in `apps/pulse/lib/jamie-games/poker.ts`.
-
-Sunset Volley includes local side-view ball physics, jump timing, wall and net collisions, first-to-seven scoring, Jamie positioning AI, touch controls, and browser-persisted match records. Its rules layer lives in `apps/pulse/lib/jamie-games/volley.ts`.
+Available games:
+- **Chess**: Fully compliant moves, castling, en passant, promotion, and checkmate powered by `chess.js`. Includes three Jamie difficulty levels, move undo, captured pieces display, and local win tracking.
+- **Block Drop**: Seven-piece randomizer, wall kicks, ghost piece previews, touch controls, and high scores.
+- **Texas Hold'em**: 52-card deck, virtual chip bets, hand evaluation, opponent AI, and match history logs.
+- **Volleyball**: Physics-based rallies, jump timing, collision detection, and score tracking to 7 points.
 
 ## Getting Started
 
 Install dependencies:
-
 ```bash
 npm install
 ```
 
-Run the Pulse app:
-
+Start the development server:
 ```bash
 npm run pulse:dev
 ```
 
-Or from the app workspace:
-
-```bash
-cd apps/pulse
-npm run dev
-```
-
-Open:
-
+Open the command center in your browser:
 ```text
 http://127.0.0.1:3000/command-center
 ```
 
-If another dev server is already running, Next.js may choose another port such as `3002`.
+## Useful Commands
 
-## Useful Scripts
-
-From the repo root:
-
+Root scripts:
 ```bash
 npm run pulse:dev
 npm run pulse:build
@@ -877,8 +556,7 @@ npm run test:unit
 npm run test:e2e
 ```
 
-From `apps/pulse`:
-
+App-specific scripts (`apps/pulse`):
 ```bash
 npm run tah:import-doc -- -- ./path/to/source.pdf --title "Imported Source"
 npm run tah:lancedb:index
@@ -890,58 +568,31 @@ npm run test:unit
 npm run build
 ```
 
-## Import Documents Into TAH
+## Importing Documents Into TAH
 
-Sunset Pulse can use Microsoft MarkItDown to turn local documents into TAH-ready Markdown cartridges. This is useful for MLS PDFs, TREC forms, market reports, seller notes, spreadsheets, slide decks, and other source files that should become local Command Center context.
-
-Install the optional Python dependency once:
+Convert PDFs, spreadsheets, forms, and presentations into TAH cartridges using MarkItDown:
 
 ```bash
 python -m pip install -r apps/pulse/requirements-markitdown.txt
-```
-
-Import a document from the repo root:
-
-```bash
 npm run tah:import-doc -- -- "C:\path\to\market-report.pdf" --title "Market Report" --aliases "market, comps, pricing"
 ```
 
-By default, imported cartridges are written under:
+Output files are stored under `apps/pulse/cartridges/imports/`.
 
-```text
-apps/pulse/cartridges/imports/
-```
+## Local LanceDB Search
 
-Generated `.tah` imports stay ignored by Git unless intentionally unignored.
-
-## Local LanceDB TAH Search
-
-Sunset Pulse can build a local LanceDB full-text index over `.tah` cartridges for fast BM25 retrieval experiments before routing deeper into Command Center.
-
-Build or rebuild the local index:
+Index TAH cartridges locally for fast BM25 search testing:
 
 ```bash
 npm run tah:lancedb:index
-```
-
-Search it:
-
-```bash
 npm run tah:lancedb:search -- --query "seller pricing comps"
 ```
 
-The default database lives at:
-
-```text
-apps/pulse/.lancedb/
-```
-
-That directory is ignored by Git because it is a generated local index. The index currently uses LanceDB full-text search; vector/hybrid embeddings can be added once the chunking shape is proven.
+The database index is stored locally at `apps/pulse/.lancedb/`.
 
 ## Verification
 
-Common local checks:
-
+Run local build and test checks:
 ```bash
 npx tsc -p apps/pulse/tsconfig.json --noEmit --pretty false
 npm exec --workspace apps/pulse -- vitest run tests/unit/listing-discovery.test.ts tests/unit/listing-read-surfaces.test.ts tests/unit/jamie-tools.test.ts
@@ -951,37 +602,29 @@ npm run build --workspace apps/pulse
 npm run tah:pack-expert-atlas --workspace=apps/pulse
 ```
 
-Smoke-test MLS discovery:
-
+Test endpoints:
 ```bash
 curl "http://127.0.0.1:3000/api/properties/discover?city=Frisco&pageSize=6"
-```
-
-Smoke-test the command route:
-
-```bash
 curl -X POST http://127.0.0.1:3002/api/commands \
   -H "Content-Type: application/json" \
   -d "{\"command\":\"Give me a valuation using recent sales\",\"relayMode\":\"slideshow\",\"supervisor\":true}"
 ```
 
-## Important Docs
+## Documentation Links
 
 - [apps/pulse/docs/TAH_RELAY_TEMPLATE_CATALOG.md](apps/pulse/docs/TAH_RELAY_TEMPLATE_CATALOG.md)
 - [apps/pulse/docs/TAH_QUERY_MEMORY.md](apps/pulse/docs/TAH_QUERY_MEMORY.md)
 - [apps/pulse/docs/CMS_USB_BRIDGE.md](apps/pulse/docs/CMS_USB_BRIDGE.md)
 - [apps/pulse/docs/LOCAL_NEWS_SIGNALS.md](apps/pulse/docs/LOCAL_NEWS_SIGNALS.md)
 
-## Notes On Generated Files
+## Untracked Artifacts
 
-The repo ignores broad `.tah` and `.hat` generated files by default. The first-party command-center capsules are explicitly unignored in `.gitignore` so they can travel with the app.
-
-Generated or local-only artifacts should remain untracked:
-
+The repository untracks large generated binaries by default. Keep these local paths out of Git:
 - `apps/pulse/cartridges/query_memory.tah`
 - `apps/pulse/cartridges/expert-atlas/segmented_expert_atlas.hat`
 - `apps/pulse/cartridges/expert-atlas/segmented_expert_atlas.tah`
+- `apps/pulse/.lancedb/`
 
-## Status
+## Project Status
 
-This is a local-first, practical implementation. The system is designed to work with cheap/small models and private `.tah` context before adding heavier agent frameworks or vector infrastructure.
+Sunset Pulse prioritizes local-first architecture and small, affordable models paired with private TAH context over heavy remote infrastructure.
