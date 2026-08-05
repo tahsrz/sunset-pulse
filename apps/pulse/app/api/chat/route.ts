@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (limitResponse) return limitResponse;
 
     const body = await req.json();
-    const { messages, propertyData, isDevMode, memoryContext } = body;
+    const { messages, propertyData, isDevMode, memoryContext, personaMode } = body;
     const agentId = getAgentIdFromInput({ agentId: body.agentId });
     const result = await runTensorZeroJamieChat({
       messages,
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       memoryContext,
       isDevMode,
       agentId,
+      personaMode: personaMode === 'guarded_real_estate' ? 'guarded_real_estate' : 'general',
       isMock: process.env.NEXT_PUBLIC_MOCK_MODE === 'true',
     });
 
