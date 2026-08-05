@@ -3,12 +3,14 @@
 import React from 'react';
 import { useTheme } from '@/context/ThemeProvider';
 import { FaBolt } from 'react-icons/fa';
+import { JAMIE_VOICE_CHOICES, speak } from '@/lib/core/tts';
 
 const SystemSettings = () => {
   const {
     isAdvancedMode, setAdvancedMode, customKeybind, setCustomKeybind,
     isWakeListeningEnabled, setWakeListeningEnabled,
     isGuardedJamieEnabled, setGuardedJamieEnabled,
+    jamieVoice, setJamieVoice,
   } = useTheme();
 
   return (
@@ -18,6 +20,28 @@ const SystemSettings = () => {
       </h3>
       
       <div className='space-y-8'>
+        <div>
+          <div className='flex items-center justify-between gap-6'>
+            <div>
+              <h4 className='text-sm font-bold text-white'>Jamie Character</h4>
+              <p className='text-[10px] text-slate-500 mt-1 leading-relaxed'>Choose and preview Jamie&apos;s spoken voice.</p>
+            </div>
+            <span className='text-xs font-black text-emerald-300'>{jamieVoice}</span>
+          </div>
+          <div className='mt-3 grid grid-cols-2 gap-2'>
+            {JAMIE_VOICE_CHOICES.map((voice) => (
+              <button
+                key={voice.id}
+                type='button'
+                onClick={() => { setJamieVoice(voice.id); speak('This is how I will sound.', voice.id); }}
+                className={`border px-3 py-2 text-left text-xs font-bold transition ${jamieVoice === voice.id ? 'border-emerald-300 bg-emerald-300/10 text-emerald-200' : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'}`}
+              >
+                {voice.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className='flex items-center justify-between gap-6'>
           <div>
             <h4 className='text-sm font-bold text-white'>Voice Wake Listening</h4>

@@ -53,6 +53,19 @@ const VOICE_PRESETS = {
 
 export type JamieVoicePreset = keyof typeof VOICE_PRESETS;
 
+export const JAMIE_VOICE_CHOICES: Array<{
+  id: JamieVoicePreset;
+  label: string;
+  description: string;
+}> = [
+  { id: 'Jamie', label: 'Jamie', description: 'Measured British delivery' },
+  { id: 'Spike', label: 'Spike', description: 'Fast American delivery' },
+  { id: 'Ghost', label: 'Ghost', description: 'Low Australian delivery' },
+  { id: 'Nova', label: 'Nova', description: 'Clear American delivery' },
+  { id: 'Sage', label: 'Sage', description: 'Calm American delivery' },
+  { id: 'Raven', label: 'Raven', description: 'Low British delivery' },
+];
+
 const DEFAULT_PRESET: VoicePreset = VOICE_PRESETS.Jamie;
 let activeUtterance: SpeechSynthesisUtterance | null = null;
 let speechRequestId = 0;
