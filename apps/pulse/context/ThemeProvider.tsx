@@ -94,6 +94,10 @@ interface ThemeContextType {
   setLefthandMode: (active: boolean) => void;
   isVoiceEnabled: boolean;
   setVoiceEnabled: (active: boolean) => void;
+  isWakeListeningEnabled: boolean;
+  setWakeListeningEnabled: (active: boolean) => void;
+  isGuardedJamieEnabled: boolean;
+  setGuardedJamieEnabled: (active: boolean) => void;
   customKeybind: string;
   setCustomKeybind: (key: string) => void;
   selectedAbidan: AbidanCharacter;
@@ -175,6 +179,8 @@ export function ThemeProvider({
   const [isAdvancedMode, setAdvancedModeState] = useState(false);
   const [isLefthandMode, setLefthandModeState] = useState(false);
   const [isVoiceEnabled, setVoiceEnabledState] = useState(true);
+  const [isWakeListeningEnabled, setWakeListeningEnabledState] = useState(true);
+  const [isGuardedJamieEnabled, setGuardedJamieEnabledState] = useState(false);
   const [customKeybind, setCustomKeybindState] = useState('P');
   const [selectedAbidan, setSelectedAbidanState] = useState<AbidanCharacter>(ABIDAN_DATA[0]);
   const [protocolLogs, setProtocolLogs] = useState<ProtocolLog[]>([]);
@@ -211,6 +217,10 @@ export function ThemeProvider({
     const savedDev = localStorage.getItem('jamie_dev_mode');
     const savedLefthand = localStorage.getItem('jamie_lefthand_mode');
     const savedVoice = localStorage.getItem('jamie_voice_enabled');
+    const savedWakeListening = localStorage.getItem('jamie_wake_listening_enabled');
+    const savedGuardedJamie = localStorage.getItem('jamie_guarded_mode');
+    if (savedWakeListening === 'false') setWakeListeningEnabledState(false);
+    if (savedGuardedJamie === 'true') setGuardedJamieEnabledState(true);
     
     if (user) {
       if (typeof user.user_metadata?.isAdvancedMode !== 'undefined') {
@@ -351,6 +361,16 @@ export function ThemeProvider({
     if (user) syncSettings({ isVoiceEnabled: active } as any);
   };
 
+  const setWakeListeningEnabled = (active: boolean) => {
+    setWakeListeningEnabledState(active);
+    localStorage.setItem('jamie_wake_listening_enabled', active ? 'true' : 'false');
+  };
+
+  const setGuardedJamieEnabled = (active: boolean) => {
+    setGuardedJamieEnabledState(active);
+    localStorage.setItem('jamie_guarded_mode', active ? 'true' : 'false');
+  };
+
   const updateBranding = (newSettings: any) => {
     setBranding((prev) => ({ ...prev, ...newSettings }));
   };
@@ -406,6 +426,10 @@ export function ThemeProvider({
       setLefthandMode,
       isVoiceEnabled,
       setVoiceEnabled,
+      isWakeListeningEnabled,
+      setWakeListeningEnabled,
+      isGuardedJamieEnabled,
+      setGuardedJamieEnabled,
       customKeybind,
       setCustomKeybind,
       selectedAbidan,
