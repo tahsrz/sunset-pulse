@@ -20,6 +20,7 @@ import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 import MlsCommandWorkspace from '@/components/idx/MlsCommandWorkspace';
 import { useJamieWakeListening } from './chat/useJamieWakeListening';
+import JamieCharacterCreation from './chat/JamieCharacterCreation';
 
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
 
@@ -64,6 +65,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     isWakeListeningEnabled,
     setWakeListeningEnabled,
     isGuardedJamieEnabled,
+    jamieVoice,
   } = useTheme();
 
   const { setVibeFromContent } = useVibe();
@@ -97,6 +99,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingJamie, setIsCreatingJamie] = useState(false);
   const wakeQueryRef = React.useRef<(query: string) => void>(() => undefined);
   const wakeListening = useJamieWakeListening(isWakeListeningEnabled, (query) => wakeQueryRef.current(query));
 
@@ -106,6 +109,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   useEffect(() => {
     setMounted(true);
+    setIsCreatingJamie(localStorage.getItem('jamie_character_created') !== 'true');
     setMemoryContext(memoryBridge.getGreetingContext());
 
     // Hydrate history from Supabase for cross-device persistence
@@ -178,7 +182,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
     // TTS: Speak the message, but strip tags first
     const cleanText = messageContent.replace(/\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g, '').trim();
-    if (cleanText && isVoiceEnabled) speak(cleanText);
+    if (cleanText && isVoiceEnabled) speak(cleanText, jamieVoice);
 
     const tagRegex = /\[\[([A-Z]+):(\{.*?\}|\[.*?\])\]\]/g;
     let match;
@@ -548,6 +552,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   return (
     <div className={shellClass}>
+      <JamieCharacterCreation open={isCreatingJamie} onComplete={() => setIsCreatingJamie(false)} />
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
       <div className="flex items-center gap-2 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
         <span className={`h-2 w-2 rounded-full ${wakeListening.status === 'listening' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
