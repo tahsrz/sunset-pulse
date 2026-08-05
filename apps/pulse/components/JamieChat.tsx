@@ -551,8 +551,8 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
       <div className="flex items-center gap-2 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
         <span className={`h-2 w-2 rounded-full ${wakeListening.status === 'listening' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-        <span>{wakeListening.status === 'listening' ? 'Listening for Pull that up' : wakeListening.status === 'requesting' ? 'Requesting microphone' : 'Microphone off'}</span>
-        {wakeListening.status !== 'listening' && isWakeListeningEnabled ? (
+        <span>{wakeListening.status === 'listening' ? 'Listening for Pull that up' : wakeListening.status === 'paused' ? 'Paused while Jamie speaks' : wakeListening.status === 'requesting' ? 'Requesting microphone' : 'Microphone off'}</span>
+        {!['listening', 'paused', 'requesting'].includes(wakeListening.status) && isWakeListeningEnabled ? (
           <button type="button" onClick={() => void wakeListening.start()} className="rounded border border-white/15 px-2 py-1 text-white">Enable</button>
         ) : null}
         {wakeListening.status === 'listening' ? (

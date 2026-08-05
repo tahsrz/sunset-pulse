@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { TTS_END_EVENT, TTS_START_EVENT } from '@/lib/core/tts';
 
 type TranscriptSegment = { text: string; capturedAt: number };
 
@@ -36,12 +37,13 @@ export function useJamieWakeListening(
   enabled: boolean,
   onQuery: (query: string) => void,
 ) {
-  const [status, setStatus] = useState<'off' | 'requesting' | 'listening' | 'unsupported' | 'denied'>('off');
+  const [status, setStatus] = useState<'off' | 'requesting' | 'listening' | 'paused' | 'unsupported' | 'denied'>('off');
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const segmentsRef = useRef<TranscriptSegment[]>([]);
   const callbackRef = useRef(onQuery);
   const enabledRef = useRef(enabled);
   const lastTriggerRef = useRef(0);
+  const pausedForTtsRef = useRef(false);
 
   useEffect(() => { callbackRef.current = onQuery; }, [onQuery]);
   useEffect(() => { enabledRef.current = enabled; }, [enabled]);
@@ -90,9 +92,11 @@ export function useJamieWakeListening(
           }
         }
       };
-      recognition.onerror = () => setStatus('denied');
+      recognition.onerror = () => {
+        if (!pausedForTtsRef.current) setStatus('denied');
+      };
       recognition.onend = () => {
-        if (enabledRef.current) {
+        if (enabledRef.current && !pausedForTtsRef.current) {
           try { recognition.start(); } catch { setStatus('off'); }
         }
       };
@@ -104,7 +108,31 @@ export function useJamieWakeListening(
     }
   }, []);
 
-  useEffect(() => () => recognitionRef.current?.stop(), []);
+  useEffect(() => {
+    const pauseForTts = () => {
+      pausedForTtsRef.current = true;
+      recognitionRef.current?.stop();
+      if (enabledRef.current) setStatus('paused');
+    };
+    const resumeAfterTts = () => {
+      pausedForTtsRef.current = false;
+      if (!enabledRef.current || !recognitionRef.current) return;
+      try {
+        recognitionRef.current.start();
+        setStatus('listening');
+      } catch {
+        setStatus('off');
+      }
+    };
+
+    window.addEventListener(TTS_START_EVENT, pauseForTts);
+    window.addEventListener(TTS_END_EVENT, resumeAfterTts);
+    return () => {
+      window.removeEventListener(TTS_START_EVENT, pauseForTts);
+      window.removeEventListener(TTS_END_EVENT, resumeAfterTts);
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   return { status, start, stop };
 }
