@@ -83,4 +83,20 @@ describe('Jamie TensorZero backbone', () => {
     });
     expect(result.body.tool_results).toHaveLength(1);
   });
+
+  it('does not claim work is running when a requested tool is unavailable', async () => {
+    mockGetJamieResponse.mockResolvedValue({
+      role: 'assistant',
+      content: '',
+      tool_calls: [{ id: 'call_2', function: { name: 'lookup_commute_time' } }],
+    });
+    mockExecuteJamieToolCalls.mockResolvedValue([]);
+
+    const result = await runTensorZeroJamieChat({
+      messages: [{ role: 'user', content: 'Check the commute time.' }],
+    });
+
+    expect(result.body.content).toBe('I cannot run that lookup with the tools currently available. I can search properties, summarize details you provide, or draft a follow-up.');
+    expect(result.body.content).not.toContain('checking that now');
+  });
 });

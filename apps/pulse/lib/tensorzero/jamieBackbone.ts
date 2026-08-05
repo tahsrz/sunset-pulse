@@ -56,12 +56,13 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
   }
 
   if (response && (response as any).tool_calls) {
-    const toolResults = await executeJamieToolCalls((response as any).tool_calls);
+    const toolCalls = Array.isArray((response as any).tool_calls) ? (response as any).tool_calls : [];
+    const toolResults = await executeJamieToolCalls(toolCalls);
     const firstSearchResult = toolResults.find((result: any) => result?.name === 'search_properties');
     const responseContent = typeof (response as any).content === 'string' ? (response as any).content : '';
     const content = firstSearchResult
-      ? `${responseContent}\n\n${formatPropertySearchResult((firstSearchResult as any).output)}`
-      : responseContent;
+      ? [responseContent, formatPropertySearchResult((firstSearchResult as any).output)].filter(Boolean).join('\n\n')
+      : responseContent.trim() || unavailableToolReply(toolCalls);
     const tensorzero = recordBackboneTurn({
       messages: chatMessages,
       propertyData: input.propertyData,
@@ -100,6 +101,15 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
     : { role: 'assistant', content: fallbackContent, tensorzero };
 
   return { body, init: { headers: { 'Content-Type': 'application/json' } } };
+}
+
+function unavailableToolReply(toolCalls: any[]) {
+  const requestedSearch = toolCalls.some((call) => call?.function?.name === 'search_properties');
+  if (requestedSearch) {
+    return 'I could not complete the property search. Please check the location or search criteria and try again.';
+  }
+
+  return 'I cannot run that lookup with the tools currently available. I can search properties, summarize details you provide, or draft a follow-up.';
 }
 
 function recordBackboneTurn(input: Parameters<typeof recordTensorZeroJamieTurn>[0]) {

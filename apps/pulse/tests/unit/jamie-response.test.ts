@@ -31,7 +31,7 @@ JAMIE_ANALYSIS_REPORT: hidden worker state
       tool_calls: [{ id: 'call_1', function: { name: 'search_properties' } }],
     });
 
-    expect(reply).toBe("I'm checking that now.");
+    expect(reply).toBe("I couldn't complete that request from the available information. Try rephrasing it or add the property, lead, or market details you want me to use.");
   });
 
   it('handles accidental JSON string payloads', () => {
