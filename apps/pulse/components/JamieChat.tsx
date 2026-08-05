@@ -546,6 +546,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         onOpen={() => toggleMinimized(false)}
         isLefthandMode={isLefthandMode}
         assistantName={assistantProfile.displayName}
+        listeningStatus={wakeListening.status}
       />
     );
   }
