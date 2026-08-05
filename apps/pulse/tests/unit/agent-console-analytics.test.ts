@@ -11,6 +11,7 @@ describe('Agent Console conversion analytics', () => {
       event('open-1', 'AGENT_CONSOLE_CONSOLE_OPENED', 'agent-console:session-1'),
       event('open-1-repeat', 'AGENT_CONSOLE_CONSOLE_OPENED', 'agent-console:session-1'),
       event('open-2', 'AGENT_CONSOLE_CONSOLE_OPENED', 'agent-console:session-2'),
+      event('quick-1', 'AGENT_CONSOLE_QUICK_START_LOADED', 'agent-console:session-1', { jobId: 'lead-follow-up' }),
       event('voice-1', 'AGENT_CONSOLE_VOICE_SAVED', 'agent-console:session-1'),
       event('example-1', 'AGENT_CONSOLE_EXAMPLE_LOADED', 'agent-console:session-1', {
         jobId: 'lead-follow-up',
@@ -26,7 +27,7 @@ describe('Agent Console conversion analytics', () => {
 
     const analytics = buildAgentConsoleConversionAnalytics(events);
 
-    expect(analytics.funnel.map((stage) => stage.sessions)).toEqual([2, 1, 1, 2, 1, 1]);
+    expect(analytics.funnel.map((stage) => stage.sessions)).toEqual([2, 1, 1, 1, 2, 1, 1]);
     expect(analytics.conversionRate).toBe(50);
     expect(analytics.completionRate).toBe(50);
     expect(analytics.reuseRate).toBe(100);
