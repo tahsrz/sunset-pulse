@@ -401,6 +401,13 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     }
   };
 
+  const openJamie = () => {
+    toggleMinimized(false);
+    if (isWakeListeningEnabled && wakeListening.status !== 'listening') {
+      void wakeListening.start();
+    }
+  };
+
   wakeQueryRef.current = (query: string) => {
     if (!isLoading) void sendChatMessage(query, { logUser: true });
   };
@@ -543,7 +550,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   if (!isWorkspace && isMinimized) {
     return (
       <JamieChatMinimized
-        onOpen={() => toggleMinimized(false)}
+        onOpen={openJamie}
         isLefthandMode={isLefthandMode}
         assistantName={assistantProfile.displayName}
         listeningStatus={wakeListening.status}
@@ -553,7 +560,15 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   return (
     <div className={shellClass}>
-      <JamieCharacterCreation open={isCreatingJamie} onComplete={() => setIsCreatingJamie(false)} />
+      <JamieCharacterCreation
+        open={isCreatingJamie}
+        onComplete={() => {
+          setIsCreatingJamie(false);
+          if (isWakeListeningEnabled && wakeListening.status !== 'listening') {
+            void wakeListening.start();
+          }
+        }}
+      />
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
       <div className="flex items-center gap-2 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
         <span className={`h-2 w-2 rounded-full ${wakeListening.status === 'listening' ? 'bg-emerald-400' : 'bg-slate-600'}`} />

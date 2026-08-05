@@ -63,7 +63,7 @@ export default function JamieCharacterCreation({ open, onComplete }: JamieCharac
         </div>
 
         <button type="button" onClick={complete} className="mt-5 w-full bg-emerald-300 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-slate-950">
-          Continue with {jamieVoice}
+          Continue and enable microphone
         </button>
       </div>
     </div>
