@@ -79,7 +79,7 @@ const JamiePropertyResultCards = ({ toolResults }: { toolResults?: any[] }) => {
 const JamieMessage: React.FC<JamieMessageProps> = ({ message, isDevMode }) => {
   const isUser = message.role === 'user';
   const content = message.content || '';
-  const cleaned = cleanContent(content);
+  const cleaned = isUser ? content : cleanContent(content);
 
   const displayContent = cleaned || (isDevMode ? '[METADATA_ONLY_NODE]' : '');
 
