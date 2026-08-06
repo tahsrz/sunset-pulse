@@ -554,6 +554,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         isLefthandMode={isLefthandMode}
         assistantName={assistantProfile.displayName}
         listeningStatus={wakeListening.status}
+        liveCaption={wakeListening.caption}
       />
     );
   }
@@ -580,6 +581,12 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           <button type="button" onClick={() => { setWakeListeningEnabled(false); wakeListening.stop(); }} className="rounded border border-white/15 px-2 py-1 text-white">Stop</button>
         ) : null}
       </div>
+      {wakeListening.status === 'listening' || wakeListening.caption ? (
+        <div className="mx-4 border-l-2 border-emerald-300 bg-slate-950/70 px-3 py-2" aria-live="polite" aria-label="Jamie live transcript">
+          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-300">Pending query context</p>
+          <p className="mt-1 text-xs leading-5 text-slate-200">{wakeListening.caption || 'Listening...'}</p>
+        </div>
+      ) : null}
 
       {localIntel && (
         <div className="animate-in fade-in zoom-in duration-500">

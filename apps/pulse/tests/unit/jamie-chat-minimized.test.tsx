@@ -25,4 +25,20 @@ describe('Jamie minimized launcher', () => {
     fireEvent.click(button);
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
+
+  it('shows the rolling transcript without changing the launcher name', () => {
+    render(
+      <JamieChatMinimized
+        onOpen={vi.fn()}
+        isLefthandMode={false}
+        listeningStatus="listening"
+        liveCaption="Fort Worth homes under five hundred thousand"
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Open Jamie' })).toBeTruthy();
+    expect(screen.getByLabelText('Jamie live transcript').textContent).toContain(
+      'Fort Worth homes under five hundred thousand',
+    );
+  });
 });

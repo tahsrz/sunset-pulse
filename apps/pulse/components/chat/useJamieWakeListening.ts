@@ -38,12 +38,21 @@ export function useJamieWakeListening(
   onQuery: (query: string) => void,
 ) {
   const [status, setStatus] = useState<'off' | 'requesting' | 'listening' | 'paused' | 'unsupported' | 'denied'>('off');
+  const [caption, setCaption] = useState('');
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const segmentsRef = useRef<TranscriptSegment[]>([]);
   const callbackRef = useRef(onQuery);
   const enabledRef = useRef(enabled);
   const lastTriggerRef = useRef(0);
   const pausedForTtsRef = useRef(false);
+  const interimRef = useRef('');
+  const captionHoldUntilRef = useRef(0);
+
+  const refreshCaption = useCallback((now = Date.now()) => {
+    if (now < captionHoldUntilRef.current) return;
+    const finalText = recentTranscript(segmentsRef.current, now);
+    setCaption([finalText, interimRef.current].filter(Boolean).join(' ').trim());
+  }, []);
 
   useEffect(() => { callbackRef.current = onQuery; }, [onQuery]);
   useEffect(() => { enabledRef.current = enabled; }, [enabled]);
@@ -74,11 +83,16 @@ export function useJamieWakeListening(
       recognition.interimResults = true;
       recognition.lang = 'en-US';
       recognition.onresult = (event) => {
+        const interimParts: string[] = [];
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index];
-          if (!result.isFinal) continue;
           const text = result[0]?.transcript?.trim();
           if (!text) continue;
+
+          if (!result.isFinal) {
+            interimParts.push(text);
+            continue;
+          }
 
           const now = Date.now();
           segmentsRef.current = [...segmentsRef.current, { text, capturedAt: now }]
@@ -87,10 +101,18 @@ export function useJamieWakeListening(
           if (WAKE_PHRASE.test(text) && now - lastTriggerRef.current > 3_000) {
             lastTriggerRef.current = now;
             const query = recentTranscript(segmentsRef.current, now);
-            if (query) callbackRef.current(query);
+            if (query) {
+              captionHoldUntilRef.current = now + 4_000;
+              setCaption(`Pulling up: ${query}`);
+              callbackRef.current(query);
+            }
             segmentsRef.current = [];
+            interimRef.current = '';
+            window.setTimeout(() => refreshCaption(), 4_000);
           }
         }
+        interimRef.current = interimParts.join(' ').trim();
+        if (!segmentsRef.current.some((segment) => WAKE_PHRASE.test(segment.text))) refreshCaption();
       };
       recognition.onerror = () => {
         if (!pausedForTtsRef.current) setStatus('denied');
@@ -106,7 +128,16 @@ export function useJamieWakeListening(
     } catch {
       setStatus('denied');
     }
-  }, []);
+  }, [refreshCaption]);
+
+  useEffect(() => {
+    const pruneTimer = window.setInterval(() => {
+      const now = Date.now();
+      segmentsRef.current = segmentsRef.current.filter((segment) => now - segment.capturedAt <= WINDOW_MS);
+      refreshCaption(now);
+    }, 1_000);
+    return () => window.clearInterval(pruneTimer);
+  }, [refreshCaption]);
 
   useEffect(() => {
     const pauseForTts = () => {
@@ -134,5 +165,5 @@ export function useJamieWakeListening(
     };
   }, []);
 
-  return { status, start, stop };
+  return { status, caption, start, stop };
 }
