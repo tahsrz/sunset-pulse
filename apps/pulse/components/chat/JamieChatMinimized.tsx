@@ -7,7 +7,7 @@ interface JamieChatMinimizedProps {
   onOpen: () => void;
   isLefthandMode: boolean;
   assistantName?: string;
-  listeningStatus?: 'off' | 'requesting' | 'listening' | 'paused' | 'unsupported' | 'denied';
+  listeningStatus?: 'off' | 'permission-required' | 'starting' | 'listening' | 'speech-detected' | 'submitting' | 'jamie-speaking' | 'paused' | 'denied' | 'unavailable';
   liveCaption?: string;
 }
 
@@ -18,16 +18,16 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
   listeningStatus = 'off',
   liveCaption = '',
 }) => {
-  const isListening = listeningStatus === 'listening';
+  const isListening = listeningStatus === 'listening' || listeningStatus === 'speech-detected';
   const statusLabel = isListening
     ? 'Listening for Pull that up'
-    : listeningStatus === 'paused'
+    : listeningStatus === 'paused' || listeningStatus === 'jamie-speaking'
       ? 'Listening paused while Jamie speaks'
-      : listeningStatus === 'requesting'
+      : listeningStatus === 'permission-required' || listeningStatus === 'starting'
         ? 'Waiting for microphone permission'
         : listeningStatus === 'denied'
           ? 'Microphone permission denied'
-          : listeningStatus === 'unsupported'
+          : listeningStatus === 'unavailable'
             ? 'Voice wake is unavailable in this browser'
             : 'Voice wake is off';
 
@@ -53,7 +53,7 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
       >
         <span
           aria-hidden="true"
-          className={`h-2 w-2 rounded-full ${isListening ? 'bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.8)]' : listeningStatus === 'paused' || listeningStatus === 'requesting' ? 'bg-amber-300' : 'bg-slate-500'}`}
+          className={`h-2 w-2 rounded-full ${isListening ? 'bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.8)]' : listeningStatus === 'paused' || listeningStatus === 'jamie-speaking' || listeningStatus === 'permission-required' || listeningStatus === 'starting' ? 'bg-amber-300' : 'bg-slate-500'}`}
         />
         <span className="sr-only" aria-live="polite">{statusLabel}</span>
         <Bot size={18} className="transition-transform group-hover:scale-110" />
