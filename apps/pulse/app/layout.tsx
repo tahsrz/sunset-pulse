@@ -11,6 +11,7 @@ import { SunsetPowerSyncProvider } from '@/lib/powersync/PowerSyncProvider';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
 import { JamiePulseProvider } from '@/context/JamiePulseContext';
+import { JamieAudioProvider } from '@/context/JamieAudioContext';
 import { VibeProvider } from '@/context/VibeContext';
 import KeybindHandler from '@/components/KeybindHandler';
 import ClientWidgets from '@/components/ClientWidgets';
@@ -227,6 +228,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
               integrationProfile={integrationProfile}
               agentId={sbConfig?.agent_id || activeAgentId}
             >
+              <JamieAudioProvider>
               <VibeProvider>
                 <JamiePulseProvider>
                   <div className='flex min-h-screen flex-col bg-[#06131d]/30'>
@@ -245,6 +247,7 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
                   <ToastContainer />
                 </JamiePulseProvider>
               </VibeProvider>
+              </JamieAudioProvider>
             </ThemeProvider>
           </CartProvider>
           </SunsetPowerSyncProvider>

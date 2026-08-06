@@ -19,7 +19,7 @@ import JamieDevControls from './chat/JamieDevControls';
 import JamieIntelCard from './chat/JamieIntelCard';
 import JamieBrandingConfirm from './chat/JamieBrandingConfirm';
 import MlsCommandWorkspace from '@/components/idx/MlsCommandWorkspace';
-import { useJamieWakeListening } from './chat/useJamieWakeListening';
+import { useJamieAudio } from '@/context/JamieAudioContext';
 import JamieCharacterCreation from './chat/JamieCharacterCreation';
 
 const MATRIX_IDX_URL = 'https://ntrdd.mlsmatrix.com/Matrix/public/IDX.aspx?idx=22f244f9';
@@ -101,7 +101,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingJamie, setIsCreatingJamie] = useState(false);
   const wakeQueryRef = React.useRef<(query: string) => void>(() => undefined);
-  const wakeListening = useJamieWakeListening(isWakeListeningEnabled, (query) => wakeQueryRef.current(query));
+  const wakeListening = useJamieAudio();
 
   // Recognition Context for returning users - safely handled after mount
   const [memoryContext, setMemoryContext] = useState<any>(null);
@@ -413,10 +413,10 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   };
 
   useEffect(() => {
-    if (!mounted) return;
-    if (isWakeListeningEnabled && wakeListening.status === 'off') void wakeListening.start();
-    if (!isWakeListeningEnabled && wakeListening.status !== 'off') wakeListening.stop();
-  }, [mounted, isWakeListeningEnabled, wakeListening.status, wakeListening.start, wakeListening.stop]);
+    if (!mounted || isLoading || !wakeListening.submittedQuery) return;
+    wakeQueryRef.current(wakeListening.submittedQuery.text);
+    wakeListening.consumeSubmittedQuery(wakeListening.submittedQuery.id);
+  }, [isLoading, mounted, wakeListening]);
 
   const originalHandleSubmit = async (_event?: React.FormEvent<HTMLFormElement>) => {
     await sendChatMessage(input);
@@ -554,6 +554,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         isLefthandMode={isLefthandMode}
         assistantName={assistantProfile.displayName}
         listeningStatus={wakeListening.status}
+        liveCaption={wakeListening.caption}
       />
     );
   }
@@ -572,14 +573,26 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
       <div className="flex items-center gap-2 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
         <span className={`h-2 w-2 rounded-full ${wakeListening.status === 'listening' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-        <span>{wakeListening.status === 'listening' ? 'Listening for Pull that up' : wakeListening.status === 'paused' ? 'Paused while Jamie speaks' : wakeListening.status === 'requesting' ? 'Requesting microphone' : 'Microphone off'}</span>
-        {!['listening', 'paused', 'requesting'].includes(wakeListening.status) && isWakeListeningEnabled ? (
+        <span>{wakeListening.status === 'listening' || wakeListening.status === 'speech-detected' ? 'Listening for Pull that up' : wakeListening.status === 'jamie-speaking' ? 'Paused while Jamie speaks' : wakeListening.status === 'permission-required' || wakeListening.status === 'starting' ? 'Requesting microphone' : 'Microphone off'}</span>
+        {!['listening', 'speech-detected', 'jamie-speaking', 'permission-required', 'starting'].includes(wakeListening.status) && isWakeListeningEnabled ? (
           <button type="button" onClick={() => void wakeListening.start()} className="rounded border border-white/15 px-2 py-1 text-white">Enable</button>
         ) : null}
         {wakeListening.status === 'listening' ? (
           <button type="button" onClick={() => { setWakeListeningEnabled(false); wakeListening.stop(); }} className="rounded border border-white/15 px-2 py-1 text-white">Stop</button>
         ) : null}
       </div>
+      {wakeListening.status === 'listening' || wakeListening.caption ? (
+        <div className="mx-4 border-l-2 border-emerald-300 bg-slate-950/70 px-3 py-2" aria-live="polite" aria-label="Jamie live transcript">
+          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-300">Pending query context</p>
+          <p className="mt-1 text-xs leading-5 text-slate-200">{wakeListening.caption || 'Listening...'}</p>
+        </div>
+      ) : null}
+      {wakeListening.pendingQuery ? (
+        <div className="mx-4 flex items-center justify-between gap-3 border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
+          <span className="min-w-0 truncate">Searching in 2 seconds: {wakeListening.pendingQuery.text}</span>
+          <button type="button" onClick={wakeListening.cancelPendingQuery} className="shrink-0 border border-amber-200/30 px-2 py-1 font-black uppercase">Cancel</button>
+        </div>
+      ) : null}
 
       {localIntel && (
         <div className="animate-in fade-in zoom-in duration-500">
