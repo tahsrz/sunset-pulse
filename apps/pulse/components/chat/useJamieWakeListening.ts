@@ -10,6 +10,10 @@ type SpeechRecognitionEventLike = Event & {
   results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
 };
 
+type SpeechRecognitionErrorEventLike = Event & {
+  error: 'aborted' | 'audio-capture' | 'bad-grammar' | 'language-not-supported' | 'network' | 'no-speech' | 'not-allowed' | 'service-not-allowed';
+};
+
 type SpeechRecognitionLike = EventTarget & {
   continuous: boolean;
   interimResults: boolean;
@@ -18,7 +22,7 @@ type SpeechRecognitionLike = EventTarget & {
   stop: () => void;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
 };
 
 const WINDOW_MS = 30_000;
@@ -47,6 +51,9 @@ export function useJamieWakeListening(
   const pausedForTtsRef = useRef(false);
   const interimRef = useRef('');
   const captionHoldUntilRef = useRef(0);
+  const activeRef = useRef(false);
+  const startInFlightRef = useRef(false);
+  const restartTimerRef = useRef<number | null>(null);
 
   const refreshCaption = useCallback((now = Date.now()) => {
     if (now < captionHoldUntilRef.current) return;
@@ -57,15 +64,40 @@ export function useJamieWakeListening(
   useEffect(() => { callbackRef.current = onQuery; }, [onQuery]);
   useEffect(() => { enabledRef.current = enabled; }, [enabled]);
 
+  const beginRecognition = useCallback((delay = 0) => {
+    if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
+    restartTimerRef.current = window.setTimeout(() => {
+      restartTimerRef.current = null;
+      if (!enabledRef.current || pausedForTtsRef.current || activeRef.current || !recognitionRef.current) return;
+      try {
+        recognitionRef.current.start();
+        activeRef.current = true;
+        setStatus('listening');
+      } catch {
+        activeRef.current = false;
+        setStatus('off');
+      }
+    }, delay);
+  }, []);
+
   const stop = useCallback(() => {
     enabledRef.current = false;
+    if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
+    restartTimerRef.current = null;
     recognitionRef.current?.stop();
     recognitionRef.current = null;
+    activeRef.current = false;
     setStatus('off');
   }, []);
 
   const start = useCallback(async () => {
     if (typeof window === 'undefined') return;
+    if (activeRef.current || startInFlightRef.current) return;
+    if (recognitionRef.current) {
+      enabledRef.current = true;
+      beginRecognition();
+      return;
+    }
     const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionConstructor || !navigator.mediaDevices?.getUserMedia) {
       setStatus('unsupported');
@@ -73,6 +105,7 @@ export function useJamieWakeListening(
     }
 
     setStatus('requesting');
+    startInFlightRef.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((track) => track.stop());
@@ -114,21 +147,36 @@ export function useJamieWakeListening(
         interimRef.current = interimParts.join(' ').trim();
         if (!segmentsRef.current.some((segment) => WAKE_PHRASE.test(segment.text))) refreshCaption();
       };
-      recognition.onerror = () => {
-        if (!pausedForTtsRef.current) setStatus('denied');
+      recognition.onerror = (event) => {
+        activeRef.current = false;
+        if (pausedForTtsRef.current || event.error === 'aborted' || event.error === 'no-speech') return;
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          enabledRef.current = false;
+          recognitionRef.current = null;
+          setStatus('denied');
+          return;
+        }
+        if (event.error === 'audio-capture' || event.error === 'language-not-supported') {
+          enabledRef.current = false;
+          recognitionRef.current = null;
+          setStatus('unsupported');
+        }
       };
       recognition.onend = () => {
+        activeRef.current = false;
         if (enabledRef.current && !pausedForTtsRef.current) {
-          try { recognition.start(); } catch { setStatus('off'); }
+          beginRecognition(750);
         }
       };
       recognitionRef.current = recognition;
-      recognition.start();
-      setStatus('listening');
+      beginRecognition();
     } catch {
+      enabledRef.current = false;
       setStatus('denied');
+    } finally {
+      startInFlightRef.current = false;
     }
-  }, [refreshCaption]);
+  }, [beginRecognition, refreshCaption]);
 
   useEffect(() => {
     const pruneTimer = window.setInterval(() => {
@@ -143,17 +191,13 @@ export function useJamieWakeListening(
     const pauseForTts = () => {
       pausedForTtsRef.current = true;
       recognitionRef.current?.stop();
+      activeRef.current = false;
       if (enabledRef.current) setStatus('paused');
     };
     const resumeAfterTts = () => {
       pausedForTtsRef.current = false;
       if (!enabledRef.current || !recognitionRef.current) return;
-      try {
-        recognitionRef.current.start();
-        setStatus('listening');
-      } catch {
-        setStatus('off');
-      }
+      beginRecognition(250);
     };
 
     window.addEventListener(TTS_START_EVENT, pauseForTts);
@@ -161,9 +205,10 @@ export function useJamieWakeListening(
     return () => {
       window.removeEventListener(TTS_START_EVENT, pauseForTts);
       window.removeEventListener(TTS_END_EVENT, resumeAfterTts);
+      if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
       recognitionRef.current?.stop();
     };
-  }, []);
+  }, [beginRecognition]);
 
   return { status, caption, start, stop };
 }
