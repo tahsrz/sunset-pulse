@@ -8,6 +8,7 @@ interface JamieChatMinimizedProps {
   isLefthandMode: boolean;
   assistantName?: string;
   listeningStatus?: 'off' | 'requesting' | 'listening' | 'paused' | 'unsupported' | 'denied';
+  liveCaption?: string;
 }
 
 const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
@@ -15,6 +16,7 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
   isLefthandMode,
   assistantName = 'Jamie',
   listeningStatus = 'off',
+  liveCaption = '',
 }) => {
   const isListening = listeningStatus === 'listening';
   const statusLabel = isListening
@@ -31,6 +33,16 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
 
   return (
     <div className={`fixed bottom-4 ${isLefthandMode ? 'left-4 sm:left-0' : 'right-4 sm:right-0'} z-40 transition-all duration-500 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2`}>
+      {(isListening || liveCaption) ? (
+        <div
+          className={`absolute bottom-14 w-[min(320px,calc(100vw-2rem))] border border-white/15 bg-slate-950/95 px-3 py-2 text-left shadow-xl backdrop-blur-md sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 ${isLefthandMode ? 'left-0 sm:left-16' : 'right-0 sm:right-16'}`}
+          aria-live="polite"
+          aria-label="Jamie live transcript"
+        >
+          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-300">Pending query context</p>
+          <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-200">{liveCaption || 'Listening...'}</p>
+        </div>
+      ) : null}
       <button
         onClick={onOpen}
         aria-label="Open Jamie"
