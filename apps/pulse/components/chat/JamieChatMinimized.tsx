@@ -20,7 +20,7 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
   assistantName = 'Jamie',
   listeningStatus = 'off',
   liveCaption = '',
-}: JamieChatMinimizedProps) {
+}) => {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
 
   const isDraggingRef = useRef(false);
@@ -186,4 +186,6 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
       </button>
     </div>
   );
-}
+};
+
+export default JamieChatMinimized;
