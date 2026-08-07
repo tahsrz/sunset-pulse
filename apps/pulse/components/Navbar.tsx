@@ -39,6 +39,8 @@ const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { cart } = useCart() as { cart: CartItem[] };
   const isSigningOutRef = useRef(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -60,35 +62,37 @@ const Navbar: React.FC = () => {
     return `/login?redirect=${encodeURIComponent(pathname)}`;
   }, [pathname]);
 
-  const navLinks = useMemo<NavLink[]>(() => [
-    { href: '/', label: 'Home', active: pathname === '/' },
-    { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent'), emphasis: 'emerald' },
-    { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
-    ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine'), emphasis: 'emerald' as const }] : []),
-    { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
-    { href: '/spatial-lab', label: 'Spatial', active: pathname.startsWith('/spatial-lab'), emphasis: 'teal' },
-    { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
-    { href: '/play-jamie', label: 'Play Jamie', active: pathname.startsWith('/play-jamie'), emphasis: 'violet' },
-    { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
-    { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
-    { href: '/properties', label: 'Properties', active: pathname === '/properties' },
-    { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
-    ...(canOperateLeads ? [{ href: '/admin/lead-engine', label: 'Lead Engine', active: pathname.startsWith('/admin/lead-engine'), emphasis: 'blue' as const }] : []),
-    { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), emphasis: 'emerald', compact: true },
-    { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), emphasis: 'cyan', compact: true },
-    { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
-    { href: '/grill', label: 'Grill', active: pathname === '/grill' },
-    { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
-    { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true },
-    { href: '/contact', label: 'Contact', active: pathname === '/contact', emphasis: 'blue', compact: true }
-  ], [canOperateLeads, pathname]);
+  const { navLinks, primaryLinks, overflowLinks, commandRoutes } = useMemo(() => {
+    const links: NavLink[] = [
+      { href: '/', label: 'Home', active: pathname === '/' },
+      { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent'), emphasis: 'emerald' },
+      { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
+      ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine'), emphasis: 'emerald' as const }] : []),
+      { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
+      { href: '/spatial-lab', label: 'Spatial', active: pathname.startsWith('/spatial-lab'), emphasis: 'teal' },
+      { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
+      { href: '/play-jamie', label: 'Play Jamie', active: pathname.startsWith('/play-jamie'), emphasis: 'violet' },
+      { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
+      { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
+      { href: '/properties', label: 'Properties', active: pathname === '/properties' },
+      { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
+      ...(canOperateLeads ? [{ href: '/admin/lead-engine', label: 'Lead Engine', active: pathname.startsWith('/admin/lead-engine'), emphasis: 'blue' as const }] : []),
+      { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), emphasis: 'emerald', compact: true },
+      { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), emphasis: 'cyan', compact: true },
+      { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
+      { href: '/grill', label: 'Grill', active: pathname === '/grill' },
+      { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
+      { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true },
+      { href: '/contact', label: 'Contact', active: pathname === '/contact', emphasis: 'blue', compact: true },
+    ];
 
-  const primaryLinks = navLinks.slice(0, 5);
-  const overflowLinks = navLinks.slice(5);
-  const commandRoutes = useMemo<CommandPaletteRoute[]>(
-    () => navLinks.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })),
-    [navLinks]
-  );
+    return {
+      navLinks: links,
+      primaryLinks: links.slice(0, 5),
+      overflowLinks: links.slice(5),
+      commandRoutes: links.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })) satisfies CommandPaletteRoute[],
+    };
+  }, [canOperateLeads, pathname]);
 
   useEffect(() => {
     if (isSigningOutRef.current) {
@@ -117,6 +121,20 @@ const Navbar: React.FC = () => {
     setIsProfileMenuOpen(false);
     setIsCommandOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -180,7 +198,7 @@ const Navbar: React.FC = () => {
             ))}
 
             {overflowLinks.length > 0 && (
-              <div className="relative">
+              <div className="relative" ref={moreMenuRef}>
                 <button
                   type="button"
                   className={`flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold transition ${
@@ -254,7 +272,7 @@ const Navbar: React.FC = () => {
             </Link>
 
             {isLoggedIn ? (
-              <div className="relative">
+              <div className="relative" ref={profileMenuRef}>
                 <button
                   type="button"
                   className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
@@ -381,6 +399,12 @@ function desktopActiveClass(emphasis?: NavLink['emphasis']) {
       return 'bg-cyan-300/15 text-cyan-100';
     case 'violet':
       return 'bg-violet-300/15 text-violet-100';
+    case 'emerald':
+      return 'bg-emerald-300/15 text-emerald-100';
+    case 'blue':
+      return 'bg-blue-300/15 text-blue-100';
+    case 'orange':
+      return 'bg-orange-300/15 text-orange-100';
     default:
       return 'bg-white/[0.12] text-white';
   }
