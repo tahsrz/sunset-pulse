@@ -97,6 +97,46 @@ describe('MLS listing discovery engine', () => {
     expect(result.listings[0]).toMatchObject({ id: 'match', distance_miles: 0 });
   });
 
+  it('treats Residential Lease as lease intent instead of over-filtering listing type', async () => {
+    const search = vi.fn().mockResolvedValue([
+      listing('arlington-lease', {
+        type: 'Residential',
+        name: 'Arlington lease home',
+        location: { street: '100 Rental Lane', city: 'Arlington', state: 'TX', zipcode: '76013' },
+        beds: 3,
+        baths: 2,
+        list_price: 2500,
+        price: 2500,
+        price_type: 'lease',
+        rates: { monthly: 2500 },
+      }),
+      listing('arlington-sale', {
+        type: 'Residential',
+        name: 'Arlington sale home',
+        location: { street: '101 Sale Lane', city: 'Arlington', state: 'TX', zipcode: '76013' },
+        beds: 3,
+        baths: 2,
+        price_type: 'sale',
+      }),
+    ]);
+
+    const result = await discoverListings({
+      location: 'Arlington',
+      propertyTypes: ['Residential Lease'],
+      bedsMin: 3,
+      bathsMin: 2,
+    }, { search, now: () => NOW });
+
+    expect(result.listings.map((item) => item.id)).toEqual(['arlington-lease']);
+    expect(search.mock.calls[0][0]).toMatchObject({
+      location: 'Arlington',
+      priceType: 'lease',
+      beds: 3,
+      baths: 2,
+    });
+    expect(search.mock.calls[0][0].propertyType).toBeUndefined();
+  });
+
   it('sorts and paginates deterministically', async () => {
     const search = vi.fn().mockResolvedValue([
       listing('five', { list_price: 500000 }),
@@ -132,7 +172,7 @@ describe('MLS listing discovery engine', () => {
 
   it('parses public query aliases into the shared discovery contract', () => {
     const input = parseListingDiscoverySearchParams(new URLSearchParams(
-      'city=Frisco&propertyType=Single%20Family,Condo&minPrice=400000&maxPrice=900000&beds=3&bounds=-97,33,-96,34&center=-96.82,33.15&radius=15&limit=12'
+      'city=Frisco&propertyType=Single%20Family,Condo&minPrice=400000&maxPrice=900000&price_type=lease&beds=3&bounds=-97,33,-96,34&center=-96.82,33.15&radius=15&limit=12'
     ));
     const parsed = listingDiscoveryInputSchema.parse(input);
 
@@ -141,6 +181,7 @@ describe('MLS listing discovery engine', () => {
       propertyTypes: ['Single Family', 'Condo'],
       priceMin: 400000,
       priceMax: 900000,
+      priceType: 'lease',
       bedsMin: 3,
       bounds: { west: -97, south: 33, east: -96, north: 34 },
       center: { longitude: -96.82, latitude: 33.15 },
