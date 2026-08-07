@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "declaration": true,
     "resolveJsonModule": true,
@@ -38,7 +39,12 @@
       "kysely/helpers/postgres": ["../../../node_modules/kysely/dist/helpers/postgres.d.ts"],
       "@lingo.dev/sdk": ["../../../node_modules/@lingo.dev/sdk/dist/index.d.ts"],
       "react": ["../../../apps/scheduling/web/node_modules/@types/react/index.d.ts"],
-      "react/*": ["../../../apps/scheduling/web/node_modules/@types/react/*"]
+      "react/*": ["../../../apps/scheduling/web/node_modules/@types/react/*"],
+      "*": [
+        "*",
+        "node_modules/*",
+        "../../../node_modules/*"
+      ]
     },
     "incremental": true,
     "skipLibCheck": true,
