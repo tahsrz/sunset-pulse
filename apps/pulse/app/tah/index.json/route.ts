@@ -44,7 +44,9 @@ export function GET(request: Request) {
         htmlUrl: cartridge.routes.html,
         headlessUrl: cartridge.routes.headless,
         apiUrl: cartridge.routes.api,
-        metaUrl: cartridge.routes.meta
+        metaUrl: cartridge.routes.meta,
+        downloadUrl: cartridge.routes.download,
+        payloadDownloadUrl: cartridge.routes.payloadDownload
       }))
     },
     {

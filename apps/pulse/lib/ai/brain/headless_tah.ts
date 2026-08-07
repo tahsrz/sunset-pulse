@@ -43,6 +43,8 @@ export function formatHeadlessCatalog(host: string, cartridges: PulseCartridge[]
       `HEADLESS: ${cartridge.routes.headless}`,
       `API: ${cartridge.routes.api}`,
       `META: ${cartridge.routes.meta}`,
+      `DOWNLOAD: ${cartridge.routes.download}`,
+      ...(cartridge.routes.payloadDownload ? [`PAYLOAD_DOWNLOAD: ${cartridge.routes.payloadDownload}`] : []),
       ''
     ])
   ].join('\n');
@@ -72,6 +74,8 @@ export function formatHeadlessCartridge(host: string, cartridge: PulseCartridge,
     `JSON_INDEX: ${host}/tah/index.json`,
     `QUERY_API: ${metadata.routes.api}`,
     `META_API: ${metadata.routes.meta}`,
+    `DOWNLOAD: ${metadata.routes.download}`,
+    ...(metadata.routes.payloadDownload ? [`PAYLOAD_DOWNLOAD: ${metadata.routes.payloadDownload}`] : []),
     '',
     'PREVIEW_SHARDS:',
     previews.length > 0

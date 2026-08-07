@@ -5,6 +5,7 @@ import { GET as getTahHeadless } from '@/app/tah/headless/route';
 import { GET as getTahIndex } from '@/app/tah/index.json/route';
 import { GET as getCartridgeHeadless } from '@/app/tah/[slug]/headless/route';
 import { GET as getCartridgeMeta } from '@/app/api/tah/[slug]/meta/route';
+import { GET as downloadCartridge } from '@/app/api/tah/[slug]/download/route';
 import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
 import { GET as getAtlasManifest } from '@/app/api/tah/atlas/manifest/route';
 import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
@@ -89,10 +90,26 @@ describe('TAH robot-facing routes', () => {
         searchQuery: fixture.searchQuery,
         routes: expect.objectContaining({
           headless: fixture.routes.headless,
-          meta: fixture.routes.meta
+          meta: fixture.routes.meta,
+          download: fixture.routes.download
         })
       })
     );
+    expect(body.cartridge.path).toBeUndefined();
+  });
+
+  it('serves catalog-bounded cartridge binaries without exposing local paths', async () => {
+    const fixture = getCatalogFixtureMetadata();
+    const response = await downloadCartridge(new NextRequest(fixture.routes.download), {
+      params: Promise.resolve({ slug: fixture.slug })
+    });
+    const body = await response.arrayBuffer();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/octet-stream');
+    expect(response.headers.get('content-disposition')).toContain('attachment; filename=');
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(body.byteLength).toBe(fixture.byteSize);
   });
 
   it('advertises headless and JSON entrances in llms.txt', async () => {
@@ -113,6 +130,7 @@ describe('TAH robot-facing routes', () => {
     expect(body).toContain(`[${fixture.title}](${fixture.routes.html})`);
     expect(body).toContain(`[headless](${fixture.routes.headless})`);
     expect(body).toContain(`[query](${fixture.routes.api})`);
+    expect(body).toContain(`[download](${fixture.routes.download})`);
   });
 
   it('serves the consolidated Atlas world map from the TAH catalog', async () => {
