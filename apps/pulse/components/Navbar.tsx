@@ -93,35 +93,6 @@ const Navbar: React.FC = () => {
       commandRoutes: links.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })) satisfies CommandPaletteRoute[],
     };
   }, [canOperateLeads, pathname]);
-  const navLinks = useMemo<NavLink[]>(() => [
-    { href: '/', label: 'Home', active: pathname === '/' },
-    { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent'), emphasis: 'emerald' },
-    { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
-    ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine'), emphasis: 'emerald' as const }] : []),
-    { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
-    { href: '/spatial-lab', label: 'Spatial', active: pathname.startsWith('/spatial-lab'), emphasis: 'teal' },
-    { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
-    { href: '/play-jamie', label: 'Play Jamie', active: pathname.startsWith('/play-jamie'), emphasis: 'violet' },
-    { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
-    { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
-    { href: '/properties', label: 'Properties', active: pathname === '/properties' },
-    { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
-    ...(canOperateLeads ? [{ href: '/admin/lead-engine', label: 'Lead Engine', active: pathname.startsWith('/admin/lead-engine'), emphasis: 'blue' as const }] : []),
-    { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), emphasis: 'emerald', compact: true },
-    { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), emphasis: 'cyan', compact: true },
-    { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
-    { href: '/grill', label: 'Grill', active: pathname === '/grill' },
-    { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
-    { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true },
-    { href: '/contact', label: 'Contact', active: pathname === '/contact', emphasis: 'blue', compact: true }
-  ], [canOperateLeads, pathname]);
-
-  const primaryLinks = navLinks.slice(0, 5);
-  const overflowLinks = navLinks.slice(5);
-  const commandRoutes = useMemo<CommandPaletteRoute[]>(
-    () => navLinks.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })),
-    [navLinks]
-  );
 
   useEffect(() => {
     if (isSigningOutRef.current) {
