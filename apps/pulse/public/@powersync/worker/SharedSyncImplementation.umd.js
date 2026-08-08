@@ -1054,6 +1054,7 @@ class SharedSyncImplementation extends _powersync_common__WEBPACK_IMPORTED_MODUL
     syncStatus;
     broadCastLogger;
     database = this.generateReconnectableDatabase();
+    sharedCloseSignal = (0,_shared_tab_close_signal_js__WEBPACK_IMPORTED_MODULE_6__.generateTabCloseSignal)();
     constructor() {
         super();
         this.ports = [];
@@ -1387,7 +1388,7 @@ class SharedSyncImplementation extends _powersync_common__WEBPACK_IMPORTED_MODUL
         });
         const remote = comlink__WEBPACK_IMPORTED_MODULE_1__.wrap(workerPort);
         const identifier = this.syncParams.dbParams.dbFilename;
-        const clientLockName = await (0,_shared_tab_close_signal_js__WEBPACK_IMPORTED_MODULE_6__.generateTabCloseSignal)();
+        const clientLockName = await this.sharedCloseSignal;
         /**
          * The open could fail if the tab is closed while we're busy opening the database.
          * This operation is typically executed inside an exclusive portMutex lock.
@@ -3844,7 +3845,7 @@ class SyncStatus {
         });
     }
     /**
-     * All sync streams currently being tracked in teh database.
+     * All sync streams currently being tracked in the database.
      *
      * This returns null when the database is currently being opened and we don't have reliable information about all
      * included streams yet.
@@ -4124,12 +4125,16 @@ class ControlledExecutor {
     }
     async execute(param) {
         this.runningTask = this.task(param);
-        await this.runningTask;
-        this.runningTask = undefined;
-        if (this.pendingTaskParam) {
-            const pendingParam = this.pendingTaskParam;
-            this.pendingTaskParam = undefined;
-            this.execute(pendingParam);
+        try {
+            await this.runningTask;
+        }
+        finally {
+            this.runningTask = undefined;
+            if (this.pendingTaskParam) {
+                const pendingParam = this.pendingTaskParam;
+                this.pendingTaskParam = undefined;
+                this.execute(pendingParam);
+            }
         }
     }
 }
@@ -12709,7 +12714,7 @@ function requireDist () {
 
 var distExports = requireDist();
 
-var version = "1.57.0";
+var version = "1.57.3";
 var PACKAGE = {
 	version: version};
 
@@ -13323,6 +13328,9 @@ class AbstractRemote {
             if (!res.ok || !res.body) {
                 const text = await res.text();
                 this.logger.error(`Could not POST streaming to ${path} - ${res.status} - ${res.statusText}: ${text}`);
+                if (res.status === 401) {
+                    this.invalidateCredentials();
+                }
                 const error = new Error(`HTTP ${res.statusText}: ${text}`);
                 error.status = res.status;
                 throw error;
@@ -13579,6 +13587,7 @@ class AbstractStreamingSyncImplementation extends BaseObserver {
     async _uploadAllCrud(signal) {
         return this.obtainLock({
             type: LockType.CRUD,
+            signal,
             callback: async () => {
                 /**
                  * Keep track of the first item in the CRUD queue for the last `uploadCrud` iteration.
@@ -14460,7 +14469,12 @@ class TriggerManagerImpl {
                 // destination table consistent.
                 await this.db.writeTransaction(async (tx) => {
                     const callbackResult = await options.onChange({
-                        ...tx,
+                        execute: (query, params) => tx.execute(query, params),
+                        executeBatch: (query, params) => tx.executeBatch(query, params),
+                        executeRaw: (query, params) => tx.executeRaw(query, params),
+                        get: (query, params) => tx.get(query, params),
+                        getAll: (query, params) => tx.getAll(query, params),
+                        getOptional: (query, params) => tx.getOptional(query, params),
                         destinationTable: destination,
                         withDiff: async (query, params, options) => {
                             // Wrap the query to expose the destination table
@@ -15198,7 +15212,7 @@ SELECT * FROM crud_entries;
     }
     /**
      * Open a read-only transaction.
-     * Read transactions can run concurrently to a write transaction.
+     * When multiple connections are available, read transactions can run concurrently to a write transaction.
      * Changes from any write transaction are not visible to read transactions started before it.
      *
      * @param callback - Function to execute within the transaction
