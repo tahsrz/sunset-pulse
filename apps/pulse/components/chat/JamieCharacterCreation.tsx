@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect } from 'react';
 import { Check, Volume2, X } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
 import { JAMIE_VOICE_CHOICES, speak, stopSpeaking, type JamieVoicePreset } from '@/lib/core/tts';
@@ -21,6 +22,33 @@ export default function JamieCharacterCreation({ open, onComplete }: JamieCharac
     speak(PREVIEW_LINE, voice);
   };
 
+  const complete = useCallback(() => {
+    stopSpeaking();
+    localStorage.setItem('jamie_character_created', 'true');
+    onComplete();
+  }, [onComplete]);
+
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') complete();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      stopSpeaking();
+    };
+  }, [open, complete]);
+
+  if (!open) return null;
   const complete = () => {
     stopSpeaking();
     localStorage.setItem('jamie_character_created', 'true');

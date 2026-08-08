@@ -65,6 +65,7 @@ describe('Jamie tools', () => {
       city: 'Frisco',
       property_types: 'Single Family',
       property_sub_types: '',
+      price_type: '',
       price_min: '',
       price_max: '750000',
       beds_min: '3',
@@ -76,6 +77,7 @@ describe('Jamie tools', () => {
       city: 'Frisco',
       property_types: ['Single Family'],
       property_sub_types: undefined,
+      price_type: undefined,
       price_min: undefined,
       price_max: 750000,
       beds_min: 3,
@@ -121,5 +123,47 @@ describe('Jamie tools', () => {
     }));
     expect(result.total).toBe(12);
     expect(result.properties[0].image).toBe('https://cdn.example.test/home.jpg');
+  });
+
+  it('passes lease intent into the shared discovery engine', async () => {
+    mockDiscoverListings.mockResolvedValue({
+      listings: [{
+        id: 'lease-1',
+        _id: 'lease-1',
+        mls_id: 'MLS-LEASE-1',
+        name: 'Arlington Lease Home',
+        location: { city: 'Arlington', state: 'TX' },
+        price_type: 'lease',
+        list_price: 2500,
+        rates: { monthly: 2500 },
+        beds: 3,
+        baths: 2,
+        images: ['https://cdn.example.test/lease.jpg'],
+        source: 'MLS',
+      }],
+      pagination: { total: 1 },
+    });
+
+    const result = await searchPropertiesForJamie({
+      city: 'Arlington',
+      property_types: ['Residential Lease'],
+      price_type: 'lease',
+      beds_min: 3,
+      full_baths_min: 2,
+    });
+
+    expect(mockDiscoverListings).toHaveBeenCalledWith(expect.objectContaining({
+      location: 'Arlington',
+      propertyTypes: ['Residential Lease'],
+      priceType: 'lease',
+      bedsMin: 3,
+      bathsMin: 2,
+    }));
+    expect(result.properties[0]).toMatchObject({
+      name: 'Arlington Lease Home',
+      price: 2500,
+      beds: 3,
+      baths: 2,
+    });
   });
 });

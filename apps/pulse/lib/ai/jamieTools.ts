@@ -26,6 +26,8 @@ export const jamiePropertySearchInputSchema = z.object({
   neighborhood: z.string().optional().describe("Specific neighborhood name."),
   property_types: optionalStringList.describe("Property types to include."),
   property_sub_types: optionalStringList.describe("Property sub-types to include."),
+  price_type: z.enum(['sale', 'lease', 'unknown', '']).optional().transform((value) => value === '' ? undefined : value)
+    .describe("Use 'lease' for rent, rental, or lease searches; use 'sale' for purchase searches."),
   price_min: optionalPositiveInteger.describe("Minimum price in USD."),
   price_max: optionalPositiveInteger.describe("Maximum price in USD."),
   beds_min: optionalPositiveInteger.describe("Minimum bedrooms."),
@@ -109,6 +111,7 @@ export async function searchPropertiesForJamie(input: JamiePropertySearchInput):
     propertyTypes: parsed.property_types,
     priceMin: parsed.price_min,
     priceMax: parsed.price_max,
+    priceType: parsed.price_type,
     bedsMin: parsed.beds_min,
     bedsMax: parsed.beds_max,
     bathsMin: parsed.full_baths_min,

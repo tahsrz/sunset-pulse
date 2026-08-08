@@ -127,6 +127,8 @@ class BridgeMLSService {
       baths: item.BathroomsFull || 0,
       square_feet: item.LivingArea || 0,
       amenities: [],
+      list_price: item.ListPrice,
+      price_type: isRental ? 'lease' : 'sale',
       price: !isRental ? item.ListPrice : 0,
       rates: {
         monthly: isRental ? item.ListPrice : 0

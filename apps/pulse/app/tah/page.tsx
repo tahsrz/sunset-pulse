@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
+import { getCartridgeMetadata, toPublicCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
 import { TahLibraryClient } from '@/app/tah/TahLibraryClient';
 import { getTahMasterMetadata } from '@/lib/core/tah_master';
@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function TahPage() {
   const cartridges = listPulseCartridges().map(cartridge => getCartridgeMetadata(cartridge));
-  const publicCartridges = cartridges.map(({ path: _path, ...cartridge }) => cartridge);
+  const publicCartridges = cartridges.map(toPublicCartridgeMetadata);
   const master = getTahMasterMetadata();
   const masterArchive = {
     status: master.status,

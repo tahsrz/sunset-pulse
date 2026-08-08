@@ -36,6 +36,7 @@ export const listingDiscoveryInputSchema = z.object({
   propertyTypes: stringArray,
   priceMin: optionalNumber(z.coerce.number().finite().nonnegative()),
   priceMax: optionalNumber(z.coerce.number().finite().nonnegative()),
+  priceType: z.enum(['sale', 'lease', 'unknown']).optional(),
   bedsMin: optionalNumber(z.coerce.number().finite().nonnegative()),
   bedsMax: optionalNumber(z.coerce.number().finite().nonnegative()),
   bathsMin: optionalNumber(z.coerce.number().finite().nonnegative()),
@@ -69,6 +70,7 @@ export type ListingDiscoveryInput = {
   propertyTypes?: string | string[];
   priceMin?: NumericInput;
   priceMax?: NumericInput;
+  priceType?: 'sale' | 'lease' | 'unknown';
   bedsMin?: NumericInput;
   bedsMax?: NumericInput;
   bathsMin?: NumericInput;
@@ -125,9 +127,12 @@ export async function discoverListings(
   const now = (dependencies.now || (() => new Date()))();
   const updatedSince = new Date(now.getTime() - criteria.maxAgeHours * 60 * 60 * 1000).toISOString();
   const search = dependencies.search || searchListings;
+  const transactionIntent = getTransactionIntent(criteria);
+  const propertyTypeFilters = getStructuralPropertyTypes(criteria);
   const coarseFilters: ListingSearch = {
     location: criteria.location,
-    propertyType: criteria.propertyTypes?.length === 1 ? criteria.propertyTypes[0] : undefined,
+    propertyType: propertyTypeFilters.length === 1 ? propertyTypeFilters[0] : undefined,
+    priceType: transactionIntent,
     minPrice: criteria.priceMin,
     maxPrice: criteria.priceMax,
     beds: criteria.bedsMin,
@@ -174,6 +179,7 @@ export function parseListingDiscoverySearchParams(searchParams: URLSearchParams)
     ],
     priceMin: firstPresent(searchParams, ['priceMin', 'minPrice']),
     priceMax: firstPresent(searchParams, ['priceMax', 'maxPrice']),
+    priceType: parsePriceType(searchParams.get('priceType') || searchParams.get('price_type') || searchParams.get('transaction')),
     bedsMin: firstPresent(searchParams, ['bedsMin', 'beds']),
     bedsMax: searchParams.get('bedsMax') || undefined,
     bathsMin: firstPresent(searchParams, ['bathsMin', 'baths']),
@@ -204,7 +210,10 @@ function qualifyListing(
   if (!images.length) return null;
 
   if (criteria.location && !matchesLocation(listing, criteria.location)) return null;
-  if (criteria.propertyTypes?.length && !criteria.propertyTypes.some((type) => equalsIgnoreCase(type, listing.type))) return null;
+  const propertyTypeFilters = getStructuralPropertyTypes(criteria);
+  if (propertyTypeFilters.length && !propertyTypeFilters.some((type) => equalsIgnoreCase(type, listing.type))) return null;
+  const transactionIntent = getTransactionIntent(criteria);
+  if (transactionIntent && listing.price_type !== transactionIntent) return null;
 
   const price = listing.list_price ?? listing.price ?? listing.rates.monthly ?? null;
   if (criteria.priceMin !== undefined && (price === null || price < criteria.priceMin)) return null;
@@ -308,6 +317,26 @@ function firstPresent(searchParams: URLSearchParams, keys: string[]) {
     if (value !== null && value !== '') return value;
   }
   return undefined;
+}
+
+function parsePriceType(value: string | null): ListingDiscoveryInput['priceType'] {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === 'sale' || normalized === 'lease' || normalized === 'unknown') return normalized;
+  if (normalized === 'rent' || normalized === 'rental') return 'lease';
+  return undefined;
+}
+
+function getTransactionIntent(criteria: ParsedListingDiscoveryInput) {
+  if (criteria.priceType) return criteria.priceType;
+  return criteria.propertyTypes?.some(isLeaseTypeAlias) ? 'lease' as const : undefined;
+}
+
+function getStructuralPropertyTypes(criteria: ParsedListingDiscoveryInput) {
+  return (criteria.propertyTypes || []).filter((type) => !isLeaseTypeAlias(type));
+}
+
+function isLeaseTypeAlias(value: string) {
+  return /\b(lease|rental|rent)\b/i.test(value);
 }
 
 function stableId(listing: Listing) {

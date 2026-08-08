@@ -32,8 +32,12 @@ export type CartridgeMetadata = {
     headless: string;
     api: string;
     meta: string;
+    download: string;
+    payloadDownload: string | null;
   };
 };
+
+export type PublicCartridgeMetadata = Omit<CartridgeMetadata, 'path'>;
 
 export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://sunsetpulse.app'): CartridgeMetadata {
   const header = readHeader(cartridge.path);
@@ -67,9 +71,16 @@ export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://
       html: `${host}/tah/${cartridge.slug}`,
       headless: `${host}/tah/${cartridge.slug}/headless`,
       api: getCartridgeApiUrl(host, cartridge),
-      meta: `${host}/api/tah/${cartridge.slug}/meta`
+      meta: `${host}/api/tah/${cartridge.slug}/meta`,
+      download: `${host}/api/tah/${cartridge.slug}/download`,
+      payloadDownload: cartridge.type === 'hat' ? `${host}/api/tah/${cartridge.slug}/download?part=payload` : null
     }
   };
+}
+
+export function toPublicCartridgeMetadata(metadata: CartridgeMetadata): PublicCartridgeMetadata {
+  const { path: _path, ...publicMetadata } = metadata;
+  return publicMetadata;
 }
 
 export function classifyCartridgeDomain(cartridge: PulseCartridge, searchQuery = '', summary = '') {

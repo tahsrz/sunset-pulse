@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
         shardCount: cartridge.shardCount,
         summary: cartridge.summary,
         url: `/tah/${cartridge.slug}`,
-        metaUrl: cartridge.routes.meta
+        metaUrl: cartridge.routes.meta,
+        downloadUrl: cartridge.routes.download,
+        payloadDownloadUrl: cartridge.routes.payloadDownload
       })),
       count: cartridges.length
     });
