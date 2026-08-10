@@ -5,7 +5,7 @@ import { GET as getTahHeadless } from '@/app/tah/headless/route';
 import { GET as getTahIndex } from '@/app/tah/index.json/route';
 import { GET as getCartridgeHeadless } from '@/app/tah/[slug]/headless/route';
 import { GET as getCartridgeMeta } from '@/app/api/tah/[slug]/meta/route';
-import { GET as downloadCartridge } from '@/app/api/tah/[slug]/download/route';
+import { GET as downloadCartridge, HEAD as headCartridgeDownload } from '@/app/api/tah/[slug]/download/route';
 import { GET as getAtlasMap } from '@/app/api/tah/atlas/map/route';
 import { GET as getAtlasManifest } from '@/app/api/tah/atlas/manifest/route';
 import { GET as getAtlasProbe } from '@/app/api/tah/atlas/probe/route';
@@ -67,7 +67,9 @@ describe('TAH robot-facing routes', () => {
       expect.arrayContaining([
         expect.objectContaining({
           slug: fixture.slug,
-          headlessUrl: fixture.routes.headless
+          headlessUrl: fixture.routes.headless,
+          downloadUrl: fixture.routes.download,
+          checksumSha256: fixture.checksumSha256
         })
       ])
     );
@@ -95,10 +97,11 @@ describe('TAH robot-facing routes', () => {
         })
       })
     );
+    expect(body.cartridge.checksumSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(body.cartridge.path).toBeUndefined();
   });
 
-  it('serves catalog-bounded cartridge binaries without exposing local paths', async () => {
+  it('serves catalog-bounded cartridge binaries with integrity headers', async () => {
     const fixture = getCatalogFixtureMetadata();
     const response = await downloadCartridge(new NextRequest(fixture.routes.download), {
       params: Promise.resolve({ slug: fixture.slug })
@@ -109,7 +112,22 @@ describe('TAH robot-facing routes', () => {
     expect(response.headers.get('content-type')).toBe('application/octet-stream');
     expect(response.headers.get('content-disposition')).toContain('attachment; filename=');
     expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get('x-checksum-sha256')).toBe(fixture.checksumSha256);
+    expect(response.headers.get('etag')).toBe(`"sha256-${fixture.checksumSha256}"`);
     expect(body.byteLength).toBe(fixture.byteSize);
+  });
+
+  it('supports HEAD checks before cartridge downloads', async () => {
+    const fixture = getCatalogFixtureMetadata();
+    const response = await headCartridgeDownload(new NextRequest(fixture.routes.download), {
+      params: Promise.resolve({ slug: fixture.slug })
+    });
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-length')).toBe(String(fixture.byteSize));
+    expect(response.headers.get('x-checksum-sha256')).toBe(fixture.checksumSha256);
+    expect(body).toBe('');
   });
 
   it('advertises headless and JSON entrances in llms.txt', async () => {
@@ -156,6 +174,8 @@ describe('TAH robot-facing routes', () => {
         expect.objectContaining({ id: `cartridge:${fixture.slug}`, type: 'cartridge' })
       ])
     );
+    const fixtureNode = body.nodes.find((node: any) => node.id === `cartridge:${fixture.slug}`);
+    expect(fixtureNode.downloadUrl).toBe(fixture.routes.download);
     const webNode = body.nodes.find((node: any) => node.id.startsWith('cartridge:web-'));
     if (webNode) {
       expect(webNode.searchQuery).toBeTruthy();
@@ -235,7 +255,8 @@ describe('TAH robot-facing routes', () => {
           coverage: expect.any(Number),
           confidence: expect.any(Number),
           routes: expect.objectContaining({
-            headless: fixture.routes.headless
+            headless: fixture.routes.headless,
+            download: fixture.routes.download
           })
         })
       ])
