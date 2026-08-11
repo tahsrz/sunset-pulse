@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_0e9d66685fe9f28d",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!Hu_language\",\"retryPages\":[],\"freshPages\":[2874779],\"continuationAfter\":\"!Kheis_Local_Municipality_elections\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:49:31.427Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 2874779,
+        "title": "!K7 Music",
+        "url": "https://en.wikipedia.org/wiki/!K7_Music"
+      },
+      "recordId": "lead_crawl_1o8sm37",
+      "title": "!K7 Music - Wikipedia",
+      "crawledAt": "2026-08-11T20:49:31.426Z",
+      "markdownChars": 14020
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_0e9d66685fe9f28d.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!Kheis_Local_Municipality_elections",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:49:31.427Z",
+    "runCount": 6,
+    "batchCount": 6,
+    "enumeratedCount": 9,
+    "crawledCount": 9,
+    "importedCount": 9,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}
