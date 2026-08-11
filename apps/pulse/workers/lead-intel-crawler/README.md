@@ -52,3 +52,5 @@ LEAD_INTEL_ALLOWED_DOMAINS=wikipedia.org
 ```
 
 The Windows `start-web-knowledge-worker.ps1` launcher starts this continuous worker alongside the older SunsetWars ingestion orchestrator. Registering the scheduled task remains an explicit operator action.
+
+For a deployed Atlas monitor, set `PULSE_CRAWLER_HEARTBEAT_URL` to the deployed `/api/atlas/processes/heartbeat` endpoint and set the same random `PULSE_CRAWLER_HEARTBEAT_TOKEN` in the crawler's local `.env.local` and deployed Pulse environment. The crawler publishes only bounded progress and checkpoint metadata after each batch. Apply the `crawler_heartbeats` Supabase migration before enabling the remote heartbeat.

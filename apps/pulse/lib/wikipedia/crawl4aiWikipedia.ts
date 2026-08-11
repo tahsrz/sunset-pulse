@@ -119,7 +119,7 @@ export async function runWikipediaIngestionBatch(
       runCount: state.runCount + 1,
     };
     saveWikipediaIngestionState(completeState, statePath);
-    return {
+    return publishWikipediaHeartbeat({
       status: completeState.complete ? 'complete' : 'empty',
       batchId: null,
       cartridgePath: null,
@@ -127,7 +127,7 @@ export async function runWikipediaIngestionBatch(
       articleCount: 0,
       failureCount: 0,
       state: completeState,
-    };
+    });
   }
 
   const pages = uniquePages([...retryPages, ...freshBatch.pages]);
@@ -137,7 +137,7 @@ export async function runWikipediaIngestionBatch(
   const replay = readReplayManifest(manifestPath, checkpointKey);
   if (replay) {
     saveWikipediaIngestionState(replay.stateAfter, statePath);
-    return {
+    return publishWikipediaHeartbeat({
       status: 'replayed',
       batchId,
       cartridgePath: replay.cartridgePath,
@@ -145,7 +145,7 @@ export async function runWikipediaIngestionBatch(
       articleCount: replay.articles.length,
       failureCount: replay.failures.length,
       state: replay.stateAfter,
-    };
+    });
   }
 
   const crawlPage = options.crawlPage || crawlWikipediaPage;
@@ -223,7 +223,7 @@ export async function runWikipediaIngestionBatch(
   writeJsonAtomically(manifestPath, manifest);
   saveWikipediaIngestionState(stateAfter, statePath);
 
-  return {
+  return publishWikipediaHeartbeat({
     status: successes.length ? 'imported' : 'empty',
     batchId,
     cartridgePath,
@@ -231,7 +231,34 @@ export async function runWikipediaIngestionBatch(
     articleCount: successes.length,
     failureCount: failures.length,
     state: stateAfter,
-  };
+  });
+}
+
+async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<WikipediaBatchResult> {
+  const endpoint = process.env.PULSE_CRAWLER_HEARTBEAT_URL || process.env.PULSE_HEARTBEAT_URL;
+  const token = process.env.PULSE_CRAWLER_HEARTBEAT_TOKEN || process.env.PULSE_HEARTBEAT_TOKEN;
+  if (!endpoint || !token) return result;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Crawler-Token': token },
+      body: JSON.stringify({
+        crawlerId: process.env.PULSE_CRAWLER_ID || `wikipedia-${result.state.language}`,
+        status: result.status,
+        batchId: result.batchId,
+        articleCount: result.articleCount,
+        failureCount: result.failureCount,
+        state: result.state,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) throw new Error(`heartbeat endpoint returned ${response.status}`);
+  } catch (error) {
+    console.warn('[WIKIPEDIA_HEARTBEAT_FAILED]', error instanceof Error ? error.message : 'unknown error');
+  }
+
+  return result;
 }
 
 export async function listWikipediaPages(input: {
