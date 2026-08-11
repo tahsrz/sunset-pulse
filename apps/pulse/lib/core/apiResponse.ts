@@ -16,7 +16,7 @@ export const successResponse = (data, metadata = {}, status = 200) => {
   });
 };
 
-export const errorResponse = (message, status = 500, details = null) => {
+export const errorResponse = (message, status = 500, details: unknown = null) => {
   const incidentId = crypto.randomUUID();
   const exposeDetails = status < 500;
   console.error(`[API_ERROR] ${incidentId} ${status}: ${message}`, details || '');

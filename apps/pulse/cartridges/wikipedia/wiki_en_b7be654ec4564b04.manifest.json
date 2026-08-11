@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_b7be654ec4564b04",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Believing_Women\\\"_in_Islam._Unreading_Patriarchal_Interpretations_of_the_Qur'an\",\"retryPages\":[],\"freshPages\":[44296440],\"continuationAfter\":\"\\\"Big\\\"_Jim_Martin\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:02:20.740Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 44296440,
+        "title": "\"Big\" Donnie MacLeod",
+        "url": "https://en.wikipedia.org/wiki/%22Big%22_Donnie_MacLeod"
+      },
+      "recordId": "lead_crawl_avjivw",
+      "title": "\"Big\" Donnie MacLeod - Wikipedia",
+      "crawledAt": "2026-08-11T21:02:20.740Z",
+      "markdownChars": 7425
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_b7be654ec4564b04.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Big\"_Jim_Martin",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:02:20.740Z",
+    "runCount": 27,
+    "batchCount": 27,
+    "enumeratedCount": 41,
+    "crawledCount": 41,
+    "importedCount": 41,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}
