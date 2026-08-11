@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_c92d861acf6a54a9",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Cochranella\\\"_riveroi\",\"retryPages\":[],\"freshPages\":[12365403,12365469,4313020],\"continuationAfter\":\"\\\"Colostethus\\\"_poecilonotus\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:09:19.989Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 12365403,
+        "title": "\"Cochranella\" riveroi",
+        "url": "https://en.wikipedia.org/wiki/%22Cochranella%22_riveroi"
+      },
+      "recordId": "lead_crawl_ejs72s",
+      "title": "\"Cochranella\" riveroi - Wikipedia",
+      "crawledAt": "2026-08-11T21:09:08.152Z",
+      "markdownChars": 7447
+    },
+    {
+      "page": {
+        "pageid": 12365469,
+        "title": "\"Cochranella\" xanthocheridia",
+        "url": "https://en.wikipedia.org/wiki/%22Cochranella%22_xanthocheridia"
+      },
+      "recordId": "lead_crawl_1chv882",
+      "title": "\"Cochranella\" xanthocheridia - Wikipedia",
+      "crawledAt": "2026-08-11T21:09:11.719Z",
+      "markdownChars": 7032
+    },
+    {
+      "page": {
+        "pageid": 4313020,
+        "title": "\"Coelosaurus\" antiquus",
+        "url": "https://en.wikipedia.org/wiki/%22Coelosaurus%22_antiquus"
+      },
+      "recordId": "lead_crawl_1e43lu4",
+      "title": "\"Coelosaurus\" antiquus - Wikipedia",
+      "crawledAt": "2026-08-11T21:09:19.988Z",
+      "markdownChars": 11971
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_c92d861acf6a54a9.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Colostethus\"_poecilonotus",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:09:19.989Z",
+    "runCount": 38,
+    "batchCount": 38,
+    "enumeratedCount": 66,
+    "crawledCount": 66,
+    "importedCount": 66,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

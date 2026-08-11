@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_7b679a6aa466eee7",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"40_Licks\\\"_World_tour\",\"retryPages\":[],\"freshPages\":[23956379,61912686],\"continuationAfter\":\"\\\"@\\\"_(album)\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:54:52.926Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 23956379,
+        "title": "\"900\", Cahiers d'Italie et d'Europe",
+        "url": "https://en.wikipedia.org/wiki/%22900%22%2C_Cahiers_d'Italie_et_d'Europe"
+      },
+      "recordId": "lead_crawl_1x7wwyw",
+      "title": "\"900\", Cahiers d'Italie et d'Europe - Wikipedia",
+      "crawledAt": "2026-08-11T20:54:48.840Z",
+      "markdownChars": 11785
+    },
+    {
+      "page": {
+        "pageid": 61912686,
+        "title": "\"95th Anniversary of the Armed Forces of Azerbaijan (1918–2013)\" Medal",
+        "url": "https://en.wikipedia.org/wiki/%2295th_Anniversary_of_the_Armed_Forces_of_Azerbaijan_(1918%E2%80%932013)%22_Medal"
+      },
+      "recordId": "lead_crawl_60jqfo",
+      "title": "\"95th Anniversary of the Armed Forces of Azerbaijan (1918–2013)\" Medal - Wikipedia",
+      "crawledAt": "2026-08-11T20:54:52.926Z",
+      "markdownChars": 11006
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_7b679a6aa466eee7.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"@\"_(album)",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:54:52.926Z",
+    "runCount": 15,
+    "batchCount": 15,
+    "enumeratedCount": 23,
+    "crawledCount": 23,
+    "importedCount": 23,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

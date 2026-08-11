@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_0a24fb96deebde93",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!Xoong_language\",\"retryPages\":[],\"freshPages\":[64943732,3243047,51334951,61353839],\"continuationAfter\":\"!_(disambiguation)\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:52:02.327Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 64943732,
+        "title": "! (Cláudia Pascoal album)",
+        "url": "https://en.wikipedia.org/wiki/!_(Cl%C3%A1udia_Pascoal_album)"
+      },
+      "recordId": "lead_crawl_16sjt90",
+      "title": "! (Cláudia Pascoal album) - Wikipedia",
+      "crawledAt": "2026-08-11T20:51:49.848Z",
+      "markdownChars": 6180
+    },
+    {
+      "page": {
+        "pageid": 3243047,
+        "title": "! (The Dismemberment Plan album)",
+        "url": "https://en.wikipedia.org/wiki/!_(The_Dismemberment_Plan_album)"
+      },
+      "recordId": "lead_crawl_u55311",
+      "title": "! (The Dismemberment Plan album) - Wikipedia",
+      "crawledAt": "2026-08-11T20:51:53.288Z",
+      "markdownChars": 6665
+    },
+    {
+      "page": {
+        "pageid": 51334951,
+        "title": "! (The Song Formerly Known As)",
+        "url": "https://en.wikipedia.org/wiki/!_(The_Song_Formerly_Known_As)"
+      },
+      "recordId": "lead_crawl_rgufdz",
+      "title": "! (The Song Formerly Known As) - Wikipedia",
+      "crawledAt": "2026-08-11T20:51:57.881Z",
+      "markdownChars": 11365
+    },
+    {
+      "page": {
+        "pageid": 61353839,
+        "title": "! (Trippie Redd album)",
+        "url": "https://en.wikipedia.org/wiki/!_(Trippie_Redd_album)"
+      },
+      "recordId": "lead_crawl_tx3ltx",
+      "title": "! (Trippie Redd album) - Wikipedia",
+      "crawledAt": "2026-08-11T20:52:02.326Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_0a24fb96deebde93.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!_(disambiguation)",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:52:02.327Z",
+    "runCount": 10,
+    "batchCount": 10,
+    "enumeratedCount": 17,
+    "crawledCount": 17,
+    "importedCount": 17,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

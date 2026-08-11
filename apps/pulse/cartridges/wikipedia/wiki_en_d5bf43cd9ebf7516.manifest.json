@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_d5bf43cd9ebf7516",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Big_Room\\\"\",\"retryPages\":[],\"freshPages\":[66419195],\"continuationAfter\":\"\\\"Black_Swan\\\"_Funds\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:03:26.471Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 66419195,
+        "title": "\"Big Willie\" Robinson",
+        "url": "https://en.wikipedia.org/wiki/%22Big_Willie%22_Robinson"
+      },
+      "recordId": "lead_crawl_16jdgtu",
+      "title": "\"Big Willie\" Robinson - Wikipedia",
+      "crawledAt": "2026-08-11T21:03:26.471Z",
+      "markdownChars": 11845
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_d5bf43cd9ebf7516.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Black_Swan\"_Funds",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:03:26.471Z",
+    "runCount": 29,
+    "batchCount": 29,
+    "enumeratedCount": 43,
+    "crawledCount": 43,
+    "importedCount": 43,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

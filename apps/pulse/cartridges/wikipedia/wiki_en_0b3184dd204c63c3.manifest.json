@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_0b3184dd204c63c3",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Bullet\\\"_Bob_Hayes\",\"retryPages\":[],\"freshPages\":[24909117],\"continuationAfter\":\"\\\"But\\\"_Hits_Alliance\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:04:37.007Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 24909117,
+        "title": "\"Bund\" in Latvia",
+        "url": "https://en.wikipedia.org/wiki/%22Bund%22_in_Latvia"
+      },
+      "recordId": "lead_crawl_1wui0pt",
+      "title": "\"Bund\" in Latvia - Wikipedia",
+      "crawledAt": "2026-08-11T21:04:37.006Z",
+      "markdownChars": 17963
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_0b3184dd204c63c3.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"But\"_Hits_Alliance",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:04:37.007Z",
+    "runCount": 31,
+    "batchCount": 31,
+    "enumeratedCount": 46,
+    "crawledCount": 46,
+    "importedCount": 46,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

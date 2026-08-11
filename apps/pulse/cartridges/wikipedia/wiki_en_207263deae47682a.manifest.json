@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_207263deae47682a",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Arena\\\"_(short_story)\",\"retryPages\":[],\"freshPages\":[52243591],\"continuationAfter\":\"\\\"Ayaks\\\"_Shaumian\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:58:36.017Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 52243591,
+        "title": "\"Awaken, My Love!\"",
+        "url": "https://en.wikipedia.org/wiki/%22Awaken%2C_My_Love!%22"
+      },
+      "recordId": "lead_crawl_z3ubms",
+      "title": "\"Awaken, My Love!\" - Wikipedia",
+      "crawledAt": "2026-08-11T20:58:36.016Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_207263deae47682a.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Ayaks\"_Shaumian",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:58:36.017Z",
+    "runCount": 21,
+    "batchCount": 21,
+    "enumeratedCount": 33,
+    "crawledCount": 33,
+    "importedCount": 33,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

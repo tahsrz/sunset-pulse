@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_149bc476f27e2a8a",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Angara\\\"_launch_vehicles_launches_list\",\"retryPages\":[],\"freshPages\":[1973314],\"continuationAfter\":\"\\\"Arena\\\"_(short_story)\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:58:02.313Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 1973314,
+        "title": "\"Aquifex aeolicus\"",
+        "url": "https://en.wikipedia.org/wiki/%22Aquifex_aeolicus%22"
+      },
+      "recordId": "lead_crawl_1bpjym8",
+      "title": "\"Aquifex aeolicus\" - Wikipedia",
+      "crawledAt": "2026-08-11T20:58:02.312Z",
+      "markdownChars": 15896
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_149bc476f27e2a8a.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Arena\"_(short_story)",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:58:02.313Z",
+    "runCount": 20,
+    "batchCount": 20,
+    "enumeratedCount": 32,
+    "crawledCount": 32,
+    "importedCount": 32,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

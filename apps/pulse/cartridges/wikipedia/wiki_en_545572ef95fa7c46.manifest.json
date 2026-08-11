@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_545572ef95fa7c46",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"@\\\"_(album)\",\"retryPages\":[],\"freshPages\":[899480,39806582,1282996],\"continuationAfter\":\"\\\"A\\\"_Vancouver\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:55:35.983Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 899480,
+        "title": "\"A\" Device",
+        "url": "https://en.wikipedia.org/wiki/%22A%22_Device"
+      },
+      "recordId": "lead_crawl_ywcf1u",
+      "title": "\"A\" Device - Wikipedia",
+      "crawledAt": "2026-08-11T20:55:25.618Z",
+      "markdownChars": 9827
+    },
+    {
+      "page": {
+        "pageid": 39806582,
+        "title": "\"A\" Fort and Battery Hill Redoubt-Camp Early",
+        "url": "https://en.wikipedia.org/wiki/%22A%22_Fort_and_Battery_Hill_Redoubt-Camp_Early"
+      },
+      "recordId": "lead_crawl_nem19r",
+      "title": "\"A\" Fort and Battery Hill Redoubt-Camp Early - Wikipedia",
+      "crawledAt": "2026-08-11T20:55:31.112Z",
+      "markdownChars": 8436
+    },
+    {
+      "page": {
+        "pageid": 1282996,
+        "title": "\"A\" Is for Alibi",
+        "url": "https://en.wikipedia.org/wiki/%22A%22_Is_for_Alibi"
+      },
+      "recordId": "lead_crawl_17zvsuf",
+      "title": "\"A\" Is for Alibi - Wikipedia",
+      "crawledAt": "2026-08-11T20:55:35.982Z",
+      "markdownChars": 11180
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_545572ef95fa7c46.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"A\"_Vancouver",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:55:35.983Z",
+    "runCount": 16,
+    "batchCount": 16,
+    "enumeratedCount": 26,
+    "crawledCount": 26,
+    "importedCount": 26,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

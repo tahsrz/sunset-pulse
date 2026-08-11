@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_eb52f07c7b232202",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"America\\\"\",\"retryPages\":[],\"freshPages\":[83090085],\"continuationAfter\":\"\\\"Angara\\\"_launch_vehicles_launches_list\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:57:28.739Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 83090085,
+        "title": "\"Amynodon\" sinensis",
+        "url": "https://en.wikipedia.org/wiki/%22Amynodon%22_sinensis"
+      },
+      "recordId": "lead_crawl_pn62j5",
+      "title": "\"Amynodon\" sinensis - Wikipedia",
+      "crawledAt": "2026-08-11T20:57:28.738Z",
+      "markdownChars": 14020
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_eb52f07c7b232202.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Angara\"_launch_vehicles_launches_list",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:57:28.739Z",
+    "runCount": 19,
+    "batchCount": 19,
+    "enumeratedCount": 31,
+    "crawledCount": 31,
+    "importedCount": 31,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

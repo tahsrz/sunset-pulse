@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_e1d9dc795b1fa3d6",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!Kheis_Local_Municipality_elections\",\"retryPages\":[],\"freshPages\":[83156836],\"continuationAfter\":\"!Kung\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:50:04.542Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 83156836,
+        "title": "!Khwa ttu",
+        "url": "https://en.wikipedia.org/wiki/!Khwa_ttu"
+      },
+      "recordId": "lead_crawl_ghq3bt",
+      "title": "!Khwa ttu - Wikipedia",
+      "crawledAt": "2026-08-11T20:50:04.541Z",
+      "markdownChars": 8548
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_e1d9dc795b1fa3d6.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!Kung",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:50:04.542Z",
+    "runCount": 7,
+    "batchCount": 7,
+    "enumeratedCount": 10,
+    "crawledCount": 10,
+    "importedCount": 10,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}
