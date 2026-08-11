@@ -21,6 +21,8 @@
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
   "dependencies": {
+    "dompurify": "3.4.13",
+    "postcss": "8.5.26",
     "typescript": "6.0.2"
   },
   "devDependencies": {

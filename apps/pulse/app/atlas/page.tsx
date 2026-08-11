@@ -153,8 +153,8 @@ export default function MemoriaAtlasPage() {
       const items: ProbeItem[] = [];
 
       while (cursor !== null && !cancelled) {
-        const response = await fetch(`/api/tah/atlas/probe?cursor=${cursor}&limit=18`, { cache: 'no-store' });
-        const body = await response.json();
+        const response: Response = await fetch(`/api/tah/atlas/probe?cursor=${cursor}&limit=18`, { cache: 'no-store' });
+        const body: { mapped: number; total: number; percent: number; done: boolean; items: ProbeItem[]; nextCursor: number | null } = await response.json();
         items.push(...body.items);
 
         if (cancelled) return;
