@@ -42,7 +42,7 @@ export default function JamieChatMinimized() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/jamie-chat', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -59,7 +59,7 @@ export default function JamieChatMinimized() {
         ...prev,
         {
           role: 'assistant',
-          content: data.reply || data.message || "I'm having trouble retrieving details right now, but feel free to ask about market trends or local listings!",
+          content: data.content || data.reply || data.message || "I'm having trouble retrieving details right now, but feel free to ask about market trends or local listings!",
         },
       ]);
     } catch (err) {
