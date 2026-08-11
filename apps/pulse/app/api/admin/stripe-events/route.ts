@@ -96,5 +96,5 @@ async function resolveSiteStripeObjectIds(agentId: string) {
     kit.billingProfile.stripeCheckoutSessionId,
     kit.billingProfile.stripeSubscriptionId,
     kit.billingProfile.stripeCustomerId,
-  ].filter(Boolean)));
+  ].filter((value): value is string => Boolean(value))));
 }
