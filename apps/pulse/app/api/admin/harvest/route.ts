@@ -25,7 +25,7 @@ export async function POST() {
 
     // 1. Get existing paths from DB to avoid duplicates
     const existingAssets = await ViralAsset.find({ type: 'VIDEO' });
-    const existingPaths = new Set(existingAssets.map(a => a.path));
+    const existingPaths = new Set(existingAssets.map((asset: { path: string }) => asset.path));
 
     // 2. Identify and register new files
     const newAssets = [];
