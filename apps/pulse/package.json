@@ -37,6 +37,8 @@
     "tah:pack-expert-atlas": "tsx scripts/pack-segmented-expert-atlas.ts",
     "roster:seed": "tsx scripts/seed-roster.ts",
     "lead:intel:crawl": "python workers/lead-intel-crawler/crawl4ai_worker.py",
+    "wikipedia:crawl": "tsx scripts/crawl-wikipedia-to-tah.ts",
+    "wikipedia:crawl:continuous": "tsx scripts/crawl-wikipedia-to-tah.ts --continuous",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "menu:upsert": "tsx scripts/upsert-menu.ts",
     "seed": "tsx scripts/universal-seed.ts",

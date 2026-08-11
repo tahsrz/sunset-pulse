@@ -21,6 +21,8 @@ DEFAULT_REAL_ESTATE_SCHEMA: Dict[str, Any] = {
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Crawl a lead-intelligence source with Crawl4AI.")
     parser.add_argument("--url", required=True)
     parser.add_argument("--mode", choices=["markdown", "json", "both"], default="both")
@@ -57,18 +59,22 @@ async def crawl(url: str, mode: str, max_pages: int, hints: Dict[str, Any]) -> D
     from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
     from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
-    schema = validate_extraction_schema(hints.get("extraction_schema") or DEFAULT_REAL_ESTATE_SCHEMA)
+    content_profile = bounded_string(hints.get("content_profile"), 40).lower()
+    is_wikipedia = content_profile == "wikipedia"
+    schema = None if is_wikipedia else validate_extraction_schema(hints.get("extraction_schema") or DEFAULT_REAL_ESTATE_SCHEMA)
     browser_config = BrowserConfig(headless=True, verbose=False, use_persistent_context=False)
     markdown_generator = DefaultMarkdownGenerator(
         content_filter=PruningContentFilter(user_query=bounded_string(hints.get("query"), 300))
     )
-    run_config = CrawlerRunConfig(
+    run_config_options: Dict[str, Any] = dict(
         cache_mode=CacheMode.BYPASS,
-        extraction_strategy=JsonCssExtractionStrategy(schema, verbose=False),
         markdown_generator=markdown_generator,
         word_count_threshold=5,
         page_timeout=30000,
     )
+    if schema is not None:
+        run_config_options["extraction_strategy"] = JsonCssExtractionStrategy(schema, verbose=False)
+    run_config = CrawlerRunConfig(**run_config_options)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url=url, config=run_config)
@@ -88,7 +94,7 @@ async def crawl(url: str, mode: str, max_pages: int, hints: Dict[str, Any]) -> D
     title = metadata.get("title") or first_heading(markdown)
     description = metadata.get("description") or first_sentence(markdown)
     links = normalize_links(getattr(result, "links", None), url)
-    extracted_records = parse_extracted_records(getattr(result, "extracted_content", None))
+    extracted_records = parse_extracted_records(getattr(result, "extracted_content", None)) if schema else []
 
     payload: Dict[str, Any] = {
         "status": "completed",
@@ -111,6 +117,7 @@ async def crawl(url: str, mode: str, max_pages: int, hints: Dict[str, Any]) -> D
             "description": description,
             "entity_hints": hints,
             "extraction_schema": schema,
+            "content_profile": content_profile or "lead_intelligence",
             "extracted_records": extracted_records,
             "signals": extract_signals(markdown),
             "link_count": len(links),

@@ -48,6 +48,8 @@ apps/pulse/.lancedb/
 apps/pulse/cartridges/sqlsync/*.jsonl
 apps/pulse/cartridges/tensorzero/*.jsonl
 apps/pulse/cartridges/lead-intel/*.jsonl
+apps/pulse/cartridges/wikipedia/*.json
+apps/pulse/cartridges/wikipedia/*.jsonl
 apps/pulse/cartridges/notifications/*.jsonl
 apps/pulse/cartridges/command_supervisor_reviews.jsonl
 apps/pulse/.pulse-local/
