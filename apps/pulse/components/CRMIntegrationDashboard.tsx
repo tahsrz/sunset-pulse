@@ -1,13 +1,28 @@
 'use client';
 import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { FaCog, FaChartLine, FaRobot, FaDatabase } from 'react-icons/fa';
 
-const CRMIntegrationDashboard = ({ user }) => {
+interface CrmNote {
+  note: string;
+  date: string;
+}
+
+interface CrmUser {
+  crmStatus?: string;
+  crmNotes?: CrmNote[];
+}
+
+interface CRMIntegrationDashboardProps {
+  user?: CrmUser | null;
+}
+
+const CRMIntegrationDashboard = ({ user }: CRMIntegrationDashboardProps) => {
   const [status, setStatus] = useState(user?.crmStatus || 'Lead');
-  const [notes, setNotes] = useState(user?.crmNotes || []);
+  const [notes, setNotes] = useState<CrmNote[]>(user?.crmNotes || []);
   const [newNote, setNewNote] = useState('');
 
-  const handleUpdateStatus = async (newStatus) => {
+  const handleUpdateStatus = async (newStatus: string) => {
     setStatus(newStatus);
     // API call to update CRM status would go here
   };
@@ -42,7 +57,7 @@ const CRMIntegrationDashboard = ({ user }) => {
         <div className='space-y-4'>
           <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-500'>Lead lifecycle Status</h4>
           <div className='grid grid-cols-2 gap-2'>
-            {['Lead', 'Active', 'Closed', 'Archived'].map(s => (
+            {['Lead', 'Active', 'Closed', 'Archived'].map((s) => (
               <button
                 key={s}
                 onClick={() => handleUpdateStatus(s)}
@@ -67,7 +82,7 @@ const CRMIntegrationDashboard = ({ user }) => {
               placeholder='Log new observation...'
               className='flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all'
               value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewNote(e.target.value)}
             />
             <button
               onClick={handleAddNote}
@@ -77,7 +92,7 @@ const CRMIntegrationDashboard = ({ user }) => {
             </button>
           </div>
           <div className='space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar'>
-            {notes.map((n, i) => (
+            {notes.map((n: CrmNote, i: number) => (
               <div key={i} className='p-3 bg-white/5 rounded-lg border border-white/5'>
                 <p className='text-xs text-slate-300'>{n.note}</p>
                 <p className='text-[8px] text-slate-600 font-black uppercase mt-1'>{new Date(n.date).toLocaleDateString()}</p>

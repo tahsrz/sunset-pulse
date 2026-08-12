@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import connectDB from '@/lib/core/database';
 import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import Property from '@/models/Property';
+import type { PropertyDocument } from '@/models/types';
 import { listingToRow, normalizeListing, type Listing } from './listingContract';
 import { withRetry } from '@/lib/core/withRetry';
 import {
@@ -177,7 +178,7 @@ async function searchLegacyListings(filters: ListingSearch, limit: number): Prom
       includeDemo: filters.includeDemo ? 'true' : 'false',
     });
     const rows = await Property.find(query).limit(limit).lean();
-    return rows.map((row) => normalizeListing(row as Record<string, any>));
+    return rows.map((row: PropertyDocument) => normalizeListing(row as unknown as Record<string, any>));
   } catch (error) {
     console.warn('[LISTING_REPOSITORY_LEGACY_SEARCH]', formatError(error));
     return [];

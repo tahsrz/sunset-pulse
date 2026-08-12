@@ -1,15 +1,28 @@
 'use client';
 import { useState, useEffect } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { FaMicroscope, FaExclamationTriangle, FaTrash, FaPlus, FaSatellite, FaSpinner, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 import { speak } from '@/lib/core/tts';
 
+interface Observation {
+  id: string;
+  region: string;
+  data: string;
+  raw: string;
+}
+
+interface ObservationDraft {
+  region: string;
+  data: string;
+}
+
 const ComplexObservationsManager = () => {
-  const [observations, setObservations] = useState([]);
-  const [newObs, setNewObs] = useState({ region: '', data: '' });
+  const [observations, setObservations] = useState<Observation[]>([]);
+  const [newObs, setNewObs] = useState<ObservationDraft>({ region: '', data: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({ region: '', data: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<ObservationDraft>({ region: '', data: '' });
 
   const fetchObservations = async (shouldSpeak = false) => {
     setIsLoading(true);
@@ -35,7 +48,7 @@ const ComplexObservationsManager = () => {
     fetchObservations(true); // Speak latest on mount
   }, []);
 
-  const handleAdd = async (e) => {
+  const handleAdd = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (observations.length >= 5) {
       alert("Limit reached: only 5 active observations are allowed.");
@@ -44,7 +57,7 @@ const ComplexObservationsManager = () => {
 
     // Duplicate Validation
     const isDuplicate = observations.some(
-      o => o.region.toLowerCase() === newObs.region.toLowerCase() && 
+      (o: Observation) => o.region.toLowerCase() === newObs.region.toLowerCase() && 
            o.data.toLowerCase() === newObs.data.toLowerCase()
     );
     if (isDuplicate) {
@@ -72,7 +85,7 @@ const ComplexObservationsManager = () => {
     }
   };
 
-  const handleDelete = async (obs) => {
+  const handleDelete = async (obs: Observation) => {
     if (!window.confirm("Remove this observation from the log?")) return;
 
     try {
@@ -90,7 +103,7 @@ const ComplexObservationsManager = () => {
     }
   };
 
-  const startEdit = (obs) => {
+  const startEdit = (obs: Observation) => {
     setEditingId(obs.id);
     setEditForm({ region: obs.region, data: obs.data });
   };
@@ -100,7 +113,7 @@ const ComplexObservationsManager = () => {
     setEditForm({ region: '', data: '' });
   };
 
-  const handleUpdate = async (originalObs) => {
+  const handleUpdate = async (originalObs: Observation) => {
     // Edit logic: Delete original and add new
     try {
       // 1. Remove original

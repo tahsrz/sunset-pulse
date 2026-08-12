@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import Groq from "groq-sdk";
 import connectDB from "@/lib/core/database";
 import MenuItem from "@/models/MenuItem";
+import type { MenuItemDocument } from '@/models/types';
 import { SiteConfig } from "@/models/SiteConfig";
 import { abidanGatekeeper } from "@/lib/security/identityGatekeeper";
 
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
 
     const neighborhoodContext = `
       LOCAL BUSINESS DATA (${businessName}):
-      - Featured Items: ${localBusinessIntel.map(item => `${item.name} ($${item.price})`).join(', ')}
+      - Featured Items: ${localBusinessIntel.map((item: MenuItemDocument) => `${item.name} ($${item.price})`).join(', ')}
       - Business Strategy: Local high-traffic hub.
     `;
 

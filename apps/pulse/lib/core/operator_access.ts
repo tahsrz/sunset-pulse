@@ -14,7 +14,7 @@ export type OperatorAccess = {
 };
 
 export async function getOperatorAccess(host: string | null): Promise<OperatorAccess> {
-  const local = isLocalHost(host);
+  const local = isLocalHost(host) || isE2EOperatorAccess(host);
 
   if (local) {
     return {
@@ -61,6 +61,10 @@ export async function getOperatorAccess(host: string | null): Promise<OperatorAc
   };
 }
 
+function isE2EOperatorAccess(host: string | null) {
+  return process.env.E2E_OPERATOR_ACCESS === 'true' && isLocalHostName(host);
+}
+
 export function isLocalHost(host: string | null) {
   if (!host) return false;
 
@@ -75,6 +79,12 @@ export function isLocalHost(host: string | null) {
   }
 
   return isPrivateDevelopmentHost(hostname);
+}
+
+function isLocalHostName(host: string | null) {
+  if (!host) return false;
+  const hostname = normalizeHostName(host);
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
 
 function normalizeHostName(host: string) {

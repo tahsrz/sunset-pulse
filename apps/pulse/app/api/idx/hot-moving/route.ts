@@ -8,6 +8,16 @@ import connectDB from '@/lib/core/database';
 
 export const dynamic = 'force-dynamic';
 
+type HotMovingCandidate = {
+  source?: string;
+  display_public?: boolean;
+  mls_id?: unknown;
+  _id?: unknown;
+  images?: unknown;
+  image_url?: unknown;
+  [key: string]: unknown;
+};
+
 /** Returns image-qualified, publicly displayable MLS listings for the homepage. */
 export async function GET(_request: NextRequest) {
   try {
@@ -20,7 +30,7 @@ export async function GET(_request: NextRequest) {
     })
       .sort({ updatedAt: -1 })
       .limit(80)
-      .lean();
+      .lean() as HotMovingCandidate[];
 
     const listings = candidates
       .filter((listing) => listing.source === 'MLS' && listing.display_public !== false)

@@ -49,10 +49,13 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 300000, // 5 Minutes
     env: {
+      E2E_OPERATOR_ACCESS: 'true',
+      NEXT_PUBLIC_E2E_MODE: 'true',
       JAMIE_PUBLIC_GUIDE_E2E_FIXTURE: 'true',
       NEXT_PUBLIC_MOCK_MODE: 'true',
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '',
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
       MONGODB_URI: process.env.MONGODB_URI || '',
     },

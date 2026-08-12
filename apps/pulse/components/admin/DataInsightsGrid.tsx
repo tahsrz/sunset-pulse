@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import type { ValuationResult } from '@/models/types';
 import { FaHome, FaCheckCircle } from 'react-icons/fa';
 import JamieSprintDashboard from '@/components/JamieSprintDashboard';
 import IntelligenceTimeline from '@/components/IntelligenceTimeline';
@@ -13,7 +14,7 @@ interface DataInsightsGridProps {
   bottomLeftMode: string;
   setBottomLeftMode: (mode: string) => void;
   groupedLeads: any;
-  valuations: any[];
+  valuations: ValuationResult[];
   insights: any[];
   bookings: any[];
   activeSprintId: string | null;

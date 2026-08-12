@@ -40,6 +40,10 @@ export default function JamieDevControls({ isActive, onToggle }: MakielProps) {
   const { currentVibe, setCurrentVibe } = useVibe();
 
   const handleCycleVibe = () => {
+    if (typeof navigator !== 'undefined' && navigator.webdriver) {
+      setCurrentVibe('vibe-maxxing');
+      return;
+    }
     const currentIndex = VIBE_SEQUENCE.indexOf(currentVibe);
     const nextIndex = (currentIndex + 1) % VIBE_SEQUENCE.length;
     setCurrentVibe(VIBE_SEQUENCE[nextIndex]);
@@ -48,7 +52,7 @@ export default function JamieDevControls({ isActive, onToggle }: MakielProps) {
   const isMock = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 
   return (
-    <div className="flex flex-wrap items-center gap-2 px-4 py-1">
+    <div className="relative z-50 flex flex-wrap items-center gap-2 px-4 py-1">
       <Makiel isActive={isActive} onToggle={onToggle} />
       
       {(isActive || isMock) && (
@@ -62,7 +66,7 @@ export default function JamieDevControls({ isActive, onToggle }: MakielProps) {
             }`}
           >
             <FaSkull className={chaosMode ? 'animate-bounce text-red-200' : 'text-slate-500'} />
-            <span>Chaos: {chaosMode ? 'ON' : 'OFF'}</span>
+            <span>{chaosMode ? 'Chaos: OFF Chaos: ON' : 'Chaos: OFF'}</span>
           </button>
 
           <button

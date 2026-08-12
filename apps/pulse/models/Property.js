@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+/** @typedef {import('./types').PropertyDocument} PropertyDocument */
 const { Schema, model, models } = mongoose;
 const PropertySchema = new Schema(
   {
@@ -148,6 +149,6 @@ const PropertySchema = new Schema(
   }
 );
 
-/** @type {import('mongoose').Model<any>} */
+/** @type {import('mongoose').Model<PropertyDocument>} */
 const Property = models.Property || model('Property', PropertySchema);
 export default Property;

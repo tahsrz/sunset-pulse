@@ -52,9 +52,10 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
     }));
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(filters);
+    await fetch(`/api/properties/search?location=${encodeURIComponent(filters.location || '')}`, { cache: 'no-store' }).catch(() => undefined);
+    await onSearch(filters);
   };
 
   return (
@@ -70,7 +71,14 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
               placeholder='Search by city, address, or zip...'
               className='w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 font-medium'
               value={filters.location}
-              onChange={handleChange}
+              onChange={(event) => {
+                handleChange(event);
+                if (event.target.value.trim()) {
+                  window.setTimeout(() => {
+                    void fetch(`/api/properties/search?location=${encodeURIComponent(event.target.value)}`, { cache: 'no-store' }).catch(() => undefined);
+                  }, 50);
+                }
+              }}
             />
           </div>
           <select

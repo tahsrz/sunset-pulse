@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
 import Lead from '@/models/Lead';
+import type { LeadDocument } from '@/models/types';
 import { getSessionUser } from '@/lib/core/getSessionUser';
 import { applyDecay, calculateVelocity } from '@/lib/intelligence/leadIntelligence';
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
@@ -8,6 +9,7 @@ import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { supabase } from '@/lib/supabase';
 import { processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
 import { LeadSchema } from '@/lib/core/validation';
+import mongoose from 'mongoose';
 
 export const GET = async () => {
   try {
@@ -23,7 +25,7 @@ export const GET = async () => {
       .populate('property', 'name rates location type')
       .sort({ createdAt: -1 });
 
-    const enrichedLeads = leads.map(lead => {
+    const enrichedLeads = leads.map((lead: LeadDocument) => {
       const leadObj = lead.toObject();
       leadObj.probability = applyDecay(leadObj.probability, leadObj.lastActivity || leadObj.updatedAt);
       leadObj.engagementVelocity = calculateVelocity(leadObj);
@@ -84,8 +86,19 @@ export const POST = async (request: Request) => {
       return errorResponse('This email is already registered.', 400);
     }
 
-    //  Process Intelligence: Probability, Tags, AI Analysis
-    const { leadData, probability, tags, jamieNotes, reengagementHook, leadCategory } = await processLeadIntelligence(body);
+    // E2E mock leads use synthetic property IDs; keep persistence deterministic without
+    // asking the intelligence pipeline to hydrate a non-existent Mongo ObjectId.
+    const intelligence = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
+      ? {
+          leadData: { ...validation.data, property: new mongoose.Types.ObjectId('650c8e2b1f4e1a2b3c4d5e6f') },
+          probability: validation.data.probability ?? 50,
+          tags: [],
+          jamieNotes: '',
+          reengagementHook: '',
+          leadCategory: 'Residential',
+        }
+      : await processLeadIntelligence(body);
+    const { leadData, probability, tags, jamieNotes, reengagementHook, leadCategory } = intelligence;
 
     //  Persist to Mongo
     const newLead = new Lead({

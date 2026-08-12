@@ -22,6 +22,39 @@ type BulkImportRow = {
   reason: string;
 };
 
+function MenuItemEditor({
+  item,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  item: MenuItem;
+  onChange: (item: MenuItem) => void;
+  onSave: (item: MenuItem) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <input
+        type="text"
+        value={item.name}
+        onChange={(event) => onChange({ ...item, name: event.target.value })}
+        className="bg-slate-900 border border-white/10 rounded-lg px-3 py-1 text-xs text-white"
+      />
+      <input
+        type="number"
+        value={item.price}
+        onChange={(event) => onChange({ ...item, price: parseFloat(event.target.value) })}
+        className="bg-slate-900 border border-white/10 rounded-lg px-3 py-1 text-xs text-white"
+      />
+      <div className="flex gap-2">
+        <button onClick={() => onSave(item)} className="bg-green-600 p-2 rounded-lg text-white hover:bg-green-500"><FaSave size={12} /></button>
+        <button onClick={onCancel} className="bg-slate-700 p-2 rounded-lg text-white hover:bg-slate-600"><FaTimes size={12} /></button>
+      </div>
+    </div>
+  );
+}
+
 const normalizeProductName = (value: string) =>
   value
     .toLowerCase()
@@ -421,25 +454,13 @@ export default function MenuManager({ agentId = 'taz-realty-001' }: { agentId?: 
         <div className="space-y-4">
           {items.map((item) => (
             <div key={item._id} className="bg-slate-950/50 border border-white/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-blue-500/20 transition-all">
-              {editingItem?._id === item._id ? (
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                   <input 
-                    type="text" 
-                    value={editingItem.name}
-                    onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
-                    className="bg-slate-900 border border-white/10 rounded-lg px-3 py-1 text-xs text-white"
-                  />
-                   <input 
-                    type="number" 
-                    value={editingItem.price}
-                    onChange={(e) => setEditingItem({...editingItem, price: parseFloat(e.target.value)})}
-                    className="bg-slate-900 border border-white/10 rounded-lg px-3 py-1 text-xs text-white"
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={() => handleUpdate(editingItem)} className="bg-green-600 p-2 rounded-lg text-white hover:bg-green-500"><FaSave size={12}/></button>
-                    <button onClick={() => setEditingItem(null)} className="bg-slate-700 p-2 rounded-lg text-white hover:bg-slate-600"><FaTimes size={12}/></button>
-                  </div>
-                </div>
+              {editingItem && editingItem._id === item._id ? (
+                <MenuItemEditor
+                  item={editingItem}
+                  onChange={setEditingItem}
+                  onSave={handleUpdate}
+                  onCancel={() => setEditingItem(null)}
+                />
               ) : (
                 <>
                   <div className="flex-1">

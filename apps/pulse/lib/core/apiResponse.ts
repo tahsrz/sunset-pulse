@@ -2,7 +2,7 @@
  * SunsetPulse Standardized API Response Helper
  */
 
-export const successResponse = (data, metadata = {}, status = 200) => {
+export const successResponse = (data: unknown, metadata: Record<string, unknown> | number = {}, status = 200) => {
   const payload = {
     success: true,
     data,
@@ -16,7 +16,7 @@ export const successResponse = (data, metadata = {}, status = 200) => {
   });
 };
 
-export const errorResponse = (message, status = 500, details: unknown = null) => {
+export const errorResponse = (message: string, status = 500, details: unknown = null) => {
   const incidentId = crypto.randomUUID();
   const exposeDetails = status < 500;
   console.error(`[API_ERROR] ${incidentId} ${status}: ${message}`, details || '');
@@ -26,7 +26,7 @@ export const errorResponse = (message, status = 500, details: unknown = null) =>
       error: true,
       message,
       incidentId,
-      ...(exposeDetails && details && { details }),
+      ...(exposeDetails && details !== null ? { details } : {}),
       timestamp: new Date().toISOString(),
     }),
     {
@@ -38,4 +38,4 @@ export const errorResponse = (message, status = 500, details: unknown = null) =>
 
 export const unauthorizedResponse = (message = 'Unauthorized access restricted.') => errorResponse(message, 401);
 export const notFoundResponse = (resource = 'Resource') => errorResponse(`${resource} not found.`, 404);
-export const validationErrorResponse = (errors) => errorResponse('Validation failed.', 400, errors);
+export const validationErrorResponse = (errors: unknown) => errorResponse('Validation failed.', 400, errors);

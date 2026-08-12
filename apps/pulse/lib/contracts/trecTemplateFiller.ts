@@ -165,9 +165,9 @@ function formatOverlayValue(value: string, format?: 'text' | 'money' | 'date') {
   return value;
 }
 
-function safeOptions(field: any) {
+function safeOptions(field: { getOptions?: () => string[] }): string[] {
   try {
-    return field.getOptions() || [];
+    return field.getOptions?.() || [];
   } catch {
     return [];
   }

@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
     });
 
     return successResponse({
+      ...result,
       endpoint: '/api/admin/stripe-events',
       action: 'stripe_event_replay',
       operator: operatorAuditUser(access),
-      ...result,
     });
   } catch (error: any) {
     return errorResponse(error?.message || 'Failed to replay Stripe event.', 400);

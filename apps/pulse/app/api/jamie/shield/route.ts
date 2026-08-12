@@ -18,6 +18,6 @@ export async function POST(request: Request) {
 
     return successResponse(analysis);
   } catch (error) {
-    return errorResponse('Internal security scan failure.', 500, error.message);
+    return errorResponse('Internal security scan failure.', 500, error instanceof Error ? error.message : String(error));
   }
 }

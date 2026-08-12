@@ -19,7 +19,7 @@ export type AgentLeadNotificationInput = {
       id?: string;
       mlsId?: string;
       name?: string;
-    };
+    } | null;
     guideBrief?: PublicGuideHandoffBrief;
   };
 };

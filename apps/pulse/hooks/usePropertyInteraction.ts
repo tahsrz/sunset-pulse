@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase, toggleCollection, addPropertyComment, subscribeToPropertyComments, logEvent } from '@/lib/supabase';
 import { toast } from 'react-toastify';
+import type { PropertyComment, PropertyCommentInsertPayload } from '@/models/types';
 
 export const usePropertyInteraction = (propId: string, userId: string, userName: string, property: any) => {
   const [isInCollection, setIsInCollection] = useState(false);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<PropertyComment[]>([]);
 
   useEffect(() => {
     if (!propId || !userId) return;
@@ -31,7 +32,7 @@ export const usePropertyInteraction = (propId: string, userId: string, userName:
     checkCollection();
     fetchComments();
 
-    const sub = subscribeToPropertyComments(propId, (payload) => {
+    const sub = subscribeToPropertyComments(propId, (payload: PropertyCommentInsertPayload) => {
       setComments(prev => [...prev, payload.new]);
       toast.info(`New Feedback from ${payload.new.user_name || 'Consumer'}`);
     });

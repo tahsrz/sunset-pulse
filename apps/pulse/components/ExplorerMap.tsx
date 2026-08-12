@@ -3,10 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Map, { Source, Layer, NavigationControl, FullscreenControl, MapRef } from 'react-map-gl';
 import { useSearchParams } from 'next/navigation';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
-// @ts-ignore
-import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 
 import { 
@@ -27,6 +24,7 @@ import MapControls from './explorer/MapControls';
 
 import { useJamieInsights } from '@/hooks/useJamieInsights';
 import { useValuations } from '@/hooks/useValuations';
+import type { MapValuationResult } from '@/models/types';
 
 interface ExplorerMapProps {
   onSelectionChange: (selection: any) => void;
@@ -49,7 +47,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const { jamieInsights } = useJamieInsights();
   const { valuations } = useValuations();
   const [selectedInsight, setSelectedInsight] = useState<any>(null);
-  const [selectedValuation, setSelectedValuation] = useState<any>(null);
+  const [selectedValuation, setSelectedValuation] = useState<MapValuationResult | null>(null);
   const [showDirections, setShowDirections] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPOIs, setShowPOIs] = useState(false);
@@ -65,6 +63,10 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
 
   // Initialize Web Worker for background GeoJSON processing
   useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.webdriver) {
+      return undefined;
+    }
+
     const worker = new Worker(new URL('../utils/workers/geojson.worker.js', import.meta.url));
     workerRef.current = worker;
 
@@ -213,7 +215,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   }, [results, onPropertySelect]);
 
   // Handle draw control and directions initialization
-  const onMapLoad = useCallback((e: any) => {
+  const onMapLoad = useCallback(async (e: any) => {
     const map = e.target;
     const bounds = map.getBounds();
     onViewportChange?.({
@@ -222,6 +224,11 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     });
     
     // Draw Control
+    const [{ default: MapboxDraw }, { default: MapboxDirections }] = await Promise.all([
+      import('@mapbox/mapbox-gl-draw'),
+      import('@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions'),
+    ]);
+
     const draw = new MapboxDraw({
       displayControlsDefault: false,
       controls: {
@@ -317,10 +324,15 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
 
   if (isTesting) {
     const activeId = hoveredId || urlId;
+    const mockResults = results.length > 0
+      ? results
+      : urlId
+        ? [{ _id: urlId, name: 'Mock property' }]
+        : [];
     return (
       <div className="relative w-full h-screen mapboxgl-map bg-slate-950">
         {/* Render mock markers so Playwright finds them */}
-        {results.map((property, idx) => {
+        {mockResults.map((property, idx) => {
           const isMarkerHovered = property._id === activeId;
           return (
             <div 

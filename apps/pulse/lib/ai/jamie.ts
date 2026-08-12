@@ -29,9 +29,30 @@ import { sanitizeJamieReply } from '@/lib/ai/jamieResponse';
 import { buildJamieCommandBridgeContext } from '@/lib/command-center/jamieBridge';
 import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 import { getActiveSiteProfiles } from '@/lib/sites/siteProfiles';
+import { formatMenuItemSummary, type EntityDocument, type MenuItemDocument } from '@/models/types';
 
 const JAMIE_PULSE_RESULT_LIMIT = 5;
 const JAMIE_PULSE_SNIPPET_LIMIT = 520;
+
+type JamieAgentConfig = {
+  jamieSystemPrompt?: string;
+  abidanPrompts?: Record<string, string | undefined>;
+  modelMatrix?: {
+    primaryModel?: string;
+    reconModel?: string;
+  };
+  operationalSettings?: {
+    minJudges?: number;
+    maxJudges?: number;
+    personalityPreset?: string;
+  };
+  focusNeighborhood?: string;
+  branding?: {
+    tone?: string;
+    primaryColor?: string;
+    [key: string]: unknown;
+  };
+};
 
 export async function getJamiePulseContext(query: string, propertyData?: any): Promise<string> {
   const cleanQuery = buildJamiePulseQuery(query, propertyData);
@@ -530,7 +551,7 @@ export async function getJamieResponse(
     .eq('agent_id', agentId)
     .single();
 
-  let agentConfig;
+  let agentConfig: JamieAgentConfig | null = null;
   if (sbConfig) {
     agentConfig = {
       jamieSystemPrompt: sbConfig.intelligence?.jamieSystemPrompt,
@@ -542,11 +563,11 @@ export async function getJamieResponse(
   } else {
     // Fallback to MongoDB (Legacy)
     await connectDB();
-    agentConfig = await SiteConfig.findOne({ agentId }).lean();
+    agentConfig = await SiteConfig.findOne({ agentId }).lean() as JamieAgentConfig | null;
   }
 
   const [localBusinessIntel] = await Promise.all([
-    MenuItem.find({ isAvailable: true }).limit(5)
+    MenuItem.find({ isAvailable: true }).limit(5) as unknown as Promise<MenuItemDocument[]>
   ]);
 
   // Use Dynamic Configuration from Database or Fallback to Constants
@@ -572,7 +593,7 @@ export async function getJamieResponse(
   
   const neighborhoodContext = `
     LOCAL BUSINESS DATA:
-    - Featured Items: ${localBusinessIntel.map(item => `${item.name} ($${item.price})`).join(', ')}
+    - Featured Items: ${localBusinessIntel.map(formatMenuItemSummary).join(', ')}
     - Business Strategy: Local retail hub for the community. ${assistantName} uses this to show lifestyle value.
   `;
 
@@ -590,7 +611,7 @@ export async function getJamieResponse(
     // Fetch Dynamic Council Members from Registry
     const councilEntities = await Entity.find({ 
       'operationalSettings.isCouncilMember': true 
-    }).lean();
+    }).lean() as unknown as EntityDocument[];
 
     const allAnalyticAgents = councilEntities.map(e => ({
       name: e.uid.replace('JUDGE-', ''),

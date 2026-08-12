@@ -6,6 +6,13 @@
 // Featured amenity: Sunset Grill
 const DEFAULT_GRILL_COORDS = [-97.766724, 33.453823]; 
 
+/**
+ * @param {number[]} propertyCoords
+ * @param {unknown[]} [amenities]
+ * @param {number[]} [grillCoords]
+ * @param {Record<string, number> | null} [stats]
+ * @param {string} [activeVibe]
+ */
 export const calculatePulseScore = (propertyCoords, amenities = [], grillCoords = DEFAULT_GRILL_COORDS, stats = null, activeVibe = 'Sunset') => {
   if (!propertyCoords || propertyCoords.length < 2) return 50;
 

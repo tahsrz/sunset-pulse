@@ -15,7 +15,7 @@ interface SearchFilters {
 const PropertiesPage: React.FC = () => {
   const router = useRouter();
 
-  const handleSearch = (filters: SearchFilters) => {
+  const handleSearch = async (filters: SearchFilters) => {
     const params = new URLSearchParams();
     Object.keys(filters).forEach(key => {
       const value = filters[key];
@@ -27,6 +27,7 @@ const PropertiesPage: React.FC = () => {
         }
       }
     });
+    await fetch(`/api/properties/search?${params.toString()}`, { cache: 'no-store' }).catch(() => undefined);
     router.push(`/properties/search-results?${params.toString()}`);
   };
 

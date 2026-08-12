@@ -1,19 +1,20 @@
 'use client';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import ExplorerMap from '@/components/ExplorerMap';
-import JamieChat from '@/components/JamieChat';
 import { FaMapMarkedAlt, FaSearch, FaBolt, FaRoute, FaHeartbeat } from 'react-icons/fa';
 import { calculatePulseScore } from '@/lib/intelligence/neighborhoodIntelligence';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeProvider';
 
+type ExplorerProperty = Record<string, any>;
+
 function ExplorerContent() {
   const { intelligence } = useTheme();
   const searchParams = useSearchParams();
   const targetId = searchParams.get('id');
   const [selection, setSelection] = useState<any>(null);
-  const [properties, setProperties] = useState([]);
+  const [properties, setProperties] = useState<ExplorerProperty[]>([]);
   const [loading, setLoading] = useState(false);
   const [areaIntel, setAreaIntel] = useState({ pulseScore: 0, tourRecommendation: '' });
   const getPrimaryPrice = (property: any) => {
@@ -142,7 +143,9 @@ function ExplorerContent() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-black/40 p-3 rounded-xl border border-white/5">
                   <p className="text-[8px] text-slate-500 uppercase font-black mb-1">
-                    {properties.filter((p: any) => getPrimaryPrice(p) > 0).length >= properties.filter((p: any) => (p.rates?.monthly || 0) > 0).length
+                    {searchParams.get('lat') && searchParams.get('lng')
+                      ? 'Avg Monthly Rent'
+                      : properties.filter((p: any) => getPrimaryPrice(p) > 0).length >= properties.filter((p: any) => (p.rates?.monthly || 0) > 0).length
                       ? 'Avg Sale Price'
                       : 'Avg Monthly Rent'}
                   </p>
@@ -198,7 +201,6 @@ function ExplorerContent() {
       )}
 
       {/* Jamie Integration (Floating Chat) */}
-      <JamieChat propertyData={properties} />
 
       {/* Narrative Status Overlay (Bottom Right) */}
       <div className="absolute bottom-10 right-10 z-20 flex flex-col items-end gap-2 pointer-events-none">

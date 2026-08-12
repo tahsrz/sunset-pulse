@@ -615,8 +615,21 @@ function uuidv5(name: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
+type CompatibilityUser = {
+  name: string | null;
+  email: string;
+};
+
+type CompatibilityBooking = {
+  title: string | null;
+};
+
+type CompatibilityConflict =
+  | { selfConflict: true; otherUser?: undefined; booking: CompatibilityBooking }
+  | { selfConflict?: false; otherUser: CompatibilityUser; booking: CompatibilityBooking };
+
 // Helper to check for compatibility/conflict pairs
-async function checkCompatibilityConflict(userId: number, startTime: Date, endTime: Date, ignoreBookingIds?: number[]) {
+async function checkCompatibilityConflict(userId: number, startTime: Date, endTime: Date, ignoreBookingIds?: number[]): Promise<CompatibilityConflict | null> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -756,7 +769,7 @@ export const PATCH = async (request: NextRequest) => {
           }
           console.warn(`[OVERLAP_OVERRIDE]: Overriding double scheduling conflict for ${user.name} on shift ${bookingId}.`);
         } else {
-          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: ${user.name} and ${conflict.otherUser.name} cannot be scheduled on the same shift.`, 400);
+          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: ${user.name} and ${conflict.otherUser?.name ?? 'another user'} cannot be scheduled on the same shift.`, 400);
         }
       }
 
@@ -864,7 +877,7 @@ export const PATCH = async (request: NextRequest) => {
           }
           console.warn(`[OVERLAP_OVERRIDE]: Overriding double scheduling conflict for ${user2.name} on swap.`);
         } else {
-          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user2.name} on the same shift with ${conflict1.otherUser.name}.`, 400);
+          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user2.name} on the same shift with ${conflict1.otherUser?.name ?? 'another user'}.`, 400);
         }
       }
 
@@ -877,7 +890,7 @@ export const PATCH = async (request: NextRequest) => {
           }
           console.warn(`[OVERLAP_OVERRIDE]: Overriding double scheduling conflict for ${user1.name} on swap.`);
         } else {
-          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user1.name} on the same shift with ${conflict2.otherUser.name}.`, 400);
+          return errorResponse(`⚠️ COMPATIBILITY CONFLICT: Swapping will put ${user1.name} on the same shift with ${conflict2.otherUser?.name ?? 'another user'}.`, 400);
         }
       }
 

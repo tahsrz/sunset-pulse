@@ -1,7 +1,8 @@
 import React from 'react';
+import type { ValuationResult } from '@/models/types';
 
 interface ValuationGridProps {
-  valuations: any[];
+  valuations: ValuationResult[];
 }
 
 const ValuationGrid: React.FC<ValuationGridProps> = ({ valuations }) => {
@@ -21,11 +22,11 @@ const ValuationGrid: React.FC<ValuationGridProps> = ({ valuations }) => {
           <div className='grid grid-cols-2 gap-2'>
             <div className='bg-black/40 p-2 rounded-lg border border-white/5'>
               <div className='text-[8px] opacity-40 uppercase font-bold'>ML Confidence</div>
-              <div className='text-[10px] font-mono text-green-400'>{(v.ml_adjustments?.confidence_score * 100).toFixed(0)}%</div>
+              <div className='text-[10px] font-mono text-green-400'>{((v.ml_adjustments?.confidence_score ?? 0) * 100).toFixed(0)}%</div>
             </div>
             <div className='bg-black/40 p-2 rounded-lg border border-white/5'>
               <div className='text-[8px] opacity-40 uppercase font-bold'>Trend Index</div>
-              <div className='text-[10px] font-mono text-blue-400'>{v.ml_adjustments?.price_trend_index}x</div>
+              <div className='text-[10px] font-mono text-blue-400'>{(v.ml_adjustments?.price_trend_index ?? 0).toFixed(1)}x</div>
             </div>
           </div>
         </div>

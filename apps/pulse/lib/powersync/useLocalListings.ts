@@ -14,17 +14,19 @@ export function useLocalViewportListings(bounds: ViewportBounds | null) {
 
   useEffect(() => {
     if (!database || !bounds) return;
+    const activeDatabase = database;
+    const activeBounds = bounds;
     const controller = new AbortController();
 
     async function watchRows() {
       try {
-        for await (const result of database.watch(
+        for await (const result of activeDatabase.watch(
           `SELECT * FROM properties
            WHERE latitude BETWEEN ? AND ?
              AND longitude BETWEEN ? AND ?
              AND display_public = 1
              AND is_demo = 0`,
-          [bounds.south, bounds.north, bounds.west, bounds.east],
+          [activeBounds.south, activeBounds.north, activeBounds.west, activeBounds.east],
           { signal: controller.signal }
         )) {
           setRows((result.rows?._array || []) as LocalPropertyRow[]);
@@ -39,10 +41,11 @@ export function useLocalViewportListings(bounds: ViewportBounds | null) {
 
   useEffect(() => {
     if (!database || !connected || !bounds) return;
+    const activeDatabase = database;
     let subscription: { unsubscribe(): void } | null = null;
     let cancelled = false;
 
-    sunsetSyncStreams(database).viewport(bounds).subscribe({ ttl: 300 })
+    sunsetSyncStreams(activeDatabase).viewport(bounds).subscribe({ ttl: 300 })
       .then((result) => {
         if (cancelled) result.unsubscribe();
         else subscription = result;
@@ -71,10 +74,11 @@ export function useLocalListing(propertyId: string | null) {
 
   useEffect(() => {
     if (!database || !propertyId) return;
+    const activeDatabase = database;
     const controller = new AbortController();
 
     async function watchListing() {
-      for await (const result of database.watch(
+      for await (const result of activeDatabase.watch(
         'SELECT * FROM properties WHERE id = ? OR mls_id = ? LIMIT 1',
         [propertyId, propertyId],
         { signal: controller.signal }
@@ -89,9 +93,10 @@ export function useLocalListing(propertyId: string | null) {
 
   useEffect(() => {
     if (!database || !connected || !propertyId) return;
+    const activeDatabase = database;
     let cancelled = false;
     let subscription: { unsubscribe(): void } | null = null;
-    sunsetSyncStreams(database).propertyDetail(propertyId).subscribe({ ttl: 3600 })
+    sunsetSyncStreams(activeDatabase).propertyDetail(propertyId).subscribe({ ttl: 3600 })
       .then((result) => cancelled ? result.unsubscribe() : subscription = result)
       .catch(() => {});
     return () => {

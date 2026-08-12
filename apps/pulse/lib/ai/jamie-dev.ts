@@ -1,6 +1,25 @@
 import { SiteConfig } from '@/models/SiteConfig';
 import Groq from 'groq-sdk';
 
+function parseSiteConfigResponse(content: string | null | undefined): Record<string, unknown> {
+  if (!content?.trim()) {
+    throw new Error('Jamie returned no site configuration.');
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error('Jamie returned invalid site configuration JSON.');
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Jamie returned a site configuration with an invalid shape.');
+  }
+
+  return parsed as Record<string, unknown>;
+}
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function jamieUpdateSite(agentId: string, voiceCommand: string) {
@@ -23,7 +42,8 @@ export async function jamieUpdateSite(agentId: string, voiceCommand: string) {
     response_format: { type: "json_object" },
   });
 
-  const newConfig = JSON.parse(chatCompletion.choices[0].message.content);
+  const content = chatCompletion.choices[0]?.message.content;
+  const newConfig = parseSiteConfigResponse(content);
 
   await SiteConfig.findOneAndUpdate({ agentId }, newConfig, { upsert: true });
   

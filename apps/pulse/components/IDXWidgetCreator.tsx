@@ -3,14 +3,15 @@ import { useState } from 'react';
 import { FaCode, FaCheck, FaCopy } from 'react-icons/fa';
 
 const IDXWidgetCreator = () => {
-  const [activeWidget, setActiveWidget] = useState('Search');
-  const [copied, setCopied] = useState(false);
-
   const widgets = {
-    'Search': `<script src="https://sunsetpulse.app/widgets/search.js" data-api-key="YOUR_IDX_KEY"></script>\n<div id="sunset-pulse-search"></div>`,
-    'Grid': `<script src="https://sunsetpulse.app/widgets/grid.js" data-api-key="YOUR_IDX_KEY" data-type="RV"></script>\n<div id="sunset-pulse-grid"></div>`,
-    'Map': `<script src="https://sunsetpulse.app/widgets/map.js" data-api-key="YOUR_IDX_KEY" data-lat="33.0" data-lon="-97.0"></script>\n<div id="sunset-pulse-map"></div>`,
-  };
+    Search: `<script src="https://sunsetpulse.app/widgets/search.js" data-api-key="YOUR_IDX_KEY"></script>\n<div id="sunset-pulse-search"></div>`,
+    Grid: `<script src="https://sunsetpulse.app/widgets/grid.js" data-api-key="YOUR_IDX_KEY" data-type="RV"></script>\n<div id="sunset-pulse-grid"></div>`,
+    Map: `<script src="https://sunsetpulse.app/widgets/map.js" data-api-key="YOUR_IDX_KEY" data-lat="33.0" data-lon="-97.0"></script>\n<div id="sunset-pulse-map"></div>`,
+  } as const;
+  type WidgetKey = keyof typeof widgets;
+
+  const [activeWidget, setActiveWidget] = useState<WidgetKey>('Search');
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(widgets[activeWidget]);
@@ -31,7 +32,7 @@ const IDXWidgetCreator = () => {
       </div>
 
       <div className='flex gap-2 mb-6'>
-        {Object.keys(widgets).map(w => (
+        {(Object.keys(widgets) as WidgetKey[]).map((w) => (
           <button
             key={w}
             onClick={() => setActiveWidget(w)}
