@@ -38,13 +38,17 @@ export function GET(request: Request) {
         format: cartridge.format,
         byteSize: cartridge.byteSize,
         payloadByteSize: cartridge.payloadByteSize,
+        checksumSha256: cartridge.checksumSha256,
+        payloadChecksumSha256: cartridge.payloadChecksumSha256,
         shardCount: cartridge.shardCount,
         searchQuery: cartridge.searchQuery,
         summary: cartridge.summary,
         htmlUrl: cartridge.routes.html,
         headlessUrl: cartridge.routes.headless,
         apiUrl: cartridge.routes.api,
-        metaUrl: cartridge.routes.meta
+        metaUrl: cartridge.routes.meta,
+        downloadUrl: cartridge.routes.download,
+        payloadDownloadUrl: cartridge.routes.payloadDownload
       }))
     },
     {

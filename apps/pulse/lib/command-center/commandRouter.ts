@@ -302,7 +302,7 @@ const CommandGraphAnnotation = Annotation.Root({
 
 type CommandGraphNodeState = typeof CommandGraphAnnotation.State;
 
-const commandCenterGraph = new StateGraph<CommandGraphState>(CommandGraphAnnotation)
+const commandCenterGraph = new StateGraph<CommandGraphNodeState>(CommandGraphAnnotation)
   .addNode('route', routeCommandNode)
   .addNode('retrieve', retrieveContextNode)
   .addNode('plan', planRelayNode)

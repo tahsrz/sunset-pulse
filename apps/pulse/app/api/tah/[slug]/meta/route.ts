@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
+import { getCartridgeMetadata, toPublicCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
 import { getPulseCartridge } from '@/lib/ai/brain/pulse_query';
 import { siteUrlFromRequest } from '@/lib/core/site_url';
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: TahMetaRouteProps) {
   return Response.json(
     {
       generatedAt: new Date().toISOString(),
-      cartridge: getCartridgeMetadata(cartridge, siteUrlFromRequest(request))
+      cartridge: toPublicCartridgeMetadata(getCartridgeMetadata(cartridge, siteUrlFromRequest(request)))
     },
     {
       headers: {

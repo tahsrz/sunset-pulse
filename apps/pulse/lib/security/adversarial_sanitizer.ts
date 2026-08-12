@@ -71,7 +71,7 @@ class AdversarialSanitizer {
       // Return a safe default for now, but the structure is ready for the tool call
       return { 
         isCompromised: isPotentiallyMalicious, 
-        attackVector: isPotentiallyMalicious ? 'Structural Delimiter Hijack' : null,
+        attackVector: isPotentiallyMalicious ? 'Structural Delimiter Hijack' : undefined,
         reconstructedIntent: "Audit required for complex query" 
       };
     } catch (e) {

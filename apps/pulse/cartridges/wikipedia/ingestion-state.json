@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "language": "en",
+  "continuation": "-somy",
+  "complete": false,
+  "startedAt": "2026-08-11T20:46:26.325Z",
+  "updatedAt": "2026-08-12T07:37:01.301Z",
+  "runCount": 983,
+  "batchCount": 982,
+  "enumeratedCount": 1882,
+  "crawledCount": 1882,
+  "importedCount": 1882,
+  "crawlFailureCount": 1,
+  "terminalFailureCount": 0,
+  "retryQueue": []
+}

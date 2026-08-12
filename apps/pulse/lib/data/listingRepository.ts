@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import connectDB from '@/lib/core/database';
 import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
 import Property from '@/models/Property';
+import type { PropertyDocument } from '@/models/types';
 import { listingToRow, normalizeListing, type Listing } from './listingContract';
 import { withRetry } from '@/lib/core/withRetry';
 import {
@@ -15,6 +16,7 @@ export type ListingSearch = {
   location?: string;
   city?: string;
   propertyType?: string;
+  priceType?: 'sale' | 'lease' | 'unknown';
   minPrice?: string | number;
   maxPrice?: string | number;
   beds?: string | number;
@@ -84,6 +86,7 @@ function searchMockListings(filters: ListingSearch) {
     .filter((listing) => {
       const location = String(filters.city || filters.location || '').trim().toLowerCase();
       const propertyType = String(filters.propertyType || '').trim().toLowerCase();
+      const priceType = String(filters.priceType || '').trim().toLowerCase();
       const minimumBeds = numberFilter(filters.beds);
       const minimumBaths = numberFilter(filters.baths);
       const minimumPrice = numberFilter(filters.minPrice);
@@ -101,6 +104,7 @@ function searchMockListings(filters: ListingSearch) {
 
       if (location && !searchable.includes(location)) return false;
       if (propertyType && propertyType !== 'all' && listing.type.toLowerCase() !== propertyType) return false;
+      if (priceType && listing.price_type !== priceType) return false;
       if (filters.status && listing.listing_status !== filters.status) return false;
       if (filters.source && listing.source !== filters.source) return false;
       if (minimumBeds !== null && Number(listing.beds || 0) < minimumBeds) return false;
@@ -130,6 +134,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number): P
     query = query.or(`city.ilike.%${safeLocation}%,state.ilike.%${safeLocation}%,zip.ilike.%${safeLocation}%,name.ilike.%${safeLocation}%`);
   }
   if (filters.propertyType && filters.propertyType !== 'All') query = query.eq('type', filters.propertyType);
+  if (filters.priceType) query = query.eq('price_type', filters.priceType);
   if (filters.status) query = query.eq('listing_status', filters.status);
   if (filters.source) query = query.eq('source', filters.source);
   if (filters.updatedSince) query = query.gte('last_updated', filters.updatedSince);
@@ -173,7 +178,7 @@ async function searchLegacyListings(filters: ListingSearch, limit: number): Prom
       includeDemo: filters.includeDemo ? 'true' : 'false',
     });
     const rows = await Property.find(query).limit(limit).lean();
-    return rows.map((row) => normalizeListing(row as Record<string, any>));
+    return rows.map((row: PropertyDocument) => normalizeListing(row as unknown as Record<string, any>));
   } catch (error) {
     console.warn('[LISTING_REPOSITORY_LEGACY_SEARCH]', formatError(error));
     return [];

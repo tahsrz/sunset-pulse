@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_4a2f6224ae7a6c7d",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!!!_(album)\",\"retryPages\":[],\"freshPages\":[2556962,55029148],\"continuationAfter\":\"!'O!Kung\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:47:10.070Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 2556962,
+        "title": "!!! (album)",
+        "url": "https://en.wikipedia.org/wiki/!!!_(album)"
+      },
+      "recordId": "lead_crawl_1fdir8u",
+      "title": "!!! (album) - Wikipedia",
+      "crawledAt": "2026-08-11T20:47:06.601Z",
+      "markdownChars": 6253
+    },
+    {
+      "page": {
+        "pageid": 55029148,
+        "title": "!!! (disambiguation)",
+        "url": "https://en.wikipedia.org/wiki/!!!_(disambiguation)"
+      },
+      "recordId": "lead_crawl_3h5k2s",
+      "title": "!!! (disambiguation) - Wikipedia",
+      "crawledAt": "2026-08-11T20:47:10.070Z",
+      "markdownChars": 1982
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_4a2f6224ae7a6c7d.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!'O!Kung",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:47:10.070Z",
+    "runCount": 2,
+    "batchCount": 2,
+    "enumeratedCount": 4,
+    "crawledCount": 4,
+    "importedCount": 4,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

@@ -265,9 +265,9 @@ const applyCouponFromInput = async () => {
                         className="flex items-center justify-between py-5 group relative"
                       >
                         <div className="flex-1 pr-4">
-                          <h4 className="text-lg font-bold text-slate-100 group-hover:text-orange-400 transition-colors">
+                          <h2 className="text-lg font-bold text-slate-100 group-hover:text-orange-400 transition-colors">
                             {item.name}
-                          </h4>
+                          </h2>
                           <p className="text-xs text-slate-500 mt-1 font-serif italic">
                             ${item.price.toFixed(2)} x {item.quantity}
                           </p>

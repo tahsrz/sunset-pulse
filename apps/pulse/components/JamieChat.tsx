@@ -109,7 +109,11 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   useEffect(() => {
     setMounted(true);
-    setIsCreatingJamie(localStorage.getItem('jamie_character_created') !== 'true');
+    setIsCreatingJamie(
+      process.env.NEXT_PUBLIC_E2E_MODE === 'true'
+        ? false
+        : localStorage.getItem('jamie_character_created') !== 'true'
+    );
     setMemoryContext(memoryBridge.getGreetingContext());
 
     // Hydrate history from Supabase for cross-device persistence
@@ -121,6 +125,12 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
     if (isWorkspace) {
       setIsMinimized(false);
+      return;
+    }
+
+    if (process.env.NEXT_PUBLIC_E2E_MODE === 'true') {
+      setIsMinimized(true);
+      localStorage.setItem('jamie_chat_minimized', 'true');
       return;
     }
 
@@ -315,6 +325,8 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   ) => {
     const currentInput = content.trim();
     if (!currentInput) return;
+
+    setVibeFromContent(currentInput);
 
     if (options?.logUser && !options.skipUserLog) {
       await memoryBridge.logInteraction({ role: 'user', content: currentInput, timestamp: new Date().toISOString() });
@@ -541,9 +553,10 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   const dockSideClass = isLefthandMode ? 'left-2 items-start sm:left-0' : 'right-2 items-end sm:right-0';
   const panelRadiusClass = isWorkspace ? 'rounded-2xl' : isLefthandMode ? 'rounded-r-2xl border-l-0' : 'rounded-l-2xl border-r-0';
+  const isE2eMode = process.env.NEXT_PUBLIC_E2E_MODE === 'true';
   const shellClass = isWorkspace
     ? 'flex h-[calc(100vh-9rem)] min-h-[620px] w-full flex-col gap-3'
-    : `fixed bottom-5 top-40 ${dockSideClass} z-40 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`;
+    : `fixed bottom-5 top-40 ${dockSideClass} z-50 flex w-[calc(100vw-1rem)] flex-col gap-3 transition-all duration-500 sm:w-[420px]`;
   const isCheckingMlsAccess = authLoading || mlsAccess === 'checking';
   const canViewMls = Boolean(user) || mlsAccess === 'allowed';
 

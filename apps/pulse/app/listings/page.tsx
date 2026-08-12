@@ -6,6 +6,8 @@ import PropertySearchForm from '@/components/PropertySearchForm';
 import { FaGlobeAmericas, FaServer, FaMapMarkerAlt } from 'react-icons/fa';
 import Spinner from '@/components/Spinner';
 
+type ListingRow = Record<string, any>;
+
 const MARKET_BOARDS = [
   { id: '', label: 'Global (All Boards)' },
   { id: '61', label: 'TRREB (Toronto)' },
@@ -14,7 +16,7 @@ const MARKET_BOARDS = [
   { id: 'internal', label: 'Sunset Pulse Verified' }
 ];
 
-function normalizeListingPayload(payload: any): any[] {
+function normalizeListingPayload(payload: any): ListingRow[] {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload?.data?.properties)) return payload.data.properties;
@@ -28,7 +30,7 @@ export default function ListingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [listings, setListings] = useState([]);
+  const [listings, setListings] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   
   const currentBoard = searchParams.get('boardId') || '';

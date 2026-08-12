@@ -1,5 +1,6 @@
 import { listPulseCartridges } from '@/lib/ai/brain/pulse_query';
-import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
+import { getCartridgeMetadata } from '@/lib/ai/brain/cartridge_metadata';
+import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 import { siteUrlFromRequest } from '@/lib/core/site_url';
 
 export const dynamic = 'force-dynamic';
@@ -25,11 +26,11 @@ export function GET(request: Request) {
     '',
     '## Cartridge Pages',
     ...cartridges.map(cartridge => {
-      const pageUrl = `${host}/tah/${cartridge.slug}`;
-      const headlessUrl = `${pageUrl}/headless`;
+      const metadata = getCartridgeMetadata(cartridge, host);
       const querySeed = getCartridgeSearchQuery(cartridge);
+      const payload = metadata.routes.payloadDownload ? ` | [payload](${metadata.routes.payloadDownload})` : '';
 
-      return `- [${cartridge.title}](${pageUrl}) | [headless](${headlessUrl}) | [query](${getCartridgeApiUrl(host, cartridge)}) | seed: ${querySeed}`;
+      return `- [${metadata.displayTitle}](${metadata.routes.html}) | [headless](${metadata.routes.headless}) | [query](${metadata.routes.api}) | [download](${metadata.routes.download})${payload} | seed: ${querySeed}`;
     }),
     '',
     '## API Usage',

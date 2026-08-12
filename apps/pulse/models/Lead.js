@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+/** @typedef {import('./types').LeadDocument} LeadDocument */
 const { Schema, model, models } = mongoose;
 
 const LeadSchema = new Schema(
@@ -96,7 +97,7 @@ const LeadSchema = new Schema(
   }
 );
 
-/** @type {import('mongoose').Model<any>} */
+/** @type {import('mongoose').Model<LeadDocument>} */
 const Lead = models.Lead || model('Lead', LeadSchema);
 
 export default Lead;

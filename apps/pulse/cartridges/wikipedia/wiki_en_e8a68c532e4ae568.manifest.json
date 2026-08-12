@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_e8a68c532e4ae568",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Chabuakiani-Balanchine\\\"_International_Ballet_Art_Festival\",\"retryPages\":[],\"freshPages\":[69422313],\"continuationAfter\":\"\\\"Chūkara\\\":_Ebichū_no_Waku_Waku_Best\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:07:14.715Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 69422313,
+        "title": "\"Christmas tree\" files",
+        "url": "https://en.wikipedia.org/wiki/%22Christmas_tree%22_files"
+      },
+      "recordId": "lead_crawl_pi1xlo",
+      "title": "\"Christmas tree\" files - Wikipedia",
+      "crawledAt": "2026-08-11T21:07:14.714Z",
+      "markdownChars": 17106
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_e8a68c532e4ae568.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Chūkara\":_Ebichū_no_Waku_Waku_Best",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:07:14.715Z",
+    "runCount": 35,
+    "batchCount": 35,
+    "enumeratedCount": 57,
+    "crawledCount": 57,
+    "importedCount": 57,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

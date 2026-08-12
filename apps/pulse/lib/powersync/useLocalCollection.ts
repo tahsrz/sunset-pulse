@@ -14,11 +14,12 @@ export function useLocalCollection(propertyId: string, userId?: string) {
       setLoading(false);
       return;
     }
+    const activeDatabase = database;
     const controller = new AbortController();
     setLoading(true);
 
     async function watchSavedState() {
-      for await (const result of database.watch(
+      for await (const result of activeDatabase.watch(
         'SELECT id FROM collections WHERE user_id = ? AND property_id = ? LIMIT 1',
         [userId, propertyId],
         { signal: controller.signal }

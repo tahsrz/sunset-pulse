@@ -11,7 +11,8 @@ import LeadCaptureSuccess from './lead-capture/LeadCaptureSuccess';
 import LeadIntelligenceBar from './lead-capture/LeadIntelligenceBar';
 
 // Derive the form data type from the ZOD schema
-type LeadFormData = z.infer<typeof LeadSchema>;
+type LeadFormInput = z.input<typeof LeadSchema>;
+type LeadFormData = z.output<typeof LeadSchema>;
 
 interface LeadCaptureFormProps {
   propertyId: string;
@@ -27,7 +28,7 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
     watch,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<LeadFormData>({
+  } = useForm<LeadFormInput, undefined, LeadFormData>({
     resolver: zodResolver(LeadSchema),
     defaultValues: {
       property: propertyId,

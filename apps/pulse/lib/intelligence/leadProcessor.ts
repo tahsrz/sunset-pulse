@@ -47,7 +47,7 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
   if (leadData.tourRequested) tags.push('TOUR-REQUEST');
   if (probability > 80) tags.push('HIGH-VALUE');
   if (isRV) tags.push('RV-ASSET');
-  if (leadData.budget > 500000) tags.push('PREMIUM-TIER');
+  if ((leadData.budget ?? 0) > 500000) tags.push('PREMIUM-TIER');
 
   // 4. Generate AI Intelligence Hooks and Jamie AI Notes
   let reengagementHook: any;
@@ -107,7 +107,7 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
  * Synchronizes lead data to the Supabase secondary grid.
  * Hardened with conflict resolution and integrity checks.
  */
-export const syncLeadToSupabase = async (lead: any, retries = 2) => {
+export const syncLeadToSupabase = async (lead: any, retries = 2): Promise<void> => {
   if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
     console.log(`[MOCK_MODE] Bypassing Supabase synchronization for lead: ${lead.email}`);
     return;

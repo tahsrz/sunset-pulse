@@ -44,7 +44,7 @@ export async function GET() {
     console.error('[DREAMS_API_FATAL]:', error);
     return new Response(JSON.stringify({ 
       error: 'Failed to retrieve spatial data insights.',
-      details: error.message 
+      details: error instanceof Error ? error.message : String(error)
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }

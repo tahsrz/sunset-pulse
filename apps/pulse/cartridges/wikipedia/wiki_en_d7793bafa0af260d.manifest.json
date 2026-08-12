@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_d7793bafa0af260d",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!aaaH-aH_,yawA_eM_ekaT_ot_gnimoC_er'yehT\",\"retryPages\":[],\"freshPages\":[77933739],\"continuationAfter\":\"\\\"...And_Ladies_of_the_Club\\\"\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:53:09.911Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 77933739,
+        "title": "\"&\"",
+        "url": "https://en.wikipedia.org/wiki/%22%26%22"
+      },
+      "recordId": "lead_crawl_3uadtg",
+      "title": "\"&\" - Wikipedia",
+      "crawledAt": "2026-08-11T20:53:09.909Z",
+      "markdownChars": 20349
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_d7793bafa0af260d.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"...And_Ladies_of_the_Club\"",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:53:09.911Z",
+    "runCount": 12,
+    "batchCount": 12,
+    "enumeratedCount": 19,
+    "crawledCount": 19,
+    "importedCount": 19,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

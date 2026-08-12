@@ -11,7 +11,7 @@
     "allowJs": true,
     "checkJs": false,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "incremental": true,
@@ -23,12 +23,7 @@
     "jsx": "preserve",
     "paths": {
       "@/*": ["./*"],
-      "@/components/*": ["components/*"],
-      "@/utils/*": ["utils/*"],
-      "@/lib/*": ["lib/*"],
-      "@/context/*": ["context/*"],
-      "@/models/*": ["models/*"],
-      "@/assets/*": ["assets/*"]
+      "~/*": ["./*"]
     },
     "plugins": [
       {

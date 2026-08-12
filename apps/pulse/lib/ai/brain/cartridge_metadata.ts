@@ -1,11 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'node:crypto';
 import { getCartridgeApiUrl, getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
 import { CARTRIDGE_DOMAINS, type CartridgeDomain } from '@/lib/ai/brain/cartridge_domains';
 import type { PulseCartridge } from '@/lib/ai/brain/pulse_query';
 import { TAHRetriever } from '@/lib/core/tah_retriever';
 
 const SAMPLE_BYTES = 2048;
+const checksumCache = new Map<string, string | null>();
 
 export type CartridgeMetadata = {
   slug: string;
@@ -22,6 +24,8 @@ export type CartridgeMetadata = {
   searchQuery: string;
   byteSize: number;
   payloadByteSize: number;
+  checksumSha256: string | null;
+  payloadChecksumSha256: string | null;
   shardCount: number;
   bloomBits: string;
   hashCount: number;
@@ -32,8 +36,12 @@ export type CartridgeMetadata = {
     headless: string;
     api: string;
     meta: string;
+    download: string;
+    payloadDownload: string | null;
   };
 };
+
+export type PublicCartridgeMetadata = Omit<CartridgeMetadata, 'path'>;
 
 export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://sunsetpulse.app'): CartridgeMetadata {
   const header = readHeader(cartridge.path);
@@ -58,6 +66,8 @@ export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://
     searchQuery,
     byteSize: statSafe(cartridge.path),
     payloadByteSize: statSafe(payloadPath),
+    checksumSha256: hashFileSha256(cartridge.path),
+    payloadChecksumSha256: payloadPath === cartridge.path ? hashFileSha256(cartridge.path) : hashFileSha256(payloadPath),
     shardCount: header.shardCount,
     bloomBits: header.bloomBits,
     hashCount: header.hashCount,
@@ -67,9 +77,16 @@ export function getCartridgeMetadata(cartridge: PulseCartridge, host = 'https://
       html: `${host}/tah/${cartridge.slug}`,
       headless: `${host}/tah/${cartridge.slug}/headless`,
       api: getCartridgeApiUrl(host, cartridge),
-      meta: `${host}/api/tah/${cartridge.slug}/meta`
+      meta: `${host}/api/tah/${cartridge.slug}/meta`,
+      download: `${host}/api/tah/${cartridge.slug}/download`,
+      payloadDownload: cartridge.type === 'hat' ? `${host}/api/tah/${cartridge.slug}/download?part=payload` : null
     }
   };
+}
+
+export function toPublicCartridgeMetadata(metadata: CartridgeMetadata): PublicCartridgeMetadata {
+  const { path: _path, ...publicMetadata } = metadata;
+  return publicMetadata;
 }
 
 export function classifyCartridgeDomain(cartridge: PulseCartridge, searchQuery = '', summary = '') {
@@ -110,6 +127,20 @@ export function resolvePairedTahPath(hatPath: string) {
   }
 
   return path.join(path.dirname(hatPath), `${path.basename(hatPath, '.hat')}.tah`);
+}
+
+export function hashFileSha256(filePath: string): string | null {
+  try {
+    const stat = fs.statSync(filePath);
+    const cacheKey = `${filePath}:${stat.size}:${stat.mtimeMs}`;
+    if (checksumCache.has(cacheKey)) return checksumCache.get(cacheKey) || null;
+
+    const digest = createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+    checksumCache.set(cacheKey, digest);
+    return digest;
+  } catch {
+    return null;
+  }
 }
 
 function displayTitleFor(cartridge: PulseCartridge, searchQuery: string) {

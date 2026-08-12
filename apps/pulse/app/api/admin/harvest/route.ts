@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import connectDB from '@/lib/core/database';
 import ViralAsset from '@/models/ViralAsset';
+import type { ViralAssetDocument } from '@/models/types';
 
 /**
  * Trend Harvester API v3.0 (Database Synced)
@@ -25,7 +26,7 @@ export async function POST() {
 
     // 1. Get existing paths from DB to avoid duplicates
     const existingAssets = await ViralAsset.find({ type: 'VIDEO' });
-    const existingPaths = new Set(existingAssets.map(a => a.path));
+    const existingPaths = new Set(existingAssets.map((asset: ViralAssetDocument) => asset.path));
 
     // 2. Identify and register new files
     const newAssets = [];

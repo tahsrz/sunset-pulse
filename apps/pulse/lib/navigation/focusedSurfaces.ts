@@ -13,6 +13,12 @@ const operatorSurfacePrefixes = [
   '/admin',
 ];
 
+const standaloneSurfacePrefixes = [
+  '/abidan/war-room',
+  '/register',
+  '/scythe',
+];
+
 const minimalChromeSurfacePrefixes = [
   '/agent',
 ];
@@ -26,11 +32,11 @@ export function isOperatorSurface(pathname?: string | null) {
 }
 
 export function isLightweightGlobalSurface(pathname?: string | null) {
-  return isFocusedGameSurface(pathname) || isOperatorSurface(pathname);
+  return isFocusedGameSurface(pathname) || isOperatorSurface(pathname) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 export function isMinimalChromeSurface(pathname?: string | null) {
-  return matchesPrefix(pathname, minimalChromeSurfacePrefixes);
+  return matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 function matchesPrefix(pathname: string | null | undefined, prefixes: string[]) {

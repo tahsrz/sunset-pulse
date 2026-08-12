@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+/** @typedef {import('./types').EntityDocument} EntityDocument */
 const { Schema, model, models } = mongoose;
 
 const EntitySchema = new Schema(
@@ -74,6 +75,6 @@ const EntitySchema = new Schema(
   }
 );
 
-/** @type {import('mongoose').Model<any>} */
+/** @type {import('mongoose').Model<EntityDocument>} */
 const Entity = models.Entity || model('Entity', EntitySchema);
 export default Entity;

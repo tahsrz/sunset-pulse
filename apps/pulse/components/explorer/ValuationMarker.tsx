@@ -3,11 +3,12 @@
 import React, { memo } from 'react';
 import { Marker } from 'react-map-gl';
 import { FaTags } from 'react-icons/fa6';
+import type { MapValuationResult } from '@/models/types';
 
 interface ValuationMarkerProps {
-  valuation: any;
+  valuation: MapValuationResult;
   hoveredId: string | null;
-  onSelect: (valuation: any) => void;
+  onSelect: (valuation: MapValuationResult) => void;
 }
 
 const ValuationMarker: React.FC<ValuationMarkerProps> = ({ valuation, hoveredId, onSelect }) => {

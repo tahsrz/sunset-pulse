@@ -1,12 +1,25 @@
 'use client';
 import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaBolt } from 'react-icons/fa';
 import { useTheme } from '@/context/ThemeProvider';
 
-const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
+interface AutomatedLeadCaptureProps {
+  propertyId: string;
+  onCapture?: () => void;
+}
+
+interface LeadCaptureFormData {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+}
+
+const AutomatedLeadCapture = ({ propertyId, onCapture }: AutomatedLeadCaptureProps) => {
   const { agentId, agentProfile, integrationProfile } = useTheme();
   const agentLabel = [agentProfile.displayName, agentProfile.brokerageName].filter(Boolean).join(' | ');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LeadCaptureFormData>({
     name: '',
     email: '',
     phone: '',
@@ -15,11 +28,12 @@ const AutomatedLeadCapture = ({ propertyId, onCapture }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const field = e.target.name as keyof LeadCaptureFormData;
+    setFormData((current) => ({ ...current, [field]: e.target.value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 

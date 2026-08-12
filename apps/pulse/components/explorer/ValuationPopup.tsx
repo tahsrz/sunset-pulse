@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
+import type { MapValuationResult } from '@/models/types';
 import { Popup } from 'react-map-gl';
 import { FaTags } from 'react-icons/fa6';
 
 interface ValuationPopupProps {
-  valuation: any;
+  valuation: MapValuationResult;
   onClose: () => void;
 }
 

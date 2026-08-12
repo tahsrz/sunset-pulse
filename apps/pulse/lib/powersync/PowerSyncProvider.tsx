@@ -90,10 +90,11 @@ export function SunsetPowerSyncProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!database) return;
+    const activeDatabase = database;
     let cancelled = false;
 
     async function updateStatus(status: SyncStatus) {
-      const uploadQueue = await database.getUploadQueueStats().catch(() => ({ count: 0 }));
+      const uploadQueue = await activeDatabase.getUploadQueueStats().catch(() => ({ count: 0 }));
       if (cancelled) return;
       const syncError = status.dataFlowStatus.downloadError || status.dataFlowStatus.uploadError || null;
       const state: PowerSyncHealth['state'] = syncError
@@ -117,8 +118,8 @@ export function SunsetPowerSyncProvider({ children }: { children: React.ReactNod
       setError(syncError);
     }
 
-    const unregister = database.registerListener({ statusChanged: updateStatus });
-    updateStatus(database.currentStatus);
+    const unregister = activeDatabase.registerListener({ statusChanged: updateStatus });
+    updateStatus(activeDatabase.currentStatus);
     return () => {
       cancelled = true;
       unregister();
@@ -127,12 +128,13 @@ export function SunsetPowerSyncProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!enabled || !database || loading) return;
+    const activeDatabase = database;
     let cancelled = false;
 
     async function reconcileConnection() {
       const userId = session?.user?.id || null;
       if (!userId) {
-        await database.disconnectAndClear();
+        await activeDatabase.disconnectAndClear();
         connectedUser.current = null;
         if (!cancelled) {
           setConnected(false);
@@ -142,10 +144,10 @@ export function SunsetPowerSyncProvider({ children }: { children: React.ReactNod
       }
 
       if (connectedUser.current && connectedUser.current !== userId) {
-        await database.disconnectAndClear();
+        await activeDatabase.disconnectAndClear();
       }
       if (connectedUser.current !== userId) {
-        await database.connect(new SunsetPowerSyncConnector());
+        await activeDatabase.connect(new SunsetPowerSyncConnector());
         connectedUser.current = userId;
       }
       if (!cancelled) setError(null);

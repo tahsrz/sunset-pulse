@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_32bbfc1b40e3c8ff",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"...And_Ladies_of_the_Club\\\"\",\"retryPages\":[],\"freshPages\":[2538127],\"continuationAfter\":\"\\\"10th_Anniversary_of_the_Armed_Forces_of_Azerbaijan_(1991–2001)\\\"_Medal\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T20:53:42.731Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 2538127,
+        "title": "\"...And Ladies of the Club\"",
+        "url": "https://en.wikipedia.org/wiki/%22...And_Ladies_of_the_Club%22"
+      },
+      "recordId": "lead_crawl_1rbxt14",
+      "title": "\"...And Ladies of the Club\" - Wikipedia",
+      "crawledAt": "2026-08-11T20:53:42.729Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_32bbfc1b40e3c8ff.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"10th_Anniversary_of_the_Armed_Forces_of_Azerbaijan_(1991–2001)\"_Medal",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T20:53:42.731Z",
+    "runCount": 13,
+    "batchCount": 13,
+    "enumeratedCount": 20,
+    "crawledCount": 20,
+    "importedCount": 20,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

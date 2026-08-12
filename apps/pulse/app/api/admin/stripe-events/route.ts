@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
     });
 
     return successResponse({
-      endpoint: '/api/admin/stripe-events',
-      action: 'stripe_event_replay',
-      operator: operatorAuditUser(access),
       ...result,
+      endpoint: '/api/admin/stripe-events',
+      auditAction: 'stripe_event_replay',
+      operator: operatorAuditUser(access),
     });
   } catch (error: any) {
     return errorResponse(error?.message || 'Failed to replay Stripe event.', 400);
@@ -96,5 +96,5 @@ async function resolveSiteStripeObjectIds(agentId: string) {
     kit.billingProfile.stripeCheckoutSessionId,
     kit.billingProfile.stripeSubscriptionId,
     kit.billingProfile.stripeCustomerId,
-  ].filter(Boolean)));
+  ].filter((value): value is string => Boolean(value))));
 }

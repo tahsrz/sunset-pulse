@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_9803bea355a17ffd",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Big\\\"_Jim_Martin\",\"retryPages\":[],\"freshPages\":[55500928],\"continuationAfter\":\"\\\"Big_Room\\\"\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:02:53.809Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 55500928,
+        "title": "\"Big Boy\" Teddy Edwards",
+        "url": "https://en.wikipedia.org/wiki/%22Big_Boy%22_Teddy_Edwards"
+      },
+      "recordId": "lead_crawl_rdwgr1",
+      "title": "\"Big Boy\" Teddy Edwards - Wikipedia",
+      "crawledAt": "2026-08-11T21:02:53.807Z",
+      "markdownChars": 8886
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_9803bea355a17ffd.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Big_Room\"",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:02:53.809Z",
+    "runCount": 28,
+    "batchCount": 28,
+    "enumeratedCount": 42,
+    "crawledCount": 42,
+    "importedCount": 42,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

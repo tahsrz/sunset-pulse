@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_30551e8123c44789",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"CROATOAN\\\"\",\"retryPages\":[],\"freshPages\":[12365020,12365106,12365138,12365159,12365165],\"continuationAfter\":\"\\\"Chabuakiani-Balanchine\\\"_International_Ballet_Art_Festival\"}",
+  "language": "en",
+  "createdAt": "2026-08-11T21:06:41.727Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 12365020,
+        "title": "\"Centrolene\" azulae",
+        "url": "https://en.wikipedia.org/wiki/%22Centrolene%22_azulae"
+      },
+      "recordId": "lead_crawl_l26ax0",
+      "title": "\"Centrolene\" azulae - Wikipedia",
+      "crawledAt": "2026-08-11T21:06:26.623Z",
+      "markdownChars": 6696
+    },
+    {
+      "page": {
+        "pageid": 12365106,
+        "title": "\"Centrolene\" medemi",
+        "url": "https://en.wikipedia.org/wiki/%22Centrolene%22_medemi"
+      },
+      "recordId": "lead_crawl_tmjk2m",
+      "title": "\"Centrolene\" medemi - Wikipedia",
+      "crawledAt": "2026-08-11T21:06:30.380Z",
+      "markdownChars": 12273
+    },
+    {
+      "page": {
+        "pageid": 12365138,
+        "title": "\"Centrolene\" petrophilum",
+        "url": "https://en.wikipedia.org/wiki/%22Centrolene%22_petrophilum"
+      },
+      "recordId": "lead_crawl_1igjqg4",
+      "title": "\"Centrolene\" petrophilum - Wikipedia",
+      "crawledAt": "2026-08-11T21:06:34.304Z",
+      "markdownChars": 11585
+    },
+    {
+      "page": {
+        "pageid": 12365159,
+        "title": "\"Centrolene\" quindianum",
+        "url": "https://en.wikipedia.org/wiki/%22Centrolene%22_quindianum"
+      },
+      "recordId": "lead_crawl_opl0k2",
+      "title": "\"Centrolene\" quindianum - Wikipedia",
+      "crawledAt": "2026-08-11T21:06:38.155Z",
+      "markdownChars": 13189
+    },
+    {
+      "page": {
+        "pageid": 12365165,
+        "title": "\"Centrolene\" robledoi",
+        "url": "https://en.wikipedia.org/wiki/%22Centrolene%22_robledoi"
+      },
+      "recordId": "lead_crawl_16y8tgf",
+      "title": "\"Centrolene\" robledoi - Wikipedia",
+      "crawledAt": "2026-08-11T21:06:41.727Z",
+      "markdownChars": 6811
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_30551e8123c44789.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Chabuakiani-Balanchine\"_International_Ballet_Art_Festival",
+    "complete": false,
+    "startedAt": "2026-08-11T20:46:26.325Z",
+    "updatedAt": "2026-08-11T21:06:41.727Z",
+    "runCount": 34,
+    "batchCount": 34,
+    "enumeratedCount": 56,
+    "crawledCount": 56,
+    "importedCount": 56,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

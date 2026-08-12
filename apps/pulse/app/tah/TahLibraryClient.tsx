@@ -492,6 +492,7 @@ export function TahLibraryClient({ cartridges, masterArchive }: TahLibraryClient
                     <Link className="rounded bg-pink-300 px-3 py-2 text-slate-950" href={`/tah/${cartridge.slug}/headless`}>Headless</Link>
                     <Link className="rounded border border-white/20 px-3 py-2 text-white" href={`/api/tah/${cartridge.slug}/meta`}>Meta</Link>
                     <Link className="rounded border border-white/20 px-3 py-2 text-white" href={cartridge.routes.api.replace(/^https?:\/\/[^/]+/, '')}>Query</Link>
+                    <Link className="rounded border border-white/20 px-3 py-2 text-white" href={cartridge.routes.download.replace(/^https?:\/\/[^/]+/, '')}>Download</Link>
                   </div>
                 </article>
               ))}

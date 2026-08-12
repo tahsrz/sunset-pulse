@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+/** @typedef {import('./types').ViralAssetDocument} ViralAssetDocument */
 const { Schema, model, models } = mongoose;
 
 const ViralAssetSchema = new Schema(
@@ -26,6 +27,6 @@ const ViralAssetSchema = new Schema(
   { timestamps: true }
 );
 
-/** @type {import('mongoose').Model<any>} */
+/** @type {import('mongoose').Model<ViralAssetDocument>} */
 const ViralAsset = models.ViralAsset || model('ViralAsset', ViralAssetSchema);
 export default ViralAsset;

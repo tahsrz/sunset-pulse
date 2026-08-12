@@ -23,7 +23,7 @@ const MapControls: React.FC<MapControlsProps> = ({
   showDirections
 }) => {
   return (
-    <div className="absolute top-5 right-5 z-10 space-y-3">
+    <div className="fixed top-20 right-5 z-[9999] space-y-3 pointer-events-auto">
       <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl max-w-[250px]">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3 text-blue-400">

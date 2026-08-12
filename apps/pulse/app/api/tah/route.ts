@@ -47,16 +47,19 @@ export async function GET(request: NextRequest) {
         domain: cartridge.domain,
         format: cartridge.format,
         byteSize: cartridge.byteSize,
+        checksumSha256: cartridge.checksumSha256,
         shardCount: cartridge.shardCount,
         summary: cartridge.summary,
         url: `/tah/${cartridge.slug}`,
-        metaUrl: cartridge.routes.meta
+        metaUrl: cartridge.routes.meta,
+        downloadUrl: cartridge.routes.download,
+        payloadDownloadUrl: cartridge.routes.payloadDownload
       })),
       count: cartridges.length
     });
   }
 
-  return runTahQuery({ query, limit, sync });
+  return runTahQuery({ query, limit: limit || undefined, sync });
 }
 
 export async function POST(request: NextRequest) {

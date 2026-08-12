@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useProperties } from '@/hooks/useProperties';
 import { FaMapMarkerAlt, FaBed, FaBath } from 'react-icons/fa';
+import type { Property } from '@/lib/types';
 
 interface RecommendedPropertiesProps {
   currentPropertyId: string;

@@ -65,7 +65,7 @@ export function parseHotsheetText(text: string): NormalizedMlsListing[] {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const mlsLineIndices = [];
+  const mlsLineIndices: number[] = [];
   for (let index = 0; index < lines.length; index += 1) {
     if (/^MLS#\s*[0-9A-Z-]+\s*-/.test(lines[index])) mlsLineIndices.push(index);
   }

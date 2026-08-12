@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AtlasGlobeCanvas, { AtlasGlobe, GlobeNode } from '@/components/atlas/AtlasGlobeCanvas';
+import WikipediaProcessTerminal from '@/components/atlas/WikipediaProcessTerminal';
 
 type AtlasNode = {
   id: string;
@@ -152,8 +153,8 @@ export default function MemoriaAtlasPage() {
       const items: ProbeItem[] = [];
 
       while (cursor !== null && !cancelled) {
-        const response = await fetch(`/api/tah/atlas/probe?cursor=${cursor}&limit=18`, { cache: 'no-store' });
-        const body = await response.json();
+        const response: Response = await fetch(`/api/tah/atlas/probe?cursor=${cursor}&limit=18`, { cache: 'no-store' });
+        const body: { mapped: number; total: number; percent: number; done: boolean; items: ProbeItem[]; nextCursor: number | null } = await response.json();
         items.push(...body.items);
 
         if (cancelled) return;
@@ -303,6 +304,8 @@ export default function MemoriaAtlasPage() {
             placeholder="Search the world..."
           />
         </div>
+
+        <WikipediaProcessTerminal />
 
         <div className="mt-4 rounded border border-white/10 bg-white/[0.04] p-4">
           <div className="mb-4 border-b border-white/10 pb-4">

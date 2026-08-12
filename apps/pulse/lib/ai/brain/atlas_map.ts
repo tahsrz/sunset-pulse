@@ -19,6 +19,8 @@ type AtlasNode = {
   url?: string;
   headlessUrl?: string;
   apiUrl?: string;
+  downloadUrl?: string;
+  payloadDownloadUrl?: string | null;
   searchQuery?: string;
 };
 
@@ -92,6 +94,8 @@ export function buildTahAtlasMap(host = 'https://sunsetpulse.app') {
         url: item.routes.html,
         headlessUrl: item.routes.headless,
         apiUrl: item.routes.api,
+        downloadUrl: item.routes.download,
+        payloadDownloadUrl: item.routes.payloadDownload,
         searchQuery: item.searchQuery
       });
       links.push({ source: domain.id, target: `cartridge:${item.slug}`, value: 1 });

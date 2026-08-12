@@ -96,6 +96,6 @@ function normalizeAgentConsoleEvent(event: AgentConsoleTelemetryEvent): Required
 }
 
 function clampNumber(value: unknown, max: number) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(max, Math.round(value)));
 }

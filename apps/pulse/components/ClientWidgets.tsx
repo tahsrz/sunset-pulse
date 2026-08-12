@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { isFocusedGameSurface, isOperatorSurface } from '@/lib/navigation/focusedSurfaces';
+import { isFocusedGameSurface, isLightweightGlobalSurface, isOperatorSurface } from '@/lib/navigation/focusedSurfaces';
 
 const JamieChat = dynamic(() => import('@/components/JamieChat'), { ssr: false });
 const FeedbackWidget = dynamic(() => import('@/components/FeedbackWidget'), { ssr: false });
@@ -33,6 +33,8 @@ export default function ClientWidgets() {
       </>
     );
   }
+
+  if (isLightweightGlobalSurface(pathname)) return null;
 
   return (
     <>

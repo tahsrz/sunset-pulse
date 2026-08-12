@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect } from 'react';
 import { Check, Volume2, X } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
 import { JAMIE_VOICE_CHOICES, speak, stopSpeaking, type JamieVoicePreset } from '@/lib/core/tts';
@@ -14,18 +15,38 @@ const PREVIEW_LINE = 'I am Jamie. Let us pull up what matters and get to work.';
 export default function JamieCharacterCreation({ open, onComplete }: JamieCharacterCreationProps) {
   const { jamieVoice, setJamieVoice } = useTheme();
 
-  if (!open) return null;
-
   const choose = (voice: JamieVoicePreset) => {
     setJamieVoice(voice);
     speak(PREVIEW_LINE, voice);
   };
 
-  const complete = () => {
+  const complete = useCallback(() => {
     stopSpeaking();
     localStorage.setItem('jamie_character_created', 'true');
     onComplete();
-  };
+  }, [onComplete]);
+
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') complete();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      stopSpeaking();
+    };
+  }, [open, complete]);
+
+  if (!open) return null;
 
   return (
     <div className="absolute inset-0 z-[80] flex items-end bg-slate-950/80 p-3 backdrop-blur-sm sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="jamie-character-title">

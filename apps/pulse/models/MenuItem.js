@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+/** @typedef {import('./types').MenuItemDocument} MenuItemDocument */
 const { Schema, model, models } = mongoose;
 const MenuItemSchema = new Schema({
   id: { type: String, index: true },
@@ -29,6 +30,6 @@ const MenuItemSchema = new Schema({
   timestamps: true
 });
 
-/** @type {import('mongoose').Model<any>} */
+/** @type {import('mongoose').Model<MenuItemDocument>} */
 const MenuItem = models.MenuItem || model('MenuItem', MenuItemSchema);
 export default MenuItem;

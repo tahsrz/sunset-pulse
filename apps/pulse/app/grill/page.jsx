@@ -299,9 +299,9 @@ const GrillPage = () => {
                   <div className='absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/40 to-transparent' />
                   <div>
                     <div className='flex justify-between items-start gap-4'>
-                      <h3 className='text-xl font-bold text-slate-100 group-hover:text-orange-400 transition-colors'>
+                      <h2 className='text-xl font-bold text-slate-100 group-hover:text-orange-400 transition-colors'>
                         {item.name}
-                      </h3>
+                      </h2>
                       <span className='text-[9px] px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-semibold uppercase tracking-wider'>
                         Featured
                       </span>
@@ -358,9 +358,9 @@ const GrillPage = () => {
                   <div className='absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-rose-500/40 to-transparent' />
                   <div>
                     <div className='flex justify-between items-start gap-4'>
-                      <h3 className='text-xl font-bold text-slate-100 group-hover:text-rose-400 transition-colors'>
+                      <h2 className='text-xl font-bold text-slate-100 group-hover:text-rose-400 transition-colors'>
                         {item.name}
-                      </h3>
+                      </h2>
                       <span className='text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 font-semibold uppercase tracking-wider'>
                         Staff Signature
                       </span>

@@ -19,7 +19,15 @@ export const GET = async (request: NextRequest) => {
     const { query, signature } = buildPropertyQuery(params);
 
     if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
-      const response = successResponse(filterMockSearchProperties(params), {
+      const cachedMockData = PulseCache.get(signature);
+      if (cachedMockData) {
+        const response = successResponse(cachedMockData, { signature, cached: true, source: 'mock' });
+        response.headers.set('X-Cache', 'HIT');
+        return response;
+      }
+      const mockData = filterMockSearchProperties(params);
+      PulseCache.set(signature, mockData);
+      const response = successResponse(mockData, {
         signature,
         cached: false,
         source: 'mock',

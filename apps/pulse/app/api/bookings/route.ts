@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Booking from '@/models/Booking';
+import type { PropertyDocument } from '@/models/types';
 import Lead from '@/models/Lead';
 import Property from '@/models/Property';
 import { getSessionUser } from '@/lib/core/getSessionUser';
@@ -26,7 +27,7 @@ export const GET = async (request: NextRequest) => {
     if (role === 'agent') {
       // Fetch all bookings for properties owned by this user
       const userProperties = await Property.find({ owner: userId }).select('_id');
-      const propertyIds = userProperties.map(p => p._id);
+      const propertyIds = userProperties.map((property: PropertyDocument) => property._id);
       bookings = await Booking.find({ property: { $in: propertyIds } })
         .populate('property')
         .populate('user', 'username email image')
