@@ -15,6 +15,12 @@ export type PulseCartridge = {
 
 let cachedCartridges: PulseCartridge[] | null = null;
 let cachedKey: string | null = null;
+let remoteHydrated = false;
+
+export function clearPulseCartridgeCache() {
+  cachedCartridges = null;
+  cachedKey = null;
+}
 
 export function listPulseCartridges(): PulseCartridge[] {
   const dirs = getCartridgeDirs();
@@ -107,6 +113,12 @@ export function getPulseCartridge(slug: string): PulseCartridge | null {
  * and raw swarm prototype .tah streams.
  */
 export async function pulse_search(query: string, maxResults = 25): Promise<any[]> {
+  const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
+  if (process.env.VERCEL && !isBuild && !remoteHydrated) {
+    remoteHydrated = true;
+    const { syncUniversalIntelligence } = await import('@/lib/ai/brain/remote_atlas');
+    await syncUniversalIntelligence();
+  }
   const cartridges = listPulseCartridges();
   const results: any[] = [];
 

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import fs from 'fs';
 import path from 'path';
+import { clearPulseCartridgeCache } from '@/lib/ai/brain/pulse_query';
 
 /**
  * Remote Atlas: Bridges local TAH cartridges with Supabase Cloud Storage.
@@ -57,5 +58,6 @@ export const syncUniversalIntelligence = async () => {
     const p = await syncRemoteCartridge(file.name);
     if (p) syncedPaths.push(p);
   }
+  clearPulseCartridgeCache();
   return syncedPaths;
 };
