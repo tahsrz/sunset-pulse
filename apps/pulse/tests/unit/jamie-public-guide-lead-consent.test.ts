@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   buildPublicGuideHandoffBrief: vi.fn(),
   discoverListingById: vi.fn(),
   eq: vi.fn(),
+  eventEq: vi.fn(),
+  eventIn: vi.fn(),
+  eventLimit: vi.fn(),
+  eventOrder: vi.fn(),
+  eventSelect: vi.fn(),
   from: vi.fn(),
   getTenantSite: vi.fn(),
   insert: vi.fn(),
@@ -71,7 +76,14 @@ beforeEach(() => {
   mocks.buildPublicGuideHandoffBrief.mockResolvedValue(sprintThreeBrief);
   mocks.hashPublicGuideSessionId.mockReturnValue('hashed-session-id');
   mocks.getTenantSite.mockResolvedValue({ isPublished: false });
-  mocks.from.mockReturnValue({ insert: mocks.insert, update: mocks.update });
+  mocks.from.mockImplementation((table: string) => table === 'intelligence_events'
+    ? { select: mocks.eventSelect }
+    : { insert: mocks.insert, update: mocks.update });
+  mocks.eventSelect.mockReturnValue({ eq: mocks.eventEq });
+  mocks.eventEq.mockReturnValue({ in: mocks.eventIn });
+  mocks.eventIn.mockReturnValue({ order: mocks.eventOrder });
+  mocks.eventOrder.mockReturnValue({ limit: mocks.eventLimit });
+  mocks.eventLimit.mockResolvedValue({ data: [], error: null });
   mocks.insert.mockReturnValue({ select: mocks.select });
   mocks.select.mockReturnValue({ single: mocks.single });
   mocks.single.mockResolvedValue({ data: { id: 'lead-1' }, error: null });
@@ -211,6 +223,17 @@ describe('Jamie public guide lead consent', () => {
           sessionIdHash: 'hashed-session-id',
           sourceHost: 'jamie',
         }),
+        leadIntelligence: expect.objectContaining({
+          score: 55,
+          level: 'warm',
+          inferredIntent: 'property_specific',
+          reasons: expect.arrayContaining([
+            expect.objectContaining({ code: 'contact_shared', points: 25 }),
+            expect.objectContaining({ code: 'search_refinement', points: 12 }),
+            expect.objectContaining({ code: 'verified_listing', points: 8 }),
+            expect.objectContaining({ code: 'properties_compared', points: 10 }),
+          ]),
+        }),
       }),
     }));
     expect(mocks.notifyAgentSiteLead).toHaveBeenCalledWith(expect.objectContaining({
@@ -230,7 +253,7 @@ describe('Jamie public guide lead consent', () => {
     expect(JSON.stringify(mocks.insert.mock.calls[0][0])).not.toContain('Raw visitor question');
     expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(expect.objectContaining({
       event: 'handoff_completed',
-      sessionId: 'session-12345678',
+      sessionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
     }));
   });
 });

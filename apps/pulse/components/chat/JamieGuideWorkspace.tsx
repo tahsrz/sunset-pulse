@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import Link from 'next/link';
@@ -91,24 +91,30 @@ export function JamieGuideWorkspace({
   const isBusy = status === 'submitted' || status === 'streaming';
   const hasAgentContext = Boolean(initialContext?.agent);
   const hasListingContext = Boolean(initialContext?.listing);
+  const sessionReadyRef = useRef<Promise<void> | null>(null);
   const handoffSnapshot = useMemo(
     () => buildHandoffSnapshot(messages, initialContext?.listing),
     [initialContext?.listing, messages],
   );
 
-  useEffect(() => {
-    postGuideEvent({
+  const ensureVisitorSession = useCallback(() => {
+    sessionReadyRef.current ??= postGuideEvent({
       event: 'guide_opened',
       sessionId: analyticsSessionId,
       hasAgentContext,
       hasListingContext,
     });
+    return sessionReadyRef.current;
   }, [analyticsSessionId, hasAgentContext, hasListingContext]);
+
+  useEffect(() => {
+    void ensureVisitorSession();
+  }, [ensureVisitorSession]);
 
   const send = (text: string) => {
     const prompt = text.trim();
     if (!prompt || isBusy) return;
-    void sendMessage({ text: prompt });
+    void ensureVisitorSession().then(() => sendMessage({ text: prompt }));
     setInput('');
   };
 
@@ -663,14 +669,14 @@ function buildHandoffSnapshot(
   };
 }
 
-function postGuideEvent(input: {
+async function postGuideEvent(input: {
   actionId?: PublicGuideActionId;
   event: PublicGuideClientEventName;
   hasAgentContext: boolean;
   hasListingContext: boolean;
   sessionId: string;
 }) {
-  void fetch('/api/jamie/guide/events', {
+  await fetch('/api/jamie/guide/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     keepalive: true,

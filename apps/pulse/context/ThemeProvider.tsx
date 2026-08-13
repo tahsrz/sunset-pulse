@@ -184,7 +184,7 @@ export function ThemeProvider({
   const [isAdvancedMode, setAdvancedModeState] = useState(false);
   const [isLefthandMode, setLefthandModeState] = useState(false);
   const [isVoiceEnabled, setVoiceEnabledState] = useState(true);
-  const [isWakeListeningEnabled, setWakeListeningEnabledState] = useState(true);
+  const [isWakeListeningEnabled, setWakeListeningEnabledState] = useState(false);
   const [isGuardedJamieEnabled, setGuardedJamieEnabledState] = useState(false);
   const [jamieVoice, setJamieVoiceState] = useState<JamieVoicePreset>('Jamie');
   const [customKeybind, setCustomKeybindState] = useState('P');
@@ -226,7 +226,7 @@ export function ThemeProvider({
     const savedWakeListening = localStorage.getItem('jamie_wake_listening_enabled');
     const savedGuardedJamie = localStorage.getItem('jamie_real_estate_mode') ?? localStorage.getItem('jamie_guarded_mode');
     const savedJamieVoice = localStorage.getItem('jamie_voice_preset') as JamieVoicePreset | null;
-    if (savedWakeListening === 'false') setWakeListeningEnabledState(false);
+    setWakeListeningEnabledState(savedWakeListening === 'true');
     if (savedGuardedJamie === 'true') setGuardedJamieEnabledState(true);
     if (savedJamieVoice) setJamieVoiceState(savedJamieVoice);
     

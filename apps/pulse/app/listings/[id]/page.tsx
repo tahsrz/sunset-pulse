@@ -13,6 +13,7 @@ import DraftOfferButton from '@/components/contracts/DraftOfferButton';
 import MarketIntelligencePocket from '@/components/property/MarketIntelligencePocket';
 import YieldIntelligenceCard from '@/components/property/YieldIntelligenceCard';
 import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
+import VisitorPropertyViewTracker from '@/components/property/VisitorPropertyViewTracker';
 
 interface ListingPageProps {
   params: { id: string };
@@ -38,6 +39,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
   return (
     <main className='bg-slate-50 min-h-screen pb-20'>
+      <VisitorPropertyViewTracker propertyId={property._id || params.id} />
       <PropertyHeaderImage image={property.images[0]} />
 
       <section className='bg-white border-b border-slate-200'>

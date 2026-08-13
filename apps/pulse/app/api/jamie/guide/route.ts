@@ -19,6 +19,10 @@ import {
 } from '@/lib/ai/publicGuideTelemetry';
 import { getFirstPartySiteFromHost } from '@/lib/sites/tenantRouting';
 import { getPublicRootOrigin } from '@/lib/sites/siteUrls';
+import {
+  attachVisitorSessionCookie,
+  getOrCreateVisitorSession,
+} from '@/lib/intelligence/visitorSession';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -28,24 +32,25 @@ export async function POST(request: Request) {
   if (getFirstPartySiteFromHost(host) !== 'jamie') {
     return notFoundResponse('Jamie public guide');
   }
+  const visitorSession = getOrCreateVisitorSession(request);
 
   const limitResponse = await applyPublicApiRateLimit(request, 'jamie-public-guide', 10);
-  if (limitResponse) return limitResponse;
+  if (limitResponse) return attachVisitorSessionCookie(request, limitResponse, visitorSession);
 
   let rawBody: unknown;
   try {
     const body = await request.text();
     if (body.length > 64_000) {
-      return errorResponse('The request body is too large.', 413);
+      return attachVisitorSessionCookie(request, errorResponse('The request body is too large.', 413), visitorSession);
     }
     rawBody = JSON.parse(body);
   } catch {
-    return errorResponse('A valid JSON request body is required.', 400);
+    return attachVisitorSessionCookie(request, errorResponse('A valid JSON request body is required.', 400), visitorSession);
   }
 
   const validation = publicGuideRequestSchema.safeParse(rawBody);
   if (!validation.success) {
-    return validationErrorResponse(validation.error.flatten());
+    return attachVisitorSessionCookie(request, validationErrorResponse(validation.error.flatten()), visitorSession);
   }
   const userMessage = validation.data.messages
     .slice()
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
           rootOrigin,
         });
         const eventContext = {
-          sessionId: validation.data.analyticsSessionId,
+          sessionId: visitorSession.id,
           hasAgentContext: Boolean(resolvedContext?.agent),
           hasListingContext: Boolean(resolvedContext?.listing),
           intentCategory,
@@ -141,7 +146,7 @@ export async function POST(request: Request) {
         writer.write({ type: 'text-end', id: textId });
         schedulePublicGuideEvent({
           event: 'guide_error',
-          sessionId: validation.data.analyticsSessionId,
+          sessionId: visitorSession.id,
           durationMs: Date.now() - startedAt,
           hasAgentContext: Boolean(resolvedContext?.agent),
           hasListingContext: Boolean(resolvedContext?.listing),
@@ -151,13 +156,14 @@ export async function POST(request: Request) {
     },
   });
 
-  return createUIMessageStreamResponse({
+  const response = createUIMessageStreamResponse({
     stream,
     headers: {
       'Cache-Control': 'no-store',
       'X-Robots-Tag': 'noindex',
     },
   });
+  return attachVisitorSessionCookie(request, response, visitorSession);
 }
 
 function safeArray<T>(value: unknown): T[] {

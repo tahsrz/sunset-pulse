@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { initialJamieAudioState, jamieAudioReducer, recentTranscript } from '@/context/JamieAudioContext';
+import {
+  initialJamieAudioState,
+  jamieAudioReducer,
+  recentTranscript,
+  wakeListeningSyncAction,
+} from '@/context/JamieAudioContext';
 
 describe('Jamie audio state', () => {
   it('keeps only the rolling 30-second query context and removes the wake phrase', () => {
@@ -29,5 +34,12 @@ describe('Jamie audio state', () => {
 
     const consumed = jamieAudioReducer(submitted, { type: 'CONSUME_QUERY', id: query.id });
     expect(consumed.submittedQuery).toBeNull();
+  });
+
+  it('does not start the microphone while wake listening is disabled', () => {
+    expect(wakeListeningSyncAction(false, 'off')).toBe('none');
+    expect(wakeListeningSyncAction(false, 'listening')).toBe('stop');
+    expect(wakeListeningSyncAction(true, 'off')).toBe('start');
+    expect(wakeListeningSyncAction(true, 'listening')).toBe('none');
   });
 });
