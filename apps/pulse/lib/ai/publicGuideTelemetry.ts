@@ -1,9 +1,9 @@
 import 'server-only';
 
-import { createHash } from 'node:crypto';
 import { after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { PublicGuideActionId, PublicGuideOutcome } from '@/lib/ai/publicGuideContract';
+import { hashVisitorSessionId } from '@/lib/intelligence/visitorSession';
 
 export const PUBLIC_GUIDE_INTENT_CATEGORIES = [
   'buying_process',
@@ -79,7 +79,7 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
 }
 
 export function hashPublicGuideSessionId(sessionId: string) {
-  return createHash('sha256').update(sessionId).digest('hex').slice(0, 20);
+  return hashVisitorSessionId(sessionId);
 }
 
 export function classifyPublicGuideIntent(userMessage: string): PublicGuideIntentCategory {

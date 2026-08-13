@@ -19,11 +19,11 @@ import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
 import { FaArrowLeft } from 'react-icons/fa';
 import { Property } from '@/lib/types';
-import { logEvent } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useLocalListing } from '@/lib/powersync/useLocalListings';
 import { useSunsetPowerSync } from '@/lib/powersync/PowerSyncProvider';
 import { recordLocalPropertyView } from '@/lib/powersync/mutations';
+import VisitorPropertyViewTracker from '@/components/property/VisitorPropertyViewTracker';
 
 // --- Interfaces for Type Safety ---
 interface RentData {
@@ -67,16 +67,6 @@ const PropertyPage: React.FC = () => {
         setProperty(propertyData as Property);
 
         if (propertyData) {
-          // Log Engagement Event (Last 48h tracking)
-          logEvent({
-            type: 'PROPERTY_VIEW',
-            description: `Viewed property: ${propertyData.name}.`,
-            actorId: user?.id || 'anonymous',
-            actorName: user?.user_metadata?.full_name || 'Anonymous_User',
-            targetId: id,
-            severity: 'INFO'
-          });
-
           try {
             const rentRes = await fetch(`/api/properties/${id}/rent`);
             if (rentRes.ok) {
@@ -119,6 +109,7 @@ const PropertyPage: React.FC = () => {
       {loading && <Spinner loading={loading} />}
       {!loading && property && (
         <>
+          <VisitorPropertyViewTracker propertyId={property._id || id} />
           <PropertyHeaderImage image={property.images[0]} />
           <section>
             <div className='container m-auto py-6 px-6'>

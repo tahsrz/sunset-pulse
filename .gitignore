@@ -33,7 +33,7 @@ build/
 !apps/pulse/cartridges/objection_scripts.tah
 !apps/pulse/cartridges/local_business_context.tah
 !apps/pulse/cartridges/market_rules.tah
-
+apps/pulse/cartridges/wikipedia/ingestion-state.json
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -86,3 +86,4 @@ scratch/
 temp_render/
 **/scratch/
 **/temp_render/
+apps/pulse/cartridges/wikipedia/ingestion-state.json

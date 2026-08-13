@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   discoverListingById: vi.fn(),
   eq: vi.fn(),
   eventEq: vi.fn(),
-  eventLike: vi.fn(),
+  eventIn: vi.fn(),
   eventLimit: vi.fn(),
   eventOrder: vi.fn(),
   eventSelect: vi.fn(),
@@ -80,8 +80,8 @@ beforeEach(() => {
     ? { select: mocks.eventSelect }
     : { insert: mocks.insert, update: mocks.update });
   mocks.eventSelect.mockReturnValue({ eq: mocks.eventEq });
-  mocks.eventEq.mockReturnValue({ like: mocks.eventLike });
-  mocks.eventLike.mockReturnValue({ order: mocks.eventOrder });
+  mocks.eventEq.mockReturnValue({ in: mocks.eventIn });
+  mocks.eventIn.mockReturnValue({ order: mocks.eventOrder });
   mocks.eventOrder.mockReturnValue({ limit: mocks.eventLimit });
   mocks.eventLimit.mockResolvedValue({ data: [], error: null });
   mocks.insert.mockReturnValue({ select: mocks.select });
@@ -253,7 +253,7 @@ describe('Jamie public guide lead consent', () => {
     expect(JSON.stringify(mocks.insert.mock.calls[0][0])).not.toContain('Raw visitor question');
     expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(expect.objectContaining({
       event: 'handoff_completed',
-      sessionId: 'session-12345678',
+      sessionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
     }));
   });
 });

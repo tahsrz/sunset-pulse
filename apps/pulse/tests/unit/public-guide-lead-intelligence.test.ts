@@ -77,6 +77,34 @@ describe('public guide lead intelligence', () => {
     expect(intelligence.inferredIntent).toBe('general_inquiry');
     expect(intelligence.recommendedAction.label).toBe('Clarify the lead goal');
   });
+
+  it('scores property behavior recorded outside Jamie', () => {
+    const intelligence = buildPublicGuideLeadIntelligence({
+      brief: {
+        ...brief,
+        discussedListingIds: [],
+        statedNextStep: 'general_question',
+        conversationTurnCount: 2,
+      },
+      handoff: { ...handoff, discussedListingIds: [], nextStep: 'general_question' },
+      hasPhone: false,
+      hasVerifiedListing: false,
+      preferredContact: 'email',
+      events: [
+        event('VISITOR_PROPERTY_VIEWED', '2026-08-12T12:00:00.000Z', null, 'MLS-101'),
+        event('VISITOR_PROPERTY_VIEWED', '2026-08-13T11:00:00.000Z', null, 'MLS-101'),
+        event('VISITOR_PROPERTIES_COMPARED', '2026-08-13T11:05:00.000Z', { propertyCount: 3 }, 'MLS-101'),
+      ],
+    });
+
+    expect(intelligence.score).toBe(60);
+    expect(intelligence.level).toBe('warm');
+    expect(intelligence.reasons.map((reason) => reason.code)).toEqual(expect.arrayContaining([
+      'properties_compared',
+      'repeat_property_view',
+      'return_visit',
+    ]));
+  });
 });
 
 function event(

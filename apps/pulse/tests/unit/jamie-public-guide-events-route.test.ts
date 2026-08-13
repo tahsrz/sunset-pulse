@@ -32,7 +32,11 @@ describe('Jamie public guide event route', () => {
     }));
 
     expect(response.status).toBe(204);
-    expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(event);
+    expect(response.headers.get('set-cookie')).toContain('sunset_visitor_session=');
+    expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith({
+      ...event,
+      sessionId: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+    });
   });
 
   it('rejects arbitrary event names, destinations, and extra visitor content', async () => {

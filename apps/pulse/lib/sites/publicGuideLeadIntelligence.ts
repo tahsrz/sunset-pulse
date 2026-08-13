@@ -82,6 +82,11 @@ export function buildPublicGuideLeadIntelligence(
   if (discussedListingCount >= 2) {
     addReason('properties_compared', `Compared or discussed ${discussedListingCount} verified properties`, 10);
   }
+  const comparisonEvent = input.events.find((event) => event.event_type === 'VISITOR_PROPERTIES_COMPARED');
+  const comparedPropertyCount = Number(comparisonEvent?.metadata?.propertyCount || 0);
+  if (comparedPropertyCount >= 2) {
+    addReason('properties_compared', `Compared ${comparedPropertyCount} verified properties`, 10);
+  }
 
   const questionCount = countEvents(input.events, 'PUBLIC_GUIDE_QUESTION_ASKED');
   if (questionCount >= 4 || input.brief.conversationTurnCount >= 8) {
@@ -100,7 +105,10 @@ export function buildPublicGuideLeadIntelligence(
     addReason('location_research', 'Researched or compared locations', 8);
   }
 
-  const listingOpenEvents = input.events.filter((event) => event.event_type === 'PUBLIC_GUIDE_LISTING_OPENED');
+  const listingOpenEvents = input.events.filter((event) => (
+    event.event_type === 'PUBLIC_GUIDE_LISTING_OPENED'
+    || event.event_type === 'VISITOR_PROPERTY_VIEWED'
+  ));
   const listingOpenCounts = countByTarget(listingOpenEvents);
   if (Array.from(listingOpenCounts.values()).some((count) => count >= 2)) {
     addReason('repeat_property_view', 'Returned to the same property more than once', 10);
@@ -207,7 +215,10 @@ function countByTarget(events: PublicGuideBehaviorEvent[]) {
 
 function isReturnVisit(events: PublicGuideBehaviorEvent[]) {
   const opened = events
-    .filter((event) => event.event_type === 'PUBLIC_GUIDE_GUIDE_OPENED')
+    .filter((event) => (
+      event.event_type === 'PUBLIC_GUIDE_GUIDE_OPENED'
+      || event.event_type === 'VISITOR_PROPERTY_VIEWED'
+    ))
     .map((event) => Date.parse(event.created_at))
     .filter(Number.isFinite)
     .sort((left, right) => left - right);

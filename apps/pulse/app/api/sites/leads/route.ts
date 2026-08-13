@@ -19,6 +19,10 @@ import {
   buildPublicGuideLeadIntelligence,
   type PublicGuideBehaviorEvent,
 } from '@/lib/sites/publicGuideLeadIntelligence';
+import {
+  attachVisitorSessionCookie,
+  getOrCreateVisitorSession,
+} from '@/lib/intelligence/visitorSession';
 
 const leadSchema = z.object({
   agentId: z.string().trim().min(1).max(80),
@@ -45,6 +49,7 @@ export async function POST(request: Request) {
   try {
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
     const isJamieRequest = getFirstPartySiteFromHost(host) === 'jamie';
+    const visitorSession = isJamieRequest ? getOrCreateVisitorSession(request) : null;
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
     const body = await request.text();
     if (body.length > 32_000) return errorResponse('The request body is too large.', 413);
@@ -108,23 +113,26 @@ export async function POST(request: Request) {
       return validationErrorResponse({ listing: ['The listing is not available for a verified public handoff.'] });
     }
 
-    const verifiedDiscussedListingIds = input.guide
-      ? await resolveVerifiedJamieListingIds(input.guide.discussedListingIds, listing)
+    const guideHandoff = input.guide && visitorSession
+      ? { ...input.guide, sessionId: visitorSession.id }
+      : input.guide;
+    const verifiedDiscussedListingIds = guideHandoff
+      ? await resolveVerifiedJamieListingIds(guideHandoff.discussedListingIds, listing)
       : listing ? [listing.mlsId || listing.id].filter((id): id is string => Boolean(id)) : [];
-    const guideBrief = input.guide
+    const guideBrief = guideHandoff
       ? await buildPublicGuideHandoffBrief({
-          handoff: input.guide,
+          handoff: guideHandoff,
           verifiedListingIds: verifiedDiscussedListingIds,
         })
       : null;
-    const guideBehaviorEvents = input.guide
-      ? await loadPublicGuideSessionEvents(input.guide.sessionId)
+    const guideBehaviorEvents = guideHandoff
+      ? await loadPublicGuideSessionEvents(guideHandoff.sessionId)
       : [];
-    const leadIntelligence = input.guide && guideBrief
+    const leadIntelligence = guideHandoff && guideBrief
       ? buildPublicGuideLeadIntelligence({
           brief: guideBrief,
           events: guideBehaviorEvents,
-          handoff: input.guide,
+          handoff: guideHandoff,
           hasPhone: Boolean(input.phone),
           hasVerifiedListing: Boolean(listing),
           preferredContact: input.preferredContact,
@@ -149,7 +157,7 @@ export async function POST(request: Request) {
           listingVerified: Boolean(listing),
           tenantVerified: true,
           discussedListingCount: verifiedDiscussedListingIds.length,
-          sessionIdHash: input.guide ? hashPublicGuideSessionId(input.guide.sessionId) : null,
+          sessionIdHash: guideHandoff ? hashPublicGuideSessionId(guideHandoff.sessionId) : null,
           sourceHost: 'jamie',
           sourcePagePath: pagePath,
         },
@@ -204,11 +212,11 @@ export async function POST(request: Request) {
       console.warn('[AGENT_SITE_LEAD_NOTIFICATION]', notification.status, notification.reason);
     }
 
-    if (input.guide) {
+    if (guideHandoff) {
       schedulePublicGuideEvent({
         event: 'handoff_completed',
         actionId: 'contact_agent',
-        sessionId: input.guide.sessionId,
+        sessionId: guideHandoff.sessionId,
         hasAgentContext: true,
         hasListingContext: Boolean(listing),
       });
@@ -224,13 +232,16 @@ export async function POST(request: Request) {
       })
       .eq('id', data.id);
 
-    return successResponse({
+    const response = successResponse({
       accepted: true,
       id: data?.id,
       agentId,
       site: tenantSite.site,
       notification: notification.status,
     }, 201);
+    return visitorSession
+      ? attachVisitorSessionCookie(request, response, visitorSession)
+      : response;
   } catch (error: any) {
     console.error('[AGENT_SITE_LEAD_ROUTE_ERROR]', error);
     return errorResponse('Failed to submit lead inquiry.', 500, error?.message);
@@ -244,7 +255,14 @@ async function loadPublicGuideSessionEvents(sessionId: string): Promise<PublicGu
       .from('intelligence_events')
       .select('event_type, target_id, metadata, created_at')
       .eq('actor_id', actorId)
-      .like('event_type', 'PUBLIC_GUIDE_%')
+      .in('event_type', [
+        'PUBLIC_GUIDE_GUIDE_OPENED',
+        'PUBLIC_GUIDE_LISTING_OPENED',
+        'PUBLIC_GUIDE_QUESTION_ASKED',
+        'PUBLIC_GUIDE_TOOL_USED',
+        'VISITOR_PROPERTIES_COMPARED',
+        'VISITOR_PROPERTY_VIEWED',
+      ])
       .order('created_at', { ascending: true })
       .limit(250);
 

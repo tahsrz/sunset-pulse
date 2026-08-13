@@ -7,6 +7,10 @@ import {
 } from '@/lib/ai/publicGuideContract';
 import { schedulePublicGuideEvent } from '@/lib/ai/publicGuideTelemetry';
 import { getFirstPartySiteFromHost } from '@/lib/sites/tenantRouting';
+import {
+  attachVisitorSessionCookie,
+  getOrCreateVisitorSession,
+} from '@/lib/intelligence/visitorSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,24 +25,31 @@ const eventSchema = z.object({
 export async function POST(request: Request) {
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
   if (getFirstPartySiteFromHost(host) !== 'jamie') {
-    return notFoundResponse('Jamie public guide event');
+    return notFoundResponse('Jamie Public Guide Event');
   }
+  const session = getOrCreateVisitorSession(request);
 
   const limitResponse = await applyPublicApiRateLimit(request, 'jamie-public-event', 30);
-  if (limitResponse) return limitResponse;
+  if (limitResponse) return attachVisitorSessionCookie(request, limitResponse, session);
 
   let rawBody: unknown;
   try {
     const body = await request.text();
-    if (body.length > 8_000) return errorResponse('The request body is too large.', 413);
+    if (body.length > 8_000) return attachVisitorSessionCookie(request, errorResponse('The request body is too large.', 413), session);
     rawBody = JSON.parse(body);
   } catch {
-    return errorResponse('A valid JSON request body is required.', 400);
+    return attachVisitorSessionCookie(request, errorResponse('A valid JSON request body is required.', 400), session);
   }
 
   const validation = eventSchema.safeParse(rawBody);
-  if (!validation.success) return validationErrorResponse(validation.error.flatten());
+  if (!validation.success) {
+    return attachVisitorSessionCookie(request, validationErrorResponse(validation.error.flatten()), session);
+  }
 
-  schedulePublicGuideEvent({ ...validation.data, event: validation.data.event! });
-  return new Response(null, { status: 204 });
+  schedulePublicGuideEvent({
+    ...validation.data,
+    event: validation.data.event!,
+    sessionId: session.id,
+  });
+  return attachVisitorSessionCookie(request, new Response(null, { status: 204 }), session);
 }
