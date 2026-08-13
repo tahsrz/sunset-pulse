@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createTahInputsFromText } from '@/lib/core/tah_ingest';
 import { TAHBuilder } from '@/lib/core/tah_builder';
+import { supabaseAdmin } from '@/lib/supabase';
 import {
   crawlLeadIntelligence,
   type LeadIntelCrawlRecord,
@@ -204,7 +205,7 @@ export async function runWikipediaIngestionBatch(
 
   fs.mkdirSync(outputDir, { recursive: true });
   const cartridgePath = successes.length
-    ? forgeWikipediaBatchCartridge({ batchId, language, articles: successes, outputDir })
+    ? await forgeWikipediaBatchCartridge({ batchId, language, articles: successes, outputDir })
     : null;
   const manifest: WikipediaManifest = {
     version: 1,
@@ -235,6 +236,41 @@ export async function runWikipediaIngestionBatch(
 }
 
 async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<WikipediaBatchResult> {
+  const crawlerId = process.env.PULSE_CRAWLER_ID || `wikipedia-${result.state.language}`;
+  const payload = {
+    crawler_id: crawlerId,
+    status: result.status,
+    updated_at: new Date().toISOString(),
+    payload: {
+      batchId: result.batchId,
+      articleCount: result.articleCount,
+      failureCount: result.failureCount,
+      state: result.state,
+    },
+  };
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supabaseUrl && serviceRoleKey) {
+    try {
+      const response = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/crawler_heartbeats?on_conflict=crawler_id`, {
+        method: 'POST',
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (!response.ok) throw new Error(`Supabase heartbeat returned ${response.status}`);
+      return result;
+    } catch (error) {
+      console.warn('[WIKIPEDIA_HEARTBEAT_SUPABASE_FAILED]', error instanceof Error ? error.message : 'unknown error');
+    }
+  }
+
   const endpoint = process.env.PULSE_CRAWLER_HEARTBEAT_URL || process.env.PULSE_HEARTBEAT_URL;
   const token = process.env.PULSE_CRAWLER_HEARTBEAT_TOKEN || process.env.PULSE_HEARTBEAT_TOKEN;
   if (!endpoint || !token) return result;
@@ -244,7 +280,7 @@ async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Crawler-Token': token },
       body: JSON.stringify({
-        crawlerId: process.env.PULSE_CRAWLER_ID || `wikipedia-${result.state.language}`,
+        crawlerId,
         status: result.status,
         batchId: result.batchId,
         articleCount: result.articleCount,
@@ -380,7 +416,7 @@ async function crawlWikipediaPage(page: WikipediaPage, language: string) {
   });
 }
 
-function forgeWikipediaBatchCartridge(input: {
+async function forgeWikipediaBatchCartridge(input: {
   batchId: string;
   language: string;
   articles: WikipediaCrawlSuccess[];
@@ -410,7 +446,17 @@ function forgeWikipediaBatchCartridge(input: {
     }));
   });
   const outputPath = path.join(input.outputDir, `${input.batchId}.tah`);
-  writeBufferAtomically(outputPath, new TAHBuilder().forge(tahInputs));
+  const buffer = new TAHBuilder().forge(tahInputs);
+  writeBufferAtomically(outputPath, buffer);
+  try {
+    const { error } = await supabaseAdmin.storage.from('cartridges').upload(path.basename(outputPath), buffer, {
+      contentType: 'application/octet-stream',
+      upsert: true,
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.warn('[WIKIPEDIA_CARTRIDGE_UPLOAD_FAILED]', error instanceof Error ? error.message : 'unknown error');
+  }
   return path.relative(process.cwd(), outputPath);
 }
 

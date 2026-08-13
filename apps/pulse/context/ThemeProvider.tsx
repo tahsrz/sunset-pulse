@@ -99,6 +99,8 @@ interface ThemeContextType {
   setWakeListeningEnabled: (active: boolean) => void;
   isGuardedJamieEnabled: boolean;
   setGuardedJamieEnabled: (active: boolean) => void;
+  isRealEstateJamieEnabled: boolean;
+  setRealEstateJamieEnabled: (active: boolean) => void;
   jamieVoice: JamieVoicePreset;
   setJamieVoice: (voice: JamieVoicePreset) => void;
   customKeybind: string;
@@ -222,7 +224,7 @@ export function ThemeProvider({
     const savedLefthand = localStorage.getItem('jamie_lefthand_mode');
     const savedVoice = localStorage.getItem('jamie_voice_enabled');
     const savedWakeListening = localStorage.getItem('jamie_wake_listening_enabled');
-    const savedGuardedJamie = localStorage.getItem('jamie_guarded_mode');
+    const savedGuardedJamie = localStorage.getItem('jamie_real_estate_mode') ?? localStorage.getItem('jamie_guarded_mode');
     const savedJamieVoice = localStorage.getItem('jamie_voice_preset') as JamieVoicePreset | null;
     if (savedWakeListening === 'false') setWakeListeningEnabledState(false);
     if (savedGuardedJamie === 'true') setGuardedJamieEnabledState(true);
@@ -374,6 +376,7 @@ export function ThemeProvider({
 
   const setGuardedJamieEnabled = (active: boolean) => {
     setGuardedJamieEnabledState(active);
+    localStorage.setItem('jamie_real_estate_mode', active ? 'true' : 'false');
     localStorage.setItem('jamie_guarded_mode', active ? 'true' : 'false');
   };
 
@@ -441,6 +444,8 @@ export function ThemeProvider({
       setWakeListeningEnabled,
       isGuardedJamieEnabled,
       setGuardedJamieEnabled,
+      isRealEstateJamieEnabled: isGuardedJamieEnabled,
+      setRealEstateJamieEnabled: setGuardedJamieEnabled,
       jamieVoice,
       setJamieVoice,
       customKeybind,

@@ -7,6 +7,7 @@ interface JamieChatHeaderProps {
   onMinimize: () => void;
   isMlsOpen: boolean;
   onToggleMls: () => void;
+  showMls?: boolean;
   isLefthandMode: boolean;
   onToggleLefthand: () => void;
   isVoiceEnabled: boolean;
@@ -21,6 +22,7 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
   onMinimize, 
   isMlsOpen,
   onToggleMls,
+  showMls = true,
   isLefthandMode, 
   onToggleLefthand,
   isVoiceEnabled,
@@ -51,7 +53,7 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 relative z-10">
-        <button
+        {showMls && <button
           type="button"
           onClick={onToggleMls}
           title={isMlsOpen ? 'Hide MLS Search' : 'Show MLS Search'}
@@ -61,7 +63,7 @@ const JamieChatHeader: React.FC<JamieChatHeaderProps> = ({
         >
           <FaHome className="text-[10px]" />
           MLS
-        </button>
+        </button>}
         <button 
           onClick={onToggleVoice} 
           title={isVoiceEnabled ? `Mute ${assistantName}` : `Unmute ${assistantName}`}
