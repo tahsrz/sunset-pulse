@@ -125,7 +125,9 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
         dispatch({ type: 'STATUS', status: 'listening' });
       } catch {
         activeRef.current = false;
-        dispatch({ type: 'STATUS', status: 'paused' });
+        // Browser speech recognition can reject a restart while it is still
+        // closing the previous session. Keep the active state stable and retry.
+        beginRecognition(1_000);
       }
     }, delay);
   }, []);
@@ -198,7 +200,6 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
         activeRef.current = false;
         if (pausedForTtsRef.current || event.error === 'aborted' || event.error === 'no-speech') {
           if (enabledRef.current && !pausedForTtsRef.current) {
-            dispatch({ type: 'STATUS', status: 'listening' });
             beginRecognition(750);
           }
           return;
@@ -216,7 +217,6 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       recognition.onend = () => {
         activeRef.current = false;
         if (enabledRef.current && !pausedForTtsRef.current) {
-          dispatch({ type: 'STATUS', status: 'listening' });
           beginRecognition(750);
         }
       };
