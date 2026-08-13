@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildPublicGuideLeadIntelligence } from '@/lib/sites/publicGuideLeadIntelligence';
+import {
+  buildPublicGuideLeadIntelligence,
+  sortLeadsByIntelligence,
+} from '@/lib/sites/publicGuideLeadIntelligence';
 
 const brief = {
   schemaVersion: 1 as const,
@@ -105,7 +108,63 @@ describe('public guide lead intelligence', () => {
       'return_visit',
     ]));
   });
+
+  it('sorts scored leads by intelligence and uses recency for ties', () => {
+    const leads = [
+      rankedLead('warm-old', 60, '2026-08-12T10:00:00.000Z'),
+      rankedLead('high', 90, '2026-08-11T10:00:00.000Z'),
+      rankedLead('warm-new', 60, '2026-08-13T10:00:00.000Z'),
+    ];
+
+    expect(sortLeadsByIntelligence(leads).map((lead) => lead.id)).toEqual([
+      'high',
+      'warm-new',
+      'warm-old',
+    ]);
+    expect(leads.map((lead) => lead.id)).toEqual(['warm-old', 'high', 'warm-new']);
+  });
+
+  it('places unscored and malformed legacy leads after scored leads', () => {
+    const leads = [
+      { id: 'unscored-new', created_at: '2026-08-13T10:00:00.000Z', metadata: null },
+      rankedLead('scored-old', 25, '2026-08-10T10:00:00.000Z'),
+      {
+        id: 'malformed-middle',
+        created_at: '2026-08-12T10:00:00.000Z',
+        metadata: { leadIntelligence: { score: 100 } },
+      },
+    ];
+
+    expect(sortLeadsByIntelligence(leads).map((lead) => lead.id)).toEqual([
+      'scored-old',
+      'unscored-new',
+      'malformed-middle',
+    ]);
+  });
 });
+
+function rankedLead(id: string, score: number, createdAt: string) {
+  return {
+    id,
+    created_at: createdAt,
+    metadata: {
+      leadIntelligence: {
+        schemaVersion: 1,
+        score,
+        level: score >= 70 ? 'high' : score >= 45 ? 'warm' : 'developing',
+        inferredIntent: 'general_inquiry',
+        reasons: [],
+        recommendedAction: {
+          urgency: 'medium',
+          label: 'Review lead',
+          recommendation: 'Review the inquiry and choose a next step.',
+          channel: 'email',
+        },
+        computedAt: '2026-08-13T12:00:00.000Z',
+      },
+    },
+  };
+}
 
 function event(
   eventType: string,

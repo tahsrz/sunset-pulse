@@ -39,7 +39,13 @@ type ChatMessage = {
 };
 
 type JamieChatProps = {
-  propertyData?: any;
+  propertyData?: {
+    id?: unknown;
+    _id?: unknown;
+    mls_id?: unknown;
+    mlsId?: unknown;
+    name?: unknown;
+  } | null;
   mode?: 'dock' | 'workspace';
   apiRoute?: string;
 };
@@ -69,6 +75,9 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   } = useTheme();
 
   const { setVibeFromContent } = useVibe();
+  const listingId = [propertyData?.id, propertyData?._id, propertyData?.mls_id, propertyData?.mlsId]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    ?.trim();
 
   const [mounted, setMounted] = useState(false);
   const [localIntel, setLocalIntel] = useState(null);
@@ -214,7 +223,10 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
         // Persist highlights if significant action detected
         if (tag === 'INTEL' || tag === 'ANALYTICS') {
-          memoryBridge.persistSessionHighlights(`Viewed ${tag}`, propertyData?.name);
+          memoryBridge.persistSessionHighlights(
+            `Viewed ${tag}`,
+            typeof propertyData?.name === 'string' ? propertyData.name : undefined,
+          );
         }
       } catch (e) {
         console.error(`Processing Error [${tag}]:`, e);
@@ -354,7 +366,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: nextMessages.map(({ role, content }) => ({ role, content })),
-          propertyData,
+          listingId,
           isDevMode,
           memoryContext,
           agentId,

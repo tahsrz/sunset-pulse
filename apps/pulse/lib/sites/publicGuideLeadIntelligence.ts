@@ -33,6 +33,33 @@ export const publicGuideLeadIntelligenceSchema = z.object({
 
 export type PublicGuideLeadIntelligence = z.infer<typeof publicGuideLeadIntelligenceSchema>;
 
+type IntelligenceRankableLead = {
+  created_at: string;
+  metadata?: Record<string, unknown> | null;
+};
+
+export function readPublicGuideLeadIntelligence(
+  metadata: Record<string, unknown> | null | undefined,
+): PublicGuideLeadIntelligence | null {
+  const result = publicGuideLeadIntelligenceSchema.safeParse(metadata?.leadIntelligence);
+  return result.success ? result.data : null;
+}
+
+export function sortLeadsByIntelligence<T extends IntelligenceRankableLead>(leads: readonly T[]): T[] {
+  return [...leads].sort((left, right) => {
+    const leftScore = readPublicGuideLeadIntelligence(left.metadata)?.score;
+    const rightScore = readPublicGuideLeadIntelligence(right.metadata)?.score;
+
+    if (leftScore !== undefined || rightScore !== undefined) {
+      if (leftScore === undefined) return 1;
+      if (rightScore === undefined) return -1;
+      if (leftScore !== rightScore) return rightScore - leftScore;
+    }
+
+    return Date.parse(right.created_at) - Date.parse(left.created_at);
+  });
+}
+
 export type PublicGuideBehaviorEvent = {
   event_type: string;
   target_id: string | null;
