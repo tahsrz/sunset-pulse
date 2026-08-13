@@ -13,18 +13,19 @@ type JamieCharacterCreationProps = {
 const PREVIEW_LINE = 'I am Jamie. Let us pull up what matters and get to work.';
 
 export default function JamieCharacterCreation({ open, onComplete }: JamieCharacterCreationProps) {
-  const { jamieVoice, setJamieVoice } = useTheme();
+  const { jamieVoice, setJamieVoice, setWakeListeningEnabled } = useTheme();
 
   const choose = (voice: JamieVoicePreset) => {
     setJamieVoice(voice);
     speak(PREVIEW_LINE, voice);
   };
 
-  const complete = useCallback(() => {
+  const complete = useCallback((enableMicrophone: boolean) => {
     stopSpeaking();
     localStorage.setItem('jamie_character_created', 'true');
+    if (enableMicrophone) setWakeListeningEnabled(true);
     onComplete();
-  }, [onComplete]);
+  }, [onComplete, setWakeListeningEnabled]);
 
   useEffect(() => {
     return () => {
@@ -36,7 +37,7 @@ export default function JamieCharacterCreation({ open, onComplete }: JamieCharac
     if (!open) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') complete();
+      if (event.key === 'Escape') complete(false);
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -56,7 +57,7 @@ export default function JamieCharacterCreation({ open, onComplete }: JamieCharac
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Character Creation</p>
             <h2 id="jamie-character-title" className="mt-1 text-xl font-black text-white">Choose Jamie&apos;s voice</h2>
           </div>
-          <button type="button" onClick={complete} className="grid h-8 w-8 place-items-center text-slate-400 hover:text-white" aria-label="Close character creation">
+          <button type="button" onClick={() => complete(false)} className="grid h-8 w-8 place-items-center text-slate-400 hover:text-white" aria-label="Close character creation">
             <X size={18} />
           </button>
         </div>
@@ -83,7 +84,7 @@ export default function JamieCharacterCreation({ open, onComplete }: JamieCharac
           })}
         </div>
 
-        <button type="button" onClick={complete} className="mt-5 w-full bg-emerald-300 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-slate-950">
+        <button type="button" onClick={() => complete(true)} className="mt-5 w-full bg-emerald-300 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-slate-950">
           Continue and enable microphone
         </button>
       </div>

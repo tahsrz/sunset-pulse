@@ -93,10 +93,19 @@ export function recentTranscript(segments: TranscriptSegment[], now = Date.now()
     .trim();
 }
 
+export function wakeListeningSyncAction(
+  enabled: boolean,
+  status: JamieAudioStatus,
+): 'start' | 'stop' | 'none' {
+  if (!enabled) return status === 'off' ? 'none' : 'stop';
+  return status === 'off' ? 'start' : 'none';
+}
+
 export function JamieAudioProvider({ children }: { children: React.ReactNode }) {
   const { isWakeListeningEnabled } = useTheme();
   const [state, dispatch] = useReducer(jamieAudioReducer, initialJamieAudioState);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const microphoneStreamRef = useRef<MediaStream | null>(null);
   const segmentsRef = useRef<TranscriptSegment[]>([]);
   const interimRef = useRef('');
   const enabledRef = useRef(isWakeListeningEnabled);
@@ -138,14 +147,16 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     restartTimerRef.current = null;
     recognitionRef.current?.stop();
     recognitionRef.current = null;
+    microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+    microphoneStreamRef.current = null;
     activeRef.current = false;
     dispatch({ type: 'STATUS', status: 'off' });
   }, []);
 
   const start = useCallback(async () => {
     if (typeof window === 'undefined' || activeRef.current || startInFlightRef.current) return;
+    enabledRef.current = true;
     if (recognitionRef.current) {
-      enabledRef.current = true;
       beginRecognition();
       return;
     }
@@ -159,9 +170,15 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     dispatch({ type: 'STATUS', status: 'permission-required' });
     startInFlightRef.current = true;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-      stream.getTracks().forEach((track) => track.stop());
-      enabledRef.current = true;
+      const microphoneStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      if (!enabledRef.current) {
+        microphoneStream.getTracks().forEach((track) => track.stop());
+        dispatch({ type: 'STATUS', status: 'off' });
+        return;
+      }
+      microphoneStreamRef.current = microphoneStream;
       dispatch({ type: 'STATUS', status: 'starting' });
 
       const recognition = new Recognition() as SpeechRecognitionLike;
@@ -207,10 +224,14 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
           enabledRef.current = false;
           recognitionRef.current = null;
+          microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+          microphoneStreamRef.current = null;
           dispatch({ type: 'STATUS', status: 'denied' });
         } else if (event.error === 'audio-capture' || event.error === 'language-not-supported') {
           enabledRef.current = false;
           recognitionRef.current = null;
+          microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+          microphoneStreamRef.current = null;
           dispatch({ type: 'STATUS', status: 'unavailable' });
         }
       };
@@ -223,16 +244,23 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       recognitionRef.current = recognition;
       beginRecognition();
     } catch {
-      enabledRef.current = false;
-      dispatch({ type: 'STATUS', status: 'denied' });
+      microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+      microphoneStreamRef.current = null;
+      if (enabledRef.current) {
+        enabledRef.current = false;
+        dispatch({ type: 'STATUS', status: 'denied' });
+      } else {
+        dispatch({ type: 'STATUS', status: 'off' });
+      }
     } finally {
       startInFlightRef.current = false;
     }
   }, [beginRecognition, refreshCaption]);
 
   useEffect(() => {
-    if (!isWakeListeningEnabled && state.status !== 'off') stop();
-    else if (state.status === 'off') void start();
+    const action = wakeListeningSyncAction(isWakeListeningEnabled, state.status);
+    if (action === 'stop') stop();
+    else if (action === 'start') void start();
   }, [isWakeListeningEnabled, start, state.status, stop]);
 
   useEffect(() => {
@@ -269,6 +297,8 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       window.removeEventListener(TTS_END_EVENT, resumeAfterTts);
       if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
       recognitionRef.current?.stop();
+      microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+      microphoneStreamRef.current = null;
     };
   }, [beginRecognition]);
 
