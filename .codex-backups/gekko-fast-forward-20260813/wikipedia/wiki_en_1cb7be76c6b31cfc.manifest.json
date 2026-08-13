@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_1cb7be76c6b31cfc",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Al-Ahwas\\\"_Al-Ansari\",\"retryPages\":[],\"freshPages\":[53210757,72138330],\"continuationAfter\":\"\\\"America\\\"\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:32:03.116Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 53210757,
+        "title": "\"All God's Children\" Campaign",
+        "url": "https://en.wikipedia.org/wiki/%22All_God's_Children%22_Campaign"
+      },
+      "recordId": "lead_crawl_12ahtnp",
+      "title": "\"All God's Children\" Campaign - Wikipedia",
+      "crawledAt": "2026-08-13T19:31:59.554Z",
+      "markdownChars": 24954
+    },
+    {
+      "page": {
+        "pageid": 72138330,
+        "title": "\"Amanat\" Commonwealth of Trade Unions",
+        "url": "https://en.wikipedia.org/wiki/%22Amanat%22_Commonwealth_of_Trade_Unions"
+      },
+      "recordId": "lead_crawl_tzgivb",
+      "title": "\"Amanat\" Commonwealth of Trade Unions - Wikipedia",
+      "crawledAt": "2026-08-13T19:32:03.115Z",
+      "markdownChars": 22135
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_1cb7be76c6b31cfc.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"America\"",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:32:03.116Z",
+    "runCount": 18,
+    "batchCount": 18,
+    "enumeratedCount": 30,
+    "crawledCount": 30,
+    "importedCount": 30,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

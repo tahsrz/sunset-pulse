@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_43546a0f871617c0",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Bazooka\\\"_Gomez\",\"retryPages\":[],\"freshPages\":[48768264],\"continuationAfter\":\"\\\"Believing_Women\\\"_in_Islam._Unreading_Patriarchal_Interpretations_of_the_Qur'an\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:36:37.942Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 48768264,
+        "title": "\"Believing Women\" in Islam",
+        "url": "https://en.wikipedia.org/wiki/%22Believing_Women%22_in_Islam"
+      },
+      "recordId": "lead_crawl_14857rd",
+      "title": "\"Believing Women\" in Islam - Wikipedia",
+      "crawledAt": "2026-08-13T19:36:37.941Z",
+      "markdownChars": 24477
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_43546a0f871617c0.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Believing_Women\"_in_Islam._Unreading_Patriarchal_Interpretations_of_the_Qur'an",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:36:37.942Z",
+    "runCount": 26,
+    "batchCount": 26,
+    "enumeratedCount": 40,
+    "crawledCount": 40,
+    "importedCount": 40,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

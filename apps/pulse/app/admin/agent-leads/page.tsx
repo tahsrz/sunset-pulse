@@ -35,7 +35,8 @@ import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { LeadStatus as PipelineLeadStatus } from '@/lib/sites/leadOperatingSystem';
 import {
-  publicGuideLeadIntelligenceSchema,
+  readPublicGuideLeadIntelligence,
+  sortLeadsByIntelligence,
   type PublicGuideLeadIntelligence,
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
@@ -126,8 +127,9 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
       }),
   ]);
   const { data, error } = leadResult;
-  const leads = (data || []) as AgentSiteLead[];
-  const newestLead = leads[0];
+  const fetchedLeads = (data || []) as AgentSiteLead[];
+  const newestLead = fetchedLeads[0];
+  const leads = sortLeadsByIntelligence(fetchedLeads);
   const listingLeadCount = leads.filter((lead) => lead.listing_mls_id || lead.listing_id).length;
   const uniqueAgents = new Set(leads.map((lead) => lead.agent_id)).size;
   const activeLeadCount = leads.filter((lead) => (lead.status || 'new') !== 'archived').length;
@@ -259,8 +261,7 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
   const guideDisposition = lead.source === 'jamie_public_guide'
     ? readPublicGuideDisposition(lead.metadata)
     : undefined;
-  const intelligenceResult = publicGuideLeadIntelligenceSchema.safeParse(lead.metadata?.leadIntelligence);
-  const leadIntelligence = intelligenceResult.success ? intelligenceResult.data : null;
+  const leadIntelligence = readPublicGuideLeadIntelligence(lead.metadata);
 
   return (
     <article className={`min-w-0 overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-black/10 ${

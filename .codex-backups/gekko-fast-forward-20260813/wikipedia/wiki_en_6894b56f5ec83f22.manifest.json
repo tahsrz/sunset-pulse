@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_6894b56f5ec83f22",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!Alarma!_(album)\",\"retryPages\":[],\"freshPages\":[47197315],\"continuationAfter\":\"!BANG!\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:23:31.725Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 47197315,
+        "title": "!Arriba! La Pachanga",
+        "url": "https://en.wikipedia.org/wiki/!Arriba!_La_Pachanga"
+      },
+      "recordId": "lead_crawl_1a0em0p",
+      "title": "!Arriba! La Pachanga - Wikipedia",
+      "crawledAt": "2026-08-13T19:23:31.724Z",
+      "markdownChars": 21550
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_6894b56f5ec83f22.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!BANG!",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:23:31.725Z",
+    "runCount": 4,
+    "batchCount": 4,
+    "enumeratedCount": 6,
+    "crawledCount": 6,
+    "importedCount": 6,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

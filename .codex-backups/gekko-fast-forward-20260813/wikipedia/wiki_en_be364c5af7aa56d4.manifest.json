@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_be364c5af7aa56d4",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"But\\\"_Hits_Alliance\",\"retryPages\":[],\"freshPages\":[13623996,11918746],\"continuationAfter\":\"\\\"C\\\"_Is_for_(Please_Insert_Sophomoric_Genitalia_Reference_Here)\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:40:03.720Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 13623996,
+        "title": "\"Buzz!!\" The Movie",
+        "url": "https://en.wikipedia.org/wiki/%22Buzz!!%22_The_Movie"
+      },
+      "recordId": "lead_crawl_b88vak",
+      "title": "\"Buzz!!\" The Movie - Wikipedia",
+      "crawledAt": "2026-08-13T19:40:00.230Z",
+      "markdownChars": 27670
+    },
+    {
+      "page": {
+        "pageid": 11918746,
+        "title": "\"By\" Dunham",
+        "url": "https://en.wikipedia.org/wiki/%22By%22_Dunham"
+      },
+      "recordId": "lead_crawl_13n9fnw",
+      "title": "\"By\" Dunham - Wikipedia",
+      "crawledAt": "2026-08-13T19:40:03.719Z",
+      "markdownChars": 18459
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_be364c5af7aa56d4.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"C\"_Is_for_(Please_Insert_Sophomoric_Genitalia_Reference_Here)",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:40:03.720Z",
+    "runCount": 32,
+    "batchCount": 32,
+    "enumeratedCount": 48,
+    "crawledCount": 48,
+    "importedCount": 48,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

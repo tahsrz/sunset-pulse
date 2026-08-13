@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_80fe581cca0087a2",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Classy\\\"_Freddie_Blassie\",\"retryPages\":[],\"freshPages\":[12365274,12365280,12365296,12365387],\"continuationAfter\":\"\\\"Cochranella\\\"_riveroi\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:43:26.665Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 12365274,
+        "title": "\"Cochranella\" duidaeana",
+        "url": "https://en.wikipedia.org/wiki/%22Cochranella%22_duidaeana"
+      },
+      "recordId": "lead_crawl_p4q519",
+      "title": "\"Cochranella\" duidaeana - Wikipedia",
+      "crawledAt": "2026-08-13T19:43:16.036Z",
+      "markdownChars": 24360
+    },
+    {
+      "page": {
+        "pageid": 12365280,
+        "title": "\"Cochranella\" euhystrix",
+        "url": "https://en.wikipedia.org/wiki/%22Cochranella%22_euhystrix"
+      },
+      "recordId": "lead_crawl_psxx5k",
+      "title": "\"Cochranella\" euhystrix - Wikipedia",
+      "crawledAt": "2026-08-13T19:43:19.596Z",
+      "markdownChars": 25570
+    },
+    {
+      "page": {
+        "pageid": 12365296,
+        "title": "\"Cochranella\" geijskesi",
+        "url": "https://en.wikipedia.org/wiki/%22Cochranella%22_geijskesi"
+      },
+      "recordId": "lead_crawl_i3dwcy",
+      "title": "\"Cochranella\" geijskesi - Wikipedia",
+      "crawledAt": "2026-08-13T19:43:23.124Z",
+      "markdownChars": 18546
+    },
+    {
+      "page": {
+        "pageid": 12365387,
+        "title": "\"Cochranella\" ramirezi",
+        "url": "https://en.wikipedia.org/wiki/%22Cochranella%22_ramirezi"
+      },
+      "recordId": "lead_crawl_1kiqh8n",
+      "title": "\"Cochranella\" ramirezi - Wikipedia",
+      "crawledAt": "2026-08-13T19:43:26.664Z",
+      "markdownChars": 18398
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_80fe581cca0087a2.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Cochranella\"_riveroi",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:43:26.665Z",
+    "runCount": 37,
+    "batchCount": 37,
+    "enumeratedCount": 63,
+    "crawledCount": 63,
+    "importedCount": 63,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

@@ -60,4 +60,41 @@ describe('Jamie public guide disposition UI', () => {
     });
     expect(mocks.refresh).toHaveBeenCalled();
   });
+
+  it('opens the native primary action and tracks it without contact details', async () => {
+    render(
+      <AgentLeadActions
+        lead={{
+          id: '11111111-1111-4111-8111-111111111111',
+          agent_id: 'broker-one',
+          site: 'broker-one',
+          name: 'Jamie Lead',
+          email: 'lead@example.test',
+          phone: '(214) 555-1212',
+          preferred_contact: 'phone',
+          message: 'Please call me.',
+          status: 'new',
+          internal_note: '',
+          metadata: {},
+          created_at: '2026-07-24T12:00:00.000Z',
+        }}
+      />,
+    );
+
+    const action = screen.getByRole('link', { name: 'Call Lead (High Intent)' });
+    expect(action).toHaveAttribute('href', 'tel:2145551212');
+    fireEvent.click(action);
+
+    await waitFor(() => expect(mocks.fetch).toHaveBeenCalledWith(
+      '/api/admin/agent-leads/action-events',
+      expect.objectContaining({ method: 'POST', keepalive: true }),
+    ));
+    const [, options] = mocks.fetch.mock.calls[0];
+    expect(JSON.parse(String(options?.body))).toEqual({
+      leadId: '11111111-1111-4111-8111-111111111111',
+      actionType: 'call',
+      agentId: 'broker-one',
+      listingId: null,
+    });
+  });
 });

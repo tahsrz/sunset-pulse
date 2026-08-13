@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_18c3f778403f0503",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Ayaks\\\"_Shaumian\",\"retryPages\":[],\"freshPages\":[16250456,79143857],\"continuationAfter\":\"\\\"Babbacombe\\\"_Lee\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:34:20.576Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 16250456,
+        "title": "\"B\" Is for Burglar",
+        "url": "https://en.wikipedia.org/wiki/%22B%22_Is_for_Burglar"
+      },
+      "recordId": "lead_crawl_zu468q",
+      "title": "\"B\" Is for Burglar - Wikipedia",
+      "crawledAt": "2026-08-13T19:34:16.809Z",
+      "markdownChars": 25013
+    },
+    {
+      "page": {
+        "pageid": 79143857,
+        "title": "\"BBF\" Hosted by DJ Escrow",
+        "url": "https://en.wikipedia.org/wiki/%22BBF%22_Hosted_by_DJ_Escrow"
+      },
+      "recordId": "lead_crawl_1lkzxdv",
+      "title": "\"BBF\" Hosted by DJ Escrow - Wikipedia",
+      "crawledAt": "2026-08-13T19:34:20.575Z",
+      "markdownChars": 25375
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_18c3f778403f0503.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Babbacombe\"_Lee",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:34:20.576Z",
+    "runCount": 22,
+    "batchCount": 22,
+    "enumeratedCount": 35,
+    "crawledCount": 35,
+    "importedCount": 35,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}
