@@ -420,6 +420,8 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     }
   };
 
+  const wakeModeActive = ['listening', 'speech-detected', 'starting', 'permission-required'].includes(wakeListening.status);
+
   wakeQueryRef.current = (query: string) => {
     if (!isLoading) void sendChatMessage(query, { logUser: true });
   };
@@ -578,19 +580,19 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         open={isCreatingJamie}
         onComplete={() => {
           setIsCreatingJamie(false);
-          if (isWakeListeningEnabled && wakeListening.status !== 'listening') {
+          if (isWakeListeningEnabled && !wakeModeActive) {
             void wakeListening.start();
           }
         }}
       />
       <JamieDevControls isActive={isDevMode} onToggle={setDevMode} />
       <div className="flex items-center gap-2 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-        <span className={`h-2 w-2 rounded-full ${wakeListening.status === 'listening' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+        <span className={`h-2 w-2 rounded-full ${wakeModeActive ? 'bg-emerald-400' : 'bg-slate-600'}`} />
         <span>{wakeListening.status === 'listening' || wakeListening.status === 'speech-detected' ? 'Listening for Pull that up' : wakeListening.status === 'jamie-speaking' ? 'Paused while Jamie speaks' : wakeListening.status === 'permission-required' || wakeListening.status === 'starting' ? 'Requesting microphone' : 'Microphone off'}</span>
         {!['listening', 'speech-detected', 'jamie-speaking', 'permission-required', 'starting'].includes(wakeListening.status) && isWakeListeningEnabled ? (
           <button type="button" onClick={() => void wakeListening.start()} className="rounded border border-white/15 px-2 py-1 text-white">Enable</button>
         ) : null}
-        {wakeListening.status === 'listening' ? (
+        {wakeModeActive ? (
           <button type="button" onClick={() => { setWakeListeningEnabled(false); wakeListening.stop(); }} className="rounded border border-white/15 px-2 py-1 text-white">Stop</button>
         ) : null}
       </div>

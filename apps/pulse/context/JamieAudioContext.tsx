@@ -196,7 +196,13 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       };
       recognition.onerror = (event) => {
         activeRef.current = false;
-        if (pausedForTtsRef.current || event.error === 'aborted' || event.error === 'no-speech') return;
+        if (pausedForTtsRef.current || event.error === 'aborted' || event.error === 'no-speech') {
+          if (enabledRef.current && !pausedForTtsRef.current) {
+            dispatch({ type: 'STATUS', status: 'listening' });
+            beginRecognition(750);
+          }
+          return;
+        }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
           enabledRef.current = false;
           recognitionRef.current = null;
@@ -209,7 +215,10 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       };
       recognition.onend = () => {
         activeRef.current = false;
-        if (enabledRef.current && !pausedForTtsRef.current) beginRecognition(750);
+        if (enabledRef.current && !pausedForTtsRef.current) {
+          dispatch({ type: 'STATUS', status: 'listening' });
+          beginRecognition(750);
+        }
       };
       recognitionRef.current = recognition;
       beginRecognition();
