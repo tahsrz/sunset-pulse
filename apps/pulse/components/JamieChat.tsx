@@ -64,7 +64,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     setVoiceEnabled,
     isWakeListeningEnabled,
     setWakeListeningEnabled,
-    isGuardedJamieEnabled,
+    isRealEstateJamieEnabled,
     jamieVoice,
   } = useTheme();
 
@@ -97,11 +97,16 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   });
   const [tempInput, setTempInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesRef = React.useRef<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingJamie, setIsCreatingJamie] = useState(false);
   const wakeQueryRef = React.useRef<(query: string) => void>(() => undefined);
   const wakeListening = useJamieAudio();
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Recognition Context for returning users - safely handled after mount
   const [memoryContext, setMemoryContext] = useState<any>(null);
@@ -333,8 +338,13 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     }
 
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: currentInput };
-    const nextMessages = options?.skipUserAppend ? messages : [...messages, userMessage];
-    if (!options?.skipUserAppend) setMessages(nextMessages);
+    const nextMessages = options?.skipUserAppend
+      ? messagesRef.current
+      : [...messagesRef.current, userMessage];
+    if (!options?.skipUserAppend) {
+      messagesRef.current = nextMessages;
+      setMessages(nextMessages);
+    }
     setInput('');
     setIsLoading(true);
 
@@ -348,7 +358,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           isDevMode,
           memoryContext,
           agentId,
-          personaMode: isGuardedJamieEnabled ? 'guarded_real_estate' : 'general',
+          personaMode: isRealEstateJamieEnabled ? 'guarded_real_estate' : 'general',
         }),
       });
 
@@ -385,7 +395,9 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         tensorzero,
       };
 
-      setMessages([...nextMessages, assistantMessage]);
+      const completedMessages = [...messagesRef.current, assistantMessage];
+      messagesRef.current = completedMessages;
+      setMessages(completedMessages);
       await handleAction(assistantContent);
     } catch (error: any) {
       console.error('[JamieChat] API Error:', error);
@@ -401,7 +413,9 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
         content: `⚠️ ${errorMessage}`,
       };
 
-      setMessages([...nextMessages, fallbackMessage]);
+      const failedMessages = [...messagesRef.current, fallbackMessage];
+      messagesRef.current = failedMessages;
+      setMessages(failedMessages);
 
       await memoryBridge.logInteraction({
         role: 'assistant',
@@ -426,11 +440,12 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     if (!isLoading) void sendChatMessage(query, { logUser: true });
   };
 
+  const submittedWakeQuery = wakeListening.submittedQuery;
   useEffect(() => {
-    if (!mounted || isLoading || !wakeListening.submittedQuery) return;
-    wakeQueryRef.current(wakeListening.submittedQuery.text);
-    wakeListening.consumeSubmittedQuery(wakeListening.submittedQuery.id);
-  }, [isLoading, mounted, wakeListening]);
+    if (!mounted || isLoading || !submittedWakeQuery) return;
+    wakeQueryRef.current(submittedWakeQuery.text);
+    wakeListening.consumeSubmittedQuery(submittedWakeQuery.id);
+  }, [isLoading, mounted, submittedWakeQuery, wakeListening.consumeSubmittedQuery]);
 
   const originalHandleSubmit = async (_event?: React.FormEvent<HTMLFormElement>) => {
     await sendChatMessage(input);
@@ -624,6 +639,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           onMinimize={() => isWorkspace ? router.push('/') : toggleMinimized(true)}
           isMlsOpen={isMlsOpen}
           onToggleMls={() => setIsMlsOpen((value) => !value)}
+          showMls={isRealEstateJamieEnabled}
           isLefthandMode={isLefthandMode}
           onToggleLefthand={() => setLefthandMode(!isLefthandMode)}
           isVoiceEnabled={isVoiceEnabled}
@@ -636,7 +652,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
           }}
         />
 
-        {isMlsOpen && (
+        {isRealEstateJamieEnabled && isMlsOpen && (
           <div className="shrink-0 border-b border-white/10 bg-slate-950/70 p-3">
             <div className="mb-2 flex items-center justify-between gap-3">
               <div>
