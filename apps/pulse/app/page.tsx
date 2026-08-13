@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { Compass, DatabaseZap, MessageSquareText, ShoppingBasket, Sparkles } from 'lucide-react';
+import { Compass, DatabaseZap, ShoppingBasket, Sparkles } from 'lucide-react';
 import { headers } from 'next/headers';
 import InfoBoxes from '@/components/InfoBoxes';
 import UnifiedPropertyStage from '@/components/marketing/UnifiedPropertyStage';
@@ -69,21 +69,14 @@ function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolea
               Scanned from Sunset?
             </p>
             <h1 className="mt-3 text-2xl font-black uppercase leading-tight tracking-[0.02em] text-white md:text-4xl">
-              Order Food, Open The Explorer, or Run Jamie
+              Order Food or Open The Explorer
             </h1>
             <p className="mt-2 max-w-2xl text-xs font-bold uppercase leading-6 tracking-[0.14em] text-slate-400">
-              Start the fastest path for what you came here to do.
+              Start a grill pickup order or explore the Sunset Pulse map.
             </p>
           </div>
 
-          <div className={`mt-4 grid gap-2 sm:grid-cols-2 md:mt-0 ${showLeadOperations ? 'md:min-w-[680px] md:grid-cols-4' : 'md:min-w-[520px] md:grid-cols-3'}`}>
-            <Link
-              href="/agent"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-300 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-200"
-            >
-              <MessageSquareText size={17} />
-              Agent Console
-            </Link>
+          <div className={`mt-4 grid gap-2 sm:grid-cols-2 md:mt-0 ${showLeadOperations ? 'md:min-w-[680px] md:grid-cols-3' : 'md:min-w-[360px] md:grid-cols-2'}`}>
             <Link
               href="/grill"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-400 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-orange-950/30 transition hover:bg-orange-300"
