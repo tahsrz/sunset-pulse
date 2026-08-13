@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_ca2ba4caece5598b",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Black_Swan\\\"_Funds\",\"retryPages\":[],\"freshPages\":[12359213,70997981],\"continuationAfter\":\"\\\"Bullet\\\"_Bob_Hayes\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:38:53.954Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 12359213,
+        "title": "\"Bufo\" scorteccii",
+        "url": "https://en.wikipedia.org/wiki/%22Bufo%22_scorteccii"
+      },
+      "recordId": "lead_crawl_1bswx2m",
+      "title": "\"Bufo\" scorteccii - Wikipedia",
+      "crawledAt": "2026-08-13T19:38:50.530Z",
+      "markdownChars": 20912
+    },
+    {
+      "page": {
+        "pageid": 70997981,
+        "title": "\"Bulldog\" Ben Robinson",
+        "url": "https://en.wikipedia.org/wiki/%22Bulldog%22_Ben_Robinson"
+      },
+      "recordId": "lead_crawl_1h79l3p",
+      "title": "\"Bulldog\" Ben Robinson - Wikipedia",
+      "crawledAt": "2026-08-13T19:38:53.953Z",
+      "markdownChars": 20828
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_ca2ba4caece5598b.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Bullet\"_Bob_Hayes",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:38:53.954Z",
+    "runCount": 30,
+    "batchCount": 30,
+    "enumeratedCount": 45,
+    "crawledCount": 45,
+    "importedCount": 45,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

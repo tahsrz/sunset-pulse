@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_679a80c2aa37b131",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"C\\\"_Is_for_(Please_Insert_Sophomoric_Genitalia_Reference_Here)\",\"retryPages\":[],\"freshPages\":[25033979,16250549,74270663],\"continuationAfter\":\"\\\"CROATOAN\\\"\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:40:43.927Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 25033979,
+        "title": "\"C\" Is for (Please Insert Sophomoric Genitalia Reference Here)",
+        "url": "https://en.wikipedia.org/wiki/%22C%22_Is_for_(Please_Insert_Sophomoric_Genitalia_Reference_Here)"
+      },
+      "recordId": "lead_crawl_19qq074",
+      "title": "\"C\" Is for (Please Insert Sophomoric Genitalia Reference Here) - Wikipedia",
+      "crawledAt": "2026-08-13T19:40:36.855Z",
+      "markdownChars": 30000
+    },
+    {
+      "page": {
+        "pageid": 16250549,
+        "title": "\"C\" Is for Corpse",
+        "url": "https://en.wikipedia.org/wiki/%22C%22_Is_for_Corpse"
+      },
+      "recordId": "lead_crawl_1epm52l",
+      "title": "\"C\" Is for Corpse - Wikipedia",
+      "crawledAt": "2026-08-13T19:40:40.410Z",
+      "markdownChars": 26072
+    },
+    {
+      "page": {
+        "pageid": 74270663,
+        "title": "\"C\" device",
+        "url": "https://en.wikipedia.org/wiki/%22C%22_device"
+      },
+      "recordId": "lead_crawl_1idai7j",
+      "title": "\"C\" device - Wikipedia",
+      "crawledAt": "2026-08-13T19:40:43.926Z",
+      "markdownChars": 21147
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_679a80c2aa37b131.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"CROATOAN\"",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:40:43.927Z",
+    "runCount": 33,
+    "batchCount": 33,
+    "enumeratedCount": 51,
+    "crawledCount": 51,
+    "importedCount": 51,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

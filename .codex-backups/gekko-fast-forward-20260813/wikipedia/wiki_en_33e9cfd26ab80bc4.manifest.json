@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_33e9cfd26ab80bc4",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!_(disambiguation)\",\"retryPages\":[],\"freshPages\":[64486],\"continuationAfter\":\"!aaaH-aH_,yawA_eM_ekaT_ot_gnimoC_er'yehT\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:27:44.052Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 64486,
+        "title": "! (disambiguation)",
+        "url": "https://en.wikipedia.org/wiki/!_(disambiguation)"
+      },
+      "recordId": "lead_crawl_o4qw9q",
+      "title": "! (disambiguation) - Wikipedia",
+      "crawledAt": "2026-08-13T19:27:44.051Z",
+      "markdownChars": 18218
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_33e9cfd26ab80bc4.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!aaaH-aH_,yawA_eM_ekaT_ot_gnimoC_er'yehT",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:27:44.052Z",
+    "runCount": 11,
+    "batchCount": 11,
+    "enumeratedCount": 18,
+    "crawledCount": 18,
+    "importedCount": 18,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

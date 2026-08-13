@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_d45c209e29c38631",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Bad_Ass\\\"_Billy_Gunn\",\"retryPages\":[],\"freshPages\":[57093510,42925117],\"continuationAfter\":\"\\\"Bar_Or\\\"\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:35:31.689Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 57093510,
+        "title": "\"Bad News\" Barnes",
+        "url": "https://en.wikipedia.org/wiki/%22Bad_News%22_Barnes"
+      },
+      "recordId": "lead_crawl_3pnwao",
+      "title": "\"Bad News\" Barnes - Wikipedia",
+      "crawledAt": "2026-08-13T19:35:28.027Z",
+      "markdownChars": 11169
+    },
+    {
+      "page": {
+        "pageid": 42925117,
+        "title": "\"Balaenoptera\" ryani",
+        "url": "https://en.wikipedia.org/wiki/%22Balaenoptera%22_ryani"
+      },
+      "recordId": "lead_crawl_uz59au",
+      "title": "\"Balaenoptera\" ryani - Wikipedia",
+      "crawledAt": "2026-08-13T19:35:31.688Z",
+      "markdownChars": 17974
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_d45c209e29c38631.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Bar_Or\"",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:35:31.689Z",
+    "runCount": 24,
+    "batchCount": 24,
+    "enumeratedCount": 38,
+    "crawledCount": 38,
+    "importedCount": 38,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

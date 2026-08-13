@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_041b70267593c0da",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":null,\"retryPages\":[],\"freshPages\":[3632887,600744],\"continuationAfter\":\"!!!_(album)\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:21:46.865Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 3632887,
+        "title": "!!",
+        "url": "https://en.wikipedia.org/wiki/!!"
+      },
+      "recordId": "lead_crawl_1foknm6",
+      "title": "!! - Wikipedia",
+      "crawledAt": "2026-08-13T19:21:42.603Z",
+      "markdownChars": 13392
+    },
+    {
+      "page": {
+        "pageid": 600744,
+        "title": "!!!",
+        "url": "https://en.wikipedia.org/wiki/!!!"
+      },
+      "recordId": "lead_crawl_ambxwk",
+      "title": "!!! - Wikipedia",
+      "crawledAt": "2026-08-13T19:21:46.864Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_041b70267593c0da.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!!!_(album)",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:21:46.865Z",
+    "runCount": 1,
+    "batchCount": 1,
+    "enumeratedCount": 2,
+    "crawledCount": 2,
+    "importedCount": 2,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

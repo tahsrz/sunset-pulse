@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_619c2f102f4c6116",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!'O!Kung\",\"retryPages\":[],\"freshPages\":[2978668],\"continuationAfter\":\"!Alarma!_(album)\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:22:57.831Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 2978668,
+        "title": "!Action Pact!",
+        "url": "https://en.wikipedia.org/wiki/!Action_Pact!"
+      },
+      "recordId": "lead_crawl_1hv5zkh",
+      "title": "!Action Pact! - Wikipedia",
+      "crawledAt": "2026-08-13T19:22:57.830Z",
+      "markdownChars": 22794
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_619c2f102f4c6116.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!Alarma!_(album)",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:22:57.831Z",
+    "runCount": 3,
+    "batchCount": 3,
+    "enumeratedCount": 5,
+    "crawledCount": 5,
+    "importedCount": 5,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

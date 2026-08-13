@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_fcbce794be5305af",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"A\\\"_Vancouver\",\"retryPages\":[],\"freshPages\":[64238440,64251093],\"continuationAfter\":\"\\\"Al-Ahwas\\\"_Al-Ansari\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:31:26.350Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 64238440,
+        "title": "\"Agathis\" jurassica",
+        "url": "https://en.wikipedia.org/wiki/%22Agathis%22_jurassica"
+      },
+      "recordId": "lead_crawl_1ha3fsz",
+      "title": "\"Agathis\" jurassica - Wikipedia",
+      "crawledAt": "2026-08-13T19:31:22.793Z",
+      "markdownChars": 30000
+    },
+    {
+      "page": {
+        "pageid": 64251093,
+        "title": "\"Ako ang Batas\" -Gen. Tomas Karingal",
+        "url": "https://en.wikipedia.org/wiki/%22Ako_ang_Batas%22_-Gen._Tomas_Karingal"
+      },
+      "recordId": "lead_crawl_hp7hgu",
+      "title": "\"Ako ang Batas\" -Gen. Tomas Karingal - Wikipedia",
+      "crawledAt": "2026-08-13T19:31:26.349Z",
+      "markdownChars": 22415
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_fcbce794be5305af.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Al-Ahwas\"_Al-Ansari",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:31:26.350Z",
+    "runCount": 17,
+    "batchCount": 17,
+    "enumeratedCount": 28,
+    "crawledCount": 28,
+    "importedCount": 28,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

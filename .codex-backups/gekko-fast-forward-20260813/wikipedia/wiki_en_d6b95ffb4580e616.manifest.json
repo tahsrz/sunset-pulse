@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_d6b95ffb4580e616",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!Kung\",\"retryPages\":[],\"freshPages\":[22602473],\"continuationAfter\":\"!Ora_people\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:25:49.427Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 22602473,
+        "title": "!Oka Tokat",
+        "url": "https://en.wikipedia.org/wiki/!Oka_Tokat"
+      },
+      "recordId": "lead_crawl_117do22",
+      "title": "!Oka Tokat - Wikipedia",
+      "crawledAt": "2026-08-13T19:25:49.425Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_d6b95ffb4580e616.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!Ora_people",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:25:49.427Z",
+    "runCount": 8,
+    "batchCount": 8,
+    "enumeratedCount": 11,
+    "crawledCount": 11,
+    "importedCount": 11,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}
