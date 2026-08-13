@@ -34,6 +34,10 @@ import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { LeadStatus as PipelineLeadStatus } from '@/lib/sites/leadOperatingSystem';
+import {
+  publicGuideLeadIntelligenceSchema,
+  type PublicGuideLeadIntelligence,
+} from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
 
@@ -255,6 +259,8 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
   const guideDisposition = lead.source === 'jamie_public_guide'
     ? readPublicGuideDisposition(lead.metadata)
     : undefined;
+  const intelligenceResult = publicGuideLeadIntelligenceSchema.safeParse(lead.metadata?.leadIntelligence);
+  const leadIntelligence = intelligenceResult.success ? intelligenceResult.data : null;
 
   return (
     <article className={`min-w-0 overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-black/10 ${
@@ -296,6 +302,7 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
           </p>
 
           {guideBrief ? <PublicGuideBrief brief={guideBrief} /> : null}
+          {leadIntelligence ? <LeadIntelligencePanel intelligence={leadIntelligence} /> : null}
 
           {lead.internal_note ? (
             <div className="mt-4 rounded-3xl border border-amber-300/20 bg-amber-300/10 p-4">
@@ -473,6 +480,54 @@ function PublicGuideConversionPanel({
           </dl>
           <p className="mt-3 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
             {analytics.leadCount} Jamie handoffs
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LeadIntelligencePanel({ intelligence }: { intelligence: PublicGuideLeadIntelligence }) {
+  const scoreStyle = intelligence.level === 'high'
+    ? 'border-rose-300/25 bg-rose-300/10 text-rose-100'
+    : intelligence.level === 'warm'
+      ? 'border-amber-300/25 bg-amber-300/10 text-amber-100'
+      : 'border-cyan-300/20 bg-cyan-300/10 text-cyan-100';
+
+  return (
+    <section className="mt-5 border-y border-emerald-300/15 py-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-emerald-200">
+          <Target size={16} />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">Lead Intelligence</h3>
+        </div>
+        <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${scoreStyle}`}>
+          {intelligence.score} / 100 {intelligence.level}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)]">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100/45">
+            Why this score
+          </p>
+          <ul className="mt-2 grid gap-2">
+            {intelligence.reasons.map((reason) => (
+              <li key={reason.code} className="flex items-start justify-between gap-4 text-xs leading-5 text-slate-300">
+                <span>{reason.label}</span>
+                <span className="shrink-0 font-black text-emerald-200">+{reason.points}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="border-l border-white/10 pl-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100/45">
+            Recommended action
+          </p>
+          <p className="mt-2 text-sm font-black text-white">{intelligence.recommendedAction.label}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">{intelligence.recommendedAction.recommendation}</p>
+          <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            {formatIntentCategory(intelligence.inferredIntent)} / {intelligence.recommendedAction.channel}
           </p>
         </div>
       </div>

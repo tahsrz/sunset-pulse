@@ -15,6 +15,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { notifyAgentSiteLead } from '@/lib/sites/agentLeadNotification';
 import { getTenantSite } from '@/lib/sites/siteData';
 import { getFirstPartySiteFromHost, getTenantFromHost } from '@/lib/sites/tenantRouting';
+import {
+  buildPublicGuideLeadIntelligence,
+  type PublicGuideBehaviorEvent,
+} from '@/lib/sites/publicGuideLeadIntelligence';
 
 const leadSchema = z.object({
   agentId: z.string().trim().min(1).max(80),
@@ -113,6 +117,19 @@ export async function POST(request: Request) {
           verifiedListingIds: verifiedDiscussedListingIds,
         })
       : null;
+    const guideBehaviorEvents = input.guide
+      ? await loadPublicGuideSessionEvents(input.guide.sessionId)
+      : [];
+    const leadIntelligence = input.guide && guideBrief
+      ? buildPublicGuideLeadIntelligence({
+          brief: guideBrief,
+          events: guideBehaviorEvents,
+          handoff: input.guide,
+          hasPhone: Boolean(input.phone),
+          hasVerifiedListing: Boolean(listing),
+          preferredContact: input.preferredContact,
+        })
+      : null;
 
     const source = isJamieRequest ? 'jamie_public_guide' : input.source;
     const siteName = isJamieRequest ? tenantSite.siteName : input.siteName || tenantSite.siteName;
@@ -137,6 +154,7 @@ export async function POST(request: Request) {
           sourcePagePath: pagePath,
         },
         ...(guideBrief ? { publicGuideBrief: guideBrief } : {}),
+        ...(leadIntelligence ? { leadIntelligence } : {}),
       } : {}),
     };
 
@@ -216,6 +234,28 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('[AGENT_SITE_LEAD_ROUTE_ERROR]', error);
     return errorResponse('Failed to submit lead inquiry.', 500, error?.message);
+  }
+}
+
+async function loadPublicGuideSessionEvents(sessionId: string): Promise<PublicGuideBehaviorEvent[]> {
+  try {
+    const actorId = `public:${hashPublicGuideSessionId(sessionId)}`;
+    const { data, error } = await supabaseAdmin
+      .from('intelligence_events')
+      .select('event_type, target_id, metadata, created_at')
+      .eq('actor_id', actorId)
+      .like('event_type', 'PUBLIC_GUIDE_%')
+      .order('created_at', { ascending: true })
+      .limit(250);
+
+    if (error) throw error;
+    return (data || []) as PublicGuideBehaviorEvent[];
+  } catch (error) {
+    console.warn(
+      '[PUBLIC_GUIDE_LEAD_INTELLIGENCE_EVENTS]',
+      error instanceof Error ? error.message : 'Event history unavailable.',
+    );
+    return [];
   }
 }
 
