@@ -158,6 +158,22 @@ export async function notifyHotLeadWithNovu(input: {
   });
 }
 
+export async function notifyAgentAlertWithNovu(input: {
+  subscriber: Exclude<NovuSubscriber, string>;
+  workflowId: string;
+  transactionId: string;
+  payload: Record<string, unknown>;
+}) {
+  return triggerNovuNotification({
+    workflowId: input.workflowId,
+    to: input.subscriber,
+    source: 'lead_intelligence',
+    transactionId: input.transactionId,
+    payload: input.payload,
+    tenant: input.payload.agentId ? String(input.payload.agentId) : undefined,
+  });
+}
+
 export function getNovuNotificationSnapshot(): NovuNotificationSnapshot {
   const filePath = novuLedgerPath();
   const relativePath = path.relative(process.cwd(), filePath);
