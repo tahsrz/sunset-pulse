@@ -41,7 +41,7 @@ import {
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
-import AgentLeadAlerts from './AgentLeadAlerts';
+import NotificationInbox from './NotificationInbox';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -78,17 +78,18 @@ type AgentSiteLead = {
 };
 
 type AgentLeadsPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     status?: string;
     leadId?: string;
-  };
+  }>;
 };
 
 export default async function AgentLeadsPage({ searchParams }: AgentLeadsPageProps) {
   const requestHeaders = await headers();
   const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
-  const statusFilter = normalizeStatusFilter(searchParams?.status);
-  const selectedLeadId = normalizeLeadId(searchParams?.leadId);
+  const resolvedSearchParams = await searchParams;
+  const statusFilter = normalizeStatusFilter(resolvedSearchParams?.status);
+  const selectedLeadId = normalizeLeadId(resolvedSearchParams?.leadId);
 
   if (!access.allowed) {
     return (
@@ -157,6 +158,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <NotificationInbox />
               <AdminPillLink href="/admin/lead-engine" label="Lead Engine" />
               <AdminPillLink href="/admin/launch-kit" label="Launch Kit" />
               <AdminPillLink href="/admin/site-reviews" label="Site Reviews" />
@@ -196,8 +198,6 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
             ))}
           </nav>
         </header>
-
-        <AgentLeadAlerts />
 
         <PublicGuideConversionPanel
           analytics={analyticsResult.analytics}

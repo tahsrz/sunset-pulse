@@ -181,9 +181,12 @@ export const logEvent = async ({ type, description, actorId, actorName, targetId
 /**
  * THE_PAST_STREAM: Subscribe to the global intelligence event stream.
  */
+let intelligenceEventSubscriptionId = 0;
+
 export const subscribeToEvents = (callback, statusCallback) => {
+  intelligenceEventSubscriptionId += 1;
   return supabase
-    .channel('public:intelligence_events')
+    .channel(`public:intelligence_events:${intelligenceEventSubscriptionId}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'intelligence_events' }, callback)
     .subscribe(statusCallback);
 };

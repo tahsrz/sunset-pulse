@@ -82,6 +82,7 @@ async function loadRecentAlertEvents() {
 async function enqueueAlertDeliveries(events: Awaited<ReturnType<typeof loadRecentAlertEvents>>) {
   const alerts: AgentAlert[] = [];
   const rows: Array<Record<string, unknown>> = [];
+  const nativeRows = new Map<string, Record<string, unknown>>();
 
   for (const event of events) {
     const result = processIntelligenceEvent(event, alerts, Date.parse(event.created_at));
@@ -94,6 +95,23 @@ async function enqueueAlertDeliveries(events: Awaited<ReturnType<typeof loadRece
 
     const decision = decideAgentAlertNotification(result.alert, event);
     if (decision.action !== 'enqueue' || result.alert.kind === 'new_lead') continue;
+    nativeRows.set(decision.idempotencyKey, {
+      source_event_id: event.id,
+      agent_id: result.alert.agentId,
+      lead_id: result.alert.leadId,
+      listing_id: result.alert.listingId || null,
+      kind: result.alert.kind,
+      priority: result.alert.priority,
+      title: result.alert.title,
+      body: result.alert.detail,
+      action_href: result.alert.actionHref,
+      action_label: 'Open lead',
+      occurrences: result.alert.occurrences,
+      idempotency_key: decision.idempotencyKey,
+      first_seen_at: result.alert.firstSeenAt,
+      last_seen_at: result.alert.lastUpdatedAt,
+      metadata: decision.payload,
+    });
     rows.push({
       source_event_id: event.id,
       agent_id: result.alert.agentId,
@@ -108,6 +126,11 @@ async function enqueueAlertDeliveries(events: Awaited<ReturnType<typeof loadRece
   }
 
   if (!rows.length) return 0;
+  const { error: nativeError } = await supabaseAdmin
+    .from('agent_notifications')
+    .upsert([...nativeRows.values()], { onConflict: 'idempotency_key' });
+  if (nativeError) throw new Error('Unable to persist native agent notifications.');
+
   const { data, error } = await supabaseAdmin
     .from('notification_deliveries')
     .upsert(rows, { onConflict: 'idempotency_key', ignoreDuplicates: true })
