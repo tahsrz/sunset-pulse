@@ -15,7 +15,7 @@ export type PulseCartridge = {
 
 let cachedCartridges: PulseCartridge[] | null = null;
 let cachedKey: string | null = null;
-let remoteHydrated = false;
+let remoteHydration: Promise<string[]> | null = null;
 
 export function clearPulseCartridgeCache() {
   cachedCartridges = null;
@@ -114,10 +114,21 @@ export function getPulseCartridge(slug: string): PulseCartridge | null {
  */
 export async function pulse_search(query: string, maxResults = 25): Promise<any[]> {
   const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
-  if (process.env.VERCEL && !isBuild && !remoteHydrated) {
-    remoteHydrated = true;
-    const { syncUniversalIntelligence } = await import('@/lib/ai/brain/remote_atlas');
-    await syncUniversalIntelligence();
+  if (process.env.VERCEL && !isBuild) {
+    if (!remoteHydration) {
+      remoteHydration = import('@/lib/ai/brain/remote_atlas')
+        .then(({ syncUniversalIntelligence }) => syncUniversalIntelligence())
+        .then((paths) => {
+          if (!paths.length) throw new Error('Remote Atlas returned no usable cartridges.');
+          return paths;
+        })
+        .catch((error) => {
+          remoteHydration = null;
+          console.warn('[PulseSearch] Remote Atlas hydration failed:', error instanceof Error ? error.message : 'unknown error');
+          return [];
+        });
+    }
+    await remoteHydration;
   }
   const cartridges = listPulseCartridges();
   const results: any[] = [];

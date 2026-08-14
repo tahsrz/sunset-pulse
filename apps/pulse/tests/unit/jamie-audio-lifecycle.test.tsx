@@ -9,6 +9,7 @@ vi.mock('@/context/ThemeProvider', () => ({
 }));
 
 import { JamieAudioProvider } from '@/context/JamieAudioContext';
+import { TTS_END_EVENT, TTS_START_EVENT } from '@/lib/core/tts';
 
 class FakeSpeechRecognition extends EventTarget {
   static instance: FakeSpeechRecognition | null = null;
@@ -65,6 +66,33 @@ describe('Jamie audio lifecycle', () => {
     expect(stopTrack).not.toHaveBeenCalled();
 
     view.unmount();
+    expect(stopTrack).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not stop or reacquire recognition while Jamie speaks', async () => {
+    wakeListeningEnabled = true;
+    render(<JamieAudioProvider><div /></JamieAudioProvider>);
+    await waitFor(() => expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1));
+
+    act(() => window.dispatchEvent(new CustomEvent(TTS_START_EVENT)));
+    expect(FakeSpeechRecognition.instance?.stop).not.toHaveBeenCalled();
+    expect(stopTrack).not.toHaveBeenCalled();
+
+    act(() => window.dispatchEvent(new CustomEvent(TTS_END_EVENT)));
+    expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1);
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates stale recognition callbacks during teardown', async () => {
+    wakeListeningEnabled = true;
+    const view = render(<JamieAudioProvider><div /></JamieAudioProvider>);
+    await waitFor(() => expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1));
+    const staleEnd = FakeSpeechRecognition.instance?.onend;
+
+    view.unmount();
+    act(() => staleEnd?.());
+
+    expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1);
     expect(stopTrack).toHaveBeenCalledTimes(1);
   });
 });

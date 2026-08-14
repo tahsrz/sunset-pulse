@@ -13,6 +13,10 @@
     {
       "path": "/api/billing/grace-expiry/cron",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/notifications/high-intent/cron",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

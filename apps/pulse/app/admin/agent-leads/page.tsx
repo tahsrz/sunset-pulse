@@ -41,6 +41,7 @@ import {
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
+import AgentLeadAlerts from './AgentLeadAlerts';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -79,6 +80,7 @@ type AgentSiteLead = {
 type AgentLeadsPageProps = {
   searchParams?: {
     status?: string;
+    leadId?: string;
   };
 };
 
@@ -86,6 +88,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
   const requestHeaders = await headers();
   const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
   const statusFilter = normalizeStatusFilter(searchParams?.status);
+  const selectedLeadId = normalizeLeadId(searchParams?.leadId);
 
   if (!access.allowed) {
     return (
@@ -110,6 +113,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
   } else if (statusFilter !== 'all') {
     query = query.eq('status', statusFilter);
   }
+  if (selectedLeadId) query = query.eq('id', selectedLeadId);
 
   const [leadResult, analyticsResult, agentConsoleAnalyticsResult] = await Promise.all([
     query,
@@ -193,6 +197,8 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
           </nav>
         </header>
 
+        <AgentLeadAlerts />
+
         <PublicGuideConversionPanel
           analytics={analyticsResult.analytics}
           failed={analyticsResult.failed}
@@ -239,6 +245,12 @@ function AdminPillLink({ href, label }: { href: string; label: string }) {
       <ArrowUpRight size={15} />
     </Link>
   );
+}
+
+function normalizeLeadId(value?: string) {
+  return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : null;
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
