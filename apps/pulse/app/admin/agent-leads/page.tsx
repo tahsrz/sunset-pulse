@@ -41,7 +41,6 @@ import {
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
-import AgentLeadAlerts from './AgentLeadAlerts';
 import NotificationInbox from './NotificationInbox';
 
 export const dynamic = 'force-dynamic';
@@ -199,8 +198,6 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
             ))}
           </nav>
         </header>
-
-        <AgentLeadAlerts />
 
         <PublicGuideConversionPanel
           analytics={analyticsResult.analytics}
