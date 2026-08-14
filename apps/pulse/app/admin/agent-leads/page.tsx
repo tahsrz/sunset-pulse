@@ -40,8 +40,6 @@ import {
   type PublicGuideLeadIntelligence,
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
-import { getDefaultAgentId, normalizeAgentId } from '@/lib/sites/agentConfig';
-import { getNovuInboxConfig } from '@/lib/notifications/novuInbox';
 import AgentLeadActions from './AgentLeadActions';
 import AgentLeadAlerts from './AgentLeadAlerts';
 import NotificationInbox from './NotificationInbox';
@@ -81,17 +79,18 @@ type AgentSiteLead = {
 };
 
 type AgentLeadsPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     status?: string;
     leadId?: string;
-  };
+  }>;
 };
 
 export default async function AgentLeadsPage({ searchParams }: AgentLeadsPageProps) {
   const requestHeaders = await headers();
   const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
-  const statusFilter = normalizeStatusFilter(searchParams?.status);
-  const selectedLeadId = normalizeLeadId(searchParams?.leadId);
+  const resolvedSearchParams = await searchParams;
+  const statusFilter = normalizeStatusFilter(resolvedSearchParams?.status);
+  const selectedLeadId = normalizeLeadId(resolvedSearchParams?.leadId);
 
   if (!access.allowed) {
     return (
@@ -140,7 +139,6 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
   const listingLeadCount = leads.filter((lead) => lead.listing_mls_id || lead.listing_id).length;
   const uniqueAgents = new Set(leads.map((lead) => lead.agent_id)).size;
   const activeLeadCount = leads.filter((lead) => (lead.status || 'new') !== 'archived').length;
-  const novuInboxConfig = getNovuInboxConfig(await resolveInboxAgentId(access.user?.id));
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
@@ -161,7 +159,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {novuInboxConfig ? <NotificationInbox config={novuInboxConfig} /> : null}
+              <NotificationInbox />
               <AdminPillLink href="/admin/lead-engine" label="Lead Engine" />
               <AdminPillLink href="/admin/launch-kit" label="Launch Kit" />
               <AdminPillLink href="/admin/site-reviews" label="Site Reviews" />
@@ -256,19 +254,6 @@ function normalizeLeadId(value?: string) {
   return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
     ? value
     : null;
-}
-
-async function resolveInboxAgentId(userId?: string) {
-  if (!userId) return getDefaultAgentId();
-
-  const { data } = await supabaseAdmin
-    .from('site_config')
-    .select('agent_id')
-    .eq('owner_id', userId)
-    .limit(1)
-    .maybeSingle();
-
-  return normalizeAgentId(data?.agent_id) || getDefaultAgentId();
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
