@@ -107,6 +107,22 @@ describe('Wikipedia Crawl4AI ingestion', () => {
     expect(retry.state.importedCount).toBe(1);
   });
 
+  it('aborts without advancing the checkpoint when Crawl4AI is unavailable', async () => {
+    const unavailablePage = page(12, 'Unavailable worker');
+
+    await expect(runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      listPages: async () => ({ pages: [unavailablePage], continuation: 'Next|13' }),
+      crawlPage: async (item) => record(item, 'unavailable', ''),
+    })).rejects.toThrow('Crawl4AI worker is unavailable');
+
+    expect(fs.existsSync(statePath)).toBe(false);
+    expect(fs.existsSync(outputDir)).toBe(false);
+  });
+
   it('keeps the corpus complete while retrying a failed final page', async () => {
     const finalPage = page(99, 'Final article');
     await runWikipediaIngestionBatch({
@@ -224,7 +240,11 @@ function record(
       pythonExecutable: 'python',
       durationMs: 10,
       ledgerPath: 'crawl-results.jsonl',
-      note: status === 'failed' ? 'Temporary Crawl4AI failure.' : undefined,
+      note: status === 'failed'
+        ? 'Temporary Crawl4AI failure.'
+        : status === 'unavailable'
+          ? 'Crawl4AI worker is unavailable.'
+          : undefined,
     },
   };
 }

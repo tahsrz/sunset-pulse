@@ -7,7 +7,7 @@ import {
   type AgentAlert,
 } from '@/lib/intelligence/agentAlerts';
 import { enrichAgentAlertEvents } from '@/lib/intelligence/agentAlertContext';
-import { notifyAgentAlertWithNovu } from '@/lib/notifications/novu';
+import { dispatchAgentAlertNotification } from '@/lib/notifications/agentAlertChannels';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const NOTIFICATION_EVENT_TYPES = [
@@ -158,10 +158,9 @@ async function dispatchDelivery(delivery: NotificationDelivery): Promise<'sent' 
     return 'suppressed';
   }
 
-  const record = await notifyAgentAlertWithNovu({
-    subscriber: recipient,
-    workflowId: delivery.workflow_id,
-    transactionId: delivery.idempotency_key,
+  const record = await dispatchAgentAlertNotification({
+    recipient,
+    idempotencyKey: delivery.idempotency_key,
     payload: delivery.payload,
   });
 
@@ -169,16 +168,25 @@ async function dispatchDelivery(delivery: NotificationDelivery): Promise<'sent' 
     await updateDelivery(delivery.id, {
       status: 'sent',
       completed_at: new Date().toISOString(),
-      provider_message_id: record.id,
+      provider_message_id: record.messageId ? `${record.provider}:${record.messageId}` : record.provider,
       last_error: null,
     });
     return 'sent';
   }
 
+  if (record.status === 'suppressed') {
+    await updateDelivery(delivery.id, {
+      status: 'suppressed',
+      completed_at: new Date().toISOString(),
+      last_error: record.reason,
+    });
+    return 'suppressed';
+  }
+
   await updateDelivery(delivery.id, {
     status: 'failed',
     next_attempt_at: new Date(Date.now() + retryDelayMs(delivery.attempt_count)).toISOString(),
-    last_error: record.diagnostics.reason || `Novu delivery status: ${record.status}.`,
+    last_error: record.reason,
   });
   return 'failed';
 }
@@ -199,7 +207,7 @@ async function loadAgentRecipient(agentId: string) {
     lastName: lastParts.join(' ') || undefined,
     email: stringValue(integrationProfile.leadEmail) || stringValue(agentProfile.email) || undefined,
     phone: stringValue(agentProfile.phone) || undefined,
-    data: { agentId },
+    smsEnabled: integrationProfile.agentAlertSmsEnabled === true,
   };
 }
 

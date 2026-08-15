@@ -158,6 +158,11 @@ export async function runWikipediaIngestionBatch(
     const previousRetry = state.retryQueue.find((item) => item.pageid === page.pageid);
     try {
       const record = await crawlPage(page, language);
+      if (record.status === 'unavailable') {
+        throw new WikipediaCrawlerUnavailableError(
+          record.diagnostics.note || 'The Crawl4AI worker is unavailable.',
+        );
+      }
       const markdown = record.output.markdown?.trim() || '';
       if (record.status !== 'completed' || !markdown) {
         throw new Error(record.diagnostics.note || `Crawl finished with status ${record.status}.`);
@@ -170,6 +175,7 @@ export async function runWikipediaIngestionBatch(
         crawledAt: record.createdAt,
       });
     } catch (error) {
+      if (error instanceof WikipediaCrawlerUnavailableError) throw error;
       failures.push({
         ...page,
         attempts: (previousRetry?.attempts || 0) + 1,
@@ -233,6 +239,13 @@ export async function runWikipediaIngestionBatch(
     failureCount: failures.length,
     state: stateAfter,
   });
+}
+
+class WikipediaCrawlerUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WikipediaCrawlerUnavailableError';
+  }
 }
 
 async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<WikipediaBatchResult> {
@@ -393,7 +406,8 @@ export function wikipediaOutputDir() {
 
 export function wikipediaStatePath() {
   return path.resolve(
-    process.env.WIKIPEDIA_INGESTION_STATE_PATH || path.join(wikipediaOutputDir(), 'ingestion-state.json'),
+    process.env.WIKIPEDIA_INGESTION_STATE_PATH
+      || path.join(process.cwd(), '.pulse-local', 'wikipedia', 'ingestion-state.json'),
   );
 }
 

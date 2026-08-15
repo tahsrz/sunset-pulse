@@ -4,7 +4,6 @@ import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getNovuNotificationSnapshot,
-  notifyAgentAlertWithNovu,
   notifyHotLeadWithNovu,
   novuTriggerEndpoint,
   triggerNovuNotification,
@@ -101,23 +100,6 @@ describe('Novu notification pipeline', () => {
     expect(record.source).toBe('lead_intelligence');
     expect(record.recipientRefs).toEqual(['sunset-operator']);
     expect(record.transactionId).toMatch(/^hot-lead:/);
-  });
-
-  it('uses the durable delivery key for tenant-scoped agent alerts', async () => {
-    const record = await notifyAgentAlertWithNovu({
-      subscriber: { subscriberId: 'sunset-agent:agent-one', email: 'agent@example.com' },
-      workflowId: 'lead-high-intent-activity',
-      transactionId: 'agent-alert:agent-one:lead-one:revisit:window',
-      payload: { agentId: 'agent-one', leadName: 'Jamie Buyer', score: 91 },
-    });
-
-    expect(record).toMatchObject({
-      status: 'queued_local',
-      workflowId: 'lead-high-intent-activity',
-      source: 'lead_intelligence',
-      recipientRefs: ['sunset-agent:agent-one'],
-      transactionId: 'agent-alert:agent-one:lead-one:revisit:window',
-    });
   });
 
   it('summarizes local notification events', async () => {
