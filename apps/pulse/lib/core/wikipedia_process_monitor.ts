@@ -21,13 +21,14 @@ export type WikipediaProcessSnapshot = {
 };
 
 const APP_ROOT = process.cwd();
-const WIKIPEDIA_ROOT = path.join(APP_ROOT, 'cartridges', 'wikipedia');
+const WIKIPEDIA_RUNTIME_STATE = path.join(APP_ROOT, '.pulse-local', 'wikipedia', 'ingestion-state.json');
+const WIKIPEDIA_LEGACY_STATE = path.join(APP_ROOT, 'cartridges', 'wikipedia', 'ingestion-state.json');
 const LOG_ROOT = path.join(APP_ROOT, 'scripts', 'logs');
 
 export function getWikipediaProcessSnapshot(): WikipediaProcessSnapshot {
   const processes = readWorkerProcesses();
   const scheduler = readScheduler();
-  const state = readJson(path.join(WIKIPEDIA_ROOT, 'ingestion-state.json'));
+  const state = readJson(WIKIPEDIA_RUNTIME_STATE) || readJson(WIKIPEDIA_LEGACY_STATE);
   const heartbeat = isRecent(state?.updatedAt);
 
   return {

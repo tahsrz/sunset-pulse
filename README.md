@@ -140,6 +140,79 @@ flowchart TD
   Final --> Agent
 ```
 
+## Graph-Derived Code Map
+
+The map below was verified against a local Codebase Memory index on August 13, 2026. The fast index found 47,186 nodes and 192,852 relationships across TypeScript, JavaScript, Python, CSS, SQL, YAML, C#, and supporting files. It recognized 435 route nodes and 481 HTTP call relationships.
+
+The repository also contains substantial scheduling and shared platform code under `apps/scheduling`, `apps/api/v2`, and `packages`. Those systems dominate repository-wide hotspot rankings, so Sunset Pulse product analysis should normally begin with the scoped `apps/pulse` domains below.
+
+```mermaid
+flowchart LR
+  Surfaces["Product surfaces<br/>Command Center / Jamie / Agent Leads / Atlas"]
+  Routes["Next.js API boundary<br/>apps/pulse/app/api<br/>176 route files"]
+  Command["Command orchestration<br/>lib/command-center<br/>306 nodes / 996 edges"]
+  Intelligence["Jamie and TAH intelligence<br/>lib/ai<br/>461 nodes / 1,183 edges"]
+  Core["Shared runtime and security<br/>lib/core<br/>708 nodes / 1,719 edges"]
+  Listings["Canonical listing data<br/>lib/data<br/>253 nodes / 689 edges"]
+  Storage["Supabase / Mongo / local TAH<br/>cartridges and event ledgers"]
+  Workers["Specialized workers<br/>retrieval / synthesis / supervision"]
+
+  Surfaces --> Routes
+  Surfaces --> Command
+  Surfaces --> Intelligence
+  Routes --> Core
+  Routes --> Command
+  Routes --> Intelligence
+  Routes --> Listings
+  Command --> Workers
+  Command --> Intelligence
+  Command --> Listings
+  Intelligence --> Core
+  Intelligence --> Listings
+  Core --> Storage
+  Listings --> Storage
+```
+
+High-value graph entry points:
+
+| Domain | Entry points and hotspots |
+| --- | --- |
+| Command Center | `runCommandCenterCommand`, `retrieveContextNode`, `applyTahRetrievalPolicy`, `buildCommandDeliverable` |
+| Jamie | `getJamieResponse`, `runPublicJamieGuide`, `sanitizeJamieReply`, `resolveJamieListingContext` |
+| TAH and Atlas | `listPulseCartridges`, `pulse_search`, `getCartridgeMetadata`, `getTahIndices` |
+| Listings | `normalizeListing`, `searchListings`, `getListingById`, `discoverListings` |
+| Security and APIs | `requireOperatorRouteAccess`, `getSessionUser`, `errorResponse`, `successResponse` |
+| Agent operations | `AgentConsole`, `AgentSelectionArena`, `AgentLeadActions`, `trackAgentConsoleEvent` |
+
+### Local Code Graph
+
+Codebase Memory is an optional local engineering tool. Its executable and generated graph are intentionally excluded from Git:
+
+```text
+.local-tools/codebase-memory-mcp/
+.codebase-memory/
+```
+
+With the verified executable installed at the ignored local path, refresh the fast index:
+
+```powershell
+.\.local-tools\codebase-memory-mcp\app\codebase-memory-mcp.exe cli --progress index_repository --repo-path "C:\Users\Taz\SunsetPulse" --mode fast --name SunsetPulse --persistence false
+```
+
+Query a product domain:
+
+```powershell
+.\.local-tools\codebase-memory-mcp\app\codebase-memory-mcp.exe cli get_architecture --project SunsetPulse --path apps/pulse/lib/command-center --aspects overview
+```
+
+Start the persistent local graph application and open `http://127.0.0.1:9749`:
+
+```powershell
+.\.local-tools\codebase-memory-mcp\app\codebase-memory-mcp.exe daemon start
+```
+
+Fast mode intentionally excludes tests and other filtered files. Treat graph absence as provisional until `check_index_coverage` and direct source inspection confirm the relevant paths.
+
 ## MLS Discovery Engine
 
 Sunset Pulse serves property search queries from a local canonical MLS cache. This avoids making slow external API calls during page loads. Both Jamie and the public discovery API rely on this shared engine:

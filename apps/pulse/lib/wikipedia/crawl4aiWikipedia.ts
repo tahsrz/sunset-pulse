@@ -35,10 +35,20 @@ export type WikipediaIngestionState = {
   crawlFailureCount: number;
   terminalFailureCount: number;
   retryQueue: WikipediaRetry[];
+  health: WikipediaIngestionHealth;
+};
+
+export type WikipediaIngestionHealth = {
+  status: 'healthy' | 'degraded' | 'paused' | 'dependency_error';
+  consecutiveFailureBatches: number;
+  lastSuccessfulImportAt: string | null;
+  retryBacklog: number;
+  retryDrainRate: number | null;
+  lastError: string | null;
 };
 
 export type WikipediaBatchResult = {
-  status: 'imported' | 'empty' | 'complete' | 'replayed';
+  status: 'imported' | 'empty' | 'complete' | 'replayed' | 'paused' | 'dependency_error';
   batchId: string | null;
   cartridgePath: string | null;
   manifestPath: string | null;
@@ -89,7 +99,6 @@ export type WikipediaIngestionOptions = {
 };
 
 const DEFAULT_BATCH_SIZE = 10;
-const DEFAULT_RETRY_SLOTS = 2;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_REQUEST_DELAY_MS = 1_000;
 
@@ -98,14 +107,19 @@ export async function runWikipediaIngestionBatch(
 ): Promise<WikipediaBatchResult> {
   const language = normalizeLanguage(options.language || process.env.WIKIPEDIA_LANGUAGE || 'en');
   const batchSize = clampInteger(options.batchSize || numberFromEnv('WIKIPEDIA_BATCH_SIZE') || DEFAULT_BATCH_SIZE, 1, 50);
-  const retrySlots = clampInteger(options.retrySlots ?? DEFAULT_RETRY_SLOTS, 0, batchSize);
   const maxAttempts = clampInteger(options.maxAttempts || DEFAULT_MAX_ATTEMPTS, 1, 10);
   const requestDelayMs = clampInteger(options.requestDelayMs ?? numberFromEnv('WIKIPEDIA_REQUEST_DELAY_MS') ?? DEFAULT_REQUEST_DELAY_MS, 0, 60_000);
   const outputDir = path.resolve(options.outputDir || wikipediaOutputDir());
   const statePath = path.resolve(options.statePath || wikipediaStatePath());
   const state = loadWikipediaIngestionState({ language, statePath });
+  const drainingRetryBacklog = options.retrySlots === undefined && state.retryQueue.length > 0;
+  const retrySlots = clampInteger(
+    options.retrySlots ?? (drainingRetryBacklog ? batchSize : 0),
+    0,
+    batchSize,
+  );
   const retryPages = state.retryQueue.slice(0, retrySlots);
-  const freshLimit = Math.max(0, batchSize - retryPages.length);
+  const freshLimit = drainingRetryBacklog ? 0 : Math.max(0, batchSize - retryPages.length);
   const listPages = options.listPages || listWikipediaPages;
   const freshBatch = state.complete || freshLimit === 0
     ? { pages: [], continuation: state.continuation }
@@ -137,7 +151,11 @@ export async function runWikipediaIngestionBatch(
   const manifestPath = path.join(outputDir, `${batchId}.manifest.json`);
   const replay = readReplayManifest(manifestPath, checkpointKey);
   if (replay) {
-    saveWikipediaIngestionState(replay.stateAfter, statePath);
+    const replayState = {
+      ...replay.stateAfter,
+      health: normalizeIngestionHealth(replay.stateAfter.health, replay.stateAfter.retryQueue.length),
+    };
+    saveWikipediaIngestionState(replayState, statePath);
     return publishWikipediaHeartbeat({
       status: 'replayed',
       batchId,
@@ -145,7 +163,7 @@ export async function runWikipediaIngestionBatch(
       manifestPath: path.relative(process.cwd(), manifestPath),
       articleCount: replay.articles.length,
       failureCount: replay.failures.length,
-      state: replay.stateAfter,
+      state: replayState,
     });
   }
 
@@ -158,6 +176,11 @@ export async function runWikipediaIngestionBatch(
     const previousRetry = state.retryQueue.find((item) => item.pageid === page.pageid);
     try {
       const record = await crawlPage(page, language);
+      if (record.status === 'unavailable') {
+        throw new WikipediaCrawlerUnavailableError(
+          record.diagnostics.note || 'The Crawl4AI worker is unavailable.',
+        );
+      }
       const markdown = record.output.markdown?.trim() || '';
       if (record.status !== 'completed' || !markdown) {
         throw new Error(record.diagnostics.note || `Crawl finished with status ${record.status}.`);
@@ -170,6 +193,25 @@ export async function runWikipediaIngestionBatch(
         crawledAt: record.createdAt,
       });
     } catch (error) {
+      if (error instanceof WikipediaCrawlerUnavailableError) {
+        await publishWikipediaHeartbeat({
+          status: 'dependency_error',
+          batchId: null,
+          cartridgePath: null,
+          manifestPath: null,
+          articleCount: 0,
+          failureCount: 0,
+          state: {
+            ...state,
+            health: {
+              ...state.health,
+              status: 'dependency_error',
+              lastError: error.message,
+            },
+          },
+        });
+        throw error;
+      }
       failures.push({
         ...page,
         attempts: (previousRetry?.attempts || 0) + 1,
@@ -188,6 +230,11 @@ export async function runWikipediaIngestionBatch(
   const untouchedRetries = state.retryQueue.filter((item) => !processedPageIds.has(item.pageid));
   const retryQueue = uniqueRetries([...untouchedRetries, ...activeFailures]);
   const now = new Date().toISOString();
+  const recoveredRetries = retryPages.filter((retry) => successes.some((success) => success.page.pageid === retry.pageid)).length;
+  const consecutiveFailureBatches = failures.length > 0 && successes.length === 0
+    ? state.health.consecutiveFailureBatches + 1
+    : 0;
+  const paused = consecutiveFailureBatches >= 3;
   const stateAfter: WikipediaIngestionState = {
     ...state,
     continuation: freshBatch.pages.length ? freshBatch.continuation : state.continuation,
@@ -201,6 +248,14 @@ export async function runWikipediaIngestionBatch(
     crawlFailureCount: state.crawlFailureCount + failures.length,
     terminalFailureCount: state.terminalFailureCount + terminalFailures.length,
     retryQueue,
+    health: {
+      status: paused ? 'paused' : failures.length ? 'degraded' : 'healthy',
+      consecutiveFailureBatches,
+      lastSuccessfulImportAt: successes.length ? now : state.health.lastSuccessfulImportAt,
+      retryBacklog: retryQueue.length,
+      retryDrainRate: retryPages.length ? Math.round((recoveredRetries / retryPages.length) * 100) : null,
+      lastError: failures[0]?.lastError || null,
+    },
   };
 
   fs.mkdirSync(outputDir, { recursive: true });
@@ -225,7 +280,7 @@ export async function runWikipediaIngestionBatch(
   saveWikipediaIngestionState(stateAfter, statePath);
 
   return publishWikipediaHeartbeat({
-    status: successes.length ? 'imported' : 'empty',
+    status: paused ? 'paused' : successes.length ? 'imported' : 'empty',
     batchId,
     cartridgePath,
     manifestPath: path.relative(process.cwd(), manifestPath),
@@ -233,6 +288,13 @@ export async function runWikipediaIngestionBatch(
     failureCount: failures.length,
     state: stateAfter,
   });
+}
+
+class WikipediaCrawlerUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WikipediaCrawlerUnavailableError';
+  }
 }
 
 async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<WikipediaBatchResult> {
@@ -359,7 +421,7 @@ export function loadWikipediaIngestionState(input: {
     if (parsed.version !== 1 || parsed.language !== language || !Array.isArray(parsed.retryQueue)) {
       throw new Error(`Wikipedia ingestion state at ${statePath} is incompatible with language ${language}.`);
     }
-    return parsed;
+    return { ...parsed, health: normalizeIngestionHealth(parsed.health, parsed.retryQueue.length) };
   }
 
   const now = new Date().toISOString();
@@ -378,6 +440,7 @@ export function loadWikipediaIngestionState(input: {
     crawlFailureCount: 0,
     terminalFailureCount: 0,
     retryQueue: [],
+    health: normalizeIngestionHealth(undefined, 0),
   };
 }
 
@@ -393,7 +456,8 @@ export function wikipediaOutputDir() {
 
 export function wikipediaStatePath() {
   return path.resolve(
-    process.env.WIKIPEDIA_INGESTION_STATE_PATH || path.join(wikipediaOutputDir(), 'ingestion-state.json'),
+    process.env.WIKIPEDIA_INGESTION_STATE_PATH
+      || path.join(process.cwd(), '.pulse-local', 'wikipedia', 'ingestion-state.json'),
   );
 }
 
@@ -545,6 +609,19 @@ function compactError(error: unknown) {
 function numberFromEnv(name: string) {
   const value = Number(process.env[name]);
   return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function normalizeIngestionHealth(value: WikipediaIngestionHealth | undefined, retryBacklog: number): WikipediaIngestionHealth {
+  const consecutiveFailureBatches = Number(value?.consecutiveFailureBatches);
+  const retryDrainRate = value?.retryDrainRate == null ? null : Number(value.retryDrainRate);
+  return {
+    status: value?.status || 'healthy',
+    consecutiveFailureBatches: Number.isInteger(consecutiveFailureBatches) ? consecutiveFailureBatches : 0,
+    lastSuccessfulImportAt: value?.lastSuccessfulImportAt || null,
+    retryBacklog,
+    retryDrainRate: retryDrainRate !== null && Number.isFinite(retryDrainRate) ? retryDrainRate : null,
+    lastError: value?.lastError || null,
+  };
 }
 
 function clampInteger(value: number, min: number, max: number) {
