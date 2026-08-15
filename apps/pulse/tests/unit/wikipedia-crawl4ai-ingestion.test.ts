@@ -107,6 +107,32 @@ describe('Wikipedia Crawl4AI ingestion', () => {
     expect(retry.state.importedCount).toBe(1);
   });
 
+  it('drains queued retries before enumerating fresh Wikipedia pages', async () => {
+    const failedPage = page(13, 'Backlog article');
+    await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      listPages: async () => ({ pages: [failedPage], continuation: 'Fresh|14' }),
+      crawlPage: async (item) => failedRecord(item),
+    });
+    const listPages = vi.fn(async () => ({ pages: [page(14, 'Fresh article')], continuation: 'Next|15' }));
+
+    const result = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 2,
+      requestDelayMs: 0,
+      listPages,
+      crawlPage: async (item) => completedRecord(item),
+    });
+
+    expect(listPages).not.toHaveBeenCalled();
+    expect(result.state.importedCount).toBe(1);
+    expect(result.state.continuation).toBe('Fresh|14');
+  });
+
   it('aborts without advancing the checkpoint when Crawl4AI is unavailable', async () => {
     const unavailablePage = page(12, 'Unavailable worker');
 
@@ -121,6 +147,37 @@ describe('Wikipedia Crawl4AI ingestion', () => {
 
     expect(fs.existsSync(statePath)).toBe(false);
     expect(fs.existsSync(outputDir)).toBe(false);
+  });
+
+  it('pauses after three consecutive zero-success batches', async () => {
+    const failedPage = page(15, 'Circuit breaker article');
+    const first = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      listPages: async () => ({ pages: [failedPage], continuation: 'Next|16' }),
+      crawlPage: async (item) => failedRecord(item),
+    });
+    const second = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      crawlPage: async (item) => failedRecord(item),
+    });
+    const third = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      crawlPage: async (item) => failedRecord(item),
+    });
+
+    expect(first.state.health.status).toBe('degraded');
+    expect(second.state.health.consecutiveFailureBatches).toBe(2);
+    expect(third.status).toBe('paused');
+    expect(third.state.health).toMatchObject({ status: 'paused', consecutiveFailureBatches: 3 });
   });
 
   it('keeps the corpus complete while retrying a failed final page', async () => {

@@ -43,7 +43,9 @@ export default function WikipediaProcessTerminal() {
 
   const state = snapshot?.ingestion.state || (snapshot?.remoteHeartbeat?.payload.state as Record<string, unknown> | undefined);
   const remote = snapshot?.remoteHeartbeat;
+  const health = state?.health as Record<string, unknown> | undefined;
   const progress = state ? `${state.importedCount || 0} imported · ${state.enumeratedCount || 0} enumerated` : 'Waiting for checkpoint';
+  const healthStatus = String(health?.status || remote?.status || 'checking');
 
   return (
     <section className="mt-4 rounded border border-emerald-200/20 bg-[#020707]/90 p-3 font-mono shadow-2xl shadow-black/20">
@@ -65,7 +67,12 @@ export default function WikipediaProcessTerminal() {
             <span>articles: <b className="text-slate-200">{progress}</b></span>
             <span>cursor: <b className="text-cyan-200">{String(state?.continuation || 'none')}</b></span>
             <span>retries: <b className="text-amber-200">{String(state?.retryQueue ? (state.retryQueue as unknown[]).length : 0)}</b></span>
+            <span>health: <b className={healthStatus === 'healthy' ? 'text-emerald-200' : healthStatus === 'degraded' ? 'text-amber-200' : 'text-red-200'}>{healthStatus}</b></span>
+            <span>failure streak: <b className="text-slate-200">{String(health?.consecutiveFailureBatches || 0)}</b></span>
+            <span>retry recovery: <b className="text-cyan-200">{health?.retryDrainRate == null ? 'n/a' : `${String(health.retryDrainRate)}%`}</b></span>
+            <span>last import: <b className="text-slate-200">{formatHeartbeatTime(health?.lastSuccessfulImportAt)}</b></span>
           </div>
+          {health?.lastError ? <p className="flex items-start gap-2 text-red-200"><CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />{String(health.lastError)}</p> : null}
           {snapshot?.worker.processes.map(process => (
             <div key={process.pid} className="rounded border border-white/10 bg-white/[0.04] p-2 text-slate-400">
               <p className="text-emerald-200">pid {process.pid} · parent {process.parentPid} · {process.name}</p>
@@ -82,4 +89,10 @@ export default function WikipediaProcessTerminal() {
       )}
     </section>
   );
+}
+
+function formatHeartbeatTime(value: unknown) {
+  if (typeof value !== 'string') return 'unknown';
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toLocaleTimeString() : 'unknown';
 }
