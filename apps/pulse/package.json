@@ -14,6 +14,7 @@
     "jamie:dream": "python lib/ai/bridges/core.py",
     "ozriel:dream": "node scripts/ozriel_dream.mjs",
     "atlas:publish": "tsx scripts/publish-atlas-manifest.ts",
+    "atlas:evaluate-retrieval": "node scripts/run-retrieval-evaluation.mjs",
     "mls:import-hotsheet": "tsx scripts/import-hotsheet-text.ts",
     "mls:openresync:normalize": "tsx scripts/normalize-openresync.ts",
     "mls:openresync:doctor": "tsx scripts/openresync-doctor.ts",

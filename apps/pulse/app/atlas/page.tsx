@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AtlasGlobeCanvas, { AtlasGlobe, GlobeNode } from '@/components/atlas/AtlasGlobeCanvas';
 import WikipediaProcessTerminal from '@/components/atlas/WikipediaProcessTerminal';
+import RetrievalInspector from '@/components/atlas/RetrievalInspector';
 
 type AtlasNode = {
   id: string;
@@ -306,6 +307,7 @@ export default function MemoriaAtlasPage() {
         </div>
 
         <WikipediaProcessTerminal />
+        <RetrievalInspector />
 
         <div className="mt-4 rounded border border-white/10 bg-white/[0.04] p-4">
           <div className="mb-4 border-b border-white/10 pb-4">

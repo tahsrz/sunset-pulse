@@ -1,9 +1,17 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { MemoriaRetriever } from '@/lib/core/memoria_retriever';
 import { SwarmRetriever } from '@/lib/core/swarm_retriever';
 import { TAHRetriever } from '@/lib/core/tah_retriever';
 import { getCartridgeSearchQuery } from '@/lib/ai/brain/cartridge_query';
+import { classifyCartridgeDomain, resolvePairedTahPath, summarizePayload } from '@/lib/ai/brain/cartridge_metadata';
+import {
+  normalizeRetrievalQuery,
+  rankCartridgeDocuments,
+  scoreRetrievedEvidence,
+  type CartridgeRankingDocument,
+} from '@/lib/ai/brain/cartridge_ranking';
 
 export type PulseCartridge = {
   name: string;
@@ -11,33 +19,44 @@ export type PulseCartridge = {
   slug: string;
   title: string;
   type: 'hat' | 'tah';
+  searchTerms?: string;
+};
+
+export type PulseSearchTrace = {
+  query: string;
+  startedAt: string;
+  durationMs: number;
+  candidateCount: number;
+  searchLimit: number;
+  searchedCartridges: string[];
+  matchedCartridges: string[];
+  resultCount: number;
+  stopReason: 'complete' | 'time_budget' | 'search_limit';
+  remoteHydration: 'not_needed' | 'completed' | 'empty';
+  candidateDecisions: Array<{ source: string; score: number; selected: boolean; reasons: string[] }>;
 };
 
 let cachedCartridges: PulseCartridge[] | null = null;
 let cachedKey: string | null = null;
+let cachedAt = 0;
 let remoteHydration: Promise<string[]> | null = null;
+let wikipediaSearchCatalog: Record<string, string> | null = null;
+const rankingDocumentCache = new Map<string, CartridgeRankingDocument>();
 
 export function clearPulseCartridgeCache() {
   cachedCartridges = null;
   cachedKey = null;
+  cachedAt = 0;
+  wikipediaSearchCatalog = null;
+  rankingDocumentCache.clear();
 }
 
 export function listPulseCartridges(): PulseCartridge[] {
+  if (cachedCartridges && Date.now() - cachedAt < 30_000) return cachedCartridges;
   const dirs = getCartridgeDirs();
-  const rawFilesInfo: string[] = [];
-
-  for (const dir of dirs) {
-    const files = readCartridgeFiles(dir);
-    for (const file of files) {
-      const filePath = path.join(dir, file);
-      try {
-        const stat = fs.statSync(filePath);
-        rawFilesInfo.push(`${filePath}:${stat.size}:${stat.mtimeMs}`);
-      } catch {
-        rawFilesInfo.push(`${filePath}:0:0`);
-      }
-    }
-  }
+  const rawFilesInfo = dirs.map((dir) => {
+    try { return `${dir}:${fs.statSync(dir).mtimeMs}`; } catch { return `${dir}:0`; }
+  });
 
   const currentKey = rawFilesInfo.join('|');
   if (cachedCartridges && cachedKey === currentKey) {
@@ -69,7 +88,8 @@ export function listPulseCartridges(): PulseCartridge[] {
         path: filePath,
         slug,
         title: cartridgeTitle(file),
-        type: file.endsWith('.hat') ? 'hat' : 'tah'
+        type: file.endsWith('.hat') ? 'hat' : 'tah',
+        searchTerms: readManifestSearchTerms(filePath),
       });
     }
   }
@@ -98,6 +118,7 @@ export function listPulseCartridges(): PulseCartridge[] {
   
   cachedCartridges = consolidated;
   cachedKey = currentKey;
+  cachedAt = Date.now();
 
   return consolidated;
 }
@@ -113,6 +134,16 @@ export function getPulseCartridge(slug: string): PulseCartridge | null {
  * and raw swarm prototype .tah streams.
  */
 export async function pulse_search(query: string, maxResults = 25): Promise<any[]> {
+  return (await runPulseSearch(query, maxResults)).results;
+}
+
+export async function pulse_search_with_trace(query: string, maxResults = 25) {
+  return runPulseSearch(query, maxResults);
+}
+
+async function runPulseSearch(query: string, maxResults: number): Promise<{ results: any[]; trace: PulseSearchTrace }> {
+  const started = Date.now();
+  let hydration: PulseSearchTrace['remoteHydration'] = 'not_needed';
   const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
   if (process.env.VERCEL && !isBuild) {
     if (!remoteHydration) {
@@ -128,16 +159,34 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
           return [];
         });
     }
-    await remoteHydration;
+    const hydrated = await remoteHydration;
+    hydration = hydrated.length ? 'completed' : 'empty';
   }
-  const cartridges = listPulseCartridges();
+  const rankedCandidates = rankCartridgesForQuery(
+    uniqueCartridges([...wikipediaCandidates(query), ...listPulseCartridges()]),
+    query,
+  );
+  const limit = searchCartridgeLimit();
+  const eligibleCandidates = rankedCandidates.filter((candidate) => candidate.score > 0);
+  const candidates = eligibleCandidates.slice(0, limit);
   const results: any[] = [];
+  const searchedCartridges: string[] = [];
+  const matchedCartridges = new Set<string>();
+  const deadline = Date.now() + searchTimeBudgetMs();
+  let timeBudgetReached = false;
 
-  for (const cartridge of cartridges) {
+  for (const candidate of candidates) {
+    const cartridge = candidate.cartridge;
+    if (Date.now() > deadline && results.length > 0) {
+      timeBudgetReached = true;
+      break;
+    }
+    searchedCartridges.push(cartridge.name);
     try {
-      const matches = searchCartridge(cartridge.path, cartridge.name, query);
+      const matches = searchCartridge(cartridge.path, cartridge.name, query, candidate.score);
       
       if (matches.length > 0) {
+        matchedCartridges.add(cartridge.name);
         matches.forEach(m => {
           results.push({
             source: cartridge.name,
@@ -152,7 +201,111 @@ export async function pulse_search(query: string, maxResults = 25): Promise<any[
     }
   }
 
-  return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
+  const selected = results.sort((a, b) => b.score - a.score).slice(0, maxResults);
+  return {
+    results: selected,
+    trace: {
+      query,
+      startedAt: new Date(started).toISOString(),
+      durationMs: Date.now() - started,
+      candidateCount: rankedCandidates.length,
+      searchLimit: limit,
+      searchedCartridges,
+      matchedCartridges: [...matchedCartridges],
+      resultCount: selected.length,
+      stopReason: timeBudgetReached ? 'time_budget' : eligibleCandidates.length > limit ? 'search_limit' : 'complete',
+      remoteHydration: hydration,
+      candidateDecisions: rankedCandidates.slice(0, 30).map((candidate) => ({
+        source: candidate.cartridge.name,
+        score: candidate.score,
+        selected: candidates.includes(candidate),
+        reasons: candidate.reasons,
+      })),
+    },
+  };
+}
+
+function rankCartridgesForQuery(cartridges: PulseCartridge[], query: string) {
+  return rankCartridgeDocuments(cartridges.map(rankingDocumentFor), query);
+}
+
+function rankingDocumentFor(cartridge: PulseCartridge): CartridgeRankingDocument {
+  let statKey = cartridge.path;
+  try {
+    const stat = fs.statSync(cartridge.path);
+    statKey = `${cartridge.path}:${stat.size}:${stat.mtimeMs}:${cartridge.searchTerms || ''}`;
+  } catch {
+    // Missing files receive only filename/catalog metadata.
+  }
+  const cached = rankingDocumentCache.get(statKey);
+  if (cached) return cached;
+  const searchQuery = getCartridgeSearchQuery(cartridge);
+  const magic = readMagic(cartridge.path);
+  const format = cartridge.type === 'hat' ? 'memoria-pair' : magic === 0x54414821 ? 'indexed-tah' : 'swarm-stream';
+  const payloadPath = cartridge.type === 'hat' ? resolvePairedTahPath(cartridge.path) : cartridge.path;
+  const representativeText = summarizePayload(payloadPath, searchQuery, format);
+  const domain = classifyCartridgeDomain(cartridge, searchQuery, representativeText).label;
+  const document = {
+    cartridge,
+    title: `${cartridge.title} ${cartridge.name} ${searchQuery}`,
+    searchTerms: cartridge.searchTerms || '',
+    representativeText,
+    domain,
+  };
+  rankingDocumentCache.set(statKey, document);
+  return document;
+}
+
+function wikipediaCandidates(query: string): PulseCartridge[] {
+  const terms = query.toLowerCase().split(/[^a-z0-9]+/).filter((term) => term.length > 2);
+  const directories = [path.join(process.cwd(), 'cartridges', 'wikipedia'), os.tmpdir()];
+  return directories.flatMap((directory) => Object.entries(loadWikipediaSearchCatalog(directory))
+    .map(([name, searchTerms]) => ({
+      name,
+      searchTerms,
+      directory,
+      score: terms.reduce((total, term) => total + (searchTerms.toLowerCase().includes(term) ? 1 : 0), 0),
+    }))
+    .filter((item) => item.score > 0 && fs.existsSync(path.join(directory, item.name)))
+  )
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 40)
+    .map(({ name, searchTerms, directory }) => ({
+      name,
+      path: path.join(directory, name),
+      slug: cartridgeSlug(name),
+      title: cartridgeTitle(name),
+      type: 'tah' as const,
+      searchTerms,
+    }));
+}
+
+function uniqueCartridges(cartridges: PulseCartridge[]) {
+  return [...new Map(cartridges.map((cartridge) => [cartridge.path, cartridge])).values()];
+}
+
+function readManifestSearchTerms(cartridgePath: string) {
+  if (!cartridgePath.toLowerCase().includes(`${path.sep}wikipedia${path.sep}`)) return '';
+  wikipediaSearchCatalog ||= loadWikipediaSearchCatalog(path.dirname(cartridgePath));
+  return wikipediaSearchCatalog[path.basename(cartridgePath)] || '';
+}
+
+function loadWikipediaSearchCatalog(directory: string) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(directory, 'wikipedia-catalog.json'), 'utf8')) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function searchCartridgeLimit() {
+  const configured = Number(process.env.PULSE_SEARCH_CARTRIDGE_LIMIT);
+  return Number.isInteger(configured) && configured > 0 ? Math.min(configured, 100) : 18;
+}
+
+function searchTimeBudgetMs() {
+  const configured = Number(process.env.PULSE_SEARCH_TIME_BUDGET_MS);
+  return Number.isFinite(configured) && configured >= 100 ? Math.min(configured, 10_000) : 1_500;
 }
 
 export async function previewPulseCartridge(slug: string, maxResults = 5): Promise<any[]> {
@@ -187,25 +340,42 @@ function cartridgeTitle(file: string): string {
     .join(' ');
 }
 
-function searchCartridge(filePath: string, file: string, query: string): Array<{ score: number; data: string; links?: number[] }> {
+function searchCartridge(filePath: string, file: string, query: string, candidateScore: number): Array<{ score: number; data: string; links?: number[] }> {
   if (file.endsWith('.hat')) {
-    return new MemoriaRetriever(filePath).search(query);
+    return new MemoriaRetriever(filePath).search(query)
+      .map((match) => ({ ...match, score: scoreRetrievedEvidence(query, match.data, candidateScore, match.score) }))
+      .filter((match) => match.score > 0);
   }
 
   const magic = readMagic(filePath);
   if (magic === 0x54414821) {
-    return new TAHRetriever(filePath).search(query).map(match => ({
-      score: 1.0,
+    const retriever = new TAHRetriever(filePath);
+    const matches = uniqueTahMatches([
+      query,
+      ...normalizeRetrievalQuery(query).terms,
+    ].flatMap((term) => retriever.search(term)));
+    return matches.map(match => ({
+      score: scoreRetrievedEvidence(query, match.data, candidateScore, 1),
       data: match.data,
       links: []
-    }));
+    })).filter((match) => match.score > 0);
   }
 
   return new SwarmRetriever(filePath).search(query).map(match => ({
-    score: match.score,
+    score: scoreRetrievedEvidence(query, match.data, candidateScore, match.score),
     data: match.data,
     links: []
-  }));
+  })).filter((match) => match.score > 0);
+}
+
+function uniqueTahMatches<T extends { offset: bigint; length: number }>(matches: T[]) {
+  const seen = new Set<string>();
+  return matches.filter((match) => {
+    const key = `${match.offset}:${match.length}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function getCartridgeDirs(): string[] {
@@ -256,7 +426,8 @@ function collectCartridgeDirs(root: string, depth = 3): string[] {
 function readCartridgeFiles(dir: string): string[] {
   try {
     if (!fs.existsSync(dir)) return [];
-    return fs.readdirSync(dir).filter(file => file.endsWith('.tah') || file.endsWith('.hat'));
+    const files = fs.readdirSync(dir).filter(file => file.endsWith('.tah') || file.endsWith('.hat'));
+    return path.basename(dir).toLowerCase() === 'wikipedia' ? files.slice(-25) : files;
   } catch {
     return [];
   }

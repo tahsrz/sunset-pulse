@@ -29,6 +29,35 @@ Research Desk WIP eliminates data entry bottlenecks so agents spend less time fi
 Single Table Design:
 The underlying schema relies on clear Enum state transitions (such as research, new, and contacted). This allows incoming leads to move seamlessly from an unverified Investigation Desk into an active sales pipeline via basic state updates while keeping attachments, property records, and notes intact.
 
+## August 15, 2026 Work Wrap-Up
+
+Active branch:
+```text
+codex/crawler-operations-and-retrieval
+```
+
+Completed today:
+- Replaced the Novu-centered alert path with native agent notifications, durable delivery rows, Resend email delivery, and optional Telnyx SMS opt-in.
+- Hardened Wikipedia crawler operations with persisted heartbeats, retry-state telemetry, production-safe resume commands, circuit-breaker behavior, and a health cron for stale or degraded crawler states.
+- Added the Atlas Retrieval Inspector so operators can inspect the same bounded retrieval path Jamie uses, including cartridge candidate counts, matched sources, fallback state, crawler state, and elapsed time.
+- Added a 20-fixture retrieval evaluation corpus and local runner for repeatable Jamie retrieval baselines.
+- Added demand-aware crawler acquisition and term-level indexed TAH probes so retrieval misses can feed crawler priority instead of waiting behind exhaustive enumeration.
+- Documented the native notification, crawler, and retrieval operating model in the root README and Pulse app README.
+
+Measured retrieval baseline:
+```text
+Initial strict baseline:       0/20 fixtures, 510 ms average
+Candidate Ranking v2:          4/20 fixtures,  76 ms average
+Demand-aware acquisition pass:  9/20 fixtures, 203 ms average
+```
+
+Next actionables:
+- Continue crawler acquisition for the remaining failed retrieval fixtures and rerun `npm run atlas:evaluate-retrieval`.
+- Monitor `/atlas` crawler health for retry recovery, stale heartbeat, zero-success batches, and estimated completion drift.
+- Validate production env coverage for `CRON_SECRET`, `RESEND_API_KEY`, `OPERATOR_EMAIL`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Keep `.pulse-local/wikipedia/` and `.pulse-local/wikipedia/demand-queue.json` ignored; they are runtime checkpoints, not source artifacts.
+- Resolve the existing strict TypeScript backlog before treating full-app `tsc --noEmit` as a blocking PR gate.
+
 ## SaaS Agent Sites (WIP)
 
 Sunset Pulse is expanding from an individual agent command center into a multi-tenant platform for real estate agents. New agents will be able to launch branded consumer sites with an AI assistant, fresh MLS listings, and lead capture without editing code.
@@ -77,7 +106,7 @@ SunsetPulse/
       app/api/properties/discover/
                             Image-qualified MLS discovery API
       app/api/intelligence/ Lead intelligence ingestion APIs
-      app/api/notifications/ Novu notification workflow APIs
+      app/api/notifications/ Native inbox and external-delivery workers
       app/api/jamie/chat/   Jamie chat alias wired to the shared helper route
       app/api/tah/          TAH catalog, fact, forge, and search APIs
       cartridges/           Local TAH inputs and generated archives
@@ -92,7 +121,7 @@ SunsetPulse/
       lib/sqlsync/          SQLSync-ready mutation journal helpers
       lib/tensorzero/       TensorZero-ready evaluation ledgers
       lib/lead-intel/       Crawl4AI lead intelligence ledger helpers
-      lib/notifications/    Novu notification workflow helpers
+      lib/notifications/    Resend and optional Telnyx delivery adapters
       lib/data/             Canonical listing contract, repository, MLS sync, and discovery engine
       lib/jamie-games/      Local game rules, opponents, and commentary
       scripts/              TAH import, packing, and local index utilities
@@ -126,7 +155,7 @@ flowchart TD
   Graph --> Jamie["Jamie Chat Context"]
   Jamie --> TZero
   API --> Crawl4AI["Crawl4AI Lead Intel"]
-  API --> Novu["Novu Notifications"]
+  API --> Notify["Native Inbox + Resend"]
   Agent --> Discovery["MLS Discovery API"]
   Discovery --> Listings["Canonical Supabase MLS Cache"]
   Discovery --> Jamie
@@ -534,17 +563,60 @@ python -m pip install -r workers/lead-intel-crawler/requirements.txt
 python -m playwright install chromium
 ```
 
-## Novu Notifications
+## Native Notifications
 
-Sunset Pulse uses a unified Novu notification adapter to send lead alerts, scheduling updates, and system events.
+Sunset Pulse owns its notification lifecycle. High-intent events are aggregated into `agent_notifications`, external deliveries are claimed atomically from `notification_deliveries`, and Resend provides email delivery. Telnyx SMS is an explicit per-agent opt-in fallback.
 
-Endpoints:
 ```text
-GET  /api/notifications/novu
-POST /api/notifications/novu
+GET/PATCH /api/admin/agent-leads/notifications
+GET       /api/notifications/high-intent/cron
 ```
 
-If `NOVU_SECRET_KEY` is not provided, events are safely queued to a local ledger file (`apps/pulse/cartridges/notifications/novu-events.jsonl`) for inspection during development.
+The worker uses database idempotency, retry backoff, stuck-job recovery, and a native inbox. No Novu account or trial is required.
+
+## Wikipedia TAH Crawler Operations
+
+The permanent local Crawl4AI worker enumerates Wikipedia, forges binary `.tah` cartridges, uploads them to shared storage, and publishes authoritative heartbeats to Atlas. Runtime checkpoints live under ignored `.pulse-local/wikipedia/`; they must not be committed.
+
+Retrieval evaluations also maintain an ignored demand queue at `.pulse-local/wikipedia/demand-queue.json`. Each crawler batch reserves two slots for unresolved Wikipedia evaluation topics and uses the remaining capacity for exhaustive alphabetical enumeration. MediaWiki resolves demand questions to canonical articles before Crawl4AI ingestion; once accepted, ordinary retry and replay rules own the page. Set `WIKIPEDIA_DEMAND_SLOTS` to tune the bounded lane, or pass `--no-enqueue` to `npm run atlas:evaluate-retrieval` for a read-only benchmark.
+
+Atlas Process Terminal at `/atlas` shows health, retry backlog and trend, retry recovery, pages per hour, cartridge growth, estimated completion, and the last successful import. The authenticated Resume control writes a durable command to `crawler_heartbeats`; the local worker consumes and acknowledges that command, so production never attempts to manipulate a Windows PID directly.
+
+Retry policy:
+- Transient network, browser, and worker failures use exponential backoff.
+- Permanent HTTP, robots, invalid URL, and unsupported-source failures leave the active queue immediately.
+- Three consecutive zero-success batches open the circuit breaker.
+- A Vercel health cron checks every ten minutes and emails the operator for stale heartbeats, open circuits, dependency failures, or zero retry recovery.
+
+Required production variables:
+```text
+CRON_SECRET=
+RESEND_API_KEY=
+OPERATOR_EMAIL=
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Jamie queries the same TAH/HAT retrieval layer before generation. Empty answers and unrelated `no active listings` results fall back to cited cartridge evidence; when evidence has not arrived yet, Jamie reports crawler acquisition state instead of presenting listing availability as the answer.
+
+### Retrieval Inspector and Evaluations
+
+Authenticated operators can use the Retrieval Inspector inside `/atlas` to run the exact shared retrieval path used by Jamie. Each inspection reports candidate and searched cartridge counts, matched sources, selected evidence, elapsed time, remote hydration state, crawler state, the search stop reason, and whether Jamie would need its knowledge fallback. The inspector exposes bounded evidence excerpts and source URLs, never system prompts or hidden model context.
+
+The fixture selector is backed by [`apps/pulse/config/retrieval-evaluation-fixtures.json`](./apps/pulse/config/retrieval-evaluation-fixtures.json), a 20-question corpus spanning history, science, medicine, computing, local knowledge, real estate, security, business, and Sunset Pulse itself. A fixture passes only when one selected evidence item contains at least two expected source or topic hints. This provides a repeatable baseline for ranking, cartridge coverage, and crawler-priority work.
+
+Initial strict local baseline on August 15, 2026: **0/20 fixtures passed**, average retrieval latency **510 ms**. Most misses returned the maximum six snippets but lacked two topic-aligned hints in any single evidence item, while many searches reached the 120-cartridge bound. This establishes ranking and catalog coverage, rather than model generation, as the next measured bottleneck.
+
+Candidate Ranking v2 preselects cartridges from filename, manifest catalog, representative payload text, and inferred domain before opening binary payloads. It searches at most 18 positive-signal candidates, rejects hash collisions without query evidence, and calibrates evidence scores from lexical coverage, candidate confidence, and the underlying retrieval engine. The strict local follow-up baseline on August 15, 2026 reached **4/20 fixtures (20%)** with average retrieval latency **76 ms**. The passing coverage now includes North Texas, HOA/property guidance, database indexes, and TAH retrieval; the remaining Wikipedia misses identify crawler/catalog coverage work rather than indiscriminate search latency.
+
+The demand-aware crawler and term-level indexed TAH probes raised the same corpus to **9/20 fixtures (45%)** after one acquisition cycle. The worker imported demanded topics alongside retry recovery instead of waiting behind the exhaustive alphabetical crawl. Average retrieval latency increased to **203 ms** because selected binary cartridges now receive bounded term probes, while remaining well below the original 510 ms baseline.
+
+```text
+GET  /api/atlas/retrieval                  # list evaluation fixtures
+POST /api/atlas/retrieval { query }        # inspect a custom Jamie retrieval
+POST /api/atlas/retrieval { fixtureId }    # inspect and score one fixture
+npm run atlas:evaluate-retrieval           # run the complete local baseline
+```
 
 ## Langfuse Observability
 

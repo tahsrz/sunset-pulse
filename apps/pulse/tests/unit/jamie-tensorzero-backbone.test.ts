@@ -19,6 +19,13 @@ vi.mock('@/lib/ai/jamieTools', () => ({
   formatPropertySearchResult: vi.fn(() => 'Property cards rendered.'),
 }));
 
+vi.mock('@/lib/ai/jamieKnowledgeFallback', () => ({
+  retrieveJamieKnowledge: vi.fn(() => Promise.resolve({ query: 'question', evidence: [], crawlerStatus: 'unknown' })),
+  formatJamieKnowledgePrompt: vi.fn(() => ''),
+  shouldUseJamieKnowledgeFallback: vi.fn((content: string) => content.includes('cannot run that lookup')),
+  buildJamieKnowledgeFallback: vi.fn(() => 'I do not have a reliable cartridge match yet.'),
+}));
+
 import { runTensorZeroJamieChat } from '@/lib/tensorzero/jamieBackbone';
 
 const originalEnv = { ...process.env };
@@ -96,7 +103,7 @@ describe('Jamie TensorZero backbone', () => {
       messages: [{ role: 'user', content: 'Check the commute time.' }],
     });
 
-    expect(result.body.content).toBe('I cannot run that lookup with the tools currently available. I can search properties, summarize details you provide, or draft a follow-up.');
+    expect(result.body.content).toBe('I do not have a reliable cartridge match yet.');
     expect(result.body.content).not.toContain('checking that now');
   });
 });

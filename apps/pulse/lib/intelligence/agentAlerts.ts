@@ -32,7 +32,7 @@ export const intelligenceEventSchema = z.object({
   description: z.string(),
   metadata: metadataSchema.nullable().default({}),
   severity: z.string().nullable(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 }).strict();
 
 export type IntelligenceEvent = z.infer<typeof intelligenceEventSchema>;
@@ -185,7 +185,7 @@ export function decideAgentAlertNotification(
   const windowStart = Math.floor(Date.parse(alert.firstSeenAt) / ALERT_WINDOW_MS) * ALERT_WINDOW_MS;
   return {
     action: 'enqueue',
-    workflowId: process.env.NOVU_HIGH_INTENT_WORKFLOW_ID || 'lead-high-intent-activity',
+    workflowId: 'native-agent-alert-v1',
     idempotencyKey: `agent-alert:${alert.agentId}:${alert.leadId}:${alert.kind}:${windowStart}`,
     payload: {
       alertKind: alert.kind,

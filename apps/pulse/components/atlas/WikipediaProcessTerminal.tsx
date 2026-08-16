@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, ChevronDown, ChevronUp, CircleAlert, Loader2, TerminalSquare } from 'lucide-react';
+import { Activity, ChevronDown, ChevronUp, CircleAlert, Loader2, Play, TerminalSquare } from 'lucide-react';
 
 type ProcessSnapshot = {
   generatedAt: string;
@@ -15,9 +15,11 @@ export default function WikipediaProcessTerminal() {
   const [snapshot, setSnapshot] = useState<ProcessSnapshot | null>(null);
   const [open, setOpen] = useState(true);
   const [error, setError] = useState('');
+  const [controlPending, setControlPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    let timer: number | null = null;
 
     const refresh = async () => {
       try {
@@ -30,14 +32,15 @@ export default function WikipediaProcessTerminal() {
         }
       } catch (refreshError) {
         if (!cancelled) setError(refreshError instanceof Error ? refreshError.message : 'Process monitor unavailable.');
+      } finally {
+        if (!cancelled) timer = window.setTimeout(refresh, 5_000);
       }
     };
 
     refresh();
-    const interval = window.setInterval(refresh, 5_000);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      if (timer !== null) window.clearTimeout(timer);
     };
   }, []);
 
@@ -46,6 +49,24 @@ export default function WikipediaProcessTerminal() {
   const health = state?.health as Record<string, unknown> | undefined;
   const progress = state ? `${state.importedCount || 0} imported · ${state.enumeratedCount || 0} enumerated` : 'Waiting for checkpoint';
   const healthStatus = String(health?.status || remote?.status || 'checking');
+
+  const resume = async () => {
+    setControlPending(true);
+    try {
+      const response = await fetch('/api/atlas/processes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resume' }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || 'Resume command failed.');
+      setError('');
+    } catch (controlError) {
+      setError(controlError instanceof Error ? controlError.message : 'Resume command failed.');
+    } finally {
+      setControlPending(false);
+    }
+  };
 
   return (
     <section className="mt-4 rounded border border-emerald-200/20 bg-[#020707]/90 p-3 font-mono shadow-2xl shadow-black/20">
@@ -71,7 +92,17 @@ export default function WikipediaProcessTerminal() {
             <span>failure streak: <b className="text-slate-200">{String(health?.consecutiveFailureBatches || 0)}</b></span>
             <span>retry recovery: <b className="text-cyan-200">{health?.retryDrainRate == null ? 'n/a' : `${String(health.retryDrainRate)}%`}</b></span>
             <span>last import: <b className="text-slate-200">{formatHeartbeatTime(health?.lastSuccessfulImportAt)}</b></span>
+            <span>throughput: <b className="text-emerald-200">{String(health?.throughputPerHour || 0)}/hour</b></span>
+            <span>backlog trend: <b className="text-slate-200">{formatDelta(health?.retryBacklogDelta)}</b></span>
+            <span>cartridge data: <b className="text-slate-200">{formatBytes(health?.cartridgeBytes)}</b></span>
+            <span>estimated finish: <b className="text-slate-200">{formatDate(health?.estimatedCompletionAt)}</b></span>
           </div>
+          {(healthStatus === 'paused' || healthStatus === 'dependency_error') && (
+            <button type="button" onClick={resume} disabled={controlPending} className="inline-flex h-8 items-center gap-2 border border-emerald-300/30 px-3 text-emerald-200 disabled:opacity-50" title="Resume Wikipedia crawler">
+              {controlPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+              Resume crawler
+            </button>
+          )}
           {health?.lastError ? <p className="flex items-start gap-2 text-red-200"><CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />{String(health.lastError)}</p> : null}
           {snapshot?.worker.processes.map(process => (
             <div key={process.pid} className="rounded border border-white/10 bg-white/[0.04] p-2 text-slate-400">
@@ -95,4 +126,22 @@ function formatHeartbeatTime(value: unknown) {
   if (typeof value !== 'string') return 'unknown';
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? new Date(timestamp).toLocaleTimeString() : 'unknown';
+}
+
+function formatDate(value: unknown) {
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) return 'calculating';
+  return new Date(value).toLocaleDateString();
+}
+
+function formatDelta(value: unknown) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number === 0) return 'steady';
+  return number > 0 ? `+${number}` : String(number);
+}
+
+function formatBytes(value: unknown) {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
 }

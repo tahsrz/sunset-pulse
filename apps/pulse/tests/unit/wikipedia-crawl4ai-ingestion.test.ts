@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  enqueueWikipediaDemand,
   listWikipediaPages,
   loadWikipediaIngestionState,
   runWikipediaIngestionBatch,
@@ -13,11 +14,13 @@ import type { LeadIntelCrawlRecord } from '@/lib/lead-intel/crawlLead';
 let tempDir: string;
 let statePath: string;
 let outputDir: string;
+let demandPath: string;
 
 beforeEach(() => {
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wikipedia-crawl4ai-'));
   statePath = path.join(tempDir, 'ingestion-state.json');
   outputDir = path.join(tempDir, 'cartridges');
+  demandPath = path.join(tempDir, 'demand-queue.json');
 });
 
 afterEach(() => {
@@ -26,6 +29,34 @@ afterEach(() => {
 });
 
 describe('Wikipedia Crawl4AI ingestion', () => {
+  it('uses bounded demand slots before continuing the alphabetical crawl', async () => {
+    enqueueWikipediaDemand([
+      { query: 'How does photosynthesis work?', reason: 'retrieval miss' },
+      { query: 'How does photosynthesis work?', reason: 'duplicate' },
+    ], demandPath);
+    const listPages = vi.fn(async ({ limit }: { limit: number }) => ({
+      pages: [page(2, 'Alphabetical article')].slice(0, limit),
+      continuation: 'Next|3',
+    }));
+    const result = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      demandPath,
+      batchSize: 2,
+      demandSlots: 1,
+      requestDelayMs: 0,
+      resolveDemandPage: async () => page(1, 'Photosynthesis'),
+      listPages,
+      crawlPage: async (item) => completedRecord(item),
+    });
+
+    expect(result.articleCount).toBe(2);
+    expect(listPages).toHaveBeenCalledWith(expect.objectContaining({ limit: 1 }));
+    const queue = JSON.parse(fs.readFileSync(demandPath, 'utf8')) as { pending: unknown[]; completed: string[] };
+    expect(queue.pending).toHaveLength(0);
+    expect(queue.completed).toContain('How does photosynthesis work?');
+  });
+
   it('crawls a bounded MediaWiki batch and forges a resumable TAH cartridge', async () => {
     const pages = [page(1, 'Alpha'), page(2, 'Beta')];
     const result = await runWikipediaIngestionBatch({
@@ -118,6 +149,8 @@ describe('Wikipedia Crawl4AI ingestion', () => {
       crawlPage: async (item) => failedRecord(item),
     });
     const listPages = vi.fn(async () => ({ pages: [page(14, 'Fresh article')], continuation: 'Next|15' }));
+    const afterBackoff = Date.now() + 2 * 60_000;
+    vi.spyOn(Date, 'now').mockReturnValue(afterBackoff);
 
     const result = await runWikipediaIngestionBatch({
       statePath,
@@ -164,6 +197,7 @@ describe('Wikipedia Crawl4AI ingestion', () => {
       outputDir,
       batchSize: 1,
       requestDelayMs: 0,
+      retrySlots: 1,
       crawlPage: async (item) => failedRecord(item),
     });
     const third = await runWikipediaIngestionBatch({
@@ -171,6 +205,7 @@ describe('Wikipedia Crawl4AI ingestion', () => {
       outputDir,
       batchSize: 1,
       requestDelayMs: 0,
+      retrySlots: 1,
       crawlPage: async (item) => failedRecord(item),
     });
 
@@ -178,6 +213,40 @@ describe('Wikipedia Crawl4AI ingestion', () => {
     expect(second.state.health.consecutiveFailureBatches).toBe(2);
     expect(third.status).toBe('paused');
     expect(third.state.health).toMatchObject({ status: 'paused', consecutiveFailureBatches: 3 });
+  });
+
+  it('classifies permanent failures out of the retry queue', async () => {
+    const missingPage = page(16, 'Missing article');
+    const result = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      listPages: async () => ({ pages: [missingPage], continuation: 'Next|17' }),
+      crawlPage: async () => { throw new Error('404 not found'); },
+    });
+
+    expect(result.state.retryQueue).toHaveLength(0);
+    expect(result.state.terminalFailureCount).toBe(1);
+  });
+
+  it('backs off transient retries and exposes throughput telemetry', async () => {
+    const retryPage = page(17, 'Transient article');
+    const result = await runWikipediaIngestionBatch({
+      statePath,
+      outputDir,
+      batchSize: 1,
+      requestDelayMs: 0,
+      listPages: async () => ({ pages: [retryPage], continuation: 'Next|18' }),
+      crawlPage: async (item) => failedRecord(item),
+    });
+
+    expect(Date.parse(result.state.retryQueue[0].nextAttemptAt!)).toBeGreaterThan(Date.now());
+    expect(result.state.health).toEqual(expect.objectContaining({
+      retryBacklogDelta: 1,
+      throughputPerHour: expect.any(Number),
+      cartridgeBytes: expect.any(Number),
+    }));
   });
 
   it('keeps the corpus complete while retrying a failed final page', async () => {

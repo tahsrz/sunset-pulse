@@ -72,6 +72,9 @@ export const syncUniversalIntelligence = async () => {
 
   if (error || !files) return [];
 
+  const catalog = files.find((candidate) => candidate.name === 'wikipedia-catalog.json');
+  if (catalog) await syncRemoteWikipediaCatalog();
+
   const syncedPaths = [];
   for (const file of files.filter((candidate) => /\.(?:tah|hat)$/i.test(candidate.name))) {
     const p = await syncRemoteCartridge(file.name);
@@ -80,6 +83,26 @@ export const syncUniversalIntelligence = async () => {
   clearPulseCartridgeCache();
   return syncedPaths;
 };
+
+async function syncRemoteWikipediaCatalog() {
+  const destination = path.join(os.tmpdir(), 'wikipedia-catalog.json');
+  try {
+    const { data, error } = await supabaseAdmin.storage
+      .from('cartridges')
+      .download('wikipedia-catalog.json');
+    if (error) throw error;
+    const buffer = Buffer.from(await data.arrayBuffer());
+    const parsed = JSON.parse(buffer.toString('utf8')) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Wikipedia catalog is not an object.');
+    }
+    const stagingPath = `${destination}.${process.pid}.${Date.now()}.partial`;
+    fs.writeFileSync(stagingPath, buffer, { flag: 'wx' });
+    fs.renameSync(stagingPath, destination);
+  } catch (error) {
+    console.warn('[RemoteAtlas] Wikipedia catalog sync failed:', error instanceof Error ? error.message : 'unknown error');
+  }
+}
 
 function isValidCartridgeFile(filePath: string) {
   try {
