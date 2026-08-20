@@ -1,9 +1,7 @@
 import { NextRequest } from 'next/server';
-import connectDB from '@/lib/core/database';
-import Property from '@/models/Property';
 import { successResponse } from '@/lib/core/apiResponse';
-import { buildPropertyQuery } from '@/lib/core/propertyQueryBuilder';
-import { filterMockSearchProperties } from '@/lib/mocks/propertySearch';
+import { searchListings } from '@/lib/data/listingRepository';
+import { projectPublicListing } from '@/lib/data/publicInventory';
 import { PulseCache } from '@/utils/security/PulseCache';
 
 export const dynamic = 'force-dynamic';
@@ -15,26 +13,7 @@ export const GET = async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
 
-    // 1. Build Query & Handle Cache Signature
-    const { query, signature } = buildPropertyQuery(params);
-
-    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
-      const cachedMockData = PulseCache.get(signature);
-      if (cachedMockData) {
-        const response = successResponse(cachedMockData, { signature, cached: true, source: 'mock' });
-        response.headers.set('X-Cache', 'HIT');
-        return response;
-      }
-      const mockData = filterMockSearchProperties(params);
-      PulseCache.set(signature, mockData);
-      const response = successResponse(mockData, {
-        signature,
-        cached: false,
-        source: 'mock',
-      });
-      response.headers.set('X-Cache', 'MOCK');
-      return response;
-    }
+    const signature = JSON.stringify(Object.entries(params).sort(([a], [b]) => a.localeCompare(b)));
 
     // 2. Cache Check
     const cachedData = PulseCache.get(signature);
@@ -44,14 +23,28 @@ export const GET = async (request: NextRequest) => {
       return response;
     }
 
-    // 3. Database Execution (MongoDB Source of Truth for Explorer)
-    await connectDB();
-    const properties = await Property.find(query).lean();
+    const listings = await searchListings({
+      location: params.location || params.city,
+      city: params.city,
+      propertyType: params.propertyType,
+      priceType: params.priceType as 'sale' | 'lease' | 'unknown' | undefined,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      beds: params.beds,
+      baths: params.baths,
+      status: params.status,
+      source: params.source as 'Internal' | 'MLS' | undefined,
+      polygon: params.polygon,
+      radius: params.radius,
+      center: params.center,
+      includeDemo: false,
+    }, { limit: 500, publicOnly: true });
+    const properties = listings.map(projectPublicListing);
 
     // 4. Store in PulseCache
     PulseCache.set(signature, properties);
 
-    const response = successResponse(properties, { signature, cached: false });
+    const response = successResponse(properties, { signature, cached: false, source: 'canonical-repository' });
     response.headers.set('X-Cache', 'MISS');
     return response;
   } catch (error: any) {

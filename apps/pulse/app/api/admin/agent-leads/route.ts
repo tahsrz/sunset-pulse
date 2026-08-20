@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { publicGuideDispositionIdSchema } from '@/lib/ai/publicGuideConversionContract';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
+import { resolveOperatorAgentId } from '@/lib/intelligence/agentNotificationStore';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const leadIdSchema = z.string().uuid();
@@ -34,17 +35,24 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { id, action } = parsed.data;
+  const scopedAgentId = access.user?.role === 'realtor'
+    ? await resolveOperatorAgentId(access)
+    : null;
   const now = new Date().toISOString();
   const auditUser = operatorAuditUser(access);
 
   const { data: existing, error: readError } = await supabaseAdmin
     .from('agent_site_leads')
-    .select('metadata, internal_note, source, status')
+    .select('agent_id, metadata, internal_note, source, status')
     .eq('id', id)
     .single();
 
   if (readError) {
     return NextResponse.json({ ok: false, error: readError.message }, { status: 404 });
+  }
+
+  if (scopedAgentId && existing.agent_id !== scopedAgentId) {
+    return NextResponse.json({ ok: false, error: 'Lead not found.' }, { status: 404 });
   }
 
   if (action === 'disposition' && existing?.source !== 'jamie_public_guide') {

@@ -213,7 +213,10 @@ async function loadAgentRecipient(agentId: string) {
 
 async function updateDelivery(id: string, update: Record<string, unknown>) {
   const { error } = await supabaseAdmin.from('notification_deliveries').update(update).eq('id', id);
-  if (error) console.warn('[AGENT_ALERT_NOTIFICATION_LEDGER]', error.message);
+  if (error) {
+    console.error('[AGENT_ALERT_NOTIFICATION_LEDGER]', error.message);
+    throw new Error('Unable to persist notification delivery state.');
+  }
 }
 
 function retryDelayMs(attemptCount: number) {

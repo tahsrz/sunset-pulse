@@ -94,26 +94,14 @@ export function listPulseCartridges(): PulseCartridge[] {
     }
   }
 
-  // Group by Search Query to consolidate duplicates (keeping the latest scrape)
   const uniqueGroups = new Map<string, PulseCartridge>();
-
   for (const cartridge of rawCartridges) {
     const searchQuery = getCartridgeSearchQuery(cartridge);
     const existing = uniqueGroups.get(searchQuery);
-    if (!existing) {
+    if (!existing || safeMtime(cartridge.path) > safeMtime(existing.path)) {
       uniqueGroups.set(searchQuery, cartridge);
-    } else {
-      const existingMatch = existing.name.match(/\d+/);
-      const currentMatch = cartridge.name.match(/\d+/);
-      const existingTime = existingMatch ? Number(existingMatch[0]) : 0;
-      const currentTime = currentMatch ? Number(currentMatch[0]) : 0;
-
-      if (currentTime > existingTime) {
-        uniqueGroups.set(searchQuery, cartridge);
-      }
     }
   }
-
   const consolidated = Array.from(uniqueGroups.values()).sort((a, b) => a.name.localeCompare(b.name));
   
   cachedCartridges = consolidated;
@@ -121,6 +109,10 @@ export function listPulseCartridges(): PulseCartridge[] {
   cachedAt = Date.now();
 
   return consolidated;
+}
+
+function safeMtime(filePath: string) {
+  try { return fs.statSync(filePath).mtimeMs; } catch { return 0; }
 }
 
 export function getPulseCartridge(slug: string): PulseCartridge | null {
@@ -148,7 +140,7 @@ async function runPulseSearch(query: string, maxResults: number): Promise<{ resu
   if (process.env.VERCEL && !isBuild) {
     if (!remoteHydration) {
       remoteHydration = import('@/lib/ai/brain/remote_atlas')
-        .then(({ syncUniversalIntelligence }) => syncUniversalIntelligence())
+        .then(({ syncUniversalIntelligence }) => syncUniversalIntelligence(query))
         .then((paths) => {
           if (!paths.length) throw new Error('Remote Atlas returned no usable cartridges.');
           return paths;
@@ -257,7 +249,9 @@ function rankingDocumentFor(cartridge: PulseCartridge): CartridgeRankingDocument
 }
 
 function wikipediaCandidates(query: string): PulseCartridge[] {
-  const terms = query.toLowerCase().split(/[^a-z0-9]+/).filter((term) => term.length > 2);
+  // Keep catalog preselection aligned with ranking: raw question words such as
+  // "the" and "are" otherwise crowd out the domain terms that identify a page.
+  const terms = normalizeRetrievalQuery(query).terms;
   const directories = [path.join(process.cwd(), 'cartridges', 'wikipedia'), os.tmpdir()];
   return directories.flatMap((directory) => Object.entries(loadWikipediaSearchCatalog(directory))
     .map(([name, searchTerms]) => ({

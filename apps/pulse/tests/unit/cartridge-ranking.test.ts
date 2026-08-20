@@ -7,8 +7,19 @@ describe('TAH candidate ranking v2', () => {
   it('removes filler and expands domain synonyms', () => {
     const normalized = normalizeRetrievalQuery('What should a buyer examine in HOA documents?');
     expect(normalized.terms).not.toContain('what');
+    expect(normalizeRetrievalQuery('How does photosynthesis work?').terms).not.toContain('how');
     expect(normalized.terms).toContain('homeowners');
     expect(normalized.terms).toContain('estate');
+  });
+
+  it('prioritizes a distinctive catalog entity over generic question terms', () => {
+    const ranked = rankCartridgeDocuments([
+      { cartridge: cartridge('wiki_generic.tah'), title: 'Wiki Generic', searchTerms: 'How light becomes visible', representativeText: 'How light works.', domain: 'Wikipedia' },
+      { cartridge: cartridge('wiki_exact.tah'), title: 'Wiki Exact', searchTerms: 'Photosynthesis - Wikipedia', representativeText: '', domain: 'Wikipedia' },
+    ], 'How does photosynthesis convert light into energy?');
+
+    expect(ranked[0].cartridge.name).toBe('wiki_exact.tah');
+    expect(ranked[0].reasons).toContain('specific: photosynthesis');
   });
 
   it('puts catalog and title matches ahead of unrelated broad cartridges', () => {

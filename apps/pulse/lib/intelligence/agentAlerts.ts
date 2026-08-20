@@ -106,7 +106,7 @@ export function processIntelligenceEvent(
       alert: {
         ...matching,
         sourceEventId: event.id,
-        sourceEventIds: [...matching.sourceEventIds, event.id],
+        sourceEventIds: [...matching.sourceEventIds, event.id].slice(-100),
         detail,
         listingId: listingId || matching.listingId,
         occurrences: matching.occurrences + 1,

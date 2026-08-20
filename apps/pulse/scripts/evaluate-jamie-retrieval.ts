@@ -4,6 +4,7 @@ import { evaluateRetrievalFixture, listRetrievalEvaluationFixtures } from '@/lib
 import { enqueueWikipediaDemand } from '@/lib/wikipedia/crawl4aiWikipedia';
 
 async function main() {
+  const verbose = process.argv.includes('--verbose');
   const requestedLimit = Number(process.argv.find((argument) => argument.startsWith('--limit='))?.split('=')[1]);
   const fixtures = listRetrievalEvaluationFixtures().slice(0, Number.isInteger(requestedLimit) && requestedLimit > 0 ? requestedLimit : undefined);
   const rows = [];
@@ -11,6 +12,13 @@ async function main() {
   for (const fixture of fixtures) {
     const context = await retrieveJamieKnowledge(fixture.question);
     const evaluation = evaluateRetrievalFixture(fixture, context);
+    if (verbose && !evaluation.passed) {
+      console.log(JSON.stringify({
+        fixture: fixture.id,
+        candidates: context.trace?.candidateDecisions.slice(0, 8),
+        evidence: context.evidence.map((item) => ({ source: item.source, title: item.title, score: item.score, excerpt: item.excerpt.slice(0, 180) })),
+      }, null, 2));
+    }
     rows.push({
       id: fixture.id,
       passed: evaluation.passed,

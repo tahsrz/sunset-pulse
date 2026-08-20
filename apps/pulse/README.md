@@ -23,7 +23,7 @@ Today moved the Atlas/Jamie retrieval layer from ad hoc cartridge search toward 
 - The Wikipedia Crawl4AI worker reports durable heartbeats and crawler health, while `/atlas` exposes retry backlog, retry recovery, page throughput, cartridge growth, estimated completion, and resume controls.
 - The crawler uses demand-aware acquisition from retrieval misses, with `.pulse-local/wikipedia/demand-queue.json` kept local and ignored.
 - `/api/atlas/retrieval` and the Atlas Retrieval Inspector expose bounded Jamie retrieval diagnostics without leaking hidden prompts or raw model context.
-- The 20-fixture retrieval corpus improved from `0/20 @ 510 ms` to `4/20 @ 76 ms` after ranking work, then to `9/20 @ 203 ms` after demand acquisition and term-level indexed TAH probes.
+- The 20-fixture retrieval corpus improved from `0/20 @ 510 ms` to `4/20 @ 76 ms` after ranking work, `9/20 @ 203 ms` after demand acquisition and term-level indexed TAH probes, and `14/20 @ 192 ms` after canonical title resolution and distinctive-term ranking. All ten Wikipedia fixtures now pass.
 
 Carry-forward checks:
 ```bash

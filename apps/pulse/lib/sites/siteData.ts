@@ -1,6 +1,7 @@
 import connectDB from '@/lib/core/database';
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
-import { getTourHotList, resolveTourHotListTargets } from '@/lib/data/tourHotList';
+import { getListingById } from '@/lib/data/listingRepository';
+import { resolveTourHotListTargets } from '@/lib/data/tourHotList';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
   type AgentProfile,
@@ -113,7 +114,7 @@ export async function getAgentTenantSite(
         configuredMlsIds.map((value) => ({ kind: 'mlsId' as const, value })),
         { limit },
       )
-    : await getTourHotList({ limit });
+    : { listings: [] };
 
   const listings = Array.isArray(result?.listings) ? result.listings : [];
 
@@ -121,6 +122,19 @@ export async function getAgentTenantSite(
     ...tenantSite,
     featuredListings: listings.filter(hasUsableRemoteListingImage),
   };
+}
+
+/** Resolve a public listing only when it belongs to the tenant's explicit MLS allowlist. */
+export async function getTenantListingById(site: TenantSite, listingId: string): Promise<Listing | null> {
+  const configuredMlsIds = Array.isArray(site.integrationProfile?.hotListMlsIds)
+    ? new Set(site.integrationProfile.hotListMlsIds.map((id) => String(id).trim().toLowerCase()).filter(Boolean))
+    : new Set<string>();
+
+  if (configuredMlsIds.size === 0) return null;
+
+  const listing = await getListingById(listingId);
+  const listingMlsId = listing?.mls_id?.trim().toLowerCase();
+  return listing && listingMlsId && configuredMlsIds.has(listingMlsId) ? listing : null;
 }
 
 function normalizeTenantSite(

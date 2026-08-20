@@ -127,6 +127,7 @@ const DEFAULT_BATCH_SIZE = 10;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_REQUEST_DELAY_MS = 1_000;
 const DEFAULT_WIKIPEDIA_ARTICLE_ESTIMATE = 6_900_000;
+const DEFAULT_MAX_DEMAND_ATTEMPTS = 5;
 
 export async function runWikipediaIngestionBatch(
   options: WikipediaIngestionOptions = {},
@@ -170,9 +171,9 @@ export async function runWikipediaIngestionBatch(
     try {
       const resolved = await resolveDemandPage(demand.query, language);
       if (resolved) demandPages.push(resolved);
-      else unresolvedDemand.push({ ...demand, attempts: demand.attempts + 1 });
+      else if (demand.attempts + 1 < DEFAULT_MAX_DEMAND_ATTEMPTS) unresolvedDemand.push({ ...demand, attempts: demand.attempts + 1 });
     } catch {
-      unresolvedDemand.push({ ...demand, attempts: demand.attempts + 1 });
+      if (demand.attempts + 1 < DEFAULT_MAX_DEMAND_ATTEMPTS) unresolvedDemand.push({ ...demand, attempts: demand.attempts + 1 });
     }
   }
   const freshLimit = drainingRetryBacklog ? 0 : Math.max(0, batchSize - retryPages.length - demandPages.length);
@@ -380,6 +381,12 @@ class WikipediaCrawlerUnavailableError extends Error {
 
 async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<WikipediaBatchResult> {
   const crawlerId = process.env.PULSE_CRAWLER_ID || `wikipedia-${result.state.language}`;
+  let existingControl: Record<string, unknown> | undefined;
+  try {
+    const { data } = await supabaseAdmin.from('crawler_heartbeats').select('payload').eq('crawler_id', crawlerId).maybeSingle();
+    const payload = data?.payload as { control?: Record<string, unknown> } | null;
+    existingControl = payload?.control;
+  } catch { /* heartbeat publication remains best-effort */ }
   const payload = {
     crawler_id: crawlerId,
     status: result.status,
@@ -389,6 +396,7 @@ async function publishWikipediaHeartbeat(result: WikipediaBatchResult): Promise<
       articleCount: result.articleCount,
       failureCount: result.failureCount,
       state: result.state,
+      ...(existingControl ? { control: existingControl } : {}),
     },
   };
 
@@ -493,13 +501,14 @@ export async function listWikipediaPages(input: {
 
 export async function resolveWikipediaDemandPage(query: string, language: string): Promise<WikipediaPage | null> {
   const normalizedLanguage = normalizeLanguage(language);
+  const directCandidates = await lookupWikipediaDemandTitles(query, normalizedLanguage);
   const url = new URL(`https://${normalizedLanguage}.wikipedia.org/w/api.php`);
   url.searchParams.set('action', 'query');
   url.searchParams.set('format', 'json');
   url.searchParams.set('formatversion', '2');
   url.searchParams.set('list', 'search');
   url.searchParams.set('srnamespace', '0');
-  url.searchParams.set('srlimit', '1');
+  url.searchParams.set('srlimit', '8');
   url.searchParams.set('srsearch', query.slice(0, 300));
   const response = await fetch(url, {
     headers: {
@@ -510,10 +519,74 @@ export async function resolveWikipediaDemandPage(query: string, language: string
   });
   if (!response.ok) throw new Error(`Wikipedia demand lookup failed with ${response.status}.`);
   const payload = await response.json() as { query?: { search?: Array<{ pageid?: number; title?: string }> } };
-  const match = payload.query?.search?.find((item) => Number.isInteger(item.pageid) && Boolean(item.title));
+  const match = selectWikipediaDemandMatch(query, [...directCandidates, ...(payload.query?.search || [])]);
   return match?.pageid && match.title
     ? { pageid: match.pageid, title: match.title, url: wikipediaArticleUrl(normalizedLanguage, match.title) }
     : null;
+}
+
+async function lookupWikipediaDemandTitles(query: string, language: string) {
+  const titles = wikipediaDemandTitleCandidates(query);
+  if (!titles.length) return [];
+  const url = new URL(`https://${language}.wikipedia.org/w/api.php`);
+  url.searchParams.set('action', 'query');
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('formatversion', '2');
+  url.searchParams.set('redirects', '1');
+  url.searchParams.set('titles', titles.join('|'));
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': process.env.WIKIPEDIA_USER_AGENT || 'SunsetPulse-TAH-Crawler/1.0 (https://sunsetpulse.app/tah)',
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) return [];
+  const payload = await response.json() as { query?: { pages?: Array<{ pageid?: number; title?: string; missing?: boolean }> } };
+  return (payload.query?.pages || []).filter((page) => !page.missing);
+}
+
+export function wikipediaDemandTitleCandidates(query: string) {
+  const terms = demandTerms(normalizeDemandKey(query)).slice(0, 6);
+  const candidates: string[] = [];
+  for (let size = Math.min(3, terms.length); size >= 2; size -= 1) {
+    for (let index = 0; index <= terms.length - size; index += 1) {
+      candidates.push(terms.slice(index, index + size).join(' '));
+    }
+  }
+  candidates.push(...terms);
+  return [...new Set(candidates)].slice(0, 12);
+}
+
+export function selectWikipediaDemandMatch(
+  query: string,
+  candidates: Array<{ pageid?: number; title?: string }>,
+) {
+  const normalizedQuery = normalizeDemandKey(query);
+  const queryTerms = demandTerms(normalizedQuery);
+  return candidates
+    .filter((candidate): candidate is { pageid: number; title: string } => Number.isInteger(candidate.pageid) && Boolean(candidate.title))
+    .map((candidate) => {
+      const title = normalizeDemandKey(candidate.title);
+      const titleTerms = demandTerms(title);
+      const matchingTerms = titleTerms.filter((term) => queryTerms.includes(term));
+      const unmatchedTerms = titleTerms.length - matchingTerms.length;
+      const coverage = matchingTerms.length / Math.max(1, titleTerms.length);
+      const exactPhrase = title.length > 2 && normalizedQuery.includes(title);
+      const focusWeight = matchingTerms.reduce((total, term) => {
+        const index = queryTerms.indexOf(term);
+        return total + (index < 0 ? 0 : queryTerms.length - index);
+      }, 0);
+      const score = (exactPhrase ? 40 : 0)
+        + matchingTerms.length * 12
+        + coverage * 30
+        + focusWeight * 5
+        - unmatchedTerms * 6
+        - Math.max(0, titleTerms.length - 4);
+      return { candidate, score, matchingTerms: matchingTerms.length, titleLength: title.length };
+    })
+    .filter((ranked) => ranked.matchingTerms > 0)
+    .sort((left, right) => right.score - left.score || left.titleLength - right.titleLength)[0]?.candidate || null;
 }
 
 export function enqueueWikipediaDemand(
@@ -759,6 +832,16 @@ function normalizeDemandKey(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+const DEMAND_STOP_WORDS = new Set([
+  'about', 'become', 'body', 'caused', 'convert', 'created', 'did', 'does', 'energy', 'explain',
+  'from', 'historical', 'how', 'important', 'into', 'makes', 'originated', 'role', 'the', 'what',
+  'when', 'where', 'which', 'why', 'with', 'work',
+]);
+
+function demandTerms(value: string) {
+  return [...new Set(value.split(' ').filter((term) => term.length > 2 && !DEMAND_STOP_WORDS.has(term)))];
+}
+
 function writeJsonAtomically(filePath: string, value: unknown) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const temporaryPath = `${filePath}.${process.pid}.tmp`;
@@ -804,6 +887,8 @@ function normalizeIngestionHealth(value: WikipediaIngestionHealth | undefined, r
 
 async function updateWikipediaSearchCatalog(outputDir: string, manifest: WikipediaManifest) {
   const catalogPath = path.join(outputDir, 'wikipedia-catalog.json');
+  const release = await acquireCatalogLock(`${catalogPath}.lock`);
+  try {
   let catalog: Record<string, string> = {};
   try {
     catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8')) as Record<string, string>;
@@ -833,6 +918,26 @@ async function updateWikipediaSearchCatalog(outputDir: string, manifest: Wikiped
   } catch (error) {
     console.warn('[WIKIPEDIA_CATALOG_UPLOAD_FAILED]', error instanceof Error ? error.message : 'unknown error');
   }
+  } finally {
+    release();
+  }
+}
+
+async function acquireCatalogLock(lockPath: string) {
+  fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      const descriptor = fs.openSync(lockPath, 'wx');
+      fs.closeSync(descriptor);
+      return () => { try { fs.unlinkSync(lockPath); } catch { /* another worker recovered it */ } };
+    } catch {
+      try {
+        if (Date.now() - fs.statSync(lockPath).mtimeMs > 60_000) fs.unlinkSync(lockPath);
+      } catch { /* lock may disappear between checks */ }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+  return () => undefined;
 }
 
 async function applyRemoteCrawlerControl(state: WikipediaIngestionState, statePath: string) {

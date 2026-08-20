@@ -49,6 +49,7 @@ Measured retrieval baseline:
 Initial strict baseline:       0/20 fixtures, 510 ms average
 Candidate Ranking v2:          4/20 fixtures,  76 ms average
 Demand-aware acquisition pass:  9/20 fixtures, 203 ms average
+Canonical demand resolution:   14/20 fixtures, 192 ms average
 ```
 
 Next actionables:
@@ -610,6 +611,8 @@ Initial strict local baseline on August 15, 2026: **0/20 fixtures passed**, aver
 Candidate Ranking v2 preselects cartridges from filename, manifest catalog, representative payload text, and inferred domain before opening binary payloads. It searches at most 18 positive-signal candidates, rejects hash collisions without query evidence, and calibrates evidence scores from lexical coverage, candidate confidence, and the underlying retrieval engine. The strict local follow-up baseline on August 15, 2026 reached **4/20 fixtures (20%)** with average retrieval latency **76 ms**. The passing coverage now includes North Texas, HOA/property guidance, database indexes, and TAH retrieval; the remaining Wikipedia misses identify crawler/catalog coverage work rather than indiscriminate search latency.
 
 The demand-aware crawler and term-level indexed TAH probes raised the same corpus to **9/20 fixtures (45%)** after one acquisition cycle. The worker imported demanded topics alongside retry recovery instead of waiting behind the exhaustive alphabetical crawl. Average retrieval latency increased to **203 ms** because selected binary cartridges now receive bounded term probes, while remaining well below the original 510 ms baseline.
+
+Canonical demand resolution now tries direct MediaWiki titles before broader search, ranks multiple candidates by query focus, and favors distinctive catalog entities over generic question words. After the demanded pages were forged into TAH cartridges, the strict corpus reached **14/20 fixtures (70%)** at **192 ms** average latency, including all ten Wikipedia fixtures.
 
 ```text
 GET  /api/atlas/retrieval                  # list evaluation fixtures

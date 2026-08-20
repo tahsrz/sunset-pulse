@@ -4,6 +4,7 @@ import {
   discoverListings,
   parseListingDiscoverySearchParams,
 } from '@/lib/data/listingDiscovery';
+import { projectPublicListing } from '@/lib/data/publicInventory';
 import { PulseCache } from '@/utils/security/PulseCache';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,10 @@ export async function GET(request: Request) {
 function discoveryResponse(result: Awaited<ReturnType<typeof discoverListings>>, cached: boolean) {
   return NextResponse.json({
     success: true,
-    data: result.listings,
+    data: result.listings.map((listing) => ({
+      ...projectPublicListing(listing),
+      ...(listing.distance_miles === undefined ? {} : { distance_miles: listing.distance_miles }),
+    })),
     pagination: result.pagination,
     criteria: result.criteria,
     generatedAt: result.generatedAt,

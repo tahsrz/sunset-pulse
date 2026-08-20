@@ -81,7 +81,7 @@ export default function WikipediaProcessTerminal() {
         <div className="mt-3 space-y-3 text-[11px] leading-5">
           <div className="flex items-center justify-between border-b border-white/10 pb-2">
             <span className="flex items-center gap-2 text-slate-300"><Activity className="h-3.5 w-3.5" /> wikipedia:crawl</span>
-            <span className={snapshot?.worker.running || remote?.status === 'imported' ? 'text-emerald-300' : 'text-red-300'}>{snapshot?.worker.running || remote?.status === 'imported' ? 'RUNNING' : 'STOPPED'}</span>
+            <span className={snapshot?.worker.running || (remote && isActiveHeartbeat(remote)) ? 'text-emerald-300' : 'text-red-300'}>{snapshot?.worker.running || (remote && isActiveHeartbeat(remote)) ? 'RUNNING' : 'STOPPED'}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-slate-400">
             <span>task: <b className="text-slate-200">{snapshot?.scheduler.state || 'checking'}</b></span>
@@ -126,6 +126,12 @@ function formatHeartbeatTime(value: unknown) {
   if (typeof value !== 'string') return 'unknown';
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? new Date(timestamp).toLocaleTimeString() : 'unknown';
+}
+
+function isActiveHeartbeat(heartbeat: ProcessSnapshot['remoteHeartbeat']) {
+  if (!heartbeat || !Number.isFinite(Date.parse(heartbeat.updatedAt))) return false;
+  const fresh = Date.now() - Date.parse(heartbeat.updatedAt) < 15 * 60_000;
+  return fresh && ['healthy', 'running', 'imported', 'replayed', 'resume_requested'].includes(heartbeat.status);
 }
 
 function formatDate(value: unknown) {

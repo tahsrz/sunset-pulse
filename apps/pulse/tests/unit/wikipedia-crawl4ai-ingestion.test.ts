@@ -7,7 +7,9 @@ import {
   listWikipediaPages,
   loadWikipediaIngestionState,
   runWikipediaIngestionBatch,
+  selectWikipediaDemandMatch,
   type WikipediaPage,
+  wikipediaDemandTitleCandidates,
 } from '@/lib/wikipedia/crawl4aiWikipedia';
 import type { LeadIntelCrawlRecord } from '@/lib/lead-intel/crawlLead';
 
@@ -29,6 +31,25 @@ afterEach(() => {
 });
 
 describe('Wikipedia Crawl4AI ingestion', () => {
+  it('prefers the canonical topic over an adjacent longer search result', () => {
+    expect(selectWikipediaDemandMatch('How does photosynthesis convert light into energy?', [
+      { pageid: 2, title: 'Artificial photosynthesis' },
+      { pageid: 1, title: 'Photosynthesis' },
+      { pageid: 6, title: 'Light' },
+      { pageid: 3, title: 'Photosynthetic reaction centre' },
+    ])).toEqual({ pageid: 1, title: 'Photosynthesis' });
+
+    expect(selectWikipediaDemandMatch('What caused the French Revolution?', [
+      { pageid: 4, title: 'Influence of the American Revolution on the French Revolution' },
+      { pageid: 5, title: 'French Revolution' },
+    ])).toEqual({ pageid: 5, title: 'French Revolution' });
+
+    expect(wikipediaDemandTitleCandidates('What is the historical importance of Don Quixote?'))
+      .toEqual(expect.arrayContaining(['don quixote', 'don', 'quixote']));
+    expect(wikipediaDemandTitleCandidates('How does photosynthesis convert light into energy?'))
+      .toContain('photosynthesis');
+  });
+
   it('uses bounded demand slots before continuing the alphabetical crawl', async () => {
     enqueueWikipediaDemand([
       { query: 'How does photosynthesis work?', reason: 'retrieval miss' },

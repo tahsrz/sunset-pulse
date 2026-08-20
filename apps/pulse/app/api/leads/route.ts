@@ -7,7 +7,7 @@ import { applyDecay, calculateVelocity } from '@/lib/intelligence/leadIntelligen
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { supabase } from '@/lib/supabase';
-import { processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
+import { notifyProcessedLead, processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
 import { LeadSchema } from '@/lib/core/validation';
 import mongoose from 'mongoose';
 
@@ -115,6 +115,13 @@ export const POST = async (request: Request) => {
 
     //  Synchronize to Supabase
     await syncLeadToSupabase(newLead);
+    if (process.env.NEXT_PUBLIC_MOCK_MODE !== 'true') {
+      try {
+        await notifyProcessedLead(intelligence, intelligence.propertyName);
+      } catch (notificationError) {
+        console.error('[LEAD_NOTIFICATION_FAILURE]:', notificationError);
+      }
+    }
 
     return successResponse({ message: 'Lead successfully integrated.', id: newLead._id }, 201);
   } catch (error: any) {

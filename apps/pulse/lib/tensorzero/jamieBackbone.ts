@@ -24,7 +24,11 @@ type JamieBackboneResult = {
 };
 
 export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise<JamieBackboneResult> {
-  const chatMessages = Array.isArray(input.messages) ? input.messages : [];
+  const chatMessages = Array.isArray(input.messages)
+    ? input.messages
+      .filter((message: any) => message?.role === 'user' || message?.role === 'assistant')
+      .map((message: any) => ({ role: message.role, content: String(message.content || '').slice(0, 20_000) }))
+    : [];
   const isDevMode = Boolean(input.isDevMode);
   const lastUserMessage = chatMessages.filter((message: any) => message?.role === 'user').at(-1);
 

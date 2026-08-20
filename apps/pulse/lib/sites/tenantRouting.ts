@@ -104,9 +104,12 @@ export function normalizeHostname(host: string | null | undefined): string {
 }
 
 function getRequestHostname(request: { headers: Headers; nextUrl?: URL }): string {
+  const trustedForwardedHost = process.env.TRUSTED_PROXY_HOST_HEADER === 'true'
+    ? request.headers.get('x-forwarded-host')
+    : null;
   return normalizeHostname(
-    request.headers.get('x-forwarded-host') ||
-      request.headers.get('host') ||
+    request.headers.get('host') ||
+      trustedForwardedHost ||
       request.nextUrl?.hostname ||
       ''
   );
@@ -151,7 +154,8 @@ function getSubdomainFromHost(hostname: string): string | null {
   return null;
 }
 
-function normalizeTenantSlug(value: string): string | null {
+export function normalizePublicTenantSlug(value: string | null | undefined): string | null {
+  if (!value) return null;
   const tenant = value.toLowerCase();
 
   if (RESERVED_SUBDOMAINS.has(tenant) || !TENANT_SLUG_PATTERN.test(tenant)) {
@@ -159,6 +163,10 @@ function normalizeTenantSlug(value: string): string | null {
   }
 
   return tenant;
+}
+
+function normalizeTenantSlug(value: string): string | null {
+  return normalizePublicTenantSlug(value);
 }
 
 function shouldBypassTenantRewrite(pathname: string): boolean {

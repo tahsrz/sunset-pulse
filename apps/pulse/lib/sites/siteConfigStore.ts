@@ -72,7 +72,11 @@ export async function readExpiredPastDueSiteConfigs(nowIso = new Date().toISOStr
     .slice(0, limit);
 }
 
-export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
+export async function saveSiteConfig(
+  kit: AgentLaunchKit,
+  updatedBy: unknown,
+  options: { expectedUpdatedAt?: string } = {},
+) {
   if (isMockMode()) {
     saveMockSiteConfig(kit, updatedBy);
     return ['mock'];
@@ -82,9 +86,15 @@ export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
   const updatedAt = new Date().toISOString();
 
   try {
-    const { error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('site_config')
       .upsert(toSiteConfigSupabaseRecord(kit, updatedBy, updatedAt), { onConflict: 'agent_id' });
+
+    if (options.expectedUpdatedAt) {
+      query = query.eq('updated_at', options.expectedUpdatedAt);
+    }
+
+    const { error } = await query;
 
     if (error) {
       console.warn('[SITE_CONFIG_SUPABASE_WRITE]', error.message);
@@ -97,17 +107,23 @@ export async function saveSiteConfig(kit: AgentLaunchKit, updatedBy: unknown) {
 
   try {
     await connectDB();
-    await SiteConfig.findOneAndUpdate(
-      { agentId: kit.agentId },
+    const query = options.expectedUpdatedAt
+      ? { agentId: kit.agentId, updatedAt: new Date(options.expectedUpdatedAt) }
+      : { agentId: kit.agentId };
+    const saved = await SiteConfig.findOneAndUpdate(
+      query,
       toSiteConfigMongoRecord(kit, updatedBy, updatedAt),
       { upsert: true, new: true },
     );
-    savedStores.push('mongo');
+    if (saved || !options.expectedUpdatedAt) savedStores.push('mongo');
   } catch (error) {
     console.warn('[SITE_CONFIG_MONGO_WRITE]', error);
   }
 
   if (savedStores.length === 0) {
+    if (options.expectedUpdatedAt) {
+      throw new Error('Site changed while this form was open. Reload and try again.');
+    }
     throw new Error('No site config store accepted the launch-kit update.');
   }
 
@@ -330,6 +346,48 @@ function toTime(value: unknown) {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const time = new Date(value).getTime();
   return Number.isFinite(time) ? time : null;
+}
+
+export async function claimPastDueSiteConfigForExpiry(agentId: string, gracePeriodEndsAt: string, nowIso: string) {
+  if (isMockMode()) return true;
+
+  let claimed = false;
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('site_config')
+      .update({ status: 'draft', updated_at: nowIso })
+      .eq('agent_id', agentId)
+      .neq('status', 'draft')
+      .filter('billing_profile->>billingStatus', 'eq', 'past_due')
+      .filter('billing_profile->>gracePeriodEndsAt', 'lt', nowIso)
+      .select('agent_id')
+      .maybeSingle();
+
+    if (error) console.warn('[SITE_CONFIG_SUPABASE_EXPIRY_CLAIM]', error.message);
+    if (data && !error) claimed = true;
+  } catch (error) {
+    console.warn('[SITE_CONFIG_SUPABASE_EXPIRY_CLAIM_FALLBACK]', error);
+  }
+
+  try {
+    await connectDB();
+    const mongoClaim = await SiteConfig.findOneAndUpdate(
+      {
+        agentId,
+        status: { $ne: 'draft' },
+        'billingProfile.billingStatus': 'past_due',
+        'billingProfile.gracePeriodEndsAt': { $lt: nowIso },
+      },
+      { $set: { status: 'draft', updatedAt: new Date(nowIso) } },
+      { new: true },
+    ).lean();
+    if (mongoClaim) claimed = true;
+  } catch (error) {
+    console.warn('[SITE_CONFIG_MONGO_EXPIRY_CLAIM]', error);
+  }
+
+  return claimed;
 }
 
 type MockSiteConfigGlobal = typeof globalThis & {

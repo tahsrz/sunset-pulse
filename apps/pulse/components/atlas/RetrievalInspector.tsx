@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, CircleAlert, Loader2, Search } from 'lucide-react';
 
 type Fixture = { id: string; question: string; expectedHints: string[]; category: string };
@@ -31,6 +31,7 @@ export default function RetrievalInspector() {
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const requestVersion = useRef(0);
 
   useEffect(() => {
     fetch('/api/atlas/retrieval', { cache: 'no-store' })
@@ -46,6 +47,7 @@ export default function RetrievalInspector() {
     if (!query.trim() && !fixtureId) return;
     setLoading(true);
     setError('');
+    const version = ++requestVersion.current;
     try {
       const response = await fetch('/api/atlas/retrieval', {
         method: 'POST',
@@ -54,7 +56,7 @@ export default function RetrievalInspector() {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || 'Inspection failed.');
-      setInspection(body.data);
+      if (version === requestVersion.current) setInspection(body.data);
     } catch (inspectError) {
       setError(inspectError instanceof Error ? inspectError.message : 'Inspection failed.');
     } finally {

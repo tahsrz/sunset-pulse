@@ -4,6 +4,18 @@ import connectDB from '@/lib/core/database';
 import MenuItem from '@/models/MenuItem';
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
 import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
+import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
+import { z } from 'zod';
+
+const menuCreateSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  price: z.number().finite().nonnegative(),
+  description: z.string().max(2000).default(''),
+  category: z.string().trim().min(1).max(80),
+  isAvailable: z.boolean().default(true),
+}).strict();
+
+const menuUpdateSchema = menuCreateSchema.partial().extend({ _id: z.string().min(1) }).strict();
 
 
 
@@ -13,9 +25,10 @@ import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth
  */
 export const GET = async (request: NextRequest) => {
   try {
+    const access = await requireOperatorRouteAccess(request);
+    if (isAuthResponse(access)) return access;
     await connectDB();
-    const { searchParams } = new URL(request.url);
-    const agentId = searchParams.get('agentId') || 'taz-realty-001';
+    const agentId = getAgentIdFromInput();
     
     const menuItems = await MenuItem.find({ agentId }).sort({ category: 1, name: 1 });
     return successResponse(menuItems);
@@ -36,13 +49,12 @@ export const POST = async (request: NextRequest) => {
     await connectDB();
     const body = await request.json();
     
-    if (!body.name || !body.price) {
-      return errorResponse('Missing required fields: name, price.', 400);
-    }
+    const parsed = menuCreateSchema.safeParse(body);
+    if (!parsed.success) return errorResponse('Invalid menu item.', 400, parsed.error.flatten());
 
     const newItem = await MenuItem.create({
-      ...body,
-      agentId: body.agentId || 'taz-realty-001'
+      ...parsed.data,
+      agentId: getAgentIdFromInput()
     });
 
     return successResponse(newItem, 201);
@@ -61,10 +73,9 @@ export const PATCH = async (request: NextRequest) => {
     if (isAuthResponse(access)) return access;
 
     await connectDB();
-    const body = await request.json();
-    const { _id, ...updates } = body;
-
-    if (!_id) return errorResponse('ID required for update.', 400);
+    const parsed = menuUpdateSchema.safeParse(await request.json());
+    if (!parsed.success) return errorResponse('Invalid menu update.', 400, parsed.error.flatten());
+    const { _id, ...updates } = parsed.data;
 
     const updatedItem = await MenuItem.findByIdAndUpdate(_id, updates, { new: true });
     if (!updatedItem) return notFoundResponse('Menu Item');

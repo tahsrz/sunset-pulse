@@ -32,12 +32,12 @@ export type ListingSearch = {
 
 export async function searchListings(
   filters: ListingSearch = {},
-  options: { limit?: number; includeLegacy?: boolean } = {}
+  options: { limit?: number; includeLegacy?: boolean; publicOnly?: boolean } = {}
 ): Promise<Listing[]> {
   const limit = clamp(options.limit || 100, 1, 500);
   if (isMockMode()) return searchMockListings(filters).slice(0, limit);
   const canonical = await searchCanonicalListings(filters, limit);
-  const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit);
+  const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit, options.publicOnly);
   return deduplicateListings([...canonical, ...legacy]).slice(0, limit);
 }
 
@@ -57,6 +57,22 @@ export async function getListingById(id: string): Promise<Listing | null> {
     return legacy ? normalizeListing(legacy as Record<string, any>) : null;
   } catch (error) {
     console.warn('[LISTING_REPOSITORY_LEGACY_DETAIL]', formatError(error));
+    return null;
+  }
+}
+
+export async function getPublicListingById(id: string): Promise<Listing | null> {
+  const canonical = await getCanonicalListing(id);
+  if (canonical) return canonical;
+
+  try {
+    await connectDB();
+    const legacy = mongoose.Types.ObjectId.isValid(id)
+      ? await Property.findOne({ _id: id, is_demo: { $ne: true }, display_public: { $ne: false } }).lean()
+      : await Property.findOne({ mls_id: id, is_demo: { $ne: true }, display_public: { $ne: false } }).lean();
+    return legacy ? normalizeListing(legacy as Record<string, any>) : null;
+  } catch (error) {
+    console.warn('[LISTING_REPOSITORY_PUBLIC_DETAIL]', formatError(error));
     return null;
   }
 }
@@ -170,12 +186,13 @@ async function getCanonicalListing(id: string): Promise<Listing | null> {
   return data ? normalizeListing(data) : null;
 }
 
-async function searchLegacyListings(filters: ListingSearch, limit: number): Promise<Listing[]> {
+async function searchLegacyListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
   try {
     await connectDB();
     const { query } = buildPropertyQuery({
       ...filters,
       includeDemo: filters.includeDemo ? 'true' : 'false',
+      publicOnly: publicOnly ? 'true' : undefined,
     });
     const rows = await Property.find(query).limit(limit).lean();
     return rows.map((row: PropertyDocument) => normalizeListing(row as unknown as Record<string, any>));

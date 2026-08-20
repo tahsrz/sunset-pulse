@@ -70,9 +70,11 @@ export async function applyPublicApiRateLimit(
 }
 
 function getClientIp(request: Request) {
-  const value = request.headers.get('x-vercel-forwarded-for')
-    || request.headers.get('x-real-ip')
-    || request.headers.get('x-forwarded-for')
+  const trustedProxyIp = request.headers.get('x-vercel-forwarded-for');
+  const value = trustedProxyIp
+    || (process.env.NODE_ENV !== 'production'
+      ? request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')
+      : null)
     || 'unknown';
   return value.split(',')[0].trim() || 'unknown';
 }

@@ -4,6 +4,7 @@ const STOP_WORDS = new Set([
   'about', 'after', 'also', 'been', 'being', 'does', 'from', 'have', 'into', 'more', 'most',
   'that', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'what', 'when', 'where',
   'which', 'while', 'why', 'with', 'work', 'would', 'your', 'explain', 'usually', 'used',
+  'how',
 ]);
 
 const SYNONYMS: Record<string, string[]> = {
@@ -80,6 +81,11 @@ function scoreDocument(document: CartridgeRankingDocument, phrase: string, terms
   const domainMatches = terms.filter((term) => containsTerm(domain, term));
   if (titleMatches.length) { score += titleMatches.length * 12; reasons.push(`title: ${titleMatches.slice(0, 3).join(', ')}`); }
   if (catalogMatches.length) { score += catalogMatches.length * 8; reasons.push(`catalog: ${catalogMatches.slice(0, 3).join(', ')}`); }
+  const specificMatches = [...new Set([...titleMatches, ...catalogMatches])].filter((term) => term.length > 6);
+  if (specificMatches.length) {
+    score += specificMatches.reduce((total, term) => total + Math.min(8, term.length - 6), 0);
+    reasons.push(`specific: ${specificMatches.slice(0, 3).join(', ')}`);
+  }
   if (summaryMatches.length) { score += summaryMatches.length * 4; reasons.push(`summary: ${summaryMatches.slice(0, 3).join(', ')}`); }
   if (domainMatches.length) { score += domainMatches.length * 3; reasons.push(`domain: ${domainMatches.slice(0, 2).join(', ')}`); }
   if (/^wiki(?:pedia)?[_-]/i.test(document.cartridge.name) && catalogMatches.length) {
