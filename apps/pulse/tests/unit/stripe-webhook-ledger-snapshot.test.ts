@@ -120,7 +120,7 @@ describe('Stripe webhook ledger payload snapshots', () => {
     expect(JSON.stringify(supabaseSnapshot)).not.toContain('secretNote');
   });
 
-  it('settles a freshly inserted Supabase claim when Mongo reports the event as duplicate', async () => {
+  it('keeps the Supabase claimant authoritative when Mongo reports a mirror duplicate', async () => {
     ledgerMocks.StripeWebhookEvent.create.mockRejectedValueOnce({ code: 11000 });
 
     const claim = await claimStripeWebhookEvent({
@@ -138,14 +138,10 @@ describe('Stripe webhook ledger payload snapshots', () => {
     } as any);
 
     expect(claim).toEqual({
-      shouldProcess: false,
-      reason: 'duplicate_event',
+      shouldProcess: true,
       eventId: 'evt_partial_duplicate',
-      stores: ['mongo', 'supabase'],
+      stores: ['supabase'],
     });
-    expect(ledgerMocks.supabaseUpdates).toContainEqual(expect.objectContaining({
-      status: 'succeeded',
-      error_message: 'Duplicate event already claimed by another webhook ledger store.',
-    }));
+    expect(ledgerMocks.supabaseUpdates).toHaveLength(0);
   });
 });

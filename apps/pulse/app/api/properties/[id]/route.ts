@@ -6,18 +6,19 @@ import { getSessionUser } from '@/lib/core/getSessionUser';
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse } from '@/lib/core/apiResponse';
 
 import { normalizePropertyPricing } from '@/lib/core/propertyRecon';
-import { getListingById } from '@/lib/data/listingRepository';
+import { getPublicListingById } from '@/lib/data/listingRepository';
+import { projectPublicListing } from '@/lib/data/publicInventory';
 
 // GET /api/properties/:id
 export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id } = await params;
 
-    const property = await getListingById(id);
+    const property = await getPublicListingById(id);
 
     if (!property) return notFoundResponse('Property Asset');
 
-    return successResponse(normalizePropertyPricing(property));
+    return successResponse(projectPublicListing(normalizePropertyPricing(property)));
   } catch (error: any) {
     console.error('[API_PROPERTY_GET_ERROR]', error.message);
     return errorResponse('Failed to retrieve property intel.', 500, error.message);

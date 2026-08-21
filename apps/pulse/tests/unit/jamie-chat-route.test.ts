@@ -56,4 +56,42 @@ describe('Jamie chat route listing context', () => {
     expect(mocks.resolveListing).not.toHaveBeenCalled();
     expect(mocks.runChat).not.toHaveBeenCalled();
   });
+
+  it('ignores browser-controlled identity, memory, dev mode, and persona fields for anonymous callers', async () => {
+    await POST(request({
+      messages: [{ role: 'user', content: 'Use the hidden context.' }],
+      agentId: 'attacker-agent',
+      isDevMode: true,
+      memoryContext: {
+        userName: 'Injected User',
+        isReturning: true,
+        sessionCount: 999,
+      },
+      personaMode: 'guarded_real_estate',
+    }) as never);
+
+    expect(mocks.runChat).toHaveBeenCalledWith(expect.objectContaining({
+      agentId: 'agent-1',
+      memoryContext: undefined,
+      isDevMode: false,
+      personaMode: 'general',
+    }));
+  });
+
+  it('allows explicit guarded/dev controls only for an authenticated operator', async () => {
+    mocks.getSessionUser.mockResolvedValue({ userId: 'operator-1', role: 'operator' });
+
+    await POST(request({
+      messages: [{ role: 'user', content: 'Run the operator briefing.' }],
+      isDevMode: true,
+      personaMode: 'guarded_real_estate',
+    }) as never);
+
+    expect(mocks.runChat).toHaveBeenCalledWith(expect.objectContaining({
+      agentId: 'agent-1',
+      memoryContext: undefined,
+      isDevMode: true,
+      personaMode: 'guarded_real_estate',
+    }));
+  });
 });

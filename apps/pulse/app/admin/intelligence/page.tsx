@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTheme } from '@/context/ThemeProvider';
 import { FaBrain, FaSave, FaUndo, FaMapMarkerAlt, FaUtensils, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { supabase } from '@/lib/supabase';
 import MenuManager from '@/components/admin/MenuManager';
 
 export default function IntelligenceConfigPage() {
@@ -32,15 +31,12 @@ export default function IntelligenceConfigPage() {
   const saveToSupabase = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('site_config')
-        .update({
-          intelligence: stagedConfig,
-          updated_at: new Date().toISOString()
-        })
-        .eq('agent_id', 'taz-realty-001');
-
-      if (error) throw error;
+      const response = await fetch('/api/admin/intelligence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intelligence: stagedConfig }),
+      });
+      if (!response.ok) throw new Error('The intelligence update was rejected.');
       
       setIntelligence(stagedConfig);
       toast.success('Intelligence grid updated. Jamie is re-calculating proximities.');

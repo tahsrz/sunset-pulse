@@ -32,12 +32,12 @@ export type ListingSearch = {
 
 export async function searchListings(
   filters: ListingSearch = {},
-  options: { limit?: number; includeLegacy?: boolean } = {}
+  options: { limit?: number; includeLegacy?: boolean; publicOnly?: boolean } = {}
 ): Promise<Listing[]> {
   const limit = clamp(options.limit || 100, 1, 500);
-  if (isMockMode()) return searchMockListings(filters).slice(0, limit);
-  const canonical = await searchCanonicalListings(filters, limit);
-  const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit);
+  if (isMockMode()) return searchMockListings(filters, options.publicOnly === true).slice(0, limit);
+  const canonical = await searchCanonicalListings(filters, limit, options.publicOnly === true);
+  const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit, options.publicOnly);
   return deduplicateListings([...canonical, ...legacy]).slice(0, limit);
 }
 
@@ -61,6 +61,28 @@ export async function getListingById(id: string): Promise<Listing | null> {
   }
 }
 
+export async function getPublicListingById(id: string): Promise<Listing | null> {
+  if (isMockMode()) {
+    const property = readMockCanonicalProperty(id);
+    if (!property) return null;
+    const listing = normalizeListing(property);
+    return listing.display_public ? { ...listing, is_demo: false } : null;
+  }
+  const canonical = await getCanonicalListing(id);
+  if (canonical) return canonical;
+
+  try {
+    await connectDB();
+    const legacy = mongoose.Types.ObjectId.isValid(id)
+      ? await Property.findOne({ _id: id, is_demo: { $ne: true }, display_public: { $ne: false } }).lean()
+      : await Property.findOne({ mls_id: id, is_demo: { $ne: true }, display_public: { $ne: false } }).lean();
+    return legacy ? normalizeListing(legacy as Record<string, any>) : null;
+  } catch (error) {
+    console.warn('[LISTING_REPOSITORY_PUBLIC_DETAIL]', formatError(error));
+    return null;
+  }
+}
+
 export async function upsertCanonicalListing(input: Record<string, any>): Promise<Listing> {
   if (isMockMode()) return normalizeListing(upsertMockCanonicalProperty(input));
   const row = listingToRow(input);
@@ -80,7 +102,7 @@ export async function upsertCanonicalListing(input: Record<string, any>): Promis
   });
 }
 
-function searchMockListings(filters: ListingSearch) {
+function searchMockListings(filters: ListingSearch, publicOnly = false) {
   return listMockCanonicalProperties()
     .map((property) => normalizeListing(property))
     .filter((listing) => {
@@ -102,6 +124,7 @@ function searchMockListings(filters: ListingSearch) {
         listing.mls_id,
       ].join(' ').toLowerCase();
 
+      if (publicOnly && !listing.display_public) return false;
       if (location && !searchable.includes(location)) return false;
       if (propertyType && propertyType !== 'all' && listing.type.toLowerCase() !== propertyType) return false;
       if (priceType && listing.price_type !== priceType) return false;
@@ -112,14 +135,15 @@ function searchMockListings(filters: ListingSearch) {
       if (minimumPrice !== null && price < minimumPrice) return false;
       if (maximumPrice !== null && price > maximumPrice) return false;
       return true;
-    });
+    })
+    .map((listing) => publicOnly ? { ...listing, is_demo: false } : listing);
 }
 
 function isMockMode() {
   return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }
 
-async function searchCanonicalListings(filters: ListingSearch, limit: number): Promise<Listing[]> {
+async function searchCanonicalListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
   let query = supabaseAdmin
     .from('properties')
     .select('*')
@@ -138,7 +162,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number): P
   if (filters.status) query = query.eq('listing_status', filters.status);
   if (filters.source) query = query.eq('source', filters.source);
   if (filters.updatedSince) query = query.gte('last_updated', filters.updatedSince);
-  if (!filters.includeDemo) query = query.eq('is_demo', false);
+  if (publicOnly || !filters.includeDemo) query = query.eq('is_demo', false);
   if (filters.minPrice) query = query.gte('price', Number(filters.minPrice));
   if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice));
   if (filters.beds && filters.beds !== 'Any') query = query.gte('beds', Number(filters.beds));
@@ -170,12 +194,13 @@ async function getCanonicalListing(id: string): Promise<Listing | null> {
   return data ? normalizeListing(data) : null;
 }
 
-async function searchLegacyListings(filters: ListingSearch, limit: number): Promise<Listing[]> {
+async function searchLegacyListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
   try {
     await connectDB();
     const { query } = buildPropertyQuery({
       ...filters,
       includeDemo: filters.includeDemo ? 'true' : 'false',
+      publicOnly: publicOnly ? 'true' : undefined,
     });
     const rows = await Property.find(query).limit(limit).lean();
     return rows.map((row: PropertyDocument) => normalizeListing(row as unknown as Record<string, any>));

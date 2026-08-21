@@ -11,6 +11,7 @@ import { fetchBridgeZillowData } from '@/lib/data/external/bridge';
 // GET /api/valuation - Fetch confirmed valuations for the map
 export const GET = async () => {
   try {
+    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') return successResponse([]);
     await connectDB();
     const valuations = await Valuation.find({ status: 'Confirmed' });
     return successResponse(valuations);
