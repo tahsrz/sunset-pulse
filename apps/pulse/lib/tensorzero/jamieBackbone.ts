@@ -6,6 +6,7 @@ import {
   retrieveJamieKnowledge,
   shouldUseJamieKnowledgeFallback,
 } from '@/lib/ai/jamieKnowledgeFallback';
+import { chooseJamieModelRoute } from '@/lib/ai/jamieModelRouting';
 
 type JamieBackboneInput = {
   messages: any[];
@@ -51,10 +52,12 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
 
   const knowledgeQuery = buildJamiePulseQuery(String(lastUserMessage?.content || ''), input.propertyData);
   const knowledge = await retrieveJamieKnowledge(knowledgeQuery);
+  const modelRoute = chooseJamieModelRoute(String(lastUserMessage?.content || ''), knowledge);
   const response = await getJamieResponse(chatMessages, input.propertyData, input.memoryContext, isDevMode, {
     agentId: input.agentId,
     personaMode: input.personaMode,
     knowledgeContext: knowledge,
+    modelTier: modelRoute.tier,
   });
 
   if (typeof response === 'string') {
@@ -68,7 +71,7 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
       content,
     });
 
-    return { body: { role: 'assistant', content, knowledge_sources: knowledge.evidence, tensorzero } };
+    return { body: { role: 'assistant', content, knowledge_sources: knowledge.evidence, model_routing: modelRoute, tensorzero } };
   }
 
   if (response && (response as any).tool_calls) {
@@ -96,6 +99,7 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
         content,
         tool_results: toolResults,
         knowledge_sources: knowledge.evidence,
+        model_routing: modelRoute,
         tensorzero,
       },
       init: { headers: { 'Content-Type': 'application/json' } },
@@ -118,8 +122,8 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
   });
 
   const body = response && typeof response === 'object'
-    ? { ...(response as Record<string, unknown>), content: fallbackContent, knowledge_sources: knowledge.evidence, tensorzero }
-    : { role: 'assistant', content: fallbackContent, knowledge_sources: knowledge.evidence, tensorzero };
+    ? { ...(response as Record<string, unknown>), content: fallbackContent, knowledge_sources: knowledge.evidence, model_routing: modelRoute, tensorzero }
+    : { role: 'assistant', content: fallbackContent, knowledge_sources: knowledge.evidence, model_routing: modelRoute, tensorzero };
 
   return { body, init: { headers: { 'Content-Type': 'application/json' } } };
 }
