@@ -3,6 +3,7 @@ import 'server-only';
 import { groq } from '@ai-sdk/groq';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
 import {
   publicGuideSearchCriteriaSchema,
   type PublicGuideHandoffBrief,
@@ -41,7 +42,7 @@ export async function buildPublicGuideHandoffBrief({
     const configuredModel = process.env.JAMIE_PUBLIC_GUIDE_HANDOFF_MODEL
       || process.env.JAMIE_PUBLIC_GUIDE_MODEL
       || process.env.VERCEL_AI_MODEL;
-    const model = configuredModel || groq(process.env.JAMIE_GROQ_MODEL || 'llama-3.3-70b-versatile');
+    const model = configuredModel || groq(resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL));
     const result = await generateObject({
       model,
       schema: generatedBriefSchema,

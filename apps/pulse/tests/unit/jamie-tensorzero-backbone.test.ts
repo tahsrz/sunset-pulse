@@ -12,6 +12,7 @@ const { mockGetJamieResponse, mockExecuteJamieToolCalls } = vi.hoisted(() => ({
 
 vi.mock('@/lib/ai/jamie', () => ({
   getJamieResponse: mockGetJamieResponse,
+  buildJamiePulseQuery: vi.fn((query: string) => query),
 }));
 
 vi.mock('@/lib/ai/jamieTools', () => ({
@@ -21,7 +22,6 @@ vi.mock('@/lib/ai/jamieTools', () => ({
 
 vi.mock('@/lib/ai/jamieKnowledgeFallback', () => ({
   retrieveJamieKnowledge: vi.fn(() => Promise.resolve({ query: 'question', evidence: [], crawlerStatus: 'unknown' })),
-  formatJamieKnowledgePrompt: vi.fn(() => ''),
   shouldUseJamieKnowledgeFallback: vi.fn((content: string) => content.includes('cannot run that lookup')),
   buildJamieKnowledgeFallback: vi.fn(() => 'I do not have a reliable cartridge match yet.'),
 }));
@@ -65,6 +65,15 @@ describe('Jamie TensorZero backbone', () => {
         },
       },
     });
+    expect(mockGetJamieResponse).toHaveBeenCalledWith(
+      [{ role: 'user', content: 'What should I do next?' }],
+      undefined,
+      { isReturning: true },
+      false,
+      expect.objectContaining({
+        knowledgeContext: expect.objectContaining({ query: 'question' }),
+      }),
+    );
     expect(fs.readFileSync(process.env.TENSORZERO_JAMIE_CHAT_PATH!, 'utf8')).toContain('"functionName":"jamie_chat"');
   });
 

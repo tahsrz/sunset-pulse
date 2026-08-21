@@ -1,9 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import { clearPulseCartridgeCache } from '@/lib/ai/brain/pulse_query';
 import { normalizeRetrievalQuery } from '@/lib/ai/brain/cartridge_ranking';
+import { remoteAtlasCacheDir } from '@/lib/ai/brain/atlas_paths';
 
 /**
  * Remote Atlas: Bridges local TAH cartridges with Supabase Cloud Storage.
@@ -17,7 +17,7 @@ export const syncRemoteCartridge = async (cartridgeName: string) => {
     return null;
   }
   const localPath = path.join(process.cwd(), 'cartridges', cartridgeName);
-  const tmpPath = path.join(os.tmpdir(), cartridgeName);
+  const tmpPath = path.join(remoteAtlasCacheDir(), cartridgeName);
   
   // If local file exists, we're good (Local Dev or Baked into Build)
   if (fs.existsSync(localPath)) {
@@ -52,6 +52,7 @@ async function downloadRemoteCartridge(cartridgeName: string, tmpPath: string) {
 
     const buffer = Buffer.from(await data.arrayBuffer());
     if (!isValidCartridgeBuffer(buffer)) throw new Error('Downloaded cartridge has an invalid binary header.');
+    fs.mkdirSync(path.dirname(tmpPath), { recursive: true });
     const stagingPath = `${tmpPath}.${process.pid}.${Date.now()}.partial`;
     fs.writeFileSync(stagingPath, buffer, { flag: 'wx' });
     fs.renameSync(stagingPath, tmpPath);
@@ -93,7 +94,7 @@ export const syncUniversalIntelligence = async (query?: string) => {
 };
 
 async function syncRemoteWikipediaCatalog(query?: string): Promise<Set<string>> {
-  const destination = path.join(os.tmpdir(), 'wikipedia-catalog.json');
+  const destination = path.join(remoteAtlasCacheDir(), 'wikipedia-catalog.json');
   try {
     const { data, error } = await supabaseAdmin.storage
       .from('cartridges')
@@ -104,6 +105,7 @@ async function syncRemoteWikipediaCatalog(query?: string): Promise<Set<string>> 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       throw new Error('Wikipedia catalog is not an object.');
     }
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
     const stagingPath = `${destination}.${process.pid}.${Date.now()}.partial`;
     fs.writeFileSync(stagingPath, buffer, { flag: 'wx' });
     fs.renameSync(stagingPath, destination);

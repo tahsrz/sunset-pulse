@@ -39,10 +39,26 @@ export async function POST(request: NextRequest) {
   }
 
   const agentId = getDefaultAgentId();
+  const { data: current, error: readError } = await supabaseAdmin
+    .from('site_config')
+    .select('intelligence')
+    .eq('agent_id', agentId)
+    .maybeSingle();
+
+  if (readError) {
+    return errorResponse('Failed to read intelligence configuration.', 500);
+  }
+  if (!current) {
+    return errorResponse('The target site configuration was not found.', 404);
+  }
+
   const { data, error } = await supabaseAdmin
     .from('site_config')
     .update({
-      intelligence: parsed.data.intelligence,
+      intelligence: {
+        ...((current.intelligence || {}) as Record<string, unknown>),
+        ...parsed.data.intelligence,
+      },
       last_modified_by: 'Admin',
       updated_at: new Date().toISOString(),
     })
@@ -53,9 +69,7 @@ export async function POST(request: NextRequest) {
   if (error) {
     return errorResponse('Failed to update intelligence configuration.', 500);
   }
-  if (!data) {
-    return errorResponse('The target site configuration was not found.', 404);
-  }
+  if (!data) return errorResponse('The intelligence configuration changed before it could be saved.', 409);
 
   return successResponse({ agentId, updated: true });
 }

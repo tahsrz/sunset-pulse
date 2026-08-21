@@ -19,6 +19,9 @@ export const GET = async () => {
     if (!sessionUser || !sessionUser.userId) {
       return unauthorizedResponse('Authentication required to access lead intelligence.');
     }
+    if (sessionUser.role !== 'admin' && sessionUser.role !== 'operator') {
+      return errorResponse('Lead intelligence access requires an operator account.', 403);
+    }
 
     //  Fetch from MongoDB & Enrich
     const leads = await Lead.find({})
@@ -114,7 +117,13 @@ export const POST = async (request: Request) => {
     await newLead.save();
 
     //  Synchronize to Supabase
-    await syncLeadToSupabase(newLead);
+    let synchronized = true;
+    try {
+      await syncLeadToSupabase(newLead);
+    } catch (syncError) {
+      synchronized = false;
+      console.error('[LEAD_SUPABASE_SYNC_DEFERRED]:', syncError);
+    }
     if (process.env.NEXT_PUBLIC_MOCK_MODE !== 'true') {
       try {
         await notifyProcessedLead(intelligence, intelligence.propertyName);
@@ -123,7 +132,7 @@ export const POST = async (request: Request) => {
       }
     }
 
-    return successResponse({ message: 'Lead successfully integrated.', id: newLead._id }, 201);
+    return successResponse({ message: 'Lead successfully integrated.', id: newLead._id, synchronized }, 201);
   } catch (error: any) {
     console.error('[LEAD_POST_FAILURE]:', error);
     return errorResponse('Failed to process lead intelligence.', 500, error.message);

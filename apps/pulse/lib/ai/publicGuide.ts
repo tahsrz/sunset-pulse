@@ -10,6 +10,7 @@ import {
   supervisePublicGuideReply,
 } from '@/lib/ai/publicGuideSupervisor';
 import { jamieAiSdkTools, type JamiePropertySearchResult } from '@/lib/ai/jamieTools';
+import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
 
 const PUBLIC_GUIDE_SYSTEM_PROMPT = `
 You are Jamie, the public guide at jamie.sunsetpulse.app.
@@ -46,7 +47,7 @@ export async function runPublicJamieGuide(
   if (deterministic) return completePublicGuideResult(deterministic, options, lastUserMessage);
 
   const configuredModel = process.env.JAMIE_PUBLIC_GUIDE_MODEL || process.env.VERCEL_AI_MODEL;
-  const model = configuredModel || groq(process.env.JAMIE_GROQ_MODEL || 'llama-3.3-70b-versatile');
+  const model = configuredModel || groq(resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL));
 
   const result = await generateText({
     model,

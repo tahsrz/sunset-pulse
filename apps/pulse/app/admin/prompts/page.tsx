@@ -6,8 +6,7 @@ import { toast } from 'react-toastify';
 
 const PERSONALITY_PRESETS = ['Aggressive', 'Supportive', 'Mysterious', 'Custom'];
 const AVAILABLE_MODELS = [
-  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Fast)' },
-  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Balanced)' },
+  { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B (Production)' },
   { id: 'meta-llama/llama-3.1-405b-instruct:free', name: 'Llama 3.1 405B (Max Power)' },
   { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2 9B (Secure)' },
   { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B (Efficient)' }
@@ -19,7 +18,7 @@ export default function PromptEditorPage() {
   const [jamiePrompt, setJamiePrompt] = useState('');
   const [abidanPrompts, setAbidanPrompts] = useState<any>({});
   const [modelMatrix, setModelMatrix] = useState({
-    primaryModel: 'llama-3.1-8b-instant',
+    primaryModel: 'openai/gpt-oss-120b',
     reconModel: 'meta-llama/llama-3.1-405b-instruct:free',
     miniModel: 'google/gemma-2-9b-it:free'
   });

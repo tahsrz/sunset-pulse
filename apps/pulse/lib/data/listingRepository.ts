@@ -35,8 +35,8 @@ export async function searchListings(
   options: { limit?: number; includeLegacy?: boolean; publicOnly?: boolean } = {}
 ): Promise<Listing[]> {
   const limit = clamp(options.limit || 100, 1, 500);
-  if (isMockMode()) return searchMockListings(filters).slice(0, limit);
-  const canonical = await searchCanonicalListings(filters, limit);
+  if (isMockMode()) return searchMockListings(filters, options.publicOnly === true).slice(0, limit);
+  const canonical = await searchCanonicalListings(filters, limit, options.publicOnly === true);
   const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit, options.publicOnly);
   return deduplicateListings([...canonical, ...legacy]).slice(0, limit);
 }
@@ -62,6 +62,12 @@ export async function getListingById(id: string): Promise<Listing | null> {
 }
 
 export async function getPublicListingById(id: string): Promise<Listing | null> {
+  if (isMockMode()) {
+    const property = readMockCanonicalProperty(id);
+    if (!property) return null;
+    const listing = normalizeListing(property);
+    return listing.display_public ? { ...listing, is_demo: false } : null;
+  }
   const canonical = await getCanonicalListing(id);
   if (canonical) return canonical;
 
@@ -96,7 +102,7 @@ export async function upsertCanonicalListing(input: Record<string, any>): Promis
   });
 }
 
-function searchMockListings(filters: ListingSearch) {
+function searchMockListings(filters: ListingSearch, publicOnly = false) {
   return listMockCanonicalProperties()
     .map((property) => normalizeListing(property))
     .filter((listing) => {
@@ -118,6 +124,7 @@ function searchMockListings(filters: ListingSearch) {
         listing.mls_id,
       ].join(' ').toLowerCase();
 
+      if (publicOnly && !listing.display_public) return false;
       if (location && !searchable.includes(location)) return false;
       if (propertyType && propertyType !== 'all' && listing.type.toLowerCase() !== propertyType) return false;
       if (priceType && listing.price_type !== priceType) return false;
@@ -128,14 +135,15 @@ function searchMockListings(filters: ListingSearch) {
       if (minimumPrice !== null && price < minimumPrice) return false;
       if (maximumPrice !== null && price > maximumPrice) return false;
       return true;
-    });
+    })
+    .map((listing) => publicOnly ? { ...listing, is_demo: false } : listing);
 }
 
 function isMockMode() {
   return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }
 
-async function searchCanonicalListings(filters: ListingSearch, limit: number): Promise<Listing[]> {
+async function searchCanonicalListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
   let query = supabaseAdmin
     .from('properties')
     .select('*')
@@ -154,7 +162,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number): P
   if (filters.status) query = query.eq('listing_status', filters.status);
   if (filters.source) query = query.eq('source', filters.source);
   if (filters.updatedSince) query = query.gte('last_updated', filters.updatedSince);
-  if (!filters.includeDemo) query = query.eq('is_demo', false);
+  if (publicOnly || !filters.includeDemo) query = query.eq('is_demo', false);
   if (filters.minPrice) query = query.gte('price', Number(filters.minPrice));
   if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice));
   if (filters.beds && filters.beds !== 'Any') query = query.gte('beds', Number(filters.beds));

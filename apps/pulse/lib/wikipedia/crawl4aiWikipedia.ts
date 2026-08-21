@@ -356,8 +356,10 @@ export async function runWikipediaIngestionBatch(
     stateAfter,
     demandQueries: demandItems.filter((item) => !unresolvedDemand.some((unresolved) => unresolved.query === item.query)).map((item) => item.query),
   };
-  writeJsonAtomically(manifestPath, manifest);
   await updateWikipediaSearchCatalog(outputDir, manifest);
+  // The replay marker is committed only after the cartridge is queryable.
+  // A failed catalog update must be retried rather than replayed as complete.
+  writeJsonAtomically(manifestPath, manifest);
   updateWikipediaDemandAfterBatch(demandPath, demandItems, unresolvedDemand);
   saveWikipediaIngestionState(stateAfter, statePath);
 
@@ -937,7 +939,7 @@ async function acquireCatalogLock(lockPath: string) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
-  return () => undefined;
+  throw new Error('Timed out waiting for the Wikipedia catalog write lock.');
 }
 
 async function applyRemoteCrawlerControl(state: WikipediaIngestionState, statePath: string) {

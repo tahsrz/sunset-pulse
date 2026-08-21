@@ -1,5 +1,4 @@
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import { MemoriaRetriever } from '@/lib/core/memoria_retriever';
 import { SwarmRetriever } from '@/lib/core/swarm_retriever';
@@ -12,6 +11,7 @@ import {
   scoreRetrievedEvidence,
   type CartridgeRankingDocument,
 } from '@/lib/ai/brain/cartridge_ranking';
+import { remoteAtlasCacheDir } from '@/lib/ai/brain/atlas_paths';
 
 export type PulseCartridge = {
   name: string;
@@ -39,7 +39,7 @@ export type PulseSearchTrace = {
 let cachedCartridges: PulseCartridge[] | null = null;
 let cachedKey: string | null = null;
 let cachedAt = 0;
-let remoteHydration: Promise<string[]> | null = null;
+const remoteHydrations = new Map<string, { promise: Promise<string[]>; expiresAt: number }>();
 let wikipediaSearchCatalog: Record<string, string> | null = null;
 const rankingDocumentCache = new Map<string, CartridgeRankingDocument>();
 
@@ -49,6 +49,10 @@ export function clearPulseCartridgeCache() {
   cachedAt = 0;
   wikipediaSearchCatalog = null;
   rankingDocumentCache.clear();
+}
+
+export function clearPulseRemoteHydrationCacheForTests() {
+  remoteHydrations.clear();
 }
 
 export function listPulseCartridges(): PulseCartridge[] {
@@ -138,20 +142,29 @@ async function runPulseSearch(query: string, maxResults: number): Promise<{ resu
   let hydration: PulseSearchTrace['remoteHydration'] = 'not_needed';
   const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
   if (process.env.VERCEL && !isBuild) {
-    if (!remoteHydration) {
-      remoteHydration = import('@/lib/ai/brain/remote_atlas')
+    const hydrationKey = remoteHydrationKey(query);
+    let hydrationEntry = remoteHydrations.get(hydrationKey);
+    if (hydrationEntry && hydrationEntry.expiresAt <= Date.now()) {
+      remoteHydrations.delete(hydrationKey);
+      hydrationEntry = undefined;
+    }
+    if (!hydrationEntry) {
+      const promise = import('@/lib/ai/brain/remote_atlas')
         .then(({ syncUniversalIntelligence }) => syncUniversalIntelligence(query))
         .then((paths) => {
           if (!paths.length) throw new Error('Remote Atlas returned no usable cartridges.');
           return paths;
         })
         .catch((error) => {
-          remoteHydration = null;
+          remoteHydrations.delete(hydrationKey);
           console.warn('[PulseSearch] Remote Atlas hydration failed:', error instanceof Error ? error.message : 'unknown error');
           return [];
         });
+      hydrationEntry = { promise, expiresAt: Date.now() + remoteHydrationTtlMs() };
+      remoteHydrations.set(hydrationKey, hydrationEntry);
+      trimRemoteHydrationCache();
     }
-    const hydrated = await remoteHydration;
+    const hydrated = await hydrationEntry.promise;
     hydration = hydrated.length ? 'completed' : 'empty';
   }
   const rankedCandidates = rankCartridgesForQuery(
@@ -252,7 +265,7 @@ function wikipediaCandidates(query: string): PulseCartridge[] {
   // Keep catalog preselection aligned with ranking: raw question words such as
   // "the" and "are" otherwise crowd out the domain terms that identify a page.
   const terms = normalizeRetrievalQuery(query).terms;
-  const directories = [path.join(process.cwd(), 'cartridges', 'wikipedia'), os.tmpdir()];
+  const directories = [path.join(process.cwd(), 'cartridges', 'wikipedia'), remoteAtlasCacheDir()];
   return directories.flatMap((directory) => Object.entries(loadWikipediaSearchCatalog(directory))
     .map(([name, searchTerms]) => ({
       name,
@@ -383,8 +396,7 @@ function getCartridgeDirs(): string[] {
     path.resolve(process.cwd(), '..', 'SunsetWars', 'cartridges'),
     path.resolve(process.cwd(), '..', '..', '..', 'SunsetWars', 'cartridges'),
     ...configuredDirs,
-    '/tmp/cartridges', // Synced from Supabase
-    '/tmp'
+    remoteAtlasCacheDir(),
   ];
 
   const dirs = new Set<string>();
@@ -395,6 +407,25 @@ function getCartridgeDirs(): string[] {
   }
 
   return [...dirs];
+}
+
+function remoteHydrationKey(query: string) {
+  return normalizeRetrievalQuery(query).terms.slice(0, 8).join('|') || '__general__';
+}
+
+function remoteHydrationTtlMs() {
+  const configured = Number(process.env.PULSE_REMOTE_HYDRATION_TTL_MS);
+  return Number.isFinite(configured) && configured >= 5_000
+    ? Math.min(configured, 10 * 60_000)
+    : 60_000;
+}
+
+function trimRemoteHydrationCache() {
+  while (remoteHydrations.size > 32) {
+    const oldestKey = remoteHydrations.keys().next().value;
+    if (!oldestKey) break;
+    remoteHydrations.delete(oldestKey);
+  }
 }
 
 function collectCartridgeDirs(root: string, depth = 3): string[] {

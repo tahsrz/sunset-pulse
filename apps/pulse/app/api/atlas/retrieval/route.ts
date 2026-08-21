@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { retrieveJamieKnowledge, shouldUseJamieKnowledgeFallback } from '@/lib/ai/jamieKnowledgeFallback';
+import { retrieveKnowledge } from '@/lib/ai/knowledgeRetrieval';
 import { evaluateRetrievalFixture, listRetrievalEvaluationFixtures } from '@/lib/ai/retrievalEvaluation';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
 import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
@@ -30,13 +30,13 @@ export async function POST(request: NextRequest) {
       : undefined;
     if (parsed.data.fixtureId && !fixture) return errorResponse('Unknown retrieval fixture.', 404);
     const query = parsed.data.query || fixture!.question;
-    const context = await retrieveJamieKnowledge(query);
+    const context = await retrieveKnowledge(query);
     return successResponse({
       query,
       trace: context.trace,
       evidence: context.evidence,
       crawlerStatus: context.crawlerStatus,
-      fallbackRequired: shouldUseJamieKnowledgeFallback(context.evidence.length ? 'grounded evidence available' : ''),
+      fallbackRequired: context.evidence.length === 0,
       evaluation: fixture ? evaluateRetrievalFixture(fixture, context) : null,
     });
   } catch (error) {

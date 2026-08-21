@@ -8,6 +8,7 @@ import { errorResponse } from '@/lib/core/apiResponse';
 import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 import { getActiveSiteProfiles } from '@/lib/sites/siteProfiles';
 import { z } from 'zod';
+import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     const agentId = getAgentIdFromInput();
     const { agentProfile, assistantProfile, branding } = await getActiveSiteProfiles(agentId);
     const gatewayModel = process.env.JAMIE_AI_MODEL || process.env.VERCEL_AI_MODEL;
-    const model = gatewayModel || groq(process.env.JAMIE_GROQ_MODEL || 'llama-3.3-70b-versatile');
+    const model = gatewayModel || groq(resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL));
 
     const result = streamText({
       model,

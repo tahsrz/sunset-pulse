@@ -7,6 +7,7 @@ import { calculateLeadScore } from '@/lib/intelligence/leadIntelligence';
 import { supabase } from '@/lib/supabase';
 import { sendTelegramNotification } from '@/lib/communication/telegram';
 import { dispatchOperationalAlert } from '@/lib/notifications/agentAlertChannels';
+import { createHash } from 'node:crypto';
 
 export interface ProcessedLeadResult {
   leadData: any;
@@ -95,9 +96,13 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
 
 export async function notifyProcessedLead(result: ProcessedLeadResult, propertyName?: string | null) {
   const topHook = result.reengagementHook?.a || result.reengagementHook?.b || 'New high-stakes lead detected.';
+  const leadRef = createHash('sha256')
+    .update(String(result.leadData.email || 'unknown').trim().toLowerCase())
+    .digest('hex')
+    .slice(0, 20);
   await dispatchOperationalAlert({
     subject: `New lead: ${result.leadData.name} (${result.probability}%)`,
-    idempotencyKey: `new-lead-${String(result.leadData.email).toLowerCase()}-${new Date().toISOString().slice(0, 13)}`,
+    idempotencyKey: `new-lead-${leadRef}-${new Date().toISOString().slice(0, 13)}`,
     text: [`Name: ${result.leadData.name}`, `Email: ${result.leadData.email}`, `Probability: ${result.probability}%`, `Category: ${result.leadCategory}`, `Property: ${propertyName || 'Not specified'}`, `Top hook: ${topHook}`, '', 'Open Sunset Pulse: https://sunsetpulse.app/admin/agent-leads'].join('\n'),
   });
   await sendTelegramNotification(`🚀 *NEW LEAD ALERT*\n\n*Name:* ${result.leadData.name}\n*Probability:* ${result.probability}%\n*Top Hook:* ${topHook}\n\nView details in the Pulse Collective Command Center.`);

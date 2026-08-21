@@ -598,11 +598,11 @@ NEXT_PUBLIC_SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Jamie queries the same TAH/HAT retrieval layer before generation. Empty answers and unrelated `no active listings` results fall back to cited cartridge evidence; when evidence has not arrived yet, Jamie reports crawler acquisition state instead of presenting listing availability as the answer.
+Jamie and the Abidan judges query the same normalized TAH/HAT evidence service before generation. `lib/ai/knowledgeRetrieval.ts` owns query bounds, evidence projection, crawler state, and retrieval traces; consumer-specific modules only decide how to present that evidence. Empty Jamie answers and unrelated `no active listings` results fall back to cited cartridge evidence, while missing evidence reports crawler acquisition state instead of presenting listing availability as the answer.
 
 ### Retrieval Inspector and Evaluations
 
-Authenticated operators can use the Retrieval Inspector inside `/atlas` to run the exact shared retrieval path used by Jamie. Each inspection reports candidate and searched cartridge counts, matched sources, selected evidence, elapsed time, remote hydration state, crawler state, the search stop reason, and whether Jamie would need its knowledge fallback. The inspector exposes bounded evidence excerpts and source URLs, never system prompts or hidden model context.
+Authenticated operators can use the Retrieval Inspector inside `/atlas` to run the shared retrieval path used by Jamie, Abidan, and future model consumers. Each inspection reports candidate and searched cartridge counts, matched sources, selected evidence, elapsed time, remote hydration state, crawler state, the search stop reason, and whether a consumer would need a fallback. The inspector exposes bounded evidence excerpts and source URLs, never system prompts or hidden model context.
 
 The fixture selector is backed by [`apps/pulse/config/retrieval-evaluation-fixtures.json`](./apps/pulse/config/retrieval-evaluation-fixtures.json), a 20-question corpus spanning history, science, medicine, computing, local knowledge, real estate, security, business, and Sunset Pulse itself. A fixture passes only when one selected evidence item contains at least two expected source or topic hints. This provides a repeatable baseline for ranking, cartridge coverage, and crawler-priority work.
 
@@ -616,7 +616,7 @@ Canonical demand resolution now tries direct MediaWiki titles before broader sea
 
 ```text
 GET  /api/atlas/retrieval                  # list evaluation fixtures
-POST /api/atlas/retrieval { query }        # inspect a custom Jamie retrieval
+POST /api/atlas/retrieval { query }        # inspect a custom shared retrieval
 POST /api/atlas/retrieval { fixtureId }    # inspect and score one fixture
 npm run atlas:evaluate-retrieval           # run the complete local baseline
 ```

@@ -1,5 +1,5 @@
 import fixtures from '@/config/retrieval-evaluation-fixtures.json';
-import type { JamieKnowledgeContext } from '@/lib/ai/jamieKnowledgeFallback';
+import type { KnowledgeContext } from '@/lib/ai/knowledgeRetrieval';
 
 export type RetrievalEvaluationFixture = {
   id: string;
@@ -12,7 +12,7 @@ export function listRetrievalEvaluationFixtures(): RetrievalEvaluationFixture[] 
   return fixtures;
 }
 
-export function evaluateRetrievalFixture(fixture: RetrievalEvaluationFixture, context: JamieKnowledgeContext) {
+export function evaluateRetrievalFixture(fixture: RetrievalEvaluationFixture, context: KnowledgeContext) {
   const minimumMatches = Math.min(2, fixture.expectedHints.length);
   const evidenceMatches = context.evidence.map((item) => {
     const haystack = `${item.source} ${item.title} ${item.excerpt} ${item.url || ''}`.toLowerCase();

@@ -37,20 +37,20 @@ const validIntelligence = {
 describe('admin intelligence route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    routeMocks.maybeSingle.mockReset();
     routeMocks.requireOperatorRouteAccess.mockResolvedValue({
       allowed: true,
       mode: 'local',
       reason: 'local operator',
     });
     routeMocks.isAuthResponse.mockImplementation((value) => value instanceof Response);
-    routeMocks.from.mockReturnValue({ update: routeMocks.update });
+    routeMocks.from.mockReturnValue({ update: routeMocks.update, select: routeMocks.select });
     routeMocks.update.mockReturnValue({ eq: routeMocks.eq });
-    routeMocks.eq.mockReturnValue({ select: routeMocks.select });
-    routeMocks.select.mockReturnValue({ maybeSingle: routeMocks.maybeSingle });
-    routeMocks.maybeSingle.mockResolvedValue({
-      data: { agent_id: 'agent-authoritative' },
-      error: null,
-    });
+    routeMocks.eq.mockReturnValue({ select: routeMocks.select, maybeSingle: routeMocks.maybeSingle });
+    routeMocks.select.mockReturnValue({ eq: routeMocks.eq, maybeSingle: routeMocks.maybeSingle });
+    routeMocks.maybeSingle
+      .mockResolvedValueOnce({ data: { intelligence: { jamieSystemPrompt: 'Keep me' } }, error: null })
+      .mockResolvedValueOnce({ data: { agent_id: 'agent-authoritative' }, error: null });
   });
 
   it('requires operator access before reading the request or database', async () => {
@@ -87,7 +87,10 @@ describe('admin intelligence route', () => {
     expect(body.data).toEqual({ agentId: 'agent-authoritative', updated: true });
     expect(routeMocks.from).toHaveBeenCalledWith('site_config');
     expect(routeMocks.update).toHaveBeenCalledWith(expect.objectContaining({
-      intelligence: validIntelligence,
+      intelligence: {
+        jamieSystemPrompt: 'Keep me',
+        ...validIntelligence,
+      },
       last_modified_by: 'Admin',
       updated_at: expect.any(String),
     }));
@@ -95,7 +98,7 @@ describe('admin intelligence route', () => {
   });
 
   it('does not report success when the target site row is missing', async () => {
-    routeMocks.maybeSingle.mockResolvedValue({ data: null, error: null });
+    routeMocks.maybeSingle.mockReset().mockResolvedValueOnce({ data: null, error: null });
 
     const response = await POST(request({ intelligence: validIntelligence }));
 

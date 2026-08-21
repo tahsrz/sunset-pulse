@@ -88,4 +88,21 @@ describe('Supabase tenant domain registry mapping', () => {
       mayRenderPublicly: false,
     });
   });
+
+  it('fails closed when billing or site state is missing or unknown', () => {
+    const result = mapTenantDomainRow({
+      ...row,
+      site_config: {
+        ...row.site_config,
+        status: 'unexpected_status',
+        billing_profile: { billingStatus: 'past_due' },
+      },
+    }, query);
+
+    expect(result.publication).toMatchObject({
+      status: 'draft',
+      billingState: 'unlinked',
+      mayRenderPublicly: false,
+    });
+  });
 });

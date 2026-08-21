@@ -1,6 +1,6 @@
 import connectDB from '@/lib/core/database';
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
-import { getListingById } from '@/lib/data/listingRepository';
+import { getPublicListingById } from '@/lib/data/listingRepository';
 import { resolveTourHotListTargets } from '@/lib/data/tourHotList';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -132,7 +132,7 @@ export async function getTenantListingById(site: TenantSite, listingId: string):
 
   if (configuredMlsIds.size === 0) return null;
 
-  const listing = await getListingById(listingId);
+  const listing = await getPublicListingById(listingId);
   const listingMlsId = listing?.mls_id?.trim().toLowerCase();
   return listing && listingMlsId && configuredMlsIds.has(listingMlsId) ? listing : null;
 }

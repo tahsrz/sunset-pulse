@@ -22,7 +22,8 @@ Today moved the Atlas/Jamie retrieval layer from ad hoc cartridge search toward 
 - Native notifications now own high-intent agent alerts through `agent_notifications`, `notification_deliveries`, Resend, and optional Telnyx SMS.
 - The Wikipedia Crawl4AI worker reports durable heartbeats and crawler health, while `/atlas` exposes retry backlog, retry recovery, page throughput, cartridge growth, estimated completion, and resume controls.
 - The crawler uses demand-aware acquisition from retrieval misses, with `.pulse-local/wikipedia/demand-queue.json` kept local and ignored.
-- `/api/atlas/retrieval` and the Atlas Retrieval Inspector expose bounded Jamie retrieval diagnostics without leaking hidden prompts or raw model context.
+- `lib/ai/knowledgeRetrieval.ts` provides one normalized evidence contract for Jamie, Abidan, Atlas inspection, and future model consumers.
+- `/api/atlas/retrieval` and the Atlas Retrieval Inspector expose bounded shared retrieval diagnostics without leaking hidden prompts or raw model context.
 - The 20-fixture retrieval corpus improved from `0/20 @ 510 ms` to `4/20 @ 76 ms` after ranking work, `9/20 @ 203 ms` after demand acquisition and term-level indexed TAH probes, and `14/20 @ 192 ms` after canonical title resolution and distinctive-term ranking. All ten Wikipedia fixtures now pass.
 
 Carry-forward checks:
@@ -144,7 +145,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `/tah/headless` and `/tah/[cartridge]/headless` expose plain-text scraper views with backend-oriented labels.
 - `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
 - `/tah` includes explicit AI-agent crawl guidance and preferred query patterns.
-- Abidan judge context is routed through `lib/ai/brain/abidan_tah.ts`, which supports both indexed `.tah` cartridges and split Memoria `.hat`/`.tah` pairs before adding broad Pulse matches.
+- Abidan judge context is routed through `lib/ai/brain/abidan_tah.ts`, which supports both indexed `.tah` cartridges and split Memoria `.hat`/`.tah` pairs before adding broad matches through the shared knowledge service.
 - `TAH_MEMORIA_V4_SPEC.md` defines the draft super-cartridge direction for packaging existing cartridges into a high-capacity, provenance-aware Memoria pair.
 - `npm run tah:pack-master` packages the current cartridge catalog into a local `cartridges/master/atlas_pulse_master.hat/.tah` pair with a provenance manifest.
 - `lib/core/memoria_v4.ts` contains the first Memoria v4 superblock and section-directory reader prototype.

@@ -14,6 +14,7 @@ This document summarizes the AI and geospatial integrations added around the Com
 | Lead Intelligence Crawler | `/api/intelligence/crawl-lead` | Operator-guarded Crawl4AI ingestion route for regional sites, brokerages, and public records. |
 | Native Notification Pipeline | `/api/notifications/high-intent/cron` | Durable native inbox plus Resend and optional Telnyx delivery. |
 | Jamie Retrieval Inspector | `/atlas`, `/api/atlas/retrieval` | Operator-only traces for candidate selection, searched cartridges, evidence, latency, fallback state, and fixture scoring. |
+| Shared Knowledge Retrieval | `lib/ai/knowledgeRetrieval.ts` | Agent-neutral TAH/HAT evidence, crawler state, and traces consumed by Jamie, Abidan, Atlas, and evaluation tooling. |
 
 ## Runtime Stack
 

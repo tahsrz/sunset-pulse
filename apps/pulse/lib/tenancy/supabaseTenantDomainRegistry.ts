@@ -199,10 +199,10 @@ function enumValue<T extends string>(value: unknown, allowed: Set<T>, field: str
 }
 
 function billingStateFor(value: unknown): TenantPublication['billingState'] {
-  if (value === 'trialing' || value === 'grace' || value === 'suspended' || value === 'unlinked') {
+  if (value === 'active' || value === 'trialing' || value === 'grace' || value === 'suspended' || value === 'unlinked') {
     return value;
   }
-  return 'active';
+  return 'unlinked';
 }
 
 function reviewStatusFor(value: unknown): TenantPublication['reviewStatus'] {
@@ -211,6 +211,6 @@ function reviewStatusFor(value: unknown): TenantPublication['reviewStatus'] {
 }
 
 function siteStatusFor(value: unknown): TenantPublication['status'] {
-  if (value === 'draft' || value === 'suspended') return value;
-  return 'active';
+  if (value === 'active' || value === 'draft' || value === 'suspended') return value;
+  return 'draft';
 }

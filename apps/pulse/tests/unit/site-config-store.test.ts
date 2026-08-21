@@ -5,6 +5,7 @@ const storeMocks = vi.hoisted(() => ({
   supabaseFrom: vi.fn(),
   resolveSupabaseQuery: vi.fn(),
   supabaseUpsert: vi.fn(),
+  supabaseUpdate: vi.fn(),
   mongoFindOne: vi.fn(),
   mongoFind: vi.fn(),
   mongoFindOneAndUpdate: vi.fn(),
@@ -48,6 +49,7 @@ describe('siteConfigStore', () => {
     storeMocks.supabaseFrom.mockImplementation(() => createSupabaseQuery());
     storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: null, error: null });
     storeMocks.supabaseUpsert.mockResolvedValue({ error: null });
+    storeMocks.supabaseUpdate.mockImplementation(() => undefined);
     storeMocks.resolveMongoFindOne.mockResolvedValue(null);
     storeMocks.resolveMongoFind.mockResolvedValue([]);
     storeMocks.mongoFindOne.mockImplementation((query) => ({
@@ -194,6 +196,24 @@ describe('siteConfigStore', () => {
       { upsert: true, new: true },
     );
   });
+
+  it('uses conditional updates and rejects a stale compare-and-swap', async () => {
+    const kit = createDefaultLaunchKit('broker-one');
+    const expectedUpdatedAt = '2026-07-23T10:00:00.000Z';
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: null, error: null });
+    storeMocks.mongoFindOneAndUpdate.mockResolvedValue(null);
+
+    await expect(saveSiteConfig(kit, { email: 'operator@example.test' }, { expectedUpdatedAt }))
+      .rejects.toThrow('Site changed while this form was open.');
+
+    expect(storeMocks.supabaseUpdate).toHaveBeenCalledWith(expect.objectContaining({ agent_id: 'broker-one' }));
+    expect(storeMocks.supabaseUpsert).not.toHaveBeenCalled();
+    expect(storeMocks.mongoFindOneAndUpdate).toHaveBeenCalledWith(
+      { agentId: 'broker-one', updatedAt: new Date(expectedUpdatedAt) },
+      expect.any(Object),
+      { upsert: false, new: true },
+    );
+  });
 });
 
 function createSupabaseQuery() {
@@ -222,6 +242,10 @@ function createSupabaseQuery() {
       return api;
     }),
     maybeSingle: vi.fn(() => storeMocks.resolveSupabaseQuery(query)),
+    update: vi.fn((record: unknown) => {
+      storeMocks.supabaseUpdate(record);
+      return api;
+    }),
     upsert: storeMocks.supabaseUpsert,
     then: vi.fn((resolve, reject) => storeMocks.resolveSupabaseQuery(query).then(resolve, reject)),
   };

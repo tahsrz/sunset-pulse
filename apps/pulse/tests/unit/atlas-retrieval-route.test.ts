@@ -7,9 +7,8 @@ vi.mock('@/lib/core/routeAuth', () => ({
   requireOperatorRouteAccess: mocks.requireAccess,
   isAuthResponse: (value: unknown) => value instanceof Response,
 }));
-vi.mock('@/lib/ai/jamieKnowledgeFallback', () => ({
-  retrieveJamieKnowledge: mocks.retrieve,
-  shouldUseJamieKnowledgeFallback: (content: string) => content.trim().length < 20,
+vi.mock('@/lib/ai/knowledgeRetrieval', () => ({
+  retrieveKnowledge: mocks.retrieve,
 }));
 
 import { GET, POST } from '@/app/api/atlas/retrieval/route';
@@ -33,7 +32,7 @@ describe('Atlas retrieval inspector route', () => {
     expect(body.data.fixtures).toHaveLength(20);
   });
 
-  it('runs a fixture through Jamie shared retrieval and returns its trace', async () => {
+  it('runs a fixture through shared retrieval and returns its trace', async () => {
     const response = await POST(new NextRequest('https://example.test/api/atlas/retrieval', {
       method: 'POST',
       body: JSON.stringify({ fixtureId: 'retrieval-tah' }),

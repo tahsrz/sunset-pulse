@@ -86,20 +86,22 @@ export async function saveSiteConfig(
   const updatedAt = new Date().toISOString();
 
   try {
-    let query = supabaseAdmin
-      .from('site_config')
-      .upsert(toSiteConfigSupabaseRecord(kit, updatedBy, updatedAt), { onConflict: 'agent_id' });
-
     if (options.expectedUpdatedAt) {
-      query = query.eq('updated_at', options.expectedUpdatedAt);
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      console.warn('[SITE_CONFIG_SUPABASE_WRITE]', error.message);
+      const { data, error } = await supabaseAdmin
+        .from('site_config')
+        .update(toSiteConfigSupabaseRecord(kit, updatedBy, updatedAt))
+        .eq('agent_id', kit.agentId)
+        .eq('updated_at', options.expectedUpdatedAt)
+        .select('agent_id')
+        .maybeSingle();
+      if (error) console.warn('[SITE_CONFIG_SUPABASE_WRITE]', error.message);
+      else if (data) savedStores.push('supabase');
     } else {
-      savedStores.push('supabase');
+      const { error } = await supabaseAdmin
+        .from('site_config')
+        .upsert(toSiteConfigSupabaseRecord(kit, updatedBy, updatedAt), { onConflict: 'agent_id' });
+      if (error) console.warn('[SITE_CONFIG_SUPABASE_WRITE]', error.message);
+      else savedStores.push('supabase');
     }
   } catch (error) {
     console.warn('[SITE_CONFIG_SUPABASE_WRITE_FALLBACK]', error);
@@ -113,7 +115,7 @@ export async function saveSiteConfig(
     const saved = await SiteConfig.findOneAndUpdate(
       query,
       toSiteConfigMongoRecord(kit, updatedBy, updatedAt),
-      { upsert: true, new: true },
+      { upsert: !options.expectedUpdatedAt, new: true },
     );
     if (saved || !options.expectedUpdatedAt) savedStores.push('mongo');
   } catch (error) {

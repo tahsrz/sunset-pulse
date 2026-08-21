@@ -1,9 +1,8 @@
-import { getJamieResponse } from '@/lib/ai/jamie';
+import { buildJamiePulseQuery, getJamieResponse } from '@/lib/ai/jamie';
 import { executeJamieToolCalls, formatPropertySearchResult } from '@/lib/ai/jamieTools';
 import { recordTensorZeroJamieTurn } from '@/lib/tensorzero/jamieChat';
 import {
   buildJamieKnowledgeFallback,
-  formatJamieKnowledgePrompt,
   retrieveJamieKnowledge,
   shouldUseJamieKnowledgeFallback,
 } from '@/lib/ai/jamieKnowledgeFallback';
@@ -50,14 +49,12 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
     return { body: { role: 'assistant', content, tensorzero } };
   }
 
-  const knowledge = await retrieveJamieKnowledge(String(lastUserMessage?.content || ''));
-  const knowledgePrompt = formatJamieKnowledgePrompt(knowledge);
-  const groundedMessages = knowledgePrompt
-    ? [{ role: 'system', content: knowledgePrompt }, ...chatMessages]
-    : chatMessages;
-  const response = await getJamieResponse(groundedMessages, input.propertyData, input.memoryContext, isDevMode, {
+  const knowledgeQuery = buildJamiePulseQuery(String(lastUserMessage?.content || ''), input.propertyData);
+  const knowledge = await retrieveJamieKnowledge(knowledgeQuery);
+  const response = await getJamieResponse(chatMessages, input.propertyData, input.memoryContext, isDevMode, {
     agentId: input.agentId,
     personaMode: input.personaMode,
+    knowledgeContext: knowledge,
   });
 
   if (typeof response === 'string') {

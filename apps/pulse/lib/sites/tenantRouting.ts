@@ -108,8 +108,8 @@ function getRequestHostname(request: { headers: Headers; nextUrl?: URL }): strin
     ? request.headers.get('x-forwarded-host')
     : null;
   return normalizeHostname(
-    request.headers.get('host') ||
-      trustedForwardedHost ||
+    trustedForwardedHost ||
+      request.headers.get('host') ||
       request.nextUrl?.hostname ||
       ''
   );
