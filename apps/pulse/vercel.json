@@ -21,6 +21,10 @@
     {
       "path": "/api/atlas/processes/health",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/tenancy/domain-projection/cron",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
