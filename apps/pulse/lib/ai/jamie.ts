@@ -30,7 +30,11 @@ import { buildJamieCommandBridgeContext } from '@/lib/command-center/jamieBridge
 import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 import { getActiveSiteProfiles } from '@/lib/sites/siteProfiles';
 import { formatMenuItemSummary, type EntityDocument, type MenuItemDocument } from '@/models/types';
-import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
+import {
+  getJamieGroqModelCandidates,
+  resolveJamieGroqModel,
+  shouldRetryJamieModel,
+} from '@/lib/ai/modelDefaults';
 
 const JAMIE_PULSE_RESULT_LIMIT = 5;
 const JAMIE_PULSE_SNIPPET_LIMIT = 520;
@@ -572,7 +576,7 @@ export async function getJamieResponse(
     REAPER: agentConfig?.abidanPrompts?.REAPER || REAPER_SYSTEM_PROMPT
   };
 
-  const primaryModel = resolveJamieGroqModel(agentConfig?.modelMatrix?.primaryModel);
+  const modelCandidates = getJamieGroqModelCandidates(agentConfig?.modelMatrix?.primaryModel);
   const analysisModel = agentConfig?.modelMatrix?.reconModel || 'meta-llama/llama-3.1-405b-instruct:free';
   const minJudges = agentConfig?.operationalSettings?.minJudges || 1;
   const maxJudges = agentConfig?.operationalSettings?.maxJudges || 4;
@@ -683,8 +687,12 @@ export async function getJamieResponse(
     }));
 
   try {
-    const completion = await groq.chat.completions.create({
-      messages: [
+    let completion;
+    let selectedModel = modelCandidates[0];
+    for (const candidate of modelCandidates) {
+      try {
+        completion = await groq.chat.completions.create({
+          messages: [
         {
           role: "system",
           content: [
@@ -737,11 +745,23 @@ export async function getJamieResponse(
         },
         ...sanitizedMessages
       ],
-      model: primaryModel,
-      tools: [SEARCH_PROPERTIES_TOOL] as any,
-      tool_choice: "auto",
-      stream: false, // Switching to non-streaming for tool-call stability
-    });
+            model: candidate,
+            tools: [SEARCH_PROPERTIES_TOOL] as any,
+            tool_choice: "auto",
+            stream: false,
+          });
+        selectedModel = candidate;
+        break;
+      } catch (error) {
+        if (!shouldRetryJamieModel(error) || candidate === modelCandidates.at(-1)) throw error;
+        console.warn(`[JAMIE_MODEL_FALLBACK] ${candidate} unavailable; retrying with ${modelCandidates[modelCandidates.indexOf(candidate) + 1]}`);
+      }
+    }
+
+    if (!completion) throw new Error('Jamie model chain returned no completion.');
+    if (selectedModel !== modelCandidates[0]) {
+      console.info(`[JAMIE_MODEL_SELECTED] ${selectedModel}`);
+    }
 
     const responseMessage = completion.choices[0].message;
 

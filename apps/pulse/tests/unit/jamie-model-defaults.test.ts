@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   JAMIE_DEFAULT_GROQ_MODEL,
+  JAMIE_FALLBACK_GROQ_MODEL,
+  getJamieGroqModelCandidates,
   resolveJamieGroqModel,
+  shouldRetryJamieModel,
 } from '@/lib/ai/modelDefaults';
 
 describe('Jamie Groq model defaults', () => {
@@ -16,5 +19,19 @@ describe('Jamie Groq model defaults', () => {
 
   it('preserves explicitly configured supported model IDs', () => {
     expect(resolveJamieGroqModel('openai/gpt-oss-120b')).toBe('openai/gpt-oss-120b');
+  });
+
+  it('builds a bounded, duplicate-free fallback chain', () => {
+    expect(getJamieGroqModelCandidates('qwen/qwen3.6-27b')).toEqual([
+      'qwen/qwen3.6-27b',
+      JAMIE_DEFAULT_GROQ_MODEL,
+      JAMIE_FALLBACK_GROQ_MODEL,
+    ]);
+  });
+
+  it('retries only model-availability failures', () => {
+    expect(shouldRetryJamieModel({ status: 404, code: 'model_not_found' })).toBe(true);
+    expect(shouldRetryJamieModel({ status: 429 })).toBe(false);
+    expect(shouldRetryJamieModel({ status: 500 })).toBe(false);
   });
 });
