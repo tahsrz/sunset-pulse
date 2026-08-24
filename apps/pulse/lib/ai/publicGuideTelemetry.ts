@@ -40,6 +40,10 @@ export type PublicGuideTelemetryEvent = {
   sessionId?: string;
   toolId?: 'search_properties';
   usedListingData?: boolean;
+  generation?: {
+    modelId: string;
+    usage: { inputTokens: number; outputTokens: number; totalTokens: number } | null;
+  } | null;
 };
 
 export function schedulePublicGuideEvent(event: PublicGuideTelemetryEvent) {
@@ -69,6 +73,8 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
         outcome: event.outcome || null,
         toolId: event.toolId || null,
         usedListingData: Boolean(event.usedListingData),
+        modelId: sanitizeModelId(event.generation?.modelId),
+        usage: sanitizeUsage(event.generation?.usage),
       },
       p_severity: event.event === 'guide_error' ? 'WARN' : 'INFO',
     });
@@ -76,6 +82,23 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
   } catch (error) {
     console.warn('[JAMIE_PUBLIC_GUIDE_TELEMETRY]', error);
   }
+}
+
+function sanitizeModelId(value?: string) {
+  return typeof value === 'string' && /^[a-zA-Z0-9._:/-]{1,160}$/.test(value) ? value : null;
+}
+
+function sanitizeUsage(value?: { inputTokens: number; outputTokens: number; totalTokens: number } | null) {
+  if (!value) return null;
+  return {
+    inputTokens: clampTokens(value.inputTokens),
+    outputTokens: clampTokens(value.outputTokens),
+    totalTokens: clampTokens(value.totalTokens),
+  };
+}
+
+function clampTokens(value: number) {
+  return Number.isFinite(value) ? Math.max(0, Math.min(1_000_000, Math.round(value))) : 0;
 }
 
 export function hashPublicGuideSessionId(sessionId: string) {

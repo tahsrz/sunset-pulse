@@ -9,7 +9,8 @@ describe('profit funnel analytics', () => {
   it('builds revenue-oriented funnel and delivery metrics without exposing event payloads', () => {
     const analytics = buildProfitFunnelAnalytics(
       [
-        event('open', 'PUBLIC_GUIDE_GUIDE_OPENED', 'session-1', { usage: { totalTokens: 1000 } }),
+        event('open', 'PUBLIC_GUIDE_GUIDE_OPENED', 'session-1'),
+        event('response', 'PUBLIC_GUIDE_GUIDE_RESPONSE', 'session-1', { usage: { totalTokens: 1000 } }),
         event('handoff', 'PUBLIC_GUIDE_HANDOFF_OFFERED', 'session-1'),
         event('completed', 'PUBLIC_GUIDE_HANDOFF_COMPLETED', 'session-1'),
         event('tour', 'PUBLIC_GUIDE_TOUR_REQUESTED', 'session-1'),

@@ -62,6 +62,7 @@ Complete before optimizing the dashboard.
 - Persist notification provider and per-delivery cost.
 - Treat missing rates as `unknown`, not zero.
 - Acceptance: a sampled conversation reconciles with provider usage within an agreed tolerance.
+- In progress: Jamie guide responses now persist privacy-safe model ID and input/output/total token counts; notification provider-specific cost receipts remain next.
 
 ### P0-005: Define acknowledgment
 
