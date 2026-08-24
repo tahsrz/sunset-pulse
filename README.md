@@ -25,6 +25,54 @@ Profit-focused weekly execution is tracked in [`docs/profit-sprint-2026-08-24.md
 
 Current local release: **v0.3.0 - Research Desk**
 
+## August 24, 2026 Profit Controls
+
+Active branch:
+```text
+codex/jamie-model-routing
+```
+
+The current profit sprint turns Jamie activity into an attributable operating funnel instead of relying on inbox reads or inferred outcomes. The operator scorecard is available at:
+
+```text
+/admin/profit
+GET /api/admin/profit/scorecard
+```
+
+Implemented controls:
+- Durable funnel IDs join Jamie sessions, consented handoffs, leads, notifications, contact attempts, customer responses, appointments, values, revenue, and variable costs.
+- Contact attempts and customer responses are authoritative receipts. Opening an alert or contact control is not counted as completed outreach.
+- Zero-result rental searches retain qualification context and offer an explicit, consented agent search without claiming a saved search or agent contact occurred prematurely.
+- Commercial listing answers are rebuilt from validated inventory, carry MLS provenance, and are protected by the blocking `test:inventory-truth` CI gate.
+- Hot-alert delivery and agent contact latency are measured separately. Delivered hot leads without contact receipts escalate only after configurable operating minutes.
+- Daily privacy-safe profit checkpoints establish baseline continuity, identify exact missed dates, and send idempotent operator alerts when collection gaps appear.
+- Margin experiments remain blocked until the readiness gate passes all required volume, attribution, cost, and checkpoint criteria.
+
+Margin experiment readiness requires:
+- Seven distinct daily checkpoints in the rolling window.
+- At least 10 qualified leads and 3 closed leads.
+- At least 95% funnel identity coverage.
+- At least 95% closed-revenue, model-cost, and notification-cost coverage.
+
+The current scorecard returns `continue_baseline` until every criterion passes. It returns `start_margin_experiments` only when the complete gate is satisfied.
+
+Relevant scheduled workers:
+```text
+GET /api/notifications/high-intent/cron       # every five minutes
+GET /api/admin/profit/baseline/cron           # daily at 12:15 UTC
+```
+
+Operating-hours configuration:
+```text
+AGENT_ALERT_OPERATING_TIME_ZONE=America/Chicago
+AGENT_ALERT_OPERATING_WEEKDAYS=1,2,3,4,5
+AGENT_ALERT_OPERATING_START_HOUR=8
+AGENT_ALERT_OPERATING_END_HOUR=18
+AGENT_ALERT_CONTACT_THRESHOLD_MINUTES=10
+```
+
+Database migrations under `apps/pulse/supabase/migrations/20260824*.sql` add opportunity values, cost and engagement receipts, durable funnel identity, unattended-lead escalation, and profit baseline checkpoints. Apply migrations before deploying the scorecard or scheduled workers.
+
 Recent additions:
 Research Desk WIP eliminates data entry bottlenecks so agents spend less time filling out web forms and more time working with clients. Instead of forcing someone to manually enter 15 fields for every prospective lead, the engine accepts unstructured text, parses it asynchronously, verifies the facts, and routes the lead to the correct pipeline stage.
 
@@ -575,7 +623,7 @@ GET/PATCH /api/admin/agent-leads/notifications
 GET       /api/notifications/high-intent/cron
 ```
 
-The worker uses database idempotency, retry backoff, stuck-job recovery, and a native inbox. No Novu account or trial is required.
+The worker uses database idempotency, retry backoff, stuck-job recovery, and a native inbox. Sent hot leads are checked for authoritative contact receipts during configured operating hours. Unattended leads use a separately claimed escalation ledger so retries cannot create duplicate operator alerts. No Novu account or trial is required.
 
 ## Wikipedia TAH Crawler Operations
 
@@ -703,6 +751,7 @@ Root scripts:
 npm run pulse:dev
 npm run pulse:build
 npm run test:unit
+npm run test:inventory-truth
 npm run test:e2e
 ```
 
@@ -715,6 +764,7 @@ npm run lead:intel:crawl -- --url https://example.com --mode both --hints "{}"
 npm run tah:pack-expert-atlas
 npm run tah:pack-master
 npm run test:unit
+npm run test:inventory-truth
 npm run build
 ```
 
@@ -746,6 +796,7 @@ Run local build and test checks:
 ```bash
 npx tsc -p apps/pulse/tsconfig.json --noEmit --pretty false
 npm exec --workspace apps/pulse -- vitest run tests/unit/listing-discovery.test.ts tests/unit/listing-read-surfaces.test.ts tests/unit/jamie-tools.test.ts
+npm run test:inventory-truth
 npm run test:unit
 npm run security:audit:prod
 npm run build --workspace apps/pulse
