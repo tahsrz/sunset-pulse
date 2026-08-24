@@ -95,12 +95,10 @@ describe('profit funnel analytics', () => {
       status: index < 3 ? 'closed' : 'touring',
       source: 'jamie_public_guide',
       closed_revenue: index < 3 ? 10000 : null,
-      created_at: '2026-08-17T10:00:00.000Z',
+      created_at: '2026-08-24T10:00:00.000Z',
       metadata: null,
     }));
     const events = Array.from({ length: 10 }, (_, index) => event(`response-${index}`, 'PUBLIC_GUIDE_GUIDE_RESPONSE', `session-${index}`, { costUsd: 0.01 }));
-    events.push(event('old-open', 'PUBLIC_GUIDE_GUIDE_OPENED', 'session-old'));
-    events[events.length - 1].created_at = '2026-08-17T10:00:00.000Z';
     const deliveries = leads.map((lead, index) => ({
       id: `delivery-${index}`,
       funnel_id: lead.funnel_id,
@@ -111,7 +109,15 @@ describe('profit funnel analytics', () => {
       completed_at: '2026-08-24T10:00:08.000Z',
     }));
 
-    const analytics = buildProfitFunnelAnalytics(events, leads, deliveries, [], { modelPer1kTokens: null, notificationPerDelivery: null }, new Date('2026-08-24T12:00:00.000Z'));
+    const analytics = buildProfitFunnelAnalytics(
+      events,
+      leads,
+      deliveries,
+      [],
+      { modelPer1kTokens: null, notificationPerDelivery: null },
+      new Date('2026-08-24T12:00:00.000Z'),
+      '2026-08-17T12:00:00.000Z',
+    );
 
     expect(analytics.baselineReadiness.status).toBe('ready');
     expect(analytics.baselineReadiness.decision).toBe('start_margin_experiments');

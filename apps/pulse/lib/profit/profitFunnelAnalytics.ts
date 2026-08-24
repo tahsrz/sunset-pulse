@@ -71,7 +71,7 @@ export type ProfitCostRates = {
 
 export async function loadProfitFunnelAnalytics(now = new Date()) {
   const since = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const [eventResult, leadResult, deliveryResult, notificationResult] = await Promise.all([
+  const [eventResult, leadResult, deliveryResult, notificationResult, checkpointResult] = await Promise.all([
     supabaseAdmin
       .from('intelligence_events')
       .select('id, event_type, actor_id, target_id, metadata, created_at')
@@ -94,10 +94,15 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
       .select('id, lead_id, priority, read_at, created_at')
       .gte('created_at', since)
       .limit(2000),
+    supabaseAdmin
+      .from('profit_baseline_checkpoints')
+      .select('created_at')
+      .order('created_at', { ascending: true })
+      .limit(1),
   ]);
 
-  if (eventResult.error || leadResult.error || deliveryResult.error || notificationResult.error) {
-    throw new Error(eventResult.error?.message || leadResult.error?.message || deliveryResult.error?.message || notificationResult.error?.message || 'Profit analytics failed to load.');
+  if (eventResult.error || leadResult.error || deliveryResult.error || notificationResult.error || checkpointResult.error) {
+    throw new Error(eventResult.error?.message || leadResult.error?.message || deliveryResult.error?.message || notificationResult.error?.message || checkpointResult.error?.message || 'Profit analytics failed to load.');
   }
 
   return buildProfitFunnelAnalytics(
@@ -107,6 +112,7 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
     (notificationResult.data || []) as AgentNotification[],
     readCostRates(),
     now,
+    checkpointResult.data?.[0]?.created_at || null,
   );
 }
 
@@ -117,6 +123,7 @@ export function buildProfitFunnelAnalytics(
   notifications: AgentNotification[] = [],
   rates: ProfitCostRates = readCostRates(),
   now = new Date(),
+  collectionStartedAt: string | null = null,
 ) {
   const jamieLeads = leads.filter((lead) => lead.source === 'jamie_public_guide');
   const cohortLeadIds = new Set(leads.map((lead) => lead.id));
@@ -188,6 +195,7 @@ export function buildProfitFunnelAnalytics(
   const baselineReadiness = buildBaselineReadiness({
     now,
     timestamps: [
+      ...(collectionStartedAt ? [collectionStartedAt] : []),
       ...events.map((event) => event.created_at),
       ...leads.map((lead) => lead.created_at),
       ...deliveries.map((delivery) => delivery.created_at),
@@ -292,6 +300,29 @@ export function buildProfitFunnelAnalytics(
       suppressedNotifications: suppressed.length,
     },
   };
+}
+
+export async function captureProfitBaselineCheckpoint(now = new Date()) {
+  const analytics = await loadProfitFunnelAnalytics(now);
+  const row = {
+    checkpoint_date: now.toISOString().slice(0, 10),
+    captured_at: now.toISOString(),
+    readiness_status: analytics.baselineReadiness.status,
+    decision: analytics.baselineReadiness.decision,
+    blockers: analytics.baselineReadiness.blockers,
+    criteria: analytics.baselineReadiness.criteria,
+    aggregate_metrics: {
+      totalLeads: analytics.leads.total,
+      qualifiedLeads: analytics.baselineReadiness.criteria.find((criterion) => criterion.id === 'qualified_volume')?.actual || 0,
+      closedLeads: analytics.baselineReadiness.criteria.find((criterion) => criterion.id === 'closed_volume')?.actual || 0,
+      modelCost: analytics.acquisition.modelCost,
+      notificationCost: analytics.acquisition.notificationCost,
+    },
+  };
+  const { error } = await supabaseAdmin.from('profit_baseline_checkpoints')
+    .upsert(row, { onConflict: 'checkpoint_date' });
+  if (error) throw new Error('Unable to persist the profit baseline checkpoint.');
+  return { checkpointDate: row.checkpoint_date, readinessStatus: row.readiness_status, blockers: row.blockers };
 }
 
 function buildBaselineReadiness(input: {
