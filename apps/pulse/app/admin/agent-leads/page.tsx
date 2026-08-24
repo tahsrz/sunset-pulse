@@ -711,10 +711,13 @@ function formatGuideSearchCriteria(brief: PublicGuideHandoffBrief) {
   const criteria = brief.searchCriteria;
   return [
     ...criteria.locations,
+    criteria.transactionType !== 'unknown' ? criteria.transactionType : null,
     criteria.priceMin !== null ? `from $${criteria.priceMin.toLocaleString()}` : null,
     criteria.priceMax !== null ? `up to $${criteria.priceMax.toLocaleString()}` : null,
     criteria.bedsMin !== null ? `${criteria.bedsMin}+ beds` : null,
     criteria.bathsMin !== null ? `${criteria.bathsMin}+ baths` : null,
+    criteria.leaseTermMonths !== null ? `${criteria.leaseTermMonths}-month lease` : null,
+    criteria.timeline ? `timeline: ${criteria.timeline}` : null,
     ...criteria.propertyTypes,
     ...criteria.priorities,
   ].filter(Boolean).join(' / ');

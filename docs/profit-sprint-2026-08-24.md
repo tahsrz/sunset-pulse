@@ -113,6 +113,7 @@ Start only after Phase 0 contracts are implemented.
 - Capture location, property type, budget, timeline, bedrooms/bathrooms, contact consent, and preferred next step.
 - Ask only for missing fields.
 - Acceptance: commercial conversations end in a qualified handoff, a useful search refinement, or an explicit decline.
+- Implemented: zero-result rental searches ask for at most two actually missing criteria, while compact handoff briefs retain explicit transaction type, location, budget, beds/baths, lease term, timeline, consent, and preferred next step without storing transcripts.
 
 ### P2-002: Improve zero-result outcomes
 

@@ -29,11 +29,11 @@ export function supervisePublicGuideReply({
 
   if (listingSearch) {
     const listings = listingSearch.properties.slice(0, 6);
-    const rentalSearch = /\b(?:rent|rental|lease|leasing|monthly rent)\b/i.test(userMessage);
+    const rentalSearch = listingSearch.criteria.priceType === 'lease' || /\b(?:rent|rental|lease|leasing|monthly rent)\b/i.test(userMessage);
     const content = listings.length
       ? `I found ${listings.length} active listing${listings.length === 1 ? '' : 's'} that match the search. Open a home below to inspect its verified listing details, or tell me which tradeoff matters most and I will help you narrow the set.`
       : rentalSearch
-        ? 'I checked the active listing grid, but I did not find a verified match yet. For a better rental search, send your maximum monthly rent, preferred move-in date, bedroom count, and how flexible you are on location. I can then check a wider set of active listings or connect you with the agent for a follow-up search.'
+        ? rentalZeroResultReply(listingSearch.criteria)
         : 'I checked the active listing grid, but I did not find a matching home yet. Try widening the location, price range, or property criteria, or connect with the agent for a follow-up search.';
 
     return {
@@ -64,6 +64,26 @@ export function supervisePublicGuideReply({
     usedListingData: false,
     outcome: content === cleanDraft ? 'general_guidance' : 'safe_fallback',
   };
+}
+
+function rentalZeroResultReply(criteria: Record<string, string>) {
+  const missing = [
+    !criteria.maxPrice ? 'maximum monthly rent' : null,
+    !criteria.moveIn ? 'preferred move-in timing' : null,
+    !criteria.beds ? 'minimum bedroom count' : null,
+    !criteria.baths ? 'minimum bathroom count' : null,
+    !criteria.location ? 'preferred location' : null,
+    !criteria.leaseTermMonths ? 'lease length' : null,
+  ].filter((value): value is string => Boolean(value));
+  if (!missing.length) {
+    return 'I checked the active listing grid, but I did not find a verified match yet. Would you rather widen the location or adjust the monthly budget?';
+  }
+  const next = missing.slice(0, 2);
+  return `I checked the active listing grid, but I did not find a verified match yet. What ${next.length === 1 ? 'is your' : 'are your'} ${joinQualificationFields(next)}?`;
+}
+
+function joinQualificationFields(fields: string[]) {
+  return fields.length === 1 ? fields[0] : `${fields[0]} and ${fields[1]}`;
 }
 
 export function stripPublicGuideNavigation(content: string) {
