@@ -18,7 +18,7 @@ describe('profit funnel analytics', () => {
         event('action', 'AGENT_LEAD_ACTION_OPENED', 'operator-1'),
       ],
       [
-        { id: 'lead-1', funnel_id: '22222222-2222-4222-8222-222222222222', status: 'touring', source: 'jamie_public_guide', estimated_pipeline_value: 12500, closed_revenue: null, value_currency: 'USD', value_source: 'operator_estimate', created_at: '2026-08-24T10:00:00.000Z', metadata: { rawInput: 'private' } },
+        { id: 'lead-1', funnel_id: '22222222-2222-4222-8222-222222222222', status: 'touring', source: 'jamie_public_guide', contact_attempted_at: '2026-08-24T10:01:00.000Z', responded_at: '2026-08-24T10:04:00.000Z', response_source: 'appointment_booked', estimated_pipeline_value: 12500, closed_revenue: null, value_currency: 'USD', value_source: 'operator_estimate', created_at: '2026-08-24T10:00:00.000Z', metadata: { rawInput: 'private' } },
         { id: 'lead-2', status: 'closed', source: 'agent_site_contact', estimated_pipeline_value: 15000, closed_revenue: 30000, value_currency: 'USD', value_source: 'closing_statement', created_at: '2026-08-24T10:00:00.000Z', metadata: null },
       ],
       [
@@ -40,6 +40,7 @@ describe('profit funnel analytics', () => {
     expect(analytics.notifications).toEqual(expect.objectContaining({ total: 2, sent: 1, failed: 1, deliveryRate: 50, averageDeliverySeconds: 8, hotTotal: 2, hotRead: 1, hotReadRate: 50, actionOpened: 1, costReceipts: 1, missingCostReceipts: 0 }));
     expect(analytics.acquisition).toEqual({ modelCost: 0.01, notificationCost: 0.006, costPerQualifiedLead: 0.008 });
     expect(analytics.identity).toEqual({ leadsLinked: 1, leadsTotal: 2, deliveriesLinked: 1, deliveriesTotal: 2 });
+    expect(analytics.engagement).toEqual({ contacted: 1, responded: 1, appointments: 1, contactRate: 50, responseRate: 100 });
     expect(analytics.failureSignals).toEqual({ unansweredQuestions: 1, failedNotifications: 1, suppressedNotifications: 0 });
     expect(JSON.stringify(analytics)).not.toContain('private');
   });
@@ -56,6 +57,7 @@ describe('profit funnel analytics', () => {
     expect(analytics.leads.estimatedPipelineValue).toBeNull();
     expect(analytics.acquisition).toEqual({ modelCost: null, notificationCost: 0, costPerQualifiedLead: null });
     expect(analytics.identity).toEqual({ leadsLinked: 0, leadsTotal: 1, deliveriesLinked: 0, deliveriesTotal: 0 });
+    expect(analytics.engagement).toEqual({ contacted: 0, responded: 0, appointments: 0, contactRate: 0, responseRate: null });
   });
 });
 

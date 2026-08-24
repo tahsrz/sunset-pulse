@@ -33,6 +33,9 @@ type Lead = {
   value_currency?: string | null;
   value_source?: string | null;
   created_at: string;
+  contact_attempted_at?: string | null;
+  responded_at?: string | null;
+  response_source?: string | null;
 };
 
 type Delivery = {
@@ -73,7 +76,7 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
       .limit(5000),
     supabaseAdmin
       .from('agent_site_leads')
-      .select('id, funnel_id, metadata, status, source, estimated_pipeline_value, closed_revenue, value_currency, value_source, created_at')
+      .select('id, funnel_id, metadata, status, source, contact_attempted_at, responded_at, response_source, estimated_pipeline_value, closed_revenue, value_currency, value_source, created_at')
       .gte('created_at', since)
       .limit(2000),
     supabaseAdmin
@@ -131,6 +134,9 @@ export function buildProfitFunnelAnalytics(
   const closedLeads = leads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').length;
   const qualifiedLeadIds = new Set(leads.filter((lead) => ['touring', 'closed'].includes((lead.status || '').toLowerCase())).map((lead) => lead.id));
   const closedLeadIds = new Set(leads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').map((lead) => lead.id));
+  const contactedLeads = leads.filter((lead) => Boolean(lead.contact_attempted_at));
+  const respondedLeads = leads.filter((lead) => Boolean(lead.responded_at));
+  const appointments = respondedLeads.filter((lead) => lead.response_source === 'appointment_booked');
   const totalVariableCost = modelCost !== null && notificationCost !== null ? modelCost + notificationCost : null;
   const costPerQualifiedLead = totalVariableCost !== null && completedLeads > 0 ? totalVariableCost / completedLeads : null;
   const sourceMap = new Map<string, { source: string; leads: number; qualified: number; closed: number; estimatedPipelineValue: number | null; valuedLeads: number }>();
@@ -182,6 +188,13 @@ export function buildProfitFunnelAnalytics(
       missingCostReceipts: receiptCosts.filter((value) => value === null).length,
     },
     acquisition: { modelCost, notificationCost, costPerQualifiedLead },
+    engagement: {
+      contacted: contactedLeads.length,
+      responded: respondedLeads.length,
+      appointments: appointments.length,
+      contactRate: leads.length ? Math.round((contactedLeads.length / leads.length) * 100) : null,
+      responseRate: contactedLeads.length ? Math.round((respondedLeads.length / contactedLeads.length) * 100) : null,
+    },
     identity: {
       leadsLinked: leads.filter((lead) => Boolean(lead.funnel_id || stringValue(lead.metadata?.funnelId))).length,
       leadsTotal: leads.length,

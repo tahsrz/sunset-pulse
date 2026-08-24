@@ -71,6 +71,7 @@ Complete before optimizing the dashboard.
 - `contacted`: agent recorded an outbound attempt.
 - `responded`: customer replied or appointment was booked.
 - Acceptance: the scorecard labels each state accurately and does not collapse them into one response metric.
+- Implemented: durable contact-attempt and customer-response receipts, including appointment-booked provenance, are recorded separately from inbox reads and opened contact controls. Historical pipeline statuses are not treated as proof.
 
 ## Phase 1: Establish The Baseline
 

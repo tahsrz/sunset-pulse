@@ -50,6 +50,8 @@ describe('Jamie public guide disposition route', () => {
     mocks.readSingle.mockResolvedValue({
       data: {
         metadata: { publicGuideBrief: { schemaVersion: 1 } },
+        agent_id: 'agent-one',
+        funnel_id: FUNNEL_ID,
         source: 'jamie_public_guide',
         status: 'new',
       },
@@ -146,9 +148,43 @@ describe('Jamie public guide disposition route', () => {
     expect(response.status).toBe(400);
     expect(mocks.from).not.toHaveBeenCalled();
   });
+
+  it('records an authoritative outbound contact attempt', async () => {
+    const response = await PATCH(request({ action: 'record_contact', channel: 'call' }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      contact_attempted_at: expect.any(String),
+      contact_channel: 'call',
+      contact_recorded_by: 'Operator',
+      status: 'contacted',
+    }));
+    expect(mocks.rpc).toHaveBeenCalledWith('log_intelligence_event', expect.objectContaining({
+      p_type: 'LEAD_CONTACT_ATTEMPTED',
+      p_target_id: LEAD_ID,
+      p_metadata: { agentId: 'agent-one', funnelId: FUNNEL_ID, channel: 'call' },
+    }));
+  });
+
+  it('records an appointment as a customer response and advances the pipeline', async () => {
+    const response = await PATCH(request({ action: 'record_response', source: 'appointment_booked' }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      responded_at: expect.any(String),
+      response_source: 'appointment_booked',
+      response_recorded_by: 'Operator',
+      status: 'touring',
+    }));
+    expect(mocks.rpc).toHaveBeenCalledWith('log_intelligence_event', expect.objectContaining({
+      p_type: 'LEAD_CUSTOMER_RESPONDED',
+      p_metadata: { agentId: 'agent-one', funnelId: FUNNEL_ID, responseSource: 'appointment_booked' },
+    }));
+  });
 });
 
 const LEAD_ID = '11111111-1111-4111-8111-111111111111';
+const FUNNEL_ID = '22222222-2222-4222-8222-222222222222';
 
 function request(body: Record<string, unknown>) {
   return new NextRequest('http://localhost/api/admin/agent-leads', {

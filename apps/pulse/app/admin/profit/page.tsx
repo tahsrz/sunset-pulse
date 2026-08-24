@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { ArrowLeft, ArrowUpRight, BellRing, CircleDollarSign, Clock3, Gauge, Target } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, BellRing, CircleDollarSign, Clock3, Gauge, Phone, Target } from 'lucide-react';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { loadProfitFunnelAnalytics, type ProfitFunnelAnalytics } from '@/lib/profit/profitFunnelAnalytics';
@@ -61,6 +61,8 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
     { label: 'Cost / qualified lead', value: money(scorecard.acquisition.costPerQualifiedLead), detail: `${money(scorecard.acquisition.modelCost)} model + ${money(scorecard.acquisition.notificationCost)} alerts`, icon: CircleDollarSign },
     { label: 'Hot alerts read', value: percent(scorecard.notifications.hotReadRate), detail: `${scorecard.notifications.hotRead}/${scorecard.notifications.hotTotal} high-priority alerts; not confirmed contact`, icon: BellRing },
     { label: 'Contact controls opened', value: String(scorecard.notifications.actionOpened), detail: 'Call, email, or SMS opened; not confirmed sent', icon: ArrowUpRight },
+    { label: 'Contact attempts', value: String(scorecard.engagement.contacted), detail: `${percent(scorecard.engagement.contactRate)} of leads; operator recorded`, icon: Phone },
+    { label: 'Customer responses', value: String(scorecard.engagement.responded), detail: `${scorecard.engagement.appointments} booked appointments`, icon: Target },
     { label: 'Delivery time', value: seconds(scorecard.notifications.averageDeliverySeconds), detail: `${percent(scorecard.notifications.deliveryRate)} sent successfully`, icon: Clock3 },
     { label: 'Funnel identity', value: percent(coverage(scorecard.identity.leadsLinked, scorecard.identity.leadsTotal)), detail: `${scorecard.identity.deliveriesLinked}/${scorecard.identity.deliveriesTotal} deliveries linked`, icon: Gauge },
   ];
