@@ -54,9 +54,9 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
   const handoff = scorecard.funnel.find((stage) => stage.id === 'handoffCompleted');
   const closed = scorecard.funnel.find((stage) => stage.id === 'closed');
   const cards = [
-    { label: 'Pipeline value', value: money(scorecard.leads.estimatedPipelineValue), detail: `${scorecard.leads.total} Jamie leads`, icon: CircleDollarSign },
+    { label: 'Pipeline value', value: money(scorecard.leads.estimatedPipelineValue), detail: `${scorecard.leads.total} leads across all sources`, icon: CircleDollarSign },
     { label: 'Handoff conversion', value: percent(handoff?.conversionRate), detail: `${handoff?.count || 0} completed handoffs`, icon: Target },
-    { label: 'Lead qualification', value: percent(scorecard.leads.qualificationRate), detail: `${scorecard.leads.completedLeads}/${scorecard.leads.total} touring or closed`, icon: Target },
+    { label: 'Lead qualification', value: percent(scorecard.leads.qualificationRate), detail: `${scorecard.leads.completedLeads}/${scorecard.leads.jamieTotal} Jamie leads touring or closed`, icon: Target },
     { label: 'Closed leads', value: String(closed?.count || 0), detail: `${scorecard.leads.closedLeads} current closed records`, icon: Gauge },
     { label: 'Cost / qualified lead', value: money(scorecard.acquisition.costPerQualifiedLead), detail: `${money(scorecard.acquisition.modelCost)} model + ${money(scorecard.acquisition.notificationCost)} alerts`, icon: CircleDollarSign },
     { label: 'Hot alerts read', value: percent(scorecard.notifications.hotReadRate), detail: `${scorecard.notifications.hotRead}/${scorecard.notifications.hotTotal} high-priority alerts; not confirmed contact`, icon: BellRing },
@@ -68,6 +68,13 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
   ];
 
   return <>
+    <section className="mt-8 border border-white/10 bg-white/[0.03] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Seven-day baseline</h2><p className="mt-2 text-xs text-slate-400">{scorecard.scopes.jamieFunnel}</p></div><Confidence value={scorecard.baseline.confidence} /></div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Object.entries(scorecard.baseline.metrics).map(([id, metric]) => <div key={id} className="border border-white/[0.08] p-4"><div className="flex items-center justify-between gap-2"><p className="text-xs font-bold text-slate-300">{baselineLabel(id)}</p><Confidence value={metric.confidence} /></div><p className="mt-3 text-2xl font-black text-white">{id === 'revenue' || id === 'totalVariableCost' ? money(metric.value) : metric.value ?? 'Unknown'}</p></div>)}
+      </div>
+      <p className="mt-4 text-xs text-slate-500">Channel comparison: {scorecard.scopes.channelComparison}. Notification operations: {scorecard.scopes.notificationOperations}.</p>
+    </section>
     <section className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map(({ label, value, detail, icon: Icon }) => <article key={label} className="border border-white/10 bg-white/[0.03] p-5"><Icon size={18} className="text-cyan-200" /><p className="mt-5 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 text-3xl font-black text-white">{value}</p><p className="mt-2 text-xs text-slate-400">{detail}</p></article>)}
     </section>
@@ -80,6 +87,10 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
 }
 
 function Row({ label, value }: { label: string; value: number }) { return <div className="flex items-center justify-between border-b border-white/[0.06] pb-3"><dt className="text-slate-400">{label}</dt><dd className="font-black text-white">{value}</dd></div>; }
+
+function Confidence({ value }: { value: 'verified' | 'partial' | 'unknown' }) { const styles = value === 'verified' ? 'border-emerald-300/20 text-emerald-200' : value === 'partial' ? 'border-amber-300/20 text-amber-200' : 'border-slate-400/20 text-slate-400'; return <span className={`border px-2 py-1 text-[10px] font-black uppercase ${styles}`}>{value}</span>; }
+
+function baselineLabel(value: string) { return value.replace(/([A-Z])/g, ' $1').replace(/^./, (character) => character.toUpperCase()); }
 
 function coverage(linked: number, total: number) { return total ? Math.round((linked / total) * 100) : null; }
 function percent(value: number | null | undefined) { return value === null || value === undefined ? '—' : `${value}%`; }

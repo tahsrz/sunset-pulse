@@ -3,6 +3,7 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const WINDOW_DAYS = 7;
+type ConfidenceState = 'verified' | 'partial' | 'unknown';
 const FUNNEL_EVENTS = [
   'PUBLIC_GUIDE_GUIDE_OPENED',
   'PUBLIC_GUIDE_GUIDE_RESPONSE',
@@ -111,13 +112,18 @@ export function buildProfitFunnelAnalytics(
   notifications: AgentNotification[] = [],
   rates: ProfitCostRates = readCostRates(),
 ) {
+  const jamieLeads = leads.filter((lead) => lead.source === 'jamie_public_guide');
+  const cohortLeadIds = new Set(leads.map((lead) => lead.id));
+  const cohortDeliveries = deliveries.filter((delivery) => delivery.lead_id && cohortLeadIds.has(delivery.lead_id));
+  const cohortNotifications = notifications.filter((notification) => notification.lead_id && cohortLeadIds.has(notification.lead_id));
   const opened = uniqueSessions(events, 'PUBLIC_GUIDE_GUIDE_OPENED');
   const offered = uniqueSessions(events, 'PUBLIC_GUIDE_HANDOFF_OFFERED');
   const completed = uniqueSessions(events, 'PUBLIC_GUIDE_HANDOFF_COMPLETED');
   const tours = uniqueSessions(events, 'PUBLIC_GUIDE_TOUR_REQUESTED');
-  const sent = deliveries.filter((delivery) => delivery.status === 'sent');
-  const failed = deliveries.filter((delivery) => delivery.status === 'failed');
-  const suppressed = deliveries.filter((delivery) => delivery.status === 'suppressed');
+  const highIntent = uniqueSessions(events.filter(isHighIntentEvent));
+  const sent = cohortDeliveries.filter((delivery) => delivery.status === 'sent');
+  const failed = cohortDeliveries.filter((delivery) => delivery.status === 'failed');
+  const suppressed = cohortDeliveries.filter((delivery) => delivery.status === 'suppressed');
   const leadValues = leads.map(readLeadValue).filter((value): value is number => value !== null);
   const estimatedPipelineValue = leadValues.length ? leadValues.reduce((sum, value) => sum + value, 0) : null;
   const eventCosts = events.map((event) => readModelCost(event.metadata, rates.modelPer1kTokens)).filter((value): value is number => value !== null);
@@ -127,15 +133,15 @@ export function buildProfitFunnelAnalytics(
   const notificationCost = hasCompleteNotificationReceipts
     ? receiptCosts.reduce<number>((sum, value) => sum + (value || 0), 0)
     : rates.notificationPerDelivery === null ? null : sent.length * rates.notificationPerDelivery;
-  const hotNotifications = notifications.filter((notification) => notification.priority === 'high');
+  const hotNotifications = cohortNotifications.filter((notification) => notification.priority === 'high');
   const readHotNotifications = hotNotifications.filter((notification) => notification.read_at);
   const actionOpened = new Set(events.filter((event) => event.event_type === 'AGENT_LEAD_ACTION_OPENED').map((event) => event.target_id || `event:${event.id}`));
-  const completedLeads = leads.filter((lead) => ['touring', 'closed'].includes((lead.status || '').toLowerCase())).length;
-  const closedLeads = leads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').length;
+  const completedLeads = jamieLeads.filter((lead) => ['touring', 'closed'].includes((lead.status || '').toLowerCase())).length;
+  const closedLeads = jamieLeads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').length;
   const qualifiedLeadIds = new Set(leads.filter((lead) => ['touring', 'closed'].includes((lead.status || '').toLowerCase())).map((lead) => lead.id));
   const closedLeadIds = new Set(leads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').map((lead) => lead.id));
-  const contactedLeads = leads.filter((lead) => Boolean(lead.contact_attempted_at));
-  const respondedLeads = leads.filter((lead) => Boolean(lead.responded_at));
+  const contactedLeads = jamieLeads.filter((lead) => Boolean(lead.contact_attempted_at));
+  const respondedLeads = jamieLeads.filter((lead) => Boolean(lead.responded_at));
   const appointments = respondedLeads.filter((lead) => lead.response_source === 'appointment_booked');
   const totalVariableCost = modelCost !== null && notificationCost !== null ? modelCost + notificationCost : null;
   const costPerQualifiedLead = totalVariableCost !== null && completedLeads > 0 ? totalVariableCost / completedLeads : null;
@@ -162,23 +168,24 @@ export function buildProfitFunnelAnalytics(
       stage('handoffOffered', 'Handoff offered', offered.size, opened.size),
       stage('handoffCompleted', 'Handoff completed', completed.size, opened.size),
       stage('tourRequested', 'Tour requested', tours.size, opened.size),
-      stage('pipeline', 'Lead in touring or closed stage', completedLeads, leads.length),
-      stage('closed', 'Closed leads', closedLeads, leads.length),
+      stage('pipeline', 'Jamie lead in touring or closed stage', completedLeads, jamieLeads.length),
+      stage('closed', 'Closed Jamie leads', closedLeads, jamieLeads.length),
     ],
     leads: {
       total: leads.length,
+      jamieTotal: jamieLeads.length,
       estimatedPipelineValue,
       completedLeads,
       closedLeads,
-      qualificationRate: leads.length ? Math.round((completedLeads / leads.length) * 100) : null,
+      qualificationRate: jamieLeads.length ? Math.round((completedLeads / jamieLeads.length) * 100) : null,
       bySource: Array.from(sourceMap.values()).sort((left, right) => (right.estimatedPipelineValue || 0) - (left.estimatedPipelineValue || 0)),
     },
     notifications: {
-      total: deliveries.length,
+      total: cohortDeliveries.length,
       sent: sent.length,
       failed: failed.length,
       suppressed: suppressed.length,
-      deliveryRate: deliveries.length ? Math.round((sent.length / deliveries.length) * 100) : null,
+      deliveryRate: cohortDeliveries.length ? Math.round((sent.length / cohortDeliveries.length) * 100) : null,
       averageDeliverySeconds: averageDeliverySeconds(sent),
       hotTotal: hotNotifications.length,
       hotRead: readHotNotifications.length,
@@ -192,7 +199,7 @@ export function buildProfitFunnelAnalytics(
       contacted: contactedLeads.length,
       responded: respondedLeads.length,
       appointments: appointments.length,
-      contactRate: leads.length ? Math.round((contactedLeads.length / leads.length) * 100) : null,
+      contactRate: jamieLeads.length ? Math.round((contactedLeads.length / jamieLeads.length) * 100) : null,
       responseRate: contactedLeads.length ? Math.round((respondedLeads.length / contactedLeads.length) * 100) : null,
     },
     identity: {
@@ -200,6 +207,31 @@ export function buildProfitFunnelAnalytics(
       leadsTotal: leads.length,
       deliveriesLinked: deliveries.filter((delivery) => Boolean(delivery.funnel_id)).length,
       deliveriesTotal: deliveries.length,
+    },
+    baseline: buildBaseline({
+      opened: opened.size,
+      highIntent: highIntent.size,
+      completed: completed.size,
+      jamieLeads,
+      completedLeads,
+      contacted: contactedLeads.length,
+      appointments: appointments.length,
+      closedLeads,
+      modelCost,
+      notificationCost,
+    }),
+    scopes: {
+      window: `${WINDOW_DAYS} rolling days`,
+      jamieFunnel: 'Jamie sessions and jamie_public_guide leads created during the window',
+      channelComparison: 'All lead sources created during the window, using the same status rules',
+      notificationOperations: 'Deliveries tied to leads created during the window',
+      timestampOwners: {
+        conversation: 'intelligence_events.created_at',
+        lead: 'agent_site_leads.created_at',
+        contact: 'agent_site_leads.contact_attempted_at',
+        response: 'agent_site_leads.responded_at',
+        close: 'agent_site_leads status and closed_revenue',
+      },
     },
     failureSignals: {
       unansweredQuestions: events.filter((event) => event.event_type === 'PUBLIC_GUIDE_UNANSWERED_QUESTION').length,
@@ -213,8 +245,53 @@ function stage(id: string, label: string, count: number, denominator: number) {
   return { id, label, count, conversionRate: denominator ? Math.round((count / denominator) * 100) : null };
 }
 
-function uniqueSessions(events: FunnelEvent[], eventType: string) {
-  return new Set(events.filter((event) => event.event_type === eventType).map((event) => event.actor_id || `event:${event.id}`));
+function uniqueSessions(events: FunnelEvent[], eventType?: string) {
+  return new Set(events.filter((event) => !eventType || event.event_type === eventType).map((event) => event.actor_id || `event:${event.id}`));
+}
+
+function isHighIntentEvent(event: FunnelEvent) {
+  if (['PUBLIC_GUIDE_HANDOFF_OFFERED', 'PUBLIC_GUIDE_HANDOFF_COMPLETED', 'PUBLIC_GUIDE_TOUR_REQUESTED'].includes(event.event_type)) return true;
+  const intent = stringValue(event.metadata?.intentCategory);
+  return ['buying_process', 'listing_fact', 'listing_search', 'location_comparison', 'selling_process'].includes(intent);
+}
+
+function buildBaseline(input: {
+  opened: number;
+  highIntent: number;
+  completed: number;
+  jamieLeads: Lead[];
+  completedLeads: number;
+  contacted: number;
+  appointments: number;
+  closedLeads: number;
+  modelCost: number | null;
+  notificationCost: number | null;
+}) {
+  const linked = input.jamieLeads.filter((lead) => Boolean(lead.funnel_id || stringValue(lead.metadata?.funnelId))).length;
+  const identityConfidence: ConfidenceState = input.jamieLeads.length === 0 ? 'unknown' : linked === input.jamieLeads.length ? 'verified' : 'partial';
+  const closedRevenueValues = input.jamieLeads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').map((lead) => optionalMoney(lead.closed_revenue));
+  const revenue = closedRevenueValues.length && closedRevenueValues.every((value) => value !== null)
+    ? closedRevenueValues.reduce<number>((sum, value) => sum + (value || 0), 0)
+    : null;
+  const variableCost = input.modelCost !== null && input.notificationCost !== null ? input.modelCost + input.notificationCost : null;
+  return {
+    confidence: identityConfidence,
+    metrics: {
+      conversations: metric(input.opened, 'verified'),
+      highIntentConversations: metric(input.highIntent, input.opened ? 'partial' : 'unknown'),
+      consentedHandoffs: metric(input.completed, identityConfidence),
+      qualifiedLeads: metric(input.completedLeads, identityConfidence),
+      agentContacts: metric(input.contacted, identityConfidence),
+      appointments: metric(input.appointments, identityConfidence),
+      closedOpportunities: metric(input.closedLeads, identityConfidence),
+      revenue: metric(revenue, revenue === null ? 'unknown' : identityConfidence),
+      totalVariableCost: metric(variableCost, variableCost === null ? (input.modelCost !== null || input.notificationCost !== null ? 'partial' : 'unknown') : 'verified'),
+    },
+  };
+}
+
+function metric(value: number | null, confidence: ConfidenceState) {
+  return { value, confidence };
 }
 
 function readLeadValue(lead: Lead) {

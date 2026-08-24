@@ -48,6 +48,7 @@ Complete before optimizing the dashboard.
 - Channel comparison: all approved lead sources with the same qualification rules.
 - Notification operations: only deliveries tied to leads in the selected cohort.
 - Acceptance: every displayed denominator has a named cohort and date window.
+- Implemented: Jamie conversion uses only `jamie_public_guide` leads, channel comparison uses all sources, and notification operations include only deliveries tied to leads created in the rolling window. Timestamp ownership is returned with the scorecard.
 
 ### P0-003: Create an authoritative value contract
 
@@ -87,6 +88,7 @@ Start only after Phase 0 contracts are implemented.
 - Appointments
 - Closed opportunities
 - Revenue and total variable cost
+- Implemented: the scorecard now returns and renders the first rolling seven-day baseline; live values remain governed by confidence and completeness states.
 
 ### P1-002: Audit failed conversations
 
@@ -101,6 +103,7 @@ Start only after Phase 0 contracts are implemented.
 - Partial: some stages or costs are missing.
 - Unknown: no trustworthy value exists.
 - Acceptance: the operator can distinguish measured values from placeholders immediately.
+- Implemented: every baseline metric is labeled verified, partial, or unknown; unavailable revenue and cost remain unknown instead of rendering as zero.
 
 ## Phase 2: Improve Lead Conversion
 
