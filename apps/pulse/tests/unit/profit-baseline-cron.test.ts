@@ -11,7 +11,7 @@ describe('profit baseline checkpoint cron', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = 'profit-secret';
-    mocks.capture.mockResolvedValue({ checkpointDate: '2026-08-24', readinessStatus: 'not_ready', blockers: ['window'] });
+    mocks.capture.mockResolvedValue({ checkpointDate: '2026-08-24', readinessStatus: 'not_ready', blockers: ['checkpoint_days'], continuityAlert: 'not_needed' });
   });
 
   it('rejects unauthenticated collection attempts', async () => {
@@ -26,7 +26,7 @@ describe('profit baseline checkpoint cron', () => {
     expect(mocks.capture).toHaveBeenCalledOnce();
     expect(await response.json()).toEqual({
       ok: true,
-      result: { checkpointDate: '2026-08-24', readinessStatus: 'not_ready', blockers: ['window'] },
+      result: { checkpointDate: '2026-08-24', readinessStatus: 'not_ready', blockers: ['checkpoint_days'], continuityAlert: 'not_needed' },
     });
   });
 });

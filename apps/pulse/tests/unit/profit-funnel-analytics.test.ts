@@ -138,6 +138,7 @@ describe('profit funnel analytics', () => {
 
     expect(analytics.baselineReadiness.criteria.find((criterion) => criterion.id === 'checkpoint_days')).toMatchObject({ actual: 6, target: 7, met: false });
     expect(analytics.baselineReadiness.blockers).toContain('checkpoint_days');
+    expect(analytics.baselineReadiness.missingCheckpointDates).toEqual(['2026-08-21']);
   });
 });
 

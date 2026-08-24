@@ -114,7 +114,7 @@ Reformed after the trustworthy baseline, failure audit, and rental qualification
 2. Complete: measure hot-alert delivery and authoritative contact latency against separate service targets.
 3. Complete: escalate delivered hot leads only when no contact receipt exists after the operating-hours threshold.
 4. Complete: promote commercial inventory-truth fixtures to a regression gate.
-5. Active: collect one complete baseline week; readiness now requires seven distinct privacy-safe daily checkpoints in the rolling window, while the scorecard makes qualified-lead, closed-revenue, identity, and attributable-cost coverage explicit enough for a go/no-go decision.
+5. Active: collect one complete baseline week; readiness requires seven distinct privacy-safe daily checkpoints, and the next successful collector run sends an idempotent operator alert for any missed dates. The scorecard keeps qualified-lead, closed-revenue, identity, and attributable-cost coverage explicit for the go/no-go decision.
 6. Conditional: begin model-cost and channel-spend optimization only after the baseline readiness check passes.
 
 Profit rationale: improve handoff and agent follow-through before reducing model cost, because premature cost optimization can lower conversion while revenue attribution is still sparse.

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { supabaseAdmin } from '@/lib/supabase';
+import { dispatchOperationalAlert } from '@/lib/notifications/agentAlertChannels';
 
 const WINDOW_DAYS = 7;
 const BASELINE_MIN_QUALIFIED_LEADS = 10;
@@ -319,7 +320,22 @@ export async function captureProfitBaselineCheckpoint(now = new Date()) {
   const { error } = await supabaseAdmin.from('profit_baseline_checkpoints')
     .upsert(row, { onConflict: 'checkpoint_date' });
   if (error) throw new Error('Unable to persist the profit baseline checkpoint.');
-  return { checkpointDate: row.checkpoint_date, readinessStatus: row.readiness_status, blockers: row.blockers };
+  let continuityAlert: 'not_needed' | 'sent' | 'failed' | 'suppressed' = 'not_needed';
+  if (analytics.baselineReadiness.missingCheckpointDates.length) {
+    const missing = analytics.baselineReadiness.missingCheckpointDates;
+    const alert = await dispatchOperationalAlert({
+      subject: `Profit baseline gap: ${missing.length} missed checkpoint${missing.length === 1 ? '' : 's'}`,
+      idempotencyKey: `profit-baseline-gap-${missing.join('.')}`,
+      text: [
+        `Missing daily checkpoint dates: ${missing.join(', ')}`,
+        'Margin experiments remain blocked until seven continuous daily receipts are available.',
+        '',
+        'Open Sunset Pulse: https://sunsetpulse.app/admin/profit',
+      ].join('\n'),
+    });
+    continuityAlert = alert.status;
+  }
+  return { checkpointDate: row.checkpoint_date, readinessStatus: row.readiness_status, blockers: row.blockers, continuityAlert };
 }
 
 function buildBaselineReadiness(input: {
@@ -334,7 +350,9 @@ function buildBaselineReadiness(input: {
   notificationCostReceipts: number;
   sentNotifications: number;
 }) {
-  const checkpointDays = new Set(input.checkpointDates.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))).size;
+  const validCheckpointDates = [...new Set(input.checkpointDates.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)))].sort();
+  const checkpointDays = validCheckpointDates.length;
+  const missingCheckpointDates = missingDatesBetween(validCheckpointDates);
   const criteria = [
     readinessCriterion('checkpoint_days', 'Daily checkpoint coverage', checkpointDays, WINDOW_DAYS, 'days'),
     readinessCriterion('qualified_volume', 'Qualified lead volume', input.qualifiedLeads, BASELINE_MIN_QUALIFIED_LEADS, 'leads'),
@@ -350,7 +368,22 @@ function buildBaselineReadiness(input: {
     decision: blockers.length ? 'continue_baseline' as const : 'start_margin_experiments' as const,
     criteria,
     blockers,
+    missingCheckpointDates,
   };
+}
+
+function missingDatesBetween(dates: string[]) {
+  if (dates.length < 2) return [];
+  const present = new Set(dates);
+  const cursor = new Date(`${dates[0]}T00:00:00.000Z`);
+  const end = Date.parse(`${dates[dates.length - 1]}T00:00:00.000Z`);
+  const missing: string[] = [];
+  while (cursor.getTime() <= end) {
+    const date = cursor.toISOString().slice(0, 10);
+    if (!present.has(date)) missing.push(date);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return missing;
 }
 
 function readinessCriterion(id: string, label: string, actual: number, target: number, unit: 'days' | 'leads' | 'percent') {
