@@ -155,6 +155,7 @@ export default function SignPacketPage() {
         <div className="grid gap-5 lg:grid-cols-[1fr_0.75fr]">
           <section className="space-y-4 rounded-lg border border-slate-300 bg-white p-5">
             <h2 className="text-sm font-black uppercase tracking-[0.14em]">Packet Review</h2>
+            {draft.kind === 'buyer_tenant_representation' ? <RepresentationReview draft={draft} /> : <>
             <div className="grid gap-3 md:grid-cols-2">
               <Fact label="Property" value={draft.transaction?.propertyAddress} />
               <Fact label="Buyer(s)" value={draft.parties?.buyers?.join(', ')} />
@@ -172,6 +173,7 @@ export default function SignPacketPage() {
                 {(draft.forms?.otherForms || []).map((form: any) => <li key={form.formId}>{form.formName} ({form.formId})</li>)}
               </ul>
             </div>
+            </>}
           </section>
 
           <aside className="rounded-lg border border-slate-300 bg-white p-5">
@@ -223,7 +225,7 @@ export default function SignPacketPage() {
 
                 <label className="flex items-start gap-3 rounded border border-slate-300 bg-slate-50 p-3 text-sm leading-6">
                   <input type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} className="mt-1" />
-                  <span>I consent to use an electronic signature for this draft packet and acknowledge this packet is prepared for realtor review.</span>
+                  <span>I consent to use an electronic signature for this agreement and acknowledge that I reviewed the displayed terms before signing.</span>
                 </label>
 
                 {message && <p className="rounded border border-cyan-300 bg-cyan-50 p-3 text-sm text-cyan-950">{message}</p>}
@@ -258,3 +260,9 @@ function formatMoney(value?: number | null) {
   if (!value) return 'N/A';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
+
+function RepresentationReview({ draft }: { draft: any }) {
+  return <div className="space-y-4"><div className="border border-amber-300 bg-amber-50 p-3 text-xs leading-6 text-amber-950">Attorney and responsible-broker review required before production use. Review the complete scope, compensation, intermediary choice, and dates before signing.</div><div className="grid gap-3 md:grid-cols-2"><Fact label="Client" value={`${draft.parties?.clientName} (${draft.parties?.clientRole})`} /><Fact label="Broker" value={`${draft.parties?.brokerLegalName} · ${draft.parties?.brokerLicenseNumber}`} /><Fact label="Agent" value={`${draft.parties?.agentName} · ${draft.parties?.agentLicenseNumber}`} /><Fact label="Market area" value={draft.scope?.marketArea} /><Fact label="Relationship" value={draft.scope?.exclusivity?.replace('_', ' ')} /><Fact label="Term" value={`${draft.effectivePeriod?.startsOn} through ${draft.effectivePeriod?.endsOn}`} /></div><TextSection title="Fiduciary duties" items={draft.fiduciaryDuties || []} /><TextSection title="Client responsibilities" items={draft.clientResponsibilities || []} /><div className="border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Compensation</p><p className="mt-2 text-sm leading-6">{draft.compensation?.terms}</p><p className="mt-2 text-xs leading-5 text-slate-600">{draft.compensation?.notice}</p></div><div className="border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Intermediary</p><p className="mt-2 text-sm leading-6">{draft.intermediary?.notice}</p></div><TextSection title="Notices" items={draft.notices || []} />{draft.references?.map((reference: any) => <a key={reference.href} href={reference.href} target="_blank" rel="noreferrer" className="block text-sm font-bold text-cyan-800 underline">{reference.label}</a>)}</div>;
+}
+
+function TextSection({ title, items }: { title: string; items: string[] }) { return <div className="border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">{title}</p><ul className="mt-2 space-y-2 text-sm leading-6">{items.map((item) => <li key={item}>- {item}</li>)}</ul></div>; }

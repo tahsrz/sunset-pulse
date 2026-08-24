@@ -81,6 +81,7 @@ graph LR
 - Operator-guarded Crawl4AI ingestion can turn approved regional sites, brokerage pages, and public-record URLs into a local lead-intelligence JSONL ledger plus optional `.source.md` audit files and binary TAH cartridges.
 - Native inbox notifications, Resend email, and optional Telnyx SMS provide an owned alert path with durable delivery records.
 - Atlas includes an authenticated Jamie Retrieval Inspector with cartridge-selection traces, latency and fallback diagnostics, and a 20-question evaluation corpus.
+- `/contracts/representation` creates an attorney-review buyer/tenant representation draft, generates a secure signing packet, and sends the signer link to any validated email through Resend.
 - The operator-only `/api/admin/profit/scorecard` reports the Jamie-to-revenue funnel, estimated pipeline value, delivery reliability, unanswered questions, and configurable model/notification costs.
 
 ### 📈 Lead Sigmoid Maturation Flow
