@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_f4e4ffd6b8f564c6",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!BANG!\",\"retryPages\":[],\"freshPages\":[1921683,6893310],\"continuationAfter\":\"!Hu_language\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:24:09.190Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 1921683,
+        "title": "!Hero",
+        "url": "https://en.wikipedia.org/wiki/!Hero"
+      },
+      "recordId": "lead_crawl_cfiy5z",
+      "title": "!Hero - Wikipedia",
+      "crawledAt": "2026-08-13T19:24:05.419Z",
+      "markdownChars": 20961
+    },
+    {
+      "page": {
+        "pageid": 6893310,
+        "title": "!Hero (album)",
+        "url": "https://en.wikipedia.org/wiki/!Hero_(album)"
+      },
+      "recordId": "lead_crawl_7h20iv",
+      "title": "!Hero (album) - Wikipedia",
+      "crawledAt": "2026-08-13T19:24:09.188Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_f4e4ffd6b8f564c6.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!Hu_language",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:24:09.190Z",
+    "runCount": 5,
+    "batchCount": 5,
+    "enumeratedCount": 8,
+    "crawledCount": 8,
+    "importedCount": 8,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

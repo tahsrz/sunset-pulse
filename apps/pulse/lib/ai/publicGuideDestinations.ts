@@ -55,7 +55,9 @@ export function buildPublicGuideActions(input: {
   if (input.context?.agent) {
     actions.push({
       ...createAction('contact_agent'),
-      label: `Contact ${input.context.agent.agentName}`,
+      label: input.outcome === 'listing_search' && input.listings.length === 0
+        ? `Ask ${input.context.agent.agentName} to search`
+        : `Contact ${input.context.agent.agentName}`,
     });
     actions.push(createAction('view_agent_site', input.context.agent.publicUrl));
   }

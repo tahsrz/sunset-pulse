@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest } from 'next/server';
-import connectDB from '@/lib/core/database';
-import Property from '@/models/Property';
 import { successResponse } from '@/lib/core/apiResponse';
-import { sanitizeMlsForPublicUse } from '@/lib/data/mlsCompliance';
+import { searchHistoricalPublicListings } from '@/lib/data/publicInventory';
 import { VALUE_GUESS_DECK, normalizePropertyForValueGuess } from '@/lib/value-guess/game';
 
 const DEFAULT_LIMIT = 60;
@@ -14,23 +12,9 @@ export async function GET(request: NextRequest) {
   const limit = clampLimit(request.nextUrl.searchParams.get('limit'));
 
   try {
-    await connectDB();
-    const rawProperties = await Property.find({
-      is_demo: { $ne: true },
-      listing_status: { $in: ['Sold', 'Closed', 'S'] },
-      $or: [
-        { price_type: 'sale', list_price: { $gte: 50000 } },
-        { price_type: 'sale', price: { $gte: 50000 } },
-        { list_price: { $gte: 50000 } }
-      ],
-      images: { $exists: true, $ne: [] }
-    })
-      .sort({ updatedAt: -1, createdAt: -1 })
-      .limit(MAX_SCAN_LIMIT)
-      .lean();
-
-    const listings = rawProperties
-      .map((property: any) => normalizePropertyForValueGuess(sanitizeMlsForPublicUse(property)))
+    const publicListings = await searchHistoricalPublicListings(MAX_SCAN_LIMIT);
+    const listings = publicListings
+      .map((property) => normalizePropertyForValueGuess(property))
       .filter(Boolean)
       .slice(0, limit);
 

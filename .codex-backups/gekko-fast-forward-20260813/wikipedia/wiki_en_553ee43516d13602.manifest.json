@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_553ee43516d13602",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Babbacombe\\\"_Lee\",\"retryPages\":[],\"freshPages\":[7019731],\"continuationAfter\":\"\\\"Bad_Ass\\\"_Billy_Gunn\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:34:54.284Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 7019731,
+        "title": "\"Babbacombe\" Lee",
+        "url": "https://en.wikipedia.org/wiki/%22Babbacombe%22_Lee"
+      },
+      "recordId": "lead_crawl_pbqdpm",
+      "title": "\"Babbacombe\" Lee - Wikipedia",
+      "crawledAt": "2026-08-13T19:34:54.283Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_553ee43516d13602.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Bad_Ass\"_Billy_Gunn",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:34:54.284Z",
+    "runCount": 23,
+    "batchCount": 23,
+    "enumeratedCount": 36,
+    "crawledCount": 36,
+    "importedCount": 36,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

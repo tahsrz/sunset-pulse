@@ -503,7 +503,7 @@ export const POST = async (request: NextRequest) => {
       tourType = 'in-person', // "in-person" | "video" | "virtual"
       message = '',
     } = requestData;
-    const agentId = getAgentIdFromInput({ agentId: requestData.agentId });
+    const agentId = getAgentIdFromInput();
 
     if (!preferredDate || !preferredTime || !userEmail || !userName) {
       return errorResponse('Required scheduling parameters are missing (preferredDate, preferredTime, userEmail, userName).', 400);

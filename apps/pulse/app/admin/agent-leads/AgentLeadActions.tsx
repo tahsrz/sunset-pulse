@@ -10,7 +10,9 @@ import {
   Clock,
   Copy,
   Loader2,
+  Mail,
   MessageSquare,
+  Phone,
   RotateCcw,
   Save,
   Sparkles,
@@ -21,11 +23,12 @@ import {
   type PublicGuideDispositionId,
 } from '@/lib/ai/publicGuideConversionContract';
 import {
-  deriveNextBestAction,
   generateFollowUpMessage,
   type AgentSiteLeadData,
   type LeadStatus,
 } from '@/lib/sites/leadOperatingSystem';
+import { resolveLeadExecutionIntent } from '@/lib/sites/leadExecutionIntent';
+import { readPublicGuideLeadIntelligence } from '@/lib/sites/publicGuideLeadIntelligence';
 
 type AgentLeadActionsProps = {
   lead: AgentSiteLeadData;
@@ -57,8 +60,30 @@ export default function AgentLeadActions({
   const [error, setError] = useState('');
   const [copiedType, setCopiedType] = useState<'email' | 'sms' | null>(null);
 
-  const nextAction = deriveNextBestAction({ ...lead, status: currentStatus });
+  const executionIntent = resolveLeadExecutionIntent(
+    { ...lead, status: currentStatus },
+    readPublicGuideLeadIntelligence(lead.metadata),
+    agentName,
+  );
   const auditTrail = Array.isArray(lead.metadata?.auditTrail) ? (lead.metadata?.auditTrail as any[]) : [];
+
+  const trackExecution = () => {
+    if (executionIntent.type === 'unavailable') return;
+
+    void fetch('/api/admin/agent-leads/action-events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId: lead.id,
+        actionType: executionIntent.type,
+        agentId: lead.agent_id,
+        listingId: lead.listing_mls_id || lead.listing_id || null,
+      }),
+      keepalive: true,
+    }).catch(() => {
+      // Telemetry must not interrupt the native contact action.
+    });
+  };
 
   const runAction = async (payloadData: Record<string, unknown>) => {
     setState('saving');
@@ -109,17 +134,34 @@ export default function AgentLeadActions({
           <Sparkles size={16} />
           <span className="text-[10px] font-black uppercase tracking-[0.24em]">Next Best Action</span>
           <span className={`ml-auto rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
-            nextAction.urgency === 'immediate'
+            executionIntent.urgency === 'immediate'
               ? 'bg-red-500/20 text-red-300 border border-red-400/30'
-              : nextAction.urgency === 'high'
+              : executionIntent.urgency === 'high'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
                 : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
           }`}>
-            {nextAction.urgency}
+            {executionIntent.urgency}
           </span>
         </div>
-        <p className="mt-2 text-xs font-black text-white">{nextAction.label}</p>
-        <p className="mt-1 text-[11px] leading-5 text-slate-300">{nextAction.recommendation}</p>
+        <p className="mt-2 text-xs font-black text-white">{executionIntent.recommendationLabel}</p>
+        <p className="mt-1 text-[11px] leading-5 text-slate-300">{executionIntent.recommendation}</p>
+
+        {executionIntent.href ? (
+          <a
+            href={executionIntent.href}
+            onClick={trackExecution}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-slate-950 transition hover:bg-cyan-200"
+          >
+            {executionIntent.type === 'call' ? <Phone size={15} /> : null}
+            {executionIntent.type === 'email' ? <Mail size={15} /> : null}
+            {executionIntent.type === 'sms' ? <MessageSquare size={15} /> : null}
+            {executionIntent.actionLabel}
+          </a>
+        ) : (
+          <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
+            {executionIntent.reason}
+          </p>
+        )}
 
         {/* 1-Click Follow-Up Copy */}
         <div className="mt-4 flex flex-wrap gap-2">
@@ -143,6 +185,16 @@ export default function AgentLeadActions({
             </button>
           ) : null}
         </div>
+      </section>
+
+      <section className="border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Engagement receipts</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <button type="button" disabled={state === 'saving'} onClick={() => runAction({ action: 'record_contact', channel: executionIntent.type === 'unavailable' ? 'email' : executionIntent.type })} className="inline-flex items-center justify-center gap-2 border border-blue-300/20 px-3 py-2 text-[10px] font-black uppercase text-blue-100 hover:bg-blue-300/10 disabled:opacity-50"><Phone size={14} />Record attempt</button>
+          <button type="button" disabled={state === 'saving'} onClick={() => runAction({ action: 'record_response', source: 'customer_reply' })} className="inline-flex items-center justify-center gap-2 border border-emerald-300/20 px-3 py-2 text-[10px] font-black uppercase text-emerald-100 hover:bg-emerald-300/10 disabled:opacity-50"><MessageSquare size={14} />Record reply</button>
+          <button type="button" disabled={state === 'saving'} onClick={() => runAction({ action: 'record_response', source: 'appointment_booked' })} className="inline-flex items-center justify-center gap-2 border border-purple-300/20 px-3 py-2 text-[10px] font-black uppercase text-purple-100 hover:bg-purple-300/10 disabled:opacity-50"><CheckCircle2 size={14} />Record appointment</button>
+        </div>
+        <p className="mt-3 text-[11px] text-slate-400">Attempt: {lead.contact_attempted_at ? formatShortTime(lead.contact_attempted_at) : 'not recorded'} · Response: {lead.responded_at ? `${lead.response_source === 'appointment_booked' ? 'appointment' : 'reply'} ${formatShortTime(lead.responded_at)}` : 'not recorded'}</p>
       </section>
 
       {/* Pipeline Status Selector */}

@@ -19,7 +19,12 @@ import { useTheme } from '@/context/ThemeProvider';
 
 type JamieAssistantWorkspaceProps = {
   apiRoute?: string;
-  propertyData?: unknown;
+  propertyData?: {
+    id?: unknown;
+    _id?: unknown;
+    mls_id?: unknown;
+    mlsId?: unknown;
+  } | null;
   memoryContext?: unknown;
   isDevMode?: boolean;
 };
@@ -31,6 +36,9 @@ export default function JamieAssistantWorkspace({
   isDevMode = false
 }: JamieAssistantWorkspaceProps) {
   const { agentId, assistantProfile } = useTheme();
+  const listingId = [propertyData?.id, propertyData?._id, propertyData?.mls_id, propertyData?.mlsId]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    ?.trim();
   const modelAdapter = useMemo<ChatModelAdapter>(() => ({
     async run({ messages, abortSignal }) {
       const response = await fetch(apiRoute, {
@@ -38,7 +46,7 @@ export default function JamieAssistantWorkspace({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: toJamieMessages(messages),
-          propertyData,
+          listingId,
           memoryContext,
           isDevMode,
           agentId,
@@ -66,7 +74,7 @@ export default function JamieAssistantWorkspace({
         }
       };
     }
-  }), [agentId, apiRoute, isDevMode, memoryContext, propertyData]);
+  }), [agentId, apiRoute, isDevMode, listingId, memoryContext]);
 
   const runtime = useLocalRuntime(modelAdapter);
 

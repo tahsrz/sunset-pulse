@@ -8,7 +8,7 @@ import {
   type AgentLaunchKitResponse,
   type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
-import { readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
+import { claimPastDueSiteConfigForExpiry, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import {
   notifyBuyerSiteBillingUpdate,
   notifyBuyerSiteGraceExpired,
@@ -289,6 +289,12 @@ export async function expirePastDueGracePeriods(input: {
 
     if (kit.status === 'draft') {
       processed.push({ agentId: kit.agentId, status: 'skipped', reason: 'already_draft', siteStatus: kit.status });
+      continue;
+    }
+
+    const claimed = await claimPastDueSiteConfigForExpiry(kit.agentId, gracePeriodEndsAt, nowIso);
+    if (!claimed) {
+      processed.push({ agentId: kit.agentId, status: 'skipped', reason: 'expiry_claim_lost', siteStatus: kit.status });
       continue;
     }
 

@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_ede9c4b12b0ec917",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Chūkara\\\":_Ebichū_no_Waku_Waku_Best\",\"retryPages\":[],\"freshPages\":[52541728,43119750],\"continuationAfter\":\"\\\"Classy\\\"_Freddie_Blassie\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:42:42.358Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 52541728,
+        "title": "\"Chūsotsu\" \"Chūkara\"",
+        "url": "https://en.wikipedia.org/wiki/%22Ch%C5%ABsotsu%22_%22Ch%C5%ABkara%22"
+      },
+      "recordId": "lead_crawl_1mubo3m",
+      "title": "\"Chūsotsu\" \"Chūkara\" - Wikipedia",
+      "crawledAt": "2026-08-13T19:42:38.728Z",
+      "markdownChars": 30000
+    },
+    {
+      "page": {
+        "pageid": 43119750,
+        "title": "\"Civilized\" Sexual Morality and Modern Nervous Illness",
+        "url": "https://en.wikipedia.org/wiki/%22Civilized%22_Sexual_Morality_and_Modern_Nervous_Illness"
+      },
+      "recordId": "lead_crawl_1ky5p09",
+      "title": "\"Civilized\" Sexual Morality and Modern Nervous Illness - Wikipedia",
+      "crawledAt": "2026-08-13T19:42:42.357Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_ede9c4b12b0ec917.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Classy\"_Freddie_Blassie",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:42:42.358Z",
+    "runCount": 36,
+    "batchCount": 36,
+    "enumeratedCount": 59,
+    "crawledCount": 59,
+    "importedCount": 59,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

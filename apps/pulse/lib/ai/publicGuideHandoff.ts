@@ -3,6 +3,7 @@ import 'server-only';
 import { groq } from '@ai-sdk/groq';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
 import {
   publicGuideSearchCriteriaSchema,
   type PublicGuideHandoffBrief,
@@ -41,7 +42,7 @@ export async function buildPublicGuideHandoffBrief({
     const configuredModel = process.env.JAMIE_PUBLIC_GUIDE_HANDOFF_MODEL
       || process.env.JAMIE_PUBLIC_GUIDE_MODEL
       || process.env.VERCEL_AI_MODEL;
-    const model = configuredModel || groq(process.env.JAMIE_GROQ_MODEL || 'llama-3.3-70b-versatile');
+    const model = configuredModel || groq(resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL));
     const result = await generateObject({
       model,
       schema: generatedBriefSchema,
@@ -110,8 +111,8 @@ function extractDeterministicSearchCriteria(text: string): PublicGuideSearchCrit
   const normalized = text.replace(/,/g, ' ');
   const priceMax = readAmount(normalized.match(/\b(?:under|below|up to|maximum(?: of)?|max(?: of)?)\s*\$?([\d.]+)\s*([km])?\b/i));
   const priceMin = readAmount(normalized.match(/\b(?:over|above|at least|minimum(?: of)?|min(?: of)?)\s*\$?([\d.]+)\s*([km])?\b/i));
-  const bedsMin = readNumber(normalized.match(/\b(?:at least\s+)?([\d.]+)\+?\s*(?:beds?|bedrooms?)\b/i));
-  const bathsMin = readNumber(normalized.match(/\b(?:at least\s+)?([\d.]+)\+?\s*(?:baths?|bathrooms?)\b/i));
+  const bedsMin = readNumber(normalized.match(/\b(?:at least\s+)?([\d.]+|one|two|three|four|five|six)\+?\s*(?:beds?|bedrooms?)\b/i));
+  const bathsMin = readNumber(normalized.match(/\b(?:at least\s+)?([\d.]+|one|two|three|four|five|six)\+?\s*(?:baths?|bathrooms?)\b/i));
   const propertyTypes = [
     ['single-family', /\bsingle[- ]family\b/i],
     ['condo', /\bcondo(?:minium)?s?\b/i],
@@ -126,15 +127,42 @@ function extractDeterministicSearchCriteria(text: string): PublicGuideSearchCrit
     ['more space', /\b(?:more space|square feet|sq\.?\s*ft)\b/i],
     ['move-in ready', /\bmove[- ]in ready\b/i],
   ].filter(([, pattern]) => (pattern as RegExp).test(normalized)).map(([label]) => label as string);
+  const transactionType = /\b(?:rent|rental|lease|leasing)\b/i.test(normalized)
+    ? 'lease'
+    : /\b(?:buy|buying|purchase|purchasing)\b/i.test(normalized) ? 'purchase' : 'unknown';
+  const leaseTermMonths = readLeaseTermMonths(normalized);
+  const timeline = readTimeline(normalized);
+  const locations = readLocations(normalized);
 
   return publicGuideSearchCriteriaSchema.parse({
+    locations,
     priceMin,
     priceMax,
     bedsMin,
     bathsMin,
     propertyTypes,
     priorities,
+    transactionType,
+    timeline,
+    leaseTermMonths,
   });
+}
+
+function readLeaseTermMonths(text: string) {
+  if (/\b(?:a|one|1)\s*[- ]?year\s+lease\b/i.test(text)) return 12;
+  const years = readNumber(text.match(/\b(\d{1,2})\s*[- ]?years?\s+lease\b/i));
+  if (years !== null) return years * 12;
+  return readNumber(text.match(/\b(\d{1,3})\s*[- ]?month\s+lease\b/i));
+}
+
+function readTimeline(text: string) {
+  const match = text.match(/\b(?:move(?:-| )?in|moving|by)\s+(?:date\s+)?(?:is\s+)?([^,.!?;]{2,60})/i);
+  return match?.[1]?.trim() || null;
+}
+
+function readLocations(text: string) {
+  const matches = Array.from(text.matchAll(/\b(?:in|near|around)\s+([A-Z][A-Za-z .'-]{1,50}?)(?=\s+(?:under|below|over|with|for|on|by|and|\d|a\b|an\b)|[,.!?;]|$)/g));
+  return Array.from(new Set(matches.map((match) => match[1].trim()))).slice(0, 5);
 }
 
 function readAmount(match: RegExpMatchArray | null) {
@@ -145,7 +173,9 @@ function readAmount(match: RegExpMatchArray | null) {
 }
 
 function readNumber(match: RegExpMatchArray | null) {
-  const value = Number(match?.[1]);
+  const token = match?.[1]?.toLowerCase();
+  const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+  const value = token && token in words ? words[token] : Number(token);
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 

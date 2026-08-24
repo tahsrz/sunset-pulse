@@ -35,11 +35,13 @@ import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { LeadStatus as PipelineLeadStatus } from '@/lib/sites/leadOperatingSystem';
 import {
-  publicGuideLeadIntelligenceSchema,
+  readPublicGuideLeadIntelligence,
+  sortLeadsByIntelligence,
   type PublicGuideLeadIntelligence,
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
+import NotificationInbox from './NotificationInbox';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -72,19 +74,26 @@ type AgentSiteLead = {
   internal_note: string | null;
   reviewed_at: string | null;
   archived_at: string | null;
+  contact_attempted_at: string | null;
+  contact_channel: 'call' | 'email' | 'sms' | null;
+  responded_at: string | null;
+  response_source: 'customer_reply' | 'appointment_booked' | null;
   metadata?: Record<string, unknown> | null;
 };
 
 type AgentLeadsPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     status?: string;
-  };
+    leadId?: string;
+  }>;
 };
 
 export default async function AgentLeadsPage({ searchParams }: AgentLeadsPageProps) {
   const requestHeaders = await headers();
   const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
-  const statusFilter = normalizeStatusFilter(searchParams?.status);
+  const resolvedSearchParams = await searchParams;
+  const statusFilter = normalizeStatusFilter(resolvedSearchParams?.status);
+  const selectedLeadId = normalizeLeadId(resolvedSearchParams?.leadId);
 
   if (!access.allowed) {
     return (
@@ -109,6 +118,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
   } else if (statusFilter !== 'all') {
     query = query.eq('status', statusFilter);
   }
+  if (selectedLeadId) query = query.eq('id', selectedLeadId);
 
   const [leadResult, analyticsResult, agentConsoleAnalyticsResult] = await Promise.all([
     query,
@@ -126,8 +136,9 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
       }),
   ]);
   const { data, error } = leadResult;
-  const leads = (data || []) as AgentSiteLead[];
-  const newestLead = leads[0];
+  const fetchedLeads = (data || []) as AgentSiteLead[];
+  const newestLead = fetchedLeads[0];
+  const leads = sortLeadsByIntelligence(fetchedLeads);
   const listingLeadCount = leads.filter((lead) => lead.listing_mls_id || lead.listing_id).length;
   const uniqueAgents = new Set(leads.map((lead) => lead.agent_id)).size;
   const activeLeadCount = leads.filter((lead) => (lead.status || 'new') !== 'archived').length;
@@ -151,6 +162,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <NotificationInbox />
               <AdminPillLink href="/admin/lead-engine" label="Lead Engine" />
               <AdminPillLink href="/admin/launch-kit" label="Launch Kit" />
               <AdminPillLink href="/admin/site-reviews" label="Site Reviews" />
@@ -239,6 +251,12 @@ function AdminPillLink({ href, label }: { href: string; label: string }) {
   );
 }
 
+function normalizeLeadId(value?: string) {
+  return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : null;
+}
+
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
@@ -259,8 +277,7 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
   const guideDisposition = lead.source === 'jamie_public_guide'
     ? readPublicGuideDisposition(lead.metadata)
     : undefined;
-  const intelligenceResult = publicGuideLeadIntelligenceSchema.safeParse(lead.metadata?.leadIntelligence);
-  const leadIntelligence = intelligenceResult.success ? intelligenceResult.data : null;
+  const leadIntelligence = readPublicGuideLeadIntelligence(lead.metadata);
 
   return (
     <article className={`min-w-0 overflow-hidden rounded-[2rem] border p-5 shadow-2xl shadow-black/10 ${
@@ -694,10 +711,13 @@ function formatGuideSearchCriteria(brief: PublicGuideHandoffBrief) {
   const criteria = brief.searchCriteria;
   return [
     ...criteria.locations,
+    criteria.transactionType !== 'unknown' ? criteria.transactionType : null,
     criteria.priceMin !== null ? `from $${criteria.priceMin.toLocaleString()}` : null,
     criteria.priceMax !== null ? `up to $${criteria.priceMax.toLocaleString()}` : null,
     criteria.bedsMin !== null ? `${criteria.bedsMin}+ beds` : null,
     criteria.bathsMin !== null ? `${criteria.bathsMin}+ baths` : null,
+    criteria.leaseTermMonths !== null ? `${criteria.leaseTermMonths}-month lease` : null,
+    criteria.timeline ? `timeline: ${criteria.timeline}` : null,
     ...criteria.propertyTypes,
     ...criteria.priorities,
   ].filter(Boolean).join(' / ');

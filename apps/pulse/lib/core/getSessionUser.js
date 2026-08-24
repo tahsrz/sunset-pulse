@@ -36,6 +36,7 @@ export const getSessionUser = async () => {
 
     if (profileError) {
       console.error('[AUTH_CORE] Profile fetch failed:', profileError.message);
+      return null;
     }
 
     const metadata = user.user_metadata || {};

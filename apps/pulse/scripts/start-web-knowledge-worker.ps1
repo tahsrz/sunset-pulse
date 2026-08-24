@@ -14,8 +14,15 @@ $errLog = Join-Path $logDir "web-knowledge-worker.err.log"
 $launchLog = Join-Path $logDir "web-knowledge-worker.launch.log"
 $wikiOutLog = Join-Path $logDir "wikipedia-crawl4ai.out.log"
 $wikiErrLog = Join-Path $logDir "wikipedia-crawl4ai.err.log"
+$wikipediaStateDir = Join-Path $appRoot ".pulse-local\wikipedia"
+$wikipediaStatePath = Join-Path $wikipediaStateDir "ingestion-state.json"
+$legacyWikipediaStatePath = Join-Path $appRoot "cartridges\wikipedia\ingestion-state.json"
 
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+New-Item -ItemType Directory -Force -Path $wikipediaStateDir | Out-Null
+if (-not (Test-Path -LiteralPath $wikipediaStatePath) -and (Test-Path -LiteralPath $legacyWikipediaStatePath)) {
+  Copy-Item -LiteralPath $legacyWikipediaStatePath -Destination $wikipediaStatePath
+}
 if (Test-Path -LiteralPath $warsRoot) {
   New-Item -ItemType Directory -Force -Path (Join-Path $warsRoot "knowledge_hub\seeds") | Out-Null
   New-Item -ItemType Directory -Force -Path (Join-Path $warsRoot "knowledge_hub\processed") | Out-Null
@@ -35,8 +42,13 @@ if (-not $existingWikipedia) {
   if (-not (Test-Path -LiteralPath $crawlPython)) {
     throw "The Crawl4AI Python environment was not found at $crawlPython."
   }
+  & $crawlPython -c "from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig" 2>> $wikiErrLog
+  if ($LASTEXITCODE -ne 0) {
+    throw "The Crawl4AI Python environment failed its import preflight. See $wikiErrLog."
+  }
   $env:LEAD_INTEL_PYTHON = $crawlPython
   $env:LEAD_INTEL_ALLOWED_DOMAINS = "wikipedia.org"
+  $env:WIKIPEDIA_INGESTION_STATE_PATH = $wikipediaStatePath
   $wikiProcess = Start-Process `
     -FilePath "node.exe" `
     -ArgumentList @($tsxCli, $wikipediaScript, "--continuous") `

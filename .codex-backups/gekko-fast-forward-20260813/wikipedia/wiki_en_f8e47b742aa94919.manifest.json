@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_f8e47b742aa94919",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"!Ora_people\",\"retryPages\":[],\"freshPages\":[29988427,10602714],\"continuationAfter\":\"!Xoong_language\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:26:26.187Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 29988427,
+        "title": "!Women Art Revolution",
+        "url": "https://en.wikipedia.org/wiki/!Women_Art_Revolution"
+      },
+      "recordId": "lead_crawl_1mu384c",
+      "title": "!Women Art Revolution - Wikipedia",
+      "crawledAt": "2026-08-13T19:26:22.609Z",
+      "markdownChars": 30000
+    },
+    {
+      "page": {
+        "pageid": 10602714,
+        "title": "!Wowow!",
+        "url": "https://en.wikipedia.org/wiki/!Wowow!"
+      },
+      "recordId": "lead_crawl_1pt821q",
+      "title": "!Wowow! - Wikipedia",
+      "crawledAt": "2026-08-13T19:26:26.186Z",
+      "markdownChars": 30000
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_f8e47b742aa94919.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "!Xoong_language",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:26:26.187Z",
+    "runCount": 9,
+    "batchCount": 9,
+    "enumeratedCount": 13,
+    "crawledCount": 13,
+    "importedCount": 13,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

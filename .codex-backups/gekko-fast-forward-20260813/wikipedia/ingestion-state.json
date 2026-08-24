@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "language": "en",
+  "continuation": "\"Little_Bill\"_Johnston",
+  "complete": false,
+  "startedAt": "2026-08-13T19:21:38.662Z",
+  "updatedAt": "2026-08-13T20:17:02.628Z",
+  "runCount": 96,
+  "batchCount": 57,
+  "enumeratedCount": 142,
+  "crawledCount": 94,
+  "importedCount": 94,
+  "crawlFailureCount": 123,
+  "terminalFailureCount": 34,
+  "retryQueue": [
+    {
+      "pageid": 82695297,
+      "title": "\"Italy – Costa Rica\" Biological Meteo-Climatic Station",
+      "url": "https://en.wikipedia.org/wiki/%22Italy_%E2%80%93_Costa_Rica%22_Biological_Meteo-Climatic_Station",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 487976,
+      "title": "\"King\" Bennie Nawahi",
+      "url": "https://en.wikipedia.org/wiki/%22King%22_Bennie_Nawahi",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 16252208,
+      "title": "\"J\" Is for Judgment",
+      "url": "https://en.wikipedia.org/wiki/%22J%22_Is_for_Judgment",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 77493252,
+      "title": "\"Kodomo o Koroshite Kudasai\" to Iu Oya-tachi",
+      "url": "https://en.wikipedia.org/wiki/%22Kodomo_o_Koroshite_Kudasai%22_to_Iu_Oya-tachi",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 83929784,
+      "title": "\"Jack Latiao\" cat abuse incident",
+      "url": "https://en.wikipedia.org/wiki/%22Jack_Latiao%22_cat_abuse_incident",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 16252578,
+      "title": "\"L\" Is for Lawless",
+      "url": "https://en.wikipedia.org/wiki/%22L%22_Is_for_Lawless",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 64139594,
+      "title": "\"Jesus saves\" case",
+      "url": "https://en.wikipedia.org/wiki/%22Jesus_saves%22_case",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 38499517,
+      "title": "\"Left-Wing\" Communism: An Infantile Disorder",
+      "url": "https://en.wikipedia.org/wiki/%22Left-Wing%22_Communism%3A_An_Infantile_Disorder",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 73467257,
+      "title": "\"Josip Broz Tito\" Art Gallery of the Nonaligned Countries",
+      "url": "https://en.wikipedia.org/wiki/%22Josip_Broz_Tito%22_Art_Gallery_of_the_Nonaligned_Countries",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 29524457,
+      "title": "\"Leptura\" longipennis",
+      "url": "https://en.wikipedia.org/wiki/%22Leptura%22_longipennis",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 16252523,
+      "title": "\"K\" Is for Killer",
+      "url": "https://en.wikipedia.org/wiki/%22K%22_Is_for_Killer",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 71666393,
+      "title": "\"Let All of Them Take Heed\"",
+      "url": "https://en.wikipedia.org/wiki/%22Let_All_of_Them_Take_Heed%22",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 72535323,
+      "title": "\"Khan gizi\" spring",
+      "url": "https://en.wikipedia.org/wiki/%22Khan_gizi%22_spring",
+      "attempts": 2,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    },
+    {
+      "pageid": 1393317,
+      "title": "\"Little\" North Western Railway",
+      "url": "https://en.wikipedia.org/wiki/%22Little%22_North_Western_Railway",
+      "attempts": 1,
+      "lastError": "cannot import name 'AsyncWebCrawler' from 'crawl4ai' (unknown location). Install optional worker dependencies with python -m pip install -r workers/lead-intel-crawler/requirements.txt and python -m playwright install chromium."
+    }
+  ]
+}

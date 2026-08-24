@@ -10,6 +10,7 @@ import {
   supervisePublicGuideReply,
 } from '@/lib/ai/publicGuideSupervisor';
 import { jamieAiSdkTools, type JamiePropertySearchResult } from '@/lib/ai/jamieTools';
+import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
 
 const PUBLIC_GUIDE_SYSTEM_PROMPT = `
 You are Jamie, the public guide at jamie.sunsetpulse.app.
@@ -46,7 +47,7 @@ export async function runPublicJamieGuide(
   if (deterministic) return completePublicGuideResult(deterministic, options, lastUserMessage);
 
   const configuredModel = process.env.JAMIE_PUBLIC_GUIDE_MODEL || process.env.VERCEL_AI_MODEL;
-  const model = configuredModel || groq(process.env.JAMIE_GROQ_MODEL || 'llama-3.3-70b-versatile');
+  const model = configuredModel || groq(resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL));
 
   const result = await generateText({
     model,
@@ -68,13 +69,17 @@ export async function runPublicJamieGuide(
     listingSearch,
   });
 
-  return completePublicGuideResult(supervised, options, lastUserMessage);
+  return completePublicGuideResult(supervised, options, lastUserMessage, {
+    modelId: configuredModel || resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL),
+    usage: normalizeUsage(result.usage),
+  });
 }
 
 function completePublicGuideResult(
   supervised: ReturnType<typeof supervisePublicGuideReply>,
   options: { context?: PublicGuideContext | null; rootOrigin?: string },
   userMessage: string,
+  generation?: { modelId: string; usage: { inputTokens: number; outputTokens: number; totalTokens: number } | null },
 ) {
   const rootOrigin = options.rootOrigin || getDefaultRootOrigin();
   const listings = supervised.listings.map((listing) => ({
@@ -92,7 +97,22 @@ function completePublicGuideResult(
       rootOrigin,
       userMessage,
     }),
+    generation: generation || null,
   };
+}
+
+function normalizeUsage(value: unknown) {
+  if (!value || typeof value !== 'object') return null;
+  const usage = value as Record<string, unknown>;
+  const inputTokens = nonNegativeInteger(usage.inputTokens);
+  const outputTokens = nonNegativeInteger(usage.outputTokens);
+  const totalTokens = nonNegativeInteger(usage.totalTokens) || inputTokens + outputTokens;
+  return totalTokens > 0 ? { inputTokens, outputTokens, totalTokens } : null;
+}
+
+function nonNegativeInteger(value: unknown) {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.round(number) : 0;
 }
 
 function findListingSearchResult(steps: Array<{ toolResults: Array<{ toolName: string; output: unknown }> }>) {

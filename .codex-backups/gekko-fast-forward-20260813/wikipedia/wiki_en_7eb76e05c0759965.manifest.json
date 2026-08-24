@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_7eb76e05c0759965",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"10th_Anniversary_of_the_Armed_Forces_of_Azerbaijan_(1991–2001)\\\"_Medal\",\"retryPages\":[],\"freshPages\":[77040258],\"continuationAfter\":\"\\\"40_Licks\\\"_World_tour\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:29:24.017Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 77040258,
+        "title": "\"28 Nëntori\" Gymnasium",
+        "url": "https://en.wikipedia.org/wiki/%2228_N%C3%ABntori%22_Gymnasium"
+      },
+      "recordId": "lead_crawl_1h3o68o",
+      "title": "\"28 Nëntori\" Gymnasium - Wikipedia",
+      "crawledAt": "2026-08-13T19:29:24.016Z",
+      "markdownChars": 26498
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_7eb76e05c0759965.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"40_Licks\"_World_tour",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:29:24.017Z",
+    "runCount": 14,
+    "batchCount": 14,
+    "enumeratedCount": 21,
+    "crawledCount": 21,
+    "importedCount": 21,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

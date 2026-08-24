@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "batchId": "wiki_en_b4c8891b497e0052",
+  "checkpointKey": "{\"language\":\"en\",\"continuationBefore\":\"\\\"Bar_Or\\\"\",\"retryPages\":[],\"freshPages\":[39072529],\"continuationAfter\":\"\\\"Bazooka\\\"_Gomez\"}",
+  "language": "en",
+  "createdAt": "2026-08-13T19:36:04.958Z",
+  "articles": [
+    {
+      "page": {
+        "pageid": 39072529,
+        "title": "\"Bassy\" Bob Brockmann",
+        "url": "https://en.wikipedia.org/wiki/%22Bassy%22_Bob_Brockmann"
+      },
+      "recordId": "lead_crawl_17229hd",
+      "title": "\"Bassy\" Bob Brockmann - Wikipedia",
+      "crawledAt": "2026-08-13T19:36:04.957Z",
+      "markdownChars": 20876
+    }
+  ],
+  "failures": [],
+  "cartridgePath": "cartridges\\wikipedia\\wiki_en_b4c8891b497e0052.tah",
+  "stateAfter": {
+    "version": 1,
+    "language": "en",
+    "continuation": "\"Bazooka\"_Gomez",
+    "complete": false,
+    "startedAt": "2026-08-13T19:21:38.662Z",
+    "updatedAt": "2026-08-13T19:36:04.958Z",
+    "runCount": 25,
+    "batchCount": 25,
+    "enumeratedCount": 39,
+    "crawledCount": 39,
+    "importedCount": 39,
+    "crawlFailureCount": 0,
+    "terminalFailureCount": 0,
+    "retryQueue": []
+  }
+}

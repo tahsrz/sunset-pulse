@@ -114,6 +114,8 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   const pausedForTtsRef = useRef(false);
   const restartTimerRef = useRef<number | null>(null);
   const captionHoldUntilRef = useRef(0);
+  const disposedRef = useRef(false);
+  const recognitionGenerationRef = useRef(0);
 
   useEffect(() => { enabledRef.current = isWakeListeningEnabled; }, [isWakeListeningEnabled]);
 
@@ -127,7 +129,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     restartTimerRef.current = window.setTimeout(() => {
       restartTimerRef.current = null;
-      if (!enabledRef.current || pausedForTtsRef.current || activeRef.current || !recognitionRef.current) return;
+      if (disposedRef.current || !enabledRef.current || pausedForTtsRef.current || activeRef.current || !recognitionRef.current) return;
       try {
         recognitionRef.current.start();
         activeRef.current = true;
@@ -143,6 +145,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
 
   const stop = useCallback(() => {
     enabledRef.current = false;
+    recognitionGenerationRef.current += 1;
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     restartTimerRef.current = null;
     recognitionRef.current?.stop();
@@ -155,6 +158,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
 
   const start = useCallback(async () => {
     if (typeof window === 'undefined' || activeRef.current || startInFlightRef.current) return;
+    disposedRef.current = false;
     enabledRef.current = true;
     if (recognitionRef.current) {
       beginRecognition();
@@ -182,10 +186,13 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       dispatch({ type: 'STATUS', status: 'starting' });
 
       const recognition = new Recognition() as SpeechRecognitionLike;
+      const generation = recognitionGenerationRef.current + 1;
+      recognitionGenerationRef.current = generation;
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
       recognition.onresult = (event) => {
+        if (disposedRef.current || generation !== recognitionGenerationRef.current || pausedForTtsRef.current) return;
         const interimParts: string[] = [];
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index];
@@ -214,6 +221,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
         refreshCaption();
       };
       recognition.onerror = (event) => {
+        if (disposedRef.current || generation !== recognitionGenerationRef.current) return;
         activeRef.current = false;
         if (pausedForTtsRef.current || event.error === 'aborted' || event.error === 'no-speech') {
           if (enabledRef.current && !pausedForTtsRef.current) {
@@ -236,6 +244,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
         }
       };
       recognition.onend = () => {
+        if (disposedRef.current || generation !== recognitionGenerationRef.current) return;
         activeRef.current = false;
         if (enabledRef.current && !pausedForTtsRef.current) {
           beginRecognition(750);
@@ -282,17 +291,20 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const pauseForTts = () => {
       pausedForTtsRef.current = true;
-      recognitionRef.current?.stop();
-      activeRef.current = false;
       if (enabledRef.current) dispatch({ type: 'STATUS', status: 'jamie-speaking' });
     };
     const resumeAfterTts = () => {
       pausedForTtsRef.current = false;
-      if (enabledRef.current && recognitionRef.current) beginRecognition(250);
+      if (!enabledRef.current || !recognitionRef.current) return;
+      if (activeRef.current) dispatch({ type: 'STATUS', status: 'listening' });
+      else beginRecognition(250);
     };
     window.addEventListener(TTS_START_EVENT, pauseForTts);
     window.addEventListener(TTS_END_EVENT, resumeAfterTts);
     return () => {
+      disposedRef.current = true;
+      enabledRef.current = false;
+      recognitionGenerationRef.current += 1;
       window.removeEventListener(TTS_START_EVENT, pauseForTts);
       window.removeEventListener(TTS_END_EVENT, resumeAfterTts);
       if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
