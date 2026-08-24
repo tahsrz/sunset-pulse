@@ -62,6 +62,7 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
     { label: 'Hot alerts read', value: percent(scorecard.notifications.hotReadRate), detail: `${scorecard.notifications.hotRead}/${scorecard.notifications.hotTotal} high-priority alerts; not confirmed contact`, icon: BellRing },
     { label: 'Contact controls opened', value: String(scorecard.notifications.actionOpened), detail: 'Call, email, or SMS opened; not confirmed sent', icon: ArrowUpRight },
     { label: 'Delivery time', value: seconds(scorecard.notifications.averageDeliverySeconds), detail: `${percent(scorecard.notifications.deliveryRate)} sent successfully`, icon: Clock3 },
+    { label: 'Funnel identity', value: percent(coverage(scorecard.identity.leadsLinked, scorecard.identity.leadsTotal)), detail: `${scorecard.identity.deliveriesLinked}/${scorecard.identity.deliveriesTotal} deliveries linked`, icon: Gauge },
   ];
 
   return <>
@@ -77,6 +78,8 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
 }
 
 function Row({ label, value }: { label: string; value: number }) { return <div className="flex items-center justify-between border-b border-white/[0.06] pb-3"><dt className="text-slate-400">{label}</dt><dd className="font-black text-white">{value}</dd></div>; }
+
+function coverage(linked: number, total: number) { return total ? Math.round((linked / total) * 100) : null; }
 function percent(value: number | null | undefined) { return value === null || value === undefined ? '—' : `${value}%`; }
 function seconds(value: number | null) { return value === null ? '—' : `${value}s`; }
 function money(value: number | null) { return value === null ? '—' : `$${value.toFixed(2)}`; }

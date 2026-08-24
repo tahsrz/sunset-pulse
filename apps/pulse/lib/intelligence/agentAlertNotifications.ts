@@ -24,6 +24,7 @@ type NotificationDelivery = {
   source_event_id: string;
   agent_id: string;
   lead_id: string | null;
+  funnel_id: string | null;
   listing_id: string | null;
   alert_kind: 'high_intent_revisit' | 'tour_request';
   workflow_id: string;
@@ -99,6 +100,7 @@ async function enqueueAlertDeliveries(events: Awaited<ReturnType<typeof loadRece
       source_event_id: event.id,
       agent_id: result.alert.agentId,
       lead_id: result.alert.leadId,
+      funnel_id: stringValue(decision.payload.funnelId) || null,
       listing_id: result.alert.listingId || null,
       kind: result.alert.kind,
       priority: result.alert.priority,
@@ -116,6 +118,7 @@ async function enqueueAlertDeliveries(events: Awaited<ReturnType<typeof loadRece
       source_event_id: event.id,
       agent_id: result.alert.agentId,
       lead_id: result.alert.leadId,
+      funnel_id: stringValue(decision.payload.funnelId) || null,
       listing_id: result.alert.listingId || null,
       alert_kind: result.alert.kind,
       workflow_id: decision.workflowId,

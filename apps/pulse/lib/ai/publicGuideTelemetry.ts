@@ -37,7 +37,9 @@ export type PublicGuideTelemetryEvent = {
   hasListingContext?: boolean;
   intentCategory?: PublicGuideIntentCategory;
   outcome?: PublicGuideOutcome;
+  funnelId?: string;
   sessionId?: string;
+  targetId?: string;
   toolId?: 'search_properties';
   usedListingData?: boolean;
   generation?: {
@@ -63,7 +65,7 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
       p_description: `Jamie public guide event: ${event.event}.`,
       p_actor_id: `public:${anonymousSession}`,
       p_actor_name: 'Jamie_Public_Visitor',
-      p_target_id: event.actionId || event.toolId || event.intentCategory || event.outcome || 'jamie-guide',
+      p_target_id: event.targetId || event.actionId || event.toolId || event.intentCategory || event.outcome || 'jamie-guide',
       p_metadata: {
         actionId: event.actionId || null,
         durationMs: clampDuration(event.durationMs),
@@ -74,6 +76,7 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
         toolId: event.toolId || null,
         usedListingData: Boolean(event.usedListingData),
         modelId: sanitizeModelId(event.generation?.modelId),
+        funnelId: sanitizeUuid(event.funnelId),
         usage: sanitizeUsage(event.generation?.usage),
       },
       p_severity: event.event === 'guide_error' ? 'WARN' : 'INFO',
@@ -82,6 +85,12 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
   } catch (error) {
     console.warn('[JAMIE_PUBLIC_GUIDE_TELEMETRY]', error);
   }
+}
+
+function sanitizeUuid(value?: string) {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : null;
 }
 
 function sanitizeModelId(value?: string) {

@@ -24,6 +24,7 @@ type FunnelEvent = {
 
 type Lead = {
   id: string;
+  funnel_id?: string | null;
   metadata: Record<string, unknown> | null;
   status: string | null;
   source: string | null;
@@ -36,6 +37,7 @@ type Lead = {
 
 type Delivery = {
   id: string;
+  funnel_id?: string | null;
   lead_id: string | null;
   status: string;
   created_at: string;
@@ -71,12 +73,12 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
       .limit(5000),
     supabaseAdmin
       .from('agent_site_leads')
-      .select('id, metadata, status, source, estimated_pipeline_value, closed_revenue, value_currency, value_source, created_at')
+      .select('id, funnel_id, metadata, status, source, estimated_pipeline_value, closed_revenue, value_currency, value_source, created_at')
       .gte('created_at', since)
       .limit(2000),
     supabaseAdmin
       .from('notification_deliveries')
-      .select('id, lead_id, status, provider, cost_usd, created_at, completed_at')
+      .select('id, funnel_id, lead_id, status, provider, cost_usd, created_at, completed_at')
       .gte('created_at', since)
       .limit(2000),
     supabaseAdmin
@@ -180,6 +182,12 @@ export function buildProfitFunnelAnalytics(
       missingCostReceipts: receiptCosts.filter((value) => value === null).length,
     },
     acquisition: { modelCost, notificationCost, costPerQualifiedLead },
+    identity: {
+      leadsLinked: leads.filter((lead) => Boolean(lead.funnel_id || stringValue(lead.metadata?.funnelId))).length,
+      leadsTotal: leads.length,
+      deliveriesLinked: deliveries.filter((delivery) => Boolean(delivery.funnel_id)).length,
+      deliveriesTotal: deliveries.length,
+    },
     failureSignals: {
       unansweredQuestions: events.filter((event) => event.event_type === 'PUBLIC_GUIDE_UNANSWERED_QUESTION').length,
       failedNotifications: failed.length,
@@ -206,6 +214,10 @@ function optionalMoney(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === '') return null;
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function stringValue(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
 function readModelCost(metadata: Record<string, unknown> | null, ratePer1kTokens: number | null) {
