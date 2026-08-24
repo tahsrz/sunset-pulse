@@ -3,6 +3,9 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const WINDOW_DAYS = 7;
+const BASELINE_MIN_QUALIFIED_LEADS = 10;
+const BASELINE_MIN_CLOSED_LEADS = 3;
+const BASELINE_MIN_COVERAGE_PERCENT = 95;
 type ConfidenceState = 'verified' | 'partial' | 'unknown';
 const FUNNEL_EVENTS = [
   'PUBLIC_GUIDE_GUIDE_OPENED',
@@ -103,6 +106,7 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
     (deliveryResult.data || []) as Delivery[],
     (notificationResult.data || []) as AgentNotification[],
     readCostRates(),
+    now,
   );
 }
 
@@ -112,6 +116,7 @@ export function buildProfitFunnelAnalytics(
   deliveries: Delivery[],
   notifications: AgentNotification[] = [],
   rates: ProfitCostRates = readCostRates(),
+  now = new Date(),
 ) {
   const jamieLeads = leads.filter((lead) => lead.source === 'jamie_public_guide');
   const cohortLeadIds = new Set(leads.map((lead) => lead.id));
@@ -128,6 +133,8 @@ export function buildProfitFunnelAnalytics(
   const leadValues = leads.map(readLeadValue).filter((value): value is number => value !== null);
   const estimatedPipelineValue = leadValues.length ? leadValues.reduce((sum, value) => sum + value, 0) : null;
   const eventCosts = events.map((event) => readModelCost(event.metadata, rates.modelPer1kTokens)).filter((value): value is number => value !== null);
+  const modelCostEvents = events.filter((event) => event.event_type === 'PUBLIC_GUIDE_GUIDE_RESPONSE');
+  const modelCostReceipts = modelCostEvents.filter((event) => readModelCost(event.metadata, rates.modelPer1kTokens) !== null).length;
   const modelCost = eventCosts.length ? eventCosts.reduce((sum, value) => sum + value, 0) : null;
   const receiptCosts = sent.map((delivery) => optionalMoney(delivery.cost_usd));
   const hasCompleteNotificationReceipts = receiptCosts.every((value) => value !== null);
@@ -141,6 +148,7 @@ export function buildProfitFunnelAnalytics(
   const closedLeads = jamieLeads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').length;
   const qualifiedLeadIds = new Set(leads.filter((lead) => ['touring', 'closed'].includes((lead.status || '').toLowerCase())).map((lead) => lead.id));
   const closedLeadIds = new Set(leads.filter((lead) => (lead.status || '').toLowerCase() === 'closed').map((lead) => lead.id));
+  const closedRevenueReceipts = leads.filter((lead) => (lead.status || '').toLowerCase() === 'closed' && optionalMoney(lead.closed_revenue) !== null).length;
   const contactedLeads = jamieLeads.filter((lead) => Boolean(lead.contact_attempted_at));
   const respondedLeads = jamieLeads.filter((lead) => Boolean(lead.responded_at));
   const appointments = respondedLeads.filter((lead) => lead.response_source === 'appointment_booked');
@@ -177,9 +185,27 @@ export function buildProfitFunnelAnalytics(
     sourceMap.set(source, current);
   }
 
+  const baselineReadiness = buildBaselineReadiness({
+    now,
+    timestamps: [
+      ...events.map((event) => event.created_at),
+      ...leads.map((lead) => lead.created_at),
+      ...deliveries.map((delivery) => delivery.created_at),
+    ],
+    qualifiedLeads: qualifiedLeadIds.size,
+    closedLeads: closedLeadIds.size,
+    leadsLinked: leads.filter((lead) => Boolean(lead.funnel_id || stringValue(lead.metadata?.funnelId))).length,
+    leadsTotal: leads.length,
+    closedRevenueReceipts,
+    modelCostReceipts,
+    modelCostEvents: modelCostEvents.length,
+    notificationCostReceipts: receiptCosts.filter((value) => value !== null).length,
+    sentNotifications: sent.length,
+  });
+
   return {
     windowDays: WINDOW_DAYS,
-    generatedAt: new Date().toISOString(),
+    generatedAt: now.toISOString(),
     funnel: [
       stage('conversations', 'Jamie conversations', opened.size, opened.size),
       stage('handoffOffered', 'Handoff offered', offered.size, opened.size),
@@ -246,6 +272,7 @@ export function buildProfitFunnelAnalytics(
       modelCost,
       notificationCost,
     }),
+    baselineReadiness,
     scopes: {
       window: `${WINDOW_DAYS} rolling days`,
       jamieFunnel: 'Jamie sessions and jamie_public_guide leads created during the window',
@@ -265,6 +292,53 @@ export function buildProfitFunnelAnalytics(
       suppressedNotifications: suppressed.length,
     },
   };
+}
+
+function buildBaselineReadiness(input: {
+  now: Date;
+  timestamps: string[];
+  qualifiedLeads: number;
+  closedLeads: number;
+  leadsLinked: number;
+  leadsTotal: number;
+  closedRevenueReceipts: number;
+  modelCostReceipts: number;
+  modelCostEvents: number;
+  notificationCostReceipts: number;
+  sentNotifications: number;
+}) {
+  const validTimes = input.timestamps.map(Date.parse).filter(Number.isFinite);
+  const earliest = validTimes.length ? Math.min(...validTimes) : null;
+  const observedDays = earliest === null ? 0 : Math.min(WINDOW_DAYS, round((input.now.getTime() - earliest) / 86_400_000, 1));
+  const criteria = [
+    readinessCriterion('window', 'Observed baseline window', observedDays, WINDOW_DAYS, 'days'),
+    readinessCriterion('qualified_volume', 'Qualified lead volume', input.qualifiedLeads, BASELINE_MIN_QUALIFIED_LEADS, 'leads'),
+    readinessCriterion('closed_volume', 'Closed lead volume', input.closedLeads, BASELINE_MIN_CLOSED_LEADS, 'leads'),
+    readinessCriterion('identity_coverage', 'Funnel identity coverage', percentOf(input.leadsLinked, input.leadsTotal), BASELINE_MIN_COVERAGE_PERCENT, 'percent'),
+    readinessCriterion('revenue_coverage', 'Closed revenue coverage', percentOf(input.closedRevenueReceipts, input.closedLeads), BASELINE_MIN_COVERAGE_PERCENT, 'percent'),
+    readinessCriterion('model_cost_coverage', 'Model cost coverage', percentOf(input.modelCostReceipts, input.modelCostEvents), BASELINE_MIN_COVERAGE_PERCENT, 'percent'),
+    readinessCriterion('notification_cost_coverage', 'Notification cost coverage', percentOf(input.notificationCostReceipts, input.sentNotifications), BASELINE_MIN_COVERAGE_PERCENT, 'percent'),
+  ];
+  const blockers = criteria.filter((criterion) => !criterion.met).map((criterion) => criterion.id);
+  return {
+    status: blockers.length ? 'not_ready' as const : 'ready' as const,
+    decision: blockers.length ? 'continue_baseline' as const : 'start_margin_experiments' as const,
+    criteria,
+    blockers,
+  };
+}
+
+function readinessCriterion(id: string, label: string, actual: number, target: number, unit: 'days' | 'leads' | 'percent') {
+  return { id, label, actual, target, unit, met: actual >= target };
+}
+
+function percentOf(numerator: number, denominator: number) {
+  return denominator ? Math.round((numerator / denominator) * 100) : 0;
+}
+
+function round(value: number, decimals: number) {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
 }
 
 function stage(id: string, label: string, count: number, denominator: number) {

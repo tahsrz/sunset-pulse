@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { ArrowLeft, ArrowUpRight, BellRing, CircleDollarSign, Clock3, Gauge, Phone, Target } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, BellRing, CheckCircle2, CircleDollarSign, Clock3, Gauge, Phone, ShieldAlert, Target } from 'lucide-react';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { loadProfitFunnelAnalytics, type ProfitFunnelAnalytics } from '@/lib/profit/profitFunnelAnalytics';
@@ -68,6 +68,13 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
   ];
 
   return <>
+    <section className={`mt-8 border p-5 ${scorecard.baselineReadiness.status === 'ready' ? 'border-emerald-300/25 bg-emerald-400/[0.06]' : 'border-amber-300/25 bg-amber-400/[0.06]'}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex gap-3">{scorecard.baselineReadiness.status === 'ready' ? <CheckCircle2 className="mt-0.5 text-emerald-200" size={20} /> : <ShieldAlert className="mt-0.5 text-amber-200" size={20} />}<div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Margin experiment readiness</h2><p className="mt-2 text-sm text-slate-300">{scorecard.baselineReadiness.status === 'ready' ? 'Baseline passed. Margin experiments may begin with rollback controls.' : 'Continue collecting authoritative baseline data. Do not optimize channel or model spend yet.'}</p></div></div>
+        <span className={`border px-3 py-1 text-xs font-black uppercase ${scorecard.baselineReadiness.status === 'ready' ? 'border-emerald-300/30 text-emerald-200' : 'border-amber-300/30 text-amber-200'}`}>{scorecard.baselineReadiness.status.replace('_', ' ')}</span>
+      </div>
+      <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{scorecard.baselineReadiness.criteria.map((criterion) => <div key={criterion.id} className="border border-white/[0.08] p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-bold text-slate-300">{criterion.label}</p><span className={criterion.met ? 'text-emerald-200' : 'text-amber-200'}>{criterion.met ? 'Pass' : 'Collect'}</span></div><p className="mt-2 text-lg font-black text-white">{readinessValue(criterion.actual, criterion.unit)} <span className="text-xs font-medium text-slate-500">/ {readinessValue(criterion.target, criterion.unit)}</span></p></div>)}</div>
+    </section>
     <section className="mt-8 border border-white/10 bg-white/[0.03] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Seven-day baseline</h2><p className="mt-2 text-xs text-slate-400">{scorecard.scopes.jamieFunnel}</p></div><Confidence value={scorecard.baseline.confidence} /></div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -97,4 +104,5 @@ function coverage(linked: number, total: number) { return total ? Math.round((li
 function percent(value: number | null | undefined) { return value === null || value === undefined ? '—' : `${value}%`; }
 function seconds(value: number | null) { return value === null ? '—' : `${value}s`; }
 function money(value: number | null) { return value === null ? '—' : `$${value.toFixed(2)}`; }
+function readinessValue(value: number, unit: 'days' | 'leads' | 'percent') { return unit === 'percent' ? `${value}%` : unit === 'days' ? `${value}d` : String(value); }
 function AccessDenied({ reason }: { reason: string }) { return <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100"><section className="mx-auto max-w-3xl border border-red-300/30 bg-red-500/10 p-8"><p className="text-xs font-black uppercase tracking-[0.24em] text-red-200">Operator access</p><h1 className="mt-3 text-3xl font-black text-white">Access denied</h1><p className="mt-4 leading-7 text-red-100">{reason}</p></section></main>; }

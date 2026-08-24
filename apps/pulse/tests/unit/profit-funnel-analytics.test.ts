@@ -30,6 +30,7 @@ describe('profit funnel analytics', () => {
         { id: 'notification-2', lead_id: 'lead-2', priority: 'high', read_at: null, created_at: '2026-08-24T10:00:00.000Z' },
       ],
       { modelPer1kTokens: 0.01, notificationPerDelivery: 0.02 },
+      new Date('2026-08-24T12:00:00.000Z'),
     );
 
     expect(analytics.leads).toEqual(expect.objectContaining({ total: 2, jamieTotal: 1, estimatedPipelineValue: 42500, completedLeads: 1, closedLeads: 0, qualificationRate: 100 }));
@@ -52,6 +53,12 @@ describe('profit funnel analytics', () => {
       }),
     }));
     expect(analytics.scopes.notificationOperations).toContain('tied to leads created during the window');
+    expect(analytics.baselineReadiness).toEqual(expect.objectContaining({
+      status: 'not_ready',
+      decision: 'continue_baseline',
+      blockers: expect.arrayContaining(['window', 'qualified_volume', 'closed_volume']),
+    }));
+    expect(analytics.baselineReadiness.criteria.find((criterion) => criterion.id === 'model_cost_coverage')).toMatchObject({ actual: 100, target: 95, met: true });
     expect(analytics.failureAudit).toEqual(expect.objectContaining({
       audited: 1,
       target: 20,
@@ -69,6 +76,7 @@ describe('profit funnel analytics', () => {
       [],
       [],
       { modelPer1kTokens: null, notificationPerDelivery: null },
+      new Date('2026-08-24T12:00:00.000Z'),
     );
 
     expect(analytics.leads.estimatedPipelineValue).toBeNull();
@@ -76,6 +84,39 @@ describe('profit funnel analytics', () => {
     expect(analytics.identity).toEqual({ leadsLinked: 0, leadsTotal: 1, deliveriesLinked: 0, deliveriesTotal: 0 });
     expect(analytics.engagement).toEqual({ contacted: 0, responded: 0, appointments: 0, contactRate: 0, responseRate: null, hotDelivered: 0, contactedWithin10Minutes: 0, contactSlaRate: null, contactSlaTarget: 80, contactWindowScope: 'all_hours_pending_operating_hours_config' });
     expect(analytics.baseline.confidence).toBe('partial');
+    expect(analytics.baselineReadiness.status).toBe('not_ready');
+    expect(analytics.baselineReadiness.blockers).toContain('model_cost_coverage');
+  });
+
+  it('allows margin experiments only when every readiness criterion passes', () => {
+    const leads = Array.from({ length: 10 }, (_, index) => ({
+      id: `lead-${index}`,
+      funnel_id: `funnel-${index}`,
+      status: index < 3 ? 'closed' : 'touring',
+      source: 'jamie_public_guide',
+      closed_revenue: index < 3 ? 10000 : null,
+      created_at: '2026-08-17T10:00:00.000Z',
+      metadata: null,
+    }));
+    const events = Array.from({ length: 10 }, (_, index) => event(`response-${index}`, 'PUBLIC_GUIDE_GUIDE_RESPONSE', `session-${index}`, { costUsd: 0.01 }));
+    events.push(event('old-open', 'PUBLIC_GUIDE_GUIDE_OPENED', 'session-old'));
+    events[events.length - 1].created_at = '2026-08-17T10:00:00.000Z';
+    const deliveries = leads.map((lead, index) => ({
+      id: `delivery-${index}`,
+      funnel_id: lead.funnel_id,
+      lead_id: lead.id,
+      status: 'sent',
+      cost_usd: 0.006,
+      created_at: '2026-08-24T10:00:00.000Z',
+      completed_at: '2026-08-24T10:00:08.000Z',
+    }));
+
+    const analytics = buildProfitFunnelAnalytics(events, leads, deliveries, [], { modelPer1kTokens: null, notificationPerDelivery: null }, new Date('2026-08-24T12:00:00.000Z'));
+
+    expect(analytics.baselineReadiness.status).toBe('ready');
+    expect(analytics.baselineReadiness.decision).toBe('start_margin_experiments');
+    expect(analytics.baselineReadiness.blockers).toEqual([]);
+    expect(analytics.baselineReadiness.criteria.every((criterion) => criterion.met)).toBe(true);
   });
 });
 
