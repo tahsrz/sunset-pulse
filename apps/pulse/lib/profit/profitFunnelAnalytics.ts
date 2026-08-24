@@ -40,6 +40,8 @@ type Delivery = {
   status: string;
   created_at: string;
   completed_at: string | null;
+  provider?: string | null;
+  cost_usd?: number | string | null;
 };
 
 type AgentNotification = {
@@ -74,7 +76,7 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
       .limit(2000),
     supabaseAdmin
       .from('notification_deliveries')
-      .select('id, lead_id, status, created_at, completed_at')
+      .select('id, lead_id, status, provider, cost_usd, created_at, completed_at')
       .gte('created_at', since)
       .limit(2000),
     supabaseAdmin
@@ -115,7 +117,11 @@ export function buildProfitFunnelAnalytics(
   const estimatedPipelineValue = leadValues.length ? leadValues.reduce((sum, value) => sum + value, 0) : null;
   const eventCosts = events.map((event) => readModelCost(event.metadata, rates.modelPer1kTokens)).filter((value): value is number => value !== null);
   const modelCost = eventCosts.length ? eventCosts.reduce((sum, value) => sum + value, 0) : null;
-  const notificationCost = rates.notificationPerDelivery === null ? null : sent.length * rates.notificationPerDelivery;
+  const receiptCosts = sent.map((delivery) => optionalMoney(delivery.cost_usd));
+  const hasCompleteNotificationReceipts = receiptCosts.every((value) => value !== null);
+  const notificationCost = hasCompleteNotificationReceipts
+    ? receiptCosts.reduce<number>((sum, value) => sum + (value || 0), 0)
+    : rates.notificationPerDelivery === null ? null : sent.length * rates.notificationPerDelivery;
   const hotNotifications = notifications.filter((notification) => notification.priority === 'high');
   const readHotNotifications = hotNotifications.filter((notification) => notification.read_at);
   const actionOpened = new Set(events.filter((event) => event.event_type === 'AGENT_LEAD_ACTION_OPENED').map((event) => event.target_id || `event:${event.id}`));
@@ -170,6 +176,8 @@ export function buildProfitFunnelAnalytics(
       hotRead: readHotNotifications.length,
       hotReadRate: hotNotifications.length ? Math.round((readHotNotifications.length / hotNotifications.length) * 100) : null,
       actionOpened: actionOpened.size,
+      costReceipts: receiptCosts.filter((value) => value !== null).length,
+      missingCostReceipts: receiptCosts.filter((value) => value === null).length,
     },
     acquisition: { modelCost, notificationCost, costPerQualifiedLead },
     failureSignals: {

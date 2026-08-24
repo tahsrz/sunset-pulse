@@ -22,7 +22,7 @@ describe('profit funnel analytics', () => {
         { id: 'lead-2', status: 'closed', source: 'agent_site_contact', estimated_pipeline_value: 15000, closed_revenue: 30000, value_currency: 'USD', value_source: 'closing_statement', created_at: '2026-08-24T10:00:00.000Z', metadata: null },
       ],
       [
-        { id: 'delivery-1', lead_id: 'lead-1', status: 'sent', created_at: '2026-08-24T10:00:00.000Z', completed_at: '2026-08-24T10:00:08.000Z' },
+        { id: 'delivery-1', lead_id: 'lead-1', status: 'sent', provider: 'resend', cost_usd: 0.006, created_at: '2026-08-24T10:00:00.000Z', completed_at: '2026-08-24T10:00:08.000Z' },
         { id: 'delivery-2', lead_id: 'lead-2', status: 'failed', created_at: '2026-08-24T10:00:00.000Z', completed_at: null },
       ],
       [
@@ -37,8 +37,8 @@ describe('profit funnel analytics', () => {
       { source: 'agent_site_contact', leads: 1, qualified: 1, closed: 1, estimatedPipelineValue: 30000, valuedLeads: 1 },
       { source: 'jamie_public_guide', leads: 1, qualified: 1, closed: 0, estimatedPipelineValue: 12500, valuedLeads: 1 },
     ]);
-    expect(analytics.notifications).toEqual(expect.objectContaining({ total: 2, sent: 1, failed: 1, deliveryRate: 50, averageDeliverySeconds: 8, hotTotal: 2, hotRead: 1, hotReadRate: 50, actionOpened: 1 }));
-    expect(analytics.acquisition).toEqual({ modelCost: 0.01, notificationCost: 0.02, costPerQualifiedLead: 0.015 });
+    expect(analytics.notifications).toEqual(expect.objectContaining({ total: 2, sent: 1, failed: 1, deliveryRate: 50, averageDeliverySeconds: 8, hotTotal: 2, hotRead: 1, hotReadRate: 50, actionOpened: 1, costReceipts: 1, missingCostReceipts: 0 }));
+    expect(analytics.acquisition).toEqual({ modelCost: 0.01, notificationCost: 0.006, costPerQualifiedLead: 0.008 });
     expect(analytics.failureSignals).toEqual({ unansweredQuestions: 1, failedNotifications: 1, suppressedNotifications: 0 });
     expect(JSON.stringify(analytics)).not.toContain('private');
   });
@@ -53,7 +53,7 @@ describe('profit funnel analytics', () => {
     );
 
     expect(analytics.leads.estimatedPipelineValue).toBeNull();
-    expect(analytics.acquisition).toEqual({ modelCost: null, notificationCost: null, costPerQualifiedLead: null });
+    expect(analytics.acquisition).toEqual({ modelCost: null, notificationCost: 0, costPerQualifiedLead: null });
   });
 });
 

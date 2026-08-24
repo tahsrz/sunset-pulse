@@ -168,6 +168,8 @@ async function dispatchDelivery(delivery: NotificationDelivery): Promise<'sent' 
     await updateDelivery(delivery.id, {
       status: 'sent',
       completed_at: new Date().toISOString(),
+      provider: record.provider,
+      cost_usd: notificationCost(record.provider),
       provider_message_id: record.messageId ? `${record.provider}:${record.messageId}` : record.provider,
       last_error: null,
     });
@@ -185,6 +187,7 @@ async function dispatchDelivery(delivery: NotificationDelivery): Promise<'sent' 
 
   await updateDelivery(delivery.id, {
     status: 'failed',
+    provider: record.provider,
     next_attempt_at: new Date(Date.now() + retryDelayMs(delivery.attempt_count)).toISOString(),
     last_error: record.reason,
   });
@@ -217,6 +220,15 @@ async function updateDelivery(id: string, update: Record<string, unknown>) {
     console.error('[AGENT_ALERT_NOTIFICATION_LEDGER]', error.message);
     throw new Error('Unable to persist notification delivery state.');
   }
+}
+
+function notificationCost(provider: 'resend' | 'telnyx') {
+  const value = provider === 'resend'
+    ? process.env.PROFIT_RESEND_COST_PER_DELIVERY
+    : process.env.PROFIT_TELNYX_COST_PER_DELIVERY;
+  if (!value?.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function retryDelayMs(attemptCount: number) {
