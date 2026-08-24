@@ -113,8 +113,9 @@ Reformed after the trustworthy baseline, failure audit, and rental qualification
 1. Complete: close zero-result conversion with an explicit consented agent-search action; do not build saved search until persistence exists.
 2. Complete: measure hot-alert delivery and authoritative contact latency against separate service targets.
 3. Complete: escalate delivered hot leads only when no contact receipt exists after the operating-hours threshold.
-4. Active: promote commercial inventory-truth fixtures to a regression gate.
-5. Deferred: hold model-cost and channel-spend optimization until one complete baseline week has enough verified qualified and closed volume.
+4. Complete: promote commercial inventory-truth fixtures to a regression gate.
+5. Active: collect one complete baseline week and make qualified-lead, closed-revenue, and attributable-cost coverage explicit enough for a go/no-go decision.
+6. Conditional: begin model-cost and channel-spend optimization only after the baseline readiness check passes.
 
 Profit rationale: improve handoff and agent follow-through before reducing model cost, because premature cost optimization can lower conversion while revenue attribution is still sparse.
 
@@ -139,6 +140,7 @@ Profit rationale: improve handoff and agent follow-through before reducing model
 
 - Run the commercial retrieval fixtures on every change.
 - Acceptance: zero fabricated or unrelated listing answers; verified inventory carries provenance.
+- Implemented: `npm run test:inventory-truth` runs the commercial supervisor, canonical listing, public projection, and tenant-isolation fixture contracts as a named blocking CI step. The focused commercial fixture rejects invented facts, unrelated inventory, private fields, and provenance-free results.
 
 ## Phase 3: Improve Response Speed
 
