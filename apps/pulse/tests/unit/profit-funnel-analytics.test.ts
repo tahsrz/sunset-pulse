@@ -37,10 +37,10 @@ describe('profit funnel analytics', () => {
       { source: 'agent_site_contact', leads: 1, qualified: 1, closed: 1, estimatedPipelineValue: 30000, valuedLeads: 1 },
       { source: 'jamie_public_guide', leads: 1, qualified: 1, closed: 0, estimatedPipelineValue: 12500, valuedLeads: 1 },
     ]);
-    expect(analytics.notifications).toEqual(expect.objectContaining({ total: 2, sent: 1, failed: 1, deliveryRate: 50, averageDeliverySeconds: 8, hotTotal: 2, hotRead: 1, hotReadRate: 50, actionOpened: 1, costReceipts: 1, missingCostReceipts: 0 }));
+    expect(analytics.notifications).toEqual(expect.objectContaining({ total: 2, sent: 1, failed: 1, deliveryRate: 50, averageDeliverySeconds: 8, deliveryWithin60Seconds: 1, deliverySlaRate: 100, deliverySlaTarget: 90, hotTotal: 2, hotRead: 1, hotReadRate: 50, actionOpened: 1, costReceipts: 1, missingCostReceipts: 0 }));
     expect(analytics.acquisition).toEqual({ modelCost: 0.01, notificationCost: 0.006, costPerQualifiedLead: 0.016 });
     expect(analytics.identity).toEqual({ leadsLinked: 1, leadsTotal: 2, deliveriesLinked: 1, deliveriesTotal: 2 });
-    expect(analytics.engagement).toEqual({ contacted: 1, responded: 1, appointments: 1, contactRate: 100, responseRate: 100 });
+    expect(analytics.engagement).toEqual({ contacted: 1, responded: 1, appointments: 1, contactRate: 100, responseRate: 100, hotDelivered: 1, contactedWithin10Minutes: 1, contactSlaRate: 100, contactSlaTarget: 80, contactWindowScope: 'all_hours_pending_operating_hours_config' });
     expect(analytics.baseline).toEqual(expect.objectContaining({
       confidence: 'verified',
       metrics: expect.objectContaining({
@@ -74,7 +74,7 @@ describe('profit funnel analytics', () => {
     expect(analytics.leads.estimatedPipelineValue).toBeNull();
     expect(analytics.acquisition).toEqual({ modelCost: null, notificationCost: 0, costPerQualifiedLead: null });
     expect(analytics.identity).toEqual({ leadsLinked: 0, leadsTotal: 1, deliveriesLinked: 0, deliveriesTotal: 0 });
-    expect(analytics.engagement).toEqual({ contacted: 0, responded: 0, appointments: 0, contactRate: 0, responseRate: null });
+    expect(analytics.engagement).toEqual({ contacted: 0, responded: 0, appointments: 0, contactRate: 0, responseRate: null, hotDelivered: 0, contactedWithin10Minutes: 0, contactSlaRate: null, contactSlaTarget: 80, contactWindowScope: 'all_hours_pending_operating_hours_config' });
     expect(analytics.baseline.confidence).toBe('partial');
   });
 });

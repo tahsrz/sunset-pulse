@@ -144,6 +144,22 @@ export function buildProfitFunnelAnalytics(
   const contactedLeads = jamieLeads.filter((lead) => Boolean(lead.contact_attempted_at));
   const respondedLeads = jamieLeads.filter((lead) => Boolean(lead.responded_at));
   const appointments = respondedLeads.filter((lead) => lead.response_source === 'appointment_booked');
+  const leadById = new Map(leads.map((lead) => [lead.id, lead]));
+  const deliveryWithin60Seconds = sent.filter((delivery) => deliverySeconds(delivery) !== null && deliverySeconds(delivery)! <= 60).length;
+  const hotLeadIds = new Set(hotNotifications.flatMap((notification) => notification.lead_id ? [notification.lead_id] : []));
+  const hotSentByLead = new Map<string, Delivery>();
+  for (const delivery of sent) {
+    if (!delivery.lead_id || !hotLeadIds.has(delivery.lead_id)) continue;
+    const current = hotSentByLead.get(delivery.lead_id);
+    if (!current || Date.parse(delivery.completed_at || delivery.created_at) < Date.parse(current.completed_at || current.created_at)) hotSentByLead.set(delivery.lead_id, delivery);
+  }
+  const contactedWithin10Minutes = Array.from(hotSentByLead.entries()).filter(([leadId, delivery]) => {
+    const contactedAt = leadById.get(leadId)?.contact_attempted_at;
+    const deliveredAt = delivery.completed_at;
+    if (!contactedAt || !deliveredAt) return false;
+    const elapsed = Date.parse(contactedAt) - Date.parse(deliveredAt);
+    return elapsed >= 0 && elapsed <= 10 * 60 * 1000;
+  }).length;
   const totalVariableCost = modelCost !== null && notificationCost !== null ? modelCost + notificationCost : null;
   const costPerQualifiedLead = totalVariableCost !== null && completedLeads > 0 ? totalVariableCost / completedLeads : null;
   const sourceMap = new Map<string, { source: string; leads: number; qualified: number; closed: number; estimatedPipelineValue: number | null; valuedLeads: number }>();
@@ -188,6 +204,9 @@ export function buildProfitFunnelAnalytics(
       suppressed: suppressed.length,
       deliveryRate: cohortDeliveries.length ? Math.round((sent.length / cohortDeliveries.length) * 100) : null,
       averageDeliverySeconds: averageDeliverySeconds(sent),
+      deliveryWithin60Seconds,
+      deliverySlaRate: sent.length ? Math.round((deliveryWithin60Seconds / sent.length) * 100) : null,
+      deliverySlaTarget: 90,
       hotTotal: hotNotifications.length,
       hotRead: readHotNotifications.length,
       hotReadRate: hotNotifications.length ? Math.round((readHotNotifications.length / hotNotifications.length) * 100) : null,
@@ -202,6 +221,11 @@ export function buildProfitFunnelAnalytics(
       appointments: appointments.length,
       contactRate: jamieLeads.length ? Math.round((contactedLeads.length / jamieLeads.length) * 100) : null,
       responseRate: contactedLeads.length ? Math.round((respondedLeads.length / contactedLeads.length) * 100) : null,
+      hotDelivered: hotSentByLead.size,
+      contactedWithin10Minutes,
+      contactSlaRate: hotSentByLead.size ? Math.round((contactedWithin10Minutes / hotSentByLead.size) * 100) : null,
+      contactSlaTarget: 80,
+      contactWindowScope: 'all_hours_pending_operating_hours_config',
     },
     identity: {
       leadsLinked: leads.filter((lead) => Boolean(lead.funnel_id || stringValue(lead.metadata?.funnelId))).length,
@@ -438,4 +462,10 @@ function averageDeliverySeconds(deliveries: Delivery[]) {
     .map((delivery) => delivery.completed_at ? Date.parse(delivery.completed_at) - Date.parse(delivery.created_at) : null)
     .filter((value): value is number => value !== null && Number.isFinite(value) && value >= 0);
   return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length / 1000) : null;
+}
+
+function deliverySeconds(delivery: Delivery) {
+  if (!delivery.completed_at) return null;
+  const elapsed = Date.parse(delivery.completed_at) - Date.parse(delivery.created_at);
+  return Number.isFinite(elapsed) && elapsed >= 0 ? Math.round(elapsed / 1000) : null;
 }

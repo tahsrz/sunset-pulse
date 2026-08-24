@@ -106,6 +106,18 @@ Start only after Phase 0 contracts are implemented.
 - Acceptance: the operator can distinguish measured values from placeholders immediately.
 - Implemented: every baseline metric is labeled verified, partial, or unknown; unavailable revenue and cost remain unknown instead of rendering as zero.
 
+## Reformed Execution Queue
+
+Reformed after the trustworthy baseline, failure audit, and rental qualification work landed.
+
+1. Close zero-result conversion with an explicit consented agent-search action; do not build saved search until persistence exists.
+2. Measure hot-alert delivery and authoritative contact latency against separate service targets.
+3. Escalate delivered hot leads only when no contact receipt exists after the operating-hours threshold.
+4. Promote commercial inventory-truth fixtures to a regression gate.
+5. Hold model-cost and channel-spend optimization until one complete baseline week has enough verified qualified and closed volume.
+
+Profit rationale: improve handoff and agent follow-through before reducing model cost, because premature cost optimization can lower conversion while revenue attribution is still sparse.
+
 ## Phase 2: Improve Lead Conversion
 
 ### P2-001: Complete high-intent qualification
@@ -121,6 +133,7 @@ Start only after Phase 0 contracts are implemented.
 - Add consented agent handoff when agent context exists.
 - Add saved-search support only after the backend can actually persist it.
 - Acceptance: Jamie never claims a search, alert, or contact action occurred unless a tool confirms it.
+- Implemented: verified zero-result searches retain search refinement, add a first-class consented agent-search action when agent context exists, and do not claim contact or saved-search persistence before submission confirmation.
 
 ### P2-003: Protect inventory truth
 
@@ -134,6 +147,7 @@ Start only after Phase 0 contracts are implemented.
 - Target: 90% of hot alerts delivered within 60 seconds.
 - Target: 80% of hot leads contacted within 10 minutes during configured operating hours.
 - Exclude suppressed deliveries from successful delivery counts and report them separately.
+- Implemented: sent deliveries are measured against the 60-second target, and delivered hot leads are measured against authoritative contact receipts at 10 minutes. Contact coverage is explicitly all-hours until operating-hour configuration is available.
 
 ### P3-002: Escalate genuinely unattended leads
 
