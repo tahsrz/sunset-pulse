@@ -56,7 +56,7 @@ describe('profit funnel analytics', () => {
     expect(analytics.baselineReadiness).toEqual(expect.objectContaining({
       status: 'not_ready',
       decision: 'continue_baseline',
-      blockers: expect.arrayContaining(['window', 'qualified_volume', 'closed_volume']),
+      blockers: expect.arrayContaining(['checkpoint_days', 'qualified_volume', 'closed_volume']),
     }));
     expect(analytics.baselineReadiness.criteria.find((criterion) => criterion.id === 'model_cost_coverage')).toMatchObject({ actual: 100, target: 95, met: true });
     expect(analytics.failureAudit).toEqual(expect.objectContaining({
@@ -116,13 +116,28 @@ describe('profit funnel analytics', () => {
       [],
       { modelPer1kTokens: null, notificationPerDelivery: null },
       new Date('2026-08-24T12:00:00.000Z'),
-      '2026-08-17T12:00:00.000Z',
+      ['2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23', '2026-08-24'],
     );
 
     expect(analytics.baselineReadiness.status).toBe('ready');
     expect(analytics.baselineReadiness.decision).toBe('start_margin_experiments');
     expect(analytics.baselineReadiness.blockers).toEqual([]);
     expect(analytics.baselineReadiness.criteria.every((criterion) => criterion.met)).toBe(true);
+  });
+
+  it('keeps margin experiments blocked when a daily checkpoint is missing', () => {
+    const analytics = buildProfitFunnelAnalytics(
+      [],
+      [],
+      [],
+      [],
+      { modelPer1kTokens: null, notificationPerDelivery: null },
+      new Date('2026-08-24T12:00:00.000Z'),
+      ['2026-08-18', '2026-08-19', '2026-08-20', '2026-08-22', '2026-08-23', '2026-08-24'],
+    );
+
+    expect(analytics.baselineReadiness.criteria.find((criterion) => criterion.id === 'checkpoint_days')).toMatchObject({ actual: 6, target: 7, met: false });
+    expect(analytics.baselineReadiness.blockers).toContain('checkpoint_days');
   });
 });
 

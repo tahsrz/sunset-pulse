@@ -69,8 +69,9 @@ export type ProfitCostRates = {
   notificationPerDelivery: number | null;
 };
 
-export async function loadProfitFunnelAnalytics(now = new Date()) {
+export async function loadProfitFunnelAnalytics(now = new Date(), pendingCheckpointDates: string[] = []) {
   const since = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const checkpointSince = new Date(now.getTime() - (WINDOW_DAYS - 1) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const [eventResult, leadResult, deliveryResult, notificationResult, checkpointResult] = await Promise.all([
     supabaseAdmin
       .from('intelligence_events')
@@ -96,9 +97,10 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
       .limit(2000),
     supabaseAdmin
       .from('profit_baseline_checkpoints')
-      .select('created_at')
-      .order('created_at', { ascending: true })
-      .limit(1),
+      .select('checkpoint_date')
+      .gte('checkpoint_date', checkpointSince)
+      .order('checkpoint_date', { ascending: true })
+      .limit(WINDOW_DAYS),
   ]);
 
   if (eventResult.error || leadResult.error || deliveryResult.error || notificationResult.error || checkpointResult.error) {
@@ -112,7 +114,7 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
     (notificationResult.data || []) as AgentNotification[],
     readCostRates(),
     now,
-    checkpointResult.data?.[0]?.created_at || null,
+    [...(checkpointResult.data || []).map((checkpoint) => checkpoint.checkpoint_date), ...pendingCheckpointDates],
   );
 }
 
@@ -123,7 +125,7 @@ export function buildProfitFunnelAnalytics(
   notifications: AgentNotification[] = [],
   rates: ProfitCostRates = readCostRates(),
   now = new Date(),
-  collectionStartedAt: string | null = null,
+  checkpointDates: string[] = [],
 ) {
   const jamieLeads = leads.filter((lead) => lead.source === 'jamie_public_guide');
   const cohortLeadIds = new Set(leads.map((lead) => lead.id));
@@ -193,13 +195,7 @@ export function buildProfitFunnelAnalytics(
   }
 
   const baselineReadiness = buildBaselineReadiness({
-    now,
-    timestamps: [
-      ...(collectionStartedAt ? [collectionStartedAt] : []),
-      ...events.map((event) => event.created_at),
-      ...leads.map((lead) => lead.created_at),
-      ...deliveries.map((delivery) => delivery.created_at),
-    ],
+    checkpointDates,
     qualifiedLeads: qualifiedLeadIds.size,
     closedLeads: closedLeadIds.size,
     leadsLinked: leads.filter((lead) => Boolean(lead.funnel_id || stringValue(lead.metadata?.funnelId))).length,
@@ -303,9 +299,10 @@ export function buildProfitFunnelAnalytics(
 }
 
 export async function captureProfitBaselineCheckpoint(now = new Date()) {
-  const analytics = await loadProfitFunnelAnalytics(now);
+  const checkpointDate = now.toISOString().slice(0, 10);
+  const analytics = await loadProfitFunnelAnalytics(now, [checkpointDate]);
   const row = {
-    checkpoint_date: now.toISOString().slice(0, 10),
+    checkpoint_date: checkpointDate,
     captured_at: now.toISOString(),
     readiness_status: analytics.baselineReadiness.status,
     decision: analytics.baselineReadiness.decision,
@@ -326,8 +323,7 @@ export async function captureProfitBaselineCheckpoint(now = new Date()) {
 }
 
 function buildBaselineReadiness(input: {
-  now: Date;
-  timestamps: string[];
+  checkpointDates: string[];
   qualifiedLeads: number;
   closedLeads: number;
   leadsLinked: number;
@@ -338,11 +334,9 @@ function buildBaselineReadiness(input: {
   notificationCostReceipts: number;
   sentNotifications: number;
 }) {
-  const validTimes = input.timestamps.map(Date.parse).filter(Number.isFinite);
-  const earliest = validTimes.length ? Math.min(...validTimes) : null;
-  const observedDays = earliest === null ? 0 : Math.min(WINDOW_DAYS, round((input.now.getTime() - earliest) / 86_400_000, 1));
+  const checkpointDays = new Set(input.checkpointDates.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))).size;
   const criteria = [
-    readinessCriterion('window', 'Observed baseline window', observedDays, WINDOW_DAYS, 'days'),
+    readinessCriterion('checkpoint_days', 'Daily checkpoint coverage', checkpointDays, WINDOW_DAYS, 'days'),
     readinessCriterion('qualified_volume', 'Qualified lead volume', input.qualifiedLeads, BASELINE_MIN_QUALIFIED_LEADS, 'leads'),
     readinessCriterion('closed_volume', 'Closed lead volume', input.closedLeads, BASELINE_MIN_CLOSED_LEADS, 'leads'),
     readinessCriterion('identity_coverage', 'Funnel identity coverage', percentOf(input.leadsLinked, input.leadsTotal), BASELINE_MIN_COVERAGE_PERCENT, 'percent'),
@@ -365,11 +359,6 @@ function readinessCriterion(id: string, label: string, actual: number, target: n
 
 function percentOf(numerator: number, denominator: number) {
   return denominator ? Math.round((numerator / denominator) * 100) : 0;
-}
-
-function round(value: number, decimals: number) {
-  const factor = 10 ** decimals;
-  return Math.round(value * factor) / factor;
 }
 
 function stage(id: string, label: string, count: number, denominator: number) {
