@@ -19,6 +19,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/admin/profit/baseline/cron",
+      "schedule": "15 12 * * *"
+    },
+    {
       "path": "/api/atlas/processes/health",
       "schedule": "*/10 * * * *"
     },

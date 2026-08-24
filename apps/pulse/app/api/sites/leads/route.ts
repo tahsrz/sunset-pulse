@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { z } from 'zod';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { buildPublicGuideHandoffBrief } from '@/lib/ai/publicGuideHandoff';
 import { publicGuideHandoffInputSchema } from '@/lib/ai/publicGuideHandoffContract';
 import {
@@ -148,7 +148,9 @@ export async function POST(request: Request) {
       listingId: listing?.id || listing?.mlsId || '',
     });
     const pagePath = isJamieRequest ? getJamieSourcePagePath(request) : input.pagePath || null;
+    const funnelId = randomUUID();
     const metadata = {
+      funnelId,
       tenantAgentName: tenantSite.agentProfile.displayName,
       tenantBrokerage: tenantSite.agentProfile.brokerageName,
       submittedAt: new Date().toISOString(),
@@ -188,18 +190,19 @@ export async function POST(request: Request) {
         preferred_contact: input.preferredContact,
         message: input.message,
         metadata,
+        funnel_id: funnelId,
         idempotency_key: idempotencyKey,
       })
-      .select('id')
+      .select('id, funnel_id')
       .single();
 
     if (error?.code === '23505') {
       const { data: existing } = await supabaseAdmin
         .from('agent_site_leads')
-        .select('id')
+        .select('id, funnel_id')
         .eq('idempotency_key', idempotencyKey)
         .maybeSingle();
-      return successResponse({ accepted: true, duplicate: true, id: existing?.id || null, agentId, site: tenantSite.site }, 200);
+      return successResponse({ accepted: true, duplicate: true, id: existing?.id || null, funnelId: existing?.funnel_id || null, agentId, site: tenantSite.site }, 200);
     }
     if (error) {
       console.error('[AGENT_SITE_LEAD_INSERT_ERROR]', error);
@@ -233,6 +236,8 @@ export async function POST(request: Request) {
         sessionId: guideHandoff.sessionId,
         hasAgentContext: true,
         hasListingContext: Boolean(listing),
+        funnelId,
+        targetId: data.id,
       });
     }
 
@@ -252,6 +257,7 @@ export async function POST(request: Request) {
     const response = successResponse({
       accepted: true,
       id: data?.id,
+      funnelId,
       agentId,
       site: tenantSite.site,
       notification: notification.status,

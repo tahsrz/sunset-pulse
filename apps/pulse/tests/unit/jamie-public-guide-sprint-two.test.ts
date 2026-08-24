@@ -43,6 +43,37 @@ describe('Jamie public guide Sprint 2 contracts', () => {
     expect(actions.find((action) => action.id === 'contact_agent')).not.toHaveProperty('href');
   });
 
+  it('offers a consented agent search after verified inventory returns no matches', () => {
+    const context: PublicGuideContext = {
+      agent: {
+        agentId: 'agent-1',
+        agentName: 'Jamie Agent',
+        brokerageName: 'Sunset Realty',
+        primaryColor: '#38bdf8',
+        publicUrl: 'https://jamie-agent.sunsetpulse.app',
+        site: 'jamie-agent',
+        siteName: 'Jamie Agent Homes',
+      },
+    };
+
+    const actions = buildPublicGuideActions({
+      context,
+      listings: [],
+      outcome: 'listing_search',
+      rootOrigin: 'https://sunsetpulse.app',
+      userMessage: 'Find a rental in Arlington.',
+    });
+
+    expect(actions[0]).toMatchObject({
+      id: 'contact_agent',
+      kind: 'handoff',
+      label: 'Ask Jamie Agent to search',
+      description: 'Send a private, consented inquiry to the agent.',
+    });
+    expect(actions[0]).not.toHaveProperty('href');
+    expect(actions.map((action) => action.id)).toContain('browse_homes');
+  });
+
   it('keeps the daily Jamie slot bounded to the approved registry', () => {
     const first = getPublicGuideCuration(new Date('2026-07-20T12:00:00.000Z'));
     const second = getPublicGuideCuration(new Date('2026-07-20T23:59:00.000Z'));

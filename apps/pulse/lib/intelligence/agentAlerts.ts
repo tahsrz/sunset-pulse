@@ -8,6 +8,7 @@ const scoreReasonSchema = z.object({
 
 const metadataSchema = z.object({
   agentId: z.string().trim().min(1).optional(),
+  funnelId: z.string().uuid().optional().nullable(),
   leadId: z.string().uuid().optional(),
   leadName: z.string().trim().min(1).max(200).optional(),
   leadStatus: z.string().trim().min(1).max(80).optional().nullable(),
@@ -189,6 +190,7 @@ export function decideAgentAlertNotification(
     idempotencyKey: `agent-alert:${alert.agentId}:${alert.leadId}:${alert.kind}:${windowStart}`,
     payload: {
       alertKind: alert.kind,
+      funnelId: metadata.funnelId || null,
       leadId: alert.leadId,
       leadName: metadata.leadName || 'Lead',
       listingId: alert.listingId || null,

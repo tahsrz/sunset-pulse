@@ -4,6 +4,8 @@ Sunset Pulse is a Next.js 15 real estate intelligence platform for property disc
 
 ## Current Status
 
+The current profit-focused execution brief is [`../../docs/profit-sprint-2026-08-24.md`](../../docs/profit-sprint-2026-08-24.md).
+
 - **Status:** 🟢 Alpha Maturation // Supabase Hegemony
 - **Application framework:** Next.js 14 App Router with React and TypeScript
 - **Data services:** Supabase (Consolidated Property Grid), MongoDB, and local mock data.
@@ -79,6 +81,8 @@ graph LR
 - Operator-guarded Crawl4AI ingestion can turn approved regional sites, brokerage pages, and public-record URLs into a local lead-intelligence JSONL ledger plus optional `.source.md` audit files and binary TAH cartridges.
 - Native inbox notifications, Resend email, and optional Telnyx SMS provide an owned alert path with durable delivery records.
 - Atlas includes an authenticated Jamie Retrieval Inspector with cartridge-selection traces, latency and fallback diagnostics, and a 20-question evaluation corpus.
+- `/contracts/representation` creates an attorney-review buyer/tenant representation draft, generates a secure signing packet, and sends the signer link to any validated email through Resend.
+- The operator-only `/api/admin/profit/scorecard` reports the Jamie-to-revenue funnel, estimated pipeline value, delivery reliability, unanswered questions, and configurable model/notification costs.
 
 ### 📈 Lead Sigmoid Maturation Flow
 
@@ -158,6 +162,15 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `/api/notifications/high-intent/cron` aggregates high-intent activity into the native inbox and claims external Resend or opted-in Telnyx deliveries.
 - `/api/atlas/retrieval` lists retrieval fixtures and inspects custom or fixture-backed Jamie retrieval runs.
 - `/api/atlas/processes/health` checks crawler heartbeat freshness, retry recovery, dependency health, and circuit-breaker state for cron-driven operator alerts.
+- `/api/admin/profit/scorecard` returns the operator-only seven-day Jamie-to-revenue funnel, lead pipeline value, notification delivery health, unanswered-question count, and configurable acquisition costs.
+
+Profit scorecard configuration:
+```text
+PROFIT_MODEL_COST_PER_1K_TOKENS=0
+PROFIT_NOTIFICATION_COST_PER_DELIVERY=0
+```
+
+Set those values to actual provider rates outside local development. The scorecard reads direct `costUsd` or token-usage metadata when present and calculates cost per qualified lead from completed handoffs.
 
 ## 🗓️ Sunset Gas and Grill - Shift Scheduling & SMS Automation
 
