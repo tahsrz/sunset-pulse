@@ -21,6 +21,8 @@ Instead of sending every task to a massive remote model, Sunset Pulse packages d
 
 ## Current Release
 
+Profit-focused weekly execution is tracked in [`docs/profit-sprint-2026-08-24.md`](./docs/profit-sprint-2026-08-24.md).
+
 Current local release: **v0.3.0 - Research Desk**
 
 Recent additions:

@@ -29,9 +29,12 @@ export function supervisePublicGuideReply({
 
   if (listingSearch) {
     const listings = listingSearch.properties.slice(0, 6);
+    const rentalSearch = /\b(?:rent|rental|lease|leasing|monthly rent)\b/i.test(userMessage);
     const content = listings.length
       ? `I found ${listings.length} active listing${listings.length === 1 ? '' : 's'} that match the search. Open a home below to inspect its verified listing details, or tell me which tradeoff matters most and I will help you narrow the set.`
-      : 'I checked the active listing grid, but I did not find a matching home yet. Try widening the location, price range, or property criteria.';
+      : rentalSearch
+        ? 'I checked the active listing grid, but I did not find a verified match yet. For a better rental search, send your maximum monthly rent, preferred move-in date, bedroom count, and how flexible you are on location. I can then check a wider set of active listings or connect you with the agent for a follow-up search.'
+        : 'I checked the active listing grid, but I did not find a matching home yet. Try widening the location, price range, or property criteria, or connect with the agent for a follow-up search.';
 
     return {
       content: `${content}\n\n${PUBLIC_GUIDE_MLS_DISCLAIMER}`,

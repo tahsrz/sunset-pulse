@@ -1,0 +1,61 @@
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+vi.mock('@/lib/supabase', () => ({ supabaseAdmin: {} }));
+
+import { buildProfitFunnelAnalytics } from '@/lib/profit/profitFunnelAnalytics';
+
+describe('profit funnel analytics', () => {
+  it('builds revenue-oriented funnel and delivery metrics without exposing event payloads', () => {
+    const analytics = buildProfitFunnelAnalytics(
+      [
+        event('open', 'PUBLIC_GUIDE_GUIDE_OPENED', 'session-1', { usage: { totalTokens: 1000 } }),
+        event('handoff', 'PUBLIC_GUIDE_HANDOFF_OFFERED', 'session-1'),
+        event('completed', 'PUBLIC_GUIDE_HANDOFF_COMPLETED', 'session-1'),
+        event('tour', 'PUBLIC_GUIDE_TOUR_REQUESTED', 'session-1'),
+        event('unanswered', 'PUBLIC_GUIDE_UNANSWERED_QUESTION', 'session-2'),
+        event('action', 'AGENT_LEAD_ACTION_OPENED', 'operator-1'),
+      ],
+      [
+        { id: 'lead-1', status: 'touring', source: 'jamie_public_guide', created_at: '2026-08-24T10:00:00.000Z', metadata: { estimatedValue: 12500, rawInput: 'private' } },
+        { id: 'lead-2', status: 'closed', source: 'agent_site_contact', created_at: '2026-08-24T10:00:00.000Z', metadata: { leadValue: 30000 } },
+      ],
+      [
+        { id: 'delivery-1', lead_id: 'lead-1', status: 'sent', created_at: '2026-08-24T10:00:00.000Z', completed_at: '2026-08-24T10:00:08.000Z' },
+        { id: 'delivery-2', lead_id: 'lead-2', status: 'failed', created_at: '2026-08-24T10:00:00.000Z', completed_at: null },
+      ],
+      [
+        { id: 'notification-1', lead_id: 'lead-1', priority: 'high', read_at: '2026-08-24T10:01:00.000Z', created_at: '2026-08-24T10:00:00.000Z' },
+        { id: 'notification-2', lead_id: 'lead-2', priority: 'high', read_at: null, created_at: '2026-08-24T10:00:00.000Z' },
+      ],
+      { modelPer1kTokens: 0.01, notificationPerDelivery: 0.02 },
+    );
+
+    expect(analytics.leads).toEqual(expect.objectContaining({ total: 2, estimatedPipelineValue: 42500, completedLeads: 2, closedLeads: 1 }));
+    expect(analytics.leads.bySource).toEqual([
+      { source: 'agent_site_contact', leads: 1, qualified: 1, closed: 1, estimatedPipelineValue: 30000, valuedLeads: 1 },
+      { source: 'jamie_public_guide', leads: 1, qualified: 1, closed: 0, estimatedPipelineValue: 12500, valuedLeads: 1 },
+    ]);
+    expect(analytics.notifications).toEqual(expect.objectContaining({ total: 2, sent: 1, failed: 1, deliveryRate: 50, averageDeliverySeconds: 8, hotTotal: 2, hotRead: 1, hotReadRate: 50, actionOpened: 1 }));
+    expect(analytics.acquisition).toEqual({ modelCost: 0.01, notificationCost: 0.02, costPerQualifiedLead: 0.015 });
+    expect(analytics.failureSignals).toEqual({ unansweredQuestions: 1, failedNotifications: 1, suppressedNotifications: 0 });
+    expect(JSON.stringify(analytics)).not.toContain('private');
+  });
+
+  it('keeps missing value and cost data unknown', () => {
+    const analytics = buildProfitFunnelAnalytics(
+      [event('open', 'PUBLIC_GUIDE_GUIDE_OPENED', 'session-1', null)],
+      [{ id: 'lead-1', status: 'new', source: 'jamie_public_guide', created_at: '2026-08-24T10:00:00.000Z', metadata: null }],
+      [],
+      [],
+      { modelPer1kTokens: null, notificationPerDelivery: null },
+    );
+
+    expect(analytics.leads.estimatedPipelineValue).toBeNull();
+    expect(analytics.acquisition).toEqual({ modelCost: null, notificationCost: null, costPerQualifiedLead: null });
+  });
+});
+
+function event(id: string, event_type: string, actor_id: string, metadata: Record<string, unknown> | null = null) {
+  return { id, event_type, actor_id, target_id: event_type === 'AGENT_LEAD_ACTION_OPENED' ? 'lead-1' : null, metadata, created_at: '2026-08-24T10:00:00.000Z' };
+}
