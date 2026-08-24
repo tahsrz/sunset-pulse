@@ -17,8 +17,8 @@ describe('profit funnel analytics', () => {
         event('action', 'AGENT_LEAD_ACTION_OPENED', 'operator-1'),
       ],
       [
-        { id: 'lead-1', status: 'touring', source: 'jamie_public_guide', created_at: '2026-08-24T10:00:00.000Z', metadata: { estimatedValue: 12500, rawInput: 'private' } },
-        { id: 'lead-2', status: 'closed', source: 'agent_site_contact', created_at: '2026-08-24T10:00:00.000Z', metadata: { leadValue: 30000 } },
+        { id: 'lead-1', status: 'touring', source: 'jamie_public_guide', estimated_pipeline_value: 12500, closed_revenue: null, value_currency: 'USD', value_source: 'operator_estimate', created_at: '2026-08-24T10:00:00.000Z', metadata: { rawInput: 'private' } },
+        { id: 'lead-2', status: 'closed', source: 'agent_site_contact', estimated_pipeline_value: 15000, closed_revenue: 30000, value_currency: 'USD', value_source: 'closing_statement', created_at: '2026-08-24T10:00:00.000Z', metadata: null },
       ],
       [
         { id: 'delivery-1', lead_id: 'lead-1', status: 'sent', created_at: '2026-08-24T10:00:00.000Z', completed_at: '2026-08-24T10:00:08.000Z' },

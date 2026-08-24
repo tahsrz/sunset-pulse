@@ -113,6 +113,39 @@ describe('Jamie public guide disposition route', () => {
     expect(response.status).toBe(400);
     expect(mocks.from).not.toHaveBeenCalled();
   });
+
+  it('persists authoritative opportunity values with audit ownership', async () => {
+    const response = await PATCH(request({
+      action: 'set_value',
+      estimatedPipelineValue: 18000,
+      closedRevenue: null,
+      currency: 'USD',
+      valueSource: 'operator_estimate',
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      estimated_pipeline_value: 18000,
+      closed_revenue: null,
+      value_currency: 'USD',
+      value_source: 'operator_estimate',
+      valued_at: expect.any(String),
+      valued_by: 'Operator',
+    }));
+  });
+
+  it('rejects empty opportunity values', async () => {
+    const response = await PATCH(request({
+      action: 'set_value',
+      estimatedPipelineValue: null,
+      closedRevenue: null,
+      currency: 'USD',
+      valueSource: 'operator_estimate',
+    }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
 });
 
 const LEAD_ID = '11111111-1111-4111-8111-111111111111';

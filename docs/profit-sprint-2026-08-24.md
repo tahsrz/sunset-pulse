@@ -54,6 +54,7 @@ Complete before optimizing the dashboard.
 - Add reviewed `estimated_pipeline_value`, `closed_revenue`, `currency`, and `value_source` fields or a dedicated opportunity-value ledger.
 - Do not infer value from free-form metadata.
 - Acceptance: unknown value renders as unknown, never `$0.00`.
+- Implemented: additive opportunity-value columns, USD and source constraints, audited `set_value` updates, and scorecard reads from authoritative columns only.
 
 ### P0-004: Record real usage costs
 

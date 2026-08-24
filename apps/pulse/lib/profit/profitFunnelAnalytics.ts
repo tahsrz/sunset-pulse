@@ -26,6 +26,10 @@ type Lead = {
   metadata: Record<string, unknown> | null;
   status: string | null;
   source: string | null;
+  estimated_pipeline_value?: number | string | null;
+  closed_revenue?: number | string | null;
+  value_currency?: string | null;
+  value_source?: string | null;
   created_at: string;
 };
 
@@ -64,7 +68,7 @@ export async function loadProfitFunnelAnalytics(now = new Date()) {
       .limit(5000),
     supabaseAdmin
       .from('agent_site_leads')
-      .select('id, metadata, status, source, created_at')
+      .select('id, metadata, status, source, estimated_pipeline_value, closed_revenue, value_currency, value_source, created_at')
       .gte('created_at', since)
       .limit(2000),
     supabaseAdmin
@@ -106,7 +110,7 @@ export function buildProfitFunnelAnalytics(
   const sent = deliveries.filter((delivery) => delivery.status === 'sent');
   const failed = deliveries.filter((delivery) => delivery.status === 'failed');
   const suppressed = deliveries.filter((delivery) => delivery.status === 'suppressed');
-  const leadValues = leads.map((lead) => readMoney(lead.metadata)).filter((value): value is number => value !== null);
+  const leadValues = leads.map(readLeadValue).filter((value): value is number => value !== null);
   const estimatedPipelineValue = leadValues.length ? leadValues.reduce((sum, value) => sum + value, 0) : null;
   const eventCosts = events.map((event) => readModelCost(event.metadata, rates.modelPer1kTokens)).filter((value): value is number => value !== null);
   const modelCost = eventCosts.length ? eventCosts.reduce((sum, value) => sum + value, 0) : null;
@@ -127,7 +131,7 @@ export function buildProfitFunnelAnalytics(
     current.leads += 1;
     if (qualifiedLeadIds.has(lead.id)) current.qualified += 1;
     if (closedLeadIds.has(lead.id)) current.closed += 1;
-    const value = readMoney(lead.metadata);
+    const value = readLeadValue(lead);
     if (value !== null) {
       current.estimatedPipelineValue = (current.estimatedPipelineValue || 0) + value;
       current.valuedLeads += 1;
@@ -183,10 +187,16 @@ function uniqueSessions(events: FunnelEvent[], eventType: string) {
   return new Set(events.filter((event) => event.event_type === eventType).map((event) => event.actor_id || `event:${event.id}`));
 }
 
-function readMoney(metadata: Record<string, unknown> | null) {
-  if (!metadata) return null;
-  const value = metadata.estimatedValue ?? metadata.leadValue ?? metadata.pipelineValue;
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+function readLeadValue(lead: Lead) {
+  const closed = optionalMoney(lead.closed_revenue);
+  if (closed !== null) return closed;
+  return optionalMoney(lead.estimated_pipeline_value);
+}
+
+function optionalMoney(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function readModelCost(metadata: Record<string, unknown> | null, ratePer1kTokens: number | null) {
