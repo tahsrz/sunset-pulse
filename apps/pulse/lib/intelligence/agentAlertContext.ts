@@ -32,10 +32,12 @@ export async function enrichAgentAlertEvents(events: readonly IntelligenceEvent[
   if (!leadResult.error) {
     for (const lead of leadResult.data || []) {
       const metadata = isRecord(lead.metadata) ? lead.metadata : {};
-      const sessionHash = typeof metadata.sessionIdHash === 'string' ? metadata.sessionIdHash : '';
+      const guideContext = isRecord(metadata.publicGuideContext) ? metadata.publicGuideContext : {};
+      const sessionHash = typeof guideContext.sessionIdHash === 'string' ? guideContext.sessionIdHash : '';
       if (!sessionHashes.has(sessionHash) || leadsBySession.has(sessionHash)) continue;
       leadsBySession.set(sessionHash, {
         agentId: lead.agent_id,
+        funnelId: typeof metadata.funnelId === 'string' ? metadata.funnelId : null,
         leadId: lead.id,
         leadName: lead.name,
         leadStatus: lead.status,

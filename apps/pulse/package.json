@@ -28,6 +28,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:unit": "node --no-warnings ../../node_modules/vitest/vitest.mjs run",
+    "test:inventory-truth": "npx vitest run tests/unit/commercial-inventory-truth.test.ts tests/unit/jamie-public-guide-supervisor.test.ts tests/unit/jamie-listing-context.test.ts tests/unit/listing-read-surfaces.test.ts tests/unit/tenant-context-contracts.test.ts",
     "test:unit:watch": "node --no-warnings ../../node_modules/vitest/vitest.mjs",
     "postinstall": "prisma generate --schema prisma/schema.prisma && powersync-web copy-assets -o public",
     "powersync:assets": "powersync-web copy-assets -o public",

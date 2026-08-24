@@ -187,6 +187,16 @@ export default function AgentLeadActions({
         </div>
       </section>
 
+      <section className="border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Engagement receipts</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <button type="button" disabled={state === 'saving'} onClick={() => runAction({ action: 'record_contact', channel: executionIntent.type === 'unavailable' ? 'email' : executionIntent.type })} className="inline-flex items-center justify-center gap-2 border border-blue-300/20 px-3 py-2 text-[10px] font-black uppercase text-blue-100 hover:bg-blue-300/10 disabled:opacity-50"><Phone size={14} />Record attempt</button>
+          <button type="button" disabled={state === 'saving'} onClick={() => runAction({ action: 'record_response', source: 'customer_reply' })} className="inline-flex items-center justify-center gap-2 border border-emerald-300/20 px-3 py-2 text-[10px] font-black uppercase text-emerald-100 hover:bg-emerald-300/10 disabled:opacity-50"><MessageSquare size={14} />Record reply</button>
+          <button type="button" disabled={state === 'saving'} onClick={() => runAction({ action: 'record_response', source: 'appointment_booked' })} className="inline-flex items-center justify-center gap-2 border border-purple-300/20 px-3 py-2 text-[10px] font-black uppercase text-purple-100 hover:bg-purple-300/10 disabled:opacity-50"><CheckCircle2 size={14} />Record appointment</button>
+        </div>
+        <p className="mt-3 text-[11px] text-slate-400">Attempt: {lead.contact_attempted_at ? formatShortTime(lead.contact_attempted_at) : 'not recorded'} · Response: {lead.responded_at ? `${lead.response_source === 'appointment_booked' ? 'appointment' : 'reply'} ${formatShortTime(lead.responded_at)}` : 'not recorded'}</p>
+      </section>
+
       {/* Pipeline Status Selector */}
       <div>
         <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/45">Pipeline Status</p>

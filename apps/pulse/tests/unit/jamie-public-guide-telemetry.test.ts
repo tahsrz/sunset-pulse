@@ -41,12 +41,33 @@ describe('Jamie public guide telemetry', () => {
         hasAgentContext: true,
         hasListingContext: true,
         intentCategory: null,
+        funnelId: null,
         outcome: 'context_fact',
         toolId: null,
         usedListingData: true,
+        modelId: null,
+        usage: null,
       },
     }));
     expect(JSON.stringify(mocks.rpc.mock.calls[0][1])).not.toContain('browser-session-123');
+  });
+
+  it('records bounded model usage without prompt or response content', async () => {
+    await recordPublicGuideEvent({
+      event: 'guide_response',
+      sessionId: 'browser-session-usage',
+      generation: {
+        modelId: 'openai/gpt-oss-20b',
+        usage: { inputTokens: 120, outputTokens: 80, totalTokens: 200 },
+      },
+    });
+
+    expect(mocks.rpc).toHaveBeenCalledWith('log_intelligence_event', expect.objectContaining({
+      p_metadata: expect.objectContaining({
+        modelId: 'openai/gpt-oss-20b',
+        usage: { inputTokens: 120, outputTokens: 80, totalTokens: 200 },
+      }),
+    }));
   });
 
   it('schedules lifecycle events after the response and categorizes intent without prompt storage', async () => {

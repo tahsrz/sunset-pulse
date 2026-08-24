@@ -31,10 +31,13 @@ import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 import { getActiveSiteProfiles } from '@/lib/sites/siteProfiles';
 import { formatMenuItemSummary, type EntityDocument, type MenuItemDocument } from '@/models/types';
 import {
+  JAMIE_DEFAULT_GROQ_MODEL,
+  JAMIE_FALLBACK_GROQ_MODEL,
   getJamieGroqModelCandidates,
   resolveJamieGroqModel,
   shouldRetryJamieModel,
 } from '@/lib/ai/modelDefaults';
+import type { JamieModelTier } from '@/lib/ai/jamieModelRouting';
 
 const JAMIE_PULSE_RESULT_LIMIT = 5;
 const JAMIE_PULSE_SNIPPET_LIMIT = 520;
@@ -526,6 +529,7 @@ export async function getJamieResponse(
     agentId?: string | null;
     personaMode?: 'general' | 'guarded_real_estate';
     knowledgeContext?: KnowledgeContext;
+    modelTier?: JamieModelTier;
   } = {},
 ) {
   const userInput = messages[messages.length - 1]?.content || "";
@@ -576,7 +580,13 @@ export async function getJamieResponse(
     REAPER: agentConfig?.abidanPrompts?.REAPER || REAPER_SYSTEM_PROMPT
   };
 
-  const modelCandidates = getJamieGroqModelCandidates(agentConfig?.modelMatrix?.primaryModel);
+  const configuredPrimaryModel = resolveJamieGroqModel(agentConfig?.modelMatrix?.primaryModel);
+  const preferredModel = options.modelTier === 'cheap'
+    ? JAMIE_FALLBACK_GROQ_MODEL
+    : options.modelTier === 'strong'
+      ? JAMIE_DEFAULT_GROQ_MODEL
+      : configuredPrimaryModel;
+  const modelCandidates = getJamieGroqModelCandidates(preferredModel);
   const analysisModel = agentConfig?.modelMatrix?.reconModel || 'meta-llama/llama-3.1-405b-instruct:free';
   const minJudges = agentConfig?.operationalSettings?.minJudges || 1;
   const maxJudges = agentConfig?.operationalSettings?.maxJudges || 4;

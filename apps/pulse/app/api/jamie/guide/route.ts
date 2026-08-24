@@ -120,6 +120,7 @@ export async function POST(request: Request) {
           durationMs: Date.now() - startedAt,
           outcome: result.outcome,
           usedListingData: result.usedListingData,
+          generation: result.generation,
         });
         if (result.outcome === 'listing_search') {
           schedulePublicGuideEvent({ event: 'tool_used', ...eventContext, toolId: 'search_properties' });

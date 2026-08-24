@@ -6,6 +6,11 @@ const mocks = vi.hoisted(() => ({
   operatorAuditUser: vi.fn(),
   requireOperatorRouteAccess: vi.fn(),
   rpc: vi.fn(),
+  from: vi.fn(),
+  select: vi.fn(),
+  eqId: vi.fn(),
+  eqAgent: vi.fn(),
+  maybeSingle: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -14,7 +19,7 @@ vi.mock('@/lib/core/routeAuth', () => ({
   operatorAuditUser: mocks.operatorAuditUser,
   requireOperatorRouteAccess: mocks.requireOperatorRouteAccess,
 }));
-vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { rpc: mocks.rpc } }));
+vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from, rpc: mocks.rpc } }));
 
 import { POST } from '@/app/api/admin/agent-leads/action-events/route';
 
@@ -25,6 +30,11 @@ describe('agent lead action events route', () => {
     mocks.isAuthResponse.mockReturnValue(false);
     mocks.operatorAuditUser.mockReturnValue({ userId: 'operator-1', name: 'Operator' });
     mocks.rpc.mockResolvedValue({ error: null });
+    mocks.from.mockReturnValue({ select: mocks.select });
+    mocks.select.mockReturnValue({ eq: mocks.eqId });
+    mocks.eqId.mockReturnValue({ eq: mocks.eqAgent });
+    mocks.eqAgent.mockReturnValue({ maybeSingle: mocks.maybeSingle });
+    mocks.maybeSingle.mockResolvedValue({ data: { funnel_id: FUNNEL_ID }, error: null });
   });
 
   it('logs a privacy-safe native action event', async () => {
@@ -39,7 +49,7 @@ describe('agent lead action events route', () => {
     expect(mocks.rpc).toHaveBeenCalledWith('log_intelligence_event', expect.objectContaining({
       p_type: 'AGENT_LEAD_ACTION_OPENED',
       p_target_id: LEAD_ID,
-      p_metadata: { actionType: 'call', agentId: 'agent-one', listingId: 'MLS-104' },
+      p_metadata: { actionType: 'call', agentId: 'agent-one', funnelId: FUNNEL_ID, listingId: 'MLS-104' },
     }));
     expect(JSON.stringify(mocks.rpc.mock.calls[0])).not.toContain('email');
     expect(JSON.stringify(mocks.rpc.mock.calls[0])).not.toContain('phone');
@@ -54,6 +64,7 @@ describe('agent lead action events route', () => {
 });
 
 const LEAD_ID = '11111111-1111-4111-8111-111111111111';
+const FUNNEL_ID = '22222222-2222-4222-8222-222222222222';
 
 function request(body: Record<string, unknown>) {
   return new NextRequest('http://localhost/api/admin/agent-leads/action-events', {
