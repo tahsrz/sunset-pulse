@@ -110,11 +110,11 @@ Start only after Phase 0 contracts are implemented.
 
 Reformed after the trustworthy baseline, failure audit, and rental qualification work landed.
 
-1. Close zero-result conversion with an explicit consented agent-search action; do not build saved search until persistence exists.
-2. Measure hot-alert delivery and authoritative contact latency against separate service targets.
-3. Escalate delivered hot leads only when no contact receipt exists after the operating-hours threshold.
-4. Promote commercial inventory-truth fixtures to a regression gate.
-5. Hold model-cost and channel-spend optimization until one complete baseline week has enough verified qualified and closed volume.
+1. Complete: close zero-result conversion with an explicit consented agent-search action; do not build saved search until persistence exists.
+2. Complete: measure hot-alert delivery and authoritative contact latency against separate service targets.
+3. Complete: escalate delivered hot leads only when no contact receipt exists after the operating-hours threshold.
+4. Active: promote commercial inventory-truth fixtures to a regression gate.
+5. Deferred: hold model-cost and channel-spend optimization until one complete baseline week has enough verified qualified and closed volume.
 
 Profit rationale: improve handoff and agent follow-through before reducing model cost, because premature cost optimization can lower conversion while revenue attribution is still sparse.
 
@@ -154,6 +154,7 @@ Profit rationale: improve handoff and agent follow-through before reducing model
 - Escalate when a delivered hot lead has no recorded contact attempt after the threshold.
 - Do not escalate based solely on unread state when another channel recorded contact.
 - Acceptance: escalation tests cover retries, duplicate events, after-hours behavior, and resolved leads.
+- Implemented: delivered hot leads are evaluated against configurable operating hours, authoritative contact receipts and resolved states suppress escalation, and a separately claimed ledger provides duplicate-safe dispatch with bounded retries.
 
 ## Phase 4: Optimize Margin
 

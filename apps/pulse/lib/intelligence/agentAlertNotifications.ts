@@ -7,7 +7,11 @@ import {
   type AgentAlert,
 } from '@/lib/intelligence/agentAlerts';
 import { enrichAgentAlertEvents } from '@/lib/intelligence/agentAlertContext';
-import { dispatchAgentAlertNotification } from '@/lib/notifications/agentAlertChannels';
+import { dispatchAgentAlertNotification, dispatchOperationalAlert } from '@/lib/notifications/agentAlertChannels';
+import {
+  leadResponseOperatingHoursFromEnv,
+  shouldEscalateLeadResponse,
+} from '@/lib/intelligence/leadResponseEscalation';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const NOTIFICATION_EVENT_TYPES = [
@@ -40,6 +44,10 @@ export type AgentAlertWorkerResult = {
   sent: number;
   failed: number;
   suppressed: number;
+  escalationsEnqueued: number;
+  escalationsSent: number;
+  escalationsFailed: number;
+  escalationsSuppressed: number;
 };
 
 export async function runAgentAlertNotificationWorker(limit = 20): Promise<AgentAlertWorkerResult> {
@@ -53,6 +61,10 @@ export async function runAgentAlertNotificationWorker(limit = 20): Promise<Agent
     sent: 0,
     failed: 0,
     suppressed: 0,
+    escalationsEnqueued: 0,
+    escalationsSent: 0,
+    escalationsFailed: 0,
+    escalationsSuppressed: 0,
   };
 
   for (const delivery of claimed) {
@@ -60,7 +72,130 @@ export async function runAgentAlertNotificationWorker(limit = 20): Promise<Agent
     result[outcome] += 1;
   }
 
+  const escalationResult = await runLeadResponseEscalations(limit);
+  result.escalationsEnqueued = escalationResult.enqueued;
+  result.escalationsSent = escalationResult.sent;
+  result.escalationsFailed = escalationResult.failed;
+  result.escalationsSuppressed = escalationResult.suppressed;
+
   return result;
+}
+
+type EscalationDelivery = {
+  id: string;
+  lead_id: string;
+  agent_id: string;
+  completed_at: string;
+  payload: Record<string, unknown>;
+};
+
+type ClaimedEscalation = {
+  id: string;
+  delivery_id: string;
+  lead_id: string;
+  agent_id: string;
+  attempt_count: number;
+  payload: Record<string, unknown>;
+};
+
+async function runLeadResponseEscalations(limit: number) {
+  const deliveries = await loadRecentSentDeliveries();
+  const leadIds = [...new Set(deliveries.map((delivery) => delivery.lead_id))];
+  const leads = await loadEscalationLeads(leadIds);
+  const leadById = new Map(leads.map((lead) => [lead.id, lead]));
+  const policy = leadResponseOperatingHoursFromEnv();
+  const now = new Date();
+  const eligible = deliveries.filter((delivery) => {
+    const lead = leadById.get(delivery.lead_id);
+    return lead && shouldEscalateLeadResponse({
+      deliveredAt: delivery.completed_at,
+      contactAttemptedAt: lead.contact_attempted_at,
+      leadStatus: lead.status,
+    }, now, policy);
+  });
+
+  let enqueued = 0;
+  if (eligible.length) {
+    const { data, error } = await supabaseAdmin.from('lead_response_escalations').upsert(
+      eligible.map((delivery) => ({
+        delivery_id: delivery.id,
+        lead_id: delivery.lead_id,
+        agent_id: delivery.agent_id,
+        status: 'pending',
+        payload: delivery.payload,
+      })),
+      { onConflict: 'delivery_id', ignoreDuplicates: true },
+    ).select('id');
+    if (error) throw new Error('Unable to enqueue lead response escalations.');
+    enqueued = data?.length || 0;
+  }
+
+  const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_lead_response_escalations', {
+    p_limit: Math.max(1, Math.min(50, Math.round(limit))),
+  });
+  if (claimError) throw new Error('Unable to claim lead response escalations.');
+  const claimedEscalations = (claimed || []) as ClaimedEscalation[];
+  const missingClaimedLeadIds = [...new Set(claimedEscalations
+    .map((escalation) => escalation.lead_id)
+    .filter((leadId) => !leadById.has(leadId)))];
+  const claimedLeads = await loadEscalationLeads(missingClaimedLeadIds);
+  for (const lead of claimedLeads) leadById.set(lead.id, lead);
+  const counts = { enqueued, sent: 0, failed: 0, suppressed: 0 };
+  for (const escalation of claimedEscalations) {
+    const lead = leadById.get(escalation.lead_id);
+    if (!lead || lead.contact_attempted_at || ['closed', 'archived'].includes((lead.status || '').toLowerCase())) {
+      await updateEscalation(escalation.id, { status: 'resolved', completed_at: now.toISOString() });
+      continue;
+    }
+    const outcome = await dispatchOperationalAlert({
+      subject: `Hot lead awaiting contact: ${stringValue(escalation.payload.leadName) || 'Lead'}`,
+      idempotencyKey: `lead-response-escalation-${escalation.delivery_id}`,
+      text: [
+        `${stringValue(escalation.payload.leadName) || 'A hot lead'} has no recorded contact attempt after ${policy.thresholdMinutes} operating minutes.`,
+        `Top signal: ${stringValue(escalation.payload.topReason) || 'High-intent activity'}`,
+        '',
+        'Open Sunset Pulse: https://sunsetpulse.app/admin/agent-leads',
+      ].join('\n'),
+    });
+    if (outcome.status === 'sent') {
+      await updateEscalation(escalation.id, { status: 'sent', completed_at: new Date().toISOString(), last_error: null });
+      counts.sent += 1;
+    } else if (outcome.status === 'suppressed') {
+      await updateEscalation(escalation.id, { status: 'suppressed', completed_at: new Date().toISOString(), last_error: outcome.reason });
+      counts.suppressed += 1;
+    } else {
+      await updateEscalation(escalation.id, {
+        status: 'failed',
+        next_attempt_at: new Date(Date.now() + retryDelayMs(escalation.attempt_count)).toISOString(),
+        last_error: outcome.reason,
+      });
+      counts.failed += 1;
+    }
+  }
+  return counts;
+}
+
+async function loadRecentSentDeliveries(): Promise<EscalationDelivery[]> {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabaseAdmin.from('notification_deliveries')
+    .select('id, lead_id, agent_id, completed_at, payload')
+    .eq('status', 'sent').not('lead_id', 'is', null).not('completed_at', 'is', null)
+    .gte('completed_at', since).order('completed_at', { ascending: true }).limit(500);
+  if (error) throw new Error('Unable to load sent deliveries for response escalation.');
+  return (data || []) as EscalationDelivery[];
+}
+
+async function loadEscalationLeads(leadIds: string[]) {
+  if (!leadIds.length) return [];
+  const { data, error } = await supabaseAdmin.from('agent_site_leads')
+    .select('id, status, contact_attempted_at').in('id', leadIds);
+  if (error) throw new Error('Unable to load leads for response escalation.');
+  return (data || []) as Array<{ id: string; status: string | null; contact_attempted_at: string | null }>;
+}
+
+async function updateEscalation(id: string, update: Record<string, unknown>) {
+  const { error } = await supabaseAdmin.from('lead_response_escalations').update(update).eq('id', id);
+  if (error) throw new Error('Unable to persist lead response escalation state.');
 }
 
 async function loadRecentAlertEvents() {
