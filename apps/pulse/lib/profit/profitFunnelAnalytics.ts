@@ -11,6 +11,7 @@ const FUNNEL_EVENTS = [
   'PUBLIC_GUIDE_HANDOFF_COMPLETED',
   'PUBLIC_GUIDE_TOUR_REQUESTED',
   'PUBLIC_GUIDE_UNANSWERED_QUESTION',
+  'PUBLIC_GUIDE_GUIDE_ERROR',
   'AGENT_LEAD_ACTION_OPENED',
 ] as const;
 
@@ -208,6 +209,7 @@ export function buildProfitFunnelAnalytics(
       deliveriesLinked: deliveries.filter((delivery) => Boolean(delivery.funnel_id)).length,
       deliveriesTotal: deliveries.length,
     },
+    failureAudit: buildFailureAudit(events, jamieLeads, cohortDeliveries),
     baseline: buildBaseline({
       opened: opened.size,
       highIntent: highIntent.size,
@@ -253,6 +255,95 @@ function isHighIntentEvent(event: FunnelEvent) {
   if (['PUBLIC_GUIDE_HANDOFF_OFFERED', 'PUBLIC_GUIDE_HANDOFF_COMPLETED', 'PUBLIC_GUIDE_TOUR_REQUESTED'].includes(event.event_type)) return true;
   const intent = stringValue(event.metadata?.intentCategory);
   return ['buying_process', 'listing_fact', 'listing_search', 'location_comparison', 'selling_process'].includes(intent);
+}
+
+type FailureCategory = 'retrieval' | 'qualification' | 'unsupported_inventory' | 'missing_action' | 'delivery' | 'agent_follow_through';
+
+function buildFailureAudit(events: FunnelEvent[], leads: Lead[], deliveries: Delivery[]) {
+  const sessions = new Map<string, FunnelEvent[]>();
+  for (const event of events) {
+    if (!event.actor_id?.startsWith('public:')) continue;
+    const current = sessions.get(event.actor_id) || [];
+    current.push(event);
+    sessions.set(event.actor_id, current);
+  }
+  const leadsByActor = new Map<string, Lead>();
+  for (const lead of leads) {
+    const context = isRecord(lead.metadata?.publicGuideContext) ? lead.metadata?.publicGuideContext : {};
+    const sessionHash = stringValue(context.sessionIdHash);
+    if (sessionHash) leadsByActor.set(`public:${sessionHash}`, lead);
+  }
+  const deliveriesByLead = new Map<string, Delivery[]>();
+  for (const delivery of deliveries) {
+    if (!delivery.lead_id) continue;
+    const current = deliveriesByLead.get(delivery.lead_id) || [];
+    current.push(delivery);
+    deliveriesByLead.set(delivery.lead_id, current);
+  }
+
+  const samples = Array.from(sessions.entries()).flatMap(([actorId, sessionEvents]) => {
+    if (!sessionEvents.some(isHighIntentEvent)) return [];
+    const lead = leadsByActor.get(actorId);
+    const category = classifyFailure(sessionEvents, lead, lead ? deliveriesByLead.get(lead.id) || [] : []);
+    if (!category) return [];
+    return [{
+      category,
+      occurredAt: sessionEvents.map((event) => event.created_at).sort().at(-1) || null,
+      estimatedLostOpportunity: lead ? readLeadValue(lead) : null,
+      evidence: failureEvidence(category),
+    }];
+  }).sort((left, right) => (right.estimatedLostOpportunity || 0) - (left.estimatedLostOpportunity || 0)).slice(0, 20);
+
+  const categoryCounts = new Map<FailureCategory, { count: number; estimatedLostOpportunity: number | null }>();
+  for (const sample of samples) {
+    const current = categoryCounts.get(sample.category) || { count: 0, estimatedLostOpportunity: null };
+    current.count += 1;
+    if (sample.estimatedLostOpportunity !== null) current.estimatedLostOpportunity = (current.estimatedLostOpportunity || 0) + sample.estimatedLostOpportunity;
+    categoryCounts.set(sample.category, current);
+  }
+  const topLeaks = Array.from(categoryCounts.entries()).map(([category, values]) => ({
+    category,
+    ...values,
+    ...failureRemediation(category),
+  })).sort((left, right) => (right.estimatedLostOpportunity || 0) - (left.estimatedLostOpportunity || 0) || right.count - left.count).slice(0, 3);
+
+  return { audited: samples.length, target: 20, transcriptStored: false, samples, topLeaks };
+}
+
+function classifyFailure(events: FunnelEvent[], lead: Lead | undefined, deliveries: Delivery[]): FailureCategory | null {
+  if (events.some((event) => event.metadata?.outcome === 'listing_unverified')) return 'unsupported_inventory';
+  if (events.some((event) => event.event_type === 'PUBLIC_GUIDE_GUIDE_ERROR' || event.event_type === 'PUBLIC_GUIDE_UNANSWERED_QUESTION')) return 'retrieval';
+  const offered = events.some((event) => event.event_type === 'PUBLIC_GUIDE_HANDOFF_OFFERED');
+  const completed = events.some((event) => event.event_type === 'PUBLIC_GUIDE_HANDOFF_COMPLETED');
+  if (!offered) return 'missing_action';
+  if (!completed) return 'qualification';
+  if (deliveries.some((delivery) => delivery.status === 'failed' || delivery.status === 'suppressed')) return 'delivery';
+  if (lead && !lead.contact_attempted_at) return 'agent_follow_through';
+  return null;
+}
+
+function failureEvidence(category: FailureCategory) {
+  const evidence: Record<FailureCategory, string> = {
+    retrieval: 'Guide error or unanswered-question event recorded.',
+    qualification: 'Handoff was offered but no consented completion was recorded.',
+    unsupported_inventory: 'Guide response recorded listing_unverified.',
+    missing_action: 'Commercial intent was recorded without a handoff offer.',
+    delivery: 'Lead notification delivery failed or was suppressed.',
+    agent_follow_through: 'Consented handoff has no authoritative contact-attempt receipt.',
+  };
+  return evidence[category];
+}
+
+function failureRemediation(category: FailureCategory) {
+  const remediation: Record<FailureCategory, { owner: string; intervention: string; expectedMetric: string }> = {
+    retrieval: { owner: 'Jamie retrieval', intervention: 'Review failed intent and inventory retrieval coverage.', expectedMetric: 'Fewer unanswered commercial questions' },
+    qualification: { owner: 'Jamie conversion', intervention: 'Reduce handoff friction and ask only for missing qualification fields.', expectedMetric: 'Higher consented handoff conversion' },
+    unsupported_inventory: { owner: 'Inventory', intervention: 'Close verified inventory gaps without relaxing provenance rules.', expectedMetric: 'Fewer unverified listing outcomes' },
+    missing_action: { owner: 'Jamie conversion', intervention: 'Offer the next verified action for commercial intent.', expectedMetric: 'Higher handoff-offer rate' },
+    delivery: { owner: 'Notifications', intervention: 'Repair recipient configuration or provider delivery failures.', expectedMetric: 'Higher alert delivery rate' },
+    agent_follow_through: { owner: 'Agent operations', intervention: 'Contact delivered hot leads and record the attempt.', expectedMetric: 'Higher ten-minute contact rate' },
+  };
+  return remediation[category];
 }
 
 function buildBaseline(input: {

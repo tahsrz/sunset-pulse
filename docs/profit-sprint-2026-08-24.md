@@ -96,6 +96,7 @@ Start only after Phase 0 contracts are implemented.
 - Classify: retrieval, qualification, unsupported inventory, missing action, delivery, agent follow-through, or user decline.
 - Rank failures by estimated lost opportunity, not raw count.
 - Acceptance: top three leaks have evidence, owner, intervention, and expected metric movement.
+- Implemented: the rolling scorecard audits up to 20 privacy-safe commercial failure lineages, ranks known opportunity value before count, and assigns evidence, owner, intervention, and expected metric movement without storing transcripts or inferring customer decline.
 
 ### P1-003: Add confidence states to the UI
 

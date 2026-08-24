@@ -41,6 +41,7 @@ describe('Jamie public guide telemetry', () => {
         hasAgentContext: true,
         hasListingContext: true,
         intentCategory: null,
+        funnelId: null,
         outcome: 'context_fact',
         toolId: null,
         usedListingData: true,

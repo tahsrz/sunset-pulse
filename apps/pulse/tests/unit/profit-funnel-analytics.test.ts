@@ -14,7 +14,7 @@ describe('profit funnel analytics', () => {
         event('handoff', 'PUBLIC_GUIDE_HANDOFF_OFFERED', 'session-1'),
         event('completed', 'PUBLIC_GUIDE_HANDOFF_COMPLETED', 'session-1'),
         event('tour', 'PUBLIC_GUIDE_TOUR_REQUESTED', 'session-1'),
-        event('unanswered', 'PUBLIC_GUIDE_UNANSWERED_QUESTION', 'session-2'),
+        event('unanswered', 'PUBLIC_GUIDE_UNANSWERED_QUESTION', 'public:session-2', { intentCategory: 'listing_search' }),
         event('action', 'AGENT_LEAD_ACTION_OPENED', 'operator-1'),
       ],
       [
@@ -52,6 +52,12 @@ describe('profit funnel analytics', () => {
       }),
     }));
     expect(analytics.scopes.notificationOperations).toContain('tied to leads created during the window');
+    expect(analytics.failureAudit).toEqual(expect.objectContaining({
+      audited: 1,
+      target: 20,
+      transcriptStored: false,
+      topLeaks: [expect.objectContaining({ category: 'retrieval', count: 1, owner: 'Jamie retrieval' })],
+    }));
     expect(analytics.failureSignals).toEqual({ unansweredQuestions: 1, failedNotifications: 1, suppressedNotifications: 0 });
     expect(JSON.stringify(analytics)).not.toContain('private');
   });
