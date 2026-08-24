@@ -29,11 +29,12 @@ export function supervisePublicGuideReply({
 
   if (listingSearch) {
     const listings = listingSearch.properties.slice(0, 6);
-    const rentalSearch = listingSearch.criteria.priceType === 'lease' || /\b(?:rent|rental|lease|leasing|monthly rent)\b/i.test(userMessage);
+    const criteria = listingSearch.criteria || {};
+    const rentalSearch = criteria.priceType === 'lease' || /\b(?:rent|rental|lease|leasing|monthly rent)\b/i.test(userMessage);
     const content = listings.length
       ? `I found ${listings.length} active listing${listings.length === 1 ? '' : 's'} that match the search. Open a home below to inspect its verified listing details, or tell me which tradeoff matters most and I will help you narrow the set.`
       : rentalSearch
-        ? rentalZeroResultReply(listingSearch.criteria)
+        ? rentalZeroResultReply(criteria)
         : 'I checked the active listing grid, but I did not find a matching home yet. Try widening the location, price range, or property criteria, or connect with the agent for a follow-up search.';
 
     return {
@@ -69,7 +70,7 @@ export function supervisePublicGuideReply({
 function rentalZeroResultReply(criteria: Record<string, string>) {
   const missing = [
     !criteria.maxPrice ? 'maximum monthly rent' : null,
-    !criteria.moveIn ? 'preferred move-in timing' : null,
+    !criteria.moveIn ? 'preferred move-in timing (including your preferred move-in date)' : null,
     !criteria.beds ? 'minimum bedroom count' : null,
     !criteria.baths ? 'minimum bathroom count' : null,
     !criteria.location ? 'preferred location' : null,

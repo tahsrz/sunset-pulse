@@ -33,7 +33,9 @@ export async function enrichAgentAlertEvents(events: readonly IntelligenceEvent[
     for (const lead of leadResult.data || []) {
       const metadata = isRecord(lead.metadata) ? lead.metadata : {};
       const guideContext = isRecord(metadata.publicGuideContext) ? metadata.publicGuideContext : {};
-      const sessionHash = typeof guideContext.sessionIdHash === 'string' ? guideContext.sessionIdHash : '';
+      const sessionHash = typeof guideContext.sessionIdHash === 'string'
+        ? guideContext.sessionIdHash
+        : typeof metadata.sessionIdHash === 'string' ? metadata.sessionIdHash : '';
       if (!sessionHashes.has(sessionHash) || leadsBySession.has(sessionHash)) continue;
       leadsBySession.set(sessionHash, {
         agentId: lead.agent_id,
