@@ -48,4 +48,27 @@ describe('Jamie public guide handoff brief', () => {
     expect(brief.summary).not.toContain('214-555-0199');
     expect(JSON.stringify(brief)).not.toContain('client-supplied-id');
   });
+
+  it('extracts rental location, lease term, and move-in timing into the compact brief', async () => {
+    process.env.JAMIE_PUBLIC_GUIDE_HANDOFF_SUMMARY_DISABLED = 'true';
+
+    const brief = await buildPublicGuideHandoffBrief({
+      handoff: {
+        conversation: [{ role: 'user', text: 'I need a three bedroom two bath rental in Arlington on a one-year lease, moving October 1.' }],
+        discussedListingIds: [],
+        nextStep: 'refine_search',
+        sessionId: 'session-rental-123',
+      },
+      verifiedListingIds: [],
+    });
+
+    expect(brief.searchCriteria).toMatchObject({
+      locations: ['Arlington'],
+      transactionType: 'lease',
+      leaseTermMonths: 12,
+      timeline: 'October 1',
+      bedsMin: 3,
+      bathsMin: 2,
+    });
+  });
 });

@@ -7,11 +7,12 @@ import { PulseHash } from '@/utils/security/PulseHash';
 
 export const buildPropertyQuery = (searchParams) => {
   const query = searchParams.includeDemo === 'true' ? {} : { is_demo: { $ne: true } };
+  if (searchParams.publicOnly === 'true') query.display_public = { $ne: false };
   const signature = PulseHash.signature(searchParams);
 
   // 1. Text Search (Name, Description, Location)
   if (searchParams.location) {
-    const locationPattern = new RegExp(searchParams.location, 'i');
+    const locationPattern = new RegExp(escapeRegex(searchParams.location), 'i');
     query.$or = [
       { name: locationPattern },
       { description: locationPattern },
@@ -47,7 +48,7 @@ export const buildPropertyQuery = (searchParams) => {
     const amenitiesList = Array.isArray(searchParams.amenities) 
       ? searchParams.amenities 
       : searchParams.amenities.split(',');
-    query.amenities = { $all: amenitiesList.map(a => new RegExp(a, 'i')) };
+    query.amenities = { $all: amenitiesList.map(a => new RegExp(escapeRegex(a), 'i')) };
   }
 
   // 6. RV Specific Filters
@@ -103,3 +104,5 @@ export const buildPropertyQuery = (searchParams) => {
 
   return { query, signature };
 };
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

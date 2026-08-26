@@ -8,6 +8,7 @@ const scoreReasonSchema = z.object({
 
 const metadataSchema = z.object({
   agentId: z.string().trim().min(1).optional(),
+  funnelId: z.string().uuid().optional().nullable(),
   leadId: z.string().uuid().optional(),
   leadName: z.string().trim().min(1).max(200).optional(),
   leadStatus: z.string().trim().min(1).max(80).optional().nullable(),
@@ -32,7 +33,7 @@ export const intelligenceEventSchema = z.object({
   description: z.string(),
   metadata: metadataSchema.nullable().default({}),
   severity: z.string().nullable(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 }).strict();
 
 export type IntelligenceEvent = z.infer<typeof intelligenceEventSchema>;
@@ -106,7 +107,7 @@ export function processIntelligenceEvent(
       alert: {
         ...matching,
         sourceEventId: event.id,
-        sourceEventIds: [...matching.sourceEventIds, event.id],
+        sourceEventIds: [...matching.sourceEventIds, event.id].slice(-100),
         detail,
         listingId: listingId || matching.listingId,
         occurrences: matching.occurrences + 1,
@@ -185,10 +186,11 @@ export function decideAgentAlertNotification(
   const windowStart = Math.floor(Date.parse(alert.firstSeenAt) / ALERT_WINDOW_MS) * ALERT_WINDOW_MS;
   return {
     action: 'enqueue',
-    workflowId: process.env.NOVU_HIGH_INTENT_WORKFLOW_ID || 'lead-high-intent-activity',
+    workflowId: 'native-agent-alert-v1',
     idempotencyKey: `agent-alert:${alert.agentId}:${alert.leadId}:${alert.kind}:${windowStart}`,
     payload: {
       alertKind: alert.kind,
+      funnelId: metadata.funnelId || null,
       leadId: alert.leadId,
       leadName: metadata.leadName || 'Lead',
       listingId: alert.listingId || null,

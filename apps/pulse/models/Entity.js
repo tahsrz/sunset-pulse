@@ -41,7 +41,7 @@ const EntitySchema = new Schema(
       },
       modelId: {
         type: String,
-        default: 'llama-3.1-8b-instant',
+        default: 'openai/gpt-oss-120b',
       },
       temperature: {
         type: Number,

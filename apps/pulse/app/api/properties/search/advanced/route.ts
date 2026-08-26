@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { PulseCache } from '@/utils/security/PulseCache';
 import { searchListings } from '@/lib/data/listingRepository';
+import { projectPublicListing } from '@/lib/data/publicInventory';
 
 /**
  * GET /api/properties/search/advanced
@@ -33,12 +34,13 @@ export const GET = async (request: NextRequest) => {
       radius: params.radius,
       center: params.center,
       includeDemo: params.includeDemo === 'true',
-    }, { limit: 500 });
+    }, { limit: 500, publicOnly: true });
 
     // 3. Store in PulseCache
-    PulseCache.set(signature, allResults);
+    const publicResults = allResults.map(projectPublicListing);
+    PulseCache.set(signature, publicResults);
 
-    const response = successResponse(allResults, { signature, cached: false });
+    const response = successResponse(publicResults, { signature, cached: false });
     response.headers.set('X-Cache', 'MISS');
     return response;
 

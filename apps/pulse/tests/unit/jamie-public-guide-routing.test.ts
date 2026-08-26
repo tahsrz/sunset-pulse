@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getFirstPartySiteFromHost,
   getTenantFromHost,
   getTenantRewrite,
 } from '@/lib/sites/tenantRouting';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('Jamie first-party host routing', () => {
   it('reserves Jamie outside the tenant namespace', () => {
@@ -35,5 +39,19 @@ describe('Jamie first-party host routing', () => {
 
     expect(rewrite).toMatchObject({ tenant: 'taz', kind: 'tenant' });
     expect(rewrite?.url.pathname).toBe('/sites/taz/properties/123');
+  });
+
+  it('uses forwarded host only when the deployment explicitly trusts its proxy', () => {
+    const request = {
+      headers: new Headers({
+        host: 'deployment.vercel.app',
+        'x-forwarded-host': 'taz.sunsetpulse.app',
+      }),
+      url: 'https://deployment.vercel.app/',
+    };
+
+    expect(getTenantRewrite(request)).toBeNull();
+    vi.stubEnv('TRUSTED_PROXY_HOST_HEADER', 'true');
+    expect(getTenantRewrite(request)).toMatchObject({ tenant: 'taz', hostname: 'taz.sunsetpulse.app' });
   });
 });

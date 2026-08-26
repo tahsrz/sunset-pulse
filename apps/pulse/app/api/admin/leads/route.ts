@@ -117,6 +117,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
   if (isAuthResponse(access)) return access;
+  const declaredLength = Number(request.headers.get('content-length') || 0);
+  if (declaredLength > maxTotalEvidenceSize + 2 * 1024 * 1024) {
+    return NextResponse.json({ ok: false, error: 'Lead intake payload is too large.' }, { status: 413 });
+  }
 
   const formData = await request.formData().catch(() => null);
   if (!formData) {
@@ -151,6 +155,9 @@ export async function POST(request: NextRequest) {
   }
 
   const values = parsed.data;
+  if (values.assignedTo && !(await isAssignableOperator(values.assignedTo))) {
+    return NextResponse.json({ ok: false, error: 'The selected assignee is not an active operator.' }, { status: 400 });
+  }
   const auditUser = operatorAuditUser(access);
   const name = [values.firstName, values.lastName].filter(Boolean).join(' ').trim() || values.propertyAddress || null;
   const metadata = {
@@ -238,6 +245,9 @@ export async function PATCH(request: NextRequest) {
     });
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   } else if (input.action === 'update_details') {
+    if (input.assignedTo && !(await isAssignableOperator(input.assignedTo))) {
+      return NextResponse.json({ ok: false, error: 'The selected assignee is not an active operator.' }, { status: 400 });
+    }
     const updates = buildLeadDetailUpdates(input);
     const { error } = await supabaseAdmin.from('leads').update(updates).eq('id', input.id);
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -251,6 +261,16 @@ export async function PATCH(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+async function isAssignableOperator(profileId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('id', profileId)
+    .in('role', ['realtor', 'operator', 'admin'])
+    .maybeSingle();
+  return !error && Boolean(data?.id);
 }
 
 async function hydrateLeads(rows: LeadRow[]): Promise<InternalLead[]> {

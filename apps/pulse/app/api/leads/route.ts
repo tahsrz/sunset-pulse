@@ -7,7 +7,7 @@ import { applyDecay, calculateVelocity } from '@/lib/intelligence/leadIntelligen
 import { successResponse, errorResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { supabase } from '@/lib/supabase';
-import { processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
+import { notifyProcessedLead, processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
 import { LeadSchema } from '@/lib/core/validation';
 import mongoose from 'mongoose';
 
@@ -18,6 +18,9 @@ export const GET = async () => {
     const sessionUser = await getSessionUser();
     if (!sessionUser || !sessionUser.userId) {
       return unauthorizedResponse('Authentication required to access lead intelligence.');
+    }
+    if (sessionUser.role !== 'admin' && sessionUser.role !== 'operator') {
+      return errorResponse('Lead intelligence access requires an operator account.', 403);
     }
 
     //  Fetch from MongoDB & Enrich
@@ -35,8 +38,9 @@ export const GET = async () => {
     // Fetch from Supabase for grid consistency
     const { data: supabaseLeads } = await supabase
       .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, email, first_name, last_name, phone, status, source, created_at, updated_at, last_activity, probability, property_address, mailing_address, estimated_pipeline_value, closed_revenue, value_currency, value_source')
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     //  Merge streams by email to prevent duplication
     const finalLeads = [...enrichedLeads];
@@ -114,9 +118,22 @@ export const POST = async (request: Request) => {
     await newLead.save();
 
     //  Synchronize to Supabase
-    await syncLeadToSupabase(newLead);
+    let synchronized = true;
+    try {
+      await syncLeadToSupabase(newLead);
+    } catch (syncError) {
+      synchronized = false;
+      console.error('[LEAD_SUPABASE_SYNC_DEFERRED]:', syncError);
+    }
+    if (process.env.NEXT_PUBLIC_MOCK_MODE !== 'true') {
+      try {
+        await notifyProcessedLead(intelligence, intelligence.propertyName);
+      } catch (notificationError) {
+        console.error('[LEAD_NOTIFICATION_FAILURE]:', notificationError);
+      }
+    }
 
-    return successResponse({ message: 'Lead successfully integrated.', id: newLead._id }, 201);
+    return successResponse({ message: 'Lead successfully integrated.', id: newLead._id, synchronized }, 201);
   } catch (error: any) {
     console.error('[LEAD_POST_FAILURE]:', error);
     return errorResponse('Failed to process lead intelligence.', 500, error.message);

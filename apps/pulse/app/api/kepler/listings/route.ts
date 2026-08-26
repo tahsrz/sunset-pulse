@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { searchListings } from '@/lib/data/listingRepository';
+import { projectPublicListing } from '@/lib/data/publicInventory';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const limit = clamp(Number(url.searchParams.get('limit') || 100), 1, 500);
-    const listings = await searchListings({}, { limit });
+    const limit = clamp(Number(url.searchParams.get('limit') || 50), 1, 100);
+    const listings = (await searchListings({}, { limit }))
+      .map(projectPublicListing);
     const rows = listings
       .filter((listing) => listing.location_geo?.coordinates.every(Number.isFinite))
       .map(toKeplerListingRow);

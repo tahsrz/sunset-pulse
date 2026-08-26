@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic';
+// Public inventory can tolerate brief staleness and should not re-query Supabase on every refresh.
+export const revalidate = 60;
 import { NextRequest } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { getSessionUser } from '@/lib/core/getSessionUser';
@@ -7,6 +8,7 @@ import { successResponse, errorResponse, unauthorizedResponse } from '@/lib/core
 import Property from '@/models/Property';
 import connectDB from '@/lib/core/database';
 import { searchListings } from '@/lib/data/listingRepository';
+import { projectPublicListing } from '@/lib/data/publicInventory';
 
 
 
@@ -18,7 +20,8 @@ export const GET = async (request: NextRequest) => {
 
     const parsedPage = Math.max(1, parseInt(page));
     const parsedPageSize = Math.max(1, Math.min(100, parseInt(pageSize)));
-    const allListings = await searchListings({}, { limit: 500 });
+    const allListings = (await searchListings({}, { limit: 500, publicOnly: true }))
+      .map(projectPublicListing);
     const start = (parsedPage - 1) * parsedPageSize;
     const data = {
       total: allListings.length,

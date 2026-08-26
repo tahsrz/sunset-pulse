@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AtlasGlobeCanvas, { AtlasGlobe, GlobeNode } from '@/components/atlas/AtlasGlobeCanvas';
 import WikipediaProcessTerminal from '@/components/atlas/WikipediaProcessTerminal';
+import RetrievalInspector from '@/components/atlas/RetrievalInspector';
 
 type AtlasNode = {
   id: string;
@@ -114,9 +115,9 @@ export default function MemoriaAtlasPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/tah/atlas/map', { cache: 'no-store' }).then(res => res.json()),
-      fetch('/api/tah/atlas/globe', { cache: 'no-store' }).then(res => res.json()),
-      fetch('/api/atlas-pulse', { cache: 'no-store' }).then(res => res.json())
+      fetch('/api/tah/atlas/map', { cache: 'no-store' }).then(assertJsonResponse),
+      fetch('/api/tah/atlas/globe', { cache: 'no-store' }).then(assertJsonResponse),
+      fetch('/api/atlas-pulse', { cache: 'no-store' }).then(assertJsonResponse)
     ])
       .then(([mapData, globeData, pulseData]) => {
         setAtlas(mapData);
@@ -124,6 +125,11 @@ export default function MemoriaAtlasPage() {
         setAtlasPulse(pulseData.atlasPulse || null);
         setSelectedNode(mapData.nodes?.[0] || null);
         setSelectedGlobeNode(globeData.nodes?.[0] || null);
+      })
+      .catch(() => {
+        setAtlas(null);
+        setGlobe(null);
+        setAtlasPulse(null);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -306,6 +312,7 @@ export default function MemoriaAtlasPage() {
         </div>
 
         <WikipediaProcessTerminal />
+        <RetrievalInspector />
 
         <div className="mt-4 rounded border border-white/10 bg-white/[0.04] p-4">
           <div className="mb-4 border-b border-white/10 pb-4">
@@ -418,6 +425,11 @@ export default function MemoriaAtlasPage() {
       </section>
     </main>
   );
+}
+
+async function assertJsonResponse(response: Response) {
+  if (!response.ok) throw new Error(`Atlas request failed with ${response.status}.`);
+  return response.json();
 }
 
 function MetricPill({ label, value }: { label: string; value: string }) {

@@ -61,6 +61,22 @@ describe('Jamie public guide supervisor', () => {
     expect(result.sources[0].label).toContain('NTREIS MLS');
   });
 
+  it('asks only for missing rental qualification fields after a zero-result search', () => {
+    const result = supervisePublicGuideReply({
+      draft: 'No results.',
+      userMessage: 'I need a three bedroom, two bath rental in Arlington on a one-year lease.',
+      listingSearch: {
+        total: 0,
+        criteria: { location: 'Arlington', beds: '3', baths: '2', priceType: 'lease', leaseTermMonths: '12' },
+        properties: [],
+      },
+    });
+
+    expect(result.content).toContain('maximum monthly rent and preferred move-in timing');
+    expect(result.content).not.toContain('bedroom count');
+    expect(result.content).not.toContain('lease length');
+  });
+
   it('redirects subjective safety and demographic questions to objective factors', () => {
     const result = supervisePublicGuideReply({
       draft: 'Unsafe answer.',

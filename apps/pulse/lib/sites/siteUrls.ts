@@ -1,4 +1,5 @@
 import { FALLBACK_AGENT_ID, normalizeAgentId } from '@/lib/sites/agentConfig';
+import { normalizePublicTenantSlug } from '@/lib/sites/tenantRouting';
 
 const DEFAULT_ROOT_DOMAIN = 'sunsetpulse.app';
 const TENANT_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -10,7 +11,8 @@ export function getPublicAgentSiteUrl(input: {
   rootDomain?: string | null;
 }) {
   if (input.customDomain) {
-    return `https://${normalizeHostname(input.customDomain)}`;
+    const customDomain = normalizeHostname(input.customDomain);
+    if (isValidCustomDomain(customDomain)) return `https://${customDomain}`;
   }
 
   const rootDomain = normalizeRootDomain(input.rootDomain || process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN);
@@ -59,13 +61,13 @@ export function getJamieGuideUrl(input: {
 }
 
 export function getAgentSiteSubdomain(agentId?: string | null, configuredSubdomain?: string | null) {
-  const subdomain = normalizeTenantSlug(configuredSubdomain);
+  const subdomain = normalizePublicTenantSlug(configuredSubdomain);
   if (subdomain) return subdomain;
 
   const normalizedAgentId = normalizeAgentId(agentId) || FALLBACK_AGENT_ID;
   if (normalizedAgentId === FALLBACK_AGENT_ID) return 'taz';
 
-  return normalizeTenantSlug(
+  return normalizePublicTenantSlug(
     normalizedAgentId
       .replace(/-site$/, '')
       .replace(/-realty-\d+$/, '')
@@ -89,6 +91,13 @@ function normalizeHostname(value?: string | null) {
   const withoutProtocol = (value || '').trim().replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
   if (!withoutProtocol) return '';
   return withoutProtocol.split(':')[0];
+}
+
+function isValidCustomDomain(value: string) {
+  return value.length <= 253
+    && !value.includes('..')
+    && /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i.test(value)
+    && value.includes('.');
 }
 
 function getLocalRequestOrigin(requestHost?: string | null, requestedProtocol?: string | null) {

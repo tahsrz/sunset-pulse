@@ -25,7 +25,7 @@ async function main() {
       printResult(result);
       consecutiveFailures = 0;
 
-      if (!options.continuous || result.status === 'complete' || result.status === 'paused') return;
+      if (!options.continuous || result.status === 'complete') return;
       await delay(options.idleMs);
     } catch (error) {
       if (!options.continuous) throw error;

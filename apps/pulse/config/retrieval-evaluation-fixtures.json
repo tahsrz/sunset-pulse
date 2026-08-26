@@ -1,0 +1,22 @@
+[
+  { "id": "wikipedia-history", "question": "What caused the French Revolution?", "expectedHints": ["French Revolution", "wikipedia"], "category": "history" },
+  { "id": "wikipedia-science", "question": "How does photosynthesis convert light into energy?", "expectedHints": ["photosynthesis", "wikipedia"], "category": "science" },
+  { "id": "wikipedia-computing", "question": "Who created the Linux kernel and why?", "expectedHints": ["Linux", "Linus Torvalds", "wikipedia"], "category": "computing" },
+  { "id": "wikipedia-geography", "question": "Why is the Nile important to Egypt?", "expectedHints": ["Nile", "Egypt", "wikipedia"], "category": "geography" },
+  { "id": "wikipedia-medicine", "question": "What is the role of insulin in the body?", "expectedHints": ["insulin", "wikipedia"], "category": "medicine" },
+  { "id": "wikipedia-mathematics", "question": "Explain the Pythagorean theorem.", "expectedHints": ["Pythagorean", "wikipedia"], "category": "mathematics" },
+  { "id": "wikipedia-astronomy", "question": "What makes a star become a supernova?", "expectedHints": ["supernova", "star", "wikipedia"], "category": "astronomy" },
+  { "id": "wikipedia-literature", "question": "What is the historical importance of Don Quixote?", "expectedHints": ["Don Quixote", "Cervantes", "wikipedia"], "category": "literature" },
+  { "id": "wikipedia-music", "question": "How did jazz originate?", "expectedHints": ["jazz", "wikipedia"], "category": "music" },
+  { "id": "wikipedia-government", "question": "How does separation of powers work?", "expectedHints": ["separation of powers", "government", "wikipedia"], "category": "government" },
+  { "id": "texas-history", "question": "Why was the Battle of the Alamo significant?", "expectedHints": ["Alamo", "Texas"], "category": "local-history" },
+  { "id": "texas-geography", "question": "What defines the geography of North Texas?", "expectedHints": ["North Texas", "Texas"], "category": "local-geography" },
+  { "id": "real-estate-hoa", "question": "What should a buyer examine in HOA documents?", "expectedHints": ["HOA", "real estate", "property"], "category": "real-estate" },
+  { "id": "real-estate-comps", "question": "How are comparable home sales used in valuation?", "expectedHints": ["comparable", "valuation", "real estate"], "category": "real-estate" },
+  { "id": "real-estate-mls", "question": "What information does an MLS listing usually contain?", "expectedHints": ["MLS", "listing", "real estate"], "category": "real-estate" },
+  { "id": "ai-transformers", "question": "How do transformer neural networks use attention?", "expectedHints": ["transformer", "attention", "artificial intelligence"], "category": "ai" },
+  { "id": "databases-index", "question": "Why does a database index speed up a query?", "expectedHints": ["database", "index", "query"], "category": "computing" },
+  { "id": "security-injection", "question": "What is prompt injection and how is it mitigated?", "expectedHints": ["prompt injection", "security", "AI"], "category": "security" },
+  { "id": "commerce-inventory", "question": "How does inventory turnover affect a retail business?", "expectedHints": ["inventory", "retail", "commerce"], "category": "business" },
+  { "id": "retrieval-tah", "question": "What is a TAH cartridge in Sunset Pulse?", "expectedHints": ["TAH", "cartridge", "Sunset Pulse"], "category": "product" }
+]

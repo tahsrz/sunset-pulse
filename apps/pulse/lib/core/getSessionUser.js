@@ -30,12 +30,13 @@ export const getSessionUser = async () => {
     // Fetch the profile for role and other metadata
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('avatar_url, full_name')
       .eq('id', user.id)
       .maybeSingle();
 
     if (profileError) {
       console.error('[AUTH_CORE] Profile fetch failed:', profileError.message);
+      return null;
     }
 
     const metadata = user.user_metadata || {};

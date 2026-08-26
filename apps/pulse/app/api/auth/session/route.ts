@@ -27,7 +27,8 @@ export async function GET() {
     },
     {
       headers: {
-        'Cache-Control': 'no-store, max-age=0'
+        'Cache-Control': 'no-store, max-age=0',
+        'Vary': 'Cookie'
       }
     }
   );
@@ -51,7 +52,8 @@ export async function DELETE() {
     { ok: true },
     {
       headers: {
-        'Cache-Control': 'no-store, max-age=0'
+        'Cache-Control': 'no-store, max-age=0',
+        'Vary': 'Cookie'
       }
     }
   );

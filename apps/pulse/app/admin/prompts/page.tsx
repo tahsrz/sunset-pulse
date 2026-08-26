@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { FaSave, FaTerminal, FaRobot, FaSync, FaShieldAlt, FaMicrochip, FaSlidersH, FaBrain } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { supabase } from '@/lib/supabase';
 
 const PERSONALITY_PRESETS = ['Aggressive', 'Supportive', 'Mysterious', 'Custom'];
 const AVAILABLE_MODELS = [
-  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Fast)' },
-  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Balanced)' },
+  { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B (Production)' },
   { id: 'meta-llama/llama-3.1-405b-instruct:free', name: 'Llama 3.1 405B (Max Power)' },
   { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2 9B (Secure)' },
   { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B (Efficient)' }
@@ -20,7 +18,7 @@ export default function PromptEditorPage() {
   const [jamiePrompt, setJamiePrompt] = useState('');
   const [abidanPrompts, setAbidanPrompts] = useState<any>({});
   const [modelMatrix, setModelMatrix] = useState({
-    primaryModel: 'llama-3.1-8b-instant',
+    primaryModel: 'openai/gpt-oss-120b',
     reconModel: 'meta-llama/llama-3.1-405b-instruct:free',
     miniModel: 'google/gemma-2-9b-it:free'
   });
@@ -36,19 +34,16 @@ export default function PromptEditorPage() {
 
   const fetchPrompts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('site_config')
-        .select('*')
-        .eq('agent_id', 'taz-realty-001')
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
+      const response = await fetch('/api/admin/prompts', { cache: 'no-store' });
+      if (!response.ok) throw new Error('Prompt configuration request failed.');
+      const payload = await response.json();
+      const data = payload.data || payload;
 
       if (data) {
-        setJamiePrompt(data.intelligence?.jamieSystemPrompt || '');
-        setAbidanPrompts(data.intelligence?.abidanPrompts || {});
-        if (data.model_matrix) setModelMatrix(data.model_matrix);
-        if (data.operational_settings) setOperationalSettings(data.operational_settings);
+        setJamiePrompt(data.jamieSystemPrompt || '');
+        setAbidanPrompts(data.abidanPrompts || {});
+        if (data.modelMatrix) setModelMatrix(data.modelMatrix);
+        if (data.operationalSettings) setOperationalSettings(data.operationalSettings);
       }
       setLoading(false);
     } catch (error) {
@@ -59,20 +54,17 @@ export default function PromptEditorPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('site_config')
-        .upsert({
-          agent_id: 'taz-realty-001',
-          intelligence: {
-            jamieSystemPrompt: jamiePrompt,
-            abidanPrompts
-          },
-          model_matrix: modelMatrix,
-          operational_settings: operationalSettings,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'agent_id' });
-
-      if (error) throw error;
+      const response = await fetch('/api/admin/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jamieSystemPrompt: jamiePrompt,
+          abidanPrompts,
+          modelMatrix,
+          operationalSettings,
+        }),
+      });
+      if (!response.ok) throw new Error('Prompt configuration update failed.');
       toast.success('Neural weights updated.');
     } catch (error) {
       toast.error('Grid synchronization failure.');
