@@ -55,6 +55,7 @@ export type LaunchKitHero = {
 
 export type AgentLaunchKit = {
   agentId: string;
+  activeVibeRevisionId?: string;
   ownerId?: string;
   ownerName: string;
   subdomain: string;
@@ -191,6 +192,7 @@ const provisioningAuditEventSchema = z.object({
 
 export const agentLaunchKitSchema = z.object({
   agentId: z.string().trim().toLowerCase().min(2).max(64).regex(/^[a-z0-9](?:[a-z0-9-_]{0,62}[a-z0-9])?$/),
+  activeVibeRevisionId: optionalStringSchema,
   ownerId: optionalStringSchema,
   ownerName: z.string().trim().min(2).max(120),
   subdomain: z.string().trim().toLowerCase().min(2).max(63).regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/),
@@ -255,6 +257,7 @@ export function createDefaultLaunchKit(agentIdInput?: string | null): AgentLaunc
 
   return {
     agentId,
+    activeVibeRevisionId: '',
     ownerId: '',
     ownerName: agentProfile.displayName,
     subdomain,
@@ -313,6 +316,7 @@ export function normalizeLaunchKit(input: unknown, fallbackAgentId?: string | nu
 
   return agentLaunchKitSchema.parse({
     agentId,
+    activeVibeRevisionId: value.activeVibeRevisionId || value.active_vibe_revision_id || fallback.activeVibeRevisionId || '',
     ownerId: value.ownerId || value.owner_id || billingProfile.userId || fallback.ownerId || '',
     ownerName: value.ownerName || value.owner_name || agentProfile.displayName || fallback.ownerName,
     subdomain,
@@ -427,6 +431,7 @@ export function parseListInput(value: string): string[] {
 export function toSiteConfigSupabaseRecord(kit: AgentLaunchKit, updatedBy: unknown, updatedAt = new Date().toISOString()) {
   return {
     agent_id: kit.agentId,
+    active_vibe_revision_id: kit.activeVibeRevisionId || null,
     owner_id: kit.ownerId || kit.billingProfile.userId || null,
     owner_name: kit.ownerName,
     subdomain: kit.subdomain,
@@ -451,6 +456,7 @@ export function toSiteConfigSupabaseRecord(kit: AgentLaunchKit, updatedBy: unkno
 export function toSiteConfigMongoRecord(kit: AgentLaunchKit, updatedBy: unknown, updatedAt = new Date().toISOString()) {
   return {
     agentId: kit.agentId,
+    activeVibeRevisionId: kit.activeVibeRevisionId || undefined,
     ownerId: kit.ownerId || kit.billingProfile.userId || undefined,
     ownerName: kit.ownerName,
     subdomain: kit.subdomain,
