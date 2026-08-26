@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic';
+// Public inventory can tolerate brief staleness and should not re-query Supabase on every refresh.
+export const revalidate = 60;
 import { NextRequest } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { getSessionUser } from '@/lib/core/getSessionUser';

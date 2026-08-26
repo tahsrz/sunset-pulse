@@ -38,8 +38,9 @@ export const GET = async () => {
     // Fetch from Supabase for grid consistency
     const { data: supabaseLeads } = await supabase
       .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, email, first_name, last_name, phone, status, source, created_at, updated_at, last_activity, probability, property_address, mailing_address, estimated_pipeline_value, closed_revenue, value_currency, value_source')
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     //  Merge streams by email to prevent duplication
     const finalLeads = [...enrichedLeads];

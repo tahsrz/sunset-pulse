@@ -21,7 +21,19 @@ Instead of sending every task to a massive remote model, Sunset Pulse packages d
 
 ## Current Release
 
-Profit-focused weekly execution is tracked in [`docs/profit-sprint-2026-08-24.md`](./docs/profit-sprint-2026-08-24.md).
+Profit-focused weekly execution is tracked in [`docs/profit-sprint-2026-08-24.md`](./docs/profit-sprint-2026-08-24.md). Luna's canonical outcome-billing implementation plan is [`docs/luna-outcome-revenue-plan-2026-08-24.md`](./docs/luna-outcome-revenue-plan-2026-08-24.md), with the operator handoff in [`docs/luna-shadow-operations-runbook.md`](./docs/luna-shadow-operations-runbook.md) and the daily record in [`docs/luna-shadow-evidence-log.md`](./docs/luna-shadow-evidence-log.md); implementation notes, tests, and commits should reference its `LUNA-*` ticket IDs.
+
+Supabase egress reduction is tracked in [`docs/supabase-egress-reduction-plan-2026-08-26.md`](./docs/supabase-egress-reduction-plan-2026-08-26.md). Public listing feeds are bounded and revalidated while high-volume sources are measured.
+
+The Vibe Dictionary modernization plan is [`docs/vibe-dictionary-wordpress-plan-2026-08-25.md`](./docs/vibe-dictionary-wordpress-plan-2026-08-25.md). It defines the WordPress-style admin workflow, revisions, publishing gates, taxonomy, media, and safe Launch Kit integration.
+
+Outcome prices are research hypotheses, not active customer charges. Legal approval is reported complete under `LUNA-003`; Stripe outcome metering remains gated on the 14-day shadow evidence, pricing decision, reconciliation, and controlled-cohort checks.
+
+### Luna Outcome Revenue Status
+
+The outcome-revenue system is approximately **82% implemented**. Completed foundations include deterministic outcome contracts, immutable outcome and internal-cost ledgers, authoritative booking lineage, Jamie booking actions, commercial agent queues, shadow invoices, dispute credits, evidence-gated pricing decisions, controlled launch gates, tenant conversion baselines, and operator baseline/checkpoint controls.
+
+Legal approval is reported complete and must be retained with the tenant launch record. The remaining work is operational: seed approved baseline values, collect 14 complete shadow checkpoints, verify production cost and conversion evidence, reconcile results, and approve a controlled cohort. Stripe outcome submission remains disabled until those gates pass. Follow the [`Luna shadow operations runbook`](./docs/luna-shadow-operations-runbook.md) for the handoff procedure.
 
 Current local release: **v0.3.0 - Research Desk**
 

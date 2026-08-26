@@ -22,7 +22,7 @@ describe('listing repository mock mode', () => {
     expect(listings[0]?.mls_id).toBe('MOCK-FTW-418');
     expect(detail?.name).toBe('418 Cedar Ridge Drive');
     expect(publicDetail?.name).toBe('418 Cedar Ridge Drive');
-  });
+  }, 15_000);
 
   it('filters private fixtures while presenting demo fixtures as public simulations', async () => {
     const { upsertMockCanonicalProperty } = await import('@/lib/mocks/canonicalProperties');

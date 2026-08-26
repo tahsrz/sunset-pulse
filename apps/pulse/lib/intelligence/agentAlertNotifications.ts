@@ -13,6 +13,7 @@ import {
   shouldEscalateLeadResponse,
 } from '@/lib/intelligence/leadResponseEscalation';
 import { supabaseAdmin } from '@/lib/supabase';
+import { persistProviderCost } from '@/lib/profit/internalCostEvents';
 
 const NOTIFICATION_EVENT_TYPES = [
   'PUBLIC_GUIDE_HANDOFF_COMPLETED',
@@ -303,14 +304,16 @@ async function dispatchDelivery(delivery: NotificationDelivery): Promise<'sent' 
   });
 
   if (record.status === 'sent') {
+    const costUsd = notificationCost(record.provider);
     await updateDelivery(delivery.id, {
       status: 'sent',
       completed_at: new Date().toISOString(),
       provider: record.provider,
-      cost_usd: notificationCost(record.provider),
+      cost_usd: costUsd,
       provider_message_id: record.messageId ? `${record.provider}:${record.messageId}` : record.provider,
       last_error: null,
     });
+    await recordNotificationCost(delivery, record.provider, costUsd, record.messageId ?? undefined);
     return 'sent';
   }
 
@@ -330,6 +333,33 @@ async function dispatchDelivery(delivery: NotificationDelivery): Promise<'sent' 
     last_error: record.reason,
   });
   return 'failed';
+}
+
+async function recordNotificationCost(
+  delivery: NotificationDelivery,
+  provider: 'resend' | 'telnyx',
+  amountUsd: number | null,
+  messageId?: string,
+) {
+  if (!delivery.lead_id) return;
+  const { data: lead } = await supabaseAdmin.from('agent_site_leads').select('site').eq('id', delivery.lead_id).maybeSingle();
+  const site = stringValue(lead?.site);
+  if (!site) return;
+  try {
+    await persistProviderCost({
+      tenantSite: site,
+      funnelId: delivery.funnel_id,
+      leadId: delivery.lead_id,
+      provider,
+      providerEventId: messageId || delivery.idempotency_key,
+      costType: 'email_sms',
+      amountUsd,
+      occurredAt: new Date().toISOString(),
+      evidence: { deliveryId: delivery.id, notificationId: delivery.idempotency_key },
+    });
+  } catch (error) {
+    console.error('[INTERNAL_COST_LEDGER]', error instanceof Error ? error.message : error);
+  }
 }
 
 async function loadAgentRecipient(agentId: string) {

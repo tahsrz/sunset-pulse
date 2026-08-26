@@ -82,7 +82,7 @@ class MemoryBridge {
 
       const { data, error } = await this.supabase
         .from('jamie_interactions')
-        .select('*')
+        .select('role, content, timestamp, metadata')
         .eq('user_id', user.id)
         .order('timestamp', { ascending: true })
         .limit(50);

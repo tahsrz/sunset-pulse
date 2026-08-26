@@ -146,7 +146,7 @@ function isMockMode() {
 async function searchCanonicalListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
   let query = supabaseAdmin
     .from('properties')
-    .select('*')
+    .select('id, mls_id, owner, name, type, description, street, city, state, zip, latitude, longitude, beds, baths, sqft, amenities, price, list_price, price_type, rates, images, image_url, source, listing_status, status, last_updated, updated_at, is_demo, is_featured, display_public, metadata')
     .is('deleted_at', null)
     .eq('display_public', true)
     .order('last_updated', { ascending: false })
@@ -180,7 +180,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number, pu
 async function getCanonicalListing(id: string): Promise<Listing | null> {
   let query = supabaseAdmin
     .from('properties')
-    .select('*')
+    .select('id, mls_id, owner, name, type, description, street, city, state, zip, latitude, longitude, beds, baths, sqft, amenities, price, list_price, price_type, rates, images, image_url, source, listing_status, status, last_updated, updated_at, is_demo, is_featured, display_public, metadata')
     .eq('display_public', true)
     .eq('is_demo', false)
     .is('deleted_at', null);

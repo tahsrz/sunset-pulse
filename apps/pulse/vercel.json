@@ -23,6 +23,10 @@
       "schedule": "15 12 * * *"
     },
     {
+      "path": "/api/admin/profit/checkpoints/cron",
+      "schedule": "30 12 * * *"
+    },
+    {
       "path": "/api/atlas/processes/health",
       "schedule": "*/10 * * * *"
     },
