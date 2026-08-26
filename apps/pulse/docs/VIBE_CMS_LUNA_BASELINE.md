@@ -657,6 +657,19 @@ The first milestone is complete only when the system can:
 
 This is the architectural proof. Taxonomy expansion, media management, bulk editing, scheduled publishing, webhooks, import/export, and block composition remain later phases.
 
+## Selective GitHub Projects and References
+
+These projects may accelerate later UI and token work. They are references or candidates, not automatic dependencies.
+
+- [TanStack Table](https://github.com/TanStack/table): evaluate for server-side sorting, filtering, pagination, row selection, and future bulk actions in the Vibes list.
+- [react-colorful](https://github.com/omgovich/react-colorful): preferred candidate for accessible, lightweight color controls in the visual editor.
+- [KeystoneJS](https://github.com/Thinkmill/keystone): architecture reference for CMS fields, admin workflows, and access control; do not adopt as the CMS runtime.
+- [Shopify Polaris Tokens](https://github.com/Shopify/polaris-tokens): naming and multi-format design-token reference.
+- [Diez](https://github.com/diez/diez): typed token compilation and export reference; do not add unless cross-platform output becomes a requirement.
+- [design-book](https://github.com/meodai/design-book): reference for derived tokens, contrast selection, and CSS-variable rendering.
+
+Selection rule: preserve the custom domain, workflow, revision, and publication services. Add a dependency only when it removes meaningful UI risk or duplication without weakening tenant isolation or immutable revision guarantees.
+
 ## Implementation Status
 
 Completed in the current working tree:
