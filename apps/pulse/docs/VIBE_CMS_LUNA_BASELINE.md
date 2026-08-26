@@ -690,6 +690,7 @@ Completed in the current working tree:
 - Added authorized revision detail reads at `/api/admin/vibes/:vibeId/revisions/:revisionId` for admin preview.
 - Added controlled taxonomy catalog and authenticated `GET /api/admin/vibes/taxonomy` endpoint.
 - Added authorized source-media metadata read at `/api/admin/vibes/:vibeId/source`.
+- Added strict `PATCH /api/admin/vibes/:vibeId/source` metadata updates.
 - Added revision comparison and auditable rollback endpoints.
 - Added the first `/admin/vibes/:vibeId/edit` editor shell with metadata and editorial status surfaces.
 - Added explicit authenticated `POST /api/admin/vibes/:vibeId/submit` workflow transition.
