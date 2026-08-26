@@ -100,7 +100,7 @@ export async function publishVibeRevision(input: {
   }
 }
 
-function assertReadableTheme(draft: VibeDraft) {
+export function assertReadableTheme(draft: VibeDraft) {
   const colors = draft.tokens.visual.theme.colors;
   for (const background of [colors.background, colors.surface]) {
     if (contrastRatio(colors.textPrimary, background) < 4.5) throw new Error('PUBLISH_VALIDATION_FAILED: text contrast is below WCAG AA.');
