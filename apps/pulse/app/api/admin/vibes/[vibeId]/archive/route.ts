@@ -3,6 +3,7 @@ import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { transitionVibe } from '@/lib/cms/vibeWorkflow';
+import VibeAuditEvent from '@/models/VibeAuditEvent';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,5 +19,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   if (!transition.ok) return NextResponse.json({ error: transition.message, code: transition.code }, { status: 409 });
   const updated = await Vibe.findOneAndUpdate({ vibeId, tenantId, status: vibe.status || 'draft' }, { $set: { status: 'archived', archivedAt: new Date(), updatedBy: operatorAuditUser(access).userId, updatedAt: new Date() } }, { new: true }).lean();
   if (!updated) return NextResponse.json({ error: 'Vibe changed before archiving.' }, { status: 409 });
+  await VibeAuditEvent.create({ vibeId, tenantId, action: 'archived', actorId: operatorAuditUser(access).userId });
   return NextResponse.json({ vibe: updated });
 }
