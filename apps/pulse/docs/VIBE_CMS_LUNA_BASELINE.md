@@ -679,6 +679,7 @@ Completed in the current working tree:
 - Added explicit published-revision application service and `/api/admin/sites/:siteId/apply-vibe` route.
 - Propagated `activeVibeRevisionId` through the Launch Kit type, schema, normalization, and persistence serializers.
 - Added a narrow published-revision runtime projection reader for future public-site integration.
+- Added authenticated `GET /api/admin/sites/:siteId/vibe` for applied-revision visibility.
 
 Next recommended slice:
 
