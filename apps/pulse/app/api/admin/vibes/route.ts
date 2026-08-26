@@ -4,6 +4,7 @@ import Vibe from '@/models/Vibe';
 import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { operatorAuditUser } from '@/lib/core/routeAuth';
 import { z } from 'zod';
+import { createDefaultVibeDraft } from '@/lib/cms/vibeSchema';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       authorId: actor,
       updatedBy: actor,
       currentDraftVersion: 0,
+      draftPayload: createDefaultVibeDraft(parsed.data),
     });
     return NextResponse.json({ vibe }, { status: 201 });
   } catch (error: any) {

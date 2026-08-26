@@ -37,6 +37,7 @@ export async function saveVibeDraft(input: {
       longDescription: draft.description,
       taxonomyTermIds: draft.taxonomyTermIds,
       source: draft.source,
+      draftPayload: draft,
       linguisticLogic: draft.tokens.linguistic,
       visualParameters: draft.tokens.visual.effects,
       updatedBy: input.actorId,

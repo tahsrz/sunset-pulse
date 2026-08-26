@@ -90,6 +90,26 @@ export const vibeDraftSchema = z.object({
 });
 export type VibeDraft = z.infer<typeof vibeDraftSchema>;
 
+export function createDefaultVibeDraft(input: { title: string; slug: string; description?: string }): VibeDraft {
+  return vibeDraftSchema.parse({
+    title: input.title,
+    slug: input.slug,
+    description: input.description || '',
+    tokens: {
+      visual: {
+        theme: {
+          colors: { primary: '#2563eb', background: '#0f172a', surface: '#1e293b', textPrimary: '#f8fafc', textSecondary: '#cbd5e1' },
+          typography: { fontFamilyHeading: 'Inter', fontFamilyBody: 'Inter', baseFontSize: '16px' },
+          layout: {},
+        },
+        effects: {},
+      },
+      linguistic: { voice: { primaryTone: 'warm' }, vocabulary: {}, systemDirectives: ['Be clear, useful, and grounded.'] },
+    },
+    source: { kind: 'manual' },
+  });
+}
+
 export const vibeRevisionSchema = z.object({
   id: z.string().min(1),
   vibeId: z.string().min(1),
