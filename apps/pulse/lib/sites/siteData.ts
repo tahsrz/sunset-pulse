@@ -256,7 +256,11 @@ async function hydrateVibeProjection(tenantSite: TenantSite, config: Record<stri
   try {
     const projection = await readPublishedVibeProjection({ revisionId: String(revisionId), tenantId: config.tenant_id || config.tenantId || 'default' });
     if (!projection) return tenantSite;
-    return { ...tenantSite, activeVibeRevisionId: projection.revisionId, vibeCssVars: projection.cssVars, vibeVoiceConfig: projection.voiceConfig };
+    const primaryTone = (projection.voiceConfig as any)?.voice?.primaryTone;
+    const assistantProfile = primaryTone
+      ? { ...tenantSite.assistantProfile, tone: String(primaryTone) }
+      : tenantSite.assistantProfile;
+    return { ...tenantSite, assistantProfile, activeVibeRevisionId: projection.revisionId, vibeCssVars: projection.cssVars, vibeVoiceConfig: projection.voiceConfig };
   } catch (error) {
     console.warn('[TENANT_SITE_VIBE_PROJECTION]', error);
     return tenantSite;
