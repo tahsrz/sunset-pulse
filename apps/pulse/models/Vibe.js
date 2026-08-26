@@ -17,6 +17,7 @@ const VibeSchema = new Schema(
     updatedBy: { type: String },
     publishedBy: { type: String },
     publishedRevisionId: { type: String },
+    submittedRevisionId: { type: String },
     currentDraftVersion: { type: Number, default: 0 },
     excerpt: { type: String, default: '' },
     longDescription: { type: String, default: '' },

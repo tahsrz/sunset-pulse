@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
+import VibeRevision from '@/models/VibeRevision';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { publishVibeRevision } from '@/lib/cms/vibeService';
 import { vibeDraftSchema } from '@/lib/cms/vibeSchema';
@@ -17,10 +18,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   const parsed = publishInputSchema.safeParse(body);
   try {
     await connectDB();
-    const vibe = await Vibe.findOne({ vibeId, tenantId }).select('status draftPayload').lean() as any;
+    const vibe = await Vibe.findOne({ vibeId, tenantId }).select('status submittedRevisionId').lean() as any;
     if (!vibe) return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
     if (vibe.status !== 'in_review') return NextResponse.json({ error: 'Only vibes in review can be published.', code: 'INVALID_TRANSITION' }, { status: 409 });
-    const draft = vibeDraftSchema.parse(vibe.draftPayload);
+    const submitted = vibe.submittedRevisionId ? await VibeRevision.findOne({ _id: vibe.submittedRevisionId, vibeId, tenantId }).lean() as any : null;
+    if (!submitted) return NextResponse.json({ error: 'No submitted revision is available for publication.', code: 'MISSING_REVISION' }, { status: 409 });
+    const draft = vibeDraftSchema.parse(submitted.snapshot);
     const revision = await publishVibeRevision({
       vibeId,
       tenantId,

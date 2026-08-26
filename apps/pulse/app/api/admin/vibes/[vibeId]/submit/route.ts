@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
-import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
-import { transitionVibe } from '@/lib/cms/vibeWorkflow';
-import VibeAuditEvent from '@/models/VibeAuditEvent';
+import { submitVibeRevision } from '@/lib/cms/vibeService';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,12 +11,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   const { vibeId } = await context.params;
   const tenantId = request.nextUrl.searchParams.get('tenantId')?.trim() || 'default';
   await connectDB();
-  const vibe = await Vibe.findOne({ vibeId, tenantId }).select('status').lean() as any;
-  if (!vibe) return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
-  const transition = transitionVibe({ status: vibe.status || 'draft', action: 'submit' });
-  if (!transition.ok) return NextResponse.json({ error: transition.message, code: transition.code }, { status: 409 });
-  const updated = await Vibe.findOneAndUpdate({ vibeId, tenantId, status: vibe.status || 'draft' }, { $set: { status: 'in_review', updatedBy: operatorAuditUser(access).userId, updatedAt: new Date() } }, { new: true }).lean();
-  if (!updated) return NextResponse.json({ error: 'Vibe changed before submission.' }, { status: 409 });
-  await VibeAuditEvent.create({ vibeId, tenantId, action: 'submitted', actorId: operatorAuditUser(access).userId });
-  return NextResponse.json({ vibe: updated });
+  try {
+    const revision = await submitVibeRevision({ vibeId, tenantId, actorId: operatorAuditUser(access).userId });
+    return NextResponse.json({ revision }, { status: 201 });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : '';
+    if (code === 'VIBE_NOT_FOUND') return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
+    if (code === 'INVALID_TRANSITION') return NextResponse.json({ error: 'Only draft vibes can be submitted.', code }, { status: 409 });
+    return NextResponse.json({ error: 'Vibe could not be submitted.' }, { status: 400 });
+  }
 }

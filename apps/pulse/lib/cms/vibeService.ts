@@ -100,6 +100,33 @@ export async function publishVibeRevision(input: {
   }
 }
 
+export async function submitVibeRevision(input: { vibeId: string; tenantId: string; actorId: string }) {
+  const session = await mongoose.startSession();
+  try {
+    let submitted;
+    await session.withTransaction(async () => {
+      const vibe = await Vibe.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).session(session);
+      if (!vibe) throw new Error('VIBE_NOT_FOUND');
+      if (vibe.status !== 'draft') throw new Error('INVALID_TRANSITION');
+      const draft = vibeDraftSchema.parse(vibe.draftPayload);
+      const previous = await VibeRevision.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
+      const revisionId = new mongoose.Types.ObjectId().toString();
+      const revision = new VibeRevision({ _id: revisionId, vibeId: input.vibeId, tenantId: input.tenantId, revisionNumber: (previous?.revisionNumber || 0) + 1, snapshot: draft, cssVars: compileCssVars(draft), voiceConfig: draft.tokens.linguistic, contentHash: hashVibeDraft(draft), parentRevisionId: previous?._id, changeSummary: 'Submitted for review', createdBy: input.actorId });
+      await revision.save({ session });
+      vibe.status = 'in_review';
+      vibe.submittedRevisionId = revisionId;
+      vibe.updatedBy = input.actorId;
+      vibe.updatedAt = new Date();
+      await vibe.save({ session });
+      await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'submitted', revisionId, actorId: input.actorId }], { session });
+      submitted = revision.toObject();
+    });
+    return submitted;
+  } finally {
+    await session.endSession();
+  }
+}
+
 export function assertReadableTheme(draft: VibeDraft) {
   const colors = draft.tokens.visual.theme.colors;
   for (const background of [colors.background, colors.surface]) {
@@ -130,7 +157,7 @@ export async function applyVibeRevisionToSite(input: { siteId: string; tenantId:
         { new: true, session },
       ).lean();
       if (!site) throw new Error('SITE_NOT_FOUND');
-      await VibeAuditEvent.create([{ vibeId: revision.vibeId, tenantId: input.tenantId, action: 'applied', revisionId: input.revisionId, siteId: input.siteId, actorId: input.actorId }], { session });
+      await VibeAuditEvent.create([{ vibeId: (revision as any).vibeId, tenantId: input.tenantId, action: 'applied', revisionId: input.revisionId, siteId: input.siteId, actorId: input.actorId }], { session });
     });
     return site;
   } finally {
