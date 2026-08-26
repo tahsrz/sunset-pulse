@@ -73,6 +73,7 @@ export async function POST(request: Request) {
         });
         const eventContext = {
           sessionId: visitorSession.id,
+          tenantSite: host || 'jamie',
           hasAgentContext: Boolean(resolvedContext?.agent),
           hasListingContext: Boolean(resolvedContext?.listing),
           intentCategory,

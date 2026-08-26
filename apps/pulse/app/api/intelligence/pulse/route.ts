@@ -17,6 +17,12 @@ export async function POST(request: Request) {
 
     // 1. Optional: Sync from Supabase Storage (Ensures Vercel has latest cartridges)
     if (sync) {
+      if (process.env.REMOTE_ATLAS_SYNC_ENABLED !== 'true') {
+        return NextResponse.json({
+          success: false,
+          error: 'Remote cartridge sync is temporarily disabled.'
+        }, { status: 503 });
+      }
       console.log("[Intelligence_Pulse] Triggering Cloud Sync...");
       await syncUniversalIntelligence();
     }

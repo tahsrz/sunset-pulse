@@ -14,7 +14,7 @@ const IntelligenceTimeline = () => {
     const fetchEvents = async () => {
       const { data, error } = await supabase
         .from('intelligence_events')
-        .select('*')
+        .select('id, event_type, actor_name, created_at, description')
         .order('created_at', { ascending: false })
         .limit(20);
       

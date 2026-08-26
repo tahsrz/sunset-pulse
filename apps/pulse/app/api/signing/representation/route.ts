@@ -4,6 +4,8 @@ import { getSessionUser } from '@/lib/core/getSessionUser';
 import { buildRepresentationAgreement, representationAgreementSchema } from '@/lib/contracts/representationAgreement';
 import { createSignerToken, hashPayload } from '@/lib/signing/signingHash';
 import SigningPacket from '@/models/SigningPacket';
+import { supabaseAdmin } from '@/lib/supabase';
+import { persistProviderCost } from '@/lib/profit/internalCostEvents';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,11 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'Invalid representation agreement.', details: parsed.error.flatten().fieldErrors }, { status: 400 });
 
   const draftPayload = buildRepresentationAgreement(parsed.data);
+  const commercialContext = parsed.data.commercialContext;
+  if (commercialContext) {
+    const lineageError = await validateCommercialContext(commercialContext);
+    if (lineageError) return NextResponse.json({ ok: false, error: lineageError }, { status: 400 });
+  }
   const token = createSignerToken();
   const payloadHash = hashPayload(draftPayload);
   await connectDB();
@@ -25,6 +32,7 @@ export async function POST(request: NextRequest) {
     title: draftPayload.agreementTitle,
     status: 'sent',
     createdBy: session.userId,
+    commercialContext: commercialContext || undefined,
     draftPayload,
     payloadHash,
     signerLinks: [{ role: draftPayload.signerRoles[0].role, name: parsed.data.clientName, email: parsed.data.clientEmail, routingOrder: 1, token, status: 'pending' }],
@@ -36,8 +44,63 @@ export async function POST(request: NextRequest) {
   packet.auditTrail.push({ type: email.ok ? 'signing_email_sent' : 'signing_email_failed', actorRole: 'system', actorEmail: parsed.data.clientEmail, payloadHash, metadata: email });
   await packet.save();
 
+  if (email.ok && commercialContext) {
+    await recordSigningEmailCost(commercialContext, String(packet._id), email.id);
+  }
+
   if (!email.ok) return NextResponse.json({ ok: false, error: email.error, packetId: packet._id, signingUrl }, { status: 502 });
   return NextResponse.json({ ok: true, packetId: packet._id, signingUrl, emailId: email.id });
+}
+
+async function recordSigningEmailCost(
+  context: NonNullable<ReturnType<typeof representationAgreementSchema.parse>['commercialContext']>,
+  packetId: string,
+  providerMessageId: string,
+) {
+  const configured = Number(process.env.PROFIT_RESEND_COST_PER_DELIVERY);
+  try {
+    await persistProviderCost({
+      tenantSite: context.site,
+      funnelId: context.funnelId,
+      leadId: context.leadId,
+      provider: 'resend',
+      providerEventId: providerMessageId || packetId,
+      costType: 'email_sms',
+      amountUsd: Number.isFinite(configured) && configured >= 0 ? configured : null,
+      occurredAt: new Date().toISOString(),
+      evidence: { packetId, purpose: 'representation_agreement_email' },
+    });
+  } catch (error) {
+    console.warn('[SIGNING_COST_LEDGER]', error);
+  }
+}
+
+async function validateCommercialContext(context: NonNullable<ReturnType<typeof representationAgreementSchema.parse>['commercialContext']>) {
+  const { data: lead, error: leadError } = await supabaseAdmin
+    .from('agent_site_leads')
+    .select('id, funnel_id, agent_id, site')
+    .eq('id', context.leadId)
+    .eq('funnel_id', context.funnelId)
+    .eq('agent_id', context.agentId)
+    .eq('site', context.site)
+    .maybeSingle();
+  if (leadError) return 'Unable to verify representation packet lineage.';
+  if (!lead) return 'Representation packet lineage does not match the selected lead.';
+
+  if (context.bookingId) {
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from('scheduling_bookings')
+      .select('id, funnel_id, lead_id, agent_id, site, status')
+      .eq('id', context.bookingId)
+      .eq('funnel_id', context.funnelId)
+      .eq('lead_id', context.leadId)
+      .eq('agent_id', context.agentId)
+      .eq('site', context.site)
+      .maybeSingle();
+    if (bookingError) return 'Unable to verify representation booking lineage.';
+    if (!booking || ['cancelled', 'rejected'].includes(booking.status)) return 'Representation packet booking lineage is invalid.';
+  }
+  return null;
 }
 
 async function sendAgreementEmail(input: { to: string; clientName: string; agentName: string; signingUrl: string; idempotencyKey: string }) {

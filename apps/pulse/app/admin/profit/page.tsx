@@ -4,6 +4,11 @@ import { ArrowLeft, ArrowUpRight, BellRing, CheckCircle2, CircleDollarSign, Cloc
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { loadProfitFunnelAnalytics, type ProfitFunnelAnalytics } from '@/lib/profit/profitFunnelAnalytics';
+import { loadInternalCostSummary, type InternalCostSummary } from '@/lib/profit/internalCostLedger';
+import { loadShadowInvoice } from '@/lib/profit/shadowInvoice';
+import { loadShadowCheckpointDecision } from '@/lib/profit/shadowCheckpoint';
+import { DisputeCreditForm } from './DisputeCreditForm';
+import ConversionBaselineForm from './ConversionBaselineForm';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,14 +19,25 @@ export const metadata = {
 };
 
 export default async function ProfitScorecardPage() {
-  const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
+  const requestHeaders = await headers();
+  const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
   if (!access.allowed) return <AccessDenied reason={access.reason} />;
   if (access.user?.role === 'realtor') return <AccessDenied reason="Organization profit analytics require admin or operator access." />;
 
   let scorecard: ProfitFunnelAnalytics | null = null;
+  let costs: InternalCostSummary | null = null;
+  let invoice: Awaited<ReturnType<typeof loadShadowInvoice>> | null = null;
+  let checkpointDecision: Awaited<ReturnType<typeof loadShadowCheckpointDecision>> | null = null;
   let error = '';
   try {
-    scorecard = await loadProfitFunnelAnalytics();
+    const periodEnd = new Date().toISOString();
+    const periodStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    [scorecard, costs, invoice, checkpointDecision] = await Promise.all([
+      loadProfitFunnelAnalytics(),
+      loadInternalCostSummary(),
+      loadShadowInvoice({ tenantSite: getRequestHostFromHeaders(requestHeaders) || 'unknown', periodStart, periodEnd, accountMinimumUsd: 0, includedCreditUsd: 0, entries: [] }),
+      loadShadowCheckpointDecision({ tenantSite: getRequestHostFromHeaders(requestHeaders) || 'unknown', legalApproved: process.env.LUNA_LEGAL_APPROVED === 'true' }),
+    ]);
   } catch (cause) {
     error = cause instanceof Error ? cause.message : 'Scorecard unavailable.';
   }
@@ -41,16 +57,20 @@ export default async function ProfitScorecardPage() {
           <Link href="/api/admin/profit/scorecard" className="inline-flex items-center gap-2 border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 hover:border-cyan-200/40 hover:text-white">
             JSON endpoint <ArrowUpRight size={14} />
           </Link>
+          <Link href={`/api/admin/profit/invoice?site=${encodeURIComponent(getRequestHostFromHeaders(requestHeaders) || 'unknown')}`} className="inline-flex items-center gap-2 border border-violet-300/20 px-3 py-2 text-xs font-bold text-violet-200 hover:border-violet-200/50 hover:text-white">
+            Shadow invoice <ArrowUpRight size={14} />
+          </Link>
         </header>
 
         {error ? <div className="mt-8 border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">{error}</div> : null}
-        {scorecard ? <Scorecard scorecard={scorecard} /> : null}
+        {scorecard ? <Scorecard scorecard={scorecard} costs={costs} invoice={invoice} checkpointDecision={checkpointDecision} /> : null}
+        <ConversionBaselineForm />
       </div>
     </main>
   );
 }
 
-function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
+function Scorecard({ scorecard, costs, invoice, checkpointDecision }: { scorecard: ProfitFunnelAnalytics; costs: InternalCostSummary | null; invoice: Awaited<ReturnType<typeof loadShadowInvoice>> | null; checkpointDecision: Awaited<ReturnType<typeof loadShadowCheckpointDecision>> | null }) {
   const handoff = scorecard.funnel.find((stage) => stage.id === 'handoffCompleted');
   const closed = scorecard.funnel.find((stage) => stage.id === 'closed');
   const cards = [
@@ -68,6 +88,10 @@ function Scorecard({ scorecard }: { scorecard: ProfitFunnelAnalytics }) {
   ];
 
   return <>
+    <section className="mt-8 border border-amber-300/20 bg-amber-400/[0.05] p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Pricing decision</h2><p className="mt-2 text-xs text-slate-400">Evidence-gated shadow result. Launch remains blocked without explicit legal approval and complete observation data.</p></div><span className="border border-amber-300/30 px-3 py-1 text-xs font-black uppercase text-amber-200">{checkpointDecision?.decision.decision.replaceAll('_', ' ') || 'Unknown'}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-5"><div><p className="text-xs text-slate-500">Evidence days</p><p className="mt-1 text-2xl font-black text-white">{checkpointDecision?.evidenceDays ?? '—'} / 14</p></div><div><p className="text-xs text-slate-500">Margin</p><p className="mt-1 text-2xl font-black text-white">{checkpointDecision?.averages.marginPercent == null ? 'Unknown' : `${checkpointDecision.averages.marginPercent.toFixed(1)}%`}</p></div><div><p className="text-xs text-slate-500">Unknown metrics</p><p className="mt-1 text-2xl font-black text-white">{checkpointDecision?.unknownMetricCount ?? '—'}</p><p className="mt-1 text-[10px] text-slate-500">{checkpointDecision?.unknownMetrics.join(', ') || 'None'}</p></div><div><p className="text-xs text-slate-500">Gate</p><p className="mt-1 text-sm font-bold text-white">{checkpointDecision?.evidenceDays != null && checkpointDecision.evidenceDays >= 14 ? 'Observation complete' : 'Continue shadow'}</p></div><div><p className="text-xs text-slate-500">Reason</p><p className="mt-1 text-sm font-bold text-white">{checkpointDecision?.decision.reasons.join(', ') || 'No checkpoint data'}</p></div></div></section>
+    <section className="mt-8 border border-violet-300/20 bg-violet-400/[0.05] p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Shadow invoice</h2><p className="mt-2 text-xs text-slate-400">Estimate only. No customer charge or Stripe submission.</p></div><span className="border border-violet-300/30 px-3 py-1 text-xs font-black uppercase text-violet-200">Shadow only</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-xs text-slate-500">Estimated total</p><p className="mt-1 text-2xl font-black text-white">{money(invoice?.estimatedTotalUsd ?? null)}</p></div><div><p className="text-xs text-slate-500">Charges / credits</p><p className="mt-1 text-2xl font-black text-white">{invoice ? `${money(invoice.chargeTotalUsd)} / ${money(invoice.creditTotalUsd)}` : '—'}</p></div><div><p className="text-xs text-slate-500">Outcomes</p><p className="mt-1 text-2xl font-black text-white">{invoice?.outcomeCount ?? '—'}</p></div><div><p className="text-xs text-slate-500">Evidence coverage</p><p className="mt-1 text-2xl font-black text-white">{invoice?.evidenceCoveragePercent == null ? 'Unknown' : `${invoice.evidenceCoveragePercent}%`}</p></div></div></section>
+    <section className="mt-5 border border-white/10 bg-white/[0.03] p-5"><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Outcome entries</h2><div className="mt-4 space-y-3">{invoice?.entries?.length ? invoice.entries.map((entry) => <div key={entry.id} className="border border-white/[0.08] p-3"><div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className="font-bold text-slate-300">{entry.id}</span><span className="text-slate-500">{entry.entryKind} · ${entry.amountUsd.toFixed(2)}</span></div>{entry.entryKind === 'charge' ? <DisputeCreditForm outcomeId={entry.id} /> : null}</div>) : <p className="text-sm text-slate-500">No shadow outcomes in this period.</p>}</div></section>
+    <section className="mt-8 border border-cyan-300/20 bg-cyan-400/[0.05] p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Ledger cost coverage</h2><p className="mt-2 text-xs text-slate-400">Seven-day internal costs from provider receipts. Unknown amounts remain unknown.</p></div><span className={`border px-3 py-1 text-xs font-black uppercase ${costs?.costsKnown ? 'border-emerald-300/30 text-emerald-200' : 'border-amber-300/30 text-amber-200'}`}>{costs?.costsKnown ? 'Complete' : 'Partial'}</span></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><div><p className="text-xs text-slate-500">Known cost</p><p className="mt-1 text-2xl font-black text-white">{money(costs?.totalUsd ?? null)}</p></div><div><p className="text-xs text-slate-500">Receipts</p><p className="mt-1 text-2xl font-black text-white">{costs ? `${costs.knownEntries}/${costs.entries}` : '—'}</p></div><div><p className="text-xs text-slate-500">Model / alerts</p><p className="mt-1 text-2xl font-black text-white">{money((costs?.byType.model as number | null | undefined) ?? null)} / {money((costs?.byType.email_sms as number | null | undefined) ?? null)}</p></div></div></section>
     <section className={`mt-8 border p-5 ${scorecard.baselineReadiness.status === 'ready' ? 'border-emerald-300/25 bg-emerald-400/[0.06]' : 'border-amber-300/25 bg-amber-400/[0.06]'}`}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex gap-3">{scorecard.baselineReadiness.status === 'ready' ? <CheckCircle2 className="mt-0.5 text-emerald-200" size={20} /> : <ShieldAlert className="mt-0.5 text-amber-200" size={20} />}<div><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Margin experiment readiness</h2><p className="mt-2 text-sm text-slate-300">{scorecard.baselineReadiness.status === 'ready' ? 'Baseline passed. Margin experiments may begin with rollback controls.' : 'Continue collecting authoritative baseline data. Do not optimize channel or model spend yet.'}</p></div></div>
