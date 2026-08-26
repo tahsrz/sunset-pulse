@@ -273,7 +273,7 @@ async function loadSupabaseSiteConfig(agentId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('site_config')
-        .select('agent_id, branding, intelligence, agent_profile, assistant_profile, compliance_profile, integration_profile')
+        .select('*')
         .eq('agent_id', agentId)
         .maybeSingle();
 

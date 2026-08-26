@@ -36,9 +36,6 @@ export const publicGuideSearchCriteriaSchema = z.object({
   bathsMin: z.number().finite().nonnegative().nullable().default(null),
   propertyTypes: z.array(z.string().trim().min(1).max(60)).max(5).default([]),
   priorities: z.array(z.string().trim().min(1).max(100)).max(6).default([]),
-  transactionType: z.enum(['purchase', 'lease', 'unknown']).default('unknown'),
-  timeline: z.string().trim().min(1).max(120).nullable().default(null),
-  leaseTermMonths: z.number().int().positive().max(120).nullable().default(null),
 }).strict();
 
 export const publicGuideHandoffBriefSchema = z.object({

@@ -35,15 +35,4 @@ describe('SwarmRetriever', () => {
     expect(matches.some(match => match.data.includes('[SWARM_LINKS]'))).toBe(true);
     expect(matches.some(match => match.links.some(link => link.offset === 0))).toBe(true);
   });
-
-  it('reads human-readable knowledge capsules without swarm framing', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'text-capsule-'));
-    const tahPath = path.join(dir, 'comps_context.tah');
-    fs.writeFileSync(tahPath, 'TITLE: Comparable Sales\nALIASES: comparable sales, valuation\nUse recent nearby sales for valuation support.');
-
-    const matches = new SwarmRetriever(tahPath).search('How are comparable home sales used in valuation?');
-
-    expect(matches).toHaveLength(1);
-    expect(matches[0].data).toContain('Comparable Sales');
-  });
 });

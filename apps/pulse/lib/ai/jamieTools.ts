@@ -36,8 +36,6 @@ export const jamiePropertySearchInputSchema = z.object({
   sqft_min: optionalPositiveInteger.describe("Minimum square footage."),
   pool: z.enum(['Yes', 'No', '']).optional().describe("Pool preference."),
   construction_status: optionalStringList.describe("Construction statuses."),
-  move_in: z.string().trim().min(1).max(80).optional().describe("Visitor's stated move-in timing; qualification context only, not an MLS filter."),
-  lease_term_months: optionalPositiveInteger.describe("Requested lease term in months; qualification context only, not an MLS filter."),
 });
 
 export type JamiePropertySearchInput = z.infer<typeof jamiePropertySearchInputSchema>;
@@ -81,9 +79,6 @@ function toPropertySearchParams(input: JamiePropertySearchInput) {
     maxPrice: input.price_max ? String(input.price_max) : undefined,
     beds: input.beds_min ? String(input.beds_min) : undefined,
     baths: input.full_baths_min ? String(input.full_baths_min) : undefined,
-    priceType: input.price_type,
-    moveIn: input.move_in,
-    leaseTermMonths: input.lease_term_months ? String(input.lease_term_months) : undefined,
     includeMLS: 'true',
   });
 }

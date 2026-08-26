@@ -5,14 +5,6 @@ import ViralAsset from '@/models/ViralAsset';
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/core/apiResponse';
 import fs from 'fs';
 import path from 'path';
-import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
-import { z } from 'zod';
-
-const assetSchema = z.object({
-  name: z.string().trim().min(1).max(200),
-  path: z.string().trim().min(1).max(500),
-  type: z.string().trim().max(80).optional(),
-}).strict();
 
 
 
@@ -20,10 +12,8 @@ const assetSchema = z.object({
  * GET /api/admin/library
  * Retrieves all assets from the tactical library.
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const access = await requireOperatorRouteAccess(req);
-    if (isAuthResponse(access)) return access;
     await connectDB();
     const assets = await ViralAsset.find({}).sort({ createdAt: -1 });
     return successResponse(assets);
@@ -38,13 +28,14 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const access = await requireOperatorRouteAccess(req);
-    if (isAuthResponse(access)) return access;
     await connectDB();
-    const parsed = assetSchema.safeParse(await req.json());
-    if (!parsed.success) return errorResponse('Invalid library asset.', 400, parsed.error.flatten());
+    const body = await req.json();
+    
+    if (!body.name || !body.path) {
+      return errorResponse('Missing required fields: name, path.', 400);
+    }
 
-    const asset = await ViralAsset.create(parsed.data);
+    const asset = await ViralAsset.create(body);
     return successResponse(asset, 201);
   } catch (error: any) {
     return errorResponse('Failed to register asset.', 500, error.message);
@@ -57,8 +48,6 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const access = await requireOperatorRouteAccess(request);
-    if (isAuthResponse(access)) return access;
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

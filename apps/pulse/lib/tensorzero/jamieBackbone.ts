@@ -1,12 +1,6 @@
-import { buildJamiePulseQuery, getJamieResponse } from '@/lib/ai/jamie';
+import { getJamieResponse } from '@/lib/ai/jamie';
 import { executeJamieToolCalls, formatPropertySearchResult } from '@/lib/ai/jamieTools';
 import { recordTensorZeroJamieTurn } from '@/lib/tensorzero/jamieChat';
-import {
-  buildJamieKnowledgeFallback,
-  retrieveJamieKnowledge,
-  shouldUseJamieKnowledgeFallback,
-} from '@/lib/ai/jamieKnowledgeFallback';
-import { chooseJamieModelRoute } from '@/lib/ai/jamieModelRouting';
 
 type JamieBackboneInput = {
   messages: any[];
@@ -24,13 +18,8 @@ type JamieBackboneResult = {
 };
 
 export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise<JamieBackboneResult> {
-  const chatMessages = Array.isArray(input.messages)
-    ? input.messages
-      .filter((message: any) => message?.role === 'user' || message?.role === 'assistant')
-      .map((message: any) => ({ role: message.role, content: String(message.content || '').slice(0, 20_000) }))
-    : [];
+  const chatMessages = Array.isArray(input.messages) ? input.messages : [];
   const isDevMode = Boolean(input.isDevMode);
-  const lastUserMessage = chatMessages.filter((message: any) => message?.role === 'user').at(-1);
 
   if (input.isMock) {
     const lastUserMsg = chatMessages.filter((message: any) => message?.role === 'user').slice(-1)[0];
@@ -50,28 +39,22 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
     return { body: { role: 'assistant', content, tensorzero } };
   }
 
-  const knowledgeQuery = buildJamiePulseQuery(String(lastUserMessage?.content || ''), input.propertyData);
-  const knowledge = await retrieveJamieKnowledge(knowledgeQuery);
-  const modelRoute = chooseJamieModelRoute(String(lastUserMessage?.content || ''), knowledge);
   const response = await getJamieResponse(chatMessages, input.propertyData, input.memoryContext, isDevMode, {
     agentId: input.agentId,
     personaMode: input.personaMode,
-    knowledgeContext: knowledge,
-    modelTier: modelRoute.tier,
   });
 
   if (typeof response === 'string') {
-    const content = shouldUseJamieKnowledgeFallback(response) ? buildJamieKnowledgeFallback(knowledge) : response;
     const tensorzero = recordBackboneTurn({
       messages: chatMessages,
       propertyData: input.propertyData,
       memoryContext: input.memoryContext,
       isDevMode,
       response,
-      content,
+      content: response,
     });
 
-    return { body: { role: 'assistant', content, knowledge_sources: knowledge.evidence, model_routing: modelRoute, tensorzero } };
+    return { body: { role: 'assistant', content: response, tensorzero } };
   }
 
   if (response && (response as any).tool_calls) {
@@ -79,10 +62,9 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
     const toolResults = await executeJamieToolCalls(toolCalls);
     const firstSearchResult = toolResults.find((result: any) => result?.name === 'search_properties');
     const responseContent = typeof (response as any).content === 'string' ? (response as any).content : '';
-    const toolContent = firstSearchResult
+    const content = firstSearchResult
       ? [responseContent, formatPropertySearchResult((firstSearchResult as any).output)].filter(Boolean).join('\n\n')
       : responseContent.trim() || unavailableToolReply(toolCalls);
-    const content = shouldUseJamieKnowledgeFallback(toolContent) ? buildJamieKnowledgeFallback(knowledge) : toolContent;
     const tensorzero = recordBackboneTurn({
       messages: chatMessages,
       propertyData: input.propertyData,
@@ -98,20 +80,15 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
         ...(response as Record<string, unknown>),
         content,
         tool_results: toolResults,
-        knowledge_sources: knowledge.evidence,
-        model_routing: modelRoute,
         tensorzero,
       },
       init: { headers: { 'Content-Type': 'application/json' } },
     };
   }
 
-  const rawFallbackContent = response && typeof response === 'object' && typeof (response as any).content === 'string'
+  const fallbackContent = response && typeof response === 'object' && typeof (response as any).content === 'string'
     ? (response as any).content
     : '';
-  const fallbackContent = shouldUseJamieKnowledgeFallback(rawFallbackContent)
-    ? buildJamieKnowledgeFallback(knowledge)
-    : rawFallbackContent;
   const tensorzero = recordBackboneTurn({
     messages: chatMessages,
     propertyData: input.propertyData,
@@ -122,8 +99,8 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
   });
 
   const body = response && typeof response === 'object'
-    ? { ...(response as Record<string, unknown>), content: fallbackContent, knowledge_sources: knowledge.evidence, model_routing: modelRoute, tensorzero }
-    : { role: 'assistant', content: fallbackContent, knowledge_sources: knowledge.evidence, model_routing: modelRoute, tensorzero };
+    ? { ...(response as Record<string, unknown>), tensorzero }
+    : { role: 'assistant', content: fallbackContent, tensorzero };
 
   return { body, init: { headers: { 'Content-Type': 'application/json' } } };
 }

@@ -91,7 +91,7 @@ export async function notifyBuyerSiteReviewDecision(input: {
     recipients: uniqueEmails([input.email]),
     subject,
     text,
-    idempotencyKey: `site-review-${input.decision}-${input.kit.agentId}-${hashText(input.notes || '')}`,
+    idempotencyKey: `site-review-${input.decision}-${input.kit.agentId}-${input.kit.reviewProfile.reviewedAt || 'pending'}`,
   });
 }
 

@@ -18,7 +18,7 @@ export const POST = async (request: Request) => {
   try {
     await connectDB();
     const body = await request.json();
-    const agentId = getAgentIdFromInput();
+    const agentId = getAgentIdFromInput({ agentId: body.agentId });
 
     // Validate Input
     const validation = TourRequestSchema.safeParse(body);
@@ -61,11 +61,7 @@ export const POST = async (request: Request) => {
     });
 
     // Notify Agent via Telnyx
-    try {
-      await notifyTourRequest(newTour);
-    } catch (notificationError) {
-      console.error('[TOUR_NOTIFICATION_FAILURE]:', notificationError);
-    }
+    await notifyTourRequest(newTour);
 
     return successResponse({ 
       message: 'Tour request synchronized. Tactical briefing scheduled.',

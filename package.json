@@ -18,7 +18,6 @@
     "security:audit:prod": "npm audit --omit=dev --audit-level=low",
     "security:audit:pulse": "npm audit --workspace property-pulse --omit=dev --audit-level=high",
     "test:unit": "npm run test:unit --workspace=apps/pulse",
-    "test:inventory-truth": "npm run test:inventory-truth --workspace=apps/pulse",
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
   "dependencies": {

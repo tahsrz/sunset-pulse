@@ -4,43 +4,11 @@ Sunset Pulse is a Next.js 15 real estate intelligence platform for property disc
 
 ## Current Status
 
-The current profit-focused execution brief is [`../../docs/profit-sprint-2026-08-24.md`](../../docs/profit-sprint-2026-08-24.md).
-
 - **Status:** 🟢 Alpha Maturation // Supabase Hegemony
 - **Application framework:** Next.js 14 App Router with React and TypeScript
 - **Data services:** Supabase (Consolidated Property Grid), MongoDB, and local mock data.
 - **Test coverage:** Vitest unit tests and Playwright browser tests.
 - **Primary focus:** TAH Memory Forge, Sigmoid Lead Maturation, and Ozriel Protocol integration.
-
-### August 15, 2026 Operational Wrap-Up
-
-Active branch:
-```text
-codex/crawler-operations-and-retrieval
-```
-
-Today moved the Atlas/Jamie retrieval layer from ad hoc cartridge search toward an observable crawler-backed loop:
-
-- Native notifications now own high-intent agent alerts through `agent_notifications`, `notification_deliveries`, Resend, and optional Telnyx SMS.
-- The Wikipedia Crawl4AI worker reports durable heartbeats and crawler health, while `/atlas` exposes retry backlog, retry recovery, page throughput, cartridge growth, estimated completion, and resume controls.
-- The crawler uses demand-aware acquisition from retrieval misses, with `.pulse-local/wikipedia/demand-queue.json` kept local and ignored.
-- `lib/ai/knowledgeRetrieval.ts` provides one normalized evidence contract for Jamie, Abidan, Atlas inspection, and future model consumers.
-- `/api/atlas/retrieval` and the Atlas Retrieval Inspector expose bounded shared retrieval diagnostics without leaking hidden prompts or raw model context.
-- The 20-fixture retrieval corpus improved from `0/20 @ 510 ms` to `4/20 @ 76 ms` after ranking work, `9/20 @ 203 ms` after demand acquisition and term-level indexed TAH probes, and `14/20 @ 192 ms` after canonical title resolution and distinctive-term ranking. All ten Wikipedia fixtures now pass.
-
-Carry-forward checks:
-```bash
-npm run atlas:evaluate-retrieval
-```
-
-Production env required for crawler health and notification delivery:
-```text
-CRON_SECRET=
-RESEND_API_KEY=
-OPERATOR_EMAIL=
-NEXT_PUBLIC_SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-```
 
 ### 🏗️ System Architecture Overview
 
@@ -79,10 +47,7 @@ graph LR
 - Command Center and JamieChat integration docs live in [`docs/AI_INTEGRATION_STACK.md`](./docs/AI_INTEGRATION_STACK.md).
 - JamieChat turns route through the TensorZero-ready backbone helper before falling through to the current provider path.
 - Operator-guarded Crawl4AI ingestion can turn approved regional sites, brokerage pages, and public-record URLs into a local lead-intelligence JSONL ledger plus optional `.source.md` audit files and binary TAH cartridges.
-- Native inbox notifications, Resend email, and optional Telnyx SMS provide an owned alert path with durable delivery records.
-- Atlas includes an authenticated Jamie Retrieval Inspector with cartridge-selection traces, latency and fallback diagnostics, and a 20-question evaluation corpus.
-- `/contracts/representation` creates an attorney-review buyer/tenant representation draft, generates a secure signing packet, and sends the signer link to any validated email through Resend.
-- The operator-only `/api/admin/profit/scorecard` reports the Jamie-to-revenue funnel, estimated pipeline value, delivery reliability, unanswered questions, and configurable model/notification costs.
+- Novu-compatible notification workflows provide one trigger path for hot leads, staff operations, scheduling updates, and future in-app notifications.
 
 ### 📈 Lead Sigmoid Maturation Flow
 
@@ -149,7 +114,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - `/tah/headless` and `/tah/[cartridge]/headless` expose plain-text scraper views with backend-oriented labels.
 - `/llms.txt`, `/robots.txt`, and `/sitemap.xml` advertise the TAH archive as a stable context surface.
 - `/tah` includes explicit AI-agent crawl guidance and preferred query patterns.
-- Abidan judge context is routed through `lib/ai/brain/abidan_tah.ts`, which supports both indexed `.tah` cartridges and split Memoria `.hat`/`.tah` pairs before adding broad matches through the shared knowledge service.
+- Abidan judge context is routed through `lib/ai/brain/abidan_tah.ts`, which supports both indexed `.tah` cartridges and split Memoria `.hat`/`.tah` pairs before adding broad Pulse matches.
 - `TAH_MEMORIA_V4_SPEC.md` defines the draft super-cartridge direction for packaging existing cartridges into a high-capacity, provenance-aware Memoria pair.
 - `npm run tah:pack-master` packages the current cartridge catalog into a local `cartridges/master/atlas_pulse_master.hat/.tah` pair with a provenance manifest.
 - `lib/core/memoria_v4.ts` contains the first Memoria v4 superblock and section-directory reader prototype.
@@ -159,18 +124,7 @@ Sunset Pulse exposes the local cartridge brain through `/api/tah`:
 - Queued terminal intents persist to `/.orchestrator/terminal-intents.json` by default. Set `ORCHESTRATOR_COMMAND_QUEUE_PATH` to move the local queue store.
 - `/api/telegram/webhook` accepts Telegram updates, authorizes `AUTHORIZED_USER_ID` or `TELEGRAM_OPERATOR_CHAT_ID`, and routes `/commands`, `/status`, `/sessions`, `/tah`, `/places`, `/check`, `/cancel`, `/pack_master`, and guarded `!command` terminal intents.
 - `/api/intelligence/crawl-lead` runs the operator-guarded Crawl4AI lead-intelligence ingestion path and writes local JSONL rows under `cartridges/lead-intel/` by default. Use `importToTah: true` to create `.source.md` provenance files and binary `.tah` cartridges under `cartridges/imports/lead-intel/`.
-- `/api/notifications/high-intent/cron` aggregates high-intent activity into the native inbox and claims external Resend or opted-in Telnyx deliveries.
-- `/api/atlas/retrieval` lists retrieval fixtures and inspects custom or fixture-backed Jamie retrieval runs.
-- `/api/atlas/processes/health` checks crawler heartbeat freshness, retry recovery, dependency health, and circuit-breaker state for cron-driven operator alerts.
-- `/api/admin/profit/scorecard` returns the operator-only seven-day Jamie-to-revenue funnel, lead pipeline value, notification delivery health, unanswered-question count, and configurable acquisition costs.
-
-Profit scorecard configuration:
-```text
-PROFIT_MODEL_COST_PER_1K_TOKENS=0
-PROFIT_NOTIFICATION_COST_PER_DELIVERY=0
-```
-
-Set those values to actual provider rates outside local development. The scorecard reads direct `costUsd` or token-usage metadata when present and calculates cost per qualified lead from completed handoffs.
+- `/api/notifications/novu` triggers or locally queues Novu-compatible notification workflows, starting with hot-lead alerts from the lead processor.
 
 ## 🗓️ Sunset Gas and Grill - Shift Scheduling & SMS Automation
 

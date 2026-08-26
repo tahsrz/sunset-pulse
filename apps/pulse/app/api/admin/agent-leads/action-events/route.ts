@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { validationErrorResponse } from '@/lib/core/apiResponse';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
-import { resolveOperatorAgentId } from '@/lib/intelligence/agentNotificationStore';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -22,13 +21,6 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return validationErrorResponse(parsed.error.flatten());
 
   const operator = operatorAuditUser(access);
-  const agentId = await resolveOperatorAgentId(access, parsed.data.agentId);
-  const { data: lead } = await supabaseAdmin
-    .from('agent_site_leads')
-    .select('funnel_id')
-    .eq('id', parsed.data.leadId)
-    .eq('agent_id', agentId)
-    .maybeSingle();
   const { error } = await supabaseAdmin.rpc('log_intelligence_event', {
     p_type: 'AGENT_LEAD_ACTION_OPENED',
     p_description: 'Operator opened the recommended lead action.',
@@ -37,8 +29,7 @@ export async function POST(request: NextRequest) {
     p_target_id: parsed.data.leadId,
     p_metadata: {
       actionType: parsed.data.actionType,
-      agentId,
-      funnelId: lead?.funnel_id || null,
+      agentId: parsed.data.agentId,
       listingId: parsed.data.listingId || null,
     },
     p_severity: 'INFO',

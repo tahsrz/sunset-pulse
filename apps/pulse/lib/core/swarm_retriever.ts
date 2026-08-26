@@ -94,20 +94,6 @@ export class SwarmRetriever {
       offset = nextOffset;
     }
 
-    // Local knowledge capsules are intentionally human-readable .tah files.
-    // They do not have swarm shard framing, but should still participate in
-    // retrieval instead of being silently treated as empty cartridges.
-    if (shards.length === 0) {
-      const text = this.buffer.toString('utf-8').replace(/\s+/g, ' ').trim();
-      if (/^(TITLE|ALIASES):\s/i.test(text)) {
-        const chunkSize = 8_000;
-        for (let start = 0; start < text.length; start += chunkSize) {
-          const chunk = text.slice(start, start + chunkSize);
-          shards.push({ offset: start, length: chunk.length, text: chunk, links: [] });
-        }
-      }
-    }
-
     this.shards = shards;
     return shards;
   }

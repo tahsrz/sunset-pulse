@@ -1,9 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { clearPulseCartridgeCache } from '@/lib/ai/brain/pulse_query';
-import { normalizeRetrievalQuery } from '@/lib/ai/brain/cartridge_ranking';
-import { remoteAtlasCacheDir } from '@/lib/ai/brain/atlas_paths';
 
 /**
  * Remote Atlas: Bridges local TAH cartridges with Supabase Cloud Storage.
@@ -17,7 +16,7 @@ export const syncRemoteCartridge = async (cartridgeName: string) => {
     return null;
   }
   const localPath = path.join(process.cwd(), 'cartridges', cartridgeName);
-  const tmpPath = path.join(remoteAtlasCacheDir(), cartridgeName);
+  const tmpPath = path.join(os.tmpdir(), cartridgeName);
   
   // If local file exists, we're good (Local Dev or Baked into Build)
   if (fs.existsSync(localPath)) {
@@ -52,7 +51,6 @@ async function downloadRemoteCartridge(cartridgeName: string, tmpPath: string) {
 
     const buffer = Buffer.from(await data.arrayBuffer());
     if (!isValidCartridgeBuffer(buffer)) throw new Error('Downloaded cartridge has an invalid binary header.');
-    fs.mkdirSync(path.dirname(tmpPath), { recursive: true });
     const stagingPath = `${tmpPath}.${process.pid}.${Date.now()}.partial`;
     fs.writeFileSync(stagingPath, buffer, { flag: 'wx' });
     fs.renameSync(stagingPath, tmpPath);
@@ -67,69 +65,21 @@ async function downloadRemoteCartridge(cartridgeName: string, tmpPath: string) {
 /**
  * Syncs the entire 'Universe' of cartridges from Supabase.
  */
-export const syncUniversalIntelligence = async (query?: string) => {
-  if (process.env.REMOTE_ATLAS_SYNC_ENABLED !== 'true') {
-    console.warn('[RemoteAtlas] Remote cartridge sync is disabled by configuration.');
-    return [];
-  }
-  const files = [];
-  for (let offset = 0; ; offset += 100) {
-    const { data: page, error } = await supabaseAdmin.storage.from('cartridges').list('', { limit: 100, offset });
-    if (error || !page?.length) break;
-    files.push(...page);
-    if (page.length < 100) break;
-  }
-  if (!files.length) return [];
+export const syncUniversalIntelligence = async () => {
+  const { data: files, error } = await supabaseAdmin.storage
+    .from('cartridges')
+    .list();
 
-  const catalog = files.find((candidate) => candidate.name === 'wikipedia-catalog.json');
-  const wikipediaNames = query && catalog ? await syncRemoteWikipediaCatalog(query) : new Set<string>();
-  const requestedFiles = files.filter((candidate) => /\.(?:tah|hat)$/i.test(candidate.name));
-  const selectedFiles = query
-    ? requestedFiles.filter((file) => !file.name.startsWith('wiki_') || wikipediaNames.has(file.name))
-    : requestedFiles;
+  if (error || !files) return [];
 
   const syncedPaths = [];
-  for (let index = 0; index < selectedFiles.length; index += 4) {
-    const paths = await Promise.all(selectedFiles.slice(index, index + 4).map((file) => syncRemoteCartridge(file.name)));
-    for (const p of paths) if (p) syncedPaths.push(p);
+  for (const file of files.filter((candidate) => /\.(?:tah|hat)$/i.test(candidate.name))) {
+    const p = await syncRemoteCartridge(file.name);
+    if (p) syncedPaths.push(p);
   }
   clearPulseCartridgeCache();
   return syncedPaths;
 };
-
-async function syncRemoteWikipediaCatalog(query?: string): Promise<Set<string>> {
-  const destination = path.join(remoteAtlasCacheDir(), 'wikipedia-catalog.json');
-  try {
-    const { data, error } = await supabaseAdmin.storage
-      .from('cartridges')
-      .download('wikipedia-catalog.json');
-    if (error) throw error;
-    const buffer = Buffer.from(await data.arrayBuffer());
-    const parsed = JSON.parse(buffer.toString('utf8')) as unknown;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new Error('Wikipedia catalog is not an object.');
-    }
-    fs.mkdirSync(path.dirname(destination), { recursive: true });
-    const stagingPath = `${destination}.${process.pid}.${Date.now()}.partial`;
-    fs.writeFileSync(stagingPath, buffer, { flag: 'wx' });
-    fs.renameSync(stagingPath, destination);
-    return filterWikipediaCatalog(parsed as Record<string, string>, query);
-  } catch (error) {
-    console.warn('[RemoteAtlas] Wikipedia catalog sync failed:', error instanceof Error ? error.message : 'unknown error');
-    try {
-      return filterWikipediaCatalog(JSON.parse(fs.readFileSync(destination, 'utf8')) as Record<string, string>, query);
-    } catch {
-      return new Set();
-    }
-  }
-}
-
-function filterWikipediaCatalog(catalog: Record<string, string>, query?: string) {
-  const terms = query ? normalizeRetrievalQuery(query).terms : [];
-  return new Set(Object.entries(catalog)
-    .filter(([, value]) => !query || terms.some((term) => value.toLowerCase().includes(term)))
-    .map(([name]) => name));
-}
 
 function isValidCartridgeFile(filePath: string) {
   try {

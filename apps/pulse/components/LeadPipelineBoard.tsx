@@ -29,9 +29,8 @@ const LeadPipelineBoard: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('leads')
-          .select('id, name, email, stage, budget, probability, updated_at')
-          .order('updated_at', { ascending: false })
-          .limit(200);
+          .select('*')
+          .order('updated_at', { ascending: false });
         
         if (data) setLeads(data as Lead[]);
         setLoading(false);

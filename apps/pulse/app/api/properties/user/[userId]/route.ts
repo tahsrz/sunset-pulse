@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
-import { getSessionUser } from '@/lib/core/getSessionUser';
-import { successResponse, errorResponse, validationErrorResponse, unauthorizedResponse } from '@/lib/core/apiResponse';
+import { successResponse, errorResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 
 // GET /api/properties/user/:userId
 export const GET = async (request: NextRequest, { params }: { params: Promise<{ userId: string }> }) => {
@@ -16,12 +15,7 @@ export const GET = async (request: NextRequest, { params }: { params: Promise<{ 
       return validationErrorResponse('User ID is required');
     }
 
-    const sessionUser = await getSessionUser();
-    if (!sessionUser?.userId || String(sessionUser.userId) !== String(userId)) {
-      return unauthorizedResponse();
-    }
-
-    const properties = await Property.find({ owner: userId }).select('-seller_info');
+    const properties = await Property.find({ owner: userId });
 
     return successResponse(properties);
   } catch (error: any) {

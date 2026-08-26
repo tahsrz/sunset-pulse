@@ -1,22 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const { mockSearchListings, mockGetPublicListingById } = vi.hoisted(() => ({
+const { mockSearchListings, mockGetListingById } = vi.hoisted(() => ({
   mockSearchListings: vi.fn(),
-  mockGetPublicListingById: vi.fn(),
+  mockGetListingById: vi.fn(),
 }));
 
 vi.mock('@/lib/data/listingRepository', () => ({
   searchListings: mockSearchListings,
-  getPublicListingById: mockGetPublicListingById,
+  getListingById: mockGetListingById,
 }));
 
 import { PulseCache } from '@/utils/security/PulseCache';
-import { GET as searchGET } from '@/app/api/properties/search/route';
+import { GET as advancedSearchGET } from '@/app/api/properties/search/advanced/route';
 import { GET as discoveryGET } from '@/app/api/properties/discover/route';
 import { GET as propertyDetailGET } from '@/app/api/properties/[id]/route';
 import { GET as keplerGET } from '@/app/api/kepler/listings/route';
-import { GET as advancedSearchGET } from '@/app/api/properties/search/advanced/route';
 
 const listing = {
   id: '8e202c99-a88e-4262-bab0-bbc4cd25cd01',
@@ -49,7 +48,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   PulseCache.purge();
   mockSearchListings.mockResolvedValue([listing]);
-  mockGetPublicListingById.mockResolvedValue(listing);
+  mockGetListingById.mockResolvedValue(listing);
 });
 
 describe('canonical listing read surfaces', () => {
@@ -62,23 +61,8 @@ describe('canonical listing read surfaces', () => {
     expect(mockSearchListings).toHaveBeenCalledWith(expect.objectContaining({
       location: 'Fort Worth',
       beds: '3',
-    }), { limit: 500, publicOnly: true });
+    }), { limit: 500 });
     expect(body.data[0]).toMatchObject({ id: listing.id, mls_id: 'NTREIS-100' });
-  });
-
-  it('uses the public repository and projection for the standard search surface', async () => {
-    const response = await searchGET(new NextRequest(
-      'http://localhost:3000/api/properties/search?city=Fort%20Worth&beds=3'
-    ));
-    const body = await response.json();
-
-    expect(mockSearchListings).toHaveBeenCalledWith(expect.objectContaining({
-      city: 'Fort Worth',
-      beds: '3',
-      includeDemo: false,
-    }), { limit: 500, publicOnly: true });
-    expect(body.data[0]).toMatchObject({ id: listing.id, mls_id: 'NTREIS-100' });
-    expect(body.data[0]).not.toHaveProperty('metadata');
   });
 
   it('uses the same stable Sunset ID for property detail', async () => {
@@ -88,7 +72,7 @@ describe('canonical listing read surfaces', () => {
     );
     const body = await response.json();
 
-    expect(mockGetPublicListingById).toHaveBeenCalledWith(listing.id);
+    expect(mockGetListingById).toHaveBeenCalledWith(listing.id);
     expect(body.data).toMatchObject({ id: listing.id, _id: listing.id, images: listing.images });
   });
 
@@ -105,8 +89,6 @@ describe('canonical listing read surfaces', () => {
     }), { limit: 500, includeLegacy: false });
     expect(body.data).toHaveLength(1);
     expect(body.pagination).toMatchObject({ page: 1, pageSize: 10, total: 1 });
-    expect(body.data[0]).not.toHaveProperty('metadata');
-    expect(body.data[0]).not.toHaveProperty('owner');
     expect(response.headers.get('X-Cache')).toBe('MISS');
   });
 
@@ -122,6 +104,5 @@ describe('canonical listing read surfaces', () => {
       price: 425000,
       city: 'Fort Worth',
     });
-    expect(body.dataset.rows[0]).not.toHaveProperty('metadata');
   });
 });

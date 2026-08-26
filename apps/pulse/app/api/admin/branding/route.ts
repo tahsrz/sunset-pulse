@@ -1,19 +1,15 @@
 export const dynamic = 'force-dynamic';
 import connectDB from '@/lib/core/database';
-import { NextRequest } from 'next/server';
 import { SiteConfig } from '@/models/SiteConfig';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
-import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const access = await requireOperatorRouteAccess(req);
-    if (isAuthResponse(access)) return access;
     await connectDB();
     const body = await req.json();
     const { branding } = body;
-    const agentId = getAgentIdFromInput();
+    const agentId = getAgentIdFromInput({ agentId: body.agentId });
 
     if (!branding) {
       return errorResponse('Branding data is required', 400);

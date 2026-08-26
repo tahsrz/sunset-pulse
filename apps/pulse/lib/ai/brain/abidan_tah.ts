@@ -3,7 +3,7 @@ import path from 'path';
 import { createClient } from '@/utils/supabase/server';
 import { MemoriaRetriever } from '@/lib/core/memoria_retriever';
 import { TAHRetriever } from '@/lib/core/tah_retriever';
-import { retrieveKnowledge } from '@/lib/ai/knowledgeRetrieval';
+import { pulse_search } from '@/lib/ai/brain/pulse_query';
 
 const ABIDAN_PULSE_LIMIT = 4;
 const ABIDAN_SNIPPET_LIMIT = 420;
@@ -61,16 +61,20 @@ async function getTargetedContext(judgeName: string, query: string) {
 
 async function getPulseContext(judgeName: string, query: string) {
   try {
-    const context = await retrieveKnowledge(`${judgeName} ${query}`, { limit: ABIDAN_PULSE_LIMIT });
-    if (context.evidence.length === 0) return '';
+    const results = await pulse_search(`${judgeName} ${query}`, ABIDAN_PULSE_LIMIT);
+    if (results.length === 0) return '';
 
     return [
       'BROAD_PULSE_MATCHES:',
-      ...context.evidence.map((result, index) => {
-        const text = result.excerpt.slice(0, ABIDAN_SNIPPET_LIMIT);
-        const score = result.score.toFixed(3);
+      ...results.map((result, index) => {
+        const text = String(result.text || '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, ABIDAN_SNIPPET_LIMIT);
+        const source = String(result.source || 'unknown');
+        const score = Number(result.score || 0).toFixed(3);
 
-        return `[${index + 1}] SOURCE: ${result.source}\nSCORE: ${score}\nTEXT: ${text}`;
+        return `[${index + 1}] SOURCE: ${source}\nSCORE: ${score}\nTEXT: ${text}`;
       })
     ].join('\n');
   } catch (error) {

@@ -17,22 +17,6 @@
     {
       "path": "/api/notifications/high-intent/cron",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/admin/profit/baseline/cron",
-      "schedule": "15 12 * * *"
-    },
-    {
-      "path": "/api/admin/profit/checkpoints/cron",
-      "schedule": "30 12 * * *"
-    },
-    {
-      "path": "/api/atlas/processes/health",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/tenancy/domain-projection/cron",
-      "schedule": "*/5 * * * *"
     }
   ]
 }

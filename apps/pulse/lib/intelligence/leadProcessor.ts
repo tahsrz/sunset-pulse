@@ -6,8 +6,7 @@ import { pulseRNG } from '@/lib/core/pulseRNG';
 import { calculateLeadScore } from '@/lib/intelligence/leadIntelligence';
 import { supabase } from '@/lib/supabase';
 import { sendTelegramNotification } from '@/lib/communication/telegram';
-import { dispatchOperationalAlert } from '@/lib/notifications/agentAlertChannels';
-import { createHash } from 'node:crypto';
+import { notifyHotLeadWithNovu } from '@/lib/notifications/novu';
 
 export interface ProcessedLeadResult {
   leadData: any;
@@ -16,7 +15,6 @@ export interface ProcessedLeadResult {
   jamieNotes: string;
   reengagementHook: any;
   leadCategory: string;
-  propertyName?: string | null;
 }
 
 /**
@@ -65,6 +63,18 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
   } else {
     reengagementHook = await generateHighStakesHook(leadData, property);
 
+    // Proactive operator notifications
+    const topHook = reengagementHook?.a || reengagementHook?.b || "New high-stakes lead detected.";
+    const notification = `🚀 *NEW LEAD ALERT*\n\n*Name:* ${leadData.name}\n*Probability:* ${probability}%\n*Top Hook:* ${topHook}\n\nView details in the Pulse Collective Command Center.`;
+    await notifyHotLeadWithNovu({
+      lead: leadData,
+      probability,
+      leadCategory,
+      topHook,
+      propertyName: property?.name || null,
+    });
+    await sendTelegramNotification(notification);
+
     // 5. Generate Jamie AI Notes
     const propertyInfo = property 
       ? `Property: ${property.name}, Location: ${property.location.city}, ${property.location.state}, Type: ${property.type}`
@@ -89,24 +99,9 @@ export const processLeadIntelligence = async (body: any): Promise<ProcessedLeadR
     tags,
     jamieNotes,
     reengagementHook,
-    leadCategory,
-    propertyName: property?.name || null
+    leadCategory
   };
 };
-
-export async function notifyProcessedLead(result: ProcessedLeadResult, propertyName?: string | null) {
-  const topHook = result.reengagementHook?.a || result.reengagementHook?.b || 'New high-stakes lead detected.';
-  const leadRef = createHash('sha256')
-    .update(String(result.leadData.email || 'unknown').trim().toLowerCase())
-    .digest('hex')
-    .slice(0, 20);
-  await dispatchOperationalAlert({
-    subject: `New lead: ${result.leadData.name} (${result.probability}%)`,
-    idempotencyKey: `new-lead-${leadRef}-${new Date().toISOString().slice(0, 13)}`,
-    text: [`Name: ${result.leadData.name}`, `Email: ${result.leadData.email}`, `Probability: ${result.probability}%`, `Category: ${result.leadCategory}`, `Property: ${propertyName || 'Not specified'}`, `Top hook: ${topHook}`, '', 'Open Sunset Pulse: https://sunsetpulse.app/admin/agent-leads'].join('\n'),
-  });
-  await sendTelegramNotification(`🚀 *NEW LEAD ALERT*\n\n*Name:* ${result.leadData.name}\n*Probability:* ${result.probability}%\n*Top Hook:* ${topHook}\n\nView details in the Pulse Collective Command Center.`);
-}
 
 /**
  * Synchronizes lead data to the Supabase secondary grid.
@@ -153,6 +148,6 @@ export const syncLeadToSupabase = async (lead: any, retries = 2): Promise<void> 
     console.log(`[SUPABASE_SYNC_SUCCESS]: Lead ${lead.email} synchronized to grid.`);
   } catch (err: any) {
     console.error('[SUPABASE_SYNC_CRITICAL_FAILURE]:', err.message);
-    throw err;
+    // In a production tactical environment, we would queue this for later retry
   }
 };

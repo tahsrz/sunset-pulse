@@ -3,39 +3,46 @@ import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/location-guess/listings/route';
 
 const mocks = vi.hoisted(() => ({
-  searchHistoricalPublicListings: vi.fn(),
+  connectDB: vi.fn(),
+  find: vi.fn()
 }));
 
-vi.mock('@/lib/data/publicInventory', () => ({
-  searchHistoricalPublicListings: mocks.searchHistoricalPublicListings,
+vi.mock('@/lib/core/database', () => ({
+  default: mocks.connectDB
+}));
+
+vi.mock('@/models/Property', () => ({
+  default: {
+    find: mocks.find
+  }
 }));
 
 describe('location guess listing feed route', () => {
   beforeEach(() => {
-    mocks.searchHistoricalPublicListings.mockReset();
+    mocks.connectDB.mockReset();
+    mocks.find.mockReset();
   });
 
   it('returns normalized property-grid listings when eligible geocoded records exist', async () => {
-    mocks.searchHistoricalPublicListings.mockResolvedValue([
-      {
-        id: 'route_geo_1',
-        _id: 'route_geo_1',
-        name: 'Route Geo Home',
-        type: 'Single Family',
-        source: 'MLS',
-        location: { street: '', city: 'Bowie', state: 'TX', zipcode: '' },
-        location_geo: { type: 'Point', coordinates: [-97.848, 33.559] },
-        images: ['https://images.example.com/bowie.jpg'],
-        amenities: [],
-        description: '',
-        price_type: 'sale',
-        rates: {},
-        listing_status: 'Sold',
-        is_demo: false,
-        is_featured: false,
-        display_public: true,
-      },
-    ]);
+    mocks.connectDB.mockResolvedValue(undefined);
+    mocks.find.mockReturnValue({
+      sort: vi.fn().mockReturnValue({
+        limit: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue([
+            {
+              _id: 'route_geo_1',
+              name: 'Route Geo Home',
+              type: 'Single Family',
+              source: 'MLS',
+              location: { city: 'Bowie', county: 'Montague' },
+              location_geo: { type: 'Point', coordinates: [-97.848, 33.559] },
+              images: ['https://images.example.com/bowie.jpg'],
+              agent_phone: 'hidden'
+            }
+          ])
+        })
+      })
+    });
 
     const response = await GET(new NextRequest('http://localhost/api/location-guess/listings?limit=10'));
     const body = await response.json();
@@ -56,7 +63,7 @@ describe('location guess listing feed route', () => {
   });
 
   it('falls back to curated cards when the property grid cannot be read', async () => {
-    mocks.searchHistoricalPublicListings.mockRejectedValue(new Error('db offline'));
+    mocks.connectDB.mockRejectedValue(new Error('db offline'));
 
     const response = await GET(new NextRequest('http://localhost/api/location-guess/listings'));
     const body = await response.json();

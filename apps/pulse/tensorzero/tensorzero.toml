@@ -10,11 +10,11 @@ type = "chat"
 
 [functions.jamie_chat.variants.groq_direct_baseline]
 type = "chat_completion"
-model = "groq::openai/gpt-oss-120b"
+model = "groq::llama-3.1-8b-instant"
 
 [functions.jamie_chat.variants.groq_direct_tools]
 type = "chat_completion"
-model = "groq::openai/gpt-oss-120b"
+model = "groq::llama-3.1-8b-instant"
 
 [metrics.command_center_quality]
 type = "float"

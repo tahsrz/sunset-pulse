@@ -46,24 +46,6 @@ const RegisterContent = () => {
     setLoading(true);
     
     try {
-      let animalFact: string | undefined;
-      try {
-        const animalResponse = await fetch('/api/animals/day', { cache: 'no-store' });
-        if (animalResponse.ok) {
-          const payload = await animalResponse.json();
-          const animal = payload?.animal;
-          const name = animal?.vernacular && animal.vernacular !== 'None'
-            ? animal.vernacular
-            : animal?.taxon;
-          const fact = animal?.profile?.facts?.[0];
-          if (typeof name === 'string' && typeof fact === 'string') {
-            animalFact = `${name}: ${fact}`.slice(0, 280);
-          }
-        }
-      } catch {
-        // The public animal spotlight is enrichment; it must not block signup.
-      }
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -76,7 +58,6 @@ const RegisterContent = () => {
             license_id: licenseId,
             right_to_represent: rightToRepresent,
             isSubscribed: role === 'realtor',
-            ...(animalFact ? { animal_fact: animalFact } : {}),
             avatar_url: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(username || fullName || 'default')}`
           },
           emailRedirectTo: `${window.location.origin}/auth/callback?next=/auth/success`,

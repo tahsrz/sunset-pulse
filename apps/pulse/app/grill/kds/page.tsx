@@ -67,7 +67,6 @@ interface RestockRow {
 }
 
 const KitchenDisplaySystem = () => {
-  return <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100"><section className="mx-auto max-w-2xl border border-white/10 bg-white/[0.03] p-8"><p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">Kitchen Display System</p><h1 className="mt-3 text-3xl font-black text-white">Temporarily offline</h1><p className="mt-3 text-sm leading-6 text-slate-400">The KDS is disabled while operations are being reconfigured.</p></section></main>;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastOrderCount, setLastOrderCount] = useState(0);
@@ -166,11 +165,9 @@ const KitchenDisplaySystem = () => {
 
   useEffect(() => {
     if (!isUnlocked) return;
-    const refreshWhenVisible = () => { if (document.visibilityState === 'visible') void fetchOrders(); };
-    refreshWhenVisible();
-    const interval = setInterval(refreshWhenVisible, 15000);
-    document.addEventListener('visibilitychange', refreshWhenVisible);
-    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', refreshWhenVisible); };
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, [fetchOrders, isUnlocked]);
 
   const unlockKds = async () => {
@@ -426,7 +423,7 @@ const KitchenDisplaySystem = () => {
             {connectionOk ? 'Store Link Online' : `Connection Warning (${failedFetches})`}
           </div>
           <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">
-            <span>Last Sync: {lastFetchAt?.toLocaleTimeString() || 'Not synced'}</span>
+            <span>Last Sync: {lastFetchAt ? lastFetchAt.toLocaleTimeString() : 'Not synced'}</span>
             <span>Wake Lock: {wakeLockState}</span>
             <button type="button" onClick={lockKds} className="rounded-lg border border-white/10 px-3 py-2 text-slate-200 hover:bg-white/10">
               Lock

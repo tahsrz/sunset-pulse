@@ -3,42 +3,50 @@ import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/value-guess/listings/route';
 
 const mocks = vi.hoisted(() => ({
-  searchHistoricalPublicListings: vi.fn(),
+  connectDB: vi.fn(),
+  find: vi.fn()
 }));
 
-vi.mock('@/lib/data/publicInventory', () => ({
-  searchHistoricalPublicListings: mocks.searchHistoricalPublicListings,
+vi.mock('@/lib/core/database', () => ({
+  default: mocks.connectDB
+}));
+
+vi.mock('@/models/Property', () => ({
+  default: {
+    find: mocks.find
+  }
 }));
 
 describe('value guess listing feed route', () => {
   beforeEach(() => {
-    mocks.searchHistoricalPublicListings.mockReset();
+    mocks.connectDB.mockReset();
+    mocks.find.mockReset();
   });
 
   it('returns normalized property-grid listings when eligible property records exist', async () => {
-    mocks.searchHistoricalPublicListings.mockResolvedValue([
-      {
-        id: 'prop_route_1',
-        _id: 'prop_route_1',
-        name: 'Route Test Home',
-        type: 'Single Family',
-        source: 'MLS',
-        location: { street: '', city: 'Plano', state: 'TX', zipcode: '' },
-        list_price: 710000,
-        price_type: 'sale',
-        beds: 4,
-        baths: 3,
-        square_feet: 2600,
-        images: ['https://images.example.com/plano.jpg'],
-        amenities: [],
-        description: '',
-        rates: {},
-        listing_status: 'Sold',
-        is_demo: false,
-        is_featured: false,
-        display_public: true,
-      },
-    ]);
+    mocks.connectDB.mockResolvedValue(undefined);
+    mocks.find.mockReturnValue({
+      sort: vi.fn().mockReturnValue({
+        limit: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue([
+            {
+              _id: 'prop_route_1',
+              name: 'Route Test Home',
+              type: 'Single Family',
+              source: 'MLS',
+              location: { city: 'Plano', county: 'Collin' },
+              list_price: 710000,
+              price_type: 'sale',
+              beds: 4,
+              baths: 3,
+              square_feet: 2600,
+              images: ['https://images.example.com/plano.jpg'],
+              agent_phone: 'hidden'
+            }
+          ])
+        })
+      })
+    });
 
     const response = await GET(new NextRequest('http://localhost/api/value-guess/listings?limit=10'));
     const body = await response.json();
@@ -59,7 +67,7 @@ describe('value guess listing feed route', () => {
   });
 
   it('falls back to curated cards when the property grid cannot be read', async () => {
-    mocks.searchHistoricalPublicListings.mockRejectedValue(new Error('db offline'));
+    mocks.connectDB.mockRejectedValue(new Error('db offline'));
 
     const response = await GET(new NextRequest('http://localhost/api/value-guess/listings'));
     const body = await response.json();

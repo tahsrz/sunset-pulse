@@ -42,38 +42,6 @@ export async function dispatchAgentAlertNotification(input: {
   };
 }
 
-export async function dispatchOperationalAlert(input: {
-  subject: string;
-  text: string;
-  idempotencyKey: string;
-}): Promise<AgentAlertChannelResult> {
-  const email = process.env.OPERATOR_EMAIL || process.env.AUTHORIZED_EMAIL || process.env.ADMIN_EMAIL;
-  if (!email || !process.env.RESEND_API_KEY) {
-    return { status: 'suppressed', reason: 'Operator email or RESEND_API_KEY is not configured.' };
-  }
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': input.idempotencyKey,
-      },
-      body: JSON.stringify({
-        from: process.env.AGENT_ALERT_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || 'Sunset Pulse <no-reply@sunsetpulse.app>',
-        to: [email],
-        subject: input.subject,
-        text: input.text,
-      }),
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) return { status: 'failed', provider: 'resend', reason: stringValue(payload?.message) || `Resend returned ${response.status}.` };
-    return { status: 'sent', provider: 'resend', messageId: stringValue(payload?.id) || null };
-  } catch (error) {
-    return { status: 'failed', provider: 'resend', reason: error instanceof Error ? error.message : 'Operational alert failed.' };
-  }
-}
-
 async function sendAgentAlertEmail(input: {
   recipient: AgentAlertRecipient;
   idempotencyKey: string;

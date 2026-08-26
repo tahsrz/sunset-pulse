@@ -93,7 +93,7 @@ const SiteConfigSchema = new mongoose.Schema({
     REAPER: { type: String }
   },
   modelMatrix: {
-    primaryModel: { type: String, default: 'openai/gpt-oss-120b' },
+    primaryModel: { type: String, default: 'llama-3.1-8b-instant' },
     reconModel: { type: String, default: 'meta-llama/llama-3.1-405b-instruct:free' },
     miniModel: { type: String, default: 'google/gemma-2-9b-it:free' }
   },

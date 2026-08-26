@@ -53,10 +53,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const expectedUpdatedAt = getUpdatedAt(row);
-  const savedStores = expectedUpdatedAt
-    ? await saveSiteConfig(nextKit, operator, { expectedUpdatedAt })
-    : await saveSiteConfig(nextKit, operator);
+  const savedStores = await saveSiteConfig(nextKit, operator);
   const buyerEmail = nextKit.agentProfile.email || nextKit.integrationProfile.leadEmail || '';
   const emailNotification = parsed.data.action === 'approve_publish' || parsed.data.action === 'request_changes'
     ? await notifyBuyerSiteReviewDecision({
@@ -80,13 +77,6 @@ export async function POST(request: NextRequest) {
     emailNotification,
     ...summary,
   });
-}
-
-function getUpdatedAt(row: unknown) {
-  const value = row as { updated_at?: unknown; updatedAt?: unknown };
-  return typeof value.updated_at === 'string'
-    ? value.updated_at
-    : typeof value.updatedAt === 'string' ? value.updatedAt : undefined;
 }
 
 function buildReviewedKit(

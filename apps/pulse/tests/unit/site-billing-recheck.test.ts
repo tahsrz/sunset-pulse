@@ -73,8 +73,14 @@ describe('site billing Stripe recheck', () => {
     }));
   });
 
-  it('requires a manual billing re-link when the stored subscription is deleted', async () => {
+  it('falls back to an active customer subscription when the stored subscription is deleted', async () => {
     recheckMocks.retrieve.mockResolvedValue({ id: 'sub_deleted', deleted: true });
+    recheckMocks.list.mockResolvedValue({
+      data: [
+        subscription({ id: 'sub_old', status: 'canceled', customer: 'cus_123' }),
+        subscription({ id: 'sub_active', status: 'trialing', customer: 'cus_123' }),
+      ],
+    });
     const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       billingProfile: {
@@ -84,16 +90,28 @@ describe('site billing Stripe recheck', () => {
       },
     };
 
-    await expect(recheckSiteBillingFromStripe({ kit }))
-      .rejects.toThrow('manual billing re-link is required');
+    const result = await recheckSiteBillingFromStripe({ kit });
+
+    expect(result.selectedBy).toBe('customer_subscription');
+    expect(result.stripeSubscriptionId).toBe('sub_active');
+    expect(recheckMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
+      billingStatus: 'trialing',
+      stripeSubscriptionId: 'sub_active',
+    }));
   });
 
-  it('does not replace a canceled stored subscription with another customer subscription', async () => {
+  it('prefers a newer active customer subscription over a stored canceled subscription', async () => {
     recheckMocks.retrieve.mockResolvedValue(subscription({
       id: 'sub_canceled',
       status: 'canceled',
       customer: 'cus_123',
     }));
+    recheckMocks.list.mockResolvedValue({
+      data: [
+        subscription({ id: 'sub_canceled', status: 'canceled', customer: 'cus_123' }),
+        subscription({ id: 'sub_active', status: 'active', customer: 'cus_123' }),
+      ],
+    });
     const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
       billingProfile: {
@@ -104,18 +122,19 @@ describe('site billing Stripe recheck', () => {
     };
 
     const result = await recheckSiteBillingFromStripe({ kit });
-    expect(result.selectedBy).toBe('stored_subscription');
-    expect(result.stripeSubscriptionId).toBe('sub_canceled');
+
+    expect(result.selectedBy).toBe('customer_subscription');
+    expect(result.stripeSubscriptionId).toBe('sub_active');
     expect(recheckMocks.updateProvisionedAgentSiteBilling).toHaveBeenCalledWith(expect.objectContaining({
-      billingStatus: 'canceled',
-      stripeSubscriptionId: 'sub_canceled',
+      billingStatus: 'active',
+      stripeSubscriptionId: 'sub_active',
     }));
   });
 
   it('rejects sites without a Stripe billing pointer', async () => {
     await expect(recheckSiteBillingFromStripe({
       kit: createDefaultLaunchKit('broker-one'),
-    })).rejects.toThrow('manual billing re-link is required');
+    })).rejects.toThrow('This site does not have a Stripe subscription or customer to recheck.');
   });
 });
 

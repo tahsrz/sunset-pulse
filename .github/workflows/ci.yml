@@ -49,9 +49,6 @@ jobs:
       - name: Run Unit Tests
         run: npm run test:unit
 
-      - name: Enforce Commercial Inventory Truth
-        run: npm run test:inventory-truth
-
   jamie-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15

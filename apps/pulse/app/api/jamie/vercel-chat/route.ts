@@ -7,22 +7,9 @@ import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { errorResponse } from '@/lib/core/apiResponse';
 import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 import { getActiveSiteProfiles } from '@/lib/sites/siteProfiles';
-import { z } from 'zod';
-import { resolveJamieGroqModel } from '@/lib/ai/modelDefaults';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-const MAX_REQUEST_BYTES = 100_000;
-
-const vercelChatSchema = z.object({
-  messages: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    parts: z.array(z.object({
-      type: z.literal('text'),
-      text: z.string().min(1).max(12_000),
-    }).strict()).min(1).max(20),
-  }).passthrough()).min(1).max(60),
-}).strict();
 
 export async function POST(req: Request) {
   try {
@@ -32,27 +19,16 @@ export async function POST(req: Request) {
     const limitResponse = await applyApiRateLimit(`jamie-vercel:${rateLimitToken}`, 10);
     if (limitResponse) return limitResponse;
 
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BYTES) {
-      return errorResponse('Chat request is too large.', 413);
-    }
-    let json: unknown;
-    try {
-      json = JSON.parse(rawBody);
-    } catch {
-      return errorResponse('Invalid Jamie chat request.', 400);
-    }
-    const parsed = vercelChatSchema.safeParse(json);
-    if (!parsed.success) return errorResponse('Invalid Jamie chat request.', 400, parsed.error.flatten());
-    const { messages } = parsed.data;
-    const agentId = getAgentIdFromInput();
+    const body = await req.json();
+    const { messages } = body;
+    const agentId = getAgentIdFromInput({ agentId: body.agentId });
     const { agentProfile, assistantProfile, branding } = await getActiveSiteProfiles(agentId);
     const gatewayModel = process.env.JAMIE_AI_MODEL || process.env.VERCEL_AI_MODEL;
-    const model = gatewayModel || groq(resolveJamieGroqModel(process.env.JAMIE_GROQ_MODEL));
+    const model = gatewayModel || groq(process.env.JAMIE_GROQ_MODEL || 'llama-3.3-70b-versatile');
 
     const result = streamText({
       model,
-      messages: await convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0]),
+      messages: await convertToModelMessages(messages || []),
       system: [
         JAMIE_SYSTEM_PROMPT,
         `You are ${assistantProfile.displayName}, the AI assistant for ${agentProfile.displayName}${agentProfile.brokerageName ? ` at ${agentProfile.brokerageName}` : ''}.`,

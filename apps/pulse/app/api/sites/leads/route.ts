@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 
 import { z } from 'zod';
-import { createHash, randomUUID } from 'node:crypto';
 import { buildPublicGuideHandoffBrief } from '@/lib/ai/publicGuideHandoff';
 import { publicGuideHandoffInputSchema } from '@/lib/ai/publicGuideHandoffContract';
 import {
@@ -107,8 +106,10 @@ export async function POST(request: Request) {
       if (rateLimitResponse) return rateLimitResponse;
     }
 
-    const listing = await resolveVerifiedJamieListing(input.listing);
-    if (input.listing && !listing) {
+    const listing = isJamieRequest
+      ? await resolveVerifiedJamieListing(input.listing)
+      : input.listing;
+    if (isJamieRequest && input.listing && !listing) {
       return validationErrorResponse({ listing: ['The listing is not available for a verified public handoff.'] });
     }
 
@@ -139,18 +140,10 @@ export async function POST(request: Request) {
       : null;
 
     const source = isJamieRequest ? 'jamie_public_guide' : input.source;
-    const siteName = tenantSite.siteName;
+    const siteName = isJamieRequest ? tenantSite.siteName : input.siteName || tenantSite.siteName;
     const leadEmail = input.email.toLowerCase();
-    const idempotencyKey = buildLeadIdempotencyKey(request, {
-      agentId,
-      email: leadEmail,
-      message: input.message,
-      listingId: listing?.id || listing?.mlsId || '',
-    });
     const pagePath = isJamieRequest ? getJamieSourcePagePath(request) : input.pagePath || null;
-    const funnelId = randomUUID();
     const metadata = {
-      funnelId,
       tenantAgentName: tenantSite.agentProfile.displayName,
       tenantBrokerage: tenantSite.agentProfile.brokerageName,
       submittedAt: new Date().toISOString(),
@@ -190,20 +183,10 @@ export async function POST(request: Request) {
         preferred_contact: input.preferredContact,
         message: input.message,
         metadata,
-        funnel_id: funnelId,
-        idempotency_key: idempotencyKey,
       })
-      .select('id, funnel_id')
+      .select('id')
       .single();
 
-    if (error?.code === '23505') {
-      const { data: existing } = await supabaseAdmin
-        .from('agent_site_leads')
-        .select('id, funnel_id')
-        .eq('idempotency_key', idempotencyKey)
-        .maybeSingle();
-      return successResponse({ accepted: true, duplicate: true, id: existing?.id || null, funnelId: existing?.funnel_id || null, agentId, site: tenantSite.site }, 200);
-    }
     if (error) {
       console.error('[AGENT_SITE_LEAD_INSERT_ERROR]', error);
       return errorResponse('Failed to save lead inquiry.', 500);
@@ -236,12 +219,10 @@ export async function POST(request: Request) {
         sessionId: guideHandoff.sessionId,
         hasAgentContext: true,
         hasListingContext: Boolean(listing),
-        funnelId,
-        targetId: data.id,
       });
     }
 
-    const { error: metadataUpdateError } = await supabaseAdmin
+    await supabaseAdmin
       .from('agent_site_leads')
       .update({
         metadata: {
@@ -250,14 +231,10 @@ export async function POST(request: Request) {
         },
       })
       .eq('id', data.id);
-    if (metadataUpdateError) {
-      console.error('[AGENT_SITE_LEAD_METADATA_UPDATE_ERROR]', metadataUpdateError);
-    }
 
     const response = successResponse({
       accepted: true,
       id: data?.id,
-      funnelId,
       agentId,
       site: tenantSite.site,
       notification: notification.status,
@@ -332,20 +309,6 @@ async function resolveVerifiedJamieListingIds(
     ...verified
       .flatMap((listing) => listing ? [listing.mls_id || listing.id] : []),
   ].filter((id): id is string => Boolean(id)))).slice(0, 8);
-}
-
-function buildLeadIdempotencyKey(request: Request, input: {
-  agentId: string;
-  email: string;
-  message: string;
-  listingId: string;
-}) {
-  const explicit = request.headers.get('idempotency-key')?.trim().slice(0, 160);
-  const bucket = Math.floor(Date.now() / (2 * 60 * 1000));
-  const value = explicit
-    ? `${input.agentId}|${explicit}`
-    : `${input.agentId}|${input.email}|${input.listingId}|${input.message}|${bucket}`;
-  return createHash('sha256').update(value).digest('hex');
 }
 
 function getJamieSourcePagePath(request: Request) {

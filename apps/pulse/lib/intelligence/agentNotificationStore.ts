@@ -5,24 +5,17 @@ import { agentNotificationSchema } from '@/lib/intelligence/agentNotificationCon
 import { supabaseAdmin } from '@/lib/supabase';
 import { getDefaultAgentId, normalizeAgentId } from '@/lib/sites/agentConfig';
 
-export async function resolveOperatorAgentId(access: AuthorizedOperator, requestedAgentId?: string) {
-  const normalizedRequestedAgentId = normalizeAgentId(requestedAgentId);
-  if (!access.user?.id) return normalizedRequestedAgentId || getDefaultAgentId();
+export async function resolveOperatorAgentId(access: AuthorizedOperator) {
+  if (!access.user?.id) return getDefaultAgentId();
 
-  let query = supabaseAdmin
+  const { data } = await supabaseAdmin
     .from('site_config')
     .select('agent_id')
     .eq('owner_id', access.user.id)
-    .limit(1);
+    .limit(1)
+    .maybeSingle();
 
-  if (normalizedRequestedAgentId) query = query.eq('agent_id', normalizedRequestedAgentId);
-  const { data } = await query.maybeSingle();
-
-  if (access.user.role === 'realtor' && !data?.agent_id) {
-    throw new Error('No agent site is associated with this account.');
-  }
-
-  return normalizeAgentId(data?.agent_id) || normalizedRequestedAgentId || getDefaultAgentId();
+  return normalizeAgentId(data?.agent_id) || getDefaultAgentId();
 }
 
 export async function loadAgentNotifications(input: {

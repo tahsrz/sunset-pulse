@@ -1,7 +1,6 @@
 import connectDB from '@/lib/core/database';
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
-import { getPublicListingById } from '@/lib/data/listingRepository';
-import { resolveTourHotListTargets } from '@/lib/data/tourHotList';
+import { getTourHotList, resolveTourHotListTargets } from '@/lib/data/tourHotList';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
   type AgentProfile,
@@ -65,7 +64,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
   try {
     const { data, error } = await supabaseAdmin
       .from('site_config')
-      .select('agent_id, subdomain, custom_domain, status, owner_name, active_vibe_revision_id, branding, hero, agent_profile, assistant_profile, compliance_profile, integration_profile, billing_profile, review_profile, sections')
+      .select('*')
       .or(`subdomain.eq.${cleanSite},agent_id.eq.${cleanSite},agent_id.eq.${cleanSite}-site`)
       .maybeSingle();
 
@@ -118,7 +117,7 @@ export async function getAgentTenantSite(
         configuredMlsIds.map((value) => ({ kind: 'mlsId' as const, value })),
         { limit },
       )
-    : { listings: [] };
+    : await getTourHotList({ limit });
 
   const listings = Array.isArray(result?.listings) ? result.listings : [];
 
@@ -126,19 +125,6 @@ export async function getAgentTenantSite(
     ...tenantSite,
     featuredListings: listings.filter(hasUsableRemoteListingImage),
   };
-}
-
-/** Resolve a public listing only when it belongs to the tenant's explicit MLS allowlist. */
-export async function getTenantListingById(site: TenantSite, listingId: string): Promise<Listing | null> {
-  const configuredMlsIds = Array.isArray(site.integrationProfile?.hotListMlsIds)
-    ? new Set(site.integrationProfile.hotListMlsIds.map((id) => String(id).trim().toLowerCase()).filter(Boolean))
-    : new Set<string>();
-
-  if (configuredMlsIds.size === 0) return null;
-
-  const listing = await getPublicListingById(listingId);
-  const listingMlsId = listing?.mls_id?.trim().toLowerCase();
-  return listing && listingMlsId && configuredMlsIds.has(listingMlsId) ? listing : null;
 }
 
 function normalizeTenantSite(
@@ -261,6 +247,7 @@ function normalizeSections(value: unknown) {
 function escapePostgrestValue(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, '');
 }
+
 async function hydrateVibeProjection(tenantSite: TenantSite, config: Record<string, any>): Promise<TenantSite> {
   const revisionId = config.active_vibe_revision_id || config.activeVibeRevisionId;
   if (!revisionId) return tenantSite;

@@ -1,9 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ABIDAN_DATA, AbidanCharacter } from '@/constants/abidan';
 import { toast } from 'react-toastify';
+import { supabase } from '@/lib/supabase';
+import { isLightweightGlobalSurface } from '@/lib/navigation/focusedSurfaces';
 import {
   FALLBACK_AGENT_ID,
   type AgentProfile,
@@ -156,6 +159,7 @@ export function ThemeProvider({
   agentId?: string;
 }) {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [branding, setBranding] = useState<Branding>(() => {
     const base = { ...defaultBranding, ...initialBranding };
     base.quadrants = { ...defaultBranding.quadrants, ...initialBranding?.quadrants };
@@ -258,7 +262,52 @@ export function ThemeProvider({
       if (found) setSelectedAbidanState(found);
     }
 
-  }, [user]);
+    if (isLightweightGlobalSurface(pathname)) return;
+
+    const channel = supabase
+      .channel('public:site_config')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'site_config',
+        filter: `agent_id=eq.${agentId}`
+      }, (payload) => {
+        console.log('🔄 [THEME_SYNC] Site config update received:', payload.new);
+        if (payload.new.branding) {
+          setBranding(prev => ({ 
+            ...defaultBranding, 
+            ...prev, 
+            ...payload.new.branding,
+            quadrants: { ...defaultBranding.quadrants, ...prev.quadrants, ...payload.new.branding.quadrants }
+          }));
+        }
+        if (payload.new.intelligence) {
+          setIntelligence(prev => ({
+            ...defaultIntelligence,
+            ...prev,
+            ...payload.new.intelligence,
+            grill: { ...defaultIntelligence.grill, ...prev.grill, ...payload.new.intelligence.grill }
+          }));
+        }
+        if (payload.new.agent_profile) {
+          setAgentProfile(prev => mergeAgentProfile({ ...prev, ...payload.new.agent_profile }));
+        }
+        if (payload.new.assistant_profile) {
+          setAssistantProfile(prev => mergeAssistantProfile({ ...prev, ...payload.new.assistant_profile }));
+        }
+        if (payload.new.compliance_profile) {
+          setComplianceProfile(prev => mergeComplianceProfile({ ...prev, ...payload.new.compliance_profile }));
+        }
+        if (payload.new.integration_profile) {
+          setIntegrationProfile(prev => mergeIntegrationProfile({ ...prev, ...payload.new.integration_profile }));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, agentId, pathname]);
 
   const setSelectedAbidan = (abidan: AbidanCharacter) => {
     setSelectedAbidanState(abidan);

@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockSupabaseFrom, mockConnectDB, mockFindOne, mockResolveTourHotListTargets, mockGetTourHotList, mockGetPublicListingById } = vi.hoisted(() => ({
+const { mockSupabaseFrom, mockConnectDB, mockFindOne, mockResolveTourHotListTargets, mockGetTourHotList } = vi.hoisted(() => ({
   mockSupabaseFrom: vi.fn(),
   mockConnectDB: vi.fn(),
   mockFindOne: vi.fn(),
   mockResolveTourHotListTargets: vi.fn(),
   mockGetTourHotList: vi.fn(),
-  mockGetPublicListingById: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -30,11 +29,7 @@ vi.mock('@/lib/data/tourHotList', () => ({
   resolveTourHotListTargets: mockResolveTourHotListTargets,
 }));
 
-vi.mock('@/lib/data/listingRepository', () => ({
-  getPublicListingById: mockGetPublicListingById,
-}));
-
-import { getAgentTenantSite, getTenantListingById, getTenantSite } from '@/lib/sites/siteData';
+import { getAgentTenantSite, getTenantSite } from '@/lib/sites/siteData';
 
 describe('tenant site conversion layer', () => {
   beforeEach(() => {
@@ -50,7 +45,6 @@ describe('tenant site conversion layer', () => {
     });
     mockGetTourHotList.mockResolvedValue({ listings: [] });
     mockResolveTourHotListTargets.mockResolvedValue({ listings: [] });
-    mockGetPublicListingById.mockResolvedValue(null);
   });
 
   it('generates a clean tenant fallback for unconfigured agent sites', async () => {
@@ -154,17 +148,5 @@ describe('tenant site conversion layer', () => {
       ],
       { limit: 6 },
     );
-  });
-
-  it('resolves tenant detail pages only through the public listing repository', async () => {
-    const tenantSite = await getTenantSite('broker-one');
-    tenantSite.integrationProfile.hotListMlsIds = ['NTREIS-101'];
-    mockGetPublicListingById.mockResolvedValue({ id: 'listing-1', mls_id: 'NTREIS-101' });
-
-    await expect(getTenantListingById(tenantSite, 'listing-1')).resolves.toMatchObject({ id: 'listing-1' });
-    expect(mockGetPublicListingById).toHaveBeenCalledWith('listing-1');
-
-    mockGetPublicListingById.mockResolvedValue(null);
-    await expect(getTenantListingById(tenantSite, 'private-listing')).resolves.toBeNull();
   });
 });

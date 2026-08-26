@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { intelligenceEventSchema } from '@/lib/intelligence/agentAlerts';
 import { enrichAgentAlertEvents } from '@/lib/intelligence/agentAlertContext';
 import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
-import { resolveOperatorAgentId } from '@/lib/intelligence/agentNotificationStore';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -38,11 +37,6 @@ export async function GET(request: NextRequest) {
     .in('event_type', ALERT_EVENT_TYPES)
     .order('created_at', { ascending: isCatchUp })
     .limit(parsed.data.limit);
-
-  if (access.user?.role === 'realtor') {
-    const agentId = await resolveOperatorAgentId(access);
-    query = query.filter('metadata->>agentId', 'eq', agentId);
-  }
 
   if (parsed.data.after) query = query.gte('created_at', parsed.data.after);
   const { data, error } = await query;

@@ -9,8 +9,8 @@ import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const DEFAULT_MAX_DOWNLOAD_BYTES = 16 * 1024 * 1024;
-const DOWNLOADS_PER_MINUTE = 5;
+const DEFAULT_MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
+const DOWNLOADS_PER_MINUTE = 20;
 
 type TahDownloadRouteProps = {
   params: Promise<{

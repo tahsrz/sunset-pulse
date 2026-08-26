@@ -38,7 +38,7 @@ describe('TAH robot-facing routes', () => {
     expect(body).toContain('CATALOG_COUNT:');
     expect(body).toContain(`HEADLESS: ${fixture.routes.headless}`);
     expect(body).toMatch(/HEADLESS: https:\/\/sunsetpulse\.app\/tah\/[^/\s]+\/headless/);
-  }, 15_000);
+  });
 
   it('serves cartridge headless pages as plain text', async () => {
     const fixture = getCatalogFixtureMetadata();
@@ -165,7 +165,7 @@ describe('TAH robot-facing routes', () => {
     expect(body.progress.stages).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'seed', complete: true }),
-        expect.objectContaining({ id: 'swarm', complete: body.progress.totalCartridges >= 1000 })
+        expect.objectContaining({ id: 'swarm', complete: false })
       ])
     );
     expect(body.nodes).toEqual(
@@ -183,7 +183,7 @@ describe('TAH robot-facing routes', () => {
       expect(webNode.apiUrl).toContain(encodeURIComponent(webNode.searchQuery));
     }
     expect(body.links.length).toBeGreaterThan(0);
-  }, 15_000);
+  });
 
   it('serves progressive Atlas cartridge probes', async () => {
     const response = getAtlasProbe(new NextRequest('https://sunsetpulse.app/api/tah/atlas/probe?cursor=0&limit=3'));

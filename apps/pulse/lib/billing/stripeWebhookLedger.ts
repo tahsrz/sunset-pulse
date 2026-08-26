@@ -5,8 +5,6 @@ import { StripeWebhookEvent } from '@/models/StripeWebhookEvent';
 
 type StripeWebhookEventStatus = 'processing' | 'succeeded' | 'failed';
 
-const STRIPE_WEBHOOK_PROCESSING_LEASE_MS = 10 * 60 * 1000;
-
 type StripeWebhookClaimResult = {
   shouldProcess: boolean;
   reason?: 'duplicate_event';
@@ -91,7 +89,7 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
   }
 
   const existing = await findExistingEvent(eventId);
-  if (existing?.statuses.includes('succeeded')) {
+  if (existing) {
     await recordDuplicateStripeWebhookEvent(eventId, existing.stores);
     return {
       shouldProcess: false,
@@ -99,19 +97,6 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
       eventId,
       stores: existing.stores,
     };
-  }
-
-  if (existing) {
-    const canRetry = existing.statuses.some((status) => status === 'failed')
-      || existing.statuses.some((status) => status === 'processing' && isProcessingLeaseExpired(existing.receivedAt));
-
-    if (canRetry) {
-      await reopenStripeWebhookEvent(eventId, existing.stores);
-      return { shouldProcess: true, eventId, stores: existing.stores };
-    }
-
-    await recordDuplicateStripeWebhookEvent(eventId, existing.stores);
-    return { shouldProcess: false, reason: 'duplicate_event', eventId, stores: existing.stores };
   }
 
   const stores: string[] = [];
@@ -125,11 +110,14 @@ export async function claimStripeWebhookEvent(event: Stripe.Event): Promise<Stri
 
   const mongoResult = await insertMongoEvent(record);
   if (mongoResult === 'duplicate') {
-    // Supabase owns the claim. Mongo may already contain a mirror from an
-    // older delivery, but that must not suppress the authoritative claimant.
-    await incrementMongoDuplicateCount(eventId);
-  } else if (mongoResult === 'inserted') {
-    stores.push('mongo');
+    await recordDuplicateStripeWebhookEvent(eventId, ['mongo', ...stores]);
+    await settleDuplicateStripeWebhookStores(eventId, stores);
+    return { shouldProcess: false, reason: 'duplicate_event', eventId, stores: ['mongo', ...stores] };
+  }
+  if (mongoResult === 'inserted') stores.push('mongo');
+
+  if (stores.length === 0) {
+    throw new Error('Stripe webhook ledger is unavailable.');
   }
 
   return {
@@ -225,59 +213,28 @@ export async function failStripeWebhookEvent(eventId: string, stores: string[], 
 
 async function findExistingEvent(eventId: string) {
   const stores: string[] = [];
-  const statuses: StripeWebhookEventStatus[] = [];
-  const receivedAt: string[] = [];
 
   try {
     const { data, error } = await supabaseAdmin
       .from('stripe_webhook_events')
-      .select('event_id, status, received_at')
+      .select('event_id')
       .eq('event_id', eventId)
       .maybeSingle();
 
-    if (data && !error) {
-      stores.push('supabase');
-      statuses.push(normalizeLedgerStatus(data.status));
-      receivedAt.push(normalizeIso(data.received_at));
-    }
+    if (data && !error) stores.push('supabase');
   } catch (error) {
     console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_READ]', error);
   }
 
   try {
     await connectDB();
-    const existing = await StripeWebhookEvent.findOne({ eventId }).select('eventId status receivedAt').lean() as {
-      status?: unknown;
-      receivedAt?: unknown;
-    } | null;
-    if (existing) {
-      stores.push('mongo');
-      statuses.push(normalizeLedgerStatus(existing.status));
-      receivedAt.push(normalizeIso(existing.receivedAt));
-    }
+    const existing = await StripeWebhookEvent.findOne({ eventId }).select('eventId').lean();
+    if (existing) stores.push('mongo');
   } catch (error) {
     console.warn('[STRIPE_WEBHOOK_LEDGER_MONGO_READ]', error);
   }
 
-  return stores.length ? { stores, statuses, receivedAt } : null;
-}
-
-function isProcessingLeaseExpired(receivedAt: string[]) {
-  const oldestClaim = receivedAt
-    .map((value) => new Date(value).getTime())
-    .filter(Number.isFinite)
-    .sort((a, b) => a - b)[0];
-
-  return oldestClaim !== undefined && Date.now() - oldestClaim >= STRIPE_WEBHOOK_PROCESSING_LEASE_MS;
-}
-
-async function reopenStripeWebhookEvent(eventId: string, stores: string[]) {
-  await updateStripeWebhookEvent(eventId, stores, {
-    status: 'processing',
-    failedAt: undefined,
-    completedAt: undefined,
-    errorMessage: '',
-  });
+  return stores.length ? { stores } : null;
 }
 
 async function recordDuplicateStripeWebhookEvent(eventId: string, stores: string[]) {
@@ -432,11 +389,9 @@ async function updateSupabaseEvent(
 
     if (error) {
       console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_UPDATE]', error.message);
-      throw new Error(error.message);
     }
   } catch (error) {
     console.warn('[STRIPE_WEBHOOK_LEDGER_SUPABASE_UPDATE_FALLBACK]', error);
-    throw error;
   }
 }
 

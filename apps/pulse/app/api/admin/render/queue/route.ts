@@ -4,16 +4,13 @@ import connectDB from '@/lib/core/database';
 import { assertDestructiveDbOperationAllowed } from '@/lib/core/runtimeSafety';
 import RenderJob from '@/models/RenderJob';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
-import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 /**
  * GET /api/admin/render/queue
  * List all jobs in the queue.
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const access = await requireOperatorRouteAccess(req);
-    if (isAuthResponse(access)) return access;
     await connectDB();
     const jobs = await RenderJob.find({}).sort({ createdAt: -1 });
     return successResponse(jobs);
@@ -28,8 +25,6 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const access = await requireOperatorRouteAccess(req);
-    if (isAuthResponse(access)) return access;
     await connectDB();
     const recipe = await req.json();
     const jobId = `JOB-${Math.random().toString(36).substring(7).toUpperCase()}`;
@@ -52,8 +47,6 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const access = await requireOperatorRouteAccess(req);
-    if (isAuthResponse(access)) return access;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 

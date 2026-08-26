@@ -21,7 +21,6 @@ import {
   loadAgentConsoleConversionAnalytics,
   type AgentConsoleConversionAnalytics,
 } from '@/lib/agent-console/analytics';
-import { buildCommercialQueues, summarizeOutcomeEvidence } from '@/lib/agent-console/commercialQueues';
 import {
   PUBLIC_GUIDE_DISPOSITIONS,
   readPublicGuideDisposition,
@@ -75,11 +74,6 @@ type AgentSiteLead = {
   internal_note: string | null;
   reviewed_at: string | null;
   archived_at: string | null;
-  contact_attempted_at: string | null;
-  contact_channel: 'call' | 'email' | 'sms' | null;
-  responded_at: string | null;
-  funnel_id: string | null;
-  response_source: 'customer_reply' | 'appointment_booked' | null;
   metadata?: Record<string, unknown> | null;
 };
 
@@ -111,7 +105,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
 
   let query = supabaseAdmin
     .from('agent_site_leads')
-    .select('id, created_at, agent_id, site, site_name, listing_id, listing_mls_id, listing_name, source, page_path, name, email, phone, preferred_contact, message, status, internal_note, reviewed_at, archived_at, contact_attempted_at, contact_channel, responded_at, response_source, metadata, funnel_id')
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -139,20 +133,6 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
   ]);
   const { data, error } = leadResult;
   const fetchedLeads = (data || []) as AgentSiteLead[];
-  const { data: bookingRows } = fetchedLeads.length
-    ? await supabaseAdmin.from('scheduling_bookings').select('lead_id, status, appointment_type, start_time').in('lead_id', fetchedLeads.map((lead) => lead.id))
-    : { data: [] };
-  const { data: outcomeRows } = fetchedLeads.length
-    ? await supabaseAdmin.from('billable_outcomes').select('lead_id, outcome_type, billing_status, amount_usd, evidence, occurred_at').in('lead_id', fetchedLeads.map((lead) => lead.id)).order('occurred_at', { ascending: false })
-    : { data: [] };
-  const outcomeByLead = new Map<string, { outcome_type: string; billing_status: string; amount_usd: number; evidence: Record<string, unknown>; occurred_at: string }>();
-  for (const outcome of (outcomeRows || []) as Array<{ lead_id: string; outcome_type: string; billing_status: string; amount_usd: number; evidence: Record<string, unknown> | null; occurred_at: string }>) {
-    if (!outcomeByLead.has(outcome.lead_id)) outcomeByLead.set(outcome.lead_id, { ...outcome, evidence: outcome.evidence || {} });
-  }
-  const commercialQueues = buildCommercialQueues(
-    fetchedLeads.map((lead) => ({ id: lead.id, status: lead.status, contact_attempted_at: lead.contact_attempted_at, funnel_id: lead.funnel_id, responded_at: lead.responded_at })),
-    (bookingRows || []) as Array<{ lead_id: string; status: string; appointment_type: string; start_time: string }>,
-  );
   const newestLead = fetchedLeads[0];
   const leads = sortLeadsByIntelligence(fetchedLeads);
   const listingLeadCount = leads.filter((lead) => lead.listing_mls_id || lead.listing_id).length;
@@ -195,8 +175,6 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
           <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
             Newest: {newestLead ? formatDate(newestLead.created_at) : 'None'}
           </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2"><MetricCard label="Appointment Ready" value={commercialQueues.appointmentReady.length.toString()} /><MetricCard label="Hot Uncontacted" value={commercialQueues.hotUncontacted.length.toString()} /></div>
-          <div className="mt-6 grid gap-5 lg:grid-cols-2"><QueuePanel title="Appointment Ready" items={commercialQueues.appointmentReady.map(({ lead, booking }) => { const evidence = summarizeOutcomeEvidence(outcomeByLead.get(lead.id) || null, booking.status); return { id: lead.id, detail: `${booking.appointment_type.replaceAll('_', ' ')} · ${booking.status}`, context: evidence.detail || `${booking.start_time} · funnel ${lead.funnel_id || 'unknown'}`, eligibility: evidence.eligibility }; })} /><QueuePanel title="Hot Uncontacted" items={commercialQueues.hotUncontacted.map((lead) => ({ id: lead.id, detail: `status ${lead.status || 'new'}`, context: `funnel ${lead.funnel_id || 'unknown'} · no contact receipt`, eligibility: 'Not eligible' }))} /></div>
 
           <nav className="mt-6 flex flex-wrap gap-2">
             {[
@@ -282,10 +260,6 @@ function MetricCard({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-3xl font-black text-white">{value}</p>
     </div>
   );
-}
-
-function QueuePanel({ title, items }: { title: string; items: Array<{ id: string; detail: string; context: string; eligibility: string }> }) {
-  return <section className="border border-white/10 bg-white/[0.03] p-5"><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">{title}</h2><div className="mt-4 space-y-3">{items.length ? items.slice(0, 8).map((item) => <article key={item.id} className="border border-white/[0.08] p-3"><div className="flex items-center justify-between gap-3"><span className="truncate text-xs font-bold text-slate-300">{item.id}</span><span className="text-[10px] font-black uppercase text-cyan-200">{item.eligibility}</span></div><p className="mt-2 text-xs text-slate-300">{item.detail}</p><p className="mt-1 text-[11px] text-slate-500">{item.context}</p></article>) : <p className="text-sm text-slate-500">No leads in this queue.</p>}</div></section>;
 }
 
 function LeadCard({ lead }: { lead: AgentSiteLead }) {
@@ -733,13 +707,10 @@ function formatGuideSearchCriteria(brief: PublicGuideHandoffBrief) {
   const criteria = brief.searchCriteria;
   return [
     ...criteria.locations,
-    criteria.transactionType !== 'unknown' ? criteria.transactionType : null,
     criteria.priceMin !== null ? `from $${criteria.priceMin.toLocaleString()}` : null,
     criteria.priceMax !== null ? `up to $${criteria.priceMax.toLocaleString()}` : null,
     criteria.bedsMin !== null ? `${criteria.bedsMin}+ beds` : null,
     criteria.bathsMin !== null ? `${criteria.bathsMin}+ baths` : null,
-    criteria.leaseTermMonths !== null ? `${criteria.leaseTermMonths}-month lease` : null,
-    criteria.timeline ? `timeline: ${criteria.timeline}` : null,
     ...criteria.propertyTypes,
     ...criteria.priorities,
   ].filter(Boolean).join(' / ');

@@ -216,9 +216,7 @@ describe('Jamie public guide lead consent', () => {
       listing_mls_id: 'MLS-100',
       listing_name: '100 Verified Street',
       page_path: '/',
-      funnel_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
       metadata: expect.objectContaining({
-        funnelId: expect.stringMatching(/^[0-9a-f-]{36}$/),
         publicGuideBrief: sprintThreeBrief,
         publicGuideContext: expect.objectContaining({
           discussedListingCount: 2,
@@ -255,8 +253,6 @@ describe('Jamie public guide lead consent', () => {
     expect(JSON.stringify(mocks.insert.mock.calls[0][0])).not.toContain('Raw visitor question');
     expect(mocks.schedulePublicGuideEvent).toHaveBeenCalledWith(expect.objectContaining({
       event: 'handoff_completed',
-      funnelId: expect.stringMatching(/^[0-9a-f-]{36}$/),
-      targetId: 'lead-1',
       sessionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
     }));
   });

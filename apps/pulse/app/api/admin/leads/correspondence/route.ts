@@ -28,7 +28,6 @@ const patchSchema = z.discriminatedUnion('action', [
 export async function GET(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
   if (isAuthResponse(access)) return access;
-  if (access.user?.role === 'realtor') return NextResponse.json({ ok: false, error: 'Correspondence access requires an agent-scoped lead workspace.' }, { status: 403 });
   const audit = operatorAuditUser(access);
   const auditId = uuid.safeParse(audit.userId).success ? audit.userId : null;
   const [templateResult, draftResult, settingsResult] = await Promise.all([
@@ -45,7 +44,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
   if (isAuthResponse(access)) return access;
-  if (access.user?.role === 'realtor') return NextResponse.json({ ok: false, error: 'Correspondence access requires an agent-scoped lead workspace.' }, { status: 403 });
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message || 'Invalid correspondence request.' }, { status: 400 });
 
@@ -94,7 +92,6 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
   if (isAuthResponse(access)) return access;
-  if (access.user?.role === 'realtor') return NextResponse.json({ ok: false, error: 'Correspondence access requires an agent-scoped lead workspace.' }, { status: 403 });
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message || 'Invalid correspondence update.' }, { status: 400 });
   const input = parsed.data;

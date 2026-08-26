@@ -9,7 +9,6 @@ import { readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import { getStripeClient } from '@/lib/stripeClient';
 import { notifyOperatorSiteSetupSaved } from '@/lib/sites/siteLifecycleNotifications';
 import {
-  acceptsSiteCheckoutPaymentStatus,
   getSiteCheckoutBillingSnapshot,
   SITE_SUBSCRIPTION_TRIAL_DAYS,
   stripeId,
@@ -207,19 +206,12 @@ async function loadOwnedOnboardingSession(request: NextRequest, sessionUser: any
     throw new OnboardingError('Checkout session is not an agent-site subscription.', 400);
   }
 
-  if (!acceptsSiteCheckoutPaymentStatus(session)) {
-    throw new OnboardingError('Checkout session payment has not been accepted.', 402);
-  }
-
   const sessionUserId = session.metadata?.userId || session.client_reference_id || '';
   if (sessionUserId && sessionUserId !== sessionUser.userId) {
     throw new OnboardingError('Checkout session belongs to another user.', 403);
   }
 
   const customerEmail = session.customer_email || session.customer_details?.email || sessionUser.user.email || '';
-  if (!sessionUserId && !emailsMatch(customerEmail, sessionUser.user.email)) {
-    throw new OnboardingError('Checkout session ownership could not be verified.', 403);
-  }
   const billingSnapshot = getSiteCheckoutBillingSnapshot(session);
   const provisioningInput = {
     agentId: session.metadata?.agentId,
@@ -251,12 +243,6 @@ async function loadOwnedOnboardingSession(request: NextRequest, sessionUser: any
   }
 
   return { row, session, summary, billingSnapshot };
-}
-
-function emailsMatch(left: unknown, right: unknown) {
-  return typeof left === 'string'
-    && typeof right === 'string'
-    && left.trim().toLowerCase() === right.trim().toLowerCase();
 }
 
 function isAgentSiteCheckout(session: Stripe.Checkout.Session) {

@@ -83,7 +83,6 @@ apps/pulse/lib/generated/prisma/
 # OS files
 Thumbs.db
 desktop.ini
-debug.log
 
 # scratch and playground directories
 scratch/

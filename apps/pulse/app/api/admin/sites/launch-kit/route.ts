@@ -66,11 +66,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatedBy = operatorAuditUser(access);
-    const existingRow = await readSiteConfig(kit.agentId);
-    const expectedUpdatedAt = getUpdatedAt(existingRow);
-    const savedStores = expectedUpdatedAt
-      ? await saveSiteConfig(kit, updatedBy, { expectedUpdatedAt })
-      : await saveSiteConfig(kit, updatedBy);
+    const savedStores = await saveSiteConfig(kit, updatedBy);
 
     return successResponse({
       endpoint: '/api/admin/sites/launch-kit',
@@ -85,14 +81,6 @@ export async function PUT(request: NextRequest) {
       status === 500 ? error.message : null
     );
   }
-}
-
-function getUpdatedAt(value: unknown) {
-  if (!value || typeof value !== 'object') return undefined;
-  const row = value as { updated_at?: unknown; updatedAt?: unknown };
-  return typeof row.updated_at === 'string'
-    ? row.updated_at
-    : typeof row.updatedAt === 'string' ? row.updatedAt : undefined;
 }
 
 class RequestBodyError extends Error {

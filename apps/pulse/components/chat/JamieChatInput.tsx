@@ -60,15 +60,11 @@ const JamieChatInput: React.FC<JamieChatInputProps> = ({
           placeholder={placeholder || `Ask ${assistantName}...`} 
           onChange={handleInputChange} 
           onKeyDown={handleKeyDown}
-          disabled={isLoading}
-          aria-busy={isLoading}
           autoComplete="off"
         />
         <button 
           type="submit" 
-          disabled={isLoading || !input.trim()}
-          aria-label={isLoading ? 'Jamie is responding' : `Send message to ${assistantName}`}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 transition-colors"
         >
           <FaCogs className={isLoading ? 'animate-spin' : ''} />
         </button>

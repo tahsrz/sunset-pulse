@@ -82,7 +82,6 @@ export async function notifyAgentSiteLead(input: AgentLeadNotificationInput): Pr
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
         from,
         to: recipients,
@@ -121,6 +120,9 @@ function resolveLeadNotificationRecipients(site: TenantSite) {
   return uniqueEmails([
     site.integrationProfile.leadEmail,
     site.agentProfile.email,
+    process.env.AGENT_LEAD_NOTIFICATION_EMAIL,
+    process.env.OPERATOR_EMAIL,
+    process.env.ADMIN_EMAIL,
   ]);
 }
 

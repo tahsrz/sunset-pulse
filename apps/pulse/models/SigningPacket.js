@@ -10,13 +10,6 @@ const SigningPacketSchema = new Schema(
       index: true,
     },
     createdBy: { type: String },
-    commercialContext: {
-      leadId: { type: String, index: true },
-      funnelId: { type: String, index: true },
-      bookingId: { type: String, index: true },
-      agentId: { type: String },
-      site: { type: String },
-    },
     draftPayload: { type: Schema.Types.Mixed, required: true },
     payloadHash: { type: String, required: true, index: true },
     finalHash: { type: String },

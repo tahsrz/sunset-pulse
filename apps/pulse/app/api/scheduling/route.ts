@@ -11,10 +11,6 @@ import crypto from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
-import {
-  commercialBookingInputSchema,
-  createAuthoritativeCommercialBooking,
-} from '@/lib/scheduling/commercialBooking';
 
 // Static JSON imports for robust production environment seeding
 import defaultEmployeesJson from '@/config/default-employees.json';
@@ -506,9 +502,8 @@ export const POST = async (request: NextRequest) => {
       userPhone,
       tourType = 'in-person', // "in-person" | "video" | "virtual"
       message = '',
-      commercialContext,
     } = requestData;
-    const agentId = getAgentIdFromInput({ agentId: commercialContext?.agentId });
+    const agentId = getAgentIdFromInput({ agentId: requestData.agentId });
 
     if (!preferredDate || !preferredTime || !userEmail || !userName) {
       return errorResponse('Required scheduling parameters are missing (preferredDate, preferredTime, userEmail, userName).', 400);
@@ -529,43 +524,9 @@ export const POST = async (request: NextRequest) => {
       mappedTourType = 'Jamie-Guided';
     }
 
-    // Normalize the requested time before any persistence.
-    let timeString = preferredTime;
-    if (!/^\d{2}:\d{2}$/.test(timeString)) {
-      timeString = '10:00'; // Default to 10:00 AM if flexible/invalid format
-    }
-    const startStr = `${preferredDate}T${timeString}:00`;
-    const startTime = new Date(startStr);
-    const endTime = new Date(startTime.getTime() + 45 * 60 * 1000); // 45 minute tour duration
-    if (!Number.isFinite(startTime.getTime())) {
-      return errorResponse('The preferred booking date and time are invalid.', 400);
-    }
-
-    let authoritativeBooking: Awaited<ReturnType<typeof createAuthoritativeCommercialBooking>> | null = null;
-    if (commercialContext) {
-      const parsedCommercialBooking = commercialBookingInputSchema.safeParse({
-        ...commercialContext,
-        agentId,
-        title: `${appointmentLabel(commercialContext?.appointmentType)}${propertyId ? ` for Asset: ${propertyId}` : ''}`,
-        description: message || `User ${userName} requested a ${tourType} tour.`,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        attendee: {
-          email: userEmail,
-          name: userName,
-          phone: userPhone || '',
-          timeZone: 'America/Chicago',
-        },
-      });
-      if (!parsedCommercialBooking.success) {
-        return errorResponse('Invalid commercial booking lineage.', 400, parsedCommercialBooking.error.flatten());
-      }
-      authoritativeBooking = await createAuthoritativeCommercialBooking(parsedCommercialBooking.data);
-    }
-
-    // Supabase is authoritative for commercial bookings; Mongo remains a compatibility projection.
+    // 1. Connect MongoDB and Create Tour Request
     await connectDB();
-    const tourProjection = {
+    const newTour = new TourRequest({
       property: finalPropertyId,
       user: sessionUser.userId,
       userName,
@@ -576,29 +537,23 @@ export const POST = async (request: NextRequest) => {
       tourType: mappedTourType,
       message,
       agentId,
-      authoritativeBookingId: authoritativeBooking?.booking.id,
-      leadId: commercialContext?.leadId,
-      funnelId: commercialContext?.funnelId,
-      site: commercialContext?.site,
-      appointmentType: commercialContext?.appointmentType,
-    };
-    const newTour = authoritativeBooking
-      ? await TourRequest.findOneAndUpdate(
-          { authoritativeBookingId: authoritativeBooking.booking.id },
-          { $setOnInsert: tourProjection },
-          { upsert: true, new: true },
-        )
-      : await TourRequest.create(tourProjection);
+    });
+    await newTour.save();
 
-    // The local Prisma/Cal.com store is also a projection for commercial bookings.
-    const bookingUid = authoritativeBooking?.booking.uid || crypto.randomUUID();
-    const existingProjection = authoritativeBooking
-      ? await prisma.booking.findUnique({ where: { uid: bookingUid } })
-      : null;
-    const newBooking = existingProjection || await prisma.booking.create({
+    // 2. Schedule booking into PostgreSQL via the local Pulse Prisma client
+    let timeString = preferredTime;
+    if (!/^\d{2}:\d{2}$/.test(timeString)) {
+      timeString = '10:00'; // Default to 10:00 AM if flexible/invalid format
+    }
+    const startStr = `${preferredDate}T${timeString}:00`;
+    const startTime = new Date(startStr);
+    const endTime = new Date(startTime.getTime() + 45 * 60 * 1000); // 45 minute tour duration
+
+    const bookingUid = crypto.randomUUID();
+    const newBooking = await prisma.booking.create({
       data: {
         uid: bookingUid,
-        title: `${appointmentLabel(commercialContext?.appointmentType)}${propertyId ? ` for Asset: ${propertyId}` : ''}`,
+        title: `${tourType.toUpperCase()} Tour for Asset: ${propertyId || 'Sunset Asset'}`,
         description: message || `User ${userName} requested a ${tourType} tour.`,
         startTime,
         endTime,
@@ -612,13 +567,6 @@ export const POST = async (request: NextRequest) => {
           },
         },
         userPrimaryEmail: sessionUser.user?.email || userEmail,
-        metadata: authoritativeBooking ? {
-          authoritativeBookingId: authoritativeBooking.booking.id,
-          leadId: commercialContext.leadId,
-          funnelId: commercialContext.funnelId,
-          site: commercialContext.site,
-          appointmentType: commercialContext.appointmentType,
-        } : undefined,
       },
     });
 
@@ -633,7 +581,6 @@ export const POST = async (request: NextRequest) => {
       metadata: {
         mongoTourId: newTour._id.toString(),
         postgresBookingId: newBooking.id,
-        authoritativeBookingId: authoritativeBooking?.booking.id || null,
         bookingUid: newBooking.uid,
         preferredDate,
         preferredTime,
@@ -644,8 +591,6 @@ export const POST = async (request: NextRequest) => {
       message: 'Booking allocation synchronized across MongoDB and PostgreSQL Scheduler.',
       requestId: newTour._id,
       bookingId: newBooking.id,
-      authoritativeBookingId: authoritativeBooking?.booking.id || null,
-      duplicate: authoritativeBooking?.duplicate || false,
       bookingUid: newBooking.uid,
     }, 201);
 
@@ -654,13 +599,6 @@ export const POST = async (request: NextRequest) => {
     return errorResponse('Critical failure in scheduling synchronization.', 500, error.message);
   }
 };
-
-function appointmentLabel(value?: string) {
-  if (value === 'buyer_consultation') return 'Buyer Consultation';
-  if (value === 'rental_consultation') return 'Rental Consultation';
-  if (value === 'seller_consultation') return 'Seller Consultation';
-  return 'Property Tour';
-}
 
 
 // Deterministic UUID v5 generator using native Node.js crypto module

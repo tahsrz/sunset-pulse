@@ -64,7 +64,6 @@ describe('site onboarding route', () => {
     onboardingMocks.retrieveSession.mockResolvedValue({
       id: 'cs_site_123',
       mode: 'subscription',
-      payment_status: 'paid',
       client_reference_id: 'user-1',
       customer: 'cus_123',
       subscription: 'sub_123',

@@ -12,9 +12,7 @@ This document summarizes the AI and geospatial integrations added around the Com
 | Kepler Spatial Lab | `/spatial-lab` | Exploratory geospatial workbench for listing signals. |
 | deck.gl Signal Map | `/spatial-lab/deck` | App-native geospatial layer surface for productized map features. |
 | Lead Intelligence Crawler | `/api/intelligence/crawl-lead` | Operator-guarded Crawl4AI ingestion route for regional sites, brokerages, and public records. |
-| Native Notification Pipeline | `/api/notifications/high-intent/cron` | Durable native inbox plus Resend and optional Telnyx delivery. |
-| Jamie Retrieval Inspector | `/atlas`, `/api/atlas/retrieval` | Operator-only traces for candidate selection, searched cartridges, evidence, latency, fallback state, and fixture scoring. |
-| Shared Knowledge Retrieval | `lib/ai/knowledgeRetrieval.ts` | Agent-neutral TAH/HAT evidence, crawler state, and traces consumed by Jamie, Abidan, Atlas, and evaluation tooling. |
+| Novu Notification Pipeline | `/api/notifications/novu` | Operator-guarded workflow trigger and local notification event ledger. |
 
 ## Runtime Stack
 
@@ -29,7 +27,7 @@ This document summarizes the AI and geospatial integrations added around the Com
 | Kepler.gl | Analyst-oriented spatial workbench. | `apps/pulse/components/spatial/KeplerSpatialLab.tsx` |
 | deck.gl | Product-native signal map layers. | `apps/pulse/components/spatial/DeckListingSignals.tsx` |
 | Crawl4AI | Local-first lead intelligence crawler that converts approved URLs to Markdown, compact JSON, readable `.source.md` audit files, and forged binary indexed `.tah` cartridges. | `apps/pulse/lib/lead-intel/crawlLead.ts`, `apps/pulse/app/api/intelligence/crawl-lead/route.ts`, `apps/pulse/workers/lead-intel-crawler/crawl4ai_worker.py` |
-| Native notifications | Database-owned inbox, atomic delivery claims, Resend email, and optional Telnyx SMS. | `apps/pulse/lib/intelligence/agentAlertNotifications.ts`, `apps/pulse/lib/notifications/agentAlertChannels.ts` |
+| Novu | Unified notification workflow trigger for lead alerts, staff ops, scheduling, and future in-app notifications. | `apps/pulse/lib/notifications/novu.ts`, `apps/pulse/app/api/notifications/novu/route.ts` |
 
 ## Request Flow
 
@@ -50,7 +48,7 @@ flowchart LR
   Graph --> TZeroCommand["TensorZero Command Eval"]
   CommandAPI --> Volt["VoltAgent Advisor"]
   CommandAPI --> Crawl4AI["Crawl4AI Lead Intel"]
-  CommandAPI --> Notify["Native Inbox + Resend"]
+  CommandAPI --> Novu["Novu Notifications"]
 ```
 
 ## Privacy And Local Data
@@ -62,7 +60,7 @@ Local ledgers are intentionally compact and avoid raw command or chat text.
 - TensorZero-ready rows store fingerprints, ids, variant names, counts, route metadata, tool names, grounding flags, and scores.
 - Langfuse traces store stage metadata and counts, not long source excerpts or generated copy.
 - Crawl4AI lead-intel rows store operator-approved source URLs, compact metadata, capped Markdown, and compact JSON signals in a local JSONL ledger.
-- Notification rows store scoped recipients, idempotency keys, compact payloads, lifecycle state, and provider message ids.
+- Novu rows store workflow ids, recipient references, payload keys, fingerprints, and provider statuses rather than raw notification bodies.
 
 Ignored local outputs:
 
@@ -105,10 +103,15 @@ LEAD_INTEL_PYTHON=python
 LEAD_INTEL_WORKER_PATH=
 LEAD_INTEL_LEDGER_PATH=
 
-RESEND_API_KEY=
-AGENT_ALERT_FROM_EMAIL=
-AGENT_ALERT_SMS_ENABLED=false
-CRON_SECRET=
+NOVU_SECRET_KEY=
+NOVU_API_URL=https://api.novu.co
+NOVU_NOTIFICATIONS_DISABLED=false
+NOVU_LEDGER_DISABLED=false
+NOVU_LEDGER_PATH=
+NOVU_HOT_LEAD_WORKFLOW_ID=lead-hot-alert
+NOVU_OPERATOR_SUBSCRIBER_ID=sunset-operator
+NOVU_OPERATOR_EMAIL=
+NOVU_OPERATOR_PHONE=
 ```
 
 ## Validation
@@ -119,7 +122,7 @@ Use these checks after changing this stack:
 npm run test:unit --workspace=apps/pulse -- tests/unit/command-center.test.ts
 npm run test:unit --workspace=apps/pulse -- tests/unit/jamie-tensorzero-backbone.test.ts
 npm run test:unit --workspace=apps/pulse -- tests/unit/lead-intel-crawl.test.ts
-npm run test:unit --workspace=apps/pulse -- tests/unit/agent-alert-channels.test.ts
+npm run test:unit --workspace=apps/pulse -- tests/unit/novu-notifications.test.ts
 npx tsc -p apps/pulse/tsconfig.json --noEmit --pretty false
 npm run build --workspace=apps/pulse
 ```

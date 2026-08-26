@@ -42,10 +42,8 @@ export default function SunsetChatPage() {
     setNickname(savedNickname);
     fetchPosts();
     fetchModerationStatus();
-    const refreshWhenVisible = () => { if (document.visibilityState === 'visible') void fetchPosts(); };
-    const interval = window.setInterval(refreshWhenVisible, 30000);
-    document.addEventListener('visibilitychange', refreshWhenVisible);
-    return () => { window.clearInterval(interval); document.removeEventListener('visibilitychange', refreshWhenVisible); };
+    const interval = window.setInterval(fetchPosts, 10000);
+    return () => window.clearInterval(interval);
   }, []);
 
   const remaining = SUNSET_CHAT_MAX_MESSAGE_LENGTH - message.length;

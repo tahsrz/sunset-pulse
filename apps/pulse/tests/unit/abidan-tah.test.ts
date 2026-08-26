@@ -1,7 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
-
+import { describe, expect, it } from 'vitest';
 import { getAbidanTahContext } from '@/lib/ai/brain/abidan_tah';
 
 describe('Abidan TAH context', () => {

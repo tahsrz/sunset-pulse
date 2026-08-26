@@ -54,24 +54,16 @@ export async function POST(req: NextRequest) {
       return validationErrorResponse(parsed.error.flatten());
     }
 
-    const { messages, listingId, isDevMode } = parsed.data;
-    const serverIsDevMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
-      ? Boolean(isDevMode)
-      : sessionUser?.role === 'admin' || sessionUser?.role === 'operator';
-    // Tenant and persona selection are server-owned. Public callers use the
-    // configured default agent; operator sessions may use the guarded persona.
-    const agentId = getAgentIdFromInput();
-    const serverPersonaMode = sessionUser?.role === 'admin' || sessionUser?.role === 'operator'
-      ? parsed.data.personaMode === 'guarded_real_estate' ? 'guarded_real_estate' : 'general'
-      : 'general';
+    const { messages, listingId, isDevMode, memoryContext, personaMode } = parsed.data;
+    const agentId = getAgentIdFromInput({ agentId: parsed.data.agentId || undefined });
     const propertyData = await resolveJamieListingContext(listingId);
     const result = await runTensorZeroJamieChat({
       messages,
       propertyData,
-      memoryContext: undefined,
-      isDevMode: serverIsDevMode,
+      memoryContext,
+      isDevMode,
       agentId,
-      personaMode: serverPersonaMode,
+      personaMode: personaMode === 'guarded_real_estate' ? 'guarded_real_estate' : 'general',
       isMock: process.env.NEXT_PUBLIC_MOCK_MODE === 'true',
     });
 

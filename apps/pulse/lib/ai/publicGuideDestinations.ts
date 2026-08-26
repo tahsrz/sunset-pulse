@@ -11,11 +11,6 @@ export const PUBLIC_GUIDE_DESTINATIONS: Record<PublicGuideActionId, {
   kind: PublicGuideAction['kind'];
   label: string;
 }> = {
-  book_consultation: {
-    description: 'Choose a time for a buyer, rental, or seller consultation.',
-    kind: 'link',
-    label: 'Book a consultation',
-  },
   browse_homes: {
     description: 'Open the full verified property search.',
     kind: 'link',
@@ -52,19 +47,15 @@ export function buildPublicGuideActions(input: {
 }) {
   const actions: PublicGuideAction[] = [];
   const productQuestion = /\b(?:sunset pulse|command center|agent site|launch kit|tah)\b/i.test(input.userMessage);
-  const consultationType = consultationAppointmentType(input.userMessage);
 
   if (input.context?.listing) {
     actions.push(createAction('view_listing', input.context.listing.href));
   }
 
   if (input.context?.agent) {
-    if (consultationType) actions.push(createAction('book_consultation', `${input.rootOrigin}/schedule?appointmentType=${consultationType}&site=${encodeURIComponent(input.context.agent.site)}`));
     actions.push({
       ...createAction('contact_agent'),
-      label: input.outcome === 'listing_search' && input.listings.length === 0
-        ? `Ask ${input.context.agent.agentName} to search`
-        : `Contact ${input.context.agent.agentName}`,
+      label: `Contact ${input.context.agent.agentName}`,
     });
     actions.push(createAction('view_agent_site', input.context.agent.publicUrl));
   }
@@ -80,13 +71,6 @@ export function buildPublicGuideActions(input: {
   return actions
     .filter((action, index, all) => all.findIndex((candidate) => candidate.id === action.id) === index)
     .slice(0, 3);
-}
-
-function consultationAppointmentType(message: string) {
-  if (!/\b(?:consult|consultation|meet|meeting|appointment|talk to)\b/i.test(message)) return null;
-  if (/\b(?:sell(?:ing|er)?|listing my home)\b/i.test(message)) return 'seller_consultation';
-  if (/\b(?:rent|rental|lease|tenant)\b/i.test(message)) return 'rental_consultation';
-  return 'buyer_consultation';
 }
 
 function createAction(id: PublicGuideActionId, href?: string): PublicGuideAction {

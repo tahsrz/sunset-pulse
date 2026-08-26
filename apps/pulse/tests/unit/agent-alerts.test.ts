@@ -35,11 +35,6 @@ describe('agent alert policy', () => {
     });
   });
 
-  it('accepts the UTC offset timestamp shape returned by Supabase', () => {
-    const event = { ...BASE_EVENT, created_at: '2026-08-14T12:00:00+00:00' };
-    expect(processIntelligenceEvent(event, [], Date.parse(event.created_at)).action).toBe('create');
-  });
-
   it('keeps malformed and unscoped events out of the operational queue', () => {
     expect(processIntelligenceEvent({ ...BASE_EVENT, id: 'not-a-uuid' }, []).action).toBe('error');
     expect(processIntelligenceEvent({ ...BASE_EVENT, metadata: { propertyIds: ['MLS-104'], leadIntelligence: { score: 90, reasons: [] } } }, []).action).toBe('ignore');

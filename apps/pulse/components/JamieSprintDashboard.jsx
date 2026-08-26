@@ -18,7 +18,7 @@ const JamieSprintDashboard = ({ activeSprintId }) => {
       try {
         const { data, error } = await supabase
           .from('tasks')
-          .select('id, title, status, priority, api_endpoint, duration_minutes, description')
+          .select('*')
           .eq('sprint_id', activeSprintId)
           .order('created_at', { ascending: true });
         
