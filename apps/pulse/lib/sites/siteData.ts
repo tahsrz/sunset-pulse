@@ -15,6 +15,7 @@ import {
 import { getAgentSiteSubdomain, getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import { getSiteReadinessChecks } from '@/lib/sites/siteReadiness';
 import { SiteConfig } from '@/models/SiteConfig';
+import { readPublishedVibeProjection } from '@/lib/cms/vibeService';
 
 export type TenantSite = {
   site: string;
@@ -37,6 +38,9 @@ export type TenantSite = {
   complianceProfile: ComplianceProfile;
   integrationProfile: IntegrationProfile;
   sections: Array<{ type: string; visible?: boolean; order?: number }>;
+  activeVibeRevisionId?: string;
+  vibeCssVars?: Record<string, string>;
+  vibeVoiceConfig?: Record<string, unknown>;
 };
 
 export type AgentTenantSite = TenantSite & {
@@ -69,7 +73,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
     }
 
     if (data) {
-      return normalizeTenantSite(site, data, fallback);
+      return hydrateVibeProjection(normalizeTenantSite(site, data, fallback), data);
     }
   } catch (error) {
     console.warn('[TENANT_SITE_SUPABASE_FALLBACK]', error);
@@ -88,7 +92,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
 
     if (!config) return fallback;
 
-    return normalizeTenantSite(site, config, fallback);
+    return hydrateVibeProjection(normalizeTenantSite(site, config, fallback), config);
   } catch (error) {
     console.error('[TENANT_SITE_DATA_ERROR]', error);
     return fallback;
@@ -242,4 +246,17 @@ function normalizeSections(value: unknown) {
 
 function escapePostgrestValue(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+async function hydrateVibeProjection(tenantSite: TenantSite, config: Record<string, any>): Promise<TenantSite> {
+  const revisionId = config.active_vibe_revision_id || config.activeVibeRevisionId;
+  if (!revisionId) return tenantSite;
+  try {
+    const projection = await readPublishedVibeProjection({ revisionId: String(revisionId), tenantId: config.tenant_id || config.tenantId || 'default' });
+    if (!projection) return tenantSite;
+    return { ...tenantSite, activeVibeRevisionId: projection.revisionId, vibeCssVars: projection.cssVars, vibeVoiceConfig: projection.voiceConfig };
+  } catch (error) {
+    console.warn('[TENANT_SITE_VIBE_PROJECTION]', error);
+    return tenantSite;
+  }
 }
