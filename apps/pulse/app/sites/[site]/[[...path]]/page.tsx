@@ -2,7 +2,7 @@
 import { headers } from 'next/headers';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   ArrowRight,
   ArrowLeft,
@@ -161,7 +161,7 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
       }
 
       return (
-        <main className="min-h-screen bg-[#061017] text-white" style={{ fontFamily: tenantSite.fontFamily }}>
+        <main className="min-h-screen bg-[#061017] text-white" style={{ fontFamily: tenantSite.fontFamily, ...tenantSite.vibeCssVars } as React.CSSProperties}>
           <AgentSiteHeader site={tenantSite} />
           <AgentListingDetail
             site={tenantSite}
@@ -182,7 +182,7 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
   }
 
   return (
-    <main className="min-h-screen bg-[#061017] text-white" style={{ fontFamily: tenantSite.fontFamily }}>
+    <main className="min-h-screen bg-[#061017] text-white" style={{ fontFamily: tenantSite.fontFamily, ...tenantSite.vibeCssVars } as React.CSSProperties}>
       <AgentSiteHeader site={tenantSite} />
 
       {sections.has('hero') && (
