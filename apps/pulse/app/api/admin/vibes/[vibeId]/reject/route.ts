@@ -4,6 +4,7 @@ import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { transitionVibe } from '@/lib/cms/vibeWorkflow';
 import { z } from 'zod';
+import VibeAuditEvent from '@/models/VibeAuditEvent';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   if (!transition.ok) return NextResponse.json({ error: transition.message, code: transition.code }, { status: 409 });
   const updated = await Vibe.findOneAndUpdate({ vibeId, tenantId, status: vibe.status || 'draft' }, { $set: { status: 'draft', updatedBy: operatorAuditUser(access).userId, updatedAt: new Date(), 'migrationMetadata.lastRejectionReason': body.data.reason } }, { new: true }).lean();
   if (!updated) return NextResponse.json({ error: 'Vibe changed before rejection.' }, { status: 409 });
+  await VibeAuditEvent.create({ vibeId, tenantId, action: 'rejected', actorId: operatorAuditUser(access).userId, reason: body.data.reason });
   return NextResponse.json({ vibe: updated });
 }
 
