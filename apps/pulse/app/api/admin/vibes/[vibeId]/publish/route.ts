@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
+import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { publishVibeRevision } from '@/lib/cms/vibeService';
 import { vibeDraftSchema } from '@/lib/cms/vibeSchema';
@@ -12,17 +13,20 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   if (isAuthResponse(access)) return access;
   const { vibeId } = await context.params;
   const tenantId = request.nextUrl.searchParams.get('tenantId')?.trim() || 'default';
-  const body = await request.json().catch(() => null) as { draft?: unknown; changeSummary?: string } | null;
+  const body = await request.json().catch(() => null) as { changeSummary?: string } | null;
   const parsed = publishInputSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid publish payload.', issues: parsed.error.flatten() }, { status: 400 });
   try {
     await connectDB();
+    const vibe = await Vibe.findOne({ vibeId, tenantId }).select('status draftPayload').lean() as any;
+    if (!vibe) return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
+    if (vibe.status !== 'in_review') return NextResponse.json({ error: 'Only vibes in review can be published.', code: 'INVALID_TRANSITION' }, { status: 409 });
+    const draft = vibeDraftSchema.parse(vibe.draftPayload);
     const revision = await publishVibeRevision({
       vibeId,
       tenantId,
-      draft: parsed.data.draft,
+      draft,
       actorId: operatorAuditUser(access).userId,
-      changeSummary: parsed.data.changeSummary,
+      changeSummary: parsed.success ? parsed.data.changeSummary : undefined,
     });
     return NextResponse.json({ revision }, { status: 201 });
   } catch (error) {
@@ -33,6 +37,5 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
 }
 
 const publishInputSchema = z.object({
-  draft: vibeDraftSchema,
   changeSummary: z.string().trim().max(1_000).optional(),
 }).strict();
