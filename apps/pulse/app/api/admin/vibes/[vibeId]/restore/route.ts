@@ -3,6 +3,7 @@ import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { transitionVibe } from '@/lib/cms/vibeWorkflow';
+import VibeAuditEvent from '@/models/VibeAuditEvent';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest, context: { params: Promise<{ vibeId: string }> }) {
@@ -15,5 +16,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   const restoredStatus = vibe.migrationMetadata?.lastNonTrashStatus || 'draft';
   const updated = await Vibe.findOneAndUpdate({ vibeId, tenantId, status: 'trash' }, { $set: { status: restoredStatus, updatedBy: operatorAuditUser(access).userId, updatedAt: new Date() } }, { new: true }).lean();
   if (!updated) return NextResponse.json({ error: 'Vibe changed before restoration.' }, { status: 409 });
+  await VibeAuditEvent.create({ vibeId, tenantId, action: 'restored', actorId: operatorAuditUser(access).userId });
   return NextResponse.json({ vibe: updated });
 }
