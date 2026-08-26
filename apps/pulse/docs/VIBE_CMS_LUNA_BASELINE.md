@@ -828,3 +828,112 @@ Do not add taxonomy expansion, media management, bulk editing, scheduled publish
 ### Luna Resume Instruction
 
 Start with Phase 0. After producing a clean, narrowly scoped PR diff, execute Phases 1–6 in order using the Standard Luna Ticket Template and the existing Luna Task Rules. Treat each phase as multiple small tickets where necessary. Do not skip the immutable review-revision correction, and do not begin deferred expansion while the first vertical milestone remains unproven.
+
+## Pre-Merge Review Findings and Required Luna Actions
+
+This section records the final merge-readiness review. These findings block production merge even when automated checks are green. Luna must complete them in the order below without broadening the CMS scope.
+
+### Blocker 1: Isolate the PR Diff
+
+The current PR contains approximately 351 changed files and extensive unrelated deletions or rewrites across profit, billing, scheduling, representation, tenancy, Atlas, migrations, tests, documentation, and CI configuration. This violates the release gate prohibiting unrelated work.
+
+Required action:
+
+1. Preserve the current branch and commits as recoverable history.
+2. Produce a CMS-only PR diff against the intended current `main` base.
+3. Include only Vibe CMS schemas, models, services, routes, UI, focused tests, this baseline, explicit legacy compatibility changes, and narrow Launch Kit/public-runtime integration.
+4. Exclude unrelated product, platform, migration, documentation, test, and CI deletions.
+5. Review the final changed-file list before any merge.
+
+Exit condition: every file in the PR is directly justified by the first Vibe CMS vertical milestone.
+
+### Blocker 2: Resolve the Production Site Pointer Path
+
+The application service writes `activeVibeRevisionId` to Mongo `SiteConfig`, while public site loading checks Supabase first and returns immediately when a Supabase site record exists. A production site with a Supabase record may therefore ignore the Mongo pointer.
+
+Required action:
+
+1. Follow the locked datastore authority and projection decision in this baseline.
+2. Make the apply operation update the authoritative pointer path used by public reads, or make public reads resolve the authoritative Mongo pointer before accepting the Supabase projection.
+3. Do not introduce two independently writable authoritative pointers.
+4. Preserve safe fallback behavior when a revision cannot be resolved.
+5. Add focused coverage for a site that exists in both Supabase and Mongo.
+
+Exit condition: applying one published revision causes the same revision ID to resolve through the production public-site read path.
+
+### Blocker 3: Restore the Repeatable Editorial Cycle
+
+Saving changes to a published Vibe currently mutates `draftPayload` while leaving the record in `published`. Submission accepts only `draft`, so edited published content cannot cleanly re-enter review.
+
+Required action:
+
+1. Preserve the existing published revision and live-site pointer.
+2. On the first edit after publication, establish a new mutable draft state or an equivalent explicit draft branch without mutating published history.
+3. Allow that new draft to be submitted as a new immutable review revision.
+4. Publish only the submitted revision.
+5. Prove that the previously applied site remains unchanged until the new published revision is explicitly applied.
+
+Exit condition: the same Vibe can complete multiple draft → review → publish cycles while older published revisions remain immutable and usable.
+
+### Blocker 4: Add an Operator Site-Application Screen
+
+The apply API exists, but the vertical milestone cannot currently be completed through the admin UI without a browser-console request.
+
+Required action:
+
+1. Add a status-aware application screen reachable from the published revision or editor workflow.
+2. Let the operator select or confirm an authorized Launch Kit site.
+3. Display the exact Vibe, revision number, revision ID, and current site pointer before confirmation.
+4. Apply only published revisions.
+5. Display the resulting pointer, applying actor, and timestamp after success.
+
+Exit condition: an authorized operator can apply a published revision to a test site without manually constructing an API request.
+
+### Blocker 5: Fix Authenticated Draft Preview Loading
+
+The preview page performs a protected server-side API fetch without explicitly forwarding the incoming operator authentication context. Production may therefore display `Unable to load preview` for an authenticated operator.
+
+Required action:
+
+1. Prefer a shared server-side preview service or direct authorized data read rather than a server component calling its own protected HTTP endpoint.
+2. If the HTTP boundary is retained, forward only the required authenticated request context using the established application pattern.
+3. Keep preview draft-only and inaccessible to anonymous or public callers.
+4. Verify preview behavior in the deployed environment with a real operator session.
+
+Exit condition: an authenticated operator can load draft preview in production, while an anonymous request remains denied.
+
+### Follow-Up: Make Lifecycle State and Audit Persistence Consistent
+
+Publication and site application record audit events transactionally. Creation, rejection, archive, trash, and restore currently mutate lifecycle state and then write audit events separately, allowing an audit failure after state has changed.
+
+Required action:
+
+- Move each state transition and its required audit event into one established transactional service boundary where supported.
+- Return success only when the state change and required audit event have both completed.
+- Add focused failure tests for the chosen boundary.
+
+Exit condition: a failed required audit write cannot leave a successful but unaudited lifecycle transition.
+
+### Required CMS Verification Before Merge
+
+Automated lint, unit tests, Jamie E2E, Vercel preview comments, and Vercel deployment have passed, but they do not prove the CMS vertical milestone. Before merge, execute and record:
+
+1. Create a disposable Vibe through the admin UI.
+2. Save structured visual and linguistic fields.
+3. Load authenticated draft preview.
+4. Submit an immutable review revision.
+5. Publish exactly that submitted revision.
+6. Apply it to a controlled Launch Kit site through the admin UI.
+7. Confirm the public site reports the applied revision ID and compiled CSS variables.
+8. Confirm the published voice tone reaches the site assistant profile.
+9. Edit the mutable draft without publishing or applying it.
+10. Confirm the public revision ID and rendered tokens remain unchanged.
+11. Complete a second review and publication cycle.
+12. Roll back by creating and explicitly applying a new revision derived from an older snapshot.
+13. Restore the controlled site to its original revision.
+
+Exit condition: the complete operator-to-public flow, repeatable editorial cycle, draft/live isolation, and recovery path are recorded with revision IDs and observable results.
+
+### Updated Luna Resume Instruction
+
+Do not merge the current PR based solely on green checks. Begin with Blocker 1, then complete Blockers 2–5, the transactional audit follow-up, and the required CMS verification. Stop and escalate only when a choice changes the locked datastore authority, tenant boundary, transaction model, or public runtime contract.
