@@ -130,6 +130,7 @@ export async function applyVibeRevisionToSite(input: { siteId: string; tenantId:
         { new: true, session },
       ).lean();
       if (!site) throw new Error('SITE_NOT_FOUND');
+      await VibeAuditEvent.create([{ vibeId: revision.vibeId, tenantId: input.tenantId, action: 'applied', revisionId: input.revisionId, siteId: input.siteId, actorId: input.actorId }], { session });
     });
     return site;
   } finally {
