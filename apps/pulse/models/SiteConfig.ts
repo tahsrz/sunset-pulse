@@ -104,6 +104,8 @@ const SiteConfigSchema = new mongoose.Schema({
   },
   lastModifiedBy: { type: String, default: 'Jamie' }
   ,activeVibeRevisionId: { type: String, index: true }
+  ,activeVibeRevisionAppliedAt: { type: Date }
+  ,activeVibeRevisionAppliedBy: { type: String }
 }, { timestamps: true });
 
 SiteConfigSchema.index({ ownerId: 1, updatedAt: -1 });

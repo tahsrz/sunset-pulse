@@ -153,7 +153,7 @@ export async function applyVibeRevisionToSite(input: { siteId: string; tenantId:
       if (!revision) throw new Error('PUBLISHED_REVISION_NOT_FOUND');
       site = await SiteConfig.findOneAndUpdate(
         { agentId: input.siteId },
-        { $set: { activeVibeRevisionId: input.revisionId, lastModifiedBy: input.actorId, updatedAt: new Date() } },
+        { $set: { activeVibeRevisionId: input.revisionId, activeVibeRevisionAppliedAt: new Date(), activeVibeRevisionAppliedBy: input.actorId, lastModifiedBy: input.actorId, updatedAt: new Date() } },
         { new: true, session },
       ).lean();
       if (!site) throw new Error('SITE_NOT_FOUND');
