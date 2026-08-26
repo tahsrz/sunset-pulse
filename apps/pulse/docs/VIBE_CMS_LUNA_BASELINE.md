@@ -672,11 +672,12 @@ Completed in the current working tree:
 - Added `activeVibeRevisionId` to the site configuration model.
 - Added service-level tests for deterministic hashing and compiled token output.
 - Added authenticated, tenant-scoped `GET /api/admin/vibes` with bounded search and pagination.
+- Added authenticated `GET` and optimistic-concurrency `PATCH` admin detail route at `/api/admin/vibes/:vibeId`.
 
 Next recommended slice:
 
 - Add service-level tests for draft conflicts, revision numbering, and publication failures.
-- Add `GET /api/admin/vibes/:id` and draft read/write service coverage.
+- Add revision service tests for numbering and publication failures.
 - Wire Launch Kit runtime reads to the authoritative active revision pointer.
 
 Known verification note: the repository-wide TypeScript check currently reports pre-existing errors in unrelated Jamie guide, TAH, and weekly-dispatch tests. The focused Vitest runner also has an existing Windows path/config resolution failure; this baseline's new contract test has not yet run through that runner.
