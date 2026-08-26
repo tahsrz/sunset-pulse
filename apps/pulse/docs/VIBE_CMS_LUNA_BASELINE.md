@@ -675,6 +675,7 @@ Completed in the current working tree:
 - Added authenticated `GET` and optimistic-concurrency `PATCH` admin detail route at `/api/admin/vibes/:vibeId`.
 - Added authenticated, tenant-scoped revision history at `/api/admin/vibes/:vibeId/revisions`.
 - Added revision comparison and auditable rollback endpoints.
+- Added the first `/admin/vibes/:vibeId/edit` editor shell with metadata and editorial status surfaces.
 
 Next recommended slice:
 
