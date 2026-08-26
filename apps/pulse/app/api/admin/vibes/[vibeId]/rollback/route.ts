@@ -26,7 +26,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
       actorId: operatorAuditUser(access).userId,
       changeSummary: `Rollback to revision ${revision.revisionNumber}: ${body.reason.trim()}`,
     });
-    await VibeAuditEvent.create({ vibeId, tenantId, action: 'rolled_back', revisionId: created?._id ? String(created._id) : undefined, actorId: operatorAuditUser(access).userId, reason: body.reason.trim() });
+    const createdRevision = created as { _id?: unknown } | null | undefined;
+    await VibeAuditEvent.create({ vibeId, tenantId, action: 'rolled_back', revisionId: createdRevision?._id ? String(createdRevision._id) : undefined, actorId: operatorAuditUser(access).userId, reason: body.reason.trim() });
     return NextResponse.json({ revision: created }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Rollback could not be completed.' }, { status: 409 });
