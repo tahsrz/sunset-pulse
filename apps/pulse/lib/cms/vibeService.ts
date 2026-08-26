@@ -60,6 +60,7 @@ export async function publishVibeRevision(input: {
   changeSummary?: string;
 }) {
   const draft = vibeDraftSchema.parse(input.draft);
+  assertReadableTheme(draft);
   const session = await mongoose.startSession();
   try {
     let published;
@@ -95,6 +96,23 @@ export async function publishVibeRevision(input: {
   } finally {
     await session.endSession();
   }
+}
+
+function assertReadableTheme(draft: VibeDraft) {
+  const colors = draft.tokens.visual.theme.colors;
+  for (const background of [colors.background, colors.surface]) {
+    if (contrastRatio(colors.textPrimary, background) < 4.5) throw new Error('PUBLISH_VALIDATION_FAILED: text contrast is below WCAG AA.');
+  }
+}
+
+function contrastRatio(first: string, second: string) {
+  const luminance = (hex: string) => {
+    const normalized = hex.length === 4 ? hex.slice(1).split('').map((part) => part + part).join('') : hex.slice(1);
+    const channels = [0, 2, 4].map((offset) => Number.parseInt(normalized.slice(offset, offset + 2), 16) / 255).map((channel) => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+  };
+  const a = luminance(first); const b = luminance(second); const lighter = Math.max(a, b); const darker = Math.min(a, b);
+  return (lighter + 0.05) / (darker + 0.05);
 }
 
 export async function applyVibeRevisionToSite(input: { siteId: string; tenantId: string; revisionId: string; actorId: string }) {
