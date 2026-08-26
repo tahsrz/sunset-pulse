@@ -5,6 +5,7 @@ import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth
 import { operatorAuditUser } from '@/lib/core/routeAuth';
 import { z } from 'zod';
 import { createDefaultVibeDraft } from '@/lib/cms/vibeSchema';
+import VibeAuditEvent from '@/models/VibeAuditEvent';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
       currentDraftVersion: 0,
       draftPayload: createDefaultVibeDraft(parsed.data),
     });
+    await VibeAuditEvent.create({ vibeId: vibe.vibeId, tenantId, action: 'created', actorId: actor });
     return NextResponse.json({ vibe }, { status: 201 });
   } catch (error: any) {
     if (error?.code === 11000) return NextResponse.json({ error: 'A vibe with that slug already exists.' }, { status: 409 });
