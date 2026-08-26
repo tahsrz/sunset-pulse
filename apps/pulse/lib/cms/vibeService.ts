@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import Vibe from '@/models/Vibe';
 import VibeRevision from '@/models/VibeRevision';
+import { SiteConfig } from '@/models/SiteConfig';
 import { vibeDraftSchema, type VibeDraft } from './vibeSchema';
 
 export function stableSerialize(value: unknown): string {
@@ -90,6 +91,26 @@ export async function publishVibeRevision(input: {
       published = revision.toObject();
     });
     return published;
+  } finally {
+    await session.endSession();
+  }
+}
+
+export async function applyVibeRevisionToSite(input: { siteId: string; tenantId: string; revisionId: string; actorId: string }) {
+  const session = await mongoose.startSession();
+  try {
+    let site;
+    await session.withTransaction(async () => {
+      const revision = await VibeRevision.findOne({ _id: input.revisionId, tenantId: input.tenantId, publishedAt: { $exists: true, $ne: null } }).session(session).lean();
+      if (!revision) throw new Error('PUBLISHED_REVISION_NOT_FOUND');
+      site = await SiteConfig.findOneAndUpdate(
+        { agentId: input.siteId },
+        { $set: { activeVibeRevisionId: input.revisionId, lastModifiedBy: input.actorId, updatedAt: new Date() } },
+        { new: true, session },
+      ).lean();
+      if (!site) throw new Error('SITE_NOT_FOUND');
+    });
+    return site;
   } finally {
     await session.endSession();
   }
