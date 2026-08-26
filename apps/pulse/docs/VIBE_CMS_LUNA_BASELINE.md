@@ -674,6 +674,7 @@ Completed in the current working tree:
 - Added authenticated, tenant-scoped `GET /api/admin/vibes` with bounded search and pagination.
 - Added authenticated `GET` and optimistic-concurrency `PATCH` admin detail route at `/api/admin/vibes/:vibeId`.
 - Added authenticated, tenant-scoped revision history at `/api/admin/vibes/:vibeId/revisions`.
+- Added revision comparison and auditable rollback endpoints.
 
 Next recommended slice:
 
