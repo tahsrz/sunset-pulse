@@ -53,4 +53,12 @@ describe('Vibe CMS contracts', () => {
     expect(getAvailableVibeActions('published')).toEqual(['archive']);
     expect(getAvailableVibeActions('trash')).toEqual(['restore']);
   });
+
+  it('covers archive, trash, restore, and invalid lifecycle transitions', () => {
+    expect(transitionVibe({ status: 'published', action: 'archive' })).toEqual({ ok: true, status: 'archived' });
+    expect(transitionVibe({ status: 'archived', action: 'trash' })).toEqual({ ok: true, status: 'trash' });
+    expect(transitionVibe({ status: 'trash', action: 'restore' })).toEqual({ ok: true, status: 'draft' });
+    expect(transitionVibe({ status: 'published', action: 'trash' }).ok).toBe(false);
+    expect(transitionVibe({ status: 'trash', action: 'publish', hasPublishedRevision: true }).ok).toBe(false);
+  });
 });
