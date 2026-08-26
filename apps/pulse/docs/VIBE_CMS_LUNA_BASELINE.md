@@ -710,3 +710,113 @@ Next recommended slice:
 - Wire Launch Kit runtime reads to the authoritative active revision pointer.
 
 Known verification note: the repository-wide TypeScript check currently reports pre-existing errors in unrelated Jamie guide, TAH, and weekly-dispatch tests. The focused Vitest runner also has an existing Windows path/config resolution failure; this baseline's new contract test has not yet run through that runner.
+
+## Post-Implementation Review and Re-formed Execution Plan
+
+This section supersedes the earlier `Next recommended slice` ordering. It does not replace the locked architecture decisions, domain contracts, Luna task rules, escalation triggers, or release gates above.
+
+Current assessment: the first vertical milestone is approximately 60–65% complete. Luna has created substantial schema, service, API, runtime, and admin-UI scaffolding, but the submitted-review-published contract and the complete public-site proof still need to be closed.
+
+### Review Findings
+
+1. The current PR diff contains a large number of unrelated changes following the `53f1fec3` merge and `43200758` revert sequence. The CMS work must be isolated onto a clean branch before more feature work is accepted.
+2. Submission currently changes the Vibe status to `in_review` but does not freeze an immutable review revision as required by the workflow contract.
+3. Publication currently accepts a normalized draft snapshot from the client. Publication must instead target a specific immutable submitted revision and enforce the `in_review` to `published` transition.
+4. Revision-number lookup is scoped by Vibe ID but not tenant ID. Numbering, parent selection, and uniqueness must use the same tenant/Vibe identity boundary.
+5. Launch Kit and site-data code can resolve a published revision projection, but the public site does not yet visibly consume the compiled CSS variables or voice configuration.
+6. Admin pages exist for most actions, but they are not yet presented as one status-aware editor workflow. Several screens require direct URL knowledge.
+7. Focused coverage is still missing for optimistic draft conflicts, tenant-scoped numbering, transactional publication failure, immutable review submission, exact-revision publication, rollback lineage, and draft/live isolation.
+
+### Phase 0: Recover a Clean PR
+
+Create a clean branch from the intended current base and replay only the Vibe CMS changes. Limit the resulting diff to:
+
+- Vibe CMS schemas, models, services, routes, tests, and UI.
+- Narrow Launch Kit and public-site runtime integration required by the milestone.
+- This baseline document.
+- Explicitly intended legacy Vibe compatibility changes.
+
+Do not carry unrelated billing, scheduling, tenancy, AI, notification, documentation, migration, or platform deletions into the replacement branch.
+
+Exit condition: the PR diff contains only the approved CMS vertical slice and its narrow runtime integration.
+
+### Phase 1: Correct the Editorial Contract
+
+1. Keep draft saving mutable and versioned.
+2. Make submit create an immutable review revision or checkpoint.
+3. Store the submitted revision ID on the editorial Vibe record.
+4. Change publish to accept a revision ID rather than a browser-supplied draft.
+5. Require the Vibe to be `in_review` before publication.
+6. Publish exactly the submitted immutable revision.
+7. Preserve review and revision history when a submission is rejected.
+8. Ensure later draft edits never mutate submitted or published snapshots.
+
+Exit condition: the content reviewed is exactly the content published.
+
+### Phase 2: Finish Revision Correctness
+
+Add narrowly scoped behavior and tests for:
+
+- Optimistic draft-version conflicts.
+- Tenant-scoped revision numbering and parent selection.
+- Concurrent revision-number collision behavior.
+- Transaction rollback when revision creation, audit creation, or Vibe update fails.
+- Rollback creating a new revision with explicit lineage.
+- Protection against mutation of existing revision records through CMS services.
+
+Exit condition: revision identity, ordering, immutability, and failure behavior are deterministic and covered by focused tests.
+
+### Phase 3: Consolidate the Editor Workflow
+
+- Present Preview, Submit, Publish, Reject, Archive, Trash, Source, Taxonomy, and Revisions as status-aware editor actions.
+- Connect source metadata and taxonomy selection to the editor rail.
+- Display dirty, saving, saved, conflict, and error states.
+- Provide reload, compare, or duplicate recovery for draft conflicts without expanding into real-time collaborative editing.
+- Retain the existing structured controls and add only fields needed for the first vertical milestone.
+
+Exit condition: an operator can complete the editorial lifecycle without manually entering route URLs or editing JSON.
+
+### Phase 4: Complete Launch Kit Application
+
+- Display the currently applied revision for a selected site.
+- Allow an authorized operator to apply a published revision.
+- Confirm the exact site and revision before application.
+- Display the applied revision after success.
+- Use the established Launch Kit site identity and persistence path.
+
+Exit condition: an operator can deliberately apply one published revision to one test site.
+
+### Phase 5: Complete Public Consumption
+
+- Apply compiled CSS variables at the public site root.
+- Feed the published voice configuration into the existing Jamie/site configuration boundary.
+- Preserve the approved fallback when the pointer or revision cannot be resolved.
+- Make the resolved revision ID available in server-side diagnostics.
+
+Exit condition: the public site visibly and behaviorally consumes the selected immutable revision.
+
+### Phase 6: Prove the First Vertical Milestone
+
+Run and record this focused scenario:
+
+1. Create a Vibe.
+2. Edit structured visual and linguistic fields.
+3. Submit an immutable review revision.
+4. Publish that exact revision.
+5. Apply it to one test site.
+6. Confirm the public site consumes it.
+7. Modify the mutable draft.
+8. Confirm the public site remains unchanged.
+9. Explicitly apply a later revision or roll back and verify the intended change.
+
+Use focused service tests plus manual desktop and mobile verification. If the existing E2E runner remains blocked by its known configuration issue, record that separately rather than widening the implementation ticket.
+
+Exit condition: the architectural proof stated in `First Vertical Milestone` passes from operator UI through public runtime.
+
+### Phase 7: Deferred Expansion
+
+Do not add taxonomy expansion, media management, bulk editing, scheduled publishing, webhooks, import/export, block composition, broad security redesign, or unrelated audits until the first vertical milestone passes.
+
+### Luna Resume Instruction
+
+Start with Phase 0. After producing a clean, narrowly scoped PR diff, execute Phases 1–6 in order using the Standard Luna Ticket Template and the existing Luna Task Rules. Treat each phase as multiple small tickets where necessary. Do not skip the immutable review-revision correction, and do not begin deferred expansion while the first vertical milestone remains unproven.
