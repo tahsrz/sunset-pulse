@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileCssVars, hashVibeDraft, stableSerialize } from '@/lib/cms/vibeService';
+import { compileCssVars, hashVibeDraft, nextRevisionNumber, stableSerialize } from '@/lib/cms/vibeService';
 import { vibeDraftSchema } from '@/lib/cms/vibeSchema';
 
 const draft = vibeDraftSchema.parse({
@@ -40,5 +40,10 @@ describe('Vibe CMS services', () => {
     expect(draft.source.kind).toBe('manual');
     expect(draft.tokens.visual.theme.layout.spacingBasePx).toBe(4);
     expect(draft.tokens.linguistic.voice.allowEmoji).toBe(false);
+  });
+
+  it('increments revision numbers from zero and the prior revision', () => {
+    expect(nextRevisionNumber()).toBe(1);
+    expect(nextRevisionNumber(4)).toBe(5);
   });
 });

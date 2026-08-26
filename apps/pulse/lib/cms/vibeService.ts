@@ -18,6 +18,10 @@ export function hashVibeDraft(draft: VibeDraft): string {
   return crypto.createHash('sha256').update(stableSerialize(draft)).digest('hex');
 }
 
+export function nextRevisionNumber(previousRevisionNumber?: number): number {
+  return (previousRevisionNumber || 0) + 1;
+}
+
 export async function saveVibeDraft(input: {
   vibeId: string;
   tenantId: string;
@@ -69,7 +73,7 @@ export async function publishVibeRevision(input: {
       const vibe = await Vibe.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).session(session);
       if (!vibe) throw new Error('VIBE_NOT_FOUND');
       const previous = await VibeRevision.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
-      const revisionNumber = (previous?.revisionNumber || 0) + 1;
+      const revisionNumber = nextRevisionNumber(previous?.revisionNumber);
       const revisionId = new mongoose.Types.ObjectId().toString();
       const revision = new VibeRevision({
         _id: revisionId,
@@ -111,7 +115,7 @@ export async function submitVibeRevision(input: { vibeId: string; tenantId: stri
       const draft = vibeDraftSchema.parse(vibe.draftPayload);
       const previous = await VibeRevision.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
       const revisionId = new mongoose.Types.ObjectId().toString();
-      const revision = new VibeRevision({ _id: revisionId, vibeId: input.vibeId, tenantId: input.tenantId, revisionNumber: (previous?.revisionNumber || 0) + 1, snapshot: draft, cssVars: compileCssVars(draft), voiceConfig: draft.tokens.linguistic, contentHash: hashVibeDraft(draft), parentRevisionId: previous?._id, changeSummary: 'Submitted for review', createdBy: input.actorId });
+      const revision = new VibeRevision({ _id: revisionId, vibeId: input.vibeId, tenantId: input.tenantId, revisionNumber: nextRevisionNumber(previous?.revisionNumber), snapshot: draft, cssVars: compileCssVars(draft), voiceConfig: draft.tokens.linguistic, contentHash: hashVibeDraft(draft), parentRevisionId: previous?._id, changeSummary: 'Submitted for review', createdBy: input.actorId });
       await revision.save({ session });
       vibe.status = 'in_review';
       vibe.submittedRevisionId = revisionId;
