@@ -5,7 +5,7 @@ export default async function VibePreviewPage({ params }: { params: Promise<{ vi
   const { vibeId } = await params;
   const requestHeaders = await headers();
   const origin = requestHeaders.get('x-forwarded-proto') && requestHeaders.get('host') ? `${requestHeaders.get('x-forwarded-proto')}://${requestHeaders.get('host')}` : '';
-  const response = await fetch(`${origin}/api/admin/vibes/${encodeURIComponent(vibeId)}/preview`, { cache: 'no-store' });
+  const response = await fetch(`${origin}/api/admin/vibes/${encodeURIComponent(vibeId)}/preview`, { cache: 'no-store', headers: { cookie: requestHeaders.get('cookie') || '' } });
   const data = response.ok ? await response.json() : null;
   if (!data) return <main className="min-h-screen bg-slate-100 p-8 text-slate-500">Unable to load preview.</main>;
   const vars = data.preview.cssVars || {};
