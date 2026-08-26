@@ -670,11 +670,13 @@ Completed in the current working tree:
 - Added draft save and deterministic revision hashing services.
 - Added transaction-aware immutable revision publication service.
 - Added `activeVibeRevisionId` to the site configuration model.
+- Added service-level tests for deterministic hashing and compiled token output.
+- Added authenticated, tenant-scoped `GET /api/admin/vibes` with bounded search and pagination.
 
 Next recommended slice:
 
 - Add service-level tests for draft conflicts, revision numbering, and publication failures.
-- Add explicit admin list/read routes before building the editor UI.
+- Add `GET /api/admin/vibes/:id` and draft read/write service coverage.
 - Wire Launch Kit runtime reads to the authoritative active revision pointer.
 
 Known verification note: the repository-wide TypeScript check currently reports pre-existing errors in unrelated Jamie guide, TAH, and weekly-dispatch tests. The focused Vitest runner also has an existing Windows path/config resolution failure; this baseline's new contract test has not yet run through that runner.
