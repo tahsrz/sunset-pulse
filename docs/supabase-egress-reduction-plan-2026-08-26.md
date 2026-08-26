@@ -11,6 +11,7 @@ Reduce cached egress after the 8.61 GB overage without breaking listing freshnes
 - Cap map/dataset responses to a conservative maximum until usage is understood.
 - Do not expose Supabase Storage cartridge downloads publicly while their response sizes and access frequency are unknown.
 - Keep remote cartridge synchronization disabled unless `REMOTE_ATLAS_SYNC_ENABLED=true` is explicitly set in the server environment.
+- Direct cartridge downloads are limited to 16 MiB by default and five requests per minute per client; use an explicit reviewed override only for approved operators.
 
 ## Measurement
 

@@ -68,6 +68,10 @@ async function downloadRemoteCartridge(cartridgeName: string, tmpPath: string) {
  * Syncs the entire 'Universe' of cartridges from Supabase.
  */
 export const syncUniversalIntelligence = async (query?: string) => {
+  if (process.env.REMOTE_ATLAS_SYNC_ENABLED !== 'true') {
+    console.warn('[RemoteAtlas] Remote cartridge sync is disabled by configuration.');
+    return [];
+  }
   const files = [];
   for (let offset = 0; ; offset += 100) {
     const { data: page, error } = await supabaseAdmin.storage.from('cartridges').list('', { limit: 100, offset });
