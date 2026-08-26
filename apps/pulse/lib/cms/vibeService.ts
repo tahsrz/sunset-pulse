@@ -116,6 +116,22 @@ export async function applyVibeRevisionToSite(input: { siteId: string; tenantId:
   }
 }
 
+export async function readPublishedVibeProjection(input: { revisionId: string; tenantId: string }) {
+  const revision = await VibeRevision.findOne({
+    _id: input.revisionId,
+    tenantId: input.tenantId,
+    publishedAt: { $exists: true, $ne: null },
+  }).select('_id vibeId tenantId revisionNumber cssVars voiceConfig').lean() as any;
+  if (!revision) return null;
+  return {
+    revisionId: String(revision._id),
+    vibeId: revision.vibeId,
+    revisionNumber: revision.revisionNumber,
+    cssVars: revision.cssVars || {},
+    voiceConfig: revision.voiceConfig || {},
+  };
+}
+
 export function compileCssVars(draft: VibeDraft) {
   const colors = draft.tokens.visual.theme.colors;
   return Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value]));
