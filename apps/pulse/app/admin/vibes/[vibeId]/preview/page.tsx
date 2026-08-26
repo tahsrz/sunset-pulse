@@ -1,13 +1,17 @@
-'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { headers } from 'next/headers';
 
-export default function PreviewPage() {
-  const { vibeId } = useParams<{ vibeId: string }>(); const [data, setData] = useState<any>(null); const [error, setError] = useState('');
-  useEffect(() => { fetch(`/api/admin/vibes/${encodeURIComponent(vibeId)}/preview`).then(async (response) => { if (!response.ok) throw new Error('Draft is not ready for preview.'); return response.json(); }).then(setData).catch((reason) => setError(reason.message)); }, [vibeId]);
-  if (error) return <main className="min-h-screen bg-slate-100 p-8"><p role="alert" className="text-red-700">{error}</p></main>;
-  if (!data) return <main className="min-h-screen bg-slate-100 p-8 text-slate-500">Loading preview…</main>;
-  const vars = data.preview.cssVars || {}; const background = vars['--color-background'] || '#0f172a'; const surface = vars['--color-surface'] || '#1e293b'; const text = vars['--color-text-primary'] || '#f8fafc'; const accent = vars['--color-primary'] || '#2563eb';
-  return <main className="min-h-screen px-4 py-8 sm:px-8" style={{ background, color: text }}><div className="mx-auto max-w-5xl"><div className="flex items-center justify-between"><div><Link href={`/admin/vibes/${vibeId}/edit`} className="text-sm font-semibold opacity-70 hover:underline">← Back to editor</Link><h1 className="mt-4 text-3xl font-black">{data.vibe.title} preview</h1><p className="mt-1 text-sm opacity-70">Draft preview · not published</p></div><span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: accent, color }}>{data.vibe.status}</span></div><section className="mt-8 grid gap-5 md:grid-cols-[1fr_320px]"><article className="rounded-2xl p-8 shadow-xl" style={{ background: surface }}><p className="text-sm font-semibold opacity-70">Jamie local guide</p><h2 className="mt-4 text-4xl font-black">A clear next step for every visitor.</h2><p className="mt-4 max-w-xl text-base opacity-80">This representative layout uses the compiled draft tokens that a published site would receive.</p><button className="mt-8 rounded-lg px-4 py-2 text-sm font-bold" style={{ background: accent, color }}>Ask Jamie</button></article><aside className="rounded-2xl p-5" style={{ background: surface }}><h2 className="text-sm font-black uppercase tracking-wide opacity-70">Voice configuration</h2><p className="mt-4 text-lg font-bold">{data.preview.voiceConfig?.voice?.primaryTone || 'warm'}</p><p className="mt-2 text-sm opacity-70">Deterministic draft token preview.</p></aside></section></div></main>;
+export default async function VibePreviewPage({ params }: { params: Promise<{ vibeId: string }> }) {
+  const { vibeId } = await params;
+  const requestHeaders = await headers();
+  const origin = requestHeaders.get('x-forwarded-proto') && requestHeaders.get('host') ? `${requestHeaders.get('x-forwarded-proto')}://${requestHeaders.get('host')}` : '';
+  const response = await fetch(`${origin}/api/admin/vibes/${encodeURIComponent(vibeId)}/preview`, { cache: 'no-store' });
+  const data = response.ok ? await response.json() : null;
+  if (!data) return <main className="min-h-screen bg-slate-100 p-8 text-slate-500">Unable to load preview.</main>;
+  const vars = data.preview.cssVars || {};
+  const background = vars['--color-background'] || '#0f172a';
+  const surface = vars['--color-surface'] || '#1e293b';
+  const text = vars['--color-text-primary'] || '#f8fafc';
+  const accent = vars['--color-primary'] || '#2563eb';
+  return <main className="min-h-screen px-4 py-8 sm:px-8" style={{ background, color: text }}><div className="mx-auto max-w-5xl"><Link href={`/admin/vibes/${vibeId}/edit`} className="text-sm font-semibold opacity-70 hover:underline">← Back to editor</Link><h1 className="mt-4 text-3xl font-black">{data.vibe.title} preview</h1><p className="mt-1 text-sm opacity-70">Draft preview · not published</p><section className="mt-8 rounded-2xl p-8 shadow-xl" style={{ background: surface }}><h2 className="text-4xl font-black">A clear next step for every visitor.</h2><p className="mt-4 max-w-xl text-base opacity-80">This representative layout uses the compiled draft tokens that a published site would receive.</p><button className="mt-8 rounded-lg px-4 py-2 text-sm font-bold" style={{ background: accent, color: text }}>Ask Jamie</button></section></div></main>;
 }

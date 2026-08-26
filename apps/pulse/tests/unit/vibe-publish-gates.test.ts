@@ -9,7 +9,7 @@ describe('Vibe publication gates', () => {
   });
 
   it('rejects low-contrast text before publication', () => {
-    const draft = vibeDraftSchema.parse({ title: 'Unreadable', slug: 'unreadable', tokens: { visual: { theme: { colors: { primary: '#777777', background: '#777777', surface: '#777777', textPrimary: '#777777', textSecondary: '#888888' }, typography: { fontFamilyHeading: 'Inter', fontFamilyBody: 'Inter', baseFontSize: '16px' }, layout: {} }, effects: {} }, linguistic: { voice: { primaryTone: 'warm' }, vocabulary: {}, systemDirectives: [] } }, source: { kind: 'manual' } });
+    const draft = vibeDraftSchema.parse({ title: 'Unreadable', slug: 'unreadable', tokens: { visual: { theme: { colors: { primary: '#777777', background: '#777777', surface: '#777777', textPrimary: '#777777', textSecondary: '#888888' }, typography: { fontFamilyHeading: 'Inter', fontFamilyBody: 'Inter', baseFontSize: '16px' }, layout: {} }, effects: {} }, linguistic: { voice: { primaryTone: 'warm' }, vocabulary: {}, systemDirectives: ['Be clear.'] } }, source: { kind: 'manual' } });
     expect(() => assertReadableTheme(draft)).toThrow('PUBLISH_VALIDATION_FAILED');
   });
 });
