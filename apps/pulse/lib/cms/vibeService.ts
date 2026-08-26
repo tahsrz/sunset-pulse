@@ -68,7 +68,7 @@ export async function publishVibeRevision(input: {
     await session.withTransaction(async () => {
       const vibe = await Vibe.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).session(session);
       if (!vibe) throw new Error('VIBE_NOT_FOUND');
-      const previous = await VibeRevision.findOne({ vibeId: input.vibeId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
+      const previous = await VibeRevision.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
       const revisionNumber = (previous?.revisionNumber || 0) + 1;
       const revisionId = new mongoose.Types.ObjectId().toString();
       const revision = new VibeRevision({
