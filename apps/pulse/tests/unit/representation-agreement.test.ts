@@ -34,4 +34,20 @@ describe('representation agreement', () => {
     expect(representationAgreementSchema.safeParse({ ...validInput, clientEmail: 'not-email' }).success).toBe(false);
     expect(representationAgreementSchema.safeParse({ ...validInput, endsOn: '2026-08-23' }).success).toBe(false);
   });
+
+  it('accepts optional commercial lineage without putting it into the legal text', () => {
+    const parsed = representationAgreementSchema.parse({
+      ...validInput,
+      commercialContext: {
+        leadId: '11111111-1111-4111-8111-111111111111',
+        funnelId: '22222222-2222-4222-8222-222222222222',
+        bookingId: null,
+        agentId: 'agent-one',
+        site: 'agent-one.sunsetpulse.app',
+      },
+    });
+    const agreement = buildRepresentationAgreement(parsed);
+    expect(agreement).not.toHaveProperty('commercialContext');
+    expect(parsed.commercialContext?.funnelId).toBe('22222222-2222-4222-8222-222222222222');
+  });
 });

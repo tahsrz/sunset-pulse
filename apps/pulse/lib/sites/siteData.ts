@@ -61,7 +61,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
   try {
     const { data, error } = await supabaseAdmin
       .from('site_config')
-      .select('*')
+      .select('agent_id, subdomain, custom_domain, status, owner_name, branding, hero, agent_profile, assistant_profile, compliance_profile, integration_profile, billing_profile, review_profile, sections')
       .or(`subdomain.eq.${cleanSite},agent_id.eq.${cleanSite},agent_id.eq.${cleanSite}-site`)
       .maybeSingle();
 

@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const representationCommercialContextSchema = z.object({
+  leadId: z.string().uuid(),
+  funnelId: z.string().uuid(),
+  bookingId: z.string().uuid().nullable().default(null),
+  agentId: z.string().trim().min(1).max(120),
+  site: z.string().trim().min(1).max(180),
+}).strict();
+
 export const representationAgreementSchema = z.object({
   clientName: z.string().trim().min(2).max(160),
   clientEmail: z.string().trim().email().max(320),
@@ -14,12 +22,14 @@ export const representationAgreementSchema = z.object({
   endsOn: z.string().date(),
   compensation: z.string().trim().min(2).max(500),
   intermediaryConsent: z.boolean(),
+  commercialContext: representationCommercialContextSchema.optional(),
 }).strict().refine((value) => value.endsOn >= value.startsOn, {
   message: 'The end date must be on or after the start date.',
   path: ['endsOn'],
 });
 
 export type RepresentationAgreementInput = z.infer<typeof representationAgreementSchema>;
+export type RepresentationCommercialContext = z.infer<typeof representationCommercialContextSchema>;
 
 export function buildRepresentationAgreement(input: RepresentationAgreementInput) {
   const clientRole = input.representationType === 'buyer' ? 'Buyer' : 'Tenant';

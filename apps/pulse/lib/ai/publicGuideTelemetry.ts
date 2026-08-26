@@ -4,6 +4,7 @@ import { after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { PublicGuideActionId, PublicGuideOutcome } from '@/lib/ai/publicGuideContract';
 import { hashVisitorSessionId } from '@/lib/intelligence/visitorSession';
+import { persistProviderCost } from '@/lib/profit/internalCostEvents';
 
 export const PUBLIC_GUIDE_INTENT_CATEGORIES = [
   'buying_process',
@@ -39,6 +40,7 @@ export type PublicGuideTelemetryEvent = {
   outcome?: PublicGuideOutcome;
   funnelId?: string;
   sessionId?: string;
+  tenantSite?: string;
   targetId?: string;
   toolId?: 'search_properties';
   usedListingData?: boolean;
@@ -82,8 +84,31 @@ export async function recordPublicGuideEvent(event: PublicGuideTelemetryEvent) {
       p_severity: event.event === 'guide_error' ? 'WARN' : 'INFO',
     });
     if (error) throw error;
+    if (event.event === 'guide_response') await recordModelCost(event);
   } catch (error) {
     console.warn('[JAMIE_PUBLIC_GUIDE_TELEMETRY]', error);
+  }
+}
+
+async function recordModelCost(event: PublicGuideTelemetryEvent) {
+  const usage = event.generation?.usage;
+  if (!event.tenantSite || !event.sessionId || !event.generation?.modelId || !usage) return;
+  const rate = Number(process.env.PROFIT_MODEL_COST_PER_1K_TOKENS);
+  const amountUsd = Number.isFinite(rate) && rate >= 0 ? (usage.totalTokens / 1000) * rate : null;
+  try {
+    await persistProviderCost({
+      tenantSite: event.tenantSite,
+      funnelId: event.funnelId || null,
+      leadId: null,
+      provider: event.generation.modelId,
+      providerEventId: `${hashPublicGuideSessionId(event.sessionId)}:${usage.totalTokens}:${event.durationMs || 0}`,
+      costType: 'model',
+      amountUsd,
+      occurredAt: new Date().toISOString(),
+      evidence: { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens: usage.totalTokens },
+    });
+  } catch (error) {
+    console.warn('[JAMIE_MODEL_COST_LEDGER]', error);
   }
 }
 

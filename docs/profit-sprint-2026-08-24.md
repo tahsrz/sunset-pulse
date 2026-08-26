@@ -8,6 +8,8 @@ Review owner: Codex
 
 Increase attributable profit from Jamie-generated real-estate opportunities.
 
+The follow-on outcome-billing program is defined in [`luna-outcome-revenue-plan-2026-08-24.md`](./luna-outcome-revenue-plan-2026-08-24.md). Once this sprint's trustworthy-baseline gate passes, use that document and its `LUNA-*` ticket IDs as the canonical implementation reference.
+
 ```text
 profit = attributable closed revenue - acquisition cost - delivery cost - operating cost
 ```
