@@ -144,6 +144,7 @@ function normalizeTenantSite(
   const status = config.status || fallback.status;
   const billingProfile = config.billing_profile || config.billingProfile || {};
   const reviewProfile = config.review_profile || config.reviewProfile || {};
+  const activeVibeRevisionId = config.active_vibe_revision_id || config.activeVibeRevisionId || undefined;
 
   const readiness = getSiteReadinessChecks({
     siteName: branding.siteName || fallback.siteName,
@@ -191,6 +192,7 @@ function normalizeTenantSite(
     complianceProfile,
     integrationProfile,
     sections: normalizeSections(config.sections),
+    activeVibeRevisionId: activeVibeRevisionId ? String(activeVibeRevisionId) : undefined,
   };
 }
 
