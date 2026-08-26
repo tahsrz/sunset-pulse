@@ -713,6 +713,10 @@ Next recommended slice:
 - Add status-aware editor navigation for all lifecycle actions, including audit history.
 - Verify the complete create → submit → publish → apply → public runtime flow on desktop and mobile.
 
+Latest verification checkpoint (2026-08-26): GitHub unit tests, lint, Jamie E2E, Vercel preview comments, and Vercel deployment all passed after correcting the preview JSX type error and publication-gate fixture.
+
+Remaining milestone proof is manual/runtime validation of the complete operator-to-public flow and draft/live isolation; no new architecture or broad audit work is required for this checkpoint.
+
 Known verification note: the repository-wide TypeScript check currently reports pre-existing errors in unrelated Jamie guide, TAH, and weekly-dispatch tests. The focused Vitest runner also has an existing Windows path/config resolution failure; this baseline's new contract test has not yet run through that runner.
 
 ## Post-Implementation Review and Re-formed Execution Plan
