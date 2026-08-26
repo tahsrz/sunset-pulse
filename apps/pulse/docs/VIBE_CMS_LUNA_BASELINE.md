@@ -701,13 +701,17 @@ Completed in the current working tree:
 - Propagated `activeVibeRevisionId` through the Launch Kit type, schema, normalization, and persistence serializers.
 - Added a narrow published-revision runtime projection reader for future public-site integration.
 - Added authenticated `GET /api/admin/sites/:siteId/vibe` for applied-revision visibility.
+- Added lifecycle audit events for create, submit, reject, publish, apply, archive, trash, restore, and rollback.
+- Added tenant-scoped audit history at `/api/admin/vibes/:vibeId/audit` and an operator audit timeline screen.
+- Added server-authoritative publication from an immutable submitted revision.
+- Applied published CSS variables and voice tone to the public site runtime, with active revision diagnostics.
+- Persisted revision application timestamp and actor metadata on site configuration.
 
 Next recommended slice:
 
-- Add service-level tests for draft conflicts, revision numbering, and publication failures.
-- Add revision service tests for numbering and publication failures.
-- Add revision comparison and rollback routes.
-- Wire Launch Kit runtime reads to the authoritative active revision pointer.
+- Add focused service/integration tests for draft conflicts, revision numbering, publication failures, and draft/live isolation.
+- Add status-aware editor navigation for all lifecycle actions, including audit history.
+- Verify the complete create → submit → publish → apply → public runtime flow on desktop and mobile.
 
 Known verification note: the repository-wide TypeScript check currently reports pre-existing errors in unrelated Jamie guide, TAH, and weekly-dispatch tests. The focused Vitest runner also has an existing Windows path/config resolution failure; this baseline's new contract test has not yet run through that runner.
 
