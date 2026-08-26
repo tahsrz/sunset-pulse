@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Vibe from '@/models/Vibe';
 import VibeRevision from '@/models/VibeRevision';
 import { SiteConfig } from '@/models/SiteConfig';
+import VibeAuditEvent from '@/models/VibeAuditEvent';
 import { vibeDraftSchema, type VibeDraft } from './vibeSchema';
 
 export function stableSerialize(value: unknown): string {
@@ -86,6 +87,7 @@ export async function publishVibeRevision(input: {
         publishedBy: input.actorId,
       });
       await revision.save({ session });
+      await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'published', revisionId, actorId: input.actorId, reason: input.changeSummary || '' }], { session });
       vibe.publishedRevisionId = revisionId;
       vibe.status = 'published';
       vibe.publishedBy = input.actorId;
