@@ -677,6 +677,7 @@ Completed in the current working tree:
 - Added revision comparison and auditable rollback endpoints.
 - Added the first `/admin/vibes/:vibeId/edit` editor shell with metadata and editorial status surfaces.
 - Added explicit authenticated `POST /api/admin/vibes/:vibeId/submit` workflow transition.
+- Added authenticated reject and archive lifecycle routes using shared transition rules.
 - Added explicit published-revision application service and `/api/admin/sites/:siteId/apply-vibe` route.
 - Propagated `activeVibeRevisionId` through the Launch Kit type, schema, normalization, and persistence serializers.
 - Added a narrow published-revision runtime projection reader for future public-site integration.
