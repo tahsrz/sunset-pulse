@@ -9,6 +9,21 @@ const VibeSchema = new Schema(
   {
     vibeId: { type: String, required: true, unique: true }, // e.g., 'vibe-noir-tactical'
     name: { type: String, required: true },
+    title: { type: String },
+    slug: { type: String, lowercase: true, trim: true },
+    tenantId: { type: String, default: 'default' },
+    status: { type: String, enum: ['draft', 'in_review', 'published', 'archived', 'trash'], default: 'draft' },
+    authorId: { type: String },
+    updatedBy: { type: String },
+    publishedBy: { type: String },
+    publishedRevisionId: { type: String },
+    currentDraftVersion: { type: Number, default: 0 },
+    excerpt: { type: String, default: '' },
+    longDescription: { type: String, default: '' },
+    taxonomyTermIds: { type: [String], default: [] },
+    source: { type: mongoose.Schema.Types.Mixed, default: {} },
+    migrationMetadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    archivedAt: { type: Date },
     description: { type: String },
     
     // Linguistic logic extracted from the video's "soul"
@@ -36,6 +51,9 @@ const VibeSchema = new Schema(
   },
   { timestamps: true }
 );
+
+VibeSchema.index({ tenantId: 1, status: 1 });
+VibeSchema.index({ slug: 1, tenantId: 1 }, { unique: true, sparse: true });
 
 /** @type {import('mongoose').Model<any>} */
 const Vibe = models.Vibe || model('Vibe', VibeSchema);

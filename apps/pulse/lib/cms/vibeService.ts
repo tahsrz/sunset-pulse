@@ -1,0 +1,101 @@
+import crypto from 'node:crypto';
+import mongoose from 'mongoose';
+import Vibe from '@/models/Vibe';
+import VibeRevision from '@/models/VibeRevision';
+import { vibeDraftSchema, type VibeDraft } from './vibeSchema';
+
+export function stableSerialize(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value as Record<string, unknown>).sort().map((key) => `${JSON.stringify(key)}:${stableSerialize((value as Record<string, unknown>)[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+export function hashVibeDraft(draft: VibeDraft): string {
+  return crypto.createHash('sha256').update(stableSerialize(draft)).digest('hex');
+}
+
+export async function saveVibeDraft(input: {
+  vibeId: string;
+  tenantId: string;
+  draft: VibeDraft;
+  actorId: string;
+  expectedVersion?: number;
+}) {
+  const draft = vibeDraftSchema.parse(input.draft);
+  const filter: Record<string, unknown> = { vibeId: input.vibeId, tenantId: input.tenantId };
+  if (input.expectedVersion !== undefined) filter.currentDraftVersion = input.expectedVersion;
+
+  const updated = await Vibe.findOneAndUpdate(filter, {
+    $set: {
+      title: draft.title,
+      name: draft.title,
+      slug: draft.slug,
+      excerpt: draft.excerpt,
+      longDescription: draft.description,
+      taxonomyTermIds: draft.taxonomyTermIds,
+      source: draft.source,
+      linguisticLogic: draft.tokens.linguistic,
+      visualParameters: draft.tokens.visual.effects,
+      updatedBy: input.actorId,
+      updatedAt: new Date(),
+    },
+    $inc: { currentDraftVersion: 1 },
+  }, { new: true, runValidators: true }).lean();
+
+  if (!updated) {
+    throw new Error(input.expectedVersion === undefined ? 'VIBE_NOT_FOUND' : 'VIBE_DRAFT_CONFLICT');
+  }
+  return updated;
+}
+
+export async function publishVibeRevision(input: {
+  vibeId: string;
+  tenantId: string;
+  draft: VibeDraft;
+  actorId: string;
+  changeSummary?: string;
+}) {
+  const draft = vibeDraftSchema.parse(input.draft);
+  const session = await mongoose.startSession();
+  try {
+    let published;
+    await session.withTransaction(async () => {
+      const vibe = await Vibe.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).session(session);
+      if (!vibe) throw new Error('VIBE_NOT_FOUND');
+      const previous = await VibeRevision.findOne({ vibeId: input.vibeId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
+      const revisionNumber = (previous?.revisionNumber || 0) + 1;
+      const revisionId = new mongoose.Types.ObjectId().toString();
+      const revision = new VibeRevision({
+        _id: revisionId,
+        vibeId: input.vibeId,
+        tenantId: input.tenantId,
+        revisionNumber,
+        snapshot: draft,
+        cssVars: compileCssVars(draft),
+        voiceConfig: draft.tokens.linguistic,
+        contentHash: hashVibeDraft(draft),
+        parentRevisionId: previous?._id,
+        changeSummary: input.changeSummary || '',
+        createdBy: input.actorId,
+        publishedAt: new Date(),
+        publishedBy: input.actorId,
+      });
+      await revision.save({ session });
+      vibe.publishedRevisionId = revisionId;
+      vibe.status = 'published';
+      vibe.publishedBy = input.actorId;
+      await vibe.save({ session });
+      published = revision.toObject();
+    });
+    return published;
+  } finally {
+    await session.endSession();
+  }
+}
+
+export function compileCssVars(draft: VibeDraft) {
+  const colors = draft.tokens.visual.theme.colors;
+  return Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value]));
+}
