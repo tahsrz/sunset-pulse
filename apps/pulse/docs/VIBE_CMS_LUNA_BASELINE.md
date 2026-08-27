@@ -947,3 +947,15 @@ Completed locally in commit `12350905`.
 - Focused TypeScript output contains no errors for the new route; remaining diagnostics are pre-existing test typing issues.
 
 Next action remains Blocker 2: prove and, if necessary, unify the Mongo/Supabase site-pointer path used by production public reads. The new screen is not itself production verification.
+
+### Execution Checkpoint — Pointer and Lifecycle Consistency
+
+Completed locally after the operator UI checkpoint:
+
+- Public tenant reads now resolve a Supabase match through the shared Mongo/Supabase freshness policy, allowing a newer applied Vibe pointer to be observed.
+- Added focused dual-store pointer coverage in `tests/unit/site-config-store.test.ts`.
+- Archive, reject, trash, restore, and create transitions now persist their Vibe state and required audit event in one Mongo transaction.
+
+Local commits: `127b1702`, `57778476`, `6d084930`, `7f5d25c1`.
+
+The remaining merge gate is Required CMS Verification Before Merge. Record production evidence for the full operator-to-public flow, a second editorial cycle, draft/live isolation, rollback, and site restoration before merging.
