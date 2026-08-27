@@ -131,3 +131,9 @@ Acceptance: all automated focused checks pass, the production checklist is compl
 ### Luna completion rule
 
 Do not declare the CMS merge-ready after code changes alone. Completion requires L1–L6, a clean working tree, a reviewed PR file inventory, and recorded production evidence. Stop for a product decision only at L2 pointer authority or L5 unrelated-diff disposition.
+
+## Current PR Inventory Snapshot
+
+Measured against `origin/main` on 2026-08-27: 353 files changed, 3,935 insertions, and 18,916 deletions; the branch is 81 commits ahead. This confirms that L5 is a release-governance task, not a code-quality cleanup.
+
+Retain Vibe schemas/models, CMS services, Vibe admin/API routes and screens, focused CMS tests, the baseline/report documents, and narrowly required Launch Kit/public-site integration. Retain legacy compatibility files only when a retained CMS path imports or calls them, with that dependency documented. Classify unrelated product, migration, test, documentation, and CI changes as unrelated unless Sol explicitly accepts them. No history rewrite or automatic revert was performed.
