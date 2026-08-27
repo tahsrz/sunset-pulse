@@ -16,6 +16,7 @@ import { getAgentSiteSubdomain, getPublicAgentSiteUrl } from '@/lib/sites/siteUr
 import { getSiteReadinessChecks } from '@/lib/sites/siteReadiness';
 import { SiteConfig } from '@/models/SiteConfig';
 import { readPublishedVibeProjection } from '@/lib/cms/vibeService';
+import { readSiteConfig } from '@/lib/sites/siteConfigStore';
 
 export type TenantSite = {
   site: string;
@@ -73,7 +74,12 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
     }
 
     if (data) {
-      return hydrateVibeProjection(normalizeTenantSite(site, data, fallback), data);
+      // Resolve the final row through the shared dual-store freshness policy so
+      // a newer Mongo site-application pointer cannot be hidden by a stale
+      // Supabase projection.
+      const resolved = await readSiteConfig(String(data.agent_id || data.agentId || site));
+      const resolvedConfig = resolved || data;
+      return hydrateVibeProjection(normalizeTenantSite(site, resolvedConfig, fallback), resolvedConfig);
     }
   } catch (error) {
     console.warn('[TENANT_SITE_SUPABASE_FALLBACK]', error);

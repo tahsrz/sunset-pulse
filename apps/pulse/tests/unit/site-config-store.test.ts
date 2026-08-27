@@ -84,6 +84,24 @@ describe('siteConfigStore', () => {
     await expect(readSiteConfig('broker-one')).resolves.toBe(mongoRow);
   });
 
+  it('resolves the newer Mongo-applied Vibe pointer when both stores contain the site', async () => {
+    const supabaseRow = {
+      agent_id: 'broker-one',
+      active_vibe_revision_id: 'old-revision',
+      updated_at: '2026-07-23T10:00:00.000Z',
+    };
+    const mongoRow = {
+      agentId: 'broker-one',
+      activeVibeRevisionId: 'new-revision',
+      updatedAt: '2026-07-23T11:00:00.000Z',
+    };
+
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: supabaseRow, error: null });
+    storeMocks.resolveMongoFindOne.mockResolvedValue(mongoRow);
+
+    await expect(readSiteConfig('broker-one')).resolves.toMatchObject({ activeVibeRevisionId: 'new-revision' });
+  });
+
   it('uses provisioning audit time as a freshness fallback for older Mongo records', async () => {
     const supabaseRow = {
       agent_id: 'broker-one',
