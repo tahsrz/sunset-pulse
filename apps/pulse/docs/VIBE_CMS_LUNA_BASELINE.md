@@ -937,3 +937,13 @@ Exit condition: the complete operator-to-public flow, repeatable editorial cycle
 ### Updated Luna Resume Instruction
 
 Do not merge the current PR based solely on green checks. Begin with Blocker 1, then complete Blockers 2–5, the transactional audit follow-up, and the required CMS verification. Stop and escalate only when a choice changes the locked datastore authority, tenant boundary, transaction model, or public runtime contract.
+
+### Execution Checkpoint — Operator Apply UI
+
+Completed locally in commit `12350905`.
+
+- Added `/admin/vibes/[vibeId]/apply` with explicit site and published-revision inputs.
+- The screen calls the existing authenticated apply endpoint, renders success/error state, and warns operators to verify publication and Vibe ownership before applying.
+- Focused TypeScript output contains no errors for the new route; remaining diagnostics are pre-existing test typing issues.
+
+Next action remains Blocker 2: prove and, if necessary, unify the Mongo/Supabase site-pointer path used by production public reads. The new screen is not itself production verification.
