@@ -995,6 +995,17 @@ The Vibe workspace was deliberately moved out of the admin namespace to avoid un
 
 Current next actions:
 
-1. Test the public WIP editorial path at `/vibes`: create, edit, preview, submit, publish, inspect revisions, and compare revisions.
-2. Perform the controlled, operator-authorized site-application and public-runtime verification sequence recorded above.
-3. Before production release, disable the public WIP exception and re-run the required production verification record.
+1. Perform the controlled, operator-authorized site-application and public-runtime verification sequence recorded above.
+2. Before production release, disable the public WIP exception and re-run the required production verification record.
+
+### Local WIP Verification Record — 2026-08-27
+
+- Environment: local development server only; no production site or site pointer was changed.
+- Disposable Vibe: `default-codex-wip-verification-aug-27`.
+- Save proof: draft version advanced from 0 to 1 after taxonomy and source-provenance edits.
+- Lifecycle proof: submit created immutable checkpoint r1; publish created immutable published r2.
+- Publication proof: the revision list marked r2 Published and offered the protected **Apply to site** handoff with the exact revision ID and number.
+- Read-only proof: the compiled-token preview rendered; the audit API returned created, submitted, and published events; and r1 → r2 comparison correctly returned no payload differences.
+- Actor: `vibe-cms-wip-public`, as expected while the temporary WIP exception is enabled.
+- Fixes found by the test: `Vibe.draftPayload` is now persisted as a mixed document; `linguisticLogic` accepts the structured linguistic payload; the sidebar refreshes its status after submit, publish, and lifecycle actions; and revision comparison now evaluates equal arrays structurally instead of reporting false differences.
+- Remaining release checks: all protected site-application, public-runtime, second-cycle, rollback, restoration, and production evidence requirements above.

@@ -24,7 +24,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ vib
 
 function diffSnapshots(from: unknown, to: unknown, path = ''): Array<{ path: string; from?: unknown; to?: unknown }> {
   if (Object.is(from, to)) return [];
-  if (!from || !to || typeof from !== 'object' || typeof to !== 'object' || Array.isArray(from) || Array.isArray(to)) {
+  if (Array.isArray(from) || Array.isArray(to)) {
+    if (!Array.isArray(from) || !Array.isArray(to)) return [{ path: path || '$', from, to }];
+    const length = Math.max(from.length, to.length);
+    return Array.from({ length }).flatMap((_, index) => diffSnapshots(from[index], to[index], `${path}[${index}]`));
+  }
+  if (!from || !to || typeof from !== 'object' || typeof to !== 'object') {
     return [{ path: path || '$', from, to }];
   }
   const keys = new Set([...Object.keys(from as object), ...Object.keys(to as object)]);
