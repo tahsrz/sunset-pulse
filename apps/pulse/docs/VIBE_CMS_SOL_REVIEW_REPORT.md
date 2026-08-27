@@ -157,3 +157,35 @@ The implementation portion is now complete enough for Sol to review. Remaining w
 - Browser/API/data proof was not claimed locally because the remaining scenario requires an authenticated deployed operator session and controlled production site.
 
 Local code verification is complete. L6 remains open only for deployed evidence; L5 remains open only for the explicit PR-history disposition.
+
+## Full PR Review Findings (2026-08-27)
+
+Review basis: `origin/main...HEAD`, 353 changed files, 4,058 insertions, 18,920 deletions, and 89 branch-only commits.
+
+### P0 — PR scope is not merge-safe
+
+The branch contains extensive unrelated changes across product areas, migrations, tests, documentation, and CI. This is not a stylistic concern: merging the CMS milestone would also remove or rewrite substantial unrelated behavior. Required decision: isolate the justified CMS changes into clean history or explicitly accept the complete historical diff after owner review.
+
+### P1 — Application is not bound to the displayed Vibe
+
+The operator page displays `vibeId`, but accepts an arbitrary revision ID. The apply endpoint validates that the revision is published and tenant-matched, but receives no expected Vibe ID. An operator can therefore apply a published revision belonging to a different Vibe while the UI claims to apply the route Vibe. Required change: submit the expected Vibe ID and reject revisions whose `revision.vibeId` differs; preferably populate the selector from the route Vibe's published revisions.
+
+### P1 — Rollback source is insufficiently constrained and traced
+
+The rollback route loads any revision belonging to the Vibe and tenant, including an unpublished submitted revision. The resulting audit records the new revision and a free-text reason, but does not structurally record the source revision ID. Required change: require the source revision to be published (unless product explicitly permits submitted-snapshot recovery) and store `sourceRevisionId` in the rollback audit metadata/schema.
+
+### P1 — Production proof remains absent
+
+Local unit and focused type checks pass, but no authenticated deployed evidence proves preview, publication, application, public CSS/voice hydration, second-cycle isolation, rollback, and restoration. The release evidence checklist remains mandatory.
+
+### Verified improvements
+
+- Submitted-revision authorization is rechecked inside the publication transaction.
+- Publication, lifecycle transitions, site application, and rollback audit semantics are transactionally coupled.
+- Mongo-applied Vibe pointer metadata is preserved over newer unrelated Supabase projection writes.
+- The operator application UI can inspect and refresh current site-pointer metadata.
+- Focused site-config tests pass 8/8.
+
+### Review disposition
+
+Implementation is materially improved but not merge-ready. Resolve the P0 scope decision and both P1 contract gaps, then complete deployed verification. No additional feature expansion is recommended.

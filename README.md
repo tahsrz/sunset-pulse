@@ -33,6 +33,13 @@ The underlying schema relies on clear Enum state transitions (such as research, 
 
 Sunset Pulse is expanding from an individual agent command center into a multi-tenant platform for real estate agents. New agents will be able to launch branded consumer sites with an AI assistant, fresh MLS listings, and lead capture without editing code.
 
+### Vibe CMS review status
+
+The first Vibe CMS vertical is implemented locally: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. It remains pre-merge pending PR-scope disposition and deployed operator verification.
+
+- [Luna implementation baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md)
+- [Sol review and remediation report](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md)
+
 Target URL structure:
 ```text
 {agent}.sunsetpulse.app
