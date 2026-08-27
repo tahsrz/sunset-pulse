@@ -30,7 +30,7 @@ export const getSessionUser = async () => {
     // Fetch the profile for role and other metadata
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('avatar_url, full_name')
+      .select('avatar_url, full_name, role, is_subscribed, custom_keybind')
       .eq('id', user.id)
       .maybeSingle();
 
