@@ -285,3 +285,7 @@ Verification after isolation:
 - No CMS-focused test failed.
 
 The prior 353-file/P0 diff finding is resolved. Remaining release work is deployed CMS evidence and any independent decision about the unrelated Abidan timeout.
+
+### Accepted test exception
+
+Taz explicitly accepted the unrelated `tests/unit/abidan-tah.test.ts` timeout on 2026-08-27. It is recorded as a known non-CMS exception and is not a Vibe CMS merge blocker. This acceptance does not waive the deployed CMS verification checklist.
