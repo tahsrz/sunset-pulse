@@ -78,7 +78,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
       // Resolve the final row through the shared dual-store freshness policy so
       // a newer Mongo site-application pointer cannot be hidden by a stale
       // Supabase projection.
-      const resolved = await readSiteConfig(String(data.agent_id || data.agentId || site));
+      const resolved = await readSiteConfig(String(data.agent_id || site));
       const resolvedConfig = resolved || data;
       return hydrateVibeProjection(normalizeTenantSite(site, resolvedConfig, fallback), resolvedConfig);
     }
