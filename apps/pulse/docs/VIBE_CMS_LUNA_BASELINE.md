@@ -959,3 +959,16 @@ Completed locally after the operator UI checkpoint:
 Local commits: `127b1702`, `57778476`, `6d084930`, `7f5d25c1`.
 
 The remaining merge gate is Required CMS Verification Before Merge. Record production evidence for the full operator-to-public flow, a second editorial cycle, draft/live isolation, rollback, and site restoration before merging.
+
+### Current Baseline Context (2026-08-27)
+
+This branch contains the Vibe CMS vertical implementation plus unrelated historical PR changes. The CMS implementation work for pointer resolution, editorial cycling, preview authentication, operator application, and lifecycle audit atomicity is complete locally and has focused type coverage where practical.
+
+Release status:
+
+- Complete: CMS feature implementation and lifecycle consistency actions.
+- Open: isolate the PR to a CMS-justified file set (Blocker 1).
+- Open: run and record the production operator-to-public verification sequence, including the second cycle and rollback (required merge gate).
+- Environment note: a generated `apps/pulse/cartridges/wikipedia/wikipedia-catalog.json.lock` is untracked and is not part of the CMS work.
+
+Progress estimate after this checkpoint: approximately 25% of the plan remains by checklist scope (the PR isolation gate plus production verification). The feature-code portion is effectively complete; the remaining percentage is release validation and evidence, not new CMS behavior.
