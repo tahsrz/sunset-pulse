@@ -103,6 +103,9 @@ const SiteConfigSchema = new mongoose.Schema({
     personalityPreset: { type: String, enum: ['Aggressive', 'Supportive', 'Mysterious', 'Custom'], default: 'Aggressive' }
   },
   lastModifiedBy: { type: String, default: 'Jamie' }
+  ,activeVibeRevisionId: { type: String, index: true }
+  ,activeVibeRevisionAppliedAt: { type: Date }
+  ,activeVibeRevisionAppliedBy: { type: String }
 }, { timestamps: true });
 
 SiteConfigSchema.index({ ownerId: 1, updatedAt: -1 });

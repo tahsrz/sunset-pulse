@@ -16,6 +16,8 @@ import {
 import { getAgentSiteSubdomain, getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import { getSiteReadinessChecks } from '@/lib/sites/siteReadiness';
 import { SiteConfig } from '@/models/SiteConfig';
+import { readPublishedVibeProjection } from '@/lib/cms/vibeService';
+import { readSiteConfig } from '@/lib/sites/siteConfigStore';
 
 export type TenantSite = {
   site: string;
@@ -38,6 +40,9 @@ export type TenantSite = {
   complianceProfile: ComplianceProfile;
   integrationProfile: IntegrationProfile;
   sections: Array<{ type: string; visible?: boolean; order?: number }>;
+  activeVibeRevisionId?: string;
+  vibeCssVars?: Record<string, string>;
+  vibeVoiceConfig?: Record<string, unknown>;
 };
 
 export type AgentTenantSite = TenantSite & {
@@ -61,7 +66,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
   try {
     const { data, error } = await supabaseAdmin
       .from('site_config')
-      .select('agent_id, subdomain, custom_domain, status, owner_name, branding, hero, agent_profile, assistant_profile, compliance_profile, integration_profile, billing_profile, review_profile, sections')
+      .select('agent_id, subdomain, custom_domain, status, owner_name, active_vibe_revision_id, branding, hero, agent_profile, assistant_profile, compliance_profile, integration_profile, billing_profile, review_profile, sections')
       .or(`subdomain.eq.${cleanSite},agent_id.eq.${cleanSite},agent_id.eq.${cleanSite}-site`)
       .maybeSingle();
 
@@ -70,7 +75,12 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
     }
 
     if (data) {
-      return normalizeTenantSite(site, data, fallback);
+      // Resolve the final row through the shared dual-store freshness policy so
+      // a newer Mongo site-application pointer cannot be hidden by a stale
+      // Supabase projection.
+      const resolved = await readSiteConfig(String(data.agent_id || site));
+      const resolvedConfig = resolved || data;
+      return hydrateVibeProjection(normalizeTenantSite(site, resolvedConfig, fallback), resolvedConfig);
     }
   } catch (error) {
     console.warn('[TENANT_SITE_SUPABASE_FALLBACK]', error);
@@ -89,7 +99,7 @@ export async function getTenantSite(site: string): Promise<TenantSite> {
 
     if (!config) return fallback;
 
-    return normalizeTenantSite(site, config, fallback);
+    return hydrateVibeProjection(normalizeTenantSite(site, config, fallback), config);
   } catch (error) {
     console.error('[TENANT_SITE_DATA_ERROR]', error);
     return fallback;
@@ -154,6 +164,7 @@ function normalizeTenantSite(
   const status = config.status || fallback.status;
   const billingProfile = config.billing_profile || config.billingProfile || {};
   const reviewProfile = config.review_profile || config.reviewProfile || {};
+  const activeVibeRevisionId = config.active_vibe_revision_id || config.activeVibeRevisionId || undefined;
 
   const readiness = getSiteReadinessChecks({
     siteName: branding.siteName || fallback.siteName,
@@ -201,6 +212,7 @@ function normalizeTenantSite(
     complianceProfile,
     integrationProfile,
     sections: normalizeSections(config.sections),
+    activeVibeRevisionId: activeVibeRevisionId ? String(activeVibeRevisionId) : undefined,
   };
 }
 
@@ -256,4 +268,20 @@ function normalizeSections(value: unknown) {
 
 function escapePostgrestValue(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+async function hydrateVibeProjection(tenantSite: TenantSite, config: Record<string, any>): Promise<TenantSite> {
+  const revisionId = config.active_vibe_revision_id || config.activeVibeRevisionId;
+  if (!revisionId) return tenantSite;
+  try {
+    const projection = await readPublishedVibeProjection({ revisionId: String(revisionId), tenantId: config.tenant_id || config.tenantId || 'default' });
+    if (!projection) return tenantSite;
+    const primaryTone = (projection.voiceConfig as any)?.voice?.primaryTone;
+    const assistantProfile = primaryTone
+      ? { ...tenantSite.assistantProfile, tone: String(primaryTone) }
+      : tenantSite.assistantProfile;
+    return { ...tenantSite, assistantProfile, activeVibeRevisionId: projection.revisionId, vibeCssVars: projection.cssVars, vibeVoiceConfig: projection.voiceConfig };
+  } catch (error) {
+    console.warn('[TENANT_SITE_VIBE_PROJECTION]', error);
+    return tenantSite;
+  }
 }

@@ -86,6 +86,24 @@ describe('siteConfigStore', () => {
     await expect(readSiteConfig('broker-one')).resolves.toBe(mongoRow);
   });
 
+  it('resolves the newer Mongo-applied Vibe pointer when both stores contain the site', async () => {
+    const supabaseRow = {
+      agent_id: 'broker-one',
+      active_vibe_revision_id: 'old-revision',
+      updated_at: '2026-07-23T10:00:00.000Z',
+    };
+    const mongoRow = {
+      agentId: 'broker-one',
+      activeVibeRevisionId: 'new-revision',
+      updatedAt: '2026-07-23T11:00:00.000Z',
+    };
+
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: supabaseRow, error: null });
+    storeMocks.resolveMongoFindOne.mockResolvedValue(mongoRow);
+
+    await expect(readSiteConfig('broker-one')).resolves.toMatchObject({ activeVibeRevisionId: 'new-revision' });
+  });
+
   it('uses provisioning audit time as a freshness fallback for older Mongo records', async () => {
     const supabaseRow = {
       agent_id: 'broker-one',
@@ -103,6 +121,12 @@ describe('siteConfigStore', () => {
     storeMocks.resolveMongoFindOne.mockResolvedValue(mongoRow);
 
     await expect(readSiteConfig('broker-one')).resolves.toBe(mongoRow);
+  });
+
+  it('preserves Mongo Vibe pointer when Supabase has a newer unrelated write', async () => {
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: { agent_id: 'broker-one', active_vibe_revision_id: 'old', updated_at: '2026-07-23T12:00:00.000Z' }, error: null });
+    storeMocks.resolveMongoFindOne.mockResolvedValue({ agentId: 'broker-one', activeVibeRevisionId: 'applied', updatedAt: '2026-07-23T11:00:00.000Z', activeVibeRevisionAppliedBy: 'operator' });
+    await expect(readSiteConfig('broker-one')).resolves.toMatchObject({ activeVibeRevisionId: 'applied', activeVibeRevisionAppliedBy: 'operator' });
   });
 
   it('does not return an expired Supabase grace row when Mongo has newer active state', async () => {
