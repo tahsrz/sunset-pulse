@@ -4,7 +4,6 @@ import VibeRevision from '@/models/VibeRevision';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { publishVibeRevision } from '@/lib/cms/vibeService';
 import { vibeDraftSchema } from '@/lib/cms/vibeSchema';
-import VibeAuditEvent from '@/models/VibeAuditEvent';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +24,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
       draft: vibeDraftSchema.parse(revision.snapshot),
       actorId: operatorAuditUser(access).userId,
       changeSummary: `Rollback to revision ${revision.revisionNumber}: ${body.reason.trim()}`,
+      rollbackReason: body.reason.trim(),
     });
-    const createdRevision = created as { _id?: unknown } | null | undefined;
-    await VibeAuditEvent.create({ vibeId, tenantId, action: 'rolled_back', revisionId: createdRevision?._id ? String(createdRevision._id) : undefined, actorId: operatorAuditUser(access).userId, reason: body.reason.trim() });
     return NextResponse.json({ revision: created }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Rollback could not be completed.' }, { status: 409 });

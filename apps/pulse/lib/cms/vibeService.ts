@@ -66,6 +66,7 @@ export async function publishVibeRevision(input: {
   draft?: VibeDraft;
   actorId: string;
   changeSummary?: string;
+  rollbackReason?: string;
 }) {
   const session = await mongoose.startSession();
   try {
@@ -98,6 +99,7 @@ export async function publishVibeRevision(input: {
       });
       await revision.save({ session });
       await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'published', revisionId, actorId: input.actorId, reason: input.changeSummary || '' }], { session });
+      if (input.rollbackReason) await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'rolled_back', revisionId, actorId: input.actorId, reason: input.rollbackReason }], { session });
       vibe.publishedRevisionId = revisionId;
       vibe.status = 'published';
       vibe.publishedBy = input.actorId;
