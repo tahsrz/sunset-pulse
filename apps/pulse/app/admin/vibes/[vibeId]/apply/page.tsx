@@ -27,7 +27,7 @@ export default function ApplyVibePage() {
   async function apply(event: FormEvent) {
     event.preventDefault(); setBusy(true); setMessage('');
     try {
-      const response = await fetch(`/api/admin/sites/${encodeURIComponent(siteId)}/apply-vibe?tenantId=default`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ revisionId }) });
+      const response = await fetch(`/api/admin/sites/${encodeURIComponent(siteId)}/apply-vibe?tenantId=default`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ vibeId, revisionId }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Unable to apply revision.');
       setMessage(`Revision ${revisionId} applied to site ${siteId}.`); await checkPointer();

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ si
   if (!parsed.success) return NextResponse.json({ error: 'revisionId is required.' }, { status: 400 });
   try {
     await connectDB();
-    const site = await applyVibeRevisionToSite({ siteId, tenantId, revisionId: parsed.data.revisionId, actorId: operatorAuditUser(access).userId });
+    const site = await applyVibeRevisionToSite({ siteId, tenantId, vibeId: parsed.data.vibeId, revisionId: parsed.data.revisionId, actorId: operatorAuditUser(access).userId });
     return NextResponse.json({ site });
   } catch (error) {
     const code = error instanceof Error ? error.message : '';
@@ -25,4 +25,4 @@ export async function POST(request: NextRequest, context: { params: Promise<{ si
   }
 }
 
-const inputSchema = z.object({ revisionId: z.string().trim().min(1).max(120) }).strict();
+const inputSchema = z.object({ vibeId: z.string().trim().min(1).max(200), revisionId: z.string().trim().min(1).max(120) }).strict();

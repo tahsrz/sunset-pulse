@@ -15,7 +15,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   const body = await request.json().catch(() => null) as { revisionId?: string; reason?: string } | null;
   if (!body?.revisionId || !body.reason?.trim()) return NextResponse.json({ error: 'revisionId and rollback reason are required.' }, { status: 400 });
   await connectDB();
-  const revision = await VibeRevision.findOne({ _id: body.revisionId, vibeId, tenantId }).lean() as any;
+  const revision = await VibeRevision.findOne({ _id: body.revisionId, vibeId, tenantId, publishedAt: { $exists: true, $ne: null } }).lean() as any;
   if (!revision) return NextResponse.json({ error: 'Revision not found.' }, { status: 404 });
   try {
     const created = await publishVibeRevision({
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
       actorId: operatorAuditUser(access).userId,
       changeSummary: `Rollback to revision ${revision.revisionNumber}: ${body.reason.trim()}`,
       rollbackReason: body.reason.trim(),
+      rollbackSourceRevisionId: String(revision._id),
     });
     return NextResponse.json({ revision: created }, { status: 201 });
   } catch {

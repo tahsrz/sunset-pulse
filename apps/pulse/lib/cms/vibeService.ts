@@ -30,7 +30,7 @@ export async function saveVibeDraft(input: {
   expectedVersion?: number;
 }) {
   const draft = vibeDraftSchema.parse(input.draft);
-  const filter: Record<string, unknown> = { vibeId: input.vibeId, tenantId: input.tenantId };
+  const filter: Record<string, unknown> = { vibeId: input.vibeId, tenantId: input.tenantId, status: { $in: ['draft', 'published'] } };
   if (input.expectedVersion !== undefined) filter.currentDraftVersion = input.expectedVersion;
 
   const updated = await Vibe.findOneAndUpdate(filter, {
@@ -67,6 +67,7 @@ export async function publishVibeRevision(input: {
   actorId: string;
   changeSummary?: string;
   rollbackReason?: string;
+  rollbackSourceRevisionId?: string;
 }) {
   const session = await mongoose.startSession();
   try {
@@ -99,7 +100,7 @@ export async function publishVibeRevision(input: {
       });
       await revision.save({ session });
       await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'published', revisionId, actorId: input.actorId, reason: input.changeSummary || '' }], { session });
-      if (input.rollbackReason) await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'rolled_back', revisionId, actorId: input.actorId, reason: input.rollbackReason }], { session });
+      if (input.rollbackReason) await VibeAuditEvent.create([{ vibeId: input.vibeId, tenantId: input.tenantId, action: 'rolled_back', revisionId, sourceRevisionId: input.rollbackSourceRevisionId, actorId: input.actorId, reason: input.rollbackReason }], { session });
       vibe.publishedRevisionId = revisionId;
       vibe.status = 'published';
       vibe.publishedBy = input.actorId;
@@ -156,12 +157,12 @@ function contrastRatio(first: string, second: string) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export async function applyVibeRevisionToSite(input: { siteId: string; tenantId: string; revisionId: string; actorId: string }) {
+export async function applyVibeRevisionToSite(input: { siteId: string; tenantId: string; vibeId: string; revisionId: string; actorId: string }) {
   const session = await mongoose.startSession();
   try {
     let site;
     await session.withTransaction(async () => {
-      const revision = await VibeRevision.findOne({ _id: input.revisionId, tenantId: input.tenantId, publishedAt: { $exists: true, $ne: null } }).session(session).lean();
+      const revision = await VibeRevision.findOne({ _id: input.revisionId, vibeId: input.vibeId, tenantId: input.tenantId, publishedAt: { $exists: true, $ne: null } }).session(session).lean();
       if (!revision) throw new Error('PUBLISHED_REVISION_NOT_FOUND');
       site = await SiteConfig.findOneAndUpdate(
         { agentId: input.siteId },

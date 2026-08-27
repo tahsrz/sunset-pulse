@@ -14,6 +14,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   const tenantId = request.nextUrl.searchParams.get('tenantId')?.trim() || 'default';
   const body = await request.json().catch(() => null) as { changeSummary?: string } | null;
   const parsed = publishInputSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid publication request.', issues: parsed.error.flatten() }, { status: 400 });
   try {
     await connectDB();
     const vibe = await Vibe.findOne({ vibeId, tenantId }).select('status submittedRevisionId').lean() as any;
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
       tenantId,
       submittedRevisionId: String(vibe.submittedRevisionId || ''),
       actorId: operatorAuditUser(access).userId,
-      changeSummary: parsed.success ? parsed.data.changeSummary : undefined,
+      changeSummary: parsed.data.changeSummary,
     });
     return NextResponse.json({ revision }, { status: 201 });
   } catch (error) {
