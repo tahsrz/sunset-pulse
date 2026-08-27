@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
-import VibeRevision from '@/models/VibeRevision';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { publishVibeRevision } from '@/lib/cms/vibeService';
-import { vibeDraftSchema } from '@/lib/cms/vibeSchema';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -21,13 +19,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
     const vibe = await Vibe.findOne({ vibeId, tenantId }).select('status submittedRevisionId').lean() as any;
     if (!vibe) return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
     if (vibe.status !== 'in_review') return NextResponse.json({ error: 'Only vibes in review can be published.', code: 'INVALID_TRANSITION' }, { status: 409 });
-    const submitted = vibe.submittedRevisionId ? await VibeRevision.findOne({ _id: vibe.submittedRevisionId, vibeId, tenantId }).lean() as any : null;
-    if (!submitted) return NextResponse.json({ error: 'No submitted revision is available for publication.', code: 'MISSING_REVISION' }, { status: 409 });
-    const draft = vibeDraftSchema.parse(submitted.snapshot);
     const revision = await publishVibeRevision({
       vibeId,
       tenantId,
-      draft,
+      submittedRevisionId: String(vibe.submittedRevisionId || ''),
       actorId: operatorAuditUser(access).userId,
       changeSummary: parsed.success ? parsed.data.changeSummary : undefined,
     });
@@ -35,6 +30,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     if (message === 'VIBE_NOT_FOUND') return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
+    if (message === 'INVALID_SUBMITTED_REVISION') return NextResponse.json({ error: 'The submitted revision is no longer available for publication.', code: 'INVALID_TRANSITION' }, { status: 409 });
     return NextResponse.json({ error: 'Vibe cannot be published.', details: message === 'VIBE_NOT_FOUND' ? undefined : 'Draft validation or publication failed.' }, { status: 400 });
   }
 }

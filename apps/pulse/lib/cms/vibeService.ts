@@ -62,18 +62,22 @@ export async function saveVibeDraft(input: {
 export async function publishVibeRevision(input: {
   vibeId: string;
   tenantId: string;
-  draft: VibeDraft;
+  submittedRevisionId?: string;
+  draft?: VibeDraft;
   actorId: string;
   changeSummary?: string;
 }) {
-  const draft = vibeDraftSchema.parse(input.draft);
-  assertReadableTheme(draft);
   const session = await mongoose.startSession();
   try {
     let published;
     await session.withTransaction(async () => {
       const vibe = await Vibe.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).session(session);
       if (!vibe) throw new Error('VIBE_NOT_FOUND');
+      if (input.submittedRevisionId && (vibe.status !== 'in_review' || String(vibe.submittedRevisionId || '') !== input.submittedRevisionId)) throw new Error('INVALID_SUBMITTED_REVISION');
+      const submittedSnapshot = input.submittedRevisionId ? await VibeRevision.findOne({ _id: input.submittedRevisionId, vibeId: input.vibeId, tenantId: input.tenantId, publishedAt: { $exists: false } }).session(session).lean() as any : null;
+      if (input.submittedRevisionId && !submittedSnapshot) throw new Error('INVALID_SUBMITTED_REVISION');
+      const draft = vibeDraftSchema.parse(submittedSnapshot?.snapshot || input.draft);
+      assertReadableTheme(draft);
       const previous = await VibeRevision.findOne({ vibeId: input.vibeId, tenantId: input.tenantId }).sort({ revisionNumber: -1 }).session(session).lean() as any;
       const revisionNumber = nextRevisionNumber(previous?.revisionNumber);
       const revisionId = new mongoose.Types.ObjectId().toString();
