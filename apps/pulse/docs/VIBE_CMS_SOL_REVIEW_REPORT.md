@@ -148,3 +148,12 @@ Retain Vibe schemas/models, CMS services, Vibe admin/API routes and screens, foc
 - L6 production verification and handoff: open, requiring a deployed operator session and evidence record.
 
 The implementation portion is now complete enough for Sol to review. Remaining work is release governance and production proof, not additional feature coding.
+
+## Local Verification Evidence (2026-08-27)
+
+- `npm run test:unit` completed with exit code 0 in the repository workspace.
+- `npx vitest run tests/unit/site-config-store.test.ts` passed: 1 file, 8 tests.
+- Focused TypeScript checks for publication, rollback, pointer resolution, and the operator apply page produced no diagnostics in the changed paths.
+- Browser/API/data proof was not claimed locally because the remaining scenario requires an authenticated deployed operator session and controlled production site.
+
+Local code verification is complete. L6 remains open only for deployed evidence; L5 remains open only for the explicit PR-history disposition.
