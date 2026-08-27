@@ -982,3 +982,19 @@ Progress estimate after this checkpoint: approximately 20% of the plan remains b
 ### Sol Review Gate
 
 This baseline is ready for Sol’s implementation review. Review focus should be limited to: (1) whether the tracked PR diff is acceptable for the Vibe CMS milestone, (2) whether the Mongo/Supabase freshness rule matches the intended production authority, (3) whether lifecycle transactions preserve existing API contracts, and (4) whether the required production evidence is complete. Do not request additional feature expansion until those four review points and the manual verification record are resolved.
+
+### Current WIP Routing and Access Context (2026-08-27)
+
+The Vibe workspace was deliberately moved out of the admin namespace to avoid unrelated admin-route constraints during WIP testing:
+
+- UI: `/vibes`, `/vibes/new`, and `/vibes/:vibeId/*`.
+- Direct Vibe API: `/api/vibes/*`.
+- The temporary WIP exception permits public Vibe reads and writes. Actions without an authenticated operator are recorded as `vibe-cms-wip-public`.
+- The exception can be disabled with `VIBE_CMS_PUBLIC_WRITE_WIP=false`, restoring the regular operator boundary for the Vibe API.
+- Applying a published revision to a live site remains on the protected site-management API and is intentionally omitted from the public WIP sidebar. Do not move that mutation under `/api/vibes` without an explicit product decision.
+
+Current next actions:
+
+1. Test the public WIP editorial path at `/vibes`: create, edit, preview, submit, publish, inspect revisions, and compare revisions.
+2. Perform the controlled, operator-authorized site-application and public-runtime verification sequence recorded above.
+3. Before production release, disable the public WIP exception and re-run the required production verification record.

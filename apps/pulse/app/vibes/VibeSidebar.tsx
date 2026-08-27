@@ -29,6 +29,8 @@ export function VibeSidebar() {
     ? [
         { href: `/vibes/${vibeId}/edit`, label: 'Editor' },
         { href: `/vibes/${vibeId}/preview`, label: 'Preview' },
+        { href: `/vibes/${vibeId}/submit`, label: 'Submit for review' },
+        { href: `/vibes/${vibeId}/publish`, label: 'Publish' },
         { href: `/vibes/${vibeId}/revisions`, label: 'Revisions' },
         { href: `/vibes/${vibeId}/audit`, label: 'Audit log' },
         { href: `/vibes/${vibeId}/source`, label: 'Source' },
