@@ -47,7 +47,9 @@ export async function saveVibeDraft(input: {
       visualParameters: draft.tokens.visual.effects,
       updatedBy: input.actorId,
       updatedAt: new Date(),
+      status: 'draft',
     },
+    $unset: { submittedRevisionId: 1 },
     $inc: { currentDraftVersion: 1 },
   }, { new: true, runValidators: true }).lean();
 
