@@ -271,3 +271,17 @@ Impact: operational decisions and recovery guidance are lost from the merged his
 ### Compatibility conclusion
 
 Merging the branch as-is is a breaking platform release, not a CMS feature release. The Vibe CMS additions do not require most of these deletions. The safe disposition is to isolate the CMS additions and narrowly required site integration, restoring the deleted platform files, routes, migrations, tests, scripts, environment documentation, and CI enforcement from `origin/main`. If the deletions are intentional, they require a separately reviewed deprecation/migration release with consumer communication and database reconciliation.
+
+## Isolation Completion (2026-08-27)
+
+The accidental platform rollback was traced to commit `43200758`, which reverted the earlier main integration. Commit `2548ccea` reverts that revert and restores the platform baseline without switching branches.
+
+Resulting PR diff against `origin/main`: 54 files, 2,779 additions, and 18 deletions. The remaining files are Vibe CMS core, CMS documentation/tests, and direct Launch Kit/public-site integration. Supabase quota-control intent is preserved as part of the current main baseline rather than being reconstructed through blanket file restoration.
+
+Verification after isolation:
+
+- Focused CMS suites: 4 files passed, 20 tests passed.
+- Full unit suite restored broad platform coverage and found one unrelated timeout in `tests/unit/abidan-tah.test.ts`.
+- No CMS-focused test failed.
+
+The prior 353-file/P0 diff finding is resolved. Remaining release work is deployed CMS evidence and any independent decision about the unrelated Abidan timeout.
