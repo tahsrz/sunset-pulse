@@ -137,3 +137,14 @@ Do not declare the CMS merge-ready after code changes alone. Completion requires
 Measured against `origin/main` on 2026-08-27: 353 files changed, 3,935 insertions, and 18,916 deletions; the branch is 81 commits ahead. This confirms that L5 is a release-governance task, not a code-quality cleanup.
 
 Retain Vibe schemas/models, CMS services, Vibe admin/API routes and screens, focused CMS tests, the baseline/report documents, and narrowly required Launch Kit/public-site integration. Retain legacy compatibility files only when a retained CMS path imports or calls them, with that dependency documented. Classify unrelated product, migration, test, documentation, and CI changes as unrelated unless Sol explicitly accepts them. No history rewrite or automatic revert was performed.
+
+## Remediation Status Checkpoint (2026-08-27)
+
+- L1 atomic publication authorization: complete in `34815b90`.
+- L2 authoritative pointer protection: complete in `1b7d9eaf`; Sol must still confirm the intended production authority.
+- L3 status-aware operator application UI: complete in `c5153ae3`.
+- L4 transactional rollback audit: complete in `9f77c267`.
+- L5 PR diff reconciliation: open, requiring Sol/Taz disposition of unrelated history.
+- L6 production verification and handoff: open, requiring a deployed operator session and evidence record.
+
+The implementation portion is now complete enough for Sol to review. Remaining work is release governance and production proof, not additional feature coding.
