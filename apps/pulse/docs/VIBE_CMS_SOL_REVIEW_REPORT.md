@@ -189,3 +189,85 @@ Local unit and focused type checks pass, but no authenticated deployed evidence 
 ### Review disposition
 
 Implementation is materially improved but not merge-ready. Resolve the P0 scope decision and both P1 contract gaps, then complete deployed verification. No additional feature expansion is recommended.
+
+## Breaking-Change Audit of the Full PR
+
+The branch contains 164 deleted files, 141 modified files, and 48 added files. A successful build does not make these deletions compatible: consumers receive removed routes, altered response contracts, missing persistence structures, and reduced safeguards at runtime.
+
+### Critical: tenant routing and domain authority
+
+- Deletes the tenant contracts, environment parser, tenant resolver, request cache, domain registry, Supabase domain registry, and domain-manifest worker.
+- Deletes the tenant domain-projection cron route and its database foundation migrations/tests.
+- Changes `tenantRouting.ts` to trust `x-forwarded-host` unconditionally instead of requiring `TRUSTED_PROXY_HOST_HEADER=true`.
+- Removes the exported `normalizePublicTenantSlug` helper, breaking any external or future imports relying on that contract.
+
+Impact: tenant/domain resolution behavior changes, custom-domain projection stops, and deployments behind an untrusted proxy boundary may accept a spoofed forwarded host. Existing domain records may remain in the database but lose their application worker and route support.
+
+### Critical: database migration history removal
+
+Fourteen migrations are deleted, covering lead idempotency, tenant foundations, domain worker claims, opportunity values, notification receipts, funnel identity, engagement receipts, escalation state, profit baselines, commercial booking lineage, billable outcomes, internal costs, shadow economics, and conversion baselines.
+
+Impact: new environments cannot reproduce the schema used by existing production data and code. Existing databases are not automatically rolled back, creating schema drift between deployed databases and repository migration history. Disaster recovery, preview environments, and onboarding a new database become unreliable.
+
+### High: commercial booking and scheduling regression
+
+- Deletes the public scheduling route and the authoritative commercial booking service.
+- Removes commercial context validation and Supabase-authoritative booking persistence from the remaining scheduling endpoint.
+- Stops returning `authoritativeBookingId` and `duplicate` fields.
+- Removes idempotent lookup/upsert behavior and generates a new booking UID on each call.
+- Removes structured lead, funnel, site, and appointment metadata from Mongo/Prisma projections.
+
+Impact: existing clients using the public scheduling endpoint receive 404s; retries can create duplicate bookings; downstream funnel attribution and commercial lineage disappear; response consumers expecting the removed fields can fail.
+
+### High: profit, billing, and commercial controls removal
+
+- Deletes the profit admin screen and baseline, invoice, scorecard, credit, and cron endpoints.
+- Deletes billing controls, product configuration, cost ledgers, outcome ledgers, pricing decisions, profitability analytics, launch gates, shadow invoices, and checkpoint services.
+- Removes associated environment variables and focused tests.
+
+Impact: profit reporting and administrative operations disappear, scheduled checkpoints stop, billable-outcome and internal-cost persistence lose their application services, and pricing/launch decisions can no longer be reproduced from the repository.
+
+### High: representation workflow removal
+
+- Deletes the representation agreement service, signing API, and representation page.
+
+Impact: links and clients using the representation workflow receive 404s, and agreement generation/signing capability is removed without a replacement or migration path.
+
+### High: Atlas and AI retrieval regression
+
+- Deletes Atlas health/retrieval routes, retrieval inspector UI, Atlas path helpers, cartridge ranking, knowledge retrieval, retrieval evaluation, Jamie model routing/defaults, and knowledge fallback behavior.
+- Removes the Atlas retrieval evaluation script.
+
+Impact: Atlas monitoring and retrieval endpoints disappear; routing/fallback behavior changes; operational diagnosis and evaluation coverage are reduced; consumers of deleted APIs receive 404s.
+
+### High: public inventory and lead-response behavior
+
+- Deletes the public inventory data layer and lead-response escalation service.
+- Removes or rewrites related API and test coverage.
+
+Impact: public listing read behavior and lead escalation timing/notification contracts can change or disappear. These are customer-facing and operationally significant even if unrelated pages still compile.
+
+### Medium: notification configuration contract replacement
+
+- Removes native operator notification variables and replaces them with Novu pipeline variables.
+- Removes operating-hours and contact-threshold settings.
+
+Impact: deployments configured for the former notification path can silently stop or change alert delivery after deploy unless environment variables and workflows are migrated.
+
+### High: CI and regression coverage reduction
+
+- Removes `test:inventory-truth` from root and app package scripts.
+- Removes the CI step enforcing commercial inventory truth.
+- Deletes many unit/integration tests covering tenant boundaries, billing, profit, scheduling, representation, Atlas, and database contracts.
+
+Impact: CI can pass while the deleted behaviors regress. Green checks on this branch are not comparable to green checks on `main` because the enforcement surface itself was reduced.
+
+### Documentation and operational knowledge loss
+
+Approximately 7,823 documentation lines are removed, including sprint architecture, identity maps, risk registers, migration catalogs, implementation contracts, and executable test catalogs.
+
+Impact: operational decisions and recovery guidance are lost from the merged history, making the remaining code and database state harder to support.
+
+### Compatibility conclusion
+
+Merging the branch as-is is a breaking platform release, not a CMS feature release. The Vibe CMS additions do not require most of these deletions. The safe disposition is to isolate the CMS additions and narrowly required site integration, restoring the deleted platform files, routes, migrations, tests, scripts, environment documentation, and CI enforcement from `origin/main`. If the deletions are intentional, they require a separately reviewed deprecation/migration release with consumer communication and database reconciliation.
