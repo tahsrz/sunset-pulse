@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Send,
+  Settings,
   Tags,
   Upload,
   type LucideIcon,
@@ -41,6 +42,7 @@ function getWorkflowItems(vibeId: string, status: string | null): NavigationItem
   const items: NavigationItem[] = [
     { href: `/vibes/${vibeId}/edit`, label: 'Edit Vibe', icon: Pencil },
     { href: `/vibes/${vibeId}/preview`, label: 'Preview', icon: Eye },
+    { href: `/vibes/${vibeId}/actions`, label: 'Status & Actions', icon: Settings },
   ];
 
   if (status === 'draft') items.push({ href: `/vibes/${vibeId}/submit`, label: 'Submit for Review', icon: Send });
