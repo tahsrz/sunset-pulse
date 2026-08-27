@@ -6,6 +6,7 @@ import { operatorAuditUser } from '@/lib/core/routeAuth';
 import { z } from 'zod';
 import { createDefaultVibeDraft } from '@/lib/cms/vibeSchema';
 import VibeAuditEvent from '@/models/VibeAuditEvent';
+import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +50,11 @@ export async function POST(request: NextRequest) {
   await connectDB();
   try {
     const actor = operatorAuditUser(access).userId;
-    const vibe = await Vibe.create({
+    const session = await mongoose.startSession();
+    let vibe;
+    try {
+      await session.withTransaction(async () => {
+        const created = await Vibe.create([{
       vibeId: `${tenantId}-${parsed.data.slug}`,
       tenantId,
       title: parsed.data.title,
@@ -61,8 +66,11 @@ export async function POST(request: NextRequest) {
       updatedBy: actor,
       currentDraftVersion: 0,
       draftPayload: createDefaultVibeDraft(parsed.data),
-    });
-    await VibeAuditEvent.create({ vibeId: vibe.vibeId, tenantId, action: 'created', actorId: actor });
+        }], { session });
+        vibe = created[0];
+        await VibeAuditEvent.create([{ vibeId: vibe.vibeId, tenantId, action: 'created', actorId: actor }], { session });
+      });
+    } finally { await session.endSession(); }
     return NextResponse.json({ vibe }, { status: 201 });
   } catch (error: any) {
     if (error?.code === 11000) return NextResponse.json({ error: 'A vibe with that slug already exists.' }, { status: 409 });
