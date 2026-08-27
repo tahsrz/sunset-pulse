@@ -4,6 +4,7 @@ import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { transitionVibe } from '@/lib/cms/vibeWorkflow';
 import VibeAuditEvent from '@/models/VibeAuditEvent';
+import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest, context: { params: Promise<{ vibeId: string }> }) {
@@ -13,8 +14,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ vi
   if (!vibe) return NextResponse.json({ error: 'Vibe not found.' }, { status: 404 });
   const transition = transitionVibe({ status: vibe.status || 'draft', action: 'trash' });
   if (!transition.ok) return NextResponse.json({ error: transition.message, code: transition.code }, { status: 409 });
-  const updated = await Vibe.findOneAndUpdate({ vibeId, tenantId, status: vibe.status || 'draft' }, { $set: { status: 'trash', migrationMetadata: { lastNonTrashStatus: vibe.status, trashedBy: operatorAuditUser(access).userId, trashedAt: new Date().toISOString() }, updatedAt: new Date() } }, { new: true }).lean();
-  if (!updated) return NextResponse.json({ error: 'Vibe changed before trashing.' }, { status: 409 });
-  await VibeAuditEvent.create({ vibeId, tenantId, action: 'trashed', actorId: operatorAuditUser(access).userId });
+  const session = await mongoose.startSession(); let updated;
+  try { await session.withTransaction(async () => { updated = await Vibe.findOneAndUpdate({ vibeId, tenantId, status: vibe.status || 'draft' }, { $set: { status: 'trash', migrationMetadata: { lastNonTrashStatus: vibe.status, trashedBy: operatorAuditUser(access).userId, trashedAt: new Date().toISOString() }, updatedAt: new Date() } }, { new: true, session }).lean(); if (!updated) throw new Error('VIBE_CHANGED'); await VibeAuditEvent.create([{ vibeId, tenantId, action: 'trashed', actorId: operatorAuditUser(access).userId }], { session }); }); } catch (error) { if (error instanceof Error && error.message === 'VIBE_CHANGED') return NextResponse.json({ error: 'Vibe changed before trashing.' }, { status: 409 }); throw error; } finally { await session.endSession(); }
   return NextResponse.json({ vibe: updated });
 }
