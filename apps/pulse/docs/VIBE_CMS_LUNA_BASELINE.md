@@ -1004,6 +1004,7 @@ Current next actions:
 - Disposable Vibe: `default-codex-wip-verification-aug-27`.
 - Save proof: draft version advanced from 0 to 1 after taxonomy and source-provenance edits.
 - Lifecycle proof: submit created immutable checkpoint r1; publish created immutable published r2.
+- Lifecycle restoration proof: archive moved the disposable Vibe to `archived`; the confirmed destructive **Move to trash** action moved it to `trash`; **Restore vibe** returned it to its recorded pre-trash state, `archived`. The sidebar refreshed to each resulting status.
 - Publication proof: the revision list marked r2 Published and offered the protected **Apply to site** handoff with the exact revision ID and number.
 - Read-only proof: the compiled-token preview rendered; the audit API returned created, submitted, and published events; and r1 → r2 comparison correctly returned no payload differences.
 - Actor: `vibe-cms-wip-public`, as expected while the temporary WIP exception is enabled.
