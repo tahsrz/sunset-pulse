@@ -4,6 +4,7 @@ import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
 const storeMocks = vi.hoisted(() => ({
   readSiteConfig: vi.fn(),
   readExpiredPastDueSiteConfigs: vi.fn(),
+  claimPastDueSiteConfigForExpiry: vi.fn(),
   saveSiteConfig: vi.fn(),
   notifyBuyerSiteProvisioned: vi.fn(),
   notifyBuyerSiteBillingUpdate: vi.fn(),
@@ -15,6 +16,7 @@ const storeMocks = vi.hoisted(() => ({
 vi.mock('@/lib/sites/siteConfigStore', () => ({
   readSiteConfig: storeMocks.readSiteConfig,
   readExpiredPastDueSiteConfigs: storeMocks.readExpiredPastDueSiteConfigs,
+  claimPastDueSiteConfigForExpiry: storeMocks.claimPastDueSiteConfigForExpiry,
   saveSiteConfig: storeMocks.saveSiteConfig,
 }));
 
@@ -40,6 +42,7 @@ describe('site provisioning', () => {
     vi.clearAllMocks();
     storeMocks.readSiteConfig.mockResolvedValue(null);
     storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([]);
+    storeMocks.claimPastDueSiteConfigForExpiry.mockResolvedValue(true);
     storeMocks.saveSiteConfig.mockResolvedValue(['supabase', 'mongo']);
     storeMocks.notifyBuyerSiteProvisioned.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });
     storeMocks.notifyBuyerSiteBillingUpdate.mockResolvedValue({ status: 'skipped', reason: 'test', recipients: [] });

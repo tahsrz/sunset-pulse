@@ -338,10 +338,11 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   const sendChatMessage = async (
     content: string,
-    options?: { logUser?: boolean; skipUserLog?: boolean; skipUserAppend?: boolean }
+    options?: { logUser?: boolean; skipUserLog?: boolean; skipUserAppend?: boolean; allowWhileLoading?: boolean }
   ) => {
     const currentInput = content.trim();
     if (!currentInput) return;
+    if (isLoading && !options?.allowWhileLoading) return;
 
     setVibeFromContent(currentInput);
 
@@ -469,7 +470,10 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       return;
     }
 
-    setMessages([...messages, { id: crypto.randomUUID(), role: message.role, content: message.content }]);
+    const appendedMessage: ChatMessage = { id: crypto.randomUUID(), role: message.role, content: message.content };
+    const nextMessages = [...messagesRef.current, appendedMessage];
+    messagesRef.current = nextMessages;
+    setMessages(nextMessages);
   };
 
   // Sync messages from local storage or Supabase on mount
@@ -517,7 +521,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const currentInput = input.trim();
-    if (!currentInput) return;
+    if (!currentInput || isLoading) return;
 
     setInput('');
     setHistoryIndex(-1);
@@ -529,8 +533,12 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       content: currentInput,
     };
 
-    // Immediately reflect user message in the UI
-    setMessages((prev) => [...prev, userMessage]);
+    // Keep the ref and state synchronized before the async shield/chat chain.
+    // The next call deliberately skips appending so it must see this message.
+    const nextMessages = [...messagesRef.current, userMessage];
+    messagesRef.current = nextMessages;
+    setMessages(nextMessages);
+    setIsLoading(true);
 
     await memoryBridge.logInteraction({
       role: 'user',
@@ -569,6 +577,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
           // Post-processing (TTS, Intel Cards, Vibe Context)
           await handleAction(assistantMsg);
+          setIsLoading(false);
           return;
         }
       }
@@ -577,7 +586,7 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     }
 
     // Since user message & memory log are already handled above, pass flags accordingly:
-    await sendChatMessage(currentInput, { skipUserLog: true, skipUserAppend: true });
+    await sendChatMessage(currentInput, { skipUserLog: true, skipUserAppend: true, allowWhileLoading: true });
   };
 
   const dockSideClass = isLefthandMode ? 'left-2 items-start sm:left-0' : 'right-2 items-end sm:right-0';

@@ -80,6 +80,7 @@ export type PublicGuideContext = {
 };
 
 export const PUBLIC_GUIDE_ACTION_IDS = [
+  'book_consultation',
   'browse_homes',
   'contact_agent',
   'explore_sunset_pulse',

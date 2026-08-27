@@ -1,8 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { fetchRentEstimate } from '@/lib/data/rentcast';
-import Property from '@/models/Property';
-import connectDB from '@/lib/core/database';
+import { getPublicListingById } from '@/lib/data/listingRepository';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { IntelligenceVault } from '@/lib/core/intelligenceVault';
 
@@ -12,10 +11,9 @@ import { IntelligenceVault } from '@/lib/core/intelligenceVault';
  */
 export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    await connectDB();
     const { id } = await params;
 
-    const property: any = await Property.findById(id).lean();
+    const property = await getPublicListingById(id);
     if (!property) return errorResponse('Asset not found in grid.', 404);
 
     const address = `${property.location.street}, ${property.location.city}, ${property.location.state} ${property.location.zipcode}`;

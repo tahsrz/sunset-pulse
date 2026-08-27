@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
+import { notifyProcessedLead, processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
 import { supabase } from '@/lib/supabase';
+import { dispatchOperationalAlert } from '@/lib/notifications/agentAlertChannels';
 
 // Mock Supabase
 vi.mock('@/lib/supabase', () => ({
@@ -44,8 +45,8 @@ vi.mock('@/lib/communication/telegram', () => ({
   sendTelegramNotification: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@/lib/notifications/novu', () => ({
-  notifyHotLeadWithNovu: vi.fn(() => Promise.resolve({ status: 'queued_local' })),
+vi.mock('@/lib/notifications/agentAlertChannels', () => ({
+  dispatchOperationalAlert: vi.fn(() => Promise.resolve({ status: 'sent' })),
 }));
 
 describe('Lead Processor', () => {
@@ -109,5 +110,22 @@ describe('Lead Processor', () => {
         expect.objectContaining({ onConflict: 'email' })
       );
     });
+  });
+
+  it('uses a non-PII provider idempotency key for lead notifications', async () => {
+    await notifyProcessedLead({
+      leadData: { name: 'John Doe', email: 'john@example.com' },
+      probability: 75,
+      tags: [],
+      jamieNotes: '',
+      reengagementHook: { a: 'Call now' },
+      leadCategory: 'Residential',
+    });
+
+    expect(dispatchOperationalAlert).toHaveBeenCalledWith(expect.objectContaining({
+      idempotencyKey: expect.stringMatching(/^new-lead-[a-f0-9]{20}-/),
+    }));
+    const idempotencyKey = vi.mocked(dispatchOperationalAlert).mock.calls[0]?.[0].idempotencyKey;
+    expect(idempotencyKey).not.toContain('john@example.com');
   });
 });

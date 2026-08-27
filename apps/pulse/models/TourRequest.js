@@ -37,7 +37,12 @@ const TourRequestSchema = new Schema(
     agentId: {
       type: String,
       default: 'taz-realty-001'
-    }
+    },
+    authoritativeBookingId: { type: String, unique: true, sparse: true },
+    leadId: String,
+    funnelId: String,
+    site: String,
+    appointmentType: String,
   },
   {
     timestamps: true,

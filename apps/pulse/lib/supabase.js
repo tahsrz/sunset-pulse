@@ -6,7 +6,10 @@ import { createBrowserClient, createServerClient } from '@supabase/ssr';
  */
 
 const getSupabaseConfig = () => {
-  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  // Server-side admin reads must prefer the private runtime URL; public config can be stale or browser-specific.
+  let url = typeof window === 'undefined'
+    ? process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+    : process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   
   // Validation: Prevent Vercel prj_ leaks or missing credentials

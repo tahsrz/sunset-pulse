@@ -13,7 +13,7 @@ export const usePropertyInteraction = (propId: string, userId: string, userName:
     const checkCollection = async () => {
       const { data } = await supabase
         .from('collections')
-        .select('*')
+        .select('id')
         .eq('user_id', userId)
         .eq('property_id', propId)
         .single();
@@ -23,7 +23,7 @@ export const usePropertyInteraction = (propId: string, userId: string, userName:
     const fetchComments = async () => {
       const { data } = await supabase
         .from('property_comments')
-        .select('*')
+        .select('id, property_id, user_name, content, created_at')
         .eq('property_id', propId)
         .order('created_at', { ascending: true });
       if (data) setComments(data);

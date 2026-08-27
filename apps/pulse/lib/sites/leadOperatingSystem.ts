@@ -27,6 +27,10 @@ export type AgentSiteLeadData = {
   internal_note?: string | null;
   reviewed_at?: string | null;
   archived_at?: string | null;
+  contact_attempted_at?: string | null;
+  contact_channel?: 'call' | 'email' | 'sms' | null;
+  responded_at?: string | null;
+  response_source?: 'customer_reply' | 'appointment_booked' | null;
   metadata?: Record<string, unknown> | null;
 };
 

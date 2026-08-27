@@ -20,11 +20,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
-import { getListingById } from '@/lib/data/listingRepository';
 import { getPublicGuideCuration } from '@/lib/ai/publicGuideCuration';
 import { publicGuideContextInputSchema, type PublicGuideContext } from '@/lib/ai/publicGuideContract';
 import { resolvePublicGuideContext } from '@/lib/ai/publicGuideContext';
-import { getAgentTenantSite } from '@/lib/sites/siteData';
+import { getAgentTenantSite, getTenantListingById } from '@/lib/sites/siteData';
 import {
   safeAgentMarkets,
   safeListingAmenities,
@@ -80,7 +79,7 @@ export async function generateMetadata({ params }: TenantPageProps) {
   }
 
   if (path[0] === 'properties' && path[1]) {
-    const listing = await getListingById(decodeURIComponent(path[1]));
+    const listing = await getTenantListingById(tenantSite, decodeURIComponent(path[1]));
 
     if (listing && hasUsableRemoteListingImage(listing)) {
       const location = [listing.location.city, listing.location.state].filter(Boolean).join(', ');
@@ -154,7 +153,7 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
 
   if (path.length > 0) {
     if (path[0] === 'properties' && path[1]) {
-      const listing = await getListingById(decodeURIComponent(path[1]));
+       const listing = await getTenantListingById(tenantSite, decodeURIComponent(path[1]));
 
       if (!listing || !hasUsableRemoteListingImage(listing)) {
         notFound();

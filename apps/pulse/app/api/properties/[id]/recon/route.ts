@@ -1,13 +1,14 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { fetchOSMAmenities } from '@/lib/data/external/osm';
-import Property from '@/models/Property';
-import connectDB from '@/lib/core/database';
+import { getPublicListingById } from '@/lib/data/listingRepository';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { IntelligenceVault } from '@/lib/core/intelligenceVault';
 import { calculatePulseScore, getDistance } from '@/lib/intelligence/neighborhoodIntelligence';
 import { calculateTacticalYield, calculateMarketMomentum } from '@/lib/intelligence/financialIntelligence';
 import { createClient } from '@/utils/supabase/server';
+import { mockSearchProperties } from '@/lib/mocks/propertySearch';
+import mongoose from 'mongoose';
 
 /**
  * GET /api/properties/[id]/recon
@@ -15,33 +16,51 @@ import { createClient } from '@/utils/supabase/server';
  */
 export const GET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    await connectDB();
     const { id } = await params;
 
-    const property: any = await Property.findById(id).lean();
+    if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true' && !mongoose.isValidObjectId(id)) {
+      const mockProperty = mockSearchProperties.find((item) => item._id === id);
+      if (!mockProperty) return errorResponse('Asset not found in grid.', 404);
+      return successResponse({
+        propertyId: id,
+        neighborhood: {
+          pulseScore: 72,
+          neural_status: 'STABLE_GRID',
+          vibe_alignment: 'Sunset',
+          hub: { name: 'Sunset Gas & Grill', distance: 3.2, unit: 'miles', status: 'OPERATIONAL_REACH' },
+          schools: { count: 1, proximity: 'Localized Sector', rating: 'A-' },
+          hospitals: { count: 1, proximity: 'Standard', rating: 'A-', type: 'General Medical' },
+          transit: { nodes: 2, score: 'Medium Access' },
+          amenities: { total: mockProperty.amenities.length, retailDensity: 'Moderate', safetyIndex: 'Nominal' },
+        },
+        financial: { yield: { grade: 'B' }, market: {}, investment_grade: 'B' },
+        engagement: { visits_48h: 0, velocity: 'STABLE' },
+        raw_signals: {},
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const property = await getPublicListingById(id);
     if (!property) return errorResponse('Asset not found in grid.', 404);
 
-    const [lng, lat] = property.location_geo.coordinates;
+    const coordinates = property.location_geo?.coordinates;
+    if (!coordinates || coordinates.length < 2 || !coordinates.every(Number.isFinite)) {
+      return errorResponse('Asset location is unavailable for reconnaissance.', 404);
+    }
+    const [lng, lat] = coordinates;
 
-    // Fetch SiteConfig for Dynamic Context
+    // Tenant-specific configuration is intentionally unavailable until this route
+    // receives authoritative host-derived TenantContext. Never select a site from
+    // a browser-supplied agent header as a compatibility shortcut.
     const supabase = createClient();
-    const { data: sbConfig } = await supabase
-      .from('site_config')
-      .select('intelligence, branding')
-      .eq('agent_id', 'taz-realty-001')
-      .single();
 
     const defaultGrill = {
       name: 'Sunset Gas & Grill',
       coordinates: [-97.766724, 33.453823]
     };
 
-    const grillConfig = {
-      ...defaultGrill,
-      ...(sbConfig?.intelligence?.grill || {})
-    };
-    
-    const activeVibe = sbConfig?.branding?.siteName || 'Sunset'; 
+    const grillConfig = defaultGrill;
+    const activeVibe = 'Sunset';
 
     // Calculate Engagement Density (Last 48 Hours)
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
@@ -63,7 +82,7 @@ export const GET = async (request: NextRequest, { params }: { params: Promise<{ 
 
       const yieldData = calculateTacticalYield(property);
       const momentumData = calculateMarketMomentum(property);
-      const pulseScore = calculatePulseScore(property.location_geo.coordinates, [], grillConfig.coordinates, osmStats, activeVibe);
+      const pulseScore = calculatePulseScore(coordinates, [], grillConfig.coordinates, osmStats, activeVibe);
 
       return {
         propertyId: id,

@@ -73,6 +73,7 @@ export async function POST(request: Request) {
         });
         const eventContext = {
           sessionId: visitorSession.id,
+          tenantSite: host || 'jamie',
           hasAgentContext: Boolean(resolvedContext?.agent),
           hasListingContext: Boolean(resolvedContext?.listing),
           intentCategory,
@@ -120,6 +121,7 @@ export async function POST(request: Request) {
           durationMs: Date.now() - startedAt,
           outcome: result.outcome,
           usedListingData: result.usedListingData,
+          generation: result.generation,
         });
         if (result.outcome === 'listing_search') {
           schedulePublicGuideEvent({ event: 'tool_used', ...eventContext, toolId: 'search_properties' });
