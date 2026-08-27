@@ -971,4 +971,6 @@ Release status:
 - Open: run and record the production operator-to-public verification sequence, including the second cycle and rollback (required merge gate).
 - Environment note: a generated `apps/pulse/cartridges/wikipedia/wikipedia-catalog.json.lock` is untracked and is not part of the CMS work.
 
+The generated zero-byte lock artifact was removed from the working tree during this checkpoint; no tracked Wikipedia/catalog files were changed.
+
 Progress estimate after this checkpoint: approximately 25% of the plan remains by checklist scope (the PR isolation gate plus production verification). The feature-code portion is effectively complete; the remaining percentage is release validation and evidence, not new CMS behavior.
