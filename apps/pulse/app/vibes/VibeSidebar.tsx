@@ -2,19 +2,33 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  ClipboardList,
+  Eye,
+  FileText,
+  History,
+  List,
+  Pencil,
+  Plus,
+  Send,
+  Tags,
+  Upload,
+  type LucideIcon,
+} from 'lucide-react';
 
 type NavigationItem = {
   href: string;
   label: string;
+  icon: LucideIcon;
 };
 
 const primaryItems: NavigationItem[] = [
-  { href: '/vibes', label: 'Vibe library' },
-  { href: '/vibes/new', label: 'New vibe' },
-  { href: '/vibes/taxonomy', label: 'Taxonomy' },
+  { href: '/vibes', label: 'All Vibes', icon: List },
+  { href: '/vibes/new', label: 'Add New', icon: Plus },
+  { href: '/vibes/taxonomy', label: 'Taxonomy', icon: Tags },
 ];
 
-const vibePathPattern = /^\/admin\/vibes\/([^/]+)/;
+const vibePathPattern = /^\/vibes\/([^/]+)/;
 
 function getVibeId(pathname: string) {
   const match = pathname.match(vibePathPattern);
@@ -27,44 +41,40 @@ export function VibeSidebar() {
   const vibeId = getVibeId(pathname);
   const workflowItems: NavigationItem[] = vibeId
     ? [
-        { href: `/vibes/${vibeId}/edit`, label: 'Editor' },
-        { href: `/vibes/${vibeId}/preview`, label: 'Preview' },
-        { href: `/vibes/${vibeId}/submit`, label: 'Submit for review' },
-        { href: `/vibes/${vibeId}/publish`, label: 'Publish' },
-        { href: `/vibes/${vibeId}/revisions`, label: 'Revisions' },
-        { href: `/vibes/${vibeId}/audit`, label: 'Audit log' },
-        { href: `/vibes/${vibeId}/source`, label: 'Source' },
+        { href: `/vibes/${vibeId}/edit`, label: 'Edit Vibe', icon: Pencil },
+        { href: `/vibes/${vibeId}/preview`, label: 'Preview', icon: Eye },
+        { href: `/vibes/${vibeId}/submit`, label: 'Submit for Review', icon: Send },
+        { href: `/vibes/${vibeId}/publish`, label: 'Publish', icon: Upload },
+        { href: `/vibes/${vibeId}/revisions`, label: 'Revisions', icon: History },
+        { href: `/vibes/${vibeId}/audit`, label: 'Audit Log', icon: ClipboardList },
+        { href: `/vibes/${vibeId}/source`, label: 'Source Details', icon: FileText },
       ]
     : [];
 
   return (
-    <aside className="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r">
-      <div className="mx-auto max-w-7xl px-4 py-4 lg:px-5 lg:py-7">
-        <Link href="/vibes" className="block">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Content management</p>
-          <p className="mt-1 text-lg font-black tracking-tight text-slate-950">Vibe CMS</p>
-        </Link>
-
-        <nav aria-label="Vibe CMS navigation" className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible">
-          {primaryItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
-          {workflowItems.length > 0 ? <>
-            <p className="hidden pt-5 text-xs font-bold uppercase tracking-[0.16em] text-slate-400 lg:block">Current vibe</p>
-            {workflowItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
-          </> : null}
-        </nav>
-      </div>
+    <aside className="border-b border-[#3c434a] bg-[#1d2327] text-[#f0f0f1] lg:sticky lg:top-10 lg:h-[calc(100vh-2.5rem)] lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <nav aria-label="Vibe CMS navigation" className="flex gap-1 overflow-x-auto px-2 py-2 lg:block lg:space-y-0 lg:overflow-visible lg:px-0 lg:py-3">
+        {primaryItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
+        {workflowItems.length > 0 ? <>
+          <p className="hidden px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#a7aaad] lg:block">Current Vibe</p>
+          {workflowItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
+        </> : null}
+      </nav>
     </aside>
   );
 }
 
 function SidebarLink({ item, pathname }: { item: NavigationItem; pathname: string }) {
   const active = pathname === item.href;
+  const Icon = item.icon;
+
   return (
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
-      className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors lg:block ${active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
+      className={`flex shrink-0 items-center gap-2 rounded px-3 py-2 text-sm font-medium transition-colors lg:w-full lg:rounded-none ${active ? 'bg-[#2271b1] text-white' : 'text-[#f0f0f1] hover:bg-[#2c3338] hover:text-white'}`}
     >
+      <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2} />
       {item.label}
     </Link>
   );
