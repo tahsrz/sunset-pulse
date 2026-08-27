@@ -71,6 +71,7 @@ export default function VibeActionsPage() {
 
       setVibe(payload.vibe);
       setReason('');
+      window.dispatchEvent(new Event('vibe-status-changed'));
     } catch {
       setError(`${labels[action]} failed. Check your connection and try again.`);
     } finally {

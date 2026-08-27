@@ -72,16 +72,23 @@ export function VibeSidebar() {
     }
 
     const controller = new AbortController();
-    fetch(`/api/vibes/${encodeURIComponent(vibeId)}`, { signal: controller.signal })
-      .then(async (response) => (response.ok ? response.json() : null))
-      .then((payload) => setStatus(typeof payload?.vibe?.status === 'string' ? payload.vibe.status : null))
-      .catch((error: unknown) => {
-        if (!(error instanceof Error) || error.name !== 'AbortError') {
-          setStatus(null);
-        }
-      });
+    const loadStatus = () => {
+      fetch(`/api/vibes/${encodeURIComponent(vibeId)}`, { signal: controller.signal })
+        .then(async (response) => (response.ok ? response.json() : null))
+        .then((payload) => setStatus(typeof payload?.vibe?.status === 'string' ? payload.vibe.status : null))
+        .catch((error: unknown) => {
+          if (!(error instanceof Error) || error.name !== 'AbortError') {
+            setStatus(null);
+          }
+        });
+    };
+    loadStatus();
+    window.addEventListener('vibe-status-changed', loadStatus);
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      window.removeEventListener('vibe-status-changed', loadStatus);
+    };
   }, [vibeId]);
 
   const workflowItems = vibeId ? getWorkflowItems(vibeId, status) : [];
