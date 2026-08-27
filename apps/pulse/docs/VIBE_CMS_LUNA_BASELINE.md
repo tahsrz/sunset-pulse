@@ -1010,3 +1010,14 @@ Current next actions:
 - Actor: `vibe-cms-wip-public`, as expected while the temporary WIP exception is enabled.
 - Fixes found by the test: `Vibe.draftPayload` is now persisted as a mixed document; `linguisticLogic` accepts the structured linguistic payload; the sidebar refreshes its status after submit, publish, and lifecycle actions; and revision comparison now evaluates equal arrays structurally instead of reporting false differences.
 - Remaining release checks: all protected site-application, public-runtime, second-cycle, rollback, restoration, and production evidence requirements above.
+
+### WordPress-Alignment Delivery Track — 2026-08-27
+
+The Vibe CMS should borrow WordPress's editorial conventions while retaining its safer separation between publishing a Vibe revision and applying that revision to a live site. It is not a plan to reproduce WordPress's PHP/plugin ecosystem or expose site application to the WIP Vibe routes.
+
+1. **Editorial list and workflow (in progress):** WordPress-style All Vibes list, filtering, pagination, contextual row actions, permalink clarity, a publish/status panel, and readable revision restoration.
+2. **Appearance layer:** curated Vibe patterns, named token/style presets, then safe templates, template parts, and scoped navigation.
+3. **Collaboration and media:** media library/provenance, review comments, ownership, scheduling, and capability-based access replacing the temporary WIP exception.
+4. **Operations:** import/export, webhooks, SEO/redirects, site-assignment history, audit export, and release health controls.
+
+Completed in this increment: the `/vibes` screen is now an **All Vibes** list with search, editorial-status filtering, server-backed pagination, total counts, and Edit/Preview/Actions row links. It was browser-verified locally on 2026-08-27. Deliberately deferred: bulk mutations, templates, menus, media, and role redesign; each requires a distinct data/API design and must not bypass protected live-site application.
