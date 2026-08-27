@@ -1,17 +1,24 @@
 import { NextRequest } from 'next/server';
 import { errorResponse } from '@/lib/core/apiResponse';
-import { getOperatorAccess, type OperatorAccess } from '@/lib/core/operator_access';
+import { getOperatorAccess, getVibeCmsAccess, type OperatorAccess } from '@/lib/core/operator_access';
 
 export type AuthorizedOperator = OperatorAccess & { allowed: true };
 
 export async function requireOperatorRouteAccess(request: NextRequest): Promise<AuthorizedOperator | Response> {
-  const access = await getOperatorAccess(getRequestHost(request));
+  const access = isVibeCmsRoute(request)
+    ? await getVibeCmsAccess(getRequestHost(request))
+    : await getOperatorAccess(getRequestHost(request));
 
   if (!access.allowed) {
     return errorResponse(access.reason, 403);
   }
 
   return access as AuthorizedOperator;
+}
+
+function isVibeCmsRoute(request: NextRequest) {
+  const pathname = request.nextUrl?.pathname || new URL(request.url).pathname;
+  return pathname === '/api/admin/vibes' || pathname.startsWith('/api/admin/vibes/');
 }
 
 function getRequestHost(request: NextRequest): string | null {

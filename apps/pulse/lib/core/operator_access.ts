@@ -61,6 +61,28 @@ export async function getOperatorAccess(host: string | null): Promise<OperatorAc
   };
 }
 
+/**
+ * Temporary Vibe CMS WIP access. Set VIBE_CMS_PUBLIC_WRITE_WIP=false to
+ * restore the normal operator-only boundary without changing the routes.
+ */
+export async function getVibeCmsAccess(host: string | null): Promise<OperatorAccess> {
+  if (process.env.VIBE_CMS_PUBLIC_WRITE_WIP !== 'false') {
+    return {
+      allowed: true,
+      mode: 'authenticated',
+      reason: 'Public Vibe CMS WIP access.',
+      user: {
+        id: 'vibe-cms-wip-public',
+        email: null,
+        role: 'operator',
+        name: 'Public Vibe CMS WIP'
+      }
+    };
+  }
+
+  return getOperatorAccess(host);
+}
+
 function isE2EOperatorAccess(host: string | null) {
   return process.env.E2E_OPERATOR_ACCESS === 'true' && isLocalHostName(host);
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { isLocalHost } from '@/lib/core/operator_access';
+import { getVibeCmsAccess, isLocalHost } from '@/lib/core/operator_access';
 
 const originalEnv = { ...process.env };
 
@@ -12,6 +12,16 @@ function setNodeEnv(value: NodeJS.ProcessEnv['NODE_ENV']) {
 }
 
 describe('operator access host detection', () => {
+  it('allows public Vibe CMS work while the WIP exception is enabled', async () => {
+    delete process.env.VIBE_CMS_PUBLIC_WRITE_WIP;
+
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({
+      allowed: true,
+      reason: 'Public Vibe CMS WIP access.',
+      user: { id: 'vibe-cms-wip-public', role: 'operator' }
+    });
+  });
+
   it('allows loopback hosts outside production', () => {
     setNodeEnv('development');
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { getOperatorAccess } from '@/lib/core/operator_access';
+import { getVibeCmsAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
@@ -8,7 +8,7 @@ import Vibe from '@/models/Vibe';
 export const dynamic = 'force-dynamic';
 
 export default async function VibeSourcePage({ params }: { params: Promise<{ vibeId: string }> }) {
-  const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
+  const access = await getVibeCmsAccess(getRequestHostFromHeaders(await headers()));
   const { vibeId } = await params;
   if (!access.allowed) return <main className="min-h-screen bg-slate-950 p-8 text-white"><h1 className="text-2xl font-black">Access denied</h1><p className="mt-3">{access.reason}</p></main>;
   await connectDB();
