@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
+import { NextResponse } from 'next/server';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
 
-export async function GET(request: NextRequest) {
-  const access = await requireOperatorRouteAccess(request);
-  if (isAuthResponse(access)) return access;
+export async function GET() {
   return NextResponse.json({ terms: listVibeTaxonomyTerms() });
 }

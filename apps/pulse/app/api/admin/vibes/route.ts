@@ -11,9 +11,6 @@ import mongoose from 'mongoose';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const access = await requireOperatorRouteAccess(request);
-  if (isAuthResponse(access)) return access;
-
   await connectDB();
   const params = request.nextUrl.searchParams;
   const tenantId = params.get('tenantId')?.trim() || 'default';
