@@ -121,6 +121,12 @@ describe('siteConfigStore', () => {
     await expect(readSiteConfig('broker-one')).resolves.toBe(mongoRow);
   });
 
+  it('preserves Mongo Vibe pointer when Supabase has a newer unrelated write', async () => {
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: { agent_id: 'broker-one', active_vibe_revision_id: 'old', updated_at: '2026-07-23T12:00:00.000Z' }, error: null });
+    storeMocks.resolveMongoFindOne.mockResolvedValue({ agentId: 'broker-one', activeVibeRevisionId: 'applied', updatedAt: '2026-07-23T11:00:00.000Z', activeVibeRevisionAppliedBy: 'operator' });
+    await expect(readSiteConfig('broker-one')).resolves.toMatchObject({ activeVibeRevisionId: 'applied', activeVibeRevisionAppliedBy: 'operator' });
+  });
+
   it('does not return an expired Supabase grace row when Mongo has newer active state', async () => {
     const supabaseExpiredRow = {
       agent_id: 'broker-one',

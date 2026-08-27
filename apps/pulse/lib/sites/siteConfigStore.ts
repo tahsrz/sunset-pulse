@@ -271,11 +271,12 @@ function chooseFreshestSiteConfigRow<TSupabase, TMongo>(supabaseRow: TSupabase |
   const supabaseFreshness = getSiteConfigFreshnessMs(supabaseRow);
   const mongoFreshness = getSiteConfigFreshnessMs(mongoRow);
 
-  if (mongoFreshness !== null && (supabaseFreshness === null || mongoFreshness > supabaseFreshness)) {
-    return mongoRow;
+  const selected = mongoFreshness !== null && (supabaseFreshness === null || mongoFreshness > supabaseFreshness) ? mongoRow : supabaseRow;
+  const mongoPointer = (mongoRow as any)?.activeVibeRevisionId;
+  if (mongoPointer && selected !== mongoRow) {
+    return { ...(selected as any), activeVibeRevisionId: mongoPointer, activeVibeRevisionAppliedAt: (mongoRow as any).activeVibeRevisionAppliedAt, activeVibeRevisionAppliedBy: (mongoRow as any).activeVibeRevisionAppliedBy } as any;
   }
-
-  return supabaseRow;
+  return selected;
 }
 
 function getSiteConfigAgentId(row: unknown) {
