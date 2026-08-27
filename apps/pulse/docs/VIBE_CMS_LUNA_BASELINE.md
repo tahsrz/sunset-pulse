@@ -978,3 +978,7 @@ The generated zero-byte lock artifact was removed from the working tree during t
 Before merge, attach one verification record containing: PR head SHA; disposable `vibeId`; site ID; submitted revision ID; published revision ID; pre-apply site pointer; post-apply pointer, actor, and timestamp; public `data-vibe-revision-id`; computed CSS token values; assistant tone; second-cycle revision IDs; rollback revision ID; and restored original site pointer. Mark each Required CMS Verification step pass/fail and include the deployed URL and UTC timestamp. A missing field keeps the release gate open.
 
 Progress estimate after this checkpoint: approximately 20% of the plan remains by checklist scope (the PR isolation gate plus production verification). The feature-code portion is effectively complete; the remaining percentage is release validation and evidence, not new CMS behavior. The working tree is clean and no additional CMS implementation is queued in this branch.
+
+### Sol Review Gate
+
+This baseline is ready for Sol’s implementation review. Review focus should be limited to: (1) whether the tracked PR diff is acceptable for the Vibe CMS milestone, (2) whether the Mongo/Supabase freshness rule matches the intended production authority, (3) whether lifecycle transactions preserve existing API contracts, and (4) whether the required production evidence is complete. Do not request additional feature expansion until those four review points and the manual verification record are resolved.
