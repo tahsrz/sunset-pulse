@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
     const result = await Vibe.bulkWrite(vibes.map((vibe) => ({ updateOne: { filter: { vibeId: vibe.vibeId, tenantId, status: vibe.status || 'draft' }, update: parsed.data.action === 'archive' ? { $set: { status: 'archived', archivedAt: now, updatedAt: now, updatedBy: actorId } } : { $set: { status: 'trash', migrationMetadata: { lastNonTrashStatus: vibe.status || 'draft', trashedBy: actorId, trashedAt: now.toISOString() }, updatedAt: now, updatedBy: actorId } } } })), { session });
     if (result.matchedCount !== vibes.length) throw new Error('VIBES_CHANGED_BEFORE_BULK_ACTION');
     await VibeAuditEvent.create(vibes.map((vibe) => ({ vibeId: vibe.vibeId, tenantId, action: parsed.data.action === 'archive' ? 'archived' : 'trashed', actorId })), { session });
-  }); } finally { await session.endSession(); }
+  }); } catch (error) {
+    if (error instanceof Error && error.message === 'VIBES_CHANGED_BEFORE_BULK_ACTION') return NextResponse.json({ error: 'One or more selected Vibes changed before the bulk action completed.' }, { status: 409 });
+    throw error;
+  } finally { await session.endSession(); }
   return NextResponse.json({ updated: vibes.length });
 }
