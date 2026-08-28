@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link'; import { useRouter } from 'next/navigation'; import { useState } from 'react';
-const PRESETS = [{ id: '', name: 'Default', note: 'A neutral, editable starting point.', colors: ['#2563eb', '#0f172a', '#f8fafc'] }, { id: 'editorial', name: 'Editorial warmth', note: 'Warm, considered visual language.', colors: ['#7c2d12', '#fff7ed', '#431407'] }, { id: 'market-intelligence', name: 'Market intelligence', note: 'Calm, analytical market presentation.', colors: ['#0f766e', '#f0fdfa', '#134e4a'] }] as const;
+import { VIBE_PRESETS } from '@/lib/cms/vibePresets';
+const PRESETS = [{ id: '', name: 'Default', note: 'A neutral, editable starting point.', colors: ['#2563eb', '#0f172a', '#f8fafc'] }, ...VIBE_PRESETS] as const;
 function toSlug(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 export default function NewVibePage() {
   const router = useRouter(); const [title, setTitle] = useState(''); const [slug, setSlug] = useState(''); const [slugEdited, setSlugEdited] = useState(false); const [description, setDescription] = useState(''); const [preset, setPreset] = useState<string>(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
