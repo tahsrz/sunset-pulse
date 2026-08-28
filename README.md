@@ -131,6 +131,19 @@ The first Vibe CMS vertical is implemented locally: structured drafts, immutable
 
 The operator workspace is intentionally WordPress-familiar while preserving the safer Vibe-to-site handoff: `/vibes` provides status views, search, sorting, pagination, row actions, and guarded transactional bulk archive/trash. Bulk actions validate every selected Vibe and stop with a conflict if one changes concurrently. The editor has a Publish rail, lifecycle audit history, and immutable revision history; taxonomy has controlled-term discovery and usage counts; and new Vibes can start from visual, independent Default, Editorial warmth, or Market intelligence preset cards backed by one shared, contract-tested catalog. A selected preset seeds coordinated theme colors, controlled taxonomy terms, and Jamie's primary voice tone into that new draft; it is an editable starting point, not a live link. Templates, media, comments, scheduling, and access-model redesign remain deliberately out of this PR. Publishing a Vibe still does **not** change a live site—application remains a separate protected action.
 
+#### Required deployed verification before merge
+
+Use one disposable Vibe and one controlled Launch Kit site. Record the deployed URL, UTC time, Vibe ID, site ID, each submitted/published revision ID, the before/after site pointer, the public `data-vibe-revision-id`, visible CSS token values, and assistant voice tone.
+
+1. Create the Vibe, save structured visual and linguistic fields, and open its authenticated draft preview.
+2. Submit and publish the resulting immutable revision, then use the protected application screen to apply that exact revision to the controlled site.
+3. Confirm the public site exposes the applied revision ID, the expected compiled tokens, and the published assistant tone.
+4. Edit the draft but do not publish or apply it; confirm the public revision and presentation stay unchanged.
+5. Complete a second submit/publish/apply cycle, then restore an earlier snapshot through the auditable rollback path.
+6. Restore the controlled site to its original revision and preserve the evidence record with the PR head SHA.
+
+Green automated checks do not replace this flow. Keep the WIP exception scoped to Vibe routes and set `VIBE_CMS_PUBLIC_WRITE_WIP=false` before production release.
+
 - [Luna implementation baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md)
 - [Sol review and remediation report](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md)
 
