@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { vibeDraftSchema, vibeTokensPayloadSchema } from '@/lib/cms/vibeSchema';
 import { getAvailableVibeActions, transitionVibe } from '@/lib/cms/vibeWorkflow';
+import { getVibePreset, VIBE_PRESETS } from '@/lib/cms/vibePresets';
 
 const validDraft = {
   title: 'Calm Editorial',
@@ -60,5 +61,14 @@ describe('Vibe CMS contracts', () => {
     expect(transitionVibe({ status: 'trash', action: 'restore' })).toEqual({ ok: true, status: 'draft' });
     expect(transitionVibe({ status: 'published', action: 'trash' }).ok).toBe(false);
     expect(transitionVibe({ status: 'trash', action: 'publish', hasPublishedRevision: true }).ok).toBe(false);
+  });
+
+  it('keeps every creation preset resolvable with complete token colors', () => {
+    expect(VIBE_PRESETS.map((preset) => preset.id)).toEqual(['editorial', 'market-intelligence']);
+    for (const preset of VIBE_PRESETS) {
+      expect(getVibePreset(preset.id)).toEqual(preset);
+      expect(Object.values(preset.tokenColors)).toHaveLength(5);
+      expect(Object.values(preset.tokenColors).every((color) => /^#[0-9a-f]{6}$/i.test(color))).toBe(true);
+    }
   });
 });
