@@ -63,12 +63,15 @@ describe('Vibe CMS contracts', () => {
     expect(transitionVibe({ status: 'trash', action: 'publish', hasPublishedRevision: true }).ok).toBe(false);
   });
 
-  it('keeps every creation preset resolvable with complete token colors', () => {
+  it('keeps every creation preset resolvable with complete, coordinated draft defaults', () => {
     expect(VIBE_PRESETS.map((preset) => preset.id)).toEqual(['editorial', 'market-intelligence']);
     for (const preset of VIBE_PRESETS) {
       expect(getVibePreset(preset.id)).toEqual(preset);
       expect(Object.values(preset.tokenColors)).toHaveLength(5);
       expect(Object.values(preset.tokenColors).every((color) => /^#[0-9a-f]{6}$/i.test(color))).toBe(true);
+      expect(preset.taxonomyTermIds).toHaveLength(3);
+      expect(preset.taxonomyTermIds).toContain(`voice:${preset.primaryTone}`);
+      expect(['warm', 'analytical']).toContain(preset.primaryTone);
     }
   });
 });

@@ -98,6 +98,10 @@ const createSchema = z.object({
 function createPresetDraft(input: z.infer<typeof createSchema>) {
   const draft = createDefaultVibeDraft(input);
   const preset = getVibePreset(input.preset);
-  if (preset) Object.assign(draft.tokens.visual.theme.colors, preset.tokenColors);
+  if (preset) {
+    Object.assign(draft.tokens.visual.theme.colors, preset.tokenColors);
+    draft.taxonomyTermIds = [...preset.taxonomyTermIds];
+    draft.tokens.linguistic.voice.primaryTone = preset.primaryTone;
+  }
   return draft;
 }
