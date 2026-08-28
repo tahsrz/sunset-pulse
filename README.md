@@ -129,6 +129,8 @@ Sunset Pulse is expanding from an individual agent command center into a multi-t
 
 The first Vibe CMS vertical is implemented locally: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. It remains pre-merge pending PR-scope disposition and deployed operator verification.
 
+The operator workspace is intentionally WordPress-familiar while preserving the safer Vibe-to-site handoff: `/vibes` provides status views, search, sorting, pagination, row actions, and guarded transactional bulk archive/trash; the editor has a Publish rail and immutable revision history; taxonomy has controlled-term discovery and usage counts; and new Vibes can start from independent Editorial warmth or Market intelligence presets. Publishing a Vibe still does **not** change a live site—application remains a separate protected action.
+
 - [Luna implementation baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md)
 - [Sol review and remediation report](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md)
 
