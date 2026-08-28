@@ -56,6 +56,8 @@ export function VibeList() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -81,6 +83,7 @@ export function VibeList() {
         setStatusCounts(payload.statusCounts || {});
         setTotalPages(Math.max(1, payload.totalPages || 1));
         setError('');
+        setSelected(new Set());
       })
       .catch((reason: Error) => {
         if (reason.name !== 'AbortError') setError(reason.message);
@@ -93,6 +96,14 @@ export function VibeList() {
   function changeSort(nextSort: 'title' | 'status' | 'updatedAt') {
     if (sort === nextSort) setDirection((current) => current === 'asc' ? 'desc' : 'asc');
     else { setSort(nextSort); setDirection(nextSort === 'title' ? 'asc' : 'desc'); }
+  }
+
+  async function runBulk(action: 'archive' | 'trash') {
+    if (!selected.size || !window.confirm(`${action === 'trash' ? 'Move' : 'Archive'} ${selected.size} selected Vibe${selected.size === 1 ? '' : 's'}?`)) return;
+    setBulkBusy(true); setError('');
+    try { const response = await fetch('/api/vibes/bulk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ vibeIds: [...selected], action }) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Bulk action failed.'); window.location.reload(); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Bulk action failed.'); }
+    finally { setBulkBusy(false); }
   }
 
   const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -137,6 +148,7 @@ export function VibeList() {
               <option value="archived">Archived</option>
               <option value="trash">Trash</option>
             </select>
+            {selected.size ? <div className="flex items-center gap-2"><span className="text-sm font-semibold">{selected.size} selected</span><button type="button" disabled={bulkBusy} onClick={() => void runBulk('archive')} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">Archive</button><button type="button" disabled={bulkBusy} onClick={() => void runBulk('trash')} className="rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 disabled:opacity-50">Move to trash</button></div> : null}
           </div>
 
           {!loading && !error ? <p className="border-b border-slate-100 px-4 py-3 text-sm text-slate-500">{total} {total === 1 ? 'item' : 'items'}</p> : null}
@@ -150,6 +162,7 @@ export function VibeList() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
+                      <th scope="col" className="px-4 py-3"><input aria-label="Select all Vibes on this page" type="checkbox" checked={vibes.length > 0 && vibes.every((vibe) => selected.has(vibe.vibeId))} onChange={(event) => setSelected(event.target.checked ? new Set(vibes.map((vibe) => vibe.vibeId)) : new Set())} /></th>
                       <th scope="col" className="px-4 py-3"><button type="button" onClick={() => changeSort('title')} className="font-bold hover:text-slate-900">Vibe {sortLabel(sort === 'title', direction)}</button></th>
                       <th scope="col" className="px-4 py-3"><button type="button" onClick={() => changeSort('status')} className="font-bold hover:text-slate-900">Status {sortLabel(sort === 'status', direction)}</button></th>
                       <th scope="col" className="px-4 py-3">Revision</th>
@@ -160,6 +173,7 @@ export function VibeList() {
                   <tbody className="divide-y divide-slate-100">
                     {vibes.map((vibe) => (
                       <tr key={vibe.vibeId} className="hover:bg-slate-50">
+                        <td className="px-4 py-3"><input aria-label={`Select ${vibe.title || vibe.name || vibe.vibeId}`} type="checkbox" checked={selected.has(vibe.vibeId)} onChange={(event) => setSelected((current) => { const next = new Set(current); if (event.target.checked) next.add(vibe.vibeId); else next.delete(vibe.vibeId); return next; })} /></td>
                         <td className="px-4 py-3">
                           <Link className="font-bold text-slate-900 hover:underline" href={`/vibes/${vibe.vibeId}/edit`}>{vibe.title || vibe.name || vibe.vibeId}</Link>
                           <div className="font-mono text-xs text-slate-500">/{vibe.slug || vibe.vibeId}</div>
