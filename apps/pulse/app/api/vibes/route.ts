@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   ];
   const sortField = sort === 'title' || sort === 'status' || sort === 'updatedAt' ? sort : 'updatedAt';
 
-  const [vibes, total] = await Promise.all([
+  const [vibes, total, statusUsage] = await Promise.all([
     Vibe.find(filter)
       .select('vibeId title name slug status tenantId publishedRevisionId authorId updatedBy updatedAt createdAt taxonomyTermIds')
       .sort({ [sortField]: direction, vibeId: 1 })
@@ -36,9 +36,14 @@ export async function GET(request: NextRequest) {
       .limit(pageSize)
       .lean(),
     Vibe.countDocuments(filter),
+    Vibe.aggregate([
+      { $match: { tenantId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
   ]);
 
-  return NextResponse.json({ vibes, page, pageSize, total, totalPages: Math.ceil(total / pageSize) });
+  const statusCounts = Object.fromEntries(statusUsage.map(({ _id, count }: { _id: string; count: number }) => [_id || 'draft', count]));
+  return NextResponse.json({ vibes, page, pageSize, total, totalPages: Math.ceil(total / pageSize), statusCounts });
 }
 
 export async function POST(request: NextRequest) {

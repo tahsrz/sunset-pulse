@@ -17,9 +17,18 @@ type ListResponse = {
   vibes?: Vibe[];
   total?: number;
   totalPages?: number;
+  statusCounts?: Record<string, number>;
 };
 
 const PAGE_SIZE = 25;
+const STATUS_VIEWS = [
+  { value: '', label: 'All' },
+  { value: 'draft', label: 'Drafts' },
+  { value: 'in_review', label: 'In review' },
+  { value: 'published', label: 'Published' },
+  { value: 'archived', label: 'Archived' },
+  { value: 'trash', label: 'Trash' },
+] as const;
 
 function statusLabel(status?: string) {
   return (status || 'draft').replace(/_/g, ' ');
@@ -43,6 +52,7 @@ export function VibeList() {
   const [direction, setDirection] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,6 +78,7 @@ export function VibeList() {
       .then((payload) => {
         setVibes(payload.vibes || []);
         setTotal(payload.total || 0);
+        setStatusCounts(payload.statusCounts || {});
         setTotalPages(Math.max(1, payload.totalPages || 1));
         setError('');
       })
@@ -100,7 +111,12 @@ export function VibeList() {
         </header>
 
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Vibe list">
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+          <div className="border-b border-slate-200 px-4 pt-4">
+            <nav className="flex flex-wrap gap-x-3 gap-y-1 text-sm" aria-label="Vibe status views">
+              {STATUS_VIEWS.map((view) => <button key={view.value || 'all'} type="button" onClick={() => setStatus(view.value)} className={status === view.value ? 'font-bold text-slate-900' : 'text-[#2271b1] hover:underline'}>{view.label} <span className="text-slate-500">({view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0)})</span></button>)}
+            </nav>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 p-4">
             <input
               aria-label="Search vibes"
               value={search}
