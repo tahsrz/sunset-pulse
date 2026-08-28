@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       authorId: actor,
       updatedBy: actor,
       currentDraftVersion: 0,
-      draftPayload: createDefaultVibeDraft(parsed.data),
+      draftPayload: createPresetDraft(parsed.data),
         }], { session });
         vibe = created[0];
         await VibeAuditEvent.create([{ vibeId: vibe.vibeId, tenantId, action: 'created', actorId: actor }], { session });
@@ -91,4 +91,12 @@ const createSchema = z.object({
   title: z.string().trim().min(1).max(160),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   description: z.string().trim().max(10_000).optional(),
+  preset: z.enum(['editorial', 'market-intelligence']).optional(),
 }).strict();
+
+function createPresetDraft(input: z.infer<typeof createSchema>) {
+  const draft = createDefaultVibeDraft(input);
+  if (input.preset === 'editorial') Object.assign(draft.tokens.visual.theme.colors, { primary: '#7c2d12', background: '#fff7ed', surface: '#ffedd5', textPrimary: '#431407', textSecondary: '#9a3412' });
+  if (input.preset === 'market-intelligence') Object.assign(draft.tokens.visual.theme.colors, { primary: '#0f766e', background: '#f0fdfa', surface: '#ccfbf1', textPrimary: '#134e4a', textSecondary: '#115e59' });
+  return draft;
+}
