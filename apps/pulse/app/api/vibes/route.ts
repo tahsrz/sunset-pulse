@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
   const tenantId = params.get('tenantId')?.trim() || 'default';
   const status = params.get('status')?.trim();
   const search = params.get('search')?.trim();
+  const sort = params.get('sort')?.trim();
+  const direction = params.get('direction') === 'asc' ? 1 : -1;
   const page = Math.max(1, Number(params.get('page') || 1));
   const pageSize = Math.min(100, Math.max(1, Number(params.get('pageSize') || 25)));
   const filter: Record<string, unknown> = { tenantId };
@@ -24,11 +26,12 @@ export async function GET(request: NextRequest) {
     { title: { $regex: escapeRegex(search), $options: 'i' } },
     { slug: { $regex: escapeRegex(search), $options: 'i' } },
   ];
+  const sortField = sort === 'title' || sort === 'status' || sort === 'updatedAt' ? sort : 'updatedAt';
 
   const [vibes, total] = await Promise.all([
     Vibe.find(filter)
       .select('vibeId title name slug status tenantId publishedRevisionId authorId updatedBy updatedAt createdAt taxonomyTermIds')
-      .sort({ updatedAt: -1, title: 1 })
+      .sort({ [sortField]: direction, vibeId: 1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean(),

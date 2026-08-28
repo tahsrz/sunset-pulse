@@ -31,10 +31,16 @@ function formatModified(value?: string) {
   return Number.isNaN(date.valueOf()) ? '—' : date.toLocaleDateString();
 }
 
+function sortLabel(active: boolean, direction: 'asc' | 'desc') {
+  return active ? (direction === 'asc' ? '↑' : '↓') : '↕';
+}
+
 export function VibeList() {
   const [vibes, setVibes] = useState<Vibe[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [sort, setSort] = useState<'title' | 'status' | 'updatedAt'>('updatedAt');
+  const [direction, setDirection] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -43,13 +49,15 @@ export function VibeList() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, status]);
+  }, [search, status, sort, direction]);
 
   useEffect(() => {
     const controller = new AbortController();
     const query = new URLSearchParams({ pageSize: String(PAGE_SIZE), page: String(page) });
     if (search.trim()) query.set('search', search.trim());
     if (status) query.set('status', status);
+    query.set('sort', sort);
+    query.set('direction', direction);
 
     setLoading(true);
     fetch(`/api/vibes?${query}`, { signal: controller.signal })
@@ -69,7 +77,12 @@ export function VibeList() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [page, search, status]);
+  }, [page, search, status, sort, direction]);
+
+  function changeSort(nextSort: 'title' | 'status' | 'updatedAt') {
+    if (sort === nextSort) setDirection((current) => current === 'asc' ? 'desc' : 'asc');
+    else { setSort(nextSort); setDirection(nextSort === 'title' ? 'asc' : 'desc'); }
+  }
 
   const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, total);
@@ -121,10 +134,10 @@ export function VibeList() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th scope="col" className="px-4 py-3">Vibe</th>
-                      <th scope="col" className="px-4 py-3">Status</th>
+                      <th scope="col" className="px-4 py-3"><button type="button" onClick={() => changeSort('title')} className="font-bold hover:text-slate-900">Vibe {sortLabel(sort === 'title', direction)}</button></th>
+                      <th scope="col" className="px-4 py-3"><button type="button" onClick={() => changeSort('status')} className="font-bold hover:text-slate-900">Status {sortLabel(sort === 'status', direction)}</button></th>
                       <th scope="col" className="px-4 py-3">Revision</th>
-                      <th scope="col" className="px-4 py-3">Last modified</th>
+                      <th scope="col" className="px-4 py-3"><button type="button" onClick={() => changeSort('updatedAt')} className="font-bold hover:text-slate-900">Last modified {sortLabel(sort === 'updatedAt', direction)}</button></th>
                       <th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th>
                     </tr>
                   </thead>
