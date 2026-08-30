@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { createDefaultVibeDraft } from '@/lib/cms/vibeSchema';
 import VibeAuditEvent from '@/models/VibeAuditEvent';
 import mongoose from 'mongoose';
-import { getVibePreset } from '@/lib/cms/vibePresets';
+import { applyVibePreset } from '@/lib/cms/vibePresets';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,12 +96,5 @@ const createSchema = z.object({
 }).strict();
 
 function createPresetDraft(input: z.infer<typeof createSchema>) {
-  const draft = createDefaultVibeDraft(input);
-  const preset = getVibePreset(input.preset);
-  if (preset) {
-    Object.assign(draft.tokens.visual.theme.colors, preset.tokenColors);
-    draft.taxonomyTermIds = [...preset.taxonomyTermIds];
-    draft.tokens.linguistic.voice.primaryTone = preset.primaryTone;
-  }
-  return draft;
+  return applyVibePreset(createDefaultVibeDraft(input), input.preset);
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { vibeDraftSchema, vibeTokensPayloadSchema } from '@/lib/cms/vibeSchema';
+import { createDefaultVibeDraft, vibeDraftSchema, vibeTokensPayloadSchema } from '@/lib/cms/vibeSchema';
 import { getAvailableVibeActions, transitionVibe } from '@/lib/cms/vibeWorkflow';
-import { getVibePreset, VIBE_PRESETS } from '@/lib/cms/vibePresets';
+import { applyVibePreset, getVibePreset, VIBE_PRESETS } from '@/lib/cms/vibePresets';
 
 const validDraft = {
   title: 'Calm Editorial',
@@ -69,9 +69,22 @@ describe('Vibe CMS contracts', () => {
       expect(getVibePreset(preset.id)).toEqual(preset);
       expect(Object.values(preset.tokenColors)).toHaveLength(5);
       expect(Object.values(preset.tokenColors).every((color) => /^#[0-9a-f]{6}$/i.test(color))).toBe(true);
+      expect(preset.typography.baseFontSize).toMatch(/^\d+px$/);
+      expect(preset.typography.scaleRatio).toBeGreaterThan(1);
+      expect(['none', 'sm', 'md', 'lg', 'full']).toContain(preset.layout.borderRadius);
       expect(preset.taxonomyTermIds).toHaveLength(3);
       expect(preset.taxonomyTermIds).toContain(`voice:${preset.primaryTone}`);
       expect(['warm', 'analytical']).toContain(preset.primaryTone);
     }
+  });
+
+  it('copies the full visual system into a fresh draft without linking it to the preset', () => {
+    const seeded = applyVibePreset(createDefaultVibeDraft({ title: 'Market pulse', slug: 'market-pulse' }), 'market-intelligence');
+    const preset = getVibePreset('market-intelligence')!;
+    expect(seeded.tokens.visual.theme.colors).toMatchObject(preset.tokenColors);
+    expect(seeded.tokens.visual.theme.typography).toMatchObject(preset.typography);
+    expect(seeded.tokens.visual.theme.layout).toMatchObject(preset.layout);
+    expect(seeded.taxonomyTermIds).toEqual(preset.taxonomyTermIds);
+    expect(seeded.tokens.linguistic.voice.primaryTone).toBe(preset.primaryTone);
   });
 });
