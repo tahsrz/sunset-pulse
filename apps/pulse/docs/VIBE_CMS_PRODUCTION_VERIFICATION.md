@@ -7,7 +7,7 @@ Use this record only with a disposable Vibe and a controlled Launch Kit site. Do
 | Field | Value |
 | --- | --- |
 | PR head SHA | |
-| Deployed URL | |
+| Deployed URL | https://vibes-test.sunsetpulse.app |
 | UTC start time | |
 | Operator account | |
 | Controlled site ID | |
@@ -16,7 +16,7 @@ Use this record only with a disposable Vibe and a controlled Launch Kit site. Do
 
 ## Preconditions
 
-- [ ] The deployed build is the recorded PR head.
+- [ ] The deployed build is the recorded PR head and is reached through `https://vibes-test.sunsetpulse.app`.
 - [ ] The operator is signed in and can open `/vibes`.
 - [ ] The controlled site ID and original applied revision are recorded above.
 - [ ] `VIBE_CMS_PUBLIC_WRITE_WIP` is enabled only for this WIP session and no live customer site will be applied.
