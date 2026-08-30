@@ -113,6 +113,8 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const currentDraftVersion = vibe.currentDraftVersion ?? 0;
   const taxonomyTerms = listVibeTaxonomyTerms();
   const selectedTaxonomyTerms = new Set(draft.taxonomyTermIds || []);
+  const typography = { ...defaults.tokens.visual.theme.typography, ...(draft.tokens.visual.theme.typography || {}) };
+  const layout = { borderRadius: 'md', spacingBasePx: 4, elevation: 'subtle', ...(draft.tokens.visual.theme.layout || {}) };
 
   async function saveDraft(form: HTMLFormElement) {
     setSaveState('saving');
@@ -130,7 +132,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
       source: { ...sourceWithoutUrl, kind: String(data.get('sourceKind')), ...(sourceUrl ? { url: sourceUrl } : {}), attribution: String(data.get('sourceAttribution')), ownershipNote: String(data.get('sourceOwnershipNote')) },
       tokens: {
         ...draft.tokens,
-        visual: { ...draft.tokens.visual, theme: { ...draft.tokens.visual.theme, colors: { ...draft.tokens.visual.theme.colors, primary: String(data.get('primary')), background: String(data.get('background')), surface: String(data.get('surface')), textPrimary: String(data.get('textPrimary')), textSecondary: String(data.get('textSecondary')) } } },
+        visual: { ...draft.tokens.visual, theme: { ...draft.tokens.visual.theme, colors: { ...draft.tokens.visual.theme.colors, primary: String(data.get('primary')), background: String(data.get('background')), surface: String(data.get('surface')), textPrimary: String(data.get('textPrimary')), textSecondary: String(data.get('textSecondary')) }, typography: { ...typography, fontFamilyHeading: String(data.get('fontFamilyHeading')), fontFamilyBody: String(data.get('fontFamilyBody')), baseFontSize: String(data.get('baseFontSize')), scaleRatio: Number(data.get('scaleRatio')), fontWeightNormal: Number(data.get('fontWeightNormal')), fontWeightBold: Number(data.get('fontWeightBold')) }, layout: { ...layout, borderRadius: String(data.get('borderRadius')), spacingBasePx: Number(data.get('spacingBasePx')), elevation: String(data.get('elevation')) } } },
         linguistic: { ...draft.tokens.linguistic, voice: { ...draft.tokens.linguistic.voice, primaryTone: String(data.get('primaryTone')) } },
       },
     };
@@ -197,9 +199,28 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               </article>
 
               <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Visual theme</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Visual system</h2>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {(['primary', 'background', 'surface', 'textPrimary', 'textSecondary'] as const).map((key) => <label key={key} className="text-xs font-bold uppercase text-slate-500">{key}<input name={key} type="color" defaultValue={draft.tokens.visual.theme.colors[key]} className="mt-2 block h-10 w-full rounded border border-slate-300 bg-white p-1" /></label>)}
+                </div>
+                <div className="mt-6 border-t border-slate-100 pt-5">
+                  <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Typography</h3>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">Heading font<input name="fontFamilyHeading" defaultValue={typography.fontFamilyHeading} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Body font<input name="fontFamilyBody" defaultValue={typography.fontFamilyBody} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Base font size<input name="baseFontSize" defaultValue={typography.baseFontSize} pattern="\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|%)" className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Scale ratio<input name="scaleRatio" type="number" min="1" max="2.5" step="0.05" defaultValue={typography.scaleRatio} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Normal weight<input name="fontWeightNormal" type="number" min="100" max="900" step="100" defaultValue={typography.fontWeightNormal} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Bold weight<input name="fontWeightBold" type="number" min="100" max="900" step="100" defaultValue={typography.fontWeightBold} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                  </div>
+                </div>
+                <div className="mt-6 border-t border-slate-100 pt-5">
+                  <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Layout</h3>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                    <label className="text-xs font-bold uppercase text-slate-500">Corner radius<select name="borderRadius" defaultValue={layout.borderRadius} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="none">None</option><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="full">Full</option></select></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Base spacing (px)<input name="spacingBasePx" type="number" min="1" max="64" defaultValue={layout.spacingBasePx} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Elevation<select name="elevation" defaultValue={layout.elevation} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="flat">Flat</option><option value="subtle">Subtle</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                  </div>
                 </div>
               </article>
 
