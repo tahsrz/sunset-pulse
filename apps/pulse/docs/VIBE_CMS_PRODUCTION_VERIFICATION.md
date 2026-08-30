@@ -2,6 +2,12 @@
 
 Use this record only with a disposable Vibe and a controlled Launch Kit site. Do not use a customer-facing site. Preserve the original applied revision before testing so it can be restored at the end.
 
+## Test target policy
+
+Use `https://vibes-test.sunsetpulse.app` for all Vibe CMS browser testing on this PR. It aliases the `codex/vibe-cms-baseline` Vercel preview rather than `main`, and Vercel deployment protection must stay enabled. Sign in to Vercel in the browser before navigating to `/vibes`; use `vercel curl` for protected automated reads. Do not use a production or customer-site hostname as a substitute.
+
+Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, new-Vibe screen, editor, draft preview, revisions, audit, protected application screen, taxonomy, and the Vibe/taxonomy/revision/audit GET APIs.
+
 ## Session metadata
 
 | Field | Value |
