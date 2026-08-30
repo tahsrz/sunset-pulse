@@ -146,6 +146,7 @@ Green automated checks do not replace this flow. Keep the WIP exception scoped t
 
 - [Luna implementation baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md)
 - [Sol review and remediation report](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md)
+- [Production verification record](apps/pulse/docs/VIBE_CMS_PRODUCTION_VERIFICATION.md)
 
 Target URL structure:
 ```text
