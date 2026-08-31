@@ -34,10 +34,16 @@ describe('CMS test-site seed route', () => {
   });
 
   it('returns an existing seed site without writing again', async () => {
-    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', activeVibeRevisionId: 'revision-one' });
+    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', activeVibeRevisionId: 'revision-one' });
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: 'revision-one', created: false, idempotent: true });
+    expect(mocks.provision).not.toHaveBeenCalled();
+  });
+
+  it('rejects an existing deterministic site owned by another user', async () => {
+    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'other-user', billingProfile: { userId: 'other-user' } });
+    expect((await POST(request({ runId: 'run-123', email: 'taz@example.com' }))).status).toBe(403);
     expect(mocks.provision).not.toHaveBeenCalled();
   });
 

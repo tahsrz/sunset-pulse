@@ -48,7 +48,11 @@ export async function POST(request: NextRequest) {
   const agentId = `cms-verification-${parsed.data.runId}`;
   const existingRow = await readSiteConfig(agentId);
   if (existingRow) {
-    const existing = getLaunchKitSummary(normalizeLaunchKit(existingRow, agentId));
+    const existingKit = normalizeLaunchKit(existingRow, agentId);
+    if (existingKit.ownerId !== ownerUserId && existingKit.billingProfile.userId !== ownerUserId) {
+      return NextResponse.json({ error: 'Existing seed site owner mismatch.' }, { status: 403 });
+    }
+    const existing = getLaunchKitSummary(existingKit);
     return NextResponse.json({
       siteId: existing.kit.agentId,
       agentId: existing.kit.agentId,
