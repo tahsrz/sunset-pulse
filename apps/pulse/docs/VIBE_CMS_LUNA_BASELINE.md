@@ -1050,6 +1050,22 @@ PR #67 is merged to production as commit `9507b766b5d440419abdfded49660088ca99aa
 
 Luna may perform read-only production and PR inspection autonomously. Browser mutations are permitted only after the controlled site ID and its original pointer/revision are recorded. If the existing Taz browser session is unavailable, Luna must ask Taz to sign in and then resume; it must not create credentials, weaken deployment protection, or substitute the anonymous WIP actor for authenticated operator evidence.
 
+### Authorized Production Test-Site Provisioning — New Follow-Up
+
+The current production verification is blocked because Taz has no provisioned site and the onboarding page reports a missing checkout session. Do not fabricate an `agentId`, reuse a customer site, or write directly to Mongo/Supabase from an ad-hoc script.
+
+Implement a separate, auditable provisioning-seed path with these constraints:
+
+1. Disabled by default behind an explicit production flag such as `CMS_TEST_SEED_ENABLED=true`.
+2. Requires a server-side operator credential distinct from the browser session; never accept a client-supplied role or unrestricted site payload.
+3. Accepts only a fixed disposable-site profile with a deterministic `cms-verification-<runId>` ID prefix and non-customer marker; arbitrary customer IDs are rejected.
+4. Calls the existing site provisioning service instead of duplicating persistence logic, and records an audit event with the seed actor and run ID.
+5. Is idempotent for the run ID and returns the real `siteId`/`agentId`, public URL, and current `activeVibeRevisionId` (normally `none`) without applying a Vibe.
+6. Includes explicit cleanup/revocation or an expiry policy so disposable sites cannot become unowned permanent records.
+7. Adds tests for the disabled flag, invalid credential, customer-ID rejection, idempotency, audit metadata, and cleanup/expiry, plus a production runbook recording the seed response before any publish/apply mutation.
+
+Exit condition: an authorized operator can create one disposable non-customer Launch Kit site, receive its real site ID and original pointer, and revoke it after verification without weakening normal Launch Kit authorization.
+
 ### Known Production Bug — VCMS-068-001: Save Blocked by Base-Font Pattern
 
 Status: fixed locally on PR #68; preview and production verification remain required before closing the bug.
