@@ -96,6 +96,10 @@ Any missing evidence, unexpected public output, or failed restoration keeps the 
 
 Complete this section during the authorized seed workflow. Never record the seed token itself.
 
+### Latest local focused verification
+
+On 2026-08-31, the focused CMS safety command passed locally with 3 test files and 32 tests: the protected seed/inspection/revocation route (9), site provisioning (17), and lifecycle notifications (6). This is local evidence only; it does not substitute for the controlled production run below.
+
 | Seed field | Value | Pass/Fail |
 | --- | --- | --- |
 | Run ID | | |
