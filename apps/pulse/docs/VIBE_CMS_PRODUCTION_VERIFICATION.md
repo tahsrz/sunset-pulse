@@ -4,7 +4,9 @@ Use this record only with a disposable Vibe and a controlled Launch Kit site. Do
 
 ## Test target policy
 
-Use `https://vibes-test.sunsetpulse.app` for all Vibe CMS browser testing on this PR. It aliases the current `codex/vibe-cms-baseline` Vercel preview deployment rather than `main`, and Vercel deployment protection must stay enabled. Because Vercel aliases point to one deployment, refresh it after each successful PR deployment before browser testing. Sign in to Vercel in the browser before navigating to `/vibes`; use `vercel curl` for protected automated reads. Do not use a production or customer-site hostname as a substitute.
+PR #67 merged to production as commit `9507b766b5d440419abdfded49660088ca99aa4b`. Run the completion cycle from `https://sunsetpulse.app/vibes` using the existing authenticated Taz account. Use only a disposable Vibe and a controlled Taz Launch Kit site; never apply the test revision to a customer site. Record every observation here and put any corrective code in the production-verification follow-up PR.
+
+The protected `https://vibes-test.sunsetpulse.app` hostname remains available for validating follow-up PR fixes before they reach production. It must remain deployment-protected and must be refreshed to the newest successful follow-up deployment after each push. It is not a substitute for the production cycle requested after merge.
 
 Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, new-Vibe screen, editor, draft preview, revisions, audit, protected application screen, taxonomy, and the Vibe/taxonomy/revision/audit GET APIs.
 
@@ -12,20 +14,22 @@ Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, 
 
 | Field | Value |
 | --- | --- |
-| PR head SHA | |
-| Deployed URL | https://vibes-test.sunsetpulse.app |
+| Production merge SHA | 9507b766b5d440419abdfded49660088ca99aa4b |
+| Follow-up PR head SHA | |
+| Deployed URL | https://sunsetpulse.app/vibes |
 | UTC start time | |
-| Operator account | |
+| Operator account | Taz (existing authenticated account) |
 | Controlled site ID | |
 | Original site pointer / revision | |
 | Disposable Vibe ID | |
 
 ## Preconditions
 
-- [ ] The deployed build is the recorded PR head and is reached through `https://vibes-test.sunsetpulse.app`.
+- [ ] Production includes merge commit `9507b766b5d440419abdfded49660088ca99aa4b` and `/vibes` loads from `https://sunsetpulse.app`.
 - [ ] The operator is signed in and can open `/vibes`.
 - [ ] The controlled site ID and original applied revision are recorded above.
-- [ ] `VIBE_CMS_PUBLIC_WRITE_WIP` is enabled only for this WIP session and no live customer site will be applied.
+- [ ] The selected Launch Kit site is owned or controlled by Taz, is safe to change temporarily, and is not serving a customer.
+- [ ] `VIBE_CMS_PUBLIC_WRITE_WIP` remains a temporary testing exception and no customer site will be applied.
 
 ## Cycle one: author, publish, and apply
 
@@ -78,7 +82,7 @@ Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, 
 
 - [ ] Every required observation passed and has a value recorded above.
 - [ ] The controlled site is restored to its original revision.
-- [ ] The complete evidence record is attached to PR #67.
-- [ ] `VIBE_CMS_PUBLIC_WRITE_WIP=false` is set before any production release.
+- [ ] The complete evidence record is committed or attached to the production-verification follow-up PR.
+- [ ] `VIBE_CMS_PUBLIC_WRITE_WIP=false` is set before the WIP exception is considered released and this follow-up is closed.
 
 Any missing evidence, unexpected public output, or failed restoration keeps the release gate open.

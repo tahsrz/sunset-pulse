@@ -127,11 +127,11 @@ Sunset Pulse is expanding from an individual agent command center into a multi-t
 
 ### Vibe CMS review status
 
-The first Vibe CMS vertical is implemented on PR #67: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. The PR-scope reconciliation is complete; the diff is limited to the Vibe workspace, Vibe APIs and model, scoped access and test-host routing helpers and tests, CMS documentation, and this README. Automated CI and preview deployment gates are green. The only remaining release evidence is the controlled-site operator cycle described below.
+The first Vibe CMS vertical merged through PR #67 as production commit `9507b766`: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. Its automated CI and preview deployment gates passed. A dedicated follow-up PR now owns the controlled production-site verification, evidence capture, and any narrowly scoped fixes found during that cycle.
 
 The operator workspace is intentionally WordPress-familiar while preserving the safer Vibe-to-site handoff: `/vibes` provides status views, search, sorting, pagination, row actions, and guarded transactional bulk archive/trash. Bulk actions validate every selected Vibe and stop with a conflict if one changes concurrently. The editor has a Publish rail, lifecycle audit history, immutable revision history, and editable visual-system controls for colors, typography, and layout; taxonomy has controlled-term discovery and usage counts. Its authenticated draft preview renders that complete visual system and the selected Jamie voice tone without applying anything to a site. New Vibes can start from visual, independent Default, Editorial warmth, or Market intelligence preset cards backed by one shared, contract-tested catalog. The picker makes each preset's colors, typography, and layout visible before creation. A selected preset seeds those values plus controlled taxonomy terms and Jamie's primary voice tone into that new draft; it is an editable starting point, not a live link. Templates, media, comments, scheduling, and access-model redesign remain deliberately out of this PR. Publishing a Vibe still does **not** change a live site—application remains a separate protected action.
 
-#### Required deployed verification before merge
+#### Required post-merge production verification
 
 Use one disposable Vibe and one controlled Launch Kit site. Record the deployed URL, UTC time, Vibe ID, site ID, each submitted/published revision ID, the before/after site pointer, the public `data-vibe-revision-id`, visible CSS token values, and assistant voice tone.
 
@@ -142,11 +142,11 @@ Use one disposable Vibe and one controlled Launch Kit site. Record the deployed 
 5. Complete a second submit/publish/apply cycle, then restore an earlier snapshot through the auditable rollback path.
 6. Restore the controlled site to its original revision and preserve the evidence record with the PR head SHA.
 
-Green automated checks do not replace this flow. Keep the WIP exception scoped to Vibe routes and set `VIBE_CMS_PUBLIC_WRITE_WIP=false` before production release.
+Green automated checks do not replace this flow. Keep the WIP exception scoped to Vibe routes and set `VIBE_CMS_PUBLIC_WRITE_WIP=false` before closing the production-verification follow-up and treating the feature as released.
 
-The dedicated protected test hostname is [vibes-test.sunsetpulse.app](https://vibes-test.sunsetpulse.app). It is aliased to the current `codex/vibe-cms-baseline` Vercel preview deployment, not the production `main` deployment, and is the canonical Vibe CMS target from this point forward. Vercel aliases are deployment-specific, so refresh this alias after each successful PR deployment before manual testing. It requires a Vercel-authenticated browser session; do not disable deployment protection. Use `vercel curl` for protected automated checks. The deployed list, creation, editor, preview, revisions, audit, protected apply screen, taxonomy, and their GET APIs were smoke-checked with HTTP 200 on 2026-08-30.
+The dedicated protected test hostname is [vibes-test.sunsetpulse.app](https://vibes-test.sunsetpulse.app). It remains the preview target for corrective work discovered during production verification and must never point at the production `main` deployment. Vercel aliases are deployment-specific, so refresh this alias after each successful follow-up PR deployment before testing a fix. It requires a Vercel-authenticated browser session; do not disable deployment protection. Use `vercel curl` for protected automated checks. The deployed list, creation, editor, preview, revisions, audit, protected apply screen, taxonomy, and their GET APIs were smoke-checked with HTTP 200 before PR #67 merged.
 
-#### PR #67 pre-merge readiness
+#### PR #67 delivered scope and readiness
 
 Included in the PR:
 
