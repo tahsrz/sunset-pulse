@@ -11,7 +11,7 @@ const request = (body: unknown, token = 'secret') => new NextRequest('https://su
 });
 
 describe('CMS test-site seed route', () => {
-  beforeEach(() => { vi.clearAllMocks(); process.env.CMS_TEST_SEED_ENABLED = 'true'; process.env.CMS_TEST_SEED_TOKEN = 'secret'; });
+  beforeEach(() => { vi.clearAllMocks(); process.env.CMS_TEST_SEED_ENABLED = 'true'; process.env.CMS_TEST_SEED_TOKEN = 'secret'; process.env.CMS_TEST_SEED_OWNER_EMAIL = 'taz@example.com'; });
 
   it('stays unavailable when disabled', async () => {
     process.env.CMS_TEST_SEED_ENABLED = 'false';
