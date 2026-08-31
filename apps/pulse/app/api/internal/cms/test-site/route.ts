@@ -81,6 +81,39 @@ export async function POST(request: NextRequest) {
   }, { status: result.created ? 201 : 200 });
 }
 
+export async function GET(request: NextRequest) {
+  if (process.env.CMS_TEST_SEED_ENABLED !== 'true') return NextResponse.json({ error: 'Test-site inspection is disabled.' }, { status: 404 });
+  const expectedToken = process.env.CMS_TEST_SEED_TOKEN?.trim();
+  if (!expectedToken || request.headers.get('x-cms-test-seed-token')?.trim() !== expectedToken) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  const ownerEmail = process.env.CMS_TEST_SEED_OWNER_EMAIL?.trim().toLowerCase();
+  const ownerUserId = process.env.CMS_TEST_SEED_OWNER_USER_ID?.trim();
+  const runId = request.nextUrl.searchParams.get('runId')?.trim() || '';
+  const email = request.nextUrl.searchParams.get('email')?.trim().toLowerCase() || '';
+  if (!ownerEmail || !ownerUserId || email !== ownerEmail || !/^[a-z0-9-]{6,64}$/.test(runId)) return NextResponse.json({ error: 'Seed owner is not authorized.' }, { status: 403 });
+  const siteId = `cms-verification-${runId}`;
+  const row = await readSiteConfig(siteId);
+  if (!row) return NextResponse.json({ error: 'Seed site not found.' }, { status: 404 });
+  const kit = normalizeLaunchKit(row, siteId);
+  if (kit.ownerId !== ownerUserId && kit.billingProfile.userId !== ownerUserId) return NextResponse.json({ error: 'Seed site owner mismatch.' }, { status: 403 });
+  const summary = getLaunchKitSummary(kit);
+  return NextResponse.json({
+    runId,
+    siteId,
+    ownerUserId,
+    ownerEmail,
+    status: kit.status,
+    publicUrl: summary.publicUrl,
+    originalPointer: kit.activeVibeRevisionId || null,
+    currentPointer: kit.activeVibeRevisionId || null,
+    createdAt: null,
+    updatedAt: null,
+    expiresAt: kit.billingProfile.trialEndsAt || null,
+    audits: (kit.provisioningAudit || []).filter((event) => event.action.startsWith('cms.test-site.')).map(({ id, action, occurredAt, status, source, actor, message, savedStores }) => ({ id, action, occurredAt, status, source, actor, message, savedStores })),
+    stores: { present: true },
+    reconciliationRequired: false,
+  });
+}
+
 export async function DELETE(request: NextRequest) {
   if (process.env.CMS_TEST_SEED_ENABLED !== 'true') return NextResponse.json({ error: 'Test-site seeding is disabled.' }, { status: 404 });
   const expectedToken = process.env.CMS_TEST_SEED_TOKEN?.trim();

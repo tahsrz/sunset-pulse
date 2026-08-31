@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({ provision: vi.fn(), suspend: vi.fn(), readSite
 vi.mock('@/lib/sites/siteProvisioning', () => ({ provisionPaidAgentSite: mocks.provision, suspendProvisionedAgentSite: mocks.suspend }));
 vi.mock('@/lib/sites/siteConfigStore', () => ({ readSiteConfig: mocks.readSiteConfig }));
 
-import { DELETE, POST } from '@/app/api/internal/cms/test-site/route';
+import { DELETE, GET, POST } from '@/app/api/internal/cms/test-site/route';
 
 const request = (body: unknown, token = 'secret') => new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site', {
   method: 'POST', headers: { 'content-type': 'application/json', 'x-cms-test-seed-token': token }, body: JSON.stringify(body),
@@ -58,6 +58,14 @@ describe('CMS test-site seed route', () => {
     const response = await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', revoked: true, idempotent: true });
+    expect(mocks.suspend).not.toHaveBeenCalled();
+  });
+
+  it('inspects a disposable site without exposing secrets or mutating it', async () => {
+    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one', provisioningAudit: [{ action: 'cms.test-site.seeded', actor: 'cms-test-seed:user-taz', message: 'seeded', occurredAt: '2026-08-31T00:00:00.000Z', status: 'succeeded', source: 'cms-test-seed:run-123' }] });
+    const response = await GET(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { headers: { 'x-cms-test-seed-token': 'secret' } }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ runId: 'run-123', siteId: 'cms-verification-run-123', ownerUserId: 'user-taz', originalPointer: 'revision-one', currentPointer: 'revision-one' });
     expect(mocks.suspend).not.toHaveBeenCalled();
   });
 });
