@@ -35,13 +35,15 @@ export async function POST(request: NextRequest) {
   }
 
   const agentId = `cms-verification-${parsed.data.runId}`;
+  const trialEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const result = await provisionPaidAgentSite({
     agentId,
     ownerName: parsed.data.ownerName,
     email: parsed.data.email,
     subscriptionTier: 'starter',
     billingStatus: 'trialing',
-    source: 'cms-test-seed',
+    trialEndsAt,
+    source: `cms-test-seed:${parsed.data.runId}`,
   });
 
   return NextResponse.json({

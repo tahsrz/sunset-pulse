@@ -29,6 +29,6 @@ describe('CMS test-site seed route', () => {
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
     expect(response.status).toBe(201);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: null });
-    expect(mocks.provision).toHaveBeenCalledWith(expect.objectContaining({ agentId: 'cms-verification-run-123', source: 'cms-test-seed', billingStatus: 'trialing' }));
+    expect(mocks.provision).toHaveBeenCalledWith(expect.objectContaining({ agentId: 'cms-verification-run-123', source: 'cms-test-seed:run-123', billingStatus: 'trialing', trialEndsAt: expect.any(String) }));
   });
 });
