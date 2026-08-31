@@ -9,6 +9,26 @@ Use this when a buyer completes site checkout but onboarding, billing state, or 
 3. If the page says provisioning is catching up, wait 30-60 seconds and retry. The page can reconcile a launch kit from Stripe even if the webhook is delayed.
 4. Check `/admin/site-reviews?agentId=<agent_id>` and `/admin/launch-kit?agentId=<agent_id>` for site status, billing status, review status, and provisioning audit.
 
+## Disposable CMS Verification Site
+
+Use this only for a planned CMS verification run. It is disabled unless production has both `CMS_TEST_SEED_ENABLED=true` and a server-managed `CMS_TEST_SEED_TOKEN`.
+
+```bash
+curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
+  -H "content-type: application/json" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN" \
+  -d '{"runId":"run-20260831","ownerName":"CMS Verification","email":"operator@example.com"}'
+```
+
+Record the returned `siteId`, `publicUrl`, and `originalPointer` before publishing or applying any Vibe. The endpoint derives only `cms-verification-*` IDs and never applies a revision. After verification, revoke the site:
+
+```bash
+curl -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=run-20260831&email=operator%40example.com" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN"
+```
+
+Disable `CMS_TEST_SEED_ENABLED` immediately after the run. Never use this endpoint for customer sites or from browser code.
+
 ## Replay Stripe Events
 
 Replay from the Stripe Dashboard first when possible:
