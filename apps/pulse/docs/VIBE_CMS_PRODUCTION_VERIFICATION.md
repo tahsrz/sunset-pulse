@@ -20,9 +20,9 @@ The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-k
 | --- | --- |
 | Feature merge SHA | 9507b766b5d440419abdfded49660088ca99aa4b |
 | Save-fix merge SHA | 77e985cfe3db307a1b4f8d6d9a1b35e60241507e |
-| Follow-up PR head SHA | |
+| Follow-up PR head SHA | `e0e86fea` |
 | Deployed URL | https://sunsetpulse.app/vibes |
-| UTC start time | |
+| UTC start time | Not started — awaiting controlled production seed run |
 | Operator account | Taz (existing authenticated account) |
 | Controlled site ID | |
 | Original site pointer / revision | |
