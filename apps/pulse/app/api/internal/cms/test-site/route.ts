@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { provisionPaidAgentSite, suspendProvisionedAgentSite } from '@/lib/sites/siteProvisioning';
+import { provisionDisposableCmsSite, revokeDisposableCmsSite } from '@/lib/sites/siteProvisioning';
 import { readSiteConfig } from '@/lib/sites/siteConfigStore';
 import { getLaunchKitSummary, normalizeLaunchKit } from '@/lib/sites/launchKit';
 
@@ -59,20 +59,7 @@ export async function POST(request: NextRequest) {
       idempotent: true,
     });
   }
-  const trialEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  const provisionPromise = provisionPaidAgentSite({
-    agentId,
-    ownerName: parsed.data.ownerName,
-    email: parsed.data.email,
-    userId: ownerUserId,
-    subscriptionTier: 'starter',
-    billingStatus: 'trialing',
-    trialEndsAt,
-    source: `cms-test-seed:${parsed.data.runId}`,
-    auditAction: 'cms.test-site.seeded',
-    auditActor: `cms-test-seed:${ownerUserId}`,
-    auditMessage: `Disposable CMS verification site seeded for run ${parsed.data.runId}.`,
-  });
+  const provisionPromise = provisionDisposableCmsSite({ runId: parsed.data.runId, ownerName: parsed.data.ownerName, email: parsed.data.email, userId: ownerUserId });
 
   let result: Awaited<typeof provisionPromise>;
   try {
@@ -160,7 +147,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true, correlationId });
     }
   }
-  const result = await suspendProvisionedAgentSite({ agentId, email: parsed.data.email, userId: ownerUserId, source: `cms-test-seed-revoke:${parsed.data.runId}`, auditAction: 'cms.test-site.revoked', auditActor: `cms-test-seed:${ownerUserId}`, auditMessage: `Disposable CMS verification site revoked for run ${parsed.data.runId}.` });
+  const result = await revokeDisposableCmsSite({ runId: parsed.data.runId, email: parsed.data.email, userId: ownerUserId });
   if (!result) return NextResponse.json({ error: 'Seed site not found.' }, { status: 404 });
   return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true, correlationId, savedStores: result.savedStores });
 }

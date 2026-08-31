@@ -41,6 +41,34 @@ export type PaidAgentSiteProvisioningResult = AgentLaunchKitResponse & {
   savedStores: string[];
 };
 
+export async function provisionDisposableCmsSite(input: { runId: string; ownerName: string; email: string; userId: string }) {
+  return provisionPaidAgentSite({
+    agentId: `cms-verification-${input.runId}`,
+    ownerName: input.ownerName,
+    email: input.email,
+    userId: input.userId,
+    subscriptionTier: 'starter',
+    billingStatus: 'trialing',
+    trialEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    source: `cms-test-seed:${input.runId}`,
+    auditAction: 'cms.test-site.seeded',
+    auditActor: `cms-test-seed:${input.userId}`,
+    auditMessage: `Disposable CMS verification site seeded for run ${input.runId}.`,
+  });
+}
+
+export async function revokeDisposableCmsSite(input: { runId: string; email: string; userId: string }) {
+  return suspendProvisionedAgentSite({
+    agentId: `cms-verification-${input.runId}`,
+    email: input.email,
+    userId: input.userId,
+    source: `cms-test-seed-revoke:${input.runId}`,
+    auditAction: 'cms.test-site.revoked',
+    auditActor: `cms-test-seed:${input.userId}`,
+    auditMessage: `Disposable CMS verification site revoked for run ${input.runId}.`,
+  });
+}
+
 export type ExpirePastDueGracePeriodsResult = {
   scanned: number;
   expired: number;

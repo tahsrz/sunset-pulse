@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({ provision: vi.fn(), suspend: vi.fn(), readSiteConfig: vi.fn() }));
-vi.mock('@/lib/sites/siteProvisioning', () => ({ provisionPaidAgentSite: mocks.provision, suspendProvisionedAgentSite: mocks.suspend }));
+vi.mock('@/lib/sites/siteProvisioning', () => ({ provisionDisposableCmsSite: mocks.provision, revokeDisposableCmsSite: mocks.suspend }));
 vi.mock('@/lib/sites/siteConfigStore', () => ({ readSiteConfig: mocks.readSiteConfig }));
 
 import { DELETE, GET, POST } from '@/app/api/internal/cms/test-site/route';
@@ -30,7 +30,7 @@ describe('CMS test-site seed route', () => {
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
     expect(response.status).toBe(201);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: null });
-    expect(mocks.provision).toHaveBeenCalledWith(expect.objectContaining({ agentId: 'cms-verification-run-123', userId: 'user-taz', source: 'cms-test-seed:run-123', auditAction: 'cms.test-site.seeded', billingStatus: 'trialing', trialEndsAt: expect.any(String) }));
+    expect(mocks.provision).toHaveBeenCalledWith({ runId: 'run-123', ownerName: 'CMS Verification', email: 'taz@example.com', userId: 'user-taz' });
   });
 
   it('returns an existing seed site without writing again', async () => {
@@ -58,7 +58,7 @@ describe('CMS test-site seed route', () => {
     const response = await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', revoked: true });
-    expect(mocks.suspend).toHaveBeenCalledWith(expect.objectContaining({ agentId: 'cms-verification-run-123', userId: 'user-taz', source: 'cms-test-seed-revoke:run-123', auditAction: 'cms.test-site.revoked' }));
+    expect(mocks.suspend).toHaveBeenCalledWith({ runId: 'run-123', email: 'taz@example.com', userId: 'user-taz' });
   });
 
   it('does not rewrite an already revoked disposable site', async () => {
