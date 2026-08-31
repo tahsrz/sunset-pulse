@@ -13,6 +13,14 @@ Use this when a buyer completes site checkout but onboarding, billing state, or 
 
 Use this only for a planned CMS verification run. It is disabled unless production has both `CMS_TEST_SEED_ENABLED=true` and a server-managed `CMS_TEST_SEED_TOKEN`.
 
+Required production variables (set in Vercel Production only for the controlled run):
+
+- `CMS_TEST_SEED_ENABLED=true`
+- `CMS_TEST_SEED_TOKEN=<generated secret>`
+- `CMS_TEST_SEED_OWNER_EMAIL=<Taz account email>`
+
+After the run, set `CMS_TEST_SEED_ENABLED=false` and rotate or remove the token. Never expose the token in browser code, commits, PR comments, or verification screenshots.
+
 ```bash
 curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
   -H "content-type: application/json" \
