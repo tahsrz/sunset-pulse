@@ -22,6 +22,17 @@ Required production variables (set in Vercel Production only for the controlled 
 
 After the run, set `CMS_TEST_SEED_ENABLED=false` and rotate or remove the token. Never expose the token in browser code, commits, PR comments, or verification screenshots.
 
+### Inspecting a disposable CMS site
+
+Use the same server-only token and configured owner email to inspect the deterministic seed record without mutating it:
+
+```bash
+curl -sS "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=cms-run-123&email=tahsrz%40gmail.com" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN"
+```
+
+The response includes `siteId`, owner, status, URL, original/current Vibe pointers, filtered CMS audits, `stores.evidence`, `reconciliationRequired`, `correlationId`, and `elapsedMs`. Treat `reconciliationRequired: true` as incomplete evidence; do not apply a Vibe or proceed to production lifecycle verification until both stores are reconciled.
+
 ```bash
 curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
   -H "content-type: application/json" \
