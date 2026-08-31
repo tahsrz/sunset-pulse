@@ -982,3 +982,53 @@ Progress estimate after this checkpoint: approximately 20% of the plan remains b
 ### Sol Review Gate
 
 This baseline is ready for Sol’s implementation review. Review focus should be limited to: (1) whether the tracked PR diff is acceptable for the Vibe CMS milestone, (2) whether the Mongo/Supabase freshness rule matches the intended production authority, (3) whether lifecycle transactions preserve existing API contracts, and (4) whether the required production evidence is complete. Do not request additional feature expansion until those four review points and the manual verification record are resolved.
+
+### Current WIP Routing and Access Context (2026-08-27)
+
+The Vibe workspace was deliberately moved out of the admin namespace to avoid unrelated admin-route constraints during WIP testing:
+
+- UI: `/vibes`, `/vibes/new`, and `/vibes/:vibeId/*`.
+- Direct Vibe API: `/api/vibes/*`.
+- The temporary WIP exception permits public Vibe reads and writes. Actions without an authenticated operator are recorded as `vibe-cms-wip-public`.
+- The exception can be disabled with `VIBE_CMS_PUBLIC_WRITE_WIP=false`, restoring the regular operator boundary for the Vibe API.
+- Applying a published revision to a live site remains on the protected site-management API and is intentionally omitted from the public WIP sidebar. Do not move that mutation under `/api/vibes` without an explicit product decision.
+
+Current next actions:
+
+1. Perform the controlled, operator-authorized site-application and public-runtime verification sequence recorded above.
+2. Before production release, disable the public WIP exception and re-run the required production verification record.
+
+### Local WIP Verification Record — 2026-08-27
+
+- Environment: local development server only; no production site or site pointer was changed.
+- Disposable Vibe: `default-codex-wip-verification-aug-27`.
+- Save proof: draft version advanced from 0 to 1 after taxonomy and source-provenance edits.
+- Lifecycle proof: submit created immutable checkpoint r1; publish created immutable published r2.
+- Lifecycle restoration proof: archive moved the disposable Vibe to `archived`; the confirmed destructive **Move to trash** action moved it to `trash`; **Restore vibe** returned it to its recorded pre-trash state, `archived`. The sidebar refreshed to each resulting status.
+- Publication proof: the revision list marked r2 Published and offered the protected **Apply to site** handoff with the exact revision ID and number.
+- Read-only proof: the compiled-token preview rendered; the audit API returned created, submitted, and published events; and r1 → r2 comparison correctly returned no payload differences.
+- Actor: `vibe-cms-wip-public`, as expected while the temporary WIP exception is enabled.
+- Fixes found by the test: `Vibe.draftPayload` is now persisted as a mixed document; `linguisticLogic` accepts the structured linguistic payload; the sidebar refreshes its status after submit, publish, and lifecycle actions; and revision comparison now evaluates equal arrays structurally instead of reporting false differences.
+- Remaining release checks: all protected site-application, public-runtime, second-cycle, rollback, restoration, and production evidence requirements above.
+
+### WordPress-Alignment Delivery Track — 2026-08-27
+
+The Vibe CMS should borrow WordPress's editorial conventions while retaining its safer separation between publishing a Vibe revision and applying that revision to a live site. It is not a plan to reproduce WordPress's PHP/plugin ecosystem or expose site application to the WIP Vibe routes.
+
+1. **Editorial list and workflow (implemented locally):** WordPress-style All Vibes list, filtering, pagination, contextual row actions, guarded bulk archive/trash, permalink clarity, a publish/status panel, audit history, and readable revision restoration. Deployed end-to-end proof remains required.
+2. **Appearance layer (preset foundation implemented):** curated named token/style presets seed a new draft's theme, taxonomy, and voice. Templates, template parts, and scoped navigation remain later work.
+3. **Collaboration and media:** media library/provenance, review comments, ownership, scheduling, and capability-based access replacing the temporary WIP exception.
+4. **Operations:** import/export, webhooks, SEO/redirects, site-assignment history, audit export, and release health controls.
+
+Preset decision: a preset is an independent starting template. Selecting one copies safe structured colors, typography, layout, controlled taxonomy terms, and Jamie's primary voice tone into a newly created Vibe draft; it is never a live link and cannot mutate another Vibe or any site after creation. The structured editor exposes and saves those same color, typography, and layout fields with the existing optimistic-concurrency draft write, and the authenticated draft preview renders them for editorial review. Public application remains a separate protected action.
+
+Completed in this increment: the `/vibes` screen is now an **All Vibes** list with WordPress-style status views and counts, search, editorial-status filtering, server-backed pagination, title/status/last-modified sorting, and Edit/Preview/Actions row links. It also provides guarded transactional bulk archive/trash: all selected records are validated before mutation, each lifecycle audit is written transactionally, and concurrent changes return a conflict rather than a partial completion. The editor now includes a WordPress-style **Publish** rail with save state, status, Vibe URL, draft/revision context, Preview, revision history, audit history, and the status-appropriate lifecycle link. Revision history now distinguishes review checkpoints, current published revisions, and prior published revisions; it provides guarded restoration of a prior published revision through the existing immutable rollback service (reason plus confirmation, then a new auditable revision). The taxonomy directory now provides search, group filtering, and non-trash Vibe usage counts while truthfully retaining its controlled-schema boundary. New Vibes offer independent Default, Editorial warmth, and Market intelligence cards from a shared contract-tested catalog; a selected card seeds the editable theme, taxonomy, and voice defaults. The list, editor, revision history, taxonomy directory, and preset selection were browser-verified locally on 2026-08-27; no rollback or site application was invoked during UI verification. Deliberately deferred: templates, menus, media, comments, scheduling, capability redesign, and other expansion work; each requires a distinct data/API design and must not bypass protected live-site application.
+
+### Sprint Findings and Next Actions — 2026-08-30
+
+Current readiness: PR #67 is green for lint, unit tests, Jamie E2E, Vercel preview comments, and Vercel deployment. The dedicated test target is `https://vibes-test.sunsetpulse.app`; it is protected by Vercel login and must remain so. Vercel aliases point to a specific deployment rather than following a branch automatically, so refresh the test alias to the newest green `codex/vibe-cms-baseline` deployment after every push before browser testing.
+
+1. **This week’s outcome:** prove one complete disposable Vibe editorial cycle on the controlled test target: create, edit, authenticated preview, submit, publish, protected application to a controlled site, public evidence, draft/live isolation, second cycle, rollback, and restoration. Record every required ID and observed result in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.
+2. **Appearance projection decision:** colors and Jamie voice reach the protected public application path today. Typography and layout are safely editable and rendered in the authenticated draft preview, but are intentionally not yet projected as public CSS variables. Before expanding public styling, make an explicit product decision: retain that draft-review-only boundary or implement a separately designed allowlisted public projection.
+3. **Merge threshold:** do not treat a green CI run as replacement evidence for the controlled application/recovery sequence. The release gate remains open until the verification record is complete and the controlled site is restored.
+4. **Defer this week:** templates/template parts, menus, media, comments, scheduling, webhooks, import/export, and capability redesign. They remain separate data/API decisions after the repeatable Vibe-to-site loop is proven.

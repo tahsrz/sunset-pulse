@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { isLocalHost } from '@/lib/core/operator_access';
+import { NextRequest } from 'next/server';
+import { getVibeCmsAccess, isLocalHost } from '@/lib/core/operator_access';
+import { requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 const originalEnv = { ...process.env };
 
@@ -12,6 +14,23 @@ function setNodeEnv(value: NodeJS.ProcessEnv['NODE_ENV']) {
 }
 
 describe('operator access host detection', () => {
+  it('allows public Vibe CMS work while the WIP exception is enabled', async () => {
+    delete process.env.VIBE_CMS_PUBLIC_WRITE_WIP;
+
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({
+      allowed: true,
+      reason: 'Public Vibe CMS WIP access.',
+      user: { id: 'vibe-cms-wip-public', role: 'operator' }
+    });
+  });
+
+  it('applies the WIP exception only to the relocated Vibe API namespace', async () => {
+    delete process.env.VIBE_CMS_PUBLIC_WRITE_WIP;
+
+    await expect(requireOperatorRouteAccess(new NextRequest('https://sunsetpulse.example.com/api/vibes')))
+      .resolves.toMatchObject({ allowed: true, user: { id: 'vibe-cms-wip-public' } });
+  });
+
   it('allows loopback hosts outside production', () => {
     setNodeEnv('development');
 

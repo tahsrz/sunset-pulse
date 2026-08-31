@@ -21,6 +21,7 @@ const RESERVED_SUBDOMAINS = new Set([
   'static',
   'status',
   'support',
+  'vibes-test',
   'www',
 ]);
 

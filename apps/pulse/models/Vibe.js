@@ -19,6 +19,7 @@ const VibeSchema = new Schema(
     publishedRevisionId: { type: String },
     submittedRevisionId: { type: String },
     currentDraftVersion: { type: Number, default: 0 },
+    draftPayload: { type: mongoose.Schema.Types.Mixed },
     excerpt: { type: String, default: '' },
     longDescription: { type: String, default: '' },
     taxonomyTermIds: { type: [String], default: [] },
@@ -28,11 +29,7 @@ const VibeSchema = new Schema(
     description: { type: String },
     
     // Linguistic logic extracted from the video's "soul"
-    linguisticLogic: {
-      tone: String,      // 'cynical', 'hopeful', 'aggressive'
-      pacing: String,    // 'staccato', 'flowing', 'erratic'
-      vocabulary: [String] // Key words that trigger this vibe
-    },
+    linguisticLogic: { type: mongoose.Schema.Types.Mixed },
     
     // Visual parameters for the TacticalCloth or R3F components
     visualParameters: {

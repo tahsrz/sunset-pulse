@@ -41,6 +41,16 @@ describe('Jamie first-party host routing', () => {
     expect(rewrite?.url.pathname).toBe('/sites/taz/properties/123');
   });
 
+  it('keeps the Vibe CMS test hostname in the platform workspace', () => {
+    const request = {
+      headers: new Headers({ host: 'vibes-test.sunsetpulse.app' }),
+      url: 'https://vibes-test.sunsetpulse.app/vibes',
+    };
+
+    expect(getTenantFromHost('vibes-test.sunsetpulse.app')).toBeNull();
+    expect(getTenantRewrite(request)).toBeNull();
+  });
+
   it('uses forwarded host only when the deployment explicitly trusts its proxy', () => {
     const request = {
       headers: new Headers({

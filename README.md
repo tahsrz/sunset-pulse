@@ -127,10 +127,55 @@ Sunset Pulse is expanding from an individual agent command center into a multi-t
 
 ### Vibe CMS review status
 
-The first Vibe CMS vertical is implemented locally: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. It remains pre-merge pending PR-scope disposition and deployed operator verification.
+The first Vibe CMS vertical is implemented on PR #67: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. The PR-scope reconciliation is complete; the diff is limited to the Vibe workspace, Vibe APIs and model, scoped access and test-host routing helpers and tests, CMS documentation, and this README. Automated CI and preview deployment gates are green. The only remaining release evidence is the controlled-site operator cycle described below.
+
+The operator workspace is intentionally WordPress-familiar while preserving the safer Vibe-to-site handoff: `/vibes` provides status views, search, sorting, pagination, row actions, and guarded transactional bulk archive/trash. Bulk actions validate every selected Vibe and stop with a conflict if one changes concurrently. The editor has a Publish rail, lifecycle audit history, immutable revision history, and editable visual-system controls for colors, typography, and layout; taxonomy has controlled-term discovery and usage counts. Its authenticated draft preview renders that complete visual system and the selected Jamie voice tone without applying anything to a site. New Vibes can start from visual, independent Default, Editorial warmth, or Market intelligence preset cards backed by one shared, contract-tested catalog. The picker makes each preset's colors, typography, and layout visible before creation. A selected preset seeds those values plus controlled taxonomy terms and Jamie's primary voice tone into that new draft; it is an editable starting point, not a live link. Templates, media, comments, scheduling, and access-model redesign remain deliberately out of this PR. Publishing a Vibe still does **not** change a live site—application remains a separate protected action.
+
+#### Required deployed verification before merge
+
+Use one disposable Vibe and one controlled Launch Kit site. Record the deployed URL, UTC time, Vibe ID, site ID, each submitted/published revision ID, the before/after site pointer, the public `data-vibe-revision-id`, visible CSS token values, and assistant voice tone.
+
+1. Create the Vibe, save structured visual and linguistic fields, and open its authenticated draft preview.
+2. Submit and publish the resulting immutable revision, then use the protected application screen to apply that exact revision to the controlled site.
+3. Confirm the public site exposes the applied revision ID, the expected compiled tokens, and the published assistant tone.
+4. Edit the draft but do not publish or apply it; confirm the public revision and presentation stay unchanged.
+5. Complete a second submit/publish/apply cycle, then restore an earlier snapshot through the auditable rollback path.
+6. Restore the controlled site to its original revision and preserve the evidence record with the PR head SHA.
+
+Green automated checks do not replace this flow. Keep the WIP exception scoped to Vibe routes and set `VIBE_CMS_PUBLIC_WRITE_WIP=false` before production release.
+
+The dedicated protected test hostname is [vibes-test.sunsetpulse.app](https://vibes-test.sunsetpulse.app). It is aliased to the current `codex/vibe-cms-baseline` Vercel preview deployment, not the production `main` deployment, and is the canonical Vibe CMS target from this point forward. Vercel aliases are deployment-specific, so refresh this alias after each successful PR deployment before manual testing. It requires a Vercel-authenticated browser session; do not disable deployment protection. Use `vercel curl` for protected automated checks. The deployed list, creation, editor, preview, revisions, audit, protected apply screen, taxonomy, and their GET APIs were smoke-checked with HTTP 200 on 2026-08-30.
+
+#### PR #67 pre-merge readiness
+
+Included in the PR:
+
+- WordPress-familiar Vibe list management, search, status filters, sorting, pagination, row actions, and transactional bulk actions.
+- Draft creation with shared presets, editable visual and linguistic fields, controlled taxonomy, and authenticated visual/voice preview.
+- Submit, reject, publish, immutable revision history, revision comparison, restore, archive, trash, audit history, site application, and rollback surfaces.
+- Vibe-scoped WIP access that avoids the legacy `/admin` boundary during testing; `VIBE_CMS_PUBLIC_WRITE_WIP=false` restores operator-only access.
+- Contract and access tests, the implementation baseline, the production verification record, and the protected test-host workflow.
+
+Completed gates:
+
+- [x] PR diff reconciled against `origin/main`; unrelated platform files are excluded.
+- [x] `git diff --check` passes and the working tree is clean.
+- [x] Focused Vibe CMS access, contract, and test-host routing suite passes (21 tests).
+- [x] GitHub lint, unit, Jamie E2E, and Vercel deployment checks pass.
+- [x] PR is reported mergeable with a clean merge state.
+- [x] Protected test hostname is assigned to the current successful PR deployment and `/vibes` is reachable through authenticated Vercel tooling.
+
+Manual release evidence still required unless explicitly waived by the product owner:
+
+- [ ] Run the create/save/preview/submit/publish/apply flow against one controlled Launch Kit site.
+- [ ] Confirm draft/live isolation, public revision metadata, visual tokens, and Jamie voice tone.
+- [ ] Run a second editorial cycle, then rollback and restore the site's original pointer.
+- [ ] Complete [the production verification record](apps/pulse/docs/VIBE_CMS_PRODUCTION_VERIFICATION.md) with IDs, timestamps, before/after pointers, screenshots or observations, and the tested PR head SHA.
+- [ ] Set `VIBE_CMS_PUBLIC_WRITE_WIP=false` before treating the feature as production-released.
 
 - [Luna implementation baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md)
 - [Sol review and remediation report](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md)
+- [Production verification record](apps/pulse/docs/VIBE_CMS_PRODUCTION_VERIFICATION.md)
 
 Target URL structure:
 ```text
