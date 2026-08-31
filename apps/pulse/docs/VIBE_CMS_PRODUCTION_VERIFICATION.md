@@ -4,7 +4,7 @@ Use this record only with a disposable Vibe and a controlled Launch Kit site. Do
 
 ## Test target policy
 
-PR #67 merged to production as commit `9507b766b5d440419abdfded49660088ca99aa4b`. Run the completion cycle from `https://sunsetpulse.app/vibes` using the existing authenticated Taz account. Use only a disposable Vibe and a controlled Taz Launch Kit site; never apply the test revision to a customer site. Record every observation here and put any corrective code in the production-verification follow-up PR.
+PR #67 merged to production as commit `9507b766b5d440419abdfded49660088ca99aa4b`, and the save-validation fix from PR #68 merged as `77e985cfe3db307a1b4f8d6d9a1b35e60241507e`. Run the completion cycle from `https://sunsetpulse.app/vibes` using the existing authenticated Taz account. Use only a disposable Vibe and a controlled Taz Launch Kit site; never apply the test revision to a customer site. Record every observation here and put any corrective code in the next production-verification PR.
 
 The protected `https://vibes-test.sunsetpulse.app` hostname remains available for validating follow-up PR fixes before they reach production. It must remain deployment-protected and must be refreshed to the newest successful follow-up deployment after each push. It is not a substitute for the production cycle requested after merge.
 
@@ -14,7 +14,8 @@ Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, 
 
 | Field | Value |
 | --- | --- |
-| Production merge SHA | 9507b766b5d440419abdfded49660088ca99aa4b |
+| Feature merge SHA | 9507b766b5d440419abdfded49660088ca99aa4b |
+| Save-fix merge SHA | 77e985cfe3db307a1b4f8d6d9a1b35e60241507e |
 | Follow-up PR head SHA | |
 | Deployed URL | https://sunsetpulse.app/vibes |
 | UTC start time | |
@@ -25,7 +26,7 @@ Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, 
 
 ## Preconditions
 
-- [ ] Production includes merge commit `9507b766b5d440419abdfded49660088ca99aa4b` and `/vibes` loads from `https://sunsetpulse.app`.
+- [ ] Production includes save-fix merge commit `77e985cfe3db307a1b4f8d6d9a1b35e60241507e` and `/vibes` loads from `https://sunsetpulse.app`.
 - [ ] The operator is signed in and can open `/vibes`.
 - [ ] The controlled site ID and original applied revision are recorded above.
 - [ ] The selected Launch Kit site is owned or controlled by Taz, is safe to change temporarily, and is not serving a customer.

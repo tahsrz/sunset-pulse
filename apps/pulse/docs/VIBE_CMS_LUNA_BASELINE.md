@@ -1145,3 +1145,15 @@ After each phase, report:
 - the next single action.
 
 Current completion estimate: implementation is merged; approximately 15% of the original delivery remains, consisting of production evidence, any defects exposed by that evidence, restoration, WIP-access closure, and final review.
+
+## Luna Production Evidence Follow-Up — After PR #68 Merge (2026-08-31)
+
+PR #68 is merged as `77e985cfe3db307a1b4f8d6d9a1b35e60241507e`. The Base font size validation bug is now fixed in production. The next branch/PR must focus on evidence, not reimplementing the editor fix.
+
+1. Open `https://www.sunsetpulse.app/vibes` with the existing Taz account and confirm the saved `16px` Base font size no longer triggers native format validation.
+2. Use one clearly labeled disposable Vibe and one controlled, non-customer Taz Launch Kit site.
+3. Complete Phases 0–3 above, recording all IDs, pointers, actors, timestamps, public revision metadata, style values, and Jamie tone in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.
+4. If a step fails, preserve the site pointer and evidence first. Add only the smallest reproducible fix to the new production-evidence PR, with a focused regression test and preview verification.
+5. Do not mark the feature complete until the controlled site is restored exactly and the WIP exception is disabled and re-tested.
+
+The next single action is Phase 0: record the controlled site's original pointer before any publish or apply operation.
