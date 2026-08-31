@@ -144,7 +144,7 @@ Use one disposable Vibe and one controlled Launch Kit site. Record the deployed 
 
 Green automated checks do not replace this flow. Keep the WIP exception scoped to Vibe routes and set `VIBE_CMS_PUBLIC_WRITE_WIP=false` before production release.
 
-The dedicated protected test hostname is [vibes-test.sunsetpulse.app](https://vibes-test.sunsetpulse.app). It is aliased to the `codex/vibe-cms-baseline` Vercel preview, not the production `main` deployment, and is the canonical Vibe CMS target from this point forward. It requires a Vercel-authenticated browser session; do not disable deployment protection. Use `vercel curl` for protected automated checks. The deployed list, creation, editor, preview, revisions, audit, protected apply screen, taxonomy, and their GET APIs were smoke-checked with HTTP 200 on 2026-08-30.
+The dedicated protected test hostname is [vibes-test.sunsetpulse.app](https://vibes-test.sunsetpulse.app). It is aliased to the current `codex/vibe-cms-baseline` Vercel preview deployment, not the production `main` deployment, and is the canonical Vibe CMS target from this point forward. Vercel aliases are deployment-specific, so refresh this alias after each successful PR deployment before manual testing. It requires a Vercel-authenticated browser session; do not disable deployment protection. Use `vercel curl` for protected automated checks. The deployed list, creation, editor, preview, revisions, audit, protected apply screen, taxonomy, and their GET APIs were smoke-checked with HTTP 200 on 2026-08-30.
 
 - [Luna implementation baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md)
 - [Sol review and remediation report](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md)
