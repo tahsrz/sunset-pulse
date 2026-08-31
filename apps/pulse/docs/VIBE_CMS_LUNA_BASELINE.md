@@ -1050,6 +1050,22 @@ PR #67 is merged to production as commit `9507b766b5d440419abdfded49660088ca99aa
 
 Luna may perform read-only production and PR inspection autonomously. Browser mutations are permitted only after the controlled site ID and its original pointer/revision are recorded. If the existing Taz browser session is unavailable, Luna must ask Taz to sign in and then resume; it must not create credentials, weaken deployment protection, or substitute the anonymous WIP actor for authenticated operator evidence.
 
+### Authorized Production Test-Site Provisioning — New Follow-Up
+
+The current production verification is blocked because Taz has no provisioned site and the onboarding page reports a missing checkout session. Do not fabricate an `agentId`, reuse a customer site, or write directly to Mongo/Supabase from an ad-hoc script.
+
+Implement a separate, auditable provisioning-seed path with these constraints:
+
+1. Disabled by default behind an explicit production flag such as `CMS_TEST_SEED_ENABLED=true`.
+2. Requires a server-side operator credential distinct from the browser session; never accept a client-supplied role or unrestricted site payload.
+3. Accepts only a fixed disposable-site profile with a deterministic `cms-verification-<runId>` ID prefix and non-customer marker; arbitrary customer IDs are rejected.
+4. Calls the existing site provisioning service instead of duplicating persistence logic, and records an audit event with the seed actor and run ID.
+5. Is idempotent for the run ID and returns the real `siteId`/`agentId`, public URL, and current `activeVibeRevisionId` (normally `none`) without applying a Vibe.
+6. Includes explicit cleanup/revocation or an expiry policy so disposable sites cannot become unowned permanent records.
+7. Adds tests for the disabled flag, invalid credential, customer-ID rejection, idempotency, audit metadata, and cleanup/expiry, plus a production runbook recording the seed response before any publish/apply mutation.
+
+Exit condition: an authorized operator can create one disposable non-customer Launch Kit site, receive its real site ID and original pointer, and revoke it after verification without weakening normal Launch Kit authorization.
+
 ### Known Production Bug — VCMS-068-001: Save Blocked by Base-Font Pattern
 
 Status: fixed locally on PR #68; preview and production verification remain required before closing the bug.
@@ -1145,3 +1161,24 @@ After each phase, report:
 - the next single action.
 
 Current completion estimate: implementation is merged; approximately 15% of the original delivery remains, consisting of production evidence, any defects exposed by that evidence, restoration, WIP-access closure, and final review.
+
+## Luna Production Evidence Follow-Up — After PR #68 Merge (2026-08-31)
+
+PR #68 is merged as `77e985cfe3db307a1b4f8d6d9a1b35e60241507e`. The Base font size validation bug is now fixed in production. The next branch/PR must focus on evidence, not reimplementing the editor fix.
+
+1. Open `https://www.sunsetpulse.app/vibes` with the existing Taz account and confirm the saved `16px` Base font size no longer triggers native format validation.
+2. Use one clearly labeled disposable Vibe and one controlled, non-customer Taz Launch Kit site.
+3. Complete Phases 0–3 above, recording all IDs, pointers, actors, timestamps, public revision metadata, style values, and Jamie tone in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.
+4. If a step fails, preserve the site pointer and evidence first. Add only the smallest reproducible fix to the new production-evidence PR, with a focused regression test and preview verification.
+5. Do not mark the feature complete until the controlled site is restored exactly and the WIP exception is disabled and re-tested.
+
+The next single action is Phase 0: record the controlled site's original pointer before any publish or apply operation.
+
+### Phase 0 Blocker — Launch Kit Authority Not Exposed to Taz Session
+
+The authenticated Taz browser session can open production `/vibes`, but `/admin/launch-kit` returns **Operator Access — Access denied**, and `/dashboard` exposes no Launch Kit site or applied pointer. This was confirmed on 2026-08-31 with no mutations performed. Luna must stop here until one of these is true:
+
+1. Taz supplies a controlled, non-customer Launch Kit `siteId` and its original applied revision/pointer for the verification record; or
+2. The Taz account is granted the existing operator entitlement needed to read Launch Kit sites, after which Luna rechecks access.
+
+Do not create a new account, guess a site ID, use a customer site, or widen route permissions as a workaround. Once the site authority is available, resume Phase 0 step 3 and capture the before-state before creating a disposable Vibe.
