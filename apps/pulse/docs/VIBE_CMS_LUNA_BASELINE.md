@@ -1280,3 +1280,5 @@ Deliverable: Sol-ready verification report and final percentage remaining.
 - Defects discovered during the sprint receive only the smallest focused regression test and fix required to resume the verification path.
 
 Sprint exit condition: the full disposable-site editorial lifecycle is proven in production, the test site is revoked, production seed controls are disabled, evidence is complete, and the package is ready for Sol review.
+
+The expanded vertical-slice execution plan is maintained in [`VIBE_CMS_VERTICAL_SLICE_PLAN.md`](./VIBE_CMS_VERTICAL_SLICE_PLAN.md).
