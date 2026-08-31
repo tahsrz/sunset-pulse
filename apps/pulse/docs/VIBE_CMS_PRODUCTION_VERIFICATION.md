@@ -110,3 +110,11 @@ Complete this section during the authorized seed workflow. Never record the seed
 | Token removed or rotated | | |
 
 The seed endpoint must be invoked only after its deployment is confirmed. The production run is incomplete until the disposable site is revoked, the flag is disabled, and the final public/control state is recorded.
+
+## Local focused checks
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Site-pointer authority suite | Pass — 11 tests | Covers fresher Mongo, stale Supabase writes, absent Mongo pointer, and Mongo-read failure fallback. |
+| CMS test-site route suite | Pass — 4 tests | Covers disabled flag, token rejection, disposable provisioning, and revocation. |
+| Combined focused total | Pass — 15 tests | Runner reported all tests passed; no production data was changed. |
