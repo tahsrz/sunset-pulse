@@ -126,7 +126,14 @@ export async function GET(request: NextRequest) {
     updatedAt: null,
     expiresAt: kit.billingProfile.trialEndsAt || null,
     audits: (kit.provisioningAudit || []).filter((event) => event.action.startsWith('cms.test-site.')).map(({ id, action, occurredAt, status, source, actor, message, savedStores }) => ({ id, action, occurredAt, status, source, actor, message, savedStores })),
-    stores: { present: true },
+    stores: {
+      present: true,
+      selected: 'agent_id' in (row as Record<string, unknown>) ? 'supabase' : 'mongo',
+      evidence: {
+        supabase: 'agent_id' in (row as Record<string, unknown>),
+        mongo: 'agentId' in (row as Record<string, unknown>),
+      },
+    },
     reconciliationRequired: false,
     correlationId,
   });
