@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
       created: false,
       savedStores: [],
       idempotent: true,
+      elapsedMs: Date.now() - startedAt,
+      correlationId,
     });
   }
   const provisionPromise = provisionDisposableCmsSite({ runId: parsed.data.runId, ownerName: parsed.data.ownerName, email: parsed.data.email, userId: ownerUserId });
