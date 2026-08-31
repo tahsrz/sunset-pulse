@@ -93,7 +93,15 @@ export async function DELETE(request: NextRequest) {
   const ownerEmail = process.env.CMS_TEST_SEED_OWNER_EMAIL?.trim().toLowerCase();
   const ownerUserId = process.env.CMS_TEST_SEED_OWNER_USER_ID?.trim();
   if (!ownerEmail || !ownerUserId || parsed.data.email.toLowerCase() !== ownerEmail) return NextResponse.json({ error: 'Seed owner is not authorized.' }, { status: 403 });
-  const result = await suspendProvisionedAgentSite({ agentId: `cms-verification-${parsed.data.runId}`, email: parsed.data.email, userId: ownerUserId, source: `cms-test-seed-revoke:${parsed.data.runId}`, auditAction: 'cms.test-site.revoked', auditActor: `cms-test-seed:${ownerUserId}`, auditMessage: `Disposable CMS verification site revoked for run ${parsed.data.runId}.` });
+  const agentId = `cms-verification-${parsed.data.runId}`;
+  const existingRow = await readSiteConfig(agentId);
+  if (existingRow) {
+    const existing = normalizeLaunchKit(existingRow, agentId);
+    if (existing.status === 'suspended' && existing.billingProfile.billingStatus === 'canceled') {
+      return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true });
+    }
+  }
+  const result = await suspendProvisionedAgentSite({ agentId, email: parsed.data.email, userId: ownerUserId, source: `cms-test-seed-revoke:${parsed.data.runId}`, auditAction: 'cms.test-site.revoked', auditActor: `cms-test-seed:${ownerUserId}`, auditMessage: `Disposable CMS verification site revoked for run ${parsed.data.runId}.` });
   if (!result) return NextResponse.json({ error: 'Seed site not found.' }, { status: 404 });
   return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true });
 }
