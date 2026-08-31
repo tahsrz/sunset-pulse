@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const correlationId = randomUUID();
   if (process.env.CMS_TEST_SEED_ENABLED !== 'true') return NextResponse.json({ error: 'Test-site inspection is disabled.' }, { status: 404 });
   const expectedToken = process.env.CMS_TEST_SEED_TOKEN?.trim();
   if (!expectedToken || request.headers.get('x-cms-test-seed-token')?.trim() !== expectedToken) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
@@ -111,6 +112,7 @@ export async function GET(request: NextRequest) {
   const kit = normalizeLaunchKit(row, siteId);
   if (kit.ownerId !== ownerUserId && kit.billingProfile.userId !== ownerUserId) return NextResponse.json({ error: 'Seed site owner mismatch.' }, { status: 403 });
   const summary = getLaunchKitSummary(kit);
+  console.info('[CMS_TEST_SITE_INSPECT]', { correlationId, runId, siteId, status: kit.status });
   return NextResponse.json({
     runId,
     siteId,
@@ -126,20 +128,12 @@ export async function GET(request: NextRequest) {
     audits: (kit.provisioningAudit || []).filter((event) => event.action.startsWith('cms.test-site.')).map(({ id, action, occurredAt, status, source, actor, message, savedStores }) => ({ id, action, occurredAt, status, source, actor, message, savedStores })),
     stores: { present: true },
     reconciliationRequired: false,
+    correlationId,
   });
-  let result: Awaited<typeof provisionPromise>;
-  try {
-    result = await Promise.race([provisionPromise, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('CMS seed deadline exceeded.')), SEED_DEADLINE_MS))]);
-  } catch (error) {
-    if (error instanceof Error && error.message === 'CMS seed deadline exceeded.') {
-      console.error('[CMS_TEST_SEED_TIMEOUT]', { correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', reconciliationRequired: true });
-      return NextResponse.json({ error: 'Seed operation timed out.', correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', reconciliationRequired: true }, { status: 504 });
-    }
-    throw error;
-  }
 }
 
 export async function DELETE(request: NextRequest) {
+  const correlationId = randomUUID();
   if (process.env.CMS_TEST_SEED_ENABLED !== 'true') return NextResponse.json({ error: 'Test-site seeding is disabled.' }, { status: 404 });
   const expectedToken = process.env.CMS_TEST_SEED_TOKEN?.trim();
   if (!expectedToken || request.headers.get('x-cms-test-seed-token')?.trim() !== expectedToken) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
@@ -156,10 +150,10 @@ export async function DELETE(request: NextRequest) {
   if (existingRow) {
     const existing = normalizeLaunchKit(existingRow, agentId);
     if (existing.status === 'suspended' && existing.billingProfile.billingStatus === 'canceled') {
-      return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true });
+      return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true, correlationId });
     }
   }
   const result = await suspendProvisionedAgentSite({ agentId, email: parsed.data.email, userId: ownerUserId, source: `cms-test-seed-revoke:${parsed.data.runId}`, auditAction: 'cms.test-site.revoked', auditActor: `cms-test-seed:${ownerUserId}`, auditMessage: `Disposable CMS verification site revoked for run ${parsed.data.runId}.` });
   if (!result) return NextResponse.json({ error: 'Seed site not found.' }, { status: 404 });
-  return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true });
+  return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true, correlationId, savedStores: result.savedStores });
 }
