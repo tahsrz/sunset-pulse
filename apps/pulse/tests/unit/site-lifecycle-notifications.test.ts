@@ -54,6 +54,17 @@ describe('site lifecycle notifications', () => {
     expect(init?.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it('returns a failed notification result when the email request times out', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('The operation timed out.', 'TimeoutError')));
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    const result = await notifyBuyerSiteProvisioned({ kit, email: 'buyer@example.test', setupUrl: '/onboarding/site/setup' });
+    expect(result).toEqual(expect.objectContaining({
+      status: 'failed',
+      reason: 'The operation timed out.',
+      recipients: expect.arrayContaining(['buyer@example.test']),
+    }));
+  });
+
   it('tells the buyer when recovered billing stayed draft', async () => {
     const kit: AgentLaunchKit = {
       ...createDefaultLaunchKit('broker-one'),
