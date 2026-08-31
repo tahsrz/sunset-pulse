@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
 
@@ -208,7 +209,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="text-xs font-bold uppercase text-slate-500">Heading font<input name="fontFamilyHeading" defaultValue={typography.fontFamilyHeading} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                     <label className="text-xs font-bold uppercase text-slate-500">Body font<input name="fontFamilyBody" defaultValue={typography.fontFamilyBody} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
-                    <label className="text-xs font-bold uppercase text-slate-500">Base font size<input name="baseFontSize" defaultValue={typography.baseFontSize} pattern="\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|%)" className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
+                    <label className="text-xs font-bold uppercase text-slate-500">Base font size<input name="baseFontSize" defaultValue={typography.baseFontSize} pattern="\d+(?:\.\d+)?(?:px|rem|em|vh|vw|%)" aria-describedby="base-font-size-help" className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /><span id="base-font-size-help" className="mt-1 block text-xs font-normal normal-case text-slate-500">Use a number followed by px, rem, em, vh, vw, or % (for example, 16px).</span></label>
                     <label className="text-xs font-bold uppercase text-slate-500">Scale ratio<input name="scaleRatio" type="number" min="1" max="2.5" step="0.05" defaultValue={typography.scaleRatio} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                     <label className="text-xs font-bold uppercase text-slate-500">Normal weight<input name="fontWeightNormal" type="number" min="100" max="900" step="100" defaultValue={typography.fontWeightNormal} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                     <label className="text-xs font-bold uppercase text-slate-500">Bold weight<input name="fontWeightBold" type="number" min="100" max="900" step="100" defaultValue={typography.fontWeightBold} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
