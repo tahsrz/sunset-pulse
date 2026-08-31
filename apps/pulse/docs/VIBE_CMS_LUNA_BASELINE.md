@@ -1191,7 +1191,7 @@ The authorized disposable-site seed path is now implemented through merged PRs #
 
 - Confirm PRs #70 and #71 are present in deployed production and PR #72 is merged or its runbook is otherwise available.
 - Confirm the seed route fails closed while disabled.
-- Verify the three required production controls exist: `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, and `CMS_TEST_SEED_OWNER_EMAIL`.
+- Verify the four required production controls exist: `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, `CMS_TEST_SEED_OWNER_EMAIL`, and `CMS_TEST_SEED_OWNER_USER_ID`.
 - Record production SHA, UTC start time, and configuration readiness without exposing secret values.
 
 Deliverable: configuration/readiness row in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.

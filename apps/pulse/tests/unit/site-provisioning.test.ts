@@ -237,6 +237,29 @@ describe('site provisioning', () => {
     );
   });
 
+  it('records truthful audit metadata when an internal test site is revoked', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue(createDefaultLaunchKit('cms-verification-run-123'));
+    const result = await suspendProvisionedAgentSite({
+      agentId: 'cms-verification-run-123',
+      userId: 'user-taz',
+      email: 'taz@example.test',
+      source: 'cms-test-seed-revoke:run-123',
+      auditAction: 'cms.test-site.revoked',
+      auditActor: 'cms-test-seed:user-taz',
+      auditMessage: 'Disposable CMS verification site revoked for run run-123.',
+    });
+    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'cms.test-site.revoked',
+      actor: 'cms-test-seed:user-taz',
+      message: 'Disposable CMS verification site revoked for run run-123.',
+      source: 'cms-test-seed-revoke:run-123',
+    }));
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      role: 'cms-test-seed-revoke:run-123',
+      userId: 'user-taz',
+    }));
+  });
+
   it('keeps a past-due live site active during the grace window', async () => {
     storeMocks.readSiteConfig.mockResolvedValue({
       ...createReadyApprovedKit('broker-one'),
