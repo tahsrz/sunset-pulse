@@ -29,7 +29,7 @@ describe('CMS test-site seed route', () => {
     mocks.provision.mockResolvedValue({ created: true, savedStores: ['mongo'], publicUrl: 'https://cms-verification-run-123.sunsetpulse.app', kit: { agentId: 'cms-verification-run-123', activeVibeRevisionId: '' } });
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
     expect(response.status).toBe(201);
-    expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: null });
+    expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: null, correlationId: expect.any(String), elapsedMs: expect.any(Number) });
     expect(mocks.provision).toHaveBeenCalledWith({ runId: 'run-123', ownerName: 'CMS Verification', email: 'taz@example.com', userId: 'user-taz' });
   });
 
@@ -63,7 +63,7 @@ describe('CMS test-site seed route', () => {
     mocks.suspend.mockResolvedValue({ kit: { agentId: 'cms-verification-run-123', status: 'suspended' } });
     const response = await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', revoked: true });
+    expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', revoked: true, correlationId: expect.any(String), elapsedMs: expect.any(Number) });
     expect(mocks.suspend).toHaveBeenCalledWith({ runId: 'run-123', email: 'taz@example.com', userId: 'user-taz' });
   });
 
@@ -83,7 +83,7 @@ describe('CMS test-site seed route', () => {
     mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one', provisioningAudit: [{ action: 'cms.test-site.seeded', actor: 'cms-test-seed:user-taz', message: 'seeded', occurredAt: '2026-08-31T00:00:00.000Z', status: 'succeeded', source: 'cms-test-seed:run-123' }] });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ runId: 'run-123', siteId: 'cms-verification-run-123', ownerUserId: 'user-taz', originalPointer: 'revision-one', currentPointer: 'revision-one', reconciliationRequired: true, stores: { present: true, evidence: { supabase: false, mongo: true } } });
+    expect(await response.json()).toMatchObject({ runId: 'run-123', siteId: 'cms-verification-run-123', ownerUserId: 'user-taz', originalPointer: 'revision-one', currentPointer: 'revision-one', reconciliationRequired: true, correlationId: expect.any(String), elapsedMs: expect.any(Number), stores: { present: true, evidence: { supabase: false, mongo: true } } });
     expect(mocks.suspend).not.toHaveBeenCalled();
   });
 });
