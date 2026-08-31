@@ -1032,3 +1032,98 @@ Current readiness: PR #67 is green for lint, unit tests, Jamie E2E, Vercel previ
 2. **Appearance projection decision:** colors and Jamie voice reach the protected public application path today. Typography and layout are safely editable and rendered in the authenticated draft preview, but are intentionally not yet projected as public CSS variables. Before expanding public styling, make an explicit product decision: retain that draft-review-only boundary or implement a separately designed allowlisted public projection.
 3. **Merge threshold:** do not treat a green CI run as replacement evidence for the controlled application/recovery sequence. The release gate remains open until the verification record is complete and the controlled site is restored.
 4. **Defer this week:** templates/template parts, menus, media, comments, scheduling, webhooks, import/export, and capability redesign. They remain separate data/API decisions after the repeatable Vibe-to-site loop is proven.
+
+## Luna Production Completion Plan — Supersedes Earlier Merge Gates (2026-08-31)
+
+PR #67 is merged to production as commit `9507b766b5d440419abdfded49660088ca99aa4b`. Follow-up PR #68 on branch `codex/vibe-cms-production-verification` is the only active workstream for completing this feature. Earlier instructions that say not to merge PR #67 or to verify before that merge are historical and no longer control execution.
+
+### Access and Authority Now Available
+
+- Production Vibe workspace: `https://www.sunsetpulse.app/vibes` (`https://sunsetpulse.app/vibes` redirects there).
+- Authenticated operator: the existing Taz account. Do not create another account.
+- Mutation target: one Launch Kit site owned or controlled by Taz that is confirmed not to be customer-facing.
+- Disposable content: Luna may create one clearly named production-test Vibe for this verification cycle.
+- Corrective-code target: PR #68 only. Do not commit fixes directly to `main`.
+- Preview target for fixes: protected `https://vibes-test.sunsetpulse.app`, refreshed to the newest successful PR #68 deployment.
+- Evidence authority: `VIBE_CMS_PRODUCTION_VERIFICATION.md`. A checkbox without the required ID or observation is not evidence.
+- The temporary public-write exception is still WIP scaffolding. Disabling or changing its production environment value affects access globally and must be treated as the final controlled release action, not an incidental test step.
+
+Luna may perform read-only production and PR inspection autonomously. Browser mutations are permitted only after the controlled site ID and its original pointer/revision are recorded. If the existing Taz browser session is unavailable, Luna must ask Taz to sign in and then resume; it must not create credentials, weaken deployment protection, or substitute the anonymous WIP actor for authenticated operator evidence.
+
+### Phase 0 — Establish a Recoverable Test Session
+
+1. Confirm production `/vibes` loads and the visible session is the Taz account.
+2. Select a controlled Taz Launch Kit site and verify that it is not serving a customer.
+3. Record the site ID, public URL, current applied Vibe revision/pointer, UTC start time, and production merge SHA in the verification record.
+4. Capture enough before-state evidence to restore the site even if the UI fails later.
+5. Create a disposable Vibe with an unmistakable test title and slug; record its `vibeId`.
+
+Stop condition: do not publish or apply anything until the site ID and original pointer are known. If the current pointer cannot be read confidently from the UI/API, stop and investigate read-only rather than guessing.
+
+### Phase 1 — First Authenticated Editorial Cycle
+
+1. Save distinctive but reversible colors and a distinctive Jamie voice tone in the disposable draft.
+2. Verify authenticated draft preview without applying the draft.
+3. Submit the draft and record the immutable submitted revision ID.
+4. Publish exactly that submitted revision and record the published revision ID.
+5. Open the protected apply screen, confirm the Vibe ID, revision ID, controlled site ID, and current site pointer, then apply once.
+6. Record the resulting pointer, actor, timestamp, public `data-vibe-revision-id`, visible style values, and Jamie tone.
+
+Pass condition: the application result and public site resolve the same published revision, and the audit actor identifies the authenticated Taz operation rather than `vibe-cms-wip-public`.
+
+### Phase 2 — Prove Draft/Live Isolation
+
+1. Change the mutable draft's visual and linguistic fields without submitting, publishing, or applying.
+2. Reload the public controlled site in a fresh navigation.
+3. Confirm the public revision ID, visible presentation, and assistant tone remain on cycle one.
+4. Record the unchanged values in the isolation evidence table.
+
+Stop condition: if an unpublished draft changes the public site, preserve the current site state, stop further mutations, and open a narrowly scoped P0 fix in PR #68.
+
+### Phase 3 — Second Cycle and Recovery
+
+1. Submit, publish, and apply the changed draft as a second immutable revision; record every revision ID and public observation.
+2. Restore the earlier published snapshot through the guarded revision control with a clear test reason.
+3. Publish and apply the newly created rollback revision, then confirm the public site matches the earlier snapshot.
+4. Reapply the original pointer/revision captured in Phase 0 and confirm the site is fully restored.
+5. Record the UTC completion time and mark each evidence row pass/fail.
+
+Pass condition: two editorial cycles remain independently addressable, rollback creates an auditable new revision, and the controlled site ends on its exact original pointer.
+
+### Phase 4 — Corrective Fix Loop on PR #68
+
+For each failure found in production:
+
+1. Record the production URL, UTC time, inputs, expected result, actual result, IDs, and safe current site state before editing code.
+2. Identify the smallest root cause within the Vibe vertical. Do not expand into unrelated platform, security, migration, caching, or CI work.
+3. Add a focused regression test, implement the minimum fix, and run the relevant local suite.
+4. Push the fix to PR #68 and wait for lint, unit, Jamie E2E, and Vercel checks.
+5. Point `vibes-test.sunsetpulse.app` at the successful immutable PR #68 deployment and verify the affected path there.
+6. Report that the fix is preview-verified but not production-verified. After the fix PR is merged/deployed, repeat the affected production phase before marking it passed.
+
+Never record preview evidence as production evidence. Never continue through a failed apply, ambiguous pointer, or failed restoration merely to finish the checklist.
+
+### Phase 5 — Release Closure
+
+1. Ensure the controlled site is restored and the disposable Vibe is clearly archived or retained as labeled test evidence.
+2. Fill every required field in `VIBE_CMS_PRODUCTION_VERIFICATION.md` and update its follow-up PR head SHA.
+3. Confirm PR #68 contains only the evidence/documentation and narrowly scoped fixes required by this cycle.
+4. Coordinate the explicit production change `VIBE_CMS_PUBLIC_WRITE_WIP=false`.
+5. Re-test authenticated list, create, save, preview, submit, publish, apply, and rollback access with Taz after the WIP exception is disabled; verify anonymous writes are denied.
+6. Run final required checks, summarize residual limitations, and request Sol review before merging/closing the follow-up.
+
+### Luna Handoff Format
+
+After each phase, report:
+
+- phase status: pass, fail, or blocked;
+- production or preview URL used;
+- UTC timestamp;
+- Vibe, revision, and site IDs involved;
+- site pointer before and after;
+- exact evidence added to the verification record;
+- code/tests changed on PR #68, if any;
+- whether the controlled site is currently restored;
+- the next single action.
+
+Current completion estimate: implementation is merged; approximately 15% of the original delivery remains, consisting of production evidence, any defects exposed by that evidence, restoration, WIP-access closure, and final review.
