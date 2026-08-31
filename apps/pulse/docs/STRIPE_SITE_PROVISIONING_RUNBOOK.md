@@ -13,6 +13,14 @@ Use this when a buyer completes site checkout but onboarding, billing state, or 
 
 Use this only for a planned CMS verification run. It is disabled unless production has both `CMS_TEST_SEED_ENABLED=true` and a server-managed `CMS_TEST_SEED_TOKEN`.
 
+Required production variables (set in Vercel Production only for the controlled run):
+
+- `CMS_TEST_SEED_ENABLED=true`
+- `CMS_TEST_SEED_TOKEN=<generated secret>`
+- `CMS_TEST_SEED_OWNER_EMAIL=<Taz account email>`
+
+After the run, set `CMS_TEST_SEED_ENABLED=false` and rotate or remove the token. Never expose the token in browser code, commits, PR comments, or verification screenshots.
+
 ```bash
 curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
   -H "content-type: application/json" \
@@ -28,6 +36,15 @@ curl -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=run
 ```
 
 Disable `CMS_TEST_SEED_ENABLED` immediately after the run. Never use this endpoint for customer sites or from browser code.
+
+CMS verification handoff checklist:
+
+- [ ] PR containing the seed endpoint is merged and deployed.
+- [ ] Required production variables are configured in Vercel.
+- [ ] POST response is saved with UTC timestamp, `siteId`, `publicUrl`, and `originalPointer`.
+- [ ] Publish/apply evidence records submitted revision, published revision, post-apply pointer, actor, and public revision marker.
+- [ ] DELETE response confirms the disposable site is suspended.
+- [ ] Seed flag is disabled and token is removed or rotated.
 
 ## Replay Stripe Events
 
