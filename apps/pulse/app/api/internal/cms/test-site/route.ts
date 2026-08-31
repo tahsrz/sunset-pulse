@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
     originalPointer: result.kit.activeVibeRevisionId || null,
     created: result.created,
     savedStores: result.savedStores,
+    reconciliationRequired: result.savedStores.length < 2,
     correlationId,
   }, { status: result.created ? 201 : 200 });
 }
