@@ -118,3 +118,7 @@ The seed endpoint must be invoked only after its deployment is confirmed. The pr
 | Site-pointer authority suite | Pass — 11 tests | Covers fresher Mongo, stale Supabase writes, absent Mongo pointer, and Mongo-read failure fallback. |
 | CMS test-site route suite | Pass — 4 tests | Covers disabled flag, token rejection, disposable provisioning, and revocation. |
 | Combined focused total | Pass — 15 tests | Runner reported all tests passed; no production data was changed. |
+
+## Seed-run incident note
+
+The first controlled seed attempt reached `/api/internal/cms/test-site` but did not return within the bounded execution window. Runtime logs showed the request entered the route without a completed response. Review isolated the blocking point to the existing lifecycle notification fetch, which had no abort timeout. The notification request now carries a 10-second `AbortSignal` timeout; notification failure is handled as a warning so site persistence can complete. A focused regression test confirms the timeout signal is attached. No second seed attempt was made, preventing duplicate provisioning.
