@@ -46,6 +46,17 @@ CMS verification handoff checklist:
 - [ ] DELETE response confirms the disposable site is suspended.
 - [ ] Seed flag is disabled and token is removed or rotated.
 
+### Post-merge activation sequence
+
+1. Confirm the merge commit is deployed to the Production target; do not enable the flag on a preview deployment.
+2. Verify variable names and environments with `vercel env ls production --project sunset-pulse`; never retrieve or print secret values.
+3. Set `CMS_TEST_SEED_ENABLED=true` for the single controlled run and record the UTC start time.
+4. Provision exactly one `cms-verification-<runId>` site, capture the response, and perform the verification checklist above.
+5. Revoke the site, set `CMS_TEST_SEED_ENABLED=false`, and remove or rotate `CMS_TEST_SEED_TOKEN`.
+6. Confirm a deployment applies the disabled flag, then verify the seed endpoint returns `404` again.
+
+If the deployed SHA or flag state cannot be identified confidently, stop before provisioning and leave the endpoint disabled.
+
 ## Replay Stripe Events
 
 Replay from the Stripe Dashboard first when possible:
