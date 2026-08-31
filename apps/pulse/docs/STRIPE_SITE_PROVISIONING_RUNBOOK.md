@@ -33,6 +33,17 @@ curl -sS "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=cms-run-1
 
 The response includes `siteId`, owner, status, URL, original/current Vibe pointers, filtered CMS audits, `stores.evidence`, `reconciliationRequired`, `correlationId`, and `elapsedMs`. Treat `reconciliationRequired: true` as incomplete evidence; do not apply a Vibe or proceed to production lifecycle verification until both stores are reconciled.
 
+### Revoking the disposable site
+
+After lifecycle verification, revoke only the deterministic run ID and configured owner:
+
+```bash
+curl -sS -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=cms-run-123&email=tahsrz%40gmail.com" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN"
+```
+
+The response must show `revoked: true`, `status: suspended`, and a `correlationId`. Repeating the same request is safely idempotent. If the site cannot be found or the owner does not match, stop and reconcile the recorded `siteId` before attempting any other mutation.
+
 ```bash
 curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
   -H "content-type: application/json" \
