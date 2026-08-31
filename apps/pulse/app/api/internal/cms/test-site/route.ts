@@ -17,6 +17,7 @@ const inputSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const correlationId = randomUUID();
+  const startedAt = Date.now();
   if (process.env.CMS_TEST_SEED_ENABLED !== 'true') {
     return NextResponse.json({ error: 'Test-site seeding is disabled.' }, { status: 404 });
   }
@@ -70,8 +71,9 @@ export async function POST(request: NextRequest) {
     result = await Promise.race([provisionPromise, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('CMS seed deadline exceeded.')), SEED_DEADLINE_MS))]);
   } catch (error) {
     if (error instanceof Error && error.message === 'CMS seed deadline exceeded.') {
-      console.error('[CMS_TEST_SEED_TIMEOUT]', { correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', reconciliationRequired: true });
-      return NextResponse.json({ error: 'Seed operation timed out.', correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', reconciliationRequired: true }, { status: 504 });
+      const elapsedMs = Date.now() - startedAt;
+      console.error('[CMS_TEST_SEED_TIMEOUT]', { correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', elapsedMs, reconciliationRequired: true });
+      return NextResponse.json({ error: 'Seed operation timed out.', correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', elapsedMs, reconciliationRequired: true }, { status: 504 });
     }
     throw error;
   }
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
     created: result.created,
     savedStores: result.savedStores,
     reconciliationRequired: result.savedStores.length < 2,
+    elapsedMs: Date.now() - startedAt,
     correlationId,
   }, { status: result.created ? 201 : 200 });
 }
