@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
   }
 
+  const ownerEmail = process.env.CMS_TEST_SEED_OWNER_EMAIL?.trim().toLowerCase();
+
   let body: unknown;
   try {
     body = await request.json();
@@ -32,6 +34,9 @@ export async function POST(request: NextRequest) {
   const parsed = inputSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid seed request.', details: parsed.error.flatten() }, { status: 400 });
+  }
+  if (!ownerEmail || parsed.data.email.toLowerCase() !== ownerEmail) {
+    return NextResponse.json({ error: 'Seed owner is not authorized.' }, { status: 403 });
   }
 
   const agentId = `cms-verification-${parsed.data.runId}`;
@@ -65,6 +70,8 @@ export async function DELETE(request: NextRequest) {
     email: request.nextUrl.searchParams.get('email'),
   });
   if (!parsed.success) return NextResponse.json({ error: 'Valid runId and email are required.' }, { status: 400 });
+  const ownerEmail = process.env.CMS_TEST_SEED_OWNER_EMAIL?.trim().toLowerCase();
+  if (!ownerEmail || parsed.data.email.toLowerCase() !== ownerEmail) return NextResponse.json({ error: 'Seed owner is not authorized.' }, { status: 403 });
   const result = await suspendProvisionedAgentSite({ agentId: `cms-verification-${parsed.data.runId}`, email: parsed.data.email, source: `cms-test-seed-revoke:${parsed.data.runId}` });
   if (!result) return NextResponse.json({ error: 'Seed site not found.' }, { status: 404 });
   return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true });
