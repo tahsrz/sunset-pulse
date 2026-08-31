@@ -91,3 +91,22 @@ The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-k
 - [ ] `VIBE_CMS_PUBLIC_WRITE_WIP=false` is set before the WIP exception is considered released and this follow-up is closed.
 
 Any missing evidence, unexpected public output, or failed restoration keeps the release gate open.
+
+## Disposable seed-run evidence (PR #73)
+
+Complete this section during the authorized seed workflow. Never record the seed token itself.
+
+| Seed field | Value | Pass/Fail |
+| --- | --- | --- |
+| Run ID | | |
+| Seed endpoint UTC start | | |
+| Seed response status (`201` or idempotent `200`) | | |
+| Site ID / Agent ID | | |
+| Public URL | | |
+| Original active Vibe revision pointer | | |
+| Idempotent repeat returned same site | | |
+| Revocation response/status | | |
+| Seed flag disabled after run | | |
+| Token removed or rotated | | |
+
+The seed endpoint must be invoked only after its deployment is confirmed. The production run is incomplete until the disposable site is revoked, the flag is disabled, and the final public/control state is recorded.
