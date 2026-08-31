@@ -129,6 +129,14 @@ describe('siteConfigStore', () => {
     await expect(readSiteConfig('broker-one')).resolves.toMatchObject({ activeVibeRevisionId: 'applied', activeVibeRevisionAppliedBy: 'operator' });
   });
 
+  it('does not invent a Vibe pointer when the newer Mongo row has none', async () => {
+    const supabaseRow = { agent_id: 'broker-one', active_vibe_revision_id: 'supabase-revision', updated_at: '2026-07-23T10:00:00.000Z' };
+    const mongoRow = { agentId: 'broker-one', updatedAt: '2026-07-23T11:00:00.000Z' };
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: supabaseRow, error: null });
+    storeMocks.resolveMongoFindOne.mockResolvedValue(mongoRow);
+    await expect(readSiteConfig('broker-one')).resolves.toBe(mongoRow);
+  });
+
   it('does not return an expired Supabase grace row when Mongo has newer active state', async () => {
     const supabaseExpiredRow = {
       agent_id: 'broker-one',
