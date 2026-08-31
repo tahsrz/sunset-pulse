@@ -105,6 +105,8 @@ export async function GET(request: NextRequest) {
   if (kit.ownerId !== ownerUserId && kit.billingProfile.userId !== ownerUserId) return NextResponse.json({ error: 'Seed site owner mismatch.' }, { status: 403 });
   const summary = getLaunchKitSummary(kit);
   console.info('[CMS_TEST_SITE_INSPECT]', { correlationId, runId, siteId, status: kit.status });
+  const hasSupabase = 'agent_id' in (row as Record<string, unknown>);
+  const hasMongo = 'agentId' in (row as Record<string, unknown>);
   return NextResponse.json({
     runId,
     siteId,
@@ -122,11 +124,11 @@ export async function GET(request: NextRequest) {
       present: true,
       selected: 'agent_id' in (row as Record<string, unknown>) ? 'supabase' : 'mongo',
       evidence: {
-        supabase: 'agent_id' in (row as Record<string, unknown>),
-        mongo: 'agentId' in (row as Record<string, unknown>),
+        supabase: hasSupabase,
+        mongo: hasMongo,
       },
     },
-    reconciliationRequired: false,
+    reconciliationRequired: !(hasSupabase && hasMongo),
     correlationId,
   });
 }
