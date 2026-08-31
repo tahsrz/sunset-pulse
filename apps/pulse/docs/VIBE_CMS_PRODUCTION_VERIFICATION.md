@@ -10,6 +10,10 @@ The protected `https://vibes-test.sunsetpulse.app` hostname remains available fo
 
 Read-only smoke verification on 2026-08-30 returned HTTP 200 for the Vibe list, new-Vibe screen, editor, draft preview, revisions, audit, protected application screen, taxonomy, and the Vibe/taxonomy/revision/audit GET APIs.
 
+### Phase 0 access note — 2026-08-31
+
+The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-kit` returned **Operator Access — Access denied**. The regular `/dashboard` workspace did not expose a Launch Kit site or an applied Vibe pointer. No Vibe, revision, site pointer, or production content was mutated. Phase 0 remains blocked until Taz either provides the ID and original pointer of a confirmed controlled Launch Kit site or receives the operator entitlement required to read it. Do not infer a site ID from a public URL or proceed with the apply form while these fields are unknown.
+
 ## Session metadata
 
 | Field | Value |

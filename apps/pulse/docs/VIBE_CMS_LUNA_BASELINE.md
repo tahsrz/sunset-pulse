@@ -1157,3 +1157,12 @@ PR #68 is merged as `77e985cfe3db307a1b4f8d6d9a1b35e60241507e`. The Base font si
 5. Do not mark the feature complete until the controlled site is restored exactly and the WIP exception is disabled and re-tested.
 
 The next single action is Phase 0: record the controlled site's original pointer before any publish or apply operation.
+
+### Phase 0 Blocker — Launch Kit Authority Not Exposed to Taz Session
+
+The authenticated Taz browser session can open production `/vibes`, but `/admin/launch-kit` returns **Operator Access — Access denied**, and `/dashboard` exposes no Launch Kit site or applied pointer. This was confirmed on 2026-08-31 with no mutations performed. Luna must stop here until one of these is true:
+
+1. Taz supplies a controlled, non-customer Launch Kit `siteId` and its original applied revision/pointer for the verification record; or
+2. The Taz account is granted the existing operator entitlement needed to read Launch Kit sites, after which Luna rechecks access.
+
+Do not create a new account, guess a site ID, use a customer site, or widen route permissions as a workaround. Once the site authority is available, resume Phase 0 step 3 and capture the before-state before creating a disposable Vibe.
