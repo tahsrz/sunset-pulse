@@ -1052,19 +1052,19 @@ Luna may perform read-only production and PR inspection autonomously. Browser mu
 
 ### Known Production Bug — VCMS-068-001: Save Blocked by Base-Font Pattern
 
-Status: confirmed by source inspection; fix belongs on PR #68 before continuing the production editorial cycle.
+Status: fixed locally on PR #68; preview and production verification remain required before closing the bug.
 
 User-visible symptom: clicking **Save changes** in the Vibe editor triggers the browser message **Please match the requested format** and no save request is sent.
 
 Root cause: `apps/pulse/app/vibes/[vibeId]/edit/VibeEditor.tsx` defines the **Base font size** control with the JSX attribute literal `pattern="\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|%)"`. Because this is a JSX attribute literal rather than a JavaScript string expression, the doubled backslashes are delivered to the HTML pattern. The browser consequently interprets the constraint as a literal backslash/`d` sequence instead of the intended digit class. A valid seeded value such as `16px` fails native constraint validation before `onSubmit`, `saveDraft`, or `/api/vibes/:vibeId` can run. The optional Source URL field can produce URL-specific native validation, but it does not explain this exact requested-format message; Base font size is the editor's only `pattern` field.
 
-Required Luna action:
+Completed action and remaining verification:
 
-1. Add a focused UI regression test that renders the editor with `baseFontSize: '16px'`, verifies the input is natively valid, and proves form submission reaches the save request.
-2. Correct the pattern representation so it accepts a positive numeric value with an allowlisted CSS unit: `px`, `rem`, `em`, `vh`, `vw`, or `%`; retain optional decimals.
-3. Add cases for accepted values (`16px`, `1rem`, `1.25em`, `100%`) and rejected values (missing unit, arbitrary CSS, negative values, and trailing text).
-4. Add visible helper/error text identifying the Base font size format so future native validation does not leave the operator guessing which field failed.
-5. Run the focused editor test plus Vibe contract/access tests, push the fix to PR #68, and verify saving on the protected preview before retrying production.
+1. **Implemented:** add a focused UI regression test that renders the editor with `baseFontSize: '16px'`, verifies native validity, and proves form submission reaches the save request.
+2. **Implemented:** correct the pattern representation so it accepts a positive numeric value with an allowlisted CSS unit: `px`, `rem`, `em`, `vh`, `vw`, or `%`; optional decimals remain supported.
+3. **Implemented:** cover accepted values (`16px`, `1rem`, `1.25em`, `100%`) and rejected values (missing unit, arbitrary CSS, negative values, and trailing text).
+4. **Implemented:** add visible helper text and `aria-describedby` identifying the Base font size format.
+5. **Implemented locally:** explicit React compatibility import plus the focused editor, Vibe contract, and access tests pass (21/21). **Remaining:** push to PR #68, verify saving on the protected preview, then retry the affected production step.
 
 Acceptance condition: the existing seeded `16px` value and all allowlisted valid examples permit **Save changes** to reach the PATCH request; invalid values identify the Base font size field and never send the request.
 
