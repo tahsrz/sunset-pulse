@@ -41,6 +41,18 @@ describe('CMS test-site seed route', () => {
     expect(mocks.provision).not.toHaveBeenCalled();
   });
 
+  it('fails closed when the configured owner controls are incomplete', async () => {
+    delete process.env.CMS_TEST_SEED_OWNER_USER_ID;
+    expect((await POST(request({ runId: 'run-123', email: 'taz@example.com' }))).status).toBe(403);
+    expect(mocks.provision).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the configured owner email is absent', async () => {
+    delete process.env.CMS_TEST_SEED_OWNER_EMAIL;
+    expect((await POST(request({ runId: 'run-123', email: 'taz@example.com' }))).status).toBe(403);
+    expect(mocks.provision).not.toHaveBeenCalled();
+  });
+
   it('revokes only the derived disposable site', async () => {
     mocks.suspend.mockResolvedValue({ kit: { agentId: 'cms-verification-run-123', status: 'suspended' } });
     const response = await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }));
