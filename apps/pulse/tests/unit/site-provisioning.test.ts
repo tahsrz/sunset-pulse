@@ -95,6 +95,27 @@ describe('site provisioning', () => {
     })).toBe('broker-one');
   });
 
+  it('records truthful audit and owner metadata for internal test seeding', async () => {
+    const result = await provisionPaidAgentSite({
+      agentId: 'cms-verification-run-123',
+      userId: 'user-taz',
+      ownerName: 'CMS Verification',
+      email: 'taz@example.test',
+      source: 'cms-test-seed:run-123',
+      auditAction: 'cms.test-site.seeded',
+      auditActor: 'cms-test-seed:user-taz',
+      auditMessage: 'Disposable CMS verification site seeded for run run-123.',
+    });
+    expect(result.kit.ownerId).toBe('user-taz');
+    expect(result.kit.billingProfile.userId).toBe('user-taz');
+    expect(result.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'cms.test-site.seeded',
+      actor: 'cms-test-seed:user-taz',
+      message: 'Disposable CMS verification site seeded for run run-123.',
+      source: 'cms-test-seed:run-123',
+    }));
+  });
+
   it('refreshes an existing site without overwriting custom identity fields', async () => {
     const existing = {
       ...createDefaultLaunchKit('broker-one'),

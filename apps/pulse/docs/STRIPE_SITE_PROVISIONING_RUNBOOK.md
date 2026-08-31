@@ -18,6 +18,7 @@ Required production variables (set in Vercel Production only for the controlled 
 - `CMS_TEST_SEED_ENABLED=true`
 - `CMS_TEST_SEED_TOKEN=<generated secret>`
 - `CMS_TEST_SEED_OWNER_EMAIL=<Taz account email>`
+- `CMS_TEST_SEED_OWNER_USER_ID=<Taz Supabase profile user ID>`
 
 After the run, set `CMS_TEST_SEED_ENABLED=false` and rotate or remove the token. Never expose the token in browser code, commits, PR comments, or verification screenshots.
 

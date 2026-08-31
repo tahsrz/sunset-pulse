@@ -31,6 +31,9 @@ export type PaidAgentSiteProvisioningInput = {
   trialEndsAt?: string | null;
   billingStatus?: AgentLaunchKit['billingProfile']['billingStatus'] | string | null;
   source?: string | null;
+  auditAction?: string | null;
+  auditActor?: string | null;
+  auditMessage?: string | null;
 };
 
 export type PaidAgentSiteProvisioningResult = AgentLaunchKitResponse & {
@@ -118,11 +121,11 @@ export async function provisionPaidAgentSite(
       status: 'not_started',
     },
   }, agentId), {
-    action: 'checkout.session.completed',
+    action: input.auditAction || 'checkout.session.completed',
     source: input.source || 'stripe-webhook',
     status: 'succeeded',
-    message: existing ? 'Stripe checkout refreshed an existing agent site.' : 'Stripe checkout provisioned a new draft agent site.',
-    actor: 'stripe-webhook',
+    message: input.auditMessage || (existing ? 'Stripe checkout refreshed an existing agent site.' : 'Stripe checkout provisioned a new draft agent site.'),
+    actor: input.auditActor || 'stripe-webhook',
     stripeCheckoutSessionId: input.stripeCheckoutSessionId || '',
     stripeCustomerId: input.stripeCustomerId || '',
     stripeSubscriptionId: input.stripeSubscriptionId || '',
@@ -168,11 +171,11 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
       billingStatusChangedAt,
     },
   }, agentId), {
-    action: 'customer.subscription.deleted',
+    action: input.auditAction || 'customer.subscription.deleted',
     source: input.source || 'stripe-webhook',
     status: 'succeeded',
-    message: 'Stripe subscription ended; agent site access was suspended.',
-    actor: 'stripe-webhook',
+    message: input.auditMessage || 'Stripe subscription ended; agent site access was suspended.',
+    actor: input.auditActor || 'stripe-webhook',
     stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
     stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
     billingStatus: 'canceled',

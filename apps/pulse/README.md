@@ -370,4 +370,4 @@ See [LICENSE.md](./LICENSE.md).
 SunsetPulse 2026
 # CMS production verification seed
 
-The internal CMS test-site seed endpoint is disabled by default. For a controlled verification run, configure `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, and `CMS_TEST_SEED_OWNER_EMAIL` in Vercel Production, use the procedure in `docs/STRIPE_SITE_PROVISIONING_RUNBOOK.md`, record the returned site pointer before mutation, then disable the flag and rotate the token immediately.
+The internal CMS test-site seed endpoint is disabled by default. For a controlled verification run, configure `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, `CMS_TEST_SEED_OWNER_EMAIL`, and `CMS_TEST_SEED_OWNER_USER_ID` in Vercel Production, use the procedure in `docs/STRIPE_SITE_PROVISIONING_RUNBOOK.md`, record the returned site pointer before mutation, then disable the flag and rotate the token immediately.
