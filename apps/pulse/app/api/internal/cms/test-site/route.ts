@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const correlationId = randomUUID();
+  const startedAt = Date.now();
   if (process.env.CMS_TEST_SEED_ENABLED !== 'true') return NextResponse.json({ error: 'Test-site inspection is disabled.' }, { status: 404 });
   const expectedToken = process.env.CMS_TEST_SEED_TOKEN?.trim();
   if (!expectedToken || request.headers.get('x-cms-test-seed-token')?.trim() !== expectedToken) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
@@ -135,11 +136,13 @@ export async function GET(request: NextRequest) {
     },
     reconciliationRequired: !(hasSupabase && hasMongo),
     correlationId,
+    elapsedMs: Date.now() - startedAt,
   });
 }
 
 export async function DELETE(request: NextRequest) {
   const correlationId = randomUUID();
+  const startedAt = Date.now();
   if (process.env.CMS_TEST_SEED_ENABLED !== 'true') return NextResponse.json({ error: 'Test-site seeding is disabled.' }, { status: 404 });
   const expectedToken = process.env.CMS_TEST_SEED_TOKEN?.trim();
   if (!expectedToken || request.headers.get('x-cms-test-seed-token')?.trim() !== expectedToken) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
@@ -156,10 +159,10 @@ export async function DELETE(request: NextRequest) {
   if (existingRow) {
     const existing = normalizeLaunchKit(existingRow, agentId);
     if (existing.status === 'suspended' && existing.billingProfile.billingStatus === 'canceled') {
-      return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true, correlationId });
+      return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true, correlationId, elapsedMs: Date.now() - startedAt });
     }
   }
   const result = await revokeDisposableCmsSite({ runId: parsed.data.runId, email: parsed.data.email, userId: ownerUserId });
   if (!result) return NextResponse.json({ error: 'Seed site not found.' }, { status: 404 });
-  return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true, correlationId, savedStores: result.savedStores });
+  return NextResponse.json({ siteId: result.kit.agentId, status: result.kit.status, revoked: true, correlationId, savedStores: result.savedStores, elapsedMs: Date.now() - startedAt });
 }
