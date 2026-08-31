@@ -127,7 +127,7 @@ Sunset Pulse is expanding from an individual agent command center into a multi-t
 
 ### Vibe CMS review status
 
-The first Vibe CMS vertical is implemented on PR #67: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. The PR-scope reconciliation is complete; the 58-file diff is limited to the Vibe workspace, Vibe APIs and model, scoped access helpers and tests, CMS documentation, and this README. Automated CI and preview deployment gates are green. The only remaining release evidence is the controlled-site operator cycle described below.
+The first Vibe CMS vertical is implemented on PR #67: structured drafts, immutable review revisions, publication, Launch Kit application, public visual/voice projection, lifecycle audits, and rollback. The PR-scope reconciliation is complete; the diff is limited to the Vibe workspace, Vibe APIs and model, scoped access and test-host routing helpers and tests, CMS documentation, and this README. Automated CI and preview deployment gates are green. The only remaining release evidence is the controlled-site operator cycle described below.
 
 The operator workspace is intentionally WordPress-familiar while preserving the safer Vibe-to-site handoff: `/vibes` provides status views, search, sorting, pagination, row actions, and guarded transactional bulk archive/trash. Bulk actions validate every selected Vibe and stop with a conflict if one changes concurrently. The editor has a Publish rail, lifecycle audit history, immutable revision history, and editable visual-system controls for colors, typography, and layout; taxonomy has controlled-term discovery and usage counts. Its authenticated draft preview renders that complete visual system and the selected Jamie voice tone without applying anything to a site. New Vibes can start from visual, independent Default, Editorial warmth, or Market intelligence preset cards backed by one shared, contract-tested catalog. The picker makes each preset's colors, typography, and layout visible before creation. A selected preset seeds those values plus controlled taxonomy terms and Jamie's primary voice tone into that new draft; it is an editable starting point, not a live link. Templates, media, comments, scheduling, and access-model redesign remain deliberately out of this PR. Publishing a Vibe still does **not** change a live site—application remains a separate protected action.
 
@@ -160,7 +160,7 @@ Completed gates:
 
 - [x] PR diff reconciled against `origin/main`; unrelated platform files are excluded.
 - [x] `git diff --check` passes and the working tree is clean.
-- [x] Focused Vibe CMS access and contract suite passes (16 tests).
+- [x] Focused Vibe CMS access, contract, and test-host routing suite passes (21 tests).
 - [x] GitHub lint, unit, Jamie E2E, and Vercel deployment checks pass.
 - [x] PR is reported mergeable with a clean merge state.
 - [x] Protected test hostname is assigned to the current successful PR deployment and `/vibes` is reachable through authenticated Vercel tooling.
