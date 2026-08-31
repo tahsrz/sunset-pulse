@@ -37,6 +37,15 @@ curl -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=run
 
 Disable `CMS_TEST_SEED_ENABLED` immediately after the run. Never use this endpoint for customer sites or from browser code.
 
+CMS verification handoff checklist:
+
+- [ ] PR containing the seed endpoint is merged and deployed.
+- [ ] Required production variables are configured in Vercel.
+- [ ] POST response is saved with UTC timestamp, `siteId`, `publicUrl`, and `originalPointer`.
+- [ ] Publish/apply evidence records submitted revision, published revision, post-apply pointer, actor, and public revision marker.
+- [ ] DELETE response confirms the disposable site is suspended.
+- [ ] Seed flag is disabled and token is removed or rotated.
+
 ## Replay Stripe Events
 
 Replay from the Stripe Dashboard first when possible:
