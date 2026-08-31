@@ -1182,3 +1182,101 @@ The authenticated Taz browser session can open production `/vibes`, but `/admin/
 2. The Taz account is granted the existing operator entitlement needed to read Launch Kit sites, after which Luna rechecks access.
 
 Do not create a new account, guess a site ID, use a customer site, or widen route permissions as a workaround. Once the site authority is available, resume Phase 0 step 3 and capture the before-state before creating a disposable Vibe.
+
+## Luna 10-Hour Production Completion Sprint — Supersedes the Phase 0 Blocker
+
+The authorized disposable-site seed path is now implemented through merged PRs #70 and #71. PR #72 documents the production handoff. Luna must use that path after deployment; the earlier instruction to wait for an existing Launch Kit site no longer blocks progress. This sprint is capped at ten focused hours and must not expand into unrelated platform, security, billing, caching, migration, or CI redesign.
+
+### Hour 1 — Reconcile deployment and controls
+
+- Confirm PRs #70 and #71 are present in deployed production and PR #72 is merged or its runbook is otherwise available.
+- Confirm the seed route fails closed while disabled.
+- Verify the three required production controls exist: `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, and `CMS_TEST_SEED_OWNER_EMAIL`.
+- Record production SHA, UTC start time, and configuration readiness without exposing secret values.
+
+Deliverable: configuration/readiness row in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.
+
+### Hour 2 — Provision and baseline the disposable site
+
+- Enable the seed flag for the controlled window and create one deterministic `cms-verification-<runId>` site owned by the configured Taz email.
+- Record `runId`, `siteId`, public URL, `originalPointer`, created/idempotent result, and saved stores.
+- Repeat the same POST once to prove idempotency; do not create a second site.
+- Confirm the public URL resolves before any Vibe application.
+
+Deliverable: recoverable before-state with a real site ID and original pointer.
+
+### Hour 3 — Create and validate the disposable Vibe
+
+- Create one unmistakably named disposable Vibe using the WordPress-style flow.
+- Exercise slug guidance, preset selection, taxonomy, visual tokens, linguistic tokens, save status, preview, revision history, and audit history.
+- Record the Vibe ID, slug, initial draft values, and any browser/API errors.
+
+Deliverable: saved draft and authenticated preview evidence.
+
+### Hour 4 — First immutable editorial cycle
+
+- Submit the draft and capture the immutable submitted revision ID.
+- Publish exactly that submitted revision and capture the published revision ID/number.
+- Confirm revision history and audit actor are correct before applying anything.
+
+Deliverable: cycle-one publication evidence with exact revision identity.
+
+### Hour 5 — Apply and prove public consumption
+
+- Read the current site pointer again and compare it with the recorded original pointer.
+- Apply cycle one once through the protected operator flow.
+- Verify the post-apply pointer, actor, timestamp, public `data-vibe-revision-id`, computed CSS values, visible presentation, and Jamie tone.
+
+Deliverable: operator-to-public proof for the same immutable revision.
+
+### Hour 6 — Draft/live isolation
+
+- Change distinctive visual and linguistic draft values without submitting, publishing, or applying.
+- Reload the public site in a fresh navigation and prove the applied revision, CSS values, presentation, and Jamie tone remain unchanged.
+- If draft data leaks publicly, stop mutation work and record a minimal reproducible defect.
+
+Deliverable: pass/fail isolation table with before/after observations.
+
+### Hour 7 — Second editorial cycle
+
+- Submit and publish the changed draft as a second immutable revision.
+- Prove cycle one remains independently readable and unchanged.
+- Apply cycle two and verify the public site resolves cycle two exactly.
+
+Deliverable: two independently addressable published revision records.
+
+### Hour 8 — Rollback and restoration
+
+- Restore the earlier published snapshot through the guarded rollback control, including a required test reason.
+- Confirm rollback creates a new revision with source lineage and an audit event.
+- Apply the rollback revision, verify public recovery, then restore the site to its exact original pointer when one existed.
+
+Deliverable: rollback lineage plus confirmed final pointer.
+
+### Hour 9 — Revoke and close production controls
+
+- Invoke the gated DELETE operation for the exact `runId` and confirm the disposable site becomes suspended.
+- Set `CMS_TEST_SEED_ENABLED=false` and remove or rotate `CMS_TEST_SEED_TOKEN`.
+- Confirm the seed endpoint fails closed again and no customer site was touched.
+- Archive or clearly retain the disposable Vibe as labeled test evidence.
+
+Deliverable: revocation response, disabled-state proof, and restored/suspended end state.
+
+### Hour 10 — Evidence reconciliation and Sol handoff
+
+- Complete every required field in `VIBE_CMS_PRODUCTION_VERIFICATION.md` with URLs, UTC timestamps, IDs, pointers, actors, public markers, tokens, tone, rollback lineage, and pass/fail results.
+- Reconcile the current PR diff and ensure it contains only evidence, documentation, and narrowly scoped regression fixes discovered during this run.
+- Run the focused unit/type/lint checks applicable to changed files; record unrelated CI failures separately.
+- Summarize residual limitations, remaining WIP-access closure, and the exact recommendation for merge or follow-up.
+
+Deliverable: Sol-ready verification report and final percentage remaining.
+
+### Sprint rules
+
+- Each hour ends with a short checkpoint in the verification document; unused time rolls into the next listed hour without changing scope.
+- Preserve the current pointer and evidence before every mutation.
+- Never expose the seed token, use a customer site, or treat preview evidence as production evidence.
+- A failed or ambiguous apply, pointer read, rollback, restoration, or revocation stops further mutation until the site state is understood.
+- Defects discovered during the sprint receive only the smallest focused regression test and fix required to resume the verification path.
+
+Sprint exit condition: the full disposable-site editorial lifecycle is proven in production, the test site is revoked, production seed controls are disabled, evidence is complete, and the package is ready for Sol review.
