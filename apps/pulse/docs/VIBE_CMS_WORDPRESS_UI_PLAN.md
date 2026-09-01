@@ -4888,6 +4888,20 @@ manager dependency.
 4. Add a list test that changes status and asserts one updated live summary;
    assert a rejected fetch does not announce a false result count.
 
+### ER. List loading-state contract
+
+1. In `VibeList.tsx`, keep the list `<section aria-label="Vibe list">` and add
+   `aria-busy={loading ? true : undefined}`. Do not replace the section while a
+   refresh runs; preserve the prior table until the new response arrives.
+2. During an initial load with no rows, show the table-shaped skeleton from CH.
+   During a later filter/sort/page refresh with existing rows, retain the rows
+   and render a small visible **Updating list…** status beside the result count.
+3. The updating text uses `role="status"`; it must disappear on success, error,
+   or abort. Do not render a spinner dependency or block navigation controls
+   beyond controls whose request would conflict.
+4. Add tests for initial `aria-busy`, retained rows during refresh, and removal
+   of **Updating list…** after successful or failed response.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
