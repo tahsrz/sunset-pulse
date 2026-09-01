@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import React from "react";
 import { VIBE_PRESETS } from "@/lib/cms/vibePresets";
 import { toVibeSlug } from "@/lib/cms/vibeSlug";
 import { isValidVibeSlug } from "@/lib/cms/vibeSlug";
