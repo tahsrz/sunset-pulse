@@ -3329,6 +3329,183 @@ first; do not combine that reformat with a new API capability.
    another before the first fetch resolves; assert the first controller aborts,
    the old values disappear, and the second endpoint uses encoded `from`/`to`.
 
+### DQ. Modern WordPress admin patterns — scoped implementation package 1C
+
+The current WordPress list-table model uses an accessible bulk-action select,
+compact Apply control, top/bottom table navigation, sortable columns, row
+actions tied to the primary column, and contextual screen tools. The Vibe list
+already has the required data API, so implement the interaction model without
+adding preferences persistence, server-rendered PHP behavior, or a generic
+administration framework. Reference: [bulk action markup](https://developer.wordpress.org/reference/classes/wp_list_table/bulk_actions/), [list-table behavior](https://developer.wordpress.org/reference/classes/wp_list_table/), and [screen options responsibilities](https://developer.wordpress.org/reference/classes/wp_screen/).
+
+#### `app/vibes/_components/VibeListToolbar.tsx` — extend after package 1B
+
+1. Add required prop `position: 'top' | 'bottom'`.
+2. Use it only to make IDs unique:
+
+   ```ts
+   const selectId = `vibe-bulk-action-${position}`;
+   const applyId = `vibe-bulk-apply-${position}`;
+   ```
+
+3. Render the select label as:
+
+   ```tsx
+   <label htmlFor={selectId} className="sr-only">
+     Select bulk action
+   </label>
+   ```
+
+   This retains an explicit accessible label instead of relying on the visible
+   placeholder alone.
+4. First option stays `value=""` with exact visible text **Bulk actions**.
+   Second/third options stay `archive` / `trash`; do not create a grouped list
+   until an endpoint supports additional action families.
+5. Render Apply with `id={applyId}`, `type="button"`, and visible text
+   **Apply**. Its disabled expression remains exactly
+   `selectedCount === 0 || bulkAction === '' || bulkBusy`.
+6. When `position === 'bottom'`, do not render the search control or the status
+   views. It renders selection count, select, and Apply only. This mirrors the
+   duplicated table-navigation control without duplicating filters.
+
+#### `app/vibes/VibeList.tsx` — add bottom navigation after pagination work
+
+**Current lines 196–204, pagination region after migration:**
+
+1. Keep the existing `<nav aria-label="Vibe pagination">` and range text.
+2. Immediately before that nav, render a border-top table-navigation div:
+
+   ```tsx
+   <div className="flex flex-col gap-3 border-t border-[#c3c4c7] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+     <VibeListToolbar
+       position="bottom"
+       selectedCount={selected.size}
+       bulkAction={bulkAction}
+       onBulkActionChange={setBulkAction}
+       onApplyBulkAction={() => void requestBulkAction()}
+       bulkBusy={bulkBusy}
+       search=""
+       onSearchChange={() => undefined}
+     />
+     <p className="text-sm text-[#50575e]">{total} {total === 1 ? 'item' : 'items'}</p>
+   </div>
+   ```
+
+3. If `VibeListToolbar` cannot accept inert search props cleanly, split its
+   shared bulk section into `VibeBulkControls` and make top/bottom toolbar
+   wrappers. Do not duplicate select markup in `VibeList.tsx`.
+4. Render bottom navigation only when `vibes.length > 0`. It must appear even
+   when there is only one page so selected rows always have a second bulk-action
+   control below the table.
+5. Keep selection state shared between top and bottom controls. Selecting an
+   action in one select updates the other; applying either calls the same
+   `requestBulkAction` path.
+
+#### Primary column and row actions
+
+**`VibeList.tsx`, current lines 177–190 after CH migration:**
+
+1. Make the Vibe title cell `<th scope="row">`, not `<td>`, because it is the
+   table’s primary record identity. Preserve its Link to edit.
+2. Render slug beneath title in muted monospace as already planned.
+3. Render `VibeRowActions` below the slug with separators that are visually
+   present but `aria-hidden="true"`. Each link still has its own text label.
+4. Exact initial action array is:
+
+   ```ts
+   [
+     { href: `/vibes/${vibe.vibeId}/edit`, label: 'Edit' },
+     { href: `/vibes/${vibe.vibeId}/preview`, label: 'Preview' },
+     { href: `/vibes/${vibe.vibeId}/revisions`, label: 'Revisions' },
+     { href: `/vibes/${vibe.vibeId}/actions`, label: 'Status & Actions' },
+   ]
+   ```
+
+   Do not add direct archive/trash links to rows; those mutations remain on the
+   Status & Actions screen or through the existing bulk endpoint.
+5. Remove the standalone Actions column only after all four links above render
+   in the primary cell. Keep table column count and header/body alignment exact.
+
+#### `app/vibes/_components/VibeScreenTools.tsx` — contextual help, no saved settings
+
+Create this component only in package 1C. It is intentionally not a persisted
+Screen Options clone because the current CMS has no user-preference API.
+
+1. Props: `items: Array<{ term: string; description: string }>`.
+2. Render a native `<details className="relative">` with a compact summary
+   button-style label **Help** and `aria-label="Vibe screen help"`.
+3. Render a positioned, bordered white `<dl>` below it with the passed items.
+   Use `z-30`, `w-80`, and `max-w-[calc(100vw-2rem)]` so it stays usable on
+   small screens.
+4. On the list screen, pass only these facts:
+   - **Status views:** filter the table by editorial state.
+   - **Bulk actions:** select items, choose Archive or Move to trash, then Apply.
+   - **Revisions:** published history is available from each Vibe’s Revisions link.
+5. Do not add column visibility toggles, items-per-page inputs, localStorage,
+   cookies, account preference writes, or a Help route. Those require a distinct
+   product/data decision.
+
+#### `VibePageHeader.tsx` integration
+
+1. Add optional prop `tools?: ReactNode` after current `actions` prop.
+2. In the header action wrapper, render `tools` before `actions` so Help sits to
+   the left of **Add New** in left-to-right layouts.
+3. In `VibeList.tsx`, pass `<VibeScreenTools items={listHelpItems} />` through
+   `tools`. Keep the existing Add New link in `actions`.
+4. Do not add Help to edit/apply/lifecycle pages in 1C. Help content must be
+   contextual, not copied globally.
+
+### DR. Modern edit-screen hierarchy — packages 2B and 3B only
+
+The familiar edit-screen pattern is: a clear title/context, a primary save
+control, compact status facts, and collapsible meta panels. Apply it with the
+existing Vibe draft fields and lifecycle pages.
+
+#### `edit/VibeEditor.tsx`, current lines 163–235
+
+1. `VibePageHeader` uses `title={draft.title || 'Edit Vibe'}`; do not place the
+   editable title input inside the page title itself.
+2. Add a muted identity line directly below header description:
+   `Vibe ID: <code>{vibe.vibeId}</code> · Slug: <code>{draft.slug || 'not set'}</code>`.
+   This is read-only context; no new API field is required.
+3. Keep the Save draft control in the right editorial panel. The title input is
+   not an autosave trigger; saving stays explicit because PATCH uses version
+   conflict protection.
+4. `VibePanel` summaries use the exact labels **Vibe identity**, **Taxonomy**,
+   **Source details**, **Colors**, **Typography**, **Layout**, and **Jamie voice**.
+   Do not substitute generic terms such as “blocks,” “sections,” or “widgets.”
+5. Metadata and Taxonomy default open; all remaining panels follow the defaults
+   in CJ. This keeps primary editorial identity visible without overwhelming the
+   first view.
+
+#### Revisions and actions
+
+1. Revisions page starts with current published status/badge, then chronological
+   rows. The visible verbs remain **Compare**, **Republish revision**, and
+   **Apply to site** (only current published). Do not make older rows appear
+   editable.
+2. Actions page uses status as a compact fact panel and separates the possible
+   next lifecycle actions into individual cards. Do not combine publish/submit
+   into the actions page; their dedicated pages explain their effects.
+3. Publish page calls its final action **Publish immutable revision**. Submit
+   page calls its final action **Submit for review**. These labels are accurate
+   descriptions of the existing routes.
+
+### DS. Package 1C/2B test additions
+
+1. In `vibe-list.test.tsx`, render top and bottom bulk controls; select
+   **Move to trash** in the top control and assert the bottom select reflects
+   `trash`; select rows; click bottom Apply; assert the single existing bulk
+   POST payload.
+2. Assert the title cell is `th[scope="row"]` and includes all four expected
+   row action links. Assert there is no Actions table header after migration.
+3. In `vibe-ui-primitives.test.tsx`, render `VibeScreenTools`; assert Help is
+   a native summary, closed initially, opens to show all passed terms, and does
+   not call fetch or write localStorage.
+4. In `vibe-editor-validation.test.tsx`, assert the editor header uses the
+   loaded draft title and identity line while the title input remains a separate
+   form control. Do not test visual color classes as a replacement for behavior.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
