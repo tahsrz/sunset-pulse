@@ -1602,6 +1602,104 @@ If the answer is the second, remove it from this Vibes plan and propose it under
 the tenant-site product area. Reusing a style layer across sites and composing a
 site’s public sections are different products with different data owners.
 
+### BI. Apply preflight: pointer-aware impact rules
+
+The existing pointer read route resolves the site’s active published revision.
+Its response is enough to make the preflight more truthful without adding an
+API route, as long as the client type represents the returned revision identity.
+
+#### Required client-type and state changes
+
+In `app/vibes/[vibeId]/apply/page.tsx`:
+
+1. Expand `Pointer` so `revision` includes optional `vibeId` in addition to
+   `revisionId` and `revisionNumber`. The pointer endpoint already returns the
+   published projection; the current client type merely omits this context.
+2. Replace the single `pointer` truthy check with an explicit preflight state:
+   `idle | checking | verified | error` plus `checkedSiteId` and `checkedAt`.
+3. Invalidate `verified` when the Site ID changes. Revision changes update the
+   summary but do not erase the fact that the selected site pointer was checked.
+4. Keep the final apply button disabled unless `preflightState === 'verified'`,
+   `checkedSiteId === siteId`, and a revision ID is present.
+5. Render the check time as “Current site selection checked just now” or a
+   formatted timestamp. It is a preflight observation, not a lock on the site.
+6. After a successful apply, refetch the pointer using existing `checkPointer()`
+   and show the returned pointer in the success confirmation.
+
+#### Preflight presentation rules
+
+| Site pointer condition | What to show | Available next action |
+| --- | --- | --- |
+| No active revision | “This site does not currently have a published Vibe revision selected.” | Apply remains available after a successful pointer check and final confirmation. |
+| Active revision belongs to this Vibe | “Currently using rN from this Vibe.” | Show **Compare revisions** only if current and selected revision IDs differ. |
+| Active revision belongs to a different Vibe | “Currently using a revision from another Vibe.” | No cross-Vibe compare link. Show exact current revision as secondary operational context. |
+| Active revision equals selected revision | “This site already uses the selected revision.” | Disable final apply and offer **Back to revisions**; do not send an idempotent no-op by default. |
+| Pointer check unavailable | Error notice with reason and **Check again**. | Apply remains disabled. |
+| Site ID changed after check | “Check the current site selection before applying.” | Apply remains disabled until checked again. |
+
+For same-Vibe comparison only, link to the existing compare route:
+
+```text
+/vibes/:vibeId/compare?from=:currentRevisionId&to=:selectedRevisionId
+```
+
+Do not construct this link when `pointer.revision.vibeId !== vibeId`; the
+current comparison route is scoped to one Vibe and must not be presented as a
+cross-Vibe semantic diff.
+
+#### Concurrency wording
+
+The current apply API does not accept an expected-current-pointer value. The UI
+must therefore never say “the site will change only if it is still on rN.” Use
+this wording instead:
+
+> You checked the current selection at [time]. The protected apply action will
+> validate the requested published revision before updating the site.
+
+If conditional pointer compare-and-set behavior becomes necessary, it requires a
+separate API contract and is not a client-side confirmation enhancement.
+
+### BJ. Preview capability boundary
+
+There are two distinct review surfaces:
+
+| Surface | Existing? | What it proves | What it does not prove |
+| --- | --- | --- | --- |
+| Saved Vibe settings preview | Yes, `/vibes/:vibeId/preview` | The Vibe draft’s normalized style/voice settings can render in the representative preview. | Tenant site sections, listings, profile content, host routing, or actual applied result. |
+| Public tenant route | Yes, tenant host rewritten to `/sites/:tenant` | The real tenant composition resolves its active Vibe projection. | A proposed/draft Vibe revision before pointer application. |
+| Tenant-site revision preview | No | Would let an authorized operator inspect a real tenant composition against a chosen revision. | Must not mutate the active pointer or expose tenant inventory. |
+
+Do not add a site selector, iframe, or `?site=` query parameter to the existing
+Vibe settings preview. A future tenant-site revision preview needs all of these
+before it is proposed for implementation:
+
+1. A server-authorized site selection boundary.
+2. A server-rendered or server-validated temporary revision override that does
+   not persist into the tenant site pointer.
+3. Clear draft versus published-revision eligibility rules.
+4. Reuse of the actual public tenant rendering path rather than a duplicate
+   client renderer.
+5. A controlled verification strategy that never exercises a customer site
+   without authorization.
+
+### BK. Version and renderer compatibility guardrails
+
+The Vibe UI must assume revisions can outlive the current editor code. Avoid
+features that make old published snapshots impossible to inspect or apply.
+
+- Existing preview/publish schema validation remains the source of truth.
+- UI panels must provide defaults for missing optional visual fields, as the
+  current editor does, but must not silently write unknown schema values on save.
+- Revision rows with a projection that cannot render should display a clear
+  “Revision data is unavailable for preview” state and preserve audit metadata;
+  they must not be represented as a healthy current selection.
+- New Vibe fields require a schema, preview, revision-snapshot, public-renderer,
+  and compare-path decision before they appear in the editor. A field is not
+  complete because it saves to draft JSON alone.
+- Any schema-version or migration policy belongs to a separate data-model plan;
+  this UI plan records the compatibility gate but does not invent a versioning
+  mechanism.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
