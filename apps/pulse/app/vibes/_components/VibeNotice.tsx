@@ -16,7 +16,7 @@ const noticeStyles = {
 export function VibeNotice({ tone, children, action, onDismiss }: VibeNoticeProps) {
   return <div role={tone === 'error' ? 'alert' : 'status'} className={`border-l-4 p-3 text-sm ${noticeStyles[tone]}`}>
     <div className="flex flex-wrap items-center gap-3"><div className="min-w-0 flex-1">{children}</div>
-      {action && ('href' in action ? <Link href={action.href} className="font-semibold underline">{action.label}</Link> : <button type="button" onClick={action.onClick} className="font-semibold underline">{action.label}</button>)}
+      {action && ('href' in action && action.href ? <Link href={action.href} className="font-semibold underline">{action.label}</Link> : <button type="button" onClick={action.onClick} className="font-semibold underline">{action.label}</button>)}
       {onDismiss ? <button type="button" onClick={onDismiss} aria-label="Dismiss notice" className="font-semibold underline">Dismiss</button> : null}
     </div>
   </div>;

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { parseVibeListQuery, serializeVibeListQuery, type VibeListQuery } from '@/lib/cms/vibeListQuery';
 
 type Vibe = {
   vibeId: string;
@@ -45,12 +47,16 @@ function sortLabel(active: boolean, direction: 'asc' | 'desc') {
 }
 
 export function VibeList() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const parsedQuery = parseVibeListQuery(new URLSearchParams(searchParams.toString()));
   const [vibes, setVibes] = useState<Vibe[]>([]);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [sort, setSort] = useState<'title' | 'status' | 'updatedAt'>('updatedAt');
-  const [direction, setDirection] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(parsedQuery.q);
+  const [status, setStatus] = useState(parsedQuery.status);
+  const [sort, setSort] = useState(parsedQuery.sort);
+  const [direction, setDirection] = useState(parsedQuery.direction);
+  const [page, setPage] = useState(parsedQuery.page);
   const [total, setTotal] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [totalPages, setTotalPages] = useState(1);
@@ -60,8 +66,31 @@ export function VibeList() {
   const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
-    setPage(1);
+    setSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
+    setDirection(parsedQuery.direction); setPage(parsedQuery.page);
+  // URL is the source of truth when navigating with Back/Forward.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  function updateQuery(next: Partial<VibeListQuery>, mode: 'push' | 'replace' = 'push') {
+    const current = parseVibeListQuery(new URLSearchParams(searchParams.toString()));
+    const query = { ...current, ...next };
+    const queryString = serializeVibeListQuery(query);
+    router[mode](queryString ? `${pathname}?${queryString}` : pathname);
+  }
+
+  useEffect(() => {
+    if (page !== 1) updateQuery({ page: 1 }, 'replace');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, status, sort, direction]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (search !== parsedQuery.q) updateQuery({ q: search, page: 1 }, 'replace');
+    }, 275);
+    return () => window.clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -94,8 +123,9 @@ export function VibeList() {
   }, [page, search, status, sort, direction]);
 
   function changeSort(nextSort: 'title' | 'status' | 'updatedAt') {
-    if (sort === nextSort) setDirection((current) => current === 'asc' ? 'desc' : 'asc');
-    else { setSort(nextSort); setDirection(nextSort === 'title' ? 'asc' : 'desc'); }
+    const nextDirection = sort === nextSort ? (direction === 'asc' ? 'desc' : 'asc') : (nextSort === 'title' ? 'asc' : 'desc');
+    setSort(nextSort); setDirection(nextDirection); setPage(1);
+    updateQuery({ sort: nextSort, direction: nextDirection, page: 1 });
   }
 
   async function runBulk(action: 'archive' | 'trash') {
@@ -124,7 +154,7 @@ export function VibeList() {
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Vibe list">
           <div className="border-b border-slate-200 px-4 pt-4">
             <nav className="flex flex-wrap gap-x-3 gap-y-1 text-sm" aria-label="Vibe status views">
-              {STATUS_VIEWS.map((view) => <button key={view.value || 'all'} type="button" onClick={() => setStatus(view.value)} className={status === view.value ? 'font-bold text-slate-900' : 'text-[#2271b1] hover:underline'}>{view.label} <span className="text-slate-500">({view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0)})</span></button>)}
+              {STATUS_VIEWS.map((view) => <button key={view.value || 'all'} type="button" onClick={() => { setStatus(view.value); setPage(1); updateQuery({ status: view.value, page: 1 }); }} className={status === view.value ? 'font-bold text-slate-900' : 'text-[#2271b1] hover:underline'}>{view.label} <span className="text-slate-500">({view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0)})</span></button>)}
             </nav>
           </div>
           <div className="flex flex-wrap items-center gap-3 p-4">
@@ -138,7 +168,7 @@ export function VibeList() {
             <select
               aria-label="Filter by status"
               value={status}
-              onChange={(event) => setStatus(event.target.value)}
+              onChange={(event) => { const nextStatus = event.target.value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }}
               className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"
             >
               <option value="">All statuses</option>
@@ -197,8 +227,8 @@ export function VibeList() {
                 <nav className="flex items-center justify-between gap-3 border-t border-slate-200 p-4" aria-label="Vibe pagination">
                   <p className="text-sm text-slate-500">Showing {rangeStart}–{rangeEnd} of {total}</p>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">Previous</button>
-                    <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">Next</button>
+                    <button type="button" onClick={() => { const nextPage = Math.max(1, page - 1); setPage(nextPage); updateQuery({ page: nextPage }); }} disabled={page === 1} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">Previous</button>
+                    <button type="button" onClick={() => { const nextPage = Math.min(totalPages, page + 1); setPage(nextPage); updateQuery({ page: nextPage }); }} disabled={page === totalPages} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">Next</button>
                   </div>
                 </nav>
               ) : null}
