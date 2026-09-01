@@ -185,8 +185,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Source details</h2>
+              <VibePanel id="source-details" title="Source details" defaultOpen={false}>
                 <p className="mt-1 text-sm text-slate-500">Keep the provenance needed for later editorial review.</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Source kind<select name="sourceKind" defaultValue={draft.source?.kind || 'manual'} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="manual">Manual</option><option value="extracted">Extracted</option></select></label>
@@ -194,7 +193,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                   <label className="text-xs font-bold uppercase text-slate-500 sm:col-span-2">Attribution<input name="sourceAttribution" defaultValue={draft.source?.attribution || ''} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                   <label className="text-xs font-bold uppercase text-slate-500 sm:col-span-2">Ownership note<textarea name="sourceOwnershipNote" defaultValue={draft.source?.ownershipNote || ''} className="mt-2 min-h-20 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                 </div>
-              </article>
+              </VibePanel>
 
               <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Visual system</h2>
