@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
+import { VibeEditorToolbar } from '../../_components/VibeEditorToolbar';
 
 type Vibe = {
   vibeId: string;
@@ -163,11 +164,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <form onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
-          <div className="mb-6">
-            <Link href="/vibes" className="text-sm font-semibold text-slate-500 hover:underline">← All Vibes</Link>
-            <h1 className="mt-3 text-3xl font-black">Edit Vibe</h1>
-            <p className="mt-1 text-sm text-slate-500">Edit the saved draft. Publishing always creates an immutable revision.</p>
-          </div>
+          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState !== 'saved'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => document.querySelector('form')?.requestSubmit()} />
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <section className="space-y-5">
