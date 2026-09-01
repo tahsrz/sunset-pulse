@@ -178,13 +178,12 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Taxonomy</h2>
+              <VibePanel id="taxonomy" title="Taxonomy" defaultOpen>
                 <p className="mt-1 text-sm text-slate-500">Choose terms that help operators find this Vibe later.</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {taxonomyTerms.map(({ id, group, term }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold capitalize">{term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
                 </div>
-              </article>
+              </VibePanel>
 
               <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Source details</h2>
