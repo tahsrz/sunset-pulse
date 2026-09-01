@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { parseVibeListQuery, serializeVibeListQuery, type VibeListQuery } from '@/lib/cms/vibeListQuery';
+import { VibeListToolbar } from './_components/VibeListToolbar';
+import { VibeStatusViews } from './_components/VibeStatusViews';
 
 type Vibe = {
   vibeId: string;
@@ -64,6 +66,7 @@ export function VibeList() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkAction, setBulkAction] = useState<'' | 'archive' | 'trash'>('');
 
   useEffect(() => {
     setSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
@@ -153,18 +156,9 @@ export function VibeList() {
 
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Vibe list">
           <div className="border-b border-slate-200 px-4 pt-4">
-            <nav className="flex flex-wrap gap-x-3 gap-y-1 text-sm" aria-label="Vibe status views">
-              {STATUS_VIEWS.map((view) => <button key={view.value || 'all'} type="button" onClick={() => { setStatus(view.value); setPage(1); updateQuery({ status: view.value, page: 1 }); }} className={status === view.value ? 'font-bold text-slate-900' : 'text-[#2271b1] hover:underline'}>{view.label} <span className="text-slate-500">({view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0)})</span></button>)}
-            </nav>
+            <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
           </div>
-          <div className="flex flex-wrap items-center gap-3 p-4">
-            <input
-              aria-label="Search vibes"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search title or slug"
-              className="min-w-64 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
+          <VibeListToolbar position="top" selectedCount={selected.size} action={bulkAction} onActionChange={setBulkAction} onApply={() => { if (bulkAction) void runBulk(bulkAction); }} busy={bulkBusy} search={search} onSearchChange={setSearch}>
             <select
               aria-label="Filter by status"
               value={status}
@@ -178,8 +172,7 @@ export function VibeList() {
               <option value="archived">Archived</option>
               <option value="trash">Trash</option>
             </select>
-            {selected.size ? <div className="flex items-center gap-2"><span className="text-sm font-semibold">{selected.size} selected</span><button type="button" disabled={bulkBusy} onClick={() => void runBulk('archive')} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">Archive</button><button type="button" disabled={bulkBusy} onClick={() => void runBulk('trash')} className="rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 disabled:opacity-50">Move to trash</button></div> : null}
-          </div>
+          </VibeListToolbar>
 
           {!loading && !error ? <p className="border-b border-slate-100 px-4 py-3 text-sm text-slate-500">{total} {total === 1 ? 'item' : 'items'}</p> : null}
           {loading ? <p className="p-8 text-sm text-slate-500">Loading vibes…</p> : null}
