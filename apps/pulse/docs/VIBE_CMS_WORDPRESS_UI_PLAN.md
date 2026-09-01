@@ -1387,6 +1387,141 @@ The planned UI is not complete when it only looks correct with a mouse:
 7. Error and success status are announced once, without interrupting active
    typing for normal save feedback.
 
+## Platform integration: tenant sites and structured Vibe data
+
+### AX. What already exists
+
+Sunset Pulse already implements the core dynamic-subdomain pattern. This UI plan
+must integrate with it rather than create a second multi-tenant stack.
+
+| Concern | Existing implementation | UI-plan consequence |
+| --- | --- | --- |
+| Hostname parsing | `lib/sites/tenantRouting.ts` normalizes hostnames, root domains, reserved names, and valid tenant slugs. | Do not add client-side subdomain parsing or derive tenant identity from a Vibe slug. |
+| Tenant request rewrite | `middleware.js` calls `getTenantRewrite`, rewrites tenant hosts to `/sites/[tenant]`, and forwards trusted tenant headers. | Do not change middleware, DNS, SSL, or host headers for the Vibes UI work. |
+| Public site route | `app/sites/[site]/[[...path]]/page.tsx` renders the tenant site. | Treat public site rendering as the downstream consumer of a selected Vibe revision. |
+| Active Vibe pointer | Launch Kit/site data includes `activeVibeRevisionId` and application metadata. | Apply UI may display the pointer as verification context; it does not own or infer tenant routing. |
+| Structured Vibe payload | `VibeEditor` edits `draftPayload`; `vibeService` publishes immutable snapshots with CSS variables and voice configuration. | Keep editor UI bound to the existing schema; do not introduce a second page-content representation. |
+| Public Vibe projection | Site data resolves the active revision into `vibeCssVars` and `vibeVoiceConfig` for public rendering. | Preview/apply copy must distinguish saved draft preview from tenant site output. |
+
+### AY. Canonical content and rendering flow
+
+```text
+Authoring UI
+  /vibes/:vibeId/edit
+       │ saves normalized draftPayload with expectedVersion
+       ▼
+Vibe draft (not public)
+       │ publish
+       ▼
+Immutable VibeRevision
+  snapshot + cssVars + voiceConfig
+       │ apply to site (protected route)
+       ▼
+Tenant site pointer
+  activeVibeRevisionId
+       │ request arrives at <tenant>.<root-domain>
+       ▼
+middleware.js → /sites/:tenant rewrite
+       │ resolves tenant site + active revision projection
+       ▼
+Public tenant rendering
+  CSS variables + voice configuration + site data
+```
+
+Rules derived from this flow:
+
+1. A draft is never public merely because it has a title, slug, or preview.
+2. A published revision is not live on every tenant; it becomes live only for a
+   site after that site’s pointer is updated through the protected apply flow.
+3. A tenant subdomain names a tenant site, not a Vibe. Multiple sites can
+   eventually point at the same published Vibe revision.
+4. Vibe slugs are editorial identifiers/permalink context, not DNS labels and
+   not a substitute for tenant identity.
+5. The Vibes workspace should communicate this distinction in the apply
+   preflight, revision history, and preview labels—not by exposing middleware
+   mechanics to ordinary editors.
+
+### AZ. Dynamic-subdomain work: explicit disposition
+
+The multi-tenant routing proposal has two layers:
+
+| Proposal | Disposition | Reason |
+| --- | --- | --- |
+| Wildcard DNS | Platform/deployment concern; not in this UI plan. | The application already has runtime tenant-host resolution. DNS configuration belongs to deployment/domain operations. |
+| Wildcard TLS | Platform/deployment concern; not in this UI plan. | Certificate/domain management is outside Vibe authoring UX. |
+| Read Host header and resolve tenant | Already implemented server-side. | `tenantRouting.ts` and `middleware.js` own this boundary. |
+| Query tenant records and render tenant-specific content | Already implemented through site data / public site routes. | The Vibes UI is an upstream authoring surface, not a second public router. |
+| Show site/subdomain relationship in UI | In scope only where it aids an operator decision. | Apply preflight may show selected site ID and safe human-facing site label/domain if an approved response already supplies it. |
+
+Do not add a “Subdomains” navigation item to the Vibes workspace. Tenant/domain
+management has a different lifecycle and should remain in its existing site or
+Launch Kit surfaces.
+
+### BA. Block-editor proposal: explicit disposition
+
+The structured-JSON principle is compatible with the current architecture; the
+suggested generic editor frameworks are not automatically a fit.
+
+| Idea | Disposition | Reason |
+| --- | --- | --- |
+| Store structured data rather than raw HTML | Already adopted. | Vibe drafts and revision snapshots are structured data validated before preview/publish. |
+| Map structured data to a controlled renderer | Already adopted. | Public site projection uses published revision CSS/voice data; preview renders the saved normalized draft. |
+| Generic rich-document editor | Not needed for current Vibe fields. | Current Vibe model is a structured visual/editorial system, not a freeform article body. |
+| Editor.js | Defer unless a future Vibe schema introduces a rich text document field. | It would solve document-block authoring, not current visual-token editing. |
+| GrapeJS | Reject for this initiative. | It introduces a separate visual-builder model, CSS persistence, and rendering pipeline that would diverge from Vibe revisions and tenant rendering. |
+| Craft.js | Defer pending a defined repeatable-section schema and renderer contract. | Drag/drop UI without a schema, persistence format, rendering contract, and keyboard model would be premature. |
+| Native structured-section editor | Discovery gate only. | It is the lowest-risk future direction if existing payload fields become repeatable sections. |
+
+### BB. Guardrails for any future repeatable-section model
+
+If the discovery gate in Phase 5 proves a repeatable section schema is needed,
+write and approve a separate schema/rendering plan before adding drag-and-drop.
+That plan must define:
+
+1. A versioned section node shape with stable `id`, `type`, and validated props.
+2. An allowlist of section types and an explicit renderer for each type.
+3. Normalization rules, defaults, and migration behavior.
+4. How a section node is stored inside the existing Vibe draft and frozen in an
+   immutable revision snapshot.
+5. How public tenant rendering consumes the same published node structure.
+6. Keyboard add, edit, duplicate, delete, and move controls before pointer drag
+   is introduced.
+7. Preview/test fixtures for every type and an unknown-type fallback that fails
+   safely rather than rendering arbitrary markup.
+
+Until those conditions are met, retain the current native structured fields and
+the UI improvements described in this plan.
+
+### BC. UI copy that reflects the tenant relationship
+
+Use these precise explanations where needed:
+
+| Screen | Copy rule |
+| --- | --- |
+| Draft preview | “Saved draft preview. This does not change any tenant site.” |
+| Publish | “Publishing creates a reusable revision. It does not apply it to a site.” |
+| Revision history | “Current published revision” means the Vibe’s current publication, not a tenant’s active selection. |
+| Apply preflight | “This site will use the selected published revision after you confirm.” |
+| Apply success | “Revision rN is now selected for this site.” Do not claim DNS, deployment, or global publication changed. |
+| Tenant/public context, if shown | Show approved site label/domain as context, then secondary site ID; never expose host-resolution/debug headers. |
+
+### BD. Tenant-aware manual verification additions
+
+After the UI work and only in a controlled environment:
+
+1. Use one disposable or approved non-customer tenant site with a known original
+   Vibe pointer.
+2. Save a Vibe draft and verify its preview label clearly says no tenant site
+   changed.
+3. Publish the draft and verify the tenant’s public output remains unchanged.
+4. Apply the published revision through the preflight; verify the selected
+   tenant route displays the resolved Vibe CSS/voice projection.
+5. Verify a different tenant route remains unchanged.
+6. Revisit revision history and apply preflight; verify the current pointer
+   matches the selected revision.
+7. Revoke/restore according to the existing controlled lifecycle runbook; do
+   not use a customer site for UI verification.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
