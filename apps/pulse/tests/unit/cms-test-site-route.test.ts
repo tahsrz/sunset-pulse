@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const mocks = vi.hoisted(() => ({ provision: vi.fn(), suspend: vi.fn(), readSiteConfig: vi.fn() }));
+const mocks = vi.hoisted(() => ({ provision: vi.fn(), suspend: vi.fn(), readSiteConfig: vi.fn(), inspectSiteConfigStores: vi.fn() }));
 vi.mock('@/lib/sites/siteProvisioning', () => ({ provisionDisposableCmsSite: mocks.provision, revokeDisposableCmsSite: mocks.suspend }));
-vi.mock('@/lib/sites/siteConfigStore', () => ({ readSiteConfig: mocks.readSiteConfig }));
+vi.mock('@/lib/sites/siteConfigStore', () => ({ readSiteConfig: mocks.readSiteConfig, inspectSiteConfigStores: mocks.inspectSiteConfigStores }));
 
 import { DELETE, GET, POST } from '@/app/api/internal/cms/test-site/route';
 
@@ -12,7 +12,7 @@ const request = (body: unknown, token = 'secret') => new NextRequest('https://su
 });
 
 describe('CMS test-site seed route', () => {
-  beforeEach(() => { vi.clearAllMocks(); process.env.CMS_TEST_SEED_ENABLED = 'true'; process.env.CMS_TEST_SEED_TOKEN = 'secret'; process.env.CMS_TEST_SEED_OWNER_EMAIL = 'taz@example.com'; process.env.CMS_TEST_SEED_OWNER_USER_ID = 'user-taz'; mocks.readSiteConfig.mockResolvedValue(null); });
+  beforeEach(() => { vi.clearAllMocks(); process.env.CMS_TEST_SEED_ENABLED = 'true'; process.env.CMS_TEST_SEED_TOKEN = 'secret'; process.env.CMS_TEST_SEED_OWNER_EMAIL = 'taz@example.com'; process.env.CMS_TEST_SEED_OWNER_USER_ID = 'user-taz'; mocks.readSiteConfig.mockResolvedValue(null); mocks.inspectSiteConfigStores.mockResolvedValue({ supabaseRow: null, mongoRow: null, selectedRow: null, selectedStore: null }); });
 
   it('stays unavailable when disabled', async () => {
     process.env.CMS_TEST_SEED_ENABLED = 'false';
@@ -89,7 +89,8 @@ describe('CMS test-site seed route', () => {
   });
 
   it('inspects a disposable site without exposing secrets or mutating it', async () => {
-    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one', provisioningAudit: [{ action: 'cms.test-site.seeded', actor: 'cms-test-seed:user-taz', message: 'seeded', occurredAt: '2026-08-31T00:00:00.000Z', status: 'succeeded', source: 'cms-test-seed:run-123' }] });
+    const mongoRow = { agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one', provisioningAudit: [{ action: 'cms.test-site.seeded', actor: 'cms-test-seed:user-taz', message: 'seeded', occurredAt: '2026-08-31T00:00:00.000Z', status: 'succeeded', source: 'cms-test-seed:run-123' }] };
+    mocks.inspectSiteConfigStores.mockResolvedValue({ supabaseRow: null, mongoRow, selectedRow: mongoRow, selectedStore: 'mongo' });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ runId: 'run-123', siteId: 'cms-verification-run-123', ownerUserId: 'user-taz', originalPointer: 'revision-one', currentPointer: 'revision-one', reconciliationRequired: true, correlationId: expect.any(String), elapsedMs: expect.any(Number), stores: { present: true, evidence: { supabase: false, mongo: true } } });

@@ -21,6 +21,22 @@ export async function readSiteConfig(agentId?: string | null) {
   return chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
 }
 
+export async function inspectSiteConfigStores(agentId?: string | null) {
+  const targetAgentId = agentId || createDefaultLaunchKit(agentId).agentId;
+  if (isMockMode()) {
+    const supabaseRow = readMockSiteConfig(targetAgentId);
+    return { supabaseRow, mongoRow: null, selectedRow: supabaseRow, selectedStore: 'supabase' as const };
+  }
+
+  const [supabaseRow, mongoRow] = await Promise.all([
+    readSupabaseSiteConfig(targetAgentId),
+    readMongoSiteConfig(targetAgentId),
+  ]);
+  const selectedRow = chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
+  const selectedStore = selectedRow && mongoRow && selectedRow === mongoRow ? 'mongo' : selectedRow && supabaseRow ? 'supabase' : null;
+  return { supabaseRow, mongoRow, selectedRow, selectedStore };
+}
+
 export async function readSiteConfigByOwnerUser(userId?: string | null) {
   const normalizedUserId = String(userId || '').trim();
   if (!normalizedUserId) return null;
