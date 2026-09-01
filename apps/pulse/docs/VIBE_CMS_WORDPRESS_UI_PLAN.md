@@ -3506,6 +3506,170 @@ existing Vibe draft fields and lifecycle pages.
    loaded draft title and identity line while the title input remains a separate
    form control. Do not test visual color classes as a replacement for behavior.
 
+### DT. Responsive list-table package 1D — modern small-screen behavior
+
+Modern WordPress list tables make the primary column the portable record
+summary and expose additional row details through a dedicated toggle. Implement
+the same information hierarchy with native disclosure, not a client-side table
+replacement. Reference: [WordPress list-table primary-row actions](https://developer.wordpress.org/reference/classes/wp_list_table/).
+
+#### New `app/vibes/_components/VibeListRowDetails.tsx`
+
+1. Props are exactly:
+
+   ```ts
+   type VibeListRowDetailsProps = {
+     statusLabel: string;
+     hasPublishedRevision: boolean;
+     modifiedLabel: string;
+   };
+   ```
+
+2. Render `<details className="mt-2 sm:hidden">` so it exists only as a
+   small-screen control. The `summary` text is **Show details** when closed and
+   **Hide details** when open only if a local `open` state is introduced. It is
+   acceptable to leave summary text **Details** and rely on native open state;
+   do not add script solely to swap the label.
+3. Use `<dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">`
+   with exactly the labels **Status**, **Revision**, and **Last modified**.
+4. Revision value is **Published revision** when `hasPublishedRevision` is true;
+   otherwise `—`. Do not fetch a revision number per list row.
+5. This component receives strings/booleans only. It must not import routing,
+   fetch, Vibe types, or status formatting helpers.
+
+#### `app/vibes/VibeList.tsx` — lines 162–194 after CH migration
+
+1. Keep the native `<table>` and outer `overflow-x-auto` wrapper on desktop.
+2. On the Status, Revision, and Last modified `<th>` elements, add
+   `className="hidden px-4 py-3 sm:table-cell"`. Keep header scope values.
+3. Apply the matching `hidden px-4 py-3 sm:table-cell` class to the three body
+   cells in every row. Do not hide the checkbox or primary title cell.
+4. In the primary `<th scope="row">` below the title, slug, and
+   `VibeRowActions`, insert:
+
+   ```tsx
+   <VibeListRowDetails
+     statusLabel={statusLabel(vibe.status)}
+     hasPublishedRevision={Boolean(vibe.publishedRevisionId)}
+     modifiedLabel={formatModified(vibe.updatedAt)}
+   />
+   ```
+
+5. Do not use CSS-only `display: none` for details that are the only source of
+   status/revision/modified information on small screens; the native details
+   control remains keyboard-operable and in the DOM.
+6. The checkbox column remains first. Do not turn row click into a selection
+   toggle; title/link and action links must retain their normal behavior.
+7. Keep the action links visible immediately; the Details disclosure is for
+   metadata columns only, not a menu substitute.
+
+#### Package 1D tests
+
+1. Add `VibeListRowDetails` tests: status, revision state, and modified label
+   render after opening native details; no fetch mock is needed.
+2. In `vibe-list.test.tsx`, assert secondary desktop cells carry `sm:table-cell`
+   and the primary cell contains `VibeListRowDetails` data. Test semantics and
+   text, not computed CSS layout.
+3. Assert **Edit**, **Preview**, **Revisions**, and **Status & Actions** remain
+   visible without opening Details.
+
+### DU. Editor-toolbar package 2C — modern editor hierarchy without a block builder
+
+The modern WordPress editor keeps document-level state and primary actions in a
+stable toolbar, while advanced settings live in collapsible inspector sections;
+important operations are not hidden solely in a sidebar. Reference:
+[Block Editor user interface](https://developer.wordpress.org/block-editor/explanations/user-interface/),
+[Panel behavior](https://developer.wordpress.org/block-editor/reference-guides/components/panel/), and
+[Notice placement](https://developer.wordpress.org/block-editor/reference-guides/components/notice/).
+
+#### `app/vibes/_components/VibeEditorToolbar.tsx`
+
+Replace the earlier facts-only preliminary contract in CR with this final,
+still-presentational contract:
+
+```ts
+type VibeEditorToolbarProps = {
+  saveState: 'saved' | 'dirty' | 'saving' | 'conflict';
+  draftVersion?: number;
+  publishedRevision?: number | null;
+  status: string;
+  onSave: () => void;
+  saveDisabled: boolean;
+  previewHref: string;
+};
+```
+
+1. Import `Link` only. Do not import `SaveState` from `VibeEditor.tsx`; the
+   toolbar owns its explicit compatible string union. Do not import `useState`,
+   `useEffect`, `fetch`, or `useRouter`.
+2. Render `<div role="toolbar" aria-label="Vibe editor tools">` with
+   `sticky top-10 z-10 flex flex-wrap items-center gap-2 border-y border-[#c3c4c7] bg-white px-3 py-2 shadow-sm`.
+   `top-10` clears the existing global Vibe header height; do not make a second
+   fixed header.
+3. Left group renders a text status label and compact draft/published revision
+   facts. It does not render icon-only controls.
+4. Right group renders, in exact order: **Save draft** button, **Preview Vibe
+   settings** Link, workflow Link when supplied by the parent, and revision
+   history Link when supplied by the parent.
+5. Save button has `type="button"`, calls `onSave`, and `disabled={saveDisabled}`.
+   Its visible busy/dirty/conflict text comes from props, not a second save
+   state inside this component.
+6. Use normal text labels for every control. Do not create icon-only buttons,
+   undo/redo controls, insertion controls, an ellipsis menu, or a settings gear;
+   those would claim capabilities the Vibe editor does not have.
+
+#### `app/vibes/[vibeId]/edit/VibeEditor.tsx` — exact wiring
+
+**Current lines 120–160, `saveDraft`:**
+
+1. Extract the existing FormData/save logic into `async function saveDraft()` as
+   `async function saveDraft(form: HTMLFormElement)`; retain its form parameter
+   and do not make toolbar buttons submit a second form.
+2. Above it, add:
+
+   ```ts
+   function requestSave() {
+     const form = formRef.current;
+     if (!form) return;
+     if (!form.reportValidity()) return;
+     void saveDraft(form);
+   }
+   ```
+
+3. Change the current React hook import to
+   `import { useEffect, useRef, useState } from 'react';`, then add
+   `const formRef = useRef<HTMLFormElement>(null);` beside current editor state.
+   Add `ref={formRef}` to the existing `<form>` at current line 165.
+4. Keep the form `onSubmit` handler and call the same `saveDraft`; keyboard form
+   submission and toolbar Save therefore share validation and request behavior.
+5. Insert `<VibeEditorToolbar ... />` inside the existing form, directly after
+   `VibePageHeader` and before the outer edit grid. Pass `onSave={requestSave}`
+   and `saveDisabled={saveState === 'saving' || !vibe}`. This is a toolbar
+   inside one existing form, not a nested form; its Save control remains
+   `type="button"`.
+6. Remove the duplicated Save draft button from `PublishPanel` only after the
+   toolbar button is fully wired and tested. Keep PublishPanel facts, preview,
+   workflow action, and revision-history links until their equivalents have
+   moved to the toolbar.
+7. To avoid duplicate links, choose one owner: move Preview/workflow/revisions
+   into the toolbar and leave PublishPanel as `VibeStatusSummary`, or retain
+   them in PublishPanel and have toolbar render only Save/preview. Do not leave
+   two controls with identical accessible names on one screen.
+8. On small screens, the toolbar remains visible and wraps. The edit grid’s
+   publish/status summary stacks below form panels. Do not hide Save or Preview
+   behind a sidebar toggle.
+
+#### Package 2C tests
+
+1. Render editor, locate `role="toolbar"` by name, and assert Save draft,
+   Preview Vibe settings, and lifecycle/revision controls each appear once.
+2. Change Base font size to an invalid value, click toolbar Save draft, assert
+   PATCH is not called and the native field remains invalid.
+3. With a valid draft, click toolbar Save draft and assert the same PATCH URL,
+   body fields, and `expectedVersion` as the existing form-submit test.
+4. Assert toolbar has no icon-only unlabeled buttons and no block insertion or
+   generic page-building controls.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
