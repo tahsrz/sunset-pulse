@@ -32,6 +32,7 @@ vi.mock('@/models/SiteConfig', () => ({
 }));
 
 import {
+  inspectSiteConfigStores,
   readExpiredPastDueSiteConfigs,
   readSiteConfig,
   readSiteConfigByOwnerUser,
@@ -127,6 +128,20 @@ describe('siteConfigStore', () => {
     storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: { agent_id: 'broker-one', active_vibe_revision_id: 'old', updated_at: '2026-07-23T12:00:00.000Z' }, error: null });
     storeMocks.resolveMongoFindOne.mockResolvedValue({ agentId: 'broker-one', activeVibeRevisionId: 'applied', updatedAt: '2026-07-23T11:00:00.000Z', activeVibeRevisionAppliedBy: 'operator' });
     await expect(readSiteConfig('broker-one')).resolves.toMatchObject({ activeVibeRevisionId: 'applied', activeVibeRevisionAppliedBy: 'operator' });
+  });
+
+  it('reports both persistence records while selecting the fresher store', async () => {
+    const supabaseRow = { agent_id: 'broker-one', updated_at: '2026-07-23T10:00:00.000Z' };
+    const mongoRow = { agentId: 'broker-one', updatedAt: '2026-07-23T11:00:00.000Z' };
+    storeMocks.resolveSupabaseQuery.mockResolvedValue({ data: supabaseRow, error: null });
+    storeMocks.resolveMongoFindOne.mockResolvedValue(mongoRow);
+
+    await expect(inspectSiteConfigStores('broker-one')).resolves.toEqual({
+      supabaseRow,
+      mongoRow,
+      selectedRow: mongoRow,
+      selectedStore: 'mongo',
+    });
   });
 
   it('falls back to Supabase when the Mongo read fails', async () => {
