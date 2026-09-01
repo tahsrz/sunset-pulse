@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 type VibePageHeaderProps = {
   title: string;
