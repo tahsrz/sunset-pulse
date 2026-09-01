@@ -3175,6 +3175,160 @@ Add tests for the 50-ID guard and a 409 response that retains selected rows.
    assert dialog remains visible with its input value and no pointer/apply
    endpoint was called.
 
+### DK. Remaining route patch sheets — exact function and JSX changes
+
+#### `app/vibes/[vibeId]/actions/page.tsx`
+
+**Current lines 30–44, load effect:**
+
+1. Preserve `GET /api/vibes/${encodeURIComponent(vibeId)}` and its response
+   shape `payload.vibe`.
+2. Keep the existing `AbortController`, but add `setError('')` immediately
+   before fetch so navigating from a failed Vibe ID to a valid Vibe ID does not
+   leave stale error copy.
+3. Split `!vibe` rendering into loading and error branches. Add a
+   `const [loaded, setLoaded] = useState(false)` next to current state lines
+   23–26; set it true only after a non-aborted fetch settles. Then render
+   `VibeNotice tone="error"` when `loaded && error`, otherwise loading text.
+   Do not render an action card until `vibe` exists.
+
+**Current lines 46–78, `runAction`:**
+
+1. Keep `reason.trim().length < 3` for reject; do not change the minimum.
+2. Replace only the current `window.confirm` trash branch (lines 52–54) with
+   `pendingConfirmation: 'trash' | null`. Clicking Move to trash sets it;
+   `VibeConfirmDialog` confirmation calls `runAction('trash')` through a
+   `skipConfirmation` argument or a separate `executeAction` helper.
+3. Do not open confirmation for Archive, Restore, or Return to draft in this
+   package. Their existing direct action behavior remains.
+4. Preserve headers/body exactly: only reject gets
+   `headers: { 'content-type': 'application/json' }` and
+   `body: JSON.stringify({ reason: reason.trim() })`; archive/trash/restore
+   must have no JSON body.
+5. Current line 70 clears `reason` after *every* successful action. Preserve
+   that only for Reject; do not clear a typed reject reason following failed
+   action or cancelled trash confirmation.
+6. Preserve `window.dispatchEvent(new Event('vibe-status-changed'))` after
+   successful response. This keeps `VibeSidebar` status synchronized.
+
+**Current lines 90–148, JSX:**
+
+1. Replace manually repeated cards/header with `VibePageHeader`,
+   `VibeStatusBadge`, `VibePanel` only if a panel naturally groups explanatory
+   content, and `VibeNotice` for errors. Do not change eligibility expressions:
+   `canArchive` is draft/in_review/published; `canTrash` is
+   draft/in_review/archived; Restore is only trash.
+2. Keep the Reject textarea present only when status is `in_review`. Add
+   `minLength={3}`, `aria-describedby="reject-reason-help"`, and a visible help
+   paragraph with that ID. Keep `required` off because the button’s existing
+   explicit check produces the actionable error.
+3. Place `VibeConfirmDialog` as the final child inside the page shell, not inside
+   the trash card. Its description must state that restoration remains possible.
+
+#### `app/vibes/[vibeId]/submit/page.tsx`
+
+**Current compressed lines 5–8:** expand before behavior changes. Preserve the
+component name, `useParams`, `useRouter`, `vibe`, `error`, and `submitting`.
+
+1. Replace the unguarded load chain with an AbortController effect patterned
+   after `actions/page.tsx`. Check `response.ok` before parsing success data;
+   on failure read JSON defensively and throw `payload.error || 'Unable to load
+   vibe.'`.
+2. In `submit`, call `setError('')` before setting `submitting`. Wrap the whole
+   request/JSON parse in `try/catch/finally` so a network exception returns the
+   button to its enabled state. Preserve no request body and `method: 'POST'`.
+3. On 201, keep dispatch then `router.push(`/vibes/${encodeURIComponent(vibeId)}/edit`)`.
+   Do not replace it with revisions, publish, or list navigation.
+4. Current button has no explicit `type`; add `type="button"` because this page
+   has no form. Leave the disabled condition
+   `submitting || vibe.status !== 'draft'` unchanged.
+5. Under the disabled non-draft button, add a textual status explanation only;
+   do not manufacture a submit link for another status.
+
+#### `app/vibes/[vibeId]/publish/page.tsx`
+
+**Current compressed lines 6–10:** expand imports/state/effect/publish function
+first; do not combine that reformat with a new API capability.
+
+1. Apply the same AbortController and `response.ok` load guard as Submit.
+2. In `publish`, compute `const changeSummary = reason.trim()` immediately
+   before `fetch`; send `{ changeSummary }` to preserve the existing key while
+   eliminating accidental leading/trailing whitespace.
+3. Enclose request parsing in `try/catch/finally`; only successful 201 dispatches
+   `vibe-status-changed` and redirects to revisions. A failed request keeps the
+   summary in state.
+4. On the textarea at current line 10, add `maxLength={1000}`,
+   `aria-describedby="publish-summary-help"`, and a text help paragraph. Do
+   not make the summary required.
+5. Keep button disabled condition `publishing || !vibe.draftPayload`; add the
+   stricter visual notice **Only an in-review Vibe can be published** when the
+   loaded status is not `in_review`, but do not alter the existing server guard.
+
+#### `app/vibes/[vibeId]/audit/page.tsx`
+
+**Current lines 13–17:**
+
+1. Keep route `/api/vibes/${encodeURIComponent(vibeId)}/audit`. Convert its
+   fetch to AbortController, set an explicit `loading` state true before fetch,
+   and ignore only `AbortError` during cleanup.
+2. Delete the `links` array entirely. The contextual sidebar provides the
+   workflow links; duplicating them can produce two conflicting navigation
+   regions on narrow screens.
+3. Derive a stable group key without mutating events:
+
+   ```ts
+   const groups = events.reduce<Record<string, AuditEvent[]>>((result, event) => {
+     const key = event.occurredAt && !Number.isNaN(new Date(event.occurredAt).valueOf())
+       ? new Date(event.occurredAt).toLocaleDateString()
+       : 'Unknown date';
+     (result[key] ||= []).push(event);
+     return result;
+   }, {});
+   ```
+
+4. Render `Object.entries(groups)` in existing API order. Under each date
+   heading, render action, time, actor, reason; put `revisionId` and `siteId`
+   inside native `<details><summary>Technical references</summary>…</details>`.
+5. Use a stable key only if the API exposes an event `_id`; until then retain
+   the current date/index composite key rather than inventing a hash.
+
+#### `app/vibes/[vibeId]/compare/CompareView.tsx`
+
+**Current lines 5–8:**
+
+1. Keep exact endpoint query names `from` and `to` and `encodeURIComponent` for
+   each value. No UI code should build a compare URL with revision numbers.
+2. Add an AbortController to the effect. Before fetch, set `setError('')` and
+   `setChanges(null)` so a new compare pair never displays the previous pair’s
+   differences while loading.
+3. In the catch handler, ignore AbortError; for all other failures set the
+   existing comparison message. Do not expose raw server error details in the
+   compare view.
+4. Retain raw JSON `<pre>` values because compare API fields may be nested.
+   Add `aria-label={`Previous value for ${change.path}`}` and
+   `aria-label={`New value for ${change.path}`}` to the two pre elements.
+5. When changes are empty, retain **No differences found.**; do not offer a
+   republish or apply control on the compare page.
+
+### DL. Focused tests for DK
+
+1. `tests/unit/vibe-actions-page.test.tsx`: mock draft, review, archived, and
+   trash statuses. Assert the allowed cards from current eligibility rules;
+   verify only trash opens confirmation; verify reject sends trimmed JSON while
+   archive/restore have no body; verify successful actions dispatch the status
+   event.
+2. Extend the Submit page test with a failed GET response and a rejected POST;
+   assert the page displays an error and `submitting` is cleared in both cases.
+3. Extend the Publish page test with a failed GET, rejected POST, 1,000-character
+   valid summary, and an in-review versus draft button state assertion.
+4. Add `tests/unit/vibe-audit-page.test.tsx` around a small extracted pure
+   `groupAuditEvents` function. Assert malformed date becomes Unknown date,
+   original ordering within a date is preserved, and technical IDs are not
+   initially exposed as primary copy.
+5. Add `tests/unit/vibe-compare-view.test.tsx`: render one pair then rerender
+   another before the first fetch resolves; assert the first controller aborts,
+   the old values disappear, and the second endpoint uses encoded `from`/`to`.
+
 ### DC. Test implementation details from the existing Vitest suite
 
 The existing editor test at
