@@ -4184,6 +4184,146 @@ the final command. The final reviewer should also inspect that no changes exist
 under middleware, public tenant rendering, migrations, environment files,
 package manifests, or global CSS unless independently authorized.
 
+### EF. Exact visual contracts for shared primitives
+
+Use these class maps verbatim for the first implementation. They establish a
+compact, current admin interface while keeping Vibe status and lifecycle terms
+plainly readable. Do not introduce a second styling abstraction or a global CSS
+change to achieve the same result.
+
+#### `VibeStatusBadge.tsx`
+
+1. Define the record below immediately after props/type declarations:
+
+   ```ts
+   const statusStyles: Record<string, string> = {
+     draft: 'border-[#c3c4c7] bg-[#f6f7f7] text-[#50575e]',
+     in_review: 'border-[#dba617] bg-[#fcf9e8] text-[#6b4f00]',
+     published: 'border-[#00a32a] bg-[#edfaef] text-[#0a5c20]',
+     archived: 'border-[#8c8f94] bg-[#f0f0f1] text-[#50575e]',
+     trash: 'border-[#d63638] bg-[#fcf0f1] text-[#8a2424]',
+   };
+   ```
+
+2. Normalize display label with `status.replace(/_/g, ' ')`; do not capitalize
+   the raw value by mutating it. Use CSS `capitalize` on the visible span.
+3. Render exactly one text span:
+
+   ```tsx
+   <span className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-semibold capitalize ${statusStyles[status] || statusStyles.draft}`}>
+     {label}
+   </span>
+   ```
+
+4. Unknown status fallback is visual only. If a caller deliberately passes an
+   unknown non-empty state, preserve that state’s readable text; do not replace
+   it with Draft. An absent status may be normalized by the caller to `draft`.
+5. Do not render an icon as the only identifier. Status text is the source of
+   truth for every row, toolbar, revision, and action card.
+
+#### `VibeNotice.tsx`
+
+1. Define these tone classes:
+
+   ```ts
+   const noticeStyles = {
+     info: 'border-[#72aee6] bg-[#f0f6fc] text-[#1d2327]',
+     success: 'border-[#00a32a] bg-[#edfaef] text-[#1d2327]',
+     warning: 'border-[#dba617] bg-[#fcf9e8] text-[#1d2327]',
+     error: 'border-[#d63638] bg-[#fcf0f1] text-[#1d2327]',
+   } as const;
+   ```
+
+2. Outer markup is
+   `<div className={`border-l-4 p-3 text-sm ${noticeStyles[tone]}`}>`.
+   Use `role="alert"` only for `error`; use `role="status" aria-live="polite"`
+   for `success`; use neither assertive role for information/warning unless a
+   caller needs a separate explicitly announced message.
+3. Keep text in a `<div className="min-w-0 flex-1">`. Optional action lives in
+   a sibling `shrink-0` container so long errors do not push the action below a
+   narrow card unexpectedly.
+4. Optional dismiss button uses `type="button"`, visible text **Dismiss**, and
+   `aria-label="Dismiss notice"`. Do not use an unlabeled × glyph.
+5. Notices do not set timers or write global state. Parent ownership of the
+   notice lifecycle is required for accurate save/conflict/lifecycle behavior.
+
+#### Shared control class constants
+
+Create `app/vibes/_components/vibeUiClasses.ts` in package 0B only if at least
+three consumers share each value. Otherwise keep values local to the primitive
+that owns them. If created, export exactly:
+
+```ts
+export const vibeControlClass = 'rounded-sm border border-[#8c8f94] bg-white px-2 py-1.5 text-sm text-[#1d2327] shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-1';
+export const vibeButtonClass = {
+  primary: 'rounded-sm bg-[#2271b1] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2',
+  secondary: 'rounded-sm border border-[#2271b1] bg-white px-3 py-1.5 text-sm font-semibold text-[#2271b1] hover:bg-[#f0f6fc] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2',
+  destructive: 'rounded-sm border border-[#d63638] bg-white px-3 py-1.5 text-sm font-semibold text-[#b32d2e] hover:bg-[#fcf0f1] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d63638] focus-visible:ring-offset-2',
+} as const;
+```
+
+1. Use `primary` only for Save draft, Add New, Submit for review, Publish
+   immutable revision, and confirmed Apply action—not for Archive or Trash.
+2. Use `secondary` for Preview, Check current pointer, row-adjacent neutral
+   actions, and Help triggers.
+3. Use `destructive` for initiating Move to trash and dialog confirmation only
+   when the action is destructive. The dialog remains the required boundary;
+   styling never substitutes for confirmation.
+4. Do not use `rounded-full`, gradient buttons, scaling hover effects, or
+   global `.btn-primary` classes in the Vibe workspace.
+
+#### `VibePanel.tsx`
+
+1. Outer `<details>` class is
+   `border border-[#c3c4c7] bg-white shadow-sm open:shadow-none`.
+2. `<summary>` class is
+   `flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[#1d2327] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2271b1]`.
+3. Add a decorative caret span with `aria-hidden="true"` and class
+   `transition-transform group-open:rotate-90`. Wrap details with `group` to
+   make the native open state drive the caret. Do not use a plus symbol.
+4. Child content wrapper is `border-t border-[#dcdcde] px-4 py-4`. A panel
+   description, when provided, appears beneath its summary title in muted text;
+   do not put required field errors only inside a closed panel.
+
+### EG. `VibeConfirmDialog.tsx` — exact focus and keyboard implementation
+
+The dialog must be a predictable controlled confirmation surface, not a browser
+`window.confirm` replacement with weaker keyboard behavior.
+
+1. Add these imports: `useEffect`, `useId`, `useRef` from React and
+   `type ReactNode` if required. Do not add a dialog package.
+2. Create refs:
+
+   ```ts
+   const dialogRef = useRef<HTMLDivElement>(null);
+   const cancelRef = useRef<HTMLButtonElement>(null);
+   const titleId = useId();
+   const descriptionId = useId();
+   ```
+
+3. Existing open effect focuses `cancelRef.current` using
+   `queueMicrotask(() => cancelRef.current?.focus())` only when `open` becomes
+   true. Do not focus while closing.
+4. In the same effect, listen for `keydown`:
+   - Escape calls `onCancel()` when `!busy`.
+   - Tab/Shift+Tab cycles within focusable descendants of `dialogRef.current`.
+   - Use `querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')`.
+   - If no focusables exist, prevent Tab; otherwise cycle first/last in the
+     conventional direction.
+   - Remove listener in effect cleanup.
+5. Backdrop is a fixed `inset-0 z-50 flex items-center justify-center bg-black/40
+   p-4`; clicking it must not close the dialog. The inner dialog div uses
+   `ref={dialogRef}`, `role="dialog"`, `aria-modal="true"`,
+   `aria-labelledby={titleId}`, and `aria-describedby={descriptionId}`.
+6. Cancel button uses `ref={cancelRef}` and `disabled={busy}`. Confirm uses
+   `disabled={busy || confirmDisabled}`. Add `confirmDisabled?: boolean` to the
+   component props so reason-required callers do not implement fake validation.
+7. While busy, render **Working…** only on the confirm button; retain the title,
+   description, and child reason text for context. Do not close on pending
+   network work.
+8. Add tests for Escape, Tab wrap, Shift+Tab wrap, backdrop click no-op, focus
+   on cancel, and `confirmDisabled` preventing the callback.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
