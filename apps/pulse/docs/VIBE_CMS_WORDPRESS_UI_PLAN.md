@@ -2963,6 +2963,154 @@ stacking additional changes over an unresolved result:
    deliberately deferred item. Do not call a page complete if its requested
    test file has not been added or updated.
 
+### DC. Test implementation details from the existing Vitest suite
+
+The existing editor test at
+`tests/unit/vibe-editor-validation.test.tsx` establishes the local test style:
+Vitest, React Testing Library, `fireEvent`, `vi.spyOn(global, 'fetch')`, and a
+small `next/link` mock. Follow that style. Do not add a package just to use a
+different test helper.
+
+#### Shared test setup per new client component test
+
+At the top of each `.test.tsx` file, use this structure, changing only imports
+needed by that test:
+
+```tsx
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/link', () => ({
+  default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}));
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+```
+
+1. Do not import `@testing-library/user-event`; it is not an existing direct
+   development dependency. Use `fireEvent.click`, `fireEvent.change`,
+   `fireEvent.keyDown`, and `fireEvent.submit`.
+2. For a `next/navigation` client component, add one local mock that returns
+   stable `push`, `replace`, `pathname`, and a new `URLSearchParams` per test.
+   Export the spies from the mock module or define them above `vi.mock`; reset
+   them in `afterEach`.
+3. Stub `window.confirm` only while migrating a page that still uses it. A
+   completed dialog migration must assert it is not called.
+4. Mock every `fetch` call by `input` URL and `init?.method`, as the existing
+   editor test does. Never accept a generic success response for all routes,
+   because it would hide an endpoint typo.
+
+#### Exact new-test file ownership
+
+| Test file | Component/files under test | Mock rule | Minimum assertion sequence |
+| --- | --- | --- | --- |
+| `tests/unit/vibe-ui-primitives.test.tsx` | header, notice, badge, panel, dialog | no fetch mock | Render each named export; assert roles, focus, closed-panel mounted input, Escape behavior. |
+| `tests/unit/vibe-list-query.test.ts` | `lib/cms/vibeListQuery.ts` | none | Use real `URLSearchParams`; assert parse defaults and canonical serialization. |
+| `tests/unit/vibe-list.test.tsx` | `VibeList.tsx`, list toolbar/actions | navigation + fetch by exact URL | Render, await list load, filter/sort/bulk, inspect URL spy and request payload. |
+| `tests/unit/vibe-new-page.test.tsx` | `new/page.tsx` after component extraction only if needed | navigation + POST fetch | Type title, observe slug, manually edit, change title, submit valid form, inspect JSON. |
+| existing `vibe-editor-validation.test.tsx` | `VibeEditor.tsx` | GET then PATCH exact URLs | Keep existing two cases and append panel/FormData/conflict cases. |
+| `tests/unit/vibe-revisions.test.tsx` | `RevisionList.tsx` | GET revisions + rollback | Select old published row, require reason, assert unchanged rollback JSON and reordered row. |
+| `tests/unit/vibe-apply.test.tsx` | `apply/page.tsx` | GET pointer + POST apply | Check A, change ID to B, verify disabled action, check B, confirm post. |
+
+#### Route-page testability rule
+
+`source/page.tsx` and `preview/page.tsx` are async server components. Do not
+force them into jsdom by mocking database, headers, and Next server primitives
+in a large unit test. Instead:
+
+1. Keep the server page responsible for access, fetch/database work, and route
+   params only.
+2. Extract a pure local presentation function or component
+   (`VibeSourceDetails` / `VibePreviewSurface`) into the route directory when
+   the page is migrated.
+3. Pass already-resolved primitive props into it.
+4. Unit-test that pure component’s absent/present source and preview-copy
+   branches. The server page’s request behavior is protected by existing route
+   tests/manual verification, not a broad environment mock.
+
+### DD. Exact error and busy-state decisions by route
+
+Apply one consistent rule: disable only the control currently submitting; do
+not disable navigation, editing, or inspection controls unless a request would
+make their state stale.
+
+1. **List:** `loading` disables Previous/Next and bulk Apply; search, status,
+   and sort stay available. `bulkBusy` disables only bulk select/Apply and row
+   selection checkboxes while its POST is pending.
+2. **New Vibe:** `saving` disables the submit button only. Do not disable title,
+   slug, description, or preset controls because a failed create should be
+   corrected in place.
+3. **Editor:** existing `saveState === 'saving'` disables the Save draft submit
+   button. Do not disable individual fields; the current request is an optimistic
+   snapshot protected by `expectedVersion`.
+4. **Revisions:** `pendingId` disables only the republish action buttons. The
+   selected revision’s compare and apply links remain navigation links.
+5. **Apply:** `preflightState === 'checking'` disables Check pointer and apply
+   confirmation entry; it does not clear the selected revision. Dialog confirm
+   uses a separate `applying` boolean and disables Cancel/Escape only while the
+   POST is running.
+6. **Lifecycle pages:** retain each page’s existing busy boolean. Replace visual
+   error paragraphs with `VibeNotice`, but do not change the text returned from
+   an API error unless it is misleading about the completed action.
+
+For all client pages, place the error/success notice immediately below the page
+header and before the first interactive form. Use `role="alert"` only for
+errors. A success notice is `role="status"` and is not auto-dismissed.
+
+### DE. Line-specific accessibility rules Luna must verify in review
+
+1. In `VibeList.tsx`, keep the current select-all checkbox’s checked state as
+   a boolean. Add `aria-label="Select all Vibes on this page"`; never use the
+   HTML `indeterminate` attribute string. If partial-selection visual state is
+   desired later, set `input.indeterminate` through a ref in a separate task.
+2. Each Vibe row checkbox label is `Select ${vibe.title}` (fall back to the
+   stable `vibeId` only when title is empty). This is a label change, not a
+   data-model change.
+3. Every sortable table header is a `<button type="button">` inside `<th>`.
+   Set `aria-sort` on the `<th>` to `ascending`, `descending`, or `none`; do not
+   put `aria-sort` on the button.
+4. `VibeStatusViews` buttons set `aria-pressed`; they are not tabs unless a
+   future task also implements keyboard arrow navigation and tab panels.
+5. The `<details>` summary in `VibePanel` is the accessible disclosure control;
+   do not add a nested button or a duplicate `aria-expanded` attribute.
+6. Dialog input error text uses a unique ID and is referenced by
+   `aria-describedby` only while visible. Do not leave a dangling description
+   ID on an input after the error element is removed.
+7. External source links in the pure source-details component include visible
+   text `Open source link` and an `aria-label` that includes the source kind;
+   do not display an unbounded raw URL as the only link text.
+8. The settings preview sample button is non-functional and must remain visibly
+   described as representative; do not give it a fake `href` or click handler.
+
+### DF. Explicit out-of-scope guardrails for this UI plan
+
+The following ideas can be captured as future work but must not appear in a
+Luna implementation diff for packages 0A–4A:
+
+1. A generic drag/drop editor, block schema, HTML storage, or CSS authoring UI.
+2. Wildcard DNS, TLS certificates, host parsing, middleware rewrites, or tenant
+   lookup changes.
+3. New persistence fields, schema migrations, database indexes, or cache-policy
+   changes.
+4. A permission model rewrite, authorization audit, admin route migration, or
+   changes to `getVibeCmsAccess`.
+5. New dependencies, package upgrades, Tailwind configuration, global styling,
+   or design-system rewrites.
+6. An automatic publish, automatic site application, automatic revision
+   rollback, or deletion of revision history.
+7. A broad reformat of compressed route files other than the route currently in
+   the active package.
+
+If a desired UI behavior cannot be implemented without one of these changes,
+Luna must stop after documenting the exact dependency and defer it. Do not
+silently widen the package.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
