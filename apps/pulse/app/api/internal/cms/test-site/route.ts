@@ -164,6 +164,9 @@ export async function DELETE(request: NextRequest) {
   const existingRow = await readSiteConfig(agentId);
   if (existingRow) {
     const existing = normalizeLaunchKit(existingRow, agentId);
+    if (existing.ownerId !== ownerUserId && existing.billingProfile.userId !== ownerUserId) {
+      return NextResponse.json({ error: 'Existing seed site owner mismatch.' }, { status: 403 });
+    }
     if (existing.status === 'suspended' && existing.billingProfile.billingStatus === 'canceled') {
       return NextResponse.json({ siteId: agentId, status: existing.status, revoked: true, idempotent: true, correlationId, elapsedMs: Date.now() - startedAt });
     }

@@ -79,12 +79,20 @@ describe('CMS test-site seed route', () => {
   it('does not rewrite an already revoked disposable site', async () => {
     mocks.readSiteConfig.mockResolvedValue({
       agentId: 'cms-verification-run-123',
+      ownerId: 'user-taz',
       status: 'suspended',
       billingProfile: { billingStatus: 'canceled' },
     });
     const response = await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', revoked: true, idempotent: true });
+    expect(mocks.suspend).not.toHaveBeenCalled();
+  });
+
+  it('does not revoke an existing deterministic site owned by another user', async () => {
+    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'other-user', billingProfile: { userId: 'other-user' } });
+    const response = await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }));
+    expect(response.status).toBe(403);
     expect(mocks.suspend).not.toHaveBeenCalled();
   });
 
