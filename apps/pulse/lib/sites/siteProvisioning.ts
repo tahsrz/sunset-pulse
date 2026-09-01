@@ -8,7 +8,7 @@ import {
   type AgentLaunchKitResponse,
   type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
-import { claimPastDueSiteConfigForExpiry, inspectSiteConfigStores, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
+import { claimPastDueSiteConfigForExpiry, inspectSiteConfigStores, readExpiredDisposableCmsSiteConfigs, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import {
   notifyBuyerSiteBillingUpdate,
   notifyBuyerSiteGraceExpired,
@@ -88,6 +88,26 @@ export function isDisposableCmsSiteExpired(kit: AgentLaunchKit, now = new Date()
   if (!metadata?.runId || kit.status === 'suspended' || !metadata.expiresAt) return false;
   const expiresAt = new Date(metadata.expiresAt);
   return Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() <= now.getTime();
+}
+
+export async function expireDisposableCmsSites(input: { now?: Date; limit?: number; source?: string } = {}) {
+  const rows = await readExpiredDisposableCmsSiteConfigs((input.now || new Date()).toISOString(), input.limit || 50);
+  const processed = [];
+  for (const row of rows) {
+    const kit = normalizeLaunchKit(row);
+    if (!isDisposableCmsSiteExpired(kit, input.now || new Date())) continue;
+    const result = await suspendProvisionedAgentSite({
+      agentId: kit.agentId,
+      email: kit.agentProfile.email,
+      userId: kit.ownerId || kit.billingProfile.userId,
+      source: input.source || 'cms-test-site-expiry',
+      auditAction: 'cms.test-site.expired',
+      auditActor: 'system-cron',
+      auditMessage: `Disposable CMS verification site expired at ${kit.billingProfile.disposableCms?.expiresAt}.`,
+    });
+    if (result) processed.push({ agentId: kit.agentId, savedStores: result.savedStores, status: result.kit.status });
+  }
+  return { scanned: rows.length, expired: processed.length, processed };
 }
 
 export type ExpirePastDueGracePeriodsResult = {
