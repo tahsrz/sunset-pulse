@@ -5,6 +5,7 @@ import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
 import { VibeEditorToolbar } from '../../_components/VibeEditorToolbar';
+import { VibePanel } from '../../_components/VibePanel';
 
 type Vibe = {
   vibeId: string;
@@ -169,14 +170,13 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <section className="space-y-5">
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Metadata</h2>
+              <VibePanel id="metadata" title="Metadata" defaultOpen>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Title<input name="title" defaultValue={draft.title} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                   <label className="text-xs font-bold uppercase text-slate-500">Slug<input name="slug" defaultValue={draft.slug} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm font-normal normal-case" /></label>
                   <label className="text-xs font-bold uppercase text-slate-500 sm:col-span-2">Description<textarea name="description" defaultValue={draft.description} className="mt-2 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                 </div>
-              </article>
+              </VibePanel>
 
               <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Taxonomy</h2>
