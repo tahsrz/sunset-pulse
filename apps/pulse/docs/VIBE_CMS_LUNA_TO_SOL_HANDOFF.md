@@ -65,3 +65,7 @@ The third pass added cross-store status, owner, and active-Vibe-pointer agreemen
 - `abe033fb` — return structured CMS seed failures
 - `5b537ead` — add timing to inspection and revocation
 - `a59cc0ef` — record vertical-slice execution status
+
+## Post-merge follow-up (PR from main)
+
+The implementation is now merged to `main`. The next controlled task is production evidence only: deploy the merged SHA, verify the four seed controls are present but disabled, run one authorized disposable-site lifecycle, capture the seed/inspect/reconcile/apply/revoke responses, then disable and rotate the temporary controls. No customer site may be used, and this follow-up must not be treated as complete until the final verification record contains the real site ID, original pointer, current pointer, expiry, store agreement, and revocation evidence.
