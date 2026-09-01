@@ -734,6 +734,104 @@ Add these to the manual/browser verification checklist after the relevant slice:
    fields remain visible, no false success notice appears, and reload warning is
    explicit.
 
+### Z. Current-to-target UI gap ledger
+
+Use this ledger during implementation review. Every change should close a stated
+gap or be rejected as unrelated scope.
+
+| Current implementation | User-facing issue | Target change | File / current anchor | Contract that must remain unchanged |
+| --- | --- | --- | --- | --- |
+| `VibeLayout` has a useful dark header but only two bare links. | The workspace identity and current context are thin. | Turn it into a labelled utility region with a skip link and contextual current-Vibe label. | `layout.tsx` lines 7–10 | `/vibes` and `/vibes/new` navigation. |
+| Sidebar already fetches current status and builds workflow links. | Correct functionality, but active child routes and compact/mobile behavior need polish. | Improve active matching, focus treatment, grouping, and optional local collapse. | `VibeSidebar.tsx` lines 41–125 | Status-dependent workflow links and event refresh. |
+| List title uses hero-scale type and Add New is far right. | It reads more like a marketing page than an operational screen. | Compact heading/action cluster and status views directly below it. | `VibeList.tsx` lines 115–129 | `href="/vibes/new"`. |
+| List has both status views and a status select. | Duplicate controls imply two different filters and waste horizontal room. | Status views own status filtering; move future secondary filters behind an explicit filter control. | `VibeList.tsx` lines 126–150 | Existing status values/query behavior. |
+| Search is a flexible input beside a select. | At intermediate widths it can collide/bleed into neighboring controls. | Fixed responsive widths, toolbar wrapping, debounce, and URL state. | `VibeList.tsx` lines 130–142 | Search API parameter and data results. |
+| Row actions live in a dedicated right-aligned cell. | The eye travels away from title to operate an item. | Move Edit/Preview/Revisions/actions under the Vibe title. | `VibeList.tsx` lines 177–190 | Existing action routes. |
+| Bulk actions are individual buttons shown only after selection. | Less familiar scan path and no standard action selection/apply rhythm. | Select action + Apply; confirmation only for destructive action. | `VibeList.tsx` lines 101–107, 151 | Bulk endpoint body and archive/trash choices. |
+| New Vibe page is one long JSX return with presets before identity. | The first task is visually obscured and invalid-slug feedback is browser-generic. | Split sections, title/slug first, explanatory validation, optional preset panel. | `new/page.tsx` line 9 | Create payload and preset copy behavior. |
+| Editor already has a 320px sticky Publish rail. | Strong foundation, but the canvas is a sequence of equally weighted cards. | Keep rail; turn canvas groups into purpose-ranked collapsible panels. | `VibeEditor.tsx` lines 172–235 | Draft normalization, PATCH request, conflict handling. |
+| Publish rail shows save state, preview, action, revisions. | Action order does not make save state / next lifecycle action easy to scan. | Add compact status summary and action hierarchy without merging routes. | `VibeEditor.tsx` lines 48–82 | `workflowAction` status logic and separate publish route. |
+| Revision page exposes state but raw revision context dominates. | It takes extra work to identify live versus historical revision. | Status-first row hierarchy, readable metadata, explicit restore outcome. | `RevisionList.tsx` lines 86 onward | Apply only current published revision; restore endpoint behavior. |
+| Apply page is a single dense JSX form with manual fields near the top. | It asks for opaque identifiers before showing the decision/risk. | Revision context → site selection → pointer check → preflight → confirmation. | `apply/page.tsx` lines 9–52 | Protected validation and run-ID derivation. |
+| Taxonomy directory loads data but is not explicitly a management table. | Harder to scan usage and group membership at scale. | Searchable/group-filtered table using current terms/counts response. | `TaxonomyDirectory.tsx` lines 5 onward | Term IDs, current read-only API. |
+
+### AA. Lifecycle-aware screen rules
+
+The CMS has states. The UI must expose those states instead of making all Vibes
+look equally actionable.
+
+| Vibe state | List badge/copy | Editor rail | Row actions | Revision screen | Apply eligibility |
+| --- | --- | --- | --- | --- | --- |
+| Draft | Neutral **Draft** | Save draft; **Submit for review** as next lifecycle action | Edit, Preview, Status & Actions | Checkpoints may exist | Not eligible |
+| In review | Review **In review** | Explain that the draft awaits publication; **Publish revision** is next | Edit, Preview, Status & Actions | Review checkpoints visible | Not eligible until a current published revision exists |
+| Published | Positive **Published** plus revision cue | State that later saves change the draft, not the current published revision | Edit, Preview, Revisions | Current published revision is first | Current published revision only |
+| Archived | Muted **Archived** | Status management only; no misleading publish/apply CTA | Preview, Status & Actions, audit | Historical context remains viewable | Not eligible |
+| Trash | Danger/muted **Trash** | No standard editor CTA unless existing backend supports restoration | View context only as currently supported | Historical context remains viewable | Not eligible |
+
+Rules:
+
+1. Never use button color alone to convey lifecycle state; badge text names it.
+2. Never display **Apply to site** merely because any revision exists. The
+   existing condition—current published revision—is the UI eligibility rule.
+3. A draft with a published revision needs two labels when relevant: current
+   **Draft** status and an informational “Published revision available” cue.
+4. Archive/trash controls are list-management actions, not normal editor
+   primary actions.
+5. If the server rejects an action shown by a stale client view, retain the
+   server message and refresh the Vibe status/navigation context.
+
+### AB. Visual density and layout measurements
+
+These are target ranges, not new global design tokens. They keep the workspace
+compact and readable without requiring a visual redesign of the entire product.
+
+| Element | Target |
+| --- | --- |
+| Utility header | Existing 40px height; horizontal padding 12–16px. |
+| Desktop navigation rail | Existing 240px (`lg:w-60`) maximum; no widened permanent rail. |
+| Work area width | List: `max-w-7xl`; editor/revisions: `max-w-6xl`/`max-w-5xl` as current context requires. |
+| Screen title | 28–32px, semibold/black only where justified; action sits adjacent. |
+| Toolbar controls | 32–36px minimum control height; 8px gaps; wrap before overlap. |
+| Table header | 12–13px operational label, compact vertical padding. |
+| Table row | 48–64px for simple rows; allow taller title cells for actions/metadata. |
+| Row actions | 12–13px, grouped under item title with subtle separators. |
+| Editor rail | Existing 320px desktop width; no fixed width at tablet/mobile. |
+| Panel spacing | 16–20px inner padding; 12–16px field gaps; do not surround every field with its own card. |
+| Focus indicator | 2px visible high-contrast ring with offset; never rely on box-shadow too faint to see on dark rail. |
+
+### AC. Loading and failure presentation
+
+The present code often renders a single text paragraph while loading. Replace
+that with visual continuity but preserve honest failure states.
+
+- `VibeList`: use a table-shaped skeleton with 5–8 rows while the first request
+  is pending. Do not show stale list data as current after a filter changes;
+  mark it as updating or replace it deliberately.
+- `VibeEditor`: use a header/canvas/rail skeleton, not a bare “Loading vibe…”
+  paragraph. The skeleton must not resemble editable saved data.
+- `RevisionList` and `TaxonomyDirectory`: use compact table row skeletons.
+- Error states use `VibeNotice tone="error"` plus a Retry callback where a
+  refetch is safe. Retry must not replay mutation requests.
+- Mutations show busy state on the originating control and prevent duplicate
+  submission. Do not disable unrelated navigation unless leaving would corrupt
+  in-flight UI state.
+- Preserve empty state distinction: an empty collection is not a load failure;
+  an unauthorized access message is not a missing Vibe.
+
+### AD. Definition of “done enough to implement”
+
+Before implementation begins, Luna should confirm all of the following from this
+plan:
+
+- Which exact increment is being built and which files it changes.
+- Which existing route/API contracts are explicitly preserved.
+- Which shared components are needed in that increment—and no others.
+- Which interaction states and unit/browser cases apply.
+- Whether any current UI gap requires an API change; if yes, stop at the
+  anti-drift gate and propose it separately.
+
+This prevents a broad visual refactor from becoming a hidden CMS redesign.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
