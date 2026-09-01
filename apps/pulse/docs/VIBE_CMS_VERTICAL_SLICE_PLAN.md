@@ -2,6 +2,10 @@
 
 This plan is the execution companion to `VIBE_CMS_LUNA_BASELINE.md`. It covers the remaining work from authorized seed configuration through production evidence and Sol handoff.
 
+## Execution status (2026-08-31)
+
+Approximately 60% of the weighted plan is complete; approximately 40% remains. Phases 1–8 have implemented local contracts for configuration, disposable service isolation, idempotency, diagnostics, bounded responses, inspection, and revocation. Phase 11 has partial local verification evidence. Remaining material work is automatic disposable-site expiry, operator application UI, controlled production verification, final cleanup/access closure, and Sol handoff. Production work remains intentionally unstarted until an authorized deployment window.
+
 ## Phase 1 — Seed configuration validation (45–60 minutes)
 
 Require `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, `CMS_TEST_SEED_OWNER_EMAIL`, and `CMS_TEST_SEED_OWNER_USER_ID`. Fail closed for missing/invalid controls, bind both owner fields to the configured user, and pass deterministic IDs plus truthful audit metadata. Test missing controls, wrong owner, wrong token, disabled mode, and valid configuration. Existing Stripe provisioning must remain unchanged.
