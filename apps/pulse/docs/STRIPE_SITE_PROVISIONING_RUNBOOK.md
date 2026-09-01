@@ -18,8 +18,52 @@ Required production variables (set in Vercel Production only for the controlled 
 - `CMS_TEST_SEED_ENABLED=true`
 - `CMS_TEST_SEED_TOKEN=<generated secret>`
 - `CMS_TEST_SEED_OWNER_EMAIL=<Taz account email>`
+- `CMS_TEST_SEED_OWNER_USER_ID=<Taz Supabase profile user ID>`
 
 After the run, set `CMS_TEST_SEED_ENABLED=false` and rotate or remove the token. Never expose the token in browser code, commits, PR comments, or verification screenshots.
+
+### Inspecting a disposable CMS site
+
+Use the same server-only token and configured owner email to inspect the deterministic seed record without mutating it:
+
+```bash
+curl -sS "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=cms-run-123&email=tahsrz%40gmail.com" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN"
+```
+
+The response includes `siteId`, owner, status, URL, original/current Vibe pointers, filtered CMS audits, `stores.evidence`, `reconciliationRequired`, `correlationId`, and `elapsedMs`. Treat `reconciliationRequired: true` as incomplete evidence; do not apply a Vibe or proceed to production lifecycle verification until both stores are reconciled.
+
+### Revoking the disposable site
+
+After lifecycle verification, revoke only the deterministic run ID and configured owner:
+
+```bash
+curl -sS -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId=cms-run-123&email=tahsrz%40gmail.com" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN"
+```
+
+The response must show `revoked: true`, `status: suspended`, and a `correlationId`. Repeating the same request is safely idempotent. If the site cannot be found or the owner does not match, stop and reconcile the recorded `siteId` before attempting any other mutation.
+
+If seeding returns `500` or `504`, preserve the response `correlationId`, `runId`, `siteId`, `stage`, `elapsedMs`, and `reconciliationRequired` fields. Do not retry blindly: inspect the deterministic site first, reconcile any partial store write, and only then decide whether the run can continue.
+
+When inspection reports `reconciliationRequired: true`, reconcile the deterministic site before continuing:
+
+```bash
+curl -sS -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site/reconcile" \
+  -H "content-type: application/json" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN" \
+  -d '{"runId":"cms-run-123","email":"tahsrz@gmail.com"}'
+```
+
+Proceed only when the response reports `reconciled: true` and both expected stores are listed in `savedStores`.
+
+### Close the controlled window
+
+- Set `CMS_TEST_SEED_ENABLED=false` in the deployment environment.
+- Remove or rotate `CMS_TEST_SEED_TOKEN` after the run.
+- Redeploy the configuration change when production verification is authorized.
+- Confirm a subsequent seed, inspect, and revoke request fails closed while disabled.
+- Record the final disposable-site status and both-store evidence in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.
 
 ```bash
 curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
@@ -45,6 +89,17 @@ CMS verification handoff checklist:
 - [ ] Publish/apply evidence records submitted revision, published revision, post-apply pointer, actor, and public revision marker.
 - [ ] DELETE response confirms the disposable site is suspended.
 - [ ] Seed flag is disabled and token is removed or rotated.
+
+### Post-merge activation sequence
+
+1. Confirm the merge commit is deployed to the Production target; do not enable the flag on a preview deployment.
+2. Verify variable names and environments with `vercel env ls production --project sunset-pulse`; never retrieve or print secret values.
+3. Set `CMS_TEST_SEED_ENABLED=true` for the single controlled run and record the UTC start time.
+4. Provision exactly one `cms-verification-<runId>` site, capture the response, and perform the verification checklist above.
+5. Revoke the site, set `CMS_TEST_SEED_ENABLED=false`, and remove or rotate `CMS_TEST_SEED_TOKEN`.
+6. Confirm a deployment applies the disabled flag, then verify the seed endpoint returns `404` again.
+
+If the deployed SHA or flag state cannot be identified confidently, stop before provisioning and leave the endpoint disabled.
 
 ## Replay Stripe Events
 

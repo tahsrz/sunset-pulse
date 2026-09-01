@@ -20,9 +20,9 @@ The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-k
 | --- | --- |
 | Feature merge SHA | 9507b766b5d440419abdfded49660088ca99aa4b |
 | Save-fix merge SHA | 77e985cfe3db307a1b4f8d6d9a1b35e60241507e |
-| Follow-up PR head SHA | |
+| Follow-up PR head SHA | `976bcc2c` |
 | Deployed URL | https://sunsetpulse.app/vibes |
-| UTC start time | |
+| UTC start time | Not started — awaiting controlled production seed run |
 | Operator account | Taz (existing authenticated account) |
 | Controlled site ID | |
 | Original site pointer / revision | |
@@ -91,3 +91,39 @@ The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-k
 - [ ] `VIBE_CMS_PUBLIC_WRITE_WIP=false` is set before the WIP exception is considered released and this follow-up is closed.
 
 Any missing evidence, unexpected public output, or failed restoration keeps the release gate open.
+
+## Disposable seed-run evidence (PR #73)
+
+Complete this section during the authorized seed workflow. Never record the seed token itself.
+
+### Latest local focused verification
+
+On 2026-08-31, the focused CMS safety command passed locally with 3 test files and 32 tests: the protected seed/inspection/revocation route (9), site provisioning (17), and lifecycle notifications (6). This is local evidence only; it does not substitute for the controlled production run below.
+
+| Seed field | Value | Pass/Fail |
+| --- | --- | --- |
+| Run ID | | |
+| Seed endpoint UTC start | | |
+| Seed response status (`201` or idempotent `200`) | | |
+| Site ID / Agent ID | | |
+| Public URL | | |
+| Original active Vibe revision pointer | | |
+| Idempotent repeat returned same site | | |
+| Revocation response/status | | |
+| Seed flag disabled after run | | |
+| Token removed or rotated | | |
+
+The seed endpoint must be invoked only after its deployment is confirmed. The production run is incomplete until the disposable site is revoked, the flag is disabled, and the final public/control state is recorded.
+
+## Local focused checks
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Site-pointer authority suite | Pass — 11 tests | Covers fresher Mongo, stale Supabase writes, absent Mongo pointer, and Mongo-read failure fallback. |
+| CMS test-site route suite | Pass — 4 tests | Covers disabled flag, token rejection, disposable provisioning, and revocation. |
+| Combined focused total | Pass — 15 tests | Runner reported all tests passed; no production data was changed. |
+| Expanded CMS safety set | Pass — 35 tests | Pointer authority (11), seed route (4), provisioning (15), and lifecycle notifications (5). |
+
+## Seed-run incident note
+
+The first controlled seed attempt reached `/api/internal/cms/test-site` but did not return within the bounded execution window. Runtime logs showed the request entered the route without a completed response, but did not identify the exact blocking operation. Review found one plausible unbounded wait in the lifecycle notification fetch. That request now carries a 10-second `AbortSignal` timeout; notification failure is handled as a warning after site persistence. Focused regression tests confirm the timeout signal is attached and timeout rejection produces a failed-notification result. No second live seed mutation was attempted, preventing duplicate provisioning while the cause remained uncertain.

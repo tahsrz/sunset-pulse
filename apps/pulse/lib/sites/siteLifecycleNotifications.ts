@@ -336,6 +336,7 @@ async function sendLifecycleEmail(input: {
         subject: input.subject,
         text: input.text,
       }),
+      signal: AbortSignal.timeout(10_000),
     });
 
     const payload = await response.json().catch(() => null);

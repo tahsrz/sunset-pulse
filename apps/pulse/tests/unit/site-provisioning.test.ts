@@ -3,6 +3,8 @@ import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
 
 const storeMocks = vi.hoisted(() => ({
   readSiteConfig: vi.fn(),
+  inspectSiteConfigStores: vi.fn(),
+  readExpiredDisposableCmsSiteConfigs: vi.fn(),
   readExpiredPastDueSiteConfigs: vi.fn(),
   claimPastDueSiteConfigForExpiry: vi.fn(),
   saveSiteConfig: vi.fn(),
@@ -15,6 +17,8 @@ const storeMocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/sites/siteConfigStore', () => ({
   readSiteConfig: storeMocks.readSiteConfig,
+  inspectSiteConfigStores: storeMocks.inspectSiteConfigStores,
+  readExpiredDisposableCmsSiteConfigs: storeMocks.readExpiredDisposableCmsSiteConfigs,
   readExpiredPastDueSiteConfigs: storeMocks.readExpiredPastDueSiteConfigs,
   claimPastDueSiteConfigForExpiry: storeMocks.claimPastDueSiteConfigForExpiry,
   saveSiteConfig: storeMocks.saveSiteConfig,
@@ -33,6 +37,9 @@ import {
   provisionPaidAgentSite,
   resolveProvisionedAgentId,
   suspendProvisionedAgentSite,
+  reconcileDisposableCmsSite,
+  isDisposableCmsSiteExpired,
+  expireDisposableCmsSites,
   updateProvisionedAgentSiteBilling,
 } from '@/lib/sites/siteProvisioning';
 
@@ -41,6 +48,8 @@ describe('site provisioning', () => {
     vi.useRealTimers();
     vi.clearAllMocks();
     storeMocks.readSiteConfig.mockResolvedValue(null);
+    storeMocks.inspectSiteConfigStores.mockResolvedValue({ selectedRow: null, supabaseRow: null, mongoRow: null, selectedStore: null });
+    storeMocks.readExpiredDisposableCmsSiteConfigs.mockResolvedValue([]);
     storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([]);
     storeMocks.claimPastDueSiteConfigForExpiry.mockResolvedValue(true);
     storeMocks.saveSiteConfig.mockResolvedValue(['supabase', 'mongo']);
@@ -93,6 +102,52 @@ describe('site provisioning', () => {
       agentId: 'Broker-One',
       email: 'broker@example.test',
     })).toBe('broker-one');
+  });
+
+  it('reconciles a marked disposable site through both stores', async () => {
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    kit.ownerId = 'user-taz';
+    kit.billingProfile = { billingStatus: 'trialing', userId: 'user-taz', disposableCms: { runId: 'run-123', originalPointer: '', expiresAt: '2026-09-01T00:00:00.000Z' } };
+    storeMocks.inspectSiteConfigStores.mockResolvedValue({ selectedRow: kit, supabaseRow: null, mongoRow: kit, selectedStore: 'mongo' });
+    await expect(reconcileDisposableCmsSite({ runId: 'run-123', userId: 'user-taz' })).resolves.toMatchObject({ siteId: 'cms-verification-run-123', reconciled: true, savedStores: ['supabase', 'mongo'] });
+  });
+
+  it('expires only marked disposable sites past their deadline', () => {
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    kit.billingProfile.disposableCms = { runId: 'run-123', originalPointer: '', expiresAt: '2026-08-30T00:00:00.000Z' };
+    expect(isDisposableCmsSiteExpired(kit, new Date('2026-08-31T00:00:00.000Z'))).toBe(true);
+    kit.status = 'suspended';
+    expect(isDisposableCmsSiteExpired(kit, new Date('2026-08-31T00:00:00.000Z'))).toBe(false);
+  });
+
+  it('expires marked disposable candidates through the CMS audit path', async () => {
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    kit.ownerId = 'user-taz';
+    kit.billingProfile = { billingStatus: 'trialing', userId: 'user-taz', disposableCms: { runId: 'run-123', originalPointer: '', expiresAt: '2026-08-30T00:00:00.000Z' } };
+    storeMocks.readExpiredDisposableCmsSiteConfigs.mockResolvedValue([kit]);
+    storeMocks.readSiteConfig.mockResolvedValue(kit);
+    await expect(expireDisposableCmsSites({ now: new Date('2026-08-31T00:00:00.000Z') })).resolves.toMatchObject({ scanned: 1, expired: 1 });
+  });
+
+  it('records truthful audit and owner metadata for internal test seeding', async () => {
+    const result = await provisionPaidAgentSite({
+      agentId: 'cms-verification-run-123',
+      userId: 'user-taz',
+      ownerName: 'CMS Verification',
+      email: 'taz@example.test',
+      source: 'cms-test-seed:run-123',
+      auditAction: 'cms.test-site.seeded',
+      auditActor: 'cms-test-seed:user-taz',
+      auditMessage: 'Disposable CMS verification site seeded for run run-123.',
+    });
+    expect(result.kit.ownerId).toBe('user-taz');
+    expect(result.kit.billingProfile.userId).toBe('user-taz');
+    expect(result.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'cms.test-site.seeded',
+      actor: 'cms-test-seed:user-taz',
+      message: 'Disposable CMS verification site seeded for run run-123.',
+      source: 'cms-test-seed:run-123',
+    }));
   });
 
   it('refreshes an existing site without overwriting custom identity fields', async () => {
@@ -214,6 +269,29 @@ describe('site provisioning', () => {
       expect.objectContaining({ agentId: 'broker-one', status: 'suspended' }),
       expect.objectContaining({ role: 'stripe-webhook' }),
     );
+  });
+
+  it('records truthful audit metadata when an internal test site is revoked', async () => {
+    storeMocks.readSiteConfig.mockResolvedValue(createDefaultLaunchKit('cms-verification-run-123'));
+    const result = await suspendProvisionedAgentSite({
+      agentId: 'cms-verification-run-123',
+      userId: 'user-taz',
+      email: 'taz@example.test',
+      source: 'cms-test-seed-revoke:run-123',
+      auditAction: 'cms.test-site.revoked',
+      auditActor: 'cms-test-seed:user-taz',
+      auditMessage: 'Disposable CMS verification site revoked for run run-123.',
+    });
+    expect(result?.kit.provisioningAudit[0]).toEqual(expect.objectContaining({
+      action: 'cms.test-site.revoked',
+      actor: 'cms-test-seed:user-taz',
+      message: 'Disposable CMS verification site revoked for run run-123.',
+      source: 'cms-test-seed-revoke:run-123',
+    }));
+    expect(storeMocks.saveSiteConfig).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      role: 'cms-test-seed-revoke:run-123',
+      userId: 'user-taz',
+    }));
   });
 
   it('keeps a past-due live site active during the grace window', async () => {

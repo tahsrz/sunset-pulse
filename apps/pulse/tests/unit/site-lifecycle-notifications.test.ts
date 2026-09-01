@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultLaunchKit, type AgentLaunchKit } from '@/lib/sites/launchKit';
 import {
+  notifyBuyerSiteProvisioned,
   notifyBuyerSiteBillingUpdate,
   notifyOperatorSiteBillingUpdate,
   notifyOperatorStripeWebhookFailure,
@@ -44,6 +45,24 @@ describe('site lifecycle notifications', () => {
     expect(payload.subject).toBe(`${kit.branding.siteName} billing recovered`);
     expect(payload.text).toContain('billing is active again');
     expect(payload.text).toContain('has returned live because billing recovered');
+  });
+
+  it('bounds provisioning email requests with an abort signal', async () => {
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    await notifyBuyerSiteProvisioned({ kit, email: 'buyer@example.test', setupUrl: '/onboarding/site/setup' });
+    const [, init] = vi.mocked(fetch).mock.calls.at(-1) || [];
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('returns a failed notification result when the email request times out', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('The operation timed out.', 'TimeoutError')));
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    const result = await notifyBuyerSiteProvisioned({ kit, email: 'buyer@example.test', setupUrl: '/onboarding/site/setup' });
+    expect(result).toEqual(expect.objectContaining({
+      status: 'failed',
+      reason: 'The operation timed out.',
+      recipients: expect.arrayContaining(['buyer@example.test']),
+    }));
   });
 
   it('tells the buyer when recovered billing stayed draft', async () => {

@@ -21,6 +21,44 @@ export async function readSiteConfig(agentId?: string | null) {
   return chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
 }
 
+export async function inspectSiteConfigStores(agentId?: string | null) {
+  const targetAgentId = agentId || createDefaultLaunchKit(agentId).agentId;
+  if (isMockMode()) {
+    const supabaseRow = readMockSiteConfig(targetAgentId);
+    return { supabaseRow, mongoRow: null, selectedRow: supabaseRow, selectedStore: 'supabase' as const };
+  }
+
+  const [supabaseRow, mongoRow] = await Promise.all([
+    readSupabaseSiteConfig(targetAgentId),
+    readMongoSiteConfig(targetAgentId),
+  ]);
+  const selectedRow = chooseFreshestSiteConfigRow(supabaseRow, mongoRow);
+  const selectedStore = selectedRow && mongoRow && selectedRow === mongoRow ? 'mongo' : selectedRow && supabaseRow ? 'supabase' : null;
+  return { supabaseRow, mongoRow, selectedRow, selectedStore };
+}
+
+export async function readExpiredDisposableCmsSiteConfigs(nowIso = new Date().toISOString(), limit = 50) {
+  if (isMockMode()) return [];
+  const [supabaseRows, mongoRows] = await Promise.all([
+    readSupabaseDisposableSiteConfigs(limit),
+    readMongoDisposableSiteConfigs(limit),
+  ]);
+  const rows = [...supabaseRows, ...mongoRows].filter((row) => {
+    const value = row as any;
+    const agentId = value?.agent_id || value?.agentId;
+    const billing = value?.billing_profile || value?.billingProfile || {};
+    const disposable = billing.disposableCms || billing.disposable_cms;
+    return typeof agentId === 'string'
+      && agentId.startsWith('cms-verification-')
+      && disposable?.runId
+      && typeof disposable.expiresAt === 'string'
+      && new Date(disposable.expiresAt).getTime() <= new Date(nowIso).getTime();
+  });
+  const byAgent = new Map<string, unknown>();
+  for (const row of rows) byAgent.set(getSiteConfigAgentId(row), row);
+  return Array.from(byAgent.values()).slice(0, limit);
+}
+
 export async function readSiteConfigByOwnerUser(userId?: string | null) {
   const normalizedUserId = String(userId || '').trim();
   if (!normalizedUserId) return null;
@@ -196,6 +234,21 @@ async function readMongoSiteConfig(agentId: string) {
     console.warn('[SITE_CONFIG_MONGO_READ_FALLBACK]', error);
     return null;
   }
+}
+
+async function readSupabaseDisposableSiteConfigs(limit: number) {
+  try {
+    const { data, error } = await supabaseAdmin.from('site_config').select('*').like('agent_id', 'cms-verification-%').limit(Math.min(limit, 200));
+    if (error) { console.warn('[SITE_CONFIG_SUPABASE_DISPOSABLE_READ]', error.message); return []; }
+    return data || [];
+  } catch (error) { console.warn('[SITE_CONFIG_SUPABASE_DISPOSABLE_READ_FALLBACK]', error); return []; }
+}
+
+async function readMongoDisposableSiteConfigs(limit: number) {
+  try {
+    await connectDB();
+    return await SiteConfig.find({ agentId: /^cms-verification-/ }).limit(Math.min(limit, 200)).lean();
+  } catch (error) { console.warn('[SITE_CONFIG_MONGO_DISPOSABLE_READ_FALLBACK]', error); return []; }
 }
 
 async function readMongoSiteConfigByOwnerUser(userId: string) {

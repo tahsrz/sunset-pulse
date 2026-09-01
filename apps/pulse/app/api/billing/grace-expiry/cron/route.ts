@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest } from 'next/server';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
-import { expirePastDueGracePeriods } from '@/lib/sites/siteProvisioning';
+import { expireDisposableCmsSites, expirePastDueGracePeriods } from '@/lib/sites/siteProvisioning';
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('Authorization') || '';
@@ -20,14 +20,15 @@ export async function GET(req: NextRequest) {
   try {
     const limitParam = req.nextUrl.searchParams.get('limit');
     const limit = normalizeLimit(limitParam);
-    const result = await expirePastDueGracePeriods({
-      limit,
-      source: 'site-billing-grace-cron',
-    });
+    const [billingGrace, disposableCms] = await Promise.all([
+      expirePastDueGracePeriods({ limit, source: 'site-billing-grace-cron' }),
+      expireDisposableCmsSites({ limit, source: 'site-billing-grace-cron' }),
+    ]);
 
     return successResponse({
-      message: 'Site billing grace expiry check completed.',
-      ...result,
+      message: 'Site billing and disposable CMS expiry checks completed.',
+      billingGrace,
+      disposableCms,
     });
   } catch (error: any) {
     console.error('[SITE_BILLING_GRACE_CRON_ERROR]:', error);

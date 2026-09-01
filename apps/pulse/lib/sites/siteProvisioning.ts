@@ -8,7 +8,7 @@ import {
   type AgentLaunchKitResponse,
   type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
-import { claimPastDueSiteConfigForExpiry, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
+import { claimPastDueSiteConfigForExpiry, inspectSiteConfigStores, readExpiredDisposableCmsSiteConfigs, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import {
   notifyBuyerSiteBillingUpdate,
   notifyBuyerSiteGraceExpired,
@@ -31,12 +31,84 @@ export type PaidAgentSiteProvisioningInput = {
   trialEndsAt?: string | null;
   billingStatus?: AgentLaunchKit['billingProfile']['billingStatus'] | string | null;
   source?: string | null;
+  auditAction?: string | null;
+  auditActor?: string | null;
+  auditMessage?: string | null;
+  disposableCms?: AgentLaunchKit['billingProfile']['disposableCms'];
 };
 
 export type PaidAgentSiteProvisioningResult = AgentLaunchKitResponse & {
   created: boolean;
   savedStores: string[];
 };
+
+export async function provisionDisposableCmsSite(input: { runId: string; ownerName: string; email: string; userId: string; originalPointer?: string | null }) {
+  return provisionPaidAgentSite({
+    agentId: `cms-verification-${input.runId}`,
+    ownerName: input.ownerName,
+    email: input.email,
+    userId: input.userId,
+    subscriptionTier: 'starter',
+    billingStatus: 'trialing',
+    trialEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    source: `cms-test-seed:${input.runId}`,
+    auditAction: 'cms.test-site.seeded',
+    auditActor: `cms-test-seed:${input.userId}`,
+    auditMessage: `Disposable CMS verification site seeded for run ${input.runId}.`,
+    disposableCms: { runId: input.runId, originalPointer: input.originalPointer || '', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() },
+  });
+}
+
+export async function revokeDisposableCmsSite(input: { runId: string; email: string; userId: string }) {
+  return suspendProvisionedAgentSite({
+    agentId: `cms-verification-${input.runId}`,
+    email: input.email,
+    userId: input.userId,
+    source: `cms-test-seed-revoke:${input.runId}`,
+    auditAction: 'cms.test-site.revoked',
+    auditActor: `cms-test-seed:${input.userId}`,
+    auditMessage: `Disposable CMS verification site revoked for run ${input.runId}.`,
+  });
+}
+
+export async function reconcileDisposableCmsSite(input: { runId: string; userId: string }) {
+  const agentId = `cms-verification-${input.runId}`;
+  const stores = await inspectSiteConfigStores(agentId);
+  if (!stores.selectedRow) return null;
+  const kit = normalizeLaunchKit(stores.selectedRow, agentId);
+  const metadata = kit.billingProfile.disposableCms;
+  if (!metadata || metadata.runId !== input.runId) throw new Error('Site is not a disposable CMS verification site.');
+  if (kit.ownerId !== input.userId && kit.billingProfile.userId !== input.userId) throw new Error('Disposable CMS site owner mismatch.');
+  const savedStores = await saveSiteConfig(kit, { role: `cms-test-seed-reconcile:${input.runId}`, userId: input.userId });
+  return { siteId: agentId, savedStores, reconciled: savedStores.length >= 2, originalPointer: metadata.originalPointer || null, currentPointer: kit.activeVibeRevisionId || null };
+}
+
+export function isDisposableCmsSiteExpired(kit: AgentLaunchKit, now = new Date()) {
+  const metadata = kit.billingProfile.disposableCms;
+  if (!metadata?.runId || kit.status === 'suspended' || !metadata.expiresAt) return false;
+  const expiresAt = new Date(metadata.expiresAt);
+  return Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() <= now.getTime();
+}
+
+export async function expireDisposableCmsSites(input: { now?: Date; limit?: number; source?: string } = {}) {
+  const rows = await readExpiredDisposableCmsSiteConfigs((input.now || new Date()).toISOString(), input.limit || 50);
+  const processed = [];
+  for (const row of rows) {
+    const kit = normalizeLaunchKit(row);
+    if (!isDisposableCmsSiteExpired(kit, input.now || new Date())) continue;
+    const result = await suspendProvisionedAgentSite({
+      agentId: kit.agentId,
+      email: kit.agentProfile.email,
+      userId: kit.ownerId || kit.billingProfile.userId,
+      source: input.source || 'cms-test-site-expiry',
+      auditAction: 'cms.test-site.expired',
+      auditActor: 'system-cron',
+      auditMessage: `Disposable CMS verification site expired at ${kit.billingProfile.disposableCms?.expiresAt}.`,
+    });
+    if (result) processed.push({ agentId: kit.agentId, savedStores: result.savedStores, status: result.kit.status });
+  }
+  return { scanned: rows.length, expired: processed.length, processed };
+}
 
 export type ExpirePastDueGracePeriodsResult = {
   scanned: number;
@@ -112,17 +184,18 @@ export async function provisionPaidAgentSite(
       stripeCheckoutSessionId: input.stripeCheckoutSessionId || baseKit.billingProfile.stripeCheckoutSessionId || '',
       trialEndsAt,
       billingStatus,
+      ...(input.disposableCms ? { disposableCms: input.disposableCms } : {}),
     },
     reviewProfile: existing ? baseKit.reviewProfile : {
       ...baseKit.reviewProfile,
       status: 'not_started',
     },
   }, agentId), {
-    action: 'checkout.session.completed',
+    action: input.auditAction || 'checkout.session.completed',
     source: input.source || 'stripe-webhook',
     status: 'succeeded',
-    message: existing ? 'Stripe checkout refreshed an existing agent site.' : 'Stripe checkout provisioned a new draft agent site.',
-    actor: 'stripe-webhook',
+    message: input.auditMessage || (existing ? 'Stripe checkout refreshed an existing agent site.' : 'Stripe checkout provisioned a new draft agent site.'),
+    actor: input.auditActor || 'stripe-webhook',
     stripeCheckoutSessionId: input.stripeCheckoutSessionId || '',
     stripeCustomerId: input.stripeCustomerId || '',
     stripeSubscriptionId: input.stripeSubscriptionId || '',
@@ -168,11 +241,11 @@ export async function suspendProvisionedAgentSite(input: PaidAgentSiteProvisioni
       billingStatusChangedAt,
     },
   }, agentId), {
-    action: 'customer.subscription.deleted',
+    action: input.auditAction || 'customer.subscription.deleted',
     source: input.source || 'stripe-webhook',
     status: 'succeeded',
-    message: 'Stripe subscription ended; agent site access was suspended.',
-    actor: 'stripe-webhook',
+    message: input.auditMessage || 'Stripe subscription ended; agent site access was suspended.',
+    actor: input.auditActor || 'stripe-webhook',
     stripeCustomerId: input.stripeCustomerId || kit.billingProfile.stripeCustomerId || '',
     stripeSubscriptionId: input.stripeSubscriptionId || kit.billingProfile.stripeSubscriptionId || '',
     billingStatus: 'canceled',
