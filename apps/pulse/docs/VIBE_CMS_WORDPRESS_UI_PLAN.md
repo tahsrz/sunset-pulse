@@ -4104,19 +4104,20 @@ Vibe CMS with current WordPress admin patterns.
 | --- | --- | --- | --- |
 | 1 | 0A Foundation | `layout.tsx`, `VibeSidebar.tsx`, `VibePageHeader.tsx`, `VibeStatusBadge.tsx`, `VibeNotice.tsx`, primitive tests | Landmarks/navigation/primitives pass; no route JSX migrated yet. |
 | 2 | 0B Controls | `VibePanel.tsx`, `VibeConfirmDialog.tsx`, list/status/editor helper components, primitive tests | Native disclosure/dialog behavior is tested; no API caller wired. |
-| 3 | 1A Query helper | `lib/cms/vibeListQuery.ts`, query tests | Valid API-aligned status/sort values pass parser/serializer tests. |
-| 4 | 1B List core | `VibeList.tsx`, list tests | Filters, sorting, bulk local refresh, accessible base table work with unchanged API contracts. |
-| 5 | 1C List tools | `VibeListToolbar.tsx`, `VibeBulkControls` only if necessary, `VibeScreenTools.tsx`, `VibePageHeader.tsx`, list/primitive tests | Top/bottom bulk controls share state; Help is local/read-only. |
-| 6 | 1D List responsive | `VibeListRowDetails.tsx`, `VibeList.tsx`, list tests | Primary row keeps actions visible; secondary values are available on small screens. |
-| 7 | 1E List deep links | `VibeList.tsx`, list/query tests | Direct URL, refresh, Back/Forward, canonicalization, and API mapping pass. |
-| 8 | 2A Create | `new/page.tsx`, creation tests | Slug/preset form is accessible and POST body/redirect are unchanged. |
-| 9 | 2B Editor panels | `edit/VibeEditor.tsx`, panel/editor helpers, editor test | Every FormData input remains mounted and draft PATCH conflict behavior passes. |
-| 10 | 2C Editor toolbar | `VibeEditorToolbar.tsx`, `VibeEditor.tsx`, editor test | One accessible Save/Preview/workflow control set; toolbar invokes existing form save. |
-| 11 | 3A Revisions | `RevisionList.tsx`, revision tests | Republish accurately creates a published revision; Apply stays current-published-only. |
-| 12 | 3B Workflow evidence | audit/actions/submit/publish/compare pages, focused tests | Existing lifecycle request bodies/routes/events are proven unchanged. |
-| 13 | 3C Readiness | `VibeReadinessChecklist.tsx`, submit/publish/editor notice updates, tests | Lifecycle consequences are clear; no automatic site mutation exists. |
-| 14 | 3D Supporting screens | taxonomy page/directory, source page/detail component, tests | Taxonomy remains schema-owned/read-only; Source remains server-rendered. |
-| 15 | 4A Apply | `apply/page.tsx`, local apply display components, apply tests | Site-specific preflight gates existing apply POST with no route/body changes. |
+| 3 | 0C Route states | `loading.tsx`, `error.tsx`, route-state tests | Segment fallback/recovery compiles; no ordinary API error handling is replaced. |
+| 4 | 1A Query helper | `lib/cms/vibeListQuery.ts`, query tests | Valid API-aligned status/sort values pass parser/serializer tests. |
+| 5 | 1B List core | `VibeList.tsx`, list tests | Filters, sorting, bulk local refresh, accessible base table work with unchanged API contracts. |
+| 6 | 1C List tools | `VibeListToolbar.tsx`, `VibeBulkControls` only if necessary, `VibeScreenTools.tsx`, `VibePageHeader.tsx`, list/primitive tests | Top/bottom bulk controls share state; Help is local/read-only. |
+| 7 | 1D List responsive | `VibeListRowDetails.tsx`, `VibeList.tsx`, list tests | Primary row keeps actions visible; secondary values are available on small screens. |
+| 8 | 1E List deep links | `page.tsx`, `VibeList.tsx`, list/query tests | Direct URL, refresh, Back/Forward, canonicalization, App Router boundary, and API mapping pass. |
+| 9 | 2A Create | `new/page.tsx`, creation tests | Slug/preset form is accessible and POST body/redirect are unchanged. |
+| 10 | 2B Editor panels | `edit/VibeEditor.tsx`, panel/editor helpers, editor test | Every FormData input remains mounted and draft PATCH conflict behavior passes. |
+| 11 | 2C Editor toolbar | `VibeEditorToolbar.tsx`, `VibeEditor.tsx`, editor test | One accessible Save/Preview/workflow control set; toolbar invokes existing form save. |
+| 12 | 3A Revisions | `RevisionList.tsx`, revision tests | Republish accurately creates a published revision; Apply stays current-published-only. |
+| 13 | 3B Workflow evidence | audit/actions/submit/publish/compare pages, focused tests | Existing lifecycle request bodies/routes/events are proven unchanged. |
+| 14 | 3C Readiness | `VibeReadinessChecklist.tsx`, submit/publish/editor notice updates, tests | Lifecycle consequences are clear; no automatic site mutation exists. |
+| 15 | 3D Supporting screens | taxonomy page/directory, source page/detail component, tests | Taxonomy remains schema-owned/read-only; Source remains server-rendered. |
+| 16 | 4A Apply | `apply/page.tsx`, local apply display components, apply tests | Site-specific preflight gates existing apply POST with no route/body changes. |
 
 **No package is complete just because the visual layout renders.** Its matching
 focused test group, contract checks, and stop condition must all be satisfied
@@ -4650,6 +4651,93 @@ and `useRouter` usage.
 4. In component tests, mock `next/navigation` once per test module and expose
    mutable `searchParams`, `push`, `replace`, and `pathname` values. Do not
    mock browser history as a second competing source of truth.
+
+### EM. Route-state package 0C — Vibe loading and recovery surfaces
+
+Add route-segment loading and error files after package 0B and before any list
+query work. They supply the same compact admin surface during route transitions
+or unexpected render failures; they do not replace the existing client fetch,
+validation, conflict, or access-error notices.
+
+#### New `app/vibes/loading.tsx`
+
+1. This is a server component. Do not add `'use client'`, hooks, fetch calls,
+   router imports, or `VibeSidebar`.
+2. Render exactly one page-shell div; `app/vibes/layout.tsx` already owns the
+   workspace/sidebar landmark:
+
+   ```tsx
+   export default function VibesLoading() {
+     return (
+       <div className="min-h-full bg-[#f0f0f1] px-4 py-8 text-[#1d2327] sm:px-8" aria-busy="true" aria-label="Loading Vibe workspace">
+         <div className="mx-auto max-w-6xl animate-pulse">
+           <div className="h-8 w-44 bg-[#dcdcde]" />
+           <div className="mt-3 h-4 w-96 max-w-full bg-[#dcdcde]" />
+           <div className="mt-6 border border-[#c3c4c7] bg-white p-4">
+             <div className="h-9 w-full bg-[#f0f0f1]" />
+             <div className="mt-4 space-y-px">
+               {[0, 1, 2, 3, 4].map((row) => <div key={row} className="h-12 bg-[#f6f7f7]" />)}
+             </div>
+           </div>
+         </div>
+       </div>
+     );
+   }
+   ```
+
+3. Skeleton geometry represents the list because it is the default Vibe route.
+   It must remain generic enough for nested Vibe pages; do not branch on URL or
+   add a client pathname hook.
+4. Do not use a marketing animation, gradient, glass card, spinner dependency,
+   or a fake progress percentage.
+
+#### New `app/vibes/error.tsx`
+
+1. First line is `'use client';`. This is required by the App Router error
+   boundary contract because it receives `reset` and handles a button click.
+2. Import `Link` from `next/link`, plus `useEffect` from React only if logging
+   the caught error to an existing project observability function is already
+   established. Do not create new telemetry in this UI package.
+3. Use this exact prop type:
+
+   ```ts
+   type VibesErrorProps = {
+     error: Error & { digest?: string };
+     reset: () => void;
+   };
+   ```
+
+4. Render a non-nested workspace shell with a `VibeNotice`-equivalent surface.
+   Because `VibeNotice` may be a server-compatible passive component, it may be
+   imported only if it supports client use. Otherwise inline the same notice
+   classes/role in `error.tsx`; do not make `VibeNotice` client-only merely for
+   this boundary.
+5. Visible content is exactly:
+   - heading: **The Vibe workspace could not be displayed**;
+   - paragraph: **Try loading this screen again. If the problem continues, return
+     to All Vibes and try the action again.**;
+   - primary `type="button"` control: **Try again**, calling `reset()`;
+   - secondary Link: **Back to All Vibes**, `href="/vibes"`.
+6. Do not render `error.message` or `error.digest` as visible user copy. Do not
+   add an auth redirect, site application action, or lifecycle mutation here.
+7. The error component must not be used for known API response errors. Those
+   remain in `VibeList`, editor, lifecycle, and apply pages as `VibeNotice`
+   states, where users keep their current input and context.
+
+#### Exact test and build checks for 0C
+
+1. Add `tests/unit/vibes-route-error.test.tsx`. Render the error component with
+   a spy `reset`; click Try again; assert the spy is called once and the Back
+   link points to `/vibes`. Assert a sensitive sample `error.message` is absent.
+2. Loading component test renders it and asserts `aria-busy="true"`, the
+   **Loading Vibe workspace** label, and five skeleton rows. It needs no API or
+   navigation mock.
+3. Run `npm run build` after adding `error.tsx` because App Router requires the
+   error boundary to be a client component. Do not add `global-error.tsx`; it
+   would expand scope beyond Vibe CMS and must include root HTML/body semantics.
+4. Add package **0C Route states** between 0B and 1A in section EB’s execution
+   sequence. Its stop condition is: loading/error files compile, focused tests
+   pass, and ordinary API error notices are unchanged.
 
 ### DM. Luna execution map — read and edit in this exact order
 
