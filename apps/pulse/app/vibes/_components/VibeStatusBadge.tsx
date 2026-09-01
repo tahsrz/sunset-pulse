@@ -1,3 +1,5 @@
+import React from 'react';
+
 type VibeStatusBadgeProps = { status: string };
 
 const statusStyles: Record<string, string> = {
