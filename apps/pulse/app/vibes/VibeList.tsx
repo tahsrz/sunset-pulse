@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { parseVibeListQuery, serializeVibeListQuery, type VibeListQuery } from '@/lib/cms/vibeListQuery';
 import { VibeListToolbar } from './_components/VibeListToolbar';
 import { VibeStatusViews } from './_components/VibeStatusViews';
+import { VibeRowActions } from './_components/VibeRowActions';
 
 type Vibe = {
   vibeId: string;
@@ -204,13 +205,7 @@ export function VibeList() {
                         <td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize">{statusLabel(vibe.status)}</span></td>
                         <td className="px-4 py-3 text-xs text-slate-500">{vibe.publishedRevisionId ? 'Published revision' : '—'}</td>
                         <td className="px-4 py-3 text-xs text-slate-500">{formatModified(vibe.updatedAt)}</td>
-                        <td className="px-4 py-3 text-right text-xs font-bold">
-                          <div className="flex justify-end gap-3">
-                            <Link href={`/vibes/${vibe.vibeId}/edit`} className="text-slate-700 hover:underline">Edit</Link>
-                            <Link href={`/vibes/${vibe.vibeId}/preview`} className="text-[#2271b1] hover:underline">Preview</Link>
-                            <Link href={`/vibes/${vibe.vibeId}/actions`} className="text-[#2271b1] hover:underline">Actions</Link>
-                          </div>
-                        </td>
+                        <td className="px-4 py-3 text-right"><VibeRowActions actions={[{ label: 'Edit', href: `/vibes/${vibe.vibeId}/edit` }, { label: 'Preview', href: `/vibes/${vibe.vibeId}/preview` }, { label: 'Actions', href: `/vibes/${vibe.vibeId}/actions` }]} /></td>
                       </tr>
                     ))}
                   </tbody>
