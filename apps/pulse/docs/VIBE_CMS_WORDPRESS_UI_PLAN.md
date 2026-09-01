@@ -5765,3 +5765,10 @@ WordPress can create a draft, understand its URL, edit its structured content,
   publish an immutable revision, inspect and restore history, preview it, and
 apply it through a comprehensible confirmation flow—without needing to know
 internal IDs or lifecycle implementation details.
+### Implementation evidence — current UI pass
+
+- Foundation landmarks, shared controls, validated query/slug helpers, list wiring, editor panels, revision confirmation, and Apply confirmation are implemented.
+- Focused UI verification currently covers headers, notices, badges, panels, status views, list toolbar/row actions, editor toolbar, slug rules, Add New Vibe fields, and Apply context.
+- Existing editor validation and CMS contract suites remain passing.
+- No API routes, lifecycle services, tenant configuration, or public rendering were changed by this UI pass.
+- Remaining follow-up: full Apply-page visual walkthrough and any broader route-level regression coverage.
