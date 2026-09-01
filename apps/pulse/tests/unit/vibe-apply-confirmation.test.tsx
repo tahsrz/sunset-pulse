@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { VibeApplyConfirmation } from '@/app/vibes/_components/VibeApplyConfirmation';
 
 vi.mock('next/link', () => ({ default: ({ children }: { children: ReactNode }) => <>{children}</> }));
