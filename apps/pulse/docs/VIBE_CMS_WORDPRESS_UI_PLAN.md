@@ -287,6 +287,119 @@ considered complete:
 The unit-test additions in the file-by-file map must cover these state changes;
 visual screenshots alone are not enough.
 
+### K. Save, recovery, and revision behavior
+
+WordPress presents saving and revisions as editorial reassurance. Vibe CMS can
+provide that reassurance, but only by truthfully reflecting the contracts it
+already has.
+
+| Capability | Current Vibe contract | UI decision |
+| --- | --- | --- |
+| Manual draft save | `VibeEditor.saveDraft` sends a complete normalized draft with `expectedVersion`. | Keep **Save draft** as the explicit primary persistence action. Display one of Saved / Unsaved changes / Saving / Conflict beside the editor title and in `PublishPanel`. |
+| Concurrent-edit detection | Server returns 409 / `VIBE_DRAFT_CONFLICT`. | Keep current reload-latest flow; add a clear notice explaining that local unsaved changes cannot be merged automatically. Do not overwrite or silently retry. |
+| Autosave | No demonstrated autosave-specific API, per-user recovery record, or merge policy. | **Do not add background server autosave** in this UI initiative. It would generate revisions/conflicts that the current model does not describe. |
+| Local recovery draft | Not currently specified. | **Discovery only:** assess whether `sessionStorage` can hold a non-authoritative editor snapshot with version + timestamp. Implement only after a separate recovery UX decision; never call it a saved revision or send it automatically. |
+| Published revisions | Immutable revision history already exists. | Make “Current published” visually dominant and explain that later draft saves do not modify it. |
+| Restore | Existing guarded restore behavior. | Confirmation copy must say it restores into the editable draft and does not apply/publish a site. |
+| Compare | Existing compare route. | First improve the existing summary and selected revision labels. Do not copy WordPress’s slider/highlight interface until the Vibe payload diff can produce meaningful, stable field-level changes. |
+| Scheduled publish | No stated lifecycle/API capability. | **Out of scope.** Never display a scheduling control merely because WordPress has one. |
+
+#### Required implementation changes
+
+- In `VibeEditor.tsx`, extend `SaveState` only if necessary with a distinct
+  `error` display state; preserve `saved`, `dirty`, `saving`, and `conflict`.
+  The error message itself remains `error` state. Do not collapse `conflict`
+  into a generic failure.
+- In `PublishPanel`, show save status as short text before the action controls:
+  “Saved,” “Unsaved changes,” “Saving…,” or “Conflict detected.” Use an
+  `aria-live="polite"` region for normal state changes.
+- On successful save at `VibeEditor.tsx` lines 154–155, set an ephemeral
+  success notice with a Preview action. It disappears only when the user
+  navigates, makes another edit, or dismisses it; do not persist it across
+  routes.
+- On a 409 at lines 145–148, keep the form values mounted. The Reload action
+  must have copy warning that it replaces the current unsaved form with the
+  server draft.
+- In `RevisionList.tsx`, represent revision identity in this exact order:
+  status badge → `Revision n` title → timestamp/actor → change summary/parent
+  metadata → row actions. Avoid rendering raw database IDs as the primary
+  title.
+
+### L. Notice and confirmation policy
+
+The WordPress model distinguishes non-blocking notices from actions that require
+an intentional decision. Vibes should do the same.
+
+| Event | UI mechanism | Required message/action |
+| --- | --- | --- |
+| Draft saved | success `VibeNotice`, `role="status"` | “Draft saved.” with **Preview changes** link. |
+| Draft conflict | error `VibeNotice`, `role="alert"` | Explain another session changed the draft; show **Reload latest draft**. |
+| List fetch error | error notice, `role="alert"` | “Unable to load Vibes.” Include **Try again** that invokes the existing list reload callback. |
+| Archive completed | success notice, `role="status"` | State the count and action. No Undo unless a real restore behavior is available. |
+| Move to trash | confirmation dialog, then success notice | Dialog names selected count and irreversibility; success names the completed count. |
+| Restore revision | confirmation dialog | “Restore to editable draft; this will not publish or apply it.” |
+| Apply revision | preflight + confirmation dialog | Name Vibe, revision, site, current pointer, and new pointer. |
+| Validation issue | inline field error plus summary notice only if submit was attempted | Focus the first invalid field after a failed submit; do not announce every keystroke as an alert. |
+
+`VibeNotice` must accept optional action props (`label`, `href` or `onClick`) so
+the caller, rather than a global singleton, owns the next step. Do not create a
+cross-route toast queue in this increment; it hides critical lifecycle feedback
+and complicates server/client boundaries unnecessarily.
+
+### M. Preference storage contract
+
+WordPress remembers screen preferences. Vibes can adopt the comfort of that
+behavior without creating an account-settings project.
+
+1. All Vibes list column preferences may use a single versioned local key:
+   `sunset-pulse:vibes:list:v1`.
+2. Editor panel-collapse preferences may use:
+   `sunset-pulse:vibes:editor-panels:v1`.
+3. Sidebar collapse preference may use:
+   `sunset-pulse:vibes:sidebar:v1`.
+4. Read these only inside client components after hydration. The server-rendered
+   initial UI must remain complete and usable without any preference stored.
+5. Validate parsed JSON against an allowlist of column/panel IDs. Invalid or
+   expired schema values fall back silently to defaults.
+6. Do not store Vibe content, site IDs, revision IDs, authorization data, or
+   anything from an operator action in browser preferences.
+7. Do not make columns hidden by default. The initial Vibe list remains
+   Title/Status/Revision/Last modified, with only optional secondary metadata
+   eligible for hiding later.
+
+### N. Responsive behavior specification
+
+The screenshot is desktop-oriented; its interaction model must survive smaller
+screens rather than merely shrink.
+
+| Viewport | Shell | List | Editor |
+| --- | --- | --- | --- |
+| `>= 1024px` | sticky utility bar + 240px rail | dense table, row actions revealed on hover/focus, toolbar in one line where space allows | two columns, 320px sticky Publish rail |
+| `640–1023px` | utility bar + horizontal Vibe navigation | table remains scrollable; search becomes full-width before filter controls; row actions always visible | single canvas followed by Publish rail; panels retain order |
+| `< 640px` | utility bar with accessible Add New; horizontal navigation is scrollable | retain native table semantics in an overflow container; no card-only rewrite; action links visible and wrap | one column; save/preview/lifecycle controls remain at top and Publish details follow content |
+
+For the list, table overflow is preferable to deleting status/revision context.
+If a later mobile study shows a need for a disclosure row, it must expose the
+same table data and actions, not a reduced mobile-only data model.
+
+### O. Anti-drift implementation gates
+
+An implementation PR must stop and seek a separate decision if it encounters
+any of the following:
+
+- A proposed UI needs a new API response field not currently returned.
+- A proposed action requires partial draft update, new mutation semantics, or
+  a new lifecycle transition.
+- A component needs to reveal a site inventory, seed status, secret, or
+  customer pointer in the browser.
+- A WordPress feature would require importing Gutenberg, a new drag/drop
+  dependency, a global state library, or a broad design-system rewrite.
+- A design change would alter generated Vibe payload shape, preview rendering,
+  revision immutability, or apply-to-site behavior.
+
+In those cases, leave the UI control out, document the gap, and propose a
+bounded follow-up rather than widening this plan mid-implementation.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
