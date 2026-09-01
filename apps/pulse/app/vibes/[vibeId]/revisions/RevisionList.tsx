@@ -116,7 +116,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
                 <td className="px-4 py-3 text-right">
                   <div className="flex flex-wrap justify-end gap-x-3 gap-y-2 text-xs font-bold">
                     {isCurrentPublished ? <Link href={`/vibes/${encodeURIComponent(vibeId)}/apply?revisionId=${encodeURIComponent(revision._id)}&revisionNumber=${revision.revisionNumber}`} className="text-[#2271b1] hover:underline">Apply to site</Link> : null}
-                    {!isCurrentPublished && revision.publishedAt ? <button type="button" onClick={() => void restoreRevision(revision)} disabled={pendingId !== null} className="text-[#2271b1] hover:underline disabled:opacity-50">{pendingId === revision._id ? 'Restoring…' : 'Restore revision'}</button> : null}
+                    {!isCurrentPublished && revision.publishedAt ? <button type="button" onClick={() => void restoreRevision(revision)} disabled={pendingId !== null} className="text-[#2271b1] hover:underline disabled:opacity-50">{pendingId === revision._id ? 'Republishing…' : 'Republish revision'}</button> : null}
                     {previous ? <Link href={`/vibes/${encodeURIComponent(vibeId)}/compare?from=${encodeURIComponent(previous._id)}&to=${encodeURIComponent(revision._id)}`} className="text-slate-700 hover:underline">Compare with r{previous.revisionNumber}</Link> : <span className="text-slate-400">Baseline</span>}
                   </div>
                 </td>
