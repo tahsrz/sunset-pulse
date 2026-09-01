@@ -73,6 +73,136 @@ Do **not** copy WordPress’s exact colors, icons, typography, old beveled
 controls, or plugin-specific columns. The desired outcome is “I know how to
 operate this immediately,” not “this is a WordPress replica.”
 
+## Reverse-engineered WordPress UI anatomy
+
+This section is the concrete reference model for implementation. It is derived
+from the WordPress admin list-table styling and official Block Editor UI
+guidance—not from a visual approximation alone.
+
+### A. Classic admin screen: four persistent layers
+
+| WordPress layer | WordPress responsibility | Sunset Pulse implementation |
+| --- | --- | --- |
+| Admin bar | Global identity and compact utility actions; it stays fixed above the admin workspace. | `app/vibes/layout.tsx` lines 7–10. Keep the 40px sticky header and make it a semantic Vibes-only utility bar. |
+| Admin menu | Persistent location/context, active destination, and contextual child items. | `VibeSidebar.tsx` lines 27–125. Keep All Vibes/Add New/Taxonomy plus current-Vibe workflow items. |
+| Content wrap | A calm page canvas with one screen title and action cluster. | Each `/vibes` screen via `VibePageHeader`; remove bespoke duplicated headings after introducing it. |
+| Screen body | A dense operational surface: views, toolbar, table/form, then pagination or a follow-up action. | `VibeList.tsx` for collection management; `VibeEditor.tsx` for edit forms; revisions/taxonomy/apply follow the same surface rules. |
+
+**Implementation decision:** do not add a second global dashboard header. The
+existing `VibeLayout` is already the Sunset Pulse equivalent of WordPress’s
+admin bar plus menu shell. The work is to make its hierarchy more intentional,
+not to recreate `wp-admin`.
+
+### B. WordPress list-table grammar, mapped exactly
+
+WordPress’s core list-table CSS establishes several interaction rules worth
+preserving:
+
+1. A table uses fixed, named columns for scanning—not unstructured cards.
+2. The item title is bold and the dominant cell.
+3. Secondary metadata appears beneath the title.
+4. Row actions are secondary, revealed on hover/focus and permanently available
+   for touch/mobile contexts.
+5. Selection lives in a dedicated check column with a full-cell accessible
+   label.
+6. Sortable headers are complete focusable targets, not tiny arrow-only buttons.
+7. Bulk controls and pagination occupy a short toolbar before/after the table.
+
+Apply that grammar to `VibeList.tsx` as follows:
+
+| WordPress structural convention | Exact VibeList target |
+| --- | --- |
+| `.wrap > h1 + .page-title-action` | Replace lines 115–122 with `VibePageHeader title="All Vibes" actions={<Link href="/vibes/new">Add New</Link>}`. |
+| `.subsubsub` status views under the title | Keep lines 125–129, but render each status as a text link/button with a count and CSS separators. Do not keep the second status control as an equal peer. |
+| `.tablenav.top` | Replace lines 130–152 with `VibeListToolbar position="top"`. Its order is bulk select → Apply → optional extra filters → search. |
+| `.wp-list-table.widefat.fixed` | Keep lines 161–195 as a native table; add stable column widths/classes and a `group` row class. |
+| `.column-title > .row-title + .row-actions` | Make lines 177–180 contain title link, slug/metadata, then an inline action region. Remove the separate visual action cell at lines 184–190. |
+| `.check-column` | Keep lines 165 and 176 as dedicated checkbox cells; add labels that cover the cell and preserve visible focus. |
+| `.tablenav.bottom` | Add `VibeListToolbar position="bottom"` after the table only for lists of 10+ rows; pagination remains the final control on lines 196–204. |
+
+**Important accessibility correction:** WordPress’s classic CSS hides desktop
+row actions far off-screen until hover. Do not reproduce that exact hiding
+technique. In Vibes, use visible muted actions by default on narrow/touch
+layouts, and `group-hover`, `group-focus-within`, and `focus-visible` styling on
+desktop. Actions must remain in both the DOM and tab order.
+
+### C. Modern WordPress editor grammar, mapped exactly
+
+The WordPress editor deliberately separates global/document actions from content
+editing and advanced settings:
+
+| WordPress editor element | Role | Vibe implementation |
+| --- | --- | --- |
+| Top toolbar | Navigation, save status, preview, global actions, settings toggle, publish. | Top region of `VibeEditor.tsx` lines 163–170 plus `PublishPanel`. Add a compact editor toolbar with back, draft title, save state, Preview, and a settings toggle. |
+| Content canvas | The primary editing task. It should work without opening settings. | `VibeEditor.tsx` lines 173–232. Metadata and the most-used visual controls remain accessible in the canvas. |
+| Settings sidebar | Tertiary/document settings, grouped into collapsible panels and optionally hidden on small screens. | The existing 320px right rail at lines 172 and 234. Keep Publish permanently discoverable; make secondary metadata panels collapsible/relocatable. |
+| Document vs selected-block distinction | Document-level settings are separate from controls for currently selected content. | Do not implement this until the repeatable-section discovery gate is passed. Current singleton Vibe fields are document-level settings. Future section controls belong to the selected section only. |
+| Pre-publish review | A deliberate confirmation summary before publishing. | Existing separate `/publish` route stays authoritative. Enhance its screen copy/summary rather than folding publication into an ambiguous editor button. |
+
+**Implementation decision:** do not add `@wordpress/*`, Gutenberg, its block
+store, or WordPress CSS to this repository. The Vibe CMS should copy the
+editorial interaction model through small native React components, preserving
+the existing structured payload rather than serializing WordPress blocks.
+
+### D. WordPress density and token translation
+
+WordPress list screens feel operational because of compact spacing and deliberate
+hierarchy, not because of their exact hex values. Create a Vibes-only class or
+CSS module/token map with these role names, then use it consistently in the
+components named below:
+
+| Role | Target behavior | First consumers |
+| --- | --- | --- |
+| `workspace` | light neutral canvas; no decorative gradients | `layout.tsx`, all Vibe pages |
+| `admin-bar` | dark, 40px sticky utility layer | `layout.tsx` |
+| `admin-menu` | dark persistent rail, clear active blue/brand accent | `VibeSidebar.tsx` |
+| `screen-title` | compact h1 with adjacent action—not hero marketing type | `VibePageHeader.tsx`, `VibeList.tsx` |
+| `list-header` | muted table heading, 12–13px-weighted operational label | `VibeList.tsx`, `RevisionList.tsx`, taxonomy |
+| `row-title` | 14–16px semibold/bold primary link | list and revisions |
+| `row-meta` | smaller muted text for slug, time, parent revision, counts | list and revisions |
+| `row-action` | compact text action, with danger tone only for destructive action | list, revisions |
+| `notice` | left-accented, low-chrome feedback panel | all Vibe routes |
+| `focus-ring` | high-contrast 2px visible ring independent of hover | every interactive component |
+
+Implement these as Tailwind composition constants in
+`apps/pulse/app/vibes/_components/vibeUi.ts` **only if** the project’s existing
+Tailwind setup favors class constants. If there is already a shared component
+or token convention elsewhere in `apps/pulse`, use that instead. Do not add
+WordPress CSS or hard-coded global `wp-*` class names.
+
+### E. Reverse-engineering-derived component boundaries
+
+Create the following components in this exact sequence. Each component should
+have one WordPress-derived responsibility and no data fetching of its own:
+
+1. `VibePageHeader.tsx` — classic screen title/action cluster.
+2. `VibeListToolbar.tsx` — top/bottom list-table controls.
+3. `VibeRowActions.tsx` — hover/focus/touch-safe item actions.
+4. `VibeStatusViews.tsx` — status count navigation below the title.
+5. `VibeNotice.tsx` and `VibeConfirmDialog.tsx` — mutation feedback and
+   consequential confirmation.
+6. `VibeEditorToolbar.tsx` — modern editor-level navigation/save/preview/
+   settings controls.
+7. `VibePanel.tsx` — WordPress-like collapsible settings sections.
+8. `VibeTaxonomyFieldset.tsx` — grouped document-level taxonomy control.
+
+`VibeList`, `VibeEditor`, `RevisionList`, and `TaxonomyDirectory` remain the
+data-owning route components. The new pieces should be thin so that the existing
+API calls, lifecycle logic, and test mocks remain easy to understand.
+
+### F. What not to reverse-engineer
+
+- WordPress PHP templates, `WP_List_Table`, Dashicons, `wp-admin` CSS, or its
+  global selectors.
+- A generic post/page/media/plugin/menu taxonomy. Vibes only needs the existing
+  Vibe routes and current editorial concepts.
+- Gutenberg block serialization, undo store, autosave, or keyboard shortcut
+  system before the repeatable-section schema is proven necessary.
+- WordPress’s old off-screen row-action hiding behavior or modal-heavy legacy
+  patterns.
+- Any protected operator/seed data into the browser. WordPress familiarity is a
+  UX goal, not a reason to weaken the existing site-application boundary.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
