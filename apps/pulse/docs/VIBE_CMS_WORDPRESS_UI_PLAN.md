@@ -2817,6 +2817,152 @@ Luna should begin implementation with this precise scope statement:
 That narrow first package creates a stable shared vocabulary without coupling it
 to a lifecycle or provisioning change.
 
+### CX. Visual-system patch boundaries — do not modify the global application theme
+
+The Vibe area already establishes its own light workspace in
+`app/vibes/layout.tsx` line 6, while `assets/styles/globals.css` defines the
+application-wide dark visual system and a universal color transition. The Vibe
+work must stay isolated.
+
+1. Do not change `assets/styles/globals.css`, `tailwind.config.js`, root
+   `app/layout.tsx`, or any global CSS variable in this initiative.
+2. In the three shared display primitives, use the existing local palette only:
+   workspace `#f0f0f1`, ink `#1d2327`, muted ink `#50575e`, border `#c3c4c7`,
+   action blue `#2271b1`, action hover `#135e96`, and sidebar hover `#2c3338`.
+   Do not introduce a new color token file.
+3. Apply this exact hierarchy in each migrated route:
+
+   | Element | Required classes/behavior | Do not use |
+   | --- | --- | --- |
+   | Page shell | `min-h-full bg-[#f0f0f1] px-4 py-6 sm:px-8` | a second `min-h-screen` inside the Vibe layout |
+   | Reading width | `mx-auto max-w-6xl` for lists; `max-w-3xl` for forms; `max-w-5xl` for preview | arbitrary route-specific widths |
+   | Card | `border border-[#c3c4c7] bg-white shadow-sm` | glass, blur, gradients, or rounded-pill containers |
+   | Standard control | `rounded-sm border border-[#8c8f94] bg-white px-2 py-1.5 text-sm` plus visible focus ring | `rounded-full`, scale-on-hover, or gradient action controls |
+   | Primary action | `rounded-sm bg-[#2271b1] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#135e96]` | `btn-primary` or `waterlily-button` |
+   | Destructive text | `text-red-700 hover:text-red-900 hover:underline` | red filled primary button until confirmation |
+
+4. Restrict decoration to information hierarchy: borders, compact headings,
+   active state, and readable tables. Do not add animated gradients, floating
+   cards, or a generic site-builder canvas.
+5. Where a current page already uses `rounded-lg` or `rounded-xl`, change it
+   only while that page is otherwise being migrated. Do not run a global
+   find/replace over the Vibe directory.
+
+### CY. Responsive and interaction requirements at exact affected regions
+
+#### Layout and sidebar
+
+1. `layout.tsx` current line 11 stays `lg:flex`; do not change the breakpoint.
+2. `VibeSidebar.tsx` current line 97 retains horizontal scrolling below `lg`.
+   In the line-120 link class, keep `shrink-0` so a label is never compressed
+   into unreadability; add focus classes from CE without removing overflow.
+3. Do not implement a collapse button in package 0A. The horizontal navigation
+   is the defined small-screen behavior and avoids introducing persisted state.
+
+#### List toolbar/table
+
+1. In `VibeList.tsx` lines 130–152, set the toolbar wrapper to
+   `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end`.
+2. Make search wrapper `w-full sm:max-w-sm`; bulk controls use
+   `flex flex-wrap items-center gap-2`. This keeps the search usable on a
+   320px-wide viewport without requiring horizontal page scroll.
+3. Wrap only the table in `<div className="overflow-x-auto">`; the page shell,
+   header, and pagination must not acquire horizontal overflow.
+4. Keep the checkbox column at `w-10`; title column is `min-w-56`; timestamp
+   columns use `whitespace-nowrap`; this makes the scrollable table deliberate
+   rather than squeezing content.
+5. Row actions moved into the title cell must be visible below the slug at all
+   sizes. Do not use `opacity-0 group-hover:opacity-100`.
+
+#### Editor and creation form
+
+1. Keep the edit grid at current lines 172–235 one column below `lg`; apply
+   `lg:grid-cols-[minmax(0,1fr)_18rem]` only to the outer grid if the existing
+   right publish panel remains the second child. Never reorder DOM solely for
+   desktop presentation.
+2. Inside every `VibePanel`, put color inputs in
+   `grid gap-4 sm:grid-cols-2`; source and long text fields remain full width.
+3. In `new/page.tsx`, the preset cards remain `sm:grid-cols-3`; at smaller
+   widths they stack. Keep actual radio inputs as `sr-only`, not `display:none`,
+   so keyboard users can select a preset.
+4. When a radio label is selected, add `focus-within:ring-2` to the label so
+   keyboard focus is apparent even though the input is visually hidden.
+
+### CZ. Preview page — truthful naming and strictly presentation-only change
+
+`app/vibes/[vibeId]/preview/page.tsx` is a server component that fetches the
+saved Vibe preview. It is not a tenant-site rendering route. Keep its request
+and rendering data unchanged.
+
+**Current lines 10–15:**
+
+1. Do not change `headers()`, origin construction, `cache: 'no-store'`, cookie
+   forwarding, or `GET /api/vibes/${vibeId}/preview`.
+2. Do not fetch a Site ID, tenant configuration, active pointer, or public
+   tenant route in this page.
+
+**Current line 23, unavailable branch:**
+
+1. Replace bare paragraph styling with the shared light workspace shell and a
+   `VibeNotice tone="error"` only after `VibeNotice` is available.
+2. Keep this branch server-renderable: no retry button that uses client state.
+
+**Current line 32, one-line returned main:**
+
+1. Expand into normal JSX without changing `vars`, `theme`, `sectionStyle`,
+   `primaryTone`, or the sample content data.
+2. Replace title suffix from `preview` to **Vibe settings preview**.
+3. Replace subtitle with **Saved draft settings shown in a representative
+   layout. This does not update a tenant site.** This is accurate whether the
+   Vibe is draft or published and avoids suggesting a real public preview.
+4. Keep the back link to `/vibes/${vibeId}/edit` exactly.
+5. Keep inline `sectionStyle`: it is the point of this settings preview. Do not
+   replace Vibe tokens with shared CMS palette classes.
+6. Change the sample `Ask Jamie` button to `type="button"` so it cannot become
+   an accidental submit if the preview composition later changes. It remains
+   intentionally non-functional; add `aria-label="Representative Ask Jamie button"`.
+
+Add `tests/unit/vibe-preview-page.test.tsx` with three assertions: the preview
+fetch has `cache: 'no-store'`; returned CSS variable values reach the preview
+surface style; and the page renders the new truthful subtitle without any Site
+ID input or apply action.
+
+### DA. Source-details page and copy alignment
+
+`app/vibes/[vibeId]/source/page.tsx` remains the read-only complement of the
+editor’s Source details panel. Before Luna changes its layout, make this narrow
+inspection and patch:
+
+1. Locate its fetch and retain its URL, method, response parsing, and error
+   state unchanged.
+2. Replace only duplicated route header markup with `VibePageHeader` using
+   `backHref={`/vibes/${vibeId}/edit`}` and **Back to Vibe**.
+3. Present source kind, source URL, attribution, ownership note, and timestamps
+   as a definition list (`<dl>`, `<dt>`, `<dd>`). Do not make values editable in
+   this route.
+4. If `sourceUrl` is present, render a normal external anchor with
+   `target="_blank" rel="noreferrer"`; if absent, render **Not provided** as
+   text. Do not attempt URL repair or add a new API validation rule.
+5. Add a focused page test for the absent URL and present URL paths. Keep tests
+   in the same package as this layout change.
+
+### DB. Final per-file command sequence for Luna
+
+For every package in CT, use this loop and stop on the first failure rather than
+stacking additional changes over an unresolved result:
+
+1. Read the full current target file and its closest existing unit test.
+2. Search the file for the preservation names in CU before editing.
+3. Make only the listed file changes with no generated formatting sweep.
+4. Run `git diff --check` and the focused test file listed in CT/CZ/DA.
+5. Inspect `git diff -- <changed-file>` for endpoint, request body, route, and
+   field-name drift.
+6. Commit only that package with a message of the form
+   `Refine Vibe UI package <identifier>`.
+7. In the handoff note, record changed files, test command/result, and any
+   deliberately deferred item. Do not call a page complete if its requested
+   test file has not been added or updated.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
