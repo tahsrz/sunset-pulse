@@ -1,5 +1,6 @@
 'use client';
 import type { ReactNode } from 'react';
+import React from 'react';
 type Action = '' | 'archive' | 'trash';
 export function VibeListToolbar({ position, selectedCount, action, onActionChange, onApply, busy = false, search, onSearchChange, children }: { position: 'top' | 'bottom'; selectedCount: number; action: Action; onActionChange: (action: Action) => void; onApply: () => void; busy?: boolean; search?: string; onSearchChange?: (value: string) => void; children?: ReactNode }) {
   return <div className={`flex flex-wrap items-center gap-3 p-4 ${position === 'bottom' ? 'border-t border-slate-200' : ''}`}>
