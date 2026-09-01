@@ -36,6 +36,15 @@ Branch/PR: `codex/cms-production-verification-evidence` / PR 73
 
 **Conditional review.** The seed boundary, ownership protections, idempotency, diagnostics, inspection, revocation, and local tests are ready for review. Hold production verification and merge completion until expiry/reconciliation design and the controlled production evidence checklist are completed.
 
+## Sol functional follow-up
+
+The follow-up review corrected two implementation bugs without widening into a security audit:
+
+- Inspection previously inferred store presence from the single record selected by `readSiteConfig`, which could falsely mark a healthy dual-store site as unreconciled. `inspectSiteConfigStores` now reads both stores explicitly and reports their actual presence.
+- The overall seed deadline timer was left scheduled after fast success or failure. The route now clears that timer in `finally`, avoiding unnecessary live timers after a completed request.
+
+Focused route and store verification passes with 22 tests across 2 files after these fixes.
+
 ## Key commits
 
 - `82ec5090` — isolate disposable CMS provisioning service
