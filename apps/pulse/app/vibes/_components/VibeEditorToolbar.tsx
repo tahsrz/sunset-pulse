@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import React from 'react';
 type VibeEditorToolbarProps = { title: string; dirty: boolean; conflict?: boolean; saving?: boolean; onSave: () => void; previewHref: string };
 export function VibeEditorToolbar({ title, dirty, conflict = false, saving = false, onSave, previewHref }: VibeEditorToolbarProps) {
   return <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">

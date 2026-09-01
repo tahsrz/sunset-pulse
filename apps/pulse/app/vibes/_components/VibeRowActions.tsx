@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import React from 'react';
 import { vibeActionClass } from './vibeUi';
 type RowAction = { label: string; href?: string; onClick?: () => void; tone?: 'default' | 'danger'; disabled?: boolean };
 export function VibeRowActions({ actions }: { actions: RowAction[] }) {

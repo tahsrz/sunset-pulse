@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import React from 'react';
 import { useState } from 'react';
 
 type VibePanelProps = { id: string; title: string; description?: ReactNode; defaultOpen?: boolean; children: ReactNode };

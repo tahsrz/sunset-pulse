@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 type VibeStatusView = { value: string; label: string; count: number };
 export function VibeStatusViews({ views, activeValue, onChange }: { views: readonly VibeStatusView[]; activeValue: string; onChange: (value: string) => void }) {
   return <nav aria-label="Vibe status views" className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
