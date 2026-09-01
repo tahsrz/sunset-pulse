@@ -17,6 +17,8 @@ describe('CMS test-site seed route', () => {
   it('stays unavailable when disabled', async () => {
     process.env.CMS_TEST_SEED_ENABLED = 'false';
     expect((await POST(request({ runId: 'run-123', email: 'taz@example.com' }))).status).toBe(404);
+    expect((await GET(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { headers: { 'x-cms-test-seed-token': 'secret' } }))).status).toBe(404);
+    expect((await DELETE(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { method: 'DELETE', headers: { 'x-cms-test-seed-token': 'secret' } }))).status).toBe(404);
     expect(mocks.provision).not.toHaveBeenCalled();
   });
 
