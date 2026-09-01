@@ -4092,6 +4092,98 @@ useEffect(() => {
    exactly one canonical `router.replace` with no query string and no list
    request using invalid API values.
 
+### EB. Canonical Luna package sequence — supersedes earlier ordering tables
+
+Use this list as the only execution order. Earlier CT/DM references remain
+design detail, but this sequence includes the later packages added to align the
+Vibe CMS with current WordPress admin patterns.
+
+| Order | Package | Files that may change | Mandatory stop condition |
+| --- | --- | --- | --- |
+| 1 | 0A Foundation | `layout.tsx`, `VibeSidebar.tsx`, `VibePageHeader.tsx`, `VibeStatusBadge.tsx`, `VibeNotice.tsx`, primitive tests | Landmarks/navigation/primitives pass; no route JSX migrated yet. |
+| 2 | 0B Controls | `VibePanel.tsx`, `VibeConfirmDialog.tsx`, list/status/editor helper components, primitive tests | Native disclosure/dialog behavior is tested; no API caller wired. |
+| 3 | 1A Query helper | `lib/cms/vibeListQuery.ts`, query tests | Valid API-aligned status/sort values pass parser/serializer tests. |
+| 4 | 1B List core | `VibeList.tsx`, list tests | Filters, sorting, bulk local refresh, accessible base table work with unchanged API contracts. |
+| 5 | 1C List tools | `VibeListToolbar.tsx`, `VibeBulkControls` only if necessary, `VibeScreenTools.tsx`, `VibePageHeader.tsx`, list/primitive tests | Top/bottom bulk controls share state; Help is local/read-only. |
+| 6 | 1D List responsive | `VibeListRowDetails.tsx`, `VibeList.tsx`, list tests | Primary row keeps actions visible; secondary values are available on small screens. |
+| 7 | 1E List deep links | `VibeList.tsx`, list/query tests | Direct URL, refresh, Back/Forward, canonicalization, and API mapping pass. |
+| 8 | 2A Create | `new/page.tsx`, creation tests | Slug/preset form is accessible and POST body/redirect are unchanged. |
+| 9 | 2B Editor panels | `edit/VibeEditor.tsx`, panel/editor helpers, editor test | Every FormData input remains mounted and draft PATCH conflict behavior passes. |
+| 10 | 2C Editor toolbar | `VibeEditorToolbar.tsx`, `VibeEditor.tsx`, editor test | One accessible Save/Preview/workflow control set; toolbar invokes existing form save. |
+| 11 | 3A Revisions | `RevisionList.tsx`, revision tests | Republish accurately creates a published revision; Apply stays current-published-only. |
+| 12 | 3B Workflow evidence | audit/actions/submit/publish/compare pages, focused tests | Existing lifecycle request bodies/routes/events are proven unchanged. |
+| 13 | 3C Readiness | `VibeReadinessChecklist.tsx`, submit/publish/editor notice updates, tests | Lifecycle consequences are clear; no automatic site mutation exists. |
+| 14 | 3D Supporting screens | taxonomy page/directory, source page/detail component, tests | Taxonomy remains schema-owned/read-only; Source remains server-rendered. |
+| 15 | 4A Apply | `apply/page.tsx`, local apply display components, apply tests | Site-specific preflight gates existing apply POST with no route/body changes. |
+
+**No package is complete just because the visual layout renders.** Its matching
+focused test group, contract checks, and stop condition must all be satisfied
+before the next package begins.
+
+### EC. File ledger — exact ownership and forbidden cross-package edits
+
+| File | Owning package(s) | Exact responsibility | Explicitly forbidden in this UI initiative |
+| --- | --- | --- | --- |
+| `app/vibes/layout.tsx` | 0A | Outer workspace landmark and utility bar semantics | Client hooks, tenant/site fetches, global header rewrite |
+| `app/vibes/VibeSidebar.tsx` | 0A | Active path, static/dynamic Vibe navigation ordering, focus styles | Status route mutation, permission logic, persisted collapse state |
+| `app/vibes/VibeList.tsx` | 1B–1E | Existing list GET mapping, table, bulk wiring, URL state, mobile detail placement | API response expansion, new server filter, per-page persistence |
+| `lib/cms/vibeListQuery.ts` | 1A | Parse/serialize only the five public list keys | Router hooks, fetch, environment reads |
+| `app/vibes/new/page.tsx` | 2A | Slug interaction, field order, preset presentation | New create payload keys or slug auto-conflict workaround |
+| `edit/VibeEditor.tsx` | 2B, 2C | Existing form fields/PATCH, panels, toolbar wiring | Draft schema changes, automatic save/retry, publish mutation |
+| `revisions/RevisionList.tsx` | 3A | Presentation order and controlled republish dialog | Direct pointer apply for prior revision, snapshot mutation |
+| `actions/page.tsx` | 3B | Existing status controls and trash confirmation | New lifecycle action type or endpoint |
+| `submit/page.tsx` | 3B, 3C | Existing submit POST plus readiness explanation | Request body, direct publish/site apply |
+| `publish/page.tsx` | 3B, 3C | Existing publish POST plus readiness explanation | Site-pointer mutation or automatic apply |
+| `audit/page.tsx` | 3B | Group/read event history | Audit query/API or event persistence |
+| `compare/CompareView.tsx` | 3B | Abortable existing revision comparison display | New compare data model or action controls |
+| `taxonomy/*` | 3D | Read-only filter/table semantics | Term CRUD, schema updates, migration |
+| `source/page.tsx` | 3D | Existing server access/query plus safe detail display | Client conversion, route API, source mutation |
+| `apply/page.tsx` | 4A | Existing site pointer check/apply preflight UI | Apply endpoint/body, tenant/site routing changes |
+
+### ED. Modern-admin acceptance rubric for final visual review
+
+Luna must use this as a route-by-route visual review after unit tests pass. It
+is intentionally observable, not subjective.
+
+1. **List screen:** heading and Add New action share the first row; status views
+   sit immediately above table controls; search, bulk select, Apply, count, and
+   pagination are readable without horizontal page scroll; title is primary;
+   row actions have text; top/bottom bulk controls stay synchronized.
+2. **Editor:** toolbar remains visible below the Vibe utility bar; title and
+   identity explain what is being edited; Save is reachable without hunting in
+   a sidebar; advanced settings are collapsible while Metadata/Taxonomy start
+   open; no control implies a block builder exists.
+3. **Lifecycle:** Submit, Publish, Republish, and Apply explain the result
+   before the final control; destructive Trash requires controlled confirmation;
+   status/error feedback occurs once in a predictable page position.
+4. **Supporting screens:** Taxonomy is a compact term table with visible
+   read-only boundary; Source distinguishes linkable external URLs from local
+   paths; Audit and Compare prioritize human-readable evidence, with technical
+   detail available but not dominant.
+5. **Small screens:** sidebar is scrollable rather than clipped; list primary
+   cell provides essential metadata in native disclosure; editor toolbar wraps
+   and primary save remains visible; nothing requires hover to discover or use.
+6. **Accessibility:** keyboard focus is visible; all controls have labels;
+   table headers/scopes are correct; dialogs and notices use their promised
+   semantics; color is never the sole status/error signal.
+
+### EE. Final code-review command set for the complete UI series
+
+Run after all packages, from `apps/pulse`, without changing dependencies or
+deployment settings:
+
+```powershell
+npx vitest run tests/unit/vibe-ui-primitives.test.tsx tests/unit/vibe-list-query.test.ts tests/unit/vibe-list.test.tsx tests/unit/vibe-new-page.test.tsx tests/unit/vibe-editor-validation.test.tsx tests/unit/vibe-revisions.test.tsx tests/unit/vibe-actions-page.test.tsx tests/unit/vibe-submit-page.test.tsx tests/unit/vibe-publish-page.test.tsx tests/unit/vibe-audit-page.test.tsx tests/unit/vibe-compare-view.test.tsx tests/unit/vibe-taxonomy.test.tsx tests/unit/vibe-source-details.test.tsx tests/unit/vibe-apply.test.tsx
+git diff --check
+rg -n "(/api/vibes|/api/admin/sites|expectedVersion|vibe-status-changed|apply-vibe)" app/vibes lib/cms/vibeListQuery.ts
+```
+
+If a named focused test file does not exist because its owning package is not
+implemented, that package is incomplete—not a reason to remove the file from
+the final command. The final reviewer should also inspect that no changes exist
+under middleware, public tenant rendering, migrations, environment files,
+package manifests, or global CSS unless independently authorized.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
