@@ -38,10 +38,15 @@ function getVibeId(pathname: string) {
   return candidate && candidate !== 'new' && candidate !== 'taxonomy' ? candidate : null;
 }
 
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || (href !== '/vibes' && pathname.startsWith(`${href}/`));
+}
+
 function getWorkflowItems(vibeId: string, status: string | null): NavigationItem[] {
   const items: NavigationItem[] = [
     { href: `/vibes/${vibeId}/edit`, label: 'Edit Vibe', icon: Pencil },
     { href: `/vibes/${vibeId}/preview`, label: 'Preview', icon: Eye },
+    { href: `/vibes/${vibeId}/revisions`, label: 'Revisions', icon: History },
     { href: `/vibes/${vibeId}/actions`, label: 'Status & Actions', icon: Settings },
   ];
 
@@ -50,7 +55,6 @@ function getWorkflowItems(vibeId: string, status: string | null): NavigationItem
 
   return [
     ...items,
-    { href: `/vibes/${vibeId}/revisions`, label: 'Revisions', icon: History },
     { href: `/vibes/${vibeId}/audit`, label: 'Audit Log', icon: ClipboardList },
     { href: `/vibes/${vibeId}/source`, label: 'Source Details', icon: FileText },
   ];
@@ -110,14 +114,14 @@ export function VibeSidebar() {
 }
 
 function SidebarLink({ item, pathname }: { item: NavigationItem; pathname: string }) {
-  const active = pathname === item.href;
+  const active = isActivePath(pathname, item.href);
   const Icon = item.icon;
 
   return (
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
-      className={`flex shrink-0 items-center gap-2 rounded px-3 py-2 text-sm font-medium transition-colors lg:w-full lg:rounded-none ${active ? 'bg-[#2271b1] text-white' : 'text-[#f0f0f1] hover:bg-[#2c3338] hover:text-white'}`}
+      className={`flex shrink-0 items-center gap-2 rounded px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:w-full lg:rounded-none ${active ? 'bg-[#2271b1] text-white' : 'text-[#f0f0f1] hover:bg-[#2c3338] hover:text-white'}`}
     >
       <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2} />
       {item.label}
