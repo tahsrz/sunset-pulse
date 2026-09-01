@@ -1522,6 +1522,86 @@ After the UI work and only in a controlled environment:
 7. Revoke/restore according to the existing controlled lifecycle runbook; do
    not use a customer site for UI verification.
 
+### BE. Site-versus-Vibe ownership matrix
+
+The public tenant projection shows that a Vibe is an applied layer inside a site,
+not a replacement for the site record. Keep these responsibilities separate in
+the UI and in future schema decisions.
+
+| Concern | Canonical owner today | Evidence in code | UI consequence |
+| --- | --- | --- | --- |
+| Hostname / subdomain / custom domain | Tenant site configuration and routing | `tenantRouting.ts`, `siteData.ts` lines 161–164 | Vibes screens show a target site only as apply context; they do not edit DNS/domain identity. |
+| Site publication readiness | Tenant site configuration | `siteData.ts` lines 169–208 | Vibe publication must not claim a tenant site became public. |
+| Site title, owner, agent profile, compliance, integrations | Tenant site configuration | `siteData.ts` lines 155–215 | Do not put agent/site-profile fields in Vibe editor panels. |
+| Public page section inventory/order | Tenant site configuration | `siteData.ts` lines 214 and 257–266; public route lines 148–203 | Do not introduce hero/listings/contact drag-and-drop controls in Vibe editor. |
+| Vibe draft visual/editorial configuration | Vibe draft payload | `VibeEditor.tsx` lines 107–139 | Existing structured editor remains the Vibe authoring surface. |
+| Immutable reusable visual/editorial release | Vibe revision snapshot | `vibeService.ts` publish flow | Revision history explains this as reusable publication, not tenant deployment. |
+| Active selection for one site | Tenant-site active Vibe revision pointer | `siteData.ts` lines 272–285 | Apply flow changes selection only after protected validation/preflight. |
+| Rendered Vibe values | Published revision CSS variables / voice configuration | `siteData.ts` lines 276–282; public route lines 163 and 184 | Public site output uses the resolved projection; no browser-side Vibe lookup is needed. |
+
+### BF. Visual precedence contract
+
+At present, a tenant site is normalized with its own branding, title, sections,
+and profiles, then may be hydrated with an active Vibe projection. The hydration
+adds `vibeCssVars`, `vibeVoiceConfig`, and a Vibe-derived assistant tone; the
+public site route applies `vibeCssVars` to its root style.
+
+The UI must communicate only what is guaranteed:
+
+1. Applying a Vibe selects a published revision for a site.
+2. That selected revision contributes its published visual variables and voice
+   configuration to public tenant rendering.
+3. It does **not** replace the tenant’s domain, owner, title, readiness,
+   listings, compliance profile, integration profile, or section inventory.
+4. It must not claim that every site-branding field will visibly change; actual
+   public components may consume only specific CSS variables.
+5. Before adding a UI field named “site-wide color” or “site-wide font,” inspect
+   the public component consuming that field and document whether site branding
+   or the active Vibe projection wins. Do not infer precedence from labels.
+
+This is a product-accuracy requirement. It prevents the Vibes UI from promising
+a full theme replacement when it currently supplies a controlled style/voice
+projection.
+
+### BG. Preview terminology correction
+
+The current `/vibes/[vibeId]/preview` page renders a representative layout from
+the saved Vibe draft. It is valuable for reviewing colors, typography, layout,
+and voice, but it is not the public tenant route and does not render a selected
+tenant’s listings, profiles, sections, or readiness state.
+
+Update plan copy accordingly:
+
+| Existing or proposed wording | Required wording |
+| --- | --- |
+| “Preview changes” | “Preview Vibe settings” when it opens the representative draft preview. |
+| “Draft preview” | “Saved Vibe settings preview · not applied to a site.” |
+| “Published revision preview” | “Published Vibe revision preview” unless a real tenant-site route is being rendered. |
+| “See how your site looks” | Do not use for the current preview route. |
+
+Future tenant-site preview is a separate capability. It may be proposed only if
+the UI can safely select an authorized site and render that site’s real public
+composition against a chosen saved/published Vibe revision without changing its
+active pointer. That requires a separate server-rendering and authorization
+design; it is not a client iframe or a generic page-builder canvas.
+
+### BH. Consequences for the repeatable-section discovery gate
+
+The existing public site has a site-owned section list (`hero`,
+`featured_listings`, `about_agent`, `contact`). That is evidence against putting
+site-composition controls into the Vibe editor today.
+
+The Phase 5 discovery gate must answer two separate questions before any new UI:
+
+1. Are there repeatable **Vibe-owned** values that should become sections inside
+   the Vibe revision snapshot?
+2. Or is the desired capability actually a tenant-site section/layout change
+   that belongs in a site/Launch Kit workspace?
+
+If the answer is the second, remove it from this Vibes plan and propose it under
+the tenant-site product area. Reusing a style layer across sites and composing a
+site’s public sections are different products with different data owners.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
