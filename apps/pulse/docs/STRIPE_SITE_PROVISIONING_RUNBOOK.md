@@ -44,6 +44,8 @@ curl -sS -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId
 
 The response must show `revoked: true`, `status: suspended`, and a `correlationId`. Repeating the same request is safely idempotent. If the site cannot be found or the owner does not match, stop and reconcile the recorded `siteId` before attempting any other mutation.
 
+If seeding returns `500` or `504`, preserve the response `correlationId`, `runId`, `siteId`, `stage`, `elapsedMs`, and `reconciliationRequired` fields. Do not retry blindly: inspect the deterministic site first, reconcile any partial store write, and only then decide whether the run can continue.
+
 ### Close the controlled window
 
 - Set `CMS_TEST_SEED_ENABLED=false` in the deployment environment.
