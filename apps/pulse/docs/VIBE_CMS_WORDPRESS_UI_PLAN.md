@@ -546,8 +546,9 @@ everything into cards.
 - Put validation text directly below the relevant input, and tie it with
   `aria-describedby`. Do not use placeholder text as a label or sole format
   explanation.
-- Slug is a primary identity field. Show a live non-authoritative permalink
-  preview, then validate again on the server when saved.
+- Slug is a primary identity field. Show a live non-authoritative identifier
+  preview, then validate again on the server when saved. A Vibe slug does not
+  create or identify a public tenant-site URL.
 - Color fields retain the native color input and a readable adjacent hex value
   only if the existing payload supports direct hex editing. Avoid a bespoke
   color-picker dependency in this initiative.
@@ -661,7 +662,7 @@ string mutation in JSX.
 
 #### Route and identity copy rules
 
-- Browser-facing navigation uses the Vibe title first, then the slug/permalink
+- Browser-facing navigation uses the Vibe title first, then a slug/identifier
   context. `vibeId` is operational metadata and should not lead a page title.
 - Keep current routes based on `vibeId`; replacing them with slugs is out of
   scope and risks breaking lifecycle/revision links.
@@ -677,7 +678,7 @@ than force editors to learn implementation vocabulary first.
 | Concept | First-use copy | Where it appears | Do not say |
 | --- | --- | --- | --- |
 | Vibe | “A reusable visual and editorial system for a site.” | All Vibes empty state / Add New intro | “CMS record” |
-| Slug | “The URL-safe name, for example `coastal-modern`.” | Under the slug field | “Must match the requested format” alone |
+| Slug | “A URL-safe Vibe identifier, for example `coastal-modern`. It does not create a public site URL.” | Under the slug field | “Must match the requested format” alone |
 | Draft | “Saved changes that are not yet a published revision.” | Save state / editor | “Unpublished object” |
 | Revision | “A frozen version created when you publish.” | Publish and revisions | “Database snapshot” |
 | Republish revision | “Creates a new published revision from this snapshot.” | Revision confirmation | “Rollback” without explanation |
@@ -1016,7 +1017,7 @@ VibeList (data/state owner)
 │ [Vibes]   [← All Vibes]  Editing: Coastal Modern                 [Preview] [⚙]   │
 ├───────────────┬───────────────────────────────────────────┬──────────────────────┤
 │ ALL VIBES     │ Coastal Modern                             │ PUBLISH              │
-│ ADD NEW       │ /vibes/coastal-modern                      │ Published revision   │
+│ ADD NEW       │ Slug: coastal-modern                       │ Published revision   │
 │ TAXONOMY      │ Saved / Unsaved changes / Saving / Conflict│ r12 available        │
 │               │                                            │                      │
 │ CURRENT VIBE  │ [Metadata                         −]        │ [Save draft]         │
@@ -1034,7 +1035,7 @@ VibeList (data/state owner)
 ```text
 VibeEditor (data/state owner)
 ├── VibeEditorToolbar
-│   ├── back link / current title / permalink
+│   ├── back link / current title / slug identifier
 │   ├── save-state indicator
 │   ├── Preview link
 │   └── settings visibility control (later, optional)
@@ -1435,8 +1436,8 @@ Rules derived from this flow:
    site after that site’s pointer is updated through the protected apply flow.
 3. A tenant subdomain names a tenant site, not a Vibe. Multiple sites can
    eventually point at the same published Vibe revision.
-4. Vibe slugs are editorial identifiers/permalink context, not DNS labels and
-   not a substitute for tenant identity.
+4. Vibe slugs are editorial identifiers, not public site URLs or DNS labels,
+   and not a substitute for tenant identity.
 5. The Vibes workspace should communicate this distinction in the apply
    preflight, revision history, and preview labels—not by exposing middleware
    mechanics to ordinary editors.
@@ -1984,7 +1985,7 @@ inaccessible faux dialog.
   already exists.
 - [ ] Split `new/page.tsx` into readable JSX sections or a `NewVibeForm` client
   component. Keep request and redirect behavior unchanged.
-- [ ] Put title, slug, help, permalink preview, description, and submit before
+- [ ] Put title, slug, help, identifier preview, description, and submit before
   the optional **Start from a style** panel.
 - [ ] Keep auto-slug only until the user manually edits it. Render inline
   validation and do not depend solely on native pattern text.
@@ -2010,7 +2011,7 @@ diverge.
   `VibeTaxonomyFieldset.tsx` as client components.
 - [ ] Preserve `VibeEditor` as draft data/form owner. Do not move `saveDraft`,
   fetch, `SaveState`, or conflict behavior into child components.
-- [ ] Replace the current header with title, permalink context, saved/unsaved
+- [ ] Replace the current header with title, identifier context, saved/unsaved
   state, and Preview link. Use exact preview terminology from section BG.
 - [ ] Keep two-column desktop layout. Keep PublishPanel sticky at desktop; stack
   after canvas on narrower widths.
@@ -2398,7 +2399,7 @@ Then make these exact behavioral edits:
 2. Keep `title`, `slug`, `description`, `preset`, `saving`, `error`, and
    `slugEdited` state. Rename `slugEdited` to `hasManuallyEditedSlug` only if all
    its references are updated in the same patch.
-3. Render fields in this order: Title → Slug → permalink preview → Description
+3. Render fields in this order: Title → Slug → identifier preview → Description
    → Start from a style → error → submit.
 4. On Title `onChange`, call `setSlug(toVibeSlug(next))` only while manual flag
    is false.
@@ -2436,8 +2437,9 @@ handling and its existing `expectedVersion` request untouched.
 
 **Current lines 163–170:** replace manual header with `VibeEditorToolbar` and
 `VibePageHeader` composition. Page title should use `draft.title`, not generic
-**Edit Vibe**. Render a secondary `/vibes/${draft.slug || vibe.vibeId}`
-permalink context only; do not change route identity.
+**Edit Vibe**. Render a secondary **Slug: `<value>`** identifier context only;
+do not construct `/vibes/${draft.slug}` or imply it is a public permalink. Do
+not change route identity.
 
 **Current lines 172–235:** retain grid and PublishPanel placement. Replace each
 `<article>` as follows:
@@ -4324,6 +4326,122 @@ The dialog must be a predictable controlled confirmation surface, not a browser
 8. Add tests for Escape, Tab wrap, Shift+Tab wrap, backdrop click no-op, focus
    on cancel, and `confirmDisabled` preventing the callback.
 
+### EH. Slug identity package 2A/2B — familiar clarity without a false public permalink
+
+The current create route (`app/api/vibes/route.ts`, POST lines 56–66) constructs
+an internal `vibeId` from the default tenant and submitted slug. It does not
+create a domain, a public page route, or a tenant-site path. The UI should make
+slug entry easy without promising a visitor-facing URL.
+
+#### New `app/vibes/_components/VibeSlugHelp.tsx`
+
+1. Props are exactly:
+
+   ```ts
+   type VibeSlugHelpProps = {
+     value: string;
+     invalid?: boolean;
+     errorId?: string;
+   };
+   ```
+
+2. Render a static help paragraph with id `vibe-slug-help`:
+
+   ```tsx
+   <p id="vibe-slug-help" className="mt-1 text-xs text-[#50575e]">
+     Use lowercase letters, numbers, and hyphens. This identifies the Vibe in the CMS; it does not create a public site URL.
+   </p>
+   ```
+
+3. Render a second polite preview paragraph beneath it:
+
+   ```tsx
+   <p aria-live="polite" className="mt-1 text-xs text-[#50575e]">
+     Vibe identifier: <code className="font-mono text-[#1d2327]">{value.trim() || 'not set'}</code>
+   </p>
+   ```
+
+4. When `invalid` is true, render an error paragraph whose id is `errorId` and
+   whose exact text is **Use lowercase letters, numbers, and single hyphens;
+   start and end with a letter or number.** Do not use a browser route or a
+   fabricated `/vibes/...` preview.
+5. This component imports React types only if needed. It has no Link, fetch,
+   router, tenant, or Vibe service import.
+
+#### `app/vibes/new/page.tsx`, current form state and Slug field
+
+1. Keep the existing controlled `slug` state. Add:
+
+   ```ts
+   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+   const normalizedSlug = slug.trim();
+   const isSlugValid = VIBE_SLUG_PATTERN.test(normalizedSlug);
+   ```
+
+   If the shared helper exports a RegExp with a global flag, use a non-global
+   predicate function instead; repeated `.test()` must not depend on `lastIndex`.
+2. In the form `onSubmit`, call `setHasAttemptedSubmit(true)` before `create()`.
+   At the top of `create()`, return early when `!isSlugValid`; leave title and
+   other field values intact.
+3. On Title change, continue generating `toVibeSlug(next)` only until
+   `hasManuallyEditedSlug` is true. Do not title-case, URL encode, or append a
+   tenant/site string.
+4. On Slug change, call `setHasManuallyEditedSlug(true)` even if the user clears
+   the field. Clearing is an intentional manual edit and must not let the next
+   title keystroke overwrite it.
+5. The slug input keeps current `required` and pattern. Add:
+
+   ```tsx
+   aria-invalid={normalizedSlug !== '' && !isSlugValid ? true : undefined}
+   aria-describedby={normalizedSlug !== '' && (!isSlugValid || hasAttemptedSubmit)
+     ? 'vibe-slug-help vibe-slug-error'
+     : 'vibe-slug-help'}
+   ```
+
+6. Render `<VibeSlugHelp value={slug} invalid={hasAttemptedSubmit || (normalizedSlug !== '' && !isSlugValid)} errorId="vibe-slug-error" />`
+   directly after the slug input and before Description. Do not add a separate
+   label to the preview.
+7. The POST body remains `JSON.stringify({ title, slug: normalizedSlug,
+   description, ...(preset ? { preset } : {}) })` only if this is identical to
+   current optional-preset behavior. Do not send `hasAttemptedSubmit`, validity,
+   or identifier-preview information.
+
+#### `app/vibes/[vibeId]/edit/VibeEditor.tsx`, Metadata panel
+
+1. Do not turn the existing title/slug inputs into controlled values merely to
+   display the identifier preview. Add
+   `const [slugPreview, setSlugPreview] = useState(draft.slug || '');` after the
+   loaded Vibe/draft guard, using the latest draft value when the component
+   remounts for a different Vibe.
+2. On the existing slug input only, add
+   `onChange={(event) => setSlugPreview(event.currentTarget.value)}`. The
+   parent form’s existing `onChange` event still marks the draft dirty through
+   bubbling; do not add another `setSaveState('dirty')` in this handler.
+3. Keep `name="slug"`, default value, and FormData behavior unchanged. Add the
+   same `aria-describedby="vibe-slug-help"` as Add New, but do not add client
+   invalid-state gating to editor save until it uses the same shared validator
+   and has a focused test.
+4. Render `<VibeSlugHelp value={slugPreview} />` directly below the slug input.
+   The editor’s static identity line can show `Slug: <code>{slugPreview ||
+   'not set'}</code>`; it must not render `/vibes/${slugPreview}`.
+5. Retain server PATCH validation as the source of truth for malformed saved
+   slugs. On API `400 Invalid draft payload.`, show existing error/notice and
+   preserve the uncontrolled input value.
+
+### EI. Slug identity tests and review checks
+
+1. In `vibe-new-page.test.tsx`, assert the preview uses **Vibe identifier:** and
+   does not contain `/vibes/`. Assert clearing a manually edited slug prevents
+   a later title change from overwriting it.
+2. Assert invalid slug sets `aria-invalid="true"`, ties to
+   `vibe-slug-error`, sends no POST, and leaves title/description/preset state
+   intact.
+3. In editor validation tests, change slug input, assert the identifier preview
+   changes, submit, and confirm PATCH still gets the field under key `slug`.
+4. Search every changed package file for `permalink` and `/vibes/${draft.slug}`.
+   Any occurrence must be removed unless it is an explicit warning that such a
+   route must not be created.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
@@ -4657,9 +4775,10 @@ silently widen the package.
 - Generate the slug from title until the editor explicitly changes it.
 - Put concise help directly beneath the slug: “The URL-safe name. Use lowercase
   letters, numbers, and hyphens; for example `coastal-modern`.”
-- Show a live permalink-style preview (`/vibes/coastal-modern`) and inline
+- Show a live identifier preview (**Slug: `coastal-modern`**) and inline
   validation guidance rather than relying on the browser’s generic “match the
-  requested format” message.
+  requested format” message. Do not show `/vibes/coastal-modern` as a public or
+  navigable route.
 - Keep presets, but place them after the basic identity fields or behind a
   “Start from a style” disclosure so title/slug remain the first task.
 - Replace the ambiguous primary label with **Save draft and continue editing**.
@@ -4677,7 +4796,7 @@ silently widen the package.
 - Use a two-column desktop editor: focused structured content canvas on the
   left, sticky right-hand **Publish** rail on the right. Stack predictably on
   smaller screens.
-- Put title and permalink/slug at the top of the canvas; surface a compact
+- Put title and slug identifier at the top of the canvas; surface a compact
   “Last saved” state beside the title.
 - Organize current structured fields into clearly named panels: **Identity**,
   **Visual system**, **Layout**, **Taxonomy**, and **Advanced**. Panels should
@@ -4979,7 +5098,7 @@ Create `apps/pulse/tests/unit/vibe-list.test.tsx`.
   inside a `VibePanel` named **Start from a style**.
 - **Title input:** retain auto-slug generation until a boolean
   `hasManuallyEditedSlug` becomes true. Add `aria-describedby` pointing to slug
-  help and a live permalink preview.
+  help and a live identifier preview; do not construct a public URL from it.
 - **Slug input:** retain the pattern, but show an inline error derived from
   `isValidVibeSlug(slug)` while typing and on submit. Explain the allowed format
   exactly: lowercase letters, numbers, hyphens; no spaces or leading/trailing
@@ -5012,15 +5131,15 @@ selection, and the existing create request payload.
   explicitly “Save draft.” Publishing remains a separate route/action.
 - **Lines 163–170:** replace the generic **Edit Vibe** heading with the current
   draft title; retain a subtle “Editing draft” or “Current published revision
-  available” context beside it. Use `VibePageHeader` and show the permalink
-  preview directly below the title.
+  available” context beside it. Use `VibePageHeader` and show the slug
+  identifier directly below the title. Do not render a public permalink.
 - **Line 172:** retain the `lg:grid-cols-[1fr_320px]` structure; this is already
   the desired WordPress-style canvas/rail layout. Change `gap-5` to shared
   spacing tokens only if the project already has them—do not introduce a new
   design-token system in this PR.
 - **Lines 174–181 (Metadata):** use `VibePanel defaultOpen`. Keep title, slug,
   description field names and `FormData` keys unchanged. Add the same slug help
-  and permalink preview used in Add New.
+  and identifier preview used in Add New.
 - **Lines 183–189 (Taxonomy):** extract `VibeTaxonomyFieldset.tsx`. Group terms
   by `group`, render each group label once, show selected term count in the
   panel summary, and retain checkbox name `taxonomyTermIds` and values `id`.
@@ -5046,7 +5165,7 @@ selection, and the existing create request payload.
 Update `apps/pulse/tests/unit/vibe-editor-validation.test.tsx`:
 
 - Retain lines 42–73 unchanged as regression coverage for `baseFontSize`.
-- Add assertions for the slug help/permalink preview and panel names.
+- Add assertions for the slug help/identifier preview and panel names.
 - Add a test proving form field names remain present when panels collapse/expand
   and that a save produces the same normalized PATCH payload.
 - Add a conflict-state test: API 409 shows reload guidance and does not mark
