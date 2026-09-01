@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       correlationId,
     });
   }
-  const provisionPromise = provisionDisposableCmsSite({ runId: parsed.data.runId, ownerName: parsed.data.ownerName, email: parsed.data.email, userId: ownerUserId });
+  const provisionPromise = provisionDisposableCmsSite({ runId: parsed.data.runId, ownerName: parsed.data.ownerName, email: parsed.data.email, userId: ownerUserId, originalPointer: null });
 
   let result: Awaited<typeof provisionPromise>;
   let deadlineHandle: ReturnType<typeof setTimeout> | undefined;

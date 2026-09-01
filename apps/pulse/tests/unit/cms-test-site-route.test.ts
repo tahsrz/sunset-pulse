@@ -32,7 +32,7 @@ describe('CMS test-site seed route', () => {
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
     expect(response.status).toBe(201);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: null, correlationId: expect.any(String), elapsedMs: expect.any(Number) });
-    expect(mocks.provision).toHaveBeenCalledWith({ runId: 'run-123', ownerName: 'CMS Verification', email: 'taz@example.com', userId: 'user-taz' });
+    expect(mocks.provision).toHaveBeenCalledWith({ runId: 'run-123', ownerName: 'CMS Verification', email: 'taz@example.com', userId: 'user-taz', originalPointer: null });
   });
 
   it('returns a safe structured response when provisioning fails', async () => {

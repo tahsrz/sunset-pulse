@@ -34,6 +34,7 @@ export type PaidAgentSiteProvisioningInput = {
   auditAction?: string | null;
   auditActor?: string | null;
   auditMessage?: string | null;
+  disposableCms?: AgentLaunchKit['billingProfile']['disposableCms'];
 };
 
 export type PaidAgentSiteProvisioningResult = AgentLaunchKitResponse & {
@@ -41,7 +42,7 @@ export type PaidAgentSiteProvisioningResult = AgentLaunchKitResponse & {
   savedStores: string[];
 };
 
-export async function provisionDisposableCmsSite(input: { runId: string; ownerName: string; email: string; userId: string }) {
+export async function provisionDisposableCmsSite(input: { runId: string; ownerName: string; email: string; userId: string; originalPointer?: string | null }) {
   return provisionPaidAgentSite({
     agentId: `cms-verification-${input.runId}`,
     ownerName: input.ownerName,
@@ -54,6 +55,7 @@ export async function provisionDisposableCmsSite(input: { runId: string; ownerNa
     auditAction: 'cms.test-site.seeded',
     auditActor: `cms-test-seed:${input.userId}`,
     auditMessage: `Disposable CMS verification site seeded for run ${input.runId}.`,
+    disposableCms: { runId: input.runId, originalPointer: input.originalPointer || '', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() },
   });
 }
 
@@ -143,6 +145,7 @@ export async function provisionPaidAgentSite(
       stripeCheckoutSessionId: input.stripeCheckoutSessionId || baseKit.billingProfile.stripeCheckoutSessionId || '',
       trialEndsAt,
       billingStatus,
+      ...(input.disposableCms ? { disposableCms: input.disposableCms } : {}),
     },
     reviewProfile: existing ? baseKit.reviewProfile : {
       ...baseKit.reviewProfile,

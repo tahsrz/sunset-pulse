@@ -92,6 +92,11 @@ export type LaunchKitBillingProfile = {
   gracePeriodEndsAt?: string;
   billingStatusChangedAt?: string;
   billingStatus: 'unknown' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete';
+  disposableCms?: {
+    runId: string;
+    originalPointer: string;
+    expiresAt: string;
+  };
 };
 
 export type LaunchKitReviewProfile = {
@@ -166,6 +171,7 @@ const billingProfileSchema = z.object({
   gracePeriodEndsAt: optionalStringSchema,
   billingStatusChangedAt: optionalStringSchema,
   billingStatus: z.enum(['unknown', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete']).default('unknown'),
+  disposableCms: z.object({ runId: z.string().trim().max(64), originalPointer: optionalStringSchema, expiresAt: optionalStringSchema }).optional(),
 });
 const reviewProfileSchema = z.object({
   status: z.enum(['not_started', 'setup_saved', 'requested', 'in_review', 'approved', 'changes_requested']).default('not_started'),
@@ -358,6 +364,7 @@ export function normalizeLaunchKit(input: unknown, fallbackAgentId?: string | nu
       gracePeriodEndsAt: billingProfile.gracePeriodEndsAt || billingProfile.grace_period_ends_at || fallback.billingProfile.gracePeriodEndsAt || '',
       billingStatusChangedAt: billingProfile.billingStatusChangedAt || billingProfile.billing_status_changed_at || fallback.billingProfile.billingStatusChangedAt || '',
       billingStatus: billingProfile.billingStatus || billingProfile.billing_status || fallback.billingProfile.billingStatus || 'unknown',
+      disposableCms: billingProfile.disposableCms || billingProfile.disposable_cms || fallback.billingProfile.disposableCms,
     },
     reviewProfile: {
       status: reviewProfile.status || reviewProfile.review_status || fallback.reviewProfile.status || 'not_started',
