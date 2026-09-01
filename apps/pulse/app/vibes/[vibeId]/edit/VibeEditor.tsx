@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
 import { VibeEditorToolbar } from '../../_components/VibeEditorToolbar';
 
@@ -84,6 +84,7 @@ function PublishPanel({ vibe, status, saveState, error }: { vibe: Vibe; status: 
 }
 
 export function VibeEditor({ vibeId }: { vibeId: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [vibe, setVibe] = useState<Vibe | null>(null);
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('saved');
@@ -163,8 +164,8 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <form onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
-          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState !== 'saved'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => document.querySelector('form')?.requestSubmit()} />
+        <form ref={formRef} onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
+          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState !== 'saved'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <section className="space-y-5">
