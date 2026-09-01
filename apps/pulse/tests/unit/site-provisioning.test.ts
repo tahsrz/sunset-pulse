@@ -36,6 +36,7 @@ import {
   resolveProvisionedAgentId,
   suspendProvisionedAgentSite,
   reconcileDisposableCmsSite,
+  isDisposableCmsSiteExpired,
   updateProvisionedAgentSiteBilling,
 } from '@/lib/sites/siteProvisioning';
 
@@ -105,6 +106,14 @@ describe('site provisioning', () => {
     kit.billingProfile = { billingStatus: 'trialing', userId: 'user-taz', disposableCms: { runId: 'run-123', originalPointer: '', expiresAt: '2026-09-01T00:00:00.000Z' } };
     storeMocks.inspectSiteConfigStores.mockResolvedValue({ selectedRow: kit, supabaseRow: null, mongoRow: kit, selectedStore: 'mongo' });
     await expect(reconcileDisposableCmsSite({ runId: 'run-123', userId: 'user-taz' })).resolves.toMatchObject({ siteId: 'cms-verification-run-123', reconciled: true, savedStores: ['supabase', 'mongo'] });
+  });
+
+  it('expires only marked disposable sites past their deadline', () => {
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    kit.billingProfile.disposableCms = { runId: 'run-123', originalPointer: '', expiresAt: '2026-08-30T00:00:00.000Z' };
+    expect(isDisposableCmsSiteExpired(kit, new Date('2026-08-31T00:00:00.000Z'))).toBe(true);
+    kit.status = 'suspended';
+    expect(isDisposableCmsSiteExpired(kit, new Date('2026-08-31T00:00:00.000Z'))).toBe(false);
   });
 
   it('records truthful audit and owner metadata for internal test seeding', async () => {

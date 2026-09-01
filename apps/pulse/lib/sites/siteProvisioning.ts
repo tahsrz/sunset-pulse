@@ -83,6 +83,13 @@ export async function reconcileDisposableCmsSite(input: { runId: string; userId:
   return { siteId: agentId, savedStores, reconciled: savedStores.length >= 2, originalPointer: metadata.originalPointer || null, currentPointer: kit.activeVibeRevisionId || null };
 }
 
+export function isDisposableCmsSiteExpired(kit: AgentLaunchKit, now = new Date()) {
+  const metadata = kit.billingProfile.disposableCms;
+  if (!metadata?.runId || kit.status === 'suspended' || !metadata.expiresAt) return false;
+  const expiresAt = new Date(metadata.expiresAt);
+  return Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() <= now.getTime();
+}
+
 export type ExpirePastDueGracePeriodsResult = {
   scanned: number;
   expired: number;
