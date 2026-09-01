@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link'; import { useRouter } from 'next/navigation'; import { useState } from 'react';
 import { VIBE_PRESETS } from '@/lib/cms/vibePresets';
+import { toVibeSlug } from '@/lib/cms/vibeSlug';
 const PRESETS = [{ id: '', name: 'Default', note: 'A neutral, editable starting point.', colors: ['#2563eb', '#0f172a', '#f8fafc'], typography: { fontFamilyHeading: 'Inter', fontFamilyBody: 'Inter', baseFontSize: '16px' }, layout: { borderRadius: 'md', elevation: 'subtle' } }, ...VIBE_PRESETS] as const;
-function toSlug(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+const toSlug = toVibeSlug;
 export default function NewVibePage() {
   const router = useRouter(); const [title, setTitle] = useState(''); const [slug, setSlug] = useState(''); const [slugEdited, setSlugEdited] = useState(false); const [description, setDescription] = useState(''); const [preset, setPreset] = useState<string>(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
   async function create() { setSaving(true); setError(''); const response = await fetch('/api/vibes', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, slug, description, ...(preset ? { preset } : {}) }) }); const payload = await response.json(); if (!response.ok) { setError(payload.error || 'Unable to create vibe.'); setSaving(false); return; } router.push(`/vibes/${payload.vibe.vibeId}/edit`); }
