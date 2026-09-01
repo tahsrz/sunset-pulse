@@ -2629,6 +2629,194 @@ Start with **Task 0A only**. The first code change is the layout skip landmark
 and the three shared display primitive files. Do not start list, editor, dialog,
 URL query, or tenant work in the same task.
 
+### CR. Missing component contracts — write these before touching route JSX
+
+The route tasks above refer to five small components. Create them in the order
+below. They are local to `app/vibes/_components/`; they must not call APIs or
+read router state. Route owners remain responsible for fetches and mutations.
+
+#### `VibePanel.tsx`
+
+1. Export `VibePanel({ id, title, description, defaultOpen = true, children })`.
+2. Use native `<details open={defaultOpen}>`; do **not** use controlled React
+   state. The browser owns open/closed state and fields remain mounted.
+3. Render `<summary>` with `id={`${id}-heading`}` and a visible chevron that is
+   decorative (`aria-hidden="true"`).
+4. Render `children` inside a padded `<div aria-labelledby={`${id}-heading`}>`.
+5. Do not put form controls on the summary itself. The summary must only toggle
+   the panel.
+
+#### `VibeConfirmDialog.tsx`
+
+1. Props must be exactly: `open`, `title`, `description`, `confirmLabel`,
+   `cancelLabel = 'Cancel'`, `busy = false`, `children`, `onCancel`, and
+   `onConfirm`.
+2. Return `null` when `open` is false. When open, use `role="dialog"`,
+   `aria-modal="true"`, `aria-labelledby="vibe-confirm-title"`, and a unique
+   `aria-describedby` ID supplied by a required `dialogId` prop if two dialogs
+   can coexist on the page. Do not hard-code duplicate IDs.
+3. Add an effect only while open that focuses the cancel button. Another effect
+   attaches an Escape handler that calls `onCancel` only when `busy` is false;
+   remove that handler during cleanup.
+4. The confirm button has `type="button"` and calls `onConfirm`; the cancel
+   button has `type="button"` and calls `onCancel`. Do not let dialog buttons
+   accidentally submit the parent editor form.
+5. `children` is the sole location for destructive-action reason fields. The
+   component never stores or trims reason text itself.
+
+#### `VibeListToolbar.tsx` and `VibeRowActions.tsx`
+
+1. `VibeListToolbar` receives only controlled values and callbacks:
+   `search`, `onSearchChange`, `selectedCount`, `bulkAction`,
+   `onBulkActionChange`, `onApplyBulkAction`, `bulkBusy`.
+2. The search input name is `vibe-search`; it uses `type="search"` and label
+   text rendered with `sr-only`. Do not put this input in a nested `<form>`.
+3. Bulk `<select>` uses `aria-label="Bulk actions"`. The Apply control uses
+   `type="button"`, not submit.
+4. `VibeRowActions` receives a pre-built `actions` array with `href`, `label`,
+   optional `tone`. It renders links only. It must not infer permissions,
+   statuses, or create action URLs.
+5. For narrow viewports, use `flex flex-wrap gap-x-2 gap-y-1`; never hide an
+   action behind hover-only UI.
+
+#### `VibeStatusViews.tsx`, `VibeEditorToolbar.tsx`, and apply-only cards
+
+1. `VibeStatusViews` receives the existing `STATUS_VIEWS`, selected status,
+   count callback, and `onSelect`. It renders buttons with `aria-pressed` and
+   never issues list requests directly.
+2. `VibeEditorToolbar` receives `saveState`, `draftVersion`, `publishedRevision`,
+   and `status`. It renders facts only. The save control remains in
+   `VibeEditor` so it can remain `type="submit"`.
+3. `RevisionSelectionSummary`, `CurrentPointerCard`, and
+   `ApplyPreflightSummary` receive plain props only. Keep their source file next
+   to `apply/page.tsx` if they are used only there; do not add them to the shared
+   directory prematurely.
+
+### CS. `lib/cms/vibeListQuery.ts` — exact helper surface
+
+Create this file before changing `VibeList.tsx`. Keep its exports deliberately
+small so the UI cannot invent unsupported query values.
+
+```ts
+export const VIBE_LIST_STATUSES = ['', 'draft', 'in_review', 'published', 'archived', 'trashed'] as const;
+export const VIBE_LIST_SORTS = ['updatedAt', 'title', 'createdAt'] as const;
+export const VIBE_LIST_DIRECTIONS = ['asc', 'desc'] as const;
+
+export type VibeListQuery = {
+  q: string;
+  status: (typeof VIBE_LIST_STATUSES)[number];
+  sort: (typeof VIBE_LIST_SORTS)[number];
+  direction: (typeof VIBE_LIST_DIRECTIONS)[number];
+  page: number;
+};
+```
+
+Implement exact functions below:
+
+1. `parseVibeListQuery(input: URLSearchParams): VibeListQuery`
+   - trim `q` and cap it at 120 characters;
+   - use `''` for an unsupported status;
+   - use `updatedAt` for unsupported sort;
+   - use `desc` for unsupported direction;
+   - parse page with `Number.parseInt(value, 10)` and return `1` unless it is a
+     finite integer of at least one.
+2. `serializeVibeListQuery(query: VibeListQuery): string`
+   - normalize by calling the parser on its own `URLSearchParams` first;
+   - write `q` only if non-empty;
+   - write `status` only if non-empty;
+   - omit `sort=updatedAt`, `direction=desc`, and `page=1` so canonical links
+     stay short;
+   - return `params.toString()` and never include `pageSize`.
+3. Do not read `window`, router hooks, or environment variables in this helper.
+   It must be unit-testable in Node.
+
+### CT. Page-by-page implementation order and commits
+
+Luna must not combine every visual change in one opaque commit. Use these
+bounded packages; run only the focused tests named beside each package before
+starting the next one.
+
+| Package | Exact files allowed | Required implementation and stop condition | Focused verification |
+| --- | --- | --- | --- |
+| 0A | `layout.tsx`, `VibeSidebar.tsx`, `VibePageHeader.tsx`, `VibeStatusBadge.tsx`, `VibeNotice.tsx`, associated new unit tests | Add landmarks, active navigation, and passive primitives. Stop before modifying any existing route page. | sidebar/layout component tests; typecheck affected files. |
+| 0B | `VibePanel.tsx`, `VibeConfirmDialog.tsx`, `VibeListToolbar.tsx`, `VibeRowActions.tsx`, `VibeStatusViews.tsx`, `VibeEditorToolbar.tsx`, tests | Implement presentational contracts from CR. Stop before wiring callers. | dialog keyboard/cancel tests; no API mocks required. |
+| 1A | `lib/cms/vibeListQuery.ts`, query tests | Implement CS exactly. No `VibeList.tsx` modification until parser/serializer tests pass. | `vibe-list-query.test.ts`. |
+| 1B | `VibeList.tsx`, list tests | Wire URL state, debounce, accessible table and local refresh. Preserve endpoint/query field names. | `vibe-list.test.tsx`. |
+| 2A | `new/page.tsx`, creation tests | Expand then apply CI. No API contract changes. | `vibe-new-page.test.tsx`. |
+| 2B | `edit/VibeEditor.tsx`, validation tests | Replace presentation containers with mounted native panels. Preserve every FormData field and PATCH body. | `vibe-editor-validation.test.tsx`. |
+| 3A | `RevisionList.tsx`, revision tests | Rename republish UI and replace browser confirmation. Preserve rollback request/body. | `vibe-revisions.test.tsx`. |
+| 3B | audit/taxonomy/lifecycle pages and their tests | Complete local presentation changes only. No route or lifecycle service changes. | each focused page suite. |
+| 4A | `apply/page.tsx`, apply tests | Add site-specific preflight and confirmation. Preserve all URLs and body fields. | `vibe-apply.test.tsx`. |
+
+After each package, inspect `git diff --check` and run the listed test file.
+Do not reformat unrelated files, update dependencies, alter middleware, or
+modify public tenant rendering as part of these packages.
+
+### CU. Exact preservation checklist for code review
+
+Before Luna marks any package ready, use the following literal checks against
+the diff. These are code-review gates, not optional polish:
+
+1. In `VibeList.tsx`, `GET /api/vibes` still uses `search`, `status`, `sort`,
+   `direction`, `page`, and `pageSize`; only browser URL keys may use `q` and
+   `dir`.
+2. In `new/page.tsx`, the create JSON still includes the current `title`,
+   `slug`, `description`, and preset fields. Its success route remains the
+   existing edit route.
+3. In `VibeEditor.tsx`, `FormData` contains every original field even after a
+   native panel is closed; PATCH remains
+   `/api/vibes/${vibeId}?tenantId=default` and preserves `expectedVersion`.
+4. In `RevisionList.tsx`, the only rollback request remains `POST /rollback`
+   with `{ revisionId, reason }`; its visible text never promises an editable
+   draft or automatic site application.
+5. In `apply/page.tsx`, the pointer check remains GET
+   `/api/admin/sites/${siteId}/vibe?tenantId=default`; apply remains POST
+   `/api/admin/sites/${siteId}/apply-vibe?tenantId=default` with `{ vibeId,
+   revisionId }`.
+6. No planned UI patch changes `middleware.js`, `lib/sites/tenantRouting.ts`,
+   `lib/sites/siteData.ts`, `/sites/[site]/[[...path]]`, migrations, environment
+   files, cron files, or package manifests.
+7. Every new button has an explicit `type`; every modal supports Escape and
+   cancel unless busy; every visual status also has text.
+
+### CV. Required test cases at the line of change
+
+Add the following cases to the named suites while the owning package is open;
+do not defer them to a final testing pass.
+
+1. **`VibeConfirmDialog` test:** render open; focus starts on Cancel; press
+   Escape and expect `onCancel`; rerender with `busy`; press Escape and expect
+   no cancel; click Confirm and expect `onConfirm` exactly once.
+2. **`VibePanel` test:** render closed with an input child; assert the input is
+   still present in the DOM; toggle summary and assert the input value survives.
+3. **`VibeList` URL test:** start at `?status=draft&page=3`; change status;
+   expect local page one and an URL update without the former page value.
+4. **`VibeList` failure test:** mocked bulk POST rejects; assert selected IDs
+   remain checked, error notice appears, and no full-page reload is invoked.
+5. **New Vibe form test:** title changes update slug before manual editing;
+   after editing slug once, a later title change does not overwrite it.
+6. **Editor FormData test:** close Source and Typography panels, save, then
+   inspect the PATCH JSON to confirm all original keys still exist.
+7. **Revision test:** clicking Republish opens the dialog; empty reason cannot
+   confirm; valid reason sends the unchanged rollback payload; success text says
+   a new published revision was created.
+8. **Apply preflight test:** successful check for Site A enables confirmation;
+   changing to Site B disables it before a new check; failed apply leaves Site
+   B and the last pointer visible.
+
+### CW. Luna’s first implementation message
+
+Luna should begin implementation with this precise scope statement:
+
+> Implement package 0A only: add Vibe layout landmarks, exact active navigation
+> matching, and the three passive display primitives. Preserve all existing
+> routes, fetches, lifecycle mutations, tenant routing, and public rendering.
+> Add focused tests for the changed components; then stop and report the diff
+> and test output.
+
+That narrow first package creates a stable shared vocabulary without coupling it
+to a lifecycle or provisioning change.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
