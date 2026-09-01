@@ -4501,6 +4501,84 @@ wrong state transition.
    documented future non-implementation; do not ship those phrases as action
    copy.
 
+### EK. Future structured-content discovery gate — modern editor direction, not current implementation
+
+The current `lib/cms/vibeSchema.ts` lines 74–89 define a Vibe draft as title,
+slug, text description, visual tokens, linguistic tokens, taxonomy, and source.
+There is no `sections`, `blocks`, `content`, template, or page-composition field.
+The current Vibe preview is a representative settings surface, and site rendering
+hydrates an applied Vibe projection into a tenant site. Therefore a block-style
+editor must not be added as a casual panel inside the current Vibe editor.
+
+This follows the modern WordPress separation between document content and
+settings/inspector controls: primary content operations belong in a content
+surface; advanced settings live in panels and must not hide essential actions.
+Reference: [Block Editor user interface](https://developer.wordpress.org/block-editor/explanations/user-interface/) and [block/editor responsibilities](https://developer.wordpress.org/block-editor/getting-started/fundamentals/block-in-the-editor/).
+
+#### Package 5A — discovery only; no runtime code, schema, or API changes
+
+Luna may execute this package only as an evidence document update. It must not
+edit `vibeSchema.ts`, `VibeEditor.tsx`, site-rendering code, migrations, or
+dependencies.
+
+1. Inspect and record the ownership of these exact data paths:
+   - `lib/cms/vibeSchema.ts` `vibeDraftSchema` and `vibeRevisionSchema`;
+   - `lib/cms/vibeService.ts` `readPublishedVibeProjection` and
+     `applyVibeRevisionToSite`;
+   - `lib/sites/siteData.ts` active Vibe hydration;
+   - `app/sites/[site]/[[...path]]/page.tsx` public tenant rendering;
+   - the SiteConfig model fields read by `siteData.ts`.
+2. Add a table to this plan with each existing field, owner (Vibe revision or
+   tenant site), renderer, and whether a change would affect every site sharing
+   a Vibe. Cite exact field names; do not write generic “content” entries.
+3. Answer this explicit decision question: **Should a future section be shared
+   across every site applying a Vibe, or owned by one tenant site?**
+4. Mark a Vibe-owned section schema as rejected unless the product explicitly
+   wants one published Vibe revision to replace page content on every consuming
+   site. That is a materially different product behavior from applying colors,
+   typography, and voice.
+5. Do not recommend GrapeJS, Editor.js, Craft.js, or a generic drag/drop package
+   before the ownership decision. A UI library cannot resolve persistence,
+   preview, revision, or tenant rendering authority.
+
+#### Candidate design only after product authorization
+
+If the decision is **tenant-site-owned content**, the later implementation plan
+must start with a new site-content schema/version and a renderer contract—not
+with a draggable UI.
+
+1. Define a closed union of supported section types in a new site-content
+   schema, for example `hero`, `richText`, `cta`, and `faq`. Do not save raw HTML
+   as the primary data format.
+2. Each section has `id`, `type`, `props`, and optional `visibility`; props are
+   validated with a type-specific schema. Reject unknown types/props rather than
+   passing arbitrary JSON to the public renderer.
+3. Store the section array on the tenant-site-owned record, version it with that
+   site’s own content/revision model, and render it only through a closed
+   React-component mapping in the tenant site route.
+4. Add an editor screen separate from `/vibes/[vibeId]/edit`; the Vibe editor
+   continues to own visual/editorial settings. Its existing Apply flow only
+   selects the Vibe projection, not site content.
+5. The first UI implementation uses Add section, edit, duplicate, remove, and
+   Move up/Move down buttons. Add drag-and-drop only after keyboard reorder,
+   focus movement, and revision behavior are proven.
+6. Preview must resolve the same tenant-site content revision plus the selected
+   Vibe projection. It must not reuse the current Vibe settings preview, which
+   intentionally has no tenant site context.
+
+#### Required authorization checklist before any Package 5B code
+
+- [ ] Product owner has chosen Vibe-owned vs tenant-site-owned sections.
+- [ ] A data owner and revision authority are named.
+- [ ] Public renderer mapping and unsupported-section fallback are designed.
+- [ ] Existing site rendering/active Vibe application interactions are written
+  down with exact tests.
+- [ ] Preview, publish, rollback, and site application consequences are agreed.
+- [ ] No generic builder dependency is selected before these decisions.
+
+Until all six are checked, modern WordPress alignment in this PR means a strong
+settings/editorial experience—not a drag-and-drop page builder.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
