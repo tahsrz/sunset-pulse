@@ -29,6 +29,50 @@ The CMS already has the core screens required for this direction:
 The work below improves the composition and clarity of those screens. Existing
 route contracts and lifecycle authorization remain the source of truth.
 
+## WordPress reference and design interpretation
+
+The [WordPress UI evolution reference](https://www.wpbeginner.com/showcase/evolution-of-wordpress-user-interface-2003-2009/)
+shows that the useful through-line is not a single visual era. WordPress moved
+from a simple writing screen toward a responsive, consistent admin workspace:
+
+- a durable admin bar and left navigation that make the editor feel like one
+  connected product;
+- content-management **data views** that prioritize title, status, filtering,
+  row actions, and scanability;
+- contextual side panels that keep settings available without taking attention
+  from the main editing task;
+- progressive disclosure: visible essentials first, advanced configuration only
+  when needed;
+- responsive layouts and plain, direct interaction feedback rather than ornate
+  dashboards.
+
+For Sunset Pulse, use this as an interaction and information-architecture
+reference, not a visual copy. Retain the existing dark navy, warm yellow, and
+editorial type direction where it is part of the product identity. Avoid
+recreating legacy gradients, old dashboard chrome, generic plugin management,
+or the full Gutenberg interface.
+
+### Primary visual reference: classic WordPress list-management screen
+
+Use the supplied WordPress Plugins screenshot as the direct reference for the
+Vibes list and shell. Reproduce its **information hierarchy**, adapted to
+Sunset Pulse branding:
+
+| WordPress pattern | Vibe CMS adaptation |
+| --- | --- |
+| Dark vertical admin rail with one clearly active item | Persistent dark `VibeSidebar` with **Vibes** active and contextual sub-items beneath it. |
+| Compact black utility bar | A compact Vibes utility header for workspace identity, quick **Add New**, and the current signed-in user menu; do not build unrelated global controls. |
+| Plain light-gray page canvas | Calm neutral workspace around white, bordered operational surfaces. Retain Sunset Pulse typography and brand accents. |
+| Page title plus bordered **Add New** action | **All Vibes** heading with a compact outlined **Add New** control adjacent to it. |
+| Status links/counts directly below the title | **All / Published / Drafts / In review / Archived / Trash** as countable list views, using the existing filters. |
+| Bulk-actions + Apply, then search on the same operational row | Preserve this order in `VibeList`; destructive actions remain visually distinct and confirmed. |
+| Dense table with checkboxes, clear column headers, row actions below the name | A Vibe table with title/slug, description or taxonomy summary, status/current revision, modified time, and inline Edit / Preview / Revisions actions. |
+| Repeated table header and bulk controls at the bottom | Add the bottom bulk controls only when the table has enough rows to make the repeated affordance useful. |
+
+Do **not** copy WordPress’s exact colors, icons, typography, old beveled
+controls, or plugin-specific columns. The desired outcome is “I know how to
+operate this immediately,” not “this is a WordPress replica.”
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
@@ -57,6 +101,11 @@ route contracts and lifecycle authorization remain the source of truth.
   messages, so confirmations are not lost at the bottom of forms.
 - Normalize page titles, breadcrumbs, button placement, card borders, and
   desktop/mobile spacing across every Vibe screen.
+- Use the application’s current visual system for color and typography, but
+  borrow the WordPress admin density: compact navigation, calm page backgrounds,
+  clear white working surfaces, and one recognizable primary action per screen.
+- Add the compact utility header only inside the Vibes workspace. It should not
+  replace the app-wide navigation or create a competing application shell.
 
 ### Acceptance criteria
 
@@ -71,6 +120,9 @@ route contracts and lifecycle authorization remain the source of truth.
 
 - Recompose `VibeList` around the familiar order: status views/counts, search,
   filter controls, bulk action control, then the table.
+- Place **Add New** beside the page title, status filters below it, and the
+  search field on the filter row—the spatial sequence shown in the supplied
+  reference is intentional and should be retained.
 - Keep existing server-backed filtering and pagination, but present the state as
   selected views such as **All**, **Published**, **Drafts**, **In review**,
   **Archived**, and **Trash** where supported.
@@ -81,6 +133,9 @@ route contracts and lifecycle authorization remain the source of truth.
   are never mouse-only.
 - Give bulk selection a persistent action bar with a selected-count and a
   clear destructive-action confirmation for trashing.
+- Add an optional compact/list density toggle only after the table’s primary
+  scan path is stable. Do not add a decorative card grid as a substitute for
+  operational list management.
 - Add intentional empty states for: no Vibes, no results, and an empty status
   view, each with the single useful next action.
 
@@ -90,6 +145,8 @@ route contracts and lifecycle authorization remain the source of truth.
   without opening it.
 - Row actions stay reachable by keyboard and at narrow widths.
 - Existing bulk archive/trash API behavior is unchanged.
+- At desktop width, an experienced WordPress user recognizes the list workflow
+  before reading product-specific documentation.
 
 ## Phase 3 — Make Add New Vibe self-explanatory
 
@@ -127,6 +184,9 @@ route contracts and lifecycle authorization remain the source of truth.
 - Keep the existing publish rail as the action authority, but present status,
   current published revision, Preview, Revisions, and the next lifecycle action
   in a stable WordPress-like order.
+- Include a narrow editor toolbar for navigation and primary actions, then keep
+  advanced panels out of the way until expanded. This captures the modern
+  WordPress focus on a calmer editing surface without requiring Gutenberg.
 - Rename lifecycle calls in the UI for clarity while preserving their existing
   routes and semantics: “Send for review,” “Publish revision,” and “Return to
   draft” only when that state transition is actually permitted.
@@ -232,6 +292,9 @@ Do not invent a second content schema.
 
 - Establish shared UI primitives for notices, status badges, table action
   links, panel headers, confirmation dialogs, and empty states.
+- Prefer practical feedback patterns from modern WordPress: non-blocking save
+  status, clear notices after mutations, and useful recovery language when a
+  request fails. Avoid modal interruptions for ordinary successful saves.
 - Meet keyboard, focus, label, table-header, and contrast requirements across
   the Vibes area.
 - Add responsive behavior for the list table and editor rail; prioritize the
