@@ -7,6 +7,8 @@ vi.mock('next/link', () => ({ default: ({ children }: { children: ReactNode }) =
 
 describe('VibeApplyConfirmation', () => {
   it('renders the exact site, vibe, and revision context', () => {
+    HTMLDialogElement.prototype.showModal = vi.fn();
+    HTMLDialogElement.prototype.close = vi.fn();
     render(<VibeApplyConfirmation open siteId="cms-verification-run-1" vibeId="coastal" revisionId="rev-7" onConfirm={() => undefined} onOpenChange={() => undefined} />);
     expect(screen.getByText(/cms-verification-run-1/)).toBeTruthy();
     expect(screen.getByText(/rev-7/)).toBeTruthy();
