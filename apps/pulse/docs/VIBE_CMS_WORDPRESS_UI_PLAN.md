@@ -2698,8 +2698,8 @@ Create this file before changing `VibeList.tsx`. Keep its exports deliberately
 small so the UI cannot invent unsupported query values.
 
 ```ts
-export const VIBE_LIST_STATUSES = ['', 'draft', 'in_review', 'published', 'archived', 'trashed'] as const;
-export const VIBE_LIST_SORTS = ['updatedAt', 'title', 'createdAt'] as const;
+export const VIBE_LIST_STATUSES = ['', 'draft', 'in_review', 'published', 'archived', 'trash'] as const;
+export const VIBE_LIST_SORTS = ['updatedAt', 'title', 'status'] as const;
 export const VIBE_LIST_DIRECTIONS = ['asc', 'desc'] as const;
 
 export type VibeListQuery = {
@@ -2962,6 +2962,105 @@ stacking additional changes over an unresolved result:
 7. In the handoff note, record changed files, test command/result, and any
    deliberately deferred item. Do not call a page complete if its requested
    test file has not been added or updated.
+
+### DG. Route-contract reconciliation — corrections Luna must apply to the plan
+
+This section is based on the current route implementations, not inferred UI
+requirements. These values are authoritative for packages 1A, 1B, 3A, and 4A.
+
+#### `app/api/vibes/route.ts`, GET lines 16–47
+
+1. The valid stored list status is **`trash`**, not `trashed`. The helper in CS
+   must contain `trash`, and list status buttons/select values must continue to
+   use `trash` as they do in `VibeList.tsx` lines 27–31 and 143–149.
+2. The server accepts only `updatedAt`, `title`, and `status` as sort fields at
+   current line 30. Therefore CS’s `VIBE_LIST_SORTS` is exactly
+   `['updatedAt', 'title', 'status']`; do not offer or serialize `createdAt`.
+3. The server treats `direction=asc` as ascending and every other input as
+   descending at current line 29. The client must only emit `asc` or `desc` so
+   the visible direction never relies on this fallback.
+4. The response deliberately selects only `vibeId`, `title`, `name`, `slug`,
+   `status`, `tenantId`, `publishedRevisionId`, `authorId`, `updatedBy`,
+   `updatedAt`, `createdAt`, and `taxonomyTermIds` (current line 35). Package
+   1B must not add Description, source, revision number, or preview data to the
+   list row without a separately authorized API change.
+5. `statusCounts` aggregates all statuses for the tenant, not merely the active
+   filter, at current lines 40–43. Preserve this behavior: the status-view
+   counts should remain stable while a search/filter is active.
+6. The GET route currently does not call `requireOperatorRouteAccess`. This UI
+   plan must not change access behavior; do not add an access check as a side
+   effect of list UI work.
+
+#### `app/api/vibes/route.ts`, POST lines 49–88
+
+1. The creation route accepts exactly `title`, `slug`, optional `description`,
+   and optional preset at lines 82–87. Package 2A must preserve those four
+   JSON keys and must not post the browser-only manual-slug state.
+2. Valid presets are exactly `editorial` and `market-intelligence`; the preset
+   card UI must continue using IDs from `VIBE_PRESETS`, not hard-coded display
+   names in the request.
+3. The route returns `409` with **A vibe with that slug already exists.**. The
+   new-page error area should display that server message unchanged; it should
+   not silently regenerate a different slug.
+
+#### `app/api/vibes/[vibeId]/revisions/route.ts`, GET lines 10–25
+
+1. The response is `{ revisions, publishedRevisionId }`. It does not provide a
+   separate status string for every revision. Determine current published state
+   only through strict ID equality:
+
+   ```ts
+   const isCurrentPublished = revision._id === publishedRevisionId;
+   ```
+
+2. Revisions are already returned in descending `revisionNumber` order at line
+   22. When package 3A builds the display array, retain this order inside the
+   current-published, other-published, and checkpoint groups; do not apply a
+   second date sort.
+3. Parent labels come from `parentRevisionId`; preserve the existing null/no
+   parent display. Do not request full revision payloads for the list view.
+4. This route requires operator access. UI error handling must treat 401/403 as
+   a normal load failure message and must not redirect or alter access logic.
+
+#### Site-pointer routes
+
+1. `GET /api/admin/sites/:siteId/vibe` returns either
+   `{ siteId, revision: null, appliedAt, appliedBy }` or the same shape with a
+   published projection in `revision`. Current
+   `lib/cms/vibeService.ts` lines 181–198 proves that projection contains
+   `revisionId`, `vibeId`, `revisionNumber`, `cssVars`, and `voiceConfig`.
+   Do not assume it also contains a display title, slug, author, or timestamp.
+2. For the package 4A same-Vibe comparison branch, compare
+   `pointer.revision?.vibeId === vibeId`. When true and the revision IDs differ,
+   link to the existing same-Vibe compare route. When false, show a different-
+   Vibe explanation and no compare link. A missing `vibeId` remains a safe
+   no-compare state for forward compatibility.
+3. `POST /apply-vibe` accepts strict JSON `{ vibeId, revisionId }` and verifies
+   that the revision is published server-side. The client preflight is an
+   operator safeguard; it never replaces the server validation.
+4. Site pointer GET and apply require operator access. Do not turn a preflight
+   401/403 into an empty-pointer state, and do not clear the typed site ID when
+   those responses occur.
+
+### DH. Exact plan edits resulting from DG
+
+Before coding package 1A, Luna must make these literal plan/code alignments:
+
+1. In `lib/cms/vibeListQuery.ts`, use the corrected constants from CS after
+   this reconciliation: status includes `trash`; sort includes `status`; neither
+   includes `trashed` or `createdAt`.
+2. In `VibeList.tsx`, retain `changeSort`’s existing union
+   `'title' | 'status' | 'updatedAt'`. The `VibeListQuery` sort type must match
+   it exactly, avoiding a cast or a fourth UI-only sort value.
+3. In `tests/unit/vibe-list-query.test.ts`, replace an imagined created-at test
+   with: `sort=createdAt` parses as `updatedAt`; `sort=status` remains status.
+4. In `tests/unit/vibe-list.test.tsx`, assert the fetch URL contains API names
+   `search` and `direction`, even when the browser URL uses `q` and `dir`.
+5. In `RevisionList.tsx`, derive `isCurrentPublished` from the returned
+   `publishedRevisionId`, not `publishedAt` and not array index zero.
+6. In `apply/page.tsx`, add optional `Pointer.revision.vibeId` and
+   `revisionNumber`. Use the current response’s `vibeId` for the same-Vibe
+   comparison branch and hide the link only if that value is missing.
 
 ### DC. Test implementation details from the existing Vitest suite
 
