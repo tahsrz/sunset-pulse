@@ -171,7 +171,7 @@ const billingProfileSchema = z.object({
   gracePeriodEndsAt: optionalStringSchema,
   billingStatusChangedAt: optionalStringSchema,
   billingStatus: z.enum(['unknown', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete']).default('unknown'),
-  disposableCms: z.object({ runId: z.string().trim().max(64), originalPointer: optionalStringSchema, expiresAt: optionalStringSchema }).optional(),
+  disposableCms: z.object({ runId: optionalStringSchema, originalPointer: optionalStringSchema, expiresAt: optionalStringSchema }).optional(),
 });
 const reviewProfileSchema = z.object({
   status: z.enum(['not_started', 'setup_saved', 'requested', 'in_review', 'approved', 'changes_requested']).default('not_started'),

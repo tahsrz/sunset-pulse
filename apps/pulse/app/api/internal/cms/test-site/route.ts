@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     siteId: result.kit.agentId,
     agentId: result.kit.agentId,
     publicUrl: result.publicUrl,
-    originalPointer: result.kit.billingProfile.disposableCms?.originalPointer || null,
+    originalPointer: result.kit.billingProfile?.disposableCms?.originalPointer || null,
     created: result.created,
     savedStores: result.savedStores,
     reconciliationRequired: result.savedStores.length < 2,
