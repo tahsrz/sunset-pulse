@@ -165,7 +165,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <form ref={formRef} onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
-          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState !== 'saved'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
+          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <section className="space-y-5">
