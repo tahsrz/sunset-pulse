@@ -220,10 +220,9 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Jamie voice</h2>
+              <VibePanel id="voice" title="Jamie voice" defaultOpen={false}>
                 <label className="mt-4 block text-xs font-bold uppercase text-slate-500">Primary tone<select name="primaryTone" defaultValue={draft.tokens.linguistic.voice.primaryTone} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option>warm</option><option>concise</option><option>analytical</option><option>energetic</option><option>tactical</option><option>luxurious</option><option>playful</option></select></label>
-              </article>
+              </VibePanel>
             </section>
 
             <PublishPanel vibe={vibe} status={status} saveState={saveState} error={error} />
