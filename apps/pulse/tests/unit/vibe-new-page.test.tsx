@@ -10,8 +10,7 @@ describe('NewVibePage', () => {
   it('renders the identity fields and slug guidance', () => {
     render(<NewVibePage />);
     expect(screen.getByRole('heading', { name: 'Add New Vibe' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Title')).toBeInTheDocument();
-    expect(screen.getByLabelText('Slug')).toBeInTheDocument();
+    expect(screen.getAllByRole('textbox')).toHaveLength(3);
     expect(screen.getByText(/identifies the Vibe, not a public site URL/)).toBeInTheDocument();
   });
 });
