@@ -51,9 +51,9 @@ Focused route and store verification passes with 25 tests across 2 files after t
 
 Sol completed the bounded functional repairs available in the current slice. Luna should continue with these larger items:
 
-1. Add automatic expiry targeting only explicitly marked disposable sites, with `cms.test-site.expired` audit evidence.
-2. Complete the operator application UI for selecting an authorized disposable site and confirming the exact published revision/pointer transition.
-3. Execute the controlled production lifecycle and cleanup checklist after deployment authorization, then replace conditional evidence with real IDs, timestamps, pointers, and store results.
+1. Execute the controlled production lifecycle and cleanup checklist after deployment authorization, then replace conditional evidence with real IDs, timestamps, pointers, and store results.
+
+Automatic expiry is now wired into the existing scheduled site-expiry cron, and the apply screen supports deterministic disposable run-ID selection plus an explicit Vibe/site/current-pointer/new-pointer confirmation panel.
 
 The third pass added cross-store status, owner, and active-Vibe-pointer agreement reporting. The final focused safety run passes 48 tests across 4 files.
 
