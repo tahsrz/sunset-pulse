@@ -300,7 +300,7 @@ already has.
 | Autosave | No demonstrated autosave-specific API, per-user recovery record, or merge policy. | **Do not add background server autosave** in this UI initiative. It would generate revisions/conflicts that the current model does not describe. |
 | Local recovery draft | Not currently specified. | **Discovery only:** assess whether `sessionStorage` can hold a non-authoritative editor snapshot with version + timestamp. Implement only after a separate recovery UX decision; never call it a saved revision or send it automatically. |
 | Published revisions | Immutable revision history already exists. | Make “Current published” visually dominant and explain that later draft saves do not modify it. |
-| Restore | Existing guarded rollback behavior. | Confirmation copy must say it creates a new published revision from the selected snapshot and does not apply it to a site. |
+| Republish revision | Existing guarded rollback behavior. | Confirmation copy must say it creates a new published revision from the selected snapshot and does not apply it to a site. |
 | Compare | Existing compare route. | First improve the existing summary and selected revision labels. Do not copy WordPress’s slider/highlight interface until the Vibe payload diff can produce meaningful, stable field-level changes. |
 | Scheduled publish | No stated lifecycle/API capability. | **Out of scope.** Never display a scheduling control merely because WordPress has one. |
 
@@ -752,7 +752,7 @@ gap or be rejected as unrelated scope.
 | New Vibe page is one long JSX return with presets before identity. | The first task is visually obscured and invalid-slug feedback is browser-generic. | Split sections, title/slug first, explanatory validation, optional preset panel. | `new/page.tsx` line 9 | Create payload and preset copy behavior. |
 | Editor already has a 320px sticky Publish rail. | Strong foundation, but the canvas is a sequence of equally weighted cards. | Keep rail; turn canvas groups into purpose-ranked collapsible panels. | `VibeEditor.tsx` lines 172–235 | Draft normalization, PATCH request, conflict handling. |
 | Publish rail shows save state, preview, action, revisions. | Action order does not make save state / next lifecycle action easy to scan. | Add compact status summary and action hierarchy without merging routes. | `VibeEditor.tsx` lines 48–82 | `workflowAction` status logic and separate publish route. |
-| Revision page exposes state but raw revision context dominates. | It takes extra work to identify live versus historical revision. | Status-first row hierarchy, readable metadata, explicit restore outcome. | `RevisionList.tsx` lines 86 onward | Apply only current published revision; restore endpoint behavior. |
+| Revision page exposes state but raw revision context dominates. | It takes extra work to identify live versus historical revision. | Status-first row hierarchy, readable metadata, explicit republish outcome. | `RevisionList.tsx` lines 86 onward | Apply only current published revision; rollback endpoint behavior. |
 | Apply page is a single dense JSX form with manual fields near the top. | It asks for opaque identifiers before showing the decision/risk. | Revision context → site selection → pointer check → preflight → confirmation. | `apply/page.tsx` lines 9–52 | Protected validation and run-ID derivation. |
 | Taxonomy directory loads data but is not explicitly a management table. | Harder to scan usage and group membership at scale. | Searchable/group-filtered table using current terms/counts response. | `TaxonomyDirectory.tsx` lines 5 onward | Term IDs, current read-only API. |
 
@@ -1769,9 +1769,9 @@ npm run test:unit
 npm run build
 ```
 
-If a proposed named test file has not yet been created, omit it rather than
-making the command fail artificially. Browser checks come after the relevant
-focused unit tests; they do not replace them.
+If a proposed named test file has not yet been created, create it in its owning
+package before claiming that package complete. Browser checks come after the
+relevant focused unit tests; they do not replace them.
 
 ### BP. Reversibility and rollback posture
 
@@ -4442,6 +4442,65 @@ slug entry easy without promising a visitor-facing URL.
    Any occurrence must be removed unless it is an explicit warning that such a
    route must not be created.
 
+### EJ. Lifecycle vocabulary matrix — familiar actions with exact Vibe outcomes
+
+Use this table whenever a label, confirmation message, notice, or test is added.
+It prevents the interface from borrowing a familiar term while describing the
+wrong state transition.
+
+| UI location | Exact visible action | Existing endpoint/body | Required outcome copy | Never say |
+| --- | --- | --- | --- | --- |
+| List bulk controls | **Archive** | `POST /api/vibes/bulk` `{ vibeIds, action: 'archive' }` | “Archived N Vibe(s).” | “Deleted” |
+| List bulk controls | **Move to trash** | `POST /api/vibes/bulk` `{ vibeIds, action: 'trash' }` | “Moved N Vibe(s) to trash.” | “Permanently deleted” or “Undo” |
+| Status & Actions | **Archive Vibe** | `POST /api/vibes/:id/archive`, no body | “This Vibe is archived.” | “Unpublished revision removed” |
+| Status & Actions | **Move to trash** | `POST /api/vibes/:id/trash`, no body | “This Vibe is in trash and can be restored.” | “Revision rollback” |
+| Status & Actions | **Restore Vibe** | `POST /api/vibes/:id/restore`, no body | “The Vibe returned to its prior editorial state.” | “Restored a revision” |
+| Status & Actions | **Return to draft** | `POST /api/vibes/:id/reject` `{ reason }` | “The review was returned to draft.” | “Rejected/deleted the Vibe” |
+| Submit page | **Submit for review** | `POST /api/vibes/:id/submit`, no body | “A review snapshot was created.” | “Published” |
+| Publish page | **Publish immutable revision** | `POST /api/vibes/:id/publish` `{ changeSummary? }` | “A published revision was created.” | “Applied to site” |
+| Revisions | **Republish revision** | `POST /api/vibes/:id/rollback` `{ revisionId, reason }` | “Created a new published revision from rN.” | “Restored editable draft” or “Applied to site” |
+| Revisions | **Apply to site** | no request on link; application begins on Apply page | “Open site-application preflight.” | “Published this site” |
+| Apply page | **Confirm and apply revision** | `POST /api/admin/sites/:siteId/apply-vibe` `{ vibeId, revisionId }` | “Revision X applied to site Y.” | “Published revision” |
+
+#### Exact code changes enforcing the matrix
+
+1. In `VibeList.tsx`, after a successful `loadList()` following bulk action,
+   set a `VibeNotice tone="success"` message using the Archive/Trash row above.
+   Use the pre-request selection count captured in
+   `const affectedCount = selected.size`; do not compute it after selection is
+   cleared.
+2. In `actions/page.tsx`, derive per-action success message from a
+   `successMessages: Record<LifecycleAction, string>` constant. Set it only
+   after `payload.vibe` is confirmed. Keep server error text as the error notice.
+3. In `submit/page.tsx`, do not display a completion notice that will be hidden
+   by immediate redirect. Instead, set the destination edit screen’s status via
+   the existing status event and let it show its loaded status. Do not add query
+   params solely to carry a success toast.
+4. In `publish/page.tsx`, do not display a completion notice before redirect.
+   The revisions screen renders the newly current published row; no query-based
+   toast is required.
+5. In `RevisionList.tsx`, construct success copy using
+   `revision.revisionNumber` from the selected source revision—not the newly
+   returned revision number unless the API response is intentionally displayed.
+6. In `apply/page.tsx`, success may include raw revision/site IDs because the
+   page is an operator verification screen. Render both values in `<code>` and
+   retain current re-check of pointer after successful POST.
+
+#### Tests for vocabulary and state distinction
+
+1. Query text in `vibe-revisions.test.tsx` for **Republish revision** and
+   assert **Restore revision** is absent.
+2. Query text in `vibe-actions-page.test.tsx` for **Restore Vibe** only under
+   `status === 'trash'`; assert it does not render on revisions test fixtures.
+3. Publish test asserts the pre-publish checklist says it does not apply to a
+   site and no apply endpoint is called.
+4. Apply test asserts current revision label is application-specific and never
+   reuses **Publish immutable revision** as its submit label.
+5. Grep changed Vibe UI files for **Undo**, **Restore revision**, and
+   **permanently deleted**. Each match must be either absent or an explicitly
+   documented future non-implementation; do not ship those phrases as action
+   copy.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
@@ -5175,15 +5234,15 @@ Update `apps/pulse/tests/unit/vibe-editor-validation.test.tsx`:
 
 #### `apps/pulse/app/vibes/[vibeId]/revisions/RevisionList.tsx`
 
-- **Lines 24 onward:** preserve the existing revision fetch, restore endpoint,
+- **Lines 24 onward:** preserve the existing revision fetch, rollback endpoint,
   comparison links, and `publishedRevisionId` semantics.
 - **Lines 86 onward:** retain the table but order rows/visual groups as current
   published revision, previous published revisions, then checkpoints. If the
   API ordering is not guaranteed, derive a presentational ordered array in this
   component without mutating data or changing the API.
-- Replace inline `window.confirm` (in `restoreRevision`) with `VibeConfirmDialog`.
-  Dialog copy must say: “Create a new published revision from this snapshot. It
-  will not apply it to any site.”
+- Rename `restoreRevision` to `republishRevision`, then replace its inline
+  `window.confirm` with `VibeConfirmDialog`. Dialog copy must say: “Create a
+  new published revision from this snapshot. It will not apply it to any site.”
 - Render action links in a row beneath the revision title/number rather than a
   detached final column; retain **Apply to site** only for the current published
   revision, as current code does.
