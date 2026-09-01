@@ -3062,6 +3062,119 @@ Before coding package 1A, Luna must make these literal plan/code alignments:
    `revisionNumber`. Use the current response’s `vibeId` for the same-Vibe
    comparison branch and hide the link only if that value is missing.
 
+### DI. Mutation-contract reconciliation — line-by-line UI preservation
+
+#### Bulk actions: `app/api/vibes/bulk/route.ts`
+
+1. Current schema line 9 permits only `action: 'archive' | 'trash'` and 1–50
+   Vibe IDs. `VibeList.tsx` must never send a Restore, Publish, Submit, or
+   arbitrary action through this endpoint.
+2. Before the POST, add this UI-only guard in `runBulk`:
+
+   ```ts
+   if (selected.size > 50) {
+     setError('Select no more than 50 Vibes for one bulk action.');
+     return;
+   }
+   ```
+
+   The normal list page cannot exceed 25 rows today, but the guard preserves the
+   API limit if page size changes later. Do not slice IDs silently.
+3. The request stays exactly:
+
+   ```ts
+   fetch('/api/vibes/bulk', {
+     method: 'POST',
+     headers: { 'content-type': 'application/json' },
+     body: JSON.stringify({ vibeIds: [...selected], action }),
+   });
+   ```
+
+   Do not add `tenantId` to this URL or body; the existing default server
+   behavior is part of the current contract.
+4. On a `409`, keep the selected IDs and show the returned error. Do not clear
+   selection, reload, or assume a partial success. The server transaction is
+   all-or-nothing.
+5. On success, call local `loadList()`. Its successful response clears
+   selection; do not clear selection before that fetch succeeds.
+
+Add tests for the 50-ID guard and a 409 response that retains selected rows.
+
+#### Draft save: `app/api/vibes/[vibeId]/route.ts`, PATCH lines 25–49
+
+1. The PATCH body schema is strict and exactly `{ draft, expectedVersion? }`.
+   `saveDraft` must keep the object shape; no `status`, `vibeId`, preview data,
+   UI panel state, or last-saved timestamp may be included.
+2. On `400 Invalid draft payload.`, keep the form values and render the message.
+   Do not reset to the server draft because the user can correct input locally.
+3. On `404 Vibe not found.`, keep the readable error and expose the existing
+   back/list link through the page header. Do not perform an automatic redirect.
+4. On `409` with code `VIBE_DRAFT_CONFLICT`, retain the current existing
+   conflict state and its reload action. A UI refresh must not retry PATCH with
+   a new `expectedVersion` automatically.
+5. Current editor GET and PATCH both require operator access. Leave 401/403 as
+   explicit page errors; do not treat them as a blank draft or save failure that
+   can be retried without reauthentication.
+
+#### Submit: `app/api/vibes/[vibeId]/submit/route.ts`, POST lines 10–27
+
+1. Submit has no request body. Keep the existing call as
+   `fetch('/api/vibes/${vibeId}/submit', { method: 'POST' })`; do not send the
+   change summary, current draft, or a revision ID.
+2. A `201` returns a new submitted revision. After success, keep the existing
+   `vibe-status-changed` dispatch and redirect behavior so the sidebar reloads
+   status when the next page appears.
+3. A `409` means the Vibe was no longer a draft. Display **Only draft vibes can
+   be submitted.** and keep the user on the submit page; do not navigate to a
+   presumed status route.
+
+#### Publish: `app/api/vibes/[vibeId]/publish/route.ts`, POST lines 11–35
+
+1. The strict body is exactly `{ changeSummary?: string }`; trim the local
+   textarea value before sending but do not send an empty field unless the
+   current page already does. The API accepts an omitted summary.
+2. Keep the local maximum at 1,000 characters (the server schema limit). Add
+   `maxLength={1000}` to the summary textarea if it is absent; this prevents a
+   browser-side format error without changing server validation.
+3. A `409` must display the exact returned transition message. Do not turn a
+   publication conflict into a silent refresh or a new revision request.
+4. A `201` creates a published revision but does not apply it to any site.
+   Keep the redirect to revisions; do not redirect directly to apply.
+
+#### Republish/rollback: `app/api/vibes/[vibeId]/rollback/route.ts`, POST lines 11–34
+
+1. The reason is mandatory after `trim()`. In `RevisionList.tsx`, use
+   `const normalizedReason = republishReason.trim()` in the dialog confirm
+   handler and disable Confirm when it is empty.
+2. Send exactly `{ revisionId: revision._id, reason: normalizedReason }`.
+   Never send `vibeId`, parent revision, a snapshot, or a target Site ID.
+3. A `201` is a newly created published revision; call `loadRevisions()` and
+   show the exact outcome. Do not infer that the target site pointer changed.
+4. On `404 Revision not found.` or `409 Rollback could not be completed.`, keep
+   the dialog open, display the error inside it, and preserve the reason for
+   correction/retry.
+
+### DJ. Add these mutation assertions while the relevant files are open
+
+1. In `vibe-list.test.tsx`, mock `POST /api/vibes/bulk` with `{ status: 409,
+   body: { error: 'One or more selected Vibes changed before the bulk action
+   completed.' } }`; select two rows; confirm action; assert both checkboxes
+   remain checked and no reload occurs.
+2. In `vibe-editor-validation.test.tsx`, mock PATCH `409` with
+   `{ error: 'Draft changed since it was loaded.', code: 'VIBE_DRAFT_CONFLICT' }`;
+   submit; assert conflict text appears, draft fields retain edited values, and
+   a second PATCH is not dispatched automatically.
+3. Add `tests/unit/vibe-submit-page.test.tsx`: assert POST has no `body` key;
+   mock 409 and assert no redirect; mock 201 and assert status event then
+   redirect to the current intended route.
+4. Add `tests/unit/vibe-publish-page.test.tsx`: enter 1,001 characters and
+   assert the textarea is invalid; enter valid summary; assert request JSON is
+   exactly `{ changeSummary: '...' }`; mock 409 and assert no automatic apply
+   request exists.
+5. In `vibe-revisions.test.tsx`, mock rollback 409 after entering a reason;
+   assert dialog remains visible with its input value and no pointer/apply
+   endpoint was called.
+
 ### DC. Test implementation details from the existing Vitest suite
 
 The existing editor test at
