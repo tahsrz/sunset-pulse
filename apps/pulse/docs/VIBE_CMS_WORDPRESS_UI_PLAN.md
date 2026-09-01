@@ -4853,6 +4853,28 @@ endpoint, or a preference store.
    always finishes on a valid page, and every empty state offers only a truthful
    next action.
 
+### EP. List focus-continuity patch — preserve keyboard context after updates
+
+Modern administration screens retain a clear working position after an action.
+Implement this as a small follow-up within package 1F; do not add a focus
+manager dependency.
+
+1. In `VibeList.tsx`, add `const bulkApplyRef = useRef<HTMLButtonElement>(null);`
+   beside bulk state and pass it to both bulk Apply controls only through the
+   control that triggered the request. Add `trigger: 'top' | 'bottom'` to
+   `requestBulkAction` so it records the initiating button.
+2. After a successful bulk POST and successful `loadList` on a still-valid page,
+   call `queueMicrotask(() => activeBulkApplyRef.current?.focus())`. If the page
+   repair branch runs, do not focus a stale button; let the new list render.
+3. In the corrected-page success branch, place `ref={listHeadingRef}` on the
+   visible **All Vibes** heading with `tabIndex={-1}` and focus it after the
+   replacement page finishes loading. Do not use `autoFocus`.
+4. When an empty state replaces the table, focus its heading only after a user
+   initiated bulk action removed the final item; do not steal focus on ordinary
+   search/filter typing.
+5. Add list tests for top/bottom bulk focus, corrected-page heading focus, and
+   no focus movement during debounced search. Keep all links/buttons text-labeled.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
