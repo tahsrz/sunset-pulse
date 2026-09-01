@@ -195,8 +195,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Visual system</h2>
+              <VibePanel id="visual-system" title="Visual system" defaultOpen>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {(['primary', 'background', 'surface', 'textPrimary', 'textSecondary'] as const).map((key) => <label key={key} className="text-xs font-bold uppercase text-slate-500">{key}<input name={key} type="color" defaultValue={draft.tokens.visual.theme.colors[key]} className="mt-2 block h-10 w-full rounded border border-slate-300 bg-white p-1" /></label>)}
                 </div>
@@ -219,7 +218,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                     <label className="text-xs font-bold uppercase text-slate-500">Elevation<select name="elevation" defaultValue={layout.elevation} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="flat">Flat</option><option value="subtle">Subtle</option><option value="medium">Medium</option><option value="high">High</option></select></label>
                   </div>
                 </div>
-              </article>
+              </VibePanel>
 
               <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Jamie voice</h2>
