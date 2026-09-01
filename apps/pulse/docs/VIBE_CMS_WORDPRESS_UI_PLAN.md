@@ -2933,18 +2933,29 @@ ID input or apply action.
 editor’s Source details panel. Before Luna changes its layout, make this narrow
 inspection and patch:
 
-1. Locate its fetch and retain its URL, method, response parsing, and error
-   state unchanged.
-2. Replace only duplicated route header markup with `VibePageHeader` using
+1. Keep the server-only access/data sequence exactly: `headers()` →
+   `getVibeCmsAccess(getRequestHostFromHeaders(...))` → `params` → `connectDB()`
+   → `Vibe.findOne({ vibeId, tenantId: 'default' })`. This page has no client
+   fetch to retain or replace.
+2. Preserve the current model selection fields
+   `vibeId title name source sourceVideoPath migrationMetadata`. Do not expand
+   the query merely to populate presentation fields.
+3. Replace only duplicated route header markup with `VibePageHeader` using
    `backHref={`/vibes/${vibeId}/edit`}` and **Back to Vibe**.
-3. Present source kind, source URL, attribution, ownership note, and timestamps
-   as a definition list (`<dl>`, `<dt>`, `<dd>`). Do not make values editable in
-   this route.
-4. If `sourceUrl` is present, render a normal external anchor with
-   `target="_blank" rel="noreferrer"`; if absent, render **Not provided** as
-   text. Do not attempt URL repair or add a new API validation rule.
-5. Add a focused page test for the absent URL and present URL paths. Keep tests
-   in the same package as this layout change.
+4. Present the current available source fields—kind, URL or path, attribution,
+   and ownership note—as a definition list (`<dl>`, `<dt>`, `<dd>`). Do not
+   claim timestamps are available and do not make values editable in this route.
+5. The existing source fallback remains:
+   `vibe.source || { kind: vibe.sourceVideoPath ? 'extracted' : 'manual', path:
+   vibe.sourceVideoPath || null }`. Do not remove it while extracting JSX.
+6. If `source.url` is an absolute `http:` or `https:` URL, render an external
+   anchor with `target="_blank" rel="noreferrer"`; otherwise render
+   `source.url || source.path || 'Not recorded'` as text. Do not turn a stored
+   local path into a link, repair a URL, or add a new API validation rule.
+7. Extract a pure `VibeSourceDetails` component only if needed for tests. Its
+   props are resolved display values, not Mongoose documents or access state.
+   Test absent URL, external URL, and local-path text branches in the same
+   package as this layout change.
 
 ### DB. Final per-file command sequence for Luna
 
@@ -3817,6 +3828,118 @@ perform preflight mutations, or imply that publication changes a tenant site.
 5. Review the package diff to confirm `VibeReadinessChecklist.tsx` imports only
    React types if needed and does not import `next/*`, Vibe services, routes, or
    client hooks.
+
+### DX. Taxonomy and source-screen package 3D — modern directory/detail treatment
+
+This package makes the read-only supporting screens feel coherent with the
+modern Vibe admin without implying that schema-owned taxonomy or source records
+can be edited there.
+
+#### `app/vibes/taxonomy/page.tsx`, current lines 1–15
+
+1. Keep `export const dynamic = 'force-dynamic'`.
+2. Replace the local Link/h1/p markup with `VibePageHeader`:
+
+   ```tsx
+   <VibePageHeader
+     eyebrow="Content management"
+     title="Vibe taxonomy"
+     description="Controlled terms for consistent discovery and filtering."
+     backHref="/vibes"
+     backLabel="All Vibes"
+   />
+   ```
+
+3. Replace page `<main>` with a `<div className="min-h-full ...">` because
+   `app/vibes/layout.tsx` owns the main landmark after package 0A.
+4. Keep `<TaxonomyDirectory />` as the only child below the header. Do not add
+   an Add Term button, management action, row action, or schema mutation route.
+
+#### `app/vibes/taxonomy/TaxonomyDirectory.tsx`, current lines 5–50
+
+1. Keep type fields exactly `id`, `group`, `term`; do not add term descriptions,
+   aliases, colors, or mutability properties that the API does not return.
+2. Preserve GET `/api/vibes/taxonomy`, its AbortController, local `query`, local
+   `group`, and the two existing `useMemo` computations. This directory remains
+   a client-side filter over one loaded schema-owned term set.
+3. Add `setError('')` immediately before fetch in the effect. Do not turn the
+   one-time fetch into a URL-synchronized or paginated endpoint.
+4. In the current lines 47–50 toolbar, keep Search then Group filter order.
+   Change only the search class from `min-w-56 flex-1` to
+   `min-w-0 w-full sm:w-64 sm:flex-none`; preserve the current accessible labels.
+5. Replace current card grid at line 50 with this native table structure:
+
+   ```tsx
+   <div className="overflow-x-auto">
+     <table className="w-full text-left text-sm">
+       <thead>...</thead>
+       <tbody>...</tbody>
+     </table>
+   </div>
+   ```
+
+6. The exact headers are **Term**, **Group**, and **Used by**. Term is
+   `<th scope="row">`; Group/Used by are `<td>`. The row key remains `term.id`.
+7. Term display remains `term.term.replace(/-/g, ' ')`; Group display remains
+   `groupLabel(term.group)`; usage remains `counts[term.id] || 0`. Do not fetch
+   or render names of Vibes that use a term.
+8. Keep the existing footer sentence on schema ownership, but move it beneath
+   the table in a muted bordered footer. It is the screen’s explicit no-mutation
+   explanation and must remain visible.
+9. Replace loading/error bare paragraphs with `VibeNotice`/table-shaped loading
+   only after primitives exist. The empty query state retains **No taxonomy terms
+   match this filter.** and does not show an empty action control.
+
+#### `app/vibes/[vibeId]/source/page.tsx`, current lines 1–19
+
+1. Retain imports for `headers`, `getVibeCmsAccess`,
+   `getRequestHostFromHeaders`, `connectDB`, and `Vibe`. Do not convert this
+   page to `'use client'` or route it through `/api/vibes/:id`.
+2. Keep the `access.allowed` branch ahead of `connectDB`. For the visual
+   migration, replace its inner content only; do not fetch source records for an
+   unauthorized request.
+3. Keep the `!vibe` 404-style branch after the query. It uses `VibeNotice` only
+   if a server-compatible notice component is confirmed; otherwise retain a
+   simple server-rendered message. Do not introduce client retry state.
+4. Move source-detail rendering into `VibeSourceDetails` with props:
+
+   ```ts
+   type VibeSourceDetailsProps = {
+     kind: string;
+     url: string | null;
+     path: string | null;
+     attribution: string | null;
+     ownershipNote: string | null;
+   };
+   ```
+
+5. Implement `isExternalSourceUrl(value)` in the component file using
+   `new URL(value)` in a try/catch and return true only for `http:` / `https:`.
+   Do not call it on `path` and do not expose a caught URL parser error.
+6. Definition terms use exact labels **Kind**, **URL or path**, **Attribution**,
+   and **Ownership note**. Missing value text is **Not recorded** throughout;
+   do not mix `Not provided`, `Unknown`, and em dashes on this screen.
+7. External source anchor text is **Open source link**; it includes
+   `aria-label={`Open ${kind} source link in a new tab`}`. Display the raw URL
+   in a separate `<code className="break-all">` beneath it for auditability.
+8. Local path values render only as `<code className="break-all">`; they are
+   never a `Link`, a client route, or a browser navigation target.
+
+### DY. Package 3D test requirements
+
+1. Add `tests/unit/vibe-taxonomy.test.tsx`. Mock one taxonomy response with
+   multiple groups/counts; assert search and group filters apply locally and
+   only one `/api/vibes/taxonomy` request occurs. Assert Term is a row header
+   and no Add/Remove/Edit term controls appear.
+2. Add `tests/unit/vibe-source-details.test.tsx` for the pure detail component:
+   `https://` produces the external anchor with `rel="noreferrer"`; a local
+   path produces no anchor; missing values render **Not recorded**.
+3. Do not add a full server-page test that mocks database/auth. The source page’s
+   access/query sequence is preserved by inspection; the extracted display
+   component owns UI branch coverage.
+4. After package 3D, search the changed files for `POST`, `PATCH`, `DELETE`, and
+   `fetch(`. Taxonomy must contain only its existing GET; Source must contain no
+   client fetch/mutation additions.
 
 ### DM. Luna execution map — read and edit in this exact order
 
