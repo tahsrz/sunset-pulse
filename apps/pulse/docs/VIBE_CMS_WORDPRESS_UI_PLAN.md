@@ -3941,6 +3941,157 @@ can be edited there.
    `fetch(`. Taxonomy must contain only its existing GET; Source must contain no
    client fetch/mutation additions.
 
+### DZ. List query-state package 1E — canonical deep links and browser navigation
+
+An established admin list keeps filters, search, sorting, and pagination in its
+URL so a user can refresh, bookmark, and use Back/Forward without losing their
+working context. Package 1B introduces URL state; this package makes its
+two-way synchronization explicit and prevents stale state from reasserting
+itself after browser navigation.
+
+#### `app/vibes/VibeList.tsx` — replace independent list query state
+
+**Current planned state region from CG (around lines 47–60):**
+
+1. Replace separate `status`, `sort`, `direction`, and `page` state with one
+   object state:
+
+   ```ts
+   const searchParams = useSearchParams();
+   const pathname = usePathname();
+   const router = useRouter();
+   const queryString = searchParams.toString();
+   const [listQuery, setListQuery] = useState<VibeListQuery>(() =>
+     parseVibeListQuery(new URLSearchParams(queryString)),
+   );
+   const [searchInput, setSearchInput] = useState(listQuery.q);
+   ```
+
+2. Derive `status`, `sort`, `direction`, and `page` from `listQuery` rather
+   than maintaining duplicate state variables:
+
+   ```ts
+   const { status, sort, direction, page } = listQuery;
+   ```
+
+3. Do not store `debouncedSearch` as a second query state. It is only a delayed
+   bridge from `searchInput` to `listQuery.q`.
+
+#### Synchronize URL → state first
+
+Immediately after the state declarations, add this effect:
+
+```ts
+useEffect(() => {
+  const next = parseVibeListQuery(new URLSearchParams(queryString));
+  setListQuery((current) =>
+    serializeVibeListQuery(current) === serializeVibeListQuery(next) ? current : next,
+  );
+  setSearchInput((current) => (current === next.q ? current : next.q));
+}, [queryString]);
+```
+
+1. This effect is the only code path that reacts to browser Back/Forward or a
+   directly opened list URL.
+2. It compares serialized normalized forms, so unknown URL keys are ignored and
+   equivalent default states do not create a render loop.
+3. Do not put `listQuery` or `searchInput` in this effect dependency array.
+
+#### Synchronize state → URL through one helper
+
+Replace CG’s generic `updateQuery(next, mode)` description with this exact
+helper:
+
+```ts
+function writeListQuery(next: VibeListQuery, mode: 'push' | 'replace') {
+  const normalized = parseVibeListQuery(new URLSearchParams(serializeVibeListQuery(next)));
+  const serialized = serializeVibeListQuery(normalized);
+  const href = serialized ? `${pathname}?${serialized}` : pathname;
+  setListQuery(normalized);
+  if (mode === 'push') router.push(href);
+  else router.replace(href);
+}
+```
+
+1. All status, sort, and pagination handlers call `writeListQuery` with `push`.
+2. Debounced text search calls it with `replace` so each pause in typing does
+   not create a history entry.
+3. Never mutate `searchParams` directly and never concatenate individual user
+   values onto an existing URL.
+4. Do not preserve arbitrary unknown query keys. The Vibe list owns its query
+   namespace and serializer intentionally emits only `q`, `status`, `sort`,
+   `dir`, and `page`.
+
+#### Exact handler replacements
+
+1. Replace the current search reset effect with:
+
+   ```ts
+   useEffect(() => {
+     const timer = window.setTimeout(() => {
+       if (searchInput === listQuery.q) return;
+       writeListQuery({ ...listQuery, q: searchInput.trim(), page: 1 }, 'replace');
+     }, 300);
+     return () => window.clearTimeout(timer);
+   }, [searchInput, listQuery]);
+   ```
+
+   The new query always returns to page one. Do not fetch based on raw
+   `searchInput`.
+2. Status view/select handler calls:
+
+   ```ts
+   writeListQuery({ ...listQuery, status: nextStatus, page: 1 }, 'push');
+   ```
+
+   Delete any separate `setStatus` call.
+3. Sort handler keeps existing toggle semantics but calls `writeListQuery` once
+   with `page: 1`. It must preserve status and normalized search query.
+4. Previous/Next call `writeListQuery({ ...listQuery, page: page - 1 }, 'push')`
+   or the bounded next equivalent. Delete direct `setPage` callbacks.
+5. Fetch effect depends on `listQuery`, not each destructured field. Build API
+   request names from the object: `q → search`, `direction → direction`, all
+   other names unchanged. Keep `pageSize: String(PAGE_SIZE)` out of the browser
+   URL.
+
+#### Canonical URL cleanup
+
+After the URL→state effect, add a separate effect that removes invalid/default
+query syntax only when navigation has settled:
+
+```ts
+useEffect(() => {
+  const normalized = parseVibeListQuery(new URLSearchParams(queryString));
+  const canonical = serializeVibeListQuery(normalized);
+  if (canonical !== queryString) {
+    router.replace(canonical ? `${pathname}?${canonical}` : pathname);
+  }
+}, [pathname, queryString, router]);
+```
+
+1. This transforms `?status=unknown&page=0` into the canonical list URL once.
+2. It does not use `writeListQuery`, so it does not push history or mutate
+   component state twice.
+3. It does not add a per-page setting. The API’s fixed current `PAGE_SIZE = 25`
+   remains part of this UI package; a user preference would require a separate
+   persistence decision.
+
+### EA. Package 1E tests
+
+1. In `vibe-list-query.test.ts`, assert `?status=trash&sort=status&dir=asc&page=2`
+   parses and serializes unchanged except for ordering imposed by the serializer.
+2. In `vibe-list.test.tsx`, mock `useSearchParams` with page 3/status draft;
+   rerender it with page 1/status published; assert UI updates to Published and
+   fetches `status=published&page=1` without direct user input.
+3. Type a search string in three successive `fireEvent.change` calls, advance
+   fake timers by 300ms, and assert one `router.replace` and one final list fetch
+   using API key `search`, page 1.
+4. Click a status view and then simulate Back by rerendering query params; assert
+   the status button’s `aria-pressed` returns to its previous state.
+5. Initialize invalid URL `?status=trashed&sort=createdAt&dir=up&page=0`; assert
+   exactly one canonical `router.replace` with no query string and no list
+   request using invalid API values.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
