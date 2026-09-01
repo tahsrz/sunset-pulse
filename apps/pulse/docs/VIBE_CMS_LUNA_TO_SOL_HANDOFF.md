@@ -18,10 +18,11 @@ Branch/PR: `codex/cms-production-verification-evidence` / PR 73
 
 ## Verification
 
-- Focused CMS route suite: 11 tests passing.
+- Focused CMS route suite: 13 tests passing.
+- Site-config store suite: 12 tests passing.
 - Site provisioning suite: 17 tests passing.
 - Lifecycle notification suite: 6 tests passing.
-- Combined local safety run: 34 tests passing across 3 files.
+- Combined local safety run: 48 tests passing across 4 files.
 - No production mutation or deployment was performed in this increment.
 
 ## Important limitations
@@ -43,7 +44,7 @@ The follow-up review corrected two implementation bugs without widening into a s
 - Inspection previously inferred store presence from the single record selected by `readSiteConfig`, which could falsely mark a healthy dual-store site as unreconciled. `inspectSiteConfigStores` now reads both stores explicitly and reports their actual presence.
 - The overall seed deadline timer was left scheduled after fast success or failure. The route now clears that timer in `finally`, avoiding unnecessary live timers after a completed request.
 
-Focused route and store verification passes with 22 tests across 2 files after these fixes.
+Focused route and store verification passes with 25 tests across 2 files after these fixes.
 
 ## Luna follow-up actionables after the three operational passes
 
