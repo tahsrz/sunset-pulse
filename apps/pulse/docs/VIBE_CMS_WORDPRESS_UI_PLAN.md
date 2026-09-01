@@ -183,7 +183,7 @@ have one WordPress-derived responsibility and no data fetching of its own:
    consequential confirmation.
 6. `VibeEditorToolbar.tsx` — modern editor-level navigation/save/preview/
    settings controls.
-7. `VibePanel.tsx` — WordPress-like collapsible settings sections.
+7. `VibePanel.tsx` — collapsible settings sections.
 8. `VibeTaxonomyFieldset.tsx` — grouped document-level taxonomy control.
 
 `VibeList`, `VibeEditor`, `RevisionList`, and `TaxonomyDirectory` remain the
@@ -579,7 +579,7 @@ Each slice must leave all existing Vibe routes operational; no intermediate
 commit may depend on a future slice to restore access to save, preview, publish,
 or revisions.
 
-### U. Review checklist for “WordPress-like, not WordPress-copied”
+### U. Review checklist for a familiar, purpose-built editorial workspace
 
 Before accepting any UI increment, review against these questions:
 
@@ -597,6 +597,142 @@ Before accepting any UI increment, review against these questions:
   operations rather than hiding them?
 - Did the implementation avoid importing WordPress code/CSS or broadening
   backend scope?
+
+### V. Navigation, URL state, and return-path behavior
+
+The list is an operational workspace. Returning from an editor, preview, or
+revision should restore the editor’s context rather than reset it to a generic
+first page.
+
+#### List URL contract
+
+Move the **list UI state**—not data ownership—to validated URL search params:
+
+```text
+/vibes?status=published&q=coastal&sort=updatedAt&dir=desc&page=2
+```
+
+Implement this in `VibeList.tsx` with `useSearchParams`, `useRouter`, and a
+small parser in `apps/pulse/lib/cms/vibeListQuery.ts`:
+
+```ts
+type VibeListQuery = {
+  status: '' | 'draft' | 'in_review' | 'published' | 'archived' | 'trash';
+  q: string;
+  sort: 'title' | 'status' | 'updatedAt';
+  dir: 'asc' | 'desc';
+  page: number;
+};
+```
+
+- Parse unknown, duplicate, malformed, or out-of-range parameters to safe
+  defaults. Limit `q` to the same maximum length the API supports; do not pass
+  arbitrary query data through unexamined.
+- Hydrate initial `VibeList` state from the parsed URL so direct links and
+  browser Back restore the same view.
+- For a status/sort/page selection, call `router.push()` so Back returns to the
+  preceding list state. For debounced typing in search, call `router.replace()`
+  so Back does not replay every keystroke.
+- Build the existing `GET /api/vibes` request only from the parsed state. The
+  API parameter names remain unchanged: `search`, `status`, `sort`,
+  `direction`, `page`, and `pageSize`.
+- Reset `page` to `1` when status, sort, direction, or `q` changes. Preserve
+  page when only a display preference changes.
+- Do not add route params to a Vibe edit URL. Browser Back from Edit naturally
+  returns to the already-stateful list URL.
+
+This supersedes the earlier caution against an **unvalidated** URL update. The
+requirement is now a small validated query helper with unit tests, not ad hoc
+string mutation in JSX.
+
+#### Unsaved-change policy
+
+- Add `useVibeUnsavedChangesWarning(isDirty)` under
+  `app/vibes/_components/` or `lib/cms/`. Its first responsibility is a native
+  `beforeunload` warning while `saveState === 'dirty'`.
+- Do not attempt to intercept every internal `Link` on the first pass; it is
+  error-prone and can conflict with browser navigation. The editor already
+  surfaces the dirty state prominently.
+- When a future internal-navigation confirmation is added, it must present
+  **Stay and save**, **Leave without saving**, and **Cancel**—never silently
+  discard. It must not block links while save is in flight.
+- Preview opens only from a persisted draft. Its label tells the user it
+  reflects the last saved draft, not unsaved inputs currently in the form.
+
+#### Route and identity copy rules
+
+- Browser-facing navigation uses the Vibe title first, then the slug/permalink
+  context. `vibeId` is operational metadata and should not lead a page title.
+- Keep current routes based on `vibeId`; replacing them with slugs is out of
+  scope and risks breaking lifecycle/revision links.
+- Any raw Vibe/revision/site ID shown for operational verification appears in a
+  visually secondary code-style field with a copy control only after a real
+  copy-success feedback path exists.
+
+### W. Editorial copy and progressive disclosure system
+
+The interface should teach domain concepts at the moment they matter, rather
+than force editors to learn implementation vocabulary first.
+
+| Concept | First-use copy | Where it appears | Do not say |
+| --- | --- | --- | --- |
+| Vibe | “A reusable visual and editorial system for a site.” | All Vibes empty state / Add New intro | “CMS record” |
+| Slug | “The URL-safe name, for example `coastal-modern`.” | Under the slug field | “Must match the requested format” alone |
+| Draft | “Saved changes that are not yet a published revision.” | Save state / editor | “Unpublished object” |
+| Revision | “A frozen version created when you publish.” | Publish and revisions | “Database snapshot” |
+| Restore | “Copies this revision into the editable draft.” | Restore dialog | “Rollback” without explanation |
+| Apply to site | “Sets this site to use the selected published revision.” | Apply preflight | “Mutate pointer” |
+| Disposable verification site | “A temporary site used only for controlled testing.” | Apply preflight | “Seed target” |
+
+Rules for progressive disclosure:
+
+1. Show one sentence of help under an unfamiliar field; provide longer context
+   through a small **What is this?** disclosure, not a modal tour.
+2. Do not show help labels on every familiar control. Help should disappear from
+   the scan path once the form is understood.
+3. Use exact outcome verbs: **Save**, **Submit**, **Publish**, **Restore**,
+   **Apply**, **Archive**, **Move to trash**. Avoid generic “Continue” and
+   “Confirm” unless the immediately adjacent text names the outcome.
+4. Preserve backend error text only when it is editor-safe; otherwise map it to
+   a plain-language message while retaining a technical Details disclosure for
+   operators.
+
+### X. Design consistency boundaries
+
+The workspace must feel coherent without leaking admin styling into the public
+product.
+
+- Scope all new CSS/classes/components under `app/vibes` or the existing Vibes
+  route group. Do not alter global body typography, global button defaults, or
+  public-site page spacing for this initiative.
+- Keep the existing dark Vibes shell and neutral work area; use one brand action
+  color, one danger color, and status tones only for meaningful lifecycle state.
+- Avoid excessive rounded cards. Tables, toolbars, and panels need borders and
+  spacing hierarchy more than large radii or shadows.
+- Use icon libraries already in the repository (`lucide-react` is currently in
+  `VibeSidebar.tsx`); do not add icon fonts or copy a third-party icon set.
+- If a shared global component could be useful outside Vibes, leave it local
+  first. Promote it only after a separate cross-product review.
+
+### Y. Additional verification cases
+
+Add these to the manual/browser verification checklist after the relevant slice:
+
+1. Open a filtered, sorted second page of All Vibes; edit one Vibe; use browser
+   Back; confirm query, status view, sort, and page are preserved.
+2. Type a search query, wait for debounce, then use Back once; confirm it moves
+   to the prior stable query—not each keystroke.
+3. Make an editor change, attempt browser refresh/close, and confirm native
+   unsaved-change warning appears. Save, then repeat; it must not appear.
+4. Collapse every advanced panel, save the form, reload, and confirm all field
+   values persisted while panel preference behavior follows its local setting.
+5. Tab through the list’s status views, toolbar, sort headers, select-all,
+   first row actions, pagination, and dialog; no focus target may be invisible.
+6. Reduce viewport to 375px, 768px, and 1440px; verify controls wrap or scroll
+   intentionally and no select/search field overlaps an adjacent control.
+7. Trigger a draft conflict using the existing test/mocked response; verify
+   fields remain visible, no false success notice appears, and reload warning is
+   explicit.
 
 ## Product rules
 
@@ -708,7 +844,7 @@ Before accepting any UI increment, review against these questions:
   in plain language.
 - Keep the existing publish rail as the action authority, but present status,
   current published revision, Preview, Revisions, and the next lifecycle action
-  in a stable WordPress-like order.
+  in a stable, familiar order.
 - Include a narrow editor toolbar for navigation and primary actions, then keep
   advanced panels out of the way until expanded. This captures the modern
   WordPress focus on a calmer editing surface without requiring Gutenberg.
@@ -1205,6 +1341,6 @@ checklist, and tests limited to the UI and route contracts it changes.
 
 The Vibes area is complete for this initiative when a user familiar with
 WordPress can create a draft, understand its URL, edit its structured content,
-publish an immutable revision, inspect and restore history, preview it, and
+  publish an immutable revision, inspect and restore history, preview it, and
 apply it through a comprehensible confirmation flow—without needing to know
 internal IDs or lifecycle implementation details.
