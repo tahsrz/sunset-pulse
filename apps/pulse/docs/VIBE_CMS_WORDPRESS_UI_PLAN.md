@@ -300,7 +300,7 @@ already has.
 | Autosave | No demonstrated autosave-specific API, per-user recovery record, or merge policy. | **Do not add background server autosave** in this UI initiative. It would generate revisions/conflicts that the current model does not describe. |
 | Local recovery draft | Not currently specified. | **Discovery only:** assess whether `sessionStorage` can hold a non-authoritative editor snapshot with version + timestamp. Implement only after a separate recovery UX decision; never call it a saved revision or send it automatically. |
 | Published revisions | Immutable revision history already exists. | Make “Current published” visually dominant and explain that later draft saves do not modify it. |
-| Restore | Existing guarded restore behavior. | Confirmation copy must say it restores into the editable draft and does not apply/publish a site. |
+| Restore | Existing guarded rollback behavior. | Confirmation copy must say it creates a new published revision from the selected snapshot and does not apply it to a site. |
 | Compare | Existing compare route. | First improve the existing summary and selected revision labels. Do not copy WordPress’s slider/highlight interface until the Vibe payload diff can produce meaningful, stable field-level changes. |
 | Scheduled publish | No stated lifecycle/API capability. | **Out of scope.** Never display a scheduling control merely because WordPress has one. |
 
@@ -337,7 +337,7 @@ an intentional decision. Vibes should do the same.
 | List fetch error | error notice, `role="alert"` | “Unable to load Vibes.” Include **Try again** that invokes the existing list reload callback. |
 | Archive completed | success notice, `role="status"` | State the count and action. No Undo unless a real restore behavior is available. |
 | Move to trash | confirmation dialog, then success notice | Dialog names selected count and irreversibility; success names the completed count. |
-| Restore revision | confirmation dialog | “Restore to editable draft; this will not publish or apply it.” |
+| Republish revision | confirmation dialog | “Create a new published revision from this snapshot; this will not apply it to a site.” |
 | Apply revision | preflight + confirmation dialog | Name Vibe, revision, site, current pointer, and new pointer. |
 | Validation issue | inline field error plus summary notice only if submit was attempted | Focus the first invalid field after a failed submit; do not announce every keystroke as an alert. |
 
@@ -413,7 +413,7 @@ decoration.
 | Edit draft | **Save draft** while dirty; otherwise the permitted lifecycle action is visually prominent in the Publish rail | Preview, Revisions, status details | A destructive lifecycle action or Apply to site |
 | Submit for review | **Submit for review** | Back to edit, Preview | Publish if current status is draft |
 | Publish | **Publish revision** | Back to edit, Preview, View revisions | Apply to site |
-| Revisions | No global primary action | Compare, Restore draft, Apply current published revision | Restore/publish for a non-current revision |
+| Revisions | No global primary action | Compare, Republish selected revision, Apply current published revision | Apply for a non-current revision |
 | Apply to site | **Confirm and apply revision** only after preflight succeeds | Check current pointer, choose a different revision/site | Freeform apply before pointer check |
 
 Use these exact labels in user-facing controls. Internal terms such as
@@ -680,7 +680,7 @@ than force editors to learn implementation vocabulary first.
 | Slug | “The URL-safe name, for example `coastal-modern`.” | Under the slug field | “Must match the requested format” alone |
 | Draft | “Saved changes that are not yet a published revision.” | Save state / editor | “Unpublished object” |
 | Revision | “A frozen version created when you publish.” | Publish and revisions | “Database snapshot” |
-| Restore | “Copies this revision into the editable draft.” | Restore dialog | “Rollback” without explanation |
+| Republish revision | “Creates a new published revision from this snapshot.” | Revision confirmation | “Rollback” without explanation |
 | Apply to site | “Sets this site to use the selected published revision.” | Apply preflight | “Mutate pointer” |
 | Disposable verification site | “A temporary site used only for controlled testing.” | Apply preflight | “Seed target” |
 
@@ -885,8 +885,8 @@ as published content.
 2. Publish screen explains that publication freezes the selected draft state.
 3. After publishing, Revision history puts the current published revision first
    and distinguishes it from previous publications/checkpoints.
-4. Editor can compare history or restore an earlier revision to the draft after
-   an explicit confirmation.
+4. Editor can compare history or republish an earlier published revision as a
+   new current published revision after an explicit confirmation.
 
 **Success evidence:** restore does not claim to publish/apply; raw revision IDs
 remain secondary; Apply action is offered only from current published revision.
@@ -1314,7 +1314,7 @@ duplicate interaction without claiming to provide transaction guarantees.
 | Save draft | `PublishPanel` / editor form | Disable only save submit; retain safe navigation | Save state becomes Saved; show optional preview notice | Keep form values and mark Unsaved changes/error |
 | Bulk archive/trash | `VibeListToolbar` dialog | Disable confirm and cancel dismissal while request pending | Refetch list; clear selection; success notice | Preserve selection; show error; permit retry |
 | Publish revision | Publish route button | Disable submit; do not re-enable until response | Navigate to revisions on confirmed success | Keep change summary and show error |
-| Restore revision | Revision-row dialog | Disable confirm; keep selected revision context | Reload revision list; success notice | Keep dialog error or return focus to trigger with notice |
+| Republish revision | Revision-row dialog | Disable confirm; keep selected revision context | Reload revision list; success notice | Keep dialog error or return focus to trigger with notice |
 | Apply revision | Apply confirmation dialog | Disable confirm and preflight-changing inputs during request | Preserve response message and refresh pointer only if safe | Preserve preflight summary; show rejection detail safely |
 
 Rules:
@@ -2040,7 +2040,7 @@ Leave that field unchanged and record the gap; do not add it to a new panel.
   then prior publications, then checkpoints; retain actual response ordering if
   it already guarantees this or derive presentation-only order.
 - [ ] Replace revision restore confirmation with `VibeConfirmDialog`; copy must
-  say restore goes to editable draft and does not publish/apply.
+  say it creates a new published revision and does not apply it to a site.
 - [ ] Keep Apply link only for current published revision.
 - [ ] Update revisions/audit page headers to use shared header primitives while
   preserving server access checks.
@@ -2107,6 +2107,527 @@ override. Do not invent an endpoint/query/iframe; record it as future work.
 **Done when:** every completed package has evidence and every uncompleted gap is
 listed explicitly. Do not call the initiative complete while a required package
 is merely visually drafted.
+
+## Luna line-level code blueprint
+
+### CC. Reading this blueprint
+
+Line references are anchored to the current files at the time this blueprint was
+written. When a prior Luna task changes a file, locate the named function or JSX
+region, not the old numeric line alone. Every instruction below describes a
+small patch; do not rewrite an entire file merely because its current JSX is
+compressed onto one line.
+
+### CD. `app/vibes/layout.tsx` — exact patch
+
+**Current lines 4–17, `VibeLayout`:**
+
+1. Keep line 6’s outer background/font wrapper.
+2. Before current line 7’s `<header>`, insert an anchor:
+
+   ```tsx
+   <a
+     href="#vibe-workspace"
+     className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-900"
+   >
+     Skip to Vibe workspace
+   </a>
+   ```
+
+3. Replace line 7’s bare header children with:
+
+   ```tsx
+   <nav aria-label="Vibes utility" className="flex w-full items-center justify-between">
+     <Link href="/vibes" className="inline-flex items-center gap-2 font-semibold hover:text-white">
+       Vibe CMS
+     </Link>
+     <Link href="/vibes/new" className="rounded bg-[#2271b1] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#135e96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1d2327]">
+       + Add New
+     </Link>
+   </nav>
+   ```
+
+   Keep both existing href values exactly.
+4. Replace current line 13’s `<div className="min-w-0 flex-1">{children}</div>`
+   with `<main id="vibe-workspace" className="min-w-0 flex-1">{children}</main>`.
+5. After this change, remove the outer `<main>` from child route pages only as
+   each page is migrated. Do not do a broad semantic replacement in Task 0A;
+   nested landmark cleanup belongs to the page’s own task.
+
+**Behavioral invariant:** layout remains a server component; no hook, browser
+API, or `'use client'` directive is added.
+
+### CE. `app/vibes/VibeSidebar.tsx` — exact patch
+
+**Current lines 33–39:** add below `getVibeId`:
+
+```ts
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || (href !== '/vibes' && pathname.startsWith(`${href}/`));
+}
+```
+
+Then adjust the behavior for dynamic current-Vibe links: `href` values such as
+`/vibes/:id/edit` are active only for themselves and their child routes; the
+primary `/vibes` item is active only at `/vibes` so it does not remain active on
+every Vibe detail page.
+
+**Current lines 41–56, `getWorkflowItems`:** replace the returned item order
+with this sequence while retaining all existing hrefs/icons:
+
+```ts
+const items = [
+  { href: `/vibes/${vibeId}/edit`, label: 'Edit Vibe', icon: Pencil },
+  { href: `/vibes/${vibeId}/preview`, label: 'Preview', icon: Eye },
+  { href: `/vibes/${vibeId}/revisions`, label: 'Revisions', icon: History },
+  { href: `/vibes/${vibeId}/actions`, label: 'Status & Actions', icon: Settings },
+];
+
+if (status === 'draft') items.push({ href: `/vibes/${vibeId}/submit`, label: 'Submit for Review', icon: Send });
+if (status === 'in_review') items.push({ href: `/vibes/${vibeId}/publish`, label: 'Publish', icon: Upload });
+
+items.push(
+  { href: `/vibes/${vibeId}/audit`, label: 'Audit Log', icon: ClipboardList },
+  { href: `/vibes/${vibeId}/source`, label: 'Source Details', icon: FileText },
+);
+
+return items;
+```
+
+**Current lines 112–125, `SidebarLink`:**
+
+1. Replace line 113’s equality test with a call to `isActivePath`.
+2. Add these classes to both branches of line 120’s class expression:
+   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset`.
+3. Keep `aria-current={active ? 'page' : undefined}`.
+4. Do not change lines 68–92: the abortable status fetch and
+   `vibe-status-changed` event are required.
+
+### CF. New local primitives — exact files
+
+Create only these files in Task 0A/0B. Use named exports; do not create a barrel
+file.
+
+#### `app/vibes/_components/VibePageHeader.tsx`
+
+```tsx
+import Link from 'next/link';
+import type { ReactNode } from 'react';
+
+type VibePageHeaderProps = {
+  title: string;
+  description?: ReactNode;
+  eyebrow?: string;
+  backHref?: string;
+  backLabel?: string;
+  actions?: ReactNode;
+};
+
+export function VibePageHeader({ title, description, eyebrow, backHref, backLabel, actions }: VibePageHeaderProps) {
+  return (
+    <header className="mb-5">
+      {backHref && backLabel ? <Link href={backHref} className="text-sm font-semibold text-slate-500 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2">← {backLabel}</Link> : null}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <div>
+          {eyebrow ? <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p> : null}
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">{title}</h1>
+        </div>
+        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      </div>
+      {description ? <div className="mt-1 text-sm text-slate-600">{description}</div> : null}
+    </header>
+  );
+}
+```
+
+Do not add `'use client'` or a local state hook.
+
+#### `app/vibes/_components/VibeStatusBadge.tsx`
+
+- Define a `statusStyles` record for known statuses.
+- Normalize label by replacing underscores with spaces.
+- Return `<span className={...}>{label}</span>`.
+- For an unknown/empty status, render **Draft** only when caller intentionally
+  passes the existing fallback; do not silently alter a meaningful unknown
+  server state.
+
+#### `app/vibes/_components/VibeNotice.tsx`
+
+- Props: `tone`, `children`, optional `action`, optional `onDismiss`.
+- Map `tone === 'error'` to `role="alert"`; all other tones to `role="status"`.
+- Render optional `action.href` with `Link`, optional `action.onClick` with a
+  `type="button"` button, never both for one action.
+- Keep the component’s own markup passive: it does not store global notices.
+
+### CG. `app/vibes/VibeList.tsx` — state/query patch order
+
+**Current lines 6–21:**
+
+1. Do not add taxonomy/description properties until `GET /api/vibes` is proven
+   to return them.
+2. Add `type BulkAction = '' | 'archive' | 'trash';` below `ListResponse`.
+
+**Current lines 47–60, state declarations:**
+
+1. Import `useRouter`, `useSearchParams`, `usePathname` from `next/navigation`.
+2. Import `parseVibeListQuery` and `serializeVibeListQuery` from
+   `lib/cms/vibeListQuery`.
+3. Read parsed query once from `useSearchParams()`; initialize `search`,
+   `status`, `sort`, `direction`, and `page` from it.
+4. Add `const [bulkAction, setBulkAction] = useState<BulkAction>('');`.
+5. Add `const [debouncedSearch, setDebouncedSearch] = useState(search);`.
+6. Add `const [notice, setNotice] = useState<React.ReactNode>(null);` only if
+   the list will display post-mutation success/failure through `VibeNotice`.
+
+**Current lines 62–64:** replace the one generic page-reset effect with two
+effects:
+
+```ts
+useEffect(() => {
+  const timer = window.setTimeout(() => setDebouncedSearch(search), 300);
+  return () => window.clearTimeout(timer);
+}, [search]);
+
+useEffect(() => {
+  setPage(1);
+}, [debouncedSearch, status, sort, direction]);
+```
+
+Do not include raw `search` in the fetch-effect dependency after this change.
+
+**Current lines 66–94, fetch effect:**
+
+1. Change line 69 to test `debouncedSearch.trim()`.
+2. Change line 94 dependency from `search` to `debouncedSearch`.
+3. Extract the request body inside the effect into `loadList(signal)` only if
+   the same function is needed after bulk mutation. It must accept the current
+   parsed state, call the exact same `/api/vibes` URL, and update the same six
+   state values currently set in lines 80–86.
+4. On a successful response, keep `setSelected(new Set())`.
+
+**URL update helper:**
+
+Create `updateQuery(next, mode)` that serializes a complete `VibeListQuery` and
+uses `router.push(`${pathname}?${query}`)` for selection/page/sort state, or
+`router.replace(...)` for debounced search. Omit `?` when serializer returns an
+empty string. Never concatenate raw user input into the URL.
+
+**Current lines 96–99, `changeSort`:** after calculating next values, update
+both local state and URL query. Retain default title ascending and other sorts
+descending.
+
+**Current lines 101–107, `runBulk`:**
+
+1. Delete `window.confirm` from line 102.
+2. Create `pendingBulkAction` state that opens `VibeConfirmDialog` with count
+   and specific message only for `trash`. Archive can run after an explicit
+   selected bulk action/Apply click or use the same dialog if product wants one;
+   do not change API semantics.
+3. Retain POST JSON exactly:
+
+   ```ts
+   { vibeIds: [...selected], action }
+   ```
+
+4. Delete `window.location.reload()` from line 104. After response success call
+   local `loadList`, clear selected/bulk action, and set success notice.
+5. Catch only sets list error/notice; it must preserve selection for retry.
+
+### CH. `app/vibes/VibeList.tsx` — JSX patch order
+
+**Current lines 113–122:** replace outer `<main>`/manual `<header>` with a
+non-landmark `<div className="min-h-full bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">`
+and `VibePageHeader`.
+
+Use:
+
+```tsx
+<VibePageHeader
+  eyebrow="Content management"
+  title="All Vibes"
+  description="Manage drafts, reviews, published revisions, and their editorial history."
+  actions={<Link href="/vibes/new" className={vibeActionClass.secondary}>Add New</Link>}
+/>
+```
+
+**Current lines 124–129:** replace inline map with `VibeStatusViews`. Preserve
+the `STATUS_VIEWS` array and the existing total-count calculation.
+
+**Current lines 130–152:** replace with `VibeListToolbar`:
+
+- Select has an empty first option **Bulk actions** and only Archive/Move to
+  trash values.
+- Apply button is disabled if `selected.size === 0 || bulkAction === '' ||
+  bulkBusy`.
+- Search is passed as controlled props.
+- Do not render the duplicate status select.
+
+**Current lines 154–157:**
+
+- Loading: table-shaped skeleton inside the existing section.
+- Error: `VibeNotice tone="error"` with a retry action calling `loadList`.
+- Empty: branch based on `total`, `search`, and `status` to offer Add New,
+  Clear search, or clear status filter.
+
+**Current lines 162–194:**
+
+1. Keep native table elements.
+2. Delete current line 170 Actions column header.
+3. Set each sortable `<th>` `aria-sort` based on current sort/direction.
+4. Change line 175 row class to include `group focus-within:bg-slate-50`.
+5. In title cell at lines 177–180, render title link, slug, then
+   `<VibeRowActions actions={[...]}/>`.
+6. Remove lines 184–190 entirely after row actions move.
+7. Include Revisions link in the new action array; do not make an API call to
+   determine it.
+
+**Current lines 196–204:** preserve pagination, but call `updateQuery` on
+Previous/Next. Insert bottom toolbar only when `vibes.length >= 10`.
+
+### CI. `app/vibes/new/page.tsx` — one-line file expansion patch
+
+**Current lines 2–9:** this file is intentionally compressed. First reformat it
+into normal imports, `PRESETS`, `toSlug`, component state, `create`, and JSX;
+the initial reformat must preserve every existing request field and route.
+
+Then make these exact behavioral edits:
+
+1. Replace local `toSlug` only after importing a shared helper that matches the
+   server’s allowed pattern. If no server helper exists, retain the existing
+   implementation and extract it unchanged.
+2. Keep `title`, `slug`, `description`, `preset`, `saving`, `error`, and
+   `slugEdited` state. Rename `slugEdited` to `hasManuallyEditedSlug` only if all
+   its references are updated in the same patch.
+3. Render fields in this order: Title → Slug → permalink preview → Description
+   → Start from a style → error → submit.
+4. On Title `onChange`, call `setSlug(toVibeSlug(next))` only while manual flag
+   is false.
+5. On Slug `onChange`, call `setHasManuallyEditedSlug(true)` for any user edit;
+   calculate `isSlugValid` from trimmed current value.
+6. Give slug field `aria-describedby="vibe-slug-help vibe-slug-error"`; render
+   `vibe-slug-error` only for non-empty invalid current value or submit attempt.
+7. Keep `required` and pattern on the input as defense in depth.
+8. Wrap preset card list in `<VibePanel id="starting-style" title="Start from a style" defaultOpen={false}>`.
+9. Change submit text from **Create Draft** to **Save draft and continue
+   editing**; retain disabled state and exact `POST /api/vibes` JSON.
+
+### CJ. `app/vibes/[vibeId]/edit/VibeEditor.tsx` — exact patch
+
+**Current lines 21–22:** do not remove or rename existing `SaveState` values.
+If an extra UI-only state is needed, derive it from `error`, rather than changing
+PATCH lifecycle semantics.
+
+**Current lines 48–82, `PublishPanel`:**
+
+1. Keep `workflowAction(status, vibeId)` unchanged.
+2. Replace the current unordered visual sequence with: status badge → saved/
+   dirty/saving/conflict text → draft version/published revision summary → Save
+   draft submit button → Preview Vibe settings link → workflow action link →
+   revision history link → error/reload-conflict controls.
+3. Keep the save control `type="submit"`; all links remain `Link` components.
+4. Change Preview visible label to **Preview Vibe settings**.
+5. Do not move publish to this form; `workflowAction` continues to route to the
+   separate Submit/Publish pages.
+
+**Current lines 120–160, `saveDraft`:** do not change the `FormData` names or
+the object fields constructed at lines 127–139. Only add, after successful
+`setSaveState('saved')`, a local success notice state if introduced. Keep 409
+handling and its existing `expectedVersion` request untouched.
+
+**Current lines 163–170:** replace manual header with `VibeEditorToolbar` and
+`VibePageHeader` composition. Page title should use `draft.title`, not generic
+**Edit Vibe**. Render a secondary `/vibes/${draft.slug || vibe.vibeId}`
+permalink context only; do not change route identity.
+
+**Current lines 172–235:** retain grid and PublishPanel placement. Replace each
+`<article>` as follows:
+
+| Current lines | New panel id | defaultOpen | Form names that must remain |
+| --- | --- | --- | --- |
+| 174–181 Metadata | `metadata` | true | `title`, `slug`, `description` |
+| 183–189 Taxonomy | `taxonomy` | true | `taxonomyTermIds` |
+| 191–200 Source details | `source` | false | `sourceKind`, `sourceUrl`, `sourceAttribution`, `sourceOwnershipNote` |
+| 202–217 Colors/Typography start | `colors` then `typography` | colors true, typography false | `primary`, `background`, `surface`, `textPrimary`, `textSecondary`, font fields |
+| 218–226 Layout | `layout` | false | `borderRadius`, `spacingBasePx`, `elevation` |
+| 228–231 Jamie voice | `voice` | false | `primaryTone` |
+
+For every panel, render children while collapsed—do not conditionally unmount
+the inputs. Preserve line 212’s base-font-size pattern and
+`aria-describedby="base-font-size-help"` unchanged.
+
+### CK. `app/vibes/[vibeId]/revisions/RevisionList.tsx` — exact lifecycle patch
+
+**Current lines 49–72:** the function is named `restoreRevision`, but it sends
+`POST /rollback` and line 65 correctly reports a new published revision. This
+is a republish/rollback action, not a draft restore.
+
+1. Rename function to `republishRevision` and update its call at current line
+   119 in the same patch.
+2. Replace line 50 prompt with explicit controlled dialog state:
+   `pendingRepublish: Revision | null`, `republishReason`, and optional
+   `dialogError`.
+3. Dialog requires a non-empty reason before enabling confirmation; retain JSON
+   body `{ revisionId: revision._id, reason: reason.trim() }` exactly.
+4. Replace line 52 confirmation text with: “Create a new published revision
+   from rN? Existing revisions remain unchanged. This does not apply it to a
+   site.”
+5. Keep line 65 success message’s actual semantics, preferably:
+   `Created a new published revision from r${revision.revisionNumber}.`
+6. Keep `await loadRevisions()` after a successful response.
+
+**Current lines 77–125:**
+
+1. Build a presentation array, without mutating `revisions`: current published,
+   then other `publishedAt` items, then checkpoints. Preserve original relative
+   order within each group.
+2. Use that array for rows and use an ID-to-number map from the original set for
+   parent labels.
+3. Render the status badge first in the title cell, then `rN`, based-on text,
+   date/author/summary, then `VibeRowActions` below.
+4. Keep **Apply to site** only when `isCurrentPublished` is true.
+5. Change action label from **Restore revision** to **Republish revision**.
+6. Existing **Compare with rN** remains a same-Vibe compare link; do not change
+   its query shape.
+
+### CL. `app/vibes/[vibeId]/audit/page.tsx` — exact patch
+
+**Current lines 13–17:**
+
+1. Expand line 14 into a readable abortable fetch effect. Add `AbortController`
+   and ignore `AbortError`, matching list/editor patterns.
+2. Delete line 16’s local `links` array and line 17’s workflow `<nav>`.
+   Contextual workflow navigation already lives in `VibeSidebar`.
+3. Replace line 17’s one-line return with `VibePageHeader` using back href
+   `/vibes/${vibeId}/edit`, back label **Back to Vibe**, title **Audit history**.
+4. Before rendering, derive groups by local calendar date from `occurredAt`; do
+   not change API order or dates.
+5. For each event render action label, timestamp, actor, reason, then native
+   `<details>` containing raw revision/site IDs. Do not remove IDs.
+6. Use `VibeNotice` for fetch error and a distinct empty state.
+
+### CM. `app/vibes/taxonomy/TaxonomyDirectory.tsx` — exact patch
+
+**Current lines 13–42:** preserve all state names and the current one-time fetch.
+The current `useMemo` filtering already satisfies the client-side requirement;
+do not add a new taxonomy API.
+
+**Current lines 44–45:** replace bare `<p>` status blocks with `VibeNotice`
+error and a table-shaped/loading surface.
+
+**Current lines 47–59:**
+
+1. Keep search/filter controls but fix search class from `min-w-56 flex-1` to
+   `min-w-0 w-full sm:w-64 sm:flex-none`.
+2. Keep the term count line.
+3. Replace current line 57 card grid with native table:
+   **Term**, **Group**, **Used by** columns.
+4. Each row uses `term.id` key, title-cased display label, `groupLabel`, and
+   `counts[term.id] || 0`.
+5. Preserve line 58’s read-only schema ownership explanation; do not add term
+   mutation UI.
+
+### CN. `app/vibes/[vibeId]/apply/page.tsx` — exact state and JSX patch
+
+**Current line 7:** replace Pointer type with:
+
+```ts
+type Pointer = {
+  siteId?: string;
+  revision?: { revisionId?: string; revisionNumber?: number; vibeId?: string } | null;
+  appliedAt?: string | null;
+  appliedBy?: string | null;
+};
+type PreflightState = 'idle' | 'checking' | 'verified' | 'error';
+```
+
+**Current lines 11–18:** add:
+
+```ts
+const [preflightState, setPreflightState] = useState<PreflightState>('idle');
+const [checkedSiteId, setCheckedSiteId] = useState('');
+const [checkedAt, setCheckedAt] = useState<string | null>(null);
+const [confirmOpen, setConfirmOpen] = useState(false);
+```
+
+**Current `setSiteId` call sites:** create `changeSiteId(value)` that sets site
+ID, clears `pointer`, sets preflight to `idle`, clears `checkedSiteId` and
+`checkedAt`, then use it for manual site input and **Use disposable site**.
+
+**Current lines 31–39, `checkPointer`:**
+
+1. If `siteId.trim()` is empty, set preflight error/message and return without
+   fetch.
+2. Set `preflightState('checking')`, clear message.
+3. Keep the exact GET endpoint and tenant query.
+4. On success, set pointer, `checkedSiteId(siteId)`, `checkedAt(new Date().toISOString())`,
+   `preflightState('verified')`.
+5. On error, set preflight error and current plain-language message.
+
+**Current lines 41–50, `apply`:**
+
+1. Move `event.preventDefault()` to form submit only; confirmation should call
+   an `applyRevision()` helper with no event.
+2. At helper start, guard `preflightState === 'verified'` and
+   `checkedSiteId === siteId`; otherwise set message and return without POST.
+3. Keep POST endpoint/body exactly `{ vibeId, revisionId }`.
+4. On success, set success message, close dialog, then await `checkPointer()`.
+5. On failure, keep preflight/pointer visible and show error; do not clear site
+   or revision values.
+
+**Current line 52:** split the one-line JSX into this ordered structure:
+
+```tsx
+<VibePageHeader ... />
+<form onSubmit={(event) => { event.preventDefault(); setConfirmOpen(true); }}>
+  <RevisionSelectionSummary ... />
+  <details>{/* disposable verification site controls */}</details>
+  <details>{/* manual Site ID field */}</details>
+  <CurrentPointerCard ... />
+  <ApplyPreflightSummary ... />
+  <VibeNotice ... />
+  <button type="submit" disabled={!canOpenConfirm}>Confirm and apply revision</button>
+</form>
+<VibeConfirmDialog open={confirmOpen} ... onConfirm={applyRevision} />
+```
+
+Set `canOpenConfirm` to true only when revision ID is non-empty, preflight is
+verified for current site, and selected revision does not equal the current
+pointer revision.
+
+For same-Vibe different revisions, render the existing compare route. For
+different Vibes, render explanation only—no compare link. Keep run-ID regex and
+derivation behavior unchanged.
+
+### CO. Supporting lifecycle pages — exact scope
+
+These pages are not allowed to change lifecycle requests; they only receive
+header/notice/action-style cleanup after core primitives are stable.
+
+| File | Current lines | Exact safe change |
+| --- | --- | --- |
+| `[vibeId]/submit/page.tsx` | 7–11 | Expand compressed code; preserve POST `/submit`, status guard, event dispatch, and redirect. Replace manual header/error with shared header/notice; keep label **Submit for review**. |
+| `[vibeId]/publish/page.tsx` | 7–12 | Expand compressed code; preserve POST `/publish` body `{ changeSummary: reason }`, dispatch, and revisions redirect. Use **Publish revision** button label; retain truthful immutable-revision copy. |
+| `[vibeId]/actions/page.tsx` | 48–79 and 97–145 | Keep action endpoints/bodies/status guards. Replace only trash `window.confirm` with `VibeConfirmDialog`; use local notices/header classes. Do not consolidate lifecycle actions into editor. |
+| `[vibeId]/revisions/page.tsx` | 8–12 | Preserve server access guard exactly; replace only repeated header markup with `VibePageHeader`. |
+| `[vibeId]/compare/page.tsx` and `CompareView.tsx` | page 8–13; view 5–8 | Preserve `from`/`to` query validation and endpoint. Apply shared header/notice/table styling only; do not build a new slider/diff data model. |
+
+### CP. Line-level test additions
+
+| Test file | Exact assertions to add |
+| --- | --- |
+| `tests/unit/vibe-list-query.test.ts` | `status=invalid` becomes `''`; unknown sort becomes `updatedAt`; `dir=down` becomes `desc`; `page=0` becomes `1`; serializer does not emit unsafe values. |
+| `tests/unit/vibe-list.test.tsx` | Search debounce triggers final query once; active status query; `aria-sort`; row action focus; bulk trash cancel has no POST; confirmed archive/trash sends unchanged body and refetches. |
+| `tests/unit/vibe-new-page.test.tsx` | Initial title fills slug; manual slug is preserved after title change; invalid slug blocks create and renders help; preset request payload unchanged. |
+| `tests/unit/vibe-editor-validation.test.tsx` | Existing base font assertions remain; closing panels does not remove named inputs from FormData; 409 keeps conflict text and no Saved state. |
+| `tests/unit/vibe-revisions.test.tsx` | Current published row appears first; **Republish revision** dialog requires reason; POST rollback body unchanged; Apply action only current published. |
+| `tests/unit/vibe-taxonomy.test.tsx` | Query/group use local filtering; used-by counts render; no mutation control appears. |
+| `tests/unit/vibe-apply.test.tsx` | Apply disabled before check; Site ID change invalidates check; same Vibe yields compare link; different Vibe does not; same revision disables apply; POST body unchanged after confirmation. |
+
+### CQ. Luna’s next command
+
+Start with **Task 0A only**. The first code change is the layout skip landmark
+and the three shared display primitive files. Do not start list, editor, dialog,
+URL query, or tenant work in the same task.
 
 ## Product rules
 
@@ -2267,10 +2788,11 @@ Do not invent a second content schema.
   revision, prior published revisions, then review checkpoints.
 - Display revision number, author/actor when available, publication time,
   parent revision, and change summary in predictable columns.
-- Add row actions for Compare, Preview, Restore draft, and Apply to site only
+- Add row actions for Compare, Preview, Republish revision, and Apply to site only
   when their existing server-side rules allow them.
-- Make restoration a confirmation dialog that states the result precisely:
-  restoring creates/updates the draft; it does not silently republish a site.
+- Make republishing a confirmation dialog that states the result precisely:
+  it creates a new current published revision; it does not apply that revision
+  to a site.
 - Restyle audit events as a chronological activity feed with concise human
   action names and expandable technical identifiers.
 
@@ -2595,8 +3117,8 @@ Update `apps/pulse/tests/unit/vibe-editor-validation.test.tsx`:
   API ordering is not guaranteed, derive a presentational ordered array in this
   component without mutating data or changing the API.
 - Replace inline `window.confirm` (in `restoreRevision`) with `VibeConfirmDialog`.
-  Dialog copy must say: “Restore this revision to the draft. It will not publish
-  or apply it to any site.”
+  Dialog copy must say: “Create a new published revision from this snapshot. It
+  will not apply it to any site.”
 - Render action links in a row beneath the revision title/number rather than a
   detached final column; retain **Apply to site** only for the current published
   revision, as current code does.
