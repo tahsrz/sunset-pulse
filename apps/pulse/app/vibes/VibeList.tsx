@@ -7,6 +7,7 @@ import { parseVibeListQuery, serializeVibeListQuery, type VibeListQuery } from '
 import { VibeListToolbar } from './_components/VibeListToolbar';
 import { VibeStatusViews } from './_components/VibeStatusViews';
 import { VibeRowActions } from './_components/VibeRowActions';
+import { VibeConfirmDialog } from './_components/VibeConfirmDialog';
 
 type Vibe = {
   vibeId: string;
@@ -68,6 +69,7 @@ export function VibeList() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkAction, setBulkAction] = useState<'' | 'archive' | 'trash'>('');
+  const [confirmAction, setConfirmAction] = useState<'archive' | 'trash' | null>(null);
 
   useEffect(() => {
     setSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
@@ -133,11 +135,11 @@ export function VibeList() {
   }
 
   async function runBulk(action: 'archive' | 'trash') {
-    if (!selected.size || !window.confirm(`${action === 'trash' ? 'Move' : 'Archive'} ${selected.size} selected Vibe${selected.size === 1 ? '' : 's'}?`)) return;
+    if (!selected.size) return;
     setBulkBusy(true); setError('');
     try { const response = await fetch('/api/vibes/bulk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ vibeIds: [...selected], action }) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Bulk action failed.'); window.location.reload(); }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Bulk action failed.'); }
-    finally { setBulkBusy(false); }
+    finally { setBulkBusy(false); setConfirmAction(null); }
   }
 
   const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -159,7 +161,7 @@ export function VibeList() {
           <div className="border-b border-slate-200 px-4 pt-4">
             <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
           </div>
-          <VibeListToolbar position="top" selectedCount={selected.size} action={bulkAction} onActionChange={setBulkAction} onApply={() => { if (bulkAction) void runBulk(bulkAction); }} busy={bulkBusy} search={search} onSearchChange={setSearch}>
+          <VibeListToolbar position="top" selectedCount={selected.size} action={bulkAction} onActionChange={setBulkAction} onApply={() => { if (bulkAction) setConfirmAction(bulkAction); }} busy={bulkBusy} search={search} onSearchChange={setSearch}>
             <select
               aria-label="Filter by status"
               value={status}
@@ -220,10 +222,11 @@ export function VibeList() {
                   </div>
                 </nav>
               ) : null}
-            </>
+          </>
           ) : null}
         </section>
       </div>
+      <VibeConfirmDialog open={confirmAction !== null} title={`${confirmAction === 'trash' ? 'Move' : 'Archive'} selected Vibes?`} description={`This will ${confirmAction === 'trash' ? 'move' : 'archive'} ${selected.size} selected Vibe${selected.size === 1 ? '' : 's'}.`} confirmLabel={confirmAction === 'trash' ? 'Move to trash' : 'Archive'} cancelLabel="Cancel" busy={bulkBusy} onOpenChange={(open) => { if (!open) setConfirmAction(null); }} onConfirm={() => { if (confirmAction) void runBulk(confirmAction); }} />
     </main>
   );
 }
