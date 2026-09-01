@@ -4110,14 +4110,15 @@ Vibe CMS with current WordPress admin patterns.
 | 6 | 1C List tools | `VibeListToolbar.tsx`, `VibeBulkControls` only if necessary, `VibeScreenTools.tsx`, `VibePageHeader.tsx`, list/primitive tests | Top/bottom bulk controls share state; Help is local/read-only. |
 | 7 | 1D List responsive | `VibeListRowDetails.tsx`, `VibeList.tsx`, list tests | Primary row keeps actions visible; secondary values are available on small screens. |
 | 8 | 1E List deep links | `page.tsx`, `VibeList.tsx`, list/query tests | Direct URL, refresh, Back/Forward, canonicalization, App Router boundary, and API mapping pass. |
-| 9 | 2A Create | `new/page.tsx`, creation tests | Slug/preset form is accessible and POST body/redirect are unchanged. |
-| 10 | 2B Editor panels | `edit/VibeEditor.tsx`, panel/editor helpers, editor test | Every FormData input remains mounted and draft PATCH conflict behavior passes. |
-| 11 | 2C Editor toolbar | `VibeEditorToolbar.tsx`, `VibeEditor.tsx`, editor test | One accessible Save/Preview/workflow control set; toolbar invokes existing form save. |
-| 12 | 3A Revisions | `RevisionList.tsx`, revision tests | Republish accurately creates a published revision; Apply stays current-published-only. |
-| 13 | 3B Workflow evidence | audit/actions/submit/publish/compare pages, focused tests | Existing lifecycle request bodies/routes/events are proven unchanged. |
-| 14 | 3C Readiness | `VibeReadinessChecklist.tsx`, submit/publish/editor notice updates, tests | Lifecycle consequences are clear; no automatic site mutation exists. |
-| 15 | 3D Supporting screens | taxonomy page/directory, source page/detail component, tests | Taxonomy remains schema-owned/read-only; Source remains server-rendered. |
-| 16 | 4A Apply | `apply/page.tsx`, local apply display components, apply tests | Site-specific preflight gates existing apply POST with no route/body changes. |
+| 9 | 1F List resilience | `VibeList.tsx`, `VibeListEmptyState.tsx`, list tests | Empty/out-of-range pages repair via replace and offer truthful next actions. |
+| 10 | 2A Create | `new/page.tsx`, creation tests | Slug/preset form is accessible and POST body/redirect are unchanged. |
+| 11 | 2B Editor panels | `edit/VibeEditor.tsx`, panel/editor helpers, editor test | Every FormData input remains mounted and draft PATCH conflict behavior passes. |
+| 12 | 2C Editor toolbar | `VibeEditorToolbar.tsx`, `VibeEditor.tsx`, editor test | One accessible Save/Preview/workflow control set; toolbar invokes existing form save. |
+| 13 | 3A Revisions | `RevisionList.tsx`, revision tests | Republish accurately creates a published revision; Apply stays current-published-only. |
+| 14 | 3B Workflow evidence | audit/actions/submit/publish/compare pages, focused tests | Existing lifecycle request bodies/routes/events are proven unchanged. |
+| 15 | 3C Readiness | `VibeReadinessChecklist.tsx`, submit/publish/editor notice updates, tests | Lifecycle consequences are clear; no automatic site mutation exists. |
+| 16 | 3D Supporting screens | taxonomy page/directory, source page/detail component, tests | Taxonomy remains schema-owned/read-only; Source remains server-rendered. |
+| 17 | 4A Apply | `apply/page.tsx`, local apply display components, apply tests | Site-specific preflight gates existing apply POST with no route/body changes. |
 
 **No package is complete just because the visual layout renders.** Its matching
 focused test group, contract checks, and stop condition must all be satisfied
@@ -4129,7 +4130,7 @@ before the next package begins.
 | --- | --- | --- | --- |
 | `app/vibes/layout.tsx` | 0A | Outer workspace landmark and utility bar semantics | Client hooks, tenant/site fetches, global header rewrite |
 | `app/vibes/VibeSidebar.tsx` | 0A | Active path, static/dynamic Vibe navigation ordering, focus styles | Status route mutation, permission logic, persisted collapse state |
-| `app/vibes/VibeList.tsx` | 1B–1E | Existing list GET mapping, table, bulk wiring, URL state, mobile detail placement | API response expansion, new server filter, per-page persistence |
+| `app/vibes/VibeList.tsx` | 1B–1F | Existing list GET mapping, table, bulk wiring, URL state, mobile detail placement, and valid-page recovery | API response expansion, new server filter, per-page persistence |
 | `lib/cms/vibeListQuery.ts` | 1A | Parse/serialize only the five public list keys | Router hooks, fetch, environment reads |
 | `app/vibes/new/page.tsx` | 2A | Slug interaction, field order, preset presentation | New create payload keys or slug auto-conflict workaround |
 | `edit/VibeEditor.tsx` | 2B, 2C | Existing form fields/PATCH, panels, toolbar wiring | Draft schema changes, automatic save/retry, publish mutation |
@@ -4738,6 +4739,119 @@ validation, conflict, or access-error notices.
 4. Add package **0C Route states** between 0B and 1A in section EB’s execution
    sequence. Its stop condition is: loading/error files compile, focused tests
    pass, and ordinary API error notices are unchanged.
+
+### EN. List resilience package 1F — valid pages and contextual empty states
+
+This package completes the mature list-screen behavior after 1E. It uses the
+existing list response fields only; it does not add a server filter, a new list
+endpoint, or a preference store.
+
+#### `app/vibes/VibeList.tsx`, response type and `loadList`
+
+1. Extend the local `ListResponse` type with `page?: number` and `pageSize?:
+   number` because `GET /api/vibes` already returns both. Do not add response
+   fields the route does not select/return.
+2. In the successful `loadList` branch, calculate before setting the final list
+   UI state:
+
+   ```ts
+   const nextVibes = payload.vibes || [];
+   const nextTotal = payload.total || 0;
+   const nextTotalPages = Math.max(1, payload.totalPages || 1);
+   const resolvedPage = Math.min(Math.max(1, listQuery.page), nextTotalPages);
+   ```
+
+3. If `resolvedPage !== listQuery.page`, call
+   `writeListQuery({ ...listQuery, page: resolvedPage }, 'replace')` and return
+   before setting `vibes`/selection/loading success state. The following fetch
+   obtains the correct final page. Do not use `router.push`; a collection change
+   should not add a history step solely to repair an out-of-range page.
+4. If page is valid, set `vibes`, `total`, `statusCounts`, and `totalPages` from
+   the local `next*` values, clear error, and clear selection as current success
+   behavior requires.
+5. This handles all existing causes of a stale page: a bulk archive/trash action,
+   another operator changing the collection, and a bookmarked page beyond the
+   current total. Do not special-case one mutation endpoint.
+6. Do not use `payload.page` as the selected page. The request URL/listQuery is
+   authoritative; route response `page` is evidence only and should be covered
+   by a contract test rather than silently trusted.
+
+#### New `app/vibes/_components/VibeListEmptyState.tsx`
+
+1. Props are exactly:
+
+   ```ts
+   type VibeListEmptyStateProps = {
+     total: number;
+     searchQuery: string;
+     status: string;
+     onClearSearch: () => void;
+     onClearStatus: () => void;
+     onClearFilters: () => void;
+   };
+   ```
+
+2. Render a compact, centered but not marketing-style `<section>` with an `<h2>`
+   and one paragraph. No illustration, gradient, or empty dashboard metric.
+3. Branch in this exact order:
+   - `total === 0 && !searchQuery && !status`: heading **No Vibes yet**; text
+     **Create a draft to begin an editorial system.**; Link **Add New Vibe** to
+     `/vibes/new`.
+   - `searchQuery && status`: heading **No Vibes match these filters**; button
+     **Clear filters** calling `onClearFilters`.
+   - `searchQuery`: heading **No Vibes match this search**; button **Clear
+     search** calling `onClearSearch`.
+   - `status`: heading **No Vibes in this view**; button **Clear status filter**
+     calling `onClearStatus`.
+   - fallback: heading **No Vibes found**; button **Clear filters**.
+4. All buttons use `type="button"` and secondary shared control classes. The
+   Add New control is a Link using primary action classes. Do not make an empty
+   state clear all filters automatically.
+
+#### `VibeList.tsx`, existing empty branch around current lines 154–157
+
+1. Replace the single bare empty paragraph with `VibeListEmptyState` only when
+   `!loading && !error && vibes.length === 0`.
+2. Pass `searchQuery={listQuery.q}` and `status={listQuery.status}`.
+3. Implement callbacks as follows:
+
+   ```ts
+   function clearSearch() {
+     setSearchInput('');
+     writeListQuery({ ...listQuery, q: '', page: 1 }, 'push');
+   }
+
+   function clearStatus() {
+     writeListQuery({ ...listQuery, status: '', page: 1 }, 'push');
+   }
+
+   function clearFilters() {
+     setSearchInput('');
+     writeListQuery({ q: '', status: '', sort: 'updatedAt', direction: 'desc', page: 1 }, 'push');
+   }
+   ```
+
+4. `clearFilters` intentionally resets sorting too because it is the explicit
+   all-context reset. `clearSearch` and `clearStatus` preserve remaining list
+   context. Do not change sort when only one filter is cleared.
+5. Keep status-view counts visible above the empty state; they explain that
+   other editorial states may contain Vibes.
+
+### EO. Package 1F tests and execution-order update
+
+1. In `vibe-list.test.tsx`, initialize list query page 2; return a response with
+   `totalPages: 1`; assert one `router.replace` to page 1 and that the second
+   fetch uses `page=1`. Assert no `router.push` occurs for recovery.
+2. Mock a successful bulk action that removes the only page-2 item, then return
+   the reduced page response; assert selection clears only after the corrected
+   page loads.
+3. Test all four `VibeListEmptyState` branches. Assert a search-only empty state
+   does not reset status/sort; a status-only state does not clear search; Clear
+   filters resets to the known list defaults.
+4. Add **1F List resilience** immediately after 1E and before 2A in section EB.
+   Its stop condition is: an out-of-range list URL or post-mutation page repair
+   always finishes on a valid page, and every empty state offers only a truthful
+   next action.
 
 ### DM. Luna execution map — read and edit in this exact order
 
