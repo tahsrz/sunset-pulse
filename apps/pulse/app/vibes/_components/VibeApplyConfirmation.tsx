@@ -1,6 +1,7 @@
 'use client';
 
 import { VibeConfirmDialog } from './VibeConfirmDialog';
+import React from 'react';
 
 type VibeApplyConfirmationProps = {
   open: boolean;
