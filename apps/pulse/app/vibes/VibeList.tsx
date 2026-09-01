@@ -7,6 +7,7 @@ import { parseVibeListQuery, serializeVibeListQuery, type VibeListQuery } from '
 import { VibeListToolbar } from './_components/VibeListToolbar';
 import { VibeStatusViews } from './_components/VibeStatusViews';
 import { VibeRowActions } from './_components/VibeRowActions';
+import { VibeStatusBadge } from './_components/VibeStatusBadge';
 import { VibeConfirmDialog } from './_components/VibeConfirmDialog';
 
 type Vibe = {
@@ -35,10 +36,6 @@ const STATUS_VIEWS = [
   { value: 'archived', label: 'Archived' },
   { value: 'trash', label: 'Trash' },
 ] as const;
-
-function statusLabel(status?: string) {
-  return (status || 'draft').replace(/_/g, ' ');
-}
 
 function formatModified(value?: string) {
   if (!value) return '—';
@@ -204,7 +201,7 @@ export function VibeList() {
                           <Link className="font-bold text-slate-900 hover:underline" href={`/vibes/${vibe.vibeId}/edit`}>{vibe.title || vibe.name || vibe.vibeId}</Link>
                           <div className="font-mono text-xs text-slate-500">/{vibe.slug || vibe.vibeId}</div>
                         </td>
-                        <td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold capitalize">{statusLabel(vibe.status)}</span></td>
+                        <td className="px-4 py-3"><VibeStatusBadge status={vibe.status || 'draft'} /></td>
                         <td className="px-4 py-3 text-xs text-slate-500">{vibe.publishedRevisionId ? 'Published revision' : '—'}</td>
                         <td className="px-4 py-3 text-xs text-slate-500">{formatModified(vibe.updatedAt)}</td>
                         <td className="px-4 py-3 text-right"><VibeRowActions actions={[{ label: 'Edit', href: `/vibes/${vibe.vibeId}/edit` }, { label: 'Preview', href: `/vibes/${vibe.vibeId}/preview` }, { label: 'Actions', href: `/vibes/${vibe.vibeId}/actions` }]} /></td>
