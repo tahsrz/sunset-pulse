@@ -203,6 +203,90 @@ API calls, lifecycle logic, and test mocks remain easy to understand.
 - Any protected operator/seed data into the browser. WordPress familiarity is a
   UX goal, not a reason to weaken the existing site-application boundary.
 
+### G. Operational affordances: adopt, defer, or reject
+
+The following decisions come from studying how WordPress uses screen options,
+list filtering, help, previews, and its editor preferences. They make the
+implementation plan concrete and prevent an attractive but unsafe imitation.
+
+| WordPress affordance | Decision for Vibes | Exact implementation consequence |
+| --- | --- | --- |
+| Status views with counts | **Adopt now.** | `VibeStatusViews.tsx` consumes the existing `statusCounts` from `GET /api/vibes`; no new API work. |
+| Bulk actions + Apply | **Adopt now.** | `VibeListToolbar.tsx` only exposes current `archive` and `trash` actions, then invokes the unchanged bulk endpoint. |
+| Search on the right of the list toolbar | **Adopt now.** | Keep one search field in `VibeList.tsx`; debounce the existing request, do not add client-side filtering over incomplete pages. |
+| Screen Options (column visibility / per-page) | **Adopt later, presentation-only.** | After the list refactor, add a `VibeScreenOptions` popover with column visibility stored in namespaced `localStorage` (for example `vibes:list:visible-columns`). Do not persist it through an API or change `PAGE_SIZE` until product approval. |
+| Collapsible/rearrangeable edit modules | **Adopt in limited form.** | `VibePanel` controls collapse state. Persist only panel open/closed preference locally; do not add drag-to-reorder, because editor section order has semantic meaning and needs its own schema. |
+| Quick Edit | **Defer.** | Do not add an inline row form to `VibeList` yet. Existing saves require a full draft plus `expectedVersion`; a partial list-row PATCH would create hidden merge/conflict behavior. Revisit only after a server-approved partial-edit contract exists. |
+| Bulk Edit | **Reject for this initiative.** | Existing archive/trash is safe because it already has a dedicated bulk route. Do not bulk-change taxonomy, visual tokens, titles, or lifecycle state. |
+| “Undo” notice after trash | **Do not claim it yet.** | Render a success notice that accurately states the completed action. Add an Undo link only when an explicit restore endpoint and expiry window exist. |
+| Screen Help | **Adopt later, contextual and small.** | Add `VibeHelpPanel` only to explain Vibe/revision/site-pointer concepts on their relevant pages. It should be a client disclosure, not a broad support center. |
+| Admin-menu collapse | **Adopt when shell work is stable.** | Add a local `isCollapsed` state in `VibeSidebar`; persist it locally and keep tooltips + accessible labels. On mobile, retain horizontal navigation rather than a collapsed icon rail. |
+| Keyboard command palette | **Defer.** | No `Cmd/Ctrl+K` until the route/action inventory and focus management are complete. Native browser find/search is sufficient in this slice. |
+| Dashboard widgets | **Reject.** | `/vibes` remains a management list, not a dashboard. Status counts and useful empty states are enough. |
+| Responsive preview modes | **Adopt after preview baseline.** | Add Desktop / Tablet / Mobile choices to the Vibe preview screen only after verifying the preview renderer can be constrained without changing public output. |
+
+### H. Preview-first editing model
+
+WordPress’s Customizer and recent editor views reinforce a useful Vibe-specific
+principle: visual tokens should be understood through a preview, not by reading
+hex fields alone. Implement it without conflating preview with publication.
+
+1. Keep `/vibes/[vibeId]/preview` as the rendering authority; do not create a
+   second preview renderer inside the editor.
+2. In `VibeEditorToolbar.tsx`, retain the existing Preview route link. Add a
+   visible “Open preview” label rather than an icon-only eye control.
+3. After save succeeds, show `VibeNotice` with **Preview changes** link. Do not
+   auto-open a new tab on every save.
+4. In a later increment, add viewport query parameters such as
+   `?viewport=desktop|tablet|mobile` only if the preview page can apply them as
+   a non-persistent display constraint. The Vibe payload, published revision,
+   and site pointer must not change.
+5. A preview must label its data source clearly: **Draft preview** or
+   **Published revision preview**. This label prevents an editor from assuming
+   unsaved work is live.
+
+### I. Information architecture decisions
+
+WordPress uses a stable global menu plus a screen-specific local hierarchy. The
+Vibes equivalent should be intentionally small:
+
+```text
+Vibes workspace
+├── All Vibes
+├── Add New
+├── Taxonomy
+└── Current Vibe (only on /vibes/:vibeId/*)
+    ├── Edit Vibe
+    ├── Preview
+    ├── Revisions
+    ├── Status & Actions
+    ├── Publish or Submit for review (status-dependent)
+    ├── Audit Log
+    └── Source Details
+```
+
+`Apply to site` stays an action reached from the current published revision,
+not a persistent top-level navigation item. It is an operator outcome, not an
+ordinary authoring destination.
+
+### J. Interaction-state specification
+
+Every new shared component must implement these states before visual polish is
+considered complete:
+
+| Component | Required states |
+| --- | --- |
+| `VibeListToolbar` | default, search pending, bulk disabled, bulk busy, no selection, selected count, error notice |
+| `VibeStatusViews` | default, active, keyboard focus, zero count |
+| `VibeRowActions` | desktop idle, hover, keyboard focus-within, mobile/touch visible, destructive action tone |
+| `VibePanel` | open, closed, keyboard toggled, content retains form values while closed |
+| `PublishPanel` | saved, dirty, saving, conflict, lifecycle action unavailable, API error |
+| `VibeConfirmDialog` | open, confirm busy, request error, cancel, Escape close where no request is pending |
+| `VibeNotice` | info, success, warning, error; error with `role="alert"`, non-error with `role="status"` |
+
+The unit-test additions in the file-by-file map must cover these state changes;
+visual screenshots alone are not enough.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
