@@ -104,4 +104,13 @@ describe('CMS test-site seed route', () => {
     expect(await response.json()).toMatchObject({ runId: 'run-123', siteId: 'cms-verification-run-123', ownerUserId: 'user-taz', originalPointer: 'revision-one', currentPointer: 'revision-one', reconciliationRequired: true, correlationId: expect.any(String), elapsedMs: expect.any(Number), stores: { present: true, evidence: { supabase: false, mongo: true } } });
     expect(mocks.suspend).not.toHaveBeenCalled();
   });
+
+  it('reports a reconciled inspection only when both stores agree', async () => {
+    const supabaseRow = { agent_id: 'cms-verification-run-123', owner_id: 'user-taz', status: 'draft', active_vibe_revision_id: 'revision-one' };
+    const mongoRow = { agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one' };
+    mocks.inspectSiteConfigStores.mockResolvedValue({ supabaseRow, mongoRow, selectedRow: mongoRow, selectedStore: 'mongo' });
+    const response = await GET(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { headers: { 'x-cms-test-seed-token': 'secret' } }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ reconciliationRequired: false, stores: { agreement: { status: true, owner: true, activeVibeRevision: true } } });
+  });
 });

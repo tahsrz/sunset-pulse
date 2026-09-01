@@ -119,6 +119,13 @@ export async function GET(request: NextRequest) {
   console.info('[CMS_TEST_SITE_INSPECT]', { correlationId, runId, siteId, status: kit.status });
   const hasSupabase = Boolean(storeInspection.supabaseRow);
   const hasMongo = Boolean(storeInspection.mongoRow);
+  const supabaseKit = storeInspection.supabaseRow ? normalizeLaunchKit(storeInspection.supabaseRow, siteId) : null;
+  const mongoKit = storeInspection.mongoRow ? normalizeLaunchKit(storeInspection.mongoRow, siteId) : null;
+  const statusAgreement = supabaseKit && mongoKit ? supabaseKit.status === mongoKit.status : null;
+  const ownerAgreement = supabaseKit && mongoKit
+    ? (supabaseKit.ownerId || supabaseKit.billingProfile.userId) === (mongoKit.ownerId || mongoKit.billingProfile.userId)
+    : null;
+  const pointerAgreement = supabaseKit && mongoKit ? supabaseKit.activeVibeRevisionId === mongoKit.activeVibeRevisionId : null;
   return NextResponse.json({
     runId,
     siteId,
@@ -139,8 +146,13 @@ export async function GET(request: NextRequest) {
         supabase: hasSupabase,
         mongo: hasMongo,
       },
+      agreement: {
+        status: statusAgreement,
+        owner: ownerAgreement,
+        activeVibeRevision: pointerAgreement,
+      },
     },
-    reconciliationRequired: !(hasSupabase && hasMongo),
+    reconciliationRequired: !(hasSupabase && hasMongo && statusAgreement && ownerAgreement && pointerAgreement),
     correlationId,
     elapsedMs: Date.now() - startedAt,
   });
