@@ -1142,6 +1142,132 @@ Reject or revise a UI change when it causes any of the following:
 - A visual refactor requires an API/lifecycle/backend change that is not named
   in its implementation increment.
 
+### AM. App Router and client-boundary architecture
+
+The UI should improve without moving authorization or data authority into the
+browser. Apply these boundaries exactly:
+
+| File / component | Rendering boundary | Reason | Implementation rule |
+| --- | --- | --- | --- |
+| `app/vibes/layout.tsx` | Server component | Owns route shell and static landmarks. | Keep it server-rendered; it may render client children such as `VibeSidebar`. |
+| `app/vibes/VibeSidebar.tsx` | Client component | Uses pathname, local state, and status refresh event. | Keep `'use client'`; do not move `getVibeCmsAccess` here. |
+| `app/vibes/page.tsx` | Server page wrapper | Static metadata and route boundary. | Keep it minimal and render `VibeList`. |
+| `app/vibes/VibeList.tsx` | Client component | Search/filter/pagination/bulk interaction and list fetching. | Keep request construction and bulk mutation ownership here. |
+| `app/vibes/new/page.tsx` | Client page today | Controlled form state and create navigation. | It may be split into a server wrapper plus `NewVibeForm` later, but no access behavior changes in the UI slice. |
+| `app/vibes/[vibeId]/edit/page.tsx` | Server page | Runs `getVibeCmsAccess` before client editor mounts. | Preserve this boundary exactly; no UI component may replace this check. |
+| `app/vibes/[vibeId]/edit/VibeEditor.tsx` | Client component | Fetches draft and manages form/save state. | Remains data owner for editor child components. |
+| `app/vibes/[vibeId]/revisions/page.tsx` | Server page | Runs access check. | Preserve it; only revise header composition. |
+| `RevisionList.tsx`, `TaxonomyDirectory.tsx`, `apply/page.tsx` | Client components/pages | Current client fetch/mutation behavior. | Split markup into children without moving protected data lookups client-side. |
+
+#### Shared-component directive rules
+
+1. Do not put `'use client'` in an `_components/index.ts` barrel. It would make
+   otherwise static shared markup needlessly client-bound.
+2. `VibePageHeader`, `VibeStatusBadge`, and static empty-state components remain
+   server-compatible: no hooks, browser APIs, or event callbacks internally.
+3. `VibeStatusViews`, `VibeListToolbar`, `VibeRowActions`, `VibePanel`,
+   `VibeNotice` with dismissal, and `VibeConfirmDialog` are client components
+   because their parents pass callbacks or they maintain local interaction state.
+4. Pass serializable values from server pages into client components. Do not pass
+   request headers, access objects, database clients, or server-only functions.
+5. Keep all protected APIs behind their current server routes. A UI component may
+   render a safe result from a route response; it may not import protected
+   service modules directly.
+
+### AN. Dialog and disclosure implementation choice
+
+The project currently has Tooltip/Slot primitives but no installed dialog
+primitive. For this scoped work:
+
+- Implement `VibeConfirmDialog` with the native HTML `<dialog>` element,
+  `ref.showModal()`, `ref.close()`, and a form/button structure. Verify target
+  browser support in the browser walkthrough.
+- Use the dialog’s native modal behavior rather than adding a dialog package or
+  hand-writing a brittle focus trap. Capture the trigger element before opening
+  and restore focus on close.
+- Render confirm/cancel as actual buttons. The confirm button reflects `busy`,
+  and the dialog cannot dismiss through Escape/backdrop while confirmation is
+  in flight.
+- If the project’s target browser matrix cannot support `<dialog>`, stop and
+  propose a narrowly scoped dependency decision; do not replace it with a
+  generic `div role="dialog"` that lacks focus management.
+- Use native `<details>/<summary>` for low-risk disclosures such as manual site
+  ID, disposable verification site, and advanced field help. Use `VibePanel`
+  button/region behavior where panel preference persistence is required.
+
+### AO. Component file layout
+
+Create files only when a component is used by more than one route or contains a
+non-trivial interaction. Avoid a folder full of one-line wrappers.
+
+```text
+apps/pulse/app/vibes/
+├── _components/
+│   ├── VibePageHeader.tsx          # server-compatible markup
+│   ├── VibeStatusBadge.tsx         # server-compatible mapping
+│   ├── VibeStatusViews.tsx         # client interactions
+│   ├── VibeListToolbar.tsx         # client interactions
+│   ├── VibeRowActions.tsx          # client interaction/presentation
+│   ├── VibePanel.tsx               # client collapse preference
+│   ├── VibeNotice.tsx              # client only if dismissible
+│   ├── VibeConfirmDialog.tsx       # client/native dialog
+│   ├── VibeEditorToolbar.tsx       # client editor controls
+│   ├── VibeTaxonomyFieldset.tsx    # client form fieldset
+│   └── vibeUi.ts                   # optional local class composition constants
+├── VibeList.tsx                    # list data/query/mutation ownership
+└── [vibeId]/edit/VibeEditor.tsx    # editor data/form/mutation ownership
+```
+
+No component in this directory may introduce a general-purpose CMS abstraction,
+read environment variables, or query a database.
+
+### AP. Test architecture by boundary
+
+| Concern | Test location / method | Required assertion |
+| --- | --- | --- |
+| URL query parser | `tests/unit/vibe-list-query.test.ts` | defaults, allowlist rejection, page normalization, safe search length. |
+| List interaction | `tests/unit/vibe-list.test.tsx` | views, debounce, bulk dialog, row actions, URL update behavior. |
+| New Vibe identity | `tests/unit/vibe-new-page.test.tsx` | title-to-slug, manual slug, inline validation, create payload. |
+| Editor field integrity | existing `tests/unit/vibe-editor-validation.test.tsx` | current validation plus collapsed panels retaining FormData keys. |
+| Dialog/disclosure | `tests/unit/vibe-confirm-dialog.test.tsx` | focus restoration, cancel, busy blocking dismissal, confirm callback once. |
+| Server access pages | existing/operator route tests | UI refactor did not remove server access guard. |
+| Browser walkthrough | existing Playwright setup or controlled browser session | keyboard sequence, responsive layout, and full affected journey. |
+
+Tests should mock `next/navigation` locally where URL behavior is exercised.
+They must not require a live customer site, production token, or deployment.
+
+### AQ. Performance and hydration limits
+
+- Do not add a global Vibes client provider or a global UI state store.
+- Do not import the editor component or its visual-token form into the All Vibes
+  list bundle.
+- Debounce only search input. Status, sort, pagination, and explicit actions
+  should respond immediately.
+- Abort stale list/editor fetches as the current components already do; preserve
+  that cleanup during extraction.
+- Avoid data fan-out: list rows render fields from the single list response;
+  they do not fetch revisions, taxonomy, or status individually.
+- Preferences read from `localStorage` happen after hydration and may not block
+  initial render. Use defaults until the read completes.
+- Skeletons should be plain local markup and not a heavy animation dependency.
+
+### AR. Cross-route consistency audit
+
+Before merging a UI increment, compare every touched route against this common
+set:
+
+- Same utility/header landmarks and same Vibes navigation.
+- Same title/action spacing and action variants.
+- Same status badge labels/colors.
+- Same notice placement: below header/toolbar, above primary work surface.
+- Same empty/loading/error visual language.
+- Same focus ring on dark navigation and light workspace surfaces.
+- Same back-link wording: **All Vibes**, **Back to Vibe**, or **Back to
+  revisions**, based on actual parent context.
+- Same raw-ID treatment: secondary, copyable only if verified, never title-led.
+
+This audit is a visual/code review step, not a new runtime feature.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
