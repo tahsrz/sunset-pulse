@@ -3670,6 +3670,154 @@ type VibeEditorToolbarProps = {
 4. Assert toolbar has no icon-only unlabeled buttons and no block insertion or
    generic page-building controls.
 
+### DV. Publication-flow package 3C — explicit readiness, no automatic site changes
+
+Modern editorial flows make the final action and its outcome visible before the
+operator commits it. Add a small, truthful readiness surface to Submit and
+Publish, using only data those pages already load. It must not call new APIs,
+perform preflight mutations, or imply that publication changes a tenant site.
+
+#### New `app/vibes/_components/VibeReadinessChecklist.tsx`
+
+1. Create a passive component with this exact type:
+
+   ```ts
+   type ReadinessItem = {
+     label: string;
+     complete: boolean;
+     detail: string;
+   };
+
+   type VibeReadinessChecklistProps = {
+     title: string;
+     items: ReadinessItem[];
+   };
+   ```
+
+2. Render a `<section aria-labelledby="vibe-readiness-title">` with the passed
+   title in an `<h2 id="vibe-readiness-title">`.
+3. Render an unordered list. Every list item begins with visible text
+   **Ready** or **Needs attention**; do not rely on a checkmark icon or color
+   alone.
+4. Use a compact neutral card for ready items and amber border/background for
+   items needing attention. Do not render error red unless a server request has
+   actually failed.
+5. The component has no buttons, links, hooks, API calls, or mutation logic.
+   It explains the state provided by its parent only.
+
+#### `app/vibes/[vibeId]/submit/page.tsx` — submit readiness insertion
+
+**After the existing explanatory paragraph and before the error notice:**
+
+1. Create `const isDraft = vibe.status === 'draft';` after the current loaded
+   Vibe guard.
+2. Render:
+
+   ```tsx
+   <VibeReadinessChecklist
+     title="Ready to submit"
+     items={[
+       {
+         label: 'Editorial state',
+         complete: isDraft,
+         detail: isDraft
+           ? 'This draft can be submitted for review.'
+           : `This Vibe is currently ${vibe.status || 'not in draft'}.`,
+       },
+       {
+         label: 'Draft snapshot',
+         complete: Boolean(vibe.draftPayload),
+         detail: vibe.draftPayload
+           ? 'The saved draft will be captured for review.'
+           : 'No saved draft is available to submit.',
+       },
+     ]}
+   />
+   ```
+
+3. Keep existing button disable check `submitting || vibe.status !== 'draft'`.
+   Add `|| !vibe.draftPayload` only if the existing submit route/service proves
+   a missing draft would fail; do not invent a browser-only prerequisite.
+4. Under the button, add a static note: **Submitting creates an in-review
+   snapshot. Publishing is a separate step.** Do not mention a tenant site in
+   this note because submit has no site effect.
+
+#### `app/vibes/[vibeId]/publish/page.tsx` — pre-publish insertion
+
+**After current amber review panel and before the form:**
+
+1. Define `const isInReview = vibe.status === 'in_review';` after the loaded
+   Vibe guard.
+2. Render `VibeReadinessChecklist title="Ready to publish"` with these exact
+   items:
+
+   ```ts
+   [
+     {
+       label: 'Editorial state',
+       complete: isInReview,
+       detail: isInReview
+         ? 'This Vibe is in review and can create a published revision.'
+         : `This Vibe is currently ${vibe.status || 'not in review'}.`,
+     },
+     {
+       label: 'Saved draft',
+       complete: Boolean(vibe.draftPayload),
+       detail: vibe.draftPayload
+         ? 'The normalized saved draft will be frozen into a revision.'
+         : 'A saved draft is required before publication.',
+     },
+     {
+       label: 'Site application',
+       complete: true,
+       detail: 'Publishing does not apply this revision to any site.',
+     },
+   ]
+   ```
+
+3. Change the final button disabled expression to
+   `publishing || !isInReview || !vibe.draftPayload`. This only mirrors the
+   existing server transition/payload expectations; server validation remains
+   authoritative.
+4. Keep the exact POST body `{ changeSummary }`, successful status event, and
+   revisions redirect from DK/DI.
+5. Add a second static sentence below the form submit button: **To use a
+   published revision on a site, choose Apply to site from the current published
+   revision.** This points to the existing workflow without making an automatic
+   apply request.
+
+#### Notice placement on editor and lifecycle pages
+
+1. In `VibeEditor.tsx`, render `VibeNotice` immediately below
+   `VibeEditorToolbar` when `error` is non-empty. Remove the duplicate error
+   paragraph from `PublishPanel` after this route-level notice exists; keep the
+   conflict Reload latest draft control in the status summary.
+2. In Submit, Publish, Actions, and Apply, render the page-level error/success
+   `VibeNotice` immediately after the page header and before readiness/cards.
+3. Do not render the same `error` string in both a notice and a card. A single
+   `role="alert"` prevents duplicate screen-reader announcements.
+4. Network/API error notices do not auto-dismiss. Local successful action
+   notices may remain until navigation or a follow-up request replaces them;
+   do not add an arbitrary timeout.
+
+### DW. Package 3C tests and literal acceptance criteria
+
+1. In `vibe-submit-page.test.tsx`, render draft with `draftPayload`; assert two
+   Ready rows and enabled Submit. Render `in_review`; assert Needs attention,
+   disabled Submit, and no submit POST after clicking.
+2. In `vibe-publish-page.test.tsx`, render in-review with draft; assert all
+   three readiness labels and enabled Publish. Render draft; assert Editorial
+   state Needs attention, disabled Publish, and no publish POST.
+3. Assert Publish readiness includes the exact text **Publishing does not apply
+   this revision to any site.** and the page has no site ID input, no pointer
+   GET, and no apply POST.
+4. In `vibe-editor-validation.test.tsx`, cause a conflict response and assert
+   only one alert contains the conflict text. Assert Reload latest draft remains
+   available from the status summary.
+5. Review the package diff to confirm `VibeReadinessChecklist.tsx` imports only
+   React types if needed and does not import `next/*`, Vibe services, routes, or
+   client hooks.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
