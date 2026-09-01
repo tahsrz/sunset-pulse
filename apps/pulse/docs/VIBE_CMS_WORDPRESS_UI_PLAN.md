@@ -1268,6 +1268,125 @@ set:
 
 This audit is a visual/code review step, not a new runtime feature.
 
+### AS. Existing shared-control compatibility decision
+
+`apps/pulse/components/ui/button.tsx` is currently optimized for the broader
+application’s dark/cyan visual surfaces. Its default/outline/link variants are
+not a drop-in fit for the neutral operational workspace planned here.
+
+Therefore:
+
+1. **Do not change the existing global `Button` variants as part of this plan.**
+   That would alter unrelated product surfaces and make this UI refactor harder
+   to review.
+2. In `app/vibes/_components/vibeUi.ts`, define local class composition values
+   for `primary`, `secondary`, `link`, and `danger` action styles. They must use
+   existing Tailwind utilities only; no CSS framework or new styling dependency.
+3. Use semantic `<button>` and `<Link>` elements with those local classes in the
+   Vibes route group. A navigation link must not be rendered as a button merely
+   to inherit styles.
+4. If a later cross-product design review wants a neutral operational `Button`
+   variant, propose it separately with visual regression evidence for current
+   consumers of `components/ui/button.tsx`.
+
+Suggested local class roles:
+
+```ts
+export const vibeActionClass = {
+  primary: 'inline-flex h-9 items-center justify-center rounded border border-[#2271b1] bg-[#2271b1] px-3 text-sm font-semibold text-white hover:bg-[#135e96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+  secondary: 'inline-flex h-9 items-center justify-center rounded border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+  link: 'text-sm font-medium text-[#2271b1] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2',
+  danger: 'text-sm font-medium text-[#b32d2e] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b32d2e] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+} as const;
+```
+
+These values are a starting specification, not a mandate to add an abstraction
+if the same style is used only once. Avoid hard-coded one-off button variants in
+every page.
+
+### AT. Mutation-state and idempotent-interaction rules
+
+Each mutation already depends on a server contract. The UI must prevent obvious
+duplicate interaction without claiming to provide transaction guarantees.
+
+| Mutation | Originating UI | Busy behavior | Success behavior | Failure behavior |
+| --- | --- | --- | --- | --- |
+| Save draft | `PublishPanel` / editor form | Disable only save submit; retain safe navigation | Save state becomes Saved; show optional preview notice | Keep form values and mark Unsaved changes/error |
+| Bulk archive/trash | `VibeListToolbar` dialog | Disable confirm and cancel dismissal while request pending | Refetch list; clear selection; success notice | Preserve selection; show error; permit retry |
+| Publish revision | Publish route button | Disable submit; do not re-enable until response | Navigate to revisions on confirmed success | Keep change summary and show error |
+| Restore revision | Revision-row dialog | Disable confirm; keep selected revision context | Reload revision list; success notice | Keep dialog error or return focus to trigger with notice |
+| Apply revision | Apply confirmation dialog | Disable confirm and preflight-changing inputs during request | Preserve response message and refresh pointer only if safe | Preserve preflight summary; show rejection detail safely |
+
+Rules:
+
+- One busy state is owned by the component that sends the request; do not create
+  a global “app loading” overlay.
+- A busy action’s label uses a progressive verb (`Saving…`, `Publishing…`,
+  `Restoring…`, `Applying…`) rather than generic `Loading…`.
+- Do not show a success notice until the corresponding route response is
+  successful. A button click, client-side navigation start, or optimistic badge
+  is not evidence of success.
+- Refetch after a mutation only when the current route’s data needs it. Do not
+  reload the full browser page as a shortcut.
+- Preserve a stable correlation between error message and action. An apply
+  error may not appear as a general editor save error.
+
+### AU. Motion, feedback, and visual restraint
+
+The workspace is an operational environment. Motion should clarify changes,
+not compete with content or cause uncertainty.
+
+- Use no entrance animation for page-level data tables or editor forms.
+- A panel may expand/collapse with a short (150–200ms) height/opacity transition
+  only when `prefers-reduced-motion` does not request reduction. Native details
+  without animation is acceptable.
+- Dialog open/close may fade the backdrop and surface, but focus must move
+  immediately; animation never delays interaction.
+- Loading skeletons use static neutral blocks or a subtle reduced-motion-safe
+  pulse. They do not use branded shimmer effects.
+- Status changes are communicated in text and accessible live regions; color or
+  animation is supplementary only.
+- Do not animate table rows out before a successful bulk response. Replace the
+  list after refresh so state remains truthful.
+
+### AV. Semantic table and form checklist
+
+Before merging list/editor changes, inspect DOM semantics directly:
+
+- All Vibes uses one `<table>` with `<thead>`, `<tbody>`, `<th scope="col">`,
+  and real checkbox inputs.
+- The title cell contains the main title link, secondary slug/metadata, and row
+  actions; title is not duplicated as a visually hidden separate action name.
+- Each sort header has `aria-sort`; sort icon has `aria-hidden="true"`.
+- Status views use a `<nav aria-label="Vibe status views">`, not an unlabeled
+  group of controls.
+- Search has a visible or programmatic label; filter selects have labels; the
+  Apply button is `type="button"` outside forms or `type="submit"` only when it
+  genuinely submits its surrounding form.
+- Editor has a single `<form>` for the draft payload. `VibePanel` does not nest
+  forms. Taxonomy is a fieldset with a legend.
+- Primary page title is the only h1. Panel titles are h2/h3 in logical order.
+- Notices use the role policy in section L; dialogs have an accessible name and
+  descriptive body.
+
+### AW. Baseline accessibility quality bar
+
+The planned UI is not complete when it only looks correct with a mouse:
+
+1. All interactive controls have a visible focus indicator against both light
+   work surfaces and dark navigation surfaces.
+2. Text and status badges meet legible contrast without relying on low-opacity
+   color alone.
+3. Icons supplement labels; icon-only controls have accessible names and
+   tooltips where needed.
+4. Checkbox hit areas are at least the surrounding table cell/control target
+   size, while retaining a real native input.
+5. Dialog, panel, navigation, toolbar, and table focus order match visual
+   reading order.
+6. Reduced-motion users can use every operation with no required animation.
+7. Error and success status are announced once, without interrupting active
+   typing for normal save feedback.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
