@@ -3,6 +3,7 @@ import { createDefaultLaunchKit } from '@/lib/sites/launchKit';
 
 const storeMocks = vi.hoisted(() => ({
   readSiteConfig: vi.fn(),
+  inspectSiteConfigStores: vi.fn(),
   readExpiredPastDueSiteConfigs: vi.fn(),
   claimPastDueSiteConfigForExpiry: vi.fn(),
   saveSiteConfig: vi.fn(),
@@ -15,6 +16,7 @@ const storeMocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/sites/siteConfigStore', () => ({
   readSiteConfig: storeMocks.readSiteConfig,
+  inspectSiteConfigStores: storeMocks.inspectSiteConfigStores,
   readExpiredPastDueSiteConfigs: storeMocks.readExpiredPastDueSiteConfigs,
   claimPastDueSiteConfigForExpiry: storeMocks.claimPastDueSiteConfigForExpiry,
   saveSiteConfig: storeMocks.saveSiteConfig,
@@ -33,6 +35,7 @@ import {
   provisionPaidAgentSite,
   resolveProvisionedAgentId,
   suspendProvisionedAgentSite,
+  reconcileDisposableCmsSite,
   updateProvisionedAgentSiteBilling,
 } from '@/lib/sites/siteProvisioning';
 
@@ -41,6 +44,7 @@ describe('site provisioning', () => {
     vi.useRealTimers();
     vi.clearAllMocks();
     storeMocks.readSiteConfig.mockResolvedValue(null);
+    storeMocks.inspectSiteConfigStores.mockResolvedValue({ selectedRow: null, supabaseRow: null, mongoRow: null, selectedStore: null });
     storeMocks.readExpiredPastDueSiteConfigs.mockResolvedValue([]);
     storeMocks.claimPastDueSiteConfigForExpiry.mockResolvedValue(true);
     storeMocks.saveSiteConfig.mockResolvedValue(['supabase', 'mongo']);
@@ -93,6 +97,14 @@ describe('site provisioning', () => {
       agentId: 'Broker-One',
       email: 'broker@example.test',
     })).toBe('broker-one');
+  });
+
+  it('reconciles a marked disposable site through both stores', async () => {
+    const kit = createDefaultLaunchKit('cms-verification-run-123');
+    kit.ownerId = 'user-taz';
+    kit.billingProfile = { billingStatus: 'trialing', userId: 'user-taz', disposableCms: { runId: 'run-123', originalPointer: '', expiresAt: '2026-09-01T00:00:00.000Z' } };
+    storeMocks.inspectSiteConfigStores.mockResolvedValue({ selectedRow: kit, supabaseRow: null, mongoRow: kit, selectedStore: 'mongo' });
+    await expect(reconcileDisposableCmsSite({ runId: 'run-123', userId: 'user-taz' })).resolves.toMatchObject({ siteId: 'cms-verification-run-123', reconciled: true, savedStores: ['supabase', 'mongo'] });
   });
 
   it('records truthful audit and owner metadata for internal test seeding', async () => {

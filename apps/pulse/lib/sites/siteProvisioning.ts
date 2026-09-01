@@ -8,7 +8,7 @@ import {
   type AgentLaunchKitResponse,
   type LaunchKitProvisioningAuditEvent,
 } from '@/lib/sites/launchKit';
-import { claimPastDueSiteConfigForExpiry, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
+import { claimPastDueSiteConfigForExpiry, inspectSiteConfigStores, readExpiredPastDueSiteConfigs, readSiteConfig, saveSiteConfig } from '@/lib/sites/siteConfigStore';
 import {
   notifyBuyerSiteBillingUpdate,
   notifyBuyerSiteGraceExpired,
@@ -69,6 +69,18 @@ export async function revokeDisposableCmsSite(input: { runId: string; email: str
     auditActor: `cms-test-seed:${input.userId}`,
     auditMessage: `Disposable CMS verification site revoked for run ${input.runId}.`,
   });
+}
+
+export async function reconcileDisposableCmsSite(input: { runId: string; userId: string }) {
+  const agentId = `cms-verification-${input.runId}`;
+  const stores = await inspectSiteConfigStores(agentId);
+  if (!stores.selectedRow) return null;
+  const kit = normalizeLaunchKit(stores.selectedRow, agentId);
+  const metadata = kit.billingProfile.disposableCms;
+  if (!metadata || metadata.runId !== input.runId) throw new Error('Site is not a disposable CMS verification site.');
+  if (kit.ownerId !== input.userId && kit.billingProfile.userId !== input.userId) throw new Error('Disposable CMS site owner mismatch.');
+  const savedStores = await saveSiteConfig(kit, { role: `cms-test-seed-reconcile:${input.runId}`, userId: input.userId });
+  return { siteId: agentId, savedStores, reconciled: savedStores.length >= 2, originalPointer: metadata.originalPointer || null, currentPointer: kit.activeVibeRevisionId || null };
 }
 
 export type ExpirePastDueGracePeriodsResult = {
