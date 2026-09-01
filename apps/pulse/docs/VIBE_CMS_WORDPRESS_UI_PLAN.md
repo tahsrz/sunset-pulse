@@ -967,6 +967,181 @@ tasks in this plan.
 No future opportunity authorizes a dependency, API, database, permission, or
 production change by itself.
 
+### AI. Desktop wireframes and component tree
+
+These are layout contracts, not pixel-perfect mockups. They establish hierarchy,
+placement, and action order before class-level styling begins.
+
+#### All Vibes
+
+```text
+┌──────────────────────────────── Vibes utility bar ───────────────────────────────┐
+│ [Vibes]                 [current context when applicable]            [+ Add New] │
+├───────────────┬──────────────────────────────────────────────────────────────────┤
+│ ALL VIBES     │ All Vibes  [Add New]                                               │
+│ ADD NEW       │ Manage drafts, reviews, published revisions, and history.         │
+│ TAXONOMY      │ All (24) | Drafts (5) | In review (2) | Published (14) | ...     │
+│               │                                                                    │
+│               │ [Bulk actions v] [Apply] [Filters]        [Search Vibes       ]  │
+│               │ ┌────┬────────────────────────┬───────────┬────────┬───────────┐ │
+│               │ │ □  │ Vibe                   │ Status    │ Rev.   │ Modified  │ │
+│               │ ├────┼────────────────────────┼───────────┼────────┼───────────┤ │
+│               │ │ □  │ Coastal Modern         │ Published │ r12    │ Aug 31    │ │
+│               │ │    │ /coastal-modern         │           │        │            │ │
+│               │ │    │ Edit · Preview · Revisions                                    │
+│               │ └────┴────────────────────────┴───────────┴────────┴───────────┘ │
+│               │ Showing 1–25 of 24                                     [‹] [›]   │
+└───────────────┴──────────────────────────────────────────────────────────────────┘
+```
+
+```text
+VibeList (data/state owner)
+├── VibePageHeader
+├── VibeStatusViews
+├── VibeListToolbar (top)
+├── VibeNotice (conditional)
+├── VibeListTable
+│   ├── sortable table headers
+│   ├── selection checkbox cells
+│   └── VibeRowActions
+├── VibeListToolbar (bottom, conditional)
+├── VibePagination
+└── VibeConfirmDialog (controlled by VibeList)
+```
+
+#### Edit Vibe
+
+```text
+┌──────────────────────────────── Vibes utility bar ───────────────────────────────┐
+│ [Vibes]   [← All Vibes]  Editing: Coastal Modern                 [Preview] [⚙]   │
+├───────────────┬───────────────────────────────────────────┬──────────────────────┤
+│ ALL VIBES     │ Coastal Modern                             │ PUBLISH              │
+│ ADD NEW       │ /vibes/coastal-modern                      │ Published revision   │
+│ TAXONOMY      │ Saved / Unsaved changes / Saving / Conflict│ r12 available        │
+│               │                                            │                      │
+│ CURRENT VIBE  │ [Metadata                         −]        │ [Save draft]         │
+│ Edit Vibe     │   Title · Slug · Description                │ [Preview]            │
+│ Preview       │                                            │ [Submit / Publish]   │
+│ Revisions     │ [Taxonomy                        +]         │                      │
+│ Status        │ [Colors                          +]         │ Revision history     │
+│ Audit log     │ [Typography                      +]         │                      │
+│ Source        │ [Layout                          +]         │                      │
+│               │ [Source and provenance           +]         │                      │
+│               │ [Voice                           +]         │                      │
+└───────────────┴───────────────────────────────────────────┴──────────────────────┘
+```
+
+```text
+VibeEditor (data/state owner)
+├── VibeEditorToolbar
+│   ├── back link / current title / permalink
+│   ├── save-state indicator
+│   ├── Preview link
+│   └── settings visibility control (later, optional)
+├── VibeNotice (conditional)
+├── editor form
+│   ├── VibePanel: Metadata
+│   ├── VibePanel: Taxonomy → VibeTaxonomyFieldset
+│   ├── VibePanel: Colors
+│   ├── VibePanel: Typography
+│   ├── VibePanel: Layout
+│   ├── VibePanel: Source and provenance
+│   └── VibePanel: Voice
+└── PublishPanel
+    ├── lifecycle/status summary
+    ├── save action
+    ├── Preview
+    ├── next permitted lifecycle action
+    └── revision-history link
+```
+
+#### Apply a published revision
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ ← Back to revisions                                                               │
+│ Apply published revision                                                          │
+│                                                                                  │
+│ 1. Revision                                                                       │
+│    Current published revision: r12 · 7f…9c       [Choose a different revision]  │
+│                                                                                  │
+│ 2. Target site                                                                    │
+│    [Use a disposable verification site +]                                         │
+│    [Enter site ID manually +]                                                     │
+│                                                                                  │
+│ 3. Verify current site pointer                                                    │
+│    [Check current site pointer]                                                   │
+│                                                                                  │
+│ 4. Review change                                                                  │
+│    Vibe / selected revision / site / current pointer / new pointer               │
+│    Temporary-site warning, when relevant                                          │
+│                                                                                  │
+│                                              [Confirm and apply revision]         │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### AJ. Mobile layout decisions
+
+Mobile should retain the same data and decisions, with controlled stacking:
+
+1. Utility bar keeps Vibes identity and **Add New**. It must not include a
+   dense current-Vibe label that crowds the route action.
+2. Sidebar remains a horizontally scrollable text-and-icon navigation row. Do
+   not switch to an unlabeled hamburger menu for this route group.
+3. All Vibes title/action stack, then status views wrap, then toolbar controls
+   stack in decision order. Search takes a complete line.
+4. The native table remains in an intentional overflow container. Checkbox,
+   title, status, revision, and modified data stay available; do not replace it
+   with cards that hide lifecycle information.
+5. Row actions are always visible below the Vibe title on touch widths.
+6. Editor toolbar is a compact two-row region: back/title/save state then
+   Preview/lifecycle/settings controls. Publish rail follows the editable canvas
+   as a full-width section; it is not permanently sticky.
+7. Confirmation dialogs use near-full-width layout with cancel reachable before
+   confirm in document order. No critical information is hidden behind scrolling
+   inside a small dialog.
+
+### AK. UI implementation decision log
+
+When an implementation choice is made, append a one-line entry to the relevant
+PR description or implementation note in this form:
+
+```text
+[screen] [decision] — [reason] — [contract preserved] — [test evidence]
+```
+
+Examples:
+
+```text
+[All Vibes] status select moved behind Filters — status views are the primary
+collection navigation — GET /api/vibes status query unchanged — vibe-list.test.tsx.
+
+[Editor] Typography collapsed by default — it is advanced configuration with
+safe defaults — FormData keys and PATCH payload unchanged — editor validation test.
+```
+
+This is intentionally concise. It helps future reviewers understand why an
+interaction changed without duplicating the full plan in code comments.
+
+### AL. Design review red flags
+
+Reject or revise a UI change when it causes any of the following:
+
+- The title/action area requires a user to scan the full width of the screen to
+  find the primary next action.
+- Status can be changed from two conflicting controls on the same screen.
+- A table action is hidden for keyboard users or becomes unreachable on touch.
+- A draft can be mistaken for a published revision or a site-applied revision.
+- A save/publish/apply button changes behavior based on styling rather than its
+  visible label and adjacent state explanation.
+- A generic card grid replaces a dense operational table without preserving all
+  list columns and actions.
+- A panel unmounts its inputs when closed, causing an incomplete save payload.
+- A UI component fetches protected/operator data solely to fill a convenience
+  control.
+- A visual refactor requires an API/lifecycle/backend change that is not named
+  in its implementation increment.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
