@@ -832,6 +832,141 @@ plan:
 
 This prevents a broad visual refactor from becoming a hidden CMS redesign.
 
+### AE. End-to-end editorial journey contracts
+
+Each journey below is a product contract. A UI increment is incomplete when its
+component tests pass but its affected journey is confusing or broken.
+
+#### Journey 1 — Find and resume a draft
+
+1. Editor opens **All Vibes** and immediately sees status views, search, and
+   compact table context.
+2. Editor selects **Drafts**, searches by title or slug, and opens the title or
+   **Edit** row action.
+3. The editor shows the Vibe title, Draft state, saved/unsaved state, and next
+   permitted action without exposing internal IDs first.
+4. Browser Back returns to the same list filter/search/sort/page.
+
+**Success evidence:** query params restore the list; title row actions are
+keyboard reachable; no lifecycle action appears that the draft cannot take.
+
+#### Journey 2 — Create a clear draft identity
+
+1. Editor chooses **Add New** from either the utility header or All Vibes.
+2. Editor enters a human title; slug is generated and a URL-safe explanation is
+   visible.
+3. Editor may expand **Start from a style** and choose a preset, or leave the
+   default unchanged.
+4. Editor chooses **Save draft and continue editing** and lands in the draft
+   editor with a truthful saved state.
+
+**Success evidence:** invalid slug shows inline guidance before an API request;
+manual slug edits stop automatic overwrite; selected preset is copied only into
+the new draft.
+
+#### Journey 3 — Edit, save, and preview a draft
+
+1. Editor changes title, taxonomy, or visual controls in the canvas.
+2. Save state changes to **Unsaved changes**; no false success signal appears.
+3. Editor saves; the originating control becomes busy, then the state reads
+   **Saved** and offers **Preview changes**.
+4. Preview clearly states it is a saved draft preview or published revision
+   preview, as appropriate.
+5. If the server reports a conflict, the editor stays mounted, fields remain
+   visible, and the user is told exactly what reloading would replace.
+
+**Success evidence:** outgoing PATCH payload remains normalized as today;
+base-font-size validation test still passes; no browser-only UI state is treated
+as published content.
+
+#### Journey 4 — Publish and understand history
+
+1. An in-review Vibe makes **Publish revision** the clear next lifecycle action.
+2. Publish screen explains that publication freezes the selected draft state.
+3. After publishing, Revision history puts the current published revision first
+   and distinguishes it from previous publications/checkpoints.
+4. Editor can compare history or restore an earlier revision to the draft after
+   an explicit confirmation.
+
+**Success evidence:** restore does not claim to publish/apply; raw revision IDs
+remain secondary; Apply action is offered only from current published revision.
+
+#### Journey 5 — Apply safely to an approved site
+
+1. Operator arrives from the current published revision, with revision context
+   already visible.
+2. Operator chooses an approved site mechanism or explicitly expands manual
+   site ID entry.
+3. Operator checks current pointer; a preflight summary renders Vibe, revision,
+   site, current pointer, new pointer, and temporary-site warning if relevant.
+4. Only then can the operator confirm the application.
+5. Response becomes a visible success/error notice without inventing a new
+   client-side source of truth.
+
+**Success evidence:** no secrets/customer-site inventory appear in the browser;
+the protected API continues to validate all input; an apply result is not
+mistaken for a draft save or publication.
+
+### AF. UI error-language matrix
+
+Treat errors as part of the workflow. Exact phrasing can be refined during UI
+copy review, but error categories and next actions must remain stable.
+
+| Situation | Visible message | Next action | Technical detail handling |
+| --- | --- | --- | --- |
+| List unavailable | “We couldn’t load Vibes right now.” | **Try again** | Keep network/status detail out of the default message. |
+| No matching search | “No Vibes match this search.” | **Clear search** | No error semantics. |
+| Invalid slug | “Use lowercase letters, numbers, and hyphens only.” | Fix the Slug field | Inline; do not wait for server failure. |
+| Invalid base font size | Existing unit-specific field guidance. | Fix the field | Preserve current pattern validation and help text. |
+| Draft save failed | “Draft could not be saved. Check your connection and try again.” | **Try again** | Keep locally entered fields visible. |
+| Draft conflict | “This draft changed in another session.” | **Reload latest draft** | Describe replacement effect; no auto-merge claim. |
+| Publication rejected | “This Vibe can’t be published in its current state.” | **Review status** or return to editor | Offer backend error through a Details disclosure where safe. |
+| Revision restore rejected | “This revision could not be restored.” | **Try again** / return to history | Preserve selected revision context. |
+| Site pointer check failed | “We couldn’t verify the current site revision.” | **Check again** | Do not enable apply. |
+| Application rejected | “The selected revision was not applied.” | Review preflight / try again only when safe | Preserve server reason in an operator Details disclosure. |
+
+Never show raw `Error`, a fetch exception, JSON serialization output, or an HTTP
+status as the user-facing message. However, a technical Details disclosure may
+include a correlation ID or safe server code if the API already provides one.
+
+### AG. Visual regression and design-review evidence
+
+For every UI slice, capture the same state set so reviewers can identify
+regressions rather than comparing arbitrary screenshots:
+
+| Screen | Required visual states |
+| --- | --- |
+| All Vibes | populated, selected rows/bulk toolbar, no results, fetch error, 375px width |
+| Add New | default, generated slug, invalid slug, preset expanded/selected, saving |
+| Edit | saved, unsaved, saving, conflict, advanced panels collapsed, tablet width |
+| Revisions | current published, prior published, checkpoint, restore confirmation |
+| Taxonomy | populated, search/filter result, empty result, fetch error |
+| Apply | initial, pointer checked, disposable warning, final confirmation, API error |
+
+Evidence must use disposable/local fixture data only. Screenshots must not
+contain customer site IDs, tokens, production secrets, or private editorial
+content.
+
+### AH. Deliberate future opportunities (not current work)
+
+These are valid future directions discovered while reasoning about the workflow;
+they are recorded to avoid rediscovering them, but they are not implementation
+tasks in this plan.
+
+- Server-supported partial draft updates could eventually make a careful
+  title/slug/taxonomy quick edit viable.
+- A per-user recovery-draft design could eventually support crash recovery
+  without pretending it is a published revision.
+- A stable payload-aware revision diff could eventually support richer visual
+  compare views than the current history list.
+- A server-authorized disposable-site picker could eventually replace manual
+  run-ID/site-ID entry in the operator flow.
+- Responsive preview widths can become a stronger visual-token authoring aid
+  after the preview renderer is proven to support it.
+
+No future opportunity authorizes a dependency, API, database, permission, or
+production change by itself.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
