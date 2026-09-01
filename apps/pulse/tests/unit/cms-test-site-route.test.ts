@@ -33,6 +33,13 @@ describe('CMS test-site seed route', () => {
     expect(mocks.provision).toHaveBeenCalledWith({ runId: 'run-123', ownerName: 'CMS Verification', email: 'taz@example.com', userId: 'user-taz' });
   });
 
+  it('returns a safe structured response when provisioning fails', async () => {
+    mocks.provision.mockRejectedValue(new TypeError('database details must not escape'));
+    const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({ error: 'Seed operation failed.', runId: 'run-123', siteId: 'cms-verification-run-123', stage: 'provisioning', errorClass: 'TypeError', reconciliationRequired: true, correlationId: expect.any(String), elapsedMs: expect.any(Number) });
+  });
+
   it('returns an existing seed site without writing again', async () => {
     mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', activeVibeRevisionId: 'revision-one' });
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
