@@ -14,6 +14,7 @@ Branch/PR: `codex/cms-production-verification-evidence` / PR 73
 - Added protected read-only inspection with owner checks, pointer data, filtered CMS audits, store evidence, and reconciliation status.
 - Added correlation IDs, elapsed-time diagnostics, structured timeout responses, and safe structured provisioning failures.
 - Added truthful `reconciliationRequired` reporting when fewer than both persistence stores are evidenced.
+- Added a protected reconciliation endpoint that repairs marked disposable sites through the shared persistence writer.
 - Documented seed, inspect, revoke, bounded-failure, and access-closure workflows.
 
 ## Verification
@@ -28,7 +29,7 @@ Branch/PR: `codex/cms-production-verification-evidence` / PR 73
 ## Important limitations
 
 - Automatic disposable-site expiry is not implemented yet.
-- A write-capable reconciliation operation for partial Supabase/Mongo state is not implemented yet; inspection reports the gap and operators must stop.
+- Reconciliation is implemented behind the protected operator endpoint but still requires production verification.
 - Full operator apply UI and complete production lifecycle evidence remain outstanding.
 - Production seed controls are intended to remain disabled until an explicitly authorized window.
 - The generated `wikipedia-catalog.json.lock` file is unrelated and remains outside this work.
@@ -50,11 +51,9 @@ Focused route and store verification passes with 25 tests across 2 files after t
 
 Sol completed the bounded functional repairs available in the current slice. Luna should continue with these larger items:
 
-1. Implement a write-capable reconciliation service that repairs only missing or stale disposable-site state and preserves the authoritative Vibe pointer.
-2. Persist the seed-time `originalPointer` and disposable marker explicitly; inspection currently cannot reconstruct a historical original pointer after later applications.
-3. Add automatic expiry targeting only explicitly marked disposable sites, with `cms.test-site.expired` audit evidence.
-4. Complete the operator application UI for selecting an authorized disposable site and confirming the exact published revision/pointer transition.
-5. Execute the controlled production lifecycle and cleanup checklist after deployment authorization, then replace conditional evidence with real IDs, timestamps, pointers, and store results.
+1. Add automatic expiry targeting only explicitly marked disposable sites, with `cms.test-site.expired` audit evidence.
+2. Complete the operator application UI for selecting an authorized disposable site and confirming the exact published revision/pointer transition.
+3. Execute the controlled production lifecycle and cleanup checklist after deployment authorization, then replace conditional evidence with real IDs, timestamps, pointers, and store results.
 
 The third pass added cross-store status, owner, and active-Vibe-pointer agreement reporting. The final focused safety run passes 48 tests across 4 files.
 

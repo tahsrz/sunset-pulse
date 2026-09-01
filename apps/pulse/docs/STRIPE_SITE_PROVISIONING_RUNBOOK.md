@@ -46,6 +46,17 @@ The response must show `revoked: true`, `status: suspended`, and a `correlationI
 
 If seeding returns `500` or `504`, preserve the response `correlationId`, `runId`, `siteId`, `stage`, `elapsedMs`, and `reconciliationRequired` fields. Do not retry blindly: inspect the deterministic site first, reconcile any partial store write, and only then decide whether the run can continue.
 
+When inspection reports `reconciliationRequired: true`, reconcile the deterministic site before continuing:
+
+```bash
+curl -sS -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site/reconcile" \
+  -H "content-type: application/json" \
+  -H "x-cms-test-seed-token: $CMS_TEST_SEED_TOKEN" \
+  -d '{"runId":"cms-run-123","email":"tahsrz@gmail.com"}'
+```
+
+Proceed only when the response reports `reconciled: true` and both expected stores are listed in `savedStores`.
+
 ### Close the controlled window
 
 - Set `CMS_TEST_SEED_ENABLED=false` in the deployment environment.
