@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import React from 'react';
 import { useEffect, useRef } from 'react';
 
 type VibeConfirmDialogProps = { open: boolean; title: string; description?: ReactNode; confirmLabel: string; cancelLabel: string; busy?: boolean; onConfirm: () => void; onOpenChange: (open: boolean) => void };
