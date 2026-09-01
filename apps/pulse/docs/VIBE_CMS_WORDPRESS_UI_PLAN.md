@@ -4579,6 +4579,78 @@ with a draggable UI.
 Until all six are checked, modern WordPress alignment in this PR means a strong
 settings/editorial experience—not a drag-and-drop page builder.
 
+### EL. App Router boundary rules for list deep links
+
+`app/vibes/page.tsx` is currently a server page with
+`export const dynamic = 'force-dynamic'` and renders the client `VibeList`.
+This is the correct boundary for the planned `useSearchParams`, `usePathname`,
+and `useRouter` usage.
+
+#### `app/vibes/page.tsx`, current lines 1–7
+
+1. Keep the file as a server component. Do not add `'use client'`.
+2. Keep `export const dynamic = 'force-dynamic'`; it is intentional because
+   Vibe list data and operator context are request-time concerns.
+3. Do not add `searchParams` props to `VibesPage`. `VibeList` owns validated
+   browser query parsing through the helper in package 1A.
+4. Add a narrow Suspense boundary around `VibeList` before package 1E imports
+   `useSearchParams`. This preserves a valid route boundary if the page’s
+   rendering strategy ever changes and keeps the persistent Vibe layout/sidebar
+   outside the fallback. Change the file to:
+
+   ```tsx
+   import { Suspense } from 'react';
+   import { VibeList } from './VibeList';
+
+   export const dynamic = 'force-dynamic';
+   export const metadata = { title: 'Vibes | Sunset Pulse', description: 'Manage published and draft vibe systems.' };
+
+   function VibeListFallback() {
+     return <div className="min-h-full bg-[#f0f0f1] px-4 py-8 text-sm text-[#50575e] sm:px-8" aria-busy="true">Loading Vibes…</div>;
+   }
+
+   export default function VibesPage() {
+     return <Suspense fallback={<VibeListFallback />}><VibeList /></Suspense>;
+   }
+   ```
+
+   Do not wrap `app/vibes/layout.tsx`, `VibeSidebar`, or the entire application.
+5. Preserve metadata title and description. The page title displayed in the
+   workspace remains **All Vibes**, supplied by `VibePageHeader` inside the
+   client list component.
+
+#### `app/vibes/VibeList.tsx` imports and navigation constraints
+
+1. The first import line remains `'use client';`.
+2. Replace its current React import with the exact named hooks required by its
+   final state model: `useEffect`, `useMemo` only if needed to stabilize derived
+   values, `useState`, and any type imports. Do not import server-only Next APIs.
+3. Import `usePathname`, `useRouter`, and `useSearchParams` from
+   `next/navigation` in one statement. Do not read `window.location.search` for
+   list state; that would bypass router navigation and make tests inconsistent.
+4. Do not call `router.refresh()` after search/filter/sort/pagination changes;
+   the client fetch effect owns data reload. Do not call `window.location.reload()`
+   after bulk actions; local `loadList` owns it.
+5. Do not add `router.push` calls inside the fetch effect. Only explicit user
+   handlers and canonicalization effect may write list URLs.
+6. When a Vibe title Link opens Edit, preserve the regular Link navigation. Do
+   not attach a return URL query parameter; Browser Back already restores the
+   list query state.
+
+#### Build/test checks for package 1E
+
+1. Run the focused query/list tests first.
+2. Run `npm run build` after package 1E because this is the first package adding
+   App Router query hooks to the Vibes route. Do not alter dynamic rendering,
+   cache configuration, or Next configuration to make a build warning disappear.
+3. If the build reports a missing Suspense boundary after the narrow page-level
+   wrapper exists, stop and record the exact message. Do not widen the boundary
+   to `app/vibes/layout.tsx`, since that would turn the persistent sidebar into
+   a loading fallback.
+4. In component tests, mock `next/navigation` once per test module and expose
+   mutable `searchParams`, `push`, `replace`, and `pathname` values. Do not
+   mock browser history as a second competing source of truth.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
