@@ -3329,6 +3329,109 @@ first; do not combine that reformat with a new API capability.
    another before the first fetch resolves; assert the first controller aborts,
    the old values disappear, and the second endpoint uses encoded `from`/`to`.
 
+### DM. Luna execution map — read and edit in this exact order
+
+The document has accumulated detailed reference sections. This is the canonical
+execution order; it prevents a later route task from creating imports for a
+primitive that has not been written yet.
+
+1. Read CC, CD, CE, CF, CR, CX, CY, and DE. Implement **0A**, then stop.
+2. Read CR, DC, and CV. Implement **0B** presentational components and their
+   tests. Do not modify any route page in this package.
+3. Read CS, DG, DH, and CP. Implement **1A** query helper and test it with
+   `tests/unit/vibe-list-query.test.ts` before importing it in `VibeList.tsx`.
+4. Read CG, CH, DI bulk rules, DD list state, and DE table rules. Implement
+   **1B** in `VibeList.tsx`; run its focused test.
+5. Read CI, DG create rules, DC test setup, and CX/CY form layout. Implement
+   **2A** new-Vibe page only.
+6. Read CJ, DI draft rules, DD editor state, and DE disclosure rules. Implement
+   **2B** editor only, appending cases to the existing editor-validation test.
+7. Read CK, DI rollback rules, and DJ revision assertion. Implement **3A**
+   revisions only.
+8. Read CL, CM, DA, DK audit/compare rules, and DL. Implement **3B** one route
+   at a time; do not place actions/submit/publish changes in a single file-wide
+   formatting commit.
+9. Read CN, DG pointer rules, DH, DI apply rules, and DD apply state. Implement
+   **4A** last, because it relies on dialog primitive and established notices.
+
+### DN. Exact import changes by file
+
+These are the only new imports expected in each first-pass route patch. If a
+file needs an additional import, Luna must explain why in the package handoff.
+
+| Target file | Add imports | Remove imports only after replacement is used |
+| --- | --- | --- |
+| `app/vibes/layout.tsx` | none beyond current `Link`/`VibeSidebar` | none |
+| `app/vibes/VibeSidebar.tsx` | none; `usePathname`, `useEffect`, `useState`, and icon imports already exist | none |
+| `app/vibes/VibeList.tsx` | `usePathname`, `useRouter`, `useSearchParams`; `VibePageHeader`, `VibeNotice`, `VibeStatusViews`, `VibeListToolbar`, `VibeRowActions`, `VibeConfirmDialog`; query helper/types | no current import until the equivalent local JSX is removed |
+| `app/vibes/new/page.tsx` | `VibePageHeader`, `VibePanel`, `VibeNotice` after normalizing existing imports | retain `Link` only if its back link remains outside header; otherwise remove it |
+| `edit/VibeEditor.tsx` | `VibePageHeader`, `VibePanel`, `VibeEditorToolbar`, `VibeNotice`, `VibeStatusBadge` only where rendered | no fetch/router import changes |
+| `revisions/RevisionList.tsx` | `VibeConfirmDialog`, `VibeRowActions`, `VibeStatusBadge`, `VibeNotice` | remove no lifecycle/network import |
+| `actions/page.tsx` | `VibePageHeader`, `VibeNotice`, `VibeStatusBadge`, `VibeConfirmDialog` | keep `Link` only if `VibePageHeader` has not replaced its back link |
+| `submit/page.tsx` | `VibePageHeader`, `VibeNotice`; `useEffect` stays | retain `Link` only when necessary after header replacement |
+| `publish/page.tsx` | `VibePageHeader`, `VibeNotice`, `VibeStatusBadge`; `useEffect` stays | same Link rule |
+| `audit/page.tsx` | `VibePageHeader`, `VibeNotice`; `Link` may be removed once header owns back link | delete only the local workflow-links array |
+| `compare/CompareView.tsx` | `VibeNotice` | none |
+| `apply/page.tsx` | `VibePageHeader`, `VibeNotice`, `VibeConfirmDialog`; local presentation components as needed | retain `Link` only if header has not absorbed back navigation |
+
+Do not import a generic UI library, a modal dependency, a router wrapper, or a
+new global utility. Every item in this table is either already in the project or
+created by package 0A/0B.
+
+### DO. Exact no-regression checks immediately before each package commit
+
+Run these checks from `apps/pulse` after focused tests. They require no network
+or production environment.
+
+```powershell
+git diff --check
+rg -n "(/api/vibes|/api/admin/sites|expectedVersion|vibe-status-changed)" <changed-file>
+npm run test:unit -- --runInBand <focused-test-file>
+```
+
+If this Vitest installation does not accept `--runInBand`, omit only that flag;
+do not change the project test script. For packages with more than one focused
+test, run the explicit Vitest files instead:
+
+```powershell
+npx vitest run tests/unit/vibe-ui-primitives.test.tsx tests/unit/vibe-list-query.test.ts
+```
+
+Then review exact diffs with this file-specific checklist:
+
+1. **Route files:** every old endpoint string is still present or intentionally
+   replaced by the same endpoint string in a helper; every JSON key from DI is
+   unchanged.
+2. **Forms:** each existing named input remains present in JSX; collapsed
+   panels cannot conditionally omit any field.
+3. **Links:** all `vibeId`, `revisionId`, and `siteId` path segments retain
+   `encodeURIComponent` where the current file already uses it. Do not remove
+   escaping while extracting JSX.
+4. **Events:** Submit, Publish, and successful Action routes still dispatch
+   `vibe-status-changed`; purely visual pages must not dispatch it.
+5. **Landmarks:** after a page is migrated, it does not introduce a nested
+   `<main>` under the layout main. A simple content `<div>` is the page shell.
+
+### DP. Acceptance notes Luna must append to each implementation handoff
+
+Use this exact mini-template rather than a narrative summary:
+
+```md
+## Vibe UI package <ID>
+
+- Changed files: `<one file per line>`
+- UI behavior completed: `<one sentence>`
+- Requests preserved: `<endpoint + method + exact JSON keys, or none>`
+- State/event preserved: `<status event, query state, conflict state, or none>`
+- Tests: `<exact command>` — `<pass/fail and count>`
+- Deferred by scope: `<none or explicit dependency>`
+```
+
+For a package that changes only shared primitives, write **Requests preserved:
+none**. For a route package, never write a vague statement such as “API
+unchanged”; identify the actual endpoint and body fields. This is the evidence
+needed to review Luna’s work line-by-line.
+
 ### DC. Test implementation details from the existing Vitest suite
 
 The existing editor test at
