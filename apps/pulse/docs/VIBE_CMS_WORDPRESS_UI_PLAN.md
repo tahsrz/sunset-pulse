@@ -1808,6 +1808,306 @@ Review the completed packages in this sequence:
 
 No package is “done” merely because its happy-path screenshot looks polished.
 
+## Luna execution runbook
+
+### BR. Operating rules for Luna
+
+For each turn, execute **one unchecked task only**. Do not start a later task
+because it appears related.
+
+1. Read this runbook section plus the named section(s) for the task.
+2. Run `git status --short` and preserve unrelated changes.
+3. Inspect only the named files and focused tests with `rg`/bounded reads.
+4. Use `apply_patch` for changes. Do not perform broad formatting rewrites.
+5. Run the exact focused test command listed for the task.
+6. Run `git diff --check` and inspect `git diff --stat`.
+7. Report: files changed, behavior changed, test result, and the next unchecked
+   task. Do not create an API, schema, deployment, DNS, tenant-routing, or
+   access-control change unless the task explicitly says to stop and propose it.
+
+If a task discovers a missing API field, mutation behavior, access requirement,
+or public-renderer contract, stop at that task and write a concise finding under
+the task’s **Stop condition**. Do not work around it in the client.
+
+### BS. Task 0A — add server-compatible display primitives
+
+- [ ] Create `apps/pulse/app/vibes/_components/VibePageHeader.tsx` with the
+  `VibePageHeaderProps` contract in section Q. It renders optional back link,
+  optional eyebrow, one h1, description, and actions. It uses no hooks and has
+  no `'use client'` directive.
+- [ ] Create `apps/pulse/app/vibes/_components/VibeStatusBadge.tsx` that maps
+  existing status strings (`draft`, `in_review`, `published`, `archived`,
+  `trash`) to labels/classes. Unknown status renders a neutral formatted label;
+  it does not throw or translate lifecycle values.
+- [ ] Create `apps/pulse/app/vibes/_components/VibeNotice.tsx` initially without
+  dismissal. It accepts tone, children, optional action, and renders `alert`
+  only for error; otherwise `status`.
+- [ ] Update `app/vibes/layout.tsx` only to add a skip link and
+  `<main id="vibe-workspace">` around children. Preserve header links/routes.
+
+**Do not touch:** API routes, `VibeList`, `VibeEditor`, global Button,
+middleware, tenant routing.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-editor-validation.test.tsx
+npm run build
+```
+
+**Done when:** the Vibes layout has one skip target, shared display primitives
+exist, and the existing editor test/build pass.
+
+**Stop condition:** build shows server/client serialization errors. Keep static
+components server-compatible; do not mark the layout client-side.
+
+### BT. Task 0B — sidebar navigation polish
+
+- [ ] In `VibeSidebar.tsx`, add `isActivePath(pathname, href)` so a route such
+  as `/vibes/:id/edit` marks **Edit Vibe** active without marking sibling items.
+- [ ] Add visible `focus-visible` ring classes to `SidebarLink` for both active
+  and inactive links.
+- [ ] Keep `primaryItems` limited to All Vibes, Add New, Taxonomy.
+- [ ] Reorder workflow links exactly: Edit Vibe, Preview, Revisions, Status &
+  Actions, status-dependent Submit/Publish, Audit Log, Source Details.
+- [ ] Retain status fetch, abort cleanup, and `vibe-status-changed` listener.
+
+**Do not touch:** status APIs, route paths, site/apply navigation, tenant code.
+
+**Verify:** manually open `/vibes/:id/edit`, `/preview`, `/revisions`, and
+`/actions`; tab through each sidebar item. Then run:
+
+```powershell
+npx vitest run tests/unit/vibe-editor-validation.test.tsx
+```
+
+**Done when:** exactly one contextual workflow item is active, focus is visible,
+and status-dependent links remain correct.
+
+**Stop condition:** sidebar cannot know status without a new API call. Keep the
+existing fetch/event logic; do not introduce a provider.
+
+### BU. Task 0C — list query parser and URL state
+
+- [ ] Create `apps/pulse/lib/cms/vibeListQuery.ts` with a parser/serializer for
+  `status`, `q`, `sort`, `dir`, and `page` exactly as defined in section V.
+- [ ] Add `tests/unit/vibe-list-query.test.ts` for defaults, invalid status,
+  invalid sort/dir, page normalization, duplicate values, and search length.
+- [ ] Refactor `VibeList.tsx` state initialization to use parsed search params.
+- [ ] Add URL update helpers: `router.push` for status/sort/page and debounced
+  `router.replace` for search. Keep fetch parameter names unchanged.
+- [ ] Keep page reset on search/status/sort/direction changes.
+
+**Do not touch:** `/api/vibes` route, page-size constant, list response type
+beyond fields already returned.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-list-query.test.ts
+```
+
+**Done when:** opening `/vibes?status=published&q=coastal&sort=title&dir=asc&page=2`
+initializes the matching UI state and generated fetch query; invalid params use
+safe defaults.
+
+**Stop condition:** the current Next navigation test setup cannot mock query
+state. Record the test-harness gap; do not abandon parsing/validation or move
+URL logic into a global store.
+
+### BV. Task 1A — restructure the All Vibes header, views, and toolbar
+
+- [ ] Create client `VibeStatusViews.tsx` and `VibeListToolbar.tsx` using the
+  prop contracts in section Q.
+- [ ] Replace `VibeList.tsx` lines 115–152 with `VibePageHeader`, status views,
+  and one top toolbar.
+- [ ] Move the visible **Add New** action next to the title. Keep the global
+  Add New in the utility bar; ensure narrow widths do not visually duplicate
+  competing primaries.
+- [ ] Remove the always-visible duplicate status `<select>` once status views
+  own filtering. Do not remove any supported status value.
+- [ ] Make search use `min-w-0 w-full sm:w-64 sm:flex-none` (or equivalent) and
+  a 250–300ms debounce.
+- [ ] Add list loading/error/empty-state branches described in sections L and
+  AC; no visual skeleton dependency.
+
+**Do not touch:** table columns/row actions/bulk request behavior yet; those are
+Task 1B.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-list-query.test.ts tests/unit/vibe-list.test.tsx
+```
+
+**Done when:** title/action, views, toolbar, search, URL state, and empty/error
+states work without table behavior regression.
+
+**Stop condition:** list test file does not yet exist. Create it only for these
+behaviors; do not add an end-to-end framework or live-site requirement.
+
+### BW. Task 1B — table rows, selection, and bulk confirmation
+
+- [ ] Create client `VibeRowActions.tsx` and `VibeConfirmDialog.tsx` following
+  sections Q, AN, AT, and AV.
+- [ ] Move list row actions from the far-right action cell into the Vibe title
+  cell beneath title/slug metadata. Keep Edit, Preview, Revisions, and existing
+  safe actions/routes.
+- [ ] Retain native table/checkbox structure. Add `aria-sort` to sortable `<th>`
+  and decorative sort arrows only.
+- [ ] Replace `window.confirm` in `runBulk` with `VibeConfirmDialog`.
+- [ ] Replace `window.location.reload()` after a successful bulk request with a
+  local list refresh callback, preserve current query state, clear selection,
+  and show success/error notice.
+- [ ] Add bottom toolbar only when the loaded list has at least ten rows.
+
+**Do not touch:** bulk endpoint body, archive/trash choices, API authorization.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-list.test.tsx
+```
+
+**Done when:** keyboard users can reach row actions; bulk trash asks for
+confirmation; cancel sends no request; success refetches list without full page
+reload.
+
+**Stop condition:** native dialog behavior cannot be tested in the current DOM
+environment. Mock the dialog method narrowly in the test; do not substitute an
+inaccessible faux dialog.
+
+### BX. Task 2 — Add New Vibe identity flow
+
+- [ ] Extract `toVibeSlug`, `VIBE_SLUG_PATTERN`, and `isValidVibeSlug` into a
+  shared safe helper only after checking whether an equivalent schema helper
+  already exists.
+- [ ] Split `new/page.tsx` into readable JSX sections or a `NewVibeForm` client
+  component. Keep request and redirect behavior unchanged.
+- [ ] Put title, slug, help, permalink preview, description, and submit before
+  the optional **Start from a style** panel.
+- [ ] Keep auto-slug only until the user manually edits it. Render inline
+  validation and do not depend solely on native pattern text.
+- [ ] Change visible submit label to **Save draft and continue editing**.
+- [ ] Ensure preset radios have visible focus treatment.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-new-page.test.tsx
+```
+
+**Done when:** title-to-slug, manual-slug, invalid-slug, preset, and unchanged
+create payload behaviors are all tested.
+
+**Stop condition:** server slug validation differs from the discovered shared
+helper. Use the server-safe validator or stop; do not let client/server rules
+diverge.
+
+### BY. Task 3 — editor toolbar and panel composition
+
+- [ ] Create `VibeEditorToolbar.tsx`, `VibePanel.tsx`, and
+  `VibeTaxonomyFieldset.tsx` as client components.
+- [ ] Preserve `VibeEditor` as draft data/form owner. Do not move `saveDraft`,
+  fetch, `SaveState`, or conflict behavior into child components.
+- [ ] Replace the current header with title, permalink context, saved/unsaved
+  state, and Preview link. Use exact preview terminology from section BG.
+- [ ] Keep two-column desktop layout. Keep PublishPanel sticky at desktop; stack
+  after canvas on narrower widths.
+- [ ] Convert Metadata, Taxonomy, Colors, Typography, Layout, Source and
+  provenance, and Voice into panels. Keep metadata open; preserve all mounted
+  form fields/FormData names when other panels close.
+- [ ] Reorder PublishPanel: status/lifecycle summary → save state → Save draft
+  → Preview Vibe settings → permitted lifecycle action → revision history.
+- [ ] Add polite saved/dirty/saving status and explicit conflict/error notice.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-editor-validation.test.tsx tests/unit/vibe-cms-contracts.test.ts
+```
+
+**Done when:** existing PATCH normalization/expectedVersion behavior is intact,
+the current base-font-size contract passes, and collapsed panels still submit all
+current field values.
+
+**Stop condition:** an editor field has no validated schema/preview/render path.
+Leave that field unchanged and record the gap; do not add it to a new panel.
+
+### BZ. Task 4 — revisions, audit, and taxonomy
+
+- [ ] Update `RevisionList.tsx` to present current published revision first,
+  then prior publications, then checkpoints; retain actual response ordering if
+  it already guarantees this or derive presentation-only order.
+- [ ] Replace revision restore confirmation with `VibeConfirmDialog`; copy must
+  say restore goes to editable draft and does not publish/apply.
+- [ ] Keep Apply link only for current published revision.
+- [ ] Update revisions/audit page headers to use shared header primitives while
+  preserving server access checks.
+- [ ] Replace audit’s duplicate workflow nav with current sidebar context;
+  group events by date and hide raw IDs in Details disclosure.
+- [ ] Refactor `TaxonomyDirectory.tsx` into searchable/group-filtered table
+  using its current in-memory terms and counts response only.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-revisions.test.tsx tests/unit/vibe-taxonomy.test.tsx
+```
+
+**Done when:** restore confirmation is accurate, current revision is obvious,
+taxonomy filtering is client-side over loaded terms, and no taxonomy mutation is
+introduced.
+
+**Stop condition:** revision ordering/comparison needs fields absent from the
+existing response. Render current known metadata and propose an API addition;
+do not fetch one revision per row.
+
+### CA. Task 5 — pointer-aware Apply preflight
+
+- [ ] Split `apply/page.tsx` into named presentational blocks listed in section
+  7; retain page-level state/fetch/apply functions.
+- [ ] Add `vibeId` to the client Pointer revision type and explicit preflight
+  state from section BI.
+- [ ] Invalidate verification only when Site ID changes; disable apply until a
+  fresh check for the current site completes.
+- [ ] Render none/same-Vibe/different-Vibe/already-selected states exactly as in
+  the preflight table.
+- [ ] Generate Compare link only for same-Vibe, different revision IDs.
+- [ ] Keep manual Site ID and disposable run-ID controls behind disclosures.
+- [ ] Replace final direct submit with `VibeConfirmDialog`; use accurate
+  preflight wording and post-success pointer refresh.
+
+**Verify:**
+
+```powershell
+npx vitest run tests/unit/vibe-apply.test.tsx
+```
+
+**Done when:** no-pointer/same/different/already-selected/error/stale-site
+states have tests; final apply does not bypass pointer check or alter endpoint
+payload.
+
+**Stop condition:** desired comparison crosses Vibes or needs a site-preview
+override. Do not invent an endpoint/query/iframe; record it as future work.
+
+### CB. Task 6 — integration verification and documentation evidence
+
+- [ ] Run each focused unit suite for completed work packages.
+- [ ] Run `npm run test:unit` and `npm run build` after W1–W5 integration.
+- [ ] Capture required screenshots from section AG with non-customer fixture
+  data at 1440px, 768px, and 375px as applicable.
+- [ ] Perform the keyboard and browser-Back checks in sections R, V, and Y.
+- [ ] Perform controlled non-customer tenant verification from section BD only
+  if separately authorized and the environment is available.
+- [ ] Add a concise implementation evidence note: completed packages, test
+  output, screenshots, deferred gaps, and no-change confirmation for routing,
+  tenant configuration, and public rendering.
+
+**Done when:** every completed package has evidence and every uncompleted gap is
+listed explicitly. Do not call the initiative complete while a required package
+is merely visually drafted.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
