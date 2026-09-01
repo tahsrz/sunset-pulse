@@ -43,7 +43,7 @@ describe('CMS test-site seed route', () => {
   });
 
   it('returns an existing seed site without writing again', async () => {
-    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', activeVibeRevisionId: 'revision-one' });
+    mocks.readSiteConfig.mockResolvedValue({ agentId: 'cms-verification-run-123', ownerId: 'user-taz', activeVibeRevisionId: 'revision-one', billingProfile: { disposableCms: { originalPointer: 'revision-one' } } });
     const response = await POST(request({ runId: 'run-123', email: 'taz@example.com' }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ siteId: 'cms-verification-run-123', originalPointer: 'revision-one', created: false, idempotent: true });
@@ -97,7 +97,7 @@ describe('CMS test-site seed route', () => {
   });
 
   it('inspects a disposable site without exposing secrets or mutating it', async () => {
-    const mongoRow = { agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one', provisioningAudit: [{ action: 'cms.test-site.seeded', actor: 'cms-test-seed:user-taz', message: 'seeded', occurredAt: '2026-08-31T00:00:00.000Z', status: 'succeeded', source: 'cms-test-seed:run-123' }] };
+    const mongoRow = { agentId: 'cms-verification-run-123', ownerId: 'user-taz', status: 'draft', activeVibeRevisionId: 'revision-one', billingProfile: { disposableCms: { originalPointer: 'revision-one' } }, provisioningAudit: [{ action: 'cms.test-site.seeded', actor: 'cms-test-seed:user-taz', message: 'seeded', occurredAt: '2026-08-31T00:00:00.000Z', status: 'succeeded', source: 'cms-test-seed:run-123' }] };
     mocks.inspectSiteConfigStores.mockResolvedValue({ supabaseRow: null, mongoRow, selectedRow: mongoRow, selectedStore: 'mongo' });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/internal/cms/test-site?runId=run-123&email=taz%40example.com', { headers: { 'x-cms-test-seed-token': 'secret' } }));
     expect(response.status).toBe(200);
