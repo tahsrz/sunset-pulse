@@ -44,6 +44,14 @@ curl -sS -X DELETE "https://www.sunsetpulse.app/api/internal/cms/test-site?runId
 
 The response must show `revoked: true`, `status: suspended`, and a `correlationId`. Repeating the same request is safely idempotent. If the site cannot be found or the owner does not match, stop and reconcile the recorded `siteId` before attempting any other mutation.
 
+### Close the controlled window
+
+- Set `CMS_TEST_SEED_ENABLED=false` in the deployment environment.
+- Remove or rotate `CMS_TEST_SEED_TOKEN` after the run.
+- Redeploy the configuration change when production verification is authorized.
+- Confirm a subsequent seed, inspect, and revoke request fails closed while disabled.
+- Record the final disposable-site status and both-store evidence in `VIBE_CMS_PRODUCTION_VERIFICATION.md`.
+
 ```bash
 curl -X POST "https://www.sunsetpulse.app/api/internal/cms/test-site" \
   -H "content-type: application/json" \
