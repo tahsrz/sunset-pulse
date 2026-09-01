@@ -4875,6 +4875,19 @@ manager dependency.
 5. Add list tests for top/bottom bulk focus, corrected-page heading focus, and
    no focus movement during debounced search. Keep all links/buttons text-labeled.
 
+### EQ. List result announcement — concise live feedback
+
+1. In `VibeList.tsx`, after the list header and before table controls, render one
+   visually hidden `<p aria-live="polite" aria-atomic="true" className="sr-only">`.
+2. Its text is derived only after successful, non-loading list responses:
+   **Showing {rangeStart}–{rangeEnd} of {total} Vibes**; use **No Vibes found**
+   when total is zero. Do not announce while typing before debounce settles.
+3. Do not place the same text in `VibeNotice`, pagination, and the live region;
+   the visible range remains pagination copy and the hidden line is the sole
+   announcement channel.
+4. Add a list test that changes status and asserts one updated live summary;
+   assert a rejected fetch does not announce a false result count.
+
 ### DM. Luna execution map — read and edit in this exact order
 
 The document has accumulated detailed reference sections. This is the canonical
