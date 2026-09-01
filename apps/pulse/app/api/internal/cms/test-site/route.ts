@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
       console.error('[CMS_TEST_SEED_TIMEOUT]', { correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', elapsedMs, reconciliationRequired: true });
       return NextResponse.json({ error: 'Seed operation timed out.', correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', elapsedMs, reconciliationRequired: true }, { status: 504 });
     }
-    throw error;
+    const errorClass = error instanceof Error ? error.name : 'UnknownError';
+    console.error('[CMS_TEST_SEED_FAILED]', { correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', elapsedMs: Date.now() - startedAt, errorClass });
+    return NextResponse.json({ error: 'Seed operation failed.', correlationId, runId: parsed.data.runId, siteId: agentId, stage: 'provisioning', elapsedMs: Date.now() - startedAt, errorClass, reconciliationRequired: true }, { status: 500 });
   }
 
   return NextResponse.json({
