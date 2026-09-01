@@ -1700,6 +1700,114 @@ features that make old published snapshots impossible to inspect or apply.
   this UI plan records the compatibility gate but does not invent a versioning
   mechanism.
 
+## Executable implementation backlog
+
+### BL. Work-package dependency graph
+
+```text
+W0: shared UI foundations + query helper
+ ├── W1: All Vibes list / URL state / bulk confirmation
+ ├── W2: Add New identity and slug flow
+ └── W3: editor toolbar, panels, save feedback
+      ├── W4: revisions, compare presentation, audit, taxonomy
+      └── W5: pointer-aware apply preflight
+             └── W6: browser, responsive, and keyboard verification
+```
+
+W1 and W2 can be reviewed independently after W0. W4 may begin after W3’s
+shared notice/dialog/panel primitives are stable. W5 uses the dialog/notice
+primitives but must not wait for any unapproved tenant-preview feature.
+
+### BM. Bounded work packages
+
+| Package | Files to add/change | Deliverable | Must not change | Exit evidence |
+| --- | --- | --- | --- | --- |
+| W0 — UI foundations | `layout.tsx`, `VibeSidebar.tsx`, selected `_components/*`, `lib/cms/vibeListQuery.ts` | Skip landmark, shell hierarchy, local action/notice/panel/dialog primitives, validated list-query parser | APIs, access gates, global button component, database schema | Unit parser tests; sidebar keyboard/manual check; `git diff --check`. |
+| W1 — All Vibes | `VibeList.tsx`, `vibe-list.test.tsx`, components consumed only by list | Compact title/action cluster, status views, toolbar, URL state, dense table row actions, bulk confirmation | GET list query names, POST bulk payload, bulk action set | List tests cover status/search/sort/page/bulk/empty/error; desktop + mobile screenshot. |
+| W2 — Add New | `new/page.tsx`, optional `NewVibeForm.tsx`, slug helper/tests | Identity-first create flow, readable slug validation, optional preset panel | POST create payload, create redirect, preset meaning | New-Vibe tests for slug/manual edit/create payload; keyboard radio check. |
+| W3 — Editor | `VibeEditor.tsx`, editor components, existing editor tests | Toolbar, concise save state, panelized form, safe dirty/conflict feedback | PATCH normalization, `expectedVersion`, server page access check, lifecycle routes | Existing validation tests plus panel/FormData/conflict tests; tablet screenshot. |
+| W4 — History and taxonomy | `RevisionList.tsx`, revisions/audit/taxonomy screens/tests | Current-first revision hierarchy, restore confirmation, readable audit feed, taxonomy table/search/group filter | Revision endpoints, restore semantics, taxonomy IDs/API | Revision restore/compare action test; taxonomy filter test; keyboard review. |
+| W5 — Apply | `apply/page.tsx`, apply-only components/tests | Pointer-state preflight, same-Vibe comparison link, accurate site-impact confirmation | Apply endpoint body/protected validation, run-ID derivation, tenant routing | Apply state tests for none/same/different/stale/error/already selected; controlled non-customer walkthrough. |
+| W6 — Verification | test files and documentation evidence only | Cross-route consistency, responsive, keyboard, visual evidence | Application behavior except test fixes | Focused unit runs, appropriate browser walkthrough, no production/customer mutation. |
+
+### BN. Package-level acceptance checklist
+
+Before marking a package complete, the implementer answers every item in its PR
+description:
+
+1. Which work package is this?
+2. Which current files/symbols were changed, added, or deliberately left alone?
+3. Which existing route/API contract is preserved?
+4. Which component interaction states were tested?
+5. Which desktop and narrow-width evidence was captured?
+6. Did a new API, schema, environment, dependency, route, or authorization need
+   arise? If yes, why was the package stopped rather than widened?
+7. Did the implementation modify anything outside `apps/pulse/app/vibes`, its
+   focused Vibe tests, or a named local helper? If yes, name and justify it.
+
+### BO. Suggested focused verification commands
+
+Run the smallest relevant tests during each package, then use broader checks at
+integration boundaries. Commands are run from `apps/pulse` unless noted.
+
+```powershell
+# W0 / W1 query and list work
+npx vitest run tests/unit/vibe-list-query.test.ts tests/unit/vibe-list.test.tsx
+
+# W2 create form work
+npx vitest run tests/unit/vibe-new-page.test.tsx
+
+# W3 editor work; preserve the current validation contract
+npx vitest run tests/unit/vibe-editor-validation.test.tsx tests/unit/vibe-cms-contracts.test.ts
+
+# W4 / W5 focused additions, once the named files exist
+npx vitest run tests/unit/vibe-revisions.test.tsx tests/unit/vibe-taxonomy.test.tsx tests/unit/vibe-apply.test.tsx
+
+# Integration boundary
+npm run test:unit
+npm run build
+```
+
+If a proposed named test file has not yet been created, omit it rather than
+making the command fail artificially. Browser checks come after the relevant
+focused unit tests; they do not replace them.
+
+### BP. Reversibility and rollback posture
+
+This initiative should remain easy to revert because it is primarily presentational
+and client interaction work.
+
+- Do not add migrations, change persisted Vibe fields, or rename existing routes
+  in W0–W6.
+- Keep each work package in its own commit or tightly related commit group so a
+  later UI regression can be reverted without removing unrelated CMS work.
+- URL query state is additive; old `/vibes` links without query params remain
+  valid and resolve to defaults.
+- Local preference keys are optional; deleting them returns the UI to defaults
+  and does not affect Vibe/site data.
+- New shared components must be introduced alongside one migrated consumer,
+  rather than as an untested abstract library.
+- If a UI extraction changes a mutation’s request body or timing, stop and
+  compare it against existing tests before proceeding. Refactoring JSX is not
+  authorization to alter mutation semantics.
+
+### BQ. Final integration review order
+
+Review the completed packages in this sequence:
+
+1. **Semantic/route review:** server access gates and route/API invariants still
+   match this plan.
+2. **Interaction review:** loading, error, busy, conflict, confirmation, and
+   success states work from keyboard and mouse/touch.
+3. **Editorial review:** labels make draft, revision, and site application
+   distinctions clear without exposing internal implementation vocabulary first.
+4. **Visual review:** shell, table density, panel hierarchy, responsive widths,
+   focus ring, and status badges are consistent across routes.
+5. **Tenant review:** public tenant rendering is not altered; controlled apply
+   evidence confirms only the intended selected site changes.
+
+No package is “done” merely because its happy-path screenshot looks polished.
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
