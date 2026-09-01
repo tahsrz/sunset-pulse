@@ -69,3 +69,12 @@ The third pass added cross-store status, owner, and active-Vibe-pointer agreemen
 ## Post-merge follow-up (PR from main)
 
 The implementation is now merged to `main`. The next controlled task is production evidence only: deploy the merged SHA, verify the four seed controls are present but disabled, run one authorized disposable-site lifecycle, capture the seed/inspect/reconcile/apply/revoke responses, then disable and rotate the temporary controls. No customer site may be used, and this follow-up must not be treated as complete until the final verification record contains the real site ID, original pointer, current pointer, expiry, store agreement, and revocation evidence.
+
+## Next product direction — WordPress-aligned Vibe CMS UI
+
+The follow-up editorial UX plan is in
+[`VIBE_CMS_WORDPRESS_UI_PLAN.md`](./VIBE_CMS_WORDPRESS_UI_PLAN.md). It uses the
+existing list, structured editor, revision history, taxonomy, and apply screens
+as the foundation. It deliberately limits the next work to user-facing workflow
+clarity and does not authorize a permissions redesign, generic WordPress clone,
+or backend/lifecycle rewrite.
