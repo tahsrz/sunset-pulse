@@ -400,6 +400,204 @@ any of the following:
 In those cases, leave the UI control out, document the gap, and propose a
 bounded follow-up rather than widening this plan mid-implementation.
 
+### P. Action hierarchy and exact labels
+
+WordPress screens remain understandable because each screen has one obvious
+next action. Apply the same discipline; buttons are not interchangeable visual
+decoration.
+
+| Screen | One primary action | Secondary actions | Explicitly not primary |
+| --- | --- | --- | --- |
+| All Vibes | **Add New** | Search, status view, bulk Apply, filters | Archive/trash, which remain secondary/danger actions |
+| Add New Vibe | **Save draft and continue editing** | Back to All Vibes, Start from a style | Publish, preview, or apply-to-site |
+| Edit draft | **Save draft** while dirty; otherwise the permitted lifecycle action is visually prominent in the Publish rail | Preview, Revisions, status details | A destructive lifecycle action or Apply to site |
+| Submit for review | **Submit for review** | Back to edit, Preview | Publish if current status is draft |
+| Publish | **Publish revision** | Back to edit, Preview, View revisions | Apply to site |
+| Revisions | No global primary action | Compare, Restore draft, Apply current published revision | Restore/publish for a non-current revision |
+| Apply to site | **Confirm and apply revision** only after preflight succeeds | Check current pointer, choose a different revision/site | Freeform apply before pointer check |
+
+Use these exact labels in user-facing controls. Internal terms such as
+“immutable” can appear in explanatory copy, but not as the only action label.
+Button variants are constrained as follows:
+
+- **Primary:** one per visual region; solid brand treatment.
+- **Secondary:** outline or neutral treatment; safe navigation/actions.
+- **Link:** row actions and low-emphasis navigation.
+- **Danger:** only Move to trash and an approved destructive future action.
+- **Disabled:** include adjacent explanation or a `title`/described-by message;
+  a disabled button without reason is not usable feedback.
+
+### Q. Component contracts for Luna
+
+These are intentionally thin prop contracts. They avoid a new global state
+layer and make the existing route components retain ownership of data and API
+calls.
+
+```ts
+// apps/pulse/app/vibes/_components/VibePageHeader.tsx
+type VibePageHeaderProps = {
+  title: string;
+  description?: React.ReactNode;
+  eyebrow?: string;
+  backHref?: string;
+  backLabel?: string;
+  actions?: React.ReactNode;
+};
+
+// apps/pulse/app/vibes/_components/VibeStatusViews.tsx
+type VibeStatusView = { value: string; label: string; count: number };
+type VibeStatusViewsProps = {
+  views: readonly VibeStatusView[];
+  activeValue: string;
+  onChange: (value: string) => void;
+};
+
+// apps/pulse/app/vibes/_components/VibeListToolbar.tsx
+type VibeListToolbarProps = {
+  position: 'top' | 'bottom';
+  selectedCount: number;
+  action: '' | 'archive' | 'trash';
+  onActionChange: (action: '' | 'archive' | 'trash') => void;
+  onApply: () => void;
+  busy?: boolean;
+  search?: string;
+  onSearchChange?: (value: string) => void;
+  children?: React.ReactNode; // reserved for approved filters only
+};
+
+// apps/pulse/app/vibes/_components/VibeRowActions.tsx
+type VibeRowActionsProps = {
+  actions: Array<{
+    label: string;
+    href?: string;
+    onClick?: () => void;
+    tone?: 'default' | 'danger';
+    disabled?: boolean;
+  }>;
+};
+
+// apps/pulse/app/vibes/_components/VibePanel.tsx
+type VibePanelProps = {
+  id: string;
+  title: string;
+  description?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+};
+
+// apps/pulse/app/vibes/_components/VibeNotice.tsx
+type VibeNoticeProps = {
+  tone: 'success' | 'warning' | 'error' | 'info';
+  children: React.ReactNode;
+  action?: { label: string; href?: string; onClick?: () => void };
+  onDismiss?: () => void;
+};
+```
+
+`VibeConfirmDialog` should accept `open`, `title`, `description`,
+`confirmLabel`, `cancelLabel`, `busy`, `onConfirm`, and `onOpenChange`. It must
+not receive API endpoint strings or construct a request itself.
+
+Do not create a `VibeProvider`, Zustand store, Redux store, or shared mutation
+client merely to support these components. The present API/data ownership stays
+inside `VibeList`, `VibeEditor`, `RevisionList`, and Apply.
+
+### R. Keyboard and focus specification
+
+The WordPress reference uses stable regions; Vibes should make those regions
+clear to keyboard and assistive-technology users.
+
+1. `layout.tsx` renders a **Skip to Vibe workspace** link before the utility
+   bar. It points to `#vibe-workspace`.
+2. The utility bar uses one `<nav aria-label="Vibes utility">`; the sidebar
+   uses the existing `<nav aria-label="Vibe CMS navigation">`; each screen has
+   one h1.
+3. `VibeListToolbar` uses normal Tab order: bulk select → Apply → approved
+   filters → search. It must not implement roving tabindex because these are
+   form controls, not one composite toolbar.
+4. `VibeStatusViews` uses native buttons/links in document order. Arrow-key
+   roving behavior is unnecessary unless it becomes a real `tablist` with panels
+   (it is not one in this plan).
+5. Sort headers use full-width `<button>` targets with an `aria-sort` value on
+   the containing `<th>` (`none`, `ascending`, or `descending`). The arrow is
+   decorative and `aria-hidden`.
+6. Opening `VibeConfirmDialog` moves focus to its cancel button or heading;
+   closing returns focus to the exact trigger. Escape closes only while no
+   request is in flight. While busy, both dismiss controls are disabled.
+7. `VibePanel` uses a native `<button aria-expanded aria-controls>` or semantic
+   `<details>/<summary>`. Do not make a `<div>` clickable.
+8. After an unsuccessful form submit, programmatically focus the first invalid
+   field only when native validation did not already do so. After a successful
+   save, preserve focus on the submit button and announce success politely.
+9. All icon-only controls require an accessible label. Prefer text controls for
+   the first iteration where a label improves discoverability.
+
+### S. Form and panel behavior specification
+
+The “meta box” feeling comes from grouped, scannable settings—not from putting
+everything into cards.
+
+- Use fieldset/legend for groups of related checkboxes (taxonomy) and visible
+  `<label>` elements for every scalar field.
+- Keep metadata open by default. Keep Source and provenance, Typography,
+  Layout, and Voice closed by default once their values have good defaults.
+- When a panel is collapsed, its form controls remain mounted so current values
+  remain in `FormData` on save. Do not conditionally unmount fields.
+- Put validation text directly below the relevant input, and tie it with
+  `aria-describedby`. Do not use placeholder text as a label or sole format
+  explanation.
+- Slug is a primary identity field. Show a live non-authoritative permalink
+  preview, then validate again on the server when saved.
+- Color fields retain the native color input and a readable adjacent hex value
+  only if the existing payload supports direct hex editing. Avoid a bespoke
+  color-picker dependency in this initiative.
+
+### T. Implementation sequencing at commit granularity
+
+Avoid mixing structural, behavioral, and lifecycle work in one review. The
+recommended commit/PR slices are:
+
+1. **`vibes: add shared primitives and shell semantics`**
+   - Add `_components` primitives, skip link, sidebar focus/active behavior.
+   - No API requests or lifecycle changes.
+2. **`vibes: refactor all-vibes list table`**
+   - Extract views/toolbar/row actions; preserve list and bulk endpoints.
+   - Add `vibe-list.test.tsx`.
+3. **`vibes: clarify new-vibe identity flow`**
+   - Slug helper/help, optional preset panel, form tests.
+4. **`vibes: compose editor canvas and publish rail`**
+   - Panels/toolbars/notice states; extend editor validation tests.
+5. **`vibes: align revision and taxonomy management screens`**
+   - Revision presentation, restore dialog, taxonomy table/filtering.
+6. **`vibes: refine apply preflight`**
+   - Presentational decomposition and final confirmation; no protected data
+     exposure.
+7. **`vibes: verify responsive and keyboard workflows`**
+   - Browser/manual evidence only after behavior is stable.
+
+Each slice must leave all existing Vibe routes operational; no intermediate
+commit may depend on a future slice to restore access to save, preview, publish,
+or revisions.
+
+### U. Review checklist for “WordPress-like, not WordPress-copied”
+
+Before accepting any UI increment, review against these questions:
+
+- Can a regular editor identify the current screen, current Vibe, and next safe
+  action in under five seconds?
+- Does the screen show a compact operational workspace rather than a marketing
+  hero or oversized dashboard card layout?
+- Is one action visually primary, with destructive options visibly secondary?
+- Is the data list a real accessible table with scanable columns and inline row
+  actions?
+- Can essential edit/save/preview work occur without expanding advanced panels?
+- Are status, revision, and site-application words truthful to the current
+  backend contract?
+- Do keyboard focus, error announcement, and mobile layout retain the same
+  operations rather than hiding them?
+- Did the implementation avoid importing WordPress code/CSS or broadening
+  backend scope?
+
 ## Product rules
 
 1. **Use familiar language, but retain Vibe-specific concepts.** “All Vibes,”
