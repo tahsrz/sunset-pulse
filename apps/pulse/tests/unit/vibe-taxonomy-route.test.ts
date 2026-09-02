@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   countEmbedded: vi.fn(),
   countNormalized: vi.fn(),
   listNormalized: vi.fn(),
+  createTerm: vi.fn(),
 }));
 
 vi.mock('@/lib/core/database', () => ({ default: mocks.connectDB }));
@@ -13,15 +14,32 @@ vi.mock('@/lib/cms/taxonomyRepository', () => ({
   countEmbeddedTaxonomyUsage: mocks.countEmbedded,
   countNormalizedTaxonomyUsage: mocks.countNormalized,
   listNormalizedTaxonomyTerms: mocks.listNormalized,
+  createNormalizedTaxonomyTerm: mocks.createTerm,
 }));
 
-import { GET } from '@/app/api/vibes/taxonomy/route';
+import { GET, POST } from '@/app/api/vibes/taxonomy/route';
 
 describe('taxonomy directory read authority', () => {
   afterEach(() => {
     delete process.env.VIBE_TAXONOMY_COMPARE_READS;
     delete process.env.VIBE_TAXONOMY_NORMALIZED_READ;
+    delete process.env.VIBE_TAXONOMY_MANAGE_TERMS;
     vi.clearAllMocks();
+  });
+
+  it('keeps term creation unavailable until management is enabled', async () => {
+    const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Focused' }) }));
+    expect(response.status).toBe(404);
+    expect(mocks.createTerm).not.toHaveBeenCalled();
+  });
+
+  it('creates a validated normalized term when management is enabled', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.createTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' });
+    const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ tenantId: 'tenant-a', group: 'mood', term: 'focused', label: 'Focused' }), headers: { 'content-type': 'application/json' } }));
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ term: { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' } });
+    expect(mocks.createTerm).toHaveBeenCalledWith({ tenantId: 'tenant-a', group: 'mood', term: 'focused', label: 'Focused' });
   });
 
   it('uses embedded counts by default without querying normalized relationships', async () => {

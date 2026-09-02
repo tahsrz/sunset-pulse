@@ -105,6 +105,30 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string) {
   ];
 }
 
+export async function createNormalizedTaxonomyTerm(input: {
+  tenantId: string;
+  group: string;
+  term: string;
+  label: string;
+}) {
+  const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
+  if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  try {
+    const created = await VibeTerm.create({
+      tenantId: input.tenantId,
+      taxonomyId: taxonomy._id,
+      slug: input.term,
+      label: input.label,
+      legacyId: `${input.group}:${input.term}`,
+      status: 'active',
+    });
+    return { id: created.legacyId, group: input.group, term: created.slug, label: created.label };
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) throw new Error('TERM_EXISTS');
+    throw error;
+  }
+}
+
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
   return [
     { $match: { tenantId } },
