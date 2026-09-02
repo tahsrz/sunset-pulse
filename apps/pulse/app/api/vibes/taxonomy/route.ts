@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import connectDB from '@/lib/core/database';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
-import { countEmbeddedTaxonomyUsage, countNormalizedTaxonomyUsage, createNormalizedTaxonomyTerm, listNormalizedTaxonomyTerms } from '@/lib/cms/taxonomyRepository';
+import { countEmbeddedTaxonomyUsage, countNormalizedTaxonomyUsage, createNormalizedTaxonomyTerm, listNormalizedTaxonomyTerms, updateNormalizedTaxonomyTermLabel } from '@/lib/cms/taxonomyRepository';
 import { buildTaxonomyReconciliationReport } from '@/lib/cms/taxonomyReconciliation';
 
 export async function GET(request: NextRequest) {
@@ -49,5 +49,19 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === 'TAXONOMY_NOT_FOUND') return NextResponse.json({ error: 'Taxonomy group not found.' }, { status: 404 });
     if (error instanceof Error && error.message === 'TERM_EXISTS') return NextResponse.json({ error: 'A term with this slug already exists in the group.' }, { status: 409 });
     return NextResponse.json({ error: 'Unable to create taxonomy term.' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
+  const parsed = createTermSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Use a valid group, lowercase term slug, and label.' }, { status: 400 });
+  await connectDB();
+  try {
+    const term = await updateNormalizedTaxonomyTermLabel(parsed.data);
+    return NextResponse.json({ term });
+  } catch (error) {
+    if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Taxonomy term not found.' }, { status: 404 });
+    return NextResponse.json({ error: 'Unable to update taxonomy term.' }, { status: 500 });
   }
 }

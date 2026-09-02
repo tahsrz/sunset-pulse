@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   countNormalized: vi.fn(),
   listNormalized: vi.fn(),
   createTerm: vi.fn(),
+  updateTermLabel: vi.fn(),
 }));
 
 vi.mock('@/lib/core/database', () => ({ default: mocks.connectDB }));
@@ -15,9 +16,10 @@ vi.mock('@/lib/cms/taxonomyRepository', () => ({
   countNormalizedTaxonomyUsage: mocks.countNormalized,
   listNormalizedTaxonomyTerms: mocks.listNormalized,
   createNormalizedTaxonomyTerm: mocks.createTerm,
+  updateNormalizedTaxonomyTermLabel: mocks.updateTermLabel,
 }));
 
-import { GET, POST } from '@/app/api/vibes/taxonomy/route';
+import { GET, PATCH, POST } from '@/app/api/vibes/taxonomy/route';
 
 describe('taxonomy directory read authority', () => {
   afterEach(() => {
@@ -40,6 +42,15 @@ describe('taxonomy directory read authority', () => {
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ term: { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' } });
     expect(mocks.createTerm).toHaveBeenCalledWith({ tenantId: 'tenant-a', group: 'mood', term: 'focused', label: 'Focused' });
+  });
+
+  it('updates only the display label when management is enabled', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.updateTermLabel.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' });
+    const response = await PATCH(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PATCH', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus' }) }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ term: { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' } });
+    expect(mocks.updateTermLabel).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused', label: 'Deep Focus' });
   });
 
   it('uses embedded counts by default without querying normalized relationships', async () => {

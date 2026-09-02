@@ -1,7 +1,6 @@
-import type { ClientSession } from 'mongoose';
+import type { ClientSession, PipelineStage } from 'mongoose';
 import VibeTerm from '@/models/VibeTerm';
 import VibeTermRelationship from '@/models/VibeTermRelationship';
-import VibeTerm from '@/models/VibeTerm';
 import Vibe from '@/models/Vibe';
 import VibeTaxonomy from '@/models/VibeTaxonomy';
 
@@ -52,7 +51,7 @@ export async function replaceVibeTermRelationships(input: {
   const desiredTermIds = [...new Set(input.termIds.map(String))];
   const relationshipQuery = VibeTermRelationship.find({ tenantId: input.tenantId, vibeId: input.vibeId }).select('termId');
   if (input.session) relationshipQuery.session(input.session);
-  const existing = await relationshipQuery.lean() as Array<{ termId: unknown }>;
+  const existing = await relationshipQuery.lean() as unknown as Array<{ termId: unknown }>;
   const diff = diffTaxonomyRelationships(existing.map((item) => String(item.termId)), desiredTermIds);
 
   if (diff.removeTermIds.length > 0) {
@@ -89,7 +88,7 @@ export async function listNormalizedTaxonomyTerms(tenantId: string) {
   return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId)) as Promise<Array<{ id: string; group: string; term: string; label: string }>>;
 }
 
-export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string) {
+export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string): PipelineStage[] {
   return [
     { $match: { tenantId, status: 'active' } },
     { $lookup: { from: VibeTaxonomy.collection.name, localField: 'taxonomyId', foreignField: '_id', as: 'taxonomy' } },
@@ -128,6 +127,23 @@ export async function createNormalizedTaxonomyTerm(input: {
     if (error && typeof error === 'object' && 'code' in error && error.code === 11000) throw new Error('TERM_EXISTS');
     throw error;
   }
+}
+
+export async function updateNormalizedTaxonomyTermLabel(input: {
+  tenantId: string;
+  group: string;
+  term: string;
+  label: string;
+}) {
+  const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
+  if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  const updated = await VibeTerm.findOneAndUpdate(
+    { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' },
+    { $set: { label: input.label } },
+    { new: true },
+  ).lean() as { legacyId?: string; slug: string; label: string } | null;
+  if (!updated) throw new Error('TERM_NOT_FOUND');
+  return { id: updated.legacyId || `${input.group}:${updated.slug}`, group: input.group, term: updated.slug, label: updated.label };
 }
 
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
