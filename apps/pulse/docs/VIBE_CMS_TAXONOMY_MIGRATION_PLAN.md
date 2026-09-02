@@ -3,6 +3,23 @@
 Owner: Luna implementation handoff  
 Prerequisite: PR #75 UI verification and merge
 
+## Implementation status
+
+Implemented on PR #75:
+
+- Three normalized Mongoose models and required indexes.
+- Legacy-ID resolver and idempotent relationship repository.
+- Deterministic controlled-term seed.
+- Read-only backfill analysis and explicitly gated write mode.
+- Disabled-by-default draft dual write.
+- Embedded/normalized count comparison and normalized-read cutover flag.
+- Read-only reconciliation endpoint and route-level rollback tests.
+- Operator runbook covering observation, cutover, and rollback.
+
+Operationally pending: merge/deploy, run the dry-run report, execute an approved backfill,
+observe zero mismatches for every tenant, and then decide whether to enable normalized reads.
+Embedded IDs must not be removed in this phase.
+
 ## Current contract
 
 Vibes currently store controlled IDs such as `mood:calm` in both
