@@ -4,7 +4,7 @@ import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 type TaxonomyTerm = { id: string; group: string; term: string };
-type TaxonomyResponse = { terms?: TaxonomyTerm[]; counts?: Record<string, number> };
+type TaxonomyResponse = { terms?: TaxonomyTerm[]; counts?: Record<string, number>; capabilities?: { manageTerms?: boolean } };
 
 function groupLabel(group: string) {
   return group.replace(/([A-Z])/g, ' $1');
@@ -16,6 +16,12 @@ export function TaxonomyDirectory() {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
   const [error, setError] = useState('');
+  const [manageTerms, setManageTerms] = useState(false);
+  const [newGroup, setNewGroup] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -27,6 +33,7 @@ export function TaxonomyDirectory() {
       .then((payload) => {
         setTerms(payload.terms || []);
         setCounts(payload.counts || {});
+        setManageTerms(Boolean(payload.capabilities?.manageTerms));
       })
       .catch((reason: Error) => {
         if (reason.name !== 'AbortError') setError(reason.message);
@@ -42,11 +49,29 @@ export function TaxonomyDirectory() {
     return matchesGroup && matchesQuery;
   }), [group, query, terms]);
 
+  async function createTerm() {
+    setCreating(true);
+    setCreateError('');
+    try {
+      const response = await fetch('/api/vibes/taxonomy', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ group: newGroup, term: newSlug, label: newLabel }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Unable to create taxonomy term.');
+      setTerms((current) => [...(current || []), payload.term]);
+      setNewLabel('');
+      setNewSlug('');
+    } catch (reason) {
+      setCreateError(reason instanceof Error ? reason.message : 'Unable to create taxonomy term.');
+    } finally {
+      setCreating(false);
+    }
+  }
+
   if (error) return <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">{error}</p>;
   if (!terms) return <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Loading taxonomy…</p>;
 
   return (
     <section className="border border-slate-200 bg-white" aria-label="Vibe taxonomy directory">
+      {manageTerms ? <form className="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end" onSubmit={(event) => { event.preventDefault(); void createTerm(); }}><label className="text-xs font-bold uppercase text-slate-500">Name<input required value={newLabel} onChange={(event) => { setNewLabel(event.target.value); if (!newSlug) setNewSlug(event.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={newSlug} onChange={(event) => setNewSlug(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Group<select required value={newGroup} onChange={(event) => setNewGroup(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">Select group</option>{groups.map((item) => <option key={item} value={item}>{groupLabel(item)}</option>)}</select></label><button disabled={creating} className="rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{creating ? 'Adding…' : 'Add New Term'}</button>{createError ? <p role="alert" className="text-sm text-red-700 sm:col-span-4">{createError}</p> : null}</form> : null}
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
         <input aria-label="Search taxonomy terms" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search terms" className="min-w-56 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <select aria-label="Filter taxonomy group" value={group} onChange={(event) => setGroup(event.target.value)} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm">

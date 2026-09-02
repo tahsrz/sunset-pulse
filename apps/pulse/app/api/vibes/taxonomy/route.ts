@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const reconciliation = buildTaxonomyReconciliationReport({ tenantId, embeddedCounts: counts, normalizedCounts });
     if (reconciliation.state === 'mismatch') console.warn('VIBE_TAXONOMY_READ_MISMATCH', reconciliation);
   }
-  return NextResponse.json({ terms: normalizedRead && normalizedTerms ? normalizedTerms : listVibeTaxonomyTerms(), counts: normalizedRead && normalizedCounts ? normalizedCounts : counts });
+  return NextResponse.json({ terms: normalizedRead && normalizedTerms ? normalizedTerms : listVibeTaxonomyTerms(), counts: normalizedRead && normalizedCounts ? normalizedCounts : counts, capabilities: { manageTerms: process.env.VIBE_TAXONOMY_MANAGE_TERMS === '1' } });
 }
 
 const createTermSchema = z.object({

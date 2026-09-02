@@ -23,4 +23,20 @@ describe('Vibe taxonomy directory', () => {
     expect(screen.getByRole('rowheader', { name: 'calm' })).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
+
+  it('shows term creation controls only when the API enables management', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        terms: [{ id: 'mood:calm', group: 'mood', term: 'calm' }],
+        counts: {},
+        capabilities: { manageTerms: true },
+      }),
+    }));
+    render(<TaxonomyDirectory />);
+    expect(await screen.findByRole('button', { name: 'Add New Term' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Slug' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Group' })).toBeInTheDocument();
+  });
 });
