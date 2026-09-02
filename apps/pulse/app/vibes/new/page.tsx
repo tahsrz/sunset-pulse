@@ -38,23 +38,23 @@ export default function NewVibePage() {
     }
     setSaving(true);
     setError("");
-    const response = await fetch("/api/vibes", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        title,
-        slug,
-        description,
-        ...(preset ? { preset } : {}),
-      }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      setError(payload.error || "Unable to create vibe.");
+    try {
+      const response = await fetch("/api/vibes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, slug, description, ...(preset ? { preset } : {}) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.error || "Unable to create vibe.");
+        return;
+      }
+      router.push(`/vibes/${payload.vibe.vibeId}/edit`);
+    } catch {
+      setError("Unable to create vibe. Check your connection and try again.");
+    } finally {
       setSaving(false);
-      return;
     }
-    router.push(`/vibes/${payload.vibe.vibeId}/edit`);
   }
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
