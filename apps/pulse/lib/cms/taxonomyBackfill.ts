@@ -1,4 +1,5 @@
 import { buildControlledTaxonomySeed } from './taxonomySeed';
+import { resolveLegacyTaxonomyTermIds, replaceVibeTermRelationships } from './taxonomyRepository';
 
 export type TaxonomyBackfillVibe = { tenantId?: string; vibeId: string; taxonomyTermIds?: string[] };
 
@@ -26,4 +27,25 @@ export function analyzeTaxonomyBackfill(vibes: TaxonomyBackfillVibe[]) {
     unknownLegacyIds: [...new Set(Object.values(tenants).flatMap((tenant) => tenant.unknownLegacyIds))].sort(),
     tenants,
   };
+}
+
+export async function writeTaxonomyBackfill(input: {
+  vibes: TaxonomyBackfillVibe[];
+  actorId: string;
+}) {
+  const report = analyzeTaxonomyBackfill(input.vibes);
+  let addedRelationships = 0;
+  let removedRelationships = 0;
+  const unresolved: Record<string, string[]> = {};
+
+  for (const vibe of input.vibes) {
+    const tenantId = vibe.tenantId || 'default';
+    const resolved = await resolveLegacyTaxonomyTermIds({ tenantId, legacyIds: vibe.taxonomyTermIds || [] });
+    const diff = await replaceVibeTermRelationships({ tenantId, vibeId: vibe.vibeId, termIds: resolved.termIds, actorId: input.actorId });
+    addedRelationships += diff.addTermIds.length;
+    removedRelationships += diff.removeTermIds.length;
+    if (resolved.unknownLegacyIds.length > 0) unresolved[`${tenantId}:${vibe.vibeId}`] = resolved.unknownLegacyIds;
+  }
+
+  return { ...report, mode: 'write' as const, addedRelationships, removedRelationships, unresolved };
 }
