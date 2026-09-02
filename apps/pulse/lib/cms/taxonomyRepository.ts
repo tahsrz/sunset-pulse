@@ -3,6 +3,7 @@ import VibeTerm from '@/models/VibeTerm';
 import VibeTermRelationship from '@/models/VibeTermRelationship';
 import VibeTerm from '@/models/VibeTerm';
 import Vibe from '@/models/Vibe';
+import VibeTaxonomy from '@/models/VibeTaxonomy';
 
 export type TaxonomyRelationshipDiff = {
   addTermIds: string[];
@@ -82,6 +83,22 @@ export async function countEmbeddedTaxonomyUsage(tenantId: string) {
     { $group: { _id: '$taxonomyTermIds', count: { $sum: 1 } } },
   ]);
   return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
+}
+
+export async function listNormalizedTaxonomyTerms(tenantId: string) {
+  return VibeTerm.aggregate([
+    { $match: { tenantId, status: 'active' } },
+    { $lookup: { from: VibeTaxonomy.collection.name, localField: 'taxonomyId', foreignField: '_id', as: 'taxonomy' } },
+    { $unwind: '$taxonomy' },
+    { $match: { 'taxonomy.tenantId': tenantId, 'taxonomy.status': 'active' } },
+    { $project: {
+      _id: 0,
+      id: { $ifNull: ['$legacyId', { $concat: ['$taxonomy.slug', ':', '$slug'] }] },
+      group: '$taxonomy.slug',
+      term: '$slug',
+    } },
+    { $sort: { group: 1, term: 1 } },
+  ]) as Promise<Array<{ id: string; group: string; term: string }>>;
 }
 
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {

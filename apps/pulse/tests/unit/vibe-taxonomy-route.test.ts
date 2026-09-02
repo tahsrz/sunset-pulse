@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   connectDB: vi.fn(),
   countEmbedded: vi.fn(),
   countNormalized: vi.fn(),
+  listNormalized: vi.fn(),
 }));
 
 vi.mock('@/lib/core/database', () => ({ default: mocks.connectDB }));
 vi.mock('@/lib/cms/taxonomyRepository', () => ({
   countEmbeddedTaxonomyUsage: mocks.countEmbedded,
   countNormalizedTaxonomyUsage: mocks.countNormalized,
+  listNormalizedTaxonomyTerms: mocks.listNormalized,
 }));
 
 import { GET } from '@/app/api/vibes/taxonomy/route';
@@ -34,6 +36,7 @@ describe('taxonomy directory read authority', () => {
     process.env.VIBE_TAXONOMY_COMPARE_READS = '1';
     mocks.countEmbedded.mockResolvedValue({ 'mood:calm': 2 });
     mocks.countNormalized.mockResolvedValue({ 'mood:calm': 2 });
+    mocks.listNormalized.mockResolvedValue([{ id: 'mood:calm', group: 'mood', term: 'calm' }]);
     const response = await GET(new NextRequest('http://localhost/api/vibes/taxonomy'));
     expect(await response.json()).toMatchObject({ counts: { 'mood:calm': 2 } });
     expect(mocks.countNormalized).toHaveBeenCalledWith('default');
@@ -46,6 +49,6 @@ describe('taxonomy directory read authority', () => {
     const response = await GET(new NextRequest('http://localhost/api/vibes/taxonomy'));
     const payload = await response.json();
     expect(payload.counts).toEqual({ 'mood:calm': 2 });
-    expect(payload.terms).toEqual(expect.any(Array));
+    expect(payload.terms).toEqual([{ id: 'mood:calm', group: 'mood', term: 'calm' }]);
   });
 });
