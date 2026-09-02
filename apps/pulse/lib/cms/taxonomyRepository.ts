@@ -71,7 +71,12 @@ export async function replaceVibeTermRelationships(input: {
 }
 
 export async function countNormalizedTaxonomyUsage(tenantId: string) {
-  const rows = await VibeTermRelationship.aggregate([
+  const rows = await VibeTermRelationship.aggregate(buildNormalizedTaxonomyUsagePipeline(tenantId));
+  return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
+}
+
+export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
+  return [
     { $match: { tenantId } },
     { $lookup: { from: VibeTerm.collection.name, localField: 'termId', foreignField: '_id', as: 'term' } },
     { $unwind: '$term' },
@@ -83,6 +88,5 @@ export async function countNormalizedTaxonomyUsage(tenantId: string) {
     ], as: 'vibe' } },
     { $match: { 'vibe.0': { $exists: true } } },
     { $group: { _id: '$term.legacyId', count: { $sum: 1 } } },
-  ]);
-  return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
+  ];
 }
