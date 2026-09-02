@@ -59,6 +59,14 @@ Command: `npm run vibes:taxonomy:reconcile`
 - Verified terms: `mood:tactical`, `visualFamily:high-contrast`, `visualFamily:light`, `voice:analytical`
 - Trash exclusion explains why active usage totals are lower than the 9 stored relationships
 
+### Consolidated verification — 2026-09-02
+
+- Test files: 10 passed
+- Tests: 31 passed
+- Coverage includes models, indexes, seed mapping, backfill analysis, idempotent relationship
+  diffs, tenant/trash query scope, reconciliation reports and route, read-authority cutover,
+  disabled/enabled dual write, unknown legacy IDs, Vibe service helpers, and CMS contracts.
+
 ## Current contract
 
 Vibes currently store controlled IDs such as `mood:calm` in both
