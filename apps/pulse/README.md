@@ -374,6 +374,8 @@ SunsetPulse 2026
 The implementation plan is documented in [`docs/VIBE_CMS_WORDPRESS_UI_PLAN.md`](./docs/VIBE_CMS_WORDPRESS_UI_PLAN.md).
 Use [`docs/VIBE_CMS_UI_MANUAL_VERIFICATION.md`](./docs/VIBE_CMS_UI_MANUAL_VERIFICATION.md) for the
 viewport, workflow, keyboard, and preview checks before sign-off.
+The post-UI taxonomy normalization sequence is documented in
+[`docs/VIBE_CMS_TAXONOMY_MIGRATION_PLAN.md`](./docs/VIBE_CMS_TAXONOMY_MIGRATION_PLAN.md).
 # CMS production verification seed
 
 The internal CMS test-site seed endpoint is disabled by default. For a controlled verification run, configure `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, `CMS_TEST_SEED_OWNER_EMAIL`, and `CMS_TEST_SEED_OWNER_USER_ID` in Vercel Production, use the procedure in `docs/STRIPE_SITE_PROVISIONING_RUNBOOK.md`, record the returned site pointer before mutation, then disable the flag and rotate the token immediately.
