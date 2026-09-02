@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import React from 'react';
 import { getVibeCmsAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { RevisionList } from './RevisionList';

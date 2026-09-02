@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { VibeConfirmDialog } from '../../_components/VibeConfirmDialog';
 
 type Revision = {

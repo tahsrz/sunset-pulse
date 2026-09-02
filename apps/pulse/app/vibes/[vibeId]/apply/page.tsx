@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { VibeApplyConfirmation } from "../../_components/VibeApplyConfirmation";
 
 type Pointer = {
@@ -19,9 +19,12 @@ export default function ApplyVibePage() {
   const [linkedRevisionId, setLinkedRevisionId] = useState("");
   const [revisionNumber, setRevisionNumber] = useState("");
   const [pointer, setPointer] = useState<Pointer | null>(null);
+  const [checkedSiteId, setCheckedSiteId] = useState("");
+  const [pointerBusy, setPointerBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const siteIdRef = useRef("");
 
   useEffect(() => {
     const linkedParams = new URLSearchParams(window.location.search);
@@ -34,24 +37,45 @@ export default function ApplyVibePage() {
     if (linkedRevisionNumber) setRevisionNumber(linkedRevisionNumber);
   }, []);
 
+  function changeSiteId(value: string) {
+    siteIdRef.current = value.trim();
+    setSiteId(value);
+    setPointer(null);
+    setCheckedSiteId("");
+    setPointerBusy(false);
+    setConfirmOpen(false);
+  }
+
   async function checkPointer() {
+    const requestedSiteId = siteId.trim();
+    if (!requestedSiteId) return;
     setMessage("");
+    setPointer(null);
+    setCheckedSiteId("");
+    setPointerBusy(true);
     try {
       const response = await fetch(
-        `/api/admin/sites/${encodeURIComponent(siteId)}/vibe?tenantId=default`,
+        `/api/admin/sites/${encodeURIComponent(requestedSiteId)}/vibe?tenantId=default`,
       );
       const payload = await response.json();
       if (!response.ok)
         throw new Error(
           payload.error || "Unable to read current site pointer.",
         );
+      if (siteIdRef.current !== requestedSiteId) return;
       setPointer(payload);
+      setCheckedSiteId(requestedSiteId);
     } catch (error) {
+      if (siteIdRef.current !== requestedSiteId) return;
+      setPointer(null);
+      setCheckedSiteId("");
       setMessage(
         error instanceof Error
           ? error.message
           : "Unable to read current site pointer.",
       );
+    } finally {
+      if (siteIdRef.current === requestedSiteId) setPointerBusy(false);
     }
   }
 
@@ -96,7 +120,10 @@ export default function ApplyVibePage() {
           published revision before applying.
         </p>
         <form
-          onSubmit={(event) => { event.preventDefault(); setConfirmOpen(true); }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (revisionId.trim() && pointer && checkedSiteId === siteId.trim()) setConfirmOpen(true);
+          }}
           className="mt-6 space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
@@ -111,7 +138,7 @@ export default function ApplyVibePage() {
             </label>
             <button
               type="button"
-              onClick={() => setSiteId(`cms-verification-${runId.trim()}`)}
+              onClick={() => changeSiteId(`cms-verification-${runId.trim()}`)}
               disabled={!/^[a-z0-9-]{6,64}$/.test(runId.trim())}
               className="mt-3 rounded-lg border border-amber-400 px-3 py-2 text-sm font-semibold disabled:opacity-50"
             >
@@ -123,17 +150,17 @@ export default function ApplyVibePage() {
             <input
               required
               value={siteId}
-              onChange={(event) => setSiteId(event.target.value)}
+              onChange={(event) => changeSiteId(event.target.value)}
               className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-normal"
             />
           </label>
           <button
             type="button"
             onClick={() => void checkPointer()}
-            disabled={!siteId || busy}
+            disabled={!siteId.trim() || busy || pointerBusy}
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
           >
-            Check current site pointer
+            {pointerBusy ? "Checking pointer…" : "Check current site pointer"}
           </button>
           {pointer && (
             <p className="rounded-lg bg-slate-50 p-3 text-xs">
@@ -209,7 +236,7 @@ export default function ApplyVibePage() {
             </p>
           )}
           <button
-            disabled={busy}
+            disabled={busy || pointerBusy || !revisionId.trim() || !pointer || checkedSiteId !== siteId.trim()}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
           >
             {busy ? "Applying…" : "Apply revision"}

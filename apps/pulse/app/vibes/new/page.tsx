@@ -67,56 +67,6 @@ export default function NewVibePage() {
             void create();
           }}
         >
-          <fieldset>
-            <legend className="text-sm font-bold">Starting style</legend>
-            <p className="mt-1 text-xs text-slate-500">
-              Copied into this new draft only; every value remains editable.
-            </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {PRESETS.map((item) => (
-                <label
-                  key={item.id || "default"}
-                  className={`cursor-pointer rounded-lg border p-3 ${preset === item.id ? "border-[#2271b1] bg-sky-50 ring-1 ring-[#2271b1]" : "border-slate-200 bg-white"}`}
-                >
-                  <input
-                    className="sr-only"
-                    type="radio"
-                    name="preset"
-                    value={item.id}
-                    checked={preset === item.id}
-                    onChange={() => setPreset(item.id)}
-                  />
-                  <span className="font-semibold">{item.name}</span>
-                  <span className="mt-1 block text-xs text-slate-500">
-                    {item.note}
-                  </span>
-                  <span className="mt-2 block text-xs text-slate-600">
-                    {item.typography.fontFamilyHeading} +{" "}
-                    {item.typography.fontFamilyBody} ·{" "}
-                    {item.typography.baseFontSize}
-                  </span>
-                  <span className="mt-1 block text-xs text-slate-600">
-                    {item.layout.borderRadius} radius · {item.layout.elevation}{" "}
-                    elevation
-                  </span>
-                  <span className="mt-3 flex overflow-hidden rounded">
-                    <i
-                      className="h-4 flex-1"
-                      style={{ background: item.colors[0] }}
-                    />
-                    <i
-                      className="h-4 flex-1"
-                      style={{ background: item.colors[1] }}
-                    />
-                    <i
-                      className="h-4 flex-1"
-                      style={{ background: item.colors[2] }}
-                    />
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
           <label className="block text-sm font-bold">
             Title
             <input
@@ -152,6 +102,47 @@ export default function NewVibePage() {
               className="mt-2 min-h-32 w-full rounded-md border border-slate-300 px-3 py-2 font-normal"
             />
           </label>
+          <fieldset>
+            <legend className="text-sm font-bold">Starting style</legend>
+            <p className="mt-1 text-xs text-slate-500">
+              Optional. Copied into this new draft only; every value remains editable.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {PRESETS.map((item) => (
+                <label
+                  key={item.id || "default"}
+                  className={`cursor-pointer rounded-lg border p-3 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#2271b1] focus-within:ring-offset-2 ${preset === item.id ? "border-[#2271b1] bg-sky-50 ring-1 ring-[#2271b1]" : "border-slate-200 bg-white"}`}
+                >
+                  <input
+                    className="sr-only"
+                    type="radio"
+                    name="preset"
+                    value={item.id}
+                    checked={preset === item.id}
+                    onChange={() => setPreset(item.id)}
+                  />
+                  <span className="font-semibold">{item.name}</span>
+                  <span className="mt-1 block text-xs text-slate-500">
+                    {item.note}
+                  </span>
+                  <span className="mt-2 block text-xs text-slate-600">
+                    {item.typography.fontFamilyHeading} +{" "}
+                    {item.typography.fontFamilyBody} ·{" "}
+                    {item.typography.baseFontSize}
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-600">
+                    {item.layout.borderRadius} radius · {item.layout.elevation}{" "}
+                    elevation
+                  </span>
+                  <span className="mt-3 flex overflow-hidden rounded">
+                    <i className="h-4 flex-1" style={{ background: item.colors[0] }} />
+                    <i className="h-4 flex-1" style={{ background: item.colors[1] }} />
+                    <i className="h-4 flex-1" style={{ background: item.colors[2] }} />
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           {error ? (
             <p role="alert" className="text-sm text-red-700">
               {error}

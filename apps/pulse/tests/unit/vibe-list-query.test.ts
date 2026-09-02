@@ -14,6 +14,10 @@ describe('Vibe list query', () => {
     });
   });
 
+  it('rejects partially numeric page values', () => {
+    expect(parseVibeListQuery(new URLSearchParams('page=2junk')).page).toBe(1);
+  });
+
   it('serializes canonical public URL keys only', () => {
     expect(serializeVibeListQuery({ status: 'draft', q: 'coastal', sort: 'updatedAt', direction: 'desc', page: 1 })).toBe('q=coastal&status=draft');
   });

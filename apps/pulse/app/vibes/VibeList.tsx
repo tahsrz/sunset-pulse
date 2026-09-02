@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { parseVibeListQuery, serializeVibeListQuery, type VibeListQuery } from '@/lib/cms/vibeListQuery';
 import { VibeListToolbar } from './_components/VibeListToolbar';
@@ -55,6 +55,7 @@ export function VibeList() {
   const parsedQuery = parseVibeListQuery(new URLSearchParams(searchParams.toString()));
   const [vibes, setVibes] = useState<Vibe[]>([]);
   const [search, setSearch] = useState(parsedQuery.q);
+  const [debouncedSearch, setDebouncedSearch] = useState(parsedQuery.q);
   const [status, setStatus] = useState(parsedQuery.status);
   const [sort, setSort] = useState(parsedQuery.sort);
   const [direction, setDirection] = useState(parsedQuery.direction);
@@ -72,7 +73,7 @@ export function VibeList() {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    setSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
+    setSearch(parsedQuery.q); setDebouncedSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
     setDirection(parsedQuery.direction); setPage(parsedQuery.page);
   // URL is the source of truth when navigating with Back/Forward.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,6 +88,7 @@ export function VibeList() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      setDebouncedSearch(search);
       if (search !== parsedQuery.q) updateQuery({ q: search, page: 1 }, 'replace');
     }, 275);
     return () => window.clearTimeout(timer);
@@ -96,7 +98,7 @@ export function VibeList() {
   useEffect(() => {
     const controller = new AbortController();
     const query = new URLSearchParams({ pageSize: String(PAGE_SIZE), page: String(page) });
-    if (search.trim()) query.set('search', search.trim());
+    if (debouncedSearch.trim()) query.set('search', debouncedSearch.trim());
     if (status) query.set('status', status);
     query.set('sort', sort);
     query.set('direction', direction);
@@ -121,7 +123,7 @@ export function VibeList() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
-  }, [page, search, status, sort, direction, refreshToken]);
+  }, [page, debouncedSearch, status, sort, direction, refreshToken]);
 
   function changeSort(nextSort: 'title' | 'status' | 'updatedAt') {
     const nextDirection = sort === nextSort ? (direction === 'asc' ? 'desc' : 'asc') : (nextSort === 'title' ? 'asc' : 'desc');

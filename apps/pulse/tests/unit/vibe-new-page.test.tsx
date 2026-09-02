@@ -12,5 +12,9 @@ describe('NewVibePage', () => {
     expect(screen.getByRole('heading', { name: 'Add New Vibe' })).toBeInTheDocument();
     expect(screen.getAllByRole('textbox')).toHaveLength(3);
     expect(screen.getByText(/identifies the Vibe, not a public site URL/)).toBeInTheDocument();
+    const title = screen.getByRole('textbox', { name: 'Title' });
+    const presets = screen.getByRole('group', { name: 'Starting style' });
+    expect(title.compareDocumentPosition(presets) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('radio', { name: /Default/ }).closest('label')).toHaveClass('focus-within:ring-2');
   });
 });

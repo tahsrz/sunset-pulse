@@ -19,7 +19,8 @@ export function parseVibeListQuery(input: URLSearchParams): VibeListQuery {
   const rawStatus = first(input, 'status');
   const rawSort = first(input, 'sort');
   const rawDirection = first(input, 'dir') || first(input, 'direction');
-  const parsedPage = Number.parseInt(first(input, 'page'), 10);
+  const rawPage = first(input, 'page');
+  const parsedPage = /^\d+$/.test(rawPage) ? Number(rawPage) : Number.NaN;
 
   return {
     q: first(input, 'q').trim().slice(0, 120),
