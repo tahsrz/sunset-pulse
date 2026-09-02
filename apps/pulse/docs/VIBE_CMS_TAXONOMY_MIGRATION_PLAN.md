@@ -32,6 +32,21 @@ Command: `npm run vibes:taxonomy:backfill:dry-run`
 - Tenants: `default` (6 Vibes, 9 expected relationships)
 - Result: eligible for an explicitly approved gated backfill
 
+### Backfill evidence — 2026-09-02
+
+First gated write:
+
+- Added relationships: 9
+- Removed relationships: 0
+- Unresolved legacy IDs: 0
+
+Required second write:
+
+- Added relationships: 0
+- Removed relationships: 0
+- Unresolved legacy IDs: 0
+- Result: backfill is idempotent for the configured `default` tenant dataset
+
 ## Current contract
 
 Vibes currently store controlled IDs such as `mood:calm` in both
