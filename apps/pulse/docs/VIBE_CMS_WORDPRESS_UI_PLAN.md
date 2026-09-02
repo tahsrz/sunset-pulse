@@ -6173,6 +6173,11 @@ The implementation pass is complete on PR #75 (`codex/cms-vertical-slice-followu
 - `6862ec31` — revision history information hierarchy and responsive columns.
 - `33f90509` — shared Apply page header and denser application surface.
 - `af71c095` — shared taxonomy header and compact directory cards.
+- `8ea18ad2` — shared audit-history header and denser event rows.
+- `f94a6808` — shared source-provenance header and responsive detail surface.
+- `c5a83574` — shared Submit/Publish headers and dense lifecycle forms.
+- `5036da68` — shared Status & Actions header and operational panels.
+- `f6557ed7` — shared Compare header and dense diff surface.
 
 Focused verification passed: list empty response, list toolbar, page header, Add New Vibe,
 and editor validation tests (13 tests total across focused runs). No API routes, request
