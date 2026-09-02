@@ -6162,3 +6162,20 @@ site change, and disabled Apply cannot open confirmation.
    control; no action disappears from keyboard order.
 4. Run all Vibe unit files after each package and append actual command/result
    to the evidence block. Do not remove tests merely to satisfy this plan.
+### Package 10G evidence — implementation pass (2026-09-01)
+
+The implementation pass is complete on PR #75 (`codex/cms-vertical-slice-followup`):
+
+- `49780cc2` — compact workspace shell and responsive Vibes navigation.
+- `8fd4b969` — list-table header, status views, empty state, and bulk toolbar.
+- `aefc1f74` — identity-first Add New Vibe form and optional starter styles.
+- `17e5af34` — editor canvas/publishing rail split and visual settings panels.
+- `6862ec31` — revision history information hierarchy and responsive columns.
+- `33f90509` — shared Apply page header and denser application surface.
+- `af71c095` — shared taxonomy header and compact directory cards.
+
+Focused verification passed: list empty response, list toolbar, page header, Add New Vibe,
+and editor validation tests (13 tests total across focused runs). No API routes, request
+payloads, lifecycle behavior, or persistence contracts changed. Remaining evidence is
+manual: inspect 1440px/1024px/768px/390px viewports, keyboard-tab each workflow control,
+and capture before/after screenshots for the seven surfaces listed in Package 10G.
