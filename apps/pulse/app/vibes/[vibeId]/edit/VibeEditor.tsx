@@ -89,6 +89,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const [vibe, setVibe] = useState<Vibe | null>(null);
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('saved');
+  const [settingsOpen, setSettingsOpen] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -166,7 +167,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <form ref={formRef} onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
-          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
+          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} settingsOpen={settingsOpen} onToggleSettings={() => setSettingsOpen((open) => !open)} onSave={() => formRef.current?.requestSubmit()} />
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
             <section className="order-2 space-y-4 lg:order-1">
@@ -185,6 +186,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
+              <div hidden={!settingsOpen}>
               <VibePanel id="source-details" title="Source details" defaultOpen={false}>
                 <p className="mt-1 text-sm text-slate-500">Keep the provenance needed for later editorial review.</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -225,6 +227,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               <VibePanel id="voice" title="Jamie voice" defaultOpen={false}>
                 <label className="mt-4 block text-xs font-bold uppercase text-slate-500">Primary tone<select name="primaryTone" defaultValue={draft.tokens.linguistic.voice.primaryTone} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option>warm</option><option>concise</option><option>analytical</option><option>energetic</option><option>tactical</option><option>luxurious</option><option>playful</option></select></label>
               </VibePanel>
+              </div>
             </section>
 
             <aside className="order-1 self-start lg:sticky lg:top-4 lg:order-2" aria-label="Vibe publishing and settings">
