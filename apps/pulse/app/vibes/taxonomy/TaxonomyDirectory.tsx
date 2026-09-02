@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 type TaxonomyTerm = { id: string; group: string; term: string };
@@ -54,7 +55,7 @@ export function TaxonomyDirectory() {
         </select>
       </div>
       <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{visibleTerms.length} {visibleTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
-      {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">{visibleTerms.map((term) => <article key={term.id} className="border border-slate-200 p-3"><p className="font-semibold capitalize text-slate-900">{term.term.replace(/-/g, ' ')}</p><p className="mt-1 text-xs capitalize text-slate-500">{groupLabel(term.group)}</p><p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Used by <span className="text-slate-900">{counts[term.id] || 0}</span> {counts[term.id] === 1 ? 'Vibe' : 'Vibes'}</p></article>)}</div>}
+      {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th scope="col" className="px-4 py-3">Name</th><th scope="col" className="px-4 py-3">Slug</th><th scope="col" className="px-4 py-3">Group</th><th scope="col" className="px-4 py-3 text-right">Vibes</th></tr></thead><tbody className="divide-y divide-slate-100">{visibleTerms.map((term) => <tr key={term.id} className="hover:bg-slate-50"><th scope="row" className="px-4 py-3 font-semibold capitalize text-[#2271b1]">{term.term.replace(/-/g, ' ')}</th><td className="px-4 py-3 font-mono text-xs text-slate-600">{term.term}</td><td className="px-4 py-3 capitalize text-slate-600">{groupLabel(term.group)}</td><td className="px-4 py-3 text-right font-semibold text-slate-900">{counts[term.id] || 0}</td></tr>)}</tbody></table></div>}
       <p className="border-t border-slate-200 p-4 text-xs text-slate-500">Terms are currently controlled by the Vibe schema. Term creation, aliases, and deletion will follow a dedicated migration design so existing Vibes cannot be orphaned.</p>
     </section>
   );
