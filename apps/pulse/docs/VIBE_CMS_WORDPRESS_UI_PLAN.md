@@ -6181,6 +6181,16 @@ The implementation pass is complete on PR #75 (`codex/cms-vertical-slice-followu
 - `0881f844` — explicit accessible label and button semantics for themed Preview.
 - `1235c670` — editor Settings toggle for mounted secondary panels with `aria-expanded` state.
 
+### Follow-up phase — normalized taxonomy data model
+
+After PR #75 manual UI verification, evaluate a relational taxonomy model with
+`taxonomies`, `terms`, and `term_relationships` tables. Preserve `Vibe.taxonomyTermIds`
+as the compatibility read/write surface during migration. The follow-up must add unique
+indexes for taxonomy/term slugs, a Vibe-plus-term uniqueness constraint, a backfill job
+with dry-run counts, dual-read comparison telemetry, and an explicit rollback switch before
+changing the editor or `/api/vibes/taxonomy` response. Do not begin this migration as part
+of the current UI PR.
+
 Focused verification passed: list empty response, list toolbar, page header, Add New Vibe,
 and editor validation tests (13 tests total across focused runs). No API routes, request
 payloads, lifecycle behavior, or persistence contracts changed. Remaining evidence is
