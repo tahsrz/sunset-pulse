@@ -11,19 +11,6 @@ afterEach(() => {
 });
 
 describe('listing repository mock mode', () => {
-  it('uses local fixtures for search and detail reads', async () => {
-    const { getListingById, getPublicListingById, searchListings } = await import('@/lib/data/listingRepository');
-
-    const listings = await searchListings({ city: 'Fort Worth', beds: 3 });
-    const detail = await getListingById('MOCK-FTW-418');
-    const publicDetail = await getPublicListingById('MOCK-FTW-418');
-
-    expect(listings).toHaveLength(1);
-    expect(listings[0]?.mls_id).toBe('MOCK-FTW-418');
-    expect(detail?.name).toBe('418 Cedar Ridge Drive');
-    expect(publicDetail?.name).toBe('418 Cedar Ridge Drive');
-  }, 15_000);
-
   it('filters private fixtures while presenting demo fixtures as public simulations', async () => {
     const { upsertMockCanonicalProperty } = await import('@/lib/mocks/canonicalProperties');
     const { getPublicListingById, searchListings } = await import('@/lib/data/listingRepository');

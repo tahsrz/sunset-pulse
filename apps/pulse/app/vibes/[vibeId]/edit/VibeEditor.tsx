@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
+import { VibeEditorToolbar } from '../../_components/VibeEditorToolbar';
+import { VibePanel } from '../../_components/VibePanel';
 
 type Vibe = {
   vibeId: string;
@@ -83,6 +85,7 @@ function PublishPanel({ vibe, status, saveState, error }: { vibe: Vibe; status: 
 }
 
 export function VibeEditor({ vibeId }: { vibeId: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [vibe, setVibe] = useState<Vibe | null>(null);
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('saved');
@@ -160,36 +163,29 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <form onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
-          <div className="mb-6">
-            <Link href="/vibes" className="text-sm font-semibold text-slate-500 hover:underline">← All Vibes</Link>
-            <h1 className="mt-3 text-3xl font-black">Edit Vibe</h1>
-            <p className="mt-1 text-sm text-slate-500">Edit the saved draft. Publishing always creates an immutable revision.</p>
-          </div>
+        <form ref={formRef} onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
+          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <section className="space-y-5">
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Metadata</h2>
+              <VibePanel id="metadata" title="Metadata" defaultOpen>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Title<input name="title" defaultValue={draft.title} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                   <label className="text-xs font-bold uppercase text-slate-500">Slug<input name="slug" defaultValue={draft.slug} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm font-normal normal-case" /></label>
                   <label className="text-xs font-bold uppercase text-slate-500 sm:col-span-2">Description<textarea name="description" defaultValue={draft.description} className="mt-2 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                 </div>
-              </article>
+              </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Taxonomy</h2>
+              <VibePanel id="taxonomy" title="Taxonomy" defaultOpen>
                 <p className="mt-1 text-sm text-slate-500">Choose terms that help operators find this Vibe later.</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {taxonomyTerms.map(({ id, group, term }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold capitalize">{term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
                 </div>
-              </article>
+              </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Source details</h2>
+              <VibePanel id="source-details" title="Source details" defaultOpen={false}>
                 <p className="mt-1 text-sm text-slate-500">Keep the provenance needed for later editorial review.</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Source kind<select name="sourceKind" defaultValue={draft.source?.kind || 'manual'} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="manual">Manual</option><option value="extracted">Extracted</option></select></label>
@@ -197,10 +193,9 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                   <label className="text-xs font-bold uppercase text-slate-500 sm:col-span-2">Attribution<input name="sourceAttribution" defaultValue={draft.source?.attribution || ''} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                   <label className="text-xs font-bold uppercase text-slate-500 sm:col-span-2">Ownership note<textarea name="sourceOwnershipNote" defaultValue={draft.source?.ownershipNote || ''} className="mt-2 min-h-20 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                 </div>
-              </article>
+              </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Visual system</h2>
+              <VibePanel id="visual-system" title="Visual system" defaultOpen>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {(['primary', 'background', 'surface', 'textPrimary', 'textSecondary'] as const).map((key) => <label key={key} className="text-xs font-bold uppercase text-slate-500">{key}<input name={key} type="color" defaultValue={draft.tokens.visual.theme.colors[key]} className="mt-2 block h-10 w-full rounded border border-slate-300 bg-white p-1" /></label>)}
                 </div>
@@ -223,18 +218,17 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                     <label className="text-xs font-bold uppercase text-slate-500">Elevation<select name="elevation" defaultValue={layout.elevation} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="flat">Flat</option><option value="subtle">Subtle</option><option value="medium">Medium</option><option value="high">High</option></select></label>
                   </div>
                 </div>
-              </article>
+              </VibePanel>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Jamie voice</h2>
+              <VibePanel id="voice" title="Jamie voice" defaultOpen={false}>
                 <label className="mt-4 block text-xs font-bold uppercase text-slate-500">Primary tone<select name="primaryTone" defaultValue={draft.tokens.linguistic.voice.primaryTone} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option>warm</option><option>concise</option><option>analytical</option><option>energetic</option><option>tactical</option><option>luxurious</option><option>playful</option></select></label>
-              </article>
+              </VibePanel>
             </section>
 
             <PublishPanel vibe={vibe} status={status} saveState={saveState} error={error} />
           </div>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

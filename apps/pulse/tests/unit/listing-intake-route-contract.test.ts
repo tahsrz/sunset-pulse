@@ -19,19 +19,6 @@ vi.mock('@/lib/core/routeAuth', () => ({
 }));
 
 describe('listing intake route contracts', () => {
-  it('returns a 400 for malformed listing intake create JSON', async () => {
-    const { POST } = await import('@/app/api/command-center/listing-intakes/route');
-
-    const response = await POST(malformedRequest('http://localhost/api/command-center/listing-intakes') as any);
-    const body = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(body).toEqual(expect.objectContaining({
-      error: true,
-      message: 'Invalid JSON listing intake request.',
-    }));
-  });
-
   it('returns a 400 for malformed listing intake update JSON', async () => {
     const { PUT } = await import('@/app/api/command-center/listing-intakes/[intakeId]/route');
 

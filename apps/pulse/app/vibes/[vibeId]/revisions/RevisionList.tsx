@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { VibeConfirmDialog } from '../../_components/VibeConfirmDialog';
 
 type Revision = {
   _id: string;
@@ -27,6 +28,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [confirmRevision, setConfirmRevision] = useState<{ revision: Revision; reason: string } | null>(null);
 
   const loadRevisions = useCallback(async () => {
     setError('');
@@ -49,7 +51,12 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
   async function restoreRevision(revision: Revision) {
     const reason = window.prompt(`Why should published revision r${revision.revisionNumber} be restored?`);
     if (!reason?.trim()) return;
-    if (!window.confirm(`Restore r${revision.revisionNumber} as a new published revision? Existing revisions will remain unchanged.`)) return;
+    setConfirmRevision({ revision, reason: reason.trim() });
+  }
+
+  async function confirmRestore() {
+    if (!confirmRevision) return;
+    const { revision, reason } = confirmRevision;
 
     setPendingId(revision._id);
     setError('');
@@ -62,12 +69,13 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Revision could not be restored.');
-      setMessage(`r${revision.revisionNumber} was restored as a new published revision.`);
+      setMessage(`r${revision.revisionNumber} was republished as a new published revision.`);
       await loadRevisions();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Revision could not be restored.');
     } finally {
       setPendingId(null);
+      setConfirmRevision(null);
     }
   }
 
@@ -116,7 +124,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
                 <td className="px-4 py-3 text-right">
                   <div className="flex flex-wrap justify-end gap-x-3 gap-y-2 text-xs font-bold">
                     {isCurrentPublished ? <Link href={`/vibes/${encodeURIComponent(vibeId)}/apply?revisionId=${encodeURIComponent(revision._id)}&revisionNumber=${revision.revisionNumber}`} className="text-[#2271b1] hover:underline">Apply to site</Link> : null}
-                    {!isCurrentPublished && revision.publishedAt ? <button type="button" onClick={() => void restoreRevision(revision)} disabled={pendingId !== null} className="text-[#2271b1] hover:underline disabled:opacity-50">{pendingId === revision._id ? 'Restoring…' : 'Restore revision'}</button> : null}
+                    {!isCurrentPublished && revision.publishedAt ? <button type="button" onClick={() => void restoreRevision(revision)} disabled={pendingId !== null} className="text-[#2271b1] hover:underline disabled:opacity-50">{pendingId === revision._id ? 'Republishing…' : 'Republish revision'}</button> : null}
                     {previous ? <Link href={`/vibes/${encodeURIComponent(vibeId)}/compare?from=${encodeURIComponent(previous._id)}&to=${encodeURIComponent(revision._id)}`} className="text-slate-700 hover:underline">Compare with r{previous.revisionNumber}</Link> : <span className="text-slate-400">Baseline</span>}
                   </div>
                 </td>
@@ -125,6 +133,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
           })}
         </tbody>
       </table>
+      <VibeConfirmDialog open={confirmRevision !== null} title={`Republish r${confirmRevision?.revision.revisionNumber ?? ''}?`} description="This creates a new published revision. Existing revisions remain unchanged and it does not apply the revision to a site." confirmLabel="Republish revision" cancelLabel="Cancel" busy={pendingId !== null} onOpenChange={(open) => { if (!open && pendingId === null) setConfirmRevision(null); }} onConfirm={() => void confirmRestore()} />
     </section>
   );
 }
