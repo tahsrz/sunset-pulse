@@ -57,7 +57,7 @@ export default function NewVibePage() {
     router.push(`/vibes/${payload.vibe.vibeId}/edit`);
   }
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-2xl">
         <VibePageHeader title="Add New Vibe" description="Create a draft identity to continue in the structured editor." backHref="/vibes" backLabel="All Vibes" />
         <form
@@ -165,6 +165,6 @@ export default function NewVibePage() {
           </button>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
