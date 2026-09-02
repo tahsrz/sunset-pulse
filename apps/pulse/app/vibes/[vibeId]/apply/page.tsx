@@ -82,7 +82,7 @@ export default function ApplyVibePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-2xl">
         <Link
           href={`/vibes/${vibeId}/revisions`}
@@ -217,6 +217,6 @@ export default function ApplyVibePage() {
         </form>
         <VibeApplyConfirmation open={confirmOpen} siteId={siteId} vibeId={vibeId} revisionId={revisionId} busy={busy} onOpenChange={setConfirmOpen} onConfirm={() => { setConfirmOpen(false); void apply(); }} />
       </div>
-    </main>
+    </div>
   );
 }
