@@ -45,7 +45,10 @@ describe('taxonomy directory read authority', () => {
   it('uses embedded counts by default without querying normalized relationships', async () => {
     mocks.countEmbedded.mockResolvedValue({ 'mood:calm': 2 });
     const response = await GET(new NextRequest('http://localhost/api/vibes/taxonomy?tenantId=tenant-a'));
-    expect(await response.json()).toMatchObject({ counts: { 'mood:calm': 2 } });
+    expect(await response.json()).toMatchObject({
+      counts: { 'mood:calm': 2 },
+      capabilities: { manageTerms: false },
+    });
     expect(mocks.countEmbedded).toHaveBeenCalledWith('tenant-a');
     expect(mocks.countNormalized).not.toHaveBeenCalled();
   });
@@ -68,5 +71,17 @@ describe('taxonomy directory read authority', () => {
     const payload = await response.json();
     expect(payload.counts).toEqual({ 'mood:calm': 2 });
     expect(payload.terms).toEqual([{ id: 'mood:calm', group: 'mood', term: 'calm' }]);
+  });
+
+  it('advertises management only when normalized reads and term management are both enabled', async () => {
+    process.env.VIBE_TAXONOMY_NORMALIZED_READ = '1';
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.countEmbedded.mockResolvedValue({});
+    mocks.countNormalized.mockResolvedValue({});
+    mocks.listNormalized.mockResolvedValue([]);
+
+    const response = await GET(new NextRequest('http://localhost/api/vibes/taxonomy'));
+
+    expect(await response.json()).toMatchObject({ capabilities: { manageTerms: true } });
   });
 });

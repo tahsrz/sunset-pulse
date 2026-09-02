@@ -54,7 +54,8 @@ export function TaxonomyDirectory() {
     setCreateError('');
     try {
       const response = await fetch('/api/vibes/taxonomy', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ group: newGroup, term: newSlug, label: newLabel }) });
-      const payload = await response.json();
+      const responseText = await response.text();
+      const payload = responseText ? JSON.parse(responseText) : {};
       if (!response.ok) throw new Error(payload.error || 'Unable to create taxonomy term.');
       setTerms((current) => [...(current || []), payload.term]);
       setNewLabel('');
@@ -81,7 +82,11 @@ export function TaxonomyDirectory() {
       </div>
       <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{visibleTerms.length} {visibleTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
       {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th scope="col" className="px-4 py-3">Name</th><th scope="col" className="px-4 py-3">Slug</th><th scope="col" className="px-4 py-3">Group</th><th scope="col" className="px-4 py-3 text-right">Vibes</th></tr></thead><tbody className="divide-y divide-slate-100">{visibleTerms.map((term) => <tr key={term.id} className="hover:bg-slate-50"><th scope="row" className="px-4 py-3 font-semibold capitalize text-[#2271b1]">{term.term.replace(/-/g, ' ')}</th><td className="px-4 py-3 font-mono text-xs text-slate-600">{term.term}</td><td className="px-4 py-3 capitalize text-slate-600">{groupLabel(term.group)}</td><td className="px-4 py-3 text-right font-semibold text-slate-900">{counts[term.id] || 0}</td></tr>)}</tbody></table></div>}
-      <p className="border-t border-slate-200 p-4 text-xs text-slate-500">Terms are currently controlled by the Vibe schema. Term creation, aliases, and deletion will follow a dedicated migration design so existing Vibes cannot be orphaned.</p>
+      <p className="border-t border-slate-200 p-4 text-xs text-slate-500">
+        {manageTerms
+          ? 'New terms are added to the normalized catalog. Existing terms remain stable so assigned Vibes and revision history keep their IDs.'
+          : 'Terms are currently controlled by the Vibe schema. Management becomes available after the normalized catalog is selected as the read authority.'}
+      </p>
     </section>
   );
 }
