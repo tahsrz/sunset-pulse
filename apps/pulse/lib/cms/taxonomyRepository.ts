@@ -75,6 +75,15 @@ export async function countNormalizedTaxonomyUsage(tenantId: string) {
   return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
 }
 
+export async function countEmbeddedTaxonomyUsage(tenantId: string) {
+  const rows = await Vibe.aggregate([
+    { $match: { tenantId, status: { $ne: 'trash' } } },
+    { $unwind: '$taxonomyTermIds' },
+    { $group: { _id: '$taxonomyTermIds', count: { $sum: 1 } } },
+  ]);
+  return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
+}
+
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
   return [
     { $match: { tenantId } },
