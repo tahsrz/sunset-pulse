@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { VibePageHeader } from '../../_components/VibePageHeader';
 
 type Vibe = {
   vibeId: string;
@@ -90,11 +90,9 @@ export default function VibeActionsPage() {
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-2xl">
-        <Link href={`/vibes/${encodeURIComponent(vibeId)}/edit`} className="text-sm font-semibold text-slate-500 hover:underline">← Back to editor</Link>
-        <h1 className="mt-4 text-3xl font-black">Status &amp; Actions</h1>
-        <p className="mt-1 text-sm text-slate-600">Manage the editorial state of <strong>{vibe.title || vibe.name || vibe.vibeId}</strong>.</p>
+        <VibePageHeader title="Status & Actions" description={<>Manage the editorial state of <strong>{vibe.title || vibe.name || vibe.vibeId}</strong>.</>} backHref={`/vibes/${encodeURIComponent(vibeId)}/edit`} backLabel="Back to editor" />
 
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mt-6 border border-slate-200 bg-white p-5 sm:p-6">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current status</p>
           <p className="mt-1 text-lg font-bold capitalize text-slate-900">{statusLabel(status)}</p>
           {error ? <p role="alert" className="mt-4 text-sm text-red-700">{error}</p> : null}
@@ -115,7 +113,7 @@ export default function VibeActionsPage() {
         ) : null}
 
         {canArchive ? (
-          <section className="mt-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="mt-5 border border-slate-200 bg-white p-5 sm:p-6">
             <h2 className="text-lg font-bold">Archive this Vibe</h2>
             <p className="mt-1 text-sm text-slate-600">Archived Vibes remain available in the CMS but are no longer active editorial work.</p>
             <button type="button" onClick={() => void runAction('archive')} disabled={pendingAction !== null} className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 disabled:opacity-50">

@@ -8,5 +8,6 @@ describe('VibeListToolbar', () => {
     render(<VibeListToolbar position="top" selectedCount={2} action="" onActionChange={vi.fn()} onApply={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
     expect(screen.getByText('2 selected')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toHaveClass('w-48', 'pr-10');
   });
 });

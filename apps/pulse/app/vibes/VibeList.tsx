@@ -10,6 +10,8 @@ import { VibeRowActions } from './_components/VibeRowActions';
 import { VibeStatusBadge } from './_components/VibeStatusBadge';
 import { VibeNotice } from './_components/VibeNotice';
 import { VibeConfirmDialog } from './_components/VibeConfirmDialog';
+import { VibePageHeader } from './_components/VibePageHeader';
+import { VibeListEmptyState } from './_components/VibeListEmptyState';
 
 type Vibe = {
   vibeId: string;
@@ -105,9 +107,15 @@ export function VibeList() {
 
     setLoading(true);
     fetch(`/api/vibes?${query}`, { signal: controller.signal })
-      .then(async (response) => {
+      .then(async (response): Promise<ListResponse> => {
         if (!response.ok) throw new Error('Unable to load vibes.');
-        return response.json() as Promise<ListResponse>;
+        const body = await response.text();
+        if (!body.trim()) return { vibes: [], total: 0, totalPages: 1, statusCounts: {} };
+        try {
+          return JSON.parse(body) as ListResponse;
+        } catch {
+          throw new Error('Unable to load vibes.');
+        }
       })
       .then((payload) => {
         setVibes(payload.vibes || []);
@@ -145,26 +153,19 @@ export function VibeList() {
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Content management</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight">All Vibes</h1>
-            <p className="mt-1 text-sm text-slate-600">Manage drafts, reviews, published revisions, and their editorial history.</p>
-          </div>
-          <Link href="/vibes/new" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">Add New Vibe</Link>
-        </header>
+        <VibePageHeader eyebrow="Content management" title="All Vibes" description="Manage drafts, reviews, published revisions, and their editorial history." actions={<Link href="/vibes/new" className="rounded border border-[#2271b1] px-3 py-2 text-sm font-semibold text-[#2271b1] hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2">Add New</Link>} />
 
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Vibe list">
+        <div className="mb-3 px-1">
+          <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
+        </div>
+        <section className="border border-slate-200 bg-white" aria-label="Vibe list">
           {successMessage ? <div className="p-4 pb-0"><VibeNotice tone="success" onDismiss={() => setSuccessMessage('')}>{successMessage}</VibeNotice></div> : null}
-          <div className="border-b border-slate-200 px-4 pt-4">
-            <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
-          </div>
           <VibeListToolbar position="top" selectedCount={selected.size} action={bulkAction} onActionChange={setBulkAction} onApply={() => { if (bulkAction) setConfirmAction(bulkAction); }} busy={bulkBusy} search={search} onSearchChange={setSearch} />
 
           {!loading && !error ? <p className="border-b border-slate-100 px-4 py-3 text-sm text-slate-500">{total} {total === 1 ? 'item' : 'items'}</p> : null}
           {loading ? <p className="p-8 text-sm text-slate-500">Loading vibes…</p> : null}
           {!loading && error ? <p role="alert" className="p-8 text-sm text-red-700">{error}</p> : null}
-          {!loading && !error && vibes.length === 0 ? <p className="p-8 text-sm text-slate-500">No vibes found. Try another filter or <Link href="/vibes/new" className="font-semibold text-[#2271b1] hover:underline">add a new Vibe</Link>.</p> : null}
+          {!loading && !error && vibes.length === 0 ? <VibeListEmptyState search={search} status={status} onClearSearch={() => { setSearch(''); updateQuery({ q: '', page: 1 }, 'replace'); }} onClearStatus={() => { setStatus(''); updateQuery({ status: '', page: 1 }); }} /> : null}
 
           {!loading && !error && vibes.length > 0 ? (
             <>
@@ -196,6 +197,7 @@ export function VibeList() {
                   </tbody>
                 </table>
               </div>
+              <VibeListToolbar position="bottom" selectedCount={selected.size} action={bulkAction} onActionChange={setBulkAction} onApply={() => { if (bulkAction) setConfirmAction(bulkAction); }} busy={bulkBusy} />
               {totalPages > 1 ? (
                 <nav className="flex items-center justify-between gap-3 border-t border-slate-200 p-4" aria-label="Vibe pagination">
                   <p className="text-sm text-slate-500">Showing {rangeStart}–{rangeEnd} of {total}</p>

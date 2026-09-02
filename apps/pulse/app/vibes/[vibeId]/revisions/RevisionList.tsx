@@ -85,7 +85,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
   const revisionNumbers = new Map(revisions.map((revision) => [revision._id, revision.revisionNumber]));
 
   return (
-    <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <section className="overflow-x-auto border border-slate-200 bg-white">
       <div className="border-b border-slate-200 p-4">
         <p className="text-sm text-slate-600">Every entry is immutable. Restoring a prior published revision creates a new published revision and leaves the history intact.</p>
         {message ? <p role="status" className="mt-3 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p> : null}
@@ -111,16 +111,18 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
             return (
               <tr key={revision._id} className="align-top hover:bg-slate-50">
                 <td className="px-4 py-3">
-                  <p className="font-bold">r{revision.revisionNumber}</p>
+                  <p className="font-bold text-slate-900">r{revision.revisionNumber}</p>
+                  <p className="mt-1 text-xs text-slate-500">{revision.createdBy || 'Unknown author'} · {formatDate(revision.createdAt)}</p>
                   {basedOn ? <p className="mt-1 text-xs text-slate-500">Based on r{basedOn}</p> : null}
+                  <p className="mt-2 max-w-md text-xs text-slate-600">{revision.changeSummary || 'No editorial summary provided.'}</p>
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-500">{formatDate(revision.createdAt)}</td>
-                <td className="px-4 py-3 text-xs">{revision.createdBy || '—'}</td>
+                <td className="hidden px-4 py-3 text-xs text-slate-500 sm:table-cell">{formatDate(revision.createdAt)}</td>
+                <td className="hidden px-4 py-3 text-xs sm:table-cell">{revision.createdBy || '—'}</td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-1 text-xs font-bold ${isCurrentPublished ? 'bg-emerald-100 text-emerald-800' : revision.publishedAt ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'}`}>{state}</span>
                   {revision.publishedAt ? <p className="mt-1 text-xs text-slate-500">Published {formatDate(revision.publishedAt)}</p> : null}
                 </td>
-                <td className="max-w-xs px-4 py-3 text-xs text-slate-600">{revision.changeSummary || 'No editorial summary provided.'}</td>
+                <td className="hidden max-w-xs px-4 py-3 text-xs text-slate-600 md:table-cell">{revision.changeSummary || 'No editorial summary provided.'}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex flex-wrap justify-end gap-x-3 gap-y-2 text-xs font-bold">
                     {isCurrentPublished ? <Link href={`/vibes/${encodeURIComponent(vibeId)}/apply?revisionId=${encodeURIComponent(revision._id)}&revisionNumber=${revision.revisionNumber}`} className="text-[#2271b1] hover:underline">Apply to site</Link> : null}

@@ -89,6 +89,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const [vibe, setVibe] = useState<Vibe | null>(null);
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('saved');
+  const [settingsOpen, setSettingsOpen] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -166,10 +167,10 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <form ref={formRef} onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
-          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
+          <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} settingsOpen={settingsOpen} onToggleSettings={() => setSettingsOpen((open) => !open)} onSave={() => formRef.current?.requestSubmit()} />
 
-          <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-            <section className="space-y-5">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <section className="order-2 space-y-4 lg:order-1">
               <VibePanel id="metadata" title="Metadata" defaultOpen>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Title<input name="title" defaultValue={draft.title} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
@@ -185,6 +186,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
+              <div hidden={!settingsOpen}>
               <VibePanel id="source-details" title="Source details" defaultOpen={false}>
                 <p className="mt-1 text-sm text-slate-500">Keep the provenance needed for later editorial review.</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -195,12 +197,13 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                 </div>
               </VibePanel>
 
-              <VibePanel id="visual-system" title="Visual system" defaultOpen>
+              <VibePanel id="colors" title="Colors" defaultOpen>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {(['primary', 'background', 'surface', 'textPrimary', 'textSecondary'] as const).map((key) => <label key={key} className="text-xs font-bold uppercase text-slate-500">{key}<input name={key} type="color" defaultValue={draft.tokens.visual.theme.colors[key]} className="mt-2 block h-10 w-full rounded border border-slate-300 bg-white p-1" /></label>)}
                 </div>
+              </VibePanel>
+              <VibePanel id="typography" title="Typography" defaultOpen>
                 <div className="mt-6 border-t border-slate-100 pt-5">
-                  <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Typography</h3>
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="text-xs font-bold uppercase text-slate-500">Heading font<input name="fontFamilyHeading" defaultValue={typography.fontFamilyHeading} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                     <label className="text-xs font-bold uppercase text-slate-500">Body font<input name="fontFamilyBody" defaultValue={typography.fontFamilyBody} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
@@ -210,8 +213,9 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                     <label className="text-xs font-bold uppercase text-slate-500">Bold weight<input name="fontWeightBold" type="number" min="100" max="900" step="100" defaultValue={typography.fontWeightBold} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
                   </div>
                 </div>
+              </VibePanel>
+              <VibePanel id="layout" title="Layout" defaultOpen>
                 <div className="mt-6 border-t border-slate-100 pt-5">
-                  <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Layout</h3>
                   <div className="mt-4 grid gap-4 sm:grid-cols-3">
                     <label className="text-xs font-bold uppercase text-slate-500">Corner radius<select name="borderRadius" defaultValue={layout.borderRadius} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option value="none">None</option><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="full">Full</option></select></label>
                     <label className="text-xs font-bold uppercase text-slate-500">Base spacing (px)<input name="spacingBasePx" type="number" min="1" max="64" defaultValue={layout.spacingBasePx} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label>
@@ -223,9 +227,12 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               <VibePanel id="voice" title="Jamie voice" defaultOpen={false}>
                 <label className="mt-4 block text-xs font-bold uppercase text-slate-500">Primary tone<select name="primaryTone" defaultValue={draft.tokens.linguistic.voice.primaryTone} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal normal-case"><option>warm</option><option>concise</option><option>analytical</option><option>energetic</option><option>tactical</option><option>luxurious</option><option>playful</option></select></label>
               </VibePanel>
+              </div>
             </section>
 
-            <PublishPanel vibe={vibe} status={status} saveState={saveState} error={error} />
+            <aside className="order-1 self-start lg:sticky lg:top-4 lg:order-2" aria-label="Vibe publishing and settings">
+              <PublishPanel vibe={vibe} status={status} saveState={saveState} error={error} />
+            </aside>
           </div>
         </form>
       </div>

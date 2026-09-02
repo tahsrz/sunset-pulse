@@ -99,21 +99,28 @@ export function VibeSidebar() {
 
   return (
     <aside className="border-b border-[#3c434a] bg-[#1d2327] text-[#f0f0f1] lg:sticky lg:top-10 lg:h-[calc(100vh-2.5rem)] lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r">
-      <nav aria-label="Vibe CMS navigation" className="flex gap-1 overflow-x-auto px-2 py-2 lg:block lg:space-y-0 lg:overflow-visible lg:px-0 lg:py-3">
+      <details className="px-2 py-2 lg:hidden">
+        <summary className="cursor-pointer rounded px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset">Vibes menu</summary>
+        <nav aria-label="Vibe CMS mobile navigation" className="mt-1 space-y-1">
+          {primaryItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
+          {workflowItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} nested />)}
+        </nav>
+      </details>
+      <nav aria-label="Vibe CMS navigation" className="hidden lg:block lg:space-y-0 lg:px-0 lg:py-3">
         {primaryItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
         {workflowItems.length > 0 ? <>
-          <div className="hidden px-3 pb-2 pt-6 lg:block">
+          <div className="px-3 pb-2 pt-6">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#a7aaad]">Current Vibe</p>
             {status ? <p className="mt-1 text-xs font-semibold capitalize text-[#72aee6]">{statusLabel(status)}</p> : null}
           </div>
-          {workflowItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
+          {workflowItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} nested />)}
         </> : null}
       </nav>
     </aside>
   );
 }
 
-function SidebarLink({ item, pathname }: { item: NavigationItem; pathname: string }) {
+function SidebarLink({ item, pathname, nested = false }: { item: NavigationItem; pathname: string; nested?: boolean }) {
   const active = isActivePath(pathname, item.href);
   const Icon = item.icon;
 
@@ -121,7 +128,7 @@ function SidebarLink({ item, pathname }: { item: NavigationItem; pathname: strin
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
-      className={`flex shrink-0 items-center gap-2 rounded px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:w-full lg:rounded-none ${active ? 'bg-[#2271b1] text-white' : 'text-[#f0f0f1] hover:bg-[#2c3338] hover:text-white'}`}
+      className={`flex min-h-8 shrink-0 items-center gap-2 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:w-full lg:rounded-none ${nested ? 'pl-8 text-[13px]' : ''} ${active ? 'bg-[#2271b1] text-white' : 'text-[#f0f0f1] hover:bg-[#2c3338] hover:text-white'}`}
     >
       <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2} />
       {item.label}

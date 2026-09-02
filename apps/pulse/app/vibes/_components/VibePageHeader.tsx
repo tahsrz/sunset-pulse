@@ -17,7 +17,7 @@ export function VibePageHeader({ title, description, eyebrow, backHref, backLabe
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <div>
           {eyebrow ? <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p> : null}
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">{title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{title}</h1>
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
