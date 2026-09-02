@@ -14,6 +14,6 @@ describe('VibeList empty response handling', () => {
   it('renders the empty state when the API returns an empty successful body', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, text: async () => '' }));
     render(<VibeList />);
-    await waitFor(() => expect(screen.getByText(/No vibes found/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/No Vibes have been created yet/i)).toBeInTheDocument());
   });
 });
