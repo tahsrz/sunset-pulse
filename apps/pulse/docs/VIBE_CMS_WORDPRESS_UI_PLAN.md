@@ -6179,3 +6179,7 @@ and editor validation tests (13 tests total across focused runs). No API routes,
 payloads, lifecycle behavior, or persistence contracts changed. Remaining evidence is
 manual: inspect 1440px/1024px/768px/390px viewports, keyboard-tab each workflow control,
 and capture before/after screenshots for the seven surfaces listed in Package 10G.
+
+Verification follow-up: all 18 explicitly discovered Vibes unit-test files pass (37 tests)
+on the implementation branch. The wildcard shell pattern was not used because PowerShell
+does not expand it for Vitest; the test files were enumerated explicitly.
