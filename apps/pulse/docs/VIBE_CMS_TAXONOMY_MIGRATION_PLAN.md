@@ -20,6 +20,18 @@ Operationally pending: merge/deploy, run the dry-run report, execute an approved
 observe zero mismatches for every tenant, and then decide whether to enable normalized reads.
 Embedded IDs must not be removed in this phase.
 
+### Dry-run evidence — 2026-09-02
+
+Command: `npm run vibes:taxonomy:backfill:dry-run`
+
+- Mode: `dry-run`
+- Total Vibes: 6
+- Expected relationships: 9
+- Duplicate embedded IDs: 0
+- Unknown legacy IDs: 0
+- Tenants: `default` (6 Vibes, 9 expected relationships)
+- Result: eligible for an explicitly approved gated backfill
+
 ## Current contract
 
 Vibes currently store controlled IDs such as `mood:calm` in both
