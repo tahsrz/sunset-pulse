@@ -98,7 +98,7 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string) {
     { $project: {
       _id: 0,
       id: { $ifNull: ['$legacyId', { $concat: ['$taxonomy.slug', ':', '$slug'] }] },
-      group: '$taxonomy.slug',
+      group: { $ifNull: [{ $arrayElemAt: [{ $split: ['$legacyId', ':'] }, 0] }, '$taxonomy.slug'] },
       term: '$slug',
     } },
     { $sort: { group: 1, term: 1 } },
