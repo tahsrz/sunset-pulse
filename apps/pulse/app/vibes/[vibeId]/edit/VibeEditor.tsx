@@ -21,6 +21,7 @@ type Vibe = {
 };
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict';
+type TaxonomyTerm = { id: string; group: string; term: string; label?: string };
 
 const defaults = {
   tokens: {
@@ -90,6 +91,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [taxonomyTerms, setTaxonomyTerms] = useState<TaxonomyTerm[]>(() => listVibeTaxonomyTerms());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,6 +107,22 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
     return () => controller.abort();
   }, [vibeId]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/vibes/taxonomy', { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ terms?: TaxonomyTerm[] }>;
+      })
+      .then((payload) => {
+        if (payload?.terms?.length) setTaxonomyTerms(payload.terms);
+      })
+      .catch(() => {
+        // Static controlled terms remain available if the catalog cannot load.
+      });
+    return () => controller.abort();
+  }, []);
+
   if (error && !vibe) return <main className="min-h-screen bg-slate-100 p-8"><p role="alert" className="text-red-700">{error}</p></main>;
   if (!vibe) return <main className="min-h-screen bg-slate-100 p-8 text-slate-500">Loading vibe…</main>;
 
@@ -116,7 +134,6 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   };
   const status = vibe.status || 'draft';
   const currentDraftVersion = vibe.currentDraftVersion ?? 0;
-  const taxonomyTerms = listVibeTaxonomyTerms();
   const selectedTaxonomyTerms = new Set(draft.taxonomyTermIds || []);
   const typography = { ...defaults.tokens.visual.theme.typography, ...(draft.tokens.visual.theme.typography || {}) };
   const layout = { borderRadius: 'md', spacingBasePx: 4, elevation: 'subtle', ...(draft.tokens.visual.theme.layout || {}) };
@@ -182,7 +199,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               <VibePanel id="taxonomy" title="Taxonomy" defaultOpen>
                 <p className="mt-1 text-sm text-slate-500">Choose terms that help operators find this Vibe later.</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {taxonomyTerms.map(({ id, group, term }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold capitalize">{term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
+                  {taxonomyTerms.map(({ id, group, term, label: termLabel }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold">{termLabel || term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
                 </div>
               </VibePanel>
 

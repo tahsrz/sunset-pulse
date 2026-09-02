@@ -40,6 +40,29 @@ afterEach(() => {
 });
 
 describe('VibeEditor native validation', () => {
+  it('loads normalized catalog terms and preserves their IDs in the draft payload', async () => {
+    const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
+      if (String(input) === '/api/vibes/taxonomy') {
+        return new Response(JSON.stringify({
+          terms: [{ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' }],
+        }), { status: 200 });
+      }
+      if (init?.method === 'PATCH') return new Response(JSON.stringify({ vibe }), { status: 200 });
+      return new Response(JSON.stringify({ vibe }), { status: 200 });
+    });
+
+    render(<VibeEditor vibeId="format-test" />);
+    const term = await screen.findByRole('checkbox', { name: /Deep Focus/i });
+    fireEvent.click(term);
+    fireEvent.submit(screen.getByRole('button', { name: 'Save changes' }).closest('form')!);
+
+    await waitFor(() => {
+      const patchCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'PATCH');
+      expect(patchCall).toBeDefined();
+      expect(JSON.parse(String(patchCall?.[1]?.body)).draft.taxonomyTermIds).toEqual(['mood:focused']);
+    });
+  });
+
   it('accepts the seeded base font size and submits the draft', async () => {
     const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
       if (init?.method === 'PATCH') return new Response(JSON.stringify({ vibe }), { status: 200 });
