@@ -5,6 +5,7 @@ import VibeRevision from '@/models/VibeRevision';
 import { SiteConfig } from '@/models/SiteConfig';
 import VibeAuditEvent from '@/models/VibeAuditEvent';
 import { vibeDraftSchema, type VibeDraft } from './vibeSchema';
+import { replaceVibeTermRelationships, resolveLegacyTaxonomyTermIds } from './taxonomyRepository';
 
 export function stableSerialize(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
@@ -55,6 +56,17 @@ export async function saveVibeDraft(input: {
 
   if (!updated) {
     throw new Error(input.expectedVersion === undefined ? 'VIBE_NOT_FOUND' : 'VIBE_DRAFT_CONFLICT');
+  }
+  if (process.env.VIBE_TAXONOMY_NORMALIZED_WRITE === '1') {
+    try {
+      const resolved = await resolveLegacyTaxonomyTermIds({ tenantId: input.tenantId, legacyIds: draft.taxonomyTermIds });
+      await replaceVibeTermRelationships({ tenantId: input.tenantId, vibeId: input.vibeId, termIds: resolved.termIds, actorId: input.actorId });
+      if (resolved.unknownLegacyIds.length > 0) {
+        console.warn('VIBE_TAXONOMY_UNKNOWN_LEGACY_IDS', { tenantId: input.tenantId, vibeId: input.vibeId, unknownLegacyIds: resolved.unknownLegacyIds });
+      }
+    } catch (error) {
+      console.warn('VIBE_TAXONOMY_DUAL_WRITE_FAILED', { tenantId: input.tenantId, vibeId: input.vibeId, error: error instanceof Error ? error.message : String(error) });
+    }
   }
   return updated;
 }

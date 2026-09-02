@@ -84,6 +84,10 @@ read flag immediately restores embedded-array authority. Disabling the write fla
 new relationship mutations without affecting draft saves. The backfill is idempotent;
 rollback does not delete normalized records until reconciliation evidence is retained.
 
+- `VIBE_TAXONOMY_NORMALIZED_WRITE=1`: best-effort relationship synchronization after a successful embedded draft save.
+- `VIBE_TAXONOMY_COMPARE_READS=1`: compare embedded and normalized directory counts and log mismatches.
+- `VIBE_TAXONOMY_NORMALIZED_READ=1`: return normalized directory counts while preserving the response shape.
+
 ## Acceptance evidence
 
 - Seed and backfill dry run reports zero unknown IDs for controlled terms.
