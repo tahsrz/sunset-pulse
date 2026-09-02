@@ -143,7 +143,7 @@ export function VibeList() {
   const rangeEnd = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -224,6 +224,6 @@ export function VibeList() {
         </section>
       </div>
       <VibeConfirmDialog open={confirmAction !== null} title={`${confirmAction === 'trash' ? 'Move' : 'Archive'} selected Vibes?`} description={`This will ${confirmAction === 'trash' ? 'move' : 'archive'} ${selected.size} selected Vibe${selected.size === 1 ? '' : 's'}.`} confirmLabel={confirmAction === 'trash' ? 'Move to trash' : 'Archive'} cancelLabel="Cancel" busy={bulkBusy} onOpenChange={(open) => { if (!open) setConfirmAction(null); }} onConfirm={() => { if (confirmAction) void runBulk(confirmAction); }} />
-    </main>
+    </div>
   );
 }
