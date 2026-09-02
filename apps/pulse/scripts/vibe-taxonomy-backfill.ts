@@ -1,8 +1,12 @@
+import { loadEnvConfig } from '@next/env';
+import mongoose from 'mongoose';
 import connectDB from '../lib/core/database';
 import { analyzeTaxonomyBackfill } from '../lib/cms/taxonomyBackfill';
 import { writeTaxonomyBackfill } from '../lib/cms/taxonomyBackfill';
 import { seedControlledVibeTaxonomies } from '../lib/cms/taxonomySeed';
 import Vibe from '../models/Vibe';
+
+loadEnvConfig(process.cwd());
 
 async function main() {
   const write = process.argv.includes('--write');
@@ -20,7 +24,11 @@ async function main() {
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
-main().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
-});
+main()
+  .catch((error) => {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await mongoose.disconnect();
+  });
