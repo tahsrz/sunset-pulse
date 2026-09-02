@@ -136,15 +136,18 @@ export default function ApplyVibePage() {
               Use disposable site
             </button>
           </div>
-          <label className="block text-sm font-bold">
-            Site ID
-            <input
-              required
-              value={siteId}
-              onChange={(event) => changeSiteId(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-normal"
-            />
-          </label>
+          <details open className="rounded-md border border-slate-200">
+            <summary className="cursor-pointer px-3 py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-inset">Enter a site ID manually</summary>
+            <label className="block border-t border-slate-200 p-3 text-sm font-bold">
+              Site ID
+              <input
+                required
+                value={siteId}
+                onChange={(event) => changeSiteId(event.target.value)}
+                className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-normal"
+              />
+            </label>
+          </details>
           <button
             type="button"
             onClick={() => void checkPointer()}
