@@ -46,7 +46,8 @@
     "seed": "tsx scripts/universal-seed.ts",
     "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts",
     "vibes:taxonomy:backfill:dry-run": "tsx scripts/vibe-taxonomy-backfill.ts",
-    "vibes:taxonomy:backfill:write": "tsx scripts/vibe-taxonomy-backfill.ts --write"
+    "vibes:taxonomy:backfill:write": "tsx scripts/vibe-taxonomy-backfill.ts --write",
+    "vibes:taxonomy:reconcile": "tsx scripts/vibe-taxonomy-reconcile.ts"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",

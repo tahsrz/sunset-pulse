@@ -47,6 +47,18 @@ Required second write:
 - Unresolved legacy IDs: 0
 - Result: backfill is idempotent for the configured `default` tenant dataset
 
+### Reconciliation evidence — 2026-09-02
+
+Command: `npm run vibes:taxonomy:reconcile`
+
+- Overall state: `agrees`
+- Tenant: `default`
+- Embedded active usage total: 4
+- Normalized active usage total: 4
+- Mismatch term IDs: none
+- Verified terms: `mood:tactical`, `visualFamily:high-contrast`, `visualFamily:light`, `voice:analytical`
+- Trash exclusion explains why active usage totals are lower than the 9 stored relationships
+
 ## Current contract
 
 Vibes currently store controlled IDs such as `mood:calm` in both
