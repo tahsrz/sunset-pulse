@@ -5772,3 +5772,4 @@ internal IDs or lifecycle implementation details.
 - Existing editor validation and CMS contract suites remain passing.
 - No API routes, lifecycle services, tenant configuration, or public rendering were changed by this UI pass.
 - Remaining follow-up: full Apply-page visual walkthrough and any broader route-level regression coverage.
+- Latest verification: Add New Vibe, editor validation, Apply confirmation, and CMS contract suites pass together (14 tests); route landmarks were normalized so the shared layout owns the primary workspace landmark.
