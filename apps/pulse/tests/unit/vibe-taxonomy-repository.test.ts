@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffTaxonomyRelationships } from '@/lib/cms/taxonomyRepository';
+import { diffTaxonomyRelationships, diffTaxonomyUsageCounts } from '@/lib/cms/taxonomyRepository';
 
 describe('taxonomy relationship reconciliation', () => {
   it('adds and removes only changed terms', () => {
@@ -14,5 +14,9 @@ describe('taxonomy relationship reconciliation', () => {
       addTermIds: [],
       removeTermIds: [],
     });
+  });
+
+  it('reports count mismatches from either read authority', () => {
+    expect(diffTaxonomyUsageCounts({ a: 2, b: 1 }, { a: 2, c: 1 })).toEqual(['b', 'c']);
   });
 });

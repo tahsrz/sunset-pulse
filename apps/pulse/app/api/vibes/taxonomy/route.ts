@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
+import { countNormalizedTaxonomyUsage, diffTaxonomyUsageCounts } from '@/lib/cms/taxonomyRepository';
 
 export async function GET(request: NextRequest) {
   const tenantId = request.nextUrl.searchParams.get('tenantId')?.trim() || 'default';
@@ -12,5 +13,15 @@ export async function GET(request: NextRequest) {
     { $group: { _id: '$taxonomyTermIds', count: { $sum: 1 } } },
   ]);
   const counts = Object.fromEntries(usage.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
-  return NextResponse.json({ terms: listVibeTaxonomyTerms(), counts });
+  const compareReads = process.env.VIBE_TAXONOMY_COMPARE_READS === '1';
+  const normalizedRead = process.env.VIBE_TAXONOMY_NORMALIZED_READ === '1';
+  let normalizedCounts: Record<string, number> | null = null;
+  if (compareReads || normalizedRead) {
+    normalizedCounts = await countNormalizedTaxonomyUsage(tenantId);
+  }
+  if (compareReads && normalizedCounts) {
+    const mismatches = diffTaxonomyUsageCounts(counts, normalizedCounts);
+    if (mismatches.length > 0) console.warn('VIBE_TAXONOMY_READ_MISMATCH', { tenantId, mismatches, embeddedCounts: counts, normalizedCounts });
+  }
+  return NextResponse.json({ terms: listVibeTaxonomyTerms(), counts: normalizedRead && normalizedCounts ? normalizedCounts : counts });
 }

@@ -1,11 +1,18 @@
 import type { ClientSession } from 'mongoose';
 import VibeTerm from '@/models/VibeTerm';
 import VibeTermRelationship from '@/models/VibeTermRelationship';
+import VibeTerm from '@/models/VibeTerm';
+import Vibe from '@/models/Vibe';
 
 export type TaxonomyRelationshipDiff = {
   addTermIds: string[];
   removeTermIds: string[];
 };
+
+export function diffTaxonomyUsageCounts(embedded: Record<string, number>, normalized: Record<string, number>) {
+  const termIds = new Set([...Object.keys(embedded), ...Object.keys(normalized)]);
+  return [...termIds].filter((termId) => (embedded[termId] || 0) !== (normalized[termId] || 0)).sort();
+}
 
 export function diffTaxonomyRelationships(currentTermIds: string[], desiredTermIds: string[]): TaxonomyRelationshipDiff {
   const current = new Set(currentTermIds.map(String));
@@ -61,4 +68,21 @@ export async function replaceVibeTermRelationships(input: {
   }
 
   return diff;
+}
+
+export async function countNormalizedTaxonomyUsage(tenantId: string) {
+  const rows = await VibeTermRelationship.aggregate([
+    { $match: { tenantId } },
+    { $lookup: { from: VibeTerm.collection.name, localField: 'termId', foreignField: '_id', as: 'term' } },
+    { $unwind: '$term' },
+    { $match: { 'term.status': 'active', 'term.legacyId': { $type: 'string' } } },
+    { $lookup: { from: Vibe.collection.name, let: { relationshipVibeId: '$vibeId', relationshipTenantId: '$tenantId' }, pipeline: [
+      { $match: { $expr: { $and: [{ $eq: ['$vibeId', '$$relationshipVibeId'] }, { $eq: ['$tenantId', '$$relationshipTenantId'] }] } } },
+      { $match: { status: { $ne: 'trash' } } },
+      { $limit: 1 },
+    ], as: 'vibe' } },
+    { $match: { 'vibe.0': { $exists: true } } },
+    { $group: { _id: '$term.legacyId', count: { $sum: 1 } } },
+  ]);
+  return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
 }
