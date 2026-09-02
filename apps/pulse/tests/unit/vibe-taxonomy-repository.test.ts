@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildNormalizedTaxonomyUsagePipeline, diffTaxonomyRelationships, diffTaxonomyUsageCounts } from '@/lib/cms/taxonomyRepository';
+import { buildNormalizedTaxonomyCatalogPipeline, buildNormalizedTaxonomyUsagePipeline, diffTaxonomyRelationships, diffTaxonomyUsageCounts } from '@/lib/cms/taxonomyRepository';
 
 describe('taxonomy relationship reconciliation', () => {
   it('adds and removes only changed terms', () => {
@@ -27,5 +27,15 @@ describe('taxonomy relationship reconciliation', () => {
     expect(serialized).toContain('"term.legacyId"');
     expect(serialized).toContain('"status":{"$ne":"trash"}');
     expect(serialized).toContain('"$eq":["$tenantId","$$relationshipTenantId"]');
+  });
+
+  it('builds a tenant-scoped active catalog with compatibility IDs and stable sorting', () => {
+    const serialized = JSON.stringify(buildNormalizedTaxonomyCatalogPipeline('tenant-a'));
+    expect(serialized).toContain('"tenantId":"tenant-a"');
+    expect(serialized).toContain('"status":"active"');
+    expect(serialized).toContain('"taxonomy.status":"active"');
+    expect(serialized).toContain('"$ifNull":["$legacyId"');
+    expect(serialized).toContain('"id"');
+    expect(serialized).toContain('"group":1,"term":1');
   });
 });

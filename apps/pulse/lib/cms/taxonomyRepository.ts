@@ -86,7 +86,11 @@ export async function countEmbeddedTaxonomyUsage(tenantId: string) {
 }
 
 export async function listNormalizedTaxonomyTerms(tenantId: string) {
-  return VibeTerm.aggregate([
+  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId)) as Promise<Array<{ id: string; group: string; term: string }>>;
+}
+
+export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string) {
+  return [
     { $match: { tenantId, status: 'active' } },
     { $lookup: { from: VibeTaxonomy.collection.name, localField: 'taxonomyId', foreignField: '_id', as: 'taxonomy' } },
     { $unwind: '$taxonomy' },
@@ -98,7 +102,7 @@ export async function listNormalizedTaxonomyTerms(tenantId: string) {
       term: '$slug',
     } },
     { $sort: { group: 1, term: 1 } },
-  ]) as Promise<Array<{ id: string; group: string; term: string }>>;
+  ];
 }
 
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
