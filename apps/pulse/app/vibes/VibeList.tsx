@@ -105,9 +105,15 @@ export function VibeList() {
 
     setLoading(true);
     fetch(`/api/vibes?${query}`, { signal: controller.signal })
-      .then(async (response) => {
+      .then(async (response): Promise<ListResponse> => {
         if (!response.ok) throw new Error('Unable to load vibes.');
-        return response.json() as Promise<ListResponse>;
+        const body = await response.text();
+        if (!body.trim()) return { vibes: [], total: 0, totalPages: 1, statusCounts: {} };
+        try {
+          return JSON.parse(body) as ListResponse;
+        } catch {
+          throw new Error('Unable to load vibes.');
+        }
       })
       .then((payload) => {
         setVibes(payload.vibes || []);
