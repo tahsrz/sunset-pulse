@@ -5773,3 +5773,256 @@ internal IDs or lifecycle implementation details.
 - No API routes, lifecycle services, tenant configuration, or public rendering were changed by this UI pass.
 - Remaining follow-up: full Apply-page visual walkthrough and any broader route-level regression coverage.
 - Latest verification: Add New Vibe, editor validation, Apply confirmation, and CMS contract suites pass together (14 tests); route landmarks were normalized so the shared layout owns the primary workspace landmark.
+
+## 90% Admin-Familiarity Convergence Plan
+
+### Objective and measurement
+
+This is the next implementation sequence after the current UI pass. Its goal is
+that a long-time WordPress editor can complete the Vibe workflow without first
+learning a new screen grammar. “90% similar” means familiar placement,
+density, hierarchy, keyboard behavior, and terminology—not copied branding,
+WordPress packages, or WordPress data models.
+
+Score each completed package against the following observable rubric. A package
+does not count as complete if its screenshot or keyboard walkthrough cannot
+demonstrate the matching behavior.
+
+| Surface | Current estimate | 90% target |
+| --- | ---: | --- |
+| Workspace shell and navigation | 50% | Persistent global bar, active section, contextual submenu, compact mobile menu |
+| All Vibes list table | 70% | Dense list-table anatomy, top/bottom controls, status links, hover/focus actions |
+| Add New Vibe | 60% | Identity-first screen, compact title/action presentation, advanced choices secondary |
+| Structured editor | 40% | Dominant editing canvas, fixed publish/status rail, document settings sidebar, compact toolbar |
+| Revisions and audit | 60% | Current revision first, metadata hierarchy, concise row actions, readable activity log |
+| Taxonomy and presets | 45% | List-table management surface with search/filter and usage counts |
+| Apply to site | 60% | Guided preflight, clear source/destination summary, one deliberate final action |
+
+No package may alter the Vibe API routes, draft payload shape, lifecycle
+transitions, revision behavior, authentication, or site-pointer authority.
+
+### Package 10A — Compact workspace shell and contextual navigation
+
+**Files:**
+
+- `app/vibes/layout.tsx`
+- `app/vibes/VibeSidebar.tsx`
+- `app/vibes/_components/VibePageHeader.tsx`
+
+**Implementation:**
+
+1. Keep the existing 40px dark utility bar, but make its layout match a compact
+   admin bar: workspace identity at left; only short utility actions at right.
+   Change the current oversized, pill-like Add New treatment to a small
+   bordered/solid admin action that is visually subordinate to the page title’s
+   Add New action.
+2. Make desktop sidebar rows 32–36px high with 13–14px labels, no card spacing,
+   square-to-small-radius active treatment, and a single clearly active blue
+   destination. Preserve the existing icon labels; do not add new global areas.
+3. Add a contextual child-nav slot beneath the active Vibes entry. It must show
+   **All Vibes**, **Add New**, and **Taxonomy** on collection routes, then add
+   the existing current-Vibe workflow links only on `/[vibeId]/*` routes.
+4. On widths below `lg`, replace the horizontal scrolling row with a single
+   labelled **Vibes menu** disclosure. Keep every link in the DOM and keyboard
+   reachable; do not make navigation swipe-only.
+5. Tighten `VibePageHeader`: title is 26–30px, description is secondary, and
+   action buttons render alongside the title on desktop, beneath it on narrow
+   screens.
+
+**Acceptance:** a desktop screenshot reads as one connected admin workspace;
+keyboard Tab reaches utility actions, active/contextual navigation, page action,
+then the screen body without dead ends.
+
+### Package 10B — Complete the All Vibes list-table posture
+
+**Files:**
+
+- `app/vibes/VibeList.tsx`
+- `app/vibes/_components/VibeListToolbar.tsx`
+- `app/vibes/_components/VibeStatusViews.tsx`
+- `app/vibes/_components/VibeRowActions.tsx`
+- `app/vibes/_components/VibeListEmptyState.tsx` (new)
+
+**Implementation:**
+
+1. Render the page title and compact outlined **Add New** action through
+   `VibePageHeader`; remove the large dark list-header button.
+2. Render status views directly under the title as compact text links with
+   parentheses counts and separators: `All (n) | Drafts (n) | …`. Retain the
+   current URL/filter state and API parameters exactly.
+3. Always render top and bottom `VibeListToolbar` controls when a table is
+   present. The select, Apply button, selection count, and search must retain
+   their existing event/API behavior. Bottom controls mirror the top controls;
+   pagination remains the final row.
+4. Tighten table rows to 44–52px before title metadata expands them. Give
+   checkbox, title, status, revision, and modified columns stable widths.
+   Keep the existing native table and sortable header buttons.
+5. At pointer/keyboard-capable desktop widths, mute row actions until row hover
+   or focus-within; on touch/narrow layouts keep them visible. Never remove
+   actions from tab order.
+6. Replace the generic empty paragraph with `VibeListEmptyState`. It must say
+   whether the empty state comes from no Vibes, a status filter, or a search;
+   expose **Clear search**, **Clear filter**, and **Add New Vibe** only when
+   relevant. Keep the resilient empty-response behavior already added.
+7. Add an `aria-live="polite"` result summary after fetches: e.g. “12 Vibes,
+   page 1 of 1” or “No Vibes match this search.”
+
+**Tests:** add URL/filter reset and contextual-empty-state tests. Preserve
+query parser, toolbar, row action, and empty-response tests.
+
+### Package 10C — Make Add New Vibe a compact identity-first screen
+
+**Files:**
+
+- `app/vibes/new/page.tsx`
+- `app/vibes/_components/VibePageHeader.tsx`
+- `tests/unit/vibe-new-page.test.tsx`
+
+**Implementation:**
+
+1. Keep Title, Slug, and Description first; constrain their form width to the
+   editorial canvas instead of a large promotional card.
+2. Add one short help line under Title and Slug. Keep the current slug pattern,
+   auto-generation, manual-slug override, create request, and error handling.
+3. Convert **Starting style** into a closed-by-default details/panel section
+   labelled “Optional starter style.” Opening it reveals the existing preset
+   cards; no preset is automatically applied.
+4. Reduce preset cards to compact selectable rows/swatch previews rather than
+   three equally dominant large cards. Keep their radios and visible keyboard
+   focus treatment.
+5. Make the primary submit read **Save draft and continue editing** and keep it
+   at the bottom of the identity form. Do not put publish/preview/apply actions
+   on this screen.
+
+**Acceptance:** title is the first focusable form control, slug guidance is
+visible before submit, optional style choices do not dominate first view.
+
+### Package 10D — Reshape the editor into canvas + document rail
+
+**Files:**
+
+- `app/vibes/[vibeId]/edit/VibeEditor.tsx`
+- `app/vibes/_components/VibeEditorToolbar.tsx`
+- `app/vibes/_components/VibePanel.tsx`
+- `app/vibes/_components/VibeStatusBadge.tsx`
+
+**Implementation boundary:** `saveDraft`, the form element, all existing input
+`name` attributes, PATCH URL, `expectedVersion`, and normalized draft payload
+must remain byte-for-byte behaviorally equivalent.
+
+1. Replace the current page heading with a compact editor toolbar: back to All
+   Vibes, editable draft title/slug context, save state, Preview, and Save
+   draft. Toolbar height target is 48–56px on desktop.
+2. Make the left/main column the editing canvas. Metadata stays first and open.
+   Split current **Visual system** into three distinct panels: **Colors**,
+   **Typography**, and **Layout**. Keep each panel’s child controls mounted
+   when closed.
+3. Keep Taxonomy open by default; make Source details and Jamie voice closed by
+   default. Do not conditionally unmount controls.
+4. Make the right rail sticky at desktop width and 280–320px wide. It shows, in
+   this order: status badge and explanation, save/conflict state, primary next
+   lifecycle action, Preview, revision history, and a compact audit link.
+5. Add an editor **Settings** toggle at desktop width that collapses/expands the
+   document settings column only. Publish/status rail remains available; this
+   is not a new API or persistence setting.
+6. Below `lg`, place the status/publish rail immediately after the toolbar and
+   before the editing canvas. Panels remain in the same order.
+7. Use compact admin controls: 32–36px inputs/buttons, 13–14px labels, thin
+   borders, minimal rounding. Retain Sunset Pulse color and typography tokens.
+
+**Tests:** extend editor validation to prove all field names exist while every
+panel is closed, form ref Save submits once, and status conflict remains
+distinct from dirty state.
+
+### Package 10E — Revision, audit, and taxonomy management screens
+
+**Files:**
+
+- `app/vibes/[vibeId]/revisions/RevisionList.tsx`
+- `app/vibes/[vibeId]/revisions/page.tsx`
+- `app/vibes/[vibeId]/audit/page.tsx`
+- `app/vibes/taxonomy/TaxonomyDirectory.tsx`
+
+**Implementation:**
+
+1. Keep revision history as a dense table. Present the current published
+   revision first, then previous published revisions, then checkpoints. Use
+   presentational sorting only if API ordering is insufficient.
+2. Make revision number/title the primary cell and show status, publish date,
+   author, parent revision, and change summary as secondary metadata. Keep
+   Compare, Republish, and Apply in a compact action row beneath it.
+3. Replace raw, all-caps audit cards with grouped date sections and concise
+   action labels. Put raw IDs in a native `<details>` region named **Technical
+   details**; preserve their content.
+4. Change taxonomy from its directory/card presentation to a native table with
+   Term, Group, and Used by columns. Add client-side search and group filter
+   over the already fetched response; do not add mutations or a new API.
+
+**Acceptance:** an editor can identify the live revision and its next actions
+without reading raw IDs; a taxonomy editor can scan and filter terms in one
+screen.
+
+### Package 10F — Complete site-application decision flow
+
+**Files:**
+
+- `app/vibes/[vibeId]/apply/page.tsx`
+- `app/vibes/_components/VibeApplyConfirmation.tsx`
+- `app/vibes/_components/VibeConfirmDialog.tsx`
+
+**Implementation:**
+
+1. Use a single-column operator workflow with this exact visual order:
+   selected revision → site selection → current-pointer check → preflight
+   summary → confirm and apply.
+2. Keep the revision received from Revision History as read-only context. Put
+   manual revision override behind **Choose a different revision** disclosure.
+3. Put disposable-run selection behind **Use a disposable verification site**
+   disclosure. Manual Site ID is a second disclosure; neither is the visual
+   first step when the revision is known.
+4. Keep the existing `checkedSiteId` guard: changing the site clears pointer
+   data and disables Apply until the exact new site is checked.
+5. Present preflight as a compact two-column definition list: Vibe, selected
+   revision, current pointer, new pointer, and disposable expiry warning.
+6. Preserve the native confirmation dialog, unique heading ID, duplicate-click
+   protection, and current apply endpoint/body unchanged.
+
+**Acceptance:** an operator cannot mistake a draft for a revision, cannot apply
+before checking the current site pointer, and sees source/destination context
+in one final review surface.
+
+### Package 10G — Visual system, responsive pass, and evidence
+
+**Files:** all files changed by Packages 10A–10F plus Vibe unit tests.
+
+**Implementation:**
+
+1. Normalize density tokens in the existing Vibe component classes: admin bar
+   40px, sidebar rows 32–36px, input/button controls 32–36px, table cells
+   8–12px vertical padding, page gutters 16px mobile/24px desktop.
+2. Remove decorative `rounded-xl`/shadow-heavy containers where they make an
+   operational screen feel like a dashboard card. Retain modest rounding for
+   notices, dialogs, and selected controls.
+3. Verify 1440px, 1024px, 768px, and 390px layouts. At each width, no select
+   option text may overlap its arrow; tables scroll horizontally rather than
+   dropping operational columns; navigation must be reachable without a
+   swipe-only interaction.
+4. Verify keyboard operation for sidebar/menu, list filtering, row actions,
+   panel toggles, Save, confirmation dialogs, and error notices.
+5. Capture before/after screenshots for shell, list, Add New, editor,
+   revisions, taxonomy, and Apply. Append a concise evidence block under this
+   plan after each package, with changed files, tests, and remaining gaps.
+
+### Canonical execution order
+
+1. 10A shell/navigation.
+2. 10B list table.
+3. 10C Add New.
+4. 10D editor.
+5. 10E revisions, audit, taxonomy.
+6. 10F Apply.
+7. 10G responsive, accessibility, and evidence.
+
+Do not start a later package while the preceding package has an unresolved
+interaction regression. Do not substitute a block-editor framework, add
+WordPress dependencies, or expand this plan into media/comments/plugins/themes.
