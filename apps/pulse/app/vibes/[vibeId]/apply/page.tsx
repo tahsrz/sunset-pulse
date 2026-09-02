@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { VibeApplyConfirmation } from "../../_components/VibeApplyConfirmation";
+import { VibePageHeader } from "../../_components/VibePageHeader";
 
 type Pointer = {
   revision?: { revisionId?: string; revisionNumber?: number } | null;
@@ -108,23 +109,13 @@ export default function ApplyVibePage() {
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-2xl">
-        <Link
-          href={`/vibes/${vibeId}/revisions`}
-          className="text-sm font-semibold text-slate-500 hover:underline"
-        >
-          ← Back to revisions
-        </Link>
-        <h1 className="mt-4 text-3xl font-black">Apply published revision</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Vibe <span className="font-mono">{vibeId}</span> · confirm the exact
-          published revision before applying.
-        </p>
+        <VibePageHeader title="Apply published revision" description={<>Vibe <span className="font-mono">{vibeId}</span> · confirm the exact published revision before applying.</>} backHref={`/vibes/${vibeId}/revisions`} backLabel="Back to revisions" />
         <form
           onSubmit={(event) => {
             event.preventDefault();
             if (revisionId.trim() && pointer && checkedSiteId === siteId.trim()) setConfirmOpen(true);
           }}
-          className="mt-6 space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="mt-6 space-y-5 border border-slate-200 bg-white p-6"
         >
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
             <label className="block text-sm font-bold">
