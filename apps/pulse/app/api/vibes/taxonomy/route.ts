@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
-import { countNormalizedTaxonomyUsage, diffTaxonomyUsageCounts } from '@/lib/cms/taxonomyRepository';
+import { countNormalizedTaxonomyUsage } from '@/lib/cms/taxonomyRepository';
+import { buildTaxonomyReconciliationReport } from '@/lib/cms/taxonomyReconciliation';
 
 export async function GET(request: NextRequest) {
   const tenantId = request.nextUrl.searchParams.get('tenantId')?.trim() || 'default';
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
     normalizedCounts = await countNormalizedTaxonomyUsage(tenantId);
   }
   if (compareReads && normalizedCounts) {
-    const mismatches = diffTaxonomyUsageCounts(counts, normalizedCounts);
-    if (mismatches.length > 0) console.warn('VIBE_TAXONOMY_READ_MISMATCH', { tenantId, mismatches, embeddedCounts: counts, normalizedCounts });
+    const reconciliation = buildTaxonomyReconciliationReport({ tenantId, embeddedCounts: counts, normalizedCounts });
+    if (reconciliation.state === 'mismatch') console.warn('VIBE_TAXONOMY_READ_MISMATCH', reconciliation);
   }
   return NextResponse.json({ terms: listVibeTaxonomyTerms(), counts: normalizedRead && normalizedCounts ? normalizedCounts : counts });
 }
