@@ -86,7 +86,7 @@ export async function countEmbeddedTaxonomyUsage(tenantId: string) {
 }
 
 export async function listNormalizedTaxonomyTerms(tenantId: string) {
-  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId)) as Promise<Array<{ id: string; group: string; term: string }>>;
+  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId)) as Promise<Array<{ id: string; group: string; term: string; label: string }>>;
 }
 
 export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string) {
@@ -100,6 +100,7 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string) {
       id: { $ifNull: ['$legacyId', { $concat: ['$taxonomy.slug', ':', '$slug'] }] },
       group: { $ifNull: [{ $arrayElemAt: [{ $split: ['$legacyId', ':'] }, 0] }, '$taxonomy.slug'] },
       term: '$slug',
+      label: '$label',
     } },
     { $sort: { group: 1, term: 1 } },
   ];

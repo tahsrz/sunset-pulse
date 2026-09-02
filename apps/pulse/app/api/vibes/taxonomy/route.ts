@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const compareReads = process.env.VIBE_TAXONOMY_COMPARE_READS === '1';
   const normalizedRead = process.env.VIBE_TAXONOMY_NORMALIZED_READ === '1';
   let normalizedCounts: Record<string, number> | null = null;
-  let normalizedTerms: Array<{ id: string; group: string; term: string }> | null = null;
+  let normalizedTerms: Array<{ id: string; group: string; term: string; label: string }> | null = null;
   if (compareReads || normalizedRead) {
     normalizedCounts = await countNormalizedTaxonomyUsage(tenantId);
   }

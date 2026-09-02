@@ -66,4 +66,18 @@ describe('Vibe taxonomy directory', () => {
     await screen.findByRole('table');
     expect(screen.queryByRole('button', { name: 'Add New Term' })).not.toBeInTheDocument();
   });
+
+  it('renders and searches by the persisted operator-facing label', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        terms: [{ id: 'visualFamily:high-contrast', group: 'visualFamily', term: 'high-contrast', label: 'High Contrast' }],
+        counts: {},
+      }),
+    }));
+    render(<TaxonomyDirectory />);
+    expect(await screen.findByRole('rowheader', { name: 'High Contrast' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search taxonomy terms' }), { target: { value: 'contrast' } });
+    expect(screen.getByRole('rowheader', { name: 'High Contrast' })).toBeInTheDocument();
+  });
 });
