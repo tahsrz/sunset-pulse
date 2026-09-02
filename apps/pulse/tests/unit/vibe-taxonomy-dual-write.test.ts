@@ -72,4 +72,15 @@ describe('draft taxonomy dual write', () => {
     await expect(saveVibeDraft({ vibeId: 'vibe-a', tenantId: 'tenant-a', draft, actorId: 'operator-a' })).resolves.toBe(updated);
     expect(warning).toHaveBeenCalledWith('VIBE_TAXONOMY_DUAL_WRITE_FAILED', expect.objectContaining({ tenantId: 'tenant-a', vibeId: 'vibe-a', error: 'normalized unavailable' }));
   });
+
+  it('reports unknown legacy IDs after synchronizing the known relationships', async () => {
+    process.env.VIBE_TAXONOMY_NORMALIZED_WRITE = '1';
+    arrangeSavedDraft();
+    mocks.resolve.mockResolvedValue({ termIds: ['term-a'], unknownLegacyIds: ['custom:legacy'] });
+    mocks.replace.mockResolvedValue({ addTermIds: ['term-a'], removeTermIds: [] });
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await saveVibeDraft({ vibeId: 'vibe-a', tenantId: 'tenant-a', draft: { ...draft, taxonomyTermIds: ['mood:calm', 'custom:legacy'] }, actorId: 'operator-a' });
+    expect(mocks.replace).toHaveBeenCalledWith(expect.objectContaining({ termIds: ['term-a'] }));
+    expect(warning).toHaveBeenCalledWith('VIBE_TAXONOMY_UNKNOWN_LEGACY_IDS', { tenantId: 'tenant-a', vibeId: 'vibe-a', unknownLegacyIds: ['custom:legacy'] });
+  });
 });
