@@ -8,6 +8,7 @@ import { VibeListToolbar } from './_components/VibeListToolbar';
 import { VibeStatusViews } from './_components/VibeStatusViews';
 import { VibeRowActions } from './_components/VibeRowActions';
 import { VibeStatusBadge } from './_components/VibeStatusBadge';
+import { VibeNotice } from './_components/VibeNotice';
 import { VibeConfirmDialog } from './_components/VibeConfirmDialog';
 
 type Vibe = {
@@ -67,6 +68,8 @@ export function VibeList() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkAction, setBulkAction] = useState<'' | 'archive' | 'trash'>('');
   const [confirmAction, setConfirmAction] = useState<'archive' | 'trash' | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     setSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
@@ -81,11 +84,6 @@ export function VibeList() {
     const queryString = serializeVibeListQuery(query);
     router[mode](queryString ? `${pathname}?${queryString}` : pathname);
   }
-
-  useEffect(() => {
-    if (page !== 1) updateQuery({ page: 1 }, 'replace');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, status, sort, direction]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -120,10 +118,10 @@ export function VibeList() {
       .catch((reason: Error) => {
         if (reason.name !== 'AbortError') setError(reason.message);
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
-  }, [page, search, status, sort, direction]);
+  }, [page, search, status, sort, direction, refreshToken]);
 
   function changeSort(nextSort: 'title' | 'status' | 'updatedAt') {
     const nextDirection = sort === nextSort ? (direction === 'asc' ? 'desc' : 'asc') : (nextSort === 'title' ? 'asc' : 'desc');
@@ -133,8 +131,8 @@ export function VibeList() {
 
   async function runBulk(action: 'archive' | 'trash') {
     if (!selected.size) return;
-    setBulkBusy(true); setError('');
-    try { const response = await fetch('/api/vibes/bulk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ vibeIds: [...selected], action }) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Bulk action failed.'); window.location.reload(); }
+    setBulkBusy(true); setError(''); setSuccessMessage('');
+    try { const response = await fetch('/api/vibes/bulk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ vibeIds: [...selected], action }) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Bulk action failed.'); setSuccessMessage(`${selected.size} Vibe${selected.size === 1 ? '' : 's'} ${action === 'trash' ? 'moved to trash' : 'archived'}.`); setSelected(new Set()); setBulkAction(''); setRefreshToken((current) => current + 1); }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Bulk action failed.'); }
     finally { setBulkBusy(false); setConfirmAction(null); }
   }
@@ -155,6 +153,7 @@ export function VibeList() {
         </header>
 
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Vibe list">
+          {successMessage ? <div className="p-4 pb-0"><VibeNotice tone="success" onDismiss={() => setSuccessMessage('')}>{successMessage}</VibeNotice></div> : null}
           <div className="border-b border-slate-200 px-4 pt-4">
             <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
           </div>

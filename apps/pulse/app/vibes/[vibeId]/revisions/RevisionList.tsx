@@ -133,7 +133,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
           })}
         </tbody>
       </table>
-      <VibeConfirmDialog open={confirmRevision !== null} title={`Republish r${confirmRevision?.revisionNumber ?? ''}?`} description="This creates a new published revision. Existing revisions remain unchanged and it does not apply the revision to a site." confirmLabel="Republish revision" cancelLabel="Cancel" busy={pendingId !== null} onOpenChange={(open) => { if (!open && pendingId === null) setConfirmRevision(null); }} onConfirm={() => void confirmRestore()} />
+      <VibeConfirmDialog open={confirmRevision !== null} title={`Republish r${confirmRevision?.revision.revisionNumber ?? ''}?`} description="This creates a new published revision. Existing revisions remain unchanged and it does not apply the revision to a site." confirmLabel="Republish revision" cancelLabel="Cancel" busy={pendingId !== null} onOpenChange={(open) => { if (!open && pendingId === null) setConfirmRevision(null); }} onConfirm={() => void confirmRestore()} />
     </section>
   );
 }

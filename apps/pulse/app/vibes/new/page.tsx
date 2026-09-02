@@ -138,7 +138,7 @@ export default function NewVibePage() {
               value={slug}
               onChange={(event) => {
                 setSlug(event.target.value);
-                setSlugEdited(event.target.value.length > 0);
+                setSlugEdited(true);
               }}
               className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-mono font-normal"
             />

@@ -11,7 +11,8 @@ export type VibeListQuery = {
 };
 
 function first(input: URLSearchParams, key: string) {
-  return input.get(key) ?? '';
+  const values = input.getAll(key);
+  return values.length === 1 ? values[0] : '';
 }
 
 export function parseVibeListQuery(input: URLSearchParams): VibeListQuery {
