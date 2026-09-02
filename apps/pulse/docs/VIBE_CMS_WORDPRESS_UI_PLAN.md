@@ -6178,6 +6178,7 @@ The implementation pass is complete on PR #75 (`codex/cms-vertical-slice-followu
 - `c5a83574` — shared Submit/Publish headers and dense lifecycle forms.
 - `5036da68` — shared Status & Actions header and operational panels.
 - `f6557ed7` — shared Compare header and dense diff surface.
+- `0881f844` — explicit accessible label and button semantics for themed Preview.
 
 Focused verification passed: list empty response, list toolbar, page header, Add New Vibe,
 and editor validation tests (13 tests total across focused runs). No API routes, request
