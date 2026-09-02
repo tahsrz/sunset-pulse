@@ -115,7 +115,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
         return response.json() as Promise<{ terms?: TaxonomyTerm[] }>;
       })
       .then((payload) => {
-        if (payload?.terms?.length) setTaxonomyTerms(payload.terms);
+        if (Array.isArray(payload?.terms)) setTaxonomyTerms(payload.terms);
       })
       .catch(() => {
         // Static controlled terms remain available if the catalog cannot load.
@@ -135,6 +135,19 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const status = vibe.status || 'draft';
   const currentDraftVersion = vibe.currentDraftVersion ?? 0;
   const selectedTaxonomyTerms = new Set(draft.taxonomyTermIds || []);
+  const availableTaxonomyIds = new Set(taxonomyTerms.map(({ id }) => id));
+  const unavailableSelectedTerms: TaxonomyTerm[] = Array.from(selectedTaxonomyTerms)
+    .filter((id): id is string => typeof id === 'string' && !availableTaxonomyIds.has(id))
+    .map((id) => {
+      const separator = id.indexOf(':');
+      return {
+        id,
+        group: separator > 0 ? id.slice(0, separator) : 'legacy',
+        term: separator > 0 ? id.slice(separator + 1) : id,
+        label: `${(separator > 0 ? id.slice(separator + 1) : id).replace(/-/g, ' ')} (unavailable)`,
+      };
+    });
+  const editorTaxonomyTerms = [...taxonomyTerms, ...unavailableSelectedTerms];
   const typography = { ...defaults.tokens.visual.theme.typography, ...(draft.tokens.visual.theme.typography || {}) };
   const layout = { borderRadius: 'md', spacingBasePx: 4, elevation: 'subtle', ...(draft.tokens.visual.theme.layout || {}) };
 
@@ -199,7 +212,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               <VibePanel id="taxonomy" title="Taxonomy" defaultOpen>
                 <p className="mt-1 text-sm text-slate-500">Choose terms that help operators find this Vibe later.</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {taxonomyTerms.map(({ id, group, term, label: termLabel }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold">{termLabel || term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
+                  {editorTaxonomyTerms.map(({ id, group, term, label: termLabel }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold">{termLabel || term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
                 </div>
               </VibePanel>
 

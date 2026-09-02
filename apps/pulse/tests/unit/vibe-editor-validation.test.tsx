@@ -63,6 +63,31 @@ describe('VibeEditor native validation', () => {
     });
   });
 
+  it('keeps a selected term that is absent from the active catalog until the operator removes it', async () => {
+    const vibeWithLegacyTerm = {
+      ...vibe,
+      draftPayload: { ...vibe.draftPayload, taxonomyTermIds: ['mood:archived-focus'] },
+    };
+    const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
+      if (String(input) === '/api/vibes/taxonomy') {
+        return new Response(JSON.stringify({ terms: [] }), { status: 200 });
+      }
+      if (init?.method === 'PATCH') return new Response(JSON.stringify({ vibe: vibeWithLegacyTerm }), { status: 200 });
+      return new Response(JSON.stringify({ vibe: vibeWithLegacyTerm }), { status: 200 });
+    });
+
+    render(<VibeEditor vibeId="format-test" />);
+    const unavailableTerm = await screen.findByRole('checkbox', { name: /archived focus \(unavailable\)/i });
+    expect(unavailableTerm).toBeChecked();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Updated title' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Save changes' }).closest('form')!);
+
+    await waitFor(() => {
+      const patchCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'PATCH');
+      expect(JSON.parse(String(patchCall?.[1]?.body)).draft.taxonomyTermIds).toEqual(['mood:archived-focus']);
+    });
+  });
+
   it('accepts the seeded base font size and submits the draft', async () => {
     const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
       if (init?.method === 'PATCH') return new Response(JSON.stringify({ vibe }), { status: 200 });
