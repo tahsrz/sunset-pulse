@@ -163,7 +163,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <form ref={formRef} onChange={() => { if (saveState !== 'saving') setSaveState('dirty'); }} onSubmit={(event) => { event.preventDefault(); void saveDraft(event.currentTarget); }}>
           <VibeEditorToolbar title={draft.title || 'Edit Vibe'} dirty={saveState === 'dirty'} conflict={saveState === 'conflict'} saving={saveState === 'saving'} previewHref={`/vibes/${vibeId}/preview`} onSave={() => formRef.current?.requestSubmit()} />
@@ -229,6 +229,6 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
           </div>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
