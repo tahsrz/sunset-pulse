@@ -164,6 +164,30 @@ describe('Vibe taxonomy directory', () => {
     }));
   });
 
+  it('summarizes empty, active, and archived terms for every taxonomy group', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      terms: [
+        { id: 'mood:calm', group: 'mood', term: 'calm', label: 'Calm', status: 'active' },
+        { id: 'mood:loud', group: 'mood', term: 'loud', label: 'Loud', status: 'archived' },
+      ],
+      groups: [
+        { slug: 'mood', label: 'Mood', hierarchical: false },
+        { slug: 'neighborhood', label: 'Neighborhood', hierarchical: true },
+      ],
+      counts: {},
+      capabilities: { manageTerms: true },
+    }) }));
+    render(<TaxonomyDirectory />);
+    const neighborhoodRow = (await screen.findByRole('button', { name: 'Neighborhood' })).closest('tr')!;
+    expect(within(neighborhoodRow).getByText('Hierarchical')).toBeInTheDocument();
+    expect(within(neighborhoodRow).getAllByText('0')).toHaveLength(2);
+    const moodRow = screen.getByRole('button', { name: 'Mood' }).closest('tr')!;
+    expect(within(moodRow).getByText('Flat')).toBeInTheDocument();
+    expect(within(moodRow).getAllByText('1')).toHaveLength(2);
+    fireEvent.click(within(neighborhoodRow).getByRole('button', { name: 'Neighborhood' }));
+    expect(screen.getByRole('combobox', { name: 'Filter taxonomy group' })).toHaveValue('neighborhood');
+  });
+
   it('offers active parents only for hierarchical taxonomy groups', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({
