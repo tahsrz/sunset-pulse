@@ -85,7 +85,7 @@ export async function countEmbeddedTaxonomyUsage(tenantId: string) {
 }
 
 export async function listNormalizedTaxonomyTerms(tenantId: string, includeArchived = false) {
-  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId, includeArchived)) as Promise<Array<{ id: string; group: string; term: string; label: string; status: 'active' | 'archived' }>>;
+  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId, includeArchived)) as Promise<Array<{ id: string; group: string; term: string; label: string; status: 'active' | 'archived'; parentId?: string }>>;
 }
 
 export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, includeArchived = false): PipelineStage[] {
@@ -94,6 +94,7 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, include
     { $lookup: { from: VibeTaxonomy.collection.name, localField: 'taxonomyId', foreignField: '_id', as: 'taxonomy' } },
     { $unwind: '$taxonomy' },
     { $match: { 'taxonomy.tenantId': tenantId, 'taxonomy.status': 'active' } },
+    { $lookup: { from: VibeTerm.collection.name, localField: 'parentTermId', foreignField: '_id', as: 'parent' } },
     { $project: {
       _id: 0,
       id: { $ifNull: ['$legacyId', { $concat: ['$taxonomy.slug', ':', '$slug'] }] },
@@ -101,6 +102,7 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, include
       term: '$slug',
       label: '$label',
       status: '$status',
+      parentId: { $arrayElemAt: ['$parent.legacyId', 0] },
     } },
     { $sort: { group: 1, term: 1 } },
   ];
@@ -131,9 +133,14 @@ export async function createNormalizedTaxonomyTerm(input: {
   group: string;
   term: string;
   label: string;
+  parentTerm?: string;
 }) {
   const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
   if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  const parent = input.parentTerm
+    ? await VibeTerm.findOne({ tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.parentTerm, status: 'active' }).select('_id legacyId').lean() as { _id: unknown; legacyId?: string } | null
+    : null;
+  if (input.parentTerm && !parent) throw new Error('PARENT_TERM_NOT_FOUND');
   try {
     const created = await VibeTerm.create({
       tenantId: input.tenantId,
@@ -141,9 +148,10 @@ export async function createNormalizedTaxonomyTerm(input: {
       slug: input.term,
       label: input.label,
       legacyId: `${input.group}:${input.term}`,
+      ...(parent ? { parentTermId: parent._id } : {}),
       status: 'active',
     });
-    return { id: created.legacyId, group: input.group, term: created.slug, label: created.label };
+    return { id: created.legacyId, group: input.group, term: created.slug, label: created.label, ...(parent ? { parentId: parent.legacyId || `${input.group}:${input.parentTerm}` } : {}) };
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 11000) throw new Error('TERM_EXISTS');
     throw error;

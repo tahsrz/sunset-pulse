@@ -37,6 +37,7 @@ describe('taxonomy relationship reconciliation', () => {
     expect(serialized).toContain('"$ifNull":["$legacyId"');
     expect(serialized).toContain('"$split":["$legacyId",":"]');
     expect(serialized).toContain('"label":"$label"');
+    expect(serialized).toContain('"parentId":{"$arrayElemAt":["$parent.legacyId",0]}');
     expect(serialized).toContain('"id"');
     expect(serialized).toContain('"group":1,"term":1');
   });

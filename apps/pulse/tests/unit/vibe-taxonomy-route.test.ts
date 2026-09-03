@@ -50,6 +50,14 @@ describe('taxonomy directory read authority', () => {
     expect(mocks.createTerm).toHaveBeenCalledWith({ tenantId: 'tenant-a', group: 'mood', term: 'focused', label: 'Focused' });
   });
 
+  it('passes an optional parent slug for hierarchical terms', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.createTerm.mockResolvedValue({ id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' });
+    const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentTerm: 'downtown' }) }));
+    expect(response.status).toBe(201);
+    expect(mocks.createTerm).toHaveBeenCalledWith({ tenantId: 'default', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentTerm: 'downtown' });
+  });
+
   it('updates only the display label when management is enabled', async () => {
     process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
     mocks.updateTermLabel.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' });

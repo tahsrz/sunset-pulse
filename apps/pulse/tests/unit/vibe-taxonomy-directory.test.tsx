@@ -162,4 +162,32 @@ describe('Vibe taxonomy directory', () => {
       body: JSON.stringify({ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }),
     }));
   });
+
+  it('offers active parents only for hierarchical taxonomy groups', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({
+        terms: [
+          { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown', status: 'active' },
+          { id: 'neighborhood:old-town', group: 'neighborhood', term: 'old-town', label: 'Old Town', status: 'archived' },
+        ],
+        groups: [{ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }],
+        counts: {},
+        capabilities: { manageTerms: true },
+      }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    const termForm = (await screen.findByRole('button', { name: 'Add New Term' })).closest('form')!;
+    fireEvent.change(within(termForm).getByRole('combobox', { name: 'Group' }), { target: { value: 'neighborhood' } });
+    const parentSelect = within(termForm).getByRole('combobox', { name: 'Parent term' });
+    expect(within(parentSelect).getByRole('option', { name: 'Downtown' })).toBeInTheDocument();
+    expect(within(parentSelect).queryByRole('option', { name: 'Old Town' })).not.toBeInTheDocument();
+    fireEvent.change(within(termForm).getByRole('textbox', { name: 'Name' }), { target: { value: 'Downtown East' } });
+    fireEvent.change(parentSelect, { target: { value: 'downtown' } });
+    fireEvent.submit(termForm);
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentTerm: 'downtown' }),
+    })));
+  });
 });
