@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectDescendantTermIds, orderTaxonomyTermsByHierarchy } from '@/lib/cms/taxonomyHierarchy';
+import { collectDescendantTermIds, getTaxonomyTermDepths, orderTaxonomyTermsByHierarchy } from '@/lib/cms/taxonomyHierarchy';
 
 describe('taxonomy hierarchy helpers', () => {
   it('collects every descendant while excluding siblings and ancestors', () => {
@@ -33,5 +33,18 @@ describe('taxonomy hierarchy helpers', () => {
     ]);
 
     expect(ordered.map(({ id }) => id)).toEqual(['orphan', 'root', 'child', 'cycle-a', 'cycle-b']);
+  });
+
+  it('calculates nested display depth and treats orphans and cycles as roots', () => {
+    const depths = getTaxonomyTermDepths([
+      { id: 'root' },
+      { id: 'child', parentId: 'root' },
+      { id: 'grandchild', parentId: 'child' },
+      { id: 'orphan', parentId: 'missing' },
+      { id: 'cycle-a', parentId: 'cycle-b' },
+      { id: 'cycle-b', parentId: 'cycle-a' },
+    ]);
+
+    expect(Object.fromEntries(depths)).toEqual({ root: 0, child: 1, grandchild: 2, orphan: 0, 'cycle-a': 0, 'cycle-b': 0 });
   });
 });

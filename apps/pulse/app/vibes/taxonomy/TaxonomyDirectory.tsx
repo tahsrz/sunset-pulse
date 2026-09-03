@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   collectDescendantTermIds,
+  getTaxonomyTermDepths,
   orderTaxonomyTermsByHierarchy,
 } from '@/lib/cms/taxonomyHierarchy';
 
@@ -103,6 +104,7 @@ export function TaxonomyDirectory() {
       new Map((terms || []).map((term) => [term.id, term.label || term.term.replace(/-/g, ' ')])),
     [terms],
   );
+  const termDepths = useMemo(() => getTaxonomyTermDepths(terms || []), [terms]);
   const matchingTerms = useMemo(
     () =>
       (terms || []).filter((term) => {
@@ -705,6 +707,7 @@ export function TaxonomyDirectory() {
                 <option value="">None</option>
                 {availableParents.map((term) => (
                   <option key={term.id} value={term.term}>
+                    {'— '.repeat(termDepths.get(term.id) || 0)}
                     {term.label || term.term.replace(/-/g, ' ')}
                   </option>
                 ))}
@@ -795,6 +798,7 @@ export function TaxonomyDirectory() {
               <option value="">None</option>
               {editingParentOptions.map((term) => (
                 <option key={term.id} value={term.term}>
+                  {'— '.repeat(termDepths.get(term.id) || 0)}
                   {term.label || term.term.replace(/-/g, ' ')}
                 </option>
               ))}
@@ -867,6 +871,11 @@ export function TaxonomyDirectory() {
                       </span>
                     ) : (
                       <span>
+                        {termSort === 'hierarchy' && (termDepths.get(term.id) || 0) > 0 ? (
+                          <span aria-hidden="true" className="mr-1 text-slate-400">
+                            {'— '.repeat(termDepths.get(term.id) || 0)}
+                          </span>
+                        ) : null}
                         {term.label || term.term.replace(/-/g, ' ')}
                         {term.description ? (
                           <span className="mt-1 block max-w-md text-xs font-normal text-slate-500">

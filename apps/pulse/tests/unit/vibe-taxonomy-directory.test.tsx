@@ -272,7 +272,7 @@ describe('Vibe taxonomy directory', () => {
     const childRow = screen.getByRole('rowheader', { name: 'Downtown East' }).closest('tr')!;
     expect(within(childRow).getByText('Downtown')).toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'Sort taxonomy terms' }), { target: { value: 'hierarchy' } });
-    expect(screen.getAllByRole('rowheader').map((cell) => cell.textContent)).toEqual(['Downtown', 'Downtown East']);
+    expect(screen.getAllByRole('rowheader').map((cell) => cell.textContent)).toEqual(['Downtown', '— Downtown East']);
   });
 
   it('reassigns a hierarchical parent while preserving the term identity', async () => {

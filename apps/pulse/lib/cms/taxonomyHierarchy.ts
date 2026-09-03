@@ -3,6 +3,27 @@ export type TaxonomyHierarchyTerm = {
   parentId?: string;
 };
 
+export function getTaxonomyTermDepths(terms: TaxonomyHierarchyTerm[]) {
+  const byId = new Map(terms.map((term) => [term.id, term]));
+  const depths = new Map<string, number>();
+  for (const term of terms) {
+    let depth = 0;
+    let current = term;
+    const visited = new Set([term.id]);
+    while (current.parentId && byId.has(current.parentId)) {
+      if (visited.has(current.parentId)) {
+        depth = 0;
+        break;
+      }
+      depth += 1;
+      visited.add(current.parentId);
+      current = byId.get(current.parentId)!;
+    }
+    depths.set(term.id, depth);
+  }
+  return depths;
+}
+
 export function orderTaxonomyTermsByHierarchy<T extends TaxonomyHierarchyTerm & { group: string; label?: string; term: string }>(terms: T[]) {
   const byId = new Map(terms.map((term) => [term.id, term]));
   const childrenByParent = new Map<string, T[]>();
