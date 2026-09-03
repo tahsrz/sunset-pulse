@@ -166,16 +166,17 @@ export async function updateNormalizedTaxonomyTermLabel(input: {
   group: string;
   term: string;
   label: string;
+  description?: string;
 }) {
   const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
   if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
   const updated = await VibeTerm.findOneAndUpdate(
     { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' },
-    { $set: { label: input.label } },
+    { $set: { label: input.label, ...(input.description !== undefined ? { description: input.description } : {}) } },
     { new: true },
-  ).lean() as { legacyId?: string; slug: string; label: string } | null;
+  ).lean() as { legacyId?: string; slug: string; label: string; description?: string } | null;
   if (!updated) throw new Error('TERM_NOT_FOUND');
-  return { id: updated.legacyId || `${input.group}:${updated.slug}`, group: input.group, term: updated.slug, label: updated.label };
+  return { id: updated.legacyId || `${input.group}:${updated.slug}`, group: input.group, term: updated.slug, label: updated.label, description: updated.description || '' };
 }
 
 export async function archiveNormalizedTaxonomyTerm(input: {
@@ -189,9 +190,9 @@ export async function archiveNormalizedTaxonomyTerm(input: {
     { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' },
     { $set: { status: 'archived' } },
     { new: true },
-  ).lean() as { legacyId?: string; slug: string; label: string } | null;
+  ).lean() as { legacyId?: string; slug: string; label: string; description?: string } | null;
   if (!archived) throw new Error('TERM_NOT_FOUND');
-  return { id: archived.legacyId || `${input.group}:${archived.slug}`, group: input.group, term: archived.slug, label: archived.label, status: 'archived' as const };
+  return { id: archived.legacyId || `${input.group}:${archived.slug}`, group: input.group, term: archived.slug, label: archived.label, description: archived.description || '', status: 'archived' as const };
 }
 
 export async function restoreNormalizedTaxonomyTerm(input: {
@@ -205,9 +206,9 @@ export async function restoreNormalizedTaxonomyTerm(input: {
     { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'archived' },
     { $set: { status: 'active' } },
     { new: true },
-  ).lean() as { legacyId?: string; slug: string; label: string } | null;
+  ).lean() as { legacyId?: string; slug: string; label: string; description?: string } | null;
   if (!restored) throw new Error('TERM_NOT_FOUND');
-  return { id: restored.legacyId || `${input.group}:${restored.slug}`, group: input.group, term: restored.slug, label: restored.label };
+  return { id: restored.legacyId || `${input.group}:${restored.slug}`, group: input.group, term: restored.slug, label: restored.label, description: restored.description || '' };
 }
 
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {

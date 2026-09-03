@@ -82,19 +82,20 @@ describe('Vibe taxonomy directory', () => {
     expect(screen.getByRole('rowheader', { name: 'High Contrast' })).toBeInTheDocument();
   });
 
-  it('renames a normalized term without changing its slug or ID', async () => {
+  it('edits normalized term metadata without changing its slug or ID', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [{ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' }], counts: {}, capabilities: { manageTerms: true } }) })
       .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' } }) });
     vi.stubGlobal('fetch', fetchMock);
     render(<TaxonomyDirectory />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Rename' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Name for focused' }), { target: { value: 'Deep Focus' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Description for focused' }), { target: { value: 'For concentrated layouts.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByRole('rowheader', { name: 'Deep Focus' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({
       method: 'PATCH',
-      body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus' }),
+      body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus', description: 'For concentrated layouts.' }),
     }));
   });
 

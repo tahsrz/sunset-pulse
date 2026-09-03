@@ -66,13 +66,13 @@ describe('taxonomy directory read authority', () => {
     expect(mocks.createTerm).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused', label: 'Focused', description: 'For concentrated editorial layouts.' });
   });
 
-  it('updates only the display label when management is enabled', async () => {
+  it('updates editable term metadata without changing identity', async () => {
     process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
     mocks.updateTermLabel.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' });
-    const response = await PATCH(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PATCH', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus' }) }));
+    const response = await PATCH(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PATCH', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus', description: 'For concentrated layouts.' }) }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ term: { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' } });
-    expect(mocks.updateTermLabel).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused', label: 'Deep Focus' });
+    expect(mocks.updateTermLabel).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused', label: 'Deep Focus', description: 'For concentrated layouts.' });
   });
 
   it('archives a term without deleting its compatibility identity', async () => {
