@@ -50,6 +50,19 @@ describe('taxonomy directory read authority', () => {
     expect(mocks.createTerm).toHaveBeenCalledWith({ tenantId: 'tenant-a', group: 'mood', term: 'focused', label: 'Focused' });
   });
 
+  it('accepts both new hyphenated and legacy camel-case taxonomy references', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.createTerm.mockImplementation(async (input) => ({ id: `${input.group}:${input.term}`, ...input }));
+
+    const hyphenated = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'property-type', term: 'condo', label: 'Condo' }) }));
+    const legacy = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'visualFamily', term: 'minimal', label: 'Minimal' }) }));
+
+    expect(hyphenated.status).toBe(201);
+    expect(legacy.status).toBe(201);
+    expect(mocks.createTerm).toHaveBeenNthCalledWith(1, { tenantId: 'default', group: 'property-type', term: 'condo', label: 'Condo' });
+    expect(mocks.createTerm).toHaveBeenNthCalledWith(2, { tenantId: 'default', group: 'visualFamily', term: 'minimal', label: 'Minimal' });
+  });
+
   it('passes an optional parent slug for hierarchical terms', async () => {
     process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
     mocks.createTerm.mockResolvedValue({ id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' });

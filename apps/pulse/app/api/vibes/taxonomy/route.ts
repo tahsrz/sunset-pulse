@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 const createTermSchema = z.object({
   tenantId: z.string().trim().min(1).max(80).default('default'),
-  group: z.string().trim().regex(/^[a-z][A-Za-z0-9]*$/),
+  group: z.string().trim().regex(/^[a-z][A-Za-z0-9-]*$/),
   term: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   label: z.string().trim().min(1).max(80),
   description: z.string().trim().max(240).optional(),
