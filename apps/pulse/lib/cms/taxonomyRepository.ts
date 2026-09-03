@@ -287,7 +287,7 @@ export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
     { $match: { tenantId } },
     { $lookup: { from: VibeTerm.collection.name, localField: 'termId', foreignField: '_id', as: 'term' } },
     { $unwind: '$term' },
-    { $match: { 'term.status': 'active', 'term.legacyId': { $type: 'string' } } },
+    { $match: { 'term.status': { $in: ['active', 'archived'] }, 'term.legacyId': { $type: 'string' } } },
     { $lookup: { from: Vibe.collection.name, let: { relationshipVibeId: '$vibeId', relationshipTenantId: '$tenantId' }, pipeline: [
       { $match: { $expr: { $and: [{ $eq: ['$vibeId', '$$relationshipVibeId'] }, { $eq: ['$tenantId', '$$relationshipTenantId'] }] } } },
       { $match: { status: { $ne: 'trash' } } },

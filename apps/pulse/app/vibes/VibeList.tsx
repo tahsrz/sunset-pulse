@@ -21,6 +21,7 @@ type Vibe = {
   status?: string;
   updatedAt?: string;
   publishedRevisionId?: string;
+  taxonomyTermIds?: string[];
 };
 
 type ListResponse = {
@@ -48,6 +49,10 @@ function formatModified(value?: string) {
 
 function sortLabel(active: boolean, direction: 'asc' | 'desc') {
   return active ? (direction === 'asc' ? '↑' : '↓') : '↕';
+}
+
+function taxonomyTermLabel(termId: string) {
+  return termId.split(':').pop()?.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || termId;
 }
 
 export function VibeList() {
@@ -179,6 +184,7 @@ export function VibeList() {
                       <th scope="col" className="px-4 py-3"><input aria-label="Select all Vibes on this page" type="checkbox" checked={vibes.length > 0 && vibes.every((vibe) => selected.has(vibe.vibeId))} onChange={(event) => setSelected(event.target.checked ? new Set(vibes.map((vibe) => vibe.vibeId)) : new Set())} /></th>
                       <th scope="col" aria-sort={sort === 'title' ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'} className="px-4 py-3"><button type="button" onClick={() => changeSort('title')} className="font-bold hover:text-slate-900">Vibe <span aria-hidden="true">{sortLabel(sort === 'title', direction)}</span></button></th>
                       <th scope="col" aria-sort={sort === 'status' ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'} className="px-4 py-3"><button type="button" onClick={() => changeSort('status')} className="font-bold hover:text-slate-900">Status <span aria-hidden="true">{sortLabel(sort === 'status', direction)}</span></button></th>
+                      <th scope="col" className="px-4 py-3">Taxonomy</th>
                       <th scope="col" className="px-4 py-3">Revision</th>
                       <th scope="col" aria-sort={sort === 'updatedAt' ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'} className="px-4 py-3"><button type="button" onClick={() => changeSort('updatedAt')} className="font-bold hover:text-slate-900">Last modified <span aria-hidden="true">{sortLabel(sort === 'updatedAt', direction)}</span></button></th>
                     </tr>
@@ -193,6 +199,7 @@ export function VibeList() {
                           <div className="mt-2"><VibeRowActions actions={[{ label: 'Edit', href: `/vibes/${vibe.vibeId}/edit` }, { label: 'Preview', href: `/vibes/${vibe.vibeId}/preview` }, { label: 'Revisions', href: `/vibes/${vibe.vibeId}/revisions` }, { label: 'Status & Actions', href: `/vibes/${vibe.vibeId}/actions` }]} /></div>
                         </td>
                         <td className="px-4 py-3"><VibeStatusBadge status={vibe.status || 'draft'} /></td>
+                        <td className="px-4 py-3"><div className="flex max-w-xs flex-wrap gap-1">{vibe.taxonomyTermIds?.length ? vibe.taxonomyTermIds.map((termId) => <Link key={termId} href={`/vibes?taxonomyTerm=${encodeURIComponent(termId)}`} className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-[#2271b1] hover:border-[#2271b1]">{taxonomyTermLabel(termId)}</Link>) : <span className="text-xs text-slate-400">—</span>}</div></td>
                         <td className="px-4 py-3 text-xs text-slate-500">{vibe.publishedRevisionId ? 'Published revision' : '—'}</td>
                         <td className="px-4 py-3 text-xs text-slate-500">{formatModified(vibe.updatedAt)}</td>
                       </tr>

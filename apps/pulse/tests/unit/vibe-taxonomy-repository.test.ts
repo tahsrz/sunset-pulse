@@ -27,10 +27,10 @@ describe('taxonomy relationship reconciliation', () => {
     expect(await hasTaxonomyParentCycle('child', 'root', async (id) => parents.get(id) || null)).toBe(false);
   });
 
-  it('scopes normalized usage to a tenant, active legacy terms, and non-trash Vibes', () => {
+  it('scopes normalized usage to a tenant, retained legacy terms, and non-trash Vibes', () => {
     const serialized = JSON.stringify(buildNormalizedTaxonomyUsagePipeline('tenant-a'));
     expect(serialized).toContain('"tenantId":"tenant-a"');
-    expect(serialized).toContain('"term.status":"active"');
+    expect(serialized).toContain('"term.status":{"$in":["active","archived"]}');
     expect(serialized).toContain('"term.legacyId"');
     expect(serialized).toContain('"status":{"$ne":"trash"}');
     expect(serialized).toContain('"$eq":["$tenantId","$$relationshipTenantId"]');

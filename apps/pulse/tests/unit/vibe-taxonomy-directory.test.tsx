@@ -136,11 +136,12 @@ describe('Vibe taxonomy directory', () => {
   it('filters persisted archived terms and restores them after a later refresh', async () => {
     const archived = { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', status: 'archived' };
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [archived], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [archived], counts: { 'mood:focused': 3 }, capabilities: { manageTerms: true } }) })
       .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { ...archived, status: 'active' } }) });
     vi.stubGlobal('fetch', fetchMock);
     render(<TaxonomyDirectory />);
     fireEvent.change(await screen.findByRole('combobox', { name: 'Filter taxonomy status' }), { target: { value: 'archived' } });
+    expect(screen.getByText('Focused (3)')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
     await waitFor(() => expect(screen.queryByRole('rowheader', { name: 'Focused' })).not.toBeInTheDocument());
     expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({ method: 'PUT' }));
