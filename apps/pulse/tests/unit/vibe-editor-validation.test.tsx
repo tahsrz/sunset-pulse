@@ -53,7 +53,10 @@ describe('VibeEditor native validation', () => {
 
     render(<VibeEditor vibeId="format-test" />);
     const term = await screen.findByRole('checkbox', { name: /Deep Focus/i });
+    expect(screen.getByRole('group', { name: 'Mood' })).toBeInTheDocument();
+    expect(screen.getByText('0 selected')).toBeInTheDocument();
     fireEvent.click(term);
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
     fireEvent.submit(screen.getByRole('button', { name: 'Save changes' }).closest('form')!);
 
     await waitFor(() => {

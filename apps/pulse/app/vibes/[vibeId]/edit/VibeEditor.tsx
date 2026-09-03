@@ -42,6 +42,10 @@ function label(status: string) {
   return status.replace(/_/g, ' ');
 }
 
+function taxonomyGroupLabel(group: string) {
+  return group.replace(/([A-Z])/g, ' $1').replace(/^./, (character) => character.toUpperCase());
+}
+
 function workflowAction(status: string, vibeId: string) {
   if (status === 'draft') return { href: `/vibes/${vibeId}/submit`, label: 'Submit for review', description: 'Send this saved draft to the review queue.' };
   if (status === 'in_review') return { href: `/vibes/${vibeId}/publish`, label: 'Publish revision', description: 'Create the next immutable published revision.' };
@@ -92,6 +96,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [settingsOpen, setSettingsOpen] = useState(true);
   const [taxonomyTerms, setTaxonomyTerms] = useState<TaxonomyTerm[]>(() => listVibeTaxonomyTerms());
+  const [selectedTaxonomyCount, setSelectedTaxonomyCount] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -100,7 +105,10 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
         if (!response.ok) throw new Error('Unable to load vibe.');
         return response.json();
       })
-      .then((payload) => setVibe(payload.vibe))
+      .then((payload) => {
+        setVibe(payload.vibe);
+        setSelectedTaxonomyCount(payload.vibe?.draftPayload?.taxonomyTermIds?.length || 0);
+      })
       .catch((reason: unknown) => {
         if (!(reason instanceof Error) || reason.name !== 'AbortError') setError(reason instanceof Error ? reason.message : 'Unable to load vibe.');
       });
@@ -148,6 +156,10 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
       };
     });
   const editorTaxonomyTerms = [...taxonomyTerms, ...unavailableSelectedTerms];
+  const editorTaxonomyGroups = Object.entries(editorTaxonomyTerms.reduce<Record<string, TaxonomyTerm[]>>((groups, term) => {
+    (groups[term.group] ||= []).push(term);
+    return groups;
+  }, {}));
   const typography = { ...defaults.tokens.visual.theme.typography, ...(draft.tokens.visual.theme.typography || {}) };
   const layout = { borderRadius: 'md', spacingBasePx: 4, elevation: 'subtle', ...(draft.tokens.visual.theme.layout || {}) };
 
@@ -210,9 +222,12 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               </VibePanel>
 
               <VibePanel id="taxonomy" title="Taxonomy" defaultOpen>
-                <p className="mt-1 text-sm text-slate-500">Choose terms that help operators find this Vibe later.</p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {editorTaxonomyTerms.map(({ id, group, term, label: termLabel }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold">{termLabel || term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
+                  <p>Choose terms that help operators find this Vibe later.</p>
+                  <p className="font-semibold">{selectedTaxonomyCount} selected</p>
+                </div>
+                <div className="mt-4 space-y-4">
+                  {editorTaxonomyGroups.map(([group, terms]) => <fieldset key={group} className="rounded-md border border-slate-200 p-3"><legend className="px-1 text-xs font-bold uppercase tracking-wide text-slate-500">{taxonomyGroupLabel(group)}</legend><div className="grid gap-2 sm:grid-cols-2">{(terms || []).map(({ id, term, label: termLabel }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} onChange={(event) => setSelectedTaxonomyCount((count) => Math.max(0, count + (event.target.checked ? 1 : -1)))} /><span className="font-semibold">{termLabel || term.replace(/-/g, ' ')}</span></label>)}</div></fieldset>)}
                 </div>
               </VibePanel>
 
