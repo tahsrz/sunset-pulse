@@ -146,6 +146,6 @@ describe('taxonomy directory read authority', () => {
     mocks.listGroups.mockResolvedValue([{ slug: 'mood', label: 'Mood', hierarchical: false }]);
     await GET(new NextRequest('http://localhost/api/vibes/taxonomy?includeArchived=1'));
     expect(mocks.listNormalized).toHaveBeenCalledWith('default', true);
-    expect(mocks.listGroups).toHaveBeenCalledWith('default');
+    expect(mocks.listGroups).toHaveBeenCalledWith('default', true);
   });
 });

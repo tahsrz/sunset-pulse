@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import connectDB from '@/lib/core/database';
-import { createNormalizedTaxonomyGroup, updateNormalizedTaxonomyGroupLabel } from '@/lib/cms/taxonomyRepository';
+import { archiveNormalizedTaxonomyGroup, createNormalizedTaxonomyGroup, restoreNormalizedTaxonomyGroup, updateNormalizedTaxonomyGroupLabel } from '@/lib/cms/taxonomyRepository';
 
 const createGroupSchema = z.object({
   tenantId: z.string().trim().min(1).max(80).default('default'),
@@ -41,5 +41,34 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === 'TAXONOMY_NOT_FOUND') return NextResponse.json({ error: 'Taxonomy not found.' }, { status: 404 });
     return NextResponse.json({ error: 'Unable to update taxonomy.' }, { status: 500 });
+  }
+}
+
+const identifyGroupSchema = createGroupSchema.pick({ tenantId: true, slug: true });
+
+export async function DELETE(request: NextRequest) {
+  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1' || process.env.VIBE_TAXONOMY_NORMALIZED_READ !== '1') return NextResponse.json({ error: 'Taxonomy management is disabled.' }, { status: 404 });
+  const parsed = identifyGroupSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Use a valid lowercase slug.' }, { status: 400 });
+  await connectDB();
+  try {
+    return NextResponse.json({ group: await archiveNormalizedTaxonomyGroup(parsed.data) });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'TAXONOMY_NOT_EMPTY') return NextResponse.json({ error: 'Archive every term in this taxonomy before archiving the taxonomy.' }, { status: 409 });
+    if (error instanceof Error && error.message === 'TAXONOMY_NOT_FOUND') return NextResponse.json({ error: 'Taxonomy not found.' }, { status: 404 });
+    return NextResponse.json({ error: 'Unable to archive taxonomy.' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1' || process.env.VIBE_TAXONOMY_NORMALIZED_READ !== '1') return NextResponse.json({ error: 'Taxonomy management is disabled.' }, { status: 404 });
+  const parsed = identifyGroupSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Use a valid lowercase slug.' }, { status: 400 });
+  await connectDB();
+  try {
+    return NextResponse.json({ group: await restoreNormalizedTaxonomyGroup(parsed.data) });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'TAXONOMY_NOT_FOUND') return NextResponse.json({ error: 'Archived taxonomy not found.' }, { status: 404 });
+    return NextResponse.json({ error: 'Unable to restore taxonomy.' }, { status: 500 });
   }
 }

@@ -15,12 +15,12 @@ export async function GET(request: NextRequest) {
   const includeArchived = manageTerms && request.nextUrl.searchParams.get('includeArchived') === '1';
   let normalizedCounts: Record<string, number> | null = null;
   let normalizedTerms: Array<{ id: string; group: string; term: string; label: string; description?: string; status: 'active' | 'archived'; parentId?: string }> | null = null;
-  let normalizedGroups: Array<{ slug: string; label: string; hierarchical: boolean }> | null = null;
+  let normalizedGroups: Array<{ slug: string; label: string; hierarchical: boolean; status: 'active' | 'archived' }> | null = null;
   if (compareReads || normalizedRead) {
     normalizedCounts = await countNormalizedTaxonomyUsage(tenantId);
   }
   if (normalizedRead) normalizedTerms = await listNormalizedTaxonomyTerms(tenantId, includeArchived);
-  if (includeArchived) normalizedGroups = await listNormalizedTaxonomyGroups(tenantId);
+  if (includeArchived) normalizedGroups = await listNormalizedTaxonomyGroups(tenantId, true);
   if (compareReads && normalizedCounts) {
     const reconciliation = buildTaxonomyReconciliationReport({ tenantId, embeddedCounts: counts, normalizedCounts });
     if (reconciliation.state === 'mismatch') console.warn('VIBE_TAXONOMY_READ_MISMATCH', reconciliation);

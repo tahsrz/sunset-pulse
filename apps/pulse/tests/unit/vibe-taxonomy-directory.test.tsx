@@ -205,6 +205,31 @@ describe('Vibe taxonomy directory', () => {
     }));
   });
 
+  it('archives and restores an empty taxonomy while blocking non-empty groups', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({
+        terms: [{ id: 'mood:calm', group: 'mood', term: 'calm', status: 'active' }],
+        groups: [
+          { slug: 'mood', label: 'Mood', hierarchical: false, status: 'active' },
+          { slug: 'neighborhood', label: 'Neighborhood', hierarchical: true, status: 'active' },
+        ],
+        counts: {}, capabilities: { manageTerms: true },
+      }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ group: { slug: 'neighborhood', label: 'Neighborhood', hierarchical: true, status: 'archived' } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ group: { slug: 'neighborhood', label: 'Neighborhood', hierarchical: true, status: 'active' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    const moodRow = (await screen.findByRole('button', { name: 'Mood' })).closest('tr')!;
+    expect(within(moodRow).getByRole('button', { name: 'Archive' })).toBeDisabled();
+    let neighborhoodRow = screen.getByRole('button', { name: 'Neighborhood' }).closest('tr')!;
+    fireEvent.click(within(neighborhoodRow).getByRole('button', { name: 'Archive' }));
+    fireEvent.click(within(neighborhoodRow).getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy/groups', expect.objectContaining({ method: 'DELETE' })));
+    neighborhoodRow = screen.getByRole('button', { name: 'Neighborhood' }).closest('tr')!;
+    fireEvent.click(within(neighborhoodRow).getByRole('button', { name: 'Restore' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy/groups', expect.objectContaining({ method: 'PUT' })));
+  });
+
   it('offers active parents only for hierarchical taxonomy groups', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({

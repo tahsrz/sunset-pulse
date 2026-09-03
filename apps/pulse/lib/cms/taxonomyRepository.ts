@@ -109,9 +109,9 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, include
   ];
 }
 
-export async function listNormalizedTaxonomyGroups(tenantId: string) {
-  const groups = await VibeTaxonomy.find({ tenantId, status: 'active' }).select('slug label hierarchical').sort({ label: 1 }).lean() as unknown as Array<{ slug: string; label: string; hierarchical?: boolean }>;
-  return groups.map((group) => ({ slug: group.slug, label: group.label, hierarchical: Boolean(group.hierarchical) }));
+export async function listNormalizedTaxonomyGroups(tenantId: string, includeArchived = false) {
+  const groups = await VibeTaxonomy.find({ tenantId, status: includeArchived ? { $in: ['active', 'archived'] } : 'active' }).select('slug label hierarchical status').sort({ label: 1 }).lean() as unknown as Array<{ slug: string; label: string; hierarchical?: boolean; status?: 'active' | 'archived' }>;
+  return groups.map((group) => ({ slug: group.slug, label: group.label, hierarchical: Boolean(group.hierarchical), status: group.status || 'active' }));
 }
 
 export async function createNormalizedTaxonomyGroup(input: {
@@ -141,6 +141,24 @@ export async function updateNormalizedTaxonomyGroupLabel(input: {
   ).lean() as { slug: string; label: string; hierarchical?: boolean } | null;
   if (!updated) throw new Error('TAXONOMY_NOT_FOUND');
   return { slug: updated.slug, label: updated.label, hierarchical: Boolean(updated.hierarchical) };
+}
+
+export async function archiveNormalizedTaxonomyGroup(input: { tenantId: string; slug: string }) {
+  const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.slug, status: 'active' }).select('_id slug label hierarchical').lean() as { _id: unknown; slug: string; label: string; hierarchical?: boolean } | null;
+  if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  if (await VibeTerm.exists({ tenantId: input.tenantId, taxonomyId: taxonomy._id })) throw new Error('TAXONOMY_NOT_EMPTY');
+  await VibeTaxonomy.updateOne({ _id: taxonomy._id }, { $set: { status: 'archived' } });
+  return { slug: taxonomy.slug, label: taxonomy.label, hierarchical: Boolean(taxonomy.hierarchical), status: 'archived' as const };
+}
+
+export async function restoreNormalizedTaxonomyGroup(input: { tenantId: string; slug: string }) {
+  const restored = await VibeTaxonomy.findOneAndUpdate(
+    { tenantId: input.tenantId, slug: input.slug, status: 'archived' },
+    { $set: { status: 'active' } },
+    { new: true },
+  ).lean() as { slug: string; label: string; hierarchical?: boolean } | null;
+  if (!restored) throw new Error('TAXONOMY_NOT_FOUND');
+  return { slug: restored.slug, label: restored.label, hierarchical: Boolean(restored.hierarchical), status: 'active' as const };
 }
 
 export async function createNormalizedTaxonomyTerm(input: {
