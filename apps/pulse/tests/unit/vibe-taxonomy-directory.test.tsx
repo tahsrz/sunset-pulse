@@ -304,4 +304,24 @@ describe('Vibe taxonomy directory', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Search taxonomy terms' }), { target: { value: 'editorial layouts' } });
     expect(screen.getByRole('rowheader', { name: /Focused/ })).toBeInTheDocument();
   });
+
+  it('sorts by usage and paginates larger term catalogs', async () => {
+    const terms = Array.from({ length: 27 }, (_, index) => ({
+      id: `mood:term-${String(index + 1).padStart(2, '0')}`,
+      group: 'mood',
+      term: `term-${String(index + 1).padStart(2, '0')}`,
+      label: `Term ${String(index + 1).padStart(2, '0')}`,
+    }));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ terms, counts: { 'mood:term-27': 9 } }) }));
+    render(<TaxonomyDirectory />);
+
+    await screen.findByRole('rowheader', { name: 'Term 01' });
+    expect(screen.queryByRole('rowheader', { name: 'Term 27' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort taxonomy terms' }), { target: { value: 'usage' } });
+    expect(screen.getAllByRole('rowheader')[0]).toHaveTextContent('Term 27');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort taxonomy terms' }), { target: { value: 'name' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('rowheader', { name: 'Term 27' })).toBeInTheDocument();
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+  });
 });

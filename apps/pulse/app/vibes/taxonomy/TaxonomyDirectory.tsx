@@ -18,6 +18,8 @@ export function TaxonomyDirectory() {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
   const [status, setStatus] = useState('active');
+  const [termSort, setTermSort] = useState<'name' | 'group' | 'usage'>('name');
+  const [termPage, setTermPage] = useState(1);
   const [error, setError] = useState('');
   const [manageTerms, setManageTerms] = useState(false);
   const [taxonomyGroups, setTaxonomyGroups] = useState<TaxonomyGroup[]>([]);
@@ -64,7 +66,7 @@ export function TaxonomyDirectory() {
   const groups = useMemo(() => taxonomyGroups.length > 0 ? taxonomyGroups.filter(({ status: groupStatus }) => (groupStatus || 'active') === 'active').map(({ slug }) => slug) : Array.from(new Set((terms || []).map((term) => term.group))), [taxonomyGroups, terms]);
   const taxonomyGroupLabels = useMemo(() => new Map(taxonomyGroups.map(({ slug, label }) => [slug, label])), [taxonomyGroups]);
   const termLabels = useMemo(() => new Map((terms || []).map((term) => [term.id, term.label || term.term.replace(/-/g, ' ')])), [terms]);
-  const visibleTerms = useMemo(() => (terms || []).filter((term) => {
+  const matchingTerms = useMemo(() => (terms || []).filter((term) => {
     const matchesGroup = !group || term.group === group;
     const matchesStatus = status === 'all' || (term.status || 'active') === status;
     const normalizedQuery = query.trim().toLowerCase();
@@ -75,6 +77,22 @@ export function TaxonomyDirectory() {
       || term.group.toLowerCase().includes(normalizedQuery);
     return matchesGroup && matchesStatus && matchesQuery;
   }), [group, query, status, terms]);
+  const sortedTerms = useMemo(() => [...matchingTerms].sort((left, right) => {
+    if (termSort === 'usage') return (counts[right.id] || 0) - (counts[left.id] || 0) || (left.label || left.term).localeCompare(right.label || right.term);
+    if (termSort === 'group') return (taxonomyGroupLabels.get(left.group) || left.group).localeCompare(taxonomyGroupLabels.get(right.group) || right.group) || (left.label || left.term).localeCompare(right.label || right.term);
+    return (left.label || left.term).localeCompare(right.label || right.term);
+  }), [counts, matchingTerms, taxonomyGroupLabels, termSort]);
+  const termPageSize = 25;
+  const termTotalPages = Math.max(1, Math.ceil(sortedTerms.length / termPageSize));
+  const visibleTerms = sortedTerms.slice((termPage - 1) * termPageSize, termPage * termPageSize);
+
+  useEffect(() => {
+    setTermPage(1);
+  }, [group, query, status, termSort]);
+
+  useEffect(() => {
+    if (termPage > termTotalPages) setTermPage(termTotalPages);
+  }, [termPage, termTotalPages]);
 
   const editingTerm = (terms || []).find((term) => term.id === editingId);
   const editingGroupDefinition = taxonomyGroups.find(({ slug }) => slug === editingTerm?.group);
@@ -245,11 +263,13 @@ export function TaxonomyDirectory() {
           {groups.map((item) => <option key={item} value={item}>{taxonomyGroupLabels.get(item) || groupLabel(item)}</option>)}
         </select>
         {manageTerms ? <select aria-label="Filter taxonomy status" value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="active">Active</option><option value="archived">Archived</option><option value="all">All statuses</option></select> : null}
+        <select aria-label="Sort taxonomy terms" value={termSort} onChange={(event) => setTermSort(event.target.value as 'name' | 'group' | 'usage')} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="name">Sort by name</option><option value="group">Sort by group</option><option value="usage">Sort by usage</option></select>
       </div>
       {editingTerm && editingGroupDefinition?.hierarchical ? <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-sky-50 px-4 py-3"><label className="min-w-56 text-xs font-bold uppercase text-slate-500">Parent for {editingTerm.label || editingTerm.term}<select aria-label={`Parent for ${editingTerm.term}`} value={editingParentTerm} onChange={(event) => setEditingParentTerm(event.target.value)} className="mt-1 block w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">None</option>{editingParentOptions.map((term) => <option key={term.id} value={term.term}>{term.label || term.term.replace(/-/g, ' ')}</option>)}</select></label><p className="pb-2 text-xs text-slate-500">The parent is saved with the term metadata. Existing Vibe assignments keep the same term ID.</p></div> : null}
-      <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{visibleTerms.length} {visibleTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
+      <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{matchingTerms.length} {matchingTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
       {visibleTerms.some((term) => Boolean(counts[term.id])) ? <nav aria-label="Browse Vibes by taxonomy term" className="flex flex-wrap gap-x-4 gap-y-2 border-b border-slate-100 px-4 py-3 text-sm">{visibleTerms.filter((term) => Boolean(counts[term.id])).map((term) => <Link key={term.id} className="font-semibold text-[#2271b1] hover:underline" href={`/vibes?taxonomyTerm=${encodeURIComponent(term.id)}`} aria-label={`View ${counts[term.id]} Vibes assigned to ${term.label || term.term.replace(/-/g, ' ')}`}>{term.label || term.term.replace(/-/g, ' ')} ({counts[term.id]})</Link>)}</nav> : null}
       {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th scope="col" className="px-4 py-3">Name</th><th scope="col" className="px-4 py-3">Slug</th><th scope="col" className="px-4 py-3">Group</th><th scope="col" className="px-4 py-3">Parent</th>{manageTerms ? <th scope="col" className="px-4 py-3">Status</th> : null}<th scope="col" className="px-4 py-3 text-right">Vibes</th>{manageTerms ? <th scope="col" className="px-4 py-3 text-right">Actions</th> : null}</tr></thead><tbody className="divide-y divide-slate-100">{visibleTerms.map((term) => <tr key={term.id} className="hover:bg-slate-50"><th scope="row" className="px-4 py-3 font-semibold text-[#2271b1]">{editingId === term.id ? <span className="block space-y-2"><input aria-label={`Name for ${term.term}`} required value={editingLabel} onChange={(event) => setEditingLabel(event.target.value)} className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900" /><textarea aria-label={`Description for ${term.term}`} value={editingDescription} maxLength={240} onChange={(event) => setEditingDescription(event.target.value)} className="min-h-16 w-full rounded border border-slate-300 px-2 py-1 text-xs font-normal text-slate-900" /></span> : <span>{term.label || term.term.replace(/-/g, ' ')}{term.description ? <span className="mt-1 block max-w-md text-xs font-normal text-slate-500">{term.description}</span> : null}</span>}</th><td className="px-4 py-3 font-mono text-xs text-slate-600">{term.term}</td><td className="px-4 py-3 capitalize text-slate-600">{taxonomyGroupLabels.get(term.group) || groupLabel(term.group)}</td><td className="px-4 py-3 text-slate-600">{term.parentId ? termLabels.get(term.parentId) || term.parentId : '—'}</td>{manageTerms ? <td className="px-4 py-3 capitalize text-slate-600">{term.status || 'active'}</td> : null}<td className="px-4 py-3 text-right font-semibold text-slate-900">{counts[term.id] || 0}</td>{manageTerms ? <td className="px-4 py-3 text-right">{term.status === 'archived' ? <button type="button" disabled={updating} onClick={() => void restoreTerm(term)} className="font-semibold text-[#2271b1] disabled:opacity-50">Restore</button> : editingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating || !editingLabel.trim()} onClick={() => void updateLabel(term)} className="font-semibold text-[#2271b1] disabled:opacity-50">Save</button><button type="button" disabled={updating} onClick={() => { setEditingId(''); setEditingLabel(''); setEditingDescription(''); }} className="text-slate-500">Cancel</button></span> : archivingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating} onClick={() => void archiveTerm(term)} className="font-semibold text-red-700 disabled:opacity-50">Confirm archive</button><button type="button" disabled={updating} onClick={() => setArchivingId('')} className="text-slate-500">Cancel</button></span> : <span className="inline-flex gap-3"><button type="button" onClick={() => { setEditingId(term.id); setEditingLabel(term.label || term.term.replace(/-/g, ' ')); setEditingDescription(term.description || ''); }} className="font-semibold text-[#2271b1]">Edit</button><button type="button" onClick={() => setArchivingId(term.id)} className="font-semibold text-red-700">Archive</button></span>}</td> : null}</tr>)}</tbody></table></div>}
+      {matchingTerms.length > termPageSize ? <nav aria-label="Taxonomy term pages" className="flex items-center justify-end gap-3 border-t border-slate-200 px-4 py-3 text-sm"><span className="text-slate-500">Page {termPage} of {termTotalPages}</span><button type="button" disabled={termPage === 1} onClick={() => setTermPage((current) => Math.max(1, current - 1))} className="rounded border border-slate-300 px-3 py-1.5 font-semibold disabled:opacity-40">Previous</button><button type="button" disabled={termPage === termTotalPages} onClick={() => setTermPage((current) => Math.min(termTotalPages, current + 1))} className="rounded border border-slate-300 px-3 py-1.5 font-semibold disabled:opacity-40">Next</button></nav> : null}
       <p className="border-t border-slate-200 p-4 text-xs text-slate-500">
         {manageTerms
           ? 'New terms are added to the normalized catalog. Existing terms remain stable so assigned Vibes and revision history keep their IDs.'
