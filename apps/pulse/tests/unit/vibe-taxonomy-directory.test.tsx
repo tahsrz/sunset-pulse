@@ -96,4 +96,20 @@ describe('Vibe taxonomy directory', () => {
       body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus' }),
     }));
   });
+
+  it('requires inline confirmation before archiving a term', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [{ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' }], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { id: 'mood:focused', status: 'archived' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => expect(screen.queryByRole('rowheader', { name: 'Focused' })).not.toBeInTheDocument());
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({
+      method: 'DELETE',
+      body: JSON.stringify({ group: 'mood', term: 'focused' }),
+    }));
+  });
 });

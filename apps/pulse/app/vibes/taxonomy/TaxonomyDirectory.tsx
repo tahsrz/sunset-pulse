@@ -25,6 +25,7 @@ export function TaxonomyDirectory() {
   const [editingId, setEditingId] = useState('');
   const [editingLabel, setEditingLabel] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [archivingId, setArchivingId] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -91,6 +92,23 @@ export function TaxonomyDirectory() {
     }
   }
 
+  async function archiveTerm(term: TaxonomyTerm) {
+    setUpdating(true);
+    setCreateError('');
+    try {
+      const response = await fetch('/api/vibes/taxonomy', { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ group: term.group, term: term.term }) });
+      const responseText = await response.text();
+      const payload = responseText ? JSON.parse(responseText) : {};
+      if (!response.ok) throw new Error(payload.error || 'Unable to archive taxonomy term.');
+      setTerms((current) => (current || []).filter((item) => item.id !== term.id));
+      setArchivingId('');
+    } catch (reason) {
+      setCreateError(reason instanceof Error ? reason.message : 'Unable to archive taxonomy term.');
+    } finally {
+      setUpdating(false);
+    }
+  }
+
   if (error) return <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">{error}</p>;
   if (!terms) return <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Loading taxonomy…</p>;
 
@@ -105,7 +123,7 @@ export function TaxonomyDirectory() {
         </select>
       </div>
       <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{visibleTerms.length} {visibleTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
-      {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th scope="col" className="px-4 py-3">Name</th><th scope="col" className="px-4 py-3">Slug</th><th scope="col" className="px-4 py-3">Group</th><th scope="col" className="px-4 py-3 text-right">Vibes</th>{manageTerms ? <th scope="col" className="px-4 py-3 text-right">Actions</th> : null}</tr></thead><tbody className="divide-y divide-slate-100">{visibleTerms.map((term) => <tr key={term.id} className="hover:bg-slate-50"><th scope="row" className="px-4 py-3 font-semibold text-[#2271b1]">{editingId === term.id ? <input aria-label={`Name for ${term.term}`} required value={editingLabel} onChange={(event) => setEditingLabel(event.target.value)} className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900" /> : term.label || term.term.replace(/-/g, ' ')}</th><td className="px-4 py-3 font-mono text-xs text-slate-600">{term.term}</td><td className="px-4 py-3 capitalize text-slate-600">{groupLabel(term.group)}</td><td className="px-4 py-3 text-right font-semibold text-slate-900">{counts[term.id] || 0}</td>{manageTerms ? <td className="px-4 py-3 text-right">{editingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating || !editingLabel.trim()} onClick={() => void updateLabel(term)} className="font-semibold text-[#2271b1] disabled:opacity-50">Save</button><button type="button" disabled={updating} onClick={() => { setEditingId(''); setEditingLabel(''); }} className="text-slate-500">Cancel</button></span> : <button type="button" onClick={() => { setEditingId(term.id); setEditingLabel(term.label || term.term.replace(/-/g, ' ')); }} className="font-semibold text-[#2271b1]">Rename</button>}</td> : null}</tr>)}</tbody></table></div>}
+      {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th scope="col" className="px-4 py-3">Name</th><th scope="col" className="px-4 py-3">Slug</th><th scope="col" className="px-4 py-3">Group</th><th scope="col" className="px-4 py-3 text-right">Vibes</th>{manageTerms ? <th scope="col" className="px-4 py-3 text-right">Actions</th> : null}</tr></thead><tbody className="divide-y divide-slate-100">{visibleTerms.map((term) => <tr key={term.id} className="hover:bg-slate-50"><th scope="row" className="px-4 py-3 font-semibold text-[#2271b1]">{editingId === term.id ? <input aria-label={`Name for ${term.term}`} required value={editingLabel} onChange={(event) => setEditingLabel(event.target.value)} className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900" /> : term.label || term.term.replace(/-/g, ' ')}</th><td className="px-4 py-3 font-mono text-xs text-slate-600">{term.term}</td><td className="px-4 py-3 capitalize text-slate-600">{groupLabel(term.group)}</td><td className="px-4 py-3 text-right font-semibold text-slate-900">{counts[term.id] || 0}</td>{manageTerms ? <td className="px-4 py-3 text-right">{editingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating || !editingLabel.trim()} onClick={() => void updateLabel(term)} className="font-semibold text-[#2271b1] disabled:opacity-50">Save</button><button type="button" disabled={updating} onClick={() => { setEditingId(''); setEditingLabel(''); }} className="text-slate-500">Cancel</button></span> : archivingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating} onClick={() => void archiveTerm(term)} className="font-semibold text-red-700 disabled:opacity-50">Confirm archive</button><button type="button" disabled={updating} onClick={() => setArchivingId('')} className="text-slate-500">Cancel</button></span> : <span className="inline-flex gap-3"><button type="button" onClick={() => { setEditingId(term.id); setEditingLabel(term.label || term.term.replace(/-/g, ' ')); }} className="font-semibold text-[#2271b1]">Rename</button><button type="button" onClick={() => setArchivingId(term.id)} className="font-semibold text-red-700">Archive</button></span>}</td> : null}</tr>)}</tbody></table></div>}
       <p className="border-t border-slate-200 p-4 text-xs text-slate-500">
         {manageTerms
           ? 'New terms are added to the normalized catalog. Existing terms remain stable so assigned Vibes and revision history keep their IDs.'

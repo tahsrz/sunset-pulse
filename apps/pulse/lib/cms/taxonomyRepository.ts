@@ -146,6 +146,22 @@ export async function updateNormalizedTaxonomyTermLabel(input: {
   return { id: updated.legacyId || `${input.group}:${updated.slug}`, group: input.group, term: updated.slug, label: updated.label };
 }
 
+export async function archiveNormalizedTaxonomyTerm(input: {
+  tenantId: string;
+  group: string;
+  term: string;
+}) {
+  const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
+  if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  const archived = await VibeTerm.findOneAndUpdate(
+    { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' },
+    { $set: { status: 'archived' } },
+    { new: true },
+  ).lean() as { legacyId?: string; slug: string; label: string } | null;
+  if (!archived) throw new Error('TERM_NOT_FOUND');
+  return { id: archived.legacyId || `${input.group}:${archived.slug}`, group: input.group, term: archived.slug, label: archived.label, status: 'archived' as const };
+}
+
 export function buildNormalizedTaxonomyUsagePipeline(tenantId: string) {
   return [
     { $match: { tenantId } },

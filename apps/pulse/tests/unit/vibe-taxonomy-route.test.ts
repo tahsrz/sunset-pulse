@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   listNormalized: vi.fn(),
   createTerm: vi.fn(),
   updateTermLabel: vi.fn(),
+  archiveTerm: vi.fn(),
 }));
 
 vi.mock('@/lib/core/database', () => ({ default: mocks.connectDB }));
@@ -17,9 +18,10 @@ vi.mock('@/lib/cms/taxonomyRepository', () => ({
   listNormalizedTaxonomyTerms: mocks.listNormalized,
   createNormalizedTaxonomyTerm: mocks.createTerm,
   updateNormalizedTaxonomyTermLabel: mocks.updateTermLabel,
+  archiveNormalizedTaxonomyTerm: mocks.archiveTerm,
 }));
 
-import { GET, PATCH, POST } from '@/app/api/vibes/taxonomy/route';
+import { DELETE, GET, PATCH, POST } from '@/app/api/vibes/taxonomy/route';
 
 describe('taxonomy directory read authority', () => {
   afterEach(() => {
@@ -51,6 +53,15 @@ describe('taxonomy directory read authority', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ term: { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' } });
     expect(mocks.updateTermLabel).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused', label: 'Deep Focus' });
+  });
+
+  it('archives a term without deleting its compatibility identity', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.archiveTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', status: 'archived' });
+    const response = await DELETE(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'DELETE', body: JSON.stringify({ group: 'mood', term: 'focused' }) }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ term: { id: 'mood:focused', status: 'archived' } });
+    expect(mocks.archiveTerm).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused' });
   });
 
   it('uses embedded counts by default without querying normalized relationships', async () => {
