@@ -21,7 +21,7 @@ type Vibe = {
 };
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict';
-type TaxonomyTerm = { id: string; group: string; term: string; label?: string };
+type TaxonomyTerm = { id: string; group: string; term: string; label?: string; parentId?: string };
 
 const defaults = {
   tokens: {
@@ -160,6 +160,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
     (groups[term.group] ||= []).push(term);
     return groups;
   }, {}));
+  const editorTaxonomyLabels = new Map(editorTaxonomyTerms.map((term) => [term.id, term.label || term.term.replace(/-/g, ' ')]));
   const typography = { ...defaults.tokens.visual.theme.typography, ...(draft.tokens.visual.theme.typography || {}) };
   const layout = { borderRadius: 'md', spacingBasePx: 4, elevation: 'subtle', ...(draft.tokens.visual.theme.layout || {}) };
 
@@ -227,7 +228,7 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
                   <p className="font-semibold">{selectedTaxonomyCount} selected</p>
                 </div>
                 <div className="mt-4 space-y-4">
-                  {editorTaxonomyGroups.map(([group, terms]) => <fieldset key={group} className="rounded-md border border-slate-200 p-3"><legend className="px-1 text-xs font-bold uppercase tracking-wide text-slate-500">{taxonomyGroupLabel(group)}</legend><div className="grid gap-2 sm:grid-cols-2">{(terms || []).map(({ id, term, label: termLabel }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} onChange={(event) => setSelectedTaxonomyCount((count) => Math.max(0, count + (event.target.checked ? 1 : -1)))} /><span className="font-semibold">{termLabel || term.replace(/-/g, ' ')}</span></label>)}</div></fieldset>)}
+                  {editorTaxonomyGroups.map(([group, terms]) => <fieldset key={group} className="rounded-md border border-slate-200 p-3"><legend className="px-1 text-xs font-bold uppercase tracking-wide text-slate-500">{taxonomyGroupLabel(group)}</legend><div className="grid gap-2 sm:grid-cols-2">{(terms || []).map(({ id, term, label: termLabel, parentId }) => { const displayLabel = termLabel || term.replace(/-/g, ' '); const parentLabel = parentId ? editorTaxonomyLabels.get(parentId) || parentId : ''; return <label key={id} className={`flex items-center gap-2 rounded-md border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 ${parentId ? 'ml-4' : ''}`}><input aria-label={parentId ? `${displayLabel}, child of ${parentLabel}` : undefined} name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} onChange={(event) => setSelectedTaxonomyCount((count) => Math.max(0, count + (event.target.checked ? 1 : -1)))} /><span><span className="block font-semibold">{displayLabel}</span>{parentId ? <span className="block text-xs text-slate-500">Child of {parentLabel}</span> : null}</span></label>; })}</div></fieldset>)}
                 </div>
               </VibePanel>
 

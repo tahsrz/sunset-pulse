@@ -190,4 +190,18 @@ describe('Vibe taxonomy directory', () => {
       body: JSON.stringify({ group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentTerm: 'downtown' }),
     })));
   });
+
+  it('shows the readable parent relationship in the directory', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      terms: [
+        { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' },
+        { id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' },
+      ],
+      counts: {},
+    }) }));
+    render(<TaxonomyDirectory />);
+    expect(await screen.findByRole('columnheader', { name: 'Parent' })).toBeInTheDocument();
+    const childRow = screen.getByRole('rowheader', { name: 'Downtown East' }).closest('tr')!;
+    expect(within(childRow).getByText('Downtown')).toBeInTheDocument();
+  });
 });

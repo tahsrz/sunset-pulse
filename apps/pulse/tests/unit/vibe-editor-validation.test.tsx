@@ -66,6 +66,19 @@ describe('VibeEditor native validation', () => {
     });
   });
 
+  it('presents hierarchical terms with their parent context', async () => {
+    vi.spyOn(global, 'fetch').mockImplementation(async (input) => {
+      if (String(input) === '/api/vibes/taxonomy') return new Response(JSON.stringify({ terms: [
+        { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' },
+        { id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' },
+      ] }), { status: 200 });
+      return new Response(JSON.stringify({ vibe }), { status: 200 });
+    });
+    render(<VibeEditor vibeId="format-test" />);
+    expect(await screen.findByText('Child of Downtown')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Downtown East, child of Downtown' })).toHaveAttribute('value', 'neighborhood:downtown-east');
+  });
+
   it('keeps a selected term that is absent from the active catalog until the operator removes it', async () => {
     const vibeWithLegacyTerm = {
       ...vibe,
