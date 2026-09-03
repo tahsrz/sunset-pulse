@@ -262,8 +262,8 @@ describe('Vibe taxonomy directory', () => {
   it('shows the readable parent relationship in the directory', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
       terms: [
-        { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' },
         { id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' },
+        { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' },
       ],
       counts: {},
     }) }));
@@ -271,6 +271,8 @@ describe('Vibe taxonomy directory', () => {
     expect(await screen.findByRole('columnheader', { name: 'Parent' })).toBeInTheDocument();
     const childRow = screen.getByRole('rowheader', { name: 'Downtown East' }).closest('tr')!;
     expect(within(childRow).getByText('Downtown')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort taxonomy terms' }), { target: { value: 'hierarchy' } });
+    expect(screen.getAllByRole('rowheader').map((cell) => cell.textContent)).toEqual(['Downtown', 'Downtown East']);
   });
 
   it('reassigns a hierarchical parent while preserving the term identity', async () => {

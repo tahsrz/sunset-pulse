@@ -3,7 +3,7 @@
 import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { collectDescendantTermIds } from '@/lib/cms/taxonomyHierarchy';
+import { collectDescendantTermIds, orderTaxonomyTermsByHierarchy } from '@/lib/cms/taxonomyHierarchy';
 
 type TaxonomyTerm = { id: string; group: string; term: string; label?: string; description?: string; status?: 'active' | 'archived'; parentId?: string };
 type TaxonomyGroup = { slug: string; label: string; hierarchical: boolean; status?: 'active' | 'archived' };
@@ -19,7 +19,7 @@ export function TaxonomyDirectory() {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
   const [status, setStatus] = useState('active');
-  const [termSort, setTermSort] = useState<'name' | 'group' | 'usage'>('name');
+  const [termSort, setTermSort] = useState<'name' | 'group' | 'hierarchy' | 'usage'>('name');
   const [termPage, setTermPage] = useState(1);
   const [error, setError] = useState('');
   const [manageTerms, setManageTerms] = useState(false);
@@ -83,9 +83,10 @@ export function TaxonomyDirectory() {
     if (termSort === 'group') return (taxonomyGroupLabels.get(left.group) || left.group).localeCompare(taxonomyGroupLabels.get(right.group) || right.group) || (left.label || left.term).localeCompare(right.label || right.term);
     return (left.label || left.term).localeCompare(right.label || right.term);
   }), [counts, matchingTerms, taxonomyGroupLabels, termSort]);
+  const orderedTerms = useMemo(() => termSort === 'hierarchy' ? orderTaxonomyTermsByHierarchy(matchingTerms) : sortedTerms, [matchingTerms, sortedTerms, termSort]);
   const termPageSize = 25;
-  const termTotalPages = Math.max(1, Math.ceil(sortedTerms.length / termPageSize));
-  const visibleTerms = sortedTerms.slice((termPage - 1) * termPageSize, termPage * termPageSize);
+  const termTotalPages = Math.max(1, Math.ceil(orderedTerms.length / termPageSize));
+  const visibleTerms = orderedTerms.slice((termPage - 1) * termPageSize, termPage * termPageSize);
 
   useEffect(() => {
     setTermPage(1);
@@ -265,7 +266,7 @@ export function TaxonomyDirectory() {
           {groups.map((item) => <option key={item} value={item}>{taxonomyGroupLabels.get(item) || groupLabel(item)}</option>)}
         </select>
         {manageTerms ? <select aria-label="Filter taxonomy status" value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="active">Active</option><option value="archived">Archived</option><option value="all">All statuses</option></select> : null}
-        <select aria-label="Sort taxonomy terms" value={termSort} onChange={(event) => setTermSort(event.target.value as 'name' | 'group' | 'usage')} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="name">Sort by name</option><option value="group">Sort by group</option><option value="usage">Sort by usage</option></select>
+        <select aria-label="Sort taxonomy terms" value={termSort} onChange={(event) => setTermSort(event.target.value as 'name' | 'group' | 'hierarchy' | 'usage')} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="name">Sort by name</option><option value="group">Sort by group</option><option value="hierarchy">Sort by hierarchy</option><option value="usage">Sort by usage</option></select>
       </div>
       {editingTerm && editingGroupDefinition?.hierarchical ? <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-sky-50 px-4 py-3"><label className="min-w-56 text-xs font-bold uppercase text-slate-500">Parent for {editingTerm.label || editingTerm.term}<select aria-label={`Parent for ${editingTerm.term}`} value={editingParentTerm} onChange={(event) => setEditingParentTerm(event.target.value)} className="mt-1 block w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">None</option>{editingParentOptions.map((term) => <option key={term.id} value={term.term}>{term.label || term.term.replace(/-/g, ' ')}</option>)}</select></label><p className="pb-2 text-xs text-slate-500">The parent is saved with the term metadata. Existing Vibe assignments keep the same term ID.</p></div> : null}
       <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{matchingTerms.length} {matchingTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
