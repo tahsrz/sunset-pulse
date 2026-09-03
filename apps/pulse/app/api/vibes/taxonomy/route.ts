@@ -11,12 +11,14 @@ export async function GET(request: NextRequest) {
   const counts = await countEmbeddedTaxonomyUsage(tenantId);
   const compareReads = process.env.VIBE_TAXONOMY_COMPARE_READS === '1';
   const normalizedRead = process.env.VIBE_TAXONOMY_NORMALIZED_READ === '1';
+  const manageTerms = normalizedRead && process.env.VIBE_TAXONOMY_MANAGE_TERMS === '1';
+  const includeArchived = manageTerms && request.nextUrl.searchParams.get('includeArchived') === '1';
   let normalizedCounts: Record<string, number> | null = null;
-  let normalizedTerms: Array<{ id: string; group: string; term: string; label: string }> | null = null;
+  let normalizedTerms: Array<{ id: string; group: string; term: string; label: string; status: 'active' | 'archived' }> | null = null;
   if (compareReads || normalizedRead) {
     normalizedCounts = await countNormalizedTaxonomyUsage(tenantId);
   }
-  if (normalizedRead) normalizedTerms = await listNormalizedTaxonomyTerms(tenantId);
+  if (normalizedRead) normalizedTerms = await listNormalizedTaxonomyTerms(tenantId, includeArchived);
   if (compareReads && normalizedCounts) {
     const reconciliation = buildTaxonomyReconciliationReport({ tenantId, embeddedCounts: counts, normalizedCounts });
     if (reconciliation.state === 'mismatch') console.warn('VIBE_TAXONOMY_READ_MISMATCH', reconciliation);
@@ -25,7 +27,7 @@ export async function GET(request: NextRequest) {
     terms: normalizedRead && normalizedTerms ? normalizedTerms : listVibeTaxonomyTerms(),
     counts: normalizedRead && normalizedCounts ? normalizedCounts : counts,
     capabilities: {
-      manageTerms: normalizedRead && process.env.VIBE_TAXONOMY_MANAGE_TERMS === '1',
+      manageTerms,
     },
   });
 }

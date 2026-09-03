@@ -116,5 +116,16 @@ describe('taxonomy directory read authority', () => {
     const response = await GET(new NextRequest('http://localhost/api/vibes/taxonomy'));
 
     expect(await response.json()).toMatchObject({ capabilities: { manageTerms: true } });
+    expect(mocks.listNormalized).toHaveBeenCalledWith('default', false);
+  });
+
+  it('includes archived catalog terms only for the enabled management directory', async () => {
+    process.env.VIBE_TAXONOMY_NORMALIZED_READ = '1';
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.countEmbedded.mockResolvedValue({});
+    mocks.countNormalized.mockResolvedValue({});
+    mocks.listNormalized.mockResolvedValue([]);
+    await GET(new NextRequest('http://localhost/api/vibes/taxonomy?includeArchived=1'));
+    expect(mocks.listNormalized).toHaveBeenCalledWith('default', true);
   });
 });

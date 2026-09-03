@@ -40,4 +40,10 @@ describe('taxonomy relationship reconciliation', () => {
     expect(serialized).toContain('"id"');
     expect(serialized).toContain('"group":1,"term":1');
   });
+
+  it('can include archived terms for the management directory', () => {
+    const serialized = JSON.stringify(buildNormalizedTaxonomyCatalogPipeline('tenant-a', true));
+    expect(serialized).toContain('"$in":["active","archived"]');
+    expect(serialized).toContain('"status":"$status"');
+  });
 });

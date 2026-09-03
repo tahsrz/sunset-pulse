@@ -84,13 +84,13 @@ export async function countEmbeddedTaxonomyUsage(tenantId: string) {
   return Object.fromEntries(rows.map(({ _id, count }: { _id: string; count: number }) => [_id, count]));
 }
 
-export async function listNormalizedTaxonomyTerms(tenantId: string) {
-  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId)) as Promise<Array<{ id: string; group: string; term: string; label: string }>>;
+export async function listNormalizedTaxonomyTerms(tenantId: string, includeArchived = false) {
+  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId, includeArchived)) as Promise<Array<{ id: string; group: string; term: string; label: string; status: 'active' | 'archived' }>>;
 }
 
-export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string): PipelineStage[] {
+export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, includeArchived = false): PipelineStage[] {
   return [
-    { $match: { tenantId, status: 'active' } },
+    { $match: { tenantId, status: includeArchived ? { $in: ['active', 'archived'] } : 'active' } },
     { $lookup: { from: VibeTaxonomy.collection.name, localField: 'taxonomyId', foreignField: '_id', as: 'taxonomy' } },
     { $unwind: '$taxonomy' },
     { $match: { 'taxonomy.tenantId': tenantId, 'taxonomy.status': 'active' } },
@@ -100,6 +100,7 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string): Pipeli
       group: { $ifNull: [{ $arrayElemAt: [{ $split: ['$legacyId', ':'] }, 0] }, '$taxonomy.slug'] },
       term: '$slug',
       label: '$label',
+      status: '$status',
     } },
     { $sort: { group: 1, term: 1 } },
   ];
