@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import connectDB from '@/lib/core/database';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
-import { archiveNormalizedTaxonomyTerm, countEmbeddedTaxonomyUsage, countNormalizedTaxonomyUsage, createNormalizedTaxonomyTerm, listNormalizedTaxonomyGroups, listNormalizedTaxonomyTerms, restoreNormalizedTaxonomyTerm, updateNormalizedTaxonomyTermLabel } from '@/lib/cms/taxonomyRepository';
+import { archiveNormalizedTaxonomyTerm, countEmbeddedTaxonomyUsage, countNormalizedTaxonomyUsage, createNormalizedTaxonomyTerm, listNormalizedTaxonomyGroups, listNormalizedTaxonomyTerms, restoreNormalizedTaxonomyTerm, updateNormalizedTaxonomyTerm } from '@/lib/cms/taxonomyRepository';
 import { buildTaxonomyReconciliationReport } from '@/lib/cms/taxonomyReconciliation';
 
 export async function GET(request: NextRequest) {
@@ -69,7 +69,7 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: 'Use a valid group, lowercase term slug, and label.' }, { status: 400 });
   await connectDB();
   try {
-    const term = await updateNormalizedTaxonomyTermLabel(parsed.data);
+    const term = await updateNormalizedTaxonomyTerm(parsed.data);
     return NextResponse.json({ term });
   } catch (error) {
     if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Taxonomy term not found.' }, { status: 404 });

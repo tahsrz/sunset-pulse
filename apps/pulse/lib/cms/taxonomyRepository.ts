@@ -209,7 +209,7 @@ export async function createNormalizedTaxonomyTerm(input: {
   }
 }
 
-export async function updateNormalizedTaxonomyTermLabel(input: {
+export async function updateNormalizedTaxonomyTerm(input: {
   tenantId: string;
   group: string;
   term: string;

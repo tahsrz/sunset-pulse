@@ -3,6 +3,7 @@
 import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { collectDescendantTermIds } from '@/lib/cms/taxonomyHierarchy';
 
 type TaxonomyTerm = { id: string; group: string; term: string; label?: string; description?: string; status?: 'active' | 'archived'; parentId?: string };
 type TaxonomyGroup = { slug: string; label: string; hierarchical: boolean; status?: 'active' | 'archived' };
@@ -96,7 +97,8 @@ export function TaxonomyDirectory() {
 
   const editingTerm = (terms || []).find((term) => term.id === editingId);
   const editingGroupDefinition = taxonomyGroups.find(({ slug }) => slug === editingTerm?.group);
-  const editingParentOptions = (terms || []).filter((term) => term.group === editingTerm?.group && term.id !== editingId && (term.status || 'active') === 'active');
+  const invalidParentIds = editingTerm ? collectDescendantTermIds(terms || [], editingTerm.id) : new Set<string>();
+  const editingParentOptions = (terms || []).filter((term) => term.group === editingTerm?.group && term.id !== editingId && !invalidParentIds.has(term.id) && (term.status || 'active') === 'active');
 
   useEffect(() => {
     if (!editingTerm) return;

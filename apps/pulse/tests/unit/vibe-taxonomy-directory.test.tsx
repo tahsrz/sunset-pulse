@@ -278,6 +278,7 @@ describe('Vibe taxonomy directory', () => {
       { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' },
       { id: 'neighborhood:uptown', group: 'neighborhood', term: 'uptown', label: 'Uptown' },
       { id: 'neighborhood:east', group: 'neighborhood', term: 'east', label: 'East', parentId: 'neighborhood:downtown' },
+      { id: 'neighborhood:east-side', group: 'neighborhood', term: 'east-side', label: 'East Side', parentId: 'neighborhood:east' },
     ];
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ terms, groups: [{ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }], counts: {}, capabilities: { manageTerms: true } }) })
@@ -286,7 +287,9 @@ describe('Vibe taxonomy directory', () => {
     render(<TaxonomyDirectory />);
     const eastRow = (await screen.findByRole('rowheader', { name: 'East' })).closest('tr')!;
     fireEvent.click(within(eastRow).getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Parent for east' }), { target: { value: 'uptown' } });
+    const parentSelect = screen.getByRole('combobox', { name: 'Parent for east' });
+    expect(within(parentSelect).queryByRole('option', { name: 'East Side' })).not.toBeInTheDocument();
+    fireEvent.change(parentSelect, { target: { value: 'uptown' } });
     fireEvent.click(within(eastRow).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({
       method: 'PATCH',

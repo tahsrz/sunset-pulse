@@ -20,7 +20,7 @@ vi.mock('@/lib/cms/taxonomyRepository', () => ({
   listNormalizedTaxonomyTerms: mocks.listNormalized,
   listNormalizedTaxonomyGroups: mocks.listGroups,
   createNormalizedTaxonomyTerm: mocks.createTerm,
-  updateNormalizedTaxonomyTermLabel: mocks.updateTermLabel,
+  updateNormalizedTaxonomyTerm: mocks.updateTermLabel,
   archiveNormalizedTaxonomyTerm: mocks.archiveTerm,
   restoreNormalizedTaxonomyTerm: mocks.restoreTerm,
 }));
