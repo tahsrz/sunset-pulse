@@ -28,6 +28,11 @@ vi.mock('@/lib/cms/taxonomyRepository', () => ({
 import { DELETE, GET, PATCH, POST, PUT } from '@/app/api/vibes/taxonomy/route';
 
 describe('taxonomy directory read authority', () => {
+  function enableManagement() {
+    process.env.VIBE_TAXONOMY_NORMALIZED_READ = '1';
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+  }
+
   afterEach(() => {
     delete process.env.VIBE_TAXONOMY_COMPARE_READS;
     delete process.env.VIBE_TAXONOMY_NORMALIZED_READ;
@@ -41,8 +46,15 @@ describe('taxonomy directory read authority', () => {
     expect(mocks.createTerm).not.toHaveBeenCalled();
   });
 
-  it('creates a validated normalized term when management is enabled', async () => {
+  it('does not mutate normalized terms while normalized reads are disabled', async () => {
     process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Focused' }) }));
+    expect(response.status).toBe(404);
+    expect(mocks.createTerm).not.toHaveBeenCalled();
+  });
+
+  it('creates a validated normalized term when management is enabled', async () => {
+    enableManagement();
     mocks.createTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' });
     const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ tenantId: 'tenant-a', group: 'mood', term: 'focused', label: 'Focused' }), headers: { 'content-type': 'application/json' } }));
     expect(response.status).toBe(201);
@@ -51,7 +63,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('accepts both new hyphenated and legacy camel-case taxonomy references', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.createTerm.mockImplementation(async (input) => ({ id: `${input.group}:${input.term}`, ...input }));
 
     const hyphenated = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'property-type', term: 'condo', label: 'Condo' }) }));
@@ -64,7 +76,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('passes an optional parent slug for hierarchical terms', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.createTerm.mockResolvedValue({ id: 'neighborhood:downtown-east', group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentId: 'neighborhood:downtown' });
     const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'neighborhood', term: 'downtown-east', label: 'Downtown East', parentTerm: 'downtown' }) }));
     expect(response.status).toBe(201);
@@ -72,7 +84,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('passes an optional operator-facing term description', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.createTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', description: 'For concentrated editorial layouts.' });
     const response = await POST(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'POST', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Focused', description: 'For concentrated editorial layouts.' }) }));
     expect(response.status).toBe(201);
@@ -80,7 +92,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('updates editable term metadata without changing identity', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.updateTermLabel.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Deep Focus' });
     const response = await PATCH(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PATCH', body: JSON.stringify({ group: 'mood', term: 'focused', label: 'Deep Focus', description: 'For concentrated layouts.' }) }));
     expect(response.status).toBe(200);
@@ -89,7 +101,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('passes an explicit parent removal through the term update contract', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.updateTermLabel.mockResolvedValue({ id: 'neighborhood:east', group: 'neighborhood', term: 'east', label: 'East' });
     const response = await PATCH(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PATCH', body: JSON.stringify({ group: 'neighborhood', term: 'east', label: 'East', parentTerm: null }) }));
     expect(response.status).toBe(200);
@@ -97,7 +109,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('archives a term without deleting its compatibility identity', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.archiveTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', status: 'archived' });
     const response = await DELETE(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'DELETE', body: JSON.stringify({ group: 'mood', term: 'focused' }) }));
     expect(response.status).toBe(200);
@@ -106,7 +118,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('reports a hierarchy conflict when a parent still has active children', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.archiveTerm.mockRejectedValue(new Error('TERM_HAS_CHILDREN'));
     const response = await DELETE(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'DELETE', body: JSON.stringify({ group: 'neighborhood', term: 'downtown' }) }));
     expect(response.status).toBe(409);
@@ -114,7 +126,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('restores the same archived term identity', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.restoreTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' });
     const response = await PUT(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PUT', body: JSON.stringify({ group: 'mood', term: 'focused' }) }));
     expect(response.status).toBe(200);
@@ -123,7 +135,7 @@ describe('taxonomy directory read authority', () => {
   });
 
   it('reports a hierarchy conflict when restoring a child before its parent', async () => {
-    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    enableManagement();
     mocks.restoreTerm.mockRejectedValue(new Error('PARENT_TERM_ARCHIVED'));
     const response = await PUT(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PUT', body: JSON.stringify({ group: 'neighborhood', term: 'east' }) }));
     expect(response.status).toBe(409);

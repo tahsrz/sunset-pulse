@@ -49,6 +49,10 @@ Enable `VIBE_TAXONOMY_NORMALIZED_READ=1` while keeping comparison and dual-write
 The directory API response shape does not change. Verify taxonomy filtering, counts, and
 trash exclusion before considering the cutover complete.
 
+Enable `VIBE_TAXONOMY_MANAGE_TERMS=1` only after normalized reads are active. Term and
+taxonomy mutation routes require both flags, matching the management capability returned
+to the directory UI. Disabling either flag makes those mutation routes unavailable.
+
 ## Rollback
 
 Disable `VIBE_TAXONOMY_NORMALIZED_READ` first to restore embedded count authority. If

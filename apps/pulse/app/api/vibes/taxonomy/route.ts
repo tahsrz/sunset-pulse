@@ -47,8 +47,12 @@ const createTermSchema = z.object({
 const identifyTermSchema = createTermSchema.pick({ tenantId: true, group: true, term: true });
 const updateTermSchema = createTermSchema.extend({ parentTerm: createTermSchema.shape.parentTerm.unwrap().nullable().optional() });
 
+function taxonomyManagementEnabled() {
+  return process.env.VIBE_TAXONOMY_NORMALIZED_READ === '1' && process.env.VIBE_TAXONOMY_MANAGE_TERMS === '1';
+}
+
 export async function POST(request: NextRequest) {
-  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
+  if (!taxonomyManagementEnabled()) return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
   const parsed = createTermSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Use a valid group, lowercase term slug, and label.' }, { status: 400 });
   await connectDB();
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
+  if (!taxonomyManagementEnabled()) return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
   const parsed = updateTermSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Use a valid group, lowercase term slug, and label.' }, { status: 400 });
   await connectDB();
@@ -81,7 +85,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
+  if (!taxonomyManagementEnabled()) return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
   const parsed = identifyTermSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Use a valid group and lowercase term slug.' }, { status: 400 });
   await connectDB();
@@ -96,7 +100,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
+  if (!taxonomyManagementEnabled()) return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
   const parsed = identifyTermSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Use a valid group and lowercase term slug.' }, { status: 400 });
   await connectDB();
