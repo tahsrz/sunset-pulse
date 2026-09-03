@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import connectDB from '@/lib/core/database';
 import { listVibeTaxonomyTerms } from '@/lib/cms/taxonomy';
-import { archiveNormalizedTaxonomyTerm, countEmbeddedTaxonomyUsage, countNormalizedTaxonomyUsage, createNormalizedTaxonomyTerm, listNormalizedTaxonomyTerms, updateNormalizedTaxonomyTermLabel } from '@/lib/cms/taxonomyRepository';
+import { archiveNormalizedTaxonomyTerm, countEmbeddedTaxonomyUsage, countNormalizedTaxonomyUsage, createNormalizedTaxonomyTerm, listNormalizedTaxonomyTerms, restoreNormalizedTaxonomyTerm, updateNormalizedTaxonomyTermLabel } from '@/lib/cms/taxonomyRepository';
 import { buildTaxonomyReconciliationReport } from '@/lib/cms/taxonomyReconciliation';
 
 export async function GET(request: NextRequest) {
@@ -79,5 +79,19 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Taxonomy term not found.' }, { status: 404 });
     return NextResponse.json({ error: 'Unable to archive taxonomy term.' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
+  const parsed = identifyTermSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Use a valid group and lowercase term slug.' }, { status: 400 });
+  await connectDB();
+  try {
+    const term = await restoreNormalizedTaxonomyTerm(parsed.data);
+    return NextResponse.json({ term });
+  } catch (error) {
+    if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Archived taxonomy term not found.' }, { status: 404 });
+    return NextResponse.json({ error: 'Unable to restore taxonomy term.' }, { status: 500 });
   }
 }

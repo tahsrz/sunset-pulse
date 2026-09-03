@@ -112,4 +112,22 @@ describe('Vibe taxonomy directory', () => {
       body: JSON.stringify({ group: 'mood', term: 'focused' }),
     }));
   });
+
+  it('restores the same term through the archive undo action', async () => {
+    const term = { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused' };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [term], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { ...term, status: 'archived' } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo archive' }));
+    expect(await screen.findByRole('rowheader', { name: 'Focused' })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ group: 'mood', term: 'focused' }),
+    }));
+  });
 });

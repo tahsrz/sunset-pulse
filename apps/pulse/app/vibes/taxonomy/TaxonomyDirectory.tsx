@@ -26,6 +26,7 @@ export function TaxonomyDirectory() {
   const [editingLabel, setEditingLabel] = useState('');
   const [updating, setUpdating] = useState(false);
   const [archivingId, setArchivingId] = useState('');
+  const [lastArchivedTerm, setLastArchivedTerm] = useState<TaxonomyTerm | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -101,9 +102,28 @@ export function TaxonomyDirectory() {
       const payload = responseText ? JSON.parse(responseText) : {};
       if (!response.ok) throw new Error(payload.error || 'Unable to archive taxonomy term.');
       setTerms((current) => (current || []).filter((item) => item.id !== term.id));
+      setLastArchivedTerm(term);
       setArchivingId('');
     } catch (reason) {
       setCreateError(reason instanceof Error ? reason.message : 'Unable to archive taxonomy term.');
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function restoreLastArchivedTerm() {
+    if (!lastArchivedTerm) return;
+    setUpdating(true);
+    setCreateError('');
+    try {
+      const response = await fetch('/api/vibes/taxonomy', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ group: lastArchivedTerm.group, term: lastArchivedTerm.term }) });
+      const responseText = await response.text();
+      const payload = responseText ? JSON.parse(responseText) : {};
+      if (!response.ok) throw new Error(payload.error || 'Unable to restore taxonomy term.');
+      setTerms((current) => [...(current || []), payload.term]);
+      setLastArchivedTerm(null);
+    } catch (reason) {
+      setCreateError(reason instanceof Error ? reason.message : 'Unable to restore taxonomy term.');
     } finally {
       setUpdating(false);
     }
@@ -114,6 +134,7 @@ export function TaxonomyDirectory() {
 
   return (
     <section className="border border-slate-200 bg-white" aria-label="Vibe taxonomy directory">
+      {lastArchivedTerm ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><span><strong>{lastArchivedTerm.label || lastArchivedTerm.term}</strong> was archived.</span><button type="button" disabled={updating} onClick={() => void restoreLastArchivedTerm()} className="font-bold text-[#2271b1] disabled:opacity-50">Undo archive</button></div> : null}
       {manageTerms ? <form className="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end" onSubmit={(event) => { event.preventDefault(); void createTerm(); }}><label className="text-xs font-bold uppercase text-slate-500">Name<input required value={newLabel} onChange={(event) => { setNewLabel(event.target.value); if (!newSlug) setNewSlug(event.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={newSlug} onChange={(event) => setNewSlug(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Group<select required value={newGroup} onChange={(event) => setNewGroup(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">Select group</option>{groups.map((item) => <option key={item} value={item}>{groupLabel(item)}</option>)}</select></label><button disabled={creating} className="rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{creating ? 'Adding…' : 'Add New Term'}</button>{createError ? <p role="alert" className="text-sm text-red-700 sm:col-span-4">{createError}</p> : null}</form> : null}
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
         <input aria-label="Search taxonomy terms" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search terms" className="min-w-56 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm" />
