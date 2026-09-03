@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildNormalizedTaxonomyCatalogPipeline, buildNormalizedTaxonomyUsagePipeline, diffTaxonomyRelationships, diffTaxonomyUsageCounts } from '@/lib/cms/taxonomyRepository';
+import { buildNormalizedTaxonomyCatalogPipeline, buildNormalizedTaxonomyUsagePipeline, diffTaxonomyRelationships, diffTaxonomyUsageCounts, hasTaxonomyParentCycle } from '@/lib/cms/taxonomyRepository';
 
 describe('taxonomy relationship reconciliation', () => {
   it('adds and removes only changed terms', () => {
@@ -18,6 +18,13 @@ describe('taxonomy relationship reconciliation', () => {
 
   it('reports count mismatches from either read authority', () => {
     expect(diffTaxonomyUsageCounts({ a: 2, b: 1 }, { a: 2, c: 1 })).toEqual(['b', 'c']);
+  });
+
+  it('detects self-parenting and descendant-parenting without rejecting a valid ancestor', async () => {
+    const parents = new Map([['child', 'root'], ['root', null]]);
+    expect(await hasTaxonomyParentCycle('child', 'child', async (id) => parents.get(id) || null)).toBe(true);
+    expect(await hasTaxonomyParentCycle('root', 'child', async (id) => parents.get(id) || null)).toBe(true);
+    expect(await hasTaxonomyParentCycle('child', 'root', async (id) => parents.get(id) || null)).toBe(false);
   });
 
   it('scopes normalized usage to a tenant, active legacy terms, and non-trash Vibes', () => {

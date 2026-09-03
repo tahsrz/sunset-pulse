@@ -272,6 +272,28 @@ describe('Vibe taxonomy directory', () => {
     expect(within(childRow).getByText('Downtown')).toBeInTheDocument();
   });
 
+  it('reassigns a hierarchical parent while preserving the term identity', async () => {
+    const terms = [
+      { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' },
+      { id: 'neighborhood:uptown', group: 'neighborhood', term: 'uptown', label: 'Uptown' },
+      { id: 'neighborhood:east', group: 'neighborhood', term: 'east', label: 'East', parentId: 'neighborhood:downtown' },
+    ];
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms, groups: [{ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { ...terms[2], parentId: 'neighborhood:uptown' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    const eastRow = (await screen.findByRole('rowheader', { name: 'East' })).closest('tr')!;
+    fireEvent.click(within(eastRow).getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Parent for east' }), { target: { value: 'uptown' } });
+    fireEvent.click(within(eastRow).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ group: 'neighborhood', term: 'east', label: 'East', description: '', parentTerm: 'uptown' }),
+    })));
+    expect(within(eastRow).getByText('Uptown')).toBeInTheDocument();
+  });
+
   it('renders and searches operator-facing term descriptions', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
       terms: [{ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', description: 'For concentrated editorial layouts.' }],

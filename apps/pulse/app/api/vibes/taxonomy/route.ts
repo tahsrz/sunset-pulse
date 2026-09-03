@@ -45,6 +45,7 @@ const createTermSchema = z.object({
 });
 
 const identifyTermSchema = createTermSchema.pick({ tenantId: true, group: true, term: true });
+const updateTermSchema = createTermSchema.extend({ parentTerm: createTermSchema.shape.parentTerm.unwrap().nullable().optional() });
 
 export async function POST(request: NextRequest) {
   if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1') return NextResponse.json({ error: 'Taxonomy term management is disabled.' }, { status: 404 });
-  const parsed = createTermSchema.safeParse(await request.json().catch(() => null));
+  const parsed = updateTermSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Use a valid group, lowercase term slug, and label.' }, { status: 400 });
   await connectDB();
   try {
@@ -72,6 +73,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ term });
   } catch (error) {
     if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Taxonomy term not found.' }, { status: 404 });
+    if (error instanceof Error && error.message === 'PARENT_TERM_NOT_FOUND') return NextResponse.json({ error: 'Parent term not found in this taxonomy.' }, { status: 400 });
+    if (error instanceof Error && error.message === 'PARENT_TERM_CYCLE') return NextResponse.json({ error: 'A term cannot be its own ancestor.' }, { status: 409 });
+    if (error instanceof Error && error.message === 'TAXONOMY_NOT_HIERARCHICAL') return NextResponse.json({ error: 'Flat taxonomies cannot have parent terms.' }, { status: 400 });
     return NextResponse.json({ error: 'Unable to update taxonomy term.' }, { status: 500 });
   }
 }
@@ -85,6 +89,7 @@ export async function DELETE(request: NextRequest) {
     const term = await archiveNormalizedTaxonomyTerm(parsed.data);
     return NextResponse.json({ term });
   } catch (error) {
+    if (error instanceof Error && error.message === 'TERM_HAS_CHILDREN') return NextResponse.json({ error: 'Reassign or archive this term’s active children first.' }, { status: 409 });
     if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Taxonomy term not found.' }, { status: 404 });
     return NextResponse.json({ error: 'Unable to archive taxonomy term.' }, { status: 500 });
   }

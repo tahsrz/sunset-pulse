@@ -23,6 +23,22 @@ export function diffTaxonomyRelationships(currentTermIds: string[], desiredTermI
   };
 }
 
+export async function hasTaxonomyParentCycle(
+  targetTermId: string,
+  proposedParentId: string,
+  loadParentId: (termId: string) => Promise<string | null>,
+) {
+  const visited = new Set<string>();
+  let currentId: string | null = proposedParentId;
+  while (currentId) {
+    if (currentId === targetTermId) return true;
+    if (visited.has(currentId)) return true;
+    visited.add(currentId);
+    currentId = await loadParentId(currentId);
+  }
+  return false;
+}
+
 export async function resolveLegacyTaxonomyTermIds(input: {
   tenantId: string;
   legacyIds: string[];
@@ -199,16 +215,36 @@ export async function updateNormalizedTaxonomyTermLabel(input: {
   term: string;
   label: string;
   description?: string;
+  parentTerm?: string | null;
 }) {
-  const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
+  const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id hierarchical').lean() as { _id: unknown; hierarchical?: boolean } | null;
   if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  const current = await VibeTerm.findOne({ tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
+  if (!current) throw new Error('TERM_NOT_FOUND');
+  let parent: { _id: unknown; legacyId?: string } | null = null;
+  if (input.parentTerm !== undefined) {
+    if (input.parentTerm && !taxonomy.hierarchical) throw new Error('TAXONOMY_NOT_HIERARCHICAL');
+    parent = input.parentTerm
+      ? await VibeTerm.findOne({ tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.parentTerm, status: 'active' }).select('_id legacyId').lean() as { _id: unknown; legacyId?: string } | null
+      : null;
+    if (input.parentTerm && !parent) throw new Error('PARENT_TERM_NOT_FOUND');
+    if (parent && await hasTaxonomyParentCycle(String(current._id), String(parent._id), async (termId) => {
+      const ancestor = await VibeTerm.findOne({ _id: termId, tenantId: input.tenantId, taxonomyId: taxonomy._id }).select('parentTermId').lean() as { parentTermId?: unknown } | null;
+      return ancestor?.parentTermId ? String(ancestor.parentTermId) : null;
+    })) throw new Error('PARENT_TERM_CYCLE');
+  }
+  const parentUpdate = input.parentTerm === undefined
+    ? {}
+    : input.parentTerm
+      ? { $set: { parentTermId: parent?._id } }
+      : { $unset: { parentTermId: 1 } };
   const updated = await VibeTerm.findOneAndUpdate(
     { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' },
-    { $set: { label: input.label, ...(input.description !== undefined ? { description: input.description } : {}) } },
+    { $set: { label: input.label, ...(input.description !== undefined ? { description: input.description } : {}), ...('$set' in parentUpdate ? parentUpdate.$set : {}) }, ...('$unset' in parentUpdate ? { $unset: parentUpdate.$unset } : {}) },
     { new: true },
   ).lean() as { legacyId?: string; slug: string; label: string; description?: string } | null;
   if (!updated) throw new Error('TERM_NOT_FOUND');
-  return { id: updated.legacyId || `${input.group}:${updated.slug}`, group: input.group, term: updated.slug, label: updated.label, description: updated.description || '' };
+  return { id: updated.legacyId || `${input.group}:${updated.slug}`, group: input.group, term: updated.slug, label: updated.label, description: updated.description || '', ...(parent ? { parentId: parent.legacyId || `${input.group}:${input.parentTerm}` } : {}) };
 }
 
 export async function archiveNormalizedTaxonomyTerm(input: {
@@ -218,8 +254,11 @@ export async function archiveNormalizedTaxonomyTerm(input: {
 }) {
   const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
   if (!taxonomy) throw new Error('TAXONOMY_NOT_FOUND');
+  const current = await VibeTerm.findOne({ tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
+  if (!current) throw new Error('TERM_NOT_FOUND');
+  if (await VibeTerm.exists({ tenantId: input.tenantId, taxonomyId: taxonomy._id, parentTermId: current._id, status: 'active' })) throw new Error('TERM_HAS_CHILDREN');
   const archived = await VibeTerm.findOneAndUpdate(
-    { tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'active' },
+    { _id: current._id, status: 'active' },
     { $set: { status: 'archived' } },
     { new: true },
   ).lean() as { legacyId?: string; slug: string; label: string; description?: string } | null;

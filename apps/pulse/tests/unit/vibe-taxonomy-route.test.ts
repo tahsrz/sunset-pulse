@@ -75,6 +75,14 @@ describe('taxonomy directory read authority', () => {
     expect(mocks.updateTermLabel).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused', label: 'Deep Focus', description: 'For concentrated layouts.' });
   });
 
+  it('passes an explicit parent removal through the term update contract', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.updateTermLabel.mockResolvedValue({ id: 'neighborhood:east', group: 'neighborhood', term: 'east', label: 'East' });
+    const response = await PATCH(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PATCH', body: JSON.stringify({ group: 'neighborhood', term: 'east', label: 'East', parentTerm: null }) }));
+    expect(response.status).toBe(200);
+    expect(mocks.updateTermLabel).toHaveBeenCalledWith({ tenantId: 'default', group: 'neighborhood', term: 'east', label: 'East', parentTerm: null });
+  });
+
   it('archives a term without deleting its compatibility identity', async () => {
     process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
     mocks.archiveTerm.mockResolvedValue({ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', status: 'archived' });
@@ -82,6 +90,14 @@ describe('taxonomy directory read authority', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ term: { id: 'mood:focused', status: 'archived' } });
     expect(mocks.archiveTerm).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused' });
+  });
+
+  it('reports a hierarchy conflict when a parent still has active children', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.archiveTerm.mockRejectedValue(new Error('TERM_HAS_CHILDREN'));
+    const response = await DELETE(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'DELETE', body: JSON.stringify({ group: 'neighborhood', term: 'downtown' }) }));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'Reassign or archive this term’s active children first.' });
   });
 
   it('restores the same archived term identity', async () => {

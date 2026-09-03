@@ -31,6 +31,7 @@ export function TaxonomyDirectory() {
   const [editingId, setEditingId] = useState('');
   const [editingLabel, setEditingLabel] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
+  const [editingParentTerm, setEditingParentTerm] = useState('');
   const [updating, setUpdating] = useState(false);
   const [archivingId, setArchivingId] = useState('');
   const [lastArchivedTerm, setLastArchivedTerm] = useState<TaxonomyTerm | null>(null);
@@ -74,6 +75,15 @@ export function TaxonomyDirectory() {
       || term.group.toLowerCase().includes(normalizedQuery);
     return matchesGroup && matchesStatus && matchesQuery;
   }), [group, query, status, terms]);
+
+  const editingTerm = (terms || []).find((term) => term.id === editingId);
+  const editingGroupDefinition = taxonomyGroups.find(({ slug }) => slug === editingTerm?.group);
+  const editingParentOptions = (terms || []).filter((term) => term.group === editingTerm?.group && term.id !== editingId && (term.status || 'active') === 'active');
+
+  useEffect(() => {
+    if (!editingTerm) return;
+    setEditingParentTerm(editingTerm.parentId?.split(':').slice(1).join(':') || '');
+  }, [editingTerm]);
 
   async function createTerm() {
     setCreating(true);
@@ -155,7 +165,7 @@ export function TaxonomyDirectory() {
     setUpdating(true);
     setCreateError('');
     try {
-      const response = await fetch('/api/vibes/taxonomy', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ group: term.group, term: term.term, label: editingLabel, description: editingDescription.trim() }) });
+      const response = await fetch('/api/vibes/taxonomy', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ group: term.group, term: term.term, label: editingLabel, description: editingDescription.trim(), ...(editingGroupDefinition?.hierarchical ? { parentTerm: editingParentTerm || null } : {}) }) });
       const responseText = await response.text();
       const payload = responseText ? JSON.parse(responseText) : {};
       if (!response.ok) throw new Error(payload.error || 'Unable to update taxonomy term.');
@@ -163,6 +173,7 @@ export function TaxonomyDirectory() {
       setEditingId('');
       setEditingLabel('');
       setEditingDescription('');
+      setEditingParentTerm('');
     } catch (reason) {
       setCreateError(reason instanceof Error ? reason.message : 'Unable to update taxonomy term.');
     } finally {
@@ -235,6 +246,7 @@ export function TaxonomyDirectory() {
         </select>
         {manageTerms ? <select aria-label="Filter taxonomy status" value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="active">Active</option><option value="archived">Archived</option><option value="all">All statuses</option></select> : null}
       </div>
+      {editingTerm && editingGroupDefinition?.hierarchical ? <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-sky-50 px-4 py-3"><label className="min-w-56 text-xs font-bold uppercase text-slate-500">Parent for {editingTerm.label || editingTerm.term}<select aria-label={`Parent for ${editingTerm.term}`} value={editingParentTerm} onChange={(event) => setEditingParentTerm(event.target.value)} className="mt-1 block w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">None</option>{editingParentOptions.map((term) => <option key={term.id} value={term.term}>{term.label || term.term.replace(/-/g, ' ')}</option>)}</select></label><p className="pb-2 text-xs text-slate-500">The parent is saved with the term metadata. Existing Vibe assignments keep the same term ID.</p></div> : null}
       <div className="border-b border-slate-100 p-4 text-sm text-slate-500">{visibleTerms.length} {visibleTerms.length === 1 ? 'term' : 'terms'} · usage excludes Vibes in trash</div>
       {visibleTerms.some((term) => Boolean(counts[term.id])) ? <nav aria-label="Browse Vibes by taxonomy term" className="flex flex-wrap gap-x-4 gap-y-2 border-b border-slate-100 px-4 py-3 text-sm">{visibleTerms.filter((term) => Boolean(counts[term.id])).map((term) => <Link key={term.id} className="font-semibold text-[#2271b1] hover:underline" href={`/vibes?taxonomyTerm=${encodeURIComponent(term.id)}`} aria-label={`View ${counts[term.id]} Vibes assigned to ${term.label || term.term.replace(/-/g, ' ')}`}>{term.label || term.term.replace(/-/g, ' ')} ({counts[term.id]})</Link>)}</nav> : null}
       {visibleTerms.length === 0 ? <p className="p-6 text-sm text-slate-500">No taxonomy terms match this filter.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th scope="col" className="px-4 py-3">Name</th><th scope="col" className="px-4 py-3">Slug</th><th scope="col" className="px-4 py-3">Group</th><th scope="col" className="px-4 py-3">Parent</th>{manageTerms ? <th scope="col" className="px-4 py-3">Status</th> : null}<th scope="col" className="px-4 py-3 text-right">Vibes</th>{manageTerms ? <th scope="col" className="px-4 py-3 text-right">Actions</th> : null}</tr></thead><tbody className="divide-y divide-slate-100">{visibleTerms.map((term) => <tr key={term.id} className="hover:bg-slate-50"><th scope="row" className="px-4 py-3 font-semibold text-[#2271b1]">{editingId === term.id ? <span className="block space-y-2"><input aria-label={`Name for ${term.term}`} required value={editingLabel} onChange={(event) => setEditingLabel(event.target.value)} className="w-full rounded border border-slate-300 px-2 py-1 text-sm text-slate-900" /><textarea aria-label={`Description for ${term.term}`} value={editingDescription} maxLength={240} onChange={(event) => setEditingDescription(event.target.value)} className="min-h-16 w-full rounded border border-slate-300 px-2 py-1 text-xs font-normal text-slate-900" /></span> : <span>{term.label || term.term.replace(/-/g, ' ')}{term.description ? <span className="mt-1 block max-w-md text-xs font-normal text-slate-500">{term.description}</span> : null}</span>}</th><td className="px-4 py-3 font-mono text-xs text-slate-600">{term.term}</td><td className="px-4 py-3 capitalize text-slate-600">{taxonomyGroupLabels.get(term.group) || groupLabel(term.group)}</td><td className="px-4 py-3 text-slate-600">{term.parentId ? termLabels.get(term.parentId) || term.parentId : '—'}</td>{manageTerms ? <td className="px-4 py-3 capitalize text-slate-600">{term.status || 'active'}</td> : null}<td className="px-4 py-3 text-right font-semibold text-slate-900">{counts[term.id] || 0}</td>{manageTerms ? <td className="px-4 py-3 text-right">{term.status === 'archived' ? <button type="button" disabled={updating} onClick={() => void restoreTerm(term)} className="font-semibold text-[#2271b1] disabled:opacity-50">Restore</button> : editingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating || !editingLabel.trim()} onClick={() => void updateLabel(term)} className="font-semibold text-[#2271b1] disabled:opacity-50">Save</button><button type="button" disabled={updating} onClick={() => { setEditingId(''); setEditingLabel(''); setEditingDescription(''); }} className="text-slate-500">Cancel</button></span> : archivingId === term.id ? <span className="inline-flex gap-2"><button type="button" disabled={updating} onClick={() => void archiveTerm(term)} className="font-semibold text-red-700 disabled:opacity-50">Confirm archive</button><button type="button" disabled={updating} onClick={() => setArchivingId('')} className="text-slate-500">Cancel</button></span> : <span className="inline-flex gap-3"><button type="button" onClick={() => { setEditingId(term.id); setEditingLabel(term.label || term.term.replace(/-/g, ' ')); setEditingDescription(term.description || ''); }} className="font-semibold text-[#2271b1]">Edit</button><button type="button" onClick={() => setArchivingId(term.id)} className="font-semibold text-red-700">Archive</button></span>}</td> : null}</tr>)}</tbody></table></div>}
