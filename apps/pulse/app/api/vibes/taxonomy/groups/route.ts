@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import connectDB from '@/lib/core/database';
-import { createNormalizedTaxonomyGroup } from '@/lib/cms/taxonomyRepository';
+import { createNormalizedTaxonomyGroup, updateNormalizedTaxonomyGroupLabel } from '@/lib/cms/taxonomyRepository';
 
 const createGroupSchema = z.object({
   tenantId: z.string().trim().min(1).max(80).default('default'),
@@ -23,5 +23,23 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === 'TAXONOMY_EXISTS') return NextResponse.json({ error: 'A taxonomy with this slug already exists.' }, { status: 409 });
     return NextResponse.json({ error: 'Unable to create taxonomy.' }, { status: 500 });
+  }
+}
+
+const updateGroupSchema = createGroupSchema.pick({ tenantId: true, slug: true, label: true });
+
+export async function PATCH(request: NextRequest) {
+  if (process.env.VIBE_TAXONOMY_MANAGE_TERMS !== '1' || process.env.VIBE_TAXONOMY_NORMALIZED_READ !== '1') {
+    return NextResponse.json({ error: 'Taxonomy management is disabled.' }, { status: 404 });
+  }
+  const parsed = updateGroupSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Use a valid lowercase slug and label.' }, { status: 400 });
+  await connectDB();
+  try {
+    const group = await updateNormalizedTaxonomyGroupLabel(parsed.data);
+    return NextResponse.json({ group });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'TAXONOMY_NOT_FOUND') return NextResponse.json({ error: 'Taxonomy not found.' }, { status: 404 });
+    return NextResponse.json({ error: 'Unable to update taxonomy.' }, { status: 500 });
   }
 }

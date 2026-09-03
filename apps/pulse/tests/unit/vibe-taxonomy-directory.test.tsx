@@ -188,6 +188,23 @@ describe('Vibe taxonomy directory', () => {
     expect(screen.getByRole('combobox', { name: 'Filter taxonomy group' })).toHaveValue('neighborhood');
   });
 
+  it('edits a taxonomy label while keeping its slug and hierarchy type stable', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [], groups: [{ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ group: { slug: 'neighborhood', label: 'Area', hierarchical: true } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    const groupRow = (await screen.findByRole('button', { name: 'Neighborhood' })).closest('tr')!;
+    fireEvent.click(within(groupRow).getByRole('button', { name: 'Edit' }));
+    fireEvent.change(within(groupRow).getByRole('textbox', { name: 'Name for taxonomy neighborhood' }), { target: { value: 'Area' } });
+    fireEvent.click(within(groupRow).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('button', { name: 'Area' })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy/groups', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ slug: 'neighborhood', label: 'Area' }),
+    }));
+  });
+
   it('offers active parents only for hierarchical taxonomy groups', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({

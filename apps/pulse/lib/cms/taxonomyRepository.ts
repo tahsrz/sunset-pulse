@@ -129,6 +129,20 @@ export async function createNormalizedTaxonomyGroup(input: {
   }
 }
 
+export async function updateNormalizedTaxonomyGroupLabel(input: {
+  tenantId: string;
+  slug: string;
+  label: string;
+}) {
+  const updated = await VibeTaxonomy.findOneAndUpdate(
+    { tenantId: input.tenantId, slug: input.slug, status: 'active' },
+    { $set: { label: input.label } },
+    { new: true },
+  ).lean() as { slug: string; label: string; hierarchical?: boolean } | null;
+  if (!updated) throw new Error('TAXONOMY_NOT_FOUND');
+  return { slug: updated.slug, label: updated.label, hierarchical: Boolean(updated.hierarchical) };
+}
+
 export async function createNormalizedTaxonomyTerm(input: {
   tenantId: string;
   group: string;
