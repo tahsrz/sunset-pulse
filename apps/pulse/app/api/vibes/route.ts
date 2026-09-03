@@ -17,12 +17,14 @@ export async function GET(request: NextRequest) {
   const tenantId = params.get('tenantId')?.trim() || 'default';
   const status = params.get('status')?.trim();
   const search = params.get('search')?.trim();
+  const taxonomyTerm = params.get('taxonomyTerm')?.trim().slice(0, 80);
   const sort = params.get('sort')?.trim();
   const direction = params.get('direction') === 'asc' ? 1 : -1;
   const page = Math.max(1, Number(params.get('page') || 1));
   const pageSize = Math.min(100, Math.max(1, Number(params.get('pageSize') || 25)));
   const filter: Record<string, unknown> = { tenantId };
   if (status) filter.status = status;
+  if (taxonomyTerm) filter.taxonomyTermIds = taxonomyTerm;
   if (search) filter.$or = [
     { title: { $regex: escapeRegex(search), $options: 'i' } },
     { slug: { $regex: escapeRegex(search), $options: 'i' } },

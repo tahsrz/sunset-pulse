@@ -21,7 +21,7 @@ describe('Vibe taxonomy directory', () => {
     expect(screen.getByRole('columnheader', { name: 'Group' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Vibes' })).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'calm' })).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View 2 Vibes assigned to calm' })).toHaveAttribute('href', '/vibes?taxonomyTerm=mood%3Acalm');
   });
 
   it('shows term creation controls only when the API enables management', async () => {

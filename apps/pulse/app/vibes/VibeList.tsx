@@ -59,6 +59,7 @@ export function VibeList() {
   const [search, setSearch] = useState(parsedQuery.q);
   const [debouncedSearch, setDebouncedSearch] = useState(parsedQuery.q);
   const [status, setStatus] = useState(parsedQuery.status);
+  const [taxonomyTerm, setTaxonomyTerm] = useState(parsedQuery.taxonomyTerm);
   const [sort, setSort] = useState(parsedQuery.sort);
   const [direction, setDirection] = useState(parsedQuery.direction);
   const [page, setPage] = useState(parsedQuery.page);
@@ -76,7 +77,7 @@ export function VibeList() {
 
   useEffect(() => {
     setSearch(parsedQuery.q); setDebouncedSearch(parsedQuery.q); setStatus(parsedQuery.status); setSort(parsedQuery.sort);
-    setDirection(parsedQuery.direction); setPage(parsedQuery.page);
+    setDirection(parsedQuery.direction); setTaxonomyTerm(parsedQuery.taxonomyTerm); setPage(parsedQuery.page);
   // URL is the source of truth when navigating with Back/Forward.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -102,6 +103,7 @@ export function VibeList() {
     const query = new URLSearchParams({ pageSize: String(PAGE_SIZE), page: String(page) });
     if (debouncedSearch.trim()) query.set('search', debouncedSearch.trim());
     if (status) query.set('status', status);
+    if (taxonomyTerm) query.set('taxonomyTerm', taxonomyTerm);
     query.set('sort', sort);
     query.set('direction', direction);
 
@@ -131,7 +133,7 @@ export function VibeList() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
-  }, [page, debouncedSearch, status, sort, direction, refreshToken]);
+  }, [page, debouncedSearch, status, taxonomyTerm, sort, direction, refreshToken]);
 
   function changeSort(nextSort: 'title' | 'status' | 'updatedAt') {
     const nextDirection = sort === nextSort ? (direction === 'asc' ? 'desc' : 'asc') : (nextSort === 'title' ? 'asc' : 'desc');
@@ -158,6 +160,7 @@ export function VibeList() {
         <div className="mb-3 px-1">
           <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
         </div>
+        {taxonomyTerm ? <div className="mb-3 flex items-center justify-between border-l-4 border-[#2271b1] bg-white px-4 py-3 text-sm"><span>Showing Vibes assigned to <strong>{taxonomyTerm}</strong>.</span><button type="button" className="font-semibold text-[#2271b1] hover:underline" onClick={() => { setTaxonomyTerm(''); setPage(1); updateQuery({ taxonomyTerm: '', page: 1 }); }}>Clear taxonomy filter</button></div> : null}
         <section className="border border-slate-200 bg-white" aria-label="Vibe list">
           {successMessage ? <div className="p-4 pb-0"><VibeNotice tone="success" onDismiss={() => setSuccessMessage('')}>{successMessage}</VibeNotice></div> : null}
           <VibeListToolbar position="top" selectedCount={selected.size} action={bulkAction} onActionChange={setBulkAction} onApply={() => { if (bulkAction) setConfirmAction(bulkAction); }} busy={bulkBusy} search={search} onSearchChange={setSearch} />
