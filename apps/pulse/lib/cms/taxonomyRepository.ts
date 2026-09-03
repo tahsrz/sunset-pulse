@@ -279,8 +279,9 @@ export async function restoreNormalizedTaxonomyTerm(input: {
   const current = await VibeTerm.findOne({ tenantId: input.tenantId, taxonomyId: taxonomy._id, slug: input.term, status: 'archived' }).select('_id parentTermId').lean() as { _id: unknown; parentTermId?: unknown } | null;
   if (!current) throw new Error('TERM_NOT_FOUND');
   const parent = current.parentTermId
-    ? await VibeTerm.findById(current.parentTermId).select('legacyId slug').lean() as { legacyId?: string; slug: string } | null
+    ? await VibeTerm.findById(current.parentTermId).select('legacyId slug status').lean() as { legacyId?: string; slug: string; status?: 'active' | 'archived' } | null
     : null;
+  if (current.parentTermId && parent?.status !== 'active') throw new Error('PARENT_TERM_ARCHIVED');
   const restored = await VibeTerm.findOneAndUpdate(
     { _id: current._id, status: 'archived' },
     { $set: { status: 'active' } },

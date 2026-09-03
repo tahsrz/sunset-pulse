@@ -122,6 +122,14 @@ describe('taxonomy directory read authority', () => {
     expect(mocks.restoreTerm).toHaveBeenCalledWith({ tenantId: 'default', group: 'mood', term: 'focused' });
   });
 
+  it('reports a hierarchy conflict when restoring a child before its parent', async () => {
+    process.env.VIBE_TAXONOMY_MANAGE_TERMS = '1';
+    mocks.restoreTerm.mockRejectedValue(new Error('PARENT_TERM_ARCHIVED'));
+    const response = await PUT(new NextRequest('http://localhost/api/vibes/taxonomy', { method: 'PUT', body: JSON.stringify({ group: 'neighborhood', term: 'east' }) }));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'Restore this term’s parent before restoring the child.' });
+  });
+
   it('uses embedded counts by default without querying normalized relationships', async () => {
     mocks.countEmbedded.mockResolvedValue({ 'mood:calm': 2 });
     const response = await GET(new NextRequest('http://localhost/api/vibes/taxonomy?tenantId=tenant-a'));

@@ -152,6 +152,22 @@ describe('Vibe taxonomy directory', () => {
     expect(within(restoredRow).getByText('Downtown')).toBeInTheDocument();
   });
 
+  it('shows a directory-level error when a child cannot be restored before its parent', async () => {
+    const child = { id: 'neighborhood:east', group: 'neighborhood', term: 'east', label: 'East', status: 'archived' as const, parentId: 'neighborhood:downtown' };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [child], groups: [{ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: false, text: async () => JSON.stringify({ error: 'Restore this term’s parent before restoring the child.' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Filter taxonomy status' }), { target: { value: 'archived' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Restore this term’s parent before restoring the child.');
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('filters persisted archived terms and restores them after a later refresh', async () => {
     const archived = { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', status: 'archived' };
     const fetchMock = vi.fn()

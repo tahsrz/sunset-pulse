@@ -430,6 +430,12 @@ export function TaxonomyDirectory() {
           </button>
         </div>
       ) : null}
+      {createError ? (
+        <div role="alert" className="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{createError}</span>
+          <button type="button" onClick={() => setCreateError('')} className="font-semibold hover:underline">Dismiss</button>
+        </div>
+      ) : null}
       {manageTerms ? (
         <details className="border-b border-slate-200 bg-white p-4">
           <summary className="cursor-pointer text-sm font-bold text-[#2271b1]">
@@ -737,11 +743,6 @@ export function TaxonomyDirectory() {
               className="mt-1 min-h-16 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm font-normal normal-case"
             />
           </label>
-          {createError ? (
-            <p role="alert" className="text-sm text-red-700 sm:col-span-5">
-              {createError}
-            </p>
-          ) : null}
         </form>
       ) : null}
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">

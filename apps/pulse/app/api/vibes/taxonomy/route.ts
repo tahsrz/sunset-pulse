@@ -104,6 +104,7 @@ export async function PUT(request: NextRequest) {
     const term = await restoreNormalizedTaxonomyTerm(parsed.data);
     return NextResponse.json({ term });
   } catch (error) {
+    if (error instanceof Error && error.message === 'PARENT_TERM_ARCHIVED') return NextResponse.json({ error: 'Restore this term’s parent before restoring the child.' }, { status: 409 });
     if (error instanceof Error && (error.message === 'TAXONOMY_NOT_FOUND' || error.message === 'TERM_NOT_FOUND')) return NextResponse.json({ error: 'Archived taxonomy term not found.' }, { status: 404 });
     return NextResponse.json({ error: 'Unable to restore taxonomy term.' }, { status: 500 });
   }
