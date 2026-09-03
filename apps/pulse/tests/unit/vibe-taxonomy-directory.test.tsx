@@ -204,4 +204,15 @@ describe('Vibe taxonomy directory', () => {
     const childRow = screen.getByRole('rowheader', { name: 'Downtown East' }).closest('tr')!;
     expect(within(childRow).getByText('Downtown')).toBeInTheDocument();
   });
+
+  it('renders and searches operator-facing term descriptions', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      terms: [{ id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', description: 'For concentrated editorial layouts.' }],
+      counts: {},
+    }) }));
+    render(<TaxonomyDirectory />);
+    expect(await screen.findByText('For concentrated editorial layouts.')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search taxonomy terms' }), { target: { value: 'editorial layouts' } });
+    expect(screen.getByRole('rowheader', { name: /Focused/ })).toBeInTheDocument();
+  });
 });

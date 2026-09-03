@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const manageTerms = normalizedRead && process.env.VIBE_TAXONOMY_MANAGE_TERMS === '1';
   const includeArchived = manageTerms && request.nextUrl.searchParams.get('includeArchived') === '1';
   let normalizedCounts: Record<string, number> | null = null;
-  let normalizedTerms: Array<{ id: string; group: string; term: string; label: string; status: 'active' | 'archived'; parentId?: string }> | null = null;
+  let normalizedTerms: Array<{ id: string; group: string; term: string; label: string; description?: string; status: 'active' | 'archived'; parentId?: string }> | null = null;
   let normalizedGroups: Array<{ slug: string; label: string; hierarchical: boolean }> | null = null;
   if (compareReads || normalizedRead) {
     normalizedCounts = await countNormalizedTaxonomyUsage(tenantId);
@@ -40,6 +40,7 @@ const createTermSchema = z.object({
   group: z.string().trim().regex(/^[a-z][A-Za-z0-9]*$/),
   term: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   label: z.string().trim().min(1).max(80),
+  description: z.string().trim().max(240).optional(),
   parentTerm: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
 });
 

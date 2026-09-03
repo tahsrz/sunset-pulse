@@ -85,7 +85,7 @@ export async function countEmbeddedTaxonomyUsage(tenantId: string) {
 }
 
 export async function listNormalizedTaxonomyTerms(tenantId: string, includeArchived = false) {
-  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId, includeArchived)) as Promise<Array<{ id: string; group: string; term: string; label: string; status: 'active' | 'archived'; parentId?: string }>>;
+  return VibeTerm.aggregate(buildNormalizedTaxonomyCatalogPipeline(tenantId, includeArchived)) as Promise<Array<{ id: string; group: string; term: string; label: string; description?: string; status: 'active' | 'archived'; parentId?: string }>>;
 }
 
 export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, includeArchived = false): PipelineStage[] {
@@ -101,6 +101,7 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, include
       group: { $ifNull: [{ $arrayElemAt: [{ $split: ['$legacyId', ':'] }, 0] }, '$taxonomy.slug'] },
       term: '$slug',
       label: '$label',
+      description: '$description',
       status: '$status',
       parentId: { $arrayElemAt: ['$parent.legacyId', 0] },
     } },
@@ -133,6 +134,7 @@ export async function createNormalizedTaxonomyTerm(input: {
   group: string;
   term: string;
   label: string;
+  description?: string;
   parentTerm?: string;
 }) {
   const taxonomy = await VibeTaxonomy.findOne({ tenantId: input.tenantId, slug: input.group, status: 'active' }).select('_id').lean() as { _id: unknown } | null;
@@ -147,11 +149,12 @@ export async function createNormalizedTaxonomyTerm(input: {
       taxonomyId: taxonomy._id,
       slug: input.term,
       label: input.label,
+      description: input.description || '',
       legacyId: `${input.group}:${input.term}`,
       ...(parent ? { parentTermId: parent._id } : {}),
       status: 'active',
     });
-    return { id: created.legacyId, group: input.group, term: created.slug, label: created.label, ...(parent ? { parentId: parent.legacyId || `${input.group}:${input.parentTerm}` } : {}) };
+    return { id: created.legacyId, group: input.group, term: created.slug, label: created.label, description: created.description || '', ...(parent ? { parentId: parent.legacyId || `${input.group}:${input.parentTerm}` } : {}) };
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 11000) throw new Error('TERM_EXISTS');
     throw error;
