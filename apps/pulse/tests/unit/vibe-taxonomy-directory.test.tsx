@@ -141,7 +141,7 @@ describe('Vibe taxonomy directory', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<TaxonomyDirectory />);
     fireEvent.change(await screen.findByRole('combobox', { name: 'Filter taxonomy status' }), { target: { value: 'archived' } });
-    expect(screen.getByText('Focused (3)')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View 3 Vibes assigned to Focused' })).toHaveAttribute('href', '/vibes?taxonomyTerm=mood%3Afocused');
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
     await waitFor(() => expect(screen.queryByRole('rowheader', { name: 'Focused' })).not.toBeInTheDocument());
     expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({ method: 'PUT' }));
