@@ -106,6 +106,26 @@ export function buildNormalizedTaxonomyCatalogPipeline(tenantId: string, include
   ];
 }
 
+export async function listNormalizedTaxonomyGroups(tenantId: string) {
+  const groups = await VibeTaxonomy.find({ tenantId, status: 'active' }).select('slug label hierarchical').sort({ label: 1 }).lean() as unknown as Array<{ slug: string; label: string; hierarchical?: boolean }>;
+  return groups.map((group) => ({ slug: group.slug, label: group.label, hierarchical: Boolean(group.hierarchical) }));
+}
+
+export async function createNormalizedTaxonomyGroup(input: {
+  tenantId: string;
+  slug: string;
+  label: string;
+  hierarchical: boolean;
+}) {
+  try {
+    const created = await VibeTaxonomy.create({ ...input, status: 'active' });
+    return { slug: created.slug, label: created.label, hierarchical: Boolean(created.hierarchical) };
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) throw new Error('TAXONOMY_EXISTS');
+    throw error;
+  }
+}
+
 export async function createNormalizedTaxonomyTerm(input: {
   tenantId: string;
   group: string;

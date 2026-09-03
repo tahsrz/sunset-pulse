@@ -4,7 +4,8 @@ import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 type TaxonomyTerm = { id: string; group: string; term: string; label?: string; status?: 'active' | 'archived' };
-type TaxonomyResponse = { terms?: TaxonomyTerm[]; counts?: Record<string, number>; capabilities?: { manageTerms?: boolean } };
+type TaxonomyGroup = { slug: string; label: string; hierarchical: boolean };
+type TaxonomyResponse = { terms?: TaxonomyTerm[]; groups?: TaxonomyGroup[]; counts?: Record<string, number>; capabilities?: { manageTerms?: boolean } };
 
 function groupLabel(group: string) {
   return group.replace(/([A-Z])/g, ' $1');
@@ -18,6 +19,7 @@ export function TaxonomyDirectory() {
   const [status, setStatus] = useState('active');
   const [error, setError] = useState('');
   const [manageTerms, setManageTerms] = useState(false);
+  const [taxonomyGroups, setTaxonomyGroups] = useState<TaxonomyGroup[]>([]);
   const [newGroup, setNewGroup] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newSlug, setNewSlug] = useState('');
@@ -28,6 +30,9 @@ export function TaxonomyDirectory() {
   const [updating, setUpdating] = useState(false);
   const [archivingId, setArchivingId] = useState('');
   const [lastArchivedTerm, setLastArchivedTerm] = useState<TaxonomyTerm | null>(null);
+  const [newTaxonomyLabel, setNewTaxonomyLabel] = useState('');
+  const [newTaxonomySlug, setNewTaxonomySlug] = useState('');
+  const [newTaxonomyHierarchical, setNewTaxonomyHierarchical] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -40,6 +45,7 @@ export function TaxonomyDirectory() {
         setTerms(payload.terms || []);
         setCounts(payload.counts || {});
         setManageTerms(Boolean(payload.capabilities?.manageTerms));
+        setTaxonomyGroups(payload.groups || []);
       })
       .catch((reason: Error) => {
         if (reason.name !== 'AbortError') setError(reason.message);
@@ -47,7 +53,8 @@ export function TaxonomyDirectory() {
     return () => controller.abort();
   }, []);
 
-  const groups = useMemo(() => Array.from(new Set((terms || []).map((term) => term.group))), [terms]);
+  const groups = useMemo(() => taxonomyGroups.length > 0 ? taxonomyGroups.map(({ slug }) => slug) : Array.from(new Set((terms || []).map((term) => term.group))), [taxonomyGroups, terms]);
+  const taxonomyGroupLabels = useMemo(() => new Map(taxonomyGroups.map(({ slug, label }) => [slug, label])), [taxonomyGroups]);
   const visibleTerms = useMemo(() => (terms || []).filter((term) => {
     const matchesGroup = !group || term.group === group;
     const matchesStatus = status === 'all' || (term.status || 'active') === status;
@@ -72,6 +79,26 @@ export function TaxonomyDirectory() {
       setNewSlug('');
     } catch (reason) {
       setCreateError(reason instanceof Error ? reason.message : 'Unable to create taxonomy term.');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function createTaxonomyGroup() {
+    setCreating(true);
+    setCreateError('');
+    try {
+      const response = await fetch('/api/vibes/taxonomy/groups', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug: newTaxonomySlug, label: newTaxonomyLabel, hierarchical: newTaxonomyHierarchical }) });
+      const responseText = await response.text();
+      const payload = responseText ? JSON.parse(responseText) : {};
+      if (!response.ok) throw new Error(payload.error || 'Unable to create taxonomy.');
+      setTaxonomyGroups((current) => [...current, payload.group]);
+      setNewGroup(payload.group.slug);
+      setNewTaxonomyLabel('');
+      setNewTaxonomySlug('');
+      setNewTaxonomyHierarchical(false);
+    } catch (reason) {
+      setCreateError(reason instanceof Error ? reason.message : 'Unable to create taxonomy.');
     } finally {
       setCreating(false);
     }
@@ -141,12 +168,13 @@ export function TaxonomyDirectory() {
   return (
     <section className="border border-slate-200 bg-white" aria-label="Vibe taxonomy directory">
       {lastArchivedTerm ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><span><strong>{lastArchivedTerm.label || lastArchivedTerm.term}</strong> was archived.</span><button type="button" disabled={updating} onClick={() => void restoreTerm(lastArchivedTerm)} className="font-bold text-[#2271b1] disabled:opacity-50">Undo archive</button></div> : null}
-      {manageTerms ? <form className="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end" onSubmit={(event) => { event.preventDefault(); void createTerm(); }}><label className="text-xs font-bold uppercase text-slate-500">Name<input required value={newLabel} onChange={(event) => { setNewLabel(event.target.value); if (!newSlug) setNewSlug(event.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={newSlug} onChange={(event) => setNewSlug(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Group<select required value={newGroup} onChange={(event) => setNewGroup(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">Select group</option>{groups.map((item) => <option key={item} value={item}>{groupLabel(item)}</option>)}</select></label><button disabled={creating} className="rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{creating ? 'Adding…' : 'Add New Term'}</button>{createError ? <p role="alert" className="text-sm text-red-700 sm:col-span-4">{createError}</p> : null}</form> : null}
+      {manageTerms ? <details className="border-b border-slate-200 bg-white p-4"><summary className="cursor-pointer text-sm font-bold text-[#2271b1]">Add taxonomy</summary><form className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end" onSubmit={(event) => { event.preventDefault(); void createTaxonomyGroup(); }}><label className="text-xs font-bold uppercase text-slate-500">Name<input required value={newTaxonomyLabel} onChange={(event) => { setNewTaxonomyLabel(event.target.value); if (!newTaxonomySlug) setNewTaxonomySlug(event.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Slug<input required pattern="[a-z][a-z0-9-]*" value={newTaxonomySlug} onChange={(event) => setNewTaxonomySlug(event.target.value)} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm font-normal normal-case" /></label><label className="flex items-center gap-2 pb-2 text-sm"><input type="checkbox" checked={newTaxonomyHierarchical} onChange={(event) => setNewTaxonomyHierarchical(event.target.checked)} />Hierarchical</label><button disabled={creating} className="rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">Add taxonomy</button></form></details> : null}
+      {manageTerms ? <form className="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end" onSubmit={(event) => { event.preventDefault(); void createTerm(); }}><label className="text-xs font-bold uppercase text-slate-500">Name<input required value={newLabel} onChange={(event) => { setNewLabel(event.target.value); if (!newSlug) setNewSlug(event.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={newSlug} onChange={(event) => setNewSlug(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-normal normal-case" /></label><label className="text-xs font-bold uppercase text-slate-500">Group<select required value={newGroup} onChange={(event) => setNewGroup(event.target.value)} className="mt-1 w-full rounded border border-slate-300 bg-white py-2 pl-3 pr-10 text-sm font-normal normal-case"><option value="">Select group</option>{groups.map((item) => <option key={item} value={item}>{taxonomyGroupLabels.get(item) || groupLabel(item)}</option>)}</select></label><button disabled={creating} className="rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{creating ? 'Adding…' : 'Add New Term'}</button>{createError ? <p role="alert" className="text-sm text-red-700 sm:col-span-4">{createError}</p> : null}</form> : null}
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
         <input aria-label="Search taxonomy terms" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search terms" className="min-w-56 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <select aria-label="Filter taxonomy group" value={group} onChange={(event) => setGroup(event.target.value)} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm">
           <option value="">All groups</option>
-          {groups.map((item) => <option key={item} value={item}>{groupLabel(item)}</option>)}
+          {groups.map((item) => <option key={item} value={item}>{taxonomyGroupLabels.get(item) || groupLabel(item)}</option>)}
         </select>
         {manageTerms ? <select aria-label="Filter taxonomy status" value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-md border border-slate-300 py-2 pl-3 pr-10 text-sm"><option value="active">Active</option><option value="archived">Archived</option><option value="all">All statuses</option></select> : null}
       </div>

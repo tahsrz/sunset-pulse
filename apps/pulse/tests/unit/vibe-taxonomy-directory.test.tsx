@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TaxonomyDirectory } from '@/app/vibes/taxonomy/TaxonomyDirectory';
 
@@ -41,9 +41,10 @@ describe('Vibe taxonomy directory', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<TaxonomyDirectory />);
     const addButton = await screen.findByRole('button', { name: 'Add New Term' });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Focused' } });
-    expect(screen.getByRole('textbox', { name: 'Slug' })).toHaveValue('focused');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Group' }), { target: { value: 'mood' } });
+    const termForm = addButton.closest('form')!;
+    fireEvent.change(within(termForm).getByRole('textbox', { name: 'Name' }), { target: { value: 'Focused' } });
+    expect(within(termForm).getByRole('textbox', { name: 'Slug' })).toHaveValue('focused');
+    fireEvent.change(within(termForm).getByRole('combobox', { name: 'Group' }), { target: { value: 'mood' } });
     fireEvent.click(addButton);
 
     await waitFor(() => expect(screen.getByRole('rowheader', { name: 'focused' })).toBeInTheDocument());
@@ -142,5 +143,23 @@ describe('Vibe taxonomy directory', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
     await waitFor(() => expect(screen.queryByRole('rowheader', { name: 'Focused' })).not.toBeInTheDocument());
     expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy', expect.objectContaining({ method: 'PUT' }));
+  });
+
+  it('creates an empty taxonomy group and selects it for the first term', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [], groups: [{ slug: 'mood', label: 'Mood', hierarchical: false }], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ group: { slug: 'neighborhood', label: 'Neighborhood', hierarchical: true } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+    fireEvent.click(await screen.findByText('Add taxonomy', { selector: 'summary' }));
+    const taxonomyForm = screen.getByText('Hierarchical').closest('form')!;
+    fireEvent.change(within(taxonomyForm).getByRole('textbox', { name: 'Name' }), { target: { value: 'Neighborhood' } });
+    fireEvent.click(within(taxonomyForm).getByRole('checkbox', { name: 'Hierarchical' }));
+    fireEvent.submit(taxonomyForm);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Group' })).toHaveValue('neighborhood'));
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/taxonomy/groups', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }),
+    }));
   });
 });

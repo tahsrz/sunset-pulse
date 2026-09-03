@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   countEmbedded: vi.fn(),
   countNormalized: vi.fn(),
   listNormalized: vi.fn(),
+  listGroups: vi.fn(),
   createTerm: vi.fn(),
   updateTermLabel: vi.fn(),
   archiveTerm: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('@/lib/cms/taxonomyRepository', () => ({
   countEmbeddedTaxonomyUsage: mocks.countEmbedded,
   countNormalizedTaxonomyUsage: mocks.countNormalized,
   listNormalizedTaxonomyTerms: mocks.listNormalized,
+  listNormalizedTaxonomyGroups: mocks.listGroups,
   createNormalizedTaxonomyTerm: mocks.createTerm,
   updateNormalizedTaxonomyTermLabel: mocks.updateTermLabel,
   archiveNormalizedTaxonomyTerm: mocks.archiveTerm,
@@ -125,7 +127,9 @@ describe('taxonomy directory read authority', () => {
     mocks.countEmbedded.mockResolvedValue({});
     mocks.countNormalized.mockResolvedValue({});
     mocks.listNormalized.mockResolvedValue([]);
+    mocks.listGroups.mockResolvedValue([{ slug: 'mood', label: 'Mood', hierarchical: false }]);
     await GET(new NextRequest('http://localhost/api/vibes/taxonomy?includeArchived=1'));
     expect(mocks.listNormalized).toHaveBeenCalledWith('default', true);
+    expect(mocks.listGroups).toHaveBeenCalledWith('default');
   });
 });
