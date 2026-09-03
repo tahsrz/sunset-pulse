@@ -133,6 +133,25 @@ describe('Vibe taxonomy directory', () => {
     }));
   });
 
+  it('keeps a child attached to its parent after archive undo', async () => {
+    const parent = { id: 'neighborhood:downtown', group: 'neighborhood', term: 'downtown', label: 'Downtown' };
+    const child = { id: 'neighborhood:east', group: 'neighborhood', term: 'east', label: 'East', parentId: parent.id };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ terms: [parent, child], groups: [{ slug: 'neighborhood', label: 'Neighborhood', hierarchical: true }], counts: {}, capabilities: { manageTerms: true } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { ...child, status: 'archived' } }) })
+      .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify({ term: { id: child.id, group: child.group, term: child.term, label: child.label, status: 'active' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TaxonomyDirectory />);
+
+    const childRow = (await screen.findByRole('rowheader', { name: 'East' })).closest('tr')!;
+    fireEvent.click(within(childRow).getByRole('button', { name: 'Archive' }));
+    fireEvent.click(within(childRow).getByRole('button', { name: 'Confirm archive' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo archive' }));
+
+    const restoredRow = (await screen.findByRole('rowheader', { name: 'East' })).closest('tr')!;
+    expect(within(restoredRow).getByText('Downtown')).toBeInTheDocument();
+  });
+
   it('filters persisted archived terms and restores them after a later refresh', async () => {
     const archived = { id: 'mood:focused', group: 'mood', term: 'focused', label: 'Focused', status: 'archived' };
     const fetchMock = vi.fn()

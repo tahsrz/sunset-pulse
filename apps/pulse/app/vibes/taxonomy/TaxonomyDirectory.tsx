@@ -362,9 +362,15 @@ export function TaxonomyDirectory() {
       if (!response.ok) throw new Error(payload.error || 'Unable to restore taxonomy term.');
       setTerms((current) => {
         const existing = current || [];
+        const restoredTerm = {
+          ...payload.term,
+          ...(termToRestore.parentId && !payload.term.parentId
+            ? { parentId: termToRestore.parentId }
+            : {}),
+        };
         return existing.some((item) => item.id === termToRestore.id)
-          ? existing.map((item) => (item.id === termToRestore.id ? payload.term : item))
-          : [...existing, payload.term];
+          ? existing.map((item) => (item.id === termToRestore.id ? restoredTerm : item))
+          : [...existing, restoredTerm];
       });
       setLastArchivedTerm(null);
     } catch (reason) {
