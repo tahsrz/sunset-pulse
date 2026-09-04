@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CmsPageEditor, type CmsPageEditorDocument } from '@/app/vibes/pages/[pageId]/edit/CmsPageEditor';
 
 const page: CmsPageEditorDocument = {
@@ -15,6 +15,7 @@ const page: CmsPageEditorDocument = {
 };
 
 describe('CMS page block canvas', () => {
+  afterEach(() => vi.unstubAllGlobals());
   it('derives its inserter from registered core blocks and renders persisted content', () => {
     render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
     const inserter = screen.getByRole('complementary', { name: 'Block inserter' });
@@ -27,7 +28,7 @@ describe('CMS page block canvas', () => {
     render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
     fireEvent.click(screen.getByRole('button', { name: '+ Paragraph' }));
     expect(screen.getByText('3 blocks')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('local changes');
+    expect(screen.getByText(/Unsaved changes/)).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Duplicate core/heading' })[0]);
     expect(screen.getAllByRole('textbox', { name: 'Heading text' })).toHaveLength(2);
@@ -56,6 +57,35 @@ describe('CMS page block canvas', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Paragraph text' }), { target: { value: 'People make the difference.' } });
     expect(screen.getByRole('textbox', { name: 'Heading text' })).toHaveValue('Meet the team');
     expect(screen.getByRole('textbox', { name: 'Paragraph text' })).toHaveValue('People make the difference.');
-    expect(screen.getByRole('status')).toHaveTextContent('local changes');
+    expect(screen.getByText(/Unsaved changes/)).toBeInTheDocument();
+  });
+
+  it('saves with the expected version, then previews and publishes server-held content', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => JSON.stringify({ page: { currentDraftVersion: 3 } }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => JSON.stringify({ preview: { draftPayload: page.draftPayload } }) })
+      .mockResolvedValueOnce({ ok: true, status: 201, text: async () => JSON.stringify({ revision: { revisionNumber: 1 } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Updated About' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    expect(await screen.findByText('Draft saved.')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/pages/page-1?siteId=site-a', expect.objectContaining({ method: 'PATCH', body: expect.stringContaining('"expectedVersion":2') }));
+    expect(screen.getByText(/Version 3/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    expect(await screen.findByRole('region', { name: 'Saved draft preview' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(await screen.findByText('Page published.')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/vibes/pages/page-1/publish?siteId=site-a', expect.objectContaining({ body: JSON.stringify({ expectedVersion: 3 }) }));
+  });
+
+  it('surfaces an optimistic save conflict without clearing local changes', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 409, text: async () => JSON.stringify({ error: 'Page changed since it was loaded.' }) }));
+    render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Heading text' }), { target: { value: 'Conflicting edit' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Page changed since it was loaded.');
+    expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument();
+    expect(screen.getByText(/Unsaved changes/)).toBeInTheDocument();
   });
 });

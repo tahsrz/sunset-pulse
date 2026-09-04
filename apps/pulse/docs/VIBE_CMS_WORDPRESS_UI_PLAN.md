@@ -6327,7 +6327,7 @@ never coupled to an unfinished editor route:
    duplication, and deletion.
 4. **Selection and inspector — implemented.** Keep document controls separate from selected-block controls;
    support inline text editing without replacing the persisted block schema.
-5. **Lifecycle toolbar.** Wire draft save with `expectedVersion`, preview with the pinned draft,
+5. **Lifecycle toolbar — save/preview/publish implemented; revision recovery remains.** Wire draft save with `expectedVersion`, preview with the pinned draft,
    publish through the lifecycle API, and revision recovery. Surface saving, saved, conflict,
    and failure as distinct states.
 
@@ -6342,6 +6342,11 @@ action is slice 5. Selection stores only the stable block ID and derives the cur
 every edit or reorder. Heading and paragraph text edit directly in the canvas; Heading, Image,
 and Button settings use the Block inspector; and title/excerpt/status/version/template/site
 remain isolated in the Document inspector.
+The lifecycle toolbar validates the complete draft locally, advances its version only from a
+successful PATCH response, previews the server-held draft only when local state is clean, and
+publishes that exact saved version. HTTP 409 remains a distinct conflict with an explicit reload
+action; local changes are not cleared. E3 still requires revision discovery and recovery before
+the package is complete.
 
 ### Package E4 — themes and Appearance
 
