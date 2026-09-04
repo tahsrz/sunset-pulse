@@ -6325,7 +6325,7 @@ never coupled to an unfinished editor route:
 3. **Block canvas and inserter — implemented.** Render persisted blocks using the shared registry, add only
    registered block types, and preserve stable block IDs through insertion, movement,
    duplication, and deletion.
-4. **Selection and inspector.** Keep document controls separate from selected-block controls;
+4. **Selection and inspector — implemented.** Keep document controls separate from selected-block controls;
    support inline text editing without replacing the persisted block schema.
 5. **Lifecycle toolbar.** Wire draft save with `expectedVersion`, preview with the pinned draft,
    publish through the lifecycle API, and revision recovery. Surface saving, saved, conflict,
@@ -6338,7 +6338,10 @@ draft version, and minimally complete draft payload. The canvas now derives its 
 the core registry and uses immutable operations which preserve IDs during movement, allocate a
 new ID during insertion or duplication, and reject unregistered types. Its changes remain local
 and are visibly marked unsaved until slice 5 wires the lifecycle toolbar. The next implementation
-action is slice 4.
+action is slice 5. Selection stores only the stable block ID and derives the current block after
+every edit or reorder. Heading and paragraph text edit directly in the canvas; Heading, Image,
+and Button settings use the Block inspector; and title/excerpt/status/version/template/site
+remain isolated in the Document inspector.
 
 ### Package E4 — themes and Appearance
 

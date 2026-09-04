@@ -19,8 +19,8 @@ describe('CMS page block canvas', () => {
     render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
     const inserter = screen.getByRole('complementary', { name: 'Block inserter' });
     expect(within(inserter).getAllByRole('button').map((button) => button.textContent)).toEqual(['+ Heading', '+ Paragraph', '+ Image', '+ Button']);
-    expect(screen.getByRole('heading', { name: 'Welcome' })).toBeInTheDocument();
-    expect(screen.getByText('Our story.')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Heading text' })).toHaveValue('Welcome');
+    expect(screen.getByRole('textbox', { name: 'Paragraph text' })).toHaveValue('Our story.');
   });
 
   it('inserts, reorders, duplicates, and deletes blocks locally', () => {
@@ -30,9 +30,32 @@ describe('CMS page block canvas', () => {
     expect(screen.getByRole('status')).toHaveTextContent('local changes');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Duplicate core/heading' })[0]);
-    expect(screen.getAllByRole('heading', { name: 'Welcome' })).toHaveLength(2);
+    expect(screen.getAllByRole('textbox', { name: 'Heading text' })).toHaveLength(2);
     fireEvent.click(screen.getAllByRole('button', { name: 'Move core/paragraph up' })[0]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete core/heading' })[0]);
     expect(screen.getByText('3 blocks')).toBeInTheDocument();
+  });
+
+  it('keeps document settings separate from selected block settings', () => {
+    render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
+    expect(screen.getByRole('tabpanel', { name: 'Document settings' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Our Company' } });
+    expect(screen.getByRole('heading', { name: 'Our Company', level: 1 })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Heading · Select' }));
+    expect(screen.getByRole('tabpanel', { name: 'Block settings' })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Title' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Level' }), { target: { value: '3' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'HTML anchor' }), { target: { value: 'welcome' } });
+    expect(screen.getByRole('combobox', { name: 'Level' })).toHaveValue('3');
+  });
+
+  it('edits heading and paragraph text directly in the canvas', () => {
+    render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Heading text' }), { target: { value: 'Meet the team' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Paragraph text' }), { target: { value: 'People make the difference.' } });
+    expect(screen.getByRole('textbox', { name: 'Heading text' })).toHaveValue('Meet the team');
+    expect(screen.getByRole('textbox', { name: 'Paragraph text' })).toHaveValue('People make the difference.');
+    expect(screen.getByRole('status')).toHaveTextContent('local changes');
   });
 });
