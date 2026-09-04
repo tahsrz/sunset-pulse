@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 const createPageSchema = z.object({
   title: z.string().trim().min(1).max(200),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  parentPageId: z.string().trim().min(1).max(200).optional(),
 }).strict();
 
 export async function GET(request: NextRequest) {
@@ -48,11 +49,15 @@ export async function POST(request: NextRequest) {
       siteId,
       title: parsed.data.title,
       slug: parsed.data.slug,
+      parentPageId: parsed.data.parentPageId,
       actorId: operatorAuditUser(access).userId,
     });
     return NextResponse.json({ page }, { status: 201 });
   } catch (error: any) {
-    if (error?.code === 11000) return NextResponse.json({ error: 'A page with that slug already exists for this site.' }, { status: 409 });
+    if (error?.code === 11000) return NextResponse.json({ error: 'A page already uses that path on this site.' }, { status: 409 });
+    if (error instanceof Error && error.message === 'CMS_PAGE_PARENT_NOT_FOUND') return NextResponse.json({ error: 'Parent page not found.' }, { status: 404 });
+    if (error instanceof Error && error.message === 'CMS_PAGE_HOME_CANNOT_BE_PARENT') return NextResponse.json({ error: 'The home page cannot be used as a parent.' }, { status: 409 });
+    if (error instanceof Error && error.message === 'CMS_PAGE_PATH_INVALID') return NextResponse.json({ error: 'Page paths may contain at most eight segments and 500 characters.' }, { status: 400 });
     return NextResponse.json({ error: 'Page could not be created.' }, { status: 400 });
   }
 }

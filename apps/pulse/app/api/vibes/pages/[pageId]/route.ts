@@ -44,6 +44,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     const message = error instanceof Error ? error.message : '';
     if (message === 'CMS_PAGE_NOT_FOUND') return NextResponse.json({ error: 'Page not found.' }, { status: 404 });
     if (message === 'CMS_PAGE_DRAFT_CONFLICT') return NextResponse.json({ error: 'Page changed since it was loaded.', code: message }, { status: 409 });
+    if (message === 'CMS_PAGE_PATH_CHANGE_REQUIRES_MOVE') return NextResponse.json({ error: 'Move or rename the page through the page hierarchy controls.', code: message }, { status: 409 });
     return NextResponse.json({ error: 'Page draft could not be saved.' }, { status: 400 });
   }
 }

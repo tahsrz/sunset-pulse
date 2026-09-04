@@ -15,7 +15,7 @@ export const resolvePublishedCmsPageForHost = cache(async (tenantHost: string, s
 
 export function metadataForCmsPage(context: CmsPageRenderContext): Metadata {
   const snapshot = context.page.snapshot;
-  const pathname = snapshot.slug === 'home' ? '/' : `/${snapshot.slug}`;
+  const pathname = context.page.routePath === 'home' ? '/' : `/${context.page.routePath}`;
   const title = `${snapshot.title} | ${context.siteName}`;
   const description = snapshot.excerpt || `${snapshot.title} from ${context.siteName}.`;
   return {

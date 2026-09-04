@@ -12,6 +12,7 @@ const context = {
   hostname: 'agent.sunsetpulse.app',
   page: {
     pageId: 'page-id',
+    routePath: 'about',
     revisionNumber: 4,
     snapshot: {
       schemaVersion: 1,

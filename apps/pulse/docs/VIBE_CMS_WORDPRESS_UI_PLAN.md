@@ -6277,10 +6277,18 @@ E2 completion sequence from this checkpoint:
 5. Finish E2 with route-level tests proving draft isolation, legacy fallback, reserved-route
    precedence, and metadata/content revision agreement.
 
-Steps 1 and 2 are implemented. The shared resolver uses React request memoization so
+Steps 1 through 3 are implemented. The shared resolver uses React request memoization so
 `generateMetadata` and the page Server Component reuse the same authoritative lookup.
 Metadata title, description, canonical path, and Open Graph fields come from the immutable
-published snapshot; an empty excerpt receives a deterministic site-aware fallback.
+published snapshot; an empty excerpt receives a deterministic site-aware fallback. Page
+identity now persists `parentPageId` and a unique tenant/site-scoped `routePath`. Creation
+derives the path from the selected parent, validates the same depth and length limits used
+by public routing, and permits legacy one-segment records during rollout. The public tenant
+catch-all now resolves nested paths and metadata uses the full persisted route. Slug/path
+changes deliberately return `CMS_PAGE_PATH_CHANGE_REQUIRES_MOVE` until a transactional move
+operation can repath descendants safely. Before allowing duplicate leaf slugs in production,
+the legacy unique `{ tenantId, siteId, slug }` Mongo index must be removed after route-path
+backfill and the new sparse unique route-path index must be confirmed.
 
 ### Package E3 — page editor
 

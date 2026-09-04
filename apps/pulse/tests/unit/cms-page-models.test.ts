@@ -3,10 +3,11 @@ import CmsPage from '@/models/CmsPage';
 import CmsPageRevision from '@/models/CmsPageRevision';
 
 describe('CMS page persistence models', () => {
-  it('enforces stable page IDs and site-scoped slugs', () => {
+  it('enforces stable page IDs and site-scoped hierarchical paths', () => {
     const indexes = (CmsPage as any).schema.indexes();
     expect(indexes).toContainEqual([{ tenantId: 1, pageId: 1 }, expect.objectContaining({ unique: true })]);
-    expect(indexes).toContainEqual([{ tenantId: 1, siteId: 1, slug: 1 }, expect.objectContaining({ unique: true })]);
+    expect(indexes).toContainEqual([{ tenantId: 1, siteId: 1, routePath: 1 }, expect.objectContaining({ unique: true, sparse: true })]);
+    expect(indexes).toContainEqual([{ tenantId: 1, siteId: 1, parentPageId: 1, slug: 1 }, expect.anything()]);
   });
 
   it('enforces ordered immutable revision identities', () => {
@@ -16,4 +17,3 @@ describe('CMS page persistence models', () => {
     expect((CmsPageRevision as any).schema.path('contentHash').options.immutable).toBe(true);
   });
 });
-

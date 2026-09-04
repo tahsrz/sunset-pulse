@@ -35,11 +35,11 @@ export async function listCmsPages(input: {
   if (input.status) filter.status = input.status;
   if (input.search) {
     const search = input.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    filter.$or = [{ title: { $regex: search, $options: 'i' } }, { slug: { $regex: search, $options: 'i' } }];
+    filter.$or = [{ title: { $regex: search, $options: 'i' } }, { slug: { $regex: search, $options: 'i' } }, { routePath: { $regex: search, $options: 'i' } }];
   }
   const [pages, total] = await Promise.all([
     CmsPage.find(filter)
-      .select('pageId siteId title slug status authorId updatedBy currentDraftVersion publishedRevisionId trashedAt createdAt updatedAt')
+      .select('pageId siteId title slug parentPageId routePath status authorId updatedBy currentDraftVersion publishedRevisionId trashedAt createdAt updatedAt')
       .sort({ updatedAt: -1, pageId: 1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
@@ -55,17 +55,18 @@ export async function readCmsPagePreview(input: { tenantId: string; siteId: stri
     siteId: input.siteId,
     pageId: input.pageId,
     status: { $in: ['draft', 'published'] },
-  }).select('pageId siteId status currentDraftVersion draftPayload publishedRevisionId').lean() as any;
+  }).select('pageId siteId parentPageId routePath status currentDraftVersion draftPayload publishedRevisionId').lean() as any;
   if (!page) return null;
   return { ...page, draftPayload: cmsPageDraftSchema.parse(page.draftPayload) };
 }
 
-export async function readPublishedCmsPage(input: { tenantId: string; siteId: string; pageId?: string; slug?: string }) {
+export async function readPublishedCmsPage(input: { tenantId: string; siteId: string; pageId?: string; routePath?: string; slug?: string }) {
   const pageFilter: Record<string, unknown> = { tenantId: input.tenantId, siteId: input.siteId, status: 'published' };
   if (input.pageId) pageFilter.pageId = input.pageId;
-  else if (input.slug) pageFilter.slug = input.slug;
+  else if (input.routePath) pageFilter.$or = [{ routePath: input.routePath }, ...(input.routePath.includes('/') ? [] : [{ routePath: { $exists: false }, slug: input.routePath }])];
+  else if (input.slug) pageFilter.$or = [{ routePath: input.slug }, { routePath: { $exists: false }, slug: input.slug }];
   else throw new Error('CMS_PAGE_IDENTIFIER_REQUIRED');
-  const page = await CmsPage.findOne(pageFilter).select('pageId siteId slug publishedRevisionId').lean() as any;
+  const page = await CmsPage.findOne(pageFilter).select('pageId siteId slug routePath publishedRevisionId').lean() as any;
   if (!page?.publishedRevisionId) return null;
   const revision = await CmsPageRevision.findOne({
     _id: page.publishedRevisionId,
@@ -75,7 +76,16 @@ export async function readPublishedCmsPage(input: { tenantId: string; siteId: st
     publishedAt: { $exists: true, $ne: null },
   }).select('_id pageId revisionNumber snapshot schemaVersion contentHash publishedAt').lean() as any;
   if (!revision) return null;
-  return { ...revision, snapshot: cmsPageDraftSchema.parse(revision.snapshot) };
+  return { ...revision, routePath: page.routePath || page.slug, snapshot: cmsPageDraftSchema.parse(revision.snapshot) };
+}
+
+export function buildCmsPageRoutePath(slug: string, parentRoutePath?: string) {
+  const routePath = parentRoutePath ? `${parentRoutePath}/${slug}` : slug;
+  const segments = routePath.split('/');
+  if (routePath.length > 500 || segments.length > 8 || segments.some((segment) => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segment))) {
+    throw new Error('CMS_PAGE_PATH_INVALID');
+  }
+  return routePath;
 }
 
 export async function createCmsPage(input: {
@@ -85,14 +95,25 @@ export async function createCmsPage(input: {
   slug: string;
   actorId: string;
   pageId?: string;
+  parentPageId?: string;
 }) {
   const draft = cmsPageDraftSchema.parse({ title: input.title, slug: input.slug });
+  let parentRoutePath: string | undefined;
+  if (input.parentPageId) {
+    const parent = await CmsPage.findOne({ tenantId: input.tenantId, siteId: input.siteId, pageId: input.parentPageId, status: { $ne: 'trash' } })
+      .select('pageId slug routePath').lean() as any;
+    if (!parent) throw new Error('CMS_PAGE_PARENT_NOT_FOUND');
+    parentRoutePath = parent.routePath || parent.slug;
+    if (parentRoutePath === 'home') throw new Error('CMS_PAGE_HOME_CANNOT_BE_PARENT');
+  }
   const page = new CmsPage({
     tenantId: input.tenantId,
     siteId: input.siteId,
     pageId: input.pageId || crypto.randomUUID(),
     title: draft.title,
     slug: draft.slug,
+    parentPageId: input.parentPageId,
+    routePath: buildCmsPageRoutePath(draft.slug, parentRoutePath),
     status: 'draft',
     authorId: input.actorId,
     updatedBy: input.actorId,
@@ -116,6 +137,7 @@ export async function saveCmsPageDraft(input: {
     tenantId: input.tenantId,
     siteId: input.siteId,
     pageId: input.pageId,
+    slug: draft.slug,
     status: { $in: ['draft', 'published'] },
   };
   if (input.expectedVersion !== undefined) filter.currentDraftVersion = input.expectedVersion;
@@ -132,7 +154,11 @@ export async function saveCmsPageDraft(input: {
     $inc: { currentDraftVersion: 1 },
   }, { new: true, runValidators: true }).lean();
 
-  if (!updated) throw new Error(input.expectedVersion === undefined ? 'CMS_PAGE_NOT_FOUND' : 'CMS_PAGE_DRAFT_CONFLICT');
+  if (!updated) {
+    const existing = await CmsPage.findOne({ tenantId: input.tenantId, siteId: input.siteId, pageId: input.pageId }).select('slug').lean() as any;
+    if (existing && existing.slug !== draft.slug) throw new Error('CMS_PAGE_PATH_CHANGE_REQUIRES_MOVE');
+    throw new Error(input.expectedVersion === undefined ? 'CMS_PAGE_NOT_FOUND' : 'CMS_PAGE_DRAFT_CONFLICT');
+  }
   return updated;
 }
 

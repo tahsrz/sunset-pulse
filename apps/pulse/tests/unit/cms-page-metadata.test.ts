@@ -5,7 +5,7 @@ import type { CmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 function context(slug: string, excerpt = 'Local guidance for buyers and sellers.') {
   return {
     siteName: 'Taz Realty',
-    page: { snapshot: { title: 'About Taz', slug, excerpt } },
+    page: { routePath: slug, snapshot: { title: 'About Taz', slug: slug.split('/').at(-1), excerpt } },
   } as unknown as CmsPageRenderContext;
 }
 
@@ -26,6 +26,10 @@ describe('CMS page metadata', () => {
 
   it('uses the root canonical for the conventional home page', () => {
     expect(metadataForCmsPage(context('home')).alternates).toEqual({ canonical: '/' });
+  });
+
+  it('uses the persisted hierarchical route for nested canonical URLs', () => {
+    expect(metadataForCmsPage(context('about/team')).alternates).toEqual({ canonical: '/about/team' });
   });
 
   it('provides a stable description when the optional excerpt is empty', () => {

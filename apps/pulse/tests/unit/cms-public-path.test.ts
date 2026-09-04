@@ -10,10 +10,10 @@ describe('CMS tenant public path selection', () => {
     expect(cmsSlugForTenantPath(['About-Us'])).toBe('about-us');
   });
 
-  it('preserves existing property routes and defers nested paths', () => {
+  it('preserves existing property routes and accepts bounded nested paths', () => {
     expect(cmsSlugForTenantPath(['properties'])).toBeNull();
     expect(cmsSlugForTenantPath(['properties', 'listing-id'])).toBeNull();
-    expect(cmsSlugForTenantPath(['about', 'team'])).toBeNull();
+    expect(cmsSlugForTenantPath(['about', 'team'])).toBe('about/team');
   });
 
   it('rejects malformed or non-slug path input', () => {

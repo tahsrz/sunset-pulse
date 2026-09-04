@@ -34,7 +34,7 @@ function selected(value: unknown) {
 describe('CMS page rendering context', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.readPublishedPage.mockResolvedValue({ pageId: 'page-id', snapshot: { title: 'About', slug: 'about', blocks: [] } });
+    mocks.readPublishedPage.mockResolvedValue({ pageId: 'page-id', routePath: 'about', snapshot: { title: 'About', slug: 'about', blocks: [] } });
     mocks.siteFindOne.mockReturnValue(selected({ agentId: 'site-id', branding: { siteName: 'Agent Realty' }, activeVibeRevisionId: 'vibe-revision-id' }));
     mocks.themeFindOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(null) });
     mocks.pluginFind.mockReturnValue({ sort: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }) });
@@ -49,7 +49,7 @@ describe('CMS page rendering context', () => {
       vibe: { revisionId: 'vibe-revision-id', revisionNumber: 3 },
       diagnostics: [],
     });
-    expect(mocks.readPublishedPage).toHaveBeenCalledWith({ tenantId: 'tenant-id', siteId: 'site-id', slug: 'about' });
+    expect(mocks.readPublishedPage).toHaveBeenCalledWith({ tenantId: 'tenant-id', siteId: 'site-id', routePath: 'about' });
   });
 
   it('loads only active, bundled plugins and reports unavailable activations', async () => {

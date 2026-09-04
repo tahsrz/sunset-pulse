@@ -51,7 +51,7 @@ export async function buildCmsPageRenderContext(input: {
   const tenantId = input.tenantContext.identity.tenantId;
   const siteId = input.tenantContext.identity.agentId;
   const [page, site, themeActivation, pluginActivations] = await Promise.all([
-    readPublishedCmsPage({ tenantId, siteId, slug: input.slug }),
+    readPublishedCmsPage({ tenantId, siteId, routePath: input.slug }),
     SiteConfig.findOne({ agentId: siteId }).select('agentId branding.siteName activeVibeRevisionId').lean() as Promise<any>,
     SiteThemeActivation.findOne({ tenantId, siteId }).lean() as Promise<any>,
     SitePluginActivation.find({ tenantId, siteId, status: 'active' }).sort({ pluginId: 1 }).lean() as Promise<any[]>,

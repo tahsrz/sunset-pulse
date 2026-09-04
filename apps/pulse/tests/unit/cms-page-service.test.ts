@@ -46,6 +46,7 @@ vi.mock('@/models/CmsPageRevision', () => ({
 import CmsPage from '@/models/CmsPage';
 import {
   createCmsPage,
+  buildCmsPageRoutePath,
   hashCmsPageDraft,
   listCmsPages,
   nextCmsPageRevisionNumber,
@@ -87,6 +88,12 @@ describe('CMS page lifecycle service', () => {
   it('increments immutable revision numbers', () => {
     expect(nextCmsPageRevisionNumber()).toBe(1);
     expect(nextCmsPageRevisionNumber(7)).toBe(8);
+  });
+
+  it('builds route paths from stable parent identity', () => {
+    expect(buildCmsPageRoutePath('team')).toBe('team');
+    expect(buildCmsPageRoutePath('team', 'about')).toBe('about/team');
+    expect(() => buildCmsPageRoutePath('nine', 'one/two/three/four/five/six/seven/eight')).toThrow('CMS_PAGE_PATH_INVALID');
   });
 
   it('lists only pages in the requested tenant and site with bounded pagination', async () => {
@@ -133,6 +140,12 @@ describe('CMS page lifecycle service', () => {
     expect(mocks.pageSave).toHaveBeenCalledOnce();
   });
 
+  it('creates a child beneath an existing non-trashed parent', async () => {
+    mocks.pageFindOne.mockReturnValue({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ pageId: 'parent-id', slug: 'about', routePath: 'about' }) }) });
+    await createCmsPage({ tenantId: 'tenant', siteId: 'site', title: 'Team', slug: 'team', actorId: 'actor', pageId: 'child-id', parentPageId: 'parent-id' });
+    expect(CmsPage).toHaveBeenCalledWith(expect.objectContaining({ parentPageId: 'parent-id', routePath: 'about/team' }));
+  });
+
   it('saves a draft with optimistic concurrency and retains the live pointer', async () => {
     mocks.pageFindOneAndUpdate.mockReturnValue(leanResult({ pageId: 'page-id', currentDraftVersion: 4 }));
     await saveCmsPageDraft({ tenantId: 'tenant', siteId: 'site', pageId: 'page-id', draft, actorId: 'actor', expectedVersion: 3 });
@@ -148,8 +161,16 @@ describe('CMS page lifecycle service', () => {
 
   it('reports a stale draft as a conflict', async () => {
     mocks.pageFindOneAndUpdate.mockReturnValue(leanResult(null));
+    mocks.pageFindOne.mockReturnValue({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ slug: 'about' }) }) });
     await expect(saveCmsPageDraft({ tenantId: 'tenant', siteId: 'site', pageId: 'page-id', draft, actorId: 'actor', expectedVersion: 2 }))
       .rejects.toThrow('CMS_PAGE_DRAFT_CONFLICT');
+  });
+
+  it('requires the hierarchy move operation for slug changes', async () => {
+    mocks.pageFindOneAndUpdate.mockReturnValue(leanResult(null));
+    mocks.pageFindOne.mockReturnValue({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ slug: 'original' }) }) });
+    await expect(saveCmsPageDraft({ tenantId: 'tenant', siteId: 'site', pageId: 'page-id', draft, actorId: 'actor' }))
+      .rejects.toThrow('CMS_PAGE_PATH_CHANGE_REQUIRES_MOVE');
   });
 
   it('publishes the current draft as an immutable revision in one transaction', async () => {
