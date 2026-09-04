@@ -20,7 +20,7 @@ describe('CMS page editor load boundary', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ page }) }));
     render(<CmsPageEditorLoader pageId="page-1" />);
     expect(await screen.findByRole('heading', { name: 'About', level: 1 })).toBeInTheDocument();
-    expect(screen.getByText('This page has no blocks yet.')).toBeInTheDocument();
+    expect(screen.getByText('Start building this page')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 

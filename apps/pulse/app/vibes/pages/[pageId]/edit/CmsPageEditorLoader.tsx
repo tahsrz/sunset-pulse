@@ -3,19 +3,9 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { VibePageHeader } from '../../../_components/VibePageHeader';
-import { VibeStatusBadge } from '../../../_components/VibeStatusBadge';
-import type { CmsPageDraft } from '@/lib/cms/pages/pageSchema';
+import { CmsPageEditor, type CmsPageEditorDocument } from './CmsPageEditor';
 
-type CmsPagePreview = {
-  pageId: string;
-  siteId: string;
-  routePath?: string;
-  status: 'draft' | 'published';
-  currentDraftVersion: number;
-  publishedRevisionId?: string;
-  draftPayload: CmsPageDraft;
-};
+type CmsPagePreview = CmsPageEditorDocument;
 
 type LoadState =
   | { kind: 'loading' }
@@ -58,21 +48,7 @@ export function CmsPageEditorLoader({ pageId }: { pageId: string }) {
   if (state.kind === 'loading') return <EditorMessage title="Loading page" message="Retrieving the current draft and version…" pagesHref={pagesHref} busy />;
   if (state.kind !== 'ready') return <EditorMessage title={state.kind === 'not-found' ? 'Page not found' : state.kind === 'conflict' ? 'Page changed' : state.kind === 'malformed' ? 'Page could not be opened' : 'Page failed to load'} message={state.message} pagesHref={pagesHref} onRetry={() => setAttempt((value) => value + 1)} />;
 
-  const { page } = state;
-  return <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8"><div className="mx-auto max-w-7xl">
-    <VibePageHeader eyebrow="Pages" title={page.draftPayload.title} description={`/${page.routePath || page.draftPayload.slug}`} backHref={pagesHref} backLabel="All Pages" />
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <section aria-label="Page content" className="min-h-[420px] border border-slate-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Page content</h2>
-        <p className="mt-2 text-sm text-slate-500">{page.draftPayload.blocks.length === 0 ? 'This page has no blocks yet.' : `${page.draftPayload.blocks.length} content block${page.draftPayload.blocks.length === 1 ? '' : 's'} loaded.`}</p>
-        <div className="mt-8 border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">The block canvas and inserter are the next E3 slice.</div>
-      </section>
-      <aside aria-label="Document summary" className="h-fit border border-slate-200 bg-white p-5">
-        <h2 className="font-semibold">Document</h2>
-        <dl className="mt-4 space-y-4 text-sm"><div><dt className="text-slate-500">Status</dt><dd className="mt-1"><VibeStatusBadge status={page.status} /></dd></div><div><dt className="text-slate-500">Draft version</dt><dd className="mt-1 font-semibold">{page.currentDraftVersion}</dd></div><div><dt className="text-slate-500">Template</dt><dd className="mt-1 font-mono text-xs">{page.draftPayload.templateId}</dd></div><div><dt className="text-slate-500">Site ID</dt><dd className="mt-1 break-all font-mono text-xs">{page.siteId}</dd></div></dl>
-      </aside>
-    </div>
-  </div></main>;
+  return <CmsPageEditor page={state.page} pagesHref={pagesHref} />;
 }
 
 function EditorMessage({ title, message, pagesHref, onRetry, busy = false }: { title: string; message: string; pagesHref: string; onRetry?: () => void; busy?: boolean }) {

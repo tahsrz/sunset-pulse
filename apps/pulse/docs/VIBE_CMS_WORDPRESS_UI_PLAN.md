@@ -6322,7 +6322,7 @@ never coupled to an unfinished editor route:
 2. **Editor route and load boundary — implemented.** Add `/vibes/pages/[pageId]/edit`, require `siteId`, load
    the page through the existing detail API, and distinguish loading, not-found, conflict, and
    malformed/empty response states before mounting editor controls.
-3. **Block canvas and inserter.** Render persisted blocks using the shared registry, add only
+3. **Block canvas and inserter — implemented.** Render persisted blocks using the shared registry, add only
    registered block types, and preserve stable block IDs through insertion, movement,
    duplication, and deletion.
 4. **Selection and inspector.** Keep document controls separate from selected-block controls;
@@ -6334,7 +6334,11 @@ never coupled to an unfinished editor route:
 The first two slices deliberately do not introduce a second page data model or rendering
 registry. Directory titles now link to a validated editor load boundary. That boundary does
 not mount editing controls unless the response contains the page identity, supported status,
-draft version, and minimally complete draft payload. The next implementation action is slice 3.
+draft version, and minimally complete draft payload. The canvas now derives its inserter from
+the core registry and uses immutable operations which preserve IDs during movement, allocate a
+new ID during insertion or duplication, and reject unregistered types. Its changes remain local
+and are visibly marked unsaved until slice 5 wires the lifecycle toolbar. The next implementation
+action is slice 4.
 
 ### Package E4 — themes and Appearance
 
