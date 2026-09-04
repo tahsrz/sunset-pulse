@@ -6261,8 +6261,10 @@ entry point and concrete theme template component are now implemented. The exist
 subdomain rewrite remains authoritative: previously unsupported single-segment tenant paths
 such as `/about` now resolve through `tenant_domains`, load the pinned published page, and
 render it with `sunset/page`. Existing tenant home and property-detail behavior remains
-unchanged. Nested CMS paths, a CMS-controlled home page, and plugin-provided block merging
-remain in E2.
+unchanged. A published page with the conventional `home` slug can now own the tenant root;
+when it is absent, the existing agent landing page remains the fallback. The `properties`
+namespace is explicitly reserved for the current listing experience. Nested CMS paths,
+dynamic CMS metadata, and plugin-provided block merging remain in E2.
 
 ### Package E3 — page editor
 

@@ -38,6 +38,7 @@ import connectDB from '@/lib/core/database';
 import { createPublicTenantContextResolver } from '@/lib/tenancy/publicTenantResolver';
 import { resolveCmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import { SunsetPageTemplate } from '@/lib/cms/themes/SunsetPageTemplate';
+import { cmsSlugForTenantPath } from '@/lib/cms/pages/publicPath';
 
 type TenantPageProps = {
   params: Promise<{
@@ -144,6 +145,18 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
     return <JamieGuideSite context={context} />;
   }
 
+  const cmsSlug = cmsSlugForTenantPath(path);
+  const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
+  if (cmsSlug && tenantHost) {
+    await connectDB();
+    const publicRequest = new Request(`https://${tenantHost}/${encodeURIComponent(cmsSlug)}`, { headers: { host: tenantHost } });
+    const result = await resolveCmsPageRenderContext(publicRequest, {
+      slug: cmsSlug,
+      tenantResolver: createPublicTenantContextResolver(),
+    });
+    if (result.ok) return <SunsetPageTemplate context={result.context} />;
+  }
+
   const tenantSite = await getAgentTenantSite(siteSlug, { limit: 6 });
   if (!tenantSite.isPublished) {
     notFound();
@@ -179,19 +192,6 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
           <AgentSiteFooter site={tenantSite} />
         </main>
       );
-    }
-
-    if (path.length === 1) {
-      const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
-      if (tenantHost) {
-        await connectDB();
-        const publicRequest = new Request(`https://${tenantHost}/${encodeURIComponent(path[0])}`, { headers: { host: tenantHost } });
-        const result = await resolveCmsPageRenderContext(publicRequest, {
-          slug: decodeURIComponent(path[0]),
-          tenantResolver: createPublicTenantContextResolver(),
-        });
-        if (result.ok) return <SunsetPageTemplate context={result.context} />;
-      }
     }
 
     notFound();
