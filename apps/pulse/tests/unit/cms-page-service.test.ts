@@ -130,7 +130,16 @@ describe('CMS page lifecycle service', () => {
     });
     await expect(readPublishedCmsPage({ tenantId: 'tenant', siteId: 'site', slug: 'about' }))
       .resolves.toMatchObject({ _id: 'revision-id', snapshot: draft });
+    expect(mocks.pageFindOne).toHaveBeenCalledWith(expect.objectContaining({ tenantId: 'tenant', siteId: 'site', status: 'published' }));
     expect(mocks.revisionFindOne).toHaveBeenCalledWith(expect.objectContaining({ _id: 'revision-id', tenantId: 'tenant', siteId: 'site' }));
+  });
+
+  it('never exposes a draft when no published revision is pinned', async () => {
+    mocks.pageFindOne.mockReturnValue({
+      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue({ pageId: 'page-id', status: 'draft', draftPayload: draft }) }),
+    });
+    await expect(readPublishedCmsPage({ tenantId: 'tenant', siteId: 'site', routePath: 'about' })).resolves.toBeNull();
+    expect(mocks.revisionFindOne).not.toHaveBeenCalled();
   });
 
   it('creates a normalized draft page', async () => {

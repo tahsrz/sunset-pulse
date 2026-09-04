@@ -35,8 +35,7 @@ import { getJamieGuideUrl, getPublicRootOrigin } from '@/lib/sites/siteUrls';
 import AgentLeadForm from '@/components/sites/AgentLeadForm';
 import { JamieGuideLoader } from '@/components/chat/JamieGuideLoader';
 import { SunsetPageTemplate } from '@/lib/cms/themes/SunsetPageTemplate';
-import { cmsSlugForTenantPath } from '@/lib/cms/pages/publicPath';
-import { metadataForCmsPage, resolvePublishedCmsPageForHost } from '@/lib/cms/pages/publicPageResolver';
+import { metadataForCmsPage, resolveTenantCmsRoute } from '@/lib/cms/pages/publicPageResolver';
 
 type TenantPageProps = {
   params: Promise<{
@@ -73,12 +72,9 @@ export async function generateMetadata({ params }: TenantPageProps) {
     };
   }
 
-  const cmsSlug = cmsSlugForTenantPath(path);
   const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
-  if (cmsSlug && tenantHost) {
-    const result = await resolvePublishedCmsPageForHost(tenantHost, cmsSlug);
-    if (result.ok) return metadataForCmsPage(result.context);
-  }
+  const cmsRoute = await resolveTenantCmsRoute({ tenantHost, path });
+  if (cmsRoute.kind === 'cms') return metadataForCmsPage(cmsRoute.context);
 
   const tenantSite = await getAgentTenantSite(siteSlug, { limit: 3 });
   if (!tenantSite.isPublished) {
@@ -150,12 +146,9 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
     return <JamieGuideSite context={context} />;
   }
 
-  const cmsSlug = cmsSlugForTenantPath(path);
   const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
-  if (cmsSlug && tenantHost) {
-    const result = await resolvePublishedCmsPageForHost(tenantHost, cmsSlug);
-    if (result.ok) return <SunsetPageTemplate context={result.context} />;
-  }
+  const cmsRoute = await resolveTenantCmsRoute({ tenantHost, path });
+  if (cmsRoute.kind === 'cms') return <SunsetPageTemplate context={cmsRoute.context} />;
 
   const tenantSite = await getAgentTenantSite(siteSlug, { limit: 6 });
   if (!tenantSite.isPublished) {

@@ -6294,7 +6294,12 @@ requires exact manifest/version agreement and a renderer for every declared bloc
 composition merges only active, exact-version runtimes, contains missing or colliding plugin
 code as diagnostics, and passes the resulting registry directly to `sunset/page`. The initial
 bundled runtime catalog intentionally remains empty until the E6 Contact Form vertical slice.
-Step 5 route-level integration coverage remains before E2 closes.
+Step 5 is implemented. A shared route-decision function now owns CMS-versus-legacy
+selection for both `generateMetadata` and visible rendering. Integration coverage proves
+that an unpublished page falls through without exposing its draft, a missing `home` page
+preserves the legacy landing page, reserved and malformed paths never query CMS, and nested
+metadata and visible content use one pinned revision context. Package E2 is complete. Begin
+E3 with the Pages directory and Add New identity flow before introducing block editing.
 
 ### Package E3 — page editor
 

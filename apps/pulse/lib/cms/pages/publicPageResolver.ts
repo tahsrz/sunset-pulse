@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import connectDB from '@/lib/core/database';
 import { createPublicTenantContextResolver } from '@/lib/tenancy/publicTenantResolver';
 import { resolveCmsPageRenderContext, type CmsPageRenderContext } from './renderContext';
+import { cmsSlugForTenantPath } from './publicPath';
 
 export const resolvePublishedCmsPageForHost = cache(async (tenantHost: string, slug: string) => {
   await connectDB();
@@ -12,6 +13,19 @@ export const resolvePublishedCmsPageForHost = cache(async (tenantHost: string, s
     tenantResolver: createPublicTenantContextResolver(),
   });
 });
+
+type PublishedPageResolver = typeof resolvePublishedCmsPageForHost;
+
+export async function resolveTenantCmsRoute(
+  input: { tenantHost: string | null; path: readonly string[] },
+  dependencies: { resolvePage?: PublishedPageResolver } = {},
+) {
+  const slug = cmsSlugForTenantPath(input.path);
+  if (!slug || !input.tenantHost) return { kind: 'legacy' as const };
+  const result = await (dependencies.resolvePage || resolvePublishedCmsPageForHost)(input.tenantHost, slug);
+  if (!result.ok) return { kind: 'legacy' as const };
+  return { kind: 'cms' as const, slug, context: result.context };
+}
 
 export function metadataForCmsPage(context: CmsPageRenderContext): Metadata {
   const snapshot = context.page.snapshot;
