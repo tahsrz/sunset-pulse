@@ -6264,7 +6264,23 @@ render it with `sunset/page`. Existing tenant home and property-detail behavior 
 unchanged. A published page with the conventional `home` slug can now own the tenant root;
 when it is absent, the existing agent landing page remains the fallback. The `properties`
 namespace is explicitly reserved for the current listing experience. Nested CMS paths,
-dynamic CMS metadata, and plugin-provided block merging remain in E2.
+plugin-provided block merging, and final route-level integration coverage remain in E2.
+
+E2 completion sequence from this checkpoint:
+
+1. Share a request-memoized host/slug resolver between metadata and page rendering.
+2. Generate CMS metadata from the same pinned revision used for visible content.
+3. Add explicit hierarchical path persistence and collision validation before accepting
+   nested page URLs; do not infer hierarchy by concatenating mutable titles.
+4. Compose plugin block definitions from active bundled plugin manifests and reject a plugin
+   activation when its declared renderer is unavailable.
+5. Finish E2 with route-level tests proving draft isolation, legacy fallback, reserved-route
+   precedence, and metadata/content revision agreement.
+
+Steps 1 and 2 are implemented. The shared resolver uses React request memoization so
+`generateMetadata` and the page Server Component reuse the same authoritative lookup.
+Metadata title, description, canonical path, and Open Graph fields come from the immutable
+published snapshot; an empty excerpt receives a deterministic site-aware fallback.
 
 ### Package E3 — page editor
 

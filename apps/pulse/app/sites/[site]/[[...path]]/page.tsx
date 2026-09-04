@@ -34,11 +34,9 @@ import {
 import { getJamieGuideUrl, getPublicRootOrigin } from '@/lib/sites/siteUrls';
 import AgentLeadForm from '@/components/sites/AgentLeadForm';
 import { JamieGuideLoader } from '@/components/chat/JamieGuideLoader';
-import connectDB from '@/lib/core/database';
-import { createPublicTenantContextResolver } from '@/lib/tenancy/publicTenantResolver';
-import { resolveCmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import { SunsetPageTemplate } from '@/lib/cms/themes/SunsetPageTemplate';
 import { cmsSlugForTenantPath } from '@/lib/cms/pages/publicPath';
+import { metadataForCmsPage, resolvePublishedCmsPageForHost } from '@/lib/cms/pages/publicPageResolver';
 
 type TenantPageProps = {
   params: Promise<{
@@ -73,6 +71,13 @@ export async function generateMetadata({ params }: TenantPageProps) {
         type: 'website',
       },
     };
+  }
+
+  const cmsSlug = cmsSlugForTenantPath(path);
+  const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
+  if (cmsSlug && tenantHost) {
+    const result = await resolvePublishedCmsPageForHost(tenantHost, cmsSlug);
+    if (result.ok) return metadataForCmsPage(result.context);
   }
 
   const tenantSite = await getAgentTenantSite(siteSlug, { limit: 3 });
@@ -148,12 +153,7 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
   const cmsSlug = cmsSlugForTenantPath(path);
   const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
   if (cmsSlug && tenantHost) {
-    await connectDB();
-    const publicRequest = new Request(`https://${tenantHost}/${encodeURIComponent(cmsSlug)}`, { headers: { host: tenantHost } });
-    const result = await resolveCmsPageRenderContext(publicRequest, {
-      slug: cmsSlug,
-      tenantResolver: createPublicTenantContextResolver(),
-    });
+    const result = await resolvePublishedCmsPageForHost(tenantHost, cmsSlug);
     if (result.ok) return <SunsetPageTemplate context={result.context} />;
   }
 

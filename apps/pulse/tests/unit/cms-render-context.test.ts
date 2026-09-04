@@ -35,7 +35,7 @@ describe('CMS page rendering context', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.readPublishedPage.mockResolvedValue({ pageId: 'page-id', snapshot: { title: 'About', slug: 'about', blocks: [] } });
-    mocks.siteFindOne.mockReturnValue(selected({ agentId: 'site-id', activeVibeRevisionId: 'vibe-revision-id' }));
+    mocks.siteFindOne.mockReturnValue(selected({ agentId: 'site-id', branding: { siteName: 'Agent Realty' }, activeVibeRevisionId: 'vibe-revision-id' }));
     mocks.themeFindOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(null) });
     mocks.pluginFind.mockReturnValue({ sort: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }) });
     mocks.vibeFindOne.mockReturnValue(selected({ _id: 'vibe-revision-id', vibeId: 'vibe-id', revisionNumber: 3, cssVars: { '--color-primary': '#123456' } }));
@@ -44,7 +44,7 @@ describe('CMS page rendering context', () => {
   it('composes the published page, default theme, and pinned Vibe for the resolved site', async () => {
     const context = await buildCmsPageRenderContext({ tenantContext, slug: 'about' });
     expect(context).toMatchObject({
-      requestId: 'request-id', tenantId: 'tenant-id', siteId: 'site-id', hostname: 'agent.sunsetpulse.com',
+      requestId: 'request-id', tenantId: 'tenant-id', siteId: 'site-id', siteName: 'Agent Realty', hostname: 'agent.sunsetpulse.com',
       theme: { id: DEFAULT_CMS_THEME_ID },
       vibe: { revisionId: 'vibe-revision-id', revisionNumber: 3 },
       diagnostics: [],

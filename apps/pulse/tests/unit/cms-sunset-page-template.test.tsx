@@ -8,6 +8,7 @@ const context = {
   requestId: 'request-id',
   tenantId: 'tenant-id',
   siteId: 'site-id',
+  siteName: 'Agent Realty',
   hostname: 'agent.sunsetpulse.app',
   page: {
     pageId: 'page-id',

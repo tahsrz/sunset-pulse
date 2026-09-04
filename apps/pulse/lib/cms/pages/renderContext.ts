@@ -14,6 +14,7 @@ export type CmsPageRenderContext = Readonly<{
   requestId: string;
   tenantId: string;
   siteId: string;
+  siteName: string;
   hostname: string;
   page: NonNullable<Awaited<ReturnType<typeof readPublishedCmsPage>>>;
   theme: NonNullable<ReturnType<ExtensionCatalog['getTheme']>>;
@@ -51,7 +52,7 @@ export async function buildCmsPageRenderContext(input: {
   const siteId = input.tenantContext.identity.agentId;
   const [page, site, themeActivation, pluginActivations] = await Promise.all([
     readPublishedCmsPage({ tenantId, siteId, slug: input.slug }),
-    SiteConfig.findOne({ agentId: siteId }).select('agentId activeVibeRevisionId').lean() as Promise<any>,
+    SiteConfig.findOne({ agentId: siteId }).select('agentId branding.siteName activeVibeRevisionId').lean() as Promise<any>,
     SiteThemeActivation.findOne({ tenantId, siteId }).lean() as Promise<any>,
     SitePluginActivation.find({ tenantId, siteId, status: 'active' }).sort({ pluginId: 1 }).lean() as Promise<any[]>,
   ]);
@@ -102,6 +103,7 @@ export async function buildCmsPageRenderContext(input: {
     requestId: input.tenantContext.requestId,
     tenantId,
     siteId,
+    siteName: site.branding?.siteName || site.agentId,
     hostname: input.tenantContext.domain.hostname,
     page,
     theme,
