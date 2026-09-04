@@ -6247,6 +6247,14 @@ published-page route remain part of E2 so no draft data can accidentally become 
 - Resolve request host to site, site to published page, active theme, active Vibe revision,
   and active plugin set before rendering.
 
+Implementation checkpoint: the typed block registry and the first four core renderers are
+implemented. Each definition owns its schema, display title, current version, migration
+function, and semantic public renderer. Duplicate block types fail at catalog construction.
+Invalid, unknown, or failed-migration blocks render an operator-visible warning in preview
+but are omitted from public output. Image blocks now persist intrinsic dimensions so the
+renderer can use optimized images without layout shift. Host-to-site resolution, active
+extension composition, theme templates, and the public page entry point remain in E2.
+
 ### Package E3 — page editor
 
 - Add Pages, Add New, and reusable block-editor routes to the Vibes CMS shell.

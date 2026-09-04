@@ -32,6 +32,8 @@ export const imageBlockSchema = z.object({
     src: z.string().trim().url().max(2048),
     alt: z.string().trim().max(500),
     caption: z.string().trim().max(2_000).optional(),
+    width: z.number().int().min(1).max(10_000).default(1200),
+    height: z.number().int().min(1).max(10_000).default(800),
   }).strict(),
 }).strict();
 
