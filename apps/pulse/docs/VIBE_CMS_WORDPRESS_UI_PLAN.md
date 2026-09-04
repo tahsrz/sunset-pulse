@@ -6227,6 +6227,10 @@ deployment. Uploading and executing arbitrary packages is explicitly deferred.
 - Add draft, preview, publish, trash, and restore services using optimistic concurrency.
 - Begin with `core/heading`, `core/paragraph`, `core/image`, and `core/button` schemas.
 
+Implementation checkpoint: the four version-1 core block contracts, page draft contract,
+`CmsPage`, and immutable `CmsPageRevision` persistence models are now implemented. Service
+methods and routes remain the next E1 slice.
+
 ### Package E2 — block registry and public rendering
 
 - Register each block schema, editor component, public renderer, and migration function.
