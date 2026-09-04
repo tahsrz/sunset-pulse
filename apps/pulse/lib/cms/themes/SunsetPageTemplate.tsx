@@ -19,7 +19,7 @@ export function SunsetPageTemplate({ context }: { context: CmsPageRenderContext 
           {snapshot.excerpt ? <p className="mt-4 max-w-3xl text-lg opacity-70">{snapshot.excerpt}</p> : null}
         </header>
         <div className="space-y-6" data-cms-page-content>
-          {renderCmsPageBlocks(snapshot.blocks, { mode: 'public' })}
+          {renderCmsPageBlocks(snapshot.blocks, { mode: 'public', registry: context.blockRegistry })}
         </div>
       </article>
     </main>

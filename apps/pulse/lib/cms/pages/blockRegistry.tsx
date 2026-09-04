@@ -6,13 +6,12 @@ import {
   headingBlockSchema,
   imageBlockSchema,
   paragraphBlockSchema,
-  type CmsBlock,
 } from './pageSchema';
 
 export type CmsBlockRenderMode = 'preview' | 'public';
 
 export type CmsBlockDefinition = Readonly<{
-  type: CmsBlock['type'];
+  type: string;
   title: string;
   schema: z.ZodTypeAny;
   latestVersion: number;
@@ -20,7 +19,7 @@ export type CmsBlockDefinition = Readonly<{
   render: (block: any) => ReactNode;
 }>;
 
-export function createCmsBlockRegistry(definitions: CmsBlockDefinition[]) {
+export function createCmsBlockRegistry(definitions: readonly CmsBlockDefinition[]) {
   const byType = new Map<string, CmsBlockDefinition>();
   for (const definition of definitions) {
     if (byType.has(definition.type)) throw new Error(`DUPLICATE_BLOCK_TYPE:${definition.type}`);
@@ -31,6 +30,8 @@ export function createCmsBlockRegistry(definitions: CmsBlockDefinition[]) {
     get: (type: string) => byType.get(type),
   });
 }
+
+export type CmsBlockRegistry = ReturnType<typeof createCmsBlockRegistry>;
 
 const identityMigration = (block: unknown) => block;
 
@@ -82,7 +83,7 @@ export const coreCmsBlockRegistry = createCmsBlockRegistry([
   },
 ]);
 
-export function renderCmsBlock(block: unknown, options: { mode: CmsBlockRenderMode; registry?: typeof coreCmsBlockRegistry }): ReactNode {
+export function renderCmsBlock(block: unknown, options: { mode: CmsBlockRenderMode; registry?: CmsBlockRegistry }): ReactNode {
   const registry = options.registry || coreCmsBlockRegistry;
   const type = readBlockType(block);
   const definition = type ? registry.get(type) : undefined;
@@ -97,7 +98,7 @@ export function renderCmsBlock(block: unknown, options: { mode: CmsBlockRenderMo
   }
 }
 
-export function renderCmsPageBlocks(blocks: unknown[], options: { mode: CmsBlockRenderMode; registry?: typeof coreCmsBlockRegistry }) {
+export function renderCmsPageBlocks(blocks: unknown[], options: { mode: CmsBlockRenderMode; registry?: CmsBlockRegistry }) {
   return blocks.map((block, index) => {
     const rendered = renderCmsBlock(block, options);
     return rendered == null ? null : <div key={readBlockId(block) || `block-${index}`}>{rendered}</div>;

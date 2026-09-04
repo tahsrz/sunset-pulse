@@ -9,6 +9,8 @@ import {
   type ExtensionCatalog,
 } from '@/lib/cms/extensions/catalog';
 import { readPublishedCmsPage } from './pageService';
+import { composeCmsBlockRegistry, bundledCmsPluginRuntimeCatalog, type CmsPluginRuntimeCatalog } from '@/lib/cms/extensions/runtimeCatalog';
+import type { CmsBlockRegistry } from './blockRegistry';
 
 export type CmsPageRenderContext = Readonly<{
   requestId: string;
@@ -26,18 +28,20 @@ export type CmsPageRenderContext = Readonly<{
   }>;
   plugins: ReadonlyArray<Readonly<{
     manifest: NonNullable<ReturnType<ExtensionCatalog['getPlugin']>>;
+    activationVersion: string;
     settings: Readonly<Record<string, unknown>>;
   }>>;
+  blockRegistry: CmsBlockRegistry;
   diagnostics: ReadonlyArray<string>;
 }>;
 
 export async function resolveCmsPageRenderContext(
   request: Request,
-  input: { slug: string; tenantResolver: TenantContextResolver; catalog?: ExtensionCatalog },
+  input: { slug: string; tenantResolver: TenantContextResolver; catalog?: ExtensionCatalog; runtimeCatalog?: CmsPluginRuntimeCatalog },
 ) {
   const resolution = await input.tenantResolver.resolve(request);
   if (!resolution.ok) return { ok: false as const, error: resolution.error };
-  const context = await buildCmsPageRenderContext({ tenantContext: resolution.context, slug: input.slug, catalog: input.catalog });
+  const context = await buildCmsPageRenderContext({ tenantContext: resolution.context, slug: input.slug, catalog: input.catalog, runtimeCatalog: input.runtimeCatalog });
   if (!context) return { ok: false as const, error: { code: 'PAGE_NOT_FOUND' as const, publicStatus: 404 as const, publicMessage: 'Page not found.' as const } };
   return { ok: true as const, context };
 }
@@ -46,6 +50,7 @@ export async function buildCmsPageRenderContext(input: {
   tenantContext: TenantContext;
   slug: string;
   catalog?: ExtensionCatalog;
+  runtimeCatalog?: CmsPluginRuntimeCatalog;
 }): Promise<CmsPageRenderContext | null> {
   const catalog = input.catalog || bundledExtensionCatalog;
   const tenantId = input.tenantContext.identity.tenantId;
@@ -77,8 +82,14 @@ export async function buildCmsPageRenderContext(input: {
       return [];
     }
     if (manifest.version !== activation.version) diagnostics.push(`ACTIVE_PLUGIN_VERSION_MISMATCH:${activation.pluginId}`);
-    return [{ manifest, settings: Object.freeze({ ...(activation.settings || {}) }) }];
+    return [{ manifest, activationVersion: activation.version, settings: Object.freeze({ ...(activation.settings || {}) }) }];
   });
+
+  const composedBlocks = composeCmsBlockRegistry({
+    activePlugins: plugins,
+    runtimeCatalog: input.runtimeCatalog || bundledCmsPluginRuntimeCatalog,
+  });
+  diagnostics.push(...composedBlocks.diagnostics);
 
   let vibe: CmsPageRenderContext['vibe'] = null;
   if (site.activeVibeRevisionId) {
@@ -109,6 +120,7 @@ export async function buildCmsPageRenderContext(input: {
     theme,
     vibe,
     plugins: Object.freeze(plugins),
+    blockRegistry: composedBlocks.registry,
     diagnostics: Object.freeze(diagnostics),
   });
 }
