@@ -6200,3 +6200,66 @@ and capture before/after screenshots for the seven surfaces listed in Package 10
 Verification follow-up: all 18 explicitly discovered Vibes unit-test files pass (37 tests)
 on the implementation branch. The wildcard shell pattern was not used because PowerShell
 does not expand it for Vitest; the test files were enumerated explicitly.
+
+## Extension, theme, and editable-content execution plan
+
+This user-approved phase supersedes the earlier instruction to defer extension work until
+after PR #75 manual verification. It does not change the existing Vibe publication contract.
+
+This phase separates four responsibilities that must not be collapsed into Vibes:
+Vibes provide design and voice tokens; themes provide templates and template parts;
+pages own editable structured content; plugins contribute declared editor and runtime
+extensions. Runtime installation on Vercel means activating code already bundled in a
+deployment. Uploading and executing arbitrary packages is explicitly deferred.
+
+### Package E0 — contracts and activation persistence (implemented)
+
+- Define strict namespaced plugin and theme manifests with semantic versions.
+- Add a duplicate-safe bundled extension catalog with ID lookups.
+- Persist plugin activation/settings per tenant and site.
+- Persist one active theme pointer per tenant and site.
+- Keep the initial bundled catalog empty until a block has both editor and public renderers.
+
+### Package E1 — structured pages and revisions
+
+- Add `CmsPage` and immutable `CmsPageRevision` models.
+- Store ordered versioned block JSON; do not store editor-generated HTML.
+- Add draft, preview, publish, trash, and restore services using optimistic concurrency.
+- Begin with `core/heading`, `core/paragraph`, `core/image`, and `core/button` schemas.
+
+### Package E2 — block registry and public rendering
+
+- Register each block schema, editor component, public renderer, and migration function.
+- Reject unknown block types on save and render an operator-visible fallback in preview.
+- Resolve request host to site, site to published page, active theme, active Vibe revision,
+  and active plugin set before rendering.
+
+### Package E3 — page editor
+
+- Add Pages, Add New, and reusable block-editor routes to the Vibes CMS shell.
+- Support insertion, selection, movement, duplication, deletion, inline text editing,
+  document settings, preview, save state, publishing, and revision recovery.
+
+### Package E4 — themes and Appearance
+
+- Register bundled theme templates and template parts.
+- Add theme browsing, preview, and explicit per-site activation.
+- Apply the active Vibe revision as global style tokens inside the active theme.
+
+### Package E5 — installed plugins
+
+- Add Installed, Active, and Inactive views backed by the bundled catalog and site records.
+- Add activate/deactivate operations, plugin settings validation, and compatibility errors.
+- Implement the first complete plugin only after its editor block, public renderer, settings,
+  and deactivation fallback are tested together.
+
+### Package E6 — first vertical extension
+
+- Build a Contact Form plugin as the proof: editor block, public renderer, validated site
+  settings, submission handler, activation UI, deactivation behavior, and tests.
+- Prove editable heading/paragraph text and the plugin block on a controlled test site.
+
+### Package E7 — later ecosystem boundary
+
+- Add signed catalog metadata and remote-service integrations only after bundled plugins work.
+- Do not dynamically import uploaded server code from database or writable storage.
