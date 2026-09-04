@@ -34,7 +34,7 @@ import {
 import { getJamieGuideUrl, getPublicRootOrigin } from '@/lib/sites/siteUrls';
 import AgentLeadForm from '@/components/sites/AgentLeadForm';
 import { JamieGuideLoader } from '@/components/chat/JamieGuideLoader';
-import { SunsetPageTemplate } from '@/lib/cms/themes/SunsetPageTemplate';
+import { renderCmsThemePage } from '@/lib/cms/themes/runtimeRegistry';
 import { metadataForCmsPage, resolveTenantCmsRoute } from '@/lib/cms/pages/publicPageResolver';
 
 type TenantPageProps = {
@@ -148,7 +148,7 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
 
   const tenantHost = headerStore.get('x-sunset-tenant-host') || headerStore.get('host');
   const cmsRoute = await resolveTenantCmsRoute({ tenantHost, path });
-  if (cmsRoute.kind === 'cms') return <SunsetPageTemplate context={cmsRoute.context} />;
+  if (cmsRoute.kind === 'cms') return renderCmsThemePage(cmsRoute.context);
 
   const tenantSite = await getAgentTenantSite(siteSlug, { limit: 6 });
   if (!tenantSite.isPublished) {

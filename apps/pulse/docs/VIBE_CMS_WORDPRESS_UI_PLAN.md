@@ -6368,8 +6368,14 @@ preview state and returns the document to draft status. Package E3 is complete; 
 The first Appearance slice is implemented. `/vibes/appearance` provides explicit site scope,
 catalog-backed theme cards, an honest visual preview, effective active-theme state, and explicit
 activation. `GET/POST /api/vibes/themes` use the bundled manifest catalog and the unique
-`SiteThemeActivation` authority; activation always persists the exact bundled version. The next
-slice is additional bundled templates/template parts and theme-token application.
+`SiteThemeActivation` authority; activation always persists the exact bundled version. The
+theme runtime slice is also implemented: public CMS routing resolves the snapshot template
+through a typed runtime registry, the bundled manifest declares reusable header and footer
+parts, and registry completeness is testable against every bundled manifest entry. Published
+Vibe revisions now compile their approved color, typography, spacing, radius, and elevation
+tokens to scoped CSS custom properties consumed by the active template. The next E4 slice is
+adding a second bundled visual theme and a non-mutating preview that renders the selected
+theme runtime with the current published page before activation.
 
 ### Package E5 — installed plugins
 

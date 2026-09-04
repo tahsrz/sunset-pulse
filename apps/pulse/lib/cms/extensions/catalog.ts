@@ -42,6 +42,7 @@ export const bundledExtensionCatalog = createExtensionCatalog({
     description: 'The built-in structured page theme for Sunset Pulse sites.',
     author: 'Sunset Pulse',
     templates: { page: 'sunset/page' },
+    templateParts: { header: 'sunset/header', footer: 'sunset/footer' },
     supportedBlocks: ['core/heading', 'core/paragraph', 'core/image', 'core/button'],
   }],
 });

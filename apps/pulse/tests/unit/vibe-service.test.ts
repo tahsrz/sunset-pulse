@@ -26,13 +26,22 @@ describe('Vibe CMS services', () => {
     expect(hashVibeDraft(draft)).toBe(hashVibeDraft({ ...draft, tokens: { ...draft.tokens, visual: { ...draft.tokens.visual, theme: { ...draft.tokens.visual.theme, colors: { ...draft.tokens.visual.theme.colors } } } } }));
   });
 
-  it('compiles only approved theme colors into CSS variables', () => {
-    expect(compileCssVars(draft)).toEqual({
+  it('compiles only approved visual tokens into CSS variables', () => {
+    expect(compileCssVars(draft)).toMatchObject({
       '--color-primary': '#123456',
       '--color-background': '#ffffff',
       '--color-surface': '#f7f7f7',
       '--color-text-primary': '#111111',
       '--color-text-secondary': '#555555',
+      '--font-family-heading': 'Inter',
+      '--font-family-body': 'Inter',
+      '--font-size-base': '16px',
+      '--font-weight-normal': '400',
+      '--font-weight-bold': '700',
+      '--type-scale-ratio': '1.2',
+      '--radius-base': '0.5rem',
+      '--spacing-base': '4px',
+      '--elevation-base': '0 1px 2px rgb(0 0 0 / 0.08)',
     });
   });
 

@@ -23,7 +23,7 @@ const context = {
       blocks: [{ blockId: '276fd207-2f8c-44f1-a958-9cbc641c1e4c', version: 1, type: 'core/paragraph', props: { text: 'We know North Texas.' } }],
     },
   },
-  theme: { id: 'sunset/core', name: 'Sunset Core', version: '1.0.0', description: 'Core.', author: 'Sunset Pulse', templates: { page: 'sunset/page' }, templateParts: {}, supportedBlocks: [] },
+  theme: { id: 'sunset/core', name: 'Sunset Core', version: '1.0.0', description: 'Core.', author: 'Sunset Pulse', templates: { page: 'sunset/page' }, templateParts: { header: 'sunset/header', footer: 'sunset/footer' }, supportedBlocks: [] },
   vibe: { revisionId: 'vibe-revision-id', vibeId: 'vibe-id', revisionNumber: 3, cssVars: { '--color-background': '#fafafa', '--color-text-primary': '#111111' } },
   plugins: [],
   diagnostics: [],
@@ -39,5 +39,9 @@ describe('Sunset page template', () => {
     expect(html).toContain('About the team');
     expect(html).toContain('We know North Texas.');
     expect(html).toContain('--color-background:#fafafa');
+    expect(html).toContain('font-family:var(--font-family-body, inherit)');
+    expect(html).toContain('data-cms-template-part="sunset/header"');
+    expect(html).toContain('data-cms-template-part="sunset/footer"');
+    expect(html).toContain('Agent Realty');
   });
 });

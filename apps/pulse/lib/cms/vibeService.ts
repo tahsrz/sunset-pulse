@@ -207,6 +207,24 @@ export async function readPublishedVibeProjection(input: { revisionId: string; t
 }
 
 export function compileCssVars(draft: VibeDraft) {
-  const colors = draft.tokens.visual.theme.colors;
-  return Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value]));
+  const { colors, typography, layout } = draft.tokens.visual.theme;
+  const radius = { none: '0', sm: '0.25rem', md: '0.5rem', lg: '0.75rem', full: '9999px' }[layout.borderRadius];
+  const elevation = {
+    flat: 'none',
+    subtle: '0 1px 2px rgb(0 0 0 / 0.08)',
+    medium: '0 8px 24px rgb(0 0 0 / 0.14)',
+    high: '0 18px 48px rgb(0 0 0 / 0.22)',
+  }[layout.elevation];
+  return {
+    ...Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value])),
+    '--font-family-heading': typography.fontFamilyHeading,
+    '--font-family-body': typography.fontFamilyBody,
+    '--font-size-base': typography.baseFontSize,
+    '--font-weight-normal': String(typography.fontWeightNormal),
+    '--font-weight-bold': String(typography.fontWeightBold),
+    '--type-scale-ratio': String(typography.scaleRatio),
+    '--radius-base': radius,
+    '--spacing-base': `${layout.spacingBasePx}px`,
+    '--elevation-base': elevation,
+  };
 }
