@@ -21,6 +21,34 @@ export function nextCmsPageRevisionNumber(previousRevisionNumber?: number): numb
   return (previousRevisionNumber || 0) + 1;
 }
 
+export async function listCmsPages(input: {
+  tenantId: string;
+  siteId: string;
+  status?: 'draft' | 'published' | 'trash';
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const page = Math.max(1, input.page || 1);
+  const pageSize = Math.min(100, Math.max(1, input.pageSize || 25));
+  const filter: Record<string, unknown> = { tenantId: input.tenantId, siteId: input.siteId };
+  if (input.status) filter.status = input.status;
+  if (input.search) {
+    const search = input.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    filter.$or = [{ title: { $regex: search, $options: 'i' } }, { slug: { $regex: search, $options: 'i' } }];
+  }
+  const [pages, total] = await Promise.all([
+    CmsPage.find(filter)
+      .select('pageId siteId title slug status authorId updatedBy currentDraftVersion publishedRevisionId trashedAt createdAt updatedAt')
+      .sort({ updatedAt: -1, pageId: 1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .lean(),
+    CmsPage.countDocuments(filter),
+  ]);
+  return { pages, page, pageSize, total, totalPages: Math.ceil(total / pageSize) };
+}
+
 export async function readCmsPagePreview(input: { tenantId: string; siteId: string; pageId: string }) {
   const page = await CmsPage.findOne({
     tenantId: input.tenantId,

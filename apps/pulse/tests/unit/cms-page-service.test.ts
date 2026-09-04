@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   pageToObject: vi.fn(),
   pageFindOneAndUpdate: vi.fn(),
   pageFindOne: vi.fn(),
+  pageFind: vi.fn(),
+  pageCountDocuments: vi.fn(),
   revisionSave: vi.fn(),
   revisionToObject: vi.fn(),
   revisionFindOne: vi.fn(),
@@ -26,7 +28,7 @@ vi.mock('@/models/CmsPage', () => ({
       this.save = mocks.pageSave;
       this.toObject = mocks.pageToObject;
     }),
-    { findOneAndUpdate: mocks.pageFindOneAndUpdate, findOne: mocks.pageFindOne },
+    { findOneAndUpdate: mocks.pageFindOneAndUpdate, findOne: mocks.pageFindOne, find: mocks.pageFind, countDocuments: mocks.pageCountDocuments },
   ),
 }));
 
@@ -45,6 +47,7 @@ import CmsPage from '@/models/CmsPage';
 import {
   createCmsPage,
   hashCmsPageDraft,
+  listCmsPages,
   nextCmsPageRevisionNumber,
   publishCmsPageRevision,
   readCmsPagePreview,
@@ -84,6 +87,22 @@ describe('CMS page lifecycle service', () => {
   it('increments immutable revision numbers', () => {
     expect(nextCmsPageRevisionNumber()).toBe(1);
     expect(nextCmsPageRevisionNumber(7)).toBe(8);
+  });
+
+  it('lists only pages in the requested tenant and site with bounded pagination', async () => {
+    const lean = vi.fn().mockResolvedValue([{ pageId: 'page-id' }]);
+    const limit = vi.fn().mockReturnValue({ lean });
+    const skip = vi.fn().mockReturnValue({ limit });
+    const sort = vi.fn().mockReturnValue({ skip });
+    const select = vi.fn().mockReturnValue({ sort });
+    mocks.pageFind.mockReturnValue({ select });
+    mocks.pageCountDocuments.mockResolvedValue(101);
+
+    await expect(listCmsPages({ tenantId: 'tenant', siteId: 'site', status: 'draft', search: 'About.', page: 2, pageSize: 500 }))
+      .resolves.toMatchObject({ page: 2, pageSize: 100, total: 101, totalPages: 2 });
+    expect(mocks.pageFind).toHaveBeenCalledWith(expect.objectContaining({ tenantId: 'tenant', siteId: 'site', status: 'draft' }));
+    expect(skip).toHaveBeenCalledWith(100);
+    expect(limit).toHaveBeenCalledWith(100);
   });
 
   it('reads preview content from the mutable draft payload', async () => {

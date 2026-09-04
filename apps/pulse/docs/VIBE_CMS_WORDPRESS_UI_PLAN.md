@@ -6233,8 +6233,12 @@ lifecycle service now provides deterministic content hashing, page creation, opt
 draft saves, authenticated draft-preview reads, immutable transactional publication,
 published-revision reads, and reversible trash/restore transitions. Saving a new draft
 does not clear the last published revision, so public readers remain isolated from edits.
-Tenant and site scope are mandatory on every operation. Route handlers remain the next E1
-slice.
+Tenant and site scope are mandatory on every operation. Operator page routes are now
+implemented below `/api/vibes/pages`: filtered list/create, detail/draft save, preview,
+publish, trash, and restore. Every route uses the existing Vibe CMS access contract,
+requires an explicit `siteId`, validates JSON before calling the domain service, and maps
+stale draft versions to an actionable HTTP 409 response. The public renderer and its
+published-page route remain part of E2 so no draft data can accidentally become public.
 
 ### Package E2 — block registry and public rendering
 
