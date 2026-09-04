@@ -6319,7 +6319,7 @@ never coupled to an unfinished editor route:
    allowing an operator override. Parent selection uses existing non-trashed pages. Successful
    creation returns to the directory with a confirmation instead of linking to a nonexistent
    editor.
-2. **Editor route and load boundary.** Add `/vibes/pages/[pageId]/edit`, require `siteId`, load
+2. **Editor route and load boundary — implemented.** Add `/vibes/pages/[pageId]/edit`, require `siteId`, load
    the page through the existing detail API, and distinguish loading, not-found, conflict, and
    malformed/empty response states before mounting editor controls.
 3. **Block canvas and inserter.** Render persisted blocks using the shared registry, add only
@@ -6331,8 +6331,10 @@ never coupled to an unfinished editor route:
    publish through the lifecycle API, and revision recovery. Surface saving, saved, conflict,
    and failure as distinct states.
 
-The first slice deliberately does not introduce a second page data model, a second rendering
-registry, or a dead editor link. The next implementation action is slice 2.
+The first two slices deliberately do not introduce a second page data model or rendering
+registry. Directory titles now link to a validated editor load boundary. That boundary does
+not mount editing controls unless the response contains the page identity, supported status,
+draft version, and minimally complete draft payload. The next implementation action is slice 3.
 
 ### Package E4 — themes and Appearance
 
