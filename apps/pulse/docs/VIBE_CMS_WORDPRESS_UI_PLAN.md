@@ -6252,8 +6252,12 @@ implemented. Each definition owns its schema, display title, current version, mi
 function, and semantic public renderer. Duplicate block types fail at catalog construction.
 Invalid, unknown, or failed-migration blocks render an operator-visible warning in preview
 but are omitted from public output. Image blocks now persist intrinsic dimensions so the
-renderer can use optimized images without layout shift. Host-to-site resolution, active
-extension composition, theme templates, and the public page entry point remain in E2.
+renderer can use optimized images without layout shift. The first-party `sunset/core` theme
+now owns the default `sunset/page` template. A server-only composition service accepts the
+authoritative tenant resolver, scopes every lookup to its tenant and site identity, pins the
+published page revision, resolves the active Vibe, theme, and bundled plugins, and reports
+missing or version-mismatched activations without exposing draft content. The public page
+entry point and concrete theme template component remain in E2.
 
 ### Package E3 — page editor
 

@@ -7,7 +7,7 @@ import {
 
 export type ExtensionCatalog = ReturnType<typeof createExtensionCatalog>;
 
-export function createExtensionCatalog(input: { plugins?: unknown[]; themes?: unknown[] }) {
+export function createExtensionCatalog(input: { plugins?: readonly unknown[]; themes?: readonly unknown[] }) {
   const plugins = (input.plugins || []).map((manifest) => pluginManifestSchema.parse(manifest));
   const themes = (input.themes || []).map((manifest) => themeManifestSchema.parse(manifest));
   assertUniqueIds(plugins, 'plugin');
@@ -31,5 +31,17 @@ function assertUniqueIds(manifests: Array<PluginManifest | ThemeManifest>, kind:
   }
 }
 
-export const bundledExtensionCatalog = createExtensionCatalog({ plugins: [], themes: [] });
+export const DEFAULT_CMS_THEME_ID = 'sunset/core';
 
+export const bundledExtensionCatalog = createExtensionCatalog({
+  plugins: [],
+  themes: [{
+    id: DEFAULT_CMS_THEME_ID,
+    name: 'Sunset Core',
+    version: '1.0.0',
+    description: 'The built-in structured page theme for Sunset Pulse sites.',
+    author: 'Sunset Pulse',
+    templates: { page: 'sunset/page' },
+    supportedBlocks: ['core/heading', 'core/paragraph', 'core/image', 'core/button'],
+  }],
+});
