@@ -6348,6 +6348,12 @@ publishes that exact saved version. HTTP 409 remains a distinct conflict with an
 action; local changes are not cleared. E3 still requires revision discovery and recovery before
 the package is complete.
 
+Revision recovery backend is now implemented: `GET /api/vibes/pages/[pageId]/revisions`
+returns bounded newest-first immutable history, while `POST` restores a selected snapshot into
+the mutable draft using `expectedVersion`. Restore increments the draft version, marks the page
+draft, retains the published pointer, and never edits the historical revision. The remaining E3
+action is the editor history panel and confirmation flow.
+
 ### Package E4 — themes and Appearance
 
 - Register bundled theme templates and template parts.

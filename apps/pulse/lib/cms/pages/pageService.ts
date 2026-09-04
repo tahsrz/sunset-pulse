@@ -79,6 +79,22 @@ export async function readPublishedCmsPage(input: { tenantId: string; siteId: st
   return { ...revision, routePath: page.routePath || page.slug, snapshot: cmsPageDraftSchema.parse(revision.snapshot) };
 }
 
+export async function listCmsPageRevisions(input: { tenantId: string; siteId: string; pageId: string; limit?: number }) {
+  const limit = Math.min(50, Math.max(1, input.limit || 20));
+  return CmsPageRevision.find({ tenantId: input.tenantId, siteId: input.siteId, pageId: input.pageId })
+    .select('_id revisionNumber changeSummary createdBy createdAt publishedAt publishedBy contentHash')
+    .sort({ revisionNumber: -1 }).limit(limit).lean();
+}
+
+export async function restoreCmsPageRevision(input: { tenantId: string; siteId: string; pageId: string; revisionId: string; actorId: string; expectedVersion: number }) {
+  const revision = await CmsPageRevision.findOne({ _id: input.revisionId, tenantId: input.tenantId, siteId: input.siteId, pageId: input.pageId }).select('snapshot').lean() as any;
+  if (!revision) throw new Error('CMS_PAGE_REVISION_NOT_FOUND');
+  const draft = cmsPageDraftSchema.parse(revision.snapshot);
+  const page = await CmsPage.findOneAndUpdate({ tenantId: input.tenantId, siteId: input.siteId, pageId: input.pageId, currentDraftVersion: input.expectedVersion, slug: draft.slug, status: { $in: ['draft', 'published'] } }, { $set: { title: draft.title, draftPayload: draft, status: 'draft', updatedBy: input.actorId, updatedAt: new Date() }, $inc: { currentDraftVersion: 1 } }, { new: true, runValidators: true }).lean();
+  if (!page) throw new Error('CMS_PAGE_DRAFT_CONFLICT');
+  return page;
+}
+
 export function buildCmsPageRoutePath(slug: string, parentRoutePath?: string) {
   const routePath = parentRoutePath ? `${parentRoutePath}/${slug}` : slug;
   const segments = routePath.split('/');
