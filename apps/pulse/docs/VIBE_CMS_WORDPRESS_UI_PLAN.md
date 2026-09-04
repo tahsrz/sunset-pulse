@@ -6257,7 +6257,12 @@ now owns the default `sunset/page` template. A server-only composition service a
 authoritative tenant resolver, scopes every lookup to its tenant and site identity, pins the
 published page revision, resolves the active Vibe, theme, and bundled plugins, and reports
 missing or version-mismatched activations without exposing draft content. The public page
-entry point and concrete theme template component remain in E2.
+entry point and concrete theme template component are now implemented. The existing tenant
+subdomain rewrite remains authoritative: previously unsupported single-segment tenant paths
+such as `/about` now resolve through `tenant_domains`, load the pinned published page, and
+render it with `sunset/page`. Existing tenant home and property-detail behavior remains
+unchanged. Nested CMS paths, a CMS-controlled home page, and plugin-provided block merging
+remain in E2.
 
 ### Package E3 — page editor
 
