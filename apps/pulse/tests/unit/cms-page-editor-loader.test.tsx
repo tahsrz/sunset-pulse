@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/app/vibes/pages/[pageId]/edit/CmsPageRevisions', () => ({ CmsPageRevisions: () => null }));
 import { CmsPageEditorLoader } from '@/app/vibes/pages/[pageId]/edit/CmsPageEditorLoader';
 
 let query = 'siteId=site-a';

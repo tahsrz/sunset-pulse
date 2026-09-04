@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/app/vibes/pages/[pageId]/edit/CmsPageRevisions', () => ({ CmsPageRevisions: () => null }));
 import { CmsPageEditor, type CmsPageEditorDocument } from '@/app/vibes/pages/[pageId]/edit/CmsPageEditor';
 
 const page: CmsPageEditorDocument = {

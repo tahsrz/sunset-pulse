@@ -6352,7 +6352,10 @@ Revision recovery backend is now implemented: `GET /api/vibes/pages/[pageId]/rev
 returns bounded newest-first immutable history, while `POST` restores a selected snapshot into
 the mutable draft using `expectedVersion`. Restore increments the draft version, marks the page
 draft, retains the published pointer, and never edits the historical revision. The remaining E3
-action is the editor history panel and confirmation flow.
+action is the editor history panel and confirmation flow. That panel is now implemented with
+bounded history loading, clean-draft enforcement, two-step confirmation, optimistic restore,
+and validated replacement of editor draft/version state. Restoring clears stale selection and
+preview state and returns the document to draft status. Package E3 is complete; begin E4.
 
 ### Package E4 — themes and Appearance
 
