@@ -16,6 +16,7 @@ import {
   Tags,
   Upload,
   Files,
+  Palette,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -31,10 +32,11 @@ const primaryItems: NavigationItem[] = [
   { href: '/vibes/pages', label: 'Pages', icon: Files },
   { href: '/vibes/pages/new', label: 'Add Page', icon: FileText },
   { href: '/vibes/taxonomy', label: 'Taxonomy', icon: Tags },
+  { href: '/vibes/appearance', label: 'Appearance', icon: Palette },
 ];
 
 const vibePathPattern = /^\/vibes\/([^/]+)/;
-const nonVibeSegments = new Set(['new', 'taxonomy', 'pages']);
+const nonVibeSegments = new Set(['new', 'taxonomy', 'pages', 'appearance']);
 
 function getVibeId(pathname: string) {
   const match = pathname.match(vibePathPattern);

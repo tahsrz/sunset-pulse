@@ -1,0 +1,11 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+const mocks = vi.hoisted(() => ({ read: vi.fn(), activate: vi.fn() }));
+vi.mock('@/lib/core/database', () => ({ default: vi.fn() }));
+vi.mock('@/lib/core/routeAuth', () => ({ requireOperatorRouteAccess: vi.fn(async () => ({ allowed: true })), isAuthResponse: vi.fn(() => false), operatorAuditUser: vi.fn(() => ({ userId: 'operator' })) }));
+vi.mock('@/lib/cms/themes/themeService', () => ({ readSiteThemeCatalog: mocks.read, activateSiteTheme: mocks.activate }));
+import { GET, POST } from '@/app/api/vibes/themes/route';
+describe('CMS theme routes', () => { beforeEach(() => vi.clearAllMocks());
+  it('returns the catalog and effective activation for a site', async () => { mocks.read.mockResolvedValue({ themes: [], activeThemeId: 'sunset/core' }); const response = await GET(new NextRequest('http://localhost/api/vibes/themes?siteId=site-a')); expect(response.status).toBe(200); expect(mocks.read).toHaveBeenCalledWith({ tenantId: 'default', siteId: 'site-a' }); });
+  it('activates an exact bundled theme for the operator', async () => { mocks.activate.mockResolvedValue({ themeId: 'sunset/core', version: '1.0.0' }); const response = await POST(new NextRequest('http://localhost/api/vibes/themes?siteId=site-a', { method: 'POST', body: JSON.stringify({ themeId: 'sunset/core' }) })); expect(response.status).toBe(200); expect(mocks.activate).toHaveBeenCalledWith(expect.objectContaining({ siteId: 'site-a', themeId: 'sunset/core', actorId: 'operator' })); });
+});

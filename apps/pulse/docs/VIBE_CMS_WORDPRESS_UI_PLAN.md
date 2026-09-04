@@ -6363,6 +6363,14 @@ preview state and returns the document to draft status. Package E3 is complete; 
 - Add theme browsing, preview, and explicit per-site activation.
 - Apply the active Vibe revision as global style tokens inside the active theme.
 
+#### E4 execution checkpoint — September 4, 2026
+
+The first Appearance slice is implemented. `/vibes/appearance` provides explicit site scope,
+catalog-backed theme cards, an honest visual preview, effective active-theme state, and explicit
+activation. `GET/POST /api/vibes/themes` use the bundled manifest catalog and the unique
+`SiteThemeActivation` authority; activation always persists the exact bundled version. The next
+slice is additional bundled templates/template parts and theme-token application.
+
 ### Package E5 — installed plugins
 
 - Add Installed, Active, and Inactive views backed by the bundled catalog and site records.
