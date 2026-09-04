@@ -6228,8 +6228,13 @@ deployment. Uploading and executing arbitrary packages is explicitly deferred.
 - Begin with `core/heading`, `core/paragraph`, `core/image`, and `core/button` schemas.
 
 Implementation checkpoint: the four version-1 core block contracts, page draft contract,
-`CmsPage`, and immutable `CmsPageRevision` persistence models are now implemented. Service
-methods and routes remain the next E1 slice.
+`CmsPage`, and immutable `CmsPageRevision` persistence models are implemented. The page
+lifecycle service now provides deterministic content hashing, page creation, optimistic
+draft saves, authenticated draft-preview reads, immutable transactional publication,
+published-revision reads, and reversible trash/restore transitions. Saving a new draft
+does not clear the last published revision, so public readers remain isolated from edits.
+Tenant and site scope are mandatory on every operation. Route handlers remain the next E1
+slice.
 
 ### Package E2 — block registry and public rendering
 
