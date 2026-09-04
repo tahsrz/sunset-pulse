@@ -6307,6 +6307,33 @@ E3 with the Pages directory and Add New identity flow before introducing block e
 - Support insertion, selection, movement, duplication, deletion, inline text editing,
   document settings, preview, save state, publishing, and revision recovery.
 
+#### E3 execution checkpoint — September 4, 2026
+
+Execute E3 in these independently testable slices so page identity and persisted content are
+never coupled to an unfinished editor route:
+
+1. **Pages directory and Add New identity — implemented.** Add `Pages` and `Add Page` to
+   `VibeSidebar.tsx`; keep the active site explicit in the `siteId` query parameter; list pages
+   through `GET /api/vibes/pages`; provide URL-driven status and search filters; and create the
+   page identity through `POST /api/vibes/pages`. Title entry proposes a valid slug while still
+   allowing an operator override. Parent selection uses existing non-trashed pages. Successful
+   creation returns to the directory with a confirmation instead of linking to a nonexistent
+   editor.
+2. **Editor route and load boundary.** Add `/vibes/pages/[pageId]/edit`, require `siteId`, load
+   the page through the existing detail API, and distinguish loading, not-found, conflict, and
+   malformed/empty response states before mounting editor controls.
+3. **Block canvas and inserter.** Render persisted blocks using the shared registry, add only
+   registered block types, and preserve stable block IDs through insertion, movement,
+   duplication, and deletion.
+4. **Selection and inspector.** Keep document controls separate from selected-block controls;
+   support inline text editing without replacing the persisted block schema.
+5. **Lifecycle toolbar.** Wire draft save with `expectedVersion`, preview with the pinned draft,
+   publish through the lifecycle API, and revision recovery. Surface saving, saved, conflict,
+   and failure as distinct states.
+
+The first slice deliberately does not introduce a second page data model, a second rendering
+registry, or a dead editor link. The next implementation action is slice 2.
+
 ### Package E4 — themes and Appearance
 
 - Register bundled theme templates and template parts.
