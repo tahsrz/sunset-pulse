@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { bundledExtensionCatalog } from '@/lib/cms/extensions/catalog';
 import { cmsPageDraftSchema, type CmsPageDraft } from '@/lib/cms/pages/pageSchema';
 import { livePreviewReadySchema } from '@/lib/cms/themes/livePreviewContract';
@@ -25,14 +25,14 @@ export function LiveDraftPreview({ draft, siteId, pageId, tenantId = 'default', 
     const timer = setTimeout(() => setConnectionError('Preview has not connected. Check the message in the frame, then use Reconnect.'), 15000);
     return () => clearTimeout(timer);
   }, [ready, retry]);
-  const sendLatest = () => {
+  const sendLatest = useCallback(() => {
     const parsed = cmsPageDraftSchema.safeParse(latest.current.draft);
     if (!parsed.success) return;
     frame.current?.contentWindow?.postMessage({
       type: 'cms-preview:update', channel, sequence: ++sequence.current,
       draft: parsed.data, themeId: latest.current.themeId,
     }, window.location.origin);
-  };
+  }, [channel]);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || event.origin !== window.location.origin) return;
@@ -42,12 +42,12 @@ export function LiveDraftPreview({ draft, siteId, pageId, tenantId = 'default', 
     };
     window.addEventListener('message', receive);
     return () => window.removeEventListener('message', receive);
-  }, [channel]);
+  }, [channel, sendLatest]);
   useEffect(() => {
     if (!ready) return;
     const handle = requestAnimationFrame(sendLatest);
     return () => cancelAnimationFrame(handle);
-  }, [draft, themeId, ready]);
+  }, [draft, themeId, ready, sendLatest]);
   const src = '/cms-preview?' + new URLSearchParams({ siteId, tenantId, pageId, themeId: 'sunset/core', mode: 'draft', channel, refresh: String(retry) });
   return <section aria-label="Live draft preview" className="my-5 border bg-white p-4">
     <div className="mb-3 flex flex-wrap items-center gap-3">

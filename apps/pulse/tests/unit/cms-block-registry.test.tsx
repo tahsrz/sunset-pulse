@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { coreCmsBlockRegistry, createCmsBlockRegistry, renderCmsBlock, renderCmsPageBlocks } from '@/lib/cms/pages/blockRegistry';
@@ -8,10 +8,10 @@ const blockId = '276fd207-2f8c-44f1-a958-9cbc641c1e4c';
 describe('CMS block registry', () => {
   it('registers every version-1 core block exactly once', () => {
     expect(coreCmsBlockRegistry.definitions.map(({ type }) => type)).toEqual([
-      'core/heading', 'core/paragraph', 'core/image', 'core/button',
+      'sunset/section', 'core/heading', 'core/paragraph', 'core/image', 'core/button',
     ]);
     expect(() => createCmsBlockRegistry([
-      coreCmsBlockRegistry.definitions[0], coreCmsBlockRegistry.definitions[0],
+      coreCmsBlockRegistry.get('core/heading')!, coreCmsBlockRegistry.get('core/heading')!,
     ])).toThrow('DUPLICATE_BLOCK_TYPE:core/heading');
   });
 
@@ -38,9 +38,12 @@ describe('CMS block registry', () => {
   });
 
   it('contains migration failures at the individual block boundary', () => {
-    const registry = createCmsBlockRegistry([{ ...coreCmsBlockRegistry.definitions[0], migrate: () => { throw new Error('broken migration'); } }]);
+    const migrate = vi.fn(() => { throw new Error('broken migration'); });
+    const registry = createCmsBlockRegistry([{ ...coreCmsBlockRegistry.get('core/heading')!, migrate }]);
     const block = { blockId, version: 1, type: 'core/heading', props: { text: 'Welcome', level: 2 } };
     expect(renderCmsBlock(block, { mode: 'public', registry })).toBeNull();
     expect(renderToStaticMarkup(<>{renderCmsBlock(block, { mode: 'preview', registry })}</>)).toContain('role="alert"');
+    expect(migrate).toHaveBeenCalledTimes(2);
+    expect(migrate).toHaveBeenCalledWith(block);
   });
 });

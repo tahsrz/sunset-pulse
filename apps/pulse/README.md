@@ -53,6 +53,30 @@ for the content ownership map, exact implementation decisions, verification limi
 remaining packages. Next: shared site-content revisions and split editor, then the retained
 operator utility entry, bounded listing snapshot, and visitor-activated world.
 
+#### CI repair follow-up (September 10)
+
+The reported lint failure came from the editorial header's root link; it now uses Next.js
+`Link`. Live preview also uses a stable send callback with explicit effect dependencies,
+retaining unsaved updates without per-keystroke API writes.
+
+The reported `test` job stopped at its production dependency audit, before running tests.
+The root lockfile now resolves `mysql2` 3.23.1 and overrides `sharp` to 0.35.4, including its
+matching native packages. A clean temporary install with lifecycle scripts disabled verified
+those versions, MySQL client loading, and in-memory Sharp PNG generation. This was not a
+deployment or a database connectivity check.
+
+Pulse's unit-test scripts now resolve the workspace's declared Vitest runner instead of
+hard-coding the root runner from a different major version. Registry tests include the new
+`sunset/section` block and select heading fixtures by type, not array position. The migration
+failure test also verifies that migration actually ran. No tests or CI gates were removed.
+
+Local verification: lint passes with existing warnings outside this CMS slice; the production
+dependency audit reports zero vulnerabilities. All **1,162 tests in 281 suites pass** using
+`node node_modules/vitest/vitest.mjs run --maxWorkers=2` from `apps/pulse`. An earlier
+unbounded run hit three unrelated five-second timeouts; those cases passed without code or
+timeout changes in both the focused rerun and the full two-worker run. Remote CI still needs
+to run against these changes after they are committed and pushed.
+
 The current profit-focused execution brief is [`../../docs/profit-sprint-2026-08-24.md`](../../docs/profit-sprint-2026-08-24.md).
 
 - **Status:** 🟢 Alpha Maturation // Supabase Hegemony

@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import type { CmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import { renderCmsPageBlocks } from '@/lib/cms/pages/blockRegistry';
 import type { SunsetPageTemplateParts } from './SunsetPageTemplate';
@@ -7,7 +8,7 @@ import { PresentationLinks } from './PresentationLinks';
 
 export function EditorialHeaderPart(context: CmsPageRenderContext) {
   return <header data-cms-template-part="sunset/editorial-header" className="mx-auto max-w-6xl border-b border-current/20 px-6 py-8 text-center">
-    <a href="/" className="text-2xl tracking-tight" style={{ fontFamily: 'var(--font-family-heading, Georgia, serif)' }}>{context.page.snapshot.presentation?.siteName ?? context.siteName}</a>
+    <Link href="/" className="text-2xl tracking-tight" style={{ fontFamily: 'var(--font-family-heading, Georgia, serif)' }}>{context.page.snapshot.presentation?.siteName ?? context.siteName}</Link>
     {context.page.snapshot.presentation ? <nav aria-label={context.page.snapshot.presentation.navigationLabel} className="mt-4"><PresentationLinks links={[{ label: context.page.snapshot.presentation.homeLabel, href: '/' }, ...(context.page.snapshot.presentation.navigationLinks || [])]} /></nav> : null}
   </header>;
 }

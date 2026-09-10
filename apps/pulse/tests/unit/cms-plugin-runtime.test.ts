@@ -48,7 +48,7 @@ describe('CMS plugin runtime catalog', () => {
     expect(stale.diagnostics).toEqual([`ACTIVE_PLUGIN_RUNTIME_VERSION_MISMATCH:${plugin.id}`]);
 
     const conflictExtensions = createExtensionCatalog({ plugins: [{ ...plugin, extensions: { ...plugin.extensions, blocks: ['core/heading'] } }], themes: [] });
-    const conflictRuntime = createCmsPluginRuntimeCatalog({ extensions: conflictExtensions, runtimes: [{ pluginId: plugin.id, version: plugin.version, blocks: [coreCmsBlockRegistry.definitions[0]] }] });
+    const conflictRuntime = createCmsPluginRuntimeCatalog({ extensions: conflictExtensions, runtimes: [{ pluginId: plugin.id, version: plugin.version, blocks: [coreCmsBlockRegistry.get('core/heading')!] }] });
     const conflict = composeCmsBlockRegistry({ activePlugins: [{ manifest: conflictExtensions.getPlugin(plugin.id)!, activationVersion: plugin.version }], runtimeCatalog: conflictRuntime });
     expect(conflict.diagnostics).toEqual([`ACTIVE_PLUGIN_BLOCK_CONFLICT:${plugin.id}:core/heading`]);
   });
