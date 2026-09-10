@@ -16,6 +16,28 @@ const page: CmsPageEditorDocument = {
 };
 
 describe('CMS page block canvas', () => {
+  it('keeps unsaved text, block selection, and the same live frame across workspace modes', () => {
+    const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
+    render(<CmsPageEditor page={{ ...page, tenantId: 'tenant-a' }} pagesHref="/vibes/pages?siteId=site-a&tenantId=tenant-a" />);
+    const heading = screen.getByRole('textbox', { name: 'Heading text' });
+    fireEvent.change(heading, { target: { value: 'Unsaved canvas heading' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Heading · Select' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open live preview' }));
+    const frame = screen.getByTitle('Live homepage and page preview') as HTMLIFrameElement;
+    expect(new URL(frame.src).searchParams.get('tenantId')).toBe('tenant-a');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Preview width' }), { target: { value: '768px' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Full preview' }));
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit only' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Split view' }));
+    expect(screen.getByTitle('Live homepage and page preview')).toBe(frame);
+    expect(frame.style.width).toBe('768px');
+    expect(screen.getByRole('textbox', { name: 'Heading text' })).toBe(heading);
+    expect(heading).toHaveValue('Unsaved canvas heading');
+    expect(screen.getByRole('tabpanel', { name: 'Block settings' })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it('undoes local edits and warns before leaving without making a persistence request', () => {
     const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
     render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);

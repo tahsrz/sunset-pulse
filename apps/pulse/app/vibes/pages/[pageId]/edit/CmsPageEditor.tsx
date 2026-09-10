@@ -21,6 +21,7 @@ import {
 } from '@/lib/cms/pages/pageSchema';
 import { CmsPageRevisions } from './CmsPageRevisions';
 import { LiveDraftPreview } from '../../LiveDraftPreview';
+import { CmsPageWorkspace } from '../../CmsPageWorkspace';
 import { PagePresentationFields } from '../../PagePresentationFields';
 import {
   createDraftHistory,
@@ -67,7 +68,6 @@ export function CmsPageEditor({
     text: string;
   } | null>(null);
   const [preview, setPreview] = useState<CmsPageDraft | null>(null);
-  const [livePreview, setLivePreview] = useState(false);
   const editSequence = useRef(0);
   const selected = selectedId
     ? draft.blocks.find((block) => block.blockId === selectedId) || null
@@ -342,15 +342,7 @@ export function CmsPageEditor({
             </div>
           </section>
         ) : null}
-        <button
-          type="button"
-          aria-expanded={livePreview}
-          onClick={() => setLivePreview(!livePreview)}
-          className="mb-4 rounded border border-[#2271b1] bg-white px-4 py-2 text-sm font-semibold"
-        >
-          {livePreview ? 'Hide live preview' : 'Open live preview'}
-        </button>
-        {livePreview ? (
+        <CmsPageWorkspace preview={
           <LiveDraftPreview
             draft={draft}
             siteId={page.siteId}
@@ -364,8 +356,7 @@ export function CmsPageEditor({
               'default'
             }
           />
-        ) : null}
-        <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)_300px]">
+        }>
           <aside
             aria-label="Block inserter"
             className="h-fit border border-slate-200 bg-white p-4"
@@ -529,7 +520,7 @@ export function CmsPageEditor({
               }}
             />
           </aside>
-        </div>
+        </CmsPageWorkspace>
       </div>
     </div>
   );
