@@ -7,6 +7,7 @@ export type VibeListQuery = {
   status: (typeof VIBE_LIST_STATUSES)[number];
   sort: (typeof VIBE_LIST_SORTS)[number];
   direction: (typeof VIBE_LIST_DIRECTIONS)[number];
+  taxonomyTerm: string;
   page: number;
 };
 
@@ -27,17 +28,19 @@ export function parseVibeListQuery(input: URLSearchParams): VibeListQuery {
     status: (VIBE_LIST_STATUSES as readonly string[]).includes(rawStatus) ? rawStatus as VibeListQuery['status'] : '',
     sort: (VIBE_LIST_SORTS as readonly string[]).includes(rawSort) ? rawSort as VibeListQuery['sort'] : 'updatedAt',
     direction: (VIBE_LIST_DIRECTIONS as readonly string[]).includes(rawDirection) ? rawDirection as VibeListQuery['direction'] : 'desc',
+    taxonomyTerm: first(input, 'taxonomyTerm').trim().slice(0, 80),
     page: Number.isFinite(parsedPage) && Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1,
   };
 }
 
 export function serializeVibeListQuery(query: VibeListQuery): string {
-  const normalized = parseVibeListQuery(new URLSearchParams({ q: query.q, status: query.status, sort: query.sort, dir: query.direction, page: String(query.page) }));
+  const normalized = parseVibeListQuery(new URLSearchParams({ q: query.q, status: query.status, sort: query.sort, dir: query.direction, taxonomyTerm: query.taxonomyTerm, page: String(query.page) }));
   const params = new URLSearchParams();
   if (normalized.q) params.set('q', normalized.q);
   if (normalized.status) params.set('status', normalized.status);
   if (normalized.sort !== 'updatedAt') params.set('sort', normalized.sort);
   if (normalized.direction !== 'desc') params.set('dir', normalized.direction);
+  if (normalized.taxonomyTerm) params.set('taxonomyTerm', normalized.taxonomyTerm);
   if (normalized.page !== 1) params.set('page', String(normalized.page));
   return params.toString();
 }

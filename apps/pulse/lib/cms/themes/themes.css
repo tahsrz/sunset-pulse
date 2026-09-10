@@ -1,0 +1,14 @@
+.cms-theme .cms-block-heading { font-family: var(--font-family-heading, inherit); font-weight: var(--font-weight-bold, 700); line-height: 1.2; }
+.cms-theme h1.cms-block-heading { font-size: 2.5em; }
+.cms-theme h2.cms-block-heading { font-size: 2em; }
+.cms-theme h3.cms-block-heading { font-size: 1.5em; }
+.cms-theme h4.cms-block-heading { font-size: 1.25em; }
+.cms-theme .cms-block-paragraph { white-space: pre-wrap; line-height: 1.75; }
+.cms-theme .cms-block-image img { width: 100%; height: auto; border-radius: var(--radius-base, .5rem); }
+.cms-theme .cms-block-image figcaption { margin-top: .75em; color: var(--color-text-secondary, inherit); font-size: .875em; }
+.cms-theme .cms-block-button { display: inline-block; padding: .75em 1.25em; border: 1px solid transparent; border-radius: var(--radius-base, .5rem); font-weight: var(--font-weight-bold, 700); }
+.cms-theme .cms-block-button--primary { background: var(--color-primary, #2271b1); color: var(--color-background, #fff); box-shadow: var(--elevation-base, none); }
+.cms-theme .cms-block-button--secondary { border-color: currentColor; color: var(--color-primary, #2271b1); }
+.cms-theme .cms-block-button--text { color: var(--color-primary, #2271b1); text-decoration: underline; padding-inline: 0; }
+.cms-theme-editorial .cms-block-heading { font-family: var(--font-family-heading, Georgia, serif); }
+.cms-theme a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }

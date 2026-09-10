@@ -6181,6 +6181,16 @@ The implementation pass is complete on PR #75 (`codex/cms-vertical-slice-followu
 - `0881f844` — explicit accessible label and button semantics for themed Preview.
 - `1235c670` — editor Settings toggle for mounted secondary panels with `aria-expanded` state.
 
+### Follow-up phase — normalized taxonomy data model
+
+After PR #75 manual UI verification, evaluate a relational taxonomy model with
+`taxonomies`, `terms`, and `term_relationships` tables. Preserve `Vibe.taxonomyTermIds`
+as the compatibility read/write surface during migration. The follow-up must add unique
+indexes for taxonomy/term slugs, a Vibe-plus-term uniqueness constraint, a backfill job
+with dry-run counts, dual-read comparison telemetry, and an explicit rollback switch before
+changing the editor or `/api/vibes/taxonomy` response. Do not begin this migration as part
+of the current UI PR.
+
 Focused verification passed: list empty response, list toolbar, page header, Add New Vibe,
 and editor validation tests (13 tests total across focused runs). No API routes, request
 payloads, lifecycle behavior, or persistence contracts changed. Remaining evidence is
@@ -6190,3 +6200,334 @@ and capture before/after screenshots for the seven surfaces listed in Package 10
 Verification follow-up: all 18 explicitly discovered Vibes unit-test files pass (37 tests)
 on the implementation branch. The wildcard shell pattern was not used because PowerShell
 does not expand it for Vitest; the test files were enumerated explicitly.
+
+## Extension, theme, and editable-content execution plan
+
+This user-approved phase supersedes the earlier instruction to defer extension work until
+after PR #75 manual verification. It does not change the existing Vibe publication contract.
+
+This phase separates four responsibilities that must not be collapsed into Vibes:
+Vibes provide design and voice tokens; themes provide templates and template parts;
+pages own editable structured content; plugins contribute declared editor and runtime
+extensions. Runtime installation on Vercel means activating code already bundled in a
+deployment. Uploading and executing arbitrary packages is explicitly deferred.
+
+### Package E0 — contracts and activation persistence (implemented)
+
+- Define strict namespaced plugin and theme manifests with semantic versions.
+- Add a duplicate-safe bundled extension catalog with ID lookups.
+- Persist plugin activation/settings per tenant and site.
+- Persist one active theme pointer per tenant and site.
+- Keep the initial bundled catalog empty until a block has both editor and public renderers.
+
+### Package E1 — structured pages and revisions
+
+- Add `CmsPage` and immutable `CmsPageRevision` models.
+- Store ordered versioned block JSON; do not store editor-generated HTML.
+- Add draft, preview, publish, trash, and restore services using optimistic concurrency.
+- Begin with `core/heading`, `core/paragraph`, `core/image`, and `core/button` schemas.
+
+Implementation checkpoint: the four version-1 core block contracts, page draft contract,
+`CmsPage`, and immutable `CmsPageRevision` persistence models are implemented. The page
+lifecycle service now provides deterministic content hashing, page creation, optimistic
+draft saves, authenticated draft-preview reads, immutable transactional publication,
+published-revision reads, and reversible trash/restore transitions. Saving a new draft
+does not clear the last published revision, so public readers remain isolated from edits.
+Tenant and site scope are mandatory on every operation. Operator page routes are now
+implemented below `/api/vibes/pages`: filtered list/create, detail/draft save, preview,
+publish, trash, and restore. Every route uses the existing Vibe CMS access contract,
+requires an explicit `siteId`, validates JSON before calling the domain service, and maps
+stale draft versions to an actionable HTTP 409 response. The public renderer and its
+published-page route remain part of E2 so no draft data can accidentally become public.
+
+### Package E2 — block registry and public rendering
+
+- Register each block schema, editor component, public renderer, and migration function.
+- Reject unknown block types on save and render an operator-visible fallback in preview.
+- Resolve request host to site, site to published page, active theme, active Vibe revision,
+  and active plugin set before rendering.
+
+Implementation checkpoint: the typed block registry and the first four core renderers are
+implemented. Each definition owns its schema, display title, current version, migration
+function, and semantic public renderer. Duplicate block types fail at catalog construction.
+Invalid, unknown, or failed-migration blocks render an operator-visible warning in preview
+but are omitted from public output. Image blocks now persist intrinsic dimensions so the
+renderer can use optimized images without layout shift. The first-party `sunset/core` theme
+now owns the default `sunset/page` template. A server-only composition service accepts the
+authoritative tenant resolver, scopes every lookup to its tenant and site identity, pins the
+published page revision, resolves the active Vibe, theme, and bundled plugins, and reports
+missing or version-mismatched activations without exposing draft content. The public page
+entry point and concrete theme template component are now implemented. The existing tenant
+subdomain rewrite remains authoritative: previously unsupported single-segment tenant paths
+such as `/about` now resolve through `tenant_domains`, load the pinned published page, and
+render it with `sunset/page`. Existing tenant home and property-detail behavior remains
+unchanged. A published page with the conventional `home` slug can now own the tenant root;
+when it is absent, the existing agent landing page remains the fallback. The `properties`
+namespace is explicitly reserved for the current listing experience. Nested CMS paths,
+plugin-provided block merging, and final route-level integration coverage remain in E2.
+
+E2 completion sequence from this checkpoint:
+
+1. Share a request-memoized host/slug resolver between metadata and page rendering.
+2. Generate CMS metadata from the same pinned revision used for visible content.
+3. Add explicit hierarchical path persistence and collision validation before accepting
+   nested page URLs; do not infer hierarchy by concatenating mutable titles.
+4. Compose plugin block definitions from active bundled plugin manifests and reject a plugin
+   activation when its declared renderer is unavailable.
+5. Finish E2 with route-level tests proving draft isolation, legacy fallback, reserved-route
+   precedence, and metadata/content revision agreement.
+
+Steps 1 through 4 are implemented. The shared resolver uses React request memoization so
+`generateMetadata` and the page Server Component reuse the same authoritative lookup.
+Metadata title, description, canonical path, and Open Graph fields come from the immutable
+published snapshot; an empty excerpt receives a deterministic site-aware fallback. Page
+identity now persists `parentPageId` and a unique tenant/site-scoped `routePath`. Creation
+derives the path from the selected parent, validates the same depth and length limits used
+by public routing, and permits legacy one-segment records during rollout. The public tenant
+catch-all now resolves nested paths and metadata uses the full persisted route. Slug/path
+changes deliberately return `CMS_PAGE_PATH_CHANGE_REQUIRES_MOVE` until a transactional move
+operation can repath descendants safely. Before allowing duplicate leaf slugs in production,
+the legacy unique `{ tenantId, siteId, slug }` Mongo index must be removed after route-path
+backfill and the new sparse unique route-path index must be confirmed. Plugin manifests are
+now separated from executable bundled runtime definitions. Runtime catalog construction
+requires exact manifest/version agreement and a renderer for every declared block. Public
+composition merges only active, exact-version runtimes, contains missing or colliding plugin
+code as diagnostics, and passes the resulting registry directly to `sunset/page`. The initial
+bundled runtime catalog intentionally remains empty until the E6 Contact Form vertical slice.
+Step 5 is implemented. A shared route-decision function now owns CMS-versus-legacy
+selection for both `generateMetadata` and visible rendering. Integration coverage proves
+that an unpublished page falls through without exposing its draft, a missing `home` page
+preserves the legacy landing page, reserved and malformed paths never query CMS, and nested
+metadata and visible content use one pinned revision context. Package E2 is complete. Begin
+E3 with the Pages directory and Add New identity flow before introducing block editing.
+
+### Package E3 — page editor
+
+- Add Pages, Add New, and reusable block-editor routes to the Vibes CMS shell.
+- Support insertion, selection, movement, duplication, deletion, inline text editing,
+  document settings, preview, save state, publishing, and revision recovery.
+
+#### E3 execution checkpoint — September 4, 2026
+
+Execute E3 in these independently testable slices so page identity and persisted content are
+never coupled to an unfinished editor route:
+
+1. **Pages directory and Add New identity — implemented.** Add `Pages` and `Add Page` to
+   `VibeSidebar.tsx`; keep the active site explicit in the `siteId` query parameter; list pages
+   through `GET /api/vibes/pages`; provide URL-driven status and search filters; and create the
+   page identity through `POST /api/vibes/pages`. Title entry proposes a valid slug while still
+   allowing an operator override. Parent selection uses existing non-trashed pages. Successful
+   creation returns to the directory with a confirmation instead of linking to a nonexistent
+   editor.
+2. **Editor route and load boundary — implemented.** Add `/vibes/pages/[pageId]/edit`, require `siteId`, load
+   the page through the existing detail API, and distinguish loading, not-found, conflict, and
+   malformed/empty response states before mounting editor controls.
+3. **Block canvas and inserter — implemented.** Render persisted blocks using the shared registry, add only
+   registered block types, and preserve stable block IDs through insertion, movement,
+   duplication, and deletion.
+4. **Selection and inspector — implemented.** Keep document controls separate from selected-block controls;
+   support inline text editing without replacing the persisted block schema.
+5. **Lifecycle toolbar — save/preview/publish implemented; revision recovery remains.** Wire draft save with `expectedVersion`, preview with the pinned draft,
+   publish through the lifecycle API, and revision recovery. Surface saving, saved, conflict,
+   and failure as distinct states.
+
+The first two slices deliberately do not introduce a second page data model or rendering
+registry. Directory titles now link to a validated editor load boundary. That boundary does
+not mount editing controls unless the response contains the page identity, supported status,
+draft version, and minimally complete draft payload. The canvas now derives its inserter from
+the core registry and uses immutable operations which preserve IDs during movement, allocate a
+new ID during insertion or duplication, and reject unregistered types. Its changes remain local
+and are visibly marked unsaved until slice 5 wires the lifecycle toolbar. The next implementation
+action is slice 5. Selection stores only the stable block ID and derives the current block after
+every edit or reorder. Heading and paragraph text edit directly in the canvas; Heading, Image,
+and Button settings use the Block inspector; and title/excerpt/status/version/template/site
+remain isolated in the Document inspector.
+The lifecycle toolbar validates the complete draft locally, advances its version only from a
+successful PATCH response, previews the server-held draft only when local state is clean, and
+publishes that exact saved version. HTTP 409 remains a distinct conflict with an explicit reload
+action; local changes are not cleared. E3 still requires revision discovery and recovery before
+the package is complete.
+
+Revision recovery backend is now implemented: `GET /api/vibes/pages/[pageId]/revisions`
+returns bounded newest-first immutable history, while `POST` restores a selected snapshot into
+the mutable draft using `expectedVersion`. Restore increments the draft version, marks the page
+draft, retains the published pointer, and never edits the historical revision. The remaining E3
+action is the editor history panel and confirmation flow. That panel is now implemented with
+bounded history loading, clean-draft enforcement, two-step confirmation, optimistic restore,
+and validated replacement of editor draft/version state. Restoring clears stale selection and
+preview state and returns the document to draft status. Package E3 is complete; begin E4.
+
+### Package E4 — themes and Appearance
+
+- Register bundled theme templates and template parts.
+- Add theme browsing, preview, and explicit per-site activation.
+- Apply the active Vibe revision as global style tokens inside the active theme.
+
+#### E4 execution checkpoint — September 4, 2026
+
+The first Appearance slice is implemented. `/vibes/appearance` provides explicit site scope,
+catalog-backed theme cards, an honest visual preview, effective active-theme state, and explicit
+activation. `GET/POST /api/vibes/themes` use the bundled manifest catalog and the unique
+`SiteThemeActivation` authority; activation always persists the exact bundled version. The
+theme runtime slice is also implemented: public CMS routing resolves the snapshot template
+through a typed runtime registry, the bundled manifest declares reusable header and footer
+parts, and registry completeness is testable against every bundled manifest entry. Published
+Vibe revisions now compile their approved color, typography, spacing, radius, and elevation
+tokens to scoped CSS custom properties consumed by the active template. The next E4 slice is
+adding a second bundled visual theme and a non-mutating preview that renders the selected
+theme runtime with the current published page before activation.
+
+#### E4 next slice — second theme and live preview (execution plan, September 10, 2026)
+
+Implementation checkpoint: two bundled layouts, manifest-resolved parts, published-page
+theme preview, and unsaved-draft preview transport are now implemented with focused tests.
+The dedicated opt-in platform homepage editor and page-specific navigation/footer controls
+are also implemented. The larger homepage plan is **not complete**: use section 16 and the
+completion ledger in `VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md` for exact evidence,
+remaining C1/C3/H1–H6 work, and the next executable package. No production publication or
+final public-page visual acceptance is implied by this checkpoint.
+
+Status: planned, not implemented. Execute steps 1–6 in order. Estimated implementation
+effort: 5–7 hours, including focused verification. Completion means an operator can preview
+the same published page in either bundled theme and explicitly activate the chosen theme.
+
+Current-code observations:
+
+- `app/vibes/appearance/ThemeDirectory.tsx` renders one decorative gradient for every theme;
+  this is a catalog illustration, not a preview of site content.
+- `lib/cms/themes/runtimeRegistry.tsx` chooses the snapshot template when the active manifest
+  declares it, otherwise the active theme's `templates.page`. Preserve that fallback so
+  existing pages can change themes without rewriting immutable snapshots.
+- Template parts are registered but `sunset/page` directly references fixed runtime objects.
+  Resolve part slots from the selected manifest to make those declarations functional.
+- `buildCmsPageRenderContext()` currently accepts a host-derived tenant context and route slug.
+  An operator preview needs explicit site/page scope; do not fabricate a public host context.
+- `readPublishedCmsPage()` already accepts `pageId` and loads the immutable published revision.
+  Its current status filter excludes drafts even when they retain an older published pointer.
+  Preview must match that public behavior; changing publication semantics is separate work.
+- Existing Vibe revisions contain only the CSS variables compiled when they were created.
+  New typography/layout variables do not retroactively appear in historical revisions. Keep
+  template fallbacks and explain that new tokens require publishing/applying a new revision.
+
+1. **Create a real second presentation — approximately 60–90 minutes.**
+   - In `lib/cms/extensions/catalog.ts`, add `sunset/editorial`, display name `Sunset Editorial`,
+     version `1.0.0`, `templates: { page: 'sunset/editorial-page' }`, header/footer slots pointing
+     to `sunset/editorial-header` and `sunset/editorial-footer`, and the same four supported blocks.
+   - Add `lib/cms/themes/EditorialPageTemplate.tsx`: compact masthead, narrow reading column
+     (roughly 46rem), generous title/excerpt spacing, subtle divider, and simple footer.
+     Use system serif heading fallback and system sans body fallback; active Vibe variables
+     override these defaults. Do not add remote font requests.
+   - Keep the existing core template's wider presentation. Both themes render the identical
+     pinned snapshot through `renderCmsPageBlocks()` with the context's composed block registry.
+   - Share a small `themeStyles.ts` helper for scoped body font/size/weight and Vibe variables.
+     Apply heading, image, and button styling under a theme wrapper, including radius and
+     spacing where relevant. Do not describe an emitted variable as applied unless a visible
+     element consumes it. Preserve image dimensions and each button's primary/secondary/text style.
+   - Use a wrapper outside the content `<main>` for site header/footer so they expose proper
+     banner/contentinfo landmarks. Preserve existing page/revision/theme trace attributes.
+
+2. **Make template selection and parts reusable — approximately 45 minutes.**
+   - In `runtimeRegistry.tsx`, give template renderers a second argument containing resolved
+     header/footer render functions. Resolve slot IDs from `context.theme.templateParts` using
+     the supplied registry; remove closure references to hard-coded bundled part objects.
+   - Register the editorial template and parts. Extract a pure selection function returning
+     the selected template ID and whether fallback was used; use it for public and preview rendering.
+   - Report a declared but missing runtime explicitly. An omitted optional part renders nothing;
+     a declared missing part is a configuration error. Do not silently mix themes.
+   - Extend completeness checking to require a usable `templates.page` for each bundled theme.
+     Test an existing `sunset/page` snapshot under `sunset/editorial` to prove theme switching.
+
+3. **Build a read-only preview context — approximately 60–90 minutes.**
+   - Refactor `lib/cms/pages/renderContext.ts` into a shared site-scoped composition function
+     plus the existing public wrapper. Preserve the public wrapper's host-resolution contract.
+   - Add `lib/cms/themes/themePreviewService.ts`, accepting `{ tenantId, siteId, pageId, themeId }`.
+     Load the selected bundled manifest, existing site, and `readPublishedCmsPage({ tenantId,
+     siteId, pageId })`; compose that site's active Vibe revision and plugin runtimes using
+     the same shared function as public rendering. Pass the selected theme as a request-local override.
+   - No activation, page, revision, draft, or Vibe writes occur in preview. No preview records
+     or database migration are necessary. Do not import a server context containing render
+     functions into client JSON; rendering stays on the server.
+   - Return distinct missing-site, missing-theme, unavailable-published-page, and runtime-error
+     results. Preserve pinned page revision and Vibe revision identities in the rendered output.
+
+4. **Expose a server-rendered preview document — approximately 60 minutes.**
+   - Add an isolated App Router page at `/vibes/theme-preview` with a layout that does not
+     include the editor sidebar. Inspect ancestor layouts before choosing a route group;
+     route groups alone do not remove inherited layouts. Keep the preview under the existing
+     operator authentication convention, using the applicable server-page access helper.
+   - Require explicit `siteId`, `pageId`, and `themeId`; carry `tenantId` consistently with
+     Appearance's existing scope convention. Validate query values before loading data.
+   - The page is dynamic, private, and not indexed. Invoke the preview service and the exact
+     `renderCmsThemePage()` entry point used by public CMS pages. Render understandable empty/error
+     documents, not an unhandled exception or an empty iframe. This route must never activate a theme.
+   - Display this document in an iframe from Appearance. Give the iframe a meaningful title,
+     disable interactive navigation/forms within the preview document, and keep activation controls
+     in the parent UI. Check that preview links cannot navigate the iframe away from its content.
+     Use server rendering; do not implement a second block renderer or generated HTML API.
+
+5. **Add the operator flow — approximately 60–90 minutes.**
+   - Reformat `ThemeDirectory.tsx` into readable JSX before changing its state model.
+   - Carry one explicit scope object through catalog reads, page reads, preview URLs, and activation.
+     On scope change clear cards, active state, errors, and preview; abort in-flight reads and ignore
+     stale activation completions. Synchronize the site input with the URL.
+   - Keep `Activate` as the existing explicit POST action. Add `Live preview` to each theme card.
+     Label the decorative card image as an illustration or replace it with theme-specific artwork;
+     do not present it as the site's rendered content.
+   - Add `ThemePreview.tsx` with a published-page selector using the existing pages API with
+     `status=published`, bounded pagination, and the same site/tenant scope. Label pages with title
+     and route path so duplicate titles are distinguishable. Preserve selection while comparing themes.
+   - Present a full-width preview workspace with Back to themes, selected theme, selected page,
+     desktop/mobile viewport controls, and Activate. Controls change iframe dimensions or query
+     parameters only. Use a normal page section to avoid introducing modal focus-management complexity.
+   - With no published pages, explain 'Publish a page to preview this theme' and link to the
+     scoped Pages directory. Never seed or publish sample content automatically.
+   - Use keyed loading state for the exact preview URL. Explain that preview shows published
+     content; unsaved edits and drafts are excluded. Show iframe load failure with a retry option.
+   - After activation, re-read the scoped catalog and derive active state from the response.
+     Keep the preview open and display success; failures leave the previous active theme visible.
+
+6. **Verify behavior and document completion — approximately 45–60 minutes.**
+   - Extend `cms-theme-runtime-registry.test.tsx`: both manifests resolve, snapshot fallback
+     works after switching themes, slot overrides use the supplied registry, missing runtimes fail.
+   - Add preview-service tests proving selected-theme rendering, published snapshot selection,
+     same-site Vibe/plugin composition, missing-page handling, and no persistence mutations.
+   - Extend `cms-theme-directory.test.tsx`: preview is read-only, empty-page guidance, switching
+     sites drops stale responses, and only explicit activation triggers POST.
+   - Verify rendered output differs between themes while page/block/revision identities match.
+     Verify legacy color-only Vibe projections render with typography/layout defaults.
+   - Browser-check desktop and narrow previews, long titles, image/button blocks, Back navigation,
+     and activation feedback. Use controlled data; record any unavailable browser verification honestly.
+   - Update this checkpoint and the relevant README feature section with actual behavior and
+     limitations. Commit the completed slice to the current work branch under existing authorization.
+
+Done criteria: two visually distinct bundled themes; shared public/preview renderer; functional
+manifest-owned template parts; published-page selection; zero preview writes; explicit activation;
+correct site switching; and evidence for the user flow. Package E5 follows after these criteria.
+
+#### Expanded homepage scope — September 10, 2026
+
+The next work now includes the main public homepage and tenant homepage authoring.
+Follow `VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md` for the expanded H0–H6 sequence,
+file/function anchors, visual specification, acceptance criteria, and completion ledger.
+The E4 detail above remains the theme/preview contract. The expanded plan is documentation
+only at this checkpoint; no homepage implementation is being claimed. The user's subsequent
+requirement makes all authored homepage text editable and unsaved-draft previews real time;
+section 15 of the expanded plan defines the overriding C1–C3 content/editor/preview work.
+
+### Package E5 — installed plugins
+
+- Add Installed, Active, and Inactive views backed by the bundled catalog and site records.
+- Add activate/deactivate operations, plugin settings validation, and compatibility errors.
+- Implement the first complete plugin only after its editor block, public renderer, settings,
+  and deactivation fallback are tested together.
+
+### Package E6 — first vertical extension
+
+- Build a Contact Form plugin as the proof: editor block, public renderer, validated site
+  settings, submission handler, activation UI, deactivation behavior, and tests.
+- Prove editable heading/paragraph text and the plugin block on a controlled test site.
+
+### Package E7 — later ecosystem boundary
+
+- Add signed catalog metadata and remote-service integrations only after bundled plugins work.
+- Do not dynamically import uploaded server code from database or writable storage.

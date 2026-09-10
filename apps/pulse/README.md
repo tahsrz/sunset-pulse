@@ -4,6 +4,79 @@ Sunset Pulse is a Next.js 15 real estate intelligence platform for property disc
 
 ## Current Status
 
+### Editable homepage and theme workspace
+
+Implementation is in progress under [the homepage/theme plan](docs/VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md).
+Operators can open `/vibes/homepage` to explicitly create a dedicated platform homepage draft,
+edit structured sections, page-specific navigation/footer links and SEO, and open a live
+unsaved preview in either bundled theme. The editor supports local undo/redo and versioned
+saves. Preview theme selection does not activate it; Save draft does not update the live root.
+
+Publishing pins an immutable homepage revision through the existing Mongo transaction;
+restoring the original homepage preserves the CMS draft and history. Nothing initializes or
+publishes automatically. Existing TREC/IABS disclosures are retained outside editable copy.
+The starter is not the finished redesign: shared site-wide copy, listings, deferred world,
+split-preview polish, and database-backed/public visual acceptance remain in the plan.
+
+#### Operator workflow
+
+1. Open **Vibes → Homepage** (`/vibes/homepage`) with operator access. Select **Create homepage
+   draft** only when you want to provision the dedicated platform scope. **Resume draft setup**
+   retries an incomplete setup without replacing existing edits. Neither action publishes.
+2. Edit Title/Excerpt in Document settings. Insert a **Homepage section**, select it, and edit
+   its heading, body, actions, cards, or FAQ items in Block settings. Header/footer controls
+   affect this page only; they are not shared site-wide settings.
+3. Select **Open live preview**. Text updates from local editor state without saving or issuing
+   per-keystroke database requests. Preview either theme at desktop, tablet, or phone width.
+   Invalid intermediate fields stay in the editor; the frame keeps the last valid draft.
+4. Use **Undo/Redo** for local edits, then **Save draft**. The editor checks the saved version
+   and preserves newer typing if a save is still in flight. Closing/reloading a dirty draft
+   warns; confirmation for internal application navigation is still unfinished.
+5. Select **Publish** only when the saved draft is ready to replace the public root. Publication
+   checks both draft and homepage-binding versions in one Mongo transaction. Use **View live
+   homepage** to inspect the result. Previewing a theme does not activate it; **Choose homepage
+   theme** opens the separate site-level activation workflow.
+6. To revert the root, select **Restore original homepage**, then confirm. The CMS draft and
+   published revisions remain available. Revision restoration creates a draft and does not
+   replace the platform's live revision until another explicit Publish.
+
+#### Verification and remaining work
+
+September 10 checkpoint: **91/91 tests passed across 18 focused suites**. Full-project
+TypeScript checking still reports 36 errors in unrelated tests, with none in the checked
+application or CMS test files. Desktop and 390px phone views of the uninitialized workspace
+were inspected locally; real database publication/rollback and final homepage visual parity
+are not yet verified. No production content was initialized or published in this pass.
+
+Follow [section 16 of the execution plan](docs/VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md#16-implementation-checkpoint--september-10-2026)
+for the content ownership map, exact implementation decisions, verification limitations, and
+remaining packages. Next: shared site-content revisions and split editor, then the retained
+operator utility entry, bounded listing snapshot, and visitor-activated world.
+
+#### CI repair follow-up (September 10)
+
+The reported lint failure came from the editorial header's root link; it now uses Next.js
+`Link`. Live preview also uses a stable send callback with explicit effect dependencies,
+retaining unsaved updates without per-keystroke API writes.
+
+The reported `test` job stopped at its production dependency audit, before running tests.
+The root lockfile now resolves `mysql2` 3.23.1 and overrides `sharp` to 0.35.4, including its
+matching native packages. A clean temporary install with lifecycle scripts disabled verified
+those versions, MySQL client loading, and in-memory Sharp PNG generation. This was not a
+deployment or a database connectivity check.
+
+Pulse's unit-test scripts now resolve the workspace's declared Vitest runner instead of
+hard-coding the root runner from a different major version. Registry tests include the new
+`sunset/section` block and select heading fixtures by type, not array position. The migration
+failure test also verifies that migration actually ran. No tests or CI gates were removed.
+
+Local verification: lint passes with existing warnings outside this CMS slice; the production
+dependency audit reports zero vulnerabilities. All **1,162 tests in 281 suites pass** using
+`node node_modules/vitest/vitest.mjs run --maxWorkers=2` from `apps/pulse`. An earlier
+unbounded run hit three unrelated five-second timeouts; those cases passed without code or
+timeout changes in both the focused rerun and the full two-worker run. Remote CI still needs
+to run against these changes after they are committed and pushed.
+
 The current profit-focused execution brief is [`../../docs/profit-sprint-2026-08-24.md`](../../docs/profit-sprint-2026-08-24.md).
 
 - **Status:** 🟢 Alpha Maturation // Supabase Hegemony
@@ -374,6 +447,10 @@ SunsetPulse 2026
 The implementation plan is documented in [`docs/VIBE_CMS_WORDPRESS_UI_PLAN.md`](./docs/VIBE_CMS_WORDPRESS_UI_PLAN.md).
 Use [`docs/VIBE_CMS_UI_MANUAL_VERIFICATION.md`](./docs/VIBE_CMS_UI_MANUAL_VERIFICATION.md) for the
 viewport, workflow, keyboard, and preview checks before sign-off.
+The post-UI taxonomy normalization sequence is documented in
+[`docs/VIBE_CMS_TAXONOMY_MIGRATION_PLAN.md`](./docs/VIBE_CMS_TAXONOMY_MIGRATION_PLAN.md).
+Use [`docs/VIBE_CMS_TAXONOMY_RUNBOOK.md`](./docs/VIBE_CMS_TAXONOMY_RUNBOOK.md) for staged
+backfill, observation, cutover, and rollback.
 # CMS production verification seed
 
 The internal CMS test-site seed endpoint is disabled by default. For a controlled verification run, configure `CMS_TEST_SEED_ENABLED`, `CMS_TEST_SEED_TOKEN`, `CMS_TEST_SEED_OWNER_EMAIL`, and `CMS_TEST_SEED_OWNER_USER_ID` in Vercel Production, use the procedure in `docs/STRIPE_SITE_PROVISIONING_RUNBOOK.md`, record the returned site pointer before mutation, then disable the flag and rotate the token immediately.

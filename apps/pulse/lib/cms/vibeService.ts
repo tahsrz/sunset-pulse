@@ -5,6 +5,7 @@ import VibeRevision from '@/models/VibeRevision';
 import { SiteConfig } from '@/models/SiteConfig';
 import VibeAuditEvent from '@/models/VibeAuditEvent';
 import { vibeDraftSchema, type VibeDraft } from './vibeSchema';
+import { replaceVibeTermRelationships, resolveLegacyTaxonomyTermIds } from './taxonomyRepository';
 
 export function stableSerialize(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
@@ -55,6 +56,17 @@ export async function saveVibeDraft(input: {
 
   if (!updated) {
     throw new Error(input.expectedVersion === undefined ? 'VIBE_NOT_FOUND' : 'VIBE_DRAFT_CONFLICT');
+  }
+  if (process.env.VIBE_TAXONOMY_NORMALIZED_WRITE === '1') {
+    try {
+      const resolved = await resolveLegacyTaxonomyTermIds({ tenantId: input.tenantId, legacyIds: draft.taxonomyTermIds });
+      await replaceVibeTermRelationships({ tenantId: input.tenantId, vibeId: input.vibeId, termIds: resolved.termIds, actorId: input.actorId });
+      if (resolved.unknownLegacyIds.length > 0) {
+        console.warn('VIBE_TAXONOMY_UNKNOWN_LEGACY_IDS', { tenantId: input.tenantId, vibeId: input.vibeId, unknownLegacyIds: resolved.unknownLegacyIds });
+      }
+    } catch (error) {
+      console.warn('VIBE_TAXONOMY_DUAL_WRITE_FAILED', { tenantId: input.tenantId, vibeId: input.vibeId, error: error instanceof Error ? error.message : String(error) });
+    }
   }
   return updated;
 }
@@ -195,6 +207,24 @@ export async function readPublishedVibeProjection(input: { revisionId: string; t
 }
 
 export function compileCssVars(draft: VibeDraft) {
-  const colors = draft.tokens.visual.theme.colors;
-  return Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value]));
+  const { colors, typography, layout } = draft.tokens.visual.theme;
+  const radius = { none: '0', sm: '0.25rem', md: '0.5rem', lg: '0.75rem', full: '9999px' }[layout.borderRadius];
+  const elevation = {
+    flat: 'none',
+    subtle: '0 1px 2px rgb(0 0 0 / 0.08)',
+    medium: '0 8px 24px rgb(0 0 0 / 0.14)',
+    high: '0 18px 48px rgb(0 0 0 / 0.22)',
+  }[layout.elevation];
+  return {
+    ...Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`, value])),
+    '--font-family-heading': typography.fontFamilyHeading,
+    '--font-family-body': typography.fontFamilyBody,
+    '--font-size-base': typography.baseFontSize,
+    '--font-weight-normal': String(typography.fontWeightNormal),
+    '--font-weight-bold': String(typography.fontWeightBold),
+    '--type-scale-ratio': String(typography.scaleRatio),
+    '--radius-base': radius,
+    '--spacing-base': `${layout.spacingBasePx}px`,
+    '--elevation-base': elevation,
+  };
 }

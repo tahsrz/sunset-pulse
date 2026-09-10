@@ -1,0 +1,9 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import connectDB from '@/lib/core/database';
+import { activateSiteTheme, readSiteThemeCatalog } from '@/lib/cms/themes/themeService';
+import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
+export const dynamic = 'force-dynamic';
+const activateSchema = z.object({ themeId: z.string().trim().min(1) }).strict();
+export async function GET(request: NextRequest) { const access = await requireOperatorRouteAccess(request); if (isAuthResponse(access)) return access; const siteId = request.nextUrl.searchParams.get('siteId')?.trim(); if (!siteId) return NextResponse.json({ error: 'siteId is required.' }, { status: 400 }); await connectDB(); return NextResponse.json(await readSiteThemeCatalog({ tenantId: request.nextUrl.searchParams.get('tenantId')?.trim() || 'default', siteId })); }
+export async function POST(request: NextRequest) { const access = await requireOperatorRouteAccess(request); if (isAuthResponse(access)) return access; const siteId = request.nextUrl.searchParams.get('siteId')?.trim(); if (!siteId) return NextResponse.json({ error: 'siteId is required.' }, { status: 400 }); const parsed = activateSchema.safeParse(await request.json().catch(() => null)); if (!parsed.success) return NextResponse.json({ error: 'Invalid theme activation request.' }, { status: 400 }); try { await connectDB(); const activation = await activateSiteTheme({ tenantId: request.nextUrl.searchParams.get('tenantId')?.trim() || 'default', siteId, themeId: parsed.data.themeId, actorId: operatorAuditUser(access).userId }); return NextResponse.json({ activation }); } catch (error) { if (error instanceof Error && error.message === 'CMS_THEME_NOT_FOUND') return NextResponse.json({ error: 'Theme not found.' }, { status: 404 }); return NextResponse.json({ error: 'Theme could not be activated.' }, { status: 400 }); } }

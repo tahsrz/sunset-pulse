@@ -42,7 +42,17 @@ export const securityHeaders = [
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../..'),
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      { source: '/(.*)', headers: securityHeaders },
+      {
+        source: '/cms-preview',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store' }, ...securityHeaders.map((header) => header.key === 'X-Frame-Options'
+          ? { ...header, value: 'SAMEORIGIN' }
+          : header.key === 'Content-Security-Policy'
+            ? { ...header, value: header.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+            : header)],
+      },
+    ];
   },
   images: {
     remotePatterns: [
