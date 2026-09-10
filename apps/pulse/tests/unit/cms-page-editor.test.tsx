@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/app/vibes/pages/[pageId]/edit/CmsPageRevisions', () => ({ CmsPageRevisions: () => null }));
 import { CmsPageEditor, type CmsPageEditorDocument } from '@/app/vibes/pages/[pageId]/edit/CmsPageEditor';
@@ -16,11 +16,23 @@ const page: CmsPageEditorDocument = {
 };
 
 describe('CMS page block canvas', () => {
+  it('does not mark edits made during an in-flight save as saved', async () => {
+    let resolveSave!: (value: unknown) => void;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise((resolve) => { resolveSave = resolve; })));
+    render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'First edit' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Newer edit' } });
+    await act(async () => resolveSave({ ok: true, status: 200, text: async () => JSON.stringify({ page: { currentDraftVersion: 3 } }) }));
+    expect(screen.getByText('Draft saved. Newer local edits still need saving.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Newer edit');
+  });
   afterEach(() => vi.unstubAllGlobals());
   it('derives its inserter from registered core blocks and renders persisted content', () => {
     render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
     const inserter = screen.getByRole('complementary', { name: 'Block inserter' });
-    expect(within(inserter).getAllByRole('button').map((button) => button.textContent)).toEqual(['+ Heading', '+ Paragraph', '+ Image', '+ Button']);
+    expect(within(inserter).getAllByRole('button').map((button) => button.textContent)).toEqual(['+ Homepage section', '+ Heading', '+ Paragraph', '+ Image', '+ Button']);
     expect(screen.getByRole('textbox', { name: 'Heading text' })).toHaveValue('Welcome');
     expect(screen.getByRole('textbox', { name: 'Paragraph text' })).toHaveValue('Our story.');
   });

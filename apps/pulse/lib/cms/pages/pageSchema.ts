@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { homepageSectionSchema } from './homepageSectionSchema';
 
 const blockIdSchema = z.string().uuid();
 const extensionIdSchema = z.string().trim().regex(/^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/);
@@ -52,7 +53,16 @@ export const cmsBlockSchema = z.discriminatedUnion('type', [
   paragraphBlockSchema,
   imageBlockSchema,
   buttonBlockSchema,
+  homepageSectionSchema,
 ]);
+
+// Optional additions preserve old snapshots and their content hashes.
+export const pagePresentationSchema = z.object({
+  siteName: z.string().max(200),
+  homeLabel: z.string().max(100),
+  navigationLabel: z.string().max(100),
+  footerText: z.string().max(2000),
+}).strict();
 
 export const cmsPageStatusSchema = z.enum(['draft', 'published', 'trash']);
 
@@ -63,6 +73,11 @@ export const cmsPageDraftSchema = z.object({
   excerpt: z.string().trim().max(500).default(''),
   templateId: extensionIdSchema.default('sunset/page'),
   blocks: z.array(cmsBlockSchema).max(250).default([]),
+  presentation: pagePresentationSchema.optional(),
+  seo: z.object({
+    title: z.string().max(200),
+    description: z.string().max(500),
+  }).strict().optional(),
 }).strict().superRefine((draft, context) => {
   const seen = new Set<string>();
   draft.blocks.forEach((block, index) => {

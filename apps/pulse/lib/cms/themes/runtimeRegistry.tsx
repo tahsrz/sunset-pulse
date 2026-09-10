@@ -1,11 +1,12 @@
 import React, { type ReactNode } from 'react';
 import type { CmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import { bundledExtensionCatalog } from '@/lib/cms/extensions/catalog';
-import { SunsetFooterPart, SunsetHeaderPart, SunsetPageTemplate } from './SunsetPageTemplate';
+import { SunsetFooterPart, SunsetHeaderPart, SunsetPageTemplate, type SunsetPageTemplateParts } from './SunsetPageTemplate';
+import { EditorialPageTemplate, EditorialHeaderPart, EditorialFooterPart } from './EditorialPageTemplate';
 
 export type CmsThemeTemplateRuntime = Readonly<{
   id: string;
-  render: (context: CmsPageRenderContext) => ReactNode;
+  render: (context: CmsPageRenderContext, parts: SunsetPageTemplateParts) => ReactNode;
 }>;
 
 export type CmsThemePartRuntime = Readonly<{
@@ -38,18 +39,15 @@ const sunsetHeaderRuntime = { id: 'sunset/header', render: SunsetHeaderPart } as
 const sunsetFooterRuntime = { id: 'sunset/footer', render: SunsetFooterPart } as const;
 
 export const bundledCmsThemeRuntimeRegistry = createCmsThemeRuntimeRegistry({
-  parts: [sunsetHeaderRuntime, sunsetFooterRuntime],
+  parts: [sunsetHeaderRuntime, sunsetFooterRuntime,
+    { id: 'sunset/editorial-header', render: EditorialHeaderPart },
+    { id: 'sunset/editorial-footer', render: EditorialFooterPart }],
   templates: [{
     id: 'sunset/page',
-    render: (context) => (
-      <SunsetPageTemplate
-        context={context}
-        parts={{
-          header: sunsetHeaderRuntime.render,
-          footer: sunsetFooterRuntime.render,
-        }}
-      />
-    ),
+    render: (context, parts) => <SunsetPageTemplate context={context} parts={parts} />,
+  }, {
+    id: 'sunset/editorial-page',
+    render: (context, parts) => <EditorialPageTemplate context={context} parts={parts} />,
   }],
 });
 
@@ -57,17 +55,30 @@ export function renderCmsThemePage(
   context: CmsPageRenderContext,
   registry = bundledCmsThemeRuntimeRegistry,
 ) {
-  const requestedTemplateId = context.page.snapshot.templateId;
-  const declaredTemplateIds = new Set(Object.values(context.theme.templates));
-  const defaultTemplateId = context.theme.templates.page;
-  const selectedTemplateId = declaredTemplateIds.has(requestedTemplateId) ? requestedTemplateId : defaultTemplateId;
+  const { templateId: selectedTemplateId } = selectCmsThemeTemplate(context);
   const template = registry.getTemplate(selectedTemplateId);
   if (!template) throw new Error(`CMS_THEME_TEMPLATE_RUNTIME_UNAVAILABLE:${selectedTemplateId}`);
-  return template.render(context);
+  const resolvePart = (slot: string) => {
+    const id = context.theme.templateParts?.[slot];
+    if (!id) return () => null;
+    const part = registry.getPart(id);
+    if (!part) throw new Error(`CMS_THEME_TEMPLATE_PART_RUNTIME_UNAVAILABLE:${id}`);
+    return part.render;
+  };
+  return template.render(context, { header: resolvePart('header'), footer: resolvePart('footer') });
+}
+
+export function selectCmsThemeTemplate(context: CmsPageRenderContext) {
+  const requested = context.page.snapshot.templateId;
+  const fallback = !Object.values(context.theme.templates).includes(requested);
+  const templateId = fallback ? context.theme.templates.page : requested;
+  if (!templateId) throw new Error(`CMS_THEME_DEFAULT_TEMPLATE_REQUIRED:${context.theme.id}`);
+  return { templateId, fallback };
 }
 
 export function assertBundledThemeRuntimeCompleteness() {
   for (const theme of bundledExtensionCatalog.themes) {
+    if (!theme.templates.page) throw new Error(`CMS_THEME_DEFAULT_TEMPLATE_REQUIRED:${theme.id}`);
     for (const templateId of Object.values(theme.templates)) {
       if (!bundledCmsThemeRuntimeRegistry.getTemplate(templateId)) throw new Error(`CMS_THEME_TEMPLATE_RUNTIME_UNAVAILABLE:${templateId}`);
     }

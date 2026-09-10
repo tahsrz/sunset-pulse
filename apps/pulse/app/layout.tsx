@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import '@/assets/styles/globals.css'; 
+import '@/lib/cms/themes/themes.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Navbar from '@/components/Navbar';
 import TRECConsumerNotice from '@/components/TRECConsumerNotice';
@@ -96,6 +97,10 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
   const tenantSite = requestHeaders.get('x-sunset-tenant');
   const activeAgentId = getAgentIdFromHeaders(requestHeaders);
   const requestPathname = requestHeaders.get('x-sunset-pathname');
+
+  if (requestPathname === '/cms-preview') {
+    return <html lang="en"><body className="antialiased">{children}</body></html>;
+  }
 
   if (tenantSite) {
     return (

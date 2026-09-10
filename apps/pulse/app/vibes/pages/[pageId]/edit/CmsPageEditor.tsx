@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { VibePageHeader } from '../../../_components/VibePageHeader';
 import { VibeStatusBadge } from '../../../_components/VibeStatusBadge';
 import { coreCmsBlockRegistry, renderCmsBlock, renderCmsPageBlocks } from '@/lib/cms/pages/blockRegistry';
 import { createCmsEditorBlock, deleteCmsEditorBlock, duplicateCmsEditorBlock, moveCmsEditorBlock } from '@/lib/cms/pages/editorBlocks';
 import { cmsPageDraftSchema, type CmsBlock, type CmsPageDraft } from '@/lib/cms/pages/pageSchema';
 import { CmsPageRevisions } from './CmsPageRevisions';
+import { LiveDraftPreview } from '../../LiveDraftPreview';
+import { PagePresentationFields } from '../../PagePresentationFields';
+import { HomepageSectionFields } from '../../HomepageSectionFields';
 
 export type CmsPageEditorDocument = { pageId: string; siteId: string; routePath?: string; status: 'draft' | 'published'; currentDraftVersion: number; publishedRevisionId?: string; draftPayload: CmsPageDraft };
 type BlockUpdate = (block: CmsBlock) => CmsBlock;
@@ -21,8 +24,10 @@ export function CmsPageEditor({ page, pagesHref }: { page: CmsPageEditorDocument
   const [busy, setBusy] = useState<'save' | 'preview' | 'publish' | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'error' | 'conflict'; text: string } | null>(null);
   const [preview, setPreview] = useState<CmsPageDraft | null>(null);
+  const [livePreview, setLivePreview] = useState(false);
+  const editSequence = useRef(0);
   const selected = selectedId ? draft.blocks.find((block) => block.blockId === selectedId) || null : null;
-  const changeDraft = (update: (value: CmsPageDraft) => CmsPageDraft) => { setDraft(update); setDirty(true); };
+  const changeDraft = (update: (value: CmsPageDraft) => CmsPageDraft) => { editSequence.current += 1; setDraft(update); setDirty(true); };
   const changeBlocks = (update: (value: readonly CmsBlock[]) => CmsBlock[]) => changeDraft((value) => ({ ...value, blocks: update(value.blocks) }));
   const changeBlock = (id: string, update: BlockUpdate) => changeBlocks((blocks) => blocks.map((block) => block.blockId === id ? update(block) : block));
   const choose = (id: string) => { setSelectedId(id); setPanel('block'); };
@@ -33,6 +38,7 @@ export function CmsPageEditor({ page, pagesHref }: { page: CmsPageEditorDocument
     const parsed = cmsPageDraftSchema.safeParse(draft);
     if (!parsed.success) { setNotice({ kind: 'error', text: parsed.error.issues[0]?.message || 'Fix invalid fields before saving.' }); return; }
     setBusy('save'); setNotice(null);
+    const savedSequence = editSequence.current;
     try {
       const response = await fetch(pageApi(page, ''), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draft: parsed.data, expectedVersion: version }) });
       const payload = await readPayload(response);
@@ -40,7 +46,8 @@ export function CmsPageEditor({ page, pagesHref }: { page: CmsPageEditorDocument
       if (!response.ok) throw new Error(readError(payload, 'Draft could not be saved.'));
       const nextVersion = readVersion(payload?.page);
       if (nextVersion === null) throw new Error('The save response did not include a draft version.');
-      setVersion(nextVersion); setStatus('draft'); setDirty(false); setNotice({ kind: 'success', text: 'Draft saved.' });
+      setVersion(nextVersion); setStatus('draft'); setDirty(editSequence.current !== savedSequence);
+      setNotice({ kind: 'success', text: editSequence.current === savedSequence ? 'Draft saved.' : 'Draft saved. Newer local edits still need saving.' });
     } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Draft could not be saved.' }); }
     finally { setBusy(null); }
   }
@@ -75,12 +82,14 @@ export function CmsPageEditor({ page, pagesHref }: { page: CmsPageEditorDocument
     <div aria-label="Page lifecycle" className="mb-4 flex flex-wrap items-center gap-2 border bg-white p-3"><button type="button" onClick={() => void saveDraft()} disabled={!dirty || busy !== null} className="rounded bg-[#2271b1] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{busy === 'save' ? 'Saving…' : 'Save draft'}</button><button type="button" onClick={() => void openPreview()} disabled={dirty || busy !== null} className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40">{busy === 'preview' ? 'Loading preview…' : 'Preview'}</button><button type="button" onClick={() => void publish()} disabled={dirty || busy !== null} className="rounded border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 disabled:opacity-40">{busy === 'publish' ? 'Publishing…' : 'Publish'}</button><span className="ml-auto text-xs text-slate-500">Version {version} · {dirty ? 'Unsaved changes' : status}</span></div>
     {notice ? <p role={notice.kind === 'success' ? 'status' : 'alert'} className={`mb-4 border-l-4 bg-white p-3 text-sm ${notice.kind === 'success' ? 'border-emerald-600' : 'border-red-600 text-red-800'}`}>{notice.text}{notice.kind === 'conflict' ? <button type="button" onClick={() => window.location.reload()} className="ml-3 font-semibold underline">Reload page</button> : null}</p> : null}
     {preview ? <section aria-label="Saved draft preview" className="mb-5 border border-[#2271b1] bg-white p-6"><div className="mb-5 flex justify-between"><div><p className="text-xs font-bold uppercase text-[#2271b1]">Saved draft preview</p><h2 className="text-2xl font-semibold">{preview.title}</h2></div><button type="button" onClick={() => setPreview(null)} className="rounded border px-3 py-2 text-sm">Close preview</button></div><div className="space-y-4">{renderCmsPageBlocks(preview.blocks, { mode: 'preview' })}</div></section> : null}
+    <button type="button" aria-expanded={livePreview} onClick={() => setLivePreview(!livePreview)} className="mb-4 rounded border border-[#2271b1] bg-white px-4 py-2 text-sm font-semibold">{livePreview ? 'Hide live preview' : 'Open live preview'}</button>
+    {livePreview ? <LiveDraftPreview draft={draft} siteId={page.siteId} pageId={page.pageId} dirty={dirty} tenantId={new URL(pagesHref, 'https://cms.local').searchParams.get('tenantId') || 'default'} /> : null}
     <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)_300px]">
       <aside aria-label="Block inserter" className="h-fit border border-slate-200 bg-white p-4"><h2 className="font-semibold">Blocks</h2><p className="mt-1 text-xs text-slate-500">Add registered content blocks.</p><div className="mt-4 grid gap-2">{coreCmsBlockRegistry.definitions.map((definition) => <button key={definition.type} type="button" onClick={() => insert(definition.type)} className="rounded border border-slate-300 px-3 py-2 text-left text-sm font-semibold hover:border-[#2271b1]">+ {definition.title}</button>)}</div></aside>
       <section aria-label="Page content" className="min-h-[420px] border border-slate-200 bg-white p-6"><div className="flex justify-between"><h2 className="text-lg font-semibold">Page content</h2><span className="text-xs text-slate-500">{draft.blocks.length} block{draft.blocks.length === 1 ? '' : 's'}</span></div>
         {draft.blocks.length === 0 ? <div className="mt-8 border border-dashed border-slate-300 bg-slate-50 p-8 text-center"><p className="text-sm font-semibold">Start building this page</p><p className="mt-1 text-xs text-slate-500">Choose a block from the inserter.</p></div> : <ol className="mt-5 space-y-3">{draft.blocks.map((block, index) => <li key={block.blockId} className={`border p-4 ${selectedId === block.blockId ? 'border-[#2271b1] ring-1 ring-[#2271b1]' : 'border-slate-200'}`}><div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b pb-2"><button type="button" aria-pressed={selectedId === block.blockId} onClick={() => choose(block.blockId)} className="text-xs font-bold uppercase text-slate-500">{coreCmsBlockRegistry.get(block.type)?.title || block.type} · Select</button><div className="flex gap-1"><Control label={`Move ${block.type} up`} disabled={index === 0} onClick={() => changeBlocks((blocks) => moveCmsEditorBlock(blocks, block.blockId, -1))}>↑</Control><Control label={`Move ${block.type} down`} disabled={index === draft.blocks.length - 1} onClick={() => changeBlocks((blocks) => moveCmsEditorBlock(blocks, block.blockId, 1))}>↓</Control><Control label={`Duplicate ${block.type}`} onClick={() => changeBlocks((blocks) => duplicateCmsEditorBlock(blocks, block.blockId))}>Duplicate</Control><Control label={`Delete ${block.type}`} onClick={() => remove(block.blockId)}>Delete</Control></div></div><BlockBody block={block} change={changeBlock} /></li>)}</ol>}
       </section>
-      <aside aria-label="Editor settings" className="h-fit border border-slate-200 bg-white"><div role="tablist" aria-label="Editor settings panels" className="grid grid-cols-2 border-b"><Tab active={panel === 'document'} onClick={() => setPanel('document')}>Document</Tab><Tab active={panel === 'block'} disabled={!selected} onClick={() => setPanel('block')}>Block</Tab></div><div className="p-5">{panel === 'block' && selected ? <BlockInspector block={selected} change={changeBlock} /> : <DocumentInspector page={{ ...page, status, currentDraftVersion: version }} draft={draft} change={changeDraft} />}</div><CmsPageRevisions pageId={page.pageId} siteId={page.siteId} version={version} dirty={dirty} onRestore={(restoredDraft, restoredVersion) => { setDraft(restoredDraft); setVersion(restoredVersion); setStatus('draft'); setDirty(false); setPreview(null); setSelectedId(null); setPanel('document'); setNotice({ kind: 'success', text: 'Revision restored as a new draft.' }); }} /></aside>
+      <aside aria-label="Editor settings" className="h-fit border border-slate-200 bg-white"><div role="tablist" aria-label="Editor settings panels" className="grid grid-cols-2 border-b"><Tab active={panel === 'document'} onClick={() => setPanel('document')}>Document</Tab><Tab active={panel === 'block'} disabled={!selected} onClick={() => setPanel('block')}>Block</Tab></div><div className="p-5">{panel === 'block' && selected ? <BlockInspector block={selected} change={changeBlock} /> : <DocumentInspector page={{ ...page, status, currentDraftVersion: version }} draft={draft} change={changeDraft} />}</div><PagePresentationFields draft={draft} change={changeDraft} /><CmsPageRevisions pageId={page.pageId} siteId={page.siteId} version={version} dirty={dirty} onRestore={(restoredDraft, restoredVersion) => { setDraft(restoredDraft); setVersion(restoredVersion); setStatus('draft'); setDirty(false); setPreview(null); setSelectedId(null); setPanel('document'); setNotice({ kind: 'success', text: 'Revision restored as a new draft.' }); }} /></aside>
     </div>
   </div></main>;
 }
@@ -97,6 +106,7 @@ function DocumentInspector({ page, draft, change }: { page: CmsPageEditorDocumen
 
 function BlockInspector({ block, change }: { block: CmsBlock; change: (id: string, update: BlockUpdate) => void }) {
   const patch = <T extends CmsBlock['type']>(type: T, props: Record<string, unknown>): BlockUpdate => (value) => value.type === type ? { ...value, props: { ...value.props, ...props } } as CmsBlock : value;
+  if (block.type === 'sunset/section') return <Panel title="Homepage section"><HomepageSectionFields block={block} change={(updated) => change(block.blockId, () => updated)} /></Panel>;
   if (block.type === 'core/heading') return <Panel title="Heading"><label className="block text-sm font-semibold">Level<select aria-label="Level" value={block.props.level} onChange={(e) => change(block.blockId, patch('core/heading', { level: Number(e.target.value) }))} className="mt-1 w-full rounded border px-3 py-2">{[1,2,3,4,5,6].map((n) => <option key={n} value={n}>Heading {n}</option>)}</select></label><Field label="HTML anchor" value={block.props.anchor || ''} onChange={(anchor) => change(block.blockId, patch('core/heading', { anchor: anchor || undefined }))} /></Panel>;
   if (block.type === 'core/image') return <Panel title="Image"><Field label="Image URL" value={block.props.src} onChange={(src) => change(block.blockId, patch('core/image', { src }))} /><Field label="Alternative text" value={block.props.alt} onChange={(alt) => change(block.blockId, patch('core/image', { alt }))} /><Field label="Caption" value={block.props.caption || ''} onChange={(caption) => change(block.blockId, patch('core/image', { caption: caption || undefined }))} /></Panel>;
   if (block.type === 'core/button') return <Panel title="Button"><Field label="Label" value={block.props.label} onChange={(label) => change(block.blockId, patch('core/button', { label }))} /><Field label="Link" value={block.props.href} onChange={(href) => change(block.blockId, patch('core/button', { href }))} /><label className="block text-sm font-semibold">Style<select aria-label="Style" value={block.props.style} onChange={(e) => change(block.blockId, patch('core/button', { style: e.target.value }))} className="mt-1 w-full rounded border px-3 py-2"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="text">Text</option></select></label></Panel>;

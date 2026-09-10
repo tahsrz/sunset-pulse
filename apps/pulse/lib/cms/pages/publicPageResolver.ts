@@ -30,8 +30,8 @@ export async function resolveTenantCmsRoute(
 export function metadataForCmsPage(context: CmsPageRenderContext): Metadata {
   const snapshot = context.page.snapshot;
   const pathname = context.page.routePath === 'home' ? '/' : `/${context.page.routePath}`;
-  const title = `${snapshot.title} | ${context.siteName}`;
-  const description = snapshot.excerpt || `${snapshot.title} from ${context.siteName}.`;
+  const title = snapshot.seo?.title || `${snapshot.title} | ${context.siteName}`;
+  const description = snapshot.seo?.description || snapshot.excerpt || `${snapshot.title} from ${context.siteName}.`;
   return {
     title,
     description,

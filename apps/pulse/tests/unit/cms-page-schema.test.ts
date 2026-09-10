@@ -4,6 +4,14 @@ import { cmsPageDraftSchema } from '@/lib/cms/pages/pageSchema';
 const blockId = '276fd207-2f8c-44f1-a958-9cbc641c1e4c';
 
 describe('CMS page schema', () => {
+  it('keeps old snapshots unchanged and accepts editable presentation and SEO', () => {
+    const old = cmsPageDraftSchema.parse({ title: 'Old', slug: 'old' });
+    expect(old).not.toHaveProperty('presentation');
+    expect(old).not.toHaveProperty('seo');
+    const next = cmsPageDraftSchema.parse({ ...old, presentation: { siteName: 'Our site', homeLabel: 'Start', navigationLabel: 'Explore', footerText: 'Our footer' }, seo: { title: 'Search title', description: 'Search summary' } });
+    expect(next.presentation?.footerText).toBe('Our footer');
+    expect(next.seo?.title).toBe('Search title');
+  });
   it('accepts ordered versioned core content blocks', () => {
     const draft = cmsPageDraftSchema.parse({
       title: 'About Sunset Pulse',

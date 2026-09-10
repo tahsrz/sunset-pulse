@@ -8,7 +8,7 @@ import {
   DEFAULT_CMS_THEME_ID,
   type ExtensionCatalog,
 } from '@/lib/cms/extensions/catalog';
-import { readPublishedCmsPage } from './pageService';
+import { readPublishedCmsPage, readCmsPagePreview } from './pageService';
 import { composeCmsBlockRegistry, bundledCmsPluginRuntimeCatalog, type CmsPluginRuntimeCatalog } from '@/lib/cms/extensions/runtimeCatalog';
 import type { CmsBlockRegistry } from './blockRegistry';
 
@@ -52,11 +52,39 @@ export async function buildCmsPageRenderContext(input: {
   catalog?: ExtensionCatalog;
   runtimeCatalog?: CmsPluginRuntimeCatalog;
 }): Promise<CmsPageRenderContext | null> {
+  return buildScopedCmsPageRenderContext({
+    tenantId: input.tenantContext.identity.tenantId,
+    siteId: input.tenantContext.identity.agentId,
+    requestId: input.tenantContext.requestId,
+    hostname: input.tenantContext.domain.hostname,
+    routePath: input.slug,
+    catalog: input.catalog,
+    runtimeCatalog: input.runtimeCatalog,
+  });
+}
+
+/** Shared composition for public host resolution and authenticated operator previews. */
+export async function buildScopedCmsPageRenderContext(input: {
+  tenantId: string;
+  siteId: string;
+  requestId: string;
+  hostname: string;
+  routePath?: string;
+  pageId?: string;
+  themeId?: string;
+  draftPreview?: boolean;
+  catalog?: ExtensionCatalog;
+  runtimeCatalog?: CmsPluginRuntimeCatalog;
+}): Promise<CmsPageRenderContext | null> {
   const catalog = input.catalog || bundledExtensionCatalog;
-  const tenantId = input.tenantContext.identity.tenantId;
-  const siteId = input.tenantContext.identity.agentId;
+  if (input.themeId && !catalog.getTheme(input.themeId)) throw new Error('CMS_THEME_NOT_FOUND');
+  const { tenantId, siteId } = input;
   const [page, site, themeActivation, pluginActivations] = await Promise.all([
-    readPublishedCmsPage({ tenantId, siteId, routePath: input.slug }),
+    input.draftPreview && input.pageId
+      ? readCmsPagePreview({ tenantId, siteId, pageId: input.pageId }).then((draft) => draft ? ({
+          pageId: draft.pageId, routePath: draft.routePath, revisionNumber: draft.currentDraftVersion, snapshot: draft.draftPayload,
+        }) : null)
+      : readPublishedCmsPage({ tenantId, siteId, ...(input.pageId ? { pageId: input.pageId } : { routePath: input.routePath }) }),
     SiteConfig.findOne({ agentId: siteId }).select('agentId branding.siteName activeVibeRevisionId').lean() as Promise<any>,
     SiteThemeActivation.findOne({ tenantId, siteId }).lean() as Promise<any>,
     SitePluginActivation.find({ tenantId, siteId, status: 'active' }).sort({ pluginId: 1 }).lean() as Promise<any[]>,
@@ -64,14 +92,14 @@ export async function buildCmsPageRenderContext(input: {
   if (!page || !site) return null;
 
   const diagnostics: string[] = [];
-  const requestedThemeId = themeActivation?.themeId || DEFAULT_CMS_THEME_ID;
+  const requestedThemeId = input.themeId || themeActivation?.themeId || DEFAULT_CMS_THEME_ID;
   let theme = catalog.getTheme(requestedThemeId);
   if (!theme) {
     diagnostics.push(`ACTIVE_THEME_UNAVAILABLE:${requestedThemeId}`);
     theme = catalog.getTheme(DEFAULT_CMS_THEME_ID);
   }
   if (!theme) throw new Error('DEFAULT_CMS_THEME_UNAVAILABLE');
-  if (themeActivation && themeActivation.version !== theme.version) {
+  if (!input.themeId && themeActivation && themeActivation.version !== theme.version) {
     diagnostics.push(`ACTIVE_THEME_VERSION_MISMATCH:${requestedThemeId}`);
   }
 
@@ -111,11 +139,11 @@ export async function buildCmsPageRenderContext(input: {
   }
 
   return Object.freeze({
-    requestId: input.tenantContext.requestId,
+    requestId: input.requestId,
     tenantId,
     siteId,
     siteName: site.branding?.siteName || site.agentId,
-    hostname: input.tenantContext.domain.hostname,
+    hostname: input.hostname,
     page,
     theme,
     vibe,

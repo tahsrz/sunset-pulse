@@ -43,6 +43,15 @@ export const bundledExtensionCatalog = createExtensionCatalog({
     author: 'Sunset Pulse',
     templates: { page: 'sunset/page' },
     templateParts: { header: 'sunset/header', footer: 'sunset/footer' },
-    supportedBlocks: ['core/heading', 'core/paragraph', 'core/image', 'core/button'],
+    supportedBlocks: ['core/heading', 'core/paragraph', 'core/image', 'core/button', 'sunset/section'],
+  }, {
+    id: 'sunset/editorial',
+    name: 'Sunset Editorial',
+    version: '1.0.0',
+    description: 'A quiet reading layout with a centered masthead, serif titles, and generous spacing.',
+    author: 'Sunset Pulse',
+    templates: { page: 'sunset/editorial-page' },
+    templateParts: { header: 'sunset/editorial-header', footer: 'sunset/editorial-footer' },
+    supportedBlocks: ['core/heading', 'core/paragraph', 'core/image', 'core/button', 'sunset/section'],
   }],
 });

@@ -34,6 +34,7 @@ export function deleteCmsEditorBlock(blocks: readonly CmsBlock[], blockId: strin
 function defaultBlock(type: string, blockId: string): unknown {
   const base = { blockId, version: 1 as const };
   switch (type) {
+    case 'sunset/section': return { ...base, type, props: { layout: 'story', eyebrow: '', heading: 'New section', text: '', actionLabel: '', actionHref: '', items: [] } };
     case 'core/heading': return { ...base, type, props: { text: 'New heading', level: 2 } };
     case 'core/paragraph': return { ...base, type, props: { text: 'Start writing…' } };
     case 'core/image': return { ...base, type, props: { src: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa', alt: '', width: 1200, height: 800 } };

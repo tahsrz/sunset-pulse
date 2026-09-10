@@ -1,6 +1,8 @@
 import React, { createElement, type ReactNode } from 'react';
 import Image from 'next/image';
 import { z } from 'zod';
+import { homepageSectionSchema } from './homepageSectionSchema';
+import { HomepageSection } from './HomepageSection';
 import {
   buttonBlockSchema,
   headingBlockSchema,
@@ -36,6 +38,14 @@ export type CmsBlockRegistry = ReturnType<typeof createCmsBlockRegistry>;
 const identityMigration = (block: unknown) => block;
 
 export const coreCmsBlockRegistry = createCmsBlockRegistry([
+  {
+    type: 'sunset/section',
+    title: 'Homepage section',
+    schema: homepageSectionSchema,
+    latestVersion: 1,
+    migrate: identityMigration,
+    render: (block: z.infer<typeof homepageSectionSchema>) => <HomepageSection block={block} />,
+  },
   {
     type: 'core/heading',
     title: 'Heading',

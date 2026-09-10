@@ -15,7 +15,7 @@ vi.mock('@/models/SitePluginActivation', () => ({ default: { find: mocks.pluginF
 vi.mock('@/models/VibeRevision', () => ({ default: { findOne: mocks.vibeFindOne } }));
 
 import { createExtensionCatalog, bundledExtensionCatalog, DEFAULT_CMS_THEME_ID } from '@/lib/cms/extensions/catalog';
-import { buildCmsPageRenderContext, resolveCmsPageRenderContext } from '@/lib/cms/pages/renderContext';
+import { buildCmsPageRenderContext, buildScopedCmsPageRenderContext, resolveCmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import type { TenantContext } from '@/lib/tenancy/contracts';
 
 const tenantContext = {
@@ -32,6 +32,17 @@ function selected(value: unknown) {
 }
 
 describe('CMS page rendering context', () => {
+  it('previews the selected theme against the scoped published page and pinned Vibe', async () => {
+    const context = await buildScopedCmsPageRenderContext({ tenantId: 'tenant-id', siteId: 'site-id', pageId: 'page-id', themeId: 'sunset/editorial', requestId: 'preview', hostname: '' });
+    expect(mocks.readPublishedPage).toHaveBeenCalledWith({ tenantId: 'tenant-id', siteId: 'site-id', pageId: 'page-id' });
+    expect(context?.theme.id).toBe('sunset/editorial');
+    expect(context?.vibe?.revisionId).toBe('vibe-revision-id');
+    expect(context?.diagnostics).toEqual([]);
+  });
+  it('rejects an unknown preview theme before loading site content', async () => {
+    await expect(buildScopedCmsPageRenderContext({ tenantId: 't', siteId: 's', pageId: 'p', themeId: 'missing/theme', requestId: 'r', hostname: '' })).rejects.toThrow('CMS_THEME_NOT_FOUND');
+    expect(mocks.readPublishedPage).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.readPublishedPage.mockResolvedValue({ pageId: 'page-id', routePath: 'about', snapshot: { title: 'About', slug: 'about', blocks: [] } });
