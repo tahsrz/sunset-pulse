@@ -16,6 +16,18 @@ const page: CmsPageEditorDocument = {
 };
 
 describe('CMS page block canvas', () => {
+  it('undoes local edits and warns before leaving without making a persistence request', () => {
+    const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
+    render(<CmsPageEditor page={page} pagesHref="/vibes/pages?siteId=site-a" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'New title' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('About');
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('New title');
+    const leave = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(leave);
+    expect(leave.defaultPrevented).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it('does not mark edits made during an in-flight save as saved', async () => {
     let resolveSave!: (value: unknown) => void;
     vi.stubGlobal('fetch', vi.fn(() => new Promise((resolve) => { resolveSave = resolve; })));

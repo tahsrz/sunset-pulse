@@ -1,7 +1,7 @@
 # Homepage and theme expansion — Luna execution plan
 
-Planning baseline: September 10, 2026. Status: proposed implementation, no application
-changes made by this planning task. This document expands E4 in
+Planning baseline: September 10, 2026. Status: implementation in progress; see section 16
+for the verified checkpoint and remaining work. This document expands E4 in
 `VIBE_CMS_WORDPRESS_UI_PLAN.md`; it does not supersede existing publication contracts.
 
 ## 1. Outcome and scope
@@ -247,17 +247,20 @@ provider migration, or global application redesign is needed for this deliverabl
 
 | Package | Status | Evidence needed |
 | --- | --- | --- |
-| H0 inventory | Planned | Content destinations, route map, visual baseline |
-| E4 theme/preview | Planned | Two runtimes, real preview, activation tests |
-| H1 composition | Planned | Updated orchestration and utility strip |
-| H2 hero/cards | Planned | Server markup and responsive navigation |
+| H0 inventory | Partial | Source inventory below; full original/public visual baseline remains |
+| E4 theme/preview | Implemented; visual acceptance pending | Two runtimes, manifest parts, published and live preview tests |
+| C1 editable content/scope | Partial | Typed sections, page-specific chrome, SEO, dedicated platform binding; shared site-content revisions remain |
+| C2 live preview transport | Partial | Ready handshake, ordered local updates, real theme renderer; listing snapshot and measured browser latency remain |
+| C3 editing/persistence | Partial | Versioned saves, local undo/redo, tab-close warning; split workspace and field focus remain |
+| H1 composition | Partial | Opt-in platform root orchestration; full utility/supporting content composition remains |
+| H2 hero/cards | Partial | Server-compatible structured sections and starter destinations; final homepage visual review remains |
 | H3 supporting content | Planned | Listing failure/empty evidence and content review |
 | H4 world/performance | Planned | Deferred loading and comparable measurements |
 | H5 tenant homepages | Planned | Existing lifecycle and scope behavior |
 | H6 verification | Planned | Focused tests, visual evidence, README/handoff |
 
-Update each row only after its acceptance criteria are met. The plan is ready for
-implementation under the user's requested direction; code has not changed here.
+Update each row only after its acceptance criteria are met. An implementation checkpoint
+does not authorize publication or mean the final homepage acceptance criteria are complete.
 
 ## 15. Required amendment — all authored text editable, real-time draft preview
 
@@ -369,6 +372,117 @@ footer edits require explicit scope: page-specific override versus site-wide con
 - Verify both the platform homepage scope and a controlled tenant scope without cross-site edits.
 - Audit the final rendered authored strings against the editable-copy inventory before marking done.
 
-Add C1, C2, and C3 to the completion ledger as Planned. H1 cannot be marked complete until
+Track C1, C2, and C3 individually in the completion ledger. H1 cannot be marked complete until
 its production content is backed by these contracts. An editable hero alone does not meet
 the all-text requirement.
+
+## 16. Implementation checkpoint — September 10, 2026
+
+Work stayed on `codex/cms-vertical-slice-followup`, without subagents, CI/PR polling,
+deployment, or production content writes. The starter is opt-in, not an automatic migration.
+
+### Implemented decisions and code anchors
+
+1. `runtimeRegistry.tsx` resolves each manifest's actual template parts. Core and Editorial
+   share the content renderer but have different layout/type treatments. Theme selection
+   in either preview does not activate a theme. `/cms-preview` is an exact isolated shell
+   route; it does not remove the shell from adjacent CMS routes.
+2. `LiveDraftPreview.tsx`, `LivePreviewFrame.tsx`, and `livePreviewContract.ts` carry validated
+   local draft snapshots over a ready/ordered-update handshake. Normal typing does not fetch
+   or save. Reconnection sends the newest draft. Invalid input stays in the editor while
+   preview retains the last valid whole snapshot. Preview navigation/forms are suppressed;
+   FAQ disclosures still work. No sub-100ms browser measurement has been claimed.
+3. `pageSchema.ts`, `homepageSectionSchema.ts`, and `HomepageSectionFields.tsx` support bounded
+   hero/destinations/story/FAQ/closing blocks. Existing core block snapshots remain valid.
+   Optional presentation/SEO/link fields do not add defaults to old snapshots or change their
+   parsed content hashes. Presentation edits are explicitly **page-specific**, not site-wide.
+4. `CmsPlatformHomepage.ts` stores a dedicated singleton binding, not a customer's tenant.
+   `initializePlatformHomepage()` generates its scope once and uses insert-only upserts for
+   binding, SiteConfig, and draft. A partial setup can be retried without overwriting edits.
+   The new draft contains new starter copy, not a byte-for-byte migration of the old homepage.
+5. `/vibes/homepage` exposes explicit setup, editing, themes, publication, and two-step
+   restoration of the original homepage. `/api/platform-homepage` uses existing operator
+   access. Reads never initialize content. No seed ID or secret needs to be pasted into code.
+6. `publishPlatformHomepage()` passes a callback into `publishCmsPageRevision()` so the
+   immutable revision, page publication, and platform binding CAS happen in the same Mongo
+   transaction. Both draft and binding versions are required. The transaction tests use
+   mocked sessions; a real replica-set commit/abort test remains acceptance work.
+7. `platformHomepageReader.ts` uses request-local React caching and a pinned immutable
+   revision. Saving/restoring a new draft cannot replace that live root revision. Disabled,
+   missing, invalid, or unavailable content falls back to the original homepage. The read
+   has a two-second response budget; it does **not** cancel an already-running driver query.
+   There is no added Supabase cache or per-keystroke property read.
+8. `app/page.tsx` reads the optional CMS root and metadata before the unchanged legacy flow.
+   `app/layout.tsx` avoids duplicate marketing chrome when that root is active, retains the
+   TREC notice, and reuses `ComplianceLinks.tsx` from the existing footer. Legal links remain
+   independently owned and cannot be removed by a page draft.
+9. `CmsPageEditorLoader.tsx`, `CmsPageEditor.tsx`, and `CmsPageRevisions.tsx` carry tenant scope
+   through load/save/preview/revision restore. A scope change remounts the correct editor,
+   and aborted reads cannot overwrite its state. In-flight saves retain newer local edits.
+10. `draftHistory.ts` keeps at most 50 local undo/redo snapshots; restoration starts a fresh
+    history. Undo/redo is local, never a database rollback. Dirty state is conservative:
+    undoing back to an earlier saved value can still require Save. Tab close/reload gets a
+    browser warning; interception of internal Next navigation is still pending.
+
+### Editable-copy inventory for the current structured renderer
+
+| Public content | Draft path | Operator control |
+| --- | --- | --- |
+| Page h1 and introductory copy | `title`, `excerpt` | Document → Title/Excerpt |
+| Site title and home link | `presentation.siteName`, `.homeLabel` | Header and footer |
+| Navigation accessible label | `presentation.navigationLabel` | Header and footer |
+| Navigation links | `presentation.navigationLinks[].label/href` | Navigation links → add/edit/remove |
+| Footer copy and links | `presentation.footerText`, `.footerLinks[].label/href` | Footer text / Footer links |
+| Section eyebrow/heading/body | `blocks[].props.eyebrow/heading/text` | Select Homepage section → Block |
+| Section action | `blocks[].props.actionLabel/actionHref` | Section action text/destination |
+| Destination card and FAQ copy | `blocks[].props.items[].title/text/linkLabel/href` | Section item fields |
+| Other headings/paragraphs/buttons | Existing core block props | Canvas and Block settings |
+| Image description/caption | `core/image.props.alt/caption` | Image Block settings |
+| Search title/description | `seo.title/description` | Search appearance |
+| TREC/IABS disclosures | Existing notice and shared `ComplianceLinks.tsx` | Existing legal ownership; not CMS-overridable |
+| Property facts/status/account identity | Existing property/account authorities | Not rewritten through homepage copy fields |
+
+### Original-content map and explicit unfinished items
+
+- Explorer, Properties, IDX, Grill, Atlas, property creation, and Jamie keep real destination
+  links. Jamie uses `getJamieGuideUrl()`, not an invented path. World of Tah is linked at its
+  existing `/worldoftah` route; it is not a claim that VirtualWorldHub has been migrated.
+- Legacy CinematicHero, VirtualWorldHub, AnimalOfDay, history, architecture, property stage,
+  and operator research-desk visibility remain untouched in the original fallback.
+- The **replacement starter still lacks** the operator-only utility strip, curated property
+  section, visitor-activated world, and retained compact animal/history/architecture features.
+  Do not mark H1/H3/H4 complete or publish it as the finished redesign until those are handled.
+- Shared site-wide navigation/footer draft/revisions remain C1/C3 work. Current page overrides
+  must not be described as global navigation editing. Theme activation remains its own explicit
+  site-level operation; publishing a page does not publish a preview-only theme selection.
+- C3 still needs side-by-side/full-screen preview modes, narrow-screen editing tabs, clicking
+  preview text to focus its field, and internal-navigation dirty-state confirmation.
+- H5 still needs the tenant homepage create/edit workflow and repeatable scoped verification.
+- H6 still needs database-backed save/publish/reload/restore, public vs preview screenshot
+  comparison, 320px/zoom/keyboard checks for the final page, and measured preview latency.
+
+### Verification evidence
+
+- 18 focused suites, **91/91 tests passing**, covering themes, preview transport, section and
+  link editing, page schema/lifecycle, platform read/service/routes, scope, revisions, history,
+  and preview response headers. No tests removed.
+- Full TypeScript checking still reports 36 errors in unrelated test files. The final scoped
+  check reported none in `app/`, `components/`, `lib/`, `models/`, or `tests/unit/cms-*`.
+  Three new test query-option errors discovered during this pass were corrected.
+- Local Next dev server in mock mode compiled `/cms-preview`, Appearance, and `/vibes/homepage`.
+  Desktop and 390px phone screenshots inspected for the **uninitialized homepage workspace**;
+  the setup action was not clicked. Browser API interception was attempted, but server logs
+  showed homepage GETs reaching the local server, so this is not isolated-fixture evidence.
+  No initialization/publication/restore request was executed. This is not production lifecycle
+  or final-public-design verification.
+- Existing global market/navigation chrome is still present around the admin workspace,
+  including its mobile market strip overflow. This slice does not claim to redesign it.
+- Prettier's configured Tailwind plugin was unavailable locally. Only touched implementation
+  files were formatted using `--no-config --single-quote`; no package install/config change.
+
+### Next executable package
+
+Finish C1 site-content revision scope and C3 split editor before final H1 composition.
+Then add the retained operator utility entry and bounded H3 listing snapshot to the same
+public/preview context. Keep H4's world import visitor-activated. Preserve the explicit
+platform publication binding and the unchanged fallback throughout those steps.

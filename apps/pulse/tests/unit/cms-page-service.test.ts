@@ -198,6 +198,24 @@ describe('CMS page lifecycle service', () => {
     expect(mocks.endSession).toHaveBeenCalledOnce();
   });
 
+  it('runs the publication hook inside the transaction and propagates failure before commit', async () => {
+    const page = { draftPayload: draft, status: 'draft', save: vi.fn().mockResolvedValue(undefined) };
+    mocks.pageFindOne.mockReturnValue({ session: vi.fn().mockResolvedValue(page) });
+    mocks.revisionFindOne.mockReturnValue({ sort: vi.fn().mockReturnValue({ session: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }) }) });
+    const committed = vi.fn();
+    mocks.withTransaction.mockImplementation(async callback => { await callback(); committed(); });
+    const onPublished = vi.fn(async (revision, session) => {
+      expect(revision._id).toBe('revision-id');
+      expect(page.save).toHaveBeenCalledWith({ session });
+      expect(committed).not.toHaveBeenCalled();
+      throw new Error('PLATFORM_HOMEPAGE_CONFLICT');
+    });
+    await expect(publishCmsPageRevision({ tenantId: 'platform', siteId: 'site', pageId: 'home', actorId: 'operator', expectedVersion: 2, onPublished })).rejects.toThrow('PLATFORM_HOMEPAGE_CONFLICT');
+    expect(onPublished).toHaveBeenCalledOnce();
+    expect(committed).not.toHaveBeenCalled();
+    expect(mocks.endSession).toHaveBeenCalledOnce();
+  });
+
   it('moves pages to trash without erasing their published revision', async () => {
     mocks.pageFindOneAndUpdate.mockReturnValue(leanResult({ status: 'trash' }));
     await trashCmsPage({ tenantId: 'tenant', siteId: 'site', pageId: 'page-id', actorId: 'actor' });

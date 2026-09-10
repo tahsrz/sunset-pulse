@@ -6379,6 +6379,14 @@ theme runtime with the current published page before activation.
 
 #### E4 next slice — second theme and live preview (execution plan, September 10, 2026)
 
+Implementation checkpoint: two bundled layouts, manifest-resolved parts, published-page
+theme preview, and unsaved-draft preview transport are now implemented with focused tests.
+The dedicated opt-in platform homepage editor and page-specific navigation/footer controls
+are also implemented. The larger homepage plan is **not complete**: use section 16 and the
+completion ledger in `VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md` for exact evidence,
+remaining C1/C3/H1–H6 work, and the next executable package. No production publication or
+final public-page visual acceptance is implied by this checkpoint.
+
 Status: planned, not implemented. Execute steps 1–6 in order. Estimated implementation
 effort: 5–7 hours, including focused verification. Completion means an operator can preview
 the same published page in either bundled theme and explicitly activate the chosen theme.

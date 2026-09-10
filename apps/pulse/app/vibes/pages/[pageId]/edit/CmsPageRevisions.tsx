@@ -6,22 +6,23 @@ import { cmsPageDraftSchema, type CmsPageDraft } from '@/lib/cms/pages/pageSchem
 type Revision = { _id: string; revisionNumber: number; changeSummary?: string; publishedAt?: string; createdBy?: string };
 type Payload = { error?: unknown; revisions?: unknown; page?: unknown };
 
-export function CmsPageRevisions({ pageId, siteId, version, dirty, onRestore }: { pageId: string; siteId: string; version: number; dirty: boolean; onRestore: (draft: CmsPageDraft, version: number) => void }) {
+export function CmsPageRevisions({ pageId, siteId, tenantId, version, refreshKey = 0, dirty, onRestore }: { pageId: string; siteId: string; tenantId?: string; version: number; refreshKey?: number; dirty: boolean; onRestore: (draft: CmsPageDraft, version: number) => void }) {
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error' | 'restoring'>('loading');
   const [message, setMessage] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const endpoint = `/api/vibes/pages/${encodeURIComponent(pageId)}/revisions?siteId=${encodeURIComponent(siteId)}`;
+  const endpoint = `/api/vibes/pages/${encodeURIComponent(pageId)}/revisions?siteId=${encodeURIComponent(siteId)}${tenantId ? '&tenantId=' + encodeURIComponent(tenantId) : ''}`;
 
   useEffect(() => {
     const controller = new AbortController();
+    setState('loading'); setRevisions([]); setMessage(''); setConfirmId(null);
     fetch(endpoint, { signal: controller.signal }).then(async (response) => {
       const payload = await readPayload(response);
       if (!response.ok) throw new Error(errorText(payload, 'Revision history could not be loaded.'));
-      setRevisions(readRevisions(payload?.revisions)); setState('ready');
-    }).catch((error: Error) => { if (error.name !== 'AbortError') { setMessage(error.message); setState('error'); } });
+      if (!controller.signal.aborted) { setRevisions(readRevisions(payload?.revisions)); setState('ready'); }
+    }).catch((error: Error) => { if (!controller.signal.aborted) { setMessage(error.message); setState('error'); } });
     return () => controller.abort();
-  }, [endpoint]);
+  }, [endpoint, version, refreshKey]);
 
   async function restore(revisionId: string) {
     setState('restoring'); setMessage('');

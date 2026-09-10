@@ -3,6 +3,8 @@ import { SiteConfig } from '@/models/SiteConfig';
 import SitePluginActivation from '@/models/SitePluginActivation';
 import SiteThemeActivation from '@/models/SiteThemeActivation';
 import VibeRevision from '@/models/VibeRevision';
+import CmsPageRevision from '@/models/CmsPageRevision';
+import { cmsPageDraftSchema } from './pageSchema';
 import {
   bundledExtensionCatalog,
   DEFAULT_CMS_THEME_ID,
@@ -73,6 +75,7 @@ export async function buildScopedCmsPageRenderContext(input: {
   pageId?: string;
   themeId?: string;
   draftPreview?: boolean;
+  publishedRevisionId?: string;
   catalog?: ExtensionCatalog;
   runtimeCatalog?: CmsPluginRuntimeCatalog;
 }): Promise<CmsPageRenderContext | null> {
@@ -80,7 +83,12 @@ export async function buildScopedCmsPageRenderContext(input: {
   if (input.themeId && !catalog.getTheme(input.themeId)) throw new Error('CMS_THEME_NOT_FOUND');
   const { tenantId, siteId } = input;
   const [page, site, themeActivation, pluginActivations] = await Promise.all([
-    input.draftPreview && input.pageId
+    input.publishedRevisionId && input.pageId
+      ? CmsPageRevision.findOne({ _id: input.publishedRevisionId, tenantId, siteId, pageId: input.pageId, publishedAt: { $exists: true, $ne: null } })
+          .select('_id pageId revisionNumber snapshot').lean().then((revision: any) => revision ? ({
+            ...revision, routePath: 'home', snapshot: cmsPageDraftSchema.parse(revision.snapshot),
+          }) : null)
+      : input.draftPreview && input.pageId
       ? readCmsPagePreview({ tenantId, siteId, pageId: input.pageId }).then((draft) => draft ? ({
           pageId: draft.pageId, routePath: draft.routePath, revisionNumber: draft.currentDraftVersion, snapshot: draft.draftPayload,
         }) : null)

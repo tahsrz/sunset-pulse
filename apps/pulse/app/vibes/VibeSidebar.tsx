@@ -33,10 +33,11 @@ const primaryItems: NavigationItem[] = [
   { href: '/vibes/pages/new', label: 'Add Page', icon: FileText },
   { href: '/vibes/taxonomy', label: 'Taxonomy', icon: Tags },
   { href: '/vibes/appearance', label: 'Appearance', icon: Palette },
+  { href: '/vibes/homepage', label: 'Homepage', icon: FileText },
 ];
 
 const vibePathPattern = /^\/vibes\/([^/]+)/;
-const nonVibeSegments = new Set(['new', 'taxonomy', 'pages', 'appearance']);
+const nonVibeSegments = new Set(['new', 'taxonomy', 'pages', 'appearance', 'homepage']);
 
 function getVibeId(pathname: string) {
   const match = pathname.match(vibePathPattern);

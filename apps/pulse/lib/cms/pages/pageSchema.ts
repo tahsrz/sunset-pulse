@@ -57,11 +57,17 @@ export const cmsBlockSchema = z.discriminatedUnion('type', [
 ]);
 
 // Optional additions preserve old snapshots and their content hashes.
+const presentationLinkSchema = z.object({
+  label: z.string().max(100),
+  href: linkSchema,
+}).strict();
 export const pagePresentationSchema = z.object({
   siteName: z.string().max(200),
   homeLabel: z.string().max(100),
   navigationLabel: z.string().max(100),
   footerText: z.string().max(2000),
+  navigationLinks: z.array(presentationLinkSchema).max(8).optional(),
+  footerLinks: z.array(presentationLinkSchema).max(8).optional(),
 }).strict();
 
 export const cmsPageStatusSchema = z.enum(['draft', 'published', 'trash']);

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import React, { type ReactNode } from 'react';
 import { cmsThemeStyle } from './themeStyles';
+import { PresentationLinks } from './PresentationLinks';
 import type { CmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import { renderCmsPageBlocks } from '@/lib/cms/pages/blockRegistry';
 
@@ -13,9 +14,9 @@ export function SunsetHeaderPart(context: CmsPageRenderContext) {
   const text = context.page.snapshot.presentation;
   return (
     <header className="border-b border-current/10 bg-[var(--color-surface,#f8fafc)]" data-cms-template-part="sunset/header">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
         <Link href="/" className="font-bold text-[var(--color-primary,currentColor)]">{text?.siteName ?? context.siteName}</Link>
-        <nav aria-label={text?.navigationLabel ?? 'Site navigation'}><Link href="/" className="text-sm opacity-70 hover:opacity-100">{text?.homeLabel ?? 'Home'}</Link></nav>
+        <nav aria-label={text?.navigationLabel ?? 'Site navigation'} className="flex flex-wrap items-center gap-5"><Link href="/" className="inline-flex min-h-11 items-center text-sm opacity-70 hover:opacity-100">{text?.homeLabel ?? 'Home'}</Link><PresentationLinks links={text?.navigationLinks} /></nav>
       </div>
     </header>
   );
@@ -25,6 +26,7 @@ export function SunsetFooterPart(context: CmsPageRenderContext) {
   return (
     <footer className="border-t border-current/10 bg-[var(--color-surface,#f8fafc)]" data-cms-template-part="sunset/footer">
       <div className="mx-auto w-full max-w-5xl whitespace-pre-wrap px-5 py-8 text-sm opacity-70 sm:px-8 lg:px-10">{context.page.snapshot.presentation?.footerText ?? context.siteName}</div>
+      <div className="px-5 pb-8"><PresentationLinks links={context.page.snapshot.presentation?.footerLinks} /></div>
     </footer>
   );
 }

@@ -4,6 +4,55 @@ Sunset Pulse is a Next.js 15 real estate intelligence platform for property disc
 
 ## Current Status
 
+### Editable homepage and theme workspace
+
+Implementation is in progress under [the homepage/theme plan](docs/VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md).
+Operators can open `/vibes/homepage` to explicitly create a dedicated platform homepage draft,
+edit structured sections, page-specific navigation/footer links and SEO, and open a live
+unsaved preview in either bundled theme. The editor supports local undo/redo and versioned
+saves. Preview theme selection does not activate it; Save draft does not update the live root.
+
+Publishing pins an immutable homepage revision through the existing Mongo transaction;
+restoring the original homepage preserves the CMS draft and history. Nothing initializes or
+publishes automatically. Existing TREC/IABS disclosures are retained outside editable copy.
+The starter is not the finished redesign: shared site-wide copy, listings, deferred world,
+split-preview polish, and database-backed/public visual acceptance remain in the plan.
+
+#### Operator workflow
+
+1. Open **Vibes → Homepage** (`/vibes/homepage`) with operator access. Select **Create homepage
+   draft** only when you want to provision the dedicated platform scope. **Resume draft setup**
+   retries an incomplete setup without replacing existing edits. Neither action publishes.
+2. Edit Title/Excerpt in Document settings. Insert a **Homepage section**, select it, and edit
+   its heading, body, actions, cards, or FAQ items in Block settings. Header/footer controls
+   affect this page only; they are not shared site-wide settings.
+3. Select **Open live preview**. Text updates from local editor state without saving or issuing
+   per-keystroke database requests. Preview either theme at desktop, tablet, or phone width.
+   Invalid intermediate fields stay in the editor; the frame keeps the last valid draft.
+4. Use **Undo/Redo** for local edits, then **Save draft**. The editor checks the saved version
+   and preserves newer typing if a save is still in flight. Closing/reloading a dirty draft
+   warns; confirmation for internal application navigation is still unfinished.
+5. Select **Publish** only when the saved draft is ready to replace the public root. Publication
+   checks both draft and homepage-binding versions in one Mongo transaction. Use **View live
+   homepage** to inspect the result. Previewing a theme does not activate it; **Choose homepage
+   theme** opens the separate site-level activation workflow.
+6. To revert the root, select **Restore original homepage**, then confirm. The CMS draft and
+   published revisions remain available. Revision restoration creates a draft and does not
+   replace the platform's live revision until another explicit Publish.
+
+#### Verification and remaining work
+
+September 10 checkpoint: **91/91 tests passed across 18 focused suites**. Full-project
+TypeScript checking still reports 36 errors in unrelated tests, with none in the checked
+application or CMS test files. Desktop and 390px phone views of the uninitialized workspace
+were inspected locally; real database publication/rollback and final homepage visual parity
+are not yet verified. No production content was initialized or published in this pass.
+
+Follow [section 16 of the execution plan](docs/VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md#16-implementation-checkpoint--september-10-2026)
+for the content ownership map, exact implementation decisions, verification limitations, and
+remaining packages. Next: shared site-content revisions and split editor, then the retained
+operator utility entry, bounded listing snapshot, and visitor-activated world.
+
 The current profit-focused execution brief is [`../../docs/profit-sprint-2026-08-24.md`](../../docs/profit-sprint-2026-08-24.md).
 
 - **Status:** 🟢 Alpha Maturation // Supabase Hegemony

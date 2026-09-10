@@ -3,15 +3,17 @@ import type { CmsPageRenderContext } from '@/lib/cms/pages/renderContext';
 import { renderCmsPageBlocks } from '@/lib/cms/pages/blockRegistry';
 import type { SunsetPageTemplateParts } from './SunsetPageTemplate';
 import { cmsThemeStyle } from './themeStyles';
+import { PresentationLinks } from './PresentationLinks';
 
 export function EditorialHeaderPart(context: CmsPageRenderContext) {
   return <header data-cms-template-part="sunset/editorial-header" className="mx-auto max-w-6xl border-b border-current/20 px-6 py-8 text-center">
     <a href="/" className="text-2xl tracking-tight" style={{ fontFamily: 'var(--font-family-heading, Georgia, serif)' }}>{context.page.snapshot.presentation?.siteName ?? context.siteName}</a>
+    {context.page.snapshot.presentation ? <nav aria-label={context.page.snapshot.presentation.navigationLabel} className="mt-4"><PresentationLinks links={[{ label: context.page.snapshot.presentation.homeLabel, href: '/' }, ...(context.page.snapshot.presentation.navigationLinks || [])]} /></nav> : null}
   </header>;
 }
 
 export function EditorialFooterPart(context: CmsPageRenderContext) {
-  return <footer data-cms-template-part="sunset/editorial-footer" className="mx-auto mt-16 max-w-6xl whitespace-pre-wrap border-t border-current/20 px-6 py-10 text-center text-sm">{context.page.snapshot.presentation?.footerText ?? context.siteName}</footer>;
+  return <footer data-cms-template-part="sunset/editorial-footer" className="mx-auto mt-16 max-w-6xl whitespace-pre-wrap border-t border-current/20 px-6 py-10 text-center text-sm"><p className="mb-4">{context.page.snapshot.presentation?.footerText ?? context.siteName}</p><PresentationLinks links={context.page.snapshot.presentation?.footerLinks} /></footer>;
 }
 
 export function EditorialPageTemplate({ context, parts }: { context: CmsPageRenderContext; parts: SunsetPageTemplateParts }) {

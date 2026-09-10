@@ -16,6 +16,18 @@ const page = {
 describe('CMS page editor load boundary', () => {
   beforeEach(() => { query = 'siteId=site-a'; });
   afterEach(() => vi.unstubAllGlobals());
+  it('carries an explicit tenant scope into loading and subsequent saves', async () => {
+    query = 'siteId=site-a&tenantId=platform';
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ page: { ...page, tenantId: 'platform' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CmsPageEditorLoader pageId="page-1" />);
+    await screen.findByRole('heading', { name: 'About', level: 1 });
+    expect(fetchMock).toHaveBeenCalledWith('/api/vibes/pages/page-1?siteId=site-a&tenantId=platform', expect.anything());
+    expect(screen.getByRole('link', { name: /All Pages/ })).toHaveAttribute('href', '/vibes/pages?siteId=site-a&tenantId=platform');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'New homepage' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/vibes/pages/page-1?siteId=site-a&tenantId=platform', expect.objectContaining({ method: 'PATCH' })));
+  });
 
   it('loads the current draft and document summary', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ page }) }));

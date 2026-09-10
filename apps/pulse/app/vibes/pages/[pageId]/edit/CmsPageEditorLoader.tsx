@@ -18,6 +18,11 @@ type LoadState =
 export function CmsPageEditorLoader({ pageId }: { pageId: string }) {
   const searchParams = useSearchParams();
   const siteId = searchParams.get('siteId')?.trim() || '';
+  const tenantId = searchParams.get('tenantId')?.trim() || 'default';
+  return <ScopedEditorLoader key={JSON.stringify([tenantId, siteId, pageId])} pageId={pageId} siteId={siteId} tenantId={tenantId} />;
+}
+
+function ScopedEditorLoader({ pageId, siteId, tenantId }: { pageId: string; siteId: string; tenantId: string }) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
 
@@ -25,25 +30,25 @@ export function CmsPageEditorLoader({ pageId }: { pageId: string }) {
     if (!siteId) return;
     const controller = new AbortController();
     setState({ kind: 'loading' });
-    fetch(`/api/vibes/pages/${encodeURIComponent(pageId)}?siteId=${encodeURIComponent(siteId)}`, { signal: controller.signal })
+    fetch(`/api/vibes/pages/${encodeURIComponent(pageId)}?siteId=${encodeURIComponent(siteId)}&tenantId=${encodeURIComponent(tenantId)}`, { signal: controller.signal })
       .then(async (response) => {
         const payload = await readJson(response);
         if (response.status === 404) return { kind: 'not-found', message: errorMessage(payload, 'Page not found.') } as LoadState;
         if (response.status === 409) return { kind: 'conflict', message: errorMessage(payload, 'Page changed while it was loading.') } as LoadState;
         if (!response.ok) return { kind: 'error', message: errorMessage(payload, `Unable to load page (${response.status}).`) } as LoadState;
         const page = parsePage(payload?.page);
-        return page
-          ? { kind: 'ready', page } as LoadState
+        return page && page.siteId === siteId && page.pageId === pageId && (!page.tenantId || page.tenantId === tenantId)
+          ? { kind: 'ready', page: { ...page, tenantId } } as LoadState
           : { kind: 'malformed', message: 'The page response is incomplete. Reload before editing.' } as LoadState;
       })
-      .then((nextState) => setState(nextState))
+      .then((nextState) => { if (!controller.signal.aborted) setState(nextState); })
       .catch((reason: Error) => {
-        if (reason.name !== 'AbortError') setState({ kind: 'error', message: reason.message || 'Unable to load page.' });
+        if (!controller.signal.aborted) setState({ kind: 'error', message: reason.message || 'Unable to load page.' });
       });
     return () => controller.abort();
-  }, [attempt, pageId, siteId]);
+  }, [attempt, pageId, siteId, tenantId]);
 
-  const pagesHref = siteId ? `/vibes/pages?siteId=${encodeURIComponent(siteId)}` : '/vibes/pages';
+  const pagesHref = siteId ? `/vibes/pages?siteId=${encodeURIComponent(siteId)}&tenantId=${encodeURIComponent(tenantId)}` : '/vibes/pages';
   if (!siteId) return <EditorMessage title="Choose a site first" message="This editor requires the site ID that owns the page." pagesHref={pagesHref} />;
   if (state.kind === 'loading') return <EditorMessage title="Loading page" message="Retrieving the current draft and version…" pagesHref={pagesHref} busy />;
   if (state.kind !== 'ready') return <EditorMessage title={state.kind === 'not-found' ? 'Page not found' : state.kind === 'conflict' ? 'Page changed' : state.kind === 'malformed' ? 'Page could not be opened' : 'Page failed to load'} message={state.message} pagesHref={pagesHref} onRetry={() => setAttempt((value) => value + 1)} />;

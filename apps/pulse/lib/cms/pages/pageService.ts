@@ -55,7 +55,7 @@ export async function readCmsPagePreview(input: { tenantId: string; siteId: stri
     siteId: input.siteId,
     pageId: input.pageId,
     status: { $in: ['draft', 'published'] },
-  }).select('pageId siteId parentPageId routePath status currentDraftVersion draftPayload publishedRevisionId').lean() as any;
+  }).select('tenantId pageId siteId parentPageId routePath status currentDraftVersion draftPayload publishedRevisionId').lean() as any;
   if (!page) return null;
   return { ...page, draftPayload: cmsPageDraftSchema.parse(page.draftPayload) };
 }
@@ -185,6 +185,7 @@ export async function publishCmsPageRevision(input: {
   actorId: string;
   expectedVersion?: number;
   changeSummary?: string;
+  onPublished?: (revision: { _id: unknown }, session: mongoose.ClientSession) => Promise<void>;
 }) {
   const session = await mongoose.startSession();
   try {
@@ -225,6 +226,7 @@ export async function publishCmsPageRevision(input: {
       page.updatedBy = input.actorId;
       page.updatedAt = new Date();
       await page.save({ session });
+      if (input.onPublished) await input.onPublished(revision, session);
       published = revision.toObject();
     });
     return published;

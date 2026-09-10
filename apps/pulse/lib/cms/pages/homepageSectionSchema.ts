@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const text = z.string().max(5000);
-const href = z.string().max(2048).refine((value) => !value || /^\/(?!\/)/.test(value) || /^https?:\/\//i.test(value), 'Use a site path or HTTP(S) URL');
+const href = z.string().max(2048).refine((value) => !value || /^\/(?!\/)/.test(value) || /^#[a-z0-9-]+$/i.test(value) || /^https?:\/\//i.test(value), 'Use a site path, anchor, or HTTP(S) URL');
 export const homepageSectionSchema = z.object({
   blockId: z.string().uuid(),
   version: z.literal(1),

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   themeFindOne: vi.fn(),
   pluginFind: vi.fn(),
   vibeFindOne: vi.fn(),
+  revisionFindOne: vi.fn(),
 }));
 
 vi.mock('@/lib/cms/pages/pageService', () => ({ readPublishedCmsPage: mocks.readPublishedPage }));
@@ -13,6 +14,7 @@ vi.mock('@/models/SiteConfig', () => ({ SiteConfig: { findOne: mocks.siteFindOne
 vi.mock('@/models/SiteThemeActivation', () => ({ default: { findOne: mocks.themeFindOne } }));
 vi.mock('@/models/SitePluginActivation', () => ({ default: { find: mocks.pluginFind } }));
 vi.mock('@/models/VibeRevision', () => ({ default: { findOne: mocks.vibeFindOne } }));
+vi.mock('@/models/CmsPageRevision', () => ({ default: { findOne: mocks.revisionFindOne } }));
 
 import { createExtensionCatalog, bundledExtensionCatalog, DEFAULT_CMS_THEME_ID } from '@/lib/cms/extensions/catalog';
 import { buildCmsPageRenderContext, buildScopedCmsPageRenderContext, resolveCmsPageRenderContext } from '@/lib/cms/pages/renderContext';
@@ -32,6 +34,14 @@ function selected(value: unknown) {
 }
 
 describe('CMS page rendering context', () => {
+  it('resolves a platform-pinned immutable revision without inspecting the mutable page', async () => {
+    mocks.revisionFindOne.mockReturnValue(selected({ _id: 'live-revision', pageId: 'home', revisionNumber: 3, snapshot: { title: 'Live title', slug: 'home', blocks: [] } }));
+    const context = await buildScopedCmsPageRenderContext({ tenantId: 'platform', siteId: 'site-id', pageId: 'home', publishedRevisionId: 'live-revision', requestId: 'request', hostname: '' });
+    expect(context?.page.snapshot.title).toBe('Live title');
+    expect(context?.page.routePath).toBe('home');
+    expect(mocks.revisionFindOne).toHaveBeenCalledWith({ _id: 'live-revision', tenantId: 'platform', siteId: 'site-id', pageId: 'home', publishedAt: { $exists: true, $ne: null } });
+    expect(mocks.readPublishedPage).not.toHaveBeenCalled();
+  });
   it('previews the selected theme against the scoped published page and pinned Vibe', async () => {
     const context = await buildScopedCmsPageRenderContext({ tenantId: 'tenant-id', siteId: 'site-id', pageId: 'page-id', themeId: 'sunset/editorial', requestId: 'preview', hostname: '' });
     expect(mocks.readPublishedPage).toHaveBeenCalledWith({ tenantId: 'tenant-id', siteId: 'site-id', pageId: 'page-id' });
