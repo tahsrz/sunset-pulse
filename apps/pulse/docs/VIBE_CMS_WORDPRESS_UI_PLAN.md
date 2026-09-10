@@ -6377,6 +6377,135 @@ tokens to scoped CSS custom properties consumed by the active template. The next
 adding a second bundled visual theme and a non-mutating preview that renders the selected
 theme runtime with the current published page before activation.
 
+#### E4 next slice — second theme and live preview (execution plan, September 10, 2026)
+
+Status: planned, not implemented. Execute steps 1–6 in order. Estimated implementation
+effort: 5–7 hours, including focused verification. Completion means an operator can preview
+the same published page in either bundled theme and explicitly activate the chosen theme.
+
+Current-code observations:
+
+- `app/vibes/appearance/ThemeDirectory.tsx` renders one decorative gradient for every theme;
+  this is a catalog illustration, not a preview of site content.
+- `lib/cms/themes/runtimeRegistry.tsx` chooses the snapshot template when the active manifest
+  declares it, otherwise the active theme's `templates.page`. Preserve that fallback so
+  existing pages can change themes without rewriting immutable snapshots.
+- Template parts are registered but `sunset/page` directly references fixed runtime objects.
+  Resolve part slots from the selected manifest to make those declarations functional.
+- `buildCmsPageRenderContext()` currently accepts a host-derived tenant context and route slug.
+  An operator preview needs explicit site/page scope; do not fabricate a public host context.
+- `readPublishedCmsPage()` already accepts `pageId` and loads the immutable published revision.
+  Its current status filter excludes drafts even when they retain an older published pointer.
+  Preview must match that public behavior; changing publication semantics is separate work.
+- Existing Vibe revisions contain only the CSS variables compiled when they were created.
+  New typography/layout variables do not retroactively appear in historical revisions. Keep
+  template fallbacks and explain that new tokens require publishing/applying a new revision.
+
+1. **Create a real second presentation — approximately 60–90 minutes.**
+   - In `lib/cms/extensions/catalog.ts`, add `sunset/editorial`, display name `Sunset Editorial`,
+     version `1.0.0`, `templates: { page: 'sunset/editorial-page' }`, header/footer slots pointing
+     to `sunset/editorial-header` and `sunset/editorial-footer`, and the same four supported blocks.
+   - Add `lib/cms/themes/EditorialPageTemplate.tsx`: compact masthead, narrow reading column
+     (roughly 46rem), generous title/excerpt spacing, subtle divider, and simple footer.
+     Use system serif heading fallback and system sans body fallback; active Vibe variables
+     override these defaults. Do not add remote font requests.
+   - Keep the existing core template's wider presentation. Both themes render the identical
+     pinned snapshot through `renderCmsPageBlocks()` with the context's composed block registry.
+   - Share a small `themeStyles.ts` helper for scoped body font/size/weight and Vibe variables.
+     Apply heading, image, and button styling under a theme wrapper, including radius and
+     spacing where relevant. Do not describe an emitted variable as applied unless a visible
+     element consumes it. Preserve image dimensions and each button's primary/secondary/text style.
+   - Use a wrapper outside the content `<main>` for site header/footer so they expose proper
+     banner/contentinfo landmarks. Preserve existing page/revision/theme trace attributes.
+
+2. **Make template selection and parts reusable — approximately 45 minutes.**
+   - In `runtimeRegistry.tsx`, give template renderers a second argument containing resolved
+     header/footer render functions. Resolve slot IDs from `context.theme.templateParts` using
+     the supplied registry; remove closure references to hard-coded bundled part objects.
+   - Register the editorial template and parts. Extract a pure selection function returning
+     the selected template ID and whether fallback was used; use it for public and preview rendering.
+   - Report a declared but missing runtime explicitly. An omitted optional part renders nothing;
+     a declared missing part is a configuration error. Do not silently mix themes.
+   - Extend completeness checking to require a usable `templates.page` for each bundled theme.
+     Test an existing `sunset/page` snapshot under `sunset/editorial` to prove theme switching.
+
+3. **Build a read-only preview context — approximately 60–90 minutes.**
+   - Refactor `lib/cms/pages/renderContext.ts` into a shared site-scoped composition function
+     plus the existing public wrapper. Preserve the public wrapper's host-resolution contract.
+   - Add `lib/cms/themes/themePreviewService.ts`, accepting `{ tenantId, siteId, pageId, themeId }`.
+     Load the selected bundled manifest, existing site, and `readPublishedCmsPage({ tenantId,
+     siteId, pageId })`; compose that site's active Vibe revision and plugin runtimes using
+     the same shared function as public rendering. Pass the selected theme as a request-local override.
+   - No activation, page, revision, draft, or Vibe writes occur in preview. No preview records
+     or database migration are necessary. Do not import a server context containing render
+     functions into client JSON; rendering stays on the server.
+   - Return distinct missing-site, missing-theme, unavailable-published-page, and runtime-error
+     results. Preserve pinned page revision and Vibe revision identities in the rendered output.
+
+4. **Expose a server-rendered preview document — approximately 60 minutes.**
+   - Add an isolated App Router page at `/vibes/theme-preview` with a layout that does not
+     include the editor sidebar. Inspect ancestor layouts before choosing a route group;
+     route groups alone do not remove inherited layouts. Keep the preview under the existing
+     operator authentication convention, using the applicable server-page access helper.
+   - Require explicit `siteId`, `pageId`, and `themeId`; carry `tenantId` consistently with
+     Appearance's existing scope convention. Validate query values before loading data.
+   - The page is dynamic, private, and not indexed. Invoke the preview service and the exact
+     `renderCmsThemePage()` entry point used by public CMS pages. Render understandable empty/error
+     documents, not an unhandled exception or an empty iframe. This route must never activate a theme.
+   - Display this document in an iframe from Appearance. Give the iframe a meaningful title,
+     disable interactive navigation/forms within the preview document, and keep activation controls
+     in the parent UI. Check that preview links cannot navigate the iframe away from its content.
+     Use server rendering; do not implement a second block renderer or generated HTML API.
+
+5. **Add the operator flow — approximately 60–90 minutes.**
+   - Reformat `ThemeDirectory.tsx` into readable JSX before changing its state model.
+   - Carry one explicit scope object through catalog reads, page reads, preview URLs, and activation.
+     On scope change clear cards, active state, errors, and preview; abort in-flight reads and ignore
+     stale activation completions. Synchronize the site input with the URL.
+   - Keep `Activate` as the existing explicit POST action. Add `Live preview` to each theme card.
+     Label the decorative card image as an illustration or replace it with theme-specific artwork;
+     do not present it as the site's rendered content.
+   - Add `ThemePreview.tsx` with a published-page selector using the existing pages API with
+     `status=published`, bounded pagination, and the same site/tenant scope. Label pages with title
+     and route path so duplicate titles are distinguishable. Preserve selection while comparing themes.
+   - Present a full-width preview workspace with Back to themes, selected theme, selected page,
+     desktop/mobile viewport controls, and Activate. Controls change iframe dimensions or query
+     parameters only. Use a normal page section to avoid introducing modal focus-management complexity.
+   - With no published pages, explain 'Publish a page to preview this theme' and link to the
+     scoped Pages directory. Never seed or publish sample content automatically.
+   - Use keyed loading state for the exact preview URL. Explain that preview shows published
+     content; unsaved edits and drafts are excluded. Show iframe load failure with a retry option.
+   - After activation, re-read the scoped catalog and derive active state from the response.
+     Keep the preview open and display success; failures leave the previous active theme visible.
+
+6. **Verify behavior and document completion — approximately 45–60 minutes.**
+   - Extend `cms-theme-runtime-registry.test.tsx`: both manifests resolve, snapshot fallback
+     works after switching themes, slot overrides use the supplied registry, missing runtimes fail.
+   - Add preview-service tests proving selected-theme rendering, published snapshot selection,
+     same-site Vibe/plugin composition, missing-page handling, and no persistence mutations.
+   - Extend `cms-theme-directory.test.tsx`: preview is read-only, empty-page guidance, switching
+     sites drops stale responses, and only explicit activation triggers POST.
+   - Verify rendered output differs between themes while page/block/revision identities match.
+     Verify legacy color-only Vibe projections render with typography/layout defaults.
+   - Browser-check desktop and narrow previews, long titles, image/button blocks, Back navigation,
+     and activation feedback. Use controlled data; record any unavailable browser verification honestly.
+   - Update this checkpoint and the relevant README feature section with actual behavior and
+     limitations. Commit the completed slice to the current work branch under existing authorization.
+
+Done criteria: two visually distinct bundled themes; shared public/preview renderer; functional
+manifest-owned template parts; published-page selection; zero preview writes; explicit activation;
+correct site switching; and evidence for the user flow. Package E5 follows after these criteria.
+
+#### Expanded homepage scope — September 10, 2026
+
+The next work now includes the main public homepage and tenant homepage authoring.
+Follow `VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md` for the expanded H0–H6 sequence,
+file/function anchors, visual specification, acceptance criteria, and completion ledger.
+The E4 detail above remains the theme/preview contract. The expanded plan is documentation
+only at this checkpoint; no homepage implementation is being claimed. The user's subsequent
+requirement makes all authored homepage text editable and unsaved-draft previews real time;
+section 15 of the expanded plan defines the overriding C1–C3 content/editor/preview work.
+
 ### Package E5 — installed plugins
 
 - Add Installed, Active, and Inactive views backed by the bundled catalog and site records.
