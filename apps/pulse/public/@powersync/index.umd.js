@@ -1566,6 +1566,198 @@ class Lock {
 
 /***/ },
 
+/***/ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/MemoryVFS.js"
+/*!***************************************************************************************************************************!*\
+  !*** ../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/MemoryVFS.js ***!
+  \***************************************************************************************************************************/
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MemoryVFS: () => (/* binding */ MemoryVFS)
+/* harmony export */ });
+/* harmony import */ var _FacadeVFS_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../FacadeVFS.js */ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/FacadeVFS.js");
+/* harmony import */ var _VFS_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VFS.js */ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/VFS.js");
+// Copyright 2024 Roy T. Hashimoto. All Rights Reserved.
+
+
+
+// Sample in-memory filesystem.
+class MemoryVFS extends _FacadeVFS_js__WEBPACK_IMPORTED_MODULE_0__.FacadeVFS {
+  // Map of existing files, keyed by filename.
+  mapNameToFile = new Map();
+
+  // Map of open files, keyed by id (sqlite3_file pointer).
+  mapIdToFile = new Map();
+
+  static async create(name, module) {
+    const vfs = new MemoryVFS(name, module);
+    await vfs.isReady();
+    return vfs;
+  }
+
+  constructor(name, module) {
+    super(name, module);
+  }
+
+  close() {
+    for (const fileId of this.mapIdToFile.keys()) {
+      this.jClose(fileId);
+    }
+  }
+
+  /**
+   * @param {string?} filename 
+   * @param {number} fileId 
+   * @param {number} flags 
+   * @param {DataView} pOutFlags 
+   * @returns {number|Promise<number>}
+   */
+  jOpen(filename, fileId, flags, pOutFlags) {
+    const url = new URL(filename || Math.random().toString(36).slice(2), 'file://');
+    const pathname = url.pathname;
+
+    let file = this.mapNameToFile.get(pathname);
+    if (!file) {
+      if (flags & _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OPEN_CREATE) {
+        // Create a new file object.
+        file = {
+          pathname,
+          flags,
+          size: 0,
+          data: new ArrayBuffer(0)
+        };
+        this.mapNameToFile.set(pathname, file);
+      } else {
+        return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_CANTOPEN;
+      }
+    }
+
+    // Put the file in the opened files map.
+    this.mapIdToFile.set(fileId, file);
+    pOutFlags.setInt32(0, flags, true);
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {number} fileId 
+   * @returns {number|Promise<number>}
+   */
+  jClose(fileId) {
+    const file = this.mapIdToFile.get(fileId);
+    this.mapIdToFile.delete(fileId);
+
+    if (file.flags & _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OPEN_DELETEONCLOSE) {
+      this.mapNameToFile.delete(file.pathname);
+    }
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {number} fileId 
+   * @param {Uint8Array} pData 
+   * @param {number} iOffset
+   * @returns {number|Promise<number>}
+   */
+  jRead(fileId, pData, iOffset) {
+    const file = this.mapIdToFile.get(fileId);
+
+    // Clip the requested read to the file boundary.
+    const bgn = Math.min(iOffset, file.size);
+    const end = Math.min(iOffset + pData.byteLength, file.size);
+    const nBytes = end - bgn;
+
+    if (nBytes) {
+      pData.set(new Uint8Array(file.data, bgn, nBytes));
+    }
+
+    if (nBytes < pData.byteLength) {
+      // Zero unused area of read buffer.
+      pData.fill(0, nBytes);
+      return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_IOERR_SHORT_READ;
+    }
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {number} fileId 
+   * @param {Uint8Array} pData 
+   * @param {number} iOffset
+   * @returns {number|Promise<number>}
+   */
+  jWrite(fileId, pData, iOffset) {
+    const file = this.mapIdToFile.get(fileId);
+    if (iOffset + pData.byteLength > file.data.byteLength) {
+      // Resize the ArrayBuffer to hold more data.
+      const newSize = Math.max(iOffset + pData.byteLength, 2 * file.data.byteLength);
+      const data = new ArrayBuffer(newSize);
+      new Uint8Array(data).set(new Uint8Array(file.data, 0, file.size));
+      file.data = data;
+    }
+
+    // Copy data.
+    new Uint8Array(file.data, iOffset, pData.byteLength).set(pData.subarray());
+    file.size = Math.max(file.size, iOffset + pData.byteLength);
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {number} fileId 
+   * @param {number} iSize 
+   * @returns {number|Promise<number>}
+   */
+  jTruncate(fileId, iSize) {
+    const file = this.mapIdToFile.get(fileId);
+
+    // For simplicity we don't make the ArrayBuffer smaller.
+    file.size = Math.min(file.size, iSize);
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {number} fileId 
+   * @param {DataView} pSize64 
+   * @returns {number|Promise<number>}
+   */
+  jFileSize(fileId, pSize64) {
+    const file = this.mapIdToFile.get(fileId);
+
+    pSize64.setBigInt64(0, BigInt(file.size), true);
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {string} name 
+   * @param {number} syncDir 
+   * @returns {number|Promise<number>}
+   */
+  jDelete(name, syncDir) {
+    const url = new URL(name, 'file://');
+    const pathname = url.pathname;
+
+    this.mapNameToFile.delete(pathname);
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+
+  /**
+   * @param {string} name 
+   * @param {number} flags 
+   * @param {DataView} pResOut 
+   * @returns {number|Promise<number>}
+   */
+  jAccess(name, flags, pResOut) {
+    const url = new URL(name, 'file://');
+    const pathname = url.pathname;
+
+    const file = this.mapNameToFile.get(pathname);
+    pResOut.setInt32(0, file ? 1 : 0, true);
+    return _VFS_js__WEBPACK_IMPORTED_MODULE_1__.SQLITE_OK;
+  }
+}
+
+
+/***/ },
+
 /***/ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/OPFSWriteAheadVFS.js"
 /*!***********************************************************************************************************************************!*\
   !*** ../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/OPFSWriteAheadVFS.js ***!
@@ -4731,7 +4923,7 @@ function readWritePoolState(writer, readers) {
             let timeout = null;
             let release;
             if (options?.timeoutMs) {
-                timeout = setTimeout(() => abortController.abort, options.timeoutMs);
+                timeout = setTimeout(() => abortController.abort('requesting database timed out'), options.timeoutMs);
             }
             try {
                 if (allowReadOnly) {
@@ -5450,12 +5642,21 @@ class DatabaseServer {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   RawSqliteConnection: () => (/* binding */ RawSqliteConnection)
+/* harmony export */   RawSqliteConnection: () => (/* binding */ RawSqliteConnection),
+/* harmony export */   maxPathNameLength: () => (/* binding */ maxPathNameLength)
 /* harmony export */ });
 /* harmony import */ var _journeyapps_wa_sqlite__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @journeyapps/wa-sqlite */ "@journeyapps/wa-sqlite");
 /* harmony import */ var _vfs_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./vfs.js */ "./lib/src/db/adapters/wa-sqlite/vfs.js");
 
 
+/**
+ * The maximum length of a db filename we support.
+ *
+ * We configure the same on WA-SQLite (which otherwise defaults to a maximum length of 64). We don't want to support
+ * very long path names as Safari maps OPFS files directly to OS files, and APFS has a 255-byte filename limit. Since
+ * some VFS append additional characters for pooled file access handles, we want to stay well below that.
+ */
+const maxPathNameLength = 128;
 /**
  * A small wrapper around WA-sqlite to help with opening databases and running statements by preparing them internally.
  *
@@ -5469,10 +5670,8 @@ class RawSqliteConnection {
      * The `sqlite3*` connection pointer.
      */
     db = 0;
-    _moduleFactory;
     constructor(options) {
         this.options = options;
-        this._moduleFactory = _vfs_js__WEBPACK_IMPORTED_MODULE_1__.DEFAULT_MODULE_FACTORIES[this.options.vfs];
     }
     get isOpen() {
         return this.db != 0;
@@ -5482,17 +5681,15 @@ class RawSqliteConnection {
         this.db = await api.open_v2(this.options.dbFilename, this.options.isReadOnly ? 1 /* SQLITE_OPEN_READONLY */ : 6 /* SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE */);
         await this.executeRaw(`PRAGMA temp_store = ${this.options.temporaryStorage};`);
         if (this.options.encryptionKey) {
-            const escapedKey = this.options.encryptionKey.replace("'", "''");
-            await this.executeRaw(`PRAGMA key = '${escapedKey}'`);
+            const escapedKey = this.options.encryptionKey.replaceAll("'", "''");
+            await this.executeRaw(`PRAGMA key = '${escapedKey}';`);
         }
         await this.executeRaw(`PRAGMA cache_size = -${this.options.cacheSizeKb};`);
         await this.executeRaw(`SELECT powersync_update_hooks('install');`);
     }
     async openSQLiteAPI() {
-        const { module, vfs } = await this._moduleFactory({
-            dbFileName: this.options.dbFilename,
-            encryptionKey: this.options.encryptionKey
-        });
+        const { module, vfs } = await (0,_vfs_js__WEBPACK_IMPORTED_MODULE_1__.loadModuleAndVfs)(this.options);
+        vfs.mxPathname = maxPathNameLength;
         const sqlite3 = (0,_journeyapps_wa_sqlite__WEBPACK_IMPORTED_MODULE_0__.Factory)(module);
         sqlite3.vfs_register(vfs, true);
         /**
@@ -5625,6 +5822,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _DatabaseClient_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./DatabaseClient.js */ "./lib/src/db/adapters/wa-sqlite/DatabaseClient.js");
 /* harmony import */ var _shared_tab_close_signal_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../../shared/tab_close_signal.js */ "./lib/src/shared/tab_close_signal.js");
 /* harmony import */ var _AsyncWebAdapter_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../AsyncWebAdapter.js */ "./lib/src/db/adapters/AsyncWebAdapter.js");
+/* harmony import */ var _RawSqliteConnection_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./RawSqliteConnection.js */ "./lib/src/db/adapters/wa-sqlite/RawSqliteConnection.js");
+
 
 
 
@@ -5701,8 +5900,8 @@ class WASQLiteOpenFactory {
                         cacheSizeKb,
                         flags: this.resolvedFlags,
                         encryptionKey
-                    }))
-                    : (0,_worker_db_open_worker_database_js__WEBPACK_IMPORTED_MODULE_2__.openWorkerDatabasePort)(this.options.dbFilename, enableMultiTabs, optionsDbWorker, this.waOptions.vfs);
+                    }), this.logger)
+                    : (0,_worker_db_open_worker_database_js__WEBPACK_IMPORTED_MODULE_2__.openWorkerDatabasePort)(this.options.dbFilename, enableMultiTabs, optionsDbWorker, this.waOptions.vfs, this.logger);
                 const source = comlink__WEBPACK_IMPORTED_MODULE_1__.wrap(workerPort);
                 const closeSignal = new AbortController();
                 const connection = await source.connect({
@@ -5769,6 +5968,11 @@ function assertValidWASQLiteOpenFactoryOptions(options) {
             throw new Error(`Invalid configuration: The 'useWebWorker' flag must be true when using an OPFS-based VFS (${vfs}).`);
         }
     }
+    // Account for the fact that SQLite might append -journal suffixes
+    const maxLength = _RawSqliteConnection_js__WEBPACK_IMPORTED_MODULE_10__.maxPathNameLength - 16;
+    if (options.dbFilename.length > maxLength) {
+        throw new Error(`dbFilename too long (max length is ${maxLength})`);
+    }
 }
 
 
@@ -5820,8 +6024,8 @@ class WASQLitePowerSyncDatabaseOpenFactory extends _AbstractWebPowerSyncDatabase
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   DEFAULT_MODULE_FACTORIES: () => (/* binding */ DEFAULT_MODULE_FACTORIES),
 /* harmony export */   WASQLiteVFS: () => (/* binding */ WASQLiteVFS),
+/* harmony export */   loadModuleAndVfs: () => (/* binding */ loadModuleAndVfs),
 /* harmony export */   vfsRequiresDedicatedWorkers: () => (/* binding */ vfsRequiresDedicatedWorkers)
 /* harmony export */ });
 /**
@@ -5833,9 +6037,26 @@ var WASQLiteVFS;
     WASQLiteVFS["OPFSCoopSyncVFS"] = "OPFSCoopSyncVFS";
     WASQLiteVFS["AccessHandlePoolVFS"] = "AccessHandlePoolVFS";
     WASQLiteVFS["OPFSWriteAheadVFS"] = "OPFSWriteAheadVFS";
+    /**
+     * A virtual file system storing data in-memory only, without persistence.
+     *
+     * This file system can be used in three configurations:
+     *
+     * 1. In shared workers (the default when available): All tabs share the same in-memory database, which is cleared
+     *    once the last tab is closed.
+     * 2. In dedicated workers (used when `enableMultiTabs` is disabled). Each tab has its own in-memory database cleared
+     *    when the tab is closed. Queries are offloaded to a dedicated worker.
+     * 3. In the context of the tab itself (used when both `enableMultiTabs` and `useWebWorker` are disabled). The per-tab
+     *    database is hosted in the tab itself, and queries run synchronously. This is _a lot_ faster than any other
+     *    single-threadedVFS, but can block JavaScript for computationally-intensive queries.
+     *
+     * This VFS primarily intended for development, but it also useful for online-first deployments not syncing large
+     * amounts of data, as it is quicker to start up.
+     */
+    WASQLiteVFS["InMemoryVfs"] = "InMemoryVFS";
 })(WASQLiteVFS || (WASQLiteVFS = {}));
 function vfsRequiresDedicatedWorkers(vfs) {
-    return vfs != WASQLiteVFS.IDBBatchAtomicVFS;
+    return vfs != WASQLiteVFS.IDBBatchAtomicVFS && vfs != WASQLiteVFS.InMemoryVfs;
 }
 async function asyncModuleFactory(encryptionKey) {
     if (encryptionKey) {
@@ -5860,46 +6081,47 @@ async function syncModuleFactory(encryptionKey) {
 /**
  * @internal
  */
-const DEFAULT_MODULE_FACTORIES = {
-    [WASQLiteVFS.IDBBatchAtomicVFS]: async (options) => {
-        const module = await asyncModuleFactory(options.encryptionKey);
-        const { IDBBatchAtomicVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.t.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/IDBBatchAtomicVFS.js */ "@journeyapps/wa-sqlite/src/examples/IDBBatchAtomicVFS.js", 19));
-        return {
-            module,
+async function loadModuleAndVfs({ vfs, dbFilename, encryptionKey }) {
+    let moduleFactory = syncModuleFactory;
+    let resolveVfs;
+    switch (vfs) {
+        case WASQLiteVFS.IDBBatchAtomicVFS: {
+            moduleFactory = asyncModuleFactory;
+            const { IDBBatchAtomicVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.t.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/IDBBatchAtomicVFS.js */ "@journeyapps/wa-sqlite/src/examples/IDBBatchAtomicVFS.js", 19));
+            resolveVfs = (module) => {
+                // @ts-expect-error The types for this static method are missing upstream
+                return IDBBatchAtomicVFS.create(dbFilename, module, { lockPolicy: 'exclusive' });
+            };
+            break;
+        }
+        case WASQLiteVFS.AccessHandlePoolVFS: {
+            // @ts-expect-error The types for this import are missing upstream
+            const { AccessHandlePoolVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.t.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/AccessHandlePoolVFS.js */ "@journeyapps/wa-sqlite/src/examples/AccessHandlePoolVFS.js", 19));
+            resolveVfs = (module) => AccessHandlePoolVFS.create(dbFilename, module);
+            break;
+        }
+        case WASQLiteVFS.OPFSCoopSyncVFS: {
+            // @ts-expect-error The types for this import are missing upstream
+            const { OPFSCoopSyncVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.t.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js */ "@journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js", 19));
+            resolveVfs = (module) => OPFSCoopSyncVFS.create(dbFilename, module);
+            break;
+        }
+        case WASQLiteVFS.OPFSWriteAheadVFS: {
+            // @ts-expect-error The types for this import are missing upstream
+            const { OPFSWriteAheadVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/OPFSWriteAheadVFS.js */ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/OPFSWriteAheadVFS.js"));
+            resolveVfs = (module) => OPFSWriteAheadVFS.create(dbFilename, module, {});
+            break;
+        }
+        case WASQLiteVFS.InMemoryVfs: {
+            const { MemoryVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/MemoryVFS.js */ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/MemoryVFS.js"));
             // @ts-expect-error The types for this static method are missing upstream
-            vfs: await IDBBatchAtomicVFS.create(options.dbFileName, module, { lockPolicy: 'exclusive' })
-        };
-    },
-    [WASQLiteVFS.AccessHandlePoolVFS]: async (options) => {
-        const module = await syncModuleFactory(options.encryptionKey);
-        // @ts-expect-error The types for this static method are missing upstream
-        const { AccessHandlePoolVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.t.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/AccessHandlePoolVFS.js */ "@journeyapps/wa-sqlite/src/examples/AccessHandlePoolVFS.js", 19));
-        return {
-            module,
-            vfs: await AccessHandlePoolVFS.create(options.dbFileName, module)
-        };
-    },
-    [WASQLiteVFS.OPFSCoopSyncVFS]: async (options) => {
-        const module = await syncModuleFactory(options.encryptionKey);
-        // @ts-expect-error The types for this static method are missing upstream
-        const { OPFSCoopSyncVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.t.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js */ "@journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js", 19));
-        const vfs = await OPFSCoopSyncVFS.create(options.dbFileName, module);
-        return {
-            module,
-            vfs
-        };
-    },
-    [WASQLiteVFS.OPFSWriteAheadVFS]: async (options) => {
-        const module = await syncModuleFactory(options.encryptionKey);
-        // @ts-expect-error The types for this static method are missing upstream
-        const { OPFSWriteAheadVFS } = await Promise.resolve(/*! import() */).then(__webpack_require__.bind(__webpack_require__, /*! @journeyapps/wa-sqlite/src/examples/OPFSWriteAheadVFS.js */ "../../node_modules/.pnpm/@journeyapps+wa-sqlite@1.7.0/node_modules/@journeyapps/wa-sqlite/src/examples/OPFSWriteAheadVFS.js"));
-        const vfs = await OPFSWriteAheadVFS.create(options.dbFileName, module, {});
-        return {
-            module,
-            vfs
-        };
+            resolveVfs = (module) => MemoryVFS.create(dbFilename, module);
+            break;
+        }
     }
-};
+    const module = await moduleFactory(encryptionKey);
+    return { module, vfs: await resolveVfs(module) };
+}
 
 
 /***/ },
@@ -6057,6 +6279,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _adapters_web_sql_flags_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../adapters/web-sql-flags.js */ "./lib/src/db/adapters/web-sql-flags.js");
 /* harmony import */ var _WebStreamingSyncImplementation_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./WebStreamingSyncImplementation.js */ "./lib/src/db/sync/WebStreamingSyncImplementation.js");
 /* harmony import */ var _shared_tab_close_signal_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shared/tab_close_signal.js */ "./lib/src/shared/tab_close_signal.js");
+/* harmony import */ var _worker_errors_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../worker/errors.js */ "./lib/src/worker/errors.js");
+
 
 
 
@@ -6162,21 +6386,21 @@ class SharedWebStreamingSyncImplementation extends _WebStreamingSyncImplementati
         const syncWorker = options.sync?.worker;
         if (syncWorker) {
             if (typeof syncWorker === 'function') {
-                this.messagePort = syncWorker(resolvedWorkerOptions).port;
+                this.messagePort = this.workerPort(syncWorker(resolvedWorkerOptions));
             }
             else {
-                this.messagePort = new SharedWorker(`${syncWorker}`, {
+                this.messagePort = this.workerPort(new SharedWorker(`${syncWorker}`, {
                     /* @vite-ignore */
                     name: `shared-sync-${this.webOptions.identifier}`
-                }).port;
+                }));
             }
         }
         else {
-            this.messagePort = new SharedWorker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("lib_src_worker_sync_SharedSyncImplementation_worker_js"), __webpack_require__.b), {
+            this.messagePort = this.workerPort(new SharedWorker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("lib_src_worker_sync_SharedSyncImplementation_worker_js"), __webpack_require__.b), {
                 /* @vite-ignore */
                 name: `shared-sync-${this.webOptions.identifier}`,
                 type: undefined
-            }).port;
+            }));
         }
         /**
          * Pass along any sync status updates to this listener
@@ -6200,6 +6424,10 @@ class SharedWebStreamingSyncImplementation extends _WebStreamingSyncImplementati
          * sync worker.
          */
         this.isInitialized = this._init();
+    }
+    workerPort(worker) {
+        (0,_worker_errors_js__WEBPACK_IMPORTED_MODULE_6__.logWorkerErrors)(worker, this.logger);
+        return worker.port;
     }
     async _init() {
         /**
@@ -6517,6 +6745,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shared_navigator_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../shared/navigator.js */ "./lib/src/shared/navigator.js");
 /* harmony import */ var _db_adapters_wa_sqlite_RawSqliteConnection_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../db/adapters/wa-sqlite/RawSqliteConnection.js */ "./lib/src/db/adapters/wa-sqlite/RawSqliteConnection.js");
 /* harmony import */ var _db_adapters_wa_sqlite_ConcurrentConnection_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../db/adapters/wa-sqlite/ConcurrentConnection.js */ "./lib/src/db/adapters/wa-sqlite/ConcurrentConnection.js");
+/* harmony import */ var _db_adapters_wa_sqlite_vfs_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../db/adapters/wa-sqlite/vfs.js */ "./lib/src/db/adapters/wa-sqlite/vfs.js");
+
 
 
 
@@ -6565,13 +6795,14 @@ class MultiDatabaseServer {
     }
     async databaseOpenAttempt(options) {
         return (0,_shared_navigator_js__WEBPACK_IMPORTED_MODULE_2__.getNavigatorLocks)().request(OPEN_DB_LOCK, async () => {
-            const { dbFilename } = options;
+            const { dbFilename, isReadOnly, vfs } = options;
             let server = this.activeDatabases.get(dbFilename);
             if (server == null) {
                 // We don't need navigator locks for shared workers because all queries run in this shared worker exclusively.
                 // For read-only connections, we use a VFS that supports concurrent reads (so a single lock on the connection is
-                // fine).
-                const needsNavigatorLocks = !(isSharedWorker || options.isReadOnly);
+                // fine). In-memory databases either run in a shared worker or aren't shared across tabs at all, so the internal
+                // lock is enough.
+                const needsNavigatorLocks = !(isSharedWorker || isReadOnly || vfs == _db_adapters_wa_sqlite_vfs_js__WEBPACK_IMPORTED_MODULE_5__.WASQLiteVFS.InMemoryVfs);
                 const connection = new _db_adapters_wa_sqlite_RawSqliteConnection_js__WEBPACK_IMPORTED_MODULE_3__.RawSqliteConnection(options);
                 const withSafeConcurrency = new _db_adapters_wa_sqlite_ConcurrentConnection_js__WEBPACK_IMPORTED_MODULE_4__.ConcurrentSqliteConnection(connection, needsNavigatorLocks);
                 // Initializing the RawSqliteConnection will run some pragmas that might write to the database file, so we want
@@ -6625,23 +6856,27 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var comlink__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! comlink */ "comlink");
 /* harmony import */ var _db_adapters_wa_sqlite_vfs_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../db/adapters/wa-sqlite/vfs.js */ "./lib/src/db/adapters/wa-sqlite/vfs.js");
+/* harmony import */ var _errors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../errors.js */ "./lib/src/worker/errors.js");
+
 
 
 /**
  * Opens a shared or dedicated worker which exposes opening of database connections
  */
-function openWorkerDatabasePort(workerIdentifier, multipleTabs = true, worker = '', vfs) {
+function openWorkerDatabasePort(workerIdentifier, multipleTabs = true, worker = '', vfs, logger) {
     const needsDedicated = vfs && (0,_db_adapters_wa_sqlite_vfs_js__WEBPACK_IMPORTED_MODULE_1__.vfsRequiresDedicatedWorkers)(vfs);
+    let resolvedWorker;
     if (worker) {
-        return !needsDedicated && multipleTabs
-            ? new SharedWorker(`${worker}`, {
-                /* @vite-ignore */
-                name: `shared-DB-worker-${workerIdentifier}`
-            }).port
-            : new Worker(`${worker}`, {
-                /* @vite-ignore */
-                name: `DB-worker-${workerIdentifier}`
-            });
+        resolvedWorker =
+            !needsDedicated && multipleTabs
+                ? new SharedWorker(`${worker}`, {
+                    /* @vite-ignore */
+                    name: `shared-DB-worker-${workerIdentifier}`
+                })
+                : new Worker(`${worker}`, {
+                    /* @vite-ignore */
+                    name: `DB-worker-${workerIdentifier}`
+                });
     }
     else {
         /**
@@ -6650,18 +6885,20 @@ function openWorkerDatabasePort(workerIdentifier, multipleTabs = true, worker = 
          *  This enables multi tab support by default, but falls back if SharedWorker is not available
          *  (in the case of Android)
          */
-        return !needsDedicated && multipleTabs
-            ? new SharedWorker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("lib_src_worker_db_WASQLiteDB_worker_js"), __webpack_require__.b), {
-                /* @vite-ignore */
-                name: `shared-DB-worker-${workerIdentifier}`,
-                type: undefined
-            }).port
-            : new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("lib_src_worker_db_WASQLiteDB_worker_js"), __webpack_require__.b), {
-                /* @vite-ignore */
-                name: `DB-worker-${workerIdentifier}`,
-                type: undefined
-            });
+        resolvedWorker =
+            !needsDedicated && multipleTabs
+                ? new SharedWorker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("lib_src_worker_db_WASQLiteDB_worker_js"), __webpack_require__.b), {
+                    /* @vite-ignore */
+                    name: `shared-DB-worker-${workerIdentifier}`,
+                    type: undefined
+                })
+                : new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("lib_src_worker_db_WASQLiteDB_worker_js"), __webpack_require__.b), {
+                    /* @vite-ignore */
+                    name: `DB-worker-${workerIdentifier}`,
+                    type: undefined
+                });
     }
+    return resolveWorkerDatabasePortFactory(() => resolvedWorker, logger);
 }
 /**
  * @returns A function which allows for opening database connections inside
@@ -6670,12 +6907,35 @@ function openWorkerDatabasePort(workerIdentifier, multipleTabs = true, worker = 
 function getWorkerDatabaseOpener(workerIdentifier, multipleTabs = true, worker = '') {
     return comlink__WEBPACK_IMPORTED_MODULE_0__.wrap(openWorkerDatabasePort(workerIdentifier, multipleTabs, worker));
 }
-function resolveWorkerDatabasePortFactory(worker) {
+function resolveWorkerDatabasePortFactory(worker, logger) {
     const workerInstance = worker();
+    if (logger) {
+        (0,_errors_js__WEBPACK_IMPORTED_MODULE_2__.logWorkerErrors)(workerInstance, logger);
+    }
     return isSharedWorker(workerInstance) ? workerInstance.port : workerInstance;
 }
 function isSharedWorker(worker) {
     return 'port' in worker;
+}
+
+
+/***/ },
+
+/***/ "./lib/src/worker/errors.js"
+/*!**********************************!*\
+  !*** ./lib/src/worker/errors.js ***!
+  \**********************************/
+(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   logWorkerErrors: () => (/* binding */ logWorkerErrors)
+/* harmony export */ });
+function logWorkerErrors(worker, logger) {
+    function logError(event) {
+        logger.error('Error in database or sync worker, this likely disrupts PowerSync.', event.error);
+    }
+    worker.addEventListener('error', logError);
 }
 
 
@@ -6906,6 +7166,7 @@ class SharedSyncImplementation extends _powersync_common__WEBPACK_IMPORTED_MODUL
     syncStatus;
     broadCastLogger;
     database = this.generateReconnectableDatabase();
+    sharedCloseSignal = (0,_shared_tab_close_signal_js__WEBPACK_IMPORTED_MODULE_6__.generateTabCloseSignal)();
     constructor() {
         super();
         this.ports = [];
@@ -7239,7 +7500,7 @@ class SharedSyncImplementation extends _powersync_common__WEBPACK_IMPORTED_MODUL
         });
         const remote = comlink__WEBPACK_IMPORTED_MODULE_1__.wrap(workerPort);
         const identifier = this.syncParams.dbParams.dbFilename;
-        const clientLockName = await (0,_shared_tab_close_signal_js__WEBPACK_IMPORTED_MODULE_6__.generateTabCloseSignal)();
+        const clientLockName = await this.sharedCloseSignal;
         /**
          * The open could fail if the tab is closed while we're busy opening the database.
          * This operation is typically executed inside an exclusive portMutex lock.
