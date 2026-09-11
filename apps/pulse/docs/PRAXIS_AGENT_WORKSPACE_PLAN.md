@@ -1,6 +1,6 @@
 # Praxis Agent Workspace — Implementation Plan
 
-Status: implementation in progress; P0–P3 and the P5 baseline are implemented, with P4 semantic-provider verification and P6 output-parity extraction remaining.
+Status: implementation in progress; P0–P5 baseline and the P4 semantic adapter are implemented. A real configured-provider smoke test, full P6 output/action parity, and final P7 documentation remain.
 Owner: Taz. Intended executor: Luna or the next implementation session.
 Source inspection: September 11, 2026.
 Scope: replace the Command Center interface with a microphone-driven, multi-agent workspace while reusing the existing command execution backend.
@@ -363,19 +363,19 @@ First useful milestone: P0–P2, with manual per-agent execution and the shared 
 Autonomous-listening milestone: P3–P4.
 Replacement milestone: P5–P7 with retained features verified.
 
-Current completion: P0–P3 and the P5 baseline are implemented. The bounded attention route is rules-based and explicitly does not claim semantic-provider verification. P6 retains the legacy arena behind `/command-center?legacy=1` for comparison while output extraction and full parity remain open; P7 browser verification and final documentation remain open.
+Current completion: P0–P5 baseline and the P4 semantic adapter are implemented. The bounded attention route uses the semantic adapter only when `AGENT_WORKSPACE_ATTENTION_ENABLED=true` and a configured Groq key is present; otherwise it explicitly falls back to rules-based attention. P6 now shares answer, source/trace, deliverable-frame, and relay-plan presentation between the legacy arena and workspace, while listing-review, supervisor, Command Post, copy/export, and remaining per-run action parity remain open. P7 browser verification and final documentation remain open.
 
 Implementation handoff record (September 11, 2026):
 
 1. Changed `JamieAudioContext.tsx`, `JamieChat.tsx`, the shared stream reader, the command-center page/catalog, new `lib/agent-workspace/*`, new `components/agent-workspace/*`, the bounded attention route, and focused unit/browser specs.
 2. Implemented: one shared finalized transcript feed, workspace ownership lease, legacy wake suppression in workspace mode, independent spawnable agent sessions, per-agent drafts/runs, bounded manual/automatic command dispatch, rules-based attention, concurrency/cooldown/budget guards, retry/cancel visibility, mobile-aware UI, and versioned account-scoped role preferences.
 3. Focused verification passed: 34 unit tests across audio, stream, state, attention, scheduler, command, route, catalog, and UI suites; `npm run lint` passed with two pre-existing warnings; production build completed successfully (the existing `/api/kepler/listings` static-generation diagnostic remained non-fatal).
-4. Compatibility notes: semantic attention is not verified against a configured provider; automatic attention therefore displays rules-based mode. Client aborts are labeled as unable to guarantee server cancellation. Full arena output/action/review extraction is still the next P6 package.
-5. Next package: P6, beginning with extracting arena result views and per-run action/review handlers before removing the legacy comparison surface.
+4. Compatibility notes: semantic attention is implemented behind explicit provider configuration but has not been smoke-tested against a live configured provider in this session; automatic attention displays rules-based mode when unavailable. Client aborts are labeled as unable to guarantee server cancellation. Full arena action/review extraction is still open.
+5. Next package: P6 continuation, extracting listing review, supervisor review, Command Post, and per-run action handlers before removing the legacy comparison surface.
 
 Deferred deliberately: always-on server agents, cross-device live sessions, scheduling/cron, separate agent databases, raw audio storage, arbitrary plugin installation, new model-provider architecture, redesigning `/agent`, and autonomous production mutations.
 
-Next executable action: P0, then P1. Do not begin by replacing the page or rewriting the backend.
+Next executable action: complete the remaining P6 extraction and per-run action parity, then run the P7 browser/documentation walkthrough. Do not remove the legacy comparison surface until parity is demonstrated.
 
 ## 8. Line-anchored implementation instructions
 

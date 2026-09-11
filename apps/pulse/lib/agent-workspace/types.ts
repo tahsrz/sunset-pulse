@@ -67,6 +67,7 @@ export type WorkspaceState = {
 
 export type CommandSubmission = {
   agentId: string;
+  workerId?: string;
   text: string;
   source: AgentSource;
   triggerId?: string;

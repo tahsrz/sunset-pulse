@@ -25,6 +25,8 @@ import { renderGlossaryText as glossaryText } from '@/components/glossary/Glossa
 import { CommandActionPanel } from './CommandActionPanel';
 import { CommandRouteDirectory } from './CommandRouteDirectory';
 import { ParsedRecordCard } from './ParsedRecordCard';
+import { CommandAnswer } from './results/CommandAnswer';
+import { CommandDeliverables, CommandRelayPlan } from './results/CommandDeliverables';
 import type { CivicServiceRecord, CommandActionItem } from '@/lib/command-center/actionTypes';
 import {
   chooseWorkerForCommand,
@@ -1027,7 +1029,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
 
         <section ref={answerRef} className="mt-4 scroll-mt-28 md:scroll-mt-32">
           {commandResult ? (
-            <AnswerPanel
+            <CommandAnswer
               commandResult={commandResult}
               copiedDeliverable={copiedDeliverable}
               copiedActionId={copiedActionId}
@@ -1052,10 +1054,10 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
                   />
                 </Disclosure>
                 <Disclosure title="Deliverable Frames" icon={BookOpen}>
-                  <DeliverableFrames commandResult={commandResult} />
+                  <CommandDeliverables commandResult={commandResult} />
                 </Disclosure>
                 <Disclosure title="Relay Plan" icon={ClipboardList}>
-                  <RelayPlanPanel commandResult={commandResult} />
+                  <CommandRelayPlan commandResult={commandResult} />
                 </Disclosure>
               </>
             ) : null}

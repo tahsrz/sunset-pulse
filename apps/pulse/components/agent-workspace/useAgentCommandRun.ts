@@ -31,6 +31,7 @@ export function useAgentCommandRun({
       .slice(-3)
       .map((run) => run.response?.result.summary || '')
       .filter(Boolean);
+    const workerId = submission.workerId || agent.workerId;
 
     let commandText: string;
     try {
@@ -80,7 +81,7 @@ export function useAgentCommandRun({
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
         body: JSON.stringify({
           command: commandText,
-          selectedWorkerId: agent.workerId,
+          selectedWorkerId: workerId,
           relayMode: submission.relayMode || 'briefing',
           supervisor: submission.supervisor ?? true,
         }),
