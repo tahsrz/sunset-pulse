@@ -363,7 +363,7 @@ First useful milestone: P0–P2, with manual per-agent execution and the shared 
 Autonomous-listening milestone: P3–P4.
 Replacement milestone: P5–P7 with retained features verified.
 
-Current completion: P0–P5 baseline and the P4 semantic adapter are implemented. The bounded attention route uses the semantic adapter only when `AGENT_WORKSPACE_ATTENTION_ENABLED=true` and a configured Groq key is present; otherwise it explicitly falls back to rules-based attention. P6 now shares answer, source/trace, deliverable-frame, and relay-plan presentation between the legacy arena and workspace, while listing-review, supervisor, Command Post, copy/export, and remaining per-run action parity remain open. P7 browser verification and final documentation remain open.
+Current completion: P0–P5 baseline and the P4 semantic adapter are implemented. The bounded attention route uses the semantic adapter only when `AGENT_WORKSPACE_ATTENTION_ENABLED=true` and a configured Groq key is present; otherwise it explicitly falls back to rules-based attention. P6 now shares answer, source/trace, deliverable-frame, relay-plan, Command Post, TAH note, and listing-review/copy-package presentation between the legacy arena and workspace, with canonical listing handoff, supervisor review queue state, trace export parity, and remaining per-run action/refinement parity still open. P7 browser verification and final documentation remain open.
 
 Implementation handoff record (September 11, 2026):
 
@@ -371,7 +371,7 @@ Implementation handoff record (September 11, 2026):
 2. Implemented: one shared finalized transcript feed, workspace ownership lease, legacy wake suppression in workspace mode, independent spawnable agent sessions, per-agent drafts/runs, bounded manual/automatic command dispatch, rules-based attention, concurrency/cooldown/budget guards, retry/cancel visibility, mobile-aware UI, and versioned account-scoped role preferences.
 3. Focused verification passed: 34 unit tests across audio, stream, state, attention, scheduler, command, route, catalog, and UI suites; `npm run lint` passed with two pre-existing warnings; production build completed successfully (the existing `/api/kepler/listings` static-generation diagnostic remained non-fatal).
 4. Compatibility notes: semantic attention is implemented behind explicit provider configuration but has not been smoke-tested against a live configured provider in this session; automatic attention displays rules-based mode when unavailable. Client aborts are labeled as unable to guarantee server cancellation. Full arena action/review extraction is still open.
-5. Next package: P6 continuation, extracting listing review, supervisor review, Command Post, and per-run action handlers before removing the legacy comparison surface.
+5. Next package: P6 continuation, extracting canonical listing handoff, supervisor review queue state, trace export, and remaining per-run action/refinement handlers before removing the legacy comparison surface.
 
 Deferred deliberately: always-on server agents, cross-device live sessions, scheduling/cron, separate agent databases, raw audio storage, arbitrary plugin installation, new model-provider architecture, redesigning `/agent`, and autonomous production mutations.
 

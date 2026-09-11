@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, ChevronRight, Copy, RefreshCw } from 'lucide-react';
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { renderGlossaryText as glossaryText } from '@/components/glossary/GlossaryText';
 import { CommandActionPanel } from '@/components/command-center/CommandActionPanel';

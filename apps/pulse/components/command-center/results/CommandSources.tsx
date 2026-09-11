@@ -1,6 +1,7 @@
 'use client';
 
 import { Copy, Check } from 'lucide-react';
+import React from 'react';
 import { useState } from 'react';
 import { renderGlossaryText as glossaryText } from '@/components/glossary/GlossaryText';
 
