@@ -39,6 +39,11 @@
   },
   "optionalDependencies": {
     "@depot/cli-linux-x64": "0.0.1-cli.2.80.0",
+    "@img/sharp-libvips-linux-x64": "1.3.3",
+    "@img/sharp-libvips-linuxmusl-x64": "1.3.3",
+    "@img/sharp-linux-x64": "0.35.4",
+    "@img/sharp-linuxmusl-x64": "0.35.4",
+    "@img/sharp-win32-x64": "0.35.4",
     "@rollup/rollup-linux-x64-gnu": "4.60.3",
     "@rollup/rollup-linux-x64-musl": "4.60.3"
   },
