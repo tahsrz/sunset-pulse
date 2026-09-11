@@ -21,24 +21,6 @@ Instead of sending every task to a massive remote model, Sunset Pulse packages d
 
 ## Current Release
 
-### CMS homepage and live-preview checkpoint — September 10, 2026
-
-The homepage/theme implementation now includes an opt-in platform homepage workspace at
-`/vibes/homepage`, two bundled theme layouts, and live previews of unsaved page edits.
-Operators can edit structured homepage sections, page-specific navigation/footer links,
-and SEO; undo/redo local changes; save versioned drafts; and explicitly publish an immutable
-homepage revision. Saving a draft does not replace the live homepage. The original homepage
-remains the fallback and can be restored without deleting CMS content or revision history.
-
-The larger redesign is **still in progress**. Shared site-wide copy, curated listings,
-the deferred interactive world, split-preview polish, and database-backed/public visual
-acceptance remain. No production homepage publication was performed during this checkpoint.
-Local verification: **91 focused tests passed across 18 suites**; full-project TypeScript
-checking still reports 36 errors in unrelated test files.
-
-See the [operator workflow](apps/pulse/README.md#editable-homepage-and-theme-workspace) and
-[implementation ledger and next package](apps/pulse/docs/VIBE_CMS_HOMEPAGE_AND_THEMES_EXECUTION_PLAN.md#16-implementation-checkpoint--september-10-2026).
-
 Profit-focused weekly execution is tracked in [`docs/profit-sprint-2026-08-24.md`](./docs/profit-sprint-2026-08-24.md). Luna's canonical outcome-billing implementation plan is [`docs/luna-outcome-revenue-plan-2026-08-24.md`](./docs/luna-outcome-revenue-plan-2026-08-24.md), with the operator handoff in [`docs/luna-shadow-operations-runbook.md`](./docs/luna-shadow-operations-runbook.md) and the daily record in [`docs/luna-shadow-evidence-log.md`](./docs/luna-shadow-evidence-log.md); implementation notes, tests, and commits should reference its `LUNA-*` ticket IDs.
 
 Supabase egress reduction is tracked in [`docs/supabase-egress-reduction-plan-2026-08-26.md`](./docs/supabase-egress-reduction-plan-2026-08-26.md). Public listing feeds are bounded and revalidated while high-volume sources are measured.

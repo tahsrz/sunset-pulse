@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/images/logo-white.png';
-import { ComplianceLinks } from './ComplianceLinks';
 
 const footerLinks = [
   { href: '/atlas', label: 'Atlas' },
@@ -12,6 +11,20 @@ const footerLinks = [
   { href: '/properties', label: 'Properties' },
   { href: '/explorer', label: 'Explorer' },
   { href: '/contact', label: 'Contact' }
+];
+
+const complianceLinks = [
+  {
+    href: 'https://www.trec.texas.gov/forms/consumer-protection-notice',
+    label: 'TREC Consumer Notice',
+    external: true
+  },
+  { href: '/iabs', label: 'IABS Interactive' },
+  {
+    href: 'https://www.dropbox.com/scl/fi/xjnnszs2h24nq95tvdmts/Information-About-Brokerage-Services.pdf?rlkey=uwn66iikqswvjscfr86dos7tk&e=1&st=bp3w9yw4&dl=0',
+    label: 'IABS PDF',
+    external: true
+  }
 ];
 
 const Footer = () => {
@@ -48,7 +61,17 @@ const Footer = () => {
         <div>
           <p className="text-xs font-black uppercase text-cyan-200">Compliance</p>
           <div className="mt-4 grid gap-3">
-            <ComplianceLinks />
+            {complianceLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noopener noreferrer' : undefined}
+                className="text-sm font-semibold text-slate-300 transition hover:text-white"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
         </div>
       </div>
