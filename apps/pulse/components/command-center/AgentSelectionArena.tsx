@@ -23,6 +23,7 @@ import {
 import { useTheme } from '@/context/ThemeProvider';
 import { renderGlossaryText as glossaryText } from '@/components/glossary/GlossaryText';
 import { CommandActionPanel } from './CommandActionPanel';
+import { CommandRouteDirectory } from './CommandRouteDirectory';
 import { ParsedRecordCard } from './ParsedRecordCard';
 import type { CivicServiceRecord, CommandActionItem } from '@/lib/command-center/actionTypes';
 import {
@@ -900,6 +901,7 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
       </section>
 
       <section className={embedded ? 'px-5 py-5' : 'mx-auto max-w-6xl px-4 py-5 lg:px-6'}>
+        <CommandRouteDirectory />
         <form onSubmit={submitCommand} className="border border-cyan-200/20 bg-[#0d1c27] p-3 shadow-2xl shadow-black/20">
           <label className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
             Command

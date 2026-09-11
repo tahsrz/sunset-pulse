@@ -14,6 +14,7 @@ import { signOut as signOutAction } from '@/app/login/actions';
 import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
 import { GlobalCommandPalette, type CommandPaletteRoute } from './GlobalCommandPalette';
+import { appRoutes, routeDescription } from '@/lib/navigation/routeCatalog';
 import { Button } from './ui/button';
 import LeadIntakeDrawer from '@/components/admin/LeadIntakeDrawer';
 
@@ -90,7 +91,11 @@ const Navbar: React.FC = () => {
       navLinks: links,
       primaryLinks: links.slice(0, 5),
       overflowLinks: links.slice(5),
-      commandRoutes: links.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })) satisfies CommandPaletteRoute[],
+      commandRoutes: appRoutes.map((route) => ({
+        href: route.href, path: route.path, label: route.label, group: route.group,
+        description: routeDescription(route), documentNavigation: route.kind === 'resource' && route.href === route.path,
+        active: pathname === route.path,
+      })) satisfies CommandPaletteRoute[],
     };
   }, [canOperateLeads, pathname]);
 
