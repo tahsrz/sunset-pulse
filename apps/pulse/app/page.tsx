@@ -13,13 +13,6 @@ import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 import { getTourHotList } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
-import { readPlatformHomepage } from '@/lib/cms/pages/platformHomepageReader';
-import { metadataForCmsPage } from '@/lib/cms/pages/publicPageResolver';
-
-export async function generateMetadata() {
-  const context = await readPlatformHomepage();
-  return context ? metadataForCmsPage(context) : {};
-}
 
 /**
  * fetches curated properties on the server and streams them once resolved
