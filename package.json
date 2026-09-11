@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "dompurify": "3.4.13",
+    "mysql2": "3.24.4",
     "postcss": "8.5.26",
     "typescript": "6.0.2"
   },
@@ -31,13 +32,18 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
     "@types/qs": "^6.15.1",
-    "next": "^15.5.21",
+    "next": "^15.5.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^15.12.0"
   },
   "optionalDependencies": {
     "@depot/cli-linux-x64": "0.0.1-cli.2.80.0",
+    "@img/sharp-libvips-linux-x64": "1.3.3",
+    "@img/sharp-libvips-linuxmusl-x64": "1.3.3",
+    "@img/sharp-linux-x64": "0.35.4",
+    "@img/sharp-linuxmusl-x64": "0.35.4",
+    "@img/sharp-win32-x64": "0.35.4",
     "@rollup/rollup-linux-x64-gnu": "4.60.3",
     "@rollup/rollup-linux-x64-musl": "4.60.3"
   },
@@ -119,6 +125,12 @@
     "uuid": "11.1.1",
     "ws": "8.21.0",
     "yaml": "2.9.0",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4",
+    "mysql2": "3.24.4",
+    "fflate": "0.8.3",
+    "deepmerge-ts": "8.0.0",
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.0"
+    }
   }
 }
