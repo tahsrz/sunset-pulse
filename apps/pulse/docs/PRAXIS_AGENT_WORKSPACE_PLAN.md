@@ -363,7 +363,7 @@ First useful milestone: P0–P2, with manual per-agent execution and the shared 
 Autonomous-listening milestone: P3–P4.
 Replacement milestone: P5–P7 with retained features verified.
 
-Current completion: P0–P5 baseline and the P4 semantic adapter are implemented. The bounded attention route uses the semantic adapter only when `AGENT_WORKSPACE_ATTENTION_ENABLED=true` and a configured Groq key is present; otherwise it explicitly falls back to rules-based attention. P6 now shares answer, source/trace, deliverable-frame, relay-plan, Command Post, TAH note, and listing-review/copy-package presentation between the legacy arena and workspace, with canonical listing handoff, supervisor review queue state, trace export parity, and remaining per-run action/refinement parity still open. P7 browser verification and final documentation remain open.
+Current completion: P0–P5 baseline and the P4 semantic adapter are implemented. The bounded attention route uses the semantic adapter only when `AGENT_WORKSPACE_ATTENTION_ENABLED=true` and a configured Groq key is present; otherwise it explicitly falls back to rules-based attention. P6 now shares answer, deliverable-frame, and relay-plan presentation between the legacy arena and workspace. The workspace additionally surfaces extracted source/trace, Command Post, TAH note, and listing-review/copy-package components; canonical listing handoff, legacy migration of those specialized panels, supervisor review queue state, trace export parity, and remaining per-run action/refinement parity remain open. P7 browser verification and final documentation remain open.
 
 Implementation handoff record (September 11, 2026):
 
