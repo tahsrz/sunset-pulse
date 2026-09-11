@@ -2,7 +2,6 @@ import React from 'react';
 import type { Metadata } from 'next';
 import '@/assets/styles/globals.css'; 
 import '@/lib/cms/themes/themes.css';
-import { readPlatformHomepage } from '@/lib/cms/pages/platformHomepageReader';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Navbar from '@/components/Navbar';
 import TRECConsumerNotice from '@/components/TRECConsumerNotice';
@@ -102,10 +101,6 @@ const MainLayout = async ({ children, modal }: { children: React.ReactNode; moda
 
   if (requestPathname === '/cms-preview') {
     return <html lang="en"><body className="antialiased">{children}</body></html>;
-  }
-
-  if (requestPathname === '/' && !tenantSite && await readPlatformHomepage()) {
-    return <html lang="en"><body className="antialiased"><TRECConsumerNotice />{children}<aside aria-label="Consumer information" className="flex flex-wrap justify-center gap-5 bg-[#06131d] px-5 py-6"><ComplianceLinks /></aside>{modal}</body></html>;
   }
 
   if (tenantSite) {
