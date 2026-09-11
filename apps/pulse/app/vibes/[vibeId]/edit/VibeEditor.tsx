@@ -21,7 +21,6 @@ type Vibe = {
 };
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict';
-type TaxonomyTerm = { id: string; group: string; term: string; label?: string; parentId?: string };
 
 const defaults = {
   tokens: {
@@ -40,10 +39,6 @@ const defaults = {
 
 function label(status: string) {
   return status.replace(/_/g, ' ');
-}
-
-function taxonomyGroupLabel(group: string) {
-  return group.replace(/([A-Z])/g, ' $1').replace(/^./, (character) => character.toUpperCase());
 }
 
 function workflowAction(status: string, vibeId: string) {
@@ -95,8 +90,6 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [settingsOpen, setSettingsOpen] = useState(true);
-  const [taxonomyTerms, setTaxonomyTerms] = useState<TaxonomyTerm[]>(() => listVibeTaxonomyTerms());
-  const [selectedTaxonomyCount, setSelectedTaxonomyCount] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,31 +98,12 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
         if (!response.ok) throw new Error('Unable to load vibe.');
         return response.json();
       })
-      .then((payload) => {
-        setVibe(payload.vibe);
-        setSelectedTaxonomyCount(payload.vibe?.draftPayload?.taxonomyTermIds?.length || 0);
-      })
+      .then((payload) => setVibe(payload.vibe))
       .catch((reason: unknown) => {
         if (!(reason instanceof Error) || reason.name !== 'AbortError') setError(reason instanceof Error ? reason.message : 'Unable to load vibe.');
       });
     return () => controller.abort();
   }, [vibeId]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/vibes/taxonomy', { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return response.json() as Promise<{ terms?: TaxonomyTerm[] }>;
-      })
-      .then((payload) => {
-        if (Array.isArray(payload?.terms)) setTaxonomyTerms(payload.terms);
-      })
-      .catch(() => {
-        // Static controlled terms remain available if the catalog cannot load.
-      });
-    return () => controller.abort();
-  }, []);
 
   if (error && !vibe) return <main className="min-h-screen bg-slate-100 p-8"><p role="alert" className="text-red-700">{error}</p></main>;
   if (!vibe) return <main className="min-h-screen bg-slate-100 p-8 text-slate-500">Loading vibe…</main>;
@@ -142,25 +116,8 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
   };
   const status = vibe.status || 'draft';
   const currentDraftVersion = vibe.currentDraftVersion ?? 0;
+  const taxonomyTerms = listVibeTaxonomyTerms();
   const selectedTaxonomyTerms = new Set(draft.taxonomyTermIds || []);
-  const availableTaxonomyIds = new Set(taxonomyTerms.map(({ id }) => id));
-  const unavailableSelectedTerms: TaxonomyTerm[] = Array.from(selectedTaxonomyTerms)
-    .filter((id): id is string => typeof id === 'string' && !availableTaxonomyIds.has(id))
-    .map((id) => {
-      const separator = id.indexOf(':');
-      return {
-        id,
-        group: separator > 0 ? id.slice(0, separator) : 'legacy',
-        term: separator > 0 ? id.slice(separator + 1) : id,
-        label: `${(separator > 0 ? id.slice(separator + 1) : id).replace(/-/g, ' ')} (unavailable)`,
-      };
-    });
-  const editorTaxonomyTerms = [...taxonomyTerms, ...unavailableSelectedTerms];
-  const editorTaxonomyGroups = Object.entries(editorTaxonomyTerms.reduce<Record<string, TaxonomyTerm[]>>((groups, term) => {
-    (groups[term.group] ||= []).push(term);
-    return groups;
-  }, {}));
-  const editorTaxonomyLabels = new Map(editorTaxonomyTerms.map((term) => [term.id, term.label || term.term.replace(/-/g, ' ')]));
   const typography = { ...defaults.tokens.visual.theme.typography, ...(draft.tokens.visual.theme.typography || {}) };
   const layout = { borderRadius: 'md', spacingBasePx: 4, elevation: 'subtle', ...(draft.tokens.visual.theme.layout || {}) };
 
@@ -223,12 +180,9 @@ export function VibeEditor({ vibeId }: { vibeId: string }) {
               </VibePanel>
 
               <VibePanel id="taxonomy" title="Taxonomy" defaultOpen>
-                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
-                  <p>Choose terms that help operators find this Vibe later.</p>
-                  <p className="font-semibold">{selectedTaxonomyCount} selected</p>
-                </div>
-                <div className="mt-4 space-y-4">
-                  {editorTaxonomyGroups.map(([group, terms]) => <fieldset key={group} className="rounded-md border border-slate-200 p-3"><legend className="px-1 text-xs font-bold uppercase tracking-wide text-slate-500">{taxonomyGroupLabel(group)}</legend><div className="grid gap-2 sm:grid-cols-2">{(terms || []).map(({ id, term, label: termLabel, parentId }) => { const displayLabel = termLabel || term.replace(/-/g, ' '); const parentLabel = parentId ? editorTaxonomyLabels.get(parentId) || parentId : ''; return <label key={id} className={`flex items-center gap-2 rounded-md border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 ${parentId ? 'ml-4' : ''}`}><input aria-label={parentId ? `${displayLabel}, child of ${parentLabel}` : undefined} name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} onChange={(event) => setSelectedTaxonomyCount((count) => Math.max(0, count + (event.target.checked ? 1 : -1)))} /><span><span className="block font-semibold">{displayLabel}</span>{parentId ? <span className="block text-xs text-slate-500">Child of {parentLabel}</span> : null}</span></label>; })}</div></fieldset>)}
+                <p className="mt-1 text-sm text-slate-500">Choose terms that help operators find this Vibe later.</p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {taxonomyTerms.map(({ id, group, term }) => <label key={id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"><input name="taxonomyTermIds" type="checkbox" value={id} defaultChecked={selectedTaxonomyTerms.has(id)} /><span className="font-semibold capitalize">{term.replace(/-/g, ' ')}</span><span className="ml-auto text-xs capitalize text-slate-400">{group.replace(/([A-Z])/g, ' $1')}</span></label>)}
                 </div>
               </VibePanel>
 
