@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, render, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 let wakeListeningEnabled = false;
@@ -8,7 +9,7 @@ vi.mock('@/context/ThemeProvider', () => ({
   useTheme: () => ({ isWakeListeningEnabled: wakeListeningEnabled }),
 }));
 
-import { JamieAudioProvider } from '@/context/JamieAudioContext';
+import { JamieAudioProvider, useJamieAudio } from '@/context/JamieAudioContext';
 import { TTS_END_EVENT, TTS_START_EVENT } from '@/lib/core/tts';
 
 class FakeSpeechRecognition extends EventTarget {
@@ -28,6 +29,17 @@ class FakeSpeechRecognition extends EventTarget {
   }
 }
 
+let probeAudio: ReturnType<typeof useJamieAudio> | null = null;
+function WorkspaceProbe() {
+  const audio = useJamieAudio();
+  useEffect(() => {
+    const token = audio.acquireWorkspaceOwnership();
+    return () => audio.releaseWorkspaceOwnership(token);
+  }, [audio.acquireWorkspaceOwnership, audio.releaseWorkspaceOwnership]);
+  probeAudio = audio;
+  return null;
+}
+
 describe('Jamie audio lifecycle', () => {
   const stopTrack = vi.fn();
   const getUserMedia = vi.fn(async () => ({
@@ -38,6 +50,7 @@ describe('Jamie audio lifecycle', () => {
     vi.clearAllMocks();
     wakeListeningEnabled = false;
     FakeSpeechRecognition.instance = null;
+    probeAudio = null;
     Object.defineProperty(window, 'webkitSpeechRecognition', {
       configurable: true,
       value: FakeSpeechRecognition,
@@ -94,5 +107,20 @@ describe('Jamie audio lifecycle', () => {
 
     expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1);
     expect(stopTrack).toHaveBeenCalledTimes(1);
+  });
+
+  it('publishes one finalized segment to workspace ownership and suppresses the legacy wake query', async () => {
+    const view = render(<JamieAudioProvider><WorkspaceProbe /></JamieAudioProvider>);
+    await waitFor(() => expect(probeAudio?.workspaceOwned).toBe(true));
+    await act(async () => { await probeAudio?.start(); });
+    await waitFor(() => expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1));
+    const recognition = FakeSpeechRecognition.instance;
+    const event = { resultIndex: 0, results: [{ isFinal: true, 0: { transcript: 'pull that up' } }] } as any;
+    act(() => recognition?.onresult?.(event));
+    act(() => recognition?.onresult?.(event));
+    await waitFor(() => expect(probeAudio?.finalizedSegments).toHaveLength(1));
+    expect(probeAudio?.submittedQuery).toBeNull();
+    view.unmount();
+    expect(stopTrack).toHaveBeenCalled();
   });
 });

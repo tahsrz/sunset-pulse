@@ -12,6 +12,7 @@ The codebase also includes scheduling, food-service operations, games, and visua
 - **Find the code:** see [architecture and repository layout](#architecture-and-repository-layout).
 - **Make a change:** see [commands](#commands), [verification](#verification), and [contributing](#contributing).
 - **Continue a feature:** consult the [plans and runbooks](#plans-and-runbooks), then confirm the current implementation in source.
+- **Praxis Agent Workspace:** [implementation plan and status](apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md)—shared microphone listening, spawnable agents, automatic queries, and manual submission. Output-parity extraction remains in progress.
 
 This README is the repository entry point, not a live deployment report. A route in source, a completed planning checkbox, or a passing local test does not establish production availability.
 

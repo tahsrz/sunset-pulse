@@ -5,13 +5,16 @@ import { useTheme } from '@/context/ThemeProvider';
 import { TTS_END_EVENT, TTS_START_EVENT } from '@/lib/core/tts';
 
 export type JamieAudioStatus = 'off' | 'permission-required' | 'starting' | 'listening' | 'speech-detected' | 'submitting' | 'jamie-speaking' | 'paused' | 'denied' | 'unavailable';
-type TranscriptSegment = { id: string; text: string; capturedAt: number; final: boolean };
+export type TranscriptSegment = { id: string; text: string; capturedAt: number; final: boolean; sessionId?: string; sequence?: number };
 type PendingQuery = { id: string; text: string; submitAt: number };
 type SubmittedQuery = { id: string; text: string };
 
 type AudioState = {
   status: JamieAudioStatus;
   caption: string;
+  interimCaption: string;
+  finalizedSegments: TranscriptSegment[];
+  workspaceOwned: boolean;
   pendingQuery: PendingQuery | null;
   submittedQuery: SubmittedQuery | null;
 };
@@ -19,8 +22,12 @@ type AudioState = {
 type AudioAction =
   | { type: 'STATUS'; status: JamieAudioStatus }
   | { type: 'CAPTION'; caption: string }
+  | { type: 'INTERIM'; caption: string }
+  | { type: 'WORKSPACE_OWNERSHIP'; owned: boolean }
+  | { type: 'FINAL_SEGMENTS'; segments: TranscriptSegment[] }
   | { type: 'QUEUE_QUERY'; query: PendingQuery }
   | { type: 'CANCEL_QUERY' }
+  | { type: 'INVALIDATE_QUERY' }
   | { type: 'SUBMIT_QUERY' }
   | { type: 'CONSUME_QUERY'; id: string };
 
@@ -49,6 +56,9 @@ type JamieAudioContextValue = AudioState & {
   stop: () => void;
   cancelPendingQuery: () => void;
   consumeSubmittedQuery: (id: string) => void;
+  acquireWorkspaceOwnership: () => string;
+  releaseWorkspaceOwnership: (token: string) => void;
+  workspaceOwned: boolean;
 };
 
 const WINDOW_MS = 30_000;
@@ -59,6 +69,9 @@ const JamieAudioContext = createContext<JamieAudioContextValue | null>(null);
 export const initialJamieAudioState: AudioState = {
   status: 'off',
   caption: '',
+  interimCaption: '',
+  finalizedSegments: [],
+  workspaceOwned: false,
   pendingQuery: null,
   submittedQuery: null,
 };
@@ -67,8 +80,12 @@ export function jamieAudioReducer(state: AudioState, action: AudioAction): Audio
   switch (action.type) {
     case 'STATUS': return state.status === action.status ? state : { ...state, status: action.status };
     case 'CAPTION': return { ...state, caption: action.caption };
+    case 'INTERIM': return { ...state, interimCaption: action.caption };
+    case 'WORKSPACE_OWNERSHIP': return { ...state, workspaceOwned: action.owned };
+    case 'FINAL_SEGMENTS': return { ...state, finalizedSegments: action.segments };
     case 'QUEUE_QUERY': return { ...state, status: 'submitting', pendingQuery: action.query, caption: `Ready to search: ${action.query.text}` };
     case 'CANCEL_QUERY': return { ...state, status: 'listening', pendingQuery: null, caption: 'Search cancelled.' };
+    case 'INVALIDATE_QUERY': return { ...state, pendingQuery: null, submittedQuery: null };
     case 'SUBMIT_QUERY':
       if (!state.pendingQuery) return state;
       return {
@@ -116,6 +133,11 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   const captionHoldUntilRef = useRef(0);
   const disposedRef = useRef(false);
   const recognitionGenerationRef = useRef(0);
+  const recognitionSessionRef = useRef(crypto.randomUUID());
+  const transcriptSequenceRef = useRef(0);
+  const processedResultIndexesRef = useRef<Set<string>>(new Set());
+  const workspaceOwnerRef = useRef<string | null>(null);
+  const submissionEpochRef = useRef(0);
 
   useEffect(() => { enabledRef.current = isWakeListeningEnabled; }, [isWakeListeningEnabled]);
 
@@ -145,6 +167,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
 
   const stop = useCallback(() => {
     enabledRef.current = false;
+    submissionEpochRef.current += 1;
     recognitionGenerationRef.current += 1;
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     restartTimerRef.current = null;
@@ -153,6 +176,10 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
     microphoneStreamRef.current = null;
     activeRef.current = false;
+    interimRef.current = '';
+    processedResultIndexesRef.current.clear();
+    dispatch({ type: 'INVALIDATE_QUERY' });
+    dispatch({ type: 'INTERIM', caption: '' });
     dispatch({ type: 'STATUS', status: 'off' });
   }, []);
 
@@ -188,6 +215,8 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       const recognition = new Recognition() as SpeechRecognitionLike;
       const generation = recognitionGenerationRef.current + 1;
       recognitionGenerationRef.current = generation;
+      recognitionSessionRef.current = crypto.randomUUID();
+      processedResultIndexesRef.current = new Set();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
@@ -203,10 +232,16 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
             continue;
           }
 
+          const resultKey = `${generation}:${index}`;
+          if (processedResultIndexesRef.current.has(resultKey)) continue;
+          processedResultIndexesRef.current.add(resultKey);
+
           const now = Date.now();
-          segmentsRef.current = [...segmentsRef.current, { id: crypto.randomUUID(), text, capturedAt: now, final: true }]
+          const segment = { id: crypto.randomUUID(), sessionId: recognitionSessionRef.current, sequence: ++transcriptSequenceRef.current, text, capturedAt: now, final: true as const };
+          segmentsRef.current = [...segmentsRef.current, segment]
             .filter((segment) => now - segment.capturedAt <= WINDOW_MS);
-          if (/\bpull that up\b/i.test(text)) {
+          dispatch({ type: 'FINAL_SEGMENTS', segments: segmentsRef.current });
+          if (!workspaceOwnerRef.current && /\bpull that up\b/i.test(text)) {
             const queryText = recentTranscript(segmentsRef.current, now);
             if (queryText) {
               captionHoldUntilRef.current = now + QUERY_REVIEW_MS + 4_000;
@@ -217,6 +252,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
           }
         }
         interimRef.current = interimParts.join(' ').trim();
+        dispatch({ type: 'INTERIM', caption: interimRef.current });
         if (interimRef.current) dispatch({ type: 'STATUS', status: 'speech-detected' });
         refreshCaption();
       };
@@ -267,7 +303,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   }, [beginRecognition, refreshCaption]);
 
   useEffect(() => {
-    const action = wakeListeningSyncAction(isWakeListeningEnabled, state.status);
+    const action = workspaceOwnerRef.current ? 'none' : wakeListeningSyncAction(isWakeListeningEnabled, state.status);
     if (action === 'stop') stop();
     else if (action === 'start') void start();
   }, [isWakeListeningEnabled, start, state.status, stop]);
@@ -275,7 +311,13 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!state.pendingQuery) return;
     const delay = Math.max(0, state.pendingQuery.submitAt - Date.now());
-    const timer = window.setTimeout(() => dispatch({ type: 'SUBMIT_QUERY' }), delay);
+    const queryId = state.pendingQuery.id;
+    const epoch = submissionEpochRef.current;
+    const timer = window.setTimeout(() => {
+      if (epoch === submissionEpochRef.current && queryId === state.pendingQuery?.id && !workspaceOwnerRef.current) {
+        dispatch({ type: 'SUBMIT_QUERY' });
+      }
+    }, delay);
     return () => window.clearTimeout(timer);
   }, [state.pendingQuery]);
 
@@ -283,6 +325,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     const timer = window.setInterval(() => {
       const now = Date.now();
       segmentsRef.current = segmentsRef.current.filter((segment) => now - segment.capturedAt <= WINDOW_MS);
+      dispatch({ type: 'FINAL_SEGMENTS', segments: segmentsRef.current });
       refreshCaption(now);
     }, 1_000);
     return () => window.clearInterval(timer);
@@ -291,6 +334,10 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const pauseForTts = () => {
       pausedForTtsRef.current = true;
+      submissionEpochRef.current += 1;
+      interimRef.current = '';
+      dispatch({ type: 'INVALIDATE_QUERY' });
+      dispatch({ type: 'INTERIM', caption: '' });
       if (enabledRef.current) dispatch({ type: 'STATUS', status: 'jamie-speaking' });
     };
     const resumeAfterTts = () => {
@@ -304,7 +351,9 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     return () => {
       disposedRef.current = true;
       enabledRef.current = false;
+      submissionEpochRef.current += 1;
       recognitionGenerationRef.current += 1;
+      dispatch({ type: 'INVALIDATE_QUERY' });
       window.removeEventListener(TTS_START_EVENT, pauseForTts);
       window.removeEventListener(TTS_END_EVENT, resumeAfterTts);
       if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
@@ -314,13 +363,34 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     };
   }, [beginRecognition]);
 
+  const acquireWorkspaceOwnership = useCallback(() => {
+    const token = crypto.randomUUID();
+    workspaceOwnerRef.current = token;
+    submissionEpochRef.current += 1;
+    dispatch({ type: 'WORKSPACE_OWNERSHIP', owned: true });
+    if (recognitionRef.current || activeRef.current) stop();
+    else dispatch({ type: 'INVALIDATE_QUERY' });
+    return token;
+  }, [stop]);
+
+  const releaseWorkspaceOwnership = useCallback((token: string) => {
+    if (workspaceOwnerRef.current !== token) return;
+    if (recognitionRef.current || activeRef.current || startInFlightRef.current) stop();
+    workspaceOwnerRef.current = null;
+    submissionEpochRef.current += 1;
+    dispatch({ type: 'INVALIDATE_QUERY' });
+    dispatch({ type: 'WORKSPACE_OWNERSHIP', owned: false });
+  }, []);
+
   const value = useMemo<JamieAudioContextValue>(() => ({
     ...state,
     start,
     stop,
     cancelPendingQuery: () => dispatch({ type: 'CANCEL_QUERY' }),
     consumeSubmittedQuery: (id) => dispatch({ type: 'CONSUME_QUERY', id }),
-  }), [start, state, stop]);
+    acquireWorkspaceOwnership,
+    releaseWorkspaceOwnership,
+  }), [acquireWorkspaceOwnership, releaseWorkspaceOwnership, start, state, stop]);
 
   return <JamieAudioContext.Provider value={value}>{children}</JamieAudioContext.Provider>;
 }

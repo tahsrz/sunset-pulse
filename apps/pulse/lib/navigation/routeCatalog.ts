@@ -30,7 +30,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/contact', 'Contact'], ['/investors', 'Investors'],
   ]),
   ...pages('Intelligence and chat', [
-    ['/agent', 'Agent Console'], ['/command-center', 'Command Center'], ['/atlas', 'Atlas'],
+    ['/agent', 'Agent Console'], ['/command-center', 'Agent Workspace'], ['/atlas', 'Atlas'],
     ['/jamie-chat', 'Jamie Chat workspace'], ['/jamie-console', 'Jamie Console'],
     ['/jamie-vibes', 'Jamie Vibes'], ['/sunset-chat', 'Sunset Chat'],
     ['/insights', 'Jamie Insights'], ['/tah', 'TAH library'], ['/abidan', 'Abidan'],

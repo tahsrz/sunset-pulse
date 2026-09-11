@@ -74,6 +74,20 @@ describe('agent console command stream', () => {
 
     await expect(readCommandStream(response, vi.fn())).rejects.toThrow('No worker available');
   });
+
+  it('handles CRLF framing, split UTF-8 characters, and an EOF event without a delimiter', async () => {
+    const onProgress = vi.fn();
+    const encoded = new TextEncoder().encode(`event: progress\r\ndata: {"id":"utf8","label":"Café","status":"complete"}\r\n\r\nevent: result\r\ndata: ${JSON.stringify(commandResponse)}`);
+    const response = new Response(new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoded.slice(0, encoded.length - 2));
+        controller.enqueue(encoded.slice(encoded.length - 2));
+        controller.close();
+      },
+    }));
+    await expect(readCommandStream(response, onProgress)).resolves.toEqual(commandResponse);
+    expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ id: 'utf8', label: 'Café' }));
+  });
 });
 
 describe('agent console progress helpers', () => {
