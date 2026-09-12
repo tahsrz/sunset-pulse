@@ -33,6 +33,10 @@
     {
       "path": "/api/tenancy/domain-projection/cron",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/admin/automations/hotlist-email/cron",
+      "schedule": "0 * * * *"
     }
   ]
 }

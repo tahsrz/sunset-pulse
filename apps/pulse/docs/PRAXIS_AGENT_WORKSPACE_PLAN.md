@@ -776,3 +776,30 @@ At the end of each package, record:
 5. The next package and its first concrete edit.
 
 This addendum does not authorize implementation beyond the agreed scope. Start with P0 contract extraction/characterization, then P1 microphone ownership; do not begin with a global UI rewrite.
+
+## 9. P8 — Licensed autonomous communication workflows
+
+September 12 review added the first bounded “anonymous function” vertical slice requested for Sunset Pulse: the operator can turn the verified Tour Hot List into an email for the existing contact list. The system uses the operator’s licensed identity as an attribution/disclosure profile, but that identity does not grant the software authority to make transaction decisions.
+
+### Implemented in PR #79
+
+- `app/admin/hot-list/HotlistEmailWorkflow.tsx` adds the operator panel beside the existing MLS hot-list manager.
+- `lib/autonomous-workflows/hotlistEmail.ts` validates licensed identity, requires explicit email consent, removes do-not-contact/opt-out records, filters to active MLS listings, caps recipients, and creates a deterministic draft.
+- `lib/autonomous-workflows/emailSender.server.ts` sends through the existing Resend integration using BCC and a provider idempotency key.
+- `app/api/admin/automations/hotlist-email/route.ts` persists profile/run state, requires operator access, supports preview/run/explicit approved send, records provider receipts, and prevents duplicate snapshots.
+- `app/api/admin/automations/hotlist-email/cron/route.ts` runs only for profiles with both `enabled` and `auto_send` explicitly set. The hourly Vercel cron is protected by `CRON_SECRET`.
+- `supabase/migrations/20260912010000_licensed_hotlist_workflow.sql` adds per-operator settings and auditable workflow runs with server-side RLS boundaries.
+- `tests/unit/licensed-hotlist-workflow.test.ts` covers MLS/activity filtering, consent/opt-out filtering, recipient caps, and required profile/list availability.
+
+### Safety contract
+
+1. The first-run default is disabled and draft-only. A signed-in operator must enter agent name, brokerage, license number, jurisdiction, service area, reply-to email, and disclosure text.
+2. A contact is eligible only when `metadata.email_marketing_consent === true` or `metadata.emailConsent === "subscribed"`. Missing consent is excluded, not inferred.
+3. `do_not_contact`, `email_opt_out`, and `emailOptOut` records are excluded. Sends use BCC so contacts cannot see one another.
+4. Manual sends require an explicit confirmation. Scheduled sends require the saved `enabled + auto_send` opt-in and reuse a deterministic idempotency key; unchanged snapshots are not resent.
+5. The workflow may communicate verified listing facts only. It does not make offers, negotiate, sign/submits contracts, publish MLS changes, represent a client without authorization, or move money. Those functions require separate, transaction-specific human approval and responsible-broker/legal review.
+6. The current scheduler is hourly and bounded to 25 operator profiles per invocation. A missing `RESEND_API_KEY`, missing migration, invalid profile, unavailable hot list, or empty eligible audience fails closed.
+
+### Next P8 functions
+
+Use the same profile, consent, audit, idempotency, and approval contracts for additional low-risk functions: buyer/seller follow-up drafts, showing reminders, and market-update digests. Do not add autonomous offer submission, negotiation, signature, MLS publication, escrow/funds movement, or representation commitments without a separately reviewed transaction-control package.
