@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CommandAnswer } from '@/components/command-center/results/CommandAnswer';
 import { CommandDeliverables, CommandRelayPlan } from '@/components/command-center/results/CommandDeliverables';
 import { CommandSources } from '@/components/command-center/results/CommandSources';
 import { CommandDetails } from '@/components/command-center/results/CommandDetails';
-import { CommandListingReview, type ListingReviewFacts } from '@/components/command-center/results/CommandListingReview';
+import { buildApprovedListingCommand } from '@/lib/command-center/listingReviewHelpers';
 import type { CommandActionItem } from '@/lib/command-center/actionTypes';
 import type { AgentRun } from '@/lib/agent-workspace/types';
 
@@ -22,6 +22,7 @@ export function AgentResults({
 }) {
   const [copied, setCopied] = useState(false);
   const [copiedActionId, setCopiedActionId] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string>();
 
   if (!run) return <section className="rounded-lg border border-dashed border-white/15 p-5 text-sm leading-6 text-slate-400">Submit a request to see this agent’s work. Results stay attached to the agent and run that produced them.</section>;
   if (run.state === 'running' || run.state === 'queued') return <section className="rounded-lg border border-cyan-200/20 bg-cyan-200/5 p-5" aria-live="polite"><p className="text-sm font-bold text-cyan-100">Working on the submitted request…</p><ul className="mt-3 grid gap-2 text-xs text-slate-300">{run.progress.slice(-5).map((item) => <li key={item.id}>• {item.label}{item.detail ? `: ${item.detail}` : ''}</li>)}</ul></section>;
@@ -30,15 +31,17 @@ export function AgentResults({
 
   const response = run.response;
   if (!response) return null;
-  const listingFacts = (response.trace as (typeof response.trace & { listingFacts?: ListingReviewFacts }) | undefined)?.listingFacts;
   const copy = async () => {
-    await navigator.clipboard?.writeText(response.result.deliverable.copyReadyText);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(response.result.deliverable.copyReadyText);
+      setCopied(true);
+      setCopyError(undefined);
+    } catch { setCopyError('Clipboard unavailable. Select and copy the visible output.'); }
   };
   const handleAction = async (item: CommandActionItem) => {
-    try {
-      await fetch('/api/commands/actions', {
+    // Start clipboard work within the user gesture, before any network await.
+    const copying = item.kind === 'copy' && item.copyText ? navigator.clipboard?.writeText(item.copyText) : undefined;
+    void fetch('/api/commands/actions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         keepalive: item.kind === 'external-link',
@@ -47,29 +50,27 @@ export function AgentResults({
           command: run.commandText,
           workerId: response.worker.id,
           action: item,
+          tensorzero: { evaluationId: response.trace?.tensorzero?.evaluationId, variantName: response.trace?.tensorzero?.variantName },
         }),
-      });
-    } catch {
-      // Action memory is best-effort; the explicit UI action still proceeds.
-    }
-    if (onActionItem) {
-      await onActionItem(run, item);
-      return;
-    }
+      }).catch(() => undefined);
     if (item.kind === 'copy' && item.copyText) {
-      await navigator.clipboard?.writeText(item.copyText);
-      setCopiedActionId(item.id);
-      window.setTimeout(() => setCopiedActionId(null), 1500);
-    }
+      try {
+        if (!copying) throw new Error('Clipboard unavailable');
+        await copying;
+        setCopiedActionId(item.id);
+        setCopyError(undefined);
+      } catch { setCopyError('Clipboard unavailable. Select and copy the visible output.'); }
+    } else if (onActionItem) await onActionItem(run, item);
   };
 
   return <div className="grid gap-4">
+    {copyError ? <p role="status" className="text-sm text-amber-100">{copyError}</p> : null}
     <CommandAnswer commandResult={response} copiedDeliverable={copied} copiedActionId={copiedActionId} onCopyDeliverable={() => void copy()} onActionItem={handleAction} onRerunWithWorker={onRerunWithWorker ? (workerId) => onRerunWithWorker(run, workerId) : undefined} />
+    <section aria-label="Copy-ready deliverable" className="rounded-lg border border-white/10 p-4"><h3 className="font-bold">{response.result.deliverable.title}</h3><p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{response.result.deliverable.copyReadyText}</p></section>
     <details className="rounded-lg border border-white/10 bg-slate-950/35 p-4" open>
       <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-cyan-100">Sources and trace</summary>
-      <div className="mt-4"><CommandSources commandResult={response} /></div>
+      <div className="mt-4"><CommandSources commandResult={response} sourceCommand={run.commandText} onRerunWithApprovedListing={onRerunWithCommand ? (draft) => onRerunWithCommand(run, buildApprovedListingCommand(draft)) : undefined} /></div>
     </details>
-    {listingFacts ? <CommandListingReview key={run.id} listingFacts={listingFacts} sourceCommand={run.commandText} running={false} onApplyAndRerun={onRerunWithCommand ? (command) => onRerunWithCommand(run, command) : undefined} /> : null}
     <details className="rounded-lg border border-white/10 bg-slate-950/35 p-4">
       <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-cyan-100">Deliverable frames</summary>
       <div className="mt-4"><CommandDeliverables commandResult={response} /></div>
@@ -78,6 +79,6 @@ export function AgentResults({
       <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-cyan-100">Relay plan</summary>
       <div className="mt-4"><CommandRelayPlan commandResult={response} /></div>
     </details>
-    <CommandDetails commandResult={response as unknown as Parameters<typeof CommandDetails>[0]['commandResult']} />
+    <CommandDetails commandResult={response} />
   </div>;
 }

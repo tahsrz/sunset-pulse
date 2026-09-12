@@ -1,4 +1,5 @@
 import type { AgentSession } from './types';
+import { intelligenceWorkers } from '@/lib/command-center/workerRoster';
 
 const VERSION = 1;
 const PREFIX = 'sunset-praxis-agent-workspace';
@@ -13,18 +14,22 @@ export function parseWorkspacePreferences(value: string | null): StoredAgentPref
   try {
     const parsed = JSON.parse(value) as StoredPreferences;
     if (parsed.version !== VERSION || !Array.isArray(parsed.agents)) return [];
-    return parsed.agents.filter((agent) => agent && typeof agent.id === 'string' && typeof agent.workerId === 'string' && typeof agent.label === 'string' && typeof agent.assignment === 'string').slice(0, 3);
+    const seen = new Set<string>();
+    return parsed.agents.filter((agent) => {
+      if (!agent || typeof agent.id !== 'string' || !agent.id || agent.id.length > 100 || seen.has(agent.id) || !intelligenceWorkers.some((worker) => worker.id === agent.workerId) || typeof agent.label !== 'string' || !agent.label || agent.label.length > 120 || typeof agent.assignment !== 'string' || agent.assignment.length > 1000) return false;
+      seen.add(agent.id);
+      return true;
+    }).slice(0, 3).map(({ id, workerId, label, assignment }) => ({ id, workerId, label, assignment }));
   } catch { return []; }
 }
 
 export function loadWorkspacePreferences(accountId: string) {
   if (typeof window === 'undefined' || accountId === 'anonymous') return [];
-  return parseWorkspacePreferences(window.localStorage.getItem(workspacePreferenceKey(accountId)));
+  try { return parseWorkspacePreferences(window.localStorage.getItem(workspacePreferenceKey(accountId))); } catch { return []; }
 }
 
 export function saveWorkspacePreferences(accountId: string, agents: AgentSession[]) {
   if (typeof window === 'undefined' || accountId === 'anonymous') return;
   const value: StoredPreferences = { version: VERSION, agents: agents.slice(0, 3).map(({ id, workerId, label, assignment }) => ({ id, workerId, label, assignment })) };
-  window.localStorage.setItem(workspacePreferenceKey(accountId), JSON.stringify(value));
+  try { window.localStorage.setItem(workspacePreferenceKey(accountId), JSON.stringify(value)); } catch { /* Storage may be disabled; retain the in-memory workspace. */ }
 }
-

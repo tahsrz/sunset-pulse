@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import { useTheme } from '@/context/ThemeProvider';
+import { usePathname } from 'next/navigation';
 import { TTS_END_EVENT, TTS_START_EVENT } from '@/lib/core/tts';
 
 export type JamieAudioStatus = 'off' | 'permission-required' | 'starting' | 'listening' | 'speech-detected' | 'submitting' | 'jamie-speaking' | 'paused' | 'denied' | 'unavailable';
@@ -120,6 +121,7 @@ export function wakeListeningSyncAction(
 
 export function JamieAudioProvider({ children }: { children: React.ReactNode }) {
   const { isWakeListeningEnabled } = useTheme();
+  const workspaceRoute = usePathname() === '/command-center';
   const [state, dispatch] = useReducer(jamieAudioReducer, initialJamieAudioState);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const microphoneStreamRef = useRef<MediaStream | null>(null);
@@ -133,13 +135,17 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   const captionHoldUntilRef = useRef(0);
   const disposedRef = useRef(false);
   const recognitionGenerationRef = useRef(0);
+  const recognitionAttemptRef = useRef(0);
+  const recognitionHandlersRef = useRef<Pick<SpeechRecognitionLike, 'onresult' | 'onend' | 'onerror'> | null>(null);
   const recognitionSessionRef = useRef(crypto.randomUUID());
   const transcriptSequenceRef = useRef(0);
   const processedResultIndexesRef = useRef<Set<string>>(new Set());
   const workspaceOwnerRef = useRef<string | null>(null);
   const submissionEpochRef = useRef(0);
 
-  useEffect(() => { enabledRef.current = isWakeListeningEnabled; }, [isWakeListeningEnabled]);
+  useEffect(() => {
+    if (!workspaceRoute && !workspaceOwnerRef.current) enabledRef.current = isWakeListeningEnabled;
+  }, [isWakeListeningEnabled, workspaceRoute]);
 
   const refreshCaption = useCallback((now = Date.now()) => {
     if (now < captionHoldUntilRef.current) return;
@@ -153,6 +159,13 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
       restartTimerRef.current = null;
       if (disposedRef.current || !enabledRef.current || pausedForTtsRef.current || activeRef.current || !recognitionRef.current) return;
       try {
+        const attempt = ++recognitionAttemptRef.current;
+        const handlers = recognitionHandlersRef.current;
+        const recognition = recognitionRef.current;
+        processedResultIndexesRef.current.clear();
+        recognition.onresult = (event) => { if (attempt === recognitionAttemptRef.current) handlers?.onresult?.(event); };
+        recognition.onend = () => { if (attempt === recognitionAttemptRef.current) handlers?.onend?.(); };
+        recognition.onerror = (event) => { if (attempt === recognitionAttemptRef.current) handlers?.onerror?.(event); };
         recognitionRef.current.start();
         activeRef.current = true;
         dispatch({ type: 'STATUS', status: 'listening' });
@@ -169,6 +182,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     enabledRef.current = false;
     submissionEpochRef.current += 1;
     recognitionGenerationRef.current += 1;
+    recognitionAttemptRef.current += 1;
     if (restartTimerRef.current !== null) window.clearTimeout(restartTimerRef.current);
     restartTimerRef.current = null;
     recognitionRef.current?.stop();
@@ -200,11 +214,12 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
 
     dispatch({ type: 'STATUS', status: 'permission-required' });
     startInFlightRef.current = true;
+    const startEpoch = submissionEpochRef.current;
     try {
       const microphoneStream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-      if (!enabledRef.current) {
+      if (!enabledRef.current || disposedRef.current || startEpoch !== submissionEpochRef.current) {
         microphoneStream.getTracks().forEach((track) => track.stop());
         dispatch({ type: 'STATUS', status: 'off' });
         return;
@@ -287,6 +302,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
         }
       };
       recognitionRef.current = recognition;
+      recognitionHandlersRef.current = { onresult: recognition.onresult, onend: recognition.onend, onerror: recognition.onerror };
       beginRecognition();
     } catch {
       microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -303,10 +319,10 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
   }, [beginRecognition, refreshCaption]);
 
   useEffect(() => {
-    const action = workspaceOwnerRef.current ? 'none' : wakeListeningSyncAction(isWakeListeningEnabled, state.status);
+    const action = workspaceRoute || workspaceOwnerRef.current ? 'none' : wakeListeningSyncAction(isWakeListeningEnabled, state.status);
     if (action === 'stop') stop();
     else if (action === 'start') void start();
-  }, [isWakeListeningEnabled, start, state.status, stop]);
+  }, [isWakeListeningEnabled, workspaceRoute, start, state.status, stop]);
 
   useEffect(() => {
     if (!state.pendingQuery) return;
@@ -368,7 +384,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     workspaceOwnerRef.current = token;
     submissionEpochRef.current += 1;
     dispatch({ type: 'WORKSPACE_OWNERSHIP', owned: true });
-    if (recognitionRef.current || activeRef.current) stop();
+    if (recognitionRef.current || activeRef.current || startInFlightRef.current) stop();
     else dispatch({ type: 'INVALIDATE_QUERY' });
     return token;
   }, [stop]);
@@ -380,7 +396,7 @@ export function JamieAudioProvider({ children }: { children: React.ReactNode }) 
     submissionEpochRef.current += 1;
     dispatch({ type: 'INVALIDATE_QUERY' });
     dispatch({ type: 'WORKSPACE_OWNERSHIP', owned: false });
-  }, []);
+  }, [stop]);
 
   const value = useMemo<JamieAudioContextValue>(() => ({
     ...state,

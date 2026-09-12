@@ -1,3 +1,5 @@
+import type { RelayMode, CommandProgressEvent } from '@/lib/command-center/commandTypes';
+export type { RelayMode, CommandProgressEvent, CommandResponse } from '@/lib/command-center/commandTypes';
 import {
   Clipboard,
   FileText,
@@ -7,7 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type RelayMode = 'briefing' | 'slideshow' | 'puppetshow' | 'field-board' | 'script';
+
 
 export type StarterJob = {
   id: string;
@@ -24,40 +26,9 @@ export type StarterJob = {
   example: string;
 };
 
-export type CommandProgressEvent = {
-  id: string;
-  label: string;
-  status: 'pending' | 'running' | 'complete' | 'error' | string;
-  detail?: string;
-};
 
-export type CommandResponse = {
-  commandId: string;
-  worker: {
-    id: string;
-    name: string;
-    role: string;
-  };
-  result: {
-    title: string;
-    summary: string;
-    actions: string[];
-    confidence: number;
-    deliverable: {
-      title: string;
-      copyReadyText: string;
-      sourceSummary: string;
-    };
-  };
-  trace?: {
-    selectedShards?: Array<{
-      title: string;
-      source: string;
-      excerpt: string;
-    }>;
-    progress?: CommandProgressEvent[];
-  };
-};
+
+
 
 export type AgentPreferences = {
   agentName: string;

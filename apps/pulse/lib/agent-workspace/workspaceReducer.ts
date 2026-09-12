@@ -25,7 +25,7 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
       };
     case 'RESTORE_AGENTS': {
       const agentsById = Object.fromEntries(action.agents.map((agent) => [agent.id, agent]));
-      return { ...state, agentsById, agentOrder: action.agents.map((agent) => agent.id), selectedAgentId: action.agents[0]?.id || null };
+      return { ...initialWorkspaceState, agentsById, agentOrder: action.agents.map((agent) => agent.id), selectedAgentId: action.agents[0]?.id || null };
     }
     case 'REMOVE_AGENT': {
       if (!state.agentsById[action.agentId]) return state;
@@ -68,18 +68,18 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
         ...state,
         runsById: { ...state.runsById, [action.run.id]: action.run },
         runOrder: [...state.runOrder, action.run.id],
-        agentsById: agent ? { ...state.agentsById, [agent.id]: { ...agent, transcriptCursor: Math.max(agent.transcriptCursor, ...state.transcript.map((segment) => segment.sequence), agent.transcriptCursor) } } : state.agentsById,
+        agentsById: agent ? { ...state.agentsById, [agent.id]: { ...agent, transcriptCursor: Math.max(agent.transcriptCursor, action.run.transcriptSequence ?? agent.transcriptCursor) } } : state.agentsById,
       };
     }
     case 'RUN_PROGRESS': {
       const run = state.runsById[action.runId];
-      if (!run || run.agentId !== action.agentId) return state;
+      if (!run || run.agentId !== action.agentId || run.state !== 'running') return state;
       const progress = [...run.progress.filter((item) => item.id !== action.progress.id), action.progress];
       return { ...state, runsById: { ...state.runsById, [action.runId]: { ...run, state: 'running', progress } } };
     }
     case 'RUN_COMPLETED': {
       const run = state.runsById[action.runId];
-      if (!run || run.agentId !== action.agentId) return state;
+      if (!run || run.agentId !== action.agentId || run.state !== 'running') return state;
       return { ...state, runsById: { ...state.runsById, [action.runId]: { ...run, state: 'complete', response: action.response, finishedAt: action.finishedAt, progress: action.response.trace?.progress || run.progress } } };
     }
     case 'RUN_FAILED': {
@@ -91,6 +91,11 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
       const run = state.runsById[action.runId];
       if (!run || run.agentId !== action.agentId) return state;
       return { ...state, runsById: { ...state.runsById, [action.runId]: { ...run, state: 'cancelled', finishedAt: action.finishedAt } } };
+    }
+    case 'RUN_REVIEWED': {
+      const run = state.runsById[action.runId];
+      if (!run?.response || run.response.commandId !== action.commandId) return state;
+      return { ...state, runsById: { ...state.runsById, [run.id]: { ...run, response: { ...run.response, trace: { ...run.response.trace, supervisorReview: action.review } } } } };
     }
     case 'SET_ATTENTION': return { ...state, attentionByAgentId: { ...state.attentionByAgentId, [action.decision.agentId]: action.decision } };
     case 'SET_NOTICE': return { ...state, notice: action.notice };

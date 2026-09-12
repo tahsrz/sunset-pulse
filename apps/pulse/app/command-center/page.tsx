@@ -6,7 +6,9 @@ export const metadata = {
   description: 'Spawn specialized workers, share one finalized conversation, and submit focused real estate intelligence work.'
 };
 
-export default async function CommandCenterPage({ searchParams }: { searchParams?: Promise<{ legacy?: string }> }) {
+export default async function CommandCenterPage({ searchParams }: { searchParams?: Promise<{ legacy?: string; intake?: string; command?: string }> }) {
   const params = await searchParams;
-  return params?.legacy === '1' ? <AgentSelectionArena /> : <AgentWorkspace />;
+  // Existing intake/command deep links retain their complete legacy workflow
+  // until those entry contracts have an equivalent workspace representation.
+  return params?.legacy === '1' || params?.intake || params?.command ? <AgentSelectionArena /> : <AgentWorkspace />;
 }

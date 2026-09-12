@@ -15,6 +15,7 @@ export async function applyPublicApiRateLimit(
   scope: string,
   limit: number,
   windowSeconds = 60,
+  options: { requireDistributed?: boolean } = {},
 ) {
   const identityHash = hashIdentity(`${scope}:${getClientIp(request)}`);
 
@@ -55,7 +56,7 @@ export async function applyPublicApiRateLimit(
   } catch (error) {
     console.error('[PUBLIC_RATE_LIMIT_ERROR]', error);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== 'production' && !options.requireDistributed) {
       return applyApiRateLimit(`public-dev:${identityHash}`, limit);
     }
 

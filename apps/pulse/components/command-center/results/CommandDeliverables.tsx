@@ -1,3 +1,4 @@
+import React from 'react';
 import { renderGlossaryText as glossaryText } from '@/components/glossary/GlossaryText';
 import type { RelayMode } from '@/components/agent-console/agentConsoleConfig';
 

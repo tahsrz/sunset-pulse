@@ -9,14 +9,20 @@ const roleIntents: Record<string, CommandIntent[]> = {
 };
 
 export function getEligibleWindow(agent: AgentSession, segments: TranscriptSegment[], now = Date.now()) {
-  const eligible = segments.filter((segment) => segment.final && segment.sequence > agent.transcriptCursor && segment.sequence >= agent.spawnedAtSequence && now - segment.capturedAt <= workspacePolicy.transcriptWindowMs);
+  const eligible = segments.filter((segment) => segment.final && segment.text.trim() && segment.text.length <= 2_000 && segment.sequence > agent.transcriptCursor && segment.sequence > agent.spawnedAtSequence && now >= segment.capturedAt && now - segment.capturedAt <= workspacePolicy.transcriptWindowMs);
   if (!eligible.length) return null;
-  const ordered = eligible.sort((a, b) => a.sequence - b.sequence);
-  const sessionId = ordered.map((segment) => segment.sessionId).join(',');
+  const ordered: TranscriptSegment[] = [];
+  let length = 0;
+  for (const segment of eligible.sort((a, b) => b.sequence - a.sequence)) {
+    if (ordered.length === 30 || length + segment.text.length > 12_000) break;
+    ordered.unshift(segment);
+    length += segment.text.length;
+  }
+  const windowId = `${agent.assignmentRevision}:${transcriptWindowId(ordered)}`;
   return {
-    id: `${sessionId}:${agent.assignmentRevision}:${ordered.map((segment) => segment.id).join('.')}`,
+    id: windowId,
     segments: ordered,
-    windowId: `${sessionId}:${agent.assignmentRevision}:${ordered.map((segment) => segment.id).join('.')}`,
+    windowId,
   };
 }
 
@@ -30,12 +36,19 @@ export function assessWithRules(agent: AgentSession, window: ReturnType<typeof g
   const supported = roleIntents[agent.workerId] || [];
   if (!supported.length) return { ...base, action: 'wait', reason: 'This role has no automatic trigger policy yet.' };
   if (supported.includes(classification.intent)) return { ...base, action: 'submit', reason: `Rules matched ${classification.intent.replaceAll('_', ' ')} for this role.` };
-  const roleTerms = `${agent.label} ${agent.assignment}`.toLowerCase().split(/\W+/).filter((term) => term.length > 3);
-  if (roleTerms.some((term) => text.toLowerCase().includes(term))) return { ...base, action: 'submit', reason: 'The finalized speech names this agent’s assignment.' };
   return { ...base, action: 'ignore', reason: 'The finalized speech does not match this role.' };
 }
 
 export function isStillEligible(agent: AgentSession, segments: TranscriptSegment[], decision: AttentionDecision, now = Date.now()) {
   const window = getEligibleWindow(agent, segments, now);
-  return Boolean(window && window.windowId === decision.transcriptWindowId && agent.assignmentRevision === decision.assignmentRevision);
+  return Boolean(!agent.removed && agent.autoListenEnabled && window && window.windowId === decision.transcriptWindowId && agent.assignmentRevision === decision.assignmentRevision);
+}
+
+// Compact identity only, not an authorization token. Callers also compare the
+// actual segment IDs when applying an asynchronous assessment.
+export function transcriptWindowId(segments: TranscriptSegment[]) {
+  const input = JSON.stringify(segments.map(({ sessionId, sequence, id }) => [sessionId, sequence, id]));
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) hash = Math.imul(hash ^ input.charCodeAt(index), 16777619);
+  return `${segments.length}:${segments[0]?.sequence}:${segments.at(-1)?.sequence}:${hash >>> 0}`;
 }

@@ -11,7 +11,8 @@ export const workspacePolicy = {
   maxSemanticAssessmentsPerMinute: 6,
   commandMaxLength: 20_000,
   commandContextMaxLength: 7_000,
+  // Local conservative hold after abort/uncertain delivery, not server proof.
+  cancelledRunHoldMs: 300_000,
 } as const;
 
 export type WorkspacePolicy = typeof workspacePolicy;
-

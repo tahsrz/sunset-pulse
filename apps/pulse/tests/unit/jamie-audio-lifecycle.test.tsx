@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 let wakeListeningEnabled = false;
+let pathname = '/';
+vi.mock('next/navigation', () => ({ usePathname: () => pathname }));
 
 vi.mock('@/context/ThemeProvider', () => ({
   useTheme: () => ({ isWakeListeningEnabled: wakeListeningEnabled }),
@@ -19,7 +21,7 @@ class FakeSpeechRecognition extends EventTarget {
   lang = '';
   start = vi.fn();
   stop = vi.fn();
-  onresult = null;
+  onresult: ((event: any) => void) | null = null;
   onend: (() => void) | null = null;
   onerror = null;
 
@@ -49,6 +51,7 @@ describe('Jamie audio lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     wakeListeningEnabled = false;
+    pathname = '/';
     FakeSpeechRecognition.instance = null;
     probeAudio = null;
     Object.defineProperty(window, 'webkitSpeechRecognition', {
@@ -109,6 +112,14 @@ describe('Jamie audio lifecycle', () => {
     expect(stopTrack).toHaveBeenCalledTimes(1);
   });
 
+  it('suppresses saved legacy listening on the workspace route before a child claims ownership', async () => {
+    pathname = '/command-center';
+    wakeListeningEnabled = true;
+    render(<JamieAudioProvider><div /></JamieAudioProvider>);
+    await act(async () => Promise.resolve());
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+
   it('publishes one finalized segment to workspace ownership and suppresses the legacy wake query', async () => {
     const view = render(<JamieAudioProvider><WorkspaceProbe /></JamieAudioProvider>);
     await waitFor(() => expect(probeAudio?.workspaceOwned).toBe(true));
@@ -122,5 +133,34 @@ describe('Jamie audio lifecycle', () => {
     expect(probeAudio?.submittedQuery).toBeNull();
     view.unmount();
     expect(stopTrack).toHaveBeenCalled();
+  });
+
+  it('accepts reset result indexes after restart and ignores old callbacks', async () => {
+    render(<JamieAudioProvider><WorkspaceProbe /></JamieAudioProvider>);
+    await act(async () => { await probeAudio?.start(); });
+    await waitFor(() => expect(FakeSpeechRecognition.instance?.start).toHaveBeenCalledTimes(1));
+    const recognition = FakeSpeechRecognition.instance!;
+    const stale = recognition.onresult;
+    const event = (text: string) => ({ resultIndex: 0, results: [{ isFinal: true, 0: { transcript: text } }] });
+    act(() => recognition.onresult?.(event('first result')));
+    act(() => recognition.onend?.());
+    await waitFor(() => expect(recognition.start).toHaveBeenCalledTimes(2));
+    act(() => stale?.(event('obsolete result')));
+    act(() => recognition.onresult?.(event('second result')));
+    expect(probeAudio?.finalizedSegments.map((segment) => segment.text)).toEqual(['first result', 'second result']);
+    expect(probeAudio?.finalizedSegments.map((segment) => segment.sequence)).toEqual([1, 2]);
+  });
+
+  it('releases a late microphone permission result after stop', async () => {
+    let resolveMedia!: (stream: { getTracks: () => { stop: typeof stopTrack }[] }) => void;
+    getUserMedia.mockImplementationOnce(() => new Promise((resolve) => { resolveMedia = resolve; }));
+    render(<JamieAudioProvider><WorkspaceProbe /></JamieAudioProvider>);
+    let starting: Promise<void> | undefined;
+    act(() => { starting = probeAudio?.start(); });
+    act(() => probeAudio?.stop());
+    await act(async () => { resolveMedia({ getTracks: () => [{ stop: stopTrack }] }); await starting; });
+    expect(stopTrack).toHaveBeenCalledTimes(1);
+    expect(FakeSpeechRecognition.instance).toBeNull();
+    expect(probeAudio?.status).toBe('off');
   });
 });

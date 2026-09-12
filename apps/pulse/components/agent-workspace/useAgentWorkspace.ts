@@ -17,12 +17,14 @@ export function useAgentWorkspace() {
   const audio = useJamieAudio();
   const { user } = useAuth();
   const accountId = (user as { id?: string } | null)?.id || 'anonymous';
-  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState<string | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
-  const [scheduler] = useState(() => new SubmissionScheduler(() => stateRef.current.agentsById, () => stateRef.current.automationPaused));
+  const audioRef = useRef(audio);
+  audioRef.current = audio;
+  const [scheduler] = useState(() => new SubmissionScheduler(() => stateRef.current.agentsById, () => stateRef.current.automationPaused, () => audioRef.current.workspaceOwned && ['listening', 'speech-detected'].includes(audioRef.current.status)));
   const { submitToAgent, cancelRun, retryRun } = useAgentCommandRun({ state, dispatch, scheduler });
-  const { attentionMode, assessmentCount } = useAgentAttention({ state, dispatch, audio, submitToAgent, scheduler });
+  const { attentionMode, assessmentCount, attentionUnavailableReason } = useAgentAttention({ state, dispatch, audio, submitToAgent, scheduler });
 
   useEffect(() => {
     const token = audio.acquireWorkspaceOwnership();
@@ -43,14 +45,15 @@ export function useAgentWorkspace() {
       draftRevision: 0,
       transcriptCursor: Math.max(0, ...audio.finalizedSegments.map((segment) => segment.sequence || 0)),
     }));
-    if (restored.length) dispatch({ type: 'RESTORE_AGENTS', agents: restored });
-    setPreferencesLoaded(true);
+    scheduler.invalidateEpoch();
+    dispatch({ type: 'RESTORE_AGENTS', agents: restored });
+    setPreferencesLoaded(accountId);
     // Restore only role/label/assignment. Capture and running state are never persisted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId]);
 
   useEffect(() => {
-    if (preferencesLoaded) saveWorkspacePreferences(accountId, state.agentOrder.map((id) => state.agentsById[id]));
+    if (preferencesLoaded === accountId) saveWorkspacePreferences(accountId, state.agentOrder.map((id) => state.agentsById[id]));
   }, [accountId, preferencesLoaded, state.agentOrder, state.agentsById]);
 
   const spawnAgent = useCallback(({ workerId, label, assignment, autoListenEnabled }: { workerId: string; label?: string; assignment?: string; autoListenEnabled?: boolean }) => {
@@ -81,9 +84,13 @@ export function useAgentWorkspace() {
     scheduler.removeAgent(agentId);
     dispatch({ type: 'REMOVE_AGENT', agentId });
   }, [scheduler]);
-  const selectAgent = useCallback((agentId: string) => dispatch({ type: 'SELECT_AGENT', agentId }), []);
+  const selectAgent = useCallback((agentId: string | null) => dispatch({ type: 'SELECT_AGENT', agentId }), []);
 
-  const setAutoListen = useCallback((agentId: string, enabled: boolean) => dispatch({ type: 'SET_AUTO_LISTEN', agentId, enabled }), []);
+  const setAutoListen = useCallback((agentId: string, enabled: boolean) => {
+    scheduler.invalidateEpoch();
+    if (enabled) dispatch({ type: 'ADVANCE_CURSOR', agentId, sequence: Math.max(0, ...audioRef.current.finalizedSegments.map((segment) => segment.sequence || 0)) });
+    dispatch({ type: 'SET_AUTO_LISTEN', agentId, enabled });
+  }, [scheduler]);
   const setDraft = useCallback((agentId: string, text: string) => dispatch({ type: 'SET_DRAFT', agentId, text, dirty: true }), []);
   const useRecentSpeech = useCallback((agentId: string) => dispatch({ type: 'USE_RECENT_SPEECH', agentId, text: audio.finalizedSegments.map((segment) => segment.text).join(' ') }), [audio.finalizedSegments]);
   const setAutomationPaused = useCallback((paused: boolean) => {
@@ -97,6 +104,7 @@ export function useAgentWorkspace() {
     workers: intelligenceWorkers,
     scheduler,
     attentionMode,
+    attentionUnavailableReason,
     assessmentCount,
     spawnAgent,
     removeAgent,

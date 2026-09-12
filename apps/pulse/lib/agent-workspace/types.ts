@@ -1,4 +1,4 @@
-import type { CommandProgressEvent, CommandResponse, RelayMode } from '@/components/agent-console/agentConsoleConfig';
+import type { CommandProgressEvent, CommandResponse, RelayMode } from '@/lib/command-center/commandTypes';
 
 export type TranscriptSegment = {
   sessionId: string;
@@ -34,6 +34,8 @@ export type AgentRun = {
   source: AgentSource;
   submittedText: string;
   commandText: string;
+  request?: Readonly<{ command: string; selectedWorkerId: string; relayMode: RelayMode; supervisor: boolean }>;
+  transcriptSequence?: number;
   state: AgentRunState;
   progress: CommandProgressEvent[];
   response?: CommandResponse;
@@ -74,6 +76,7 @@ export type CommandSubmission = {
   transcript?: TranscriptSegment[];
   relayMode?: RelayMode;
   supervisor?: boolean;
+  retryOfRunId?: string;
 };
 
 export type WorkspaceAction =
@@ -92,5 +95,6 @@ export type WorkspaceAction =
   | { type: 'RUN_COMPLETED'; runId: string; agentId: string; response: CommandResponse; finishedAt: number }
   | { type: 'RUN_FAILED'; runId: string; agentId: string; error: string; finishedAt: number }
   | { type: 'RUN_CANCELLED'; runId: string; agentId: string; finishedAt: number }
+  | { type: 'RUN_REVIEWED'; runId: string; commandId: string; review: NonNullable<CommandResponse['trace']>['supervisorReview'] }
   | { type: 'SET_ATTENTION'; decision: AttentionDecision }
   | { type: 'SET_NOTICE'; notice: string | null };

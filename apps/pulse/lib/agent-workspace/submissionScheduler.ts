@@ -11,6 +11,7 @@ export type Reservation = {
   createdAt: number;
   assignmentRevision: number;
   epoch: number;
+  releaseAfter?: number;
 };
 
 type SchedulerInput = {
@@ -32,10 +33,18 @@ export class SubmissionScheduler {
   private epoch = 0;
   private lastAutomaticByAgent = new Map<string, number>();
 
-  constructor(private readonly getAgents: () => Record<string, AgentSession>, private readonly getAutomationPaused: () => boolean) {}
+  constructor(private readonly getAgents: () => Record<string, AgentSession>, private readonly getAutomationPaused: () => boolean, private readonly canAutomate: () => boolean = () => true) {}
+
+  getEpoch() { return this.epoch; }
+
+  private prune(now: number) {
+    for (const [id, reservation] of this.reservations) if (reservation.releaseAfter !== undefined && now >= reservation.releaseAfter) this.reservations.delete(id);
+    while (this.startedAt[0] !== undefined && now - this.startedAt[0] >= 3_600_000) this.startedAt.shift();
+  }
 
   tryReserve(input: SchedulerInput): SchedulerResult {
     const now = input.now ?? Date.now();
+    this.prune(now);
     const agent = this.getAgents()[input.agentId];
     if (!agent || agent.removed) return { ok: false, reason: 'This agent is no longer available.' };
     if (input.assignmentRevision !== undefined && input.assignmentRevision !== agent.assignmentRevision) return { ok: false, reason: 'This agent changed while the request was being prepared.' };
@@ -51,14 +60,14 @@ export class SubmissionScheduler {
     }
 
     if (input.source === 'automatic') {
-      if (!agent.autoListenEnabled || this.getAutomationPaused()) return { ok: false, reason: 'Automatic listening is paused.' };
-      const lastAutomatic = this.lastAutomaticByAgent.get(input.agentId) || 0;
-      if (now - lastAutomatic < workspacePolicy.automaticCooldownMs) return { ok: false, reason: 'Automatic cooldown is active for this agent.' };
+      if (!agent.autoListenEnabled || this.getAutomationPaused() || !this.canAutomate()) return { ok: false, reason: 'Automatic listening is paused.' };
+      const lastAutomatic = this.lastAutomaticByAgent.get(input.agentId);
+      if (lastAutomatic !== undefined && now - lastAutomatic < workspacePolicy.automaticCooldownMs) return { ok: false, reason: 'Automatic cooldown is active for this agent.' };
       if (this.startedAt.filter((time) => now - time < 60_000).length >= workspacePolicy.maxAutomaticStartsPerMinute) return { ok: false, reason: 'The automatic minute budget is exhausted.' };
       if (this.startedAt.filter((time) => now - time < 3_600_000).length >= workspacePolicy.maxAutomaticStartsPerHour) return { ok: false, reason: 'The automatic hourly budget is exhausted.' };
     }
 
-    const active = [...this.reservations.values()].filter((reservation) => reservation.started);
+    const active = [...this.reservations.values()];
     if (active.length >= workspacePolicy.maxGlobalConcurrentCommands) return { ok: false, reason: 'Workspace is at its concurrent command limit.' };
     if (active.some((reservation) => reservation.agentId === input.agentId)) return { ok: false, reason: 'This agent is working; new automatic context will replace its queued candidate.' };
 
@@ -80,7 +89,13 @@ export class SubmissionScheduler {
   start(runId: string, now = Date.now()) {
     const reservation = this.reservations.get(runId);
     if (!reservation || reservation.epoch !== this.epoch || reservation.started) return false;
+    const agent = this.getAgents()[reservation.agentId];
+    if (!agent || agent.removed || agent.assignmentRevision !== reservation.assignmentRevision || (reservation.source === 'automatic' && (!agent.autoListenEnabled || this.getAutomationPaused() || !this.canAutomate()))) {
+      this.reservations.delete(runId);
+      return false;
+    }
     reservation.started = true;
+    this.candidates.delete(reservation.agentId);
     if (reservation.source === 'automatic') {
       this.startedAt.push(now);
       this.lastAutomaticByAgent.set(reservation.agentId, now);
@@ -100,6 +115,11 @@ export class SubmissionScheduler {
   }
 
   completeRun(runId: string) { this.reservations.delete(runId); }
+
+  holdUncertainRun(runId: string, now = Date.now()) {
+    const reservation = this.reservations.get(runId);
+    if (reservation?.started) reservation.releaseAfter = now + workspacePolicy.cancelledRunHoldMs;
+  }
 
   tryReserveAssessment(now = Date.now()) {
     while (this.assessmentsAt[0] !== undefined && now - this.assessmentsAt[0] >= 60_000) this.assessmentsAt.shift();
@@ -131,6 +151,7 @@ export class SubmissionScheduler {
   }
 
   getBudgetState(now = Date.now()) {
+    this.prune(now);
     return {
       minute: this.startedAt.filter((time) => now - time < 60_000).length,
       hour: this.startedAt.filter((time) => now - time < 3_600_000).length,

@@ -1,6 +1,6 @@
 # Praxis Agent Workspace — Implementation Plan
 
-Status: implementation in progress; P0–P5 baseline and the P4 semantic adapter are implemented. A real configured-provider smoke test, full P6 output/action parity, and final P7 documentation remain.
+Status: implementation in progress; September 11 audit corrected premature completion claims. Core safety repairs and shared listing workflow extraction are implemented. Use the evidence ledger in section 7, not the earlier baseline summary, to determine what remains.
 Owner: Taz. Intended executor: Luna or the next implementation session.
 Source inspection: September 11, 2026.
 Scope: replace the Command Center interface with a microphone-driven, multi-agent workspace while reusing the existing command execution backend.
@@ -363,9 +363,28 @@ First useful milestone: P0–P2, with manual per-agent execution and the shared 
 Autonomous-listening milestone: P3–P4.
 Replacement milestone: P5–P7 with retained features verified.
 
-Current completion: P0–P5 baseline and the P4 semantic adapter are implemented. The bounded attention route uses the semantic adapter only when `AGENT_WORKSPACE_ATTENTION_ENABLED=true` and a configured Groq key is present; otherwise it explicitly falls back to rules-based attention. P6 now shares answer, deliverable-frame, and relay-plan presentation between the legacy arena and workspace. The workspace additionally surfaces extracted source/trace, Command Post, TAH note, and listing-review/copy-package components; canonical listing handoff, legacy migration of those specialized panels, supervisor review queue state, trace export parity, and remaining per-run action/refinement parity remain open. P7 browser verification and final documentation remain open.
+### September 11 review and revised execution order
 
-Implementation handoff record (September 11, 2026):
+The initial baseline overstated safety and parity. Review found late assessments could submit after stop/TTS, batched agents shared the first agent's window, client abort immediately released backend capacity, retries rebuilt changed context, mobile navigation could strand the user, and the workspace listing panel omitted editable copy/intake/canonical workflows. These are functional regressions, not polish tasks.
+
+Corrective implementation in this review:
+
+| Area | Implemented behavior | Evidence / remaining boundary |
+| --- | --- | --- |
+| P0 contracts | `lib/command-center/commandTypes.ts` holds the full arena response and a compatible sparse console projection. Workspace retains rich diagnostics without double casts. | Legacy transport still needs migration to the shared, validated reader. |
+| P1 capture | Workspace route suppresses persisted legacy listening before child effects; permission completion is epoch-checked; recognition restarts have distinct callback attempts. | Fake recognition tests cover dedup/restart/late media. Real-device microphone walkthrough remains. |
+| P2/P3 runs | Immutable request snapshots; synchronous reserved slots; execution-time capture check; original retry options; only submitted transcript advances its cursor. Cancel/uncertain delivery holds capacity for five minutes. | The hold is a conservative client policy, not proof the backend stopped. No automatic retry. Manual speech-trigger claim integration remains. |
+| P3/P4 attention | Abort obsolete requests; recheck capture/TTS/pause/agent/window/epoch; validate both sides; batch separate per-agent segment IDs; deterministic prefilter; bounded windows; wait on access/budget/malformed-response failures. | Semantic availability is explicitly displayed. No live provider smoke performed. |
+| P4 endpoint | Existing operator access and shared request limiter run before assessment. Paid semantic requests require distributed limiting even in development. Provider timeout aborts; SDK retries disabled; no fabricated usage. | Configuration or rate-limiter failure cannot enable unlimited paid calls. No production flags changed. |
+| P5 UI | Persistent Agents/Conversation/Work navigation at mobile; rail plus switchable content at tablet; historical result selection, removed-agent history, run-keyed output state, keyboard dialog focus. | Browser checks must cover 1440, 900, and 390px; automated checks do not replace real microphone verification. |
+| P6 listing | Original `ListingReviewPanel`, editable `ListingCopyPackage`, and `CanonicalListingHandoff` structurally extracted; both arena and workspace consume them. Helpers live in `listingReviewHelpers.ts`. | Tests cover remarks/features, edited-copy save, optimistic version, readiness blockers, conflict preservation. Existing intake/command deep links remain in the classic surface. |
+| P6 actions/review | Visible copy-ready output restored; clipboard starts before action-memory requests; command actions populate a draft only; configured supervisor queues/processes review bound to run + backend command ID. | Source/diagnostic views still need structural consolidation; full trace-export and TensorZero feedback parity remain. |
+
+Revised order: safety/race fixes → shared contracts and actual listing extraction → focused regression tests → responsive browser walkthrough → remaining structural source/diagnostic/transport and feedback parity. Do not add further reduced copies. Keep `?legacy=1` and classic intake/command deep links until parity is demonstrated. Do not mark P0–P7 complete or change the root README to “complete” based on compilation alone.
+
+Verification for this review: 60 tests across the focused workspace/result suites passed, including ten asynchronous-boundary tests. The full relevant focused command below passed 57 tests across 14 suites before the final three parity assertions were added; the parity suite then passed independently. Production build passed after the shared contract extraction. Browser verification passed at 1440px, 900px, and 390px with mocked SSE responses and zero microphone requests; the existing shared-shell React #418 hydration warning was reproduced on `/`, `/command-center`, and `/command-center?legacy=1` and is explicitly tolerated only by the workspace spec. Standalone TypeScript checking still reports existing repository test errors; it is not a clean global pass. A live provider/microphone smoke test remains unavailable in this session.
+
+Earlier baseline handoff record (historical; superseded by the audit above):
 
 1. Changed `JamieAudioContext.tsx`, `JamieChat.tsx`, the shared stream reader, the command-center page/catalog, new `lib/agent-workspace/*`, new `components/agent-workspace/*`, the bounded attention route, and focused unit/browser specs.
 2. Implemented: one shared finalized transcript feed, workspace ownership lease, legacy wake suppression in workspace mode, independent spawnable agent sessions, per-agent drafts/runs, bounded manual/automatic command dispatch, rules-based attention, concurrency/cooldown/budget guards, retry/cancel visibility, mobile-aware UI, and versioned account-scoped role preferences.
@@ -381,7 +400,7 @@ Next executable action: complete the remaining P6 extraction and per-run action 
 
 This section expands P0–P7 into edit operations. It takes precedence over a less-specific instruction earlier in the plan. Existing source anchors were checked on September 11, 2026. New-file lists specify declaration/statement order, not fabricated source line numbers.
 
-Before each edit, search for the symbol and inspect the surrounding code. Do not apply an old numeric range blindly. Application implementation is still pending: snippets below describe proposed code, not installed functionality.
+Before each edit, search for the symbol and inspect the surrounding code. Do not apply an old numeric range blindly. These are target contracts, not a completion checklist; section 7 distinguishes installed behavior from remaining work.
 
 ### 8.1 P0 — Extract the full command contracts before writing the new run hook
 
