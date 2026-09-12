@@ -5,6 +5,7 @@ import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@
 import { supabaseAdmin } from '@/lib/supabase';
 import { getTourHotList } from '@/lib/data/tourHotList';
 import {
+  buildAgentEmailDraft,
   buildHotlistEmailDraft,
   HotlistWorkflowError,
   licensedWorkflowProfileSchema,
@@ -26,12 +27,18 @@ const sendSchema = z.object({
   runId: uuid,
   confirm: z.literal(true),
 });
-const requestSchema = z.discriminatedUnion('action', [saveSettingsSchema, runSchema, sendSchema]);
+const agentDraftSchema = z.object({
+  action: z.literal('save_agent_draft'),
+  subject: z.string().trim().min(1).max(300),
+  body: z.string().trim().min(1).max(12000),
+  sourceRunId: uuid.optional(),
+});
+const requestSchema = z.discriminatedUnion('action', [saveSettingsSchema, runSchema, sendSchema, agentDraftSchema]);
 
 type WorkflowRunRow = {
   id: string;
   user_id: string | null;
-  workflow_key: 'hotlist_email';
+  workflow_key: 'hotlist_email' | 'agent_email';
   status: 'draft' | 'sending' | 'sent' | 'failed' | 'cancelled';
   idempotency_key: string;
   subject: string;
@@ -97,6 +104,20 @@ export async function POST(request: NextRequest) {
     });
     if (error) return errorResponse('Failed to save the licensed workflow profile.', 500, error.message);
     return successResponse({ saved: true, profile: redactProfile(profile) });
+  }
+
+  if (parsed.data.action === 'save_agent_draft') {
+    try {
+      const profile = await loadSettings(userId);
+      if (!profile) return errorResponse('Save a complete licensed agent profile before saving an agent email.', 409);
+      const draft = buildAgentEmailDraft({ profile, subject: parsed.data.subject, body: parsed.data.body, contacts: await loadContacts(userId) });
+      const existing = await findRun(draft.fingerprint);
+      if (existing) return successResponse({ run: presentRun(existing), reused: true });
+      const run = await insertRun({ userId, draft, auditName, workflowKey: 'agent_email', metadata: { sourceRunId: parsed.data.sourceRunId || null } });
+      return NextResponse.json({ success: true, data: { run: presentRun(run), requiresApproval: true } }, { status: 201 });
+    } catch (error) {
+      return workflowErrorResponse(error);
+    }
   }
 
   if (parsed.data.action === 'run') {
@@ -210,17 +231,17 @@ async function findRun(idempotencyKey: string) {
   return data as WorkflowRunRow | null;
 }
 
-async function insertRun({ userId, draft, auditName }: { userId: string | null; draft: ReturnType<typeof buildHotlistEmailDraft>; auditName: string }) {
+async function insertRun({ userId, draft, auditName, workflowKey = 'hotlist_email', metadata = {} }: { userId: string | null; draft: ReturnType<typeof buildHotlistEmailDraft> | ReturnType<typeof buildAgentEmailDraft>; auditName: string; workflowKey?: 'hotlist_email' | 'agent_email'; metadata?: Record<string, unknown> }) {
   const { data, error } = await supabaseAdmin.from('licensed_workflow_runs').insert({
     user_id: userId,
-    workflow_key: 'hotlist_email',
+    workflow_key: workflowKey,
     status: 'draft',
     idempotency_key: draft.fingerprint,
     subject: draft.subject,
     body: draft.body,
-    listing_snapshot: draft.listingSnapshot,
+    listing_snapshot: 'listingSnapshot' in draft ? draft.listingSnapshot : [],
     recipient_snapshot: draft.recipientSnapshot,
-    skipped_snapshot: { contacts: draft.skippedContacts, listings: draft.skippedListings },
+    skipped_snapshot: { contacts: draft.skippedContacts, listings: 'skippedListings' in draft ? draft.skippedListings : [], ...metadata },
     approval_required: true,
     approved_by_name: auditName,
   }).select('*').single();

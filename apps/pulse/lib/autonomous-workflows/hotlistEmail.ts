@@ -47,6 +47,14 @@ export type HotlistEmailDraft = {
   skippedListings: Array<{ id: string; reason: 'not_mls' | 'not_active' | 'missing_mls_id' }>;
 };
 
+export type AgentEmailDraft = {
+  subject: string;
+  body: string;
+  fingerprint: string;
+  recipientSnapshot: Array<{ id: string; name: string; email: string }>;
+  skippedContacts: HotlistEmailDraft['skippedContacts'];
+};
+
 export class HotlistWorkflowError extends Error {
   constructor(message: string, readonly code: 'profile_incomplete' | 'no_listings' | 'no_recipients' | 'disabled') {
     super(message);
@@ -89,36 +97,7 @@ export function buildHotlistEmailDraft({
     throw new HotlistWorkflowError('No verified active MLS listings are available for this workflow.', 'no_listings');
   }
 
-  const recipientSnapshot: HotlistEmailDraft['recipientSnapshot'] = [];
-  const skippedContacts: HotlistEmailDraft['skippedContacts'] = [];
-  const seenEmails = new Set<string>();
-  for (const contact of contacts) {
-    const email = String(contact.email || '').trim().toLowerCase();
-    const metadata = contact.metadata || {};
-    const consent = metadata.email_marketing_consent === true || metadata.emailConsent === 'subscribed';
-    if (contact.do_not_contact || metadata.email_opt_out === true || metadata.emailOptOut === true) {
-      skippedContacts.push({ id: contact.id, email: email || null, reason: 'do_not_contact' });
-      continue;
-    }
-    if (!email) {
-      skippedContacts.push({ id: contact.id, email: null, reason: 'no_email' });
-      continue;
-    }
-    if (!consent) {
-      skippedContacts.push({ id: contact.id, email, reason: 'consent_missing' });
-      continue;
-    }
-    if (seenEmails.has(email)) {
-      skippedContacts.push({ id: contact.id, email, reason: 'duplicate' });
-      continue;
-    }
-    if (recipientSnapshot.length >= parsedProfile.data.maxRecipientsPerRun) {
-      skippedContacts.push({ id: contact.id, email, reason: 'duplicate' });
-      continue;
-    }
-    seenEmails.add(email);
-    recipientSnapshot.push({ id: contact.id, name: getContactName(contact), email });
-  }
+  const { recipientSnapshot, skippedContacts } = selectEligibleContacts(contacts, parsedProfile.data.maxRecipientsPerRun);
 
   if (recipientSnapshot.length === 0) {
     throw new HotlistWorkflowError('No contacts with explicit email consent are eligible for this workflow.', 'no_recipients');
@@ -150,6 +129,58 @@ export function buildHotlistEmailDraft({
   })).digest('hex');
 
   return { subject, body, fingerprint, listingSnapshot: qualifiedListings, recipientSnapshot, skippedContacts, skippedListings };
+}
+
+export function buildAgentEmailDraft({
+  profile,
+  subject,
+  body,
+  contacts,
+}: {
+  profile: LicensedWorkflowProfile;
+  subject: string;
+  body: string;
+  contacts: HotlistWorkflowContact[];
+}): AgentEmailDraft {
+  const parsedProfile = licensedWorkflowProfileSchema.safeParse(profile);
+  if (!parsedProfile.success) throw new HotlistWorkflowError('Complete the licensed agent profile before saving an agent email.', 'profile_incomplete');
+  const cleanSubject = subject.trim();
+  const cleanBody = body.trim();
+  if (!cleanSubject || !cleanBody) throw new HotlistWorkflowError('An agent email needs both a subject and message body.', 'no_recipients');
+  const { recipientSnapshot, skippedContacts } = selectEligibleContacts(contacts, parsedProfile.data.maxRecipientsPerRun);
+  if (recipientSnapshot.length === 0) throw new HotlistWorkflowError('No contacts with explicit email consent are eligible for this email.', 'no_recipients');
+  const fingerprint = createHash('sha256').update(JSON.stringify({ workflow: 'agent_email', profile: parsedProfile.data, subject: cleanSubject, body: cleanBody, recipients: recipientSnapshot })).digest('hex');
+  return { subject: cleanSubject, body: cleanBody, fingerprint, recipientSnapshot, skippedContacts };
+}
+
+function selectEligibleContacts(contacts: HotlistWorkflowContact[], maxRecipients: number) {
+  const recipientSnapshot: HotlistEmailDraft['recipientSnapshot'] = [];
+  const skippedContacts: HotlistEmailDraft['skippedContacts'] = [];
+  const seenEmails = new Set<string>();
+  for (const contact of contacts) {
+    const email = String(contact.email || '').trim().toLowerCase();
+    const metadata = contact.metadata || {};
+    const consent = metadata.email_marketing_consent === true || metadata.emailConsent === 'subscribed';
+    if (contact.do_not_contact || metadata.email_opt_out === true || metadata.emailOptOut === true) {
+      skippedContacts.push({ id: contact.id, email: email || null, reason: 'do_not_contact' });
+      continue;
+    }
+    if (!email) {
+      skippedContacts.push({ id: contact.id, email: null, reason: 'no_email' });
+      continue;
+    }
+    if (!consent) {
+      skippedContacts.push({ id: contact.id, email, reason: 'consent_missing' });
+      continue;
+    }
+    if (seenEmails.has(email) || recipientSnapshot.length >= maxRecipients) {
+      skippedContacts.push({ id: contact.id, email, reason: 'duplicate' });
+      continue;
+    }
+    seenEmails.add(email);
+    recipientSnapshot.push({ id: contact.id, name: getContactName(contact), email });
+  }
+  return { recipientSnapshot, skippedContacts };
 }
 
 function formatListing(listing: HotlistWorkflowListing) {

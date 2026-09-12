@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildHotlistEmailDraft, HotlistWorkflowError, type LicensedWorkflowProfile } from '@/lib/autonomous-workflows/hotlistEmail';
+import { buildAgentEmailDraft, buildHotlistEmailDraft, HotlistWorkflowError, type LicensedWorkflowProfile } from '@/lib/autonomous-workflows/hotlistEmail';
 
 const profile: LicensedWorkflowProfile = {
   agentName: 'Tahsin Reza',
@@ -73,5 +73,22 @@ describe('licensed hot-list email workflow', () => {
     });
     expect(draft.recipientSnapshot).toHaveLength(1);
     expect(draft.skippedContacts).toHaveLength(1);
+  });
+
+  it('snapshots an edited spawned-agent email for the eligible audience', () => {
+    const draft = buildAgentEmailDraft({
+      profile,
+      subject: 'A quick market note',
+      body: 'Here is the note your agent prepared for review.',
+      contacts: [
+        { id: 'contact-1', name: 'Riley Buyer', email: 'riley@example.com', metadata: { email_marketing_consent: true } },
+        { id: 'contact-2', name: 'No Consent', email: 'no-consent@example.com', metadata: {} },
+      ],
+    });
+
+    expect(draft.subject).toBe('A quick market note');
+    expect(draft.body).toContain('prepared for review');
+    expect(draft.recipientSnapshot).toEqual([{ id: 'contact-1', name: 'Riley Buyer', email: 'riley@example.com' }]);
+    expect(draft.fingerprint).toMatch(/^[a-f0-9]{64}$/);
   });
 });

@@ -784,12 +784,14 @@ September 12 review added the first bounded “anonymous function” vertical sl
 ### Implemented in PR #79
 
 - `app/admin/hot-list/HotlistEmailWorkflow.tsx` adds the operator panel beside the existing MLS hot-list manager.
+- `components/agent-workspace/AgentEmailDraft.tsx` detects email-oriented completed worker runs, shows the exact agent-written subject/body for editing, snapshots the originating run, and exposes **Send to all eligible** only after draft save and explicit confirmation.
 - `lib/autonomous-workflows/hotlistEmail.ts` validates licensed identity, requires explicit email consent, removes do-not-contact/opt-out records, filters to active MLS listings, caps recipients, and creates a deterministic draft.
 - `lib/autonomous-workflows/emailSender.server.ts` sends through the existing Resend integration using BCC and a provider idempotency key.
 - `app/api/admin/automations/hotlist-email/route.ts` persists profile/run state, requires operator access, supports preview/run/explicit approved send, records provider receipts, and prevents duplicate snapshots.
 - `app/api/admin/automations/hotlist-email/cron/route.ts` runs only for profiles with both `enabled` and `auto_send` explicitly set. The hourly Vercel cron is protected by `CRON_SECRET`.
 - `supabase/migrations/20260912010000_licensed_hotlist_workflow.sql` adds per-operator settings and auditable workflow runs with server-side RLS boundaries.
 - `tests/unit/licensed-hotlist-workflow.test.ts` covers MLS/activity filtering, consent/opt-out filtering, recipient caps, and required profile/list availability.
+- The same workflow builder now covers spawned-agent email drafts, with unit coverage for edited copy and deterministic audience snapshots.
 
 ### Safety contract
 

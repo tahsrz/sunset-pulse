@@ -8,6 +8,7 @@ import { CommandDetails } from '@/components/command-center/results/CommandDetai
 import { buildApprovedListingCommand } from '@/lib/command-center/listingReviewHelpers';
 import type { CommandActionItem } from '@/lib/command-center/actionTypes';
 import type { AgentRun } from '@/lib/agent-workspace/types';
+import { AgentEmailDraft } from './AgentEmailDraft';
 
 export function AgentResults({
   run,
@@ -66,6 +67,7 @@ export function AgentResults({
   return <div className="grid gap-4">
     {copyError ? <p role="status" className="text-sm text-amber-100">{copyError}</p> : null}
     <CommandAnswer commandResult={response} copiedDeliverable={copied} copiedActionId={copiedActionId} onCopyDeliverable={() => void copy()} onActionItem={handleAction} onRerunWithWorker={onRerunWithWorker ? (workerId) => onRerunWithWorker(run, workerId) : undefined} />
+    <AgentEmailDraft run={run} />
     <section aria-label="Copy-ready deliverable" className="rounded-lg border border-white/10 p-4"><h3 className="font-bold">{response.result.deliverable.title}</h3><p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{response.result.deliverable.copyReadyText}</p></section>
     <details className="rounded-lg border border-white/10 bg-slate-950/35 p-4" open>
       <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-cyan-100">Sources and trace</summary>
