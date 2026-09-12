@@ -12,6 +12,10 @@ export const licensedWorkflowProfileSchema = z.object({
   enabled: z.boolean().default(false),
   autoSend: z.boolean().default(false),
   maxRecipientsPerRun: z.number().int().min(1).max(50).default(25),
+  cadence: z.enum(['hourly', 'daily', 'weekly']).default('daily'),
+  timeZone: z.string().trim().min(1).max(80).default('America/Chicago'),
+  localHour: z.number().int().min(0).max(23).default(8),
+  localMinute: z.number().int().min(0).max(59).default(0),
 });
 
 export type LicensedWorkflowProfile = z.infer<typeof licensedWorkflowProfileSchema>;

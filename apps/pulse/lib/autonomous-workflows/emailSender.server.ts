@@ -1,5 +1,3 @@
-import 'server-only';
-
 export type LicensedEmailSendResult = { id: string | null };
 
 export class EmailProviderNotConfiguredError extends Error {}

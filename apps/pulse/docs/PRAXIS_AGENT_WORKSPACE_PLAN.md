@@ -805,3 +805,118 @@ September 12 review added the first bounded “anonymous function” vertical sl
 ### Next P8 functions
 
 Use the same profile, consent, audit, idempotency, and approval contracts for additional low-risk functions: buyer/seller follow-up drafts, showing reminders, and market-update digests. Do not add autonomous offer submission, negotiation, signature, MLS publication, escrow/funds movement, or representation commitments without a separately reviewed transaction-control package.
+
+## 10. Shared scheduler foundation and scheduled sprints
+
+September 12 implementation extends the plan with reusable durable scheduling. Email and sprint planning are workflow clients; neither owns scheduling behavior.
+
+### Implemented foundation
+
+- `workflow_schedules` stores owner, workflow key, cadence, timezone, enabled state, and next execution.
+- `workflow_jobs` stores durable occurrences, leases, attempts, result references, and failure state.
+- `workflow_results` provides a generic result pointer for email runs and sprints.
+- Database claim/recovery functions use row locks, `SKIP LOCKED`, leases, and a three-attempt limit.
+- `/api/scheduler` provides owner-scoped inspection, pause, resume, and cancellation.
+- Email and sprint interfaces expose schedule state and recent jobs.
+
+### Scheduled sprint MVP
+
+- `sprint_backlog_items` stores owner-scoped open work.
+- A `sprint_planner` job selects up to ten open items into a proposed sprint.
+- `/api/sprints` supports schedule creation, backlog intake, sprint creation, and approval.
+- `/admin/sprints` supports backlog entry, schedule enable/pause/resume, proposed sprint review, item removal, and approval.
+- Planning creates proposed work only; approval is required before execution or assignment.
+
+### Foundation acceptance criteria
+
+1. Every workflow uses the same scheduler claim, lease, retry, pause, resume, cancel, and result contracts.
+2. Concurrent workers cannot claim one job twice.
+3. Expired leases recover, and attempts stop at three with an explicit failure.
+4. Schedule cadence is interpreted in the stored timezone, including daylight-saving transitions.
+5. Workflow-specific data remains owner-scoped and cannot be read or controlled through another owner’s identifier.
+6. Email delivery batches and sprint proposals remain separate result types under the shared job model.
+
+Next implementation package: add shared scheduler authorization/state-transition tests, then replace fixed schedule advancement with timezone-aware cadence calculation.
+
+## 11. Accepted product defaults and executable implementation sequence
+
+These defaults were accepted for inclusion in the plan. This section supersedes conflicting defaults and completion claims in sections 9–10. It describes remaining implementation, not verified production behavior. Line anchors below were inspected in the current checkout; find the named symbol again after each edit. New-file instructions specify declaration order rather than invented line numbers.
+
+### Product decisions
+
+1. Default sprint planning is weekly, Monday at 08:00 in the user's selected timezone. Daily planning remains available. Resolve the user's saved timezone first, browser timezone second, and show an explicit fallback if neither is available.
+2. Approving a sprint automatically creates persistent agent assignments for its selected items. Assignment creation does not itself authorize sending messages or other external actions. Unmapped work remains visibly unassigned until a supported worker is selected.
+3. Manually entered work is the first backlog source. Pulse commands feed the same backlog next through an explicit Add to backlog action. GitHub and CRM imports follow after ownership, selection, and completion tracking pass verification.
+4. Scheduled email requires review by default. Users may explicitly enable auto-send for an individual workflow with a defined audience and send limit. Record the policy version used for each automatic send; changing policy does not retroactively authorize an old draft.
+5. Showing reminders are the next workflow after scheduler and sprint acceptance checks pass. They consume authoritative bookings and reuse the scheduler's ownership, cancellation, retry, and delivery contracts.
+
+### Package A — Repair and verify the shared foundation first
+
+1. In `lib/autonomous-workflows/durableScheduler.server.ts:9`, extend the schedule projection to include `time_zone`, `local_hour`, `local_minute`, and the new `local_weekday`. The current projection omits the timezone/time fields even though line 20 reads them.
+2. In `lib/autonomous-workflows/schedulerPolicy.ts:14`, replace positional schedule arguments with a validated schedule specification: cadence, timezone, local hour/minute, and weekday (ISO Monday=1 through Sunday=7). Add `nextOccurrenceAfter(now, spec)` for initial scheduling and resume. Hourly means elapsed hours; daily/weekly mean local calendar time. Apply local time in UTC too; the current early UTC return bypasses overrides.
+3. Replace `toUtcIso` in that policy module with a calendar conversion that explicitly handles nonexistent and repeated local times. Policy: shift a nonexistent time forward by the DST gap; select the earlier occurrence of a repeated time. Test both transitions and non-hour offsets. First execution must be strictly after the supplied clock instant, with seconds/milliseconds zeroed for calendar schedules.
+4. In `app/api/sprints/route.ts:28`, change schedule ownership filtering from `owner_id` to `user_id`; return local hour/minute/weekday and handle schedule-query errors. At line 42, replace `next_run_at: new Date().toISOString()` with the calculated first occurrence. Updating unrelated settings must preserve the next occurrence and pause state.
+5. Add a forward migration after the current latest migration; do not keep editing potentially applied migrations. Add weekday validation, a schedule revision, a per-claim lease token, and retry timing. Enable RLS on `workflow_results`. Revoke public/anonymous/authenticated execution of service-only SECURITY DEFINER functions and grant only service-role execution. Validate RPC limits and lease durations.
+6. Replace dispatcher writes at `durableScheduler.server.ts:14` with one transaction/RPC that locks the schedule, verifies enabled state and revision, inserts the unique occurrence, and advances next execution. Return actual inserted counts. After downtime, coalesce missed recurring planning into one occurrence and advance to the next future time; do not flood users with old sprints.
+7. Replace worker terminal writes at `durableScheduler.server.ts:55` and in its catch block with lease-token-checked RPCs. Completion and generic result insertion must commit together. Cancellation must prevent stale workers overwriting cancelled status. Document that cancellation cannot undo already performed external actions. Claim only as much work as fits the worker deadline; renew leases or claim jobs individually.
+8. Pause prevents new dispatch and new claims for that schedule; already running work may finish unless cancelled. Recovery invalidates the old lease token. Retry failures with bounded backoff up to the configured attempt limit; exhausted jobs become terminal. Add a workflow registry and move email/sprint handlers into separate services so the shared scheduler no longer imports an API route.
+
+Acceptance: database-backed tests prove duplicate dispatch, concurrent claims, expired lease fencing, pause/claim races, cancellation/completion races, retry exhaustion, RPC permissions, and atomic result persistence. Existing policy helper tests alone do not establish these guarantees.
+
+### Package B — Weekly sprint defaults usable by ordinary signed-in users
+
+1. In `app/api/sprints/route.ts:10`, default cadence to weekly and add `localWeekday` default 1. Validate timezone through the shared schedule schema. Use the same schema for email scheduling and scheduler inspection responses.
+2. Replace the operator-only access gate at `app/api/sprints/route.ts:20` and its POST counterpart with the repository's verified signed-in user access mechanism. Apply the corresponding owner-only mechanism to `/api/scheduler`. Resolve identity on the server, never from a submitted owner ID. Keep the real-estate admin route's existing access boundary.
+3. At `app/admin/sprints/SprintsWorkspace.tsx:19`, load schedules from the shared scheduler response, check both HTTP statuses, and initialize the editor from saved values. At line 24, replace the hard-coded schedule payload with a labelled form for cadence, weekday, timezone, hour and minute. Show next execution in the saved timezone and preserve edits on request failure.
+4. Format the entire workspace JSX before further UI edits. Integrate `SprintCard.tsx`, passing items filtered by sprint ID plus approve/remove callbacks. Preserve scheduling, job cancellation, backlog editing, estimates, and item display. Disable duplicate mutations while pending; show actionable errors and allow refresh.
+5. Expose the workspace through a normal signed-in route and the shared route catalog, retaining the admin URL as a compatibility route if needed. Verify two ordinary users can each create and inspect their own schedules without seeing each other's records.
+
+Acceptance: a new user can save Monday 08:00 weekly planning, reload the same values, switch to daily, pause/resume, and see the correct next occurrence. Schedule creation does not immediately generate a sprint.
+
+### Package C — Real backlog selection and atomic assignment creation
+
+1. Extend the forward migration with backlog provenance (`source_type`, `source_id`), a sprint-item backlink to its backlog record, sprint revision, and a unique non-null `source_job_id` on sprints. Add persistent `agent_assignments` with owner, sprint item, supported worker ID, instructions, status, and timestamps; enforce one assignment per sprint item and matching ownership through constraints/RPC checks.
+2. Replace the sprint handler currently at `durableScheduler.server.ts:44` with a service accepting owner, job ID, and occurrence time. Reuse an existing proposal for the same job. Persist proposal and selected items atomically. Include backlog IDs in the query and snapshot, exclude work already assigned to active sprints, and use stable priority/created-at/ID ordering.
+3. Extend `lib/autonomous-workflows/sprintSelection.ts` with distinct `maxItems` and optional `capacityMinutes`. An item count is not an effort budget. Define how unknown estimates count, return exclusions with reasons, and retain manually entered text without inventing tasks.
+4. Replace approval at `app/api/sprints/route.ts:46` with one transactional RPC: lock owner-scoped proposed sprint, verify expected revision, approve non-cancelled items, insert unique assignments, link assignments back to items, and record approval identity/time. Repeat approval returns the same assignments. Concurrent edit/removal must lock the same sprint and increment its revision.
+5. Extend backlog update at `app/api/sprints/route.ts:64` to preserve description and estimates unless explicitly edited. The current workspace submits `estimateMinutes: null` when editing only a title; remove that data-loss behavior. Add proposed-item editing for title, description, priority, estimate and supported worker assignment.
+6. Add assignment status/worker visibility to `SprintCard`. Approval creates assignments automatically; unsupported worker mappings produce a visible unassigned state. Define completion updates that mark linked backlog work done so it is not repeatedly selected.
+7. Add an explicit Add to backlog action to Pulse command results, posting through the same backlog service with the source command ID and user-edited title. Deduplicate repeated imports by owner/source identity. GitHub and CRM remain later adapters to that service.
+
+Acceptance: approve twice yields one assignment per selected item; cancelled items create none; another user's IDs fail; edit-versus-approve races cannot change approved content; a crashed planner retry creates one proposal; completed backlog work is not selected again.
+
+### Package D — Email approval default and bounded auto-send
+
+1. Keep manual review as the initial setting. Add workflow-specific audience definition, send cap, policy version and explicit auto-send opt-in metadata. Display the actual audience and limit before saving opt-in. A user's sprint approval must never authorize an email send.
+2. Extract `runHotlistEmailForUser` and `sendRun` from `app/api/admin/automations/hotlist-email/route.ts` into server services before registry integration. The scheduled handler currently passes `confirmAutoSend: false`; implement the saved automatic policy deliberately, recording that policy separately from manual approval attribution.
+3. At `route.ts:321`, require expected revision and audience hash for manual approval and include them in the atomic claim. Bind automatic approval to the generated content, audience and current policy version. Scope contact retrieval at line 267 to an authorized owner/audience and paginate it; shared unassigned leads are not automatically owned contacts.
+4. At `route.ts:350`, stop upserting an existing batch back to `pending`: this currently destroys the sent status before the skip check. Insert missing batches without overwriting existing receipts, claim pending/eligible failed batches atomically, and preserve the original payload and provider key on retry.
+5. Distinguish provider acceptance, delivery failure and uncertain receipt outcomes. Reconcile uncertain outcomes before retrying. Recheck eligibility immediately before each batch. Return refreshed batch state after send/retry and show it in the UI. Separate a total audience cap from provider batch size.
+
+Acceptance: default schedules only draft; explicit policy permits only its configured audience/cap; changing policy invalidates stale automatic authorization; successful batches survive partial failure/retry without resending; consent changes block affected deliveries. Use a fake provider for integration tests.
+
+### Package E — Showing reminders as the next scheduler client
+
+1. Inspect `lib/scheduling/commercialBooking.ts` and the current booking create/update/cancel paths. Use authoritative `scheduling_bookings` ownership, status and time; retain references rather than copying an unrelated staff scheduling model.
+2. Add a `showing_reminder` handler in the registry and one-shot job support in the shared scheduler. Add booking ID/version, reminder offset and recipient reference to its validated payload. Use a unique occurrence key derived from booking/version/offset/recipient.
+3. On booking creation or reschedule, atomically record reminder work through an outbox or equivalent transaction. Cancel obsolete queued occurrences when the booking changes; before delivery re-read booking version/status/time so an old worker cannot send a superseded reminder.
+4. Reuse delivery records, receipts, ownership and messaging approval policy. Display reminder state and failures beside the booking. Booking cancellation stops future reminders; it does not claim to retract already sent messages.
+
+Acceptance: create, reschedule, cancel and duplicate-event tests prove exactly one current reminder occurrence; reminders for obsolete bookings never send; retries retain delivery identity; users only see their own reminders.
+
+### Execution and evidence ledger
+
+- [ ] A: shared foundation repaired and verified against PostgreSQL.
+- [ ] B: weekly Monday 08:00 defaults and normal-user access verified in UI/API.
+- [ ] C: backlog provenance, review, assignments and completion verified end to end.
+- [ ] D: manual/default and explicit automatic email policies verified with fake delivery.
+- [ ] E: showing reminders implemented after A–D acceptance.
+
+### Verification recorded September 12, 2026
+
+Focused command: `npm run test:unit -- tests/unit/scheduler-policy.test.ts tests/unit/scheduler-transitions.test.ts tests/unit/sprint-selection.test.ts tests/unit/licensed-hotlist-workflow.test.ts tests/unit/licensed-hotlist-cron.test.ts tests/unit/licensed-hotlist-email-sender.test.ts tests/unit/licensed-hotlist-delivery.test.ts` — 7 files and 22 tests passed. These are unit/helper and mocked workflow checks. Package A remains unchecked because PostgreSQL RPC permissions, concurrent claims, lease fencing, and browser behavior still require integration verification.
+
+Local database check: `supabase status` could not inspect the local stack because Docker Desktop's Linux engine is unavailable. No migration was applied or marked verified in this session; run the database acceptance suite after Docker/Supabase is available.
+Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS for `workflow_results` and restricts scheduler SECURITY DEFINER RPC execution to `service_role`. It remains unverified against PostgreSQL until the local stack is available.
+
+Execute A through E in order without spawning subagents. Update this ledger with exact commands, completed results, migration status and remaining limitations. A running typecheck is not a passed check; a helper test is not a database or browser integration test. Before updating PR #79, review the complete diff, finish all checks required for the implemented packages, and rewrite the PR description to match the verified scope. Do not mark the scheduler stable solely because tables, endpoints or UI controls exist.

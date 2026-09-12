@@ -11,6 +11,7 @@ type SavedEmailRun = {
   recipientSnapshot?: Array<{ email: string }>;
   skippedSnapshot?: { contacts?: Array<unknown> };
   error?: string | null;
+  revision?: number;
 };
 
 export function AgentEmailDraft({ run }: { run: AgentRun }) {
@@ -30,7 +31,7 @@ export function AgentEmailDraft({ run }: { run: AgentRun }) {
     setSavedRun(null);
     setStatus('');
     setError('');
-  }, [response, response?.commandId]);
+  }, [run.id]);
 
   if (!response || !emailIntent) return null;
 
@@ -58,7 +59,7 @@ export function AgentEmailDraft({ run }: { run: AgentRun }) {
       const response = await fetch('/api/admin/automations/hotlist-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send', runId: savedRun.id, confirm: true }),
+         body: JSON.stringify({ action: 'send', runId: savedRun.id, confirm: true, expectedRevision: savedRun.revision }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.message || 'Unable to send the approved email.');

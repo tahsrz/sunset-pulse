@@ -37,6 +37,10 @@
     {
       "path": "/api/admin/automations/hotlist-email/cron",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/admin/automations/hotlist-email/worker",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
