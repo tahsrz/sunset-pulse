@@ -11,6 +11,7 @@ export const licensedWorkflowProfileSchema = z.object({
   disclosureText: z.string().trim().min(10).max(1200),
   enabled: z.boolean().default(false),
   autoSend: z.boolean().default(false),
+  audienceScope: z.literal('owned_hotlist_contacts').default('owned_hotlist_contacts'),
   maxRecipientsPerRun: z.number().int().min(1).max(50).default(25),
   cadence: z.enum(['hourly', 'daily', 'weekly']).default('daily'),
   timeZone: z.string().trim().min(1).max(80).default('America/Chicago'),
