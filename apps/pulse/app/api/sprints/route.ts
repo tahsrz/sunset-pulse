@@ -9,7 +9,7 @@ const item = z.object({ title: z.string().trim().min(1).max(240), description: z
 const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('create_schedule'), cadence: z.enum(['daily', 'weekly']), timeZone: z.string().trim().min(1).max(80).default('America/Chicago'), localHour: z.number().int().min(0).max(23).default(8), localMinute: z.number().int().min(0).max(59).default(0), localWeekday: z.number().int().min(1).max(7).default(1) }),
   z.object({ action: z.literal('create'), name: z.string().trim().min(1).max(160), goal: z.string().trim().min(1).max(2000), startsAt: z.string().datetime().nullable().default(null), endsAt: z.string().datetime().nullable().default(null), items: z.array(item).max(100).default([]) }),
-  z.object({ action: z.literal('approve'), sprintId: uuid }),
+  z.object({ action: z.literal('approve'), sprintId: uuid, expectedRevision: z.number().int().positive().nullable().default(null) }),
   z.object({ action: z.literal('remove_backlog_item'), itemId: uuid }),
   z.object({ action: z.literal('update_backlog_item'), itemId: uuid, title: z.string().trim().min(1).max(240), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), status: z.enum(['open','in_progress','done','cancelled']) }),
   z.object({ action: z.literal('remove_sprint_item'), itemId: uuid }),
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, schedule: data });
   }
   if (parsed.data.action === 'approve') {
-    const { data, error } = await supabaseAdmin.from('sprints').update({ status: 'approved', approved_at: new Date().toISOString(), approved_by: userId }).eq('id', parsed.data.sprintId).eq('owner_id', userId).eq('status', 'proposed').select('*').single();
-    if (error) return NextResponse.json({ ok: false, error: 'Unable to approve sprint.' }, { status: 409 });
-    return NextResponse.json({ ok: true, sprint: data });
+    const { data, error } = await supabaseAdmin.rpc('approve_sprint_with_assignments', { p_sprint_id: parsed.data.sprintId, p_owner_id: userId, p_expected_revision: parsed.data.expectedRevision });
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 409 });
+    return NextResponse.json({ ok: true, approval: data?.[0] || null });
   }
   if (parsed.data.action === 'add_backlog_item') {
     const { data, error } = await supabaseAdmin.from('sprint_backlog_items').insert({ owner_id: userId, title: parsed.data.title, description: parsed.data.description, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, source_type: 'manual' }).select('*').single();
