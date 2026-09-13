@@ -352,8 +352,15 @@ async function sendRun(run: WorkflowRunRow, profile: LicensedWorkflowProfile, au
     for (const [index, batch] of batches.entries()) {
       const batchNumber = index + 1;
       const batchKey = `${claimed.idempotency_key}:batch:${batchNumber}`;
-      const { data: delivery, error: deliveryInsertError } = await supabaseAdmin.from('workflow_deliveries').upsert({ workflow_run_id: claimed.id, batch_number: batchNumber, recipients: batch, idempotency_key: batchKey, status: 'pending' }, { onConflict: 'workflow_run_id,batch_number', ignoreDuplicates: false }).select('*').single();
-      if (deliveryInsertError) throw new Error(`Unable to persist delivery batch ${batchNumber}: ${deliveryInsertError.message}`);
+      const { data: existingDelivery, error: existingDeliveryError } = await supabaseAdmin.from('workflow_deliveries').select('*').eq('workflow_run_id', claimed.id).eq('batch_number', batchNumber).maybeSingle();
+      if (existingDeliveryError) throw new Error(`Unable to inspect delivery batch ${batchNumber}: ${existingDeliveryError.message}`);
+      if (existingDelivery?.status === 'sent' || existingDelivery?.status === 'accepted') continue;
+      let delivery = existingDelivery;
+      if (!delivery) {
+        const { data: insertedDelivery, error: deliveryInsertError } = await supabaseAdmin.from('workflow_deliveries').insert({ workflow_run_id: claimed.id, batch_number: batchNumber, recipients: batch, idempotency_key: batchKey, status: 'pending' }).select('*').single();
+        if (deliveryInsertError) throw new Error(`Unable to persist delivery batch ${batchNumber}: ${deliveryInsertError.message}`);
+        delivery = insertedDelivery;
+      }
       if (delivery.status === 'sent') { providerMessageId ||= delivery.provider_message_id; continue; }
       await supabaseAdmin.from('workflow_deliveries').update({ status: 'sending', error: null }).eq('id', delivery.id).eq('status', 'pending');
       try {
