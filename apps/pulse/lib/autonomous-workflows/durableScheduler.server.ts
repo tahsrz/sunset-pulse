@@ -50,10 +50,13 @@ export async function processQueuedWorkflowJobs(limit = 10) {
       } else if (job.workflow_key === 'sprint_planner') {
         const { data: sprint, error: sprintError } = await supabaseAdmin.from('sprints').insert({ owner_id: job.user_id, name: `Scheduled sprint · ${new Date().toLocaleDateString('en-US')}`, goal: 'Review the backlog and select the highest-priority work for this sprint.', status: 'proposed', source_job_id: job.id }).select('id').single();
         if (sprintError) throw new Error(`Unable to create proposed sprint: ${sprintError.message}`);
-        const { data: backlog, error: backlogError } = await supabaseAdmin.from('sprint_backlog_items').select('title,description,priority,estimate_minutes').eq('owner_id', job.user_id).eq('status', 'open').order('priority').order('created_at').limit(10);
+        const { data: backlog, error: backlogError } = await supabaseAdmin.from('sprint_backlog_items').select('id,title,description,priority,estimate_minutes').eq('owner_id', job.user_id).eq('status', 'open').order('priority').order('created_at').limit(100);
         if (backlogError) throw new Error(`Unable to load sprint backlog: ${backlogError.message}`);
         if (backlog?.length) {
-          const { error: itemError } = await supabaseAdmin.from('sprint_items').insert(selectSprintBacklog(backlog).map((entry) => ({ ...entry, sprint_id: sprint.id, owner_id: job.user_id })));
+          const { data: existingItems } = await supabaseAdmin.from('sprint_items').select('backlog_item_id').eq('owner_id', job.user_id).not('backlog_item_id', 'is', null);
+          const existingBacklogIds = new Set((existingItems || []).map((entry) => entry.backlog_item_id));
+          const candidates = backlog.filter((entry) => !existingBacklogIds.has(entry.id));
+          const { error: itemError } = await supabaseAdmin.from('sprint_items').insert(selectSprintBacklog(candidates).map((entry) => ({ backlog_item_id: entry.id, title: entry.title, description: entry.description, priority: entry.priority, estimate_minutes: entry.estimate_minutes, sprint_id: sprint.id, owner_id: job.user_id })));
           if (itemError) throw new Error(`Unable to create sprint items: ${itemError.message}`);
         }
         runId = sprint.id;
