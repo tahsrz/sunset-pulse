@@ -44,7 +44,9 @@ export async function processQueuedWorkflowJobs(limit = 10) {
       let runId: string | undefined;
       let resultStatus = 'drafted';
       if (job.workflow_key === 'hotlist_email') {
-        const result = await runHotlistEmailForUser({ userId: job.user_id, auditName: 'Scheduled licensed workflow', confirmAutoSend: false });
+        // The handler still enforces the persisted profile policy; this flag only
+        // allows an explicitly opted-in schedule to auto-send.
+        const result = await runHotlistEmailForUser({ userId: job.user_id, auditName: 'Scheduled licensed workflow', confirmAutoSend: true });
         runId = result.run.id;
         resultStatus = result.reused ? 'unchanged' : 'drafted';
       } else if (job.workflow_key === 'sprint_planner') {
