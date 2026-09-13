@@ -24,10 +24,11 @@ export async function GET(request: NextRequest) {
   const { data: sprints, error } = await supabaseAdmin.from('sprints').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(50);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   const { data: items } = await supabaseAdmin.from('sprint_items').select('*').eq('owner_id', userId).order('priority').limit(500);
+  const { data: assignments } = await supabaseAdmin.from('agent_assignments').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(500);
   const { data: backlog } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).order('priority').limit(500);
   const { data: schedules, error: scheduleError } = await supabaseAdmin.from('workflow_schedules').select('id,workflow_key,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at').eq('user_id', userId).eq('workflow_key', 'sprint_planner');
   if (scheduleError) return NextResponse.json({ ok: false, error: scheduleError.message }, { status: 500 });
-  return NextResponse.json({ ok: true, sprints: sprints || [], items: items || [], backlog: backlog || [], schedules: schedules || [] });
+  return NextResponse.json({ ok: true, sprints: sprints || [], items: items || [], assignments: assignments || [], backlog: backlog || [], schedules: schedules || [] });
 }
 
 export async function POST(request: NextRequest) {
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, sprint: data });
   }
   if (parsed.data.action === 'add_backlog_item') {
-    const { data, error } = await supabaseAdmin.from('sprint_backlog_items').insert({ owner_id: userId, title: parsed.data.title, description: parsed.data.description, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes }).select('*').single();
+    const { data, error } = await supabaseAdmin.from('sprint_backlog_items').insert({ owner_id: userId, title: parsed.data.title, description: parsed.data.description, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, source_type: 'manual' }).select('*').single();
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, backlogItem: data }, { status: 201 });
   }
