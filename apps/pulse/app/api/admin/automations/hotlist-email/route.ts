@@ -270,7 +270,8 @@ function profileFromRow(row: Record<string, unknown>): LicensedWorkflowProfile {
 
 async function loadContacts(userId: string | null) {
   let query = supabaseAdmin.from('leads').select('id, name, first_name, last_name, email, do_not_contact, metadata').limit(500);
-  if (userId) query = query.or(`assigned_to.eq.${userId},assigned_to.is.null`);
+  // Automatic outreach must never claim shared/unassigned leads as the owner's audience.
+  if (userId) query = query.eq('assigned_to', userId);
   const { data, error } = await query;
   if (error) throw new Error(`Unable to load the operator contact list: ${error.message}`);
   return (data || []).map((contact) => ({
