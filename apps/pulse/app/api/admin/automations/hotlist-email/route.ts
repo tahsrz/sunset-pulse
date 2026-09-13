@@ -366,7 +366,7 @@ async function sendRun(run: WorkflowRunRow, profile: LicensedWorkflowProfile, au
       try {
         const result = await sendLicensedHotlistEmail({ recipients: batch, subject: claimed.subject, body: claimed.body, replyTo: profile.replyToEmail, idempotencyKey: batchKey });
         providerMessageId ||= result.id;
-        const { error: deliveryUpdateError } = await supabaseAdmin.from('workflow_deliveries').update({ status: 'sent', provider_message_id: result.id }).eq('id', delivery.id);
+        const { error: deliveryUpdateError } = await supabaseAdmin.from('workflow_deliveries').update({ status: 'accepted', provider_message_id: result.id }).eq('id', delivery.id);
         if (deliveryUpdateError) throw new Error(`Batch ${batchNumber} sent but receipt could not be saved: ${deliveryUpdateError.message}`);
       } catch (batchError) {
         const message = batchError instanceof Error ? batchError.message : String(batchError);
