@@ -13,6 +13,7 @@ const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('remove_backlog_item'), itemId: uuid }),
   z.object({ action: z.literal('update_backlog_item'), itemId: uuid, title: z.string().trim().min(1).max(240), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), status: z.enum(['open','in_progress','done','cancelled']) }),
   z.object({ action: z.literal('remove_sprint_item'), itemId: uuid }),
+  z.object({ action: z.literal('complete_assignment'), assignmentId: uuid }),
   z.object({ action: z.literal('add_backlog_item'), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).nullable().default(null) }),
 ]);
 
@@ -74,6 +75,17 @@ export async function POST(request: NextRequest) {
     const { error } = await supabaseAdmin.from('sprint_items').update({ status: 'cancelled' }).eq('id', parsed.data.itemId).eq('owner_id', userId);
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
+  }
+  if (parsed.data.action === 'complete_assignment') {
+    const { data: assignment } = await supabaseAdmin.from('agent_assignments').select('id,sprint_item_id').eq('id', parsed.data.assignmentId).eq('owner_id', userId).maybeSingle();
+    if (!assignment) return NextResponse.json({ ok: false, error: 'Assignment not found.' }, { status: 404 });
+    const { data: sprintItem } = await supabaseAdmin.from('sprint_items').select('id,backlog_item_id').eq('id', assignment.sprint_item_id).eq('owner_id', userId).maybeSingle();
+    if (!sprintItem) return NextResponse.json({ ok: false, error: 'Sprint item not found.' }, { status: 404 });
+    const { error } = await supabaseAdmin.from('agent_assignments').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', assignment.id).eq('owner_id', userId);
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    await supabaseAdmin.from('sprint_items').update({ status: 'done' }).eq('id', sprintItem.id).eq('owner_id', userId);
+    if (sprintItem.backlog_item_id) await supabaseAdmin.from('sprint_backlog_items').update({ status: 'done' }).eq('id', sprintItem.backlog_item_id).eq('owner_id', userId);
+    return NextResponse.json({ ok: true, assignmentId: assignment.id });
   }
   const { data: sprint, error } = await supabaseAdmin.from('sprints').insert({ owner_id: userId, name: parsed.data.name, goal: parsed.data.goal, starts_at: parsed.data.startsAt, ends_at: parsed.data.endsAt }).select('*').single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
