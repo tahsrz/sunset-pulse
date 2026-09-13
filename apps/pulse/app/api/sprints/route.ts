@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
-import { isValidTimeZone } from '@/lib/autonomous-workflows/schedulerPolicy';
+import { isValidTimeZone, nextOccurrenceAfter } from '@/lib/autonomous-workflows/schedulerPolicy';
 
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
   if (parsed.data.action === 'create_schedule' && !isValidTimeZone(parsed.data.timeZone)) return NextResponse.json({ ok: false, error: 'Invalid timezone identifier.' }, { status: 400 });
 
   if (parsed.data.action === 'create_schedule') {
-    const { data, error } = await supabaseAdmin.from('workflow_schedules').upsert({ user_id: userId, workflow_key: 'sprint_planner', cadence: parsed.data.cadence, time_zone: parsed.data.timeZone, local_hour: parsed.data.localHour, local_minute: parsed.data.localMinute, local_weekday: parsed.data.localWeekday, enabled: true, next_run_at: new Date().toISOString() }, { onConflict: 'user_id,workflow_key' }).select('*').single();
+    const nextRunAt = nextOccurrenceAfter(new Date(), { cadence: parsed.data.cadence, timeZone: parsed.data.timeZone, localHour: parsed.data.localHour, localMinute: parsed.data.localMinute, localWeekday: parsed.data.localWeekday });
+    const { data, error } = await supabaseAdmin.from('workflow_schedules').upsert({ user_id: userId, workflow_key: 'sprint_planner', cadence: parsed.data.cadence, time_zone: parsed.data.timeZone, local_hour: parsed.data.localHour, local_minute: parsed.data.localMinute, local_weekday: parsed.data.localWeekday, enabled: true, next_run_at: nextRunAt }, { onConflict: 'user_id,workflow_key' }).select('*').single();
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, schedule: data });
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceSchedule, cadenceMilliseconds, isValidTimeZone, MAX_WORKFLOW_ATTEMPTS } from '@/lib/autonomous-workflows/schedulerPolicy';
+import { advanceSchedule, cadenceMilliseconds, isValidTimeZone, MAX_WORKFLOW_ATTEMPTS, nextOccurrenceAfter } from '@/lib/autonomous-workflows/schedulerPolicy';
 
 describe('shared scheduler policy', () => {
   it('keeps one retry limit and supported cadence intervals', () => {
@@ -28,5 +28,8 @@ describe('shared scheduler policy', () => {
   it('validates timezone identifiers before persistence', () => {
     expect(isValidTimeZone('America/Chicago')).toBe(true);
     expect(isValidTimeZone('Invalid/Timezone')).toBe(false);
+  });
+  it('starts a weekly schedule at the next configured local occurrence', () => {
+    expect(nextOccurrenceAfter(new Date('2026-09-06T14:00:00.000Z'), { cadence: 'weekly', timeZone: 'America/Chicago', localHour: 8, localMinute: 0, localWeekday: 1 })).toBe('2026-09-07T13:00:00.000Z');
   });
 });

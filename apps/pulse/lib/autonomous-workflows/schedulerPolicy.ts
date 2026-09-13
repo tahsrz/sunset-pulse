@@ -1,5 +1,6 @@
 export const MAX_WORKFLOW_ATTEMPTS = 3;
 export type WorkflowCadence = 'hourly' | 'daily' | 'weekly';
+export type ScheduleSpec = { cadence: WorkflowCadence; timeZone: string; localHour?: number; localMinute?: number; localWeekday?: number };
 
 export function isValidTimeZone(timeZone: string) {
   try { new Intl.DateTimeFormat('en-US', { timeZone }).format(); return true; } catch { return false; }
@@ -11,11 +12,25 @@ export function cadenceMilliseconds(cadence: WorkflowCadence) {
   return 60 * 60 * 1000;
 }
 
+export function nextOccurrenceAfter(now: Date, spec: ScheduleSpec) {
+  if (!Number.isFinite(now.getTime())) throw new Error('Schedule clock must be valid.');
+  if (!isValidTimeZone(spec.timeZone)) throw new Error('Invalid timezone identifier.');
+  if (spec.cadence === 'hourly') return new Date(now.getTime() + cadenceMilliseconds('hourly')).toISOString();
+  const parts = localParts(now, spec.timeZone);
+  parts.hour = spec.localHour ?? 8; parts.minute = spec.localMinute ?? 0; parts.second = 0;
+  const currentWeekday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay() || 7;
+  const dayDelta = spec.cadence === 'weekly' ? ((spec.localWeekday ?? 1) - currentWeekday + 7) % 7 : 0;
+  let candidate = toUtcIso(new Date(Date.UTC(parts.year, parts.month - 1, parts.day + dayDelta, parts.hour, parts.minute, 0)), spec.timeZone);
+  if (Date.parse(candidate) <= now.getTime()) {
+    candidate = advanceSchedule(candidate, spec.cadence, spec.timeZone, spec.localHour, spec.localMinute, spec.localWeekday ?? 1);
+  }
+  return candidate;
+}
+
 export function advanceSchedule(nextRunAt: string, cadence: WorkflowCadence, timeZone = 'UTC', localHour?: number, localMinute?: number, localWeekday = 1) {
   const next = Date.parse(nextRunAt);
   if (!Number.isFinite(next)) throw new Error('Schedule next_run_at must be a valid ISO timestamp.');
   if (cadence === 'hourly') return new Date(next + cadenceMilliseconds(cadence)).toISOString();
-  if (timeZone === 'UTC') return new Date(next + cadenceMilliseconds(cadence)).toISOString();
   const parts = localParts(new Date(next), timeZone);
   if (localHour !== undefined) parts.hour = localHour;
   if (localMinute !== undefined) parts.minute = localMinute;
