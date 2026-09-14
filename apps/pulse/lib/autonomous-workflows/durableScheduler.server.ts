@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { runHotlistEmailForUser } from '@/app/api/admin/automations/hotlist-email/route';
 import { createPropertySprintProposal } from '@/lib/property-sprints/planPropertySprint.server';
-import { advanceSchedule, normalizeScheduleSpec } from './schedulerPolicy';
+import { cadenceMilliseconds, nextOccurrenceAfter, normalizeScheduleSpec } from './schedulerPolicy';
 import { selectSprintBacklog } from './sprintSelection';
 
 export async function enqueueDueWorkflowJobs(limit = 25) {
@@ -13,11 +13,6 @@ export async function enqueueDueWorkflowJobs(limit = 25) {
   let queued = 0;
   for (const schedule of schedules || []) {
     const scheduledFor = schedule.next_run_at;
-    const { error: jobError } = await supabaseAdmin.from('workflow_jobs').upsert({
-      schedule_id: schedule.id, user_id: schedule.user_id, workflow_key: schedule.workflow_key,
-      planning_mode: schedule.planning_mode || 'manual_backlog', scheduled_for: scheduledFor, status: 'queued',
-    }, { onConflict: 'schedule_id,scheduled_for', ignoreDuplicates: true });
-    if (jobError) throw new Error(`Unable to enqueue workflow job: ${jobError.message}`);
     const cadence = schedule.cadence === 'weekly' || schedule.cadence === 'daily' ? schedule.cadence : 'hourly';
     const scheduleSpec = normalizeScheduleSpec({
       cadence,
@@ -26,16 +21,27 @@ export async function enqueueDueWorkflowJobs(limit = 25) {
       localMinute: schedule.local_minute ?? 0,
       localWeekday: schedule.local_weekday ?? 1,
     });
-    let nextRun = advanceSchedule(scheduledFor, scheduleSpec);
-    let guard = 0;
-    while (Date.parse(nextRun) <= Date.now() && guard < 100) {
-      nextRun = advanceSchedule(nextRun, scheduleSpec);
-      guard += 1;
+    const nowMs = Date.parse(now);
+    const scheduledForMs = Date.parse(scheduledFor);
+    let nextRun: string;
+    if (cadence === 'hourly') {
+      const hourlyMs = cadenceMilliseconds('hourly');
+      const intervals = Math.floor(Math.max(0, nowMs - scheduledForMs) / hourlyMs) + 1;
+      nextRun = new Date(scheduledForMs + intervals * hourlyMs).toISOString();
+    } else {
+      nextRun = nextOccurrenceAfter(new Date(nowMs), scheduleSpec);
     }
-    const { data: advanced, error: advanceError } = await supabaseAdmin.rpc('advance_workflow_schedule', { p_schedule_id: schedule.id, p_expected_at: scheduledFor, p_expected_revision: schedule.revision || 1, p_next_at: nextRun });
-    if (advanceError) throw new Error(`Unable to advance workflow schedule: ${advanceError.message}`);
-    if (!advanced) continue;
-    queued += 1;
+    const { data: dispatched, error: dispatchError } = await supabaseAdmin.rpc('dispatch_due_workflow_schedule', {
+      p_schedule_id: schedule.id,
+      p_expected_at: scheduledFor,
+      p_expected_revision: schedule.revision || 1,
+      p_next_at: nextRun,
+      p_now: now,
+    });
+    if (dispatchError) throw new Error(`Unable to dispatch workflow schedule: ${dispatchError.message}`);
+    const dispatch = Array.isArray(dispatched) ? dispatched[0] : dispatched;
+    if (!dispatch) continue;
+    queued += Number(dispatch.inserted_count || 0);
   }
   return { schedules: schedules?.length || 0, queued };
 }
