@@ -60,18 +60,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
+          version: latest
 
       - name: Start Supabase database only
         working-directory: apps/pulse
-        run: npx supabase start --exclude analytics,edge-runtime,functions,imgproxy,inbucket,kong,meta,realtime,rest,storage,studio,vector
+        run: supabase start --exclude analytics,edge-runtime,functions,imgproxy,inbucket,kong,meta,realtime,rest,storage,studio,vector
 
       - name: Run PostgreSQL acceptance tests
         working-directory: apps/pulse
@@ -80,7 +76,7 @@ jobs:
       - name: Stop Supabase
         if: ${{ always() }}
         working-directory: apps/pulse
-        run: npx supabase stop --no-backup
+        run: supabase stop --no-backup
 
   jamie-e2e:
     runs-on: ubuntu-latest
