@@ -921,6 +921,8 @@ Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS
 
 ## 12. Planning-stage research report — September 14, 2026
 
+Property-specific planning extension: [Keller / Westlake property sprint implementation plan](KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md). This maps the four shared-shortlist properties to ordered schema, service, scheduler, worker, review-interface and inquiry-tracking changes. It is a proposed implementation plan, not a completion claim.
+
 ### What was implemented
 
 The planning stage converted the original autonomous-agent idea into two bounded workflow clients sharing one scheduler: scheduled sprint planning and licensed hotlist email. The scheduler now has persisted schedules and jobs, owner scoping, pause/resume/cancel transitions, lease tokens, bounded retries, first-occurrence calculation, timezone-aware daily/weekly recurrence, weekday selection, and provider delivery records. Sprint planning now supports a manual backlog, provenance fields, deterministic selection, separate item and effort limits, duplicate prevention, revision-aware approval, persistent assignments, and completion propagation to linked backlog work. Email now supports review-first drafts, consent/opt-out checks, owner-scoped audiences, batching, receipt preservation, explicit auto-send policy metadata, and provider acceptance states.
