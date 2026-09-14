@@ -927,7 +927,8 @@ Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS
 - `npx vitest run tests/unit/scheduler-policy.test.ts` — 1 file and 14 tests passed.
 - `npm run test:unit` — 261 files and 1,050 tests passed. Existing test stderr includes expected mocked-provider/fallback diagnostics; no test failed.
 - `npm run build` — production build passed type checking and completed successfully. Next still emitted the existing dynamic-server-usage warning while collecting `/api/kepler/listings`; it did not fail the build.
-- Package A remains unchecked: the forward migration, transactional dispatch/terminal RPCs, lease/cancellation race tests, scheduler registry extraction, and PostgreSQL verification are still outstanding. Supabase/Docker was not available, so no migration was applied or marked verified.
+- Added forward migration `supabase/migrations/20260914040000_scheduler_retry_policy.sql` after the latest property migration. It is additive/idempotent, validates ISO weekdays, backfills and constrains schedule revisions, adds `workflow_jobs.retry_at`, issues a fresh lease token on every claim, applies one- and five-minute bounded recovery backoff, validates claim limits (1–100) and lease durations (30–900 seconds), and reasserts result RLS plus service-role-only scheduler RPC execution.
+- Package A remains unchecked: transactional dispatch/terminal RPCs, lease/cancellation race tests, scheduler registry extraction, and PostgreSQL verification are still outstanding. The forward migration is prepared but Supabase/Docker was not available, so it was not applied or marked verified.
 
 ## 12. Planning-stage research report — September 14, 2026
 
