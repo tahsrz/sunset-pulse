@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { runHotlistEmailForUser } from '@/app/api/admin/automations/hotlist-email/route';
 import { createPropertySprintProposal } from '@/lib/property-sprints/planPropertySprint.server';
-import { advanceSchedule } from './schedulerPolicy';
+import { advanceSchedule, normalizeScheduleSpec } from './schedulerPolicy';
 import { selectSprintBacklog } from './sprintSelection';
 
 export async function enqueueDueWorkflowJobs(limit = 25) {
@@ -18,10 +18,18 @@ export async function enqueueDueWorkflowJobs(limit = 25) {
       planning_mode: schedule.planning_mode || 'manual_backlog', scheduled_for: scheduledFor, status: 'queued',
     }, { onConflict: 'schedule_id,scheduled_for', ignoreDuplicates: true });
     if (jobError) throw new Error(`Unable to enqueue workflow job: ${jobError.message}`);
-    let nextRun = advanceSchedule(scheduledFor, schedule.cadence === 'weekly' || schedule.cadence === 'daily' ? schedule.cadence : 'hourly', schedule.time_zone || 'UTC', schedule.local_hour, schedule.local_minute, schedule.local_weekday || 1);
+    const cadence = schedule.cadence === 'weekly' || schedule.cadence === 'daily' ? schedule.cadence : 'hourly';
+    const scheduleSpec = normalizeScheduleSpec({
+      cadence,
+      timeZone: schedule.time_zone || 'UTC',
+      localHour: schedule.local_hour ?? 8,
+      localMinute: schedule.local_minute ?? 0,
+      localWeekday: schedule.local_weekday ?? 1,
+    });
+    let nextRun = advanceSchedule(scheduledFor, scheduleSpec);
     let guard = 0;
     while (Date.parse(nextRun) <= Date.now() && guard < 100) {
-      nextRun = advanceSchedule(nextRun, schedule.cadence === 'weekly' || schedule.cadence === 'daily' ? schedule.cadence : 'hourly', schedule.time_zone || 'UTC', schedule.local_hour, schedule.local_minute, schedule.local_weekday || 1);
+      nextRun = advanceSchedule(nextRun, scheduleSpec);
       guard += 1;
     }
     const { data: advanced, error: advanceError } = await supabaseAdmin.rpc('advance_workflow_schedule', { p_schedule_id: schedule.id, p_expected_at: scheduledFor, p_expected_revision: schedule.revision || 1, p_next_at: nextRun });

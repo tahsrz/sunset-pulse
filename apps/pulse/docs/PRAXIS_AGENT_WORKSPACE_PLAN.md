@@ -919,6 +919,16 @@ Focused command: `npm run test:unit -- tests/unit/scheduler-policy.test.ts tests
 Local database check: `supabase status` could not inspect the local stack because Docker Desktop's Linux engine is unavailable. No migration was applied or marked verified in this session; run the database acceptance suite after Docker/Supabase is available.
 Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS for `workflow_results` and restricts scheduler SECURITY DEFINER RPC execution to `service_role`. It remains unverified against PostgreSQL until the local stack is available.
 
+### Verification recorded September 14, 2026 — Package A policy slice
+
+- `lib/autonomous-workflows/schedulerPolicy.ts` now exposes a validated `scheduleSpecSchema`/`normalizeScheduleSpec` boundary, calculates first occurrences with `nextOccurrenceAfter`, and resolves daily/weekly recurrences by local calendar time. Nonexistent local times move forward by the detected timezone gap; repeated local times select the earlier UTC occurrence. Hourly schedules remain elapsed-hour calculations.
+- `lib/autonomous-workflows/durableScheduler.server.ts` now constructs one normalized schedule specification before advancing due occurrences. The existing positional `advanceSchedule` overload remains as a compatibility shim for older callers/tests while the durable scheduler uses the object form.
+- `tests/unit/scheduler-policy.test.ts` added coverage for object-form specs, DST gap/repeated-time behavior, Asia/Kathmandu's non-hour offset, strict calendar timestamp precision, and invalid schedule fields.
+- `npx vitest run tests/unit/scheduler-policy.test.ts` — 1 file and 14 tests passed.
+- `npm run test:unit` — 261 files and 1,050 tests passed. Existing test stderr includes expected mocked-provider/fallback diagnostics; no test failed.
+- `npm run build` — production build passed type checking and completed successfully. Next still emitted the existing dynamic-server-usage warning while collecting `/api/kepler/listings`; it did not fail the build.
+- Package A remains unchecked: the forward migration, transactional dispatch/terminal RPCs, lease/cancellation race tests, scheduler registry extraction, and PostgreSQL verification are still outstanding. Supabase/Docker was not available, so no migration was applied or marked verified.
+
 ## 12. Planning-stage research report — September 14, 2026
 
 Property-specific planning extension: [Keller / Westlake property sprint implementation plan](KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md). This maps the four shared-shortlist properties to ordered schema, service, scheduler, worker, review-interface and inquiry-tracking changes. It is a proposed implementation plan, not a completion claim.
