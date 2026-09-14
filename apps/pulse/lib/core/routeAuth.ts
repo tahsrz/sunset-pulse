@@ -48,7 +48,7 @@ export function getRequestHostFromHeaders(requestHeaders: Pick<Headers, 'get'>):
   return requestHeaders.get('host');
 }
 
-export function isAuthResponse(value: AuthorizedOperator | Response): value is Response {
+export function isAuthResponse(value: unknown): value is Response {
   return value instanceof Response;
 }
 

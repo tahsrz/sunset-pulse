@@ -11,7 +11,8 @@ export async function createPropertySprintProposal(ownerId: string, jobId: strin
   const planningProperties = await Promise.all(properties.map(async (property) => ({ ...property, collaborationNotes: (await listPropertyNotes(ownerId, property.id)).map((note) => `${note.authorType}: ${note.body}`) })));
   const { data: existingTasks, error: taskError } = await supabaseAdmin.from('sprint_backlog_items').select('dedupe_key,status').eq('owner_id', ownerId).not('dedupe_key', 'is', null);
   if (taskError) throw new Error(`Unable to inspect property sprint tasks: ${taskError.message}`);
-  const plan = buildPropertyBacklog({ properties: planningProperties, existingTasks: existingTasks || [], occurrenceAt });
+  const normalizedExistingTasks = (existingTasks || []).map((task) => ({ dedupeKey: task.dedupe_key, status: task.status }));
+  const plan = buildPropertyBacklog({ properties: planningProperties, existingTasks: normalizedExistingTasks, occurrenceAt });
   if (plan.tasks.length) {
     const { error } = await supabaseAdmin.from('sprint_backlog_items').insert(plan.tasks.map((task) => ({ owner_id: ownerId, title: task.title, description: task.description, priority: task.priority, estimate_minutes: task.estimatedMinutes, source_type: task.sourceType, source_id: task.propertyId, property_id: task.propertyId, property_task_kind: task.taskKind, input_revision: task.propertyRevision, dedupe_key: task.dedupeKey })));
     if (error && !error.message.toLowerCase().includes('duplicate')) throw new Error(`Unable to persist property sprint tasks: ${error.message}`);

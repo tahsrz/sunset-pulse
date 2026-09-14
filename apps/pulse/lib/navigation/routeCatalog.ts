@@ -77,6 +77,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/admin/agent-leads', 'Agent lead queues', 'operator'], ['/admin/launch-kit', 'Launch Kit', 'operator'],
     ['/admin/site-reviews', 'Site reviews', 'operator'], ['/admin/hot-list', 'Hot List', 'operator'],
     ['/admin/orchestrator', 'Orchestrator', 'operator'],
+    ['/admin/sprints', 'Sprints', 'operator'],
     ['/admin/profit', 'Profit controls', 'operator', 'Realtor role alone is not sufficient.'],
     ['/admin/intelligence', 'Intelligence configuration', 'admin'], ['/admin/prompts', 'Prompt configuration', 'admin'],
     ['/admin/marketing', 'Marketing', 'admin'], ['/admin/pulse', 'Pulse operations', 'admin'],

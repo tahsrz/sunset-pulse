@@ -137,6 +137,7 @@ How to read the directory:
 | `/dashboard` | Realtor dashboard | Realtor role; Middleware requires the realtor profile role. |
 | `/collections` | Collections | Sign-in required |
 | `/properties/saved` | Saved properties | Sign-in required |
+| `/property-shortlist` | Keller / Westlake shortlist | Sign-in required; Shared owner-scoped property context for Jamie planning. |
 | `/properties/add` | Add property | Sign-in required |
 | `/messages` | Messages | Sign-in required |
 | `/lead-gen` | Lead generation | Sign-in required |
@@ -191,6 +192,7 @@ How to read the directory:
 | `/admin/site-reviews` | Site reviews | Operator access |
 | `/admin/hot-list` | Hot List | Operator access |
 | `/admin/orchestrator` | Orchestrator | Operator access |
+| `/admin/sprints` | Sprints | Operator access |
 | `/admin/profit` | Profit controls | Operator access; Realtor role alone is not sufficient. |
 | `/admin/intelligence` | Intelligence configuration | Administrative screen |
 | `/admin/prompts` | Prompt configuration | Administrative screen |
