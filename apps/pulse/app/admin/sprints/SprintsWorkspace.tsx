@@ -6,7 +6,7 @@ import { SprintCard } from './SprintCard';
 type Backlog = { id: string; title: string; priority: number; status: string; estimate_minutes?: number | null };
 type Sprint = { id: string; name: string; goal: string; status: string; revision?: number };
 type SprintItem = { id: string; sprint_id: string; title: string; priority: number; status: string };
-type Schedule = { id: string; enabled: boolean; cadence: 'daily' | 'weekly'; time_zone: string; local_hour: number; local_minute: number; local_weekday: number; next_run_at: string };
+type Schedule = { id: string; enabled: boolean; planning_mode?: 'manual_backlog' | 'property_shortlist'; cadence: 'daily' | 'weekly'; time_zone: string; local_hour: number; local_minute: number; local_weekday: number; next_run_at: string };
 type Job = { id: string; status: string; scheduled_for: string; attempts: number; workflow_key: string };
 
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

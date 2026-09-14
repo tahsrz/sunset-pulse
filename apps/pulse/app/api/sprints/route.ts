@@ -7,7 +7,7 @@ import { isValidTimeZone, nextOccurrenceAfter } from '@/lib/autonomous-workflows
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
 const requestSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('create_schedule'), cadence: z.enum(['daily', 'weekly']), timeZone: z.string().trim().min(1).max(80).default('America/Chicago'), localHour: z.number().int().min(0).max(23).default(8), localMinute: z.number().int().min(0).max(59).default(0), localWeekday: z.number().int().min(1).max(7).default(1) }),
+  z.object({ action: z.literal('create_schedule'), cadence: z.enum(['daily', 'weekly']), planningMode: z.enum(['manual_backlog', 'property_shortlist']).default('property_shortlist'), timeZone: z.string().trim().min(1).max(80).default('America/Chicago'), localHour: z.number().int().min(0).max(23).default(8), localMinute: z.number().int().min(0).max(59).default(0), localWeekday: z.number().int().min(1).max(7).default(1) }),
   z.object({ action: z.literal('create'), name: z.string().trim().min(1).max(160), goal: z.string().trim().min(1).max(2000), startsAt: z.string().datetime().nullable().default(null), endsAt: z.string().datetime().nullable().default(null), items: z.array(item).max(100).default([]) }),
   z.object({ action: z.literal('approve'), sprintId: uuid, expectedRevision: z.number().int().positive().nullable().default(null) }),
   z.object({ action: z.literal('remove_backlog_item'), itemId: uuid }),
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   const { data: items } = await supabaseAdmin.from('sprint_items').select('*').eq('owner_id', userId).order('priority').limit(500);
   const { data: assignments } = await supabaseAdmin.from('agent_assignments').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(500);
   const { data: backlog } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).order('priority').limit(500);
-  const { data: schedules, error: scheduleError } = await supabaseAdmin.from('workflow_schedules').select('id,workflow_key,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at').eq('user_id', userId).eq('workflow_key', 'sprint_planner');
+  const { data: schedules, error: scheduleError } = await supabaseAdmin.from('workflow_schedules').select('id,workflow_key,planning_mode,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at').eq('user_id', userId).eq('workflow_key', 'sprint_planner');
   if (scheduleError) return NextResponse.json({ ok: false, error: scheduleError.message }, { status: 500 });
   return NextResponse.json({ ok: true, sprints: sprints || [], items: items || [], assignments: assignments || [], backlog: backlog || [], schedules: schedules || [] });
 }
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   if (parsed.data.action === 'create_schedule') {
     const nextRunAt = nextOccurrenceAfter(new Date(), { cadence: parsed.data.cadence, timeZone: parsed.data.timeZone, localHour: parsed.data.localHour, localMinute: parsed.data.localMinute, localWeekday: parsed.data.localWeekday });
-    const { data, error } = await supabaseAdmin.from('workflow_schedules').upsert({ user_id: userId, workflow_key: 'sprint_planner', cadence: parsed.data.cadence, time_zone: parsed.data.timeZone, local_hour: parsed.data.localHour, local_minute: parsed.data.localMinute, local_weekday: parsed.data.localWeekday, enabled: true, next_run_at: nextRunAt }, { onConflict: 'user_id,workflow_key' }).select('*').single();
+    const { data, error } = await supabaseAdmin.from('workflow_schedules').upsert({ user_id: userId, workflow_key: 'sprint_planner', planning_mode: parsed.data.planningMode, cadence: parsed.data.cadence, time_zone: parsed.data.timeZone, local_hour: parsed.data.localHour, local_minute: parsed.data.localMinute, local_weekday: parsed.data.localWeekday, enabled: true, next_run_at: nextRunAt }, { onConflict: 'user_id,workflow_key' }).select('*').single();
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, schedule: data });
   }

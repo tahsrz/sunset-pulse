@@ -20,6 +20,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS property_shortlist_owner_mls_idx ON public.pro
 CREATE UNIQUE INDEX IF NOT EXISTS property_shortlist_owner_parcel_idx ON public.property_shortlist_entries(owner_id, county, parcel_number) WHERE county IS NOT NULL AND parcel_number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS property_shortlist_owner_area_idx ON public.property_shortlist_entries(owner_id, area_key, status);
 
+ALTER TABLE public.workflow_schedules
+  ADD COLUMN IF NOT EXISTS planning_mode TEXT NOT NULL DEFAULT 'manual_backlog'
+    CHECK (planning_mode IN ('manual_backlog', 'property_shortlist'));
+ALTER TABLE public.workflow_jobs
+  ADD COLUMN IF NOT EXISTS planning_mode TEXT;
+
 CREATE TABLE IF NOT EXISTS public.property_sources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
