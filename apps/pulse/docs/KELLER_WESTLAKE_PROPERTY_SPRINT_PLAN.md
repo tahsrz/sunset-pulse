@@ -1,6 +1,8 @@
 # Keller / Westlake property sprint implementation plan
 
-Status: proposed implementation, not deployed behavior. This is a planning deliverable; no runtime changes accompany it. The single area is `keller-westlake`. Business objective: produce useful property guidance and follow-up that leads to the owner's buyer consultations and showing appointments.
+Status: active implementation plan; runtime foundation is in place, while production deployment and database acceptance remain outstanding. The single area is `keller-westlake`. Business objective: produce useful property guidance and follow-up that leads to the owner's buyer consultations and showing appointments.
+
+Collaboration rule: the owner and Jamie work from the same property record. The owner can add facts, corrections, and questions; Jamie can add sourced research context through the server service. Every note keeps its author type and optional command ID. Notes inform proposed tasks, but do not silently confirm facts, change ownership, approve assignments, or authorize delivery.
 
 ## First sprint tailored to the four shortlisted properties
 
@@ -62,6 +64,8 @@ Paths below are relative to `apps/pulse`. Existing symbols are exact edit anchor
 4. POST validates input, calls the service, and returns saved revision plus unresolved fields. No caller-supplied owner is trusted.
 5. Prepare an explicit import preview from `KELLER_SHORTLIST.md` for the four existing entries. Persist only through owner-authenticated confirmation; do not seed another user's records through a public migration.
 6. Keep Markdown as the research record. Runtime planning reads structured database records, not a Markdown parser on each scheduler tick.
+7. Expose property notes in the same response. `POST action=add_note` accepts owner input; the public route forces `authorType=user`. Jamie writes `authorType=jamie` through the server service with a command ID.
+8. Preserve note history instead of overwriting it. A note can propose a correction or question; only a verified fact update increments the property revision.
 
 ### 4. Deterministic task builder — new `lib/property-sprints/buildPropertyBacklog.ts`
 
@@ -81,6 +85,7 @@ Paths below are relative to `apps/pulse`. Existing symbols are exact edit anchor
 4. Inside the RPC, reuse the existing proposal for the same job; otherwise insert backlog additions, sprint and items atomically. Return the same result ID on retries.
 5. In `durableScheduler.server.ts`, replace inline sprint writes with a planning service dispatch based on saved mode (`manual_backlog` or `property_shortlist`). Add a handler registry and extract the API-route import into a server service.
 6. Complete the job and generic result in one lease-checked transaction. Do not build a second cron or a separate property scheduler.
+7. Load user and Jamie notes into task instructions as context with author labels. Keep source references and unresolved questions visible to the owner for review.
 
 ### 6. Selection and approval repairs
 

@@ -38,6 +38,8 @@ export const propertyTaskInputSchema = z.object({
   dependencyKeys: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
   dedupeKey: z.string().trim().min(1).max(300),
 });
+export const propertyNoteSchema = z.object({ body: z.string().trim().min(1).max(4000), authorType: z.enum(['user', 'jamie']).default('user'), sourceCommandId: z.string().trim().max(160).nullable().default(null) });
 
 export type PropertyShortlistEntry = z.infer<typeof propertyShortlistEntrySchema> & { id: string; ownerId: string; revision: number; status: 'active' | 'archived' };
 export type PropertyTaskInput = z.infer<typeof propertyTaskInputSchema>;
+export type PropertyNote = z.infer<typeof propertyNoteSchema> & { id: string; propertyId: string; createdAt: string };

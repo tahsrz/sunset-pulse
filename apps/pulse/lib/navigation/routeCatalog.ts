@@ -60,6 +60,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/login', 'Sign in'], ['/register', 'Register'], ['/profile', 'Profile', 'account'],
     ['/dashboard', 'Realtor dashboard', 'realtor', 'Middleware requires the realtor profile role.'],
     ['/collections', 'Collections', 'account'], ['/properties/saved', 'Saved properties', 'account'],
+    ['/property-shortlist', 'Keller / Westlake shortlist', 'account', 'Shared owner-scoped property context for Jamie planning.'],
     ['/properties/add', 'Add property', 'account'], ['/messages', 'Messages', 'account'],
     ['/lead-gen', 'Lead generation', 'account'], ['/premium', 'Premium plans'],
     ['/contracts/promulgated', 'Promulgated contracts'],

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { propertyShortlistEntrySchema, AREA_KEY, type PropertyShortlistEntry } from './contracts';
+import { propertyShortlistEntrySchema, propertyNoteSchema, AREA_KEY, type PropertyShortlistEntry, type PropertyNote } from './contracts';
 
 function fromRow(row: Record<string, unknown>): PropertyShortlistEntry {
   return {
@@ -32,4 +32,20 @@ export async function archiveShortlistEntry(ownerId: string, id: string, expecte
   const { data, error } = await supabaseAdmin.from('property_shortlist_entries').update({ status: 'archived', revision: expectedRevision + 1 }).eq('id', id).eq('owner_id', ownerId).eq('revision', expectedRevision).select('*').single();
   if (error) throw new Error(`Unable to archive property shortlist entry: ${error.message}`);
   return fromRow(data);
+}
+
+export async function listPropertyNotes(ownerId: string, propertyId: string) {
+  const { data, error } = await supabaseAdmin.from('property_notes').select('id,property_id,author_type,source_command_id,body,created_at').eq('owner_id', ownerId).eq('property_id', propertyId).order('created_at', { ascending: true });
+  if (error) throw new Error(`Unable to load property notes: ${error.message}`);
+  return (data || []).map((row): PropertyNote => ({ id: row.id, propertyId: row.property_id, authorType: row.author_type, sourceCommandId: row.source_command_id, body: row.body, createdAt: row.created_at }));
+}
+
+export async function addPropertyNote(ownerId: string, propertyId: string, input: unknown) {
+  const parsed = propertyNoteSchema.parse(input);
+  const { data: property, error: propertyError } = await supabaseAdmin.from('property_shortlist_entries').select('id').eq('id', propertyId).eq('owner_id', ownerId).maybeSingle();
+  if (propertyError) throw new Error(`Unable to verify property note ownership: ${propertyError.message}`);
+  if (!property) throw new Error('Property does not belong to this owner.');
+  const { data, error } = await supabaseAdmin.from('property_notes').insert({ owner_id: ownerId, property_id: propertyId, author_type: parsed.authorType, source_command_id: parsed.sourceCommandId, body: parsed.body }).select('id,property_id,author_type,source_command_id,body,created_at').single();
+  if (error) throw new Error(`Unable to save property note: ${error.message}`);
+  return { id: data.id, propertyId: data.property_id, authorType: data.author_type, sourceCommandId: data.source_command_id, body: data.body, createdAt: data.created_at } as PropertyNote;
 }
