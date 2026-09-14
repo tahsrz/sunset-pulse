@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 const mockFrom = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mockFrom } }));
-vi.mock('@/app/api/admin/automations/hotlist-email/route', () => ({ runHotlistEmailForUser: vi.fn() }));
+vi.mock('@/lib/autonomous-workflows/workflowRegistry.server', () => ({ getWorkflowHandler: vi.fn() }));
 
 import { GET } from '@/app/api/admin/automations/hotlist-email/cron/route';
 

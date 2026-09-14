@@ -1,8 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { runHotlistEmailForUser } from '@/app/api/admin/automations/hotlist-email/route';
-import { createPropertySprintProposal } from '@/lib/property-sprints/planPropertySprint.server';
 import { cadenceMilliseconds, nextOccurrenceAfter, normalizeScheduleSpec } from './schedulerPolicy';
-import { selectSprintBacklog } from './sprintSelection';
+import { getWorkflowHandler, type WorkflowJob } from './workflowRegistry.server';
 
 export async function enqueueDueWorkflowJobs(limit = 25) {
   const now = new Date().toISOString();
@@ -61,51 +59,23 @@ export async function processQueuedWorkflowJobs(limit = 10) {
     if (!job) break;
 
     try {
-      let runId: string | undefined;
-      let resultStatus = 'drafted';
-      if (job.workflow_key === 'hotlist_email') {
-        // The handler still enforces the persisted profile policy; this flag only
-        // allows an explicitly opted-in schedule to auto-send.
-        const result = await runHotlistEmailForUser({ userId: job.user_id, auditName: 'Scheduled licensed workflow', confirmAutoSend: true });
-        runId = result.run.id;
-        resultStatus = result.reused ? 'unchanged' : 'drafted';
-      } else if (job.workflow_key === 'sprint_planner') {
-        if (job.planning_mode === 'property_shortlist') {
-          runId = await createPropertySprintProposal(job.user_id, job.id, job.scheduled_for);
-          resultStatus = 'proposed';
-        } else {
-        const { data: sprint, error: sprintError } = await supabaseAdmin.from('sprints').insert({ owner_id: job.user_id, name: `Scheduled sprint · ${new Date().toLocaleDateString('en-US')}`, goal: 'Review the backlog and select the highest-priority work for this sprint.', status: 'proposed', source_job_id: job.id }).select('id').single();
-        if (sprintError) throw new Error(`Unable to create proposed sprint: ${sprintError.message}`);
-        const { data: backlog, error: backlogError } = await supabaseAdmin.from('sprint_backlog_items').select('id,title,description,priority,estimate_minutes').eq('owner_id', job.user_id).eq('status', 'open').order('priority').order('created_at').limit(100);
-        if (backlogError) throw new Error(`Unable to load sprint backlog: ${backlogError.message}`);
-        if (backlog?.length) {
-          const { data: existingItems } = await supabaseAdmin.from('sprint_items').select('backlog_item_id').eq('owner_id', job.user_id).not('backlog_item_id', 'is', null);
-          const existingBacklogIds = new Set((existingItems || []).map((entry) => entry.backlog_item_id));
-          const candidates = backlog.filter((entry) => !existingBacklogIds.has(entry.id));
-          const { error: itemError } = await supabaseAdmin.from('sprint_items').insert(selectSprintBacklog(candidates).map((entry) => ({ backlog_item_id: entry.id, title: entry.title, description: entry.description, priority: entry.priority, estimate_minutes: entry.estimate_minutes, sprint_id: sprint.id, owner_id: job.user_id })));
-          if (itemError) throw new Error(`Unable to create sprint items: ${itemError.message}`);
-        }
-        runId = sprint.id;
-        resultStatus = 'proposed';
-        }
-      } else throw new Error(`Unsupported workflow key: ${job.workflow_key}`);
-      if (!runId) throw new Error('Workflow completed without a durable result identifier.');
+      const execution = await getWorkflowHandler(job.workflow_key)(job as WorkflowJob);
       const { data: completed, error: completeError } = await supabaseAdmin.rpc('complete_workflow_job_with_result', {
         p_job_id: job.id,
         p_lease_token: job.lease_token,
-        p_result_type: job.workflow_key === 'hotlist_email' ? 'licensed_workflow_run' : 'sprint',
-        p_result_id: runId,
-        p_run_id: job.workflow_key === 'hotlist_email' ? runId : null,
+        p_result_type: execution.resultType,
+        p_result_id: execution.resultId,
+        p_run_id: execution.runId || null,
       });
       if (completeError) throw new Error(`Workflow completed but job receipt could not be saved: ${completeError.message}`);
       if (!completed) {
         results.push({ jobId: job.id, status: 'stale' });
         continue;
       }
-      results.push({ jobId: job.id, status: resultStatus, runId });
+      results.push({ jobId: job.id, status: execution.resultStatus, runId: execution.resultId });
     } catch (runError) {
       const message = runError instanceof Error ? runError.message : 'Unknown workflow failure.';
-      const { data: failed, error: failError } = await supabaseAdmin.rpc('fail_workflow_job', {
+      const { data: resolved, error: failError } = await supabaseAdmin.rpc('resolve_workflow_failure', {
         p_job_id: job.id,
         p_lease_token: job.lease_token,
         p_error: message,
@@ -113,7 +83,9 @@ export async function processQueuedWorkflowJobs(limit = 10) {
       if (failError) {
         results.push({ jobId: job.id, status: 'error', error: `${message}; failure receipt could not be saved: ${failError.message}` });
       } else {
-        results.push({ jobId: job.id, status: failed ? 'failed' : 'stale', error: failed ? message : undefined });
+        const resolution = Array.isArray(resolved) ? resolved[0] : resolved;
+        const status = resolution?.status || 'stale';
+        results.push({ jobId: job.id, status, error: status === 'stale' ? undefined : message });
       }
     }
   }

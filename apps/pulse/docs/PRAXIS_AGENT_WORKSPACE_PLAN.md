@@ -937,7 +937,10 @@ Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS
 - `npx vitest run tests/unit/scheduler-policy.test.ts tests/unit/scheduler-transitions.test.ts` — 2 files and 17 tests passed after the A7 wiring.
 - `npm run test:unit` — 261 files and 1,050 tests passed after the A7 route/worker changes. Existing mocked-provider and fallback diagnostics remain non-fatal.
 - `npm run build` — production build passed type checking and completed successfully. The existing dynamic-server-usage warning for `/api/kepler/listings` remains non-fatal.
-- Package A remains unchecked: lease/cancellation race tests, scheduler registry extraction, RPC integration verification, and PostgreSQL verification are still outstanding. The forward migrations are prepared but Supabase/Docker was not available, so they were not applied or marked verified.
+- Extracted `runHotlistEmailForUser`, its server-only persistence/delivery helpers, and the scheduled sprint planner into `lib/autonomous-workflows/hotlistEmailWorkflow.server.ts` and `lib/autonomous-workflows/sprintPlannerWorkflow.server.ts`. `workflowRegistry.server.ts` now maps workflow keys to handlers, and `durableScheduler.server.ts` no longer imports an API route or embeds workflow-specific execution logic.
+- Added forward migration `supabase/migrations/20260914070000_scheduler_registry_retry_pause.sql`. It redefines claims to join an enabled, owner/key-matching schedule, so paused schedules retain queued work without accepting new claims. It adds fenced `resolve_workflow_failure(...)`, which requeues attempts 1–2 with one- and five-minute backoff and marks attempt 3 terminal.
+- `npm run build` — production build passed after the A8 extraction and migration. The existing `/api/kepler/listings` dynamic-server-usage warning remains non-fatal.
+- Package A remains unchecked: lease/cancellation race tests, pause/claim and retry-exhaustion PostgreSQL tests, RPC integration/permission verification, and browser verification are still outstanding. The forward migrations are prepared but Supabase/Docker was not available, so they were not applied or marked verified.
 
 ## 12. Planning-stage research report — September 14, 2026
 
