@@ -919,4 +919,30 @@ Focused command: `npm run test:unit -- tests/unit/scheduler-policy.test.ts tests
 Local database check: `supabase status` could not inspect the local stack because Docker Desktop's Linux engine is unavailable. No migration was applied or marked verified in this session; run the database acceptance suite after Docker/Supabase is available.
 Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS for `workflow_results` and restricts scheduler SECURITY DEFINER RPC execution to `service_role`. It remains unverified against PostgreSQL until the local stack is available.
 
+## 12. Planning-stage research report — September 14, 2026
+
+### What was implemented
+
+The planning stage converted the original autonomous-agent idea into two bounded workflow clients sharing one scheduler: scheduled sprint planning and licensed hotlist email. The scheduler now has persisted schedules and jobs, owner scoping, pause/resume/cancel transitions, lease tokens, bounded retries, first-occurrence calculation, timezone-aware daily/weekly recurrence, weekday selection, and provider delivery records. Sprint planning now supports a manual backlog, provenance fields, deterministic selection, separate item and effort limits, duplicate prevention, revision-aware approval, persistent assignments, and completion propagation to linked backlog work. Email now supports review-first drafts, consent/opt-out checks, owner-scoped audiences, batching, receipt preservation, explicit auto-send policy metadata, and provider acceptance states.
+
+### Product decisions captured for research
+
+- Weekly Monday at 08:00 in the selected timezone is the sprint default; daily remains available.
+- Sprint approval creates durable assignments but never authorizes external communication.
+- Manual backlog entry is the first source; Pulse commands, GitHub, and CRM are later adapters.
+- Email is review-first; automatic sending requires explicit workflow opt-in, audience scope, and a cap.
+- Showing reminders are the next scheduler client after scheduler, sprint, and email acceptance checks.
+
+### Evidence and limitations
+
+The work is split across small commits and has been pushed to `codex/cms-vertical-slice-followup`; the latest commit at report time is `23c39220`. Focused helper/workflow checks reached 15 passing tests, including recurrence, selection, transitions, and delivery behavior. These checks do not prove PostgreSQL transaction behavior, RPC permissions, concurrent claims, browser access for ordinary users, or real provider reconciliation. Supabase/Docker was unavailable, so migrations remain prepared but unapplied and the execution ledger stays unchecked.
+
+### Research questions before declaring the foundation stable
+
+1. Can PostgreSQL integration tests prove duplicate-dispatch prevention, lease fencing, pause/claim races, retry exhaustion, and atomic result persistence?
+2. Can two ordinary users create, reload, pause, and inspect only their own schedules through the shared route?
+3. Does repeated sprint approval produce exactly one assignment per selected item under concurrent requests?
+4. Does a fake email provider demonstrate safe partial failure, uncertain receipts, consent changes, and policy-version invalidation?
+5. Which authoritative booking events and reminder offsets should the showing-reminder client consume?
+
 Execute A through E in order without spawning subagents. Update this ledger with exact commands, completed results, migration status and remaining limitations. A running typecheck is not a passed check; a helper test is not a database or browser integration test. Before updating PR #79, review the complete diff, finish all checks required for the implemented packages, and rewrite the PR description to match the verified scope. Do not mark the scheduler stable solely because tables, endpoints or UI controls exist.
