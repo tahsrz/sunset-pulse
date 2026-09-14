@@ -48,13 +48,18 @@ export async function enqueueDueWorkflowJobs(limit = 25) {
 
 export async function processQueuedWorkflowJobs(limit = 10) {
   await recoverExpiredWorkflowJobs();
-  const { data: jobs, error } = await supabaseAdmin.rpc('claim_workflow_jobs', { p_limit: limit, p_lease_seconds: 300 });
-  if (error) throw new Error(`Unable to load queued workflow jobs: ${error.message}`);
-
   const results: Array<{ jobId: string; status: string; runId?: string; error?: string }> = [];
-  for (const job of jobs || []) {
-    const { error: clearError } = await supabaseAdmin.from('workflow_jobs').update({ error: null }).eq('id', job.id).eq('lease_token', job.lease_token);
-    if (clearError) throw new Error(`Unable to initialize workflow job: ${clearError.message}`);
+  const requestedLimit = Number.isFinite(limit) ? Math.trunc(limit) : 0;
+  const maxJobs = Math.min(Math.max(requestedLimit, 0), 10);
+
+  // Claim one job at a time so a function deadline leaves at most one leased
+  // job to recover, rather than a batch of workers that can all expire together.
+  for (let index = 0; index < maxJobs; index += 1) {
+    const { data: jobs, error } = await supabaseAdmin.rpc('claim_workflow_jobs', { p_limit: 1, p_lease_seconds: 300 });
+    if (error) throw new Error(`Unable to load queued workflow jobs: ${error.message}`);
+    const job = jobs?.[0];
+    if (!job) break;
+
     try {
       let runId: string | undefined;
       let resultStatus = 'drafted';
@@ -84,15 +89,32 @@ export async function processQueuedWorkflowJobs(limit = 10) {
         resultStatus = 'proposed';
         }
       } else throw new Error(`Unsupported workflow key: ${job.workflow_key}`);
-      const { error: completeError } = await supabaseAdmin.from('workflow_jobs').update({ status: 'completed', run_id: job.workflow_key === 'hotlist_email' ? runId : null, result_id: runId, lease_until: null, lease_token: null }).eq('id', job.id).eq('lease_token', job.lease_token);
+      if (!runId) throw new Error('Workflow completed without a durable result identifier.');
+      const { data: completed, error: completeError } = await supabaseAdmin.rpc('complete_workflow_job_with_result', {
+        p_job_id: job.id,
+        p_lease_token: job.lease_token,
+        p_result_type: job.workflow_key === 'hotlist_email' ? 'licensed_workflow_run' : 'sprint',
+        p_result_id: runId,
+        p_run_id: job.workflow_key === 'hotlist_email' ? runId : null,
+      });
       if (completeError) throw new Error(`Workflow completed but job receipt could not be saved: ${completeError.message}`);
-      const { error: resultError } = await supabaseAdmin.from('workflow_results').upsert({ job_id: job.id, workflow_key: job.workflow_key, result_type: job.workflow_key === 'hotlist_email' ? 'licensed_workflow_run' : 'sprint', result_id: runId }, { onConflict: 'job_id' });
-      if (resultError) throw new Error(`Workflow completed but generic result could not be saved: ${resultError.message}`);
+      if (!completed) {
+        results.push({ jobId: job.id, status: 'stale' });
+        continue;
+      }
       results.push({ jobId: job.id, status: resultStatus, runId });
     } catch (runError) {
       const message = runError instanceof Error ? runError.message : 'Unknown workflow failure.';
-      await supabaseAdmin.from('workflow_jobs').update({ status: 'failed', lease_until: null, lease_token: null, error: message }).eq('id', job.id).eq('lease_token', job.lease_token);
-      results.push({ jobId: job.id, status: 'failed', error: message });
+      const { data: failed, error: failError } = await supabaseAdmin.rpc('fail_workflow_job', {
+        p_job_id: job.id,
+        p_lease_token: job.lease_token,
+        p_error: message,
+      });
+      if (failError) {
+        results.push({ jobId: job.id, status: 'error', error: `${message}; failure receipt could not be saved: ${failError.message}` });
+      } else {
+        results.push({ jobId: job.id, status: failed ? 'failed' : 'stale', error: failed ? message : undefined });
+      }
     }
   }
   return { processed: results.length, results };
