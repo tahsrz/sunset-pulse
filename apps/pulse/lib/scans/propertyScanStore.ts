@@ -11,6 +11,9 @@ export type PropertyScanSessionRecord = PropertyScanRequest & {
   scanId: string;
   ownerId: string;
   status: 'capture_ready' | 'in_review' | 'approved' | 'rejected';
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
   assets: PropertyScanAsset[];
   createdAt: string;
   updatedAt: string;
@@ -37,6 +40,14 @@ export async function listPropertyScanSessions(ownerId: string) {
 
   await connectDB();
   const records = await PropertyScanSession.find({ ownerId }).sort({ updatedAt: -1 }).limit(50).lean();
+  return records.map(serialize);
+}
+
+export async function listAllPropertyScanSessions() {
+  if (isMockMode()) return [...getMockSessions().values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  await connectDB();
+  const records = await PropertyScanSession.find({}).sort({ updatedAt: -1 }).limit(100).lean();
   return records.map(serialize);
 }
 
@@ -68,6 +79,33 @@ export async function appendPropertyScanAssets(scanId: string, ownerId: string, 
   return record ? serialize(record) : null;
 }
 
+export async function updatePropertyScanReview(
+  scanId: string,
+  status: 'in_review' | 'approved' | 'rejected',
+  reviewer: string,
+  reviewNote: string | null,
+) {
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    if (!record) return null;
+    record.status = status;
+    record.reviewNote = reviewNote;
+    record.reviewedBy = reviewer;
+    record.reviewedAt = new Date().toISOString();
+    record.updatedAt = record.reviewedAt;
+    persistMockSessions();
+    return record;
+  }
+
+  await connectDB();
+  const record = await PropertyScanSession.findOneAndUpdate(
+    { scanId },
+    { $set: { status, reviewNote, reviewedBy: reviewer, reviewedAt: new Date() } },
+    { new: true },
+  ).lean();
+  return record ? serialize(record) : null;
+}
+
 function serialize(record: any): PropertyScanSessionRecord {
   return {
     scanId: record.scanId,
@@ -76,6 +114,9 @@ function serialize(record: any): PropertyScanSessionRecord {
     listingId: record.listingId || null,
     captureMode: record.captureMode,
     status: record.status,
+    reviewNote: record.reviewNote || null,
+    reviewedAt: record.reviewedAt ? new Date(record.reviewedAt).toISOString() : null,
+    reviewedBy: record.reviewedBy || null,
     consent: record.consent,
     assets: (record.assets || []).map((asset: any) => ({
       path: asset.path,
@@ -105,6 +146,9 @@ function createMockSession(input: PropertyScanRequest, ownerId: string) {
     ownerId,
     ...input,
     status: 'capture_ready',
+    reviewNote: null,
+    reviewedAt: null,
+    reviewedBy: null,
     assets: [],
     createdAt: now,
     updatedAt: now,
@@ -138,4 +182,3 @@ function mockStorePath() {
 function isMockMode() {
   return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }
-

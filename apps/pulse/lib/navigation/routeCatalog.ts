@@ -78,6 +78,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/admin/lead-drafts', 'Lead drafts', 'operator'], ['/admin/lead-engine', 'Lead Engine', 'operator'],
     ['/admin/agent-leads', 'Agent lead queues', 'operator'], ['/admin/launch-kit', 'Launch Kit', 'operator'],
     ['/admin/site-reviews', 'Site reviews', 'operator'], ['/admin/hot-list', 'Hot List', 'operator'],
+    ['/admin/property-scans', 'Property scan review', 'operator', 'Review consented private captures before 3D reconstruction.'],
     ['/admin/orchestrator', 'Orchestrator', 'operator'],
     ['/admin/profit', 'Profit controls', 'operator', 'Realtor role alone is not sufficient.'],
     ['/admin/intelligence', 'Intelligence configuration', 'admin'], ['/admin/prompts', 'Prompt configuration', 'admin'],

@@ -7,6 +7,9 @@ const PropertyScanSessionSchema = new mongoose.Schema({
   listingId: { type: String, default: null, index: true },
   captureMode: { type: String, enum: ['guided_video', 'photo_walkthrough', 'lidar_capture'], required: true },
   status: { type: String, enum: ['capture_ready', 'in_review', 'approved', 'rejected'], required: true, default: 'capture_ready', index: true },
+  reviewNote: { type: String, default: null, maxlength: 2000 },
+  reviewedAt: { type: Date, default: null },
+  reviewedBy: { type: String, default: null },
   consent: {
     ownerAuthorized: { type: Boolean, required: true },
     interiorCaptureAcknowledged: { type: Boolean, required: true },
@@ -25,4 +28,3 @@ PropertyScanSessionSchema.index({ ownerId: 1, updatedAt: -1 });
 
 export const PropertyScanSession: Model<any> = mongoose.models.PropertyScanSession
   || mongoose.model('PropertyScanSession', PropertyScanSessionSchema);
-
