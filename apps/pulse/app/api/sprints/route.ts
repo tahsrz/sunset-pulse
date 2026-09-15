@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
-import { isValidTimeZone, nextOccurrenceAfter } from '@/lib/autonomous-workflows/schedulerPolicy';
+import { nextOccurrenceAfter, scheduleSpecSchema } from '@/lib/autonomous-workflows/schedulerPolicy';
 
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
+const sprintScheduleSpec = scheduleSpecSchema.extend({ cadence: z.enum(['daily', 'weekly']) });
 const requestSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('create_schedule'), cadence: z.enum(['daily', 'weekly']), planningMode: z.enum(['manual_backlog', 'property_shortlist']).default('manual_backlog'), timeZone: z.string().trim().min(1).max(80).default('America/Chicago'), localHour: z.number().int().min(0).max(23).default(8), localMinute: z.number().int().min(0).max(59).default(0), localWeekday: z.number().int().min(1).max(7).default(1), expectedRevision: z.number().int().positive().nullable().default(null) }),
+  z.object({ action: z.literal('create_schedule'), planningMode: z.enum(['manual_backlog', 'property_shortlist']).default('manual_backlog'), expectedRevision: z.number().int().positive().nullable().default(null) }).merge(sprintScheduleSpec),
   z.object({ action: z.literal('create'), name: z.string().trim().min(1).max(160), goal: z.string().trim().min(1).max(2000), startsAt: z.string().datetime().nullable().default(null), endsAt: z.string().datetime().nullable().default(null), items: z.array(item).max(100).default([]) }),
   z.object({ action: z.literal('approve'), sprintId: uuid, expectedRevision: z.number().int().positive().nullable().default(null) }),
   z.object({ action: z.literal('remove_backlog_item'), itemId: uuid }),
@@ -41,8 +42,6 @@ export async function POST(request: NextRequest) {
   if (!uuid.safeParse(userId).success) return NextResponse.json({ ok: false, error: 'A signed-in user is required.' }, { status: 401 });
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'Invalid sprint request.', details: parsed.error.flatten() }, { status: 400 });
-  if (parsed.data.action === 'create_schedule' && !isValidTimeZone(parsed.data.timeZone)) return NextResponse.json({ ok: false, error: 'Invalid timezone identifier.' }, { status: 400 });
-
   if (parsed.data.action === 'create_schedule') {
     const nextRunAt = nextOccurrenceAfter(new Date(), { cadence: parsed.data.cadence, timeZone: parsed.data.timeZone, localHour: parsed.data.localHour, localMinute: parsed.data.localMinute, localWeekday: parsed.data.localWeekday });
     const { data, error } = await supabaseAdmin.rpc('save_sprint_planner_schedule', { p_owner_id: userId, p_expected_revision: parsed.data.expectedRevision, p_planning_mode: parsed.data.planningMode, p_cadence: parsed.data.cadence, p_time_zone: parsed.data.timeZone, p_local_hour: parsed.data.localHour, p_local_minute: parsed.data.localMinute, p_local_weekday: parsed.data.localWeekday, p_next_run_at: nextRunAt });

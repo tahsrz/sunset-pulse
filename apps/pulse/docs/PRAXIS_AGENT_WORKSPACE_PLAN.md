@@ -95,6 +95,7 @@ Planning update only: this section records inspected implementation and specifie
 
 ### Implementation log — September 14, 2026, sprint start
 
+- Reused `scheduleSpecSchema` in `/api/sprints` for the sprint-specific daily/weekly schedule contract, keeping timezone and local-time validation aligned with the shared scheduler policy. Route tests and lint pass.
 - Hardened `/api/sprints` GET with parallel owner-scoped reads that surface any child-query error instead of returning a partial workspace as healthy. Added regression coverage for the fail-closed response; route tests and lint pass.
 - Added explicit schedule refresh behavior in `SprintsWorkspace.tsx`: saved scheduler state can refresh while unsaved cadence/mode/time edits remain in the editor, including an initial-load race. The next-run label uses the saved timezone. Focused tests remain green and `npm run lint` passes with only the existing hook-dependency warnings.
 - Added `save_sprint_planner_schedule(...)` in `20260915050000_revision_checked_sprint_schedule.sql`, routed `/api/sprints` schedule writes through the owner-scoped revision check, and preserved paused state on edits. The workspace now submits the saved revision and receives a conflict instead of overwriting a concurrent edit; route coverage includes RPC payload, stale revision and invalid timezone cases. Disposable DB replay and browser verification remain open.
