@@ -26,7 +26,8 @@ export const appRoutes: readonly AppRoute[] = [
     ['/', 'Home'], ['/explorer', 'Explorer'], ['/properties', 'Properties'],
     ['/properties/search-results', 'Property search results', 'public', 'Uses optional search query filters.'],
     ['/listings', 'Listings'], ['/idx', 'IDX Search', 'account'],
-    ['/tour-studio', 'Tour Studio'], ['/valuation', 'Property valuation', 'public', 'Account-backed actions may require sign-in.'],
+    ['/tour-studio', 'Tour Studio'], ['/scan-studio', '3D Scan Studio', 'account', 'Consent-first phone capture; uploads remain private until agent review.'],
+    ['/valuation', 'Property valuation', 'public', 'Account-backed actions may require sign-in.'],
     ['/contact', 'Contact'], ['/investors', 'Investors'],
   ]),
   ...pages('Intelligence and chat', [
