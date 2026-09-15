@@ -6,7 +6,6 @@ export interface AbidanCharacter {
   description: string;
   missionLabel: string;
   geometryType: 'hound' | 'titan' | 'ghost' | 'spider' | 'wolf' | 'phoenix' | 'fox' | 'reaper';
-  portraitPosition: string;
 }
 
 export const ABIDAN_DATA: AbidanCharacter[] = [
@@ -17,8 +16,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#3b82f6',
     description: 'Projects 5-10 year growth, infrastructure movement, and regional momentum for a property.',
     missionLabel: 'Growth Forecast',
-    geometryType: 'hound',
-    portraitPosition: '0% 0%'
+    geometryType: 'hound'
   },
   {
     id: 'gadrael',
@@ -27,8 +25,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#94a3b8',
     description: 'Reviews zoning, risk exposure, FHA-sensitive language, and structural market stability.',
     missionLabel: 'Risk Shield',
-    geometryType: 'titan',
-    portraitPosition: '50% 0%'
+    geometryType: 'titan'
   },
   {
     id: 'durandiel',
@@ -37,8 +34,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#ffffff',
     description: 'Maps transit access, utility corridors, infrastructure proximity, and location constraints.',
     missionLabel: 'Spatial Review',
-    geometryType: 'ghost',
-    portraitPosition: '100% 0%'
+    geometryType: 'ghost'
   },
   {
     id: 'telariel',
@@ -47,8 +43,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#a855f7',
     description: 'Connects neighborhood activity, historical listing behavior, and broader market patterns.',
     missionLabel: 'Network Map',
-    geometryType: 'spider',
-    portraitPosition: '0% 50%'
+    geometryType: 'spider'
   },
   {
     id: 'razael',
@@ -57,8 +52,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#ef4444',
     description: 'Builds buyer strategy, timing guidance, negotiation posture, and next steps.',
     missionLabel: 'Buyer Strategy',
-    geometryType: 'wolf',
-    portraitPosition: '50% 50%'
+    geometryType: 'wolf'
   },
   {
     id: 'suriel',
@@ -67,8 +61,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#22c55e',
     description: 'Synthesizes raw analysis into a cohesive summary with a plain-language throughline.',
     missionLabel: 'Summary Builder',
-    geometryType: 'phoenix',
-    portraitPosition: '100% 50%'
+    geometryType: 'phoenix'
   },
   {
     id: 'zakariel',
@@ -77,8 +70,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#f97316',
     description: 'Optimizes closing timelines, handoffs, logistics, and task sequencing.',
     missionLabel: 'Close Path',
-    geometryType: 'fox',
-    portraitPosition: '0% 100%'
+    geometryType: 'fox'
   },
   {
     id: 'ozriel',
@@ -87,8 +79,7 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#1e1b4b',
     description: 'Performs final balanced review, language cleanup, and potential score evaluation.',
     missionLabel: 'Final Arbiter',
-    geometryType: 'reaper',
-    portraitPosition: '50% 100%'
+    geometryType: 'reaper'
   },
   {
     id: 'daily-briefing',
@@ -97,7 +88,6 @@ export const ABIDAN_DATA: AbidanCharacter[] = [
     color: '#10b981',
     description: 'Summarizes live regional trends, market notes, and daily context.',
     missionLabel: 'Regional Summary',
-    geometryType: 'phoenix',
-    portraitPosition: '100% 100%'
+    geometryType: 'phoenix'
   }
 ];

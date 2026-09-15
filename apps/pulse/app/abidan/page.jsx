@@ -4,7 +4,7 @@ import { useTheme } from '@/context/ThemeProvider';
 import { ABIDAN_DATA } from '@/constants/abidan';
 import { FaShieldAlt, FaCrosshairs, FaBolt, FaGhost, FaSpider, FaDove, FaEye, FaSkull } from 'react-icons/fa';
 import PropertyFiberViewer from '@/components/PropertyFiberViewer';
-import AngelicAvatar from '@/components/abidan/AngelicAvatar';
+import AbidanModelViewer, { AbidanGeometryBadge } from '@/components/abidan/AbidanModelViewer';
 
 const AbidanIntroPage = () => {
   const { selectedAbidan, setSelectedAbidan } = useTheme();
@@ -58,7 +58,7 @@ const AbidanIntroPage = () => {
               }`}
             >
               <div className='flex items-center gap-4 relative z-10'>
-                <AngelicAvatar abidan={abidan} size='sm' />
+                <AbidanGeometryBadge abidan={abidan} size='sm' />
                 <div>
                   <h3 className='font-black uppercase tracking-tighter text-lg'>{abidan.name}</h3>
                   <p className='text-[10px] text-slate-500 uppercase font-mono'>{abidan.mantle}</p>
@@ -82,7 +82,7 @@ const AbidanIntroPage = () => {
             </div>
             
             <div className='flex items-center gap-6 mb-8'>
-              <AngelicAvatar abidan={selectedAbidan} size='lg' />
+              <AbidanModelViewer abidan={selectedAbidan} className='h-32 w-32 sm:h-40 sm:w-40' />
               <div
                 className='h-20 w-1'
                 style={{
