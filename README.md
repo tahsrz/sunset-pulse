@@ -20,7 +20,7 @@ This README is the repository entry point, not a live deployment report. A route
 
 Open **Browse all app paths** in Agent Console (`/agent`) or Command Center (`/command-center`). Where the global navbar is present, **Ctrl/Cmd+K** searches the same catalog by feature, path, section, and access note.
 
-The inventory covers **108 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
+The inventory covers **109 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
 
 How to read the directory:
 
@@ -138,6 +138,7 @@ How to read the directory:
 | `/collections` | Collections | Sign-in required |
 | `/properties/saved` | Saved properties | Sign-in required |
 | `/property-shortlist` | Keller / Westlake shortlist | Sign-in required; Shared owner-scoped property context for Jamie planning. |
+| `/sprints` | Sprints | Sign-in required; Shared owner-scoped scheduled planning workspace. |
 | `/properties/add` | Add property | Sign-in required |
 | `/messages` | Messages | Sign-in required |
 | `/lead-gen` | Lead generation | Sign-in required |
@@ -192,7 +193,6 @@ How to read the directory:
 | `/admin/site-reviews` | Site reviews | Operator access |
 | `/admin/hot-list` | Hot List | Operator access |
 | `/admin/orchestrator` | Orchestrator | Operator access |
-| `/admin/sprints` | Sprints | Operator access |
 | `/admin/profit` | Profit controls | Operator access; Realtor role alone is not sufficient. |
 | `/admin/intelligence` | Intelligence configuration | Administrative screen |
 | `/admin/prompts` | Prompt configuration | Administrative screen |
@@ -201,6 +201,7 @@ How to read the directory:
 | `/admin/cms` | Store / POS CMS | Administrative screen; Store controller console, not the Vibe editor. |
 | `/admin/cms/setup` | Store / POS setup | Administrative screen |
 | `/admin/scheduling` | Scheduling operations | Staff / PIN; Existing staff workflow; excluded from the middleware admin sign-in redirect. |
+| `/admin/sprints` | Sprints (legacy redirect) | Sign-in required; Compatibility route for the shared signed-in sprint workspace. Entry: `/sprints`. |
 | `/admin/branding` | Branding (legacy redirect) | Operator access; Redirects to Launch Kit; no separate branding console. Entry: `/admin/launch-kit`. |
 
 </details>

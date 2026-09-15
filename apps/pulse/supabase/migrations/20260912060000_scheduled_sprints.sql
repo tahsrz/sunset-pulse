@@ -38,6 +38,19 @@ CREATE TABLE IF NOT EXISTS public.sprint_items (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- The April workflow bootstrap may already have created public.sprints with a
+-- legacy workflow_id/total_duration_hours shape. Keep that table and its rows;
+-- scheduled sprint records add the owner-scoped columns below before any
+-- scheduled-only indexes, policies or RPCs reference them.
+ALTER TABLE public.sprints
+  ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS goal TEXT,
+  ADD COLUMN IF NOT EXISTS starts_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS source_job_id UUID REFERENCES public.workflow_jobs(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+
 ALTER TABLE public.workflow_jobs ADD COLUMN IF NOT EXISTS result_id UUID;
 
 ALTER TABLE public.workflow_schedules DROP CONSTRAINT IF EXISTS workflow_schedules_workflow_key_check;

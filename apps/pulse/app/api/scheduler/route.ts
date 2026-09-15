@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
-import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
+import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 
 const requestSchema = z.object({ action: z.enum(['pause', 'resume', 'cancel_job']), id: z.string().uuid() });
 
 export async function GET(request: NextRequest) {
-  const access = await requireOperatorRouteAccess(request);
+  const access = await requireSignedInUser(request);
   if (isAuthResponse(access)) return access;
-  const userId = operatorAuditUser(access).userId;
+  const userId = access.user.id;
   if (!z.string().uuid().safeParse(userId).success) return NextResponse.json({ ok: false, error: 'A signed-in user is required.' }, { status: 401 });
   const [{ data: schedules, error: scheduleError }, { data: jobs, error: jobError }] = await Promise.all([
-    supabaseAdmin.from('workflow_schedules').select('id,workflow_key,enabled,cadence,time_zone,next_run_at').eq('user_id', userId).order('next_run_at'),
+    supabaseAdmin.from('workflow_schedules').select('id,workflow_key,planning_mode,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at,revision').eq('user_id', userId).order('next_run_at'),
     supabaseAdmin.from('workflow_jobs').select('id,schedule_id,workflow_key,scheduled_for,status,attempts,lease_until,result_id,error').eq('user_id', userId).order('scheduled_for', { ascending: false }).limit(100),
   ]);
   if (scheduleError || jobError) return NextResponse.json({ ok: false, error: scheduleError?.message || jobError?.message }, { status: 500 });
@@ -19,9 +19,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const access = await requireOperatorRouteAccess(request);
+  const access = await requireSignedInUser(request);
   if (isAuthResponse(access)) return access;
-  const userId = operatorAuditUser(access).userId;
+  const userId = access.user.id;
   if (!z.string().uuid().safeParse(userId).success) return NextResponse.json({ ok: false, error: 'A signed-in user is required.' }, { status: 401 });
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'Invalid scheduler request.' }, { status: 400 });

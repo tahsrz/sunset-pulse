@@ -7,7 +7,7 @@ import { isValidTimeZone, nextOccurrenceAfter } from '@/lib/autonomous-workflows
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
 const requestSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('create_schedule'), cadence: z.enum(['daily', 'weekly']), planningMode: z.enum(['manual_backlog', 'property_shortlist']).default('property_shortlist'), timeZone: z.string().trim().min(1).max(80).default('America/Chicago'), localHour: z.number().int().min(0).max(23).default(8), localMinute: z.number().int().min(0).max(59).default(0), localWeekday: z.number().int().min(1).max(7).default(1) }),
+  z.object({ action: z.literal('create_schedule'), cadence: z.enum(['daily', 'weekly']), planningMode: z.enum(['manual_backlog', 'property_shortlist']).default('manual_backlog'), timeZone: z.string().trim().min(1).max(80).default('America/Chicago'), localHour: z.number().int().min(0).max(23).default(8), localMinute: z.number().int().min(0).max(59).default(0), localWeekday: z.number().int().min(1).max(7).default(1) }),
   z.object({ action: z.literal('create'), name: z.string().trim().min(1).max(160), goal: z.string().trim().min(1).max(2000), startsAt: z.string().datetime().nullable().default(null), endsAt: z.string().datetime().nullable().default(null), items: z.array(item).max(100).default([]) }),
   z.object({ action: z.literal('approve'), sprintId: uuid, expectedRevision: z.number().int().positive().nullable().default(null) }),
   z.object({ action: z.literal('remove_backlog_item'), itemId: uuid }),

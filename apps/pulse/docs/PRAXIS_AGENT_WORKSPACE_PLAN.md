@@ -1,11 +1,104 @@
 # Praxis Agent Workspace — Implementation Plan
 
-Status: implementation in progress; September 11 audit corrected premature completion claims. Core safety repairs and shared listing workflow extraction are implemented. Use the evidence ledger in section 7, not the earlier baseline summary, to determine what remains.
+Status: implementation in progress. September 14 implementation review found a confirmed sprint-schema migration collision and incomplete schedule/proposal contracts. The next five-hour sprint below is the current execution priority; historical completion summaries are not acceptance evidence.
 Owner: Taz. Intended executor: Luna or the next implementation session.
 Source inspection: September 11, 2026.
 Scope: replace the Command Center interface with a microphone-driven, multi-agent workspace while reusing the existing command execution backend.
 
-Execution guide: start with the package sequence in section 5, then use [section 8's line-anchored edit instructions](#8-line-anchored-implementation-instructions). Existing-file line numbers are verified snapshot anchors; new files use declaration/statement order.
+Execution guide: start with [the next five-hour sprint](#next-five-hour-sprint--september-14-2026). Sections 5, 8 and 11 retain the larger roadmap and safety gates, but do not override this sprint's timeboxes. Existing-file line numbers are snapshot anchors; locate the named symbol again before editing.
+
+## Next five-hour sprint — September 14, 2026
+
+Objective: make the existing collaborative Keller / Westlake planning path usable and recoverable: owner notes and missing information become reviewable backlog work, saved schedules retain their intended mode, and a scheduled occurrence persists one complete proposal. Keep the scheduler reusable for other workflows. This is a 300-minute engineering sprint, not a promise to complete Packages A–E or enable autonomous delivery.
+
+### Implementation baseline, not completion claims
+
+- Reviewed checkout: `f41fa1ea` on `codex/cms-vertical-slice-followup`. Existing uncommitted changes add `/sprints`, redirect the admin entry, open `/api/scheduler` to authenticated owners, update navigation/README, and add route tests. Preserve and finish these changes rather than recreating them. The page itself currently has no server-side auth gate; API authentication does not prove page access behavior.
+- [CI run 34895507828](https://github.com/tahsrz/sunset-pulse/actions/runs/34895507828): lint, test and Jamie E2E passed on the committed revision. `scheduler-db` failed during migration startup; its acceptance-test step was skipped. These results do not cover the uncommitted access slice or establish a passing deployment.
+- Confirmed blocker: `20260403_workflow_init.sql:17` creates legacy `public.sprints` with `workflow_id` and `total_duration_hours`, without `owner_id`. `20260912060000_scheduled_sprints.sql:3` uses `CREATE TABLE IF NOT EXISTS`, then its owner/status index fails with SQLSTATE 42703. CLI installation now succeeds; repeating the CLI fix will not repair this schema collision.
+- The scheduler has a registry, timezone policy, atomic dispatch RPC, lease tokens and terminal/retry RPCs. The 31-assertion pgTAP suite is primarily serial; it does not prove real concurrent sessions, rollback under injected failure, or complete tenant isolation.
+- `SprintsWorkspace` reads saved mode but never submits it, while `create_schedule` defaults to `property_shortlist`. Saving a manual schedule can therefore change its mode. Failed `post()` calls resolve normally and callers clear drafts; pause/cancel ignore HTTP failures; next-run formatting uses an unsaved timezone.
+- Both planner services persist headers/items separately. Property planning returns an existing header immediately, even if a prior item insert failed. The manual planner can append items to an existing proposal on retry. Neither is a complete atomic, immutable occurrence snapshot.
+- Shortlist intake, author-labelled user/Jamie notes and deterministic task generation exist. The manual property-plan endpoint creates backlog entries, not a sprint or executed Jamie research. `SprintCard` does not display the assignment records returned by the API. Creating assignments is not proof that workers ran or produced artifacts.
+
+### Time budget and order
+
+| Elapsed time | Budget | Deliverable | Exit evidence |
+| --- | ---: | --- | --- |
+| 00:00–01:00 | 60 min | Restore migration compatibility and reach scheduler DB tests | Clean migration replay plus legacy-row preservation fixture, or exact remaining blocker |
+| 01:00–02:15 | 75 min | Finish owner-accessible, reliable schedule editing | Saved mode/timezone survive reload; failed requests preserve edits; foreign-owner operations rejected |
+| 02:15–03:45 | 90 min | Persist a complete scheduled proposal atomically | Retry returns the same unchanged proposal; failed item write rolls everything back |
+| 03:45–04:15 | 30 min | Make the collaborative planning result understandable | Notes/context, task descriptions and assignment state visible; no implied worker execution |
+| 04:15–05:00 | 45 min | Targeted verification, regression checks and handoff | Exact completed checks, reviewed diff and next-sprint carryover |
+
+The budgets include implementation and focused checks; the final 45 minutes are reserved for integration/regression and contingency. At each boundary record complete/partial/blocked. Do not spend the entire sprint polling CI. If database setup remains blocked at minute 60, continue the UI/API work against controlled fixtures, but keep DB-dependent changes unaccepted and unattended execution disabled. If a safe transaction implementation exceeds its timebox, carry it over intact rather than shipping a partial write path as fixed. No subagents.
+
+### 1. Database compatibility — first 60 minutes
+
+1. Inspect `20260403_workflow_init.sql` (`sprints`, `tasks`, `initialize_workflow`) and `20260912060000_scheduled_sprints.sql` before choosing constraints. Trace later sprint foreign keys/RPCs and existing legacy callers. Preserve IDs, workflow/task relationships and legacy rows; never invent ownership for historical data.
+2. In the September scheduled-sprints migration, add explicit compatibility DDL before the first index/policy that uses new columns. Reconcile all required columns, defaults and constraints, not only `owner_id`. Prefer additive coexistence: legacy workflow rows may retain unknown ownership, while owner-scoped scheduled rows must satisfy the scheduled contract. Do not globally impose a new NOT NULL/status constraint that breaks `initialize_workflow`.
+3. Provide an idempotent forward repair for databases that already recorded the September migration. A forward migration alone cannot fix clean replay because replay fails before reaching it. Document why the historical bootstrap correction and forward repair are both present; do not drop/recreate `sprints`, reset production, or rewrite applied migration history.
+4. Add a legacy-schema upgrade fixture containing an existing workflow/sprint/task; assert preserved IDs/links and a successful new scheduled proposal insert. Test `initialize_workflow` compatibility and ownership isolation, including legacy null-owner rows remaining inaccessible through owner APIs.
+5. Replay the full migration chain on disposable PostgreSQL and run `npm run test:db` from `apps/pulse`. Fix surfaced scheduler SQL errors within the timebox. Keep the official CLI setup; pin its verified version for reproducibility rather than using `latest` indefinitely. Do not bypass old migrations to make a misleading green job.
+
+Exit: clean replay and upgrade compatibility pass, or record the exact failing migration/statement. Package A remains open until concurrency and permission acceptance is complete.
+
+### 2. Owner access and reliable schedule editing — next 75 minutes
+
+1. `app/sprints/page.tsx`, `app/admin/sprints/page.tsx`, middleware and `lib/navigation/routeCatalog.ts`: finish the existing access slice using the application's signed-in page pattern. Verify the legacy admin URL's middleware behavior before claiming it redirects for ordinary users. Keep API authorization independent of page navigation.
+2. `app/api/scheduler/route.ts`, GET schedule projection: return the saved local hour/minute/weekday, planning mode and schedule revision alongside the existing fields. Use this shared response as the editor's source of truth; do not maintain competing schedule representations in two endpoints.
+3. `app/api/sprints/route.ts`, `requestSchema` and `create_schedule`: reuse `normalizeScheduleSpec`/the shared policy schema. Default new generic sprints to weekly Monday 08:00 America/Chicago and manual backlog; require an explicit property-mode selection for Keller / Westlake. Preserve existing mode on updates that omit it. Separate saving from enabling so editing a paused schedule does not silently resume it.
+4. Replace unrestricted schedule upsert with an owner-scoped, revision-checked save transaction. Lock the schedule, compare expected revision for updates, validate/advance its next occurrence and increment revision atomically. Concurrent dispatch must not advance an obsolete schedule specification. Return a conflict rather than overwriting another tab's changes; keep workflow settings separate from generic recurrence fields.
+5. `app/admin/sprints/SprintsWorkspace.tsx`, state/load/post/toggle/cancel: add explicit planning-mode control and labelled cadence/day inputs; retain saved state separately from the editable draft. Render next occurrence using the saved timezone, handling invalid draft values without crashing. Make mutation helpers return success or throw; clear inputs only on success. Check every HTTP response, disable duplicate mutations, and preserve dirty fields on background refresh.
+6. `app/api/sprints/route.ts`, GET and backlog update: surface failed child queries instead of treating errors as empty data. Preserve omitted description/estimate fields; allow explicit null only when the user clears an estimate. Add an explicit refresh action without discarding unsaved work.
+7. Extend `tests/unit/scheduler-route.test.ts` and add sprint-route/editor coverage for signed-out GET/POST, two distinct owners, foreign schedule/job IDs, mode preservation, paused saves, stale revision conflicts, invalid timezone and failed draft retention. Browser checks must use ordinary-user sessions; mock assertions alone are not RLS evidence.
+
+Exit: an ordinary owner can save, reload, pause and resume the intended schedule without mode changes or lost edits. New schedule defaults do not migrate existing user settings.
+
+### 3. Atomic scheduled proposals — next 90 minutes
+
+1. Add a forward migration defining one service-only proposal-persistence RPC. Inputs include owner, scheduler job ID, lease token, occurrence, selected task snapshots and exclusions. Lock/validate the job's owner, workflow, running status and live lease before writing. Use the established job-lock order to avoid deadlocks with cancellation/completion.
+2. In that transaction, reuse an existing completed proposal snapshot for the same job; otherwise insert property backlog additions (when needed), the sprint and all items together. Enforce source-job uniqueness and matching owner/property/backlog references. Persist selection/exclusion metadata so an empty proposal can be distinguished from a failed partial write. No catch-and-ignore of errors based on the word "duplicate".
+3. `lib/autonomous-workflows/sprintPlannerWorkflow.server.ts`, `runSprintPlannerWorkflow`: replace its separate header/item writes with the RPC-backed service. Never append newly selected work to a proposal on retry. Construct the title from `job.scheduled_for`, not the worker's current clock.
+4. `lib/property-sprints/planPropertySprint.server.ts`, `createPropertySprintProposal`: keep fact/note gathering and pure planning outside the transaction, then persist through the same boundary. Pass lease context from `workflowRegistry.server.ts`/the handler. Recheck material property revisions in the transaction; changed facts require rebuilding, not accepting stale inputs. Preserve author-labelled note context as source material, not worker instructions.
+5. `lib/autonomous-workflows/sprintSelection.ts`, `selectSprintBacklog`: select in priority/created-at/ID order; stop at maxItems while accumulating effort only for selected items. Define unknown-estimate exclusions explicitly. Revalidate active task links under the persistence transaction so concurrent occurrences cannot select the same active work; completed tasks remain excluded, cancelled work requires deliberate reopening. Keep compatibility for existing callers and add focused fixtures.
+6. Add DB assertions for repeated same-job calls, concurrent same-job attempts, forced item-insert rollback, stale/cancelled lease rejection and cross-owner payloads. Retry after failure must create exactly one complete proposal with unchanged item snapshots. Distinguish these tests from existing successful-path receipt tests.
+
+Exit: both scheduled modes use the same atomic persistence boundary. The manual `/api/property-shortlist/plan` action remains clearly labelled as backlog generation; it must not be presented as completed sprint execution. Approval/edit races and worker execution remain separate follow-on work.
+
+### 4. Collaborative planning visibility — next 30 minutes
+
+1. `app/property-shortlist/PropertyShortlistWorkspace.tsx`: retain the single Keller / Westlake area and existing note history. Clarify that adding a question supplies context; clicking the planning action generates proposed backlog tasks, not verified answers. Preserve note drafts on failed requests and show created-task counts and returned exclusion reasons.
+2. `SprintsWorkspace.tsx` and `SprintCard.tsx`: show task descriptions, property reference/revision when present, and assignment worker/status from the existing API response. Use explicit "unassigned", "awaiting review" or "blocked" states where supported; do not label an assignment as a running agent without execution evidence. Link back to the shortlist for missing input.
+3. Keep owner and Jamie notes visibly attributed. Do not add a second chat system, synthesize Jamie replies without a worker result, overwrite verified facts from notes, or conflate collaboration with granting another user access.
+4. Use fixture examples for all four shortlisted properties, preserving unresolved identities, the land zoning discrepancy and original-versus-current price distinction. No live property import, real email or automatic schedule enablement is part of this engineering sprint.
+
+Exit: the owner can tell what context was saved, what tasks were proposed, what still needs information and whether any assignment actually ran.
+
+### 5. Verification and handoff — final 45 minutes
+
+1. Run focused route/editor/selection/proposal tests as their slices finish. At handoff run `npm run test:unit`, `npm run lint` and `npm run build` from `apps/pulse`, plus `npm run test:db` against the disposable stack. Check available script names before execution. Record exact exits/counts; unavailable or unfinished checks stay unverified. The earlier build process is no longer recoverable in the current session, so it is not fresh build evidence.
+2. Browser-check ordinary-user entry, save/reload, mode selection, failed mutation retention, note-to-backlog visibility and assignment display. Use two isolated user fixtures to test denied access, not a real contact list. Keep real delivery disabled throughout.
+3. Review the complete diff, including the access changes present before this planning update. Update this ledger and PR #79's scope when handing off implementation; do not claim a passing deployment without its result. Record remaining migration/CI blockers and carryover in priority order.
+
+Definition of done: all completed slices have evidence and no partial-write or access regression is hidden by an optimistic UI. The target is a trustworthy planning proposal flow, not a declaration that the entire autonomous platform is production-ready.
+
+### Explicit carryover after these five hours
+
+1. Finish Package A concurrent pause/claim and cancel/complete tests, actual retry-delay assertions, live-lease fencing review, and authenticated-role RLS tests. Passing the current serial suite alone does not close A.
+2. Finish Package C approval/edit locking, required revision/replay semantics and transactional assignment/item/backlog completion before expanding unattended execution. Assignment visibility in this sprint does not repair those transitions.
+3. Then implement bounded research/draft workers, durable artifacts, stale-property output rejection and the owner review queue. Use available evidence/connectors; unsupported research remains visibly blocked.
+4. Keep email review-first. Defer auto-send, send-to-all, uncertain-receipt reconciliation work and new provider connections until Package D's separate safety acceptance. Sprint approval never authorizes sending.
+5. Defer showing reminders, GitHub/CRM backlog adapters, inquiry attribution and monetization features. They remain on the roadmap, but adding scheduler clients before the foundation is accepted is not this sprint's objective.
+
+Planning update only: this section records inspected implementation and specifies future changes; its checklists are not completion claims. It supersedes earlier execution-order wording for the next 300 minutes, not the roadmap's safety requirements.
+
+### Implementation log — September 14, 2026, sprint start
+
+- Added additive compatibility columns to `20260912060000_scheduled_sprints.sql` before scheduled indexes, plus `20260914080000_repair_scheduled_sprint_compatibility.sql` for databases that already crossed the original migration. This is not database acceptance: the repair still needs a disposable PostgreSQL replay and an upgrade fixture.
+- Updated `SprintsWorkspace.tsx` to persist the selected `planningMode`, label schedule controls, check scheduler mutation responses, prevent duplicate scheduler actions while pending, and clear the backlog title only after a successful add. The page-level auth gate, revision-checked schedule save, and browser verification remain open.
+- Focused verification passed: `node --no-warnings ../../node_modules/vitest/vitest.mjs run tests/unit/scheduler-route.test.ts tests/unit/app-route-catalog.test.ts` — 2 files, 7 tests. A fresh production build was started but remained in Next optimization without output and was interrupted; no build pass is claimed. CI run 34895507828 still fails before DB acceptance at the original `sprints(owner_id, ...)` index statement.
+- Extended `lib/autonomous-workflows/sprintSelection.ts` with stable priority/created-at/ID/title ordering and `selectSprintBacklogReport`, which returns selected work, used minutes and explicit capacity/unknown-estimate/max-item exclusions while preserving the existing selected-array wrapper. Focused verification: `node --no-warnings ../../node_modules/vitest/vitest.mjs run tests/unit/sprint-selection.test.ts tests/unit/property-sprint-builder.test.ts tests/unit/scheduler-route.test.ts` — 3 files, 8 tests passed.
 
 ## 1. Product contract
 
@@ -941,6 +1034,7 @@ Security migration prepared: `20260912110000_scheduler_security.sql` enables RLS
 - Added forward migration `supabase/migrations/20260914070000_scheduler_registry_retry_pause.sql`. It redefines claims to join an enabled, owner/key-matching schedule, so paused schedules retain queued work without accepting new claims. It adds fenced `resolve_workflow_failure(...)`, which requeues attempts 1–2 with one- and five-minute backoff and marks attempt 3 terminal.
 - Added `supabase/tests/database/scheduler.sql`, a 31-assertion pgTAP acceptance suite covering scheduler function presence and RPC privileges, duplicate dispatch fencing, pause/resume claim behavior, retry backoff/exhaustion, recovery token invalidation, cancellation fencing, and atomic result persistence. It is intended to run with `supabase test db` once the local stack is available.
 - Added the `test:db` package script and a `scheduler-db` CI job that installs Supabase through `supabase/setup-cli@v1`, starts only the database containers, runs `npm run test:db`, and stops the stack even after failure. The first CI attempt exposed that the npm wrapper had only installed its Windows optional binary from the cross-platform lockfile; the job now uses the official Linux CLI setup action. A local `supabase test db` attempt still returns `LegacyDbConnectError` because the Docker-backed Postgres container is not running in this workspace.
+- Uncommitted access slice: replaced `/api/scheduler`'s operator-only gate with `requireSignedInUser` and server-derived `access.user.id`, added the `/sprints` page shell, and changed `/admin/sprints` into a compatibility redirect. The route catalog lists `/sprints` as account-scoped, but the page's server auth gate and legacy middleware behavior remain to be completed/verified. Mocked route tests assert owner identity on reads/mutations and GET auth denial; they do not prove two-user isolation or browser access.
 - `npm run build` — production build passed after the A8 extraction and migration. The existing `/api/kepler/listings` dynamic-server-usage warning remains non-fatal.
 - Package A remains unchecked: the new pgTAP suite is not yet executed, browser verification is outstanding, and true concurrent-session claims still need a local integration run. The forward migrations are prepared but Supabase/Docker was not available, so they were not applied or marked verified.
 
@@ -972,4 +1066,4 @@ The work is split across small commits and has been pushed to `codex/cms-vertica
 4. Does a fake email provider demonstrate safe partial failure, uncertain receipts, consent changes, and policy-version invalidation?
 5. Which authoritative booking events and reminder offsets should the showing-reminder client consume?
 
-Execute A through E in order without spawning subagents. Update this ledger with exact commands, completed results, migration status and remaining limitations. A running typecheck is not a passed check; a helper test is not a database or browser integration test. Before updating PR #79, review the complete diff, finish all checks required for the implemented packages, and rewrite the PR description to match the verified scope. Do not mark the scheduler stable solely because tables, endpoints or UI controls exist.
+Long-term package order remains A through E. For the immediate work, follow the five-hour sprint at the top of this document without spawning subagents; bounded UI work may proceed while database acceptance is blocked, but unattended rollout may not. Update this ledger with exact commands, completed results, migration status and remaining limitations. A running typecheck is not a passed check; a helper test is not a database or browser integration test. Before updating PR #79, review the complete diff, finish checks required for the implemented scope, and rewrite the PR description to match the verified scope. Do not mark the scheduler stable solely because tables, endpoints or UI controls exist.
