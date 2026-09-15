@@ -11,6 +11,15 @@ const reviewSchema = z.object({
   reviewNote: z.string().trim().max(2000).optional().or(z.literal('')),
 });
 
+export async function GET(request: NextRequest, { params }: { params: Promise<{ scanId: string }> }) {
+  const access = await requireOperatorRouteAccess(request);
+  if (isAuthResponse(access)) return access;
+  const { scanId } = await params;
+  const session = (await listAllPropertyScanSessions()).find((item) => item.scanId === scanId);
+  if (!session) return errorResponse('Property scan session not found.', 404);
+  return successResponse({ endpoint: `/api/admin/property-scans/${scanId}`, session });
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ scanId: string }> }) {
   const access = await requireOperatorRouteAccess(request);
   if (isAuthResponse(access)) return access;

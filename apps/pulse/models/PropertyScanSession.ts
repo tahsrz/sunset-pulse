@@ -10,6 +10,18 @@ const PropertyScanSessionSchema = new mongoose.Schema({
   reviewNote: { type: String, default: null, maxlength: 2000 },
   reviewedAt: { type: Date, default: null },
   reviewedBy: { type: String, default: null },
+  reconstruction: {
+    jobId: { type: String, default: null },
+    status: { type: String, enum: ['ready', 'failed'], default: null },
+    progress: { type: Number, default: 0 },
+    engine: { type: String, default: null },
+    previewKind: { type: String, default: null },
+    roomCount: { type: Number, default: 0 },
+    assetCount: { type: Number, default: 0 },
+    startedAt: { type: Date, default: null },
+    completedAt: { type: Date, default: null },
+    error: { type: String, default: null },
+  },
   consent: {
     ownerAuthorized: { type: Boolean, required: true },
     interiorCaptureAcknowledged: { type: Boolean, required: true },

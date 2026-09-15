@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import connectDB from '@/lib/core/database';
 import { PropertyScanSession } from '@/models/PropertyScanSession';
 import type { PropertyScanAsset, PropertyScanRequest } from '@/lib/scans/propertyScanContract';
+import { buildManifestPreview, type PropertyScanReconstruction } from '@/lib/scans/reconstruction';
 
 export type PropertyScanSessionRecord = PropertyScanRequest & {
   scanId: string;
@@ -14,6 +15,7 @@ export type PropertyScanSessionRecord = PropertyScanRequest & {
   reviewNote: string | null;
   reviewedAt: string | null;
   reviewedBy: string | null;
+  reconstruction: PropertyScanReconstruction | null;
   assets: PropertyScanAsset[];
   createdAt: string;
   updatedAt: string;
@@ -106,6 +108,40 @@ export async function updatePropertyScanReview(
   return record ? serialize(record) : null;
 }
 
+export async function startPropertyScanReconstruction(scanId: string) {
+  const startedAt = new Date().toISOString();
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    if (!record) return null;
+    const reconstruction = buildManifestPreview({ jobId: `recon_${randomUUID()}`, assets: record.assets, startedAt });
+    record.reconstruction = reconstruction;
+    record.updatedAt = new Date().toISOString();
+    persistMockSessions();
+    return record;
+  }
+
+  await connectDB();
+  const existing = await PropertyScanSession.findOne({ scanId }).lean() as any;
+  if (!existing) return null;
+  const reconstruction = buildManifestPreview({
+    jobId: `recon_${randomUUID()}`,
+    assets: (existing.assets || []).map((asset: any) => ({
+      path: asset.path,
+      fileName: asset.fileName,
+      mimeType: asset.mimeType,
+      size: asset.size,
+      capturedAt: new Date(asset.capturedAt).toISOString(),
+    })),
+    startedAt,
+  });
+  const record = await PropertyScanSession.findOneAndUpdate(
+    { scanId, status: 'approved', 'assets.0': { $exists: true } },
+    { $set: { reconstruction } },
+    { new: true },
+  ).lean();
+  return record ? serialize(record) : null;
+}
+
 function serialize(record: any): PropertyScanSessionRecord {
   return {
     scanId: record.scanId,
@@ -117,6 +153,18 @@ function serialize(record: any): PropertyScanSessionRecord {
     reviewNote: record.reviewNote || null,
     reviewedAt: record.reviewedAt ? new Date(record.reviewedAt).toISOString() : null,
     reviewedBy: record.reviewedBy || null,
+    reconstruction: record.reconstruction?.jobId ? {
+      jobId: record.reconstruction.jobId,
+      status: record.reconstruction.status,
+      progress: record.reconstruction.progress,
+      engine: record.reconstruction.engine,
+      previewKind: record.reconstruction.previewKind,
+      roomCount: record.reconstruction.roomCount,
+      assetCount: record.reconstruction.assetCount,
+      startedAt: record.reconstruction.startedAt ? new Date(record.reconstruction.startedAt).toISOString() : null,
+      completedAt: record.reconstruction.completedAt ? new Date(record.reconstruction.completedAt).toISOString() : null,
+      error: record.reconstruction.error || null,
+    } : null,
     consent: record.consent,
     assets: (record.assets || []).map((asset: any) => ({
       path: asset.path,
@@ -149,6 +197,7 @@ function createMockSession(input: PropertyScanRequest, ownerId: string) {
     reviewNote: null,
     reviewedAt: null,
     reviewedBy: null,
+    reconstruction: null,
     assets: [],
     createdAt: now,
     updatedAt: now,
