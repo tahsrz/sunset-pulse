@@ -73,15 +73,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
   if (parsed.data.action === 'complete_assignment') {
-    const { data: assignment } = await supabaseAdmin.from('agent_assignments').select('id,sprint_item_id').eq('id', parsed.data.assignmentId).eq('owner_id', userId).maybeSingle();
-    if (!assignment) return NextResponse.json({ ok: false, error: 'Assignment not found.' }, { status: 404 });
-    const { data: sprintItem } = await supabaseAdmin.from('sprint_items').select('id,backlog_item_id').eq('id', assignment.sprint_item_id).eq('owner_id', userId).maybeSingle();
-    if (!sprintItem) return NextResponse.json({ ok: false, error: 'Sprint item not found.' }, { status: 404 });
-    const { error } = await supabaseAdmin.from('agent_assignments').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', assignment.id).eq('owner_id', userId);
-    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    await supabaseAdmin.from('sprint_items').update({ status: 'done' }).eq('id', sprintItem.id).eq('owner_id', userId);
-    if (sprintItem.backlog_item_id) await supabaseAdmin.from('sprint_backlog_items').update({ status: 'done' }).eq('id', sprintItem.backlog_item_id).eq('owner_id', userId);
-    return NextResponse.json({ ok: true, assignmentId: assignment.id });
+    const { data, error } = await supabaseAdmin.rpc('complete_sprint_assignment', { p_assignment_id: parsed.data.assignmentId, p_owner_id: userId });
+    if (error || !data) return NextResponse.json({ ok: false, error: error?.message || 'Unable to complete assignment.' }, { status: 409 });
+    return NextResponse.json({ ok: true, assignmentId: parsed.data.assignmentId });
   }
   const { data: sprint, error } = await supabaseAdmin.from('sprints').insert({ owner_id: userId, name: parsed.data.name, goal: parsed.data.goal, starts_at: parsed.data.startsAt, ends_at: parsed.data.endsAt }).select('*').single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
