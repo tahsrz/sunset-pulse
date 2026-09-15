@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS pgtap;
 -- seed shape; all scheduler ownership assertions still use distinct UUIDs.
 SET LOCAL session_replication_role = replica;
 
-SELECT plan(31);
+SELECT plan(38);
 
 SELECT has_function(
   'public',
@@ -17,6 +17,7 @@ SELECT has_function(
 SELECT has_function('public', 'claim_workflow_jobs', ARRAY['integer', 'integer']);
 SELECT has_function('public', 'complete_workflow_job_with_result', ARRAY['uuid', 'uuid', 'text', 'uuid', 'uuid']);
 SELECT has_function('public', 'resolve_workflow_failure', ARRAY['uuid', 'uuid', 'text']);
+SELECT has_function('public', 'save_sprint_planner_schedule', ARRAY['uuid', 'integer', 'text', 'text', 'text', 'integer', 'integer', 'integer', 'timestamp with time zone']);
 
 SELECT ok(has_function_privilege('service_role', 'public.claim_workflow_jobs(integer, integer)', 'EXECUTE'), 'service_role can claim workflow jobs');
 SELECT ok(NOT has_function_privilege('anon', 'public.claim_workflow_jobs(integer, integer)', 'EXECUTE'), 'anon cannot claim workflow jobs');
@@ -30,6 +31,9 @@ SELECT ok(NOT has_function_privilege('authenticated', 'public.dispatch_due_workf
 SELECT ok(has_function_privilege('service_role', 'public.complete_workflow_job_with_result(uuid, uuid, text, uuid, uuid)', 'EXECUTE'), 'service_role can complete workflow jobs');
 SELECT ok(NOT has_function_privilege('anon', 'public.complete_workflow_job_with_result(uuid, uuid, text, uuid, uuid)', 'EXECUTE'), 'anon cannot complete workflow jobs');
 SELECT ok(NOT has_function_privilege('authenticated', 'public.complete_workflow_job_with_result(uuid, uuid, text, uuid, uuid)', 'EXECUTE'), 'authenticated cannot complete workflow jobs');
+SELECT ok(has_function_privilege('service_role', 'public.save_sprint_planner_schedule(uuid, integer, text, text, text, integer, integer, integer, timestamp with time zone)', 'EXECUTE'), 'service_role can save sprint schedules');
+SELECT ok(NOT has_function_privilege('anon', 'public.save_sprint_planner_schedule(uuid, integer, text, text, text, integer, integer, integer, timestamp with time zone)', 'EXECUTE'), 'anon cannot save sprint schedules');
+SELECT ok(NOT has_function_privilege('authenticated', 'public.save_sprint_planner_schedule(uuid, integer, text, text, text, integer, integer, integer, timestamp with time zone)', 'EXECUTE'), 'authenticated cannot save sprint schedules');
 
 CREATE TEMP TABLE scheduler_observations (
   observation_key TEXT PRIMARY KEY,
@@ -52,7 +56,38 @@ DECLARE
   v_result_id UUID;
   v_completed BOOLEAN;
   v_attempt INTEGER;
+  v_saved_schedule public.workflow_schedules%ROWTYPE;
+  v_stale_rejected BOOLEAN := false;
 BEGIN
+  -- Schedule creation returns revision 1. Editing a paused schedule requires
+  -- that revision and changes planning settings without re-enabling it.
+  v_owner_id := gen_random_uuid();
+  SELECT * INTO v_saved_schedule
+  FROM public.save_sprint_planner_schedule(
+    v_owner_id, NULL, 'property_shortlist', 'weekly', 'America/Chicago',
+    8, 30, 1, now() + interval '1 day'
+  ) AS saved;
+  UPDATE public.workflow_schedules AS schedule
+  SET enabled = false
+  WHERE schedule.id = v_saved_schedule.id;
+  SELECT * INTO v_saved_schedule
+  FROM public.save_sprint_planner_schedule(
+    v_owner_id, 1, 'manual_backlog', 'daily', 'America/Chicago',
+    9, 0, 1, now() + interval '1 day'
+  ) AS saved;
+  INSERT INTO scheduler_observations (observation_key, bool_value, int_value)
+  VALUES ('schedule_paused_update', NOT v_saved_schedule.enabled AND v_saved_schedule.revision = 2, v_saved_schedule.revision);
+  BEGIN
+    PERFORM public.save_sprint_planner_schedule(
+      v_owner_id, 1, 'property_shortlist', 'weekly', 'America/Chicago',
+      10, 0, 1, now() + interval '2 days'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_stale_rejected := SQLERRM = 'Schedule revision conflict';
+  END;
+  INSERT INTO scheduler_observations (observation_key, bool_value)
+  VALUES ('schedule_stale_rejected', v_stale_rejected);
+
   -- One due schedule is dispatched once. A second call with the old cursor is
   -- fenced by the schedule cursor/revision and cannot create a duplicate job.
   v_owner_id := gen_random_uuid();
@@ -198,6 +233,9 @@ SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key =
 SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'cancelled_worker_is_stale'), 'cancelled worker cannot write a result');
 SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'atomic_completion'), 'completion atomically closes the job');
 SELECT is((SELECT int_value FROM scheduler_observations WHERE observation_key = 'atomic_completion'), 1, 'completion writes one generic result pointer');
+SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'schedule_paused_update'), 'schedule updates preserve paused state and advance revision');
+SELECT is((SELECT int_value FROM scheduler_observations WHERE observation_key = 'schedule_paused_update'), 2, 'schedule update advances revision once');
+SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'schedule_stale_rejected'), 'stale schedule edits are rejected');
 
 SELECT * FROM finish();
 ROLLBACK;

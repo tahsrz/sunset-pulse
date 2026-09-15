@@ -95,6 +95,7 @@ Planning update only: this section records inspected implementation and specifie
 
 ### Implementation log — September 14, 2026, sprint start
 
+- Extended `supabase/tests/database/scheduler.sql` with pgTAP coverage for schedule RPC existence/privileges, new schedule creation, paused-state-preserving revision updates and stale-write rejection. The local database suite remains unverified because Docker Desktop's Linux engine is unavailable; CI is the authoritative disposable-DB run.
 - Routed `Generate property plan` through the workspace mutation guard so it cannot be double-submitted while pending, reports failed responses consistently, and refreshes without replacing an unsaved schedule draft. Sprint route regression tests and lint pass.
 - Reused `scheduleSpecSchema` in `/api/sprints` for the sprint-specific daily/weekly schedule contract, keeping timezone and local-time validation aligned with the shared scheduler policy. Route tests and lint pass.
 - Hardened `/api/sprints` GET with parallel owner-scoped reads that surface any child-query error instead of returning a partial workspace as healthy. Added regression coverage for the fail-closed response; route tests and lint pass.
