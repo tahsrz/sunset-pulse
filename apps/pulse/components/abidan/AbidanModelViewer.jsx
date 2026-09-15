@@ -301,7 +301,7 @@ export function AbidanGeometryBadge({ abidan, size = 'md' }) {
   );
 }
 
-export default function AbidanModelViewer({ abidan, className = '' }) {
+export default function AbidanModelViewer({ abidan, className = '', showHud = false }) {
   const color = getAccent(abidan.color);
 
   return (
@@ -314,6 +314,20 @@ export default function AbidanModelViewer({ abidan, className = '' }) {
       <Canvas camera={{ position: [0, 0.7, 4.8], fov: 38 }} dpr={[1, 1.5]}>
         <AbidanScene abidan={abidan} />
       </Canvas>
+      {showHud && (
+        <>
+          <div className="pointer-events-none absolute left-5 top-5 flex items-center gap-3 rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[9px] font-mono uppercase tracking-[0.24em] text-slate-200 backdrop-blur-md">
+            <span className="h-2 w-2 animate-pulse rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}` }} />
+            Orbit view active
+          </div>
+          <div className="pointer-events-none absolute right-5 top-5 rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[9px] font-mono uppercase tracking-[0.2em] text-slate-300 backdrop-blur-md">
+            {abidan.geometryType} // angelic body
+          </div>
+          <div className="pointer-events-none absolute bottom-5 left-5 text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400">
+            Sunset render engine // interactive 3D model
+          </div>
+        </>
+      )}
       <div className="pointer-events-none absolute bottom-2 left-2 rounded-full border border-white/10 bg-black/50 px-2 py-1 text-[8px] font-mono uppercase tracking-[0.2em] text-slate-300">
         3D model
       </div>

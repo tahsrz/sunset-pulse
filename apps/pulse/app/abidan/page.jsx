@@ -3,7 +3,6 @@ import React from 'react';
 import { useTheme } from '@/context/ThemeProvider';
 import { ABIDAN_DATA } from '@/constants/abidan';
 import { FaShieldAlt, FaCrosshairs, FaBolt, FaGhost, FaSpider, FaDove, FaEye, FaSkull } from 'react-icons/fa';
-import PropertyFiberViewer from '@/components/PropertyFiberViewer';
 import AbidanModelViewer, { AbidanGeometryBadge } from '@/components/abidan/AbidanModelViewer';
 
 const AbidanIntroPage = () => {
@@ -106,13 +105,9 @@ const AbidanIntroPage = () => {
               "{selectedAbidan.description}"
             </p>
 
-            {/* FORCED ANGEL MODE */}
+            {/* ANGELIC ORBIT MODE */}
             <div className='rounded-3xl overflow-hidden border border-white/5 bg-black/40'>
-               {/* Create a dummy property object to satisfy the viewer */}
-               <PropertyFiberViewer 
-                 property={{ name: selectedAbidan.name, location: { street: 'ABIDAN_CORE' } }} 
-                 color={selectedAbidan.color}
-               />
+              <AbidanModelViewer abidan={selectedAbidan} className='h-[500px] w-full rounded-none border-0' showHud />
             </div>
             
             <div className='mt-8 grid grid-cols-2 gap-4'>
