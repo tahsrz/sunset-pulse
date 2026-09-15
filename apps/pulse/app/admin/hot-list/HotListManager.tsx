@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { FaCheckCircle, FaExclamationTriangle, FaEye, FaHome, FaImage, FaListUl, FaSave, FaSync, FaTimesCircle } from 'react-icons/fa';
 import SafePropertyImage from '@/components/SafePropertyImage';
+import { HotlistEmailWorkflow } from './HotlistEmailWorkflow';
 
 type PreviewListing = {
   id: string;
@@ -184,6 +185,8 @@ export function HotListManager() {
             </p>
           )}
         </header>
+
+        <HotlistEmailWorkflow />
 
         <section className="grid gap-6 lg:grid-cols-[420px_1fr]">
           <div className="space-y-6">

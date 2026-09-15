@@ -2,6 +2,28 @@
 
 Sunset Pulse is a Next.js 15 real estate intelligence platform for property discovery, lead engagement, valuation workflows, and operational analytics. The application combines a customer-facing property experience with internal intelligence tools for market analysis, lead scoring, automation, and visual content workflows.
 
+## Find every app path
+
+Use **Browse all app paths** in `/agent` or `/command-center`, or press **Ctrl/Cmd+K**
+where the global navbar is present. Search by URL, feature, section, or access requirement.
+The shared catalog covers 108 page route patterns and 5 non-API handlers, including Vibe
+workflows, games, property tools, operations, and machine-readable TAH resources.
+
+See the [complete path inventory near the top of the repository README](../../README.md#app-paths-and-command-navigation).
+Dynamic record routes lead to their selection workflow; token, checkout, tenant, and booking
+routes without a generic entry are labeled as requiring an existing workflow link. This
+does not change permissions or verify production availability. Directory links do not prefetch.
+
+September 10 verification: 12 focused tests pass for source/README inventory coverage,
+directory search, palette navigation and context-only entries, and the existing Agent Console
+workflow. Lint passes with existing warnings in AgentConsole and JamieChat. Local mock-mode
+browser checks confirmed the collapsed desktop directory, 390px stacked search controls,
+taxonomy search, and navigation from a directory result to `/contact` (HTTP 200, no framework
+error overlay). The mock layout omits the global navbar, so palette behavior was unit-tested,
+not browser-verified there. Production availability and record-specific workflows were not tested.
+Full TypeScript checking still reports errors in unrelated test files; none were reported in
+the changed navigation components, route catalog, or their tests.
+
 ## Current Status
 
 The current profit-focused execution brief is [`../../docs/profit-sprint-2026-08-24.md`](../../docs/profit-sprint-2026-08-24.md).

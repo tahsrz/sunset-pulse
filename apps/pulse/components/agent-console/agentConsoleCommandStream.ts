@@ -16,26 +16,35 @@ export async function readCommandStream(
   let buffer = '';
   let result: CommandResponse | null = null;
 
-  while (true) {
-    const { value, done } = await reader.read();
-    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-    const parts = buffer.split('\n\n');
-    buffer = parts.pop() || '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      const parts = buffer.split(/\r?\n\r?\n/);
+      buffer = parts.pop() || '';
 
-    for (const part of parts) {
-      const event = parseServerSentEvent(part);
-      if (!event) continue;
-      if (event.event === 'progress') {
-        onProgress(event.data as CommandProgressEvent);
-      } else if (event.event === 'result') {
-        result = event.data as CommandResponse;
-      } else if (event.event === 'error') {
-        const errorData = event.data as { error?: string };
-        throw new Error(errorData.error || 'Jamie could not finish that job.');
+      for (const part of parts) {
+        const event = parseServerSentEvent(part);
+        if (!event) continue;
+        if (event.event === 'progress') {
+          onProgress(event.data as CommandProgressEvent);
+        } else if (event.event === 'result') {
+          result = event.data as CommandResponse;
+        } else if (event.event === 'error') {
+          const errorData = event.data as { error?: string };
+          throw new Error(errorData.error || 'Jamie could not finish that job.');
+        }
       }
-    }
 
-    if (done) break;
+      if (done) break;
+    }
+    if (buffer.trim()) {
+      const event = parseServerSentEvent(buffer);
+      if (event?.event === 'result') result = event.data as CommandResponse;
+      if (event?.event === 'error') throw new Error((event.data as { error?: string }).error || 'Jamie could not finish that job.');
+    }
+  } finally {
+    reader.releaseLock();
   }
 
   if (!result) throw new Error('Jamie finished without returning an answer.');

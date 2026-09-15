@@ -52,6 +52,32 @@ jobs:
       - name: Enforce Commercial Inventory Truth
         run: npm run test:inventory-truth
 
+  scheduler-db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase for database tests
+        working-directory: apps/pulse
+        run: supabase start --ignore-health-check --exclude analytics,edge-runtime,functions,imgproxy,inbucket,kong,meta,realtime,rest,storage,studio,vector
+
+      - name: Run PostgreSQL acceptance tests
+        working-directory: apps/pulse
+        run: npm run test:db
+
+      - name: Stop Supabase
+        if: ${{ always() }}
+        working-directory: apps/pulse
+        run: supabase stop --no-backup
+
   jamie-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
