@@ -70,7 +70,7 @@ BEGIN
     occurrence,
     'queued'
   )
-  ON CONFLICT (schedule_id, scheduled_for) DO NOTHING
+  ON CONFLICT ON CONSTRAINT workflow_jobs_schedule_id_scheduled_for_key DO NOTHING
   RETURNING id INTO inserted_job_id;
 
   GET DIAGNOSTICS did_insert = ROW_COUNT;
