@@ -22,13 +22,15 @@ export async function GET(request: NextRequest) {
   if (isAuthResponse(access)) return access;
   const userId = access.user.id;
   if (!uuid.safeParse(userId).success) return NextResponse.json({ ok: false, error: 'A signed-in user is required.' }, { status: 401 });
-  const { data: sprints, error } = await supabaseAdmin.from('sprints').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(50);
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  const { data: items } = await supabaseAdmin.from('sprint_items').select('*').eq('owner_id', userId).order('priority').limit(500);
-  const { data: assignments } = await supabaseAdmin.from('agent_assignments').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(500);
-  const { data: backlog } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).order('priority').limit(500);
-  const { data: schedules, error: scheduleError } = await supabaseAdmin.from('workflow_schedules').select('id,workflow_key,planning_mode,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at,revision').eq('user_id', userId).eq('workflow_key', 'sprint_planner');
-  if (scheduleError) return NextResponse.json({ ok: false, error: scheduleError.message }, { status: 500 });
+  const [{ data: sprints, error: sprintError }, { data: items, error: itemError }, { data: assignments, error: assignmentError }, { data: backlog, error: backlogError }, { data: schedules, error: scheduleError }] = await Promise.all([
+    supabaseAdmin.from('sprints').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(50),
+    supabaseAdmin.from('sprint_items').select('*').eq('owner_id', userId).order('priority').limit(500),
+    supabaseAdmin.from('agent_assignments').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(500),
+    supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).order('priority').limit(500),
+    supabaseAdmin.from('workflow_schedules').select('id,workflow_key,planning_mode,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at,revision').eq('user_id', userId).eq('workflow_key', 'sprint_planner'),
+  ]);
+  const readError = sprintError || itemError || assignmentError || backlogError || scheduleError;
+  if (readError) return NextResponse.json({ ok: false, error: readError.message }, { status: 500 });
   return NextResponse.json({ ok: true, sprints: sprints || [], items: items || [], assignments: assignments || [], backlog: backlog || [], schedules: schedules || [] });
 }
 

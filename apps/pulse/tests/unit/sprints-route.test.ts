@@ -14,7 +14,7 @@ vi.mock('@/lib/core/routeAuth', () => ({
 }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from, rpc: mocks.rpc } }));
 
-import { POST } from '@/app/api/sprints/route';
+import { GET, POST } from '@/app/api/sprints/route';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -89,7 +89,28 @@ describe('signed-in sprint schedule route', () => {
     expect(response.status).toBe(400);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
+
+  it('fails closed when a workspace child query cannot be read', async () => {
+    mocks.from.mockImplementation((table: string) => queryFor(table, table === 'sprint_items' ? new Error('items unavailable') : null));
+
+    const response = await GET(new NextRequest('http://localhost/api/sprints'));
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload.error).toBe('items unavailable');
+  });
 });
+
+function queryFor(table: string, error: Error | null = null) {
+  const query: Record<string, any> = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    order: vi.fn(() => query),
+    limit: vi.fn(() => query),
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: [], error }).then(resolve),
+  };
+  return query;
+}
 
 function jsonRequest(body: Record<string, unknown>) {
   return new NextRequest('http://localhost/api/sprints', {
