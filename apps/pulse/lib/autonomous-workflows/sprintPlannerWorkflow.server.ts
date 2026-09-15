@@ -5,7 +5,7 @@ import type { WorkflowExecution, WorkflowJob } from './workflowRegistry.server';
 
 export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<WorkflowExecution> {
   if (job.planning_mode === 'property_shortlist') {
-    const sprintId = await createPropertySprintProposal(job.user_id, job.id, job.scheduled_for);
+    const sprintId = await createPropertySprintProposal(job.user_id, job.id, job.scheduled_for, job.lease_token);
     return { resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
   }
 
