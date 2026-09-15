@@ -65,9 +65,9 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase database only
+      - name: Start Supabase for database tests
         working-directory: apps/pulse
-        run: supabase start --exclude analytics,edge-runtime,functions,imgproxy,inbucket,kong,meta,realtime,rest,storage,studio,vector
+        run: supabase start --ignore-health-check --exclude analytics,edge-runtime,functions,imgproxy,inbucket,kong,meta,realtime,rest,storage,studio,vector
 
       - name: Run PostgreSQL acceptance tests
         working-directory: apps/pulse
