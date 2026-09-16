@@ -4,7 +4,11 @@ import { selectSprintBacklog } from './sprintSelection';
 import type { WorkflowExecution, WorkflowJob } from './workflowRegistry.server';
 
 export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<WorkflowExecution> {
-  if (job.planning_mode === 'property_shortlist') {
+  const eventPlanningMode = job.trigger_kind === 'event' && job.payload?.planningMode === 'property_shortlist'
+    ? 'property_shortlist'
+    : null;
+  const planningMode = eventPlanningMode || job.planning_mode;
+  if (planningMode === 'property_shortlist') {
     const sprintId = await createPropertySprintProposal(job.user_id, job.id, job.scheduled_for, job.lease_token);
     return { resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
   }

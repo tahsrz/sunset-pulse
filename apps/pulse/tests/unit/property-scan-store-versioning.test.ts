@@ -5,7 +5,7 @@ import path from 'node:path';
 
 vi.mock('server-only', () => ({}));
 
-import { appendPropertyScanAssets, createPropertyScanSession, updatePropertyScanReview } from '@/lib/scans/propertyScanStore';
+import { appendPropertyScanAssets, createPropertyScanSession, updatePropertyScanReview, updatePropertyScanReviewers } from '@/lib/scans/propertyScanStore';
 
 const asset = {
   assetId: 'c5c1b3d2-9f6d-4f83-9fcf-6e2c0d0a1a11',
@@ -73,5 +73,22 @@ describe('property scan store revision fences', () => {
 
     const changed = await appendPropertyScanAssets(session.scanId, 'owner-1', [{ ...asset, assetId: 'c5c1b3d2-9f6d-4f83-9fcf-6e2c0d0a1a12', path: 'owner/scan/asset-2.jpg', fileName: 'kitchen.jpg' }], approved!.revision);
     expect(changed).toMatchObject({ status: 'in_review', revision: 4, approvedManifestRevision: null, approvedManifestHash: null });
+  });
+
+  it('lets the owner replace reviewer assignments with a revision fence', async () => {
+    const session = await createPropertyScanSession({
+      propertyAddress: '1612 Fair Oaks Drive, Westlake, TX',
+      listingId: null,
+      captureMode: 'photo_walkthrough',
+      consent: { ownerAuthorized: true, interiorCaptureAcknowledged: true, publicListingApproval: false },
+    }, 'owner-1');
+
+    const updated = await updatePropertyScanReviewers(session.scanId, 'owner-1', ['reviewer-1', 'reviewer-1', ' reviewer-2 '], session.revision);
+    expect(updated).toMatchObject({ reviewerIds: ['reviewer-1', 'reviewer-2'], revision: 2 });
+
+    const stale = await updatePropertyScanReviewers(session.scanId, 'owner-1', [], session.revision);
+    expect(stale).toBeNull();
+    const foreign = await updatePropertyScanReviewers(session.scanId, 'owner-2', [], updated!.revision);
+    expect(foreign).toBeNull();
   });
 });

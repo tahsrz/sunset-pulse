@@ -37,6 +37,10 @@ export function CommandAnswer({
   copiedActionId,
   onCopyDeliverable,
   onActionItem,
+  onAddToBacklog,
+  backlogSaved = false,
+  backlogBusy = false,
+  backlogError = '',
   onRerunWithWorker,
 }: {
   commandResult: CommandAnswerResponse;
@@ -44,6 +48,10 @@ export function CommandAnswer({
   copiedActionId: string | null;
   onCopyDeliverable: () => void;
   onActionItem: (item: CommandActionItem) => Promise<void>;
+  onAddToBacklog?: () => Promise<void>;
+  backlogSaved?: boolean;
+  backlogBusy?: boolean;
+  backlogError?: string;
   onRerunWithWorker?: (workerId: string) => void;
 }) {
   return (
@@ -58,11 +66,15 @@ export function CommandAnswer({
           <h2 className="mt-3 text-2xl font-black leading-tight text-white md:text-3xl">{glossaryText(commandResult.result.title)}</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200">{glossaryText(commandResult.result.summary)}</p>
         </div>
-        <button type="button" onClick={onCopyDeliverable} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 border border-emerald-200/40 px-3 text-xs font-black uppercase tracking-[0.14em] text-emerald-100 transition hover:bg-emerald-200 hover:text-slate-950">
-          {copiedDeliverable ? <Check size={14} /> : <Copy size={14} />}
-          {copiedDeliverable ? 'Copied' : 'Copy'}
-        </button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button type="button" onClick={onCopyDeliverable} className="inline-flex min-h-10 items-center justify-center gap-2 border border-emerald-200/40 px-3 text-xs font-black uppercase tracking-[0.14em] text-emerald-100 transition hover:bg-emerald-200 hover:text-slate-950">
+            {copiedDeliverable ? <Check size={14} /> : <Copy size={14} />}
+            {copiedDeliverable ? 'Copied' : 'Copy'}
+          </button>
+          {onAddToBacklog ? <button type="button" onClick={() => void onAddToBacklog()} disabled={backlogBusy || backlogSaved} className="inline-flex min-h-10 items-center justify-center gap-2 border border-cyan-200/40 px-3 text-xs font-black uppercase tracking-[0.14em] text-cyan-100 transition hover:bg-cyan-200 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-60">{backlogSaved ? <Check size={14} /> : null}{backlogSaved ? 'Added to backlog' : backlogBusy ? 'Adding…' : 'Add to backlog'}</button> : null}
+        </div>
       </div>
+      {backlogError ? <p className="mt-3 text-xs font-bold text-rose-200">{backlogError}</p> : null}
 
       <CommandProgressRail progress={commandResult.trace?.progress || []} />
       {onRerunWithWorker ? <RoutingCorrectionPanel commandResult={commandResult} onRerunWithWorker={onRerunWithWorker} /> : null}

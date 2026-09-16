@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   if (!z.string().uuid().safeParse(userId).success) return NextResponse.json({ ok: false, error: 'A signed-in user is required.' }, { status: 401 });
   const [{ data: schedules, error: scheduleError }, { data: jobs, error: jobError }] = await Promise.all([
     supabaseAdmin.from('workflow_schedules').select('id,workflow_key,planning_mode,enabled,cadence,time_zone,local_hour,local_minute,local_weekday,next_run_at,revision').eq('user_id', userId).order('next_run_at'),
-    supabaseAdmin.from('workflow_jobs').select('id,schedule_id,workflow_key,scheduled_for,status,attempts,lease_until,result_id,error').eq('user_id', userId).order('scheduled_for', { ascending: false }).limit(100),
+    supabaseAdmin.from('workflow_jobs').select('id,schedule_id,workflow_key,trigger_kind,event_key,payload_version,scheduled_for,status,attempts,lease_until,result_id,error').eq('user_id', userId).order('scheduled_for', { ascending: false }).limit(100),
   ]);
   if (scheduleError || jobError) return NextResponse.json({ ok: false, error: scheduleError?.message || jobError?.message }, { status: 500 });
   return NextResponse.json({ ok: true, schedules: schedules || [], jobs: jobs || [] });

@@ -89,6 +89,9 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
   const [running, setRunning] = useState(false);
   const [commandResult, setCommandResult] = useState<CommandResponse | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [backlogBusy, setBacklogBusy] = useState(false);
+  const [backlogSaved, setBacklogSaved] = useState(false);
+  const [backlogError, setBacklogError] = useState('');
   const [liveProgress, setLiveProgress] = useState<CommandProgressEvent[]>([]);
   const [copiedDeliverable, setCopiedDeliverable] = useState(false);
   const [copiedActionId, setCopiedActionId] = useState<string | null>(null);
@@ -248,6 +251,8 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     setRanCommand(false);
     setCommandError(null);
     setCommandResult(null);
+    setBacklogSaved(false);
+    setBacklogError('');
     setLiveProgress([{
       id: 'submitted',
       label: 'Submitted',
@@ -397,6 +402,35 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
     setManualSelection(true);
     setSelectedId(nextWorkerId);
     void runCommand(nextWorkerId);
+  };
+
+  const addResultToBacklog = async () => {
+    if (!commandResult) return;
+    setBacklogBusy(true);
+    setBacklogError('');
+    try {
+      const response = await fetch('/api/sprints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_backlog_item',
+          title: commandResult.result.title.slice(0, 240),
+          description: `Pulse command: ${(commandResult.commandText || routingCommand).slice(0, 900)}\n\n${commandResult.result.summary.slice(0, 1000)}`,
+          priority: 3,
+          estimateMinutes: null,
+          sourceType: 'pulse_command',
+          sourceId: commandResult.commandId,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Sign in to add this result to the sprint backlog.');
+      setBacklogSaved(true);
+      logProtocol('DATA', 'Pulse result added to sprint backlog', { commandId: commandResult.commandId, reused: Boolean(payload.reused) });
+    } catch (error) {
+      setBacklogError(error instanceof Error ? error.message : 'Unable to add this result to the sprint backlog.');
+    } finally {
+      setBacklogBusy(false);
+    }
   };
 
   const rerunWithApprovedListing = (draft: ListingReviewDraft) => {
@@ -666,6 +700,10 @@ export default function AgentSelectionArena({ embedded = false }: AgentSelection
               copiedActionId={copiedActionId}
               onCopyDeliverable={copyDeliverable}
               onActionItem={handleActionItem}
+              onAddToBacklog={addResultToBacklog}
+              backlogSaved={backlogSaved}
+              backlogBusy={backlogBusy}
+              backlogError={backlogError}
               onRerunWithWorker={rerunWithWorker}
             />
           ) : (

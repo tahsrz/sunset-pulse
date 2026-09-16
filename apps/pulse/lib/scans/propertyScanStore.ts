@@ -8,7 +8,7 @@ import { PropertyScanSession } from '@/models/PropertyScanSession';
 import type { PropertyScanAsset, PropertyScanRequest } from '@/lib/scans/propertyScanContract';
 import { reconstructionUnavailable, type PropertyScanReconstruction, type ReconstructionUnavailable } from '@/lib/scans/reconstruction';
 import { canReadScan, configuredScanReviewerIds, isScanOwnerRecord, type ScanActor } from './scanAccess.server';
-import { createConsentReceipt, createReviewEvent, propertyScanManifestHash, type PropertyScanArtifactReference, type PropertyScanConsentReceipt, type PropertyScanReviewEvent } from './propertyScanVersioning';
+import { createConsentReceipt, createReviewEvent, isCurrentScanArtifact, propertyScanManifestHash, type PropertyScanArtifactReference, type PropertyScanConsentReceipt, type PropertyScanReviewEvent } from './propertyScanVersioning';
 import { resolveOwnerPropertyScanListing } from './propertyScanListingResolution.server';
 
 export type PropertyScanSessionRecord = PropertyScanRequest & {
@@ -145,8 +145,8 @@ export async function appendPropertyScanAssets(scanId: string, ownerId: string, 
   const nextAssets = [...currentAssets, ...uniqueAssets];
   const record = await PropertyScanSession.findOneAndUpdate(
     { scanId, ownerId, revision: expectedRevision },
-    { $push: { assets: { $each: uniqueAssets.map((asset) => ({ ...asset, uploadedAt: asset.uploadedAt || new Date() })) } }, $set: { status: 'in_review', revision: expectedRevision + 1, manifestHash: propertyScanManifestHash(nextAssets), approvedManifestRevision: null, approvedManifestHash: null, 'artifactRefs.$[].status': 'stale' } },
-    { new: true },
+    { $push: { assets: { $each: uniqueAssets.map((asset) => ({ ...asset, uploadedAt: asset.uploadedAt || new Date() })) } }, $set: { status: 'in_review', revision: expectedRevision + 1, manifestHash: propertyScanManifestHash(nextAssets), approvedManifestRevision: null, approvedManifestHash: null, 'artifactRefs.$[active].status': 'stale' } },
+    { new: true, arrayFilters: [{ 'active.status': 'current' }] },
   ).lean();
   return record ? serialize(record) : null;
 }
@@ -171,6 +171,7 @@ export async function updatePropertyScanReview(
     record.reviewedAt = reviewedAt;
     record.approvedManifestRevision = status === 'approved' ? record.revision : null;
     record.approvedManifestHash = status === 'approved' ? record.manifestHash : null;
+    if (status !== 'approved') record.artifactRefs = record.artifactRefs.map((artifact) => ({ ...artifact, status: artifact.status === 'revoked' ? 'revoked' : 'stale' }));
     record.revision += 1;
     record.updatedAt = record.reviewedAt;
     persistMockSessions();
@@ -186,10 +187,38 @@ export async function updatePropertyScanReview(
   const record = await PropertyScanSession.findOneAndUpdate(
     { scanId, revision: expectedRevision, manifestHash: expectedManifestHash },
     {
-      $set: { status, reviewNote, reviewedBy: reviewer, reviewedAt, revision: expectedRevision + 1, approvedManifestRevision: status === 'approved' ? expectedRevision : null, approvedManifestHash: status === 'approved' ? expectedManifestHash : null },
+      $set: { status, reviewNote, reviewedBy: reviewer, reviewedAt, revision: expectedRevision + 1, approvedManifestRevision: status === 'approved' ? expectedRevision : null, approvedManifestHash: status === 'approved' ? expectedManifestHash : null, ...(status !== 'approved' ? { 'artifactRefs.$[active].status': 'stale' } : {}) },
       $push: { reviewEvents: event },
     },
-    { new: true },
+    { new: true, ...(status !== 'approved' ? { arrayFilters: [{ 'active.status': 'current' }] } : {}) },
+  ).lean();
+  return record ? serialize(record) : null;
+}
+
+export async function updatePropertyScanReviewers(
+  scanId: string,
+  ownerId: string,
+  reviewerIds: string[],
+  expectedRevision: number,
+) {
+  const normalizedReviewerIds = [...new Set(reviewerIds.map((id) => id.trim()).filter(Boolean))];
+  if (normalizedReviewerIds.length > 20 || normalizedReviewerIds.some((id) => id.length > 128)) return null;
+
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    if (!record || record.ownerId !== ownerId || record.revision !== expectedRevision) return null;
+    record.reviewerIds = normalizedReviewerIds;
+    record.revision += 1;
+    record.updatedAt = new Date().toISOString();
+    persistMockSessions();
+    return serialize(record);
+  }
+
+  await connectDB();
+  const record = await PropertyScanSession.findOneAndUpdate(
+    { scanId, ownerId, revision: expectedRevision },
+    { $set: { reviewerIds: normalizedReviewerIds, revision: expectedRevision + 1 } },
+    { new: true, runValidators: true },
   ).lean();
   return record ? serialize(record) : null;
 }
@@ -228,7 +257,7 @@ function serialize(record: any): PropertyScanSessionRecord {
     approvedManifestRevision: Number.isInteger(record.approvedManifestRevision) ? record.approvedManifestRevision : null,
     approvedManifestHash: record.approvedManifestHash || null,
     reviewEvents: Array.isArray(record.reviewEvents) ? record.reviewEvents.map((event: any) => ({ eventId: event.eventId, status: event.status, reviewerId: event.reviewerId, note: event.note || null, revision: event.revision, manifestHash: event.manifestHash, createdAt: new Date(event.createdAt).toISOString() })) : [],
-    artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs.map((artifact: any) => ({ artifactId: artifact.artifactId, inputRevision: artifact.inputRevision, inputManifestHash: artifact.inputManifestHash, status: artifact.status, createdAt: new Date(artifact.createdAt).toISOString() })) : [],
+    artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs.map((artifact: any) => ({ artifactId: artifact.artifactId, inputRevision: artifact.inputRevision, inputManifestHash: artifact.inputManifestHash, status: artifact.status === 'current' && (record.status !== 'approved' || !isCurrentScanArtifact(artifact, record)) ? 'stale' : artifact.status, createdAt: new Date(artifact.createdAt).toISOString() })) : [],
     reconstruction: record.reconstruction?.jobId ? {
       jobId: record.reconstruction.jobId,
       status: record.reconstruction.status,

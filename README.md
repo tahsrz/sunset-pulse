@@ -9,6 +9,7 @@ The codebase also includes scheduling, food-service operations, games, and visua
 - **Explore the app:** [Sunset Pulse](https://www.sunsetpulse.app/), [Agent Console](https://www.sunsetpulse.app/agent), or [Command Center](https://www.sunsetpulse.app/command-center).
 - **Find a screen:** use the [app path directory](#app-paths-and-command-navigation) below.
 - **Run it locally:** follow [local development](#local-development).
+- **Use Docker:** [local Mongo and isolated database tests](infra/local/README.md), with `npm run docker:up` and `npm run docker:test`.
 - **Find the code:** see [architecture and repository layout](#architecture-and-repository-layout).
 - **Make a change:** see [commands](#commands), [verification](#verification), and [contributing](#contributing).
 - **Continue a feature:** consult the [plans and runbooks](#plans-and-runbooks), then confirm the current implementation in source.

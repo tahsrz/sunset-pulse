@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { nextOccurrenceAfter, scheduleSpecSchema } from '@/lib/autonomous-workflows/schedulerPolicy';
+import { intelligenceWorkers } from '@/lib/command-center/workerRoster';
 
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
@@ -12,10 +13,11 @@ const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('create'), name: z.string().trim().min(1).max(160), goal: z.string().trim().min(1).max(2000), startsAt: z.string().datetime().nullable().default(null), endsAt: z.string().datetime().nullable().default(null), items: z.array(item).max(100).default([]) }),
   z.object({ action: z.literal('approve'), sprintId: uuid, expectedRevision: z.number().int().positive().nullable().default(null) }),
   z.object({ action: z.literal('remove_backlog_item'), itemId: uuid }),
-  z.object({ action: z.literal('update_backlog_item'), itemId: uuid, title: z.string().trim().min(1).max(240), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), status: z.enum(['open','in_progress','done','cancelled']) }),
+  z.object({ action: z.literal('update_backlog_item'), itemId: uuid, title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).optional(), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), status: z.enum(['open','in_progress','done','cancelled']) }),
   z.object({ action: z.literal('remove_sprint_item'), itemId: uuid, sprintId: uuid, expectedRevision: z.number().int().positive() }),
+  z.object({ action: z.literal('update_sprint_item'), itemId: uuid, sprintId: uuid, expectedSprintRevision: z.number().int().positive(), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), workerId: z.string().trim().min(1).max(120).nullable() }),
   z.object({ action: z.literal('complete_assignment'), assignmentId: uuid }),
-  z.object({ action: z.literal('add_backlog_item'), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).nullable().default(null) }),
+  z.object({ action: z.literal('add_backlog_item'), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).nullable().default(null), sourceType: z.enum(['manual', 'pulse_command']).default('manual'), sourceId: z.string().trim().max(160).nullable().default(null) }),
 ]);
 
 export async function GET(request: NextRequest) {
@@ -54,7 +56,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, approval: data?.[0] || null });
   }
   if (parsed.data.action === 'add_backlog_item') {
-    const { data, error } = await supabaseAdmin.from('sprint_backlog_items').insert({ owner_id: userId, title: parsed.data.title, description: parsed.data.description, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, source_type: 'manual' }).select('*').single();
+    if (parsed.data.sourceType === 'pulse_command' && parsed.data.sourceId) {
+      const { data: existing, error: lookupError } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).eq('source_type', parsed.data.sourceType).eq('source_id', parsed.data.sourceId).maybeSingle();
+      if (lookupError) return NextResponse.json({ ok: false, error: lookupError.message }, { status: 500 });
+      if (existing) return NextResponse.json({ ok: true, backlogItem: existing, reused: true });
+    }
+    const { data, error } = await supabaseAdmin.from('sprint_backlog_items').insert({ owner_id: userId, title: parsed.data.title, description: parsed.data.description, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, source_type: parsed.data.sourceType, source_id: parsed.data.sourceId }).select('*').single();
+    if (error?.code === '23505' && parsed.data.sourceType === 'pulse_command' && parsed.data.sourceId) {
+      const { data: existing, error: lookupError } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).eq('source_type', 'pulse_command').eq('source_id', parsed.data.sourceId).maybeSingle();
+      if (!lookupError && existing) return NextResponse.json({ ok: true, backlogItem: existing, reused: true });
+    }
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, backlogItem: data }, { status: 201 });
   }
@@ -64,7 +75,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
   if (parsed.data.action === 'update_backlog_item') {
-    const { data, error } = await supabaseAdmin.from('sprint_backlog_items').update({ title: parsed.data.title, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, status: parsed.data.status }).eq('id', parsed.data.itemId).eq('owner_id', userId).select('*').single();
+    const updates: Record<string, unknown> = { title: parsed.data.title, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, status: parsed.data.status };
+    if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+    const { data, error } = await supabaseAdmin.from('sprint_backlog_items').update(updates).eq('id', parsed.data.itemId).eq('owner_id', userId).select('*').single();
     if (error) return NextResponse.json({ ok: false, error: 'Unable to update backlog item.' }, { status: 409 });
     return NextResponse.json({ ok: true, backlogItem: data });
   }
@@ -72,6 +85,25 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabaseAdmin.rpc('remove_sprint_item', { p_item_id: parsed.data.itemId, p_sprint_id: parsed.data.sprintId, p_owner_id: userId, p_expected_revision: parsed.data.expectedRevision });
     if (error || !data) return NextResponse.json({ ok: false, error: error?.message || 'Unable to remove sprint item.' }, { status: 409 });
     return NextResponse.json({ ok: true });
+  }
+  if (parsed.data.action === 'update_sprint_item') {
+    const updateRequest = parsed.data;
+    if (updateRequest.workerId && !intelligenceWorkers.some((worker) => worker.id === updateRequest.workerId)) {
+      return NextResponse.json({ ok: false, error: 'Choose a supported worker.' }, { status: 400 });
+    }
+    const { data, error } = await supabaseAdmin.rpc('update_proposed_sprint_item', {
+      p_item_id: updateRequest.itemId,
+      p_sprint_id: updateRequest.sprintId,
+      p_owner_id: userId,
+      p_expected_sprint_revision: updateRequest.expectedSprintRevision,
+      p_title: updateRequest.title,
+      p_description: updateRequest.description,
+      p_priority: updateRequest.priority,
+      p_estimate_minutes: updateRequest.estimateMinutes,
+      p_worker_id: updateRequest.workerId,
+    });
+    if (error || !data) return NextResponse.json({ ok: false, error: error?.message || 'Unable to update proposed sprint item.' }, { status: 409 });
+    return NextResponse.json({ ok: true, update: data?.[0] || null });
   }
   if (parsed.data.action === 'complete_assignment') {
     const { data, error } = await supabaseAdmin.rpc('complete_sprint_assignment', { p_assignment_id: parsed.data.assignmentId, p_owner_id: userId });

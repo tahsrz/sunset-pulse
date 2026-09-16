@@ -5,6 +5,10 @@ export type WorkflowJob = {
   id: string;
   user_id: string;
   workflow_key: string;
+  trigger_kind?: 'scheduled' | 'event';
+  event_key?: string | null;
+  payload?: Record<string, unknown>;
+  payload_version?: number;
   planning_mode?: string | null;
   scheduled_for: string;
   lease_token: string;

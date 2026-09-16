@@ -13,6 +13,7 @@ type ScanSession = {
   status: string;
   revision: number;
   manifestHash: string;
+  reviewerIds: string[];
   assets: Array<{ assetId?: string; fileName: string; size: number; mimeType: string }>;
 };
 
@@ -29,6 +30,8 @@ export default function ScanStudioPage() {
   const [cameraOn, setCameraOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [reviewerDraft, setReviewerDraft] = useState('');
+  const [reviewerBusy, setReviewerBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
@@ -81,6 +84,7 @@ export default function ScanStudioPage() {
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || 'Unable to create capture session.');
       setSession(body.data.session);
+      setReviewerDraft((body.data.session.reviewerIds || []).join(', '));
       setSessions((current) => [body.data.session, ...current.filter((item) => item.scanId !== body.data.session.scanId)]);
       setMessage('Private capture session created. Upload captures for agent review.');
     } catch (error) {
@@ -160,8 +164,33 @@ export default function ScanStudioPage() {
     setAddress(saved.propertyAddress);
     setListingId(saved.listingId || '');
     setMode(saved.captureMode);
+    setReviewerDraft((saved.reviewerIds || []).join(', '));
     setSelectedFiles([]);
     setMessage(`Resumed ${saved.scanId.slice(-8)}. New captures will be added to this session.`);
+  };
+
+  const saveReviewers = async () => {
+    if (!session) return;
+    setReviewerBusy(true);
+    setMessage('');
+    const reviewerIds = [...new Set(reviewerDraft.split(',').map((value) => value.trim()).filter(Boolean))];
+    try {
+      const response = await fetch(`/api/property-scans/${session.scanId}/reviewers`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewerIds, expectedRevision: session.revision }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || 'Unable to update reviewer access.');
+      setSession(body.data.session);
+      setSessions((current) => current.map((item) => item.scanId === body.data.session.scanId ? body.data.session : item));
+      setReviewerDraft(body.data.session.reviewerIds.join(', '));
+      setMessage('Reviewer access saved for this private capture session.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to update reviewer access.');
+    } finally {
+      setReviewerBusy(false);
+    }
   };
 
   const selectedMode = scanModeCopy[mode];
@@ -196,7 +225,7 @@ export default function ScanStudioPage() {
         <div className="space-y-6">
           <div className="rounded-3xl border border-white/[0.08] bg-white/[0.04] p-6"><div className="flex items-center gap-3"><Camera className="h-5 w-5 text-teal-200" /><h2 className="font-black uppercase tracking-tight">Capture checklist</h2></div><ul className="mt-5 space-y-3">{selectedMode.instructions.map((instruction) => <li key={instruction} className="flex gap-3 text-sm leading-6 text-slate-300"><CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-teal-200" />{instruction}</li>)}</ul></div>
           {sessionLoading ? <div className="rounded-3xl border border-dashed border-white/15 p-6 text-sm text-slate-400">Loading saved sessions…</div> : sessions.length > 0 && <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Saved private sessions</p><div className="mt-3 space-y-2">{sessions.map((saved) => <button key={saved.scanId} type="button" onClick={() => resumeSession(saved)} className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm transition ${session?.scanId === saved.scanId ? 'border-teal-200/60 bg-teal-200/10' : 'border-white/10 bg-slate-950/40 hover:border-white/25'}`}><span className="min-w-0"><span className="block truncate font-bold text-slate-200">{saved.propertyAddress}</span><span className="mt-1 block text-xs text-slate-500">{saved.status.replace('_', ' ')} · {saved.assets.length} capture{saved.assets.length === 1 ? '' : 's'}</span></span><span className="shrink-0 text-xs font-black uppercase tracking-widest text-teal-200">Resume</span></button>)}</div></div>}
-          {session ? <div className="rounded-3xl border border-teal-200/20 bg-teal-200/[0.06] p-6"><div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-200">Session {session.scanId.slice(-8)}</p><h2 className="mt-2 text-xl font-black uppercase">{session.status.replace('_', ' ')}</h2><p className="mt-1 text-xs text-slate-400">{session.propertyAddress}</p></div><CloudUpload className="h-7 w-7 text-teal-200" /></div><div className="mt-5 flex flex-wrap gap-3"><button type="button" onClick={cameraOn ? stopCamera : () => void startCamera()} disabled={busy} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-black uppercase tracking-widest hover:border-teal-200/60 disabled:opacity-50"> <Camera className="h-4 w-4" />{cameraOn ? 'Stop camera' : 'Preview camera'}</button><label className={`inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-950 hover:bg-teal-100 ${busy ? 'pointer-events-none opacity-50' : ''}`}><Upload className="h-4 w-4" />Upload captures<input ref={fileInputRef} type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" capture="environment" multiple disabled={busy} onChange={(event) => void uploadCaptures(event.target.files)} /></label></div><video ref={videoRef} autoPlay muted playsInline hidden={!cameraOn} className="mt-5 aspect-video w-full rounded-2xl border border-white/10 bg-black object-cover" />{selectedFiles.length > 0 && <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-amber-200/20 bg-amber-200/[0.06] p-3 text-xs text-amber-50"><span>{selectedFiles.length} capture{selectedFiles.length === 1 ? '' : 's'} waiting to retry</span><button type="button" onClick={retrySelectedFiles} disabled={busy} className="rounded-full border border-amber-200/30 px-3 py-1 font-black uppercase tracking-widest disabled:opacity-50">Retry</button></div>}{session.assets.length > 0 && <p className="mt-5 text-sm text-teal-100">{session.assets.length} private capture{session.assets.length === 1 ? '' : 's'} ready for agent review.</p>}</div> : <div className="rounded-3xl border border-dashed border-white/15 p-6 text-sm leading-7 text-slate-400">Create or resume a session to unlock camera preview and private upload. No capture is sent before you approve the consent checkboxes.</div>}
+          {session ? <div className="rounded-3xl border border-teal-200/20 bg-teal-200/[0.06] p-6"><div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-200">Session {session.scanId.slice(-8)}</p><h2 className="mt-2 text-xl font-black uppercase">{session.status.replace('_', ' ')}</h2><p className="mt-1 text-xs text-slate-400">{session.propertyAddress}</p></div><CloudUpload className="h-7 w-7 text-teal-200" /></div><div className="mt-5 flex flex-wrap gap-3"><button type="button" onClick={cameraOn ? stopCamera : () => void startCamera()} disabled={busy} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-black uppercase tracking-widest hover:border-teal-200/60 disabled:opacity-50"> <Camera className="h-4 w-4" />{cameraOn ? 'Stop camera' : 'Preview camera'}</button><label className={`inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-950 hover:bg-teal-100 ${busy ? 'pointer-events-none opacity-50' : ''}`}><Upload className="h-4 w-4" />Upload captures<input ref={fileInputRef} type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" capture="environment" multiple disabled={busy} onChange={(event) => void uploadCaptures(event.target.files)} /></label></div><video ref={videoRef} autoPlay muted playsInline hidden={!cameraOn} className="mt-5 aspect-video w-full rounded-2xl border border-white/10 bg-black object-cover" />{selectedFiles.length > 0 && <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-amber-200/20 bg-amber-200/[0.06] p-3 text-xs text-amber-50"><span>{selectedFiles.length} capture{selectedFiles.length === 1 ? '' : 's'} waiting to retry</span><button type="button" onClick={retrySelectedFiles} disabled={busy} className="rounded-full border border-amber-200/30 px-3 py-1 font-black uppercase tracking-widest disabled:opacity-50">Retry</button></div>}{session.assets.length > 0 && <p className="mt-5 text-sm text-teal-100">{session.assets.length} private capture{session.assets.length === 1 ? '' : 's'} ready for agent review.</p>}<div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-300"><ShieldCheck className="h-4 w-4 text-teal-200" /> Reviewer access</div><p className="mt-2 text-xs leading-5 text-slate-400">Grant access only to people who should inspect this private capture. Use their account user IDs, separated by commas. Clearing the field revokes explicit assignments.</p><label className="mt-4 block text-xs font-bold text-slate-300" htmlFor="reviewer-ids">Reviewer user IDs</label><input id="reviewer-ids" value={reviewerDraft} onChange={(event) => setReviewerDraft(event.target.value)} placeholder="user-id-1, user-id-2" className="mt-2 w-full rounded-xl border border-white/15 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none focus:border-teal-200/60" /><button type="button" onClick={() => void saveReviewers()} disabled={reviewerBusy} className="mt-3 inline-flex items-center gap-2 rounded-full border border-teal-200/30 px-4 py-2 text-xs font-black uppercase tracking-widest text-teal-100 hover:bg-teal-200/10 disabled:opacity-50">{reviewerBusy ? 'Saving…' : 'Save reviewer access'}</button></div></div> : <div className="rounded-3xl border border-dashed border-white/15 p-6 text-sm leading-7 text-slate-400">Create or resume a session to unlock camera preview and private upload. No capture is sent before you approve the consent checkboxes.</div>}
         </div>
       </section>
     </main>

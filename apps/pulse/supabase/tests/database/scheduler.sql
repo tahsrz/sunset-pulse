@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS pgtap;
 -- seed shape; all scheduler ownership assertions still use distinct UUIDs.
 SET LOCAL session_replication_role = replica;
 
-SELECT plan(38);
+SELECT plan(44);
 
 SELECT has_function(
   'public',
@@ -18,6 +18,7 @@ SELECT has_function('public', 'claim_workflow_jobs', ARRAY['integer', 'integer']
 SELECT has_function('public', 'complete_workflow_job_with_result', ARRAY['uuid', 'uuid', 'text', 'uuid', 'uuid']);
 SELECT has_function('public', 'resolve_workflow_failure', ARRAY['uuid', 'uuid', 'text']);
 SELECT has_function('public', 'save_sprint_planner_schedule', ARRAY['uuid', 'integer', 'text', 'text', 'text', 'integer', 'integer', 'integer', 'timestamp with time zone']);
+SELECT has_function('public', 'enqueue_workflow_event', ARRAY['uuid', 'text', 'text', 'jsonb', 'integer', 'timestamp with time zone']);
 
 SELECT ok(has_function_privilege('service_role', 'public.claim_workflow_jobs(integer, integer)', 'EXECUTE'), 'service_role can claim workflow jobs');
 SELECT ok(NOT has_function_privilege('anon', 'public.claim_workflow_jobs(integer, integer)', 'EXECUTE'), 'anon cannot claim workflow jobs');
@@ -34,6 +35,8 @@ SELECT ok(NOT has_function_privilege('authenticated', 'public.complete_workflow_
 SELECT ok(has_function_privilege('service_role', 'public.save_sprint_planner_schedule(uuid, integer, text, text, text, integer, integer, integer, timestamp with time zone)', 'EXECUTE'), 'service_role can save sprint schedules');
 SELECT ok(NOT has_function_privilege('anon', 'public.save_sprint_planner_schedule(uuid, integer, text, text, text, integer, integer, integer, timestamp with time zone)', 'EXECUTE'), 'anon cannot save sprint schedules');
 SELECT ok(NOT has_function_privilege('authenticated', 'public.save_sprint_planner_schedule(uuid, integer, text, text, text, integer, integer, integer, timestamp with time zone)', 'EXECUTE'), 'authenticated cannot save sprint schedules');
+SELECT ok(has_function_privilege('service_role', 'public.enqueue_workflow_event(uuid, text, text, jsonb, integer, timestamp with time zone)', 'EXECUTE'), 'service_role can enqueue workflow events');
+SELECT ok(NOT has_function_privilege('anon', 'public.enqueue_workflow_event(uuid, text, text, jsonb, integer, timestamp with time zone)', 'EXECUTE'), 'anon cannot enqueue workflow events');
 
 CREATE TEMP TABLE scheduler_observations (
   observation_key TEXT PRIMARY KEY,
@@ -56,6 +59,12 @@ DECLARE
   v_result_id UUID;
   v_completed BOOLEAN;
   v_attempt INTEGER;
+  v_event_job_id UUID;
+  v_replayed_event_job_id UUID;
+  v_event_at TIMESTAMPTZ;
+  v_event_replay_ok BOOLEAN := false;
+  v_event_changed_rejected BOOLEAN := false;
+  v_event_claimed public.workflow_jobs%ROWTYPE;
   v_saved_schedule public.workflow_schedules%ROWTYPE;
   v_stale_rejected BOOLEAN := false;
 BEGIN
@@ -215,6 +224,61 @@ BEGIN
     v_completed AND (SELECT job.status = 'completed' FROM public.workflow_jobs AS job WHERE job.id = v_job_id),
     (SELECT count(*)::INTEGER FROM public.workflow_results AS result WHERE result.job_id = v_job_id)
   );
+
+  -- One-off events are owner-scoped, replay-safe and claimable without a
+  -- recurring schedule. Reusing an event key with a changed payload is not a
+  -- valid retry.
+  v_owner_id := gen_random_uuid();
+  v_event_at := now() - interval '1 minute';
+  SELECT id INTO v_event_job_id
+  FROM public.enqueue_workflow_event(
+    v_owner_id,
+    'sprint_planner',
+    'property:example:revision:2',
+    '{"planningMode":"property_shortlist","source":"property_scan"}'::jsonb,
+    1,
+    v_event_at
+  ) AS event_job;
+  SELECT id INTO v_replayed_event_job_id
+  FROM public.enqueue_workflow_event(
+    v_owner_id,
+    'sprint_planner',
+    'property:example:revision:2',
+    '{"planningMode":"property_shortlist","source":"property_scan"}'::jsonb,
+    1,
+    v_event_at
+  ) AS event_job;
+  v_event_replay_ok := v_event_job_id = v_replayed_event_job_id
+    AND (SELECT count(*) = 1 FROM public.workflow_jobs WHERE id = v_event_job_id);
+  INSERT INTO scheduler_observations (observation_key, bool_value)
+  VALUES ('event_replay_same_job', v_event_replay_ok);
+
+  BEGIN
+    PERFORM public.enqueue_workflow_event(
+      v_owner_id,
+      'sprint_planner',
+      'property:example:revision:2',
+      '{"planningMode":"manual_backlog","source":"owner_request"}'::jsonb,
+      1,
+      v_event_at
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_event_changed_rejected := SQLERRM = 'Workflow event key already exists with a different payload';
+  END;
+  INSERT INTO scheduler_observations (observation_key, bool_value)
+  VALUES ('event_changed_payload_rejected', v_event_changed_rejected);
+
+  SELECT * INTO v_event_claimed
+  FROM public.claim_workflow_jobs(100, 300) AS claimed
+  WHERE claimed.id = v_event_job_id;
+  INSERT INTO scheduler_observations (observation_key, bool_value)
+  VALUES (
+    'event_claimed_without_schedule',
+    v_event_claimed.status = 'running'
+      AND v_event_claimed.trigger_kind = 'event'
+      AND v_event_claimed.schedule_id IS NULL
+      AND v_event_claimed.payload->>'source' = 'property_scan'
+  );
 END;
 $$;
 
@@ -236,6 +300,9 @@ SELECT is((SELECT int_value FROM scheduler_observations WHERE observation_key = 
 SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'schedule_paused_update'), 'schedule updates preserve paused state and advance revision');
 SELECT is((SELECT int_value FROM scheduler_observations WHERE observation_key = 'schedule_paused_update'), 2, 'schedule update advances revision once');
 SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'schedule_stale_rejected'), 'stale schedule edits are rejected');
+SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'event_replay_same_job'), 'event replay returns the original job');
+SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'event_changed_payload_rejected'), 'event key payload changes are rejected');
+SELECT ok((SELECT bool_value FROM scheduler_observations WHERE observation_key = 'event_claimed_without_schedule'), 'event jobs claim without a recurring schedule');
 
 SELECT * FROM finish();
 ROLLBACK;
