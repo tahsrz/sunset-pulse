@@ -15,10 +15,15 @@ export type WorkflowJob = {
 };
 
 export type WorkflowExecution = {
+  kind: 'complete';
   resultType: 'licensed_workflow_run' | 'sprint';
   resultId: string;
   resultStatus: string;
   runId?: string | null;
+} | {
+  kind: 'defer';
+  nextPollAt: string;
+  reason?: string;
 };
 
 type WorkflowHandler = (job: WorkflowJob) => Promise<WorkflowExecution>;
@@ -42,6 +47,7 @@ async function runHotlistEmailWorkflow(job: WorkflowJob): Promise<WorkflowExecut
     retryFailed: true,
   });
   return {
+    kind: 'complete',
     resultType: 'licensed_workflow_run',
     resultId: result.run.id,
     runId: result.run.id,

@@ -60,6 +60,22 @@ export async function processQueuedWorkflowJobs(limit = 10) {
 
     try {
       const execution = await getWorkflowHandler(job.workflow_key)(job as WorkflowJob);
+      if (execution.kind === 'defer') {
+        const nextPollAtMs = Date.parse(execution.nextPollAt);
+        if (!Number.isFinite(nextPollAtMs) || nextPollAtMs <= Date.now()) {
+          throw new Error('Workflow returned an invalid deferred poll time.');
+        }
+        const { data: deferred, error: deferError } = await supabaseAdmin.rpc('defer_workflow_job', {
+          p_job_id: job.id,
+          p_lease_token: job.lease_token,
+          p_next_poll_at: execution.nextPollAt,
+          p_reason: execution.reason || null,
+        });
+        if (deferError) throw new Error(`Workflow deferral could not be saved: ${deferError.message}`);
+        const resolution = Array.isArray(deferred) ? deferred[0] : deferred;
+        results.push({ jobId: job.id, status: resolution?.status || 'stale' });
+        continue;
+      }
       const { data: completed, error: completeError } = await supabaseAdmin.rpc('complete_workflow_job_with_result', {
         p_job_id: job.id,
         p_lease_token: job.lease_token,

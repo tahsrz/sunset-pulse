@@ -24,6 +24,7 @@ export const propertyScanAssetSchema = z.object({
   fileName: z.string().min(1).max(255),
   mimeType: z.string().min(1).max(120),
   size: z.number().int().positive(),
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   capturedAt: z.string().datetime().nullable().optional(),
   uploadedAt: z.string().datetime().optional(),
 });
@@ -59,6 +60,9 @@ export const propertyScanAssetMimeTypes = new Set([
 export const propertyScanAssetLimits = {
   maxFiles: 24,
   maxBytesPerFile: 75 * 1024 * 1024,
+  maxBytesPerSession: 300 * 1024 * 1024,
+  maxActiveUploads: 2,
+  reservationTtlMs: 30 * 60 * 1000,
 };
 
 export function hasSupportedPropertyScanSignature(mimeType: string, bytes: Uint8Array) {

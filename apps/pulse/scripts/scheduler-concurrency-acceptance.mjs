@@ -31,11 +31,12 @@ await withDockerService('scheduler-test', async (container) => {
     '20260914070000_scheduler_registry_retry_pause.sql',
     '20260916020000_event_workflow_jobs.sql',
     '20260916030000_scheduler_live_lease_and_event_replay.sql',
+    '20260916040000_scheduler_deferred_outcomes.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
   }
-  await sql(await readFile(new URL('../supabase/migrations/20260916030000_scheduler_live_lease_and_event_replay.sql', import.meta.url), 'utf8'));
+  await sql(await readFile(new URL('../supabase/migrations/20260916040000_scheduler_deferred_outcomes.sql', import.meta.url), 'utf8'));
 
   const owner = randomUUID(), otherOwner = randomUUID(), schedule = randomUUID();
   const event = (key, payload = '{}', time = 'NULL', user = owner) =>
@@ -106,4 +107,46 @@ await withDockerService('scheduler-test', async (container) => {
   assert.equal(await sql(`SELECT count(*) FROM workflow_results WHERE job_id='${valid}';`), '1');
   assert.equal(await sql(`SELECT has_function_privilege('authenticated','enqueue_workflow_event(uuid,text,text,jsonb,integer,timestamptz)','EXECUTE');`), 'f');
   console.log('PASS: live completion writes one result; browser enqueue denied');
+
+  const deferredJob = await sql(event('deferred'));
+  await sql(`SELECT id FROM claim_workflow_jobs(10,30) WHERE id='${deferredJob}';`);
+  const deferredToken = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${deferredJob}';`);
+  assert.equal(await sql(`SELECT status FROM defer_workflow_job('${deferredJob}','${deferredToken}',clock_timestamp()+interval '5 minutes','waiting for a source');`), 'deferred');
+  assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${deferredJob}';`), 'deferred');
+  assert.equal(await sql(`SELECT attempts FROM workflow_jobs WHERE id='${deferredJob}';`), '1');
+  await sql(`UPDATE workflow_jobs SET retry_at=clock_timestamp()-interval '1 second' WHERE id='${deferredJob}';`);
+  const deferredRetryToken = await sql(`SELECT lease_token FROM claim_workflow_jobs(10,30) WHERE id='${deferredJob}';`);
+  assert.notEqual(deferredRetryToken, '');
+  assert.equal(await sql(`SELECT attempts FROM workflow_jobs WHERE id='${deferredJob}';`), '1');
+  assert.equal(await sql(`SELECT poll_attempts FROM workflow_jobs WHERE id='${deferredJob}';`), '1');
+  console.log('PASS: deferred poll resumes without consuming execution attempts');
+
+  const cancelledDeferred = await sql(event('cancel-deferred'));
+  await sql(`SELECT id FROM claim_workflow_jobs(10,30) WHERE id='${cancelledDeferred}';`);
+  const cancelledToken = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${cancelledDeferred}';`);
+  assert.equal(await sql(`SELECT status FROM defer_workflow_job('${cancelledDeferred}','${cancelledToken}',clock_timestamp()+interval '5 minutes','cancel me');`), 'deferred');
+  assert.equal(await sql(`SELECT cancel_workflow_job('${cancelledDeferred}','${owner}');`), 't');
+  assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${cancelledDeferred}';`), 'cancelled');
+  await sql(`UPDATE workflow_jobs SET retry_at=clock_timestamp()-interval '1 second' WHERE id='${cancelledDeferred}';`);
+  assert.equal(await sql(`SELECT count(*) FROM claim_workflow_jobs(10,30) WHERE id='${cancelledDeferred}';`), '0');
+  console.log('PASS: cancellation fences a deferred poll');
+
+  const pausedSchedule = randomUUID();
+  const pausedDeferred = randomUUID();
+  await sql(`INSERT INTO workflow_schedules(id,user_id,workflow_key,enabled) VALUES ('${pausedSchedule}','${otherOwner}','sprint_planner',true);
+    INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,scheduled_for) VALUES ('${pausedDeferred}','${pausedSchedule}','${otherOwner}','sprint_planner',clock_timestamp()-interval '1 minute');`);
+  await sql(`SELECT id FROM claim_workflow_jobs(10,30) WHERE id='${pausedDeferred}';`);
+  const pausedToken = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${pausedDeferred}';`);
+  assert.equal(await sql(`SELECT status FROM defer_workflow_job('${pausedDeferred}','${pausedToken}',clock_timestamp()+interval '5 minutes','pause me');`), 'deferred');
+  await sql(`UPDATE workflow_schedules SET enabled=false WHERE id='${pausedSchedule}'; UPDATE workflow_jobs SET retry_at=clock_timestamp()-interval '1 second' WHERE id='${pausedDeferred}';`);
+  assert.equal(await sql(`SELECT count(*) FROM claim_workflow_jobs(10,30) WHERE id='${pausedDeferred}';`), '0');
+  console.log('PASS: paused schedules keep deferred polls unclaimable');
+
+  const exhaustedJob = await sql(event('poll-budget'));
+  await sql(`SELECT id FROM claim_workflow_jobs(10,30) WHERE id='${exhaustedJob}';`);
+  const exhaustedToken = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${exhaustedJob}';`);
+  await sql(`UPDATE workflow_jobs SET poll_attempts=20 WHERE id='${exhaustedJob}';`);
+  assert.equal(await sql(`SELECT status FROM defer_workflow_job('${exhaustedJob}','${exhaustedToken}',clock_timestamp()+interval '5 minutes','too many polls');`), 'poll_exhausted');
+  assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${exhaustedJob}';`), 'failed');
+  console.log('PASS: deferred polling has a terminal budget');
 }).catch((error) => { console.error(error.message); process.exitCode = 1; });

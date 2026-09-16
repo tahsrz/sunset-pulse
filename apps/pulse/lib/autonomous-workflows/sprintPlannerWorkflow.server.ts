@@ -10,7 +10,7 @@ export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<Workfl
   const planningMode = eventPlanningMode || job.planning_mode;
   if (planningMode === 'property_shortlist') {
     const sprintId = await createPropertySprintProposal(job.user_id, job.id, job.scheduled_for, job.lease_token);
-    return { resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
+    return { kind: 'complete', resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
   }
 
   const { data: backlog, error: backlogError } = await supabaseAdmin.from('sprint_backlog_items')
@@ -50,7 +50,7 @@ export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<Workfl
       if (persistError) throw new Error(`Unable to persist scheduled sprint proposal: ${persistError.message}`);
       const sprintId = (Array.isArray(persisted) ? persisted[0] : persisted)?.sprint_id;
       if (!sprintId) throw new Error('Scheduled sprint proposal did not return an ID.');
-      return { resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
+      return { kind: 'complete', resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
     }
   }
 
@@ -66,5 +66,5 @@ export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<Workfl
   if (persistError) throw new Error(`Unable to persist scheduled sprint proposal: ${persistError.message}`);
   const sprintId = (Array.isArray(persisted) ? persisted[0] : persisted)?.sprint_id;
   if (!sprintId) throw new Error('Scheduled sprint proposal did not return an ID.');
-  return { resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
+  return { kind: 'complete', resultType: 'sprint', resultId: sprintId, resultStatus: 'proposed' };
 }

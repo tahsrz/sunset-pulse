@@ -30,6 +30,7 @@ type ManifestAsset = {
   fileName: string;
   mimeType: string;
   size: number;
+  contentHash?: string;
   capturedAt?: string | null;
   uploadedAt?: string | null;
 };
@@ -42,6 +43,7 @@ export function propertyScanManifestHash(assets: ManifestAsset[]) {
       fileName: asset.fileName,
       mimeType: asset.mimeType,
       size: asset.size,
+      contentHash: asset.contentHash || null,
       capturedAt: asset.capturedAt || null,
       uploadedAt: asset.uploadedAt || null,
     }))

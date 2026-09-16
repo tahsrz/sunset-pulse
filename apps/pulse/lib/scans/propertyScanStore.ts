@@ -3,9 +3,10 @@ import 'server-only';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import connectDB from '@/lib/core/database';
 import { PropertyScanSession } from '@/models/PropertyScanSession';
-import type { PropertyScanAsset, PropertyScanRequest } from '@/lib/scans/propertyScanContract';
+import { propertyScanAssetLimits, type PropertyScanAsset, type PropertyScanRequest } from '@/lib/scans/propertyScanContract';
 import { reconstructionUnavailable, type PropertyScanReconstruction, type ReconstructionUnavailable } from '@/lib/scans/reconstruction';
 import { canReadScan, configuredScanReviewerIds, isScanOwnerRecord, type ScanActor } from './scanAccess.server';
 import { createConsentReceipt, createReviewEvent, isCurrentScanArtifact, propertyScanManifestHash, type PropertyScanArtifactReference, type PropertyScanConsentReceipt, type PropertyScanReviewEvent } from './propertyScanVersioning';
@@ -29,10 +30,41 @@ export type PropertyScanSessionRecord = PropertyScanRequest & {
   approvedManifestHash: string | null;
   reviewEvents: PropertyScanReviewEvent[];
   artifactRefs: PropertyScanArtifactReference[];
+  uploadReservations: PropertyScanUploadReservation[];
   reconstruction: PropertyScanReconstruction | null;
   assets: PropertyScanAsset[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type PropertyScanUploadReservation = {
+  uploadId: string;
+  idempotencyKey: string;
+  fileName: string;
+  mimeType: string;
+  declaredBytes: number;
+  expectedRevision: number;
+  state: 'pending' | 'finalized' | 'aborted' | 'expired';
+  assetId: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PropertyScanUploadReservationInput = {
+  idempotencyKey: string;
+  fileName: string;
+  mimeType: string;
+  declaredBytes: number;
+  expectedRevision: number;
+};
+
+export type PropertyScanUploadCleanupTarget = {
+  scanId: string;
+  ownerId: string;
+  uploadId: string;
+  fileName: string;
+  mimeType: string;
 };
 
 export async function createPropertyScanSession(input: PropertyScanRequest, ownerId: string) {
@@ -151,6 +183,168 @@ export async function appendPropertyScanAssets(scanId: string, ownerId: string, 
   return record ? serialize(record) : null;
 }
 
+export async function reservePropertyScanUpload(
+  scanId: string,
+  ownerId: string,
+  input: PropertyScanUploadReservationInput,
+) {
+  if (!isValidUploadReservationInput(input)) return null;
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + propertyScanAssetLimits.reservationTtlMs);
+  const uploadId = deterministicUploadId(scanId, input.idempotencyKey);
+
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    if (!record || record.ownerId !== ownerId || record.revision !== input.expectedRevision) return null;
+    const existing = record.uploadReservations.find((reservation) => reservation.idempotencyKey === input.idempotencyKey);
+    if (existing) return matchesReservation(existing, input) ? serialize(record) : null;
+    if (!withinUploadQuota(record, input.declaredBytes, now)) return null;
+    record.uploadReservations.push({ uploadId, ...input, state: 'pending', assetId: randomUUID(), expiresAt: expiresAt.toISOString(), createdAt: now.toISOString(), updatedAt: now.toISOString() });
+    record.updatedAt = now.toISOString();
+    persistMockSessions();
+    return serialize(record);
+  }
+
+  await connectDB();
+  const activeReservations = {
+    $filter: {
+      input: { $ifNull: ['$uploadReservations', []] },
+      as: 'reservation',
+      cond: { $and: [{ $eq: ['$$reservation.state', 'pending'] }, { $gt: ['$$reservation.expiresAt', now] }] },
+    },
+  };
+  const assetBytes = { $reduce: { input: { $ifNull: ['$assets', []] }, initialValue: 0, in: { $add: ['$$value', '$$this.size'] } } };
+  const reservationBytes = { $reduce: { input: activeReservations, initialValue: 0, in: { $add: ['$$value', '$$this.declaredBytes'] } } };
+  const record = await PropertyScanSession.findOneAndUpdate(
+    {
+      scanId,
+      ownerId,
+      revision: input.expectedRevision,
+      uploadReservations: { $not: { $elemMatch: { idempotencyKey: input.idempotencyKey } } },
+      $expr: { $and: [
+        { $lt: [{ $size: { $ifNull: ['$assets', []] } }, propertyScanAssetLimits.maxFiles] },
+        { $lte: [{ $add: [assetBytes, reservationBytes, input.declaredBytes] }, propertyScanAssetLimits.maxBytesPerSession] },
+        { $lt: [{ $size: activeReservations }, propertyScanAssetLimits.maxActiveUploads] },
+      ] },
+    },
+    { $push: { uploadReservations: { uploadId, ...input, state: 'pending', assetId: randomUUID(), expiresAt, createdAt: now, updatedAt: now } }, $set: { updatedAt: now } },
+    { new: true },
+  ).lean();
+  if (record) return serialize(record);
+  const existing = await PropertyScanSession.findOne({ scanId, ownerId, 'uploadReservations.idempotencyKey': input.idempotencyKey }).lean() as any;
+  return existing && existing.revision === input.expectedRevision && existing.uploadReservations?.some((reservation: any) => reservation.idempotencyKey === input.idempotencyKey && matchesReservation(reservation, input))
+    ? serialize(existing)
+    : null;
+}
+
+export async function finalizePropertyScanUpload(
+  scanId: string,
+  ownerId: string,
+  uploadId: string,
+  asset: PropertyScanAsset,
+  expectedRevision: number,
+) {
+  if (!asset.assetId || !propertyScanAssetLimits.maxFiles || asset.size > propertyScanAssetLimits.maxBytesPerFile) return null;
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    if (!record || record.ownerId !== ownerId) return null;
+    const reservation = record.uploadReservations.find((candidate) => candidate.uploadId === uploadId);
+    if (!reservation || reservation.expectedRevision !== expectedRevision) return null;
+    if (reservation.state === 'finalized') return serialize(record);
+    if (reservation.state !== 'pending' || reservation.expiresAt <= new Date().toISOString() || asset.assetId !== reservation.assetId || asset.size !== reservation.declaredBytes || record.revision !== expectedRevision || !withinUploadQuota(record, asset.size, new Date(), true)) return null;
+    const now = new Date().toISOString();
+    reservation.state = 'finalized'; reservation.assetId = asset.assetId; reservation.updatedAt = now;
+    record.assets.push({ ...asset, uploadedAt: asset.uploadedAt || now });
+    record.status = 'in_review'; record.revision += 1; record.manifestHash = propertyScanManifestHash(record.assets); record.approvedManifestRevision = null; record.approvedManifestHash = null;
+    record.artifactRefs = record.artifactRefs.map((artifact) => ({ ...artifact, status: artifact.status === 'revoked' ? 'revoked' : 'stale' })); record.updatedAt = now; persistMockSessions();
+    return serialize(record);
+  }
+
+  await connectDB();
+  const current = await PropertyScanSession.findOne({ scanId, ownerId, 'uploadReservations.uploadId': uploadId }).lean() as any;
+  if (!current) return null;
+  const reservation = current.uploadReservations?.find((candidate: any) => candidate.uploadId === uploadId);
+  if (!reservation) return null;
+  if (reservation.state === 'finalized') return serialize(current);
+  if (current.revision !== expectedRevision || reservation.state !== 'pending' || new Date(reservation.expiresAt).getTime() <= Date.now() || asset.assetId !== reservation.assetId || asset.size !== reservation.declaredBytes) return null;
+  const currentAssets = Array.isArray(current.assets) ? current.assets : [];
+  if (currentAssets.some((candidate: any) => candidate.assetId === asset.assetId)) return null;
+  const nextAssets = [...currentAssets, asset];
+  const record = await PropertyScanSession.findOneAndUpdate(
+    { scanId, ownerId, revision: expectedRevision, 'uploadReservations': { $elemMatch: { uploadId, state: 'pending', expiresAt: { $gt: new Date() }, declaredBytes: asset.size } } },
+    { $push: { assets: { ...asset, uploadedAt: asset.uploadedAt || new Date() } }, $set: { status: 'in_review', revision: expectedRevision + 1, manifestHash: propertyScanManifestHash(nextAssets), approvedManifestRevision: null, approvedManifestHash: null, 'uploadReservations.$[reservation].state': 'finalized', 'uploadReservations.$[reservation].assetId': asset.assetId, 'uploadReservations.$[reservation].updatedAt': new Date(), 'artifactRefs.$[active].status': 'stale' } },
+    { new: true, arrayFilters: [{ 'reservation.uploadId': uploadId, 'reservation.state': 'pending' }, { 'active.status': 'current' }] },
+  ).lean();
+  return record ? serialize(record) : null;
+}
+
+export async function abortPropertyScanUpload(scanId: string, ownerId: string, uploadId: string) {
+  const now = new Date();
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    const reservation = record?.ownerId === ownerId ? record.uploadReservations.find((candidate) => candidate.uploadId === uploadId) : null;
+    if (!record || !reservation) return null;
+    if (reservation.state === 'pending') { reservation.state = 'aborted'; reservation.updatedAt = now.toISOString(); record.updatedAt = now.toISOString(); persistMockSessions(); }
+    return serialize(record);
+  }
+  await connectDB();
+  const record = await PropertyScanSession.findOneAndUpdate({ scanId, ownerId, 'uploadReservations.uploadId': uploadId }, { $set: { 'uploadReservations.$[reservation].state': 'aborted', 'uploadReservations.$[reservation].updatedAt': now, updatedAt: now } }, { new: true, arrayFilters: [{ 'reservation.uploadId': uploadId, 'reservation.state': 'pending' }] }).lean();
+  return record ? serialize(record) : null;
+}
+
+export async function expirePropertyScanUploadReservations(now = new Date()) {
+  const targets = await listExpiredPropertyScanUploadReservations(now, Number.MAX_SAFE_INTEGER);
+  let changed = 0;
+  for (const target of targets) if (await markPropertyScanUploadReservationExpired(target, now)) changed += 1;
+  return changed;
+}
+
+export async function listExpiredPropertyScanUploadReservations(now = new Date(), limit = 50): Promise<PropertyScanUploadCleanupTarget[]> {
+  const boundedLimit = Math.min(Math.max(Math.trunc(limit), 1), 100);
+  if (isMockMode()) {
+    const targets: PropertyScanUploadCleanupTarget[] = [];
+    for (const record of getMockSessions().values()) {
+      for (const reservation of record.uploadReservations) {
+        if (reservation.state !== 'pending' || new Date(reservation.expiresAt).getTime() > now.getTime()) continue;
+        targets.push({ scanId: record.scanId, ownerId: record.ownerId, uploadId: reservation.uploadId, fileName: reservation.fileName, mimeType: reservation.mimeType });
+        if (targets.length >= boundedLimit) return targets;
+      }
+    }
+    return targets;
+  }
+
+  await connectDB();
+  const records = await PropertyScanSession.find({ uploadReservations: { $elemMatch: { state: 'pending', expiresAt: { $lte: now } } } })
+    .select('scanId ownerId uploadReservations')
+    .sort({ scanId: 1 })
+    .limit(boundedLimit)
+    .lean();
+  return records.flatMap((record: any) => (record.uploadReservations || [])
+    .filter((reservation: any) => reservation.state === 'pending' && new Date(reservation.expiresAt).getTime() <= now.getTime())
+    .map((reservation: any) => ({ scanId: record.scanId, ownerId: record.ownerId, uploadId: reservation.uploadId, fileName: reservation.fileName, mimeType: reservation.mimeType })))
+    .slice(0, boundedLimit);
+}
+
+export async function markPropertyScanUploadReservationExpired(target: PropertyScanUploadCleanupTarget, now = new Date()) {
+  if (isMockMode()) {
+    const record = getMockSessions().get(target.scanId);
+    const reservation = record?.ownerId === target.ownerId ? record.uploadReservations.find((candidate) => candidate.uploadId === target.uploadId && candidate.state === 'pending') : null;
+    if (!record || !reservation || new Date(reservation.expiresAt).getTime() > now.getTime()) return false;
+    reservation.state = 'expired';
+    reservation.updatedAt = now.toISOString();
+    record.updatedAt = now.toISOString();
+    persistMockSessions();
+    return true;
+  }
+  await connectDB();
+  const result = await PropertyScanSession.updateOne(
+    { scanId: target.scanId, ownerId: target.ownerId, uploadReservations: { $elemMatch: { uploadId: target.uploadId, state: 'pending', expiresAt: { $lte: now } } } },
+    { $set: { 'uploadReservations.$[expired].state': 'expired', 'uploadReservations.$[expired].updatedAt': now, updatedAt: now } },
+    { arrayFilters: [{ 'expired.uploadId': target.uploadId, 'expired.state': 'pending', 'expired.expiresAt': { $lte: now } }] },
+  );
+  return result.modifiedCount > 0;
+}
+
 export async function updatePropertyScanReview(
   scanId: string,
   status: 'in_review' | 'approved' | 'rejected',
@@ -258,6 +452,7 @@ function serialize(record: any): PropertyScanSessionRecord {
     approvedManifestHash: record.approvedManifestHash || null,
     reviewEvents: Array.isArray(record.reviewEvents) ? record.reviewEvents.map((event: any) => ({ eventId: event.eventId, status: event.status, reviewerId: event.reviewerId, note: event.note || null, revision: event.revision, manifestHash: event.manifestHash, createdAt: new Date(event.createdAt).toISOString() })) : [],
     artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs.map((artifact: any) => ({ artifactId: artifact.artifactId, inputRevision: artifact.inputRevision, inputManifestHash: artifact.inputManifestHash, status: artifact.status === 'current' && (record.status !== 'approved' || !isCurrentScanArtifact(artifact, record)) ? 'stale' : artifact.status, createdAt: new Date(artifact.createdAt).toISOString() })) : [],
+    uploadReservations: Array.isArray(record.uploadReservations) ? record.uploadReservations.map((reservation: any) => ({ uploadId: reservation.uploadId, idempotencyKey: reservation.idempotencyKey, fileName: reservation.fileName, mimeType: reservation.mimeType, declaredBytes: reservation.declaredBytes, expectedRevision: reservation.expectedRevision, state: reservation.state, assetId: reservation.assetId || null, expiresAt: new Date(reservation.expiresAt).toISOString(), createdAt: new Date(reservation.createdAt).toISOString(), updatedAt: new Date(reservation.updatedAt).toISOString() })) : [],
     reconstruction: record.reconstruction?.jobId ? {
       jobId: record.reconstruction.jobId,
       status: record.reconstruction.status,
@@ -277,6 +472,7 @@ function serialize(record: any): PropertyScanSessionRecord {
       fileName: asset.fileName,
       mimeType: asset.mimeType,
       size: asset.size,
+      contentHash: asset.contentHash,
       capturedAt: asset.capturedAt ? new Date(asset.capturedAt).toISOString() : null,
       uploadedAt: asset.uploadedAt ? new Date(asset.uploadedAt).toISOString() : undefined,
     })),
@@ -317,6 +513,7 @@ function createMockSession(input: PropertyScanRequest, ownerId: string) {
     approvedManifestHash: null,
     reviewEvents: [],
     artifactRefs: [],
+    uploadReservations: [],
     reconstruction: null,
     assets: [],
     createdAt: now,
@@ -351,6 +548,7 @@ function normalizeMockRecord(record: PropertyScanSessionRecord): PropertyScanSes
     approvedManifestHash: record.approvedManifestHash || null,
     reviewEvents: Array.isArray(record.reviewEvents) ? record.reviewEvents : [],
     artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs : [],
+    uploadReservations: Array.isArray(record.uploadReservations) ? record.uploadReservations : [],
     reviewerIds: Array.isArray(record.reviewerIds) ? record.reviewerIds : [],
   };
 }
@@ -367,6 +565,41 @@ function mockStorePath() {
 
 function isMockMode() {
   return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+}
+
+function isValidUploadReservationInput(input: PropertyScanUploadReservationInput) {
+  return Boolean(input.idempotencyKey.trim())
+    && input.idempotencyKey.length <= 200
+    && Boolean(input.fileName.trim())
+    && input.fileName.length <= 255
+    && Boolean(input.mimeType.trim())
+    && input.mimeType.length <= 120
+    && Number.isInteger(input.declaredBytes)
+    && input.declaredBytes > 0
+    && input.declaredBytes <= propertyScanAssetLimits.maxBytesPerFile
+    && Number.isInteger(input.expectedRevision)
+    && input.expectedRevision > 0;
+}
+
+function deterministicUploadId(scanId: string, idempotencyKey: string) {
+  return `upload_${createHash('sha256').update(`${scanId}:${idempotencyKey}`).digest('hex').slice(0, 40)}`;
+}
+
+function matchesReservation(reservation: PropertyScanUploadReservation, input: PropertyScanUploadReservationInput) {
+  return reservation.fileName === input.fileName
+    && reservation.mimeType === input.mimeType
+    && reservation.declaredBytes === input.declaredBytes
+    && reservation.expectedRevision === input.expectedRevision;
+}
+
+function withinUploadQuota(record: PropertyScanSessionRecord, declaredBytes: number, now: Date, includeCurrentReservation = false) {
+  const active = record.uploadReservations.filter((reservation) => reservation.state === 'pending' && new Date(reservation.expiresAt).getTime() > now.getTime());
+  const totalBytes = record.assets.reduce((total, asset) => total + asset.size, 0)
+    + active.reduce((total, reservation) => total + reservation.declaredBytes, 0)
+    + (includeCurrentReservation ? 0 : declaredBytes);
+  return record.assets.length < propertyScanAssetLimits.maxFiles
+    && totalBytes <= propertyScanAssetLimits.maxBytesPerSession
+    && active.length + (includeCurrentReservation ? 0 : 1) <= propertyScanAssetLimits.maxActiveUploads;
 }
 
 function scanActorQuery(actor: ScanActor) {

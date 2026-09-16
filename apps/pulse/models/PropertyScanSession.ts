@@ -62,8 +62,22 @@ const PropertyScanSessionSchema = new mongoose.Schema({
     fileName: { type: String, required: true, maxlength: 255 },
     mimeType: { type: String, required: true, maxlength: 120 },
     size: { type: Number, required: true },
+    contentHash: { type: String, default: null, match: /^[a-f0-9]{64}$/ },
     capturedAt: { type: Date, required: false },
     uploadedAt: { type: Date, required: true, default: Date.now },
+  }],
+  uploadReservations: [{
+    uploadId: { type: String, required: true },
+    idempotencyKey: { type: String, required: true, maxlength: 200 },
+    fileName: { type: String, required: true, maxlength: 255 },
+    mimeType: { type: String, required: true, maxlength: 120 },
+    declaredBytes: { type: Number, required: true, min: 1 },
+    expectedRevision: { type: Number, required: true, min: 1 },
+    state: { type: String, enum: ['pending', 'finalized', 'aborted', 'expired'], required: true },
+    assetId: { type: String, default: null },
+    expiresAt: { type: Date, required: true },
+    createdAt: { type: Date, required: true },
+    updatedAt: { type: Date, required: true },
   }],
 }, { timestamps: true });
 

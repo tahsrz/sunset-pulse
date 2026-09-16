@@ -7,11 +7,12 @@ vi.mock('server-only', () => ({}));
 // if the store accidentally starts using an external Supabase dependency.
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: () => { throw new Error('Unexpected external database access'); } } }));
 import { PropertyScanSession } from '@/models/PropertyScanSession';
-import { createPropertyScanSession, appendPropertyScanAssets, updatePropertyScanReview, updatePropertyScanReviewers, readPropertyScanSession, readPropertyScanSessionForActor } from '@/lib/scans/propertyScanStore';
+import { abortPropertyScanUpload, createPropertyScanSession, appendPropertyScanAssets, expirePropertyScanUploadReservations, finalizePropertyScanUpload, reservePropertyScanUpload, updatePropertyScanReview, updatePropertyScanReviewers, readPropertyScanSession, readPropertyScanSessionForActor } from '@/lib/scans/propertyScanStore';
 
 const owner = randomUUID();
 const asset = () => ({ assetId: randomUUID(), path: `${owner}/fixture/${randomUUID()}.jpg`, fileName: 'room.jpg', mimeType: 'image/jpeg', size: 10, capturedAt: null, uploadedAt: new Date().toISOString() });
 const create = () => createPropertyScanSession({ propertyAddress: 'Local acceptance fixture', listingId: null, captureMode: 'photo_walkthrough', consent: { ownerAuthorized: true, interiorCaptureAcknowledged: true, publicListingApproval: false } }, owner);
+const reservation = (overrides: Partial<{ idempotencyKey: string; fileName: string; mimeType: string; declaredBytes: number; expectedRevision: number }> = {}) => ({ idempotencyKey: randomUUID(), fileName: 'room.jpg', mimeType: 'image/jpeg', declaredBytes: 10, expectedRevision: 1, ...overrides });
 
 beforeAll(async () => {
   const uri = process.env.PULSE_TEST_MONGO_URI || '';
@@ -90,5 +91,43 @@ describe('real Mongo conditional scan mutations', () => {
     const session = await create();
     await PropertyScanSession.updateOne({ scanId: session.scanId }, { $set: { artifactRefs: [{ artifactId: randomUUID(), status: 'current', inputRevision: 99, inputManifestHash: 'stale-hash', createdAt: new Date() }] } });
     expect((await readPropertyScanSession(session.scanId, owner))!.artifactRefs[0].status).toBe('stale');
+  });
+
+  it('limits concurrent reservations and replays the same idempotency key', async () => {
+    const session = await create();
+    const first = reservation({ idempotencyKey: 'reservation-replay-1' });
+    const results = await Promise.all([
+      reservePropertyScanUpload(session.scanId, owner, first),
+      reservePropertyScanUpload(session.scanId, owner, reservation({ idempotencyKey: 'reservation-2' })),
+      reservePropertyScanUpload(session.scanId, owner, reservation({ idempotencyKey: 'reservation-3' })),
+    ]);
+    expect(results.filter(Boolean)).toHaveLength(2);
+    const replay = await reservePropertyScanUpload(session.scanId, owner, first);
+    expect(replay?.uploadReservations.find((item) => item.idempotencyKey === first.idempotencyKey)).toMatchObject({ state: 'pending' });
+    expect(replay?.uploadReservations.filter((item) => item.state === 'pending')).toHaveLength(2);
+  });
+
+  it('finalizes a reservation once, supports abort, and expires abandoned uploads', async () => {
+    const session = await create();
+    const pending = reservation({ idempotencyKey: 'reservation-finalize-1' });
+    const reserved = (await reservePropertyScanUpload(session.scanId, owner, pending))!;
+    const uploadReservation = reserved.uploadReservations.find((item) => item.idempotencyKey === pending.idempotencyKey)!;
+    const uploadId = uploadReservation.uploadId;
+    const assetRecord = await finalizePropertyScanUpload(session.scanId, owner, uploadId, { assetId: uploadReservation.assetId!, path: `${owner}/fixture/final.jpg`, fileName: pending.fileName, mimeType: pending.mimeType, size: pending.declaredBytes, capturedAt: null, uploadedAt: new Date().toISOString() }, 1);
+    expect(assetRecord).toMatchObject({ revision: 2, assets: [expect.any(Object)] });
+    expect((await finalizePropertyScanUpload(session.scanId, owner, uploadId, { assetId: randomUUID(), path: `${owner}/fixture/ignored.jpg`, fileName: pending.fileName, mimeType: pending.mimeType, size: pending.declaredBytes, capturedAt: null, uploadedAt: new Date().toISOString() }, 1))?.assets).toHaveLength(1);
+
+    const abortedInput = reservation({ idempotencyKey: 'reservation-abort-1', expectedRevision: 2 });
+    const aborted = (await reservePropertyScanUpload(session.scanId, owner, abortedInput))!;
+    const abortedId = aborted.uploadReservations.find((item) => item.idempotencyKey === abortedInput.idempotencyKey)!.uploadId;
+    await abortPropertyScanUpload(session.scanId, owner, abortedId);
+    expect((await readPropertyScanSession(session.scanId, owner))!.uploadReservations.find((item) => item.uploadId === abortedId)?.state).toBe('aborted');
+
+    const expiredInput = reservation({ idempotencyKey: 'reservation-expired-1', expectedRevision: 2 });
+    const expired = (await reservePropertyScanUpload(session.scanId, owner, expiredInput))!;
+    const expiredId = expired.uploadReservations.find((item) => item.idempotencyKey === expiredInput.idempotencyKey)!.uploadId;
+    await PropertyScanSession.updateOne({ scanId: session.scanId, 'uploadReservations.uploadId': expiredId }, { $set: { 'uploadReservations.$.expiresAt': new Date(Date.now() - 1000) } });
+    expect(await expirePropertyScanUploadReservations()).toBeGreaterThanOrEqual(1);
+    expect((await readPropertyScanSession(session.scanId, owner))!.uploadReservations.find((item) => item.uploadId === expiredId)?.state).toBe('expired');
   });
 });
