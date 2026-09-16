@@ -1,15 +1,28 @@
 # Praxis Agent Workspace — Implementation Plan
 
-Status: implementation in progress. September 14 implementation review found a confirmed sprint-schema migration collision and incomplete schedule/proposal contracts. The next five-hour sprint below is the current execution priority; historical completion summaries are not acceptance evidence.
-Owner: Taz. Intended executor: Luna or the next implementation session.
-Source inspection: September 11, 2026.
-Scope: replace the Command Center interface with a microphone-driven, multi-agent workspace while reusing the existing command execution backend.
+Status: implementation in progress. The September 15 source review at `50aa53b2` supersedes the September 14 execution baseline. Scheduler/proposal repair code now exists, but runtime acceptance is not established by this review. Property scanning is a private intake/review scaffold with reconstruction unavailable by default; legacy synthetic records are compatibility data, not working home reconstruction. See section 13 for the current ledger, defects, and declaration-by-declaration plan.
+Owner: Taz. Intended executor: Luna. Start with section 13.7's implementation handoff, then follow the referenced S1–S10 specifications.
+Source inspection: original September 11; refreshed September 15, 2026 for scheduler repair entry points, recent product changes, and the complete property-scan path.
+Scope: replace the Command Center interface with a microphone-driven, multi-agent workspace while reusing the existing command execution backend; integrate consented property capture as a bounded client of that shared foundation.
 
-Execution guide: start with [the next five-hour sprint](#next-five-hour-sprint--september-14-2026). Sections 5, 8 and 11 retain the larger roadmap and safety gates, but do not override this sprint's timeboxes. Existing-file line numbers are snapshot anchors; locate the named symbol again before editing.
+Execution guide: Luna starts with [the implementation handoff](#137-luna-implementation-handoff), then uses [the September 15 review and revised plan](#13-september-15-review-and-revised-execution-plan) for the detailed requirements and current five-hour timebox. L1–L4 foundations are implemented locally; the checkpoint now drives L4 acceptance closeout and shared-scheduler readiness. Sections 5, 8 and 11 retain the larger roadmap and safety gates. Earlier sprint notes are historical context, not an instruction to rebuild repairs already present. Existing-file line numbers are snapshot anchors; locate the named symbol again before editing. Implementation remains branch-scoped; it is not authorization to deploy or publish captures.
 
-## Next five-hour sprint — September 14, 2026
+## Historical scheduler/proposal sprint notes
 
-Objective: make the existing collaborative Keller / Westlake planning path usable and recoverable: owner notes and missing information become reviewable backlog work, saved schedules retain their intended mode, and a scheduled occurrence persists one complete proposal. Keep the scheduler reusable for other workflows. This is a 300-minute engineering sprint, not a promise to complete Packages A–E or enable autonomous delivery.
+These notes preserve the earlier scheduler/proposal review. They are not the active execution timebox; use Section 13.4 below. They remain useful for the known migration, owner-access, atomic-proposal and scheduler-foundation findings.
+
+Historical objective: close scheduler/proposal correctness gaps while keeping the scheduler reusable. Do not treat this section as authorization to create a scan-specific scheduler, connect an unverified processor, publish interior media, or bypass email approval.
+
+| Elapsed | Budget | Exact code action | Exit evidence |
+| --- | ---: | --- | --- |
+| 00:00–00:30 | 30 min | Baseline `git status`, branch/log, `vitest.config.ts`, current scheduler DB migration list, and scan route/store callers. Confirm no new migration or deployment is being assumed. | Baseline recorded; focused commands and missing environment dependencies listed |
+| 00:30–01:30 | 60 min | Add disposable-Mongo or repository-approved database tests for `appendPropertyScanAssets` and `updatePropertyScanReview`: two writes with one `expectedRevision`, duplicate asset IDs, approve/upload race, two-reviewer race, reject-after-ready, and consent/manifest invalidation. | Exactly one fenced mutation wins; the loser gets a typed conflict; no current approval/artifact survives a manifest change |
+| 01:30–02:15 | 45 min | Audit `serialize`, admin detail, media-preview and reconstruct reads against `approvedManifestRevision`/hash. Add stale-artifact fixtures and deep-link tests; keep old synthetic records visible only as labeled compatibility history. | Stale/revoked output is never exposed as current; foreign or revoked actors receive no scan detail or signed URL |
+| 02:15–03:00 | 45 min | Run authenticated browser checks for Scan Studio resume, review acknowledgement, private media preview, denied access and an expired/deep-linked scan URL. If browser or storage credentials are unavailable, record the exact blocked checks and leave rollout disabled. | Browser evidence or a named blocker; no screenshot is treated as database/storage acceptance |
+| 03:00–04:15 | 75 min | Prepare the shared scheduler boundary only: inspect `durableScheduler.server.ts`, `workflowRegistry.server.ts`, scheduler SQL and existing sprint/email tests; document the event-job contract, lease-expiry fence, UUID result requirement and owner/payload validation. Do not enqueue scan jobs yet. | One scheduler extension design with migration/test targets; existing recurrence and email approval behavior preserved |
+| 04:15–05:00 | 45 min | Run the focused scan suite, scheduler regressions, build and `git diff --check`; update both ledgers with exact counts, blockers, changed paths and next packet. | Reproducible evidence; no PR/push/deploy unless separately authorized |
+
+Dependencies: S5 direct/private upload remains after L4 acceptance; S6 scheduler implementation may begin only from the documented shared contract and existing DB acceptance. S7 cannot enqueue reconstruction work until S5 and S6 pass. A blocked integration check does not turn into a mock acceptance claim.
 
 ### Implementation baseline, not completion claims
 
@@ -1074,3 +1087,315 @@ The work is split across small commits and has been pushed to `codex/cms-vertica
 5. Which authoritative booking events and reminder offsets should the showing-reminder client consume?
 
 Long-term package order remains A through E. For the immediate work, follow the five-hour sprint at the top of this document without spawning subagents; bounded UI work may proceed while database acceptance is blocked, but unattended rollout may not. Update this ledger with exact commands, completed results, migration status and remaining limitations. A running typecheck is not a passed check; a helper test is not a database or browser integration test. Before updating PR #79, review the complete diff, finish checks required for the implemented scope, and rewrite the PR description to match the verified scope. Do not mark the scheduler stable solely because tables, endpoints or UI controls exist.
+
+## 13. September 15 review and revised execution plan
+
+### 13.1 Baseline, scope, and working agreement
+
+Reviewed local HEAD: `50aa53b2`, branch `codex/cms-vertical-slice-followup`, initially clean. This review covers the three scan commits end to end, scheduler/proposal repair entry points, and the adjacent contracts/Grill/Abidan changes. It is not a fresh audit of every historical roadmap item or proof of current production behavior. Paths below are relative to `apps/pulse`; line numbers refer to this HEAD, and named declarations remain the authoritative edit anchors.
+
+The product direction remains one Keller / Westlake shortlist, collaborative owner/Jamie planning, weekly-by-default sprints, and separate approval for outbound communication. Capture adds evidence to a property; it must not invent rooms, measurements, property identity, or permission to publish. Wi-Fi is the upload transport in this implementation: there is no network-sensing scanner, router access, or native depth capture here.
+
+No subagents for implementation. Work in reviewable branch changes; inspect the actual open PR before assuming it is still #79. Required checks and review precede merge and the normal main-branch deployment. Do not promote a branch directly to production, apply live migrations, publish interiors, enable auto-send, or buy a reconstruction service as an incidental implementation step. The earlier direct-production workflow is not the release process to repeat.
+
+### 13.2 Work completed in code versus acceptance still owed
+
+| Slice / commit evidence | What is present in the checkout | What this does not establish |
+| --- | --- | --- |
+| Scheduler repairs: `3dfb762b`, `24514c35`, `0afd0d72` | Compatibility repair migration, CI database-startup change, qualified dispatch conflict target | Latest `scheduler-db` outcome, clean migration replay, or a production migration result |
+| Atomic proposals: `60f91bb7`, `60393813` | `sprintPlannerWorkflow.server.ts:37,53` calls `persist_scheduled_sprint_proposal`; `planPropertySprint.server.ts:16` calls `persist_property_sprint_proposal`; forward SQL checks job leases | Concurrent retry/rollback acceptance, every property-revision race, or successful worker execution |
+| Review/completion: `35d173f0`, `6a6b3a0e`, `cf3b2743`, `a303c461` | Revision-checked approval/removal SQL; `complete_sprint_assignment` RPC; assignment state displayed by the sprint UI | Exactly-once real agent work, sourced research, or permission to send an email |
+| Schedule editing: `724139ed` through `dc0ec06f` | Owner schedule-save RPC, shared input validation, dirty-draft preservation, read-error handling and route coverage; `/sprints` now has a server sign-in redirect | Browser/two-owner/DB integration acceptance. The save button still says “Enable planning” for a paused schedule even though the RPC preserves pause; correct that copy |
+| Contract previews: `21c80b1d` | Per-form page, preview API and catalogue links, with a focused route test | Every upstream form PDF loading, current form validity, or execution/signing support |
+| Grill: `cc6f2d83` | Public menu GET returns available items; unavailable-item reads and mutations retain operator checks; route tests added | Current deployed uptime or real menu data availability |
+| Abidan: `60cd8360`, `de0a290e`, `672a4ea8` | Portrait iteration followed by procedural 3D character models; active orbit view uses the character viewer | Scanned geometry, independent artist-authored model assets, or a fresh visual/performance pass on every character |
+| Scan intake: `c0570396` | `/scan-studio`, signed-in create/list/upload APIs, owner-scoped Mongo sessions, two required capture acknowledgements, private-bucket migration, two contract tests | Working first-start camera preview, video recording, LiDAR acquisition, private end-to-end upload, or applied storage migration |
+| Scan review: `da7be00b` | Operator queue, review status/note/actor/time and approve/reject API | Viewing media before approval, narrowly scoped reviewer access, immutable review history, or revision-safe approval |
+| Scan preview: `50aa53b2` | Reconstruction-shaped metadata plus a Three.js room-shell demo and one helper test | Actual reconstruction, a durable worker job, real room counts, a mesh artifact, or listing-ready output |
+
+The last three commits are useful scaffolding, but “approved scan reconstruction” overstates the implemented capability. `buildManifestPreview` uses only the number of uploaded assets; it does not read their content. The nested Mongo `reconstruction` field is persisted metadata, not a scheduler queue. Existing generic rooms must not be presented as that home's layout. Preserve the implementation history, but correct these claims in UI, tests, docs, and the PR description.
+
+Fresh review evidence on September 15:
+
+- `npm run test:unit -- tests/unit/property-scan-contract.test.ts tests/unit/property-scan-reconstruction.test.ts` from `apps/pulse`: **2 files / 3 tests passed**. The initial sandbox attempt failed before test execution because esbuild could not load the configuration; the approved retry outside that restriction exited 0. These tests currently validate consent/schema defaults and the synthetic room-count formula only.
+- Prior-session build/helper successes are historical evidence, not a new full build result. No full build, browser capture, Mongo concurrency test, Supabase migration replay, live PR inspection, or deployment verification was performed for this documentation review.
+- The private bucket migration exists; whether it has been applied is unverified. A private bucket flag alone is not evidence that all existing storage policies deny unrelated users.
+- This planning update changes documentation only. No runtime defect below is claimed fixed by adding it to the plan.
+
+### 13.3 Concrete review findings and repair order
+
+| ID / priority | Existing line or declaration | Observed behavior and required correction |
+| --- | --- | --- |
+| R1 / P1 | `lib/scans/reconstruction.ts:16,24`; `components/scans/PropertyScanPreview.tsx:6,16` | `ceil(assetCount / 3)` becomes a room count and repeated boxes become the home preview. Remove this from real scan completion; retain only a clearly isolated synthetic demo, if useful |
+| R2 / P1 | `lib/core/operator_access.ts`, `roleAllowed`; `propertyScanStore.ts:48`; admin GET/PATCH routes | The general gate permits `realtor`, and the scan queue reads all owners. Add scan-specific reviewer authorization and owner/assignment-scoped queries before exposing interior media. This is not proof of an actual unauthorized read in production |
+| R3 / P1 | `app/scan-studio/page.tsx:63–65,127` | The first camera start assigns `srcObject` before the conditional video element mounts. Bind the stream after mounting; stop late permission responses and abandoned tracks |
+| R4 / P1 | `propertyScanStore.ts:64,84,111,145`; reconstruct route `POST` | Upload resets status but retains review/model metadata; mutations have no expected revision; a ready preview is reused without matching its input. Add revision/hash fencing and invalidate downstream output on material changes |
+| R5 / P1 | `app/admin/property-scans/page.tsx`, `ScanReviewCard` | “Private media manifest” lists filenames/sizes only. Provide authorized image/video inspection and meaningful rescan feedback before approval |
+| R6 / P1 | `app/api/property-scans/[scanId]/assets/route.ts`, `POST` | Up to 24 x 75 MiB pass through one function's form-data/body buffers; validation happens after earlier files may already have uploaded. Failure can leave orphaned files; limits are per request, not per session. Add bounded reservations, direct private upload, validated finalization, and cleanup |
+| R7 / P2 | Admin detail/reconstruct routes; `propertyScanStore.ts:48` | A detail request searches only the latest 100 sessions. Older valid IDs can return 404. Use an authorized indexed lookup and cursor pagination |
+| R8 / P1 | `propertyScanContract.ts:8,13`; `models/PropertyScanSession.ts:13–29` | `listingId` is unverified; intake accepts `publicListingApproval: true`; consent lacks policy version/time. Bind verified property ownership separately and prohibit publication approval through intake |
+| R9 / P2 | `propertyScanContract.ts:3,42`; scan-studio upload input | LiDAR is selectable, but only ordinary image/video files are accepted and no depth API/import exists. Disable this mode with an honest explanation until an actual integration is selected |
+| R10 / P2 | `propertyScanStore.ts:111,184–233`; upload route mock guard | Mock reconstruction skips real approval/asset gates, while mock uploads still call Supabase storage. Use dependency-injected in-memory fixtures with the same transition rules and no live writes |
+| R11 / P2 | Scan API handlers, UI state and session schema | Missing narrow error mapping, recoverable loading/retry states, session restoration, revisioned deletion/retention, asset identities and audit history. `capturedAt` is currently upload time, not verified acquisition time |
+| R12 / P1 for scheduler expansion | `durableScheduler.server.ts:47–79`; registry `WorkflowExecution`; scheduler migrations | Registry supports only email/sprints; jobs require `schedule_id`; claim joins enabled schedules; result IDs are UUIDs. There is no one-off reconstruction contract. Also the terminal-completion SQL checks the token but not lease expiry; close that existing fence gap before relying on it for longer jobs |
+
+Priority is implementation order and release risk, not a claim that a runtime exploit was demonstrated. Fixes require tests at the service/storage boundary, not only disabled buttons.
+
+<a id="next-five-hour-sprint--l4-closeout-and-shared-scheduler-readiness"></a>
+
+### 13.4 Active next five-hour sprint — L4 closeout and shared scheduler readiness
+
+This is the single active timebox. L1–L4 foundations are already local; the work below closes evidence gaps before S5 and prepares the existing scheduler as the reusable foundation for future property jobs and scheduled sprints. Do not promise actual photogrammetry, native LiDAR, public tours, or autonomous delivery in five hours.
+
+| Elapsed | Budget | Exact code action | Exit evidence |
+| --- | ---: | --- | --- |
+| 00:00–00:30 | 30 min | Baseline `git status`, branch/log, `vitest.config.ts`, scheduler migration list, and scan route/store callers. Confirm no new migration or deployment is assumed. | Baseline recorded; missing environment dependencies listed |
+| 00:30–01:30 | 60 min | Add disposable-Mongo or repository-approved database tests for `appendPropertyScanAssets` and `updatePropertyScanReview`: one-winner revision races, duplicate asset IDs, approve/upload race, two-reviewer race, reject-after-ready and consent/manifest invalidation. | Exactly one fenced mutation wins; loser receives a typed conflict; no current approval/artifact survives a manifest change |
+| 01:30–02:15 | 45 min | Audit `serialize`, admin detail, media-preview and reconstruct reads against `approvedManifestRevision`/hash. Add stale-artifact fixtures and deep-link denial tests; keep old synthetic records as labeled history only. | Stale/revoked output is never current; foreign/revoked actors receive no scan detail or signed URL |
+| 02:15–03:00 | 45 min | Run authenticated browser checks for Scan Studio resume, server-enforced review acknowledgement, private media preview, denied access and expired/deep-linked scan URLs. | Browser evidence or exact blocker; screenshots never substitute for database/storage acceptance |
+| 03:00–04:15 | 75 min | Audit `durableScheduler.server.ts`, `workflowRegistry.server.ts`, scheduler SQL and existing sprint/email tests. Document the event-job contract, lease-expiry fence, UUID result requirement and owner/payload validation; do not enqueue scan jobs. | One shared scheduler extension design with migration/test targets; recurrence and email approval behavior preserved |
+| 04:15–05:00 | 45 min | Run the focused scan suite, scheduler regressions, build and `git diff --check`; update both ledgers with exact counts, blockers, changed paths and next packet. | Reproducible evidence; no PR/push/deploy unless separately authorized |
+
+Dependencies: S5 direct/private upload remains after L4 acceptance; S6 implementation starts only from the shared scheduler contract and existing DB acceptance. S7 cannot enqueue reconstruction work until S5 and S6 pass. A blocked integration check does not become a mock acceptance claim. No background automation is created by this plan.
+
+### 13.5 Line-by-line implementation sequence
+
+Steps below specify edit order within each file. New filenames/symbols are proposals: search for an equivalent implementation before creating them. Mark a step complete only after its exit evidence is recorded. A checkbox here is not a new automatic assignment, live schedule, or authority to act on a client's home.
+
+#### S1 — Correct capability claims and quarantine the demo
+
+1. `lib/scans/reconstruction.ts:3–30`, `PropertyScanReconstruction` / `buildManifestPreview`: separate `demo` metadata from real job/artifact types. Stop inferring rooms from file count. A valid real result requires an actual artifact ID, input revision/hash and provenance; no provider configured means unavailable, not `ready` or 100%.
+2. `lib/scans/propertyScanStore.ts:111`, `startPropertyScanReconstruction`: remove synchronous room-shell generation from the real mutation path. Until S7–S8 are accepted, return a typed capability-unavailable outcome without creating a fabricated result. Preserve old records for audit; treat `engine: manifest-preview-v1` as legacy demo data.
+3. `app/api/admin/property-scans/[scanId]/reconstruct/route.ts:8`, `POST`: map unavailable to a clear 503 with a stable error code; do not return 202 unless a durable asynchronous job was accepted. Do not reuse legacy demo records as successful reconstructions.
+4. `components/scans/PropertyScanPreview.tsx:6` and `app/admin/property-scans/[scanId]/preview/page.tsx:17`: stop linking synthetic geometry to property details. If retained, rename the component `PropertyScanDemo` and label it “Synthetic interface demo — not this property”; genuine preview renders an unavailable/pending state until S9.
+5. `app/admin/property-scans/page.tsx`, `ScanReviewCard`, and `lib/navigation/routeCatalog.ts:29,81,91`: distinguish “Capture review”, “Awaiting reconstruction capability” and “Verified artifact available”. Remove inferred-room counts and unconditional “Approved capture” labels.
+6. `propertyScanContract.ts`, `scanModeCopy`, and scan-studio mode controls: advertise uploaded photos/videos only; disable new `lidar_capture` submissions with a useful unsupported-mode response while allowing legacy records to display. Camera preview is not video recording. Keep the Wi-Fi transport explanation.
+7. `tests/unit/property-scan-reconstruction.test.ts`: replace the 40-files-means-12-rooms assertion with tests proving no room count/artifact is fabricated, including zero assets and legacy demo records. Add unavailable-provider route coverage.
+
+Exit: a user cannot mistake synthetic geometry for their home or an unavailable integration for a running worker.
+
+#### S2 — Scope access, inspect private media, and make review meaningful
+
+1. New `lib/scans/scanAccess.server.ts`: declare a typed actor, resolve the signed-in identity, then implement `canReadScan`, `canReviewScan`, and `requireScanReviewer`. Default to owner access plus explicitly granted scan-review assignments; general `realtor` membership alone is not global household access. Keep any administrative override explicit and audited. Use test identities for local fixtures, not a production host-header bypass.
+2. `models/PropertyScanSession.ts:3` and the store: add narrowly scoped reviewer grant IDs and an index supporting actor-scoped queue queries. Only the owner or authorized administrator can grant/revoke; ordinary API callers cannot set these fields. Do not broaden the global operator gate to solve a scan-specific problem.
+3. `propertyScanStore.ts:38,48,56`: replace `listAllPropertyScanSessions()` usage with actor-scoped cursor pagination sorted by `(updatedAt, scanId)`, and an indexed `readScanForActor(scanId, actor)`. Detail lookup must work for the 101st/501st session without reading the whole queue. Make metrics clearly page-local or compute scoped totals separately.
+4. `app/api/admin/property-scans/route.ts:8`, detail `GET:14` and `PATCH:24`, reconstruct `POST:8`: use the scan access service on every request and pass authorized scope into the store. Return 404 for foreign IDs without disclosing existence. Keep API authorization independent from page navigation.
+5. New `app/api/property-scans/[scanId]/assets/[assetId]/preview/route.ts`: await params, authenticate, resolve the asset through its stored session, then issue a short-lived private-media URL for that exact object. Proposed TTL: 60 seconds. Accept asset ID, never an arbitrary bucket path/URL. Recheck grant revocation on every renewal; document that an already-issued URL may remain usable until expiry. Use `Cache-Control: private, no-store`, no public image-optimizer cache, and no signed URLs in logs/analytics.
+6. `app/admin/property-scans/page.tsx`, `ScanReviewCard`: extract a `components/scans/ScanMediaGallery.tsx` client component with image/video controls, MIME/error/loading states, keyboard labels, on-demand URL refresh and visible asset identity. Display owner-entered room labels as unverified. Do not autoplay interiors or preload every video in a large queue.
+7. Replace hardcoded approval/rescan notes with an editable review form and explicit acknowledgement that the displayed manifest revision was inspected. Missing/failed media or unsupported formats prevent approval; a rejection gives concrete recapture guidance. Opening a file is not automatic quality approval.
+8. Split admin page shells into authenticated server entries and serializable client workspaces using the existing page-access pattern. Keep Mongo/storage keys/server modules out of the browser; preserve awaited Next.js dynamic params. Add two-owner, assigned-reviewer, unrelated-realtor, signed-out, revoked-grant, expired-URL and deep-link tests.
+
+Exit: reviewers can inspect the actual capture under a deliberate permission boundary; no unrelated user receives a private-media URL or scan details.
+
+#### S3 — Repair capture lifecycle and collaborative session recovery
+
+1. `app/scan-studio/page.tsx:17`: move interactive state into a proposed `ScanStudioWorkspace.tsx`; use a server page sign-in gate and plain DTO props. Reuse application auth conventions rather than assuming route-catalog metadata enforces access.
+2. At the current `videoRef`/`startCamera:58` implementation, mount the video element before attaching a stream using an effect or callback ref. Keep `getUserMedia` user-initiated, audio disabled, and the environment-facing camera as a preference. Handle unsupported/insecure contexts and rejected permission without disabling ordinary file upload.
+3. Track an in-flight request generation and a mounted/cancelled flag. Repeated clicks cannot allocate parallel streams; late resolution after stop/unmount stops every returned track. Separate cleanup from UI state mutation. Stop preview on navigation/end-session and provide a deliberate restart after backgrounding.
+4. Load owner sessions through the existing GET API with pagination and an explicit resume control. New `app/api/property-scans/[scanId]/route.ts`, owner GET, returns one authorized DTO. Lock the active session's address/mode display to persisted values; editing the next session's setup must not change the active capture's instructions.
+5. In `uploadCaptures`, separate creating/uploading/camera states, block duplicate submissions, reset the file input after a handled selection, preserve failed selections and text notes, expose retry/cancel and per-file outcomes, and abort stale requests. Until S5, do not label a buffered request as resumable or show fabricated byte progress.
+6. Add owner room labels and recapture questions without inventing geometry; retain author identity/time and separate those notes from approved facts. Link to the existing Keller / Westlake property record only after authorized identity resolution. Do not synthesize a Jamie response without a saved worker result.
+7. Add component tests with fake media streams plus browser acceptance for first start, stop, double start, late permission, denial, resume, failed upload and unsupported format. In-browser recording, device depth capture and HEIC conversion remain separate capabilities, not implied by `capture="environment"`.
+
+Exit: capture controls behave predictably and the owner can resume work without losing context or leaving a camera active.
+
+#### S4 — Version consent, manifests, review, and downstream output
+
+Current checkpoint: the consent receipt, manifest hash/revision fence, review acknowledgement, owner-scoped listing resolver, asset dedupe and invalidation foundation are implemented locally. The remaining S4 work is evidence and integration: real concurrent database behavior, deep-link/browser denial, and proving stale output cannot be serialized as current.
+
+1. `propertyScanContract.ts:6,19`: split client intake from server session/asset DTOs. Require positive asset size; assign server asset IDs; keep `uploadedAt` distinct from optional untrusted device `capturedAt`. Add `expectedRevision` to mutations. Reject intake publication approval; store `publicListingApproval: false` server-side for compatibility.
+2. Resolve `listingId`/shortlist ID against an owner-authorized property service before linking. An address string does not prove listing ownership; ambiguous or unknown references remain unlinked with an actionable question. Do not equate a public MLS identifier with a private shortlist UUID.
+3. `models/PropertyScanSession.ts:3–36`: add session schema version, integer revision, manifest hash, versioned consent receipt (actor, policy version, server time), approved manifest revision/hash, review events, and artifact/job references. Replace `Model<any>`/broad serializers with shared typed DTOs. Existing metadata cannot be backfilled as previously verified consent or media quality.
+4. `appendPropertyScanAssets:64`: atomically compare owner/revision, enforce cumulative quota and append finalized unique asset IDs. Increment revision, recompute the canonical manifest hash, reset current approval, and make earlier artifacts stale. Apply equivalent invalidation on removal, relevant identity/consent changes and consent withdrawal. Preserve audit references, not a misleading current-ready pointer.
+5. `updatePropertyScanReview:84`: compare expected revision and hash in the same database write as the review event/status update; require valid consent and a nonempty verified manifest for approval. Return typed conflict/not-found/invalid-state outcomes. Use a single-document atomic event append or an explicitly tested transaction, not a status write followed by an optional audit insert.
+6. `serialize:145` and all preview/reconstruct reads: expose current approval/artifact only when input revision/hash, consent and access still match. An old artifact may appear only in authorized history as stale/revoked, never as the current approved home.
+7. Introduce fixture/storage dependencies shared by mock and real services. Mock mode cannot call real Supabase, accept forbidden transitions or be enabled for production interior data. Add a controlled, idempotent legacy-data upgrade that marks prior demo outputs as synthetic and requires renewed review; do not silently delete records.
+8. Add concurrent approve/upload, duplicate finalize, two-reviewer conflict, reject-after-ready, consent-withdrawal and stale-artifact tests. Verify exactly one revision wins and no current publication survives invalidation.
+
+Exit: every downstream artifact can identify the exact consented and reviewed input it used.
+
+#### S5 — Make uploads bounded, private, resumable, and recoverable
+
+1. Before replacing the old upload route, validate all selected file metadata before any write; reject zero-length files; cap total request/session size; use typed failures and tracked cleanup for partial writes. Keep this transitional path restricted until deployment-body limits and cleanup are verified. A 75 MiB storage allowance is not evidence that the app request can carry it.
+2. New `lib/scans/scanUpload.server.ts`: define reserve/finalize/abort/reconcile operations in that order. Reserve server-generated owner/scan/asset paths with idempotency keys, expected revision and expiry; count outstanding reservations toward quota so parallel uploads cannot bypass limits. Start with the existing 24-file/75 MiB-per-file ceilings as upper bounds; set an explicit lower pilot byte quota and concurrency limit before rollout.
+3. New `app/api/property-scans/[scanId]/uploads/route.ts`: authenticate, authorize the session and validate declared size/type; issue a narrowly scoped signed private-storage upload capability. Use the installed storage SDK's documented direct/resumable mechanism after checking its supported contract. Large media bytes must not pass through the Next.js JSON/form handler. Keep service-role credentials server-only.
+4. New `app/api/property-scans/[scanId]/uploads/[uploadId]/complete/route.ts`: resolve the reservation, inspect the exact stored object, verify byte count, supported content signature/decodability and checksum, and only then attach it through S4's conditional mutation. Client MIME/filename/size alone is insufficient. Quarantine objects until validated; do not issue gallery URLs for pending files.
+5. Handle a lost finalize response idempotently. If a concurrent session revision changed, reconcile or reject explicitly without duplicating the asset. Abort/remove only objects belonging to that reservation. Add bounded retry and expiry reconciliation for upload-success/manifest-failure, abandoned reservations, invalid media and deletion failures.
+6. Add a forward storage-policy migration after the latest migration at implementation time. Audit inherited `storage.objects` policies and all bucket permissions; verify unrelated authenticated users/anonymous callers cannot list/read/write by guessed prefixes. Do not rewrite the existing private-bucket migration or apply live policy changes during local implementation.
+7. Wire direct-upload progress, offline/expired-token recovery and limited concurrency into `ScanStudioWorkspace`. If a format cannot be processed, reject with a clear alternative; do not claim native LiDAR/HEIC support by merely adding MIME strings.
+8. Test empty/oversized/spoofed files, mixed valid-invalid batches, repeated upload IDs, parallel quota exhaustion, interrupted uploads, replayed finalization and orphan cleanup with a disposable storage environment. Check real deployment request limits before claiming large-file support.
+
+Exit: private media has bounded cost, verified identity/content and a recovery path for each partial failure.
+
+#### S6 — Extend the shared scheduler for one-off jobs without breaking recurrence
+
+1. Start from `20260912040000_durable_workflow_scheduler.sql:23`, `20260914070000_scheduler_registry_retry_pause.sql:6`, `durableScheduler.server.ts:47`, and `workflowRegistry.server.ts:4,13`. Re-run existing DB acceptance first. The current required schedule foreign key and enabled-schedule inner join must be deliberately extended; inserting a fake repeating scan schedule is not the solution.
+2. Add a forward migration with `trigger_kind` (`scheduled` / `event`), validated payload/version, a stable event idempotency key and nullable `schedule_id` for event jobs only. Backfill existing jobs as scheduled; preserve their unique occurrence constraint. Add checks for the two legal shapes and uniqueness on `(user_id, workflow_key, event_key)` for event jobs.
+3. Add a service-only `enqueue_workflow_event` RPC that checks workflow/payload version and returns the existing matching job on replay. Reject reuse of an event key for a different payload. No browser-controlled owner, storage path or workflow name may reach it unchecked.
+4. Update claim SQL to retain the enabled/matching-owner schedule gate for scheduled jobs while admitting due, explicitly authorized event jobs. Preserve ordered `SKIP LOCKED` claims, bounded retries, cancellation and lease recovery. Review every existing job/schedule join and owner control API, not only the claim function.
+5. Strengthen completion/failure/deferral RPCs to reject expired as well as mismatched lease tokens. Add a fenced deferred/waiting outcome for asynchronous provider work; waiting for a normal provider poll must not exhaust the failed-attempt budget. Cancellation and terminal states must not be revived by a late poll or callback.
+6. `workflowRegistry.server.ts`: add typed payloads and `property_scan_reconstruction` registration only after the worker contract exists. Extend execution results as a discriminated union for terminal versus deferred work. Use a UUID reconstruction artifact/result row because `workflow_results.result_id` and completion RPC take UUIDs; existing `scan_...` / `recon_...` strings are not valid result IDs.
+7. `durableScheduler.server.ts:62–79`: branch on that union. Complete only terminal results; defer provider-pending work through the fenced RPC. Bound network calls and per-tick wall time; never run GPU reconstruction or sleep for a model build in a request handler. Preserve existing email/sprint handler behavior.
+8. Extend `supabase/tests/database/scheduler.sql` (or a focused companion suite) with real concurrent scheduled/event claims, owner isolation, duplicate event enqueue, pause behavior, expired-token completion, cancel/poll races and atomic result receipts. Replay migrations cleanly and against legacy fixtures. Do not create another cron, queue implementation or special scan-only scheduler.
+
+Exit: recurrence remains intact and one-off asynchronous work shares tested ownership, idempotency, retries and result fencing.
+
+#### S7 — Bridge reviewed Mongo captures to durable jobs safely
+
+1. New `lib/scans/scanJobs.server.ts`: define a reconstruction request from owner ID, scan ID, approved revision/hash and processor version. Derive one deterministic operation key; never use current timestamp or an arbitrary new UUID as the replay key. New processing versions or revised manifests are separate explicit operations.
+2. In the Mongo session's atomic approval/request mutation, persist a bounded enqueue-intent/outbox record with that operation key and frozen input metadata. A Postgres job write and a Mongo status update cannot be one ordinary SQL transaction. Do not claim cross-database atomicity.
+3. Add a reconciliation service to the existing scheduler tick: read pending intents in bounded batches, recheck consent/approval, call the idempotent event RPC, then mark the intent acknowledged. A crash between enqueue and acknowledgement must recover the same job. The worker rechecks the source before submission, because an upload may invalidate an intent while it is being relayed.
+4. Persist PostgreSQL reconstruction operation/result rows with UUID IDs, owner, manifest hash/revision, processor/version, provider operation ID, status and artifact reference. Keep source storage paths server-side. Use conditional updates so stale jobs cannot replace a newer session's current artifact.
+5. Replace `startPropertyScanReconstruction` and its route with this request service. Return 202 with a stable job/status URL only for persisted accepted intent; return 200/reused for the same current completed operation. Unconfigured processors remain 503, stale approvals 409.
+6. Add owner-scoped status read/cancel routes and reviewer equivalents through S2. Expose queued/submitted/processing/awaiting-review/failed/cancelled/stale separately; never fake percentage progress. Include retry guidance and a safe error code without leaking provider secrets.
+7. Link scan state into `lib/property-sprints/buildPropertyBacklog.ts` through an owner-scoped projection: missing consent/capture/review becomes proposed work, not an automatic scan. Dedupe by property, scan revision and task kind. A scheduled sprint may ask for missing rooms or review; approving it does not grant camera access, spend provider money, publish or email.
+8. Test Mongo-write/Postgres-outage, job-created/ack-lost, approval invalidated during relay, stale result projection and duplicate clicks. A durable intent is “queued for processing”, not proof a worker ran.
+
+Exit: one approved input produces one traceable operation despite retries and cross-store failures.
+
+#### S8 — Implement a real reconstruction adapter behind an evidence gate
+
+1. New `lib/scans/reconstructionProvider.server.ts`: define capabilities and `submit`, `status`, `cancel`, `collectArtifact` interfaces; include supported inputs, external processing disclosure, retention, region, maximum cost and version. Provide a deterministic fake for tests and an unavailable implementation by default, never a geometry generator masquerading as success.
+2. Before choosing a paid processor/native LiDAR route, run a documented local or authorized provider evaluation on non-sensitive, consented sample data. Record geometry/texture output, missing surfaces, scale limitations, processing time, estimated cost, licensing and deletion behavior. Ask the owner only for choices that actually change external processing/spend; do not upload client interiors as a benchmark.
+3. New `lib/autonomous-workflows/propertyScanWorkflow.server.ts`: load the immutable approved manifest, validate current permission and provider capability, reuse the operation key on submit, and persist the provider receipt. A provider with no idempotent submit or operation lookup requires an “uncertain submission” reconciliation path, not blind billable retries.
+4. Poll through S6's deferred outcome or implement a provider-specific authenticated callback if supported. For callbacks, verify signatures over the raw body, timestamp/replay window, provider operation ownership, event ordering and terminal-state rules. Never fetch an arbitrary callback-supplied URL; restrict artifact retrieval to trusted provider hosts/objects with size/time limits.
+5. Validate the returned real mesh/texture bundle, provenance and input hash before storing it privately. Reject empty, corrupt, incomplete or unsupported output with an actionable result. A “ready” HTTP response from a vendor is not by itself a valid home artifact.
+6. Keep reconstruction completion distinct from listing approval. Report unobserved areas and unknown scale explicitly; do not infer bedrooms, legal area, structural condition or dimensions from file count or hallucinated surfaces. Imported native scans require their own provenance and format validation.
+7. Test restart after submit, provider timeout/uncertain receipt, duplicate/out-of-order callback, revoked consent, cancelled job and corrupted artifact. Record real sample evidence separately from passing fake-provider tests.
+
+Exit: a supported input yields a real private artifact whose provenance and limitations can be inspected; unsupported cases remain visibly blocked.
+
+#### S9 — Display real artifacts and require separate publication approval
+
+1. Replace the production use of `PropertyScanPreview` with a typed artifact viewer taking an authorized artifact ID, format and provenance, not `roomCount`. Load the chosen supported format (initial candidate: GLB) only after adapter validation; bound asset/texture size and deny uncontrolled external asset URLs.
+2. Fit orbit controls to the actual model bounds, support reset/pan/zoom, show loading/error/WebGL fallback, and dispose geometry/textures when changing artifacts. Keep camera/UI code client-side and dynamically load the heavy viewer. Test mobile memory/performance; decorative Abidan geometry is not reusable property geometry.
+3. Admin and owner preview pages show capture date versus upload time, input revision, processor/version, review status and scale/coverage limitations. Hide stale/revoked artifacts from the current preview path. Do not show “approved” for a rejected capture just because a nested record exists.
+4. Add a separate owner publication action tied to exact artifact ID/hash, listing identity, intended audience and consent version, with its own review receipt. Neither intake's legacy boolean, agent capture approval, reconstruction completion nor sprint approval authorizes publication. Keep the private raw files private even when an explicitly approved derivative is shared.
+5. Integrate the approved derivative into the existing listing/tour surface only after its owner mapping is verified. Require authorization on artifact access; a guessed scan ID cannot become a public tour URL. Implement unpublish/consent-withdrawal so new access ceases and document signed-link/cache expiry limits honestly.
+6. Add owner deletion and retention controls covering raw uploads, derivatives, reservations, provider copies and cross-store records. Use audited, retryable tombstones until cleanup finishes; preserve minimal required audit evidence without retaining interior imagery indefinitely. Select the actual retention period before rollout, not an unstated default.
+7. E2E: upload → inspect → approve capture → enqueue → actual/fake-labeled processor → private artifact review → separate publish → unpublish; include a second user, stale manifest, denied publication and inaccessible raw assets. Fake output must be visibly labelled and never published as real property evidence.
+
+Exit: the owner can inspect an actual model and deliberately control whether a specific derivative appears on a listing.
+
+#### S10 — Verification, ledger, and PR handoff
+
+1. Add focused tests in the existing unit-test directory for scan access, route errors, revision transitions, upload orchestration, job idempotency and model provenance. Malformed JSON is a client error (400), unauthorized/foreign IDs are denied, stale revisions return 409, unsupported capability returns 503, and unexpected faults are sanitized. Error responses must not be cached with private data.
+2. Add component tests for camera lifecycle and gallery/review states, integration tests for actual Mongo conditional writes and disposable storage policies, and database acceptance for scheduler changes. Use synthetic fixtures and deliberate fault injection, not the owner's real home or contacts.
+3. During implementation run relevant focused suites after each slice. Before requesting merge, run the available `npm run test:unit`, `npm run lint`, `npm run build`, `npm run test:db` and relevant Playwright tests from `apps/pulse`. Record exact exits/counts, environment limitations and skipped checks. This docs-only review ran only the two scan helper suites listed above.
+4. Keep contract preview, public-menu, sprint-route and existing scheduler tests as regressions when touching shared auth/registry code. Do not declare all unrelated workflows fixed just because scan tests pass. Resolve the paused-schedule save-label mismatch without changing its saved enable state.
+5. Review the complete diff and actual PR base/target. Update the PR description with shipped versus unavailable scan capabilities, privacy/state migration notes, screenshots from meaningful authenticated flows, verification evidence and explicit carryover. Do not reuse a loading-screen screenshot as end-to-end evidence.
+6. Update sections 13.2 and 13.6 plus the Keller / Westlake plan after each implemented slice, with commit, acceptance command, outcome and next step. A checkbox can say “code present; acceptance pending”; it cannot turn an unrun integration test into a pass.
+7. PR checks → review → merge → normal main deployment. Verify the resulting deployment and migration state when that work is authorized. No direct production promotion, live-data cleanup, private-media publishing or auto-send in a coding handoff.
+
+### 13.6 Remaining roadmap and completion ledger
+
+| Package | Current status at this review | Next evidence required |
+| --- | --- | --- |
+| S1 truthful capability boundary | Implemented locally; focused tests/build pass | Review the diff, then merge/CI evidence; no synthetic home result or unsupported new LiDAR claim |
+| S2 scoped media review | Implemented locally; unit/route tests and build pass | Disposable Mongo/storage policy and authenticated browser evidence; reviewer-grant management |
+| S3 reliable capture/recovery | Implemented locally; focused lifecycle tests/build pass | Authenticated browser/mobile evidence, denied/late permission and failed-upload recovery evidence |
+| S4 versioned state | L4 foundation, review acknowledgement, owner-scoped listing resolver, mock-parity race tests, and a focused browser-boundary spec implemented locally; focused tests/build pass | Disposable Mongo concurrency tests, successful clean-server browser/deep-link evidence, and stale-artifact acceptance |
+| S5 private upload pipeline | Buffered route plus local route tests for revision fencing, empty/unsupported/oversized files, MIME/signature mismatch rejection, full-batch prevalidation, safe owner-scoped paths, manifest append and partial-upload cleanup | Full media decoding/provenance, storage policy/isolation, limits under real storage, retry and orphan cleanup acceptance; current post-change production build stalled before compiler output |
+| S6 one-off shared scheduler | Scheduled email/sprint foundation only; local `npm run test:db` reached Supabase but failed before SQL with `LegacyDbConnectError` because local Postgres is unavailable | Start the repository-approved disposable Postgres stack, replay migrations, then pass existing and new concurrent DB acceptance |
+| S7 cross-store job bridge | Not implemented | Replay-safe intent/job/result reconciliation |
+| S8 actual reconstruction | Not implemented; no selected processor | Consented sample artifact and provider failure evidence |
+| S9 artifact review/publication | Synthetic preview only | Real private model, separate publication and revocation |
+| S10 handoff | L1–L4 implementation and focused verification recorded below; L4 is not merge-accepted | Slice-specific integration/browser/CI evidence |
+
+Existing Packages A–E are not replaced. Preserve their concurrency, owner isolation, email approval and delivery-reconciliation gates; showing reminders and additional backlog sources follow those gates. Scan scheduling must reuse that foundation, not compete with it. The four Keller / Westlake properties remain planning records, not permission to photograph interiors or model someone else's home. The Old Town land lot is not an indoor-room scan task; unresolved identities remain questions for the owner/Jamie.
+
+Research/product measures for a later pilot: successful consent-to-upload completion, recoverable failures, review time, accepted real-artifact rate, processing cost, permission withdrawals, and consultations/showings attributable to an approved listing. Keep fees, subscriptions or paid scans out of the build until the actual unit economics and delivery quality are measured. These measures do not authorize billing or marketing messages.
+
+Next implementation action: finish L4/S4 acceptance with disposable Mongo concurrency tests, successful clean-server browser/deep-link evidence and stale-artifact checks. The browser spec now exists at `tests/property-scan-boundaries.spec.ts`; its first run used a stale server with a missing vendor chunk, while the clean CI-isolated run stalled before assertions during the slow production-server startup. The DB acceptance attempt is also environment-blocked (`npm run test:db` exit 1, `LegacyDbConnectError` before SQL); `supabase status` confirms Docker Desktop's Linux engine is unavailable. Resume DB acceptance only after the repository-approved local Postgres stack is available. Then complete S5 upload acceptance, S6 scheduler extension and S7 job bridge. S8/S9 remain gated on a real processor and explicit publication policy. Do not spend the next sprint polishing the room-shell demo.
+
+Progress accounting (directional, not story points): local implementation coverage is approximately 40–45% of the ten-packet roadmap (L1–L3 local, L4 foundation/fixtures partial, S10 ledger work), leaving approximately 55–60% of implementation scope. Production-ready acceptance is approximately 20–25% evidenced because Mongo/storage, authenticated browser, CI, migration and deployment checks remain open; approximately 75–80% of acceptance remains. This distinction prevents focused mock tests from being reported as runtime or release completion.
+
+### 13.7 Luna implementation handoff
+
+This is the operational entry point for Luna. Section 13.5 is the implementation specification; this handoff breaks it into smaller, dependency-ordered packets. Do not rewrite the roadmap before coding, redo completed scheduler repairs, or interpret all ten slices as one turn's assignment. Once implementation is requested, finish the next coherent packet and proceed while the request's scope and time budget permit. “Next actionables” means resume from the checkpoint below, not pick an unrelated feature.
+
+#### Read and establish the baseline first
+
+1. From repository root, inspect `git status --short`, `git branch --show-current`, and `git log -5 --oneline`. The reviewed source is `50aa53b2`; if HEAD differs, inspect the intervening changes before assuming a finding still applies. Preserve the existing edits in this document and `KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md`.
+2. Read applicable repository instructions, sections 13.1–13.4, and the current packet's S-section in full. Read each target file and its direct callers/tests before editing. Use `rg` to relocate declarations; do not patch an old line number blindly. Read any applicable skill before using its implementation workflow.
+3. Run the existing two scan helper suites once as a baseline. They previously passed three tests, including a test of the behavior being removed; their passing does not establish correct reconstruction. Inspect existing route-test mocks in `tests/unit/menu-route.test.ts` and `vitest.config.ts`; reuse the harness, not a new test framework.
+4. Record the active packet and its failing/missing acceptance cases before the first code change. New failing tests should demonstrate the intended regression; do not change production behavior just to preserve the old room-count expectation.
+
+#### Decisions already made — implement these without reopening them
+
+- Initial capability is private photo/video intake and review. Wi-Fi transports media; it does not scan the home. Native LiDAR, in-browser recording and real reconstruction are unavailable until implemented and tested.
+- For L1, remove the synthetic room viewer from property-facing routes. Do not spend time creating a new demo page. Preserve legacy stored records and classify them as synthetic; do not migrate/delete live data. The old component may remain unused until all references are checked.
+- No processor configured means a typed unavailable result and a 503 API response, not a fake completed result or a queued job. Authentication/authorization occurs before returning scan details or mutating anything.
+- Reuse existing API response helpers, auth identity sources, schema library, storage client and test harness. No new dependencies or framework upgrade are needed for L1–L4.
+- Review access is owner-scoped plus explicit scan-review grants. General `realtor` membership is not sufficient to see every household. While grant management is incomplete, deny non-owner access; never temporarily fall back to the global queue. An owner must also satisfy the review-role policy to approve; ownership alone permits intake/read, not an automatic agent-review bypass.
+- Signed URLs are short-lived capabilities for a resolved stored asset, never client-supplied paths. Gallery/approval must remain disabled until asset identity and access checks are in place.
+- New mutation contracts use expected revision. Older synthetic results are never current real artifacts. Re-upload/rejection/consent withdrawal invalidates downstream approval and output.
+- Keep the single Keller / Westlake area, existing shared scheduler and review-first email policy. No second scheduler, silent auto-send, fabricated Jamie answers, or invented property facts.
+
+#### Packet map and dependency order
+
+| Packet | Specification / exact scope | Required completion evidence | Next packet |
+| --- | --- | --- | --- |
+| L1 | S1: unavailable reconstruction, legacy-demo handling, truthful UI/modes | Tests prove no generated/reused synthetic home result; route/UI claims agree | L2 |
+| L2 | S2 plus the minimum S4 prerequisites: typed actor, stable asset IDs, scoped lookup, reviewer grants and revision fields | Foreign owner/unassigned realtor denied; old ID outside queue page resolves for authorized actor; legacy assets cannot bypass IDs | L3 |
+| L3 | S3: first camera start, cleanup, saved-session identity, recoverable requests | Fake-stream lifecycle/component tests; no lingering stream or lost active-session identity | L4 |
+| L4 | Remaining S4 and S2 gallery/review: conditional writes, invalidation, actual media inspection | Approve/upload race and stale artifact rejected; review cannot approve inaccessible media | L5 |
+| L5 | S5: reservation → direct private upload → verified finalize → cleanup | Quota, storage isolation, replay and orphan recovery integration tests | L6 |
+| L6 | S6: event jobs and live-lease fencing in the shared scheduler | Existing scheduler behavior preserved plus new concurrent DB acceptance | L7 |
+| L7 | S7: Mongo intent → idempotent Postgres enqueue → result projection | Crash/retry recovery produces one operation, stale output cannot become current | L8 |
+| L8 | S8: fake/unavailable adapter first, then explicitly selected real processor | Fake-provider contract tests; separately recorded authorized real-artifact evidence | L9 |
+| L9 | S9: real artifact viewer, exact-artifact publication approval and revocation | Private-to-published flow and denial/revocation evidence | Handoff |
+
+S10 verification/ledger work applies to every packet, not only the end. L2 deliberately pulled stable asset IDs and revision fields forward from S4 because S2's media route depends on them. L4 now has a local foundation; the active timebox closes its database/browser evidence gaps and audits the shared scheduler contract without enqueuing scan work. This dependency clarification overrides any reading of the five-hour table that would expose media before the required identifiers/access rules exist. The five-hour budget is a timebox for L4 acceptance plus scheduler readiness and verification, not a guarantee that production integration will be completed.
+
+#### First implementation packet — L1, edit in this order
+
+1. **Read/search:** inspect `lib/scans/reconstruction.ts`, `lib/scans/propertyScanStore.ts`, `lib/scans/propertyScanContract.ts`, both admin scan pages, the reconstruct route, route catalogue and both scan tests. Find every `buildManifestPreview`, `PropertyScanReconstruction`, `roomCount` and `manifest-preview-v1` reference before changing exports.
+2. **Tests first:** replace the misleading expectation in `tests/unit/property-scan-reconstruction.test.ts` with explicit legacy-demo/unavailable behavior. Add `tests/unit/property-scan-reconstruct-route.test.ts` using existing `vi.hoisted`/module-mock conventions. Exercise denied auth, unapproved capture, empty capture, unavailable processor and an existing legacy “ready” record. Assert no reconstruction write/provider call occurs for unavailable processing.
+3. **Pure contract:** in `lib/scans/reconstruction.ts`, retain a clearly named legacy metadata shape needed to read old records; add a typed unavailable capability/result and a legacy-demo predicate. Remove the real-path room-count builder. Do not invent a general plugin system or implement the future job lifecycle in this packet.
+4. **Store:** in `propertyScanStore.ts`, remove the builder import and replace synchronous reconstruction writes with the unavailable service outcome. Make mock and real paths agree. Keep legacy metadata readable but not eligible for current real-preview success; update DTO consumers together so the build remains type-safe. Never fix the type errors with broader `any` or casts that hide the missing state.
+5. **Route:** in `app/api/admin/property-scans/[scanId]/reconstruct/route.ts`, preserve the existing access/input gates for now, remove ready-demo reuse and fabricated 202 responses, and map unavailable to the existing error envelope with a stable machine-readable code. Follow S2 in L2 to replace the broad operator lookup; do not claim L1 repairs review authorization.
+6. **UI:** in `app/admin/property-scans/page.tsx` and `[scanId]/preview/page.tsx`, remove synthetic-room rendering/links and show “Reconstruction unavailable” or “Legacy synthetic demo — not a model of this property” as appropriate. Do not display inferred rooms or an unconditional approval badge. Keep intake/review navigation usable.
+7. **Modes/copy:** update `propertyScanContract.ts`, `app/scan-studio/page.tsx` and `lib/navigation/routeCatalog.ts` to match actual supported capture behavior. Reject new LiDAR requests while keeping legacy LiDAR records readable. Update `property-scan-contract.test.ts`, which currently treats LiDAR as a supported new request. Do not break deserialization by simply deleting the enum value everywhere.
+8. **Verify:** run the three focused files below, inspect the diff, then run build/type validation appropriate to the changed DTO consumers. Search again for builder calls and real-property `roomCount` claims. Remaining legacy references must be deliberate compatibility code, not a live route. Record exact results; do not delete failing tests to obtain green output.
+9. **Checkpoint:** mark L1 code/acceptance status, list untouched risks (particularly L2 access and L5 upload safety), and record L2 as next. A 503 instead of invented output is the intended correct interim behavior, not a reason to restore the demo.
+
+Focused commands from `apps/pulse` (the third test file is created during L1):
+
+```powershell
+npm run test:unit -- tests/unit/property-scan-contract.test.ts tests/unit/property-scan-reconstruction.test.ts
+npm run test:unit -- tests/unit/property-scan-contract.test.ts tests/unit/property-scan-reconstruction.test.ts tests/unit/property-scan-reconstruct-route.test.ts
+npm run build
+git diff --check
+```
+
+Do not run the nonexistent new test as a supposed baseline. If sandbox permissions prevent test startup, use the normal approval mechanism for that exact command; do not modify the toolchain or report an unexecuted suite as passing. A docs-only handoff does not require rerunning a production build.
+
+#### Scope controls and when to ask Taz
+
+- Fix directly required callers/tests in the same packet. If an edit unexpectedly spreads into unrelated features, stop expanding and identify the narrower adapter/boundary. Do not clean up Grill, Abidan, contracts or old sprint code as incidental refactoring.
+- A blocked integration test does not stop independent local correctness work. Continue with safe fixtures and clearly record missing acceptance; do not enable rollout on fixture evidence alone. Do not endlessly poll CI or replace database tests with mocks.
+- Ask before a paid provider, third-party transfer of interiors, new cross-owner access policy, production change, destructive data action, or a material departure from the plan. Name the precise choice and why it blocks that slice. Routine naming, component extraction and test fixtures do not need another user decision.
+- Git commit/push/PR mutations require the applicable user request; this handoff does not itself request them. If authorized, use a focused commit and inspect the active PR before updating it. Never rewrite history, merge or deploy merely because local tests passed.
+- At the five-hour boundary, summarize actual results and carryover. Do not mark a partially tested packet complete or start a second sprint silently. No subagents and no unattended background automation.
+
+#### Required checkpoint after each packet
+
+Maintain this table in place; do not append a competing “current plan” elsewhere. Update section 13.6 only when the associated S-requirements actually pass. Record `not committed` instead of inventing a commit ID.
+
+| Field | Current handoff value |
+| --- | --- |
+| Reviewed baseline | `50aa53b2`; recheck HEAD before coding |
+| Last accepted Luna packet | L4 foundation plus mock-parity race coverage implemented locally; packet acceptance is focused-test/build evidence, not merge acceptance |
+| Active / next packet | Finish L4/S4: disposable Mongo concurrency, browser/deep-link evidence and stale-artifact checks |
+| Code changes from this handoff | L1 boundary; L2 actor policy, reviewer IDs, stable asset IDs, actor-scoped lookup, private signed-URL route/gallery; L3 saved-session recovery, camera attach/cleanup, upload retry state; L4 consent receipt, revision/hash checks, review events, asset dedupe/downstream invalidation, explicit server-enforced review acknowledgement, owner-scoped listing resolver, immutable mock DTO snapshots and race tests; S5 buffered upload validation, signature checks, full-batch prevalidation, cleanup and route tests; Scan Studio prefetch boundary and browser spec |
+| Evidence carried forward | Focused L4 suite: 9 files / 23 tests passed; S5 contract/upload suites: 2 files / 11 tests passed; earlier pre-change `npm run build` exited 0 with the existing non-fatal Kepler dynamic-usage warning; current post-cleanup build stalled before compiler output and was stopped; `git diff --check` previously passed with line-ending normalization warnings only; elevated `npm run test:db` reached Supabase but exited 1 with `LegacyDbConnectError` before SQL because local Postgres is unavailable; `supabase status` reports Docker Desktop's Linux engine is unavailable; browser spec added but clean-server assertions remain unverified |
+| Remaining blockers | L4 full acceptance: disposable Mongo concurrency, clean-server browser/deep-link assertions and stale-artifact browser evidence; scheduler DB acceptance blocked until local Postgres is running; S5 full media decoding/provenance, storage-policy integration, real limits, retry/orphan reconciliation and post-change build evidence; authenticated browser/mobile acceptance; denied/late permission and failed-upload/unmount coverage; reviewer grant management; actual processor unselected; no PR/CI/migration/deployment evidence in this turn |
+| Changed paths / commit | Runtime, tests and plan docs changed locally; not committed |
+| Exact next action | Re-run `tests/property-scan-boundaries.spec.ts` from a stable clean-server/CI environment until both assertions execute; in parallel, start the repository-approved disposable Postgres stack for scheduler acceptance if available, then revisit Mongo integration with an approved disposable harness |
+
+For an implementation checkpoint, replace these values with: packet ID; changed paths; behavior delivered; commands and exit/counts; skipped checks with reason; remaining risks; commit if any; and the exact next packet/step. Keep the user-facing summary short and link here for details.
+
+#### Ready-to-use instruction for Luna
+
+> Implement the Luna handoff in section 13.7 of `apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md`. Recheck the branch and preserve existing changes. Start at the checkpoint's current active packet; currently that means finishing L4/S4 acceptance and the shared scheduler readiness audit. Follow its edit order and acceptance cases, using section 13.5 as the detailed specification. Do not spawn subagents, manufacture home geometry, create a competing scheduler, or change production. Complete and verify a coherent packet, update the checkpoint with exact evidence, and continue only to the next dependency-ready packet within the requested work budget. Ask only when new authority or a material product decision is needed. No provider spending, private-media transfer, publishing, auto-send, commit/push or deployment is authorized merely by this document.

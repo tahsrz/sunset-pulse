@@ -1,23 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { buildManifestPreview } from '@/lib/scans/reconstruction';
+import { isLegacyPropertyScanDemo, reconstructionUnavailable } from '@/lib/scans/reconstruction';
 
 describe('property scan reconstruction preview', () => {
-  it('turns approved capture coverage into bounded room-shell geometry metadata', () => {
-    const preview = buildManifestPreview({
-      jobId: 'recon_test',
-      startedAt: '2026-09-15T12:00:00.000Z',
-      assets: Array.from({ length: 40 }, (_, index) => ({
-        path: `owner/scan/capture-${index}.jpg`,
-        fileName: `capture-${index}.jpg`,
-        mimeType: 'image/jpeg',
-        size: 100,
-        capturedAt: '2026-09-15T12:00:00.000Z',
-      })),
+  it('does not infer rooms or mark a capture ready without a processor', () => {
+    expect(reconstructionUnavailable).toEqual({
+      outcome: 'unavailable',
+      code: 'PROCESSOR_UNAVAILABLE',
+      message: expect.any(String),
     });
-    expect(preview.status).toBe('ready');
-    expect(preview.previewKind).toBe('procedural-room-shell');
-    expect(preview.roomCount).toBe(12);
-    expect(preview.assetCount).toBe(40);
+  });
+
+  it('identifies legacy synthetic metadata without treating it as a real model', () => {
+    expect(isLegacyPropertyScanDemo({
+      jobId: 'legacy_demo',
+      status: 'ready',
+      progress: 100,
+      engine: 'manifest-preview-v1',
+      previewKind: 'procedural-room-shell',
+      roomCount: 12,
+      assetCount: 40,
+      startedAt: '2026-09-15T12:00:00.000Z',
+      completedAt: '2026-09-15T12:01:00.000Z',
+      error: null,
+    })).toBe(true);
   });
 });
-

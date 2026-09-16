@@ -19,6 +19,9 @@ export const successResponse = (data: unknown, metadata: Record<string, unknown>
 export const errorResponse = (message: string, status = 500, details: unknown = null) => {
   const incidentId = crypto.randomUUID();
   const exposeDetails = status < 500;
+  const publicCode = typeof details === 'object' && details !== null && 'code' in details && typeof details.code === 'string'
+    ? details.code
+    : null;
   console.error(`[API_ERROR] ${incidentId} ${status}: ${message}`, details || '');
   
   return new Response(
@@ -26,6 +29,7 @@ export const errorResponse = (message: string, status = 500, details: unknown = 
       error: true,
       message,
       incidentId,
+      ...(publicCode ? { code: publicCode } : {}),
       ...(exposeDetails && details !== null ? { details } : {}),
       timestamp: new Date().toISOString(),
     }),

@@ -42,6 +42,7 @@ How to read the directory:
 | `/listings` | Listings | Public entry |
 | `/idx` | IDX Search | Sign-in required |
 | `/tour-studio` | Tour Studio | Public entry |
+| `/scan-studio` | 3D Scan Studio | Sign-in required; Consent-first phone capture; uploads remain private until agent review. |
 | `/valuation` | Property valuation | Public entry; Account-backed actions may require sign-in. |
 | `/contact` | Contact | Public entry |
 | `/investors` | Investors | Public entry |
@@ -144,6 +145,7 @@ How to read the directory:
 | `/lead-gen` | Lead generation | Sign-in required |
 | `/premium` | Premium plans | Public entry |
 | `/contracts/promulgated` | Promulgated contracts | Public entry |
+| `/contracts/promulgated/[formId]` | Promulgated contract form | Public entry; Choose an existing promulgated contract form; requires its form ID. Entry: `/contracts/promulgated`. |
 | `/contracts/promulgated/templates` | Contract templates | Public entry |
 | `/contracts/promulgated/setup` | Contract setup | Sign-in required; Choose a contract and property in the setup workflow. |
 | `/contracts/representation` | Representation agreement | Public entry |
@@ -192,6 +194,8 @@ How to read the directory:
 | `/admin/launch-kit` | Launch Kit | Operator access |
 | `/admin/site-reviews` | Site reviews | Operator access |
 | `/admin/hot-list` | Hot List | Operator access |
+| `/admin/property-scans` | Property scan review | Operator access; Review consented private captures before 3D reconstruction. |
+| `/admin/property-scans/[scanId]/preview` | Property scan 3D preview | Operator access; Choose an approved property scan with a completed manifest preview. Entry: `/admin/property-scans`. |
 | `/admin/orchestrator` | Orchestrator | Operator access |
 | `/admin/profit` | Profit controls | Operator access; Realtor role alone is not sufficient. |
 | `/admin/intelligence` | Intelligence configuration | Administrative screen |

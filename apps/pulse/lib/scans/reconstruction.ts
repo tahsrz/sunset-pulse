@@ -1,6 +1,8 @@
-import type { PropertyScanAsset } from '@/lib/scans/propertyScanContract';
-
-export type PropertyScanReconstruction = {
+/**
+ * Metadata written by the first scan-preview slice. These records are kept so
+ * older sessions remain readable, but they are never a current home artifact.
+ */
+export type LegacyPropertyScanDemo = {
   jobId: string;
   status: 'ready' | 'failed';
   progress: number;
@@ -13,18 +15,20 @@ export type PropertyScanReconstruction = {
   error: string | null;
 };
 
-export function buildManifestPreview(input: { jobId: string; assets: PropertyScanAsset[]; startedAt: string }): PropertyScanReconstruction {
-  const assetCount = input.assets.length;
-  return {
-    jobId: input.jobId,
-    status: 'ready',
-    progress: 100,
-    engine: 'manifest-preview-v1',
-    previewKind: 'procedural-room-shell',
-    roomCount: Math.max(1, Math.min(12, Math.ceil(assetCount / 3))),
-    assetCount,
-    startedAt: input.startedAt,
-    completedAt: new Date().toISOString(),
-    error: null,
-  };
+export type PropertyScanReconstruction = LegacyPropertyScanDemo;
+
+export type ReconstructionUnavailable = {
+  outcome: 'unavailable';
+  code: 'PROCESSOR_UNAVAILABLE';
+  message: string;
+};
+
+export const reconstructionUnavailable: ReconstructionUnavailable = {
+  outcome: 'unavailable',
+  code: 'PROCESSOR_UNAVAILABLE',
+  message: 'A real reconstruction processor is not configured yet. The private capture is ready for a later processing step.',
+};
+
+export function isLegacyPropertyScanDemo(value: PropertyScanReconstruction | null | undefined): value is LegacyPropertyScanDemo {
+  return value?.engine === 'manifest-preview-v1' && value.previewKind === 'procedural-room-shell';
 }

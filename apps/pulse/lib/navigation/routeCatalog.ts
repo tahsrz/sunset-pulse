@@ -88,6 +88,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/admin/scheduling', 'Scheduling operations', 'staff', 'Existing staff workflow; excluded from the middleware admin sign-in redirect.'],
   ]),
   context('/properties/[id]', 'Property details', 'Discover', 'public', 'Choose an existing property; requires its ID.', '/properties'),
+  context('/contracts/promulgated/[formId]', 'Promulgated contract form', 'Account and business', 'public', 'Choose an existing promulgated contract form; requires its form ID.', '/contracts/promulgated'),
   context('/admin/property-scans/[scanId]/preview', 'Property scan 3D preview', 'Operations', 'operator', 'Choose an approved property scan with a completed manifest preview.', '/admin/property-scans'),
   context('/properties/[id]/edit', 'Edit property', 'Account and business', 'account', 'Choose a property you can edit; requires its ID.', '/properties'),
   context('/listings/[id]', 'Listing details', 'Discover', 'public', 'Choose an existing listing; requires its ID.', '/listings'),
