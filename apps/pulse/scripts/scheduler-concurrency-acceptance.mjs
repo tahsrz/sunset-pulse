@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { command, withDockerService } from './docker-acceptance.mjs';
+import { platformRunAcceptance } from './platform-run-acceptance.mjs';
 
 await withDockerService('scheduler-test', async (container) => {
   const sql = (input) => command('docker', [
@@ -16,12 +17,24 @@ await withDockerService('scheduler-test', async (container) => {
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA auth;
     CREATE TABLE auth.users (id uuid PRIMARY KEY);
+    CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
+      LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+    CREATE TABLE public.site_config (id uuid PRIMARY KEY);
+    CREATE TABLE public.property_shortlist_entries (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL REFERENCES auth.users(id),
+      area_key text NOT NULL, address text, city text, state text NOT NULL, postal_code text,
+      mls_id text, county text, parcel_number text, property_kind text NOT NULL,
+      revision integer NOT NULL DEFAULT 1, status text NOT NULL DEFAULT 'active',
+      unresolved_questions jsonb NOT NULL DEFAULT '[]'::jsonb,
+      created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
+    );
     CREATE TABLE public.licensed_workflow_settings (id uuid PRIMARY KEY);
     CREATE TABLE public.licensed_workflow_runs (id uuid PRIMARY KEY);
   `);
   const migrations = [
     '20260912040000_durable_workflow_scheduler.sql',
     '20260912060000_scheduled_sprints.sql',
+    '20260912120000_sprint_assignments.sql',
     '20260912070000_scheduler_foundation.sql',
     '20260912080000_scheduler_controls.sql',
     '20260912090000_scheduler_lease_fencing.sql',
@@ -32,18 +45,84 @@ await withDockerService('scheduler-test', async (container) => {
     '20260916020000_event_workflow_jobs.sql',
     '20260916030000_scheduler_live_lease_and_event_replay.sql',
     '20260916040000_scheduler_deferred_outcomes.sql',
+    '20260914010000_property_sprint_foundation.sql',
+    '20260915050000_revision_checked_sprint_schedule.sql',
+    '20260916010000_edit_proposed_sprint_items.sql',
+    '20260917010000_platform_workspaces.sql',
+    '20260917020000_platform_scope_links.sql',
+    '20260917030000_platform_property_scope_mutations.sql',
+    '20260917040000_platform_sprint_scope.sql',
+    '20260918010000_platform_sprint_schedule_backlog_scope.sql',
+    '20260918020000_platform_json_runs_checkpoints.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
   }
   await sql(await readFile(new URL('../supabase/migrations/20260916040000_scheduler_deferred_outcomes.sql', import.meta.url), 'utf8'));
 
-  const owner = randomUUID(), otherOwner = randomUUID(), schedule = randomUUID();
+  const owner = randomUUID(), otherOwner = randomUUID();
+  let schedule = randomUUID();
+  const requestedPersonalId = randomUUID();
+  await sql(`INSERT INTO auth.users VALUES ('${owner}'), ('${otherOwner}');`);
+  const firstWorkspace = await sql(`SELECT workspace_id::text FROM platform_create_workspace_with_owner('${owner}', '${requestedPersonalId}', 'personal', 'Owner workspace');`);
+  assert.equal(firstWorkspace, requestedPersonalId, 'personal workspace should be created with its requested ID');
+  const replayedWorkspace = await sql(`SELECT workspace_id::text FROM platform_create_workspace_with_owner('${owner}', '${randomUUID()}', 'personal', 'Different name');`);
+  assert.equal(replayedWorkspace, requestedPersonalId, 'personal workspace creation should replay to the existing workspace');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_workspaces WHERE created_by='${owner}' AND kind='personal' AND status='active';`), '1');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_memberships WHERE workspace_id='${requestedPersonalId}' AND user_id='${owner}' AND status='active';`), '1');
+  const propertyId = randomUUID();
+  await sql(`INSERT INTO platform_scope_links(resource_type,resource_id,owner_id,workspace_id,status,reason)
+    VALUES ('property_shortlist','${propertyId}','${owner}','${requestedPersonalId}','mapped',NULL);`);
+  assert.equal(await sql(`SELECT status FROM platform_scope_links WHERE resource_type='property_shortlist' AND resource_id='${propertyId}';`), 'mapped');
+  await sql(`INSERT INTO platform_scope_links(resource_type,resource_id,owner_id,workspace_id,status,reason)
+    VALUES ('property_shortlist','unresolved-${propertyId}','${owner}',NULL,'unmapped','No workspace');`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_scope_links WHERE status='unmapped' AND owner_id='${owner}';`), '1');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','platform_scope_links','SELECT');`), 't');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','platform_scope_links','INSERT');`), 'f');
+  const atomicProperty = await sql(`SELECT id::text FROM platform_save_property_shortlist_entry('${owner}', '${requestedPersonalId}', NULL, NULL, '1 Main Street', 'Keller', 'TX', NULL, 'MLS-ATOMIC', 'Tarrant', NULL, 'residential', '[]'::jsonb);`);
+  assert.match(atomicProperty, /^[0-9a-f-]{36}$/i);
+  assert.equal(await sql(`SELECT status FROM platform_scope_links WHERE resource_type='property_shortlist' AND resource_id='${atomicProperty}';`), 'mapped');
+  assert.equal(await sql(`SELECT revision FROM platform_save_property_shortlist_entry('${owner}', '${requestedPersonalId}', '${atomicProperty}', 1, '1 Updated Street', 'Keller', 'TX', NULL, 'MLS-ATOMIC', 'Tarrant', NULL, 'residential', '[]'::jsonb);`), '2');
+  await assert.rejects(sql(`SELECT id FROM platform_save_property_shortlist_entry('${owner}', '${requestedPersonalId}', '${atomicProperty}', 1, '1 Stale Street', 'Keller', 'TX', NULL, 'MLS-ATOMIC', 'Tarrant', NULL, 'residential', '[]'::jsonb);`), /revision conflict/);
+  assert.equal(await sql(`SELECT has_function_privilege('authenticated','platform_save_property_shortlist_entry(uuid,uuid,uuid,integer,text,text,text,text,text,text,text,text,jsonb)','EXECUTE');`), 'f');
+  console.log('PASS: personal workspace creation is idempotent and creates one owner membership');
+  await assert.rejects(
+    sql(`SELECT * FROM platform_save_sprint_planner_schedule('${otherOwner}', '${requestedPersonalId}', NULL, 'manual_backlog', 'daily', 'America/Chicago', 8, 0, 1, now() + interval '1 day');`),
+    /Schedule edit access denied/
+  );
+  const scopedSchedule = await sql(`SELECT id::text FROM platform_save_sprint_planner_schedule('${owner}', '${requestedPersonalId}', NULL, 'manual_backlog', 'daily', 'America/Chicago', 8, 0, 1, now() + interval '1 day');`);
+  assert.match(scopedSchedule, /^[0-9a-f-]{36}$/i);
+  schedule = scopedSchedule;
+  assert.equal(await sql(`SELECT workspace_id::text FROM platform_scope_links WHERE resource_type='workflow_schedule' AND resource_id='${scopedSchedule}';`), requestedPersonalId);
+  const scopedBacklog = await sql(`SELECT id::text FROM platform_add_sprint_backlog_item('${owner}', '${requestedPersonalId}', 'Scoped research', 'Workspace context', 2, 30, 'manual', NULL);`);
+  assert.match(scopedBacklog, /^[0-9a-f-]{36}$/i);
+  assert.equal(await sql(`SELECT revision::text FROM sprint_backlog_items WHERE id='${scopedBacklog}';`), '1');
+  assert.equal(await sql(`SELECT revision::text FROM platform_update_sprint_backlog_item('${owner}', '${requestedPersonalId}', '${scopedBacklog}', 1, 'Updated research', 'Updated context', 1, 45, 'open');`), '2');
+  assert.equal(await sql(`SELECT status FROM platform_remove_sprint_backlog_item('${owner}', '${requestedPersonalId}', '${scopedBacklog}', 2);`), 'cancelled');
+  assert.equal(await sql(`SELECT workspace_id::text FROM platform_scope_links WHERE resource_type='sprint_backlog_item' AND resource_id='${scopedBacklog}';`), requestedPersonalId);
+  console.log('PASS: workspace schedules and backlog mutations require membership and retain explicit scope links');
+  const sprintId = randomUUID(), sprintItemId = randomUUID();
+  await sql(`INSERT INTO public.sprints(id, owner_id, name, goal, status, revision)
+    VALUES ('${sprintId}', '${owner}', 'Workspace sprint', 'Validate workspace approval', 'proposed', 1);
+    INSERT INTO public.sprint_items(id, sprint_id, owner_id, title, description, priority, status, revision)
+    VALUES ('${sprintItemId}', '${sprintId}', '${owner}', 'Review property', '', 1, 'proposed', 1);
+    INSERT INTO public.platform_scope_links(resource_type, resource_id, owner_id, workspace_id, status, source_revision)
+    VALUES ('sprint', '${sprintId}', '${owner}', '${requestedPersonalId}', 'mapped', 1);`);
+  await assert.rejects(
+    sql(`SELECT * FROM platform_approve_sprint_with_assignments('${otherOwner}', '${requestedPersonalId}', '${sprintId}', 1);`),
+    /approval access denied/
+  );
+  assert.match(
+    await sql(`SELECT sprint_id::text || '|' || sprint_status || '|' || assignment_count::text
+      FROM platform_approve_sprint_with_assignments('${owner}', '${requestedPersonalId}', '${sprintId}', 1);`),
+    new RegExp(`${sprintId}\\|approved\\|1`)
+  );
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_scope_links WHERE resource_type='assignment' AND workspace_id='${requestedPersonalId}';`), '1');
+  assert.equal(await sql(`SELECT status FROM sprints WHERE id='${sprintId}';`), 'approved');
+  console.log('PASS: workspace sprint approval requires membership and maps resulting assignments');
   const event = (key, payload = '{}', time = 'NULL', user = owner) =>
     `SELECT id FROM enqueue_workflow_event('${user}', 'sprint_planner', '${key}', '${payload}'::jsonb, 1, ${time});`;
-  await sql(`INSERT INTO auth.users VALUES ('${owner}'), ('${otherOwner}');
-    INSERT INTO workflow_schedules(id,user_id,workflow_key,enabled) VALUES ('${schedule}','${owner}','sprint_planner',true);
-    INSERT INTO workflow_jobs(schedule_id,user_id,workflow_key,scheduled_for) VALUES ('${schedule}','${owner}','sprint_planner',now()-interval '2 minutes');`);
+  await sql(`INSERT INTO workflow_jobs(schedule_id,user_id,workflow_key,scheduled_for) VALUES ('${schedule}','${owner}','sprint_planner',now()-interval '2 minutes');`);
   const eventJob = await sql(event('claim-event'));
 
   async function waitForSession(name, predicate) {
@@ -149,4 +228,5 @@ await withDockerService('scheduler-test', async (container) => {
   assert.equal(await sql(`SELECT status FROM defer_workflow_job('${exhaustedJob}','${exhaustedToken}',clock_timestamp()+interval '5 minutes','too many polls');`), 'poll_exhausted');
   assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${exhaustedJob}';`), 'failed');
   console.log('PASS: deferred polling has a terminal budget');
+  await platformRunAcceptance(sql);
 }).catch((error) => { console.error(error.message); process.exitCode = 1; });

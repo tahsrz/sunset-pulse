@@ -11,6 +11,14 @@ vi.mock('@/lib/autonomous-workflows/workflowRegistry.server', () => ({
 import { processQueuedWorkflowJobs } from '@/lib/autonomous-workflows/durableScheduler.server';
 
 describe('durable scheduler deferred outcomes', () => {
+  it('accepts an atomic platform receipt without a second completion or deferral', async () => {
+    rpc.mockReset(); handler.mockReset();
+    rpc.mockResolvedValueOnce({ data: 0, error: null }).mockResolvedValueOnce({ data: [{ id: 'job-p', workflow_key: 'platform_run' }], error: null });
+    handler.mockResolvedValue({ kind: 'committed', resultId: 'run-p', resultStatus: 'waiting' });
+    expect(await processQueuedWorkflowJobs(1)).toEqual({ processed: 1, results: [{ jobId: 'job-p', status: 'waiting', runId: 'run-p' }] });
+    expect(rpc).toHaveBeenCalledTimes(2);
+    rpc.mockReset(); handler.mockReset();
+  });
   it('persists a handler deferral without attempting terminal completion', async () => {
     const job = {
       id: 'job-1',

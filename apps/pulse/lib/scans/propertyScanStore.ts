@@ -8,6 +8,7 @@ import connectDB from '@/lib/core/database';
 import { PropertyScanSession } from '@/models/PropertyScanSession';
 import { propertyScanAssetLimits, type PropertyScanAsset, type PropertyScanRequest } from '@/lib/scans/propertyScanContract';
 import { reconstructionUnavailable, type PropertyScanReconstruction, type ReconstructionUnavailable } from '@/lib/scans/reconstruction';
+import { buildPropertyScanReconstructionIntent, type PropertyScanReconstructionIntent } from '@/lib/scans/scanJobs.server';
 import { canReadScan, configuredScanReviewerIds, isScanOwnerRecord, type ScanActor } from './scanAccess.server';
 import { createConsentReceipt, createReviewEvent, isCurrentScanArtifact, propertyScanManifestHash, type PropertyScanArtifactReference, type PropertyScanConsentReceipt, type PropertyScanReviewEvent } from './propertyScanVersioning';
 import { resolveOwnerPropertyScanListing } from './propertyScanListingResolution.server';
@@ -30,6 +31,7 @@ export type PropertyScanSessionRecord = PropertyScanRequest & {
   approvedManifestHash: string | null;
   reviewEvents: PropertyScanReviewEvent[];
   artifactRefs: PropertyScanArtifactReference[];
+  reconstructionIntents: PropertyScanReconstructionIntent[];
   uploadReservations: PropertyScanUploadReservation[];
   reconstruction: PropertyScanReconstruction | null;
   assets: PropertyScanAsset[];
@@ -67,6 +69,11 @@ export type PropertyScanUploadCleanupTarget = {
   mimeType: string;
 };
 
+export type PendingPropertyScanReconstructionIntent = {
+  scanId: string;
+  intent: PropertyScanReconstructionIntent;
+};
+
 export async function createPropertyScanSession(input: PropertyScanRequest, ownerId: string) {
   if (isMockMode()) return createMockSession(input, ownerId);
 
@@ -87,6 +94,7 @@ export async function createPropertyScanSession(input: PropertyScanRequest, owne
     approvedManifestHash: null,
     reviewEvents: [],
     artifactRefs: [],
+    reconstructionIntents: [],
     assets: [],
   });
   return serialize(record);
@@ -430,6 +438,131 @@ export async function startPropertyScanReconstruction(scanId: string): Promise<P
   return reconstructionUnavailable;
 }
 
+/**
+ * Persist the cross-store handoff record only. A separate reconciler will
+ * enqueue the matching Postgres event after rechecking this frozen approval.
+ * This intentionally does not claim that a processor accepted the work.
+ */
+export async function persistPropertyScanReconstructionIntent(
+  scanId: string,
+  ownerId: string,
+  processorVersion: string,
+) {
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    if (!record || record.ownerId !== ownerId || record.status !== 'approved' || !record.approvedManifestRevision || !record.approvedManifestHash) return null;
+    const intent = buildPropertyScanReconstructionIntent({ ownerId, scanId, approvedManifestRevision: record.approvedManifestRevision, approvedManifestHash: record.approvedManifestHash, processorVersion });
+    const existing = record.reconstructionIntents.find((candidate) => candidate.operationKey === intent.operationKey);
+    if (existing) return { session: serialize(record), intent: existing, reused: true };
+    if (record.reconstructionIntents.length >= 20) return null;
+    record.reconstructionIntents.push(intent);
+    record.updatedAt = intent.updatedAt;
+    persistMockSessions();
+    return { session: serialize(record), intent, reused: false };
+  }
+
+  await connectDB();
+  const current = await PropertyScanSession.findOne({ scanId, ownerId, status: 'approved', approvedManifestRevision: { $ne: null }, approvedManifestHash: { $ne: null }, $expr: { $eq: ['$approvedManifestHash', '$manifestHash'] } }).lean() as any;
+  if (!current) return null;
+  const intent = buildPropertyScanReconstructionIntent({ ownerId, scanId, approvedManifestRevision: current.approvedManifestRevision, approvedManifestHash: current.approvedManifestHash, processorVersion });
+  const mongoIntent = { ...intent, createdAt: new Date(intent.createdAt), updatedAt: new Date(intent.updatedAt) };
+  const record = await PropertyScanSession.findOneAndUpdate(
+    { scanId, ownerId, status: 'approved', approvedManifestRevision: intent.approvedManifestRevision, approvedManifestHash: intent.approvedManifestHash, $expr: { $eq: ['$approvedManifestHash', '$manifestHash'] }, $or: [{ 'reconstructionIntents.operationKey': intent.operationKey }, { 'reconstructionIntents': { $exists: false } }, { $expr: { $lt: [{ $size: { $ifNull: ['$reconstructionIntents', []] } }, 20] } }] },
+    [
+      {
+        $set: {
+          reconstructionIntents: {
+            $let: {
+              vars: { existing: { $ifNull: ['$reconstructionIntents', []] } },
+              in: {
+                $cond: [
+                  { $in: [intent.operationKey, { $map: { input: '$$existing', as: 'candidate', in: '$$candidate.operationKey' } }] },
+                  '$$existing',
+                  { $concatArrays: ['$$existing', [mongoIntent]] },
+                ],
+              },
+            },
+          },
+          updatedAt: new Date(intent.updatedAt),
+        },
+      },
+    ],
+    { new: true },
+  ).lean() as any;
+  if (!record) return null;
+  const savedIntent = (record.reconstructionIntents || []).find((candidate: any) => candidate.operationKey === intent.operationKey);
+  if (!savedIntent) return null;
+  const serializedIntent = serializeReconstructionIntent(savedIntent);
+  return { session: serialize(record), intent: serializedIntent, reused: serializedIntent.createdAt !== intent.createdAt };
+}
+
+export async function listPendingPropertyScanReconstructionIntents(limit = 25): Promise<PendingPropertyScanReconstructionIntent[]> {
+  const boundedLimit = Math.min(Math.max(Math.trunc(limit), 1), 100);
+  if (isMockMode()) {
+    return [...getMockSessions().values()]
+      .flatMap((record) => record.reconstructionIntents
+        .filter((intent) => intent.state === 'pending')
+        .map((intent) => ({ scanId: record.scanId, intent })))
+      .slice(0, boundedLimit);
+  }
+
+  await connectDB();
+  const records = await PropertyScanSession.find({ reconstructionIntents: { $elemMatch: { state: 'pending' } } })
+    .select('scanId reconstructionIntents')
+    .sort({ updatedAt: 1, scanId: 1 })
+    .limit(boundedLimit)
+    .lean() as any[];
+  return records.flatMap((record) => (record.reconstructionIntents || [])
+    .filter((intent: any) => intent.state === 'pending')
+    .map((intent: any) => ({ scanId: record.scanId, intent: serializeReconstructionIntent(intent) })));
+}
+
+export async function resolvePropertyScanReconstructionIntent(
+  scanId: string,
+  operationKey: string,
+  resolution: 'acknowledged' | 'stale',
+  schedulerJobId: string | null = null,
+) {
+  const now = new Date().toISOString();
+  if (isMockMode()) {
+    const record = getMockSessions().get(scanId);
+    const intent = record?.reconstructionIntents.find((candidate) => candidate.operationKey === operationKey && candidate.state === 'pending');
+    if (!record || !intent) return false;
+    intent.state = resolution;
+    intent.schedulerJobId = schedulerJobId;
+    intent.acknowledgedAt = resolution === 'acknowledged' ? now : null;
+    intent.updatedAt = now;
+    persistMockSessions();
+    return true;
+  }
+
+  await connectDB();
+  const record = await PropertyScanSession.findOneAndUpdate(
+    { scanId, 'reconstructionIntents': { $elemMatch: { operationKey, state: 'pending' } } },
+    { $set: { 'reconstructionIntents.$[intent].state': resolution, 'reconstructionIntents.$[intent].schedulerJobId': schedulerJobId, 'reconstructionIntents.$[intent].acknowledgedAt': resolution === 'acknowledged' ? new Date(now) : null, 'reconstructionIntents.$[intent].updatedAt': new Date(now) } },
+    { new: true, arrayFilters: [{ 'intent.operationKey': operationKey, 'intent.state': 'pending' }] },
+  ).lean();
+  return Boolean(record);
+}
+
+function serializeReconstructionIntent(intent: any): PropertyScanReconstructionIntent {
+  return {
+    operationKey: intent.operationKey,
+    eventKey: intent.eventKey,
+    ownerId: intent.ownerId,
+    scanId: intent.scanId,
+    approvedManifestRevision: intent.approvedManifestRevision,
+    approvedManifestHash: intent.approvedManifestHash,
+    processorVersion: intent.processorVersion,
+    state: intent.state,
+    schedulerJobId: intent.schedulerJobId || null,
+    createdAt: new Date(intent.createdAt).toISOString(),
+    updatedAt: new Date(intent.updatedAt).toISOString(),
+    acknowledgedAt: intent.acknowledgedAt ? new Date(intent.acknowledgedAt).toISOString() : null,
+    lastError: intent.lastError || null,
+  };
+}
+
 function serialize(record: any): PropertyScanSessionRecord {
   return {
     scanId: record.scanId,
@@ -452,6 +585,7 @@ function serialize(record: any): PropertyScanSessionRecord {
     approvedManifestHash: record.approvedManifestHash || null,
     reviewEvents: Array.isArray(record.reviewEvents) ? record.reviewEvents.map((event: any) => ({ eventId: event.eventId, status: event.status, reviewerId: event.reviewerId, note: event.note || null, revision: event.revision, manifestHash: event.manifestHash, createdAt: new Date(event.createdAt).toISOString() })) : [],
     artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs.map((artifact: any) => ({ artifactId: artifact.artifactId, inputRevision: artifact.inputRevision, inputManifestHash: artifact.inputManifestHash, status: artifact.status === 'current' && (record.status !== 'approved' || !isCurrentScanArtifact(artifact, record)) ? 'stale' : artifact.status, createdAt: new Date(artifact.createdAt).toISOString() })) : [],
+    reconstructionIntents: Array.isArray(record.reconstructionIntents) ? record.reconstructionIntents.map(serializeReconstructionIntent) : [],
     uploadReservations: Array.isArray(record.uploadReservations) ? record.uploadReservations.map((reservation: any) => ({ uploadId: reservation.uploadId, idempotencyKey: reservation.idempotencyKey, fileName: reservation.fileName, mimeType: reservation.mimeType, declaredBytes: reservation.declaredBytes, expectedRevision: reservation.expectedRevision, state: reservation.state, assetId: reservation.assetId || null, expiresAt: new Date(reservation.expiresAt).toISOString(), createdAt: new Date(reservation.createdAt).toISOString(), updatedAt: new Date(reservation.updatedAt).toISOString() })) : [],
     reconstruction: record.reconstruction?.jobId ? {
       jobId: record.reconstruction.jobId,
@@ -513,6 +647,7 @@ function createMockSession(input: PropertyScanRequest, ownerId: string) {
     approvedManifestHash: null,
     reviewEvents: [],
     artifactRefs: [],
+    reconstructionIntents: [],
     uploadReservations: [],
     reconstruction: null,
     assets: [],

@@ -6,13 +6,16 @@ const mocks = vi.hoisted(() => ({
   isAuthResponse: vi.fn(),
   from: vi.fn(),
   rpc: vi.fn(),
+  listSprintsForWorkspace: vi.fn(),
 }));
 
+vi.mock('server-only', () => ({}));
 vi.mock('@/lib/core/routeAuth', () => ({
   requireSignedInUser: mocks.requireSignedInUser,
   isAuthResponse: mocks.isAuthResponse,
 }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from, rpc: mocks.rpc } }));
+vi.mock('@/lib/property-sprints/sprintWorkspace.server', () => ({ listSprintsForWorkspace: mocks.listSprintsForWorkspace }));
 
 import { GET, POST } from '@/app/api/sprints/route';
 
@@ -55,6 +58,30 @@ describe('signed-in sprint schedule route', () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
+  it('reads sprints through the explicit workspace boundary when requested', async () => {
+    mocks.listSprintsForWorkspace.mockResolvedValue({ sprints: [{ id: 'sprint-1' }], items: [], assignments: [], backlog: [], schedules: [] });
+
+    const response = await GET(new NextRequest('http://localhost/api/sprints?workspaceId=22222222-2222-4222-8222-222222222222'));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, sprints: [{ id: 'sprint-1' }] });
+    expect(mocks.listSprintsForWorkspace).toHaveBeenCalledWith(USER_ID, '22222222-2222-4222-8222-222222222222');
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('uses the workspace approval RPC when approving a scoped sprint', async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ sprint_id: 'sprint-1', sprint_status: 'approved', assignment_count: 1 }], error: null });
+
+    const response = await POST(jsonRequest({
+      action: 'approve', sprintId: '55555555-5555-4555-8555-555555555555', workspaceId: '22222222-2222-4222-8222-222222222222', expectedRevision: 1,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_approve_sprint_with_assignments', expect.objectContaining({
+      p_actor_id: USER_ID, p_workspace_id: '22222222-2222-4222-8222-222222222222', p_expected_revision: 1,
+    }));
+  });
+
   it('returns a conflict when the database rejects a stale schedule revision', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'Schedule revision conflict' } });
 
@@ -72,6 +99,32 @@ describe('signed-in sprint schedule route', () => {
 
     expect(response.status).toBe(409);
     expect(payload.error).toBe('Schedule revision conflict');
+  });
+
+  it('persists a schedule through the workspace boundary when a workspace is supplied', async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ id: 'workspace-schedule-1' }], error: null });
+    const response = await POST(jsonRequest({
+      action: 'create_schedule', workspaceId: '22222222-2222-4222-8222-222222222222', cadence: 'daily', planningMode: 'manual_backlog',
+      timeZone: 'America/Chicago', localHour: 8, localMinute: 0, localWeekday: 1, expectedRevision: null,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_save_sprint_planner_schedule', expect.objectContaining({
+      p_actor_id: USER_ID, p_workspace_id: '22222222-2222-4222-8222-222222222222',
+    }));
+  });
+
+  it('adds a backlog item through the workspace boundary when a workspace is supplied', async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ id: 'workspace-backlog-1' }], error: null });
+    const response = await POST(jsonRequest({
+      action: 'add_backlog_item', workspaceId: '22222222-2222-4222-8222-222222222222', title: 'Research listing',
+      description: 'Confirm source facts', priority: 2, estimateMinutes: 30, sourceType: 'manual', sourceId: null,
+    }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_add_sprint_backlog_item', expect.objectContaining({
+      p_actor_id: USER_ID, p_workspace_id: '22222222-2222-4222-8222-222222222222', p_title: 'Research listing',
+    }));
   });
 
   it('rejects an invalid timezone before calling the persistence boundary', async () => {

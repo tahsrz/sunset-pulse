@@ -1,5 +1,6 @@
 import { runHotlistEmailForUser } from './hotlistEmailWorkflow.server';
 import { runSprintPlannerWorkflow } from './sprintPlannerWorkflow.server';
+import { runPlatformWorkflow } from '@/lib/platform/workflows/runHandler.server';
 
 export type WorkflowJob = {
   id: string;
@@ -15,6 +16,10 @@ export type WorkflowJob = {
 };
 
 export type WorkflowExecution = {
+  kind: 'committed';
+  resultId: string;
+  resultStatus: string;
+} | {
   kind: 'complete';
   resultType: 'licensed_workflow_run' | 'sprint';
   resultId: string;
@@ -31,6 +36,7 @@ type WorkflowHandler = (job: WorkflowJob) => Promise<WorkflowExecution>;
 const workflowHandlers: Readonly<Record<string, WorkflowHandler>> = Object.freeze({
   hotlist_email: runHotlistEmailWorkflow,
   sprint_planner: runSprintPlannerWorkflow,
+  platform_run: runPlatformWorkflow,
 });
 
 export function getWorkflowHandler(workflowKey: string): WorkflowHandler {

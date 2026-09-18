@@ -102,8 +102,14 @@ describe('real Mongo conditional scan mutations', () => {
       reservePropertyScanUpload(session.scanId, owner, reservation({ idempotencyKey: 'reservation-3' })),
     ]);
     expect(results.filter(Boolean)).toHaveLength(2);
-    const replay = await reservePropertyScanUpload(session.scanId, owner, first);
-    expect(replay?.uploadReservations.find((item) => item.idempotencyKey === first.idempotencyKey)).toMatchObject({ state: 'pending' });
+    const persistedKey = [first, reservation({ idempotencyKey: 'reservation-2' }), reservation({ idempotencyKey: 'reservation-3' })]
+      .map((input) => input.idempotencyKey)
+      .find((idempotencyKey) => results.some((result) => result?.uploadReservations.some((item) => item.idempotencyKey === idempotencyKey)));
+    if (!persistedKey) throw new Error('expected one concurrent reservation to persist');
+    const replayInput = [first, reservation({ idempotencyKey: 'reservation-2' }), reservation({ idempotencyKey: 'reservation-3' })]
+      .find((input) => input.idempotencyKey === persistedKey)!;
+    const replay = await reservePropertyScanUpload(session.scanId, owner, replayInput);
+    expect(replay?.uploadReservations.find((item) => item.idempotencyKey === persistedKey)).toMatchObject({ state: 'pending' });
     expect(replay?.uploadReservations.filter((item) => item.state === 'pending')).toHaveLength(2);
   });
 

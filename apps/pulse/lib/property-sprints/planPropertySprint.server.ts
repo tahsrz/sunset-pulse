@@ -13,7 +13,7 @@ export async function createPropertySprintProposal(ownerId: string, jobId: strin
     property_id: task.propertyId, property_revision: task.propertyRevision, dedupe_key: task.dedupeKey,
     title: task.title, description: task.description, priority: task.priority, estimate_minutes: task.estimatedMinutes,
   }));
-  const { data, error } = await supabaseAdmin.rpc('persist_property_sprint_proposal', {
+  const { data, error } = await supabaseAdmin.rpc('platform_persist_property_sprint_proposal', {
     p_job_id: jobId, p_owner_id: ownerId, p_lease_token: leaseToken, p_occurrence: occurrenceAt,
     p_name: `Keller / Westlake property sprint · ${new Date(occurrenceAt).toLocaleDateString('en-US')}`,
     p_goal: 'Resolve property facts and prepare reviewed buyer follow-up for the Keller / Westlake shortlist.',

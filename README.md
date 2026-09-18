@@ -488,6 +488,7 @@ These documents contain implementation detail and historical decisions. Some inc
 
 | Topic | Documentation |
 | --- | --- |
+| Shared operating platform roadmap | [Code-level platform plan](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md), [Praxis](apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md), [Keller / Westlake](apps/pulse/docs/KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md) |
 | Vibe implementation baseline | [Luna baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md) |
 | Vibe UI design and execution | [UI plan](apps/pulse/docs/VIBE_CMS_WORDPRESS_UI_PLAN.md), [manual UI verification](apps/pulse/docs/VIBE_CMS_UI_MANUAL_VERIFICATION.md) |
 | Vibe vertical slice and handoff | [Vertical-slice plan](apps/pulse/docs/VIBE_CMS_VERTICAL_SLICE_PLAN.md), [Luna-to-Sol handoff](apps/pulse/docs/VIBE_CMS_LUNA_TO_SOL_HANDOFF.md), [Sol review](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md) |

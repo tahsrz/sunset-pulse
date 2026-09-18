@@ -44,7 +44,12 @@ auth/legacy-table prerequisites in Postgres 17. It observes an open row lock
 before running the competing claim and an actual lock wait during duplicate
 enqueue. It also checks omitted-time replay, cross-owner event identity,
 payload/time conflicts, expired-token rejection before recovery, result receipts
-and enqueue permissions. This is **not full Supabase migration or RLS acceptance**;
+and enqueue permissions. Platform fixtures also cover JSON run admission/replay,
+concurrent checkpoint responses, type-specific gate permissions, cancellation,
+membership revocation and authenticated-role run/checkpoint read policies. They
+check atomic rollback when resume admission is disabled or a worker lease expires
+while waiting for the run lock. These use fixture JWT claims, not a real Auth
+session. This is **not full Supabase migration or RLS acceptance**;
 `npm run test:db --workspace=apps/pulse` and the existing `scheduler-db` CI job
 retain that responsibility.
 

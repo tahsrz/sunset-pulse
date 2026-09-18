@@ -47,7 +47,8 @@
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "menu:upsert": "tsx scripts/upsert-menu.ts",
     "seed": "tsx scripts/universal-seed.ts",
-    "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts"
+    "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts",
+    "platform:scope:dry-run": "tsx scripts/platform-scope-backfill.ts --target local"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",

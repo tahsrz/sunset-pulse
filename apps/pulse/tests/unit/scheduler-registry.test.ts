@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 const hotlistHandler = vi.hoisted(() => vi.fn());
 const sprintHandler = vi.hoisted(() => vi.fn());
+const platformHandler = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/platform/workflows/runHandler.server', () => ({ runPlatformWorkflow: platformHandler }));
 
 vi.mock('@/lib/autonomous-workflows/hotlistEmailWorkflow.server', () => ({
   runHotlistEmailForUser: hotlistHandler,
@@ -15,6 +17,7 @@ import { getWorkflowHandler } from '@/lib/autonomous-workflows/workflowRegistry.
 describe('workflow registry', () => {
   it('maps supported keys to the dedicated handlers', () => {
     expect(getWorkflowHandler('sprint_planner')).toBe(sprintHandler);
+    expect(getWorkflowHandler('platform_run')).toBe(platformHandler);
 
     const scheduledEmail = getWorkflowHandler('hotlist_email');
     expect(scheduledEmail).not.toBe(hotlistHandler);

@@ -60,6 +60,10 @@ export async function processQueuedWorkflowJobs(limit = 10) {
 
     try {
       const execution = await getWorkflowHandler(job.workflow_key)(job as WorkflowJob);
+      if (execution.kind === 'committed') {
+        results.push({ jobId: job.id, status: execution.resultStatus, runId: execution.resultId });
+        continue;
+      }
       if (execution.kind === 'defer') {
         const nextPollAtMs = Date.parse(execution.nextPollAt);
         if (!Number.isFinite(nextPollAtMs) || nextPollAtMs <= Date.now()) {

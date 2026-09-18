@@ -1,4 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.server';
+import { resolveWorkspaceMappedResourceScope } from '@/lib/platform/access/domainScope.server';
 import { propertyShortlistEntrySchema, propertyNoteSchema, AREA_KEY, type PropertyShortlistEntry, type PropertyNote } from './contracts';
 
 function fromRow(row: Record<string, unknown>): PropertyShortlistEntry {
@@ -12,6 +14,97 @@ export async function listShortlistEntries(ownerId: string) {
   const { data, error } = await supabaseAdmin.from('property_shortlist_entries').select('*').eq('owner_id', ownerId).eq('area_key', AREA_KEY).order('created_at', { ascending: false });
   if (error) throw new Error(`Unable to load property shortlist: ${error.message}`);
   return (data || []).map(fromRow);
+}
+
+/**
+ * Workspace-aware read boundary. Legacy owner reads remain unchanged above;
+ * team reads only see resources explicitly linked into the requested workspace.
+ */
+export async function listShortlistEntriesForWorkspace(actorId: string, workspaceId: string) {
+  const workspace = await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
+  const { data: links, error: linkError } = await supabaseAdmin
+    .from('platform_scope_links')
+    .select('resource_id')
+    .eq('workspace_id', workspace.workspaceId)
+    .eq('resource_type', 'property_shortlist')
+    .eq('status', 'mapped');
+  if (linkError) throw new Error(`Unable to load workspace property scope: ${linkError.message}`);
+
+  const resourceIds = [...new Set((links || []).map((link) => String(link.resource_id)).filter(Boolean))];
+  if (!resourceIds.length) return [];
+  const { data, error } = await supabaseAdmin
+    .from('property_shortlist_entries')
+    .select('*')
+    .in('id', resourceIds)
+    .eq('area_key', AREA_KEY)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`Unable to load workspace property shortlist: ${error.message}`);
+  return (data || []).map(fromRow);
+}
+
+async function findWorkspacePropertyByIdentity(workspaceId: string, input: unknown) {
+  const parsed = propertyShortlistEntrySchema.parse(input);
+  const { data: links, error: linkError } = await supabaseAdmin
+    .from('platform_scope_links')
+    .select('resource_id')
+    .eq('workspace_id', workspaceId)
+    .eq('resource_type', 'property_shortlist')
+    .eq('status', 'mapped');
+  if (linkError) throw new Error(`Unable to inspect workspace property scope: ${linkError.message}`);
+  const ids = [...new Set((links || []).map((link) => String(link.resource_id)).filter(Boolean))];
+  if (!ids.length) return null;
+  let query = supabaseAdmin.from('property_shortlist_entries').select('*').in('id', ids).eq('area_key', AREA_KEY);
+  if (parsed.mlsId) query = query.eq('mls_id', parsed.mlsId);
+  else if (parsed.county && parsed.parcelNumber) query = query.eq('county', parsed.county).eq('parcel_number', parsed.parcelNumber);
+  else query = query.eq('address', parsed.address).eq('city', parsed.city);
+  const { data, error } = await query.limit(1);
+  if (error) throw new Error(`Unable to inspect workspace property identity: ${error.message}`);
+  return data?.[0] ? fromRow(data[0]) : null;
+}
+
+/**
+ * Workspace-aware mutation boundary. Existing owner-scoped writes remain the
+ * compatibility path; this adapter only mutates a mapped property or creates
+ * a new actor-owned property and immediately links it to the workspace.
+ */
+export async function saveShortlistEntryForWorkspace(actorId: string, workspaceId: string, input: unknown, expectedRevision?: number | null) {
+  const workspace = await requireWorkspaceAccess(actorId, workspaceId, 'property:edit');
+  const parsed = propertyShortlistEntrySchema.parse(input);
+  const existing = await findWorkspacePropertyByIdentity(workspace.workspaceId, input);
+  if (existing && expectedRevision == null) throw new Error('Expected property revision is required for workspace edits.');
+  const { data, error } = await supabaseAdmin.rpc('platform_save_property_shortlist_entry', {
+    p_actor_id: actorId,
+    p_workspace_id: workspace.workspaceId,
+    p_property_id: existing?.id || null,
+    p_expected_revision: expectedRevision ?? null,
+    p_address: parsed.address,
+    p_city: parsed.city,
+    p_state: parsed.state,
+    p_postal_code: parsed.postalCode,
+    p_mls_id: parsed.mlsId,
+    p_county: parsed.county,
+    p_parcel_number: parsed.parcelNumber,
+    p_property_kind: parsed.propertyKind,
+    p_unresolved_questions: parsed.unresolvedQuestions,
+  });
+  if (error) throw new Error(`Unable to save workspace property: ${error.message}`);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Workspace property save did not return a property.');
+  return fromRow(row);
+}
+
+export async function archiveShortlistEntryForWorkspace(actorId: string, workspaceId: string, propertyId: string, expectedRevision: number) {
+  const scope = await resolveWorkspaceMappedResourceScope(actorId, workspaceId, 'property_shortlist', propertyId);
+  const { data, error } = await supabaseAdmin.rpc('platform_archive_property_shortlist_entry', {
+    p_actor_id: actorId,
+    p_workspace_id: scope.workspaceId,
+    p_property_id: propertyId,
+    p_expected_revision: expectedRevision,
+  });
+  if (error) throw new Error(`Unable to archive workspace property: ${error.message}`);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Workspace property archive did not return a property.');
+  return fromRow(row);
 }
 
 export async function saveShortlistEntry(ownerId: string, input: unknown, expectedRevision?: number | null) {
