@@ -17,9 +17,7 @@ export const VibeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [vibeTheme, setVibeTheme] = useState<any>(null);
 
   const setVibeFromContent = (content: string) => {
-    const vibe = typeof navigator !== 'undefined' && navigator.webdriver && /maxx|roi|optim/i.test(content)
-      ? 'vibe-maxxing'
-      : resolveVibeFromContent(content);
+    const vibe = resolveVibeFromContent(content);
     setCurrentVibe(vibe);
   };
 
@@ -39,18 +37,9 @@ export const VibeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentVibe]);
 
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.webdriver) {
-      setCurrentVibe('vibe-maxxing');
-    }
-  }, []);
-
   return (
     <VibeContext.Provider value={{ currentVibe, setVibeFromContent, vibeTheme, setCurrentVibe }}>
       <div className={`vibe-simulacrum-root transition-all duration-1000 ${currentVibe}`}>
-        {typeof navigator !== 'undefined' && navigator.webdriver ? (
-          <span className="sr-only">STATUS / MAXXING</span>
-        ) : null}
         {children}
 
         {/* Simulacrum Global Mocks */}

@@ -27,7 +27,7 @@ Postgres run/checkpoint changes enqueue directly into the existing queue inside 
 - Reuse identity, memberships, audit and scope links from `20260917010000_platform_workspaces.sql` through `20260918010000_platform_sprint_schedule_backlog_scope.sql`.
 - Reuse `requireSignedInUser`, `workspaceAccess.server.ts`, `durableScheduler.server.ts`, the event contract registry and fenced job completion.
 - Preserve property truth, email review/recipient rules, Vibe exact revision review, scan privacy and existing billing ledgers.
-- Workspaces and scope adapters have local unit/build and disposable Postgres evidence. Authenticated Supabase/browser acceptance is still outstanding; the earlier live dry-run failed with an invalid API key and performed no writes.
+- Workspaces and scope adapters have local unit/build and disposable Postgres evidence. Local Supabase browser/password-session acceptance now passes for workspace creation, run start/answer/cancel, cursor pages and foreign-user denial. This is not production or all-domain RLS acceptance; the earlier production dry-run failed with an invalid API key and performed no writes.
 - Existing owner compatibility paths, team resource mapping, manual sprint edits/completion and schedule controls still need review. Schedule/backlog scope wrappers are code present, not proof of complete team isolation. Check mapping transfers, requester-versus-resource-owner selection, archived workspace denial and scheduler input selection before enabling team workflows.
 - Existing scans are a separate partial bridge; real reconstruction remains unavailable.
 - No production migration, backfill, deployment, outbound send or paid-provider activation is part of these local fixtures.
@@ -58,8 +58,8 @@ First-version scope: scalar questions, approvals, effect gates and completion. N
 
 - Finish workspace mapping/owner compatibility audit and authenticated session/RLS acceptance; add safe actor/domain scope adapters to new admissions.
 - Wire a property assignment into a manifest-launched run only when its property and task revision are explicitly mapped.
-- Add bounded cursor pagination, blocked-run recovery and input supersession with immutable prior checkpoint evidence.
-- Prove a real user can start, answer and cancel through the APIs; a mocked route test or disposable auth fixture alone does not establish this.
+- Implemented: bounded workspace/collection-bound cursor pages ordered by timestamp + ID; admin recovery requires restored requester authority; supersession creates a new pinned run and retains prior answers/actor attribution. Lists now return `{ items, nextCursor }`.
+- Completed locally: real Supabase password/cookie browser sessions prove start, answer, cancel, cursor pages and foreign-user denial. The local runner leases only its own fixture jobs; normal claim contention is covered separately by disposable scheduler acceptance. Production and future inbox UI acceptance remain separate gates.
 - Add richer question fields and conditional nodes only with matching schema/interpreter tests; unsupported graph versions fail explicitly.
 
 ## Phase 2 — Declarative Engine
@@ -113,15 +113,15 @@ Run only affected suites and the necessary database/build gates. Paths below are
 - `npm run test:unit -- tests/unit/platform-run-contracts.test.ts tests/unit/platform-run-routes.test.ts tests/unit/platform-run-handler.test.ts tests/unit/scheduler-registry.test.ts tests/unit/scheduler-deferred-outcomes.test.ts`
 - `npm run test:db:concurrency`: disposable Postgres, real scheduler + core migrations; new assertions live in `scripts/platform-run-acceptance.mjs`. No environment file or linked production database.
 - `npm run build`: Next.js production/type gate.
-- Full Supabase Auth/Storage/RLS and authenticated browser checks are separate release gates; record unavailable prerequisites honestly.
+- Local real-session check: `npm run test:platform:auth -- --stack <local-stack-id>`; reviewed missing local migrations require the explicit `--apply-local-migrations` flag. Full Storage/all-domain RLS, production and inbox UI checks remain separate release gates.
 - New event admissions remain disabled until the matching worker version is deployed. Production migration/promotion and external operations are separate from local implementation.
 
 ## Current ledger and next session
 
 | Phase | Current state | Evidence / remaining gate |
 | --- | --- | --- |
-| Core Platform | Existing identity/scope work retained. JSON run + unified checkpoint backend implemented and locally verified. | Real-Postgres lifecycle/concurrency and run/checkpoint RLS fixtures pass; real authenticated API/browser and domain assignment integration remain open. |
-| Declarative Engine | Planned | No stored app installs, protocol gateway, schema form renderer, capability/condition execution or external effects yet. |
+| Core Platform | JSON run/checkpoint backend plus pagination, recovery, supersession and scope fencing implemented. | Real-Postgres acceptance passes. Real-session/browser result recorded below; team-aware planner selection and domain assignment integration remain open. |
+| Declarative Engine | Manifest contract, revision-checked install store/API and two reviewed intake fixtures implemented. | No protocol gateway, form renderer, capability/condition execution or external effects. Capabilities must be empty in this schema version. |
 | Control Layer | Planned; existing audit reused by core | Unified inbox, quotas, operations and two-app pilot remain open. |
 
 Prior evidence: September 17–18 focused workspace/property/sprint tests passed in separate runs (9 property/scope + 16 route/reader tests); production build and disposable scheduler replay passed. The older full-unit run had three timeout failures. These results concern the old scope adapters, not the new engine.
@@ -137,6 +137,19 @@ September 18, 2026, local implementation evidence:
 - Resume admission failure leaves the checkpoint pending. Lease expiry while blocked on a run lock rolls back both checkpoint creation and the result receipt. The tests observe actual overlapping transactions/lock waits, not sequential stand-ins.
 - The disposable Docker project and its temporary fixtures were removed by the runner. No production database or environment file was used by this acceptance run.
 - `npm run build` passed compilation, type checking and production page generation (exit 0). It retained the existing nonfatal Kepler dynamic-server-usage warning. `git diff --check` passed; Git reported only line-ending normalization warnings.
-- Full real-session Supabase Auth/Storage and browser acceptance remain outstanding. The capability matrix and both domain-plan entry points now reference this three-phase plan; the baseline explicitly remains historical.
+- At the end of the initial Core slice, real-session Supabase/browser acceptance was still outstanding; the follow-up evidence below supersedes that status. Storage/all-domain RLS checks remain separate. The capability matrix and both domain-plan entry points reference this three-phase plan; the baseline remains historical.
 
-Next slice: close workspace mapping/owner compatibility gaps and exercise these APIs with a real authenticated session; then add the pinned JSON app-manifest contract/install store and two reviewed fixtures. Keep provider execution disabled until capability policy, effect receipts and cost controls are implemented. The inbox consumes the existing checkpoint API, not a new interaction subsystem.
+### Follow-up slice — September 18
+
+- `20260918030000_platform_scope_fencing.sql` adds active-workspace/member locks to seven scoped mutations and rejects implicit mapped-resource transfers. `domainScope.server.ts` honors an existing team mapping before personal-owner fallback and checks current membership.
+- `20260918035000_platform_owner_planning_guard.sql` and `sprintPlanningScope.server.ts` reject team/mixed/unresolved scopes before owner-only planner reads and again at persistence. This closes unsafe admission, **not** the missing team-aware selector. Legacy manual owner-only mutation paths still need explicit workspace adapters before full team rollout.
+- `pagination.ts` implements bounded keyset cursors. `20260918040000_platform_run_recovery.sql` adds revision-checked blocked recovery and whole-run supersession, admission-key serialization, preserved checkpoint evidence and audit. New endpoints: `runs/recover` and `runs/supersede`; no second inbox store.
+- `appManifest.ts` accepts strict inert JSON: flat scalar object schemas, current checkpoint/complete graphs, input/settings/artifact schemas. Unknown hooks, imports, refs, graph features and nonempty capabilities fail validation. Strings are data and are never evaluated.
+- `20260918050000_platform_app_installs.sql` stores manifest JSON/hash, settings, status and revision with scoped reads and service-only transactional writes. Same-version content changes and downgrades conflict; upgrades cannot modify existing run definitions. `apps/route.ts` exposes owner/admin installation.
+- `real-estate-readiness.v1.json` and `client-content-review.v1.json` are reviewed **intake-only** fixtures with no tools. Their input schemas describe intended resource identifiers; installation does not bind those identifiers to runs or confer property/publication authority. Domain-aware launch remains a follow-up.
+- Verification: **79/79 tests across 13 affected unit suites passed**; `npm run test:db:concurrency` passed all groups including concurrent recovery/supersession/install upgrades, manifest rejection, archived mutations and mapping transfer rollback. Initial production build passed; final rebuild after browser-discovered fixes is running. `git diff --check` passed.
+- Real-session/browser acceptance passed on the existing **local** Supabase Auth/PostgREST stack with mock auth disabled: rendered login form → real password/cookie session → workspace creation → run/checkpoint/answer/completion → cancellation → cursor pages. A second real user is denied by both API and real-JWT RLS. `npm run test:platform:auth -- --stack xlyfhiafactxahhvikyv` completed successfully. Screenshots: ignored `.pulse-local/platform-auth-acceptance/login.png` and `runs.png`.
+- Browser acceptance found and fixed two real issues: `VibeContext.tsx` inserted automation-only markup/theme changes that broke hydration; `http.server.ts` compared Origin against NextURL's normalized loopback host. Rendering now follows the same path for browsers and automation, and same-origin writes use the actual Host without trusting forwarded-host overrides. Both fixes have regression tests.
+- Missing migrations were applied locally without resetting data. Cleanup confirmed zero temporary accounts/workspaces, the test server stopped, and `platform_run.enabled=false` restored. Applied local migrations remain. No production changes or provider execution.
+
+Next slice: implement team-scoped planner selection/persistence and legacy mutation adapters; bind manifest-launched runs to exact authorized property/content revisions. Keep provider execution disabled until capability policy, effect receipts and cost controls exist. The future inbox consumes the existing checkpoint API.

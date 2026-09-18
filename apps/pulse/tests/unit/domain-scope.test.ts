@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fromMock = vi.fn();
+const accessMock = vi.fn();
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: fromMock } }));
+vi.mock('@/lib/platform/access/workspaceAccess.server', () => ({ requireWorkspaceAccess: accessMock }));
 
 const actorId = crypto.randomUUID();
 const propertyId = crypto.randomUUID();
@@ -20,12 +22,12 @@ function queryResult(data: unknown, error: unknown = null) {
 }
 
 describe('domain workspace scope resolvers', () => {
-  beforeEach(() => fromMock.mockReset());
+  beforeEach(() => { fromMock.mockReset(); accessMock.mockReset().mockResolvedValue({ workspaceId }); });
 
   it('resolves a property through its owner’s single personal workspace', async () => {
     const propertyQuery = queryResult({ owner_id: actorId, revision: 4 });
     const workspaceQuery = queryResult([{ id: workspaceId, created_by: actorId, kind: 'personal', status: 'active' }]);
-    fromMock.mockReturnValueOnce(propertyQuery).mockReturnValueOnce(workspaceQuery);
+    fromMock.mockReturnValueOnce(propertyQuery).mockReturnValueOnce(queryResult(null)).mockReturnValueOnce(workspaceQuery);
 
     const { resolvePropertyShortlistScope } = await import('@/lib/platform/access/domainScope.server');
     await expect(resolvePropertyShortlistScope(actorId, propertyId)).resolves.toEqual({
@@ -35,11 +37,11 @@ describe('domain workspace scope resolvers', () => {
 
   it('does not fall back to an owner-only scope when the actor is foreign', async () => {
     const propertyQuery = queryResult({ owner_id: crypto.randomUUID(), revision: 1 });
-    fromMock.mockReturnValueOnce(propertyQuery);
+    fromMock.mockReturnValueOnce(propertyQuery).mockReturnValueOnce(queryResult(null));
 
     const { resolvePropertyShortlistScope } = await import('@/lib/platform/access/domainScope.server');
     await expect(resolvePropertyShortlistScope(actorId, propertyId)).rejects.toMatchObject({ code: 'FORBIDDEN' });
-    expect(fromMock).toHaveBeenCalledTimes(1);
+    expect(fromMock).toHaveBeenCalledTimes(2);
   });
 
   it('reports ambiguous personal workspace mappings instead of choosing one', async () => {
@@ -48,7 +50,7 @@ describe('domain workspace scope resolvers', () => {
       { id: workspaceId, created_by: actorId, kind: 'personal', status: 'active' },
       { id: crypto.randomUUID(), created_by: actorId, kind: 'personal', status: 'active' },
     ]);
-    fromMock.mockReturnValueOnce(propertyQuery).mockReturnValueOnce(workspaceQuery);
+    fromMock.mockReturnValueOnce(propertyQuery).mockReturnValueOnce(queryResult(null)).mockReturnValueOnce(workspaceQuery);
 
     const { resolvePropertyShortlistScope } = await import('@/lib/platform/access/domainScope.server');
     await expect(resolvePropertyShortlistScope(actorId, propertyId)).rejects.toMatchObject({ code: 'AMBIGUOUS' });
@@ -56,8 +58,6 @@ describe('domain workspace scope resolvers', () => {
 
   it('resolves a team member only through an explicit mapped resource link', async () => {
     fromMock
-      .mockReturnValueOnce(queryResult({ workspace_id: workspaceId, user_id: actorId, role: 'member', status: 'active' }))
-      .mockReturnValueOnce(queryResult({ id: workspaceId, kind: 'team', name: 'Team', status: 'active', revision: 2 }))
       .mockReturnValueOnce(queryResult({ resource_id: propertyId, owner_id: crypto.randomUUID(), workspace_id: workspaceId, status: 'mapped', source_revision: 7 }));
 
     const { resolveWorkspaceMappedResourceScope } = await import('@/lib/platform/access/domainScope.server');
@@ -70,5 +70,27 @@ describe('domain workspace scope resolvers', () => {
     const { resolveScanScope, resolveVibeRevisionScope } = await import('@/lib/platform/access/domainScope.server');
     await expect(resolveScanScope(actorId, 'scan-1')).rejects.toMatchObject({ code: 'UNSUPPORTED' });
     await expect(resolveVibeRevisionScope(actorId, 'revision-1')).rejects.toMatchObject({ code: 'UNSUPPORTED' });
+  });
+  it('prefers an existing team mapping to the owner personal fallback', async () => {
+    fromMock.mockReturnValueOnce(queryResult({ owner_id: actorId, revision: 3 }))
+      .mockReturnValueOnce(queryResult({ owner_id: actorId, workspace_id: workspaceId, status: 'mapped' }));
+    const { resolvePropertyShortlistScope } = await import('@/lib/platform/access/domainScope.server');
+    await expect(resolvePropertyShortlistScope(actorId, propertyId)).resolves.toMatchObject({ workspaceId });
+    expect(accessMock).toHaveBeenCalledWith(actorId, workspaceId, 'workspace:read');
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+  it('rejects a revoked member without reinterpreting their resource as personal', async () => {
+    fromMock.mockReturnValueOnce(queryResult({ owner_id: actorId, revision: 3 }))
+      .mockReturnValueOnce(queryResult({ owner_id: actorId, workspace_id: workspaceId, status: 'mapped' }));
+    accessMock.mockRejectedValueOnce(new Error('Workspace not found.'));
+    const { resolvePropertyShortlistScope } = await import('@/lib/platform/access/domainScope.server');
+    await expect(resolvePropertyShortlistScope(actorId, propertyId)).rejects.toThrow('Workspace not found.');
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+  it('rejects mapping owner drift', async () => {
+    fromMock.mockReturnValueOnce(queryResult({ owner_id: actorId, revision: 3 }))
+      .mockReturnValueOnce(queryResult({ owner_id: crypto.randomUUID(), workspace_id: workspaceId, status: 'mapped' }));
+    const { resolvePropertyShortlistScope } = await import('@/lib/platform/access/domainScope.server');
+    await expect(resolvePropertyShortlistScope(actorId, propertyId)).rejects.toMatchObject({ code: 'UNMAPPED' });
   });
 });

@@ -74,7 +74,15 @@ async function resolveSupabaseOwnerScopedResource(
   if (!data) throw new DomainScopeError('NOT_FOUND', `${resourceType} resource was not found.`);
   const row = data as unknown as OwnerScopedRow;
   if (!row.owner_id) throw new DomainScopeError('UNMAPPED', `${resourceType} resource has no owner ID.`);
-  const workspaceId = await resolveWorkspaceForOwner(row.owner_id, input.actorId);
+  const { data: link, error: linkError } = await supabaseAdmin.from('platform_scope_links')
+    .select('owner_id,workspace_id,status').eq('resource_type', resourceType).eq('resource_id', input.resourceId).maybeSingle();
+  if (linkError) throw new Error('Unable to resolve resource mapping.');
+  if (link && (link.status !== 'mapped' || !link.workspace_id || link.owner_id !== row.owner_id)) {
+    throw new DomainScopeError('UNMAPPED', 'Resource mapping requires repair.');
+  }
+  // An explicit mapping always wins. Never reinterpret team data as personal.
+  const workspaceId = link?.workspace_id || await resolveWorkspaceForOwner(row.owner_id, input.actorId);
+  await requireWorkspaceAccess(input.actorId, workspaceId, 'workspace:read');
   return {
     resourceType,
     resourceId: input.resourceId,

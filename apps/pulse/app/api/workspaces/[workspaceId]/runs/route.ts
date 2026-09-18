@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest, context: WorkspaceRouteContext) {
-  return workspaceWorkflowRequest(request, context, (actor, workspace) => listRuns(actor, workspace));
+  return workspaceWorkflowRequest(request, context, (actor, workspace) => listRuns(actor, workspace, request.nextUrl.searchParams));
 }
 export async function POST(request: NextRequest, context: WorkspaceRouteContext) {
   return workspaceWorkflowRequest(request, context, async (actor, workspace) => startRun(actor, workspace, await readWorkflowBody(request)));

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { command, withDockerService } from './docker-acceptance.mjs';
 import { platformRunAcceptance } from './platform-run-acceptance.mjs';
+import { platformFollowupAcceptance } from './platform-followup-acceptance.mjs';
 
 await withDockerService('scheduler-test', async (container) => {
   const sql = (input) => command('docker', [
@@ -54,6 +55,10 @@ await withDockerService('scheduler-test', async (container) => {
     '20260917040000_platform_sprint_scope.sql',
     '20260918010000_platform_sprint_schedule_backlog_scope.sql',
     '20260918020000_platform_json_runs_checkpoints.sql',
+    '20260918030000_platform_scope_fencing.sql',
+    '20260918035000_platform_owner_planning_guard.sql',
+    '20260918040000_platform_run_recovery.sql',
+    '20260918050000_platform_app_installs.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -88,7 +93,7 @@ await withDockerService('scheduler-test', async (container) => {
   console.log('PASS: personal workspace creation is idempotent and creates one owner membership');
   await assert.rejects(
     sql(`SELECT * FROM platform_save_sprint_planner_schedule('${otherOwner}', '${requestedPersonalId}', NULL, 'manual_backlog', 'daily', 'America/Chicago', 8, 0, 1, now() + interval '1 day');`),
-    /Schedule edit access denied/
+    /Workspace action denied/
   );
   const scopedSchedule = await sql(`SELECT id::text FROM platform_save_sprint_planner_schedule('${owner}', '${requestedPersonalId}', NULL, 'manual_backlog', 'daily', 'America/Chicago', 8, 0, 1, now() + interval '1 day');`);
   assert.match(scopedSchedule, /^[0-9a-f-]{36}$/i);
@@ -110,7 +115,7 @@ await withDockerService('scheduler-test', async (container) => {
     VALUES ('sprint', '${sprintId}', '${owner}', '${requestedPersonalId}', 'mapped', 1);`);
   await assert.rejects(
     sql(`SELECT * FROM platform_approve_sprint_with_assignments('${otherOwner}', '${requestedPersonalId}', '${sprintId}', 1);`),
-    /approval access denied/
+    /Workspace action denied/
   );
   assert.match(
     await sql(`SELECT sprint_id::text || '|' || sprint_status || '|' || assignment_count::text
@@ -229,4 +234,5 @@ await withDockerService('scheduler-test', async (container) => {
   assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${exhaustedJob}';`), 'failed');
   console.log('PASS: deferred polling has a terminal budget');
   await platformRunAcceptance(sql);
+  await platformFollowupAcceptance(sql);
 }).catch((error) => { console.error(error.message); process.exitCode = 1; });

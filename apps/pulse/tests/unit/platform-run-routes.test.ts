@@ -11,6 +11,10 @@ vi.mock('@/lib/platform/access/workspaceAccess.server', async (original) => ({
 import { POST as start, GET as runs, PATCH as cancel } from '@/app/api/workspaces/[workspaceId]/runs/route';
 import { POST as respond, GET as checkpoints } from '@/app/api/workspaces/[workspaceId]/checkpoints/route';
 import { WorkspaceAccessError } from '@/lib/platform/access/workspaceAccess.server';
+import { POST as recover } from '@/app/api/workspaces/[workspaceId]/runs/recover/route';
+import { POST as supersede } from '@/app/api/workspaces/[workspaceId]/runs/supersede/route';
+import { POST as install } from '@/app/api/workspaces/[workspaceId]/apps/route';
+import manifest from '@/lib/platform/apps/manifests/real-estate-readiness.v1.json';
 
 const actor = '11111111-1111-4111-8111-111111111111';
 const workspace = '22222222-2222-4222-8222-222222222222';
@@ -49,6 +53,19 @@ describe('workspace JSON run and checkpoint routes', () => {
     expect((await respond(request(answer, 'POST', 'https://foreign.example'), context())).status).toBe(403);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
+  it('accepts the real loopback Host after NextURL normalizes the request URL', async () => {
+    const req=new NextRequest(`http://localhost/api/workspaces/${workspace}/runs`,{
+      method:'POST',headers:{Host:'127.0.0.1:3176',Origin:'http://127.0.0.1:3176','Content-Type':'application/json'},
+      body:JSON.stringify({requestKey:actor,definition:graph}),
+    });
+    expect((await start(req,context())).status).toBe(200);
+  });
+  it('does not trust a forwarded host to authorize cross-origin writes', async () => {
+    const req=request(answer,'POST','https://foreign.example');
+    req.headers.set('host','localhost');req.headers.set('x-forwarded-host','foreign.example');
+    expect((await respond(req,context())).status).toBe(403);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
   it('bounds the streamed body before parsing', async () => {
     expect((await respond(request({ value: 'x'.repeat(131073) }), context())).status).toBe(413);
     expect(mocks.rpc).not.toHaveBeenCalled();
@@ -79,5 +96,38 @@ describe('workspace JSON run and checkpoint routes', () => {
     expect(result.status).toBe(200);
     expect(query.eq).toHaveBeenCalledWith('workspace_id', workspace);
     expect(query.limit).toHaveBeenCalled();
+  });
+  it('recovers a blocked run using the signed-in actor and a checked revision', async () => {
+    expect((await recover(request({runId: checkpoint, expectedRevision: 2}), context())).status).toBe(200);
+    expect(mocks.access).toHaveBeenCalledWith(actor,workspace,'workspace:manage_apps');
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_recover_run',expect.objectContaining({p_actor_id:actor,p_expected_revision:2}));
+  });
+  it('supersedes without overwriting an answer through the checkpoint endpoint', async () => {
+    expect((await supersede(request({runId:checkpoint,expectedRevision:2,requestKey:actor,definition:graph,reason:'Changed inputs'}),context())).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_supersede_run',expect.objectContaining({p_run_id:checkpoint,p_reason:'Changed inputs'}));
+  });
+  it('saves a validated inert install through the app-management boundary', async () => {
+    expect((await install(request({manifest,settings:{area:'keller-westlake'},status:'installed',expectedRevision:null}),context())).status).toBe(200);
+    expect(mocks.access).toHaveBeenCalledWith(actor,workspace,'workspace:manage_apps');
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_save_app_install',expect.objectContaining({p_actor_id:actor,p_manifest:manifest,p_expected_revision:null}));
+  });
+  it('rejects unsupported manifest capability execution before persistence', async () => {
+    expect((await install(request({manifest:{...manifest,capabilities:[{tool:'send'}]},settings:{area:'keller-westlake'},status:'installed',expectedRevision:null}),context())).status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('returns bounded pages with a deterministic tie-break cursor', async () => {
+    const rows=[{id:actor,created_at:'2026-09-18T12:00:00+00:00'},{id:checkpoint,created_at:'2026-09-18T12:00:00+00:00'}];
+    const query={select:vi.fn().mockReturnThis(),eq:vi.fn().mockReturnThis(),order:vi.fn().mockReturnThis(),or:vi.fn().mockReturnThis(),limit:vi.fn().mockResolvedValue({data:rows,error:null})};
+    mocks.from.mockReturnValue(query);
+    const result=await runs(new NextRequest(`http://localhost/api/workspaces/${workspace}/runs?limit=1`),context());
+    const page=(await result.json()).result;
+    expect(page.items).toEqual([rows[0]]);expect(page.nextCursor).toBeTypeOf('string');
+    expect(query.limit).toHaveBeenCalledWith(2);expect(query.order).toHaveBeenCalledWith('id',{ascending:false});
+    await runs(new NextRequest(`http://localhost/api/workspaces/${workspace}/runs?limit=1&cursor=${page.nextCursor}`),context());
+    expect(query.or).toHaveBeenCalledWith(expect.stringContaining(`id.lt.${actor}`));
+  });
+  it('rejects an unbounded page request before DB access', async () => {
+    expect((await runs(new NextRequest(`http://localhost/api/workspaces/${workspace}/runs?limit=1000`),context())).status).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });

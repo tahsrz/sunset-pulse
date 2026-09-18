@@ -12,7 +12,19 @@ class InputError extends Error {
 }
 export async function readWorkflowBody(request: NextRequest): Promise<unknown> {
   const origin = request.headers.get('origin');
-  if ((origin && origin !== new URL(request.url).origin) || request.headers.get('sec-fetch-site') === 'cross-site') {
+  // NextURL normalizes loopback names. Compare against the actual HTTP Host,
+  // never x-forwarded-host supplied by a client, retaining the request protocol.
+  const requestUrl = new URL(request.url);
+  let expectedOrigin = requestUrl.origin;
+  const host = request.headers.get('host');
+  if (host) {
+    try {
+      const external = new URL(`${requestUrl.protocol}//${host}`);
+      if (external.username || external.password || external.pathname !== '/' || external.search || external.hash) throw new Error();
+      expectedOrigin = external.origin;
+    } catch { throw new InputError(403, 'Invalid request host.'); }
+  }
+  if ((origin && origin !== expectedOrigin) || request.headers.get('sec-fetch-site') === 'cross-site') {
     throw new InputError(403, 'Cross-origin request denied.');
   }
   if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') {

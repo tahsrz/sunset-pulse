@@ -2,8 +2,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { createPropertySprintProposal } from '@/lib/property-sprints/planPropertySprint.server';
 import { selectSprintBacklog } from './sprintSelection';
 import type { WorkflowExecution, WorkflowJob } from './workflowRegistry.server';
+import { requireOwnerCompatiblePlanning } from '@/lib/platform/access/sprintPlanningScope.server';
 
 export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<WorkflowExecution> {
+  await requireOwnerCompatiblePlanning(job.id, job.lease_token);
   const eventPlanningMode = job.trigger_kind === 'event' && job.payload?.planningMode === 'property_shortlist'
     ? 'property_shortlist'
     : null;

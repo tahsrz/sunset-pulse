@@ -57,6 +57,30 @@ The Mongo suite covers competing appends/reviews, approval vs upload, reviewer
 revocation, rejected/stale artifacts and preservation of revoked artifacts. It
 does not exercise signed storage URLs or real browser authentication.
 
+## Real local Supabase authentication acceptance
+
+From `apps/pulse`, with the existing local Supabase stack running:
+
+```sh
+npm run test:platform:auth -- --stack <local-stack-id> --apply-local-migrations
+```
+
+Use the suffix of the local `supabase_db_<local-stack-id>` container name. The
+runner is fixed to loopback ports 54321/3176, creates temporary real Auth users,
+logs in through the browser form with mock auth disabled, and exercises workspace
+start/checkpoint-answer/cancel/pagination plus foreign-user API and JWT/RLS denial.
+It leases only its own fixture jobs; worker contention is tested separately by the
+disposable scheduler suite. It removes its accounts/workspace and restores the
+prior `platform_run` admission flag. It never loads an environment file or logs
+credentials. The temporary Next process receives explicit local auth settings.
+
+The migration flag applies reviewed missing platform migrations to the **local**
+stack and retains them; it does not reset the database. Omit the flag to require
+an already-migrated stack. Do not run alongside another build/dev server using
+`apps/pulse/.next`. Browser screenshots go to the ignored
+`apps/pulse/.pulse-local/platform-auth-acceptance` directory. This is real local
+Supabase Auth/API evidence, not production acceptance or an inbox UI test.
+
 The `docker-acceptance` CI job runs these same commands. A local pass does not
 establish a passing remote workflow. An abruptly killed runner may leave its
 uniquely named project behind; inspect Docker Desktop and remove only that test

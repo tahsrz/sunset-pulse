@@ -46,4 +46,7 @@ export const checkpointResponseSchema = z.object({
   value: z.union([z.string().min(1).max(4000), z.number().finite(), z.boolean()]),
 }).strict();
 export const cancelRunSchema = z.object({ runId: z.string().uuid(), expectedRevision: z.number().int().positive() }).strict();
+export const supersedeRunSchema = cancelRunSchema.extend({
+  requestKey: z.string().uuid(), definition: runDefinitionSchema, reason: z.string().trim().min(1).max(500),
+}).strict();
 export type RunDefinition = z.infer<typeof runDefinitionSchema>;

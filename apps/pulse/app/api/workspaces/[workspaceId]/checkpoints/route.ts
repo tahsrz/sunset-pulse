@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest, context: WorkspaceRouteContext) {
-  return workspaceWorkflowRequest(request, context, (actor, workspace) => listCheckpoints(actor, workspace));
+  return workspaceWorkflowRequest(request, context, (actor, workspace) => listCheckpoints(actor, workspace, request.nextUrl.searchParams));
 }
 export async function POST(request: NextRequest, context: WorkspaceRouteContext) {
   return workspaceWorkflowRequest(request, context, async (actor, workspace) => respondToCheckpoint(actor, workspace, await readWorkflowBody(request)));
