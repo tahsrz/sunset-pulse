@@ -4,6 +4,8 @@ Revised September 18, 2026 from Taz's five architecture changes. This is the act
 Implement sequentially, without subagents. Read this file and only the source files needed for the current action.
 The [previous 18-packet specification](archive/SUNSET_PULSE_OPERATING_PLATFORM_PLAN_2026-09-18.md) is historical evidence, not a second implementation backlog.
 
+Execution entry: [current ledger](#current-ledger-and-next-session) → [September 21–25 handoff](PLATFORM_WEEK_2026-09-21.md). The code sequences below describe the architecture; they are not all unfinished tasks. The requested `SUNSET_PULSE_OPERATING_PLATFORM_PLAN_2.md` does not exist in this checkout; this file is the canonical replacement, not a second plan to create.
+
 Vision: people and Jamie organize business work together. Installed apps describe inputs, workflow graphs and required tools as data. One scheduler runs the work, waits for people, preserves evidence and reports outcomes.
 
 ## Architecture decisions
@@ -36,7 +38,9 @@ Postgres run/checkpoint changes enqueue directly into the existing queue inside 
 
 Goal: a validated JSON workflow persists, waits for a person, accepts one answer/decision, resumes after restart and reaches a terminal state through the existing scheduler.
 
-### Current code sequence
+### Implemented backend contract
+
+The following backend sequence is implemented and tested locally. Do not rebuild it. Team-domain integration and end-user UI are separate remaining work.
 
 1. `lib/platform/contracts/run.ts`: strict schema version 1 graph; keys/versions; unique node IDs; entry and next references; 1–64 nodes; reject missing/unreachable nodes and cycles.
 2. Define `checkpoint` and `complete` nodes first. A question uses a supported JSON Schema scalar (`string`, bounded string enum, `number`, `boolean`). Approvals/effect gates pin action, resource ID/type, revision and content hash; audience hash where applicable. Rejection cancels the run.
@@ -56,8 +60,8 @@ First-version scope: scalar questions, approvals, effect gates and completion. N
 
 ### Follow-on Core actions
 
-- Finish workspace mapping/owner compatibility audit and authenticated session/RLS acceptance; add safe actor/domain scope adapters to new admissions.
-- Wire a property assignment into a manifest-launched run only when its property and task revision are explicitly mapped.
+- Next: finish workspace-aware planner input selection, atomic persistence and legacy mutation compatibility; use W1–W2 in the [weekly handoff](PLATFORM_WEEK_2026-09-21.md). Retain the current fail-closed guard until those adapters pass acceptance.
+- Then: wire a property assignment into a manifest-launched run only when its property and task revision are explicitly mapped (W3).
 - Implemented: bounded workspace/collection-bound cursor pages ordered by timestamp + ID; admin recovery requires restored requester authority; supersession creates a new pinned run and retains prior answers/actor attribution. Lists now return `{ items, nextCursor }`.
 - Completed locally: real Supabase password/cookie browser sessions prove start, answer, cancel, cursor pages and foreign-user denial. The local runner leases only its own fixture jobs; normal claim contention is covered separately by disposable scheduler acceptance. Production and future inbox UI acceptance remain separate gates.
 - Add richer question fields and conditional nodes only with matching schema/interpreter tests; unsupported graph versions fail explicitly.
@@ -67,6 +71,8 @@ First-version scope: scalar questions, approvals, effect gates and completion. N
 Goal: real-estate readiness and client-content review are two data-defined apps using the same interpreter and tooling.
 
 ### Code sequence
+
+Items 1–3 are implemented for inert intake-only manifests. Items 4–16 are not implied by installation; W3 adds authorized launch, and W4 may add the human-only form/inbox surface. Tool execution remains gated behind policy, receipts and cost controls.
 
 1. `lib/platform/contracts/appManifest.ts`: parse JSON fields `schemaVersion`, `key`, `version`, `title`, `inputSchema`, `workflows`, `capabilities`, `artifactSchemas`, `settingsSchema`. Reject executable strings, unknown schema features and dynamic imports.
 2. Add `platform_app_installs` holding pinned manifest JSON/hash, workspace settings, status and revision. A run copies its selected definition/version at admission; upgrading an install cannot rewrite active runs.
@@ -108,48 +114,20 @@ Exit: two apps can be operated and recovered through one UI with measured costs 
 
 ## Verification and release
 
-Run only affected suites and the necessary database/build gates. Paths below are relative to `apps/pulse`.
+Use the exact commands and scope distinctions in the [September 18 verification record](PLATFORM_VERIFICATION_2026-09-18.md) and [Docker/Auth runbook](../../../infra/local/README.md). Add focused tests for each new slice; existing passes do not validate later changes.
 
-- `npm run test:unit -- tests/unit/platform-run-contracts.test.ts tests/unit/platform-run-routes.test.ts tests/unit/platform-run-handler.test.ts tests/unit/scheduler-registry.test.ts tests/unit/scheduler-deferred-outcomes.test.ts`
-- `npm run test:db:concurrency`: disposable Postgres, real scheduler + core migrations; new assertions live in `scripts/platform-run-acceptance.mjs`. No environment file or linked production database.
-- `npm run build`: Next.js production/type gate.
-- Local real-session check: `npm run test:platform:auth -- --stack <local-stack-id>`; reviewed missing local migrations require the explicit `--apply-local-migrations` flag. Full Storage/all-domain RLS, production and inbox UI checks remain separate release gates.
-- New event admissions remain disabled until the matching worker version is deployed. Production migration/promotion and external operations are separate from local implementation.
+New event admissions remain disabled until the matching worker version and release gates are satisfied. Production migrations, backfills, promotion, outbound sends and paid-provider activation require a separate explicit operational decision. No merge/deploy is authorized by this plan.
 
 ## Current ledger and next session
 
 | Phase | Current state | Evidence / remaining gate |
 | --- | --- | --- |
-| Core Platform | JSON run/checkpoint backend plus pagination, recovery, supersession and scope fencing implemented. | Real-Postgres acceptance passes. Real-session/browser result recorded below; team-aware planner selection and domain assignment integration remain open. |
-| Declarative Engine | Manifest contract, revision-checked install store/API and two reviewed intake fixtures implemented. | No protocol gateway, form renderer, capability/condition execution or external effects. Capabilities must be empty in this schema version. |
-| Control Layer | Planned; existing audit reused by core | Unified inbox, quotas, operations and two-app pilot remain open. |
+| Core Platform | JSON run/checkpoint backend, pagination, recovery, supersession and scope fencing implemented. | Local real-Postgres and real Supabase/browser acceptance pass. **Team-aware planner selection/persistence and legacy mutation adapters remain open.** |
+| Declarative Engine | Manifest contract, revision-checked install API and two reviewed intake fixtures implemented. | **Resource-bound launch and generic forms remain open.** No gateway, capability/condition execution or external effects; capabilities must be empty. |
+| Control Layer | Basic audit exists; remainder planned. | **Checkpoint inbox and run details remain open.** Quotas, connector operations and a two-app operational pilot are later gates. |
 
-Prior evidence: September 17–18 focused workspace/property/sprint tests passed in separate runs (9 property/scope + 16 route/reader tests); production build and disposable scheduler replay passed. The older full-unit run had three timeout failures. These results concern the old scope adapters, not the new engine.
+Baseline implementation: `12716f15` on [PR #79](https://github.com/tahsrz/sunset-pulse/pull/79). Its September 18 CI run passed lint, test, scheduler-db, docker-acceptance and jamie-e2e; Vercel reported success. Supabase Preview was skipped. Exact evidence, migration scope and remaining gaps live in the [dated record](PLATFORM_VERIFICATION_2026-09-18.md), not in repeated completion logs here.
 
-Next implementer reads this section, the current phase instructions and relevant code only. Do not load the archived 165-anchor plan by default. Keep both domain plans for their feature-specific requirements.
+**Next action: W1 — team-scoped planner selection**, followed by W2 atomic/manual compatibility, W3 resource-bound app launch, W4 human UI and W5 acceptance/handoff. Follow the [September 21–25 implementation plan](PLATFORM_WEEK_2026-09-21.md) for file/symbol changes and done gates. Dates are target work slots, not permission to bypass a failed prerequisite.
 
-### Current slice evidence
-
-September 18, 2026, local implementation evidence:
-
-- The five focused suites listed above passed **30/30 tests**: graph contracts, workspace routes, atomic handler result and legacy scheduler compatibility.
-- `npm run test:db:concurrency` passed every scheduler/workspace group and the new real-Postgres run/checkpoint acceptance. Assertions cover duplicate start, competing answers, exact replay, typed values, gate-specific roles, cancellation, revocation, audit attribution and authenticated-role read isolation (including archived workspaces).
-- Resume admission failure leaves the checkpoint pending. Lease expiry while blocked on a run lock rolls back both checkpoint creation and the result receipt. The tests observe actual overlapping transactions/lock waits, not sequential stand-ins.
-- The disposable Docker project and its temporary fixtures were removed by the runner. No production database or environment file was used by this acceptance run.
-- `npm run build` passed compilation, type checking and production page generation (exit 0). It retained the existing nonfatal Kepler dynamic-server-usage warning. `git diff --check` passed; Git reported only line-ending normalization warnings.
-- At the end of the initial Core slice, real-session Supabase/browser acceptance was still outstanding; the follow-up evidence below supersedes that status. Storage/all-domain RLS checks remain separate. The capability matrix and both domain-plan entry points reference this three-phase plan; the baseline remains historical.
-
-### Follow-up slice — September 18
-
-- `20260918030000_platform_scope_fencing.sql` adds active-workspace/member locks to seven scoped mutations and rejects implicit mapped-resource transfers. `domainScope.server.ts` honors an existing team mapping before personal-owner fallback and checks current membership.
-- `20260918035000_platform_owner_planning_guard.sql` and `sprintPlanningScope.server.ts` reject team/mixed/unresolved scopes before owner-only planner reads and again at persistence. This closes unsafe admission, **not** the missing team-aware selector. Legacy manual owner-only mutation paths still need explicit workspace adapters before full team rollout.
-- `pagination.ts` implements bounded keyset cursors. `20260918040000_platform_run_recovery.sql` adds revision-checked blocked recovery and whole-run supersession, admission-key serialization, preserved checkpoint evidence and audit. New endpoints: `runs/recover` and `runs/supersede`; no second inbox store.
-- `appManifest.ts` accepts strict inert JSON: flat scalar object schemas, current checkpoint/complete graphs, input/settings/artifact schemas. Unknown hooks, imports, refs, graph features and nonempty capabilities fail validation. Strings are data and are never evaluated.
-- `20260918050000_platform_app_installs.sql` stores manifest JSON/hash, settings, status and revision with scoped reads and service-only transactional writes. Same-version content changes and downgrades conflict; upgrades cannot modify existing run definitions. `apps/route.ts` exposes owner/admin installation.
-- `real-estate-readiness.v1.json` and `client-content-review.v1.json` are reviewed **intake-only** fixtures with no tools. Their input schemas describe intended resource identifiers; installation does not bind those identifiers to runs or confer property/publication authority. Domain-aware launch remains a follow-up.
-- Verification: **79/79 tests across 13 affected unit suites passed**; `npm run test:db:concurrency` passed all groups including concurrent recovery/supersession/install upgrades, manifest rejection, archived mutations and mapping transfer rollback. Initial production build passed; final rebuild after browser-discovered fixes is running. `git diff --check` passed.
-- Real-session/browser acceptance passed on the existing **local** Supabase Auth/PostgREST stack with mock auth disabled: rendered login form → real password/cookie session → workspace creation → run/checkpoint/answer/completion → cancellation → cursor pages. A second real user is denied by both API and real-JWT RLS. `npm run test:platform:auth -- --stack xlyfhiafactxahhvikyv` completed successfully. Screenshots: ignored `.pulse-local/platform-auth-acceptance/login.png` and `runs.png`.
-- Browser acceptance found and fixed two real issues: `VibeContext.tsx` inserted automation-only markup/theme changes that broke hydration; `http.server.ts` compared Origin against NextURL's normalized loopback host. Rendering now follows the same path for browsers and automation, and same-origin writes use the actual Host without trusting forwarded-host overrides. Both fixes have regression tests.
-- Missing migrations were applied locally without resetting data. Cleanup confirmed zero temporary accounts/workspaces, the test server stopped, and `platform_run.enabled=false` restored. Applied local migrations remain. No production changes or provider execution.
-
-Next slice: implement team-scoped planner selection/persistence and legacy mutation adapters; bind manifest-launched runs to exact authorized property/content revisions. Keep provider execution disabled until capability policy, effect receipts and cost controls exist. The future inbox consumes the existing checkpoint API.
+Read this ledger, the active W-section and relevant source only. Do not load the archived 165-anchor specification by default. The Praxis and Keller / Westlake plans retain feature constraints and historical evidence; their older "next" sections do not override this queue. Keep one `keller-westlake` area, preserve source uncertainty, and keep email/publication authority separate from sprint approval.

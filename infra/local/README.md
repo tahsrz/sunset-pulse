@@ -81,8 +81,10 @@ an already-migrated stack. Do not run alongside another build/dev server using
 `apps/pulse/.pulse-local/platform-auth-acceptance` directory. This is real local
 Supabase Auth/API evidence, not production acceptance or an inbox UI test.
 
-The `docker-acceptance` CI job runs these same commands. A local pass does not
-establish a passing remote workflow. An abruptly killed runner may leave its
+The `docker-acceptance` CI job runs `npm run docker:test` (disposable scheduler
+and Mongo suites), **not** the real-session Auth harness above. The `scheduler-db`
+job separately runs Supabase database tests. A local pass does not establish a
+passing remote workflow. An abruptly killed runner may leave its
 uniquely named project behind; inspect Docker Desktop and remove only that test
 project. No command here prunes shared images or volumes.
 

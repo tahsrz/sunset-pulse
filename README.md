@@ -9,11 +9,11 @@ The codebase also includes scheduling, food-service operations, games, and visua
 - **Explore the app:** [Sunset Pulse](https://www.sunsetpulse.app/), [Agent Console](https://www.sunsetpulse.app/agent), or [Command Center](https://www.sunsetpulse.app/command-center).
 - **Find a screen:** use the [app path directory](#app-paths-and-command-navigation) below.
 - **Run it locally:** follow [local development](#local-development).
-- **Use Docker:** [local Mongo and isolated database tests](infra/local/README.md), with `npm run docker:up` and `npm run docker:test`.
+- **Use Docker:** [local Mongo, isolated database tests, and real local Supabase authentication](infra/local/README.md). Start with `npm run docker:status`; acceptance uses `npm run docker:test`.
 - **Find the code:** see [architecture and repository layout](#architecture-and-repository-layout).
 - **Make a change:** see [commands](#commands), [verification](#verification), and [contributing](#contributing).
 - **Continue a feature:** consult the [plans and runbooks](#plans-and-runbooks), then confirm the current implementation in source.
-- **Praxis Agent Workspace:** [implementation plan and status](apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md)—shared microphone listening, spawnable agents, automatic queries, and manual submission. Output-parity extraction remains in progress.
+- **Continue platform work:** start with the [current ledger](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md#current-ledger-and-next-session) and [next-week implementation handoff](apps/pulse/docs/PLATFORM_WEEK_2026-09-21.md). Praxis and Keller / Westlake remain domain specifications, not competing platform backlogs.
 
 This README is the repository entry point, not a live deployment report. A route in source, a completed planning checkbox, or a passing local test does not establish production availability.
 
@@ -256,6 +256,14 @@ TAH is the application's cartridge-based knowledge layer. Local `.tah` files, re
 
 Local knowledge storage is not a guarantee of offline operation: model providers, listing data, authentication, and other integrations may still require network access and credentials. Generated indexes and runtime memory are not substitutes for the authoritative application stores.
 
+### Shared operating platform
+
+The platform reuses the durable scheduler for workspace-scoped JSON workflow runs and a single checkpoint API for questions, approvals, and effect gates. The backend includes cursor pagination, cancellation, blocked-run recovery, immutable prior answers on supersession, and pinned JSON app installs.
+
+The two manifests are currently **human-input intake fixtures**, not autonomous property research or content publication. Capabilities must be empty, `platform_run` admissions default to disabled, and the generic app/inbox UI is not implemented. Team-aware planning and resource-bound launches remain open; existing owner-only planners reject unsupported team/mixed scopes. A checkpoint decision is not a delivery receipt or permission to send, publish, or transact.
+
+Use the [capability matrix](apps/pulse/docs/PLATFORM_CAPABILITY_MATRIX.md) for implementation boundaries and the [dated verification record](apps/pulse/docs/PLATFORM_VERIFICATION_2026-09-18.md) for test evidence. Neither implies production rollout.
+
 ## Architecture and repository layout
 
 The primary application uses **Next.js 15, React 19, and TypeScript**. Its UI lives in App Router pages and shared components; route handlers and domain services implement application behavior. Supabase/PostgreSQL, MongoDB, and local artifacts serve different parts of the system. Prisma generates a PostgreSQL client for its schema.
@@ -272,6 +280,9 @@ SunsetPulse/
       lib/
         navigation/                Shared app route catalog
         command-center/            Command orchestration and knowledge workflows
+        platform/                  Workspace access, JSON runs/checkpoints, app manifests
+        autonomous-workflows/      Shared durable scheduler and existing domain workers
+        property-sprints/          Keller / Westlake shortlist and sprint adapters
         ai/                        Assistant and retrieval integrations
         data/                      Listing contracts, repositories, and discovery
         cms/                       Vibe schemas, presets, services, and workflows
@@ -289,7 +300,7 @@ SunsetPulse/
     api/                           Additional backend code
     WorldofTah/                    Separate .NET application
   packages/                        Shared/platform package sources
-  infra/                           Optional infrastructure, including OpenRESync
+  infra/                           Local Docker acceptance/services and OpenRESync
   docs/                            Cross-feature plans and operating documents
   .github/workflows/              CI definitions
 ```
@@ -304,6 +315,8 @@ Useful implementation entry points:
 | Page and API routes | [app/](apps/pulse/app/) |
 | Navigation inventory | [lib/navigation/routeCatalog.ts](apps/pulse/lib/navigation/routeCatalog.ts) |
 | Commands and retrieval | [lib/command-center/](apps/pulse/lib/command-center/), [lib/ai/](apps/pulse/lib/ai/) |
+| Platform contracts, access, and runs | [lib/platform/](apps/pulse/lib/platform/), [workspace APIs](apps/pulse/app/api/workspaces/) |
+| Shared scheduler and property planning | [lib/autonomous-workflows/](apps/pulse/lib/autonomous-workflows/), [lib/property-sprints/](apps/pulse/lib/property-sprints/) |
 | Listing data | [lib/data/](apps/pulse/lib/data/) |
 | Vibe screens and site services | [app/vibes/](apps/pulse/app/vibes/), [lib/cms/](apps/pulse/lib/cms/), [lib/sites/](apps/pulse/lib/sites/) |
 | Database definitions | [Prisma schema](apps/pulse/prisma/schema.prisma), [Supabase migrations](apps/pulse/supabase/migrations/) |
@@ -318,7 +331,7 @@ Run the commands below from the repository root unless a step says otherwise.
 - Node.js and npm with workspace support. The repository's [.node-version](.node-version) selects **Node 22**; the checked-in [CI workflow](.github/workflows/ci.yml) currently uses **Node 20**. These are not yet aligned, so record your runtime when reporting a failure.
 - Access to the development services needed by the feature you are working on.
 - Python only for Python-backed tools such as document import or crawlers.
-- Docker only for infrastructure workflows such as the OpenRESync pilot.
+- Docker Desktop with its Linux engine running for disposable Postgres/Mongo acceptance, local Mongo, or a local Supabase stack. Basic UI work does not require these services; see the [Docker runbook](infra/local/README.md).
 - A .NET SDK only if working on `apps/WorldofTah`.
 
 ### 2. Configure the app environment
@@ -394,6 +407,11 @@ All examples in this section run from the repository root. Root wrappers are def
 | Lint Pulse | `npm run lint --workspace=apps/pulse` |
 | Run unit tests | `npm run test:unit` |
 | Run unit tests in watch mode | `npm run test:unit:watch --workspace=apps/pulse` |
+| Inspect local development Mongo | `npm run docker:status` |
+| Start local development Mongo | `npm run docker:up` |
+| Run disposable scheduler/platform and Mongo acceptance | `npm run docker:test` |
+| Run only disposable scheduler/platform acceptance | `npm run docker:test:scheduler` |
+| Exercise real local Supabase login and platform APIs | `npm run test:platform:auth --workspace=apps/pulse -- --stack "<local-stack-id>"` |
 | Check commercial inventory truth | `npm run test:inventory-truth` |
 | Run browser tests | `npm run test:e2e` |
 | Open the Playwright test UI | `npm run test:e2e:ui --workspace=apps/pulse` |
@@ -471,6 +489,14 @@ npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts
 
 Mock browser tests do not establish live provider, billing, or database correctness. Vibe production verification additionally needs a controlled non-customer site, real revision IDs, before/after pointers, and cleanup evidence; follow the dedicated runbooks.
 
+### Platform database and real-session checks
+
+`npm run docker:test` creates disposable databases and removes only its own test projects. It does not validate a deployed database or real Auth/Storage configuration. `scheduler-db` CI separately replays Supabase migrations and database tests.
+
+The `test:platform:auth` command above uses an existing **local** Supabase stack. Replace `<local-stack-id>` with the suffix of its `supabase_db_...` container; follow the [real-session runbook](infra/local/README.md#real-local-supabase-authentication-acceptance) for ports and prerequisites. It creates temporary real users, logs in through the browser, exercises run/checkpoint APIs, checks foreign-user isolation, and cleans up its fixtures. This is not yet acceptance of a generic inbox UI.
+
+The optional `--apply-local-migrations` flag writes reviewed missing migrations to that local stack and retains them. Without it, the stack must already be migrated. Do not run this harness alongside another build/dev server sharing `apps/pulse/.next`. Never substitute a production database or credentials.
+
 ## Data, costs, and operations
 
 - **Respect the existing storage boundaries.** Supabase, MongoDB, and local TAH/index files are not interchangeable. Follow the domain service for the feature rather than introducing another source of truth.
@@ -488,7 +514,10 @@ These documents contain implementation detail and historical decisions. Some inc
 
 | Topic | Documentation |
 | --- | --- |
-| Shared operating platform roadmap | [Code-level platform plan](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md), [Praxis](apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md), [Keller / Westlake](apps/pulse/docs/KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md) |
+| Active platform roadmap and next work | [Three-phase plan and ledger](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md), [September 21–25 handoff](apps/pulse/docs/PLATFORM_WEEK_2026-09-21.md) |
+| Platform scope and evidence | [Capability matrix](apps/pulse/docs/PLATFORM_CAPABILITY_MATRIX.md), [September 18 verification](apps/pulse/docs/PLATFORM_VERIFICATION_2026-09-18.md) |
+| Domain specifications | [Praxis workspace](apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md), [Keller / Westlake property sprints](apps/pulse/docs/KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md) |
+| Local infrastructure and acceptance | [Docker and real local Auth runbook](infra/local/README.md) |
 | Vibe implementation baseline | [Luna baseline](apps/pulse/docs/VIBE_CMS_LUNA_BASELINE.md) |
 | Vibe UI design and execution | [UI plan](apps/pulse/docs/VIBE_CMS_WORDPRESS_UI_PLAN.md), [manual UI verification](apps/pulse/docs/VIBE_CMS_UI_MANUAL_VERIFICATION.md) |
 | Vibe vertical slice and handoff | [Vertical-slice plan](apps/pulse/docs/VIBE_CMS_VERTICAL_SLICE_PLAN.md), [Luna-to-Sol handoff](apps/pulse/docs/VIBE_CMS_LUNA_TO_SOL_HANDOFF.md), [Sol review](apps/pulse/docs/VIBE_CMS_SOL_REVIEW_REPORT.md) |

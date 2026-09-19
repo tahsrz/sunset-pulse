@@ -2,6 +2,7 @@
 
 Updated: September 18, 2026. Labels describe source evidence, not marketing availability.
 Phase references follow the active [three-phase operating platform plan](SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md).
+Next execution queue: [September 21–25 handoff](PLATFORM_WEEK_2026-09-21.md). Test scope and exact CI head: [September 18 evidence](PLATFORM_VERIFICATION_2026-09-18.md).
 
 | Capability | Current state | Evidence / boundary | Platform phase |
 | --- | --- | --- | --- |
@@ -10,7 +11,7 @@ Phase references follow the active [three-phase operating platform plan](SUNSET_
 | Existing-record personal scope report | dry-run code present; environment report blocked | `scripts/platform-scope-backfill.ts` reports profile/site/property mappings and refuses writes; last configured Supabase key was invalid | Core |
 | Existing tenant-site scope | implemented with acceptance limits | `lib/tenancy`; site config and domain publication rules | Core scope adapters |
 | Property shortlist and weekly sprint proposal | owner-compatible planning only; team adapter pending | Implicit scope transfers and archived mutations denied; legacy planners reject team/mixed mappings before reads/persistence. Manifest-run integration pending | Core → Declarative Engine |
-| Durable scheduled workflow jobs | implemented locally; CI/deployment evidence pending | Existing leases/retries/cancellation/deferral; new atomic platform result path tested in disposable Postgres | Core, reused queue |
+| Durable scheduled workflow jobs | implemented; local and September 18 CI acceptance pass | Existing leases/retries/cancellation/deferral and atomic platform results pass disposable Postgres; production worker/admission rollout remains separate | Core, reused queue |
 | Generic platform workflow definitions | backend implemented locally; admission disabled | Versioned JSON graph/state in `platform_runs`; scalar checkpoint and complete nodes only; no capability/condition nodes yet | Core |
 | Jamie retrieval/command preparation | implemented with domain-specific limits | Command router, TAH/retrieval and worker roster; shared protocol gateway still pending | Declarative Engine |
 | General autonomous worker execution | unavailable | `platform_run` handler advances checkpoints/completion, not arbitrary tools or named agents | Declarative Engine |

@@ -1,5 +1,7 @@
 # Keller / Westlake property sprint implementation plan
 
+**Execution handoff, September 18:** follow the [September 21–25 platform queue](PLATFORM_WEEK_2026-09-21.md) for shared-engine work: workspace-safe planning → atomic compatibility → authorized property-bound intake → shared human UI → acceptance. Older execution priorities below are historical, while their property truth, single-area, collaboration and approval constraints remain binding. [Current-head verification](PLATFORM_VERIFICATION_2026-09-18.md) supersedes earlier pending-CI notes; it does not establish production rollout or reconstruction availability.
+
 Platform roadmap (September 18): [Sunset Pulse operating platform — three-phase implementation plan](SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md) makes property readiness and client-content review data-defined apps on one engine. Phase 1 implements JSON run state and unified checkpoints; phase 2 connects manifests and protocol tools to existing shortlist/proposal/assignment services; phase 3 adds the shared inbox and operational controls. Preserve the single `keller-westlake` area, property truth rules and separate send/publication authority below. The platform ledger distinguishes implemented slices from planned integrations.
 
 ## September 16 review checkpoint — current execution entry
