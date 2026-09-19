@@ -5,6 +5,12 @@
     "apps/pulse"
   ],
   "scripts": {
+    "docker:up": "docker compose -f infra/local/compose.yaml --profile dev up -d --wait mongo",
+    "docker:down": "docker compose -f infra/local/compose.yaml --profile dev down",
+    "docker:status": "docker compose -f infra/local/compose.yaml --profile dev ps",
+    "docker:test:scheduler": "npm run test:db:concurrency --workspace=apps/pulse",
+    "docker:test:scans": "npm run test:db:mongo --workspace=apps/pulse",
+    "docker:test": "npm run docker:test:scheduler && npm run docker:test:scans",
     "pulse:dev": "npm run dev --workspace=apps/pulse",
     "pulse:build": "npm run build --workspace=apps/pulse",
     "tah:dev": "dotnet watch --project apps/WorldofTah run",

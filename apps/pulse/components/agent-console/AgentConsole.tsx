@@ -14,6 +14,7 @@ import { trackAgentConsoleEvent } from './agentConsoleEvents';
 import { useAgentConsolePreferences } from './useAgentConsolePreferences';
 import { useAgentConsoleRun } from './useAgentConsoleRun';
 import { useAgentConsoleSavedExamples } from './useAgentConsoleSavedExamples';
+import { CommandRouteDirectory } from '@/components/command-center/CommandRouteDirectory';
 
 export default function AgentConsole() {
   const [selectedJobId, setSelectedJobId] = useState(starterJobs[0].id);
@@ -196,6 +197,7 @@ export default function AgentConsole() {
 
       <section className="px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-4xl gap-5">
+          <CommandRouteDirectory />
           <div className="grid gap-5">
             {showResultFirst ? (
               <>

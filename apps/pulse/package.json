@@ -28,6 +28,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:unit": "node --no-warnings ../../node_modules/vitest/vitest.mjs run",
+    "test:db": "supabase test db",
+    "test:db:concurrency": "node scripts/scheduler-concurrency-acceptance.mjs",
+    "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
+    "test:db:mongo": "node scripts/scan-mongo-acceptance.mjs",
     "test:inventory-truth": "npx vitest run tests/unit/commercial-inventory-truth.test.ts tests/unit/jamie-public-guide-supervisor.test.ts tests/unit/jamie-listing-context.test.ts tests/unit/listing-read-surfaces.test.ts tests/unit/tenant-context-contracts.test.ts",
     "test:unit:watch": "node --no-warnings ../../node_modules/vitest/vitest.mjs",
     "postinstall": "prisma generate --schema prisma/schema.prisma && powersync-web copy-assets -o public",
@@ -44,7 +48,8 @@
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "menu:upsert": "tsx scripts/upsert-menu.ts",
     "seed": "tsx scripts/universal-seed.ts",
-    "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts"
+    "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts",
+    "platform:scope:dry-run": "tsx scripts/platform-scope-backfill.ts --target local"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",
