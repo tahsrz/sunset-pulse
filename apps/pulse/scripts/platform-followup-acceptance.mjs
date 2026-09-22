@@ -101,6 +101,13 @@ export async function platformFollowupAcceptance(sql) {
   await assert.rejects(admit(randomUUID(),'0.25'),/quota exceeded/);
   await assert.rejects(sql(`SELECT id FROM platform_admit_capability_operation('${workspace}','${app}','${run}','${randomUUID()}','crm.local','contacts','lookup','${'f'.repeat(64)}','${'b'.repeat(64)}',1,0.1);`),/not admitted/);
   assert.equal(await sql(`SELECT status FROM platform_capability_reservations WHERE id='${reservation}';`),'reserved');
+  const connector=await sql(`SELECT id::text FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','https://crm.example.test/mcp','crm-secret',NULL);`);
+  const connectorSchemaValue={type:'object',properties:{email:{type:'string',maxLength:320}},required:['email'],additionalProperties:false};
+  const connectorSchema=json(connectorSchemaValue);
+  const snapshot=await sql(`SELECT id::text FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${connectorSchema},NULL);`);
+  assert.equal(await sql(`SELECT schema_hash=encode(sha256(convert_to(schema::TEXT,'UTF8')),'hex') FROM platform_connector_schema_snapshots WHERE id='${snapshot}';`),'t');
+  await assert.rejects(sql(`SELECT id FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','http://crm.example.test/mcp','crm-secret',1);`),/Invalid connector/);
+  await assert.rejects(sql(`SELECT id FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${json({...connectorSchemaValue, '$ref':'file:///evil'})},1);`),/Unsupported|schema/);
   const receipt=await sql(`SELECT id::text FROM platform_record_effect_receipt('${workspace}','${run}',NULL,'${randomUUID()}','${'c'.repeat(64)}','${'d'.repeat(64)}','prepared',NULL,NULL);`);
   assert.equal(await sql(`SELECT status FROM platform_effect_receipts WHERE id='${receipt}';`),'prepared');
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_effect_receipts','INSERT');"),'f');
