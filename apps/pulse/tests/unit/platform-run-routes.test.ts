@@ -14,6 +14,7 @@ import { WorkspaceAccessError } from '@/lib/platform/access/workspaceAccess.serv
 import { POST as recover } from '@/app/api/workspaces/[workspaceId]/runs/recover/route';
 import { POST as supersede } from '@/app/api/workspaces/[workspaceId]/runs/supersede/route';
 import { POST as install } from '@/app/api/workspaces/[workspaceId]/apps/route';
+import { POST as launch } from '@/app/api/workspaces/[workspaceId]/apps/launch/route';
 import manifest from '@/lib/platform/apps/manifests/real-estate-readiness.v1.json';
 
 const actor = '11111111-1111-4111-8111-111111111111';
@@ -114,6 +115,20 @@ describe('workspace JSON run and checkpoint routes', () => {
   it('rejects unsupported manifest capability execution before persistence', async () => {
     expect((await install(request({manifest:{...manifest,capabilities:[{tool:'send'}]},settings:{area:'keller-westlake'},status:'installed',expectedRevision:null}),context())).status).toBe(400);
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('rejects launch authority fields before any install lookup', async () => {
+    const input = {
+      installId: checkpoint, expectedInstallRevision: 1, workflowKey: 'readiness-intake', requestKey: actor,
+      inputs: { property_id: 'property-1' }, resourceRefs: [], ownerId: actor,
+    };
+    expect((await launch(request(input), context())).status).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('rejects an unauthenticated app launch before workspace access', async () => {
+    mocks.auth.mockResolvedValue(new Response(null, { status: 401 }));
+    expect((await launch(request({}), context())).status).toBe(401);
+    expect(mocks.access).not.toHaveBeenCalled();
   });
   it('returns bounded pages with a deterministic tie-break cursor', async () => {
     const rows=[{id:actor,created_at:'2026-09-18T12:00:00+00:00'},{id:checkpoint,created_at:'2026-09-18T12:00:00+00:00'}];
