@@ -50,10 +50,11 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 
 ## W3 — launch from the pinned install, not browser-supplied authority
 
-**Status at September 22:** the strict `appLaunchInputSchema` contract and unit coverage are implemented. The contract
-accepts only bounded JSON inputs, a pinned install revision, a workflow key, a UUID request key, and explicit resource
-references with revisions. Server-side admission, domain authorization, the launch route, and the database enqueue RPC
-remain unimplemented; provider execution remains disabled.
+**Status at September 22:** the strict `appLaunchInputSchema` contract and unit coverage are implemented, and
+`appLaunch.server.ts` now prepares a non-mutating snapshot from the active install. The contract accepts only bounded
+JSON inputs, a pinned install revision, a workflow key, a UUID request key, and explicit resource references with
+revisions. Database admission, the launch route, and the enqueue RPC remain unimplemented; provider execution remains
+disabled.
 
 1. Extend `lib/platform/contracts/appManifest.ts` with a separate strict launch request: install ID, expected install revision, workflow key, validated inputs, resource references/revisions and request key. Do not add executable strings or relax the existing empty-capabilities constraint.
 2. Add **new** `lib/platform/apps/appLaunch.server.ts`. Load the active install server-side, select the stored workflow, validate inputs using `parseManifestValues`, resolve access and build a bounded immutable launch snapshot. Never accept a replacement graph/hash/owner from the browser for this path.
