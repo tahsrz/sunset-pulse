@@ -55,7 +55,7 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 JSON inputs, a pinned install revision, a workflow key, a UUID request key, and explicit resource references with
 revisions. The launch route and admission RPC are implemented, and disposable Postgres acceptance passes install/workflow
 pinning, concurrent replay, stale revision denial, foreign workspace denial, disabled-install denial, and resource scope
-checks. Real browser acceptance and production rollout remain outstanding; provider execution remains disabled.
+checks. The local real-auth browser harness now passes the authorized session flow; provider execution remains disabled.
 
 1. Extend `lib/platform/contracts/appManifest.ts` with a separate strict launch request: install ID, expected install revision, workflow key, validated inputs, resource references/revisions and request key. Do not add executable strings or relax the existing empty-capabilities constraint.
 2. Add **new** `lib/platform/apps/appLaunch.server.ts`. Load the active install server-side, select the stored workflow, validate inputs using `parseManifestValues`, resolve access and build a bounded immutable launch snapshot. Never accept a replacement graph/hash/owner from the browser for this path.
@@ -69,6 +69,11 @@ checks. Real browser acceptance and production rollout remain outstanding; provi
 
 ## W4 — one human interaction surface
 
+**Status at September 22:** implemented locally. The shared inbox renders installed manifests, bounded checkpoint
+cards and recent runs; run detail uses the existing checkpoint API and preserves revision/submission metadata. The
+real-auth browser harness passes rendered login plus start → answer → completion, cancel, cursor pagination and
+foreign-user denial. Content-bound launch remains visibly unavailable because the Vibe revision adapter is not proven.
+
 1. Extend `appInstallStore.server.ts` and `app/api/workspaces/[workspaceId]/apps/route.ts` with bounded, scoped reads needed by the UI. Extend run detail/history reads through the existing run/checkpoint service; expose only authorized metadata, exact targets, immutable answers and supersession links.
 2. Add **new** `components/platform/ManifestForm.tsx` for the existing flat scalar schema subset: labelled string/enum/number/boolean controls, required/bounds errors and in-memory draft preservation. Do not interpret HTML, code or unsupported schema widgets. Server validation remains authoritative.
 3. Add **new** `components/platform/CheckpointCard.tsx` with discriminated question/approval/effect-gate controls. Display exact target/version and consequences; preserve the opened revision, submission key and draft on conflict. Disable unauthorized actions but enforce authorization again server-side. Approval is not proof of delivery.
@@ -79,6 +84,9 @@ checks. Real browser acceptance and production rollout remain outstanding; provi
 **Done when:** focused form/card tests plus `app-route-catalog.test.ts`, `command-route-directory.test.tsx` and `global-command-routes.test.tsx` pass. Extend the real local Auth harness to operate rendered launch/inbox controls (not just browser `fetch`): launch → answer → completion; second-user denial; cancelled and stale-conflict cases. Render both fixtures, but label any unbound content path unavailable.
 
 ## W5 — prove and hand off
+
+**Status at September 22:** active. The local real-auth browser evidence is complete; remaining work is affected-suite
+verification, migration/rollout documentation, fresh PR-head CI review and an explicit unresolved-boundaries ledger.
 
 1. Run affected unit suites, disposable scheduler/platform concurrency, full Supabase migration/database tests, lint and production build. Re-run Mongo acceptance if a Vibe/scan adapter changed. Use the [verification baseline](PLATFORM_VERIFICATION_2026-09-18.md) for commands, not as substitute evidence.
 2. Run real local Supabase browser acceptance with mock auth off; cover team members, a foreign user, revocation, archived workspaces and source changes between read and write. Remove only created fixtures, restore the prior admission flag and stop the owned test server.
@@ -99,8 +107,17 @@ checks. Real browser acceptance and production rollout remain outstanding; provi
 | --- | --- | --- |
 | W1 | In progress — read-side identity boundary complete | Scoped readers must consume resolved workspace/resource IDs; team selection and persistence remain W2 gates |
 | W2 | Implemented and disposable DB-verified | Fresh CI and real-auth/browser evidence |
-| W3 | Implemented and disposable DB-verified | Real authorized browser launch; then W4 form/inbox work |
-| W4 | Not started; conditional on W3 | Rendered real-session human workflow |
-| W5 | Not started | Fresh head checks, cleanup and rollout/handoff record |
+| W3 | Implemented and disposable DB-verified; real-auth browser gate passed | Fresh head checks and handoff |
+| W4 | Implemented; rendered real-session workflow passed | Affected suites, accessibility/stale-conflict review and handoff |
+| W5 | Active | Fresh head checks, cleanup and rollout/handoff record |
+
+## September 22 evidence entry
+
+- Commit: `b94acf7b` is the current local UI head; no new commit was created by this evidence-only pass.
+- Changed paths: no source changes in this pass; existing UI and acceptance harness were exercised.
+- Checks: `node scripts/platform-local-auth-acceptance.mjs --stack xlyfhiafactxahhvikyv --apply-local-migrations` passed. It verified unauthenticated 401, real Supabase login with mock auth disabled, rendered browser start → checkpoint → answer → complete, cancel, cursor pages, foreign-user denial and JWT RLS denial. Temporary data was removed; the admission flag was restored. The affected Vitest suite passed 15 files / 97 tests, `npm run build` passed, and `git diff --check` passed.
+- Environment: disposable local Docker Supabase stack `xlyfhiafactxahhvikyv`; local Next server on `127.0.0.1:3176`; provider keys empty.
+- Remaining boundary: content-bound launch is unavailable until `resolveVibeRevisionScope` has a proven cross-store authorization path; production admissions/providers remain disabled.
+- Next action: inspect the exact PR head CI and review the rollout checklist before any deployment decision.
 
 For each completion, append only: commit, changed paths, exact checks/results, environment, remaining boundary and next action. Keep implementation evidence separate from deployment claims.
