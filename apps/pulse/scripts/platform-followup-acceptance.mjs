@@ -93,6 +93,14 @@ export async function platformFollowupAcceptance(sql) {
   const policy=await sql(`SELECT id::text FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`);
   assert.equal(await sql(`SELECT policy_hash=encode(sha256(convert_to(policy::TEXT,'UTF8')),'hex') FROM platform_capability_policies WHERE id='${policy}';`),'t');
   await assert.rejects(sql(`SELECT id FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`),/revision conflict/);
+  await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',1,3,1,NULL);`);
+  const operation=randomUUID();
+  const admit=(operationId=operation,cost='0.25')=>sql(`SELECT id::text FROM platform_admit_capability_operation('${workspace}','${app}','${run}','${operationId}','crm.local','contacts','lookup','${'a'.repeat(64)}','${'b'.repeat(64)}',1,${cost});`);
+  const reservation=await admit();
+  assert.equal(await admit(),reservation);
+  await assert.rejects(admit(randomUUID(),'0.25'),/quota exceeded/);
+  await assert.rejects(sql(`SELECT id FROM platform_admit_capability_operation('${workspace}','${app}','${run}','${randomUUID()}','crm.local','contacts','lookup','${'f'.repeat(64)}','${'b'.repeat(64)}',1,0.1);`),/not admitted/);
+  assert.equal(await sql(`SELECT status FROM platform_capability_reservations WHERE id='${reservation}';`),'reserved');
   const receipt=await sql(`SELECT id::text FROM platform_record_effect_receipt('${workspace}','${run}',NULL,'${randomUUID()}','${'c'.repeat(64)}','${'d'.repeat(64)}','prepared',NULL,NULL);`);
   assert.equal(await sql(`SELECT status FROM platform_effect_receipts WHERE id='${receipt}';`),'prepared');
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_effect_receipts','INSERT');"),'f');
