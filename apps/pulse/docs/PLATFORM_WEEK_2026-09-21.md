@@ -113,11 +113,12 @@ verification, migration/rollout documentation, fresh PR-head CI review and an ex
 
 ## September 22 evidence entry
 
-- Commit: `b94acf7b` is the current local UI head; no new commit was created by this evidence-only pass.
-- Changed paths: no source changes in this pass; existing UI and acceptance harness were exercised.
+- Commit: `5d8d88be` records the rollout handoff; the local branch is 17 commits ahead of `origin/codex/cms-vertical-slice-followup`.
+- Changed paths: rollout/plan documentation only in the latest commit; the pre-existing `apps/pulse/public/atlas_manifest.json` remains unstaged.
 - Checks: `node scripts/platform-local-auth-acceptance.mjs --stack xlyfhiafactxahhvikyv --apply-local-migrations` passed. It verified unauthenticated 401, real Supabase login with mock auth disabled, rendered browser start → checkpoint → answer → complete, cancel, cursor pages, foreign-user denial and JWT RLS denial. Temporary data was removed; the admission flag was restored. The affected Vitest suite passed 15 files / 97 tests, `npm run build` passed, and `git diff --check` passed.
-- Environment: disposable local Docker Supabase stack `xlyfhiafactxahhvikyv`; local Next server on `127.0.0.1:3176`; provider keys empty.
+- Environment: disposable local Docker Supabase stack `xlyfhiafactxahhvikyv`; local Next server on `127.0.0.1:3176`; provider keys empty. `npm run test:db:concurrency` passed all scheduler, run/checkpoint, scope, install, launch, replay, recovery and RLS assertions; `npm run lint` exited 0 with five existing hook/image warnings.
+- Remote PR review: PR #79 remote head `46c26d110866ae920ede3816bd7d8d22e49b9c79` reports lint, test, scheduler-db, docker-acceptance, jamie-e2e and Vercel successful. The newer local commits have not been pushed, so remote CI has not evaluated them.
 - Remaining boundary: content-bound launch is unavailable until `resolveVibeRevisionScope` has a proven cross-store authorization path; production admissions/providers remain disabled.
-- Next action: inspect the exact PR head CI and review the rollout checklist before any deployment decision.
+- Next action: user-authorized push is required before fresh CI can evaluate the 17 local commits; until then, do not claim the local evidence is PR CI evidence.
 
 For each completion, append only: commit, changed paths, exact checks/results, environment, remaining boundary and next action. Keep implementation evidence separate from deployment claims.
