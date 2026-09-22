@@ -1,11 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { buildPropertyBacklog } from './buildPropertyBacklog';
-import { listPropertyNotes, listShortlistEntries } from './shortlist.server';
+import { listPropertyNotes, listShortlistEntriesForWorkspace } from './shortlist.server';
 import { requireOwnerCompatiblePlanning } from '@/lib/platform/access/sprintPlanningScope.server';
 
-export async function createPropertySprintProposal(ownerId: string, jobId: string, occurrenceAt: string, leaseToken: string) {
+export async function createPropertySprintProposal(ownerId: string, workspaceId: string, jobId: string, occurrenceAt: string, leaseToken: string) {
   await requireOwnerCompatiblePlanning(jobId, leaseToken);
-  const properties = await listShortlistEntries(ownerId);
+  const properties = await listShortlistEntriesForWorkspace(ownerId, workspaceId);
   const planningProperties = await Promise.all(properties.map(async (property) => ({ ...property, collaborationNotes: (await listPropertyNotes(ownerId, property.id)).map((note) => `${note.authorType}: ${note.body}`) })));
   const { data: existingTasks, error: taskError } = await supabaseAdmin.from('sprint_backlog_items').select('dedupe_key,status').eq('owner_id', ownerId).not('dedupe_key', 'is', null);
   if (taskError) throw new Error(`Unable to inspect property sprint tasks: ${taskError.message}`);

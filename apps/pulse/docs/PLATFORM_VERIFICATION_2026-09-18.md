@@ -71,7 +71,7 @@ The first navigation-test attempt was blocked before test execution by sandbox f
 
 ## Remaining gates
 
-1. Team-scoped planner selectors/persistence and legacy manual mutation compatibility; current guards are safety stops, not team support.
+1. Team-scoped planner selectors/persistence and legacy manual mutation compatibility; the September 22 W1 read boundary uses mapped workspace IDs, while current guards remain safety stops, not team support.
 2. Property/assignment-bound app launch; `resolveVibeRevisionScope` remains unsupported until authoritative revision/site access is implemented.
 3. Shared schema forms, checkpoint inbox and run detail; fresh rendered browser acceptance after those screens exist.
 4. Complete all-domain/Storage access and deployment-specific checks where relevant. Earlier scan evidence is separate from platform Auth evidence.

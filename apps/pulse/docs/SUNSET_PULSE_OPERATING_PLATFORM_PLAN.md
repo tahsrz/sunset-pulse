@@ -60,7 +60,7 @@ First-version scope: scalar questions, approvals, effect gates and completion. N
 
 ### Follow-on Core actions
 
-- Next: finish workspace-aware planner input selection, atomic persistence and legacy mutation compatibility; use W1–W2 in the [weekly handoff](PLATFORM_WEEK_2026-09-21.md). Retain the current fail-closed guard until those adapters pass acceptance.
+- Next: finish workspace-aware planner input selection, then implement atomic persistence and legacy mutation compatibility; use W1–W2 in the [weekly handoff](PLATFORM_WEEK_2026-09-21.md). The September 22 W1 read boundary uses mapped workspace IDs; retain the current fail-closed guard until team adapters pass acceptance.
 - Then: wire a property assignment into a manifest-launched run only when its property and task revision are explicitly mapped (W3).
 - Implemented: bounded workspace/collection-bound cursor pages ordered by timestamp + ID; admin recovery requires restored requester authority; supersession creates a new pinned run and retains prior answers/actor attribution. Lists now return `{ items, nextCursor }`.
 - Completed locally: real Supabase password/cookie browser sessions prove start, answer, cancel, cursor pages and foreign-user denial. The local runner leases only its own fixture jobs; normal claim contention is covered separately by disposable scheduler acceptance. Production and future inbox UI acceptance remain separate gates.
@@ -128,6 +128,6 @@ New event admissions remain disabled until the matching worker version and relea
 
 Baseline implementation: `12716f15` on [PR #79](https://github.com/tahsrz/sunset-pulse/pull/79). Its September 18 CI run passed lint, test, scheduler-db, docker-acceptance and jamie-e2e; Vercel reported success. Supabase Preview was skipped. Exact evidence, migration scope and remaining gaps live in the [dated record](PLATFORM_VERIFICATION_2026-09-18.md), not in repeated completion logs here.
 
-**Next action: W1 — team-scoped planner selection**, followed by W2 atomic/manual compatibility, W3 resource-bound app launch, W4 human UI and W5 acceptance/handoff. Follow the [September 21–25 implementation plan](PLATFORM_WEEK_2026-09-21.md) for file/symbol changes and done gates. Dates are target work slots, not permission to bypass a failed prerequisite.
+**Next action: finish W1’s scoped readers, then W2 — team-scoped atomic/manual compatibility**, followed by W3 resource-bound app launch, W4 human UI and W5 acceptance. The first W1 read-side identity boundary is implemented and covered by 8 focused tests; it remains owner-compatible and does not enable team execution. Follow the [September 21–25 implementation plan](PLATFORM_WEEK_2026-09-21.md) for file/symbol changes and done gates. Dates are target work slots, not permission to bypass a failed prerequisite.
 
 Read this ledger, the active W-section and relevant source only. Do not load the archived 165-anchor specification by default. The Praxis and Keller / Westlake plans retain feature constraints and historical evidence; their older "next" sections do not override this queue. Keep one `keller-westlake` area, preserve source uncertainty, and keep email/publication authority separate from sprint approval.

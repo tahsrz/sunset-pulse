@@ -8,7 +8,7 @@ Make existing property planning safe for an explicitly selected workspace, then 
 
 | Target slot | Deliverable | Dependency / exit |
 | --- | --- | --- |
-| Monday, September 21 — W1 | Workspace-scoped planner input selection | No owner-wide reads for a team job; deterministic isolation tests |
+| Monday, September 21 — W1 | Workspace-scoped planner input selection | Read-side leased-job/workspace identity boundary is implemented; team resource selection and persistence remain gated for W2 |
 | Tuesday, September 22 — W2 | Atomic scoped persistence and legacy mutation compatibility | W1; concurrent permission/revision/lease tests and no omitted-workspace bypass |
 | Wednesday, September 23 — W3 | Pinned manifest launch bound to an authorized property/task revision | W2; duplicate launch and install/resource race tests |
 | Thursday, September 24 — W4 | Shared schema form, checkpoint inbox and run detail | W3; real browser flow, accessible controls and no second response store |
@@ -25,6 +25,8 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 5. Keep `platform_run` admission disabled outside isolated/local acceptance. End each slice with code, tests and a short evidence entry before starting the next.
 
 ## W1 — select planning inputs by workspace
+
+**Status at September 22:** the read-side identity boundary is implemented in `sprintPlanningScope.server.ts` and consumed by `sprintPlannerWorkflow.server.ts`; mapped backlog/property readers now use the resolved workspace, and 9 focused W1 tests pass. The resolver is intentionally still owner-compatible. It does not authorize team writes or remove the SQL guard.
 
 1. Extend `lib/platform/access/sprintPlanningScope.server.ts` around `requireOwnerCompatiblePlanning`. Add a scoped resolver that reads the **stored** job/schedule mapping and validates its live lease, active workspace and current requester membership. Return separate actor, resource-owner and workspace identities; never substitute `job.user_id` for all three.
 2. Extend the existing `lib/property-sprints/shortlist.server.ts::listShortlistEntriesForWorkspace` and `lib/property-sprints/sprintWorkspace.server.ts` readers only where needed. Select active, mapped resources with bounded queries; reject unresolved mappings and exclude other personal/team workspaces even when their rows share an owner.
@@ -86,7 +88,7 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 
 | Slice | State at handoff | Evidence required before marking done |
 | --- | --- | --- |
-| W1 | Not started | Scoped reader/selection tests |
+| W1 | In progress — read-side identity boundary complete | Scoped readers must consume resolved workspace/resource IDs; team selection and persistence remain W2 gates |
 | W2 | Not started | Atomic and legacy-compatibility DB/API evidence |
 | W3 | Not started | Pinned property-bound launch and admission races |
 | W4 | Not started; conditional on W3 | Rendered real-session human workflow |
