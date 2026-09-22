@@ -38,7 +38,7 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 
 ## W2 — persist and mutate under the same scope
 
-**Status at September 22:** `20260918060000_platform_owner_mutation_guard.sql` and the `sprints` route guard legacy backlog/sprint/assignment/approval mutations. `20260918070000_platform_scoped_sprint_persistence.sql` and `20260918080000_platform_scoped_property_persistence.sql` now provide atomic workspace-aware manual/property proposal paths, and the expanded planner/workspace suite passes 26/26; the acceptance harness covers mapped team schedule/backlog/property inputs, concurrent replay, scope-link creation and foreign-workspace denial. Disposable Postgres could not start because Docker Desktop's Linux engine pipe was unavailable; do not enable or roll out the new RPCs until that SQL gate passes.
+**Status at September 22:** `20260918060000_platform_owner_mutation_guard.sql` and the `sprints` route guard legacy backlog/sprint/assignment/approval mutations. `20260918070000_platform_scoped_sprint_persistence.sql` and `20260918080000_platform_scoped_property_persistence.sql` now provide atomic workspace-aware manual/property proposal paths, and the expanded planner/workspace suite passes 26/26. Forward replay fixes `20260918090100` and `20260918090200` qualify the existing replay counts. Disposable Postgres acceptance now passes mapped team schedule/backlog/property inputs, concurrent replay, scope-link creation, foreign-workspace denial, and archive rejection. Production rollout and new RPC enablement remain out of scope.
 
 1. Add a forward SQL migration after `20260918050000_platform_app_installs.sql`; do not edit previously applied migrations. Extend `persist_scheduled_sprint_proposal` and `platform_persist_property_sprint_proposal` with explicit workspace/source snapshots using backward-compatible adapters or a new signature. Preserve replay identity and existing personal behavior.
 2. Within one transaction, revalidate the live job lease, original requester membership, active workspace, schedule mapping, selected input mappings/revisions and dedupe identity. Lock resources in deterministic order; write proposal, items, assignments/scope links and audit atomically. A stale input or revoked member rolls back the entire proposal.
@@ -53,9 +53,9 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 **Status at September 22:** the strict `appLaunchInputSchema` contract and unit coverage are implemented, and
 `appLaunch.server.ts` now prepares a non-mutating snapshot from the active install. The contract accepts only bounded
 JSON inputs, a pinned install revision, a workflow key, a UUID request key, and explicit resource references with
-revisions. The launch route and admission RPC are now implemented but remain database-gated: Docker-backed migration,
-replay, race, and authorization tests are still required before enabling the `platform_run` event contract. Provider
-execution remains disabled.
+revisions. The launch route and admission RPC are implemented, and disposable Postgres acceptance passes install/workflow
+pinning, concurrent replay, stale revision denial, foreign workspace denial, disabled-install denial, and resource scope
+checks. Real browser acceptance and production rollout remain outstanding; provider execution remains disabled.
 
 1. Extend `lib/platform/contracts/appManifest.ts` with a separate strict launch request: install ID, expected install revision, workflow key, validated inputs, resource references/revisions and request key. Do not add executable strings or relax the existing empty-capabilities constraint.
 2. Add **new** `lib/platform/apps/appLaunch.server.ts`. Load the active install server-side, select the stored workflow, validate inputs using `parseManifestValues`, resolve access and build a bounded immutable launch snapshot. Never accept a replacement graph/hash/owner from the browser for this path.
@@ -98,8 +98,8 @@ execution remains disabled.
 | Slice | State at handoff | Evidence required before marking done |
 | --- | --- | --- |
 | W1 | In progress — read-side identity boundary complete | Scoped readers must consume resolved workspace/resource IDs; team selection and persistence remain W2 gates |
-| W2 | In progress — guard and scoped RPC implemented; DB gate blocked | Start Docker, run disposable SQL/concurrency acceptance, then add concurrent revocation/revision evidence |
-| W3 | Contract, preparation, route and admission slice implemented; DB gate pending | Pinned property-bound launch and admission races |
+| W2 | Implemented and disposable DB-verified | Fresh CI and real-auth/browser evidence |
+| W3 | Implemented and disposable DB-verified | Real authorized browser launch; then W4 form/inbox work |
 | W4 | Not started; conditional on W3 | Rendered real-session human workflow |
 | W5 | Not started | Fresh head checks, cleanup and rollout/handoff record |
 

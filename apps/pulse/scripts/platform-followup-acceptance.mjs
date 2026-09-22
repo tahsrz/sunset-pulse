@@ -87,7 +87,7 @@ export async function platformFollowupAcceptance(sql) {
   const scopedBacklog = await sql(`SELECT id::text FROM platform_add_sprint_backlog_item('${owner}','${workspace}','Scoped team input','Scoped proposal input',1,30,'manual',NULL);`);
   const scopedJob = randomUUID(), scopedToken = randomUUID();
   await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,scheduled_for,status,lease_token,lease_until)
-    VALUES('${scopedJob}','${schedule}','${owner}','sprint_planner',(SELECT scheduled_for FROM workflow_jobs WHERE id='${job}'),'running','${scopedToken}',now()+interval '1 minute');`);
+    VALUES('${scopedJob}','${schedule}','${owner}','sprint_planner',now()+interval '2 minutes','running','${scopedToken}',now()+interval '1 minute');`);
   const scopedItems = json([{ backlog_item_id: scopedBacklog }]);
   const scopedProposalCall = `SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Scoped team sprint','Validate mapped backlog',${scopedItems});`;
   const [scopedProposal, scopedReplay] = await Promise.all([sql(scopedProposalCall), sql(scopedProposalCall)]);
@@ -103,9 +103,31 @@ export async function platformFollowupAcceptance(sql) {
     VALUES('${propertyId}','${owner}','keller-westlake','1 Main Street','Keller','TX','residential',1,'active');
     INSERT INTO platform_scope_links(resource_type,resource_id,owner_id,workspace_id,status,source_revision)
     VALUES('property_shortlist','${propertyId}','${owner}','${workspace}','mapped',1);`);
+  const launchRevision = await sql(`SELECT revision FROM platform_app_installs WHERE id='${app}';`);
+  const launchManifestVersion = Number(await sql(`SELECT manifest->>'version' FROM platform_app_installs WHERE id='${app}';`));
+  const launchManifest = {...fixture, version: launchManifestVersion};
+  const launchRequest = randomUUID();
+  const launchInputs = json({property_id: propertyId});
+  const launchRefs = json([{resourceType:'property_shortlist',resourceId:propertyId,expectedRevision:1}]);
+  const launchCall = (actor=owner,revision=launchRevision,key=launchRequest,inputs=launchInputs,refs=launchRefs)=>
+    `SELECT id::text FROM platform_start_app_run('${actor}','${workspace}','${app}',${revision},'readiness-intake','${key}',${inputs},${refs});`;
+  await sql(`UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='platform_run';`);
+  const [launched, launchReplay] = await Promise.all([sql(launchCall()), sql(launchCall())]);
+  assert.match(launched, /^[0-9a-f-]{36}$/i);
+  assert.equal(launchReplay, launched);
+  assert.equal(await sql(`SELECT app_install_id::text FROM platform_runs WHERE id='${launched}';`), app);
+  assert.equal(await sql(`SELECT app_workflow_key FROM platform_runs WHERE id='${launched}';`), 'readiness-intake');
+  await assert.rejects(sql(launchCall(owner,Number(launchRevision)-1)),/conflict/);
+  await assert.rejects(sql(launchCall(owner,launchRevision,randomUUID(),launchInputs,json([{resourceType:'property_shortlist',resourceId:propertyId,expectedRevision:2}]))),/stale|unavailable|conflict/);
+  await assert.rejects(sql(launchCall(foreign)),/denied/);
+  await sql(`SELECT id FROM platform_save_app_install('${owner}','${workspace}',${json(launchManifest)},${json({area:'keller-westlake'})},'disabled',${launchRevision});`);
+  await assert.rejects(sql(launchCall()),/disabled|denied/);
+  await sql(`SELECT id FROM platform_save_app_install('${owner}','${workspace}',${json(launchManifest)},${json({area:'keller-westlake'})},'installed',${Number(launchRevision)+1});`);
+  await sql(`UPDATE workflow_event_contracts SET enabled=false WHERE workflow_key='platform_run';`);
+  console.log('PASS: app launch pins install/workflow/resource revisions, replays atomically and denies stale, foreign and disabled requests');
   const propertyJob = randomUUID(), propertyToken = randomUUID();
   await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,planning_mode,scheduled_for,status,lease_token,lease_until)
-    VALUES('${propertyJob}','${schedule}','${owner}','sprint_planner','property_shortlist',(SELECT scheduled_for FROM workflow_jobs WHERE id='${job}'),'running','${propertyToken}',now()+interval '1 minute');`);
+    VALUES('${propertyJob}','${schedule}','${owner}','sprint_planner','property_shortlist',now()+interval '3 minutes','running','${propertyToken}',now()+interval '1 minute');`);
   const propertyBacklog = json([{ property_id: propertyId, input_revision: 1, property_task_kind: 'verify_facts', dedupe_key: `property-${propertyId}-facts`, title: 'Verify property facts', description: 'Use mapped source facts only', priority: 1, estimate_minutes: 25 }]);
   const propertyItems = json([{ property_id: propertyId, property_revision: 1, dedupe_key: `property-${propertyId}-facts`, title: 'Verify property facts', description: 'Use mapped source facts only', priority: 1, estimate_minutes: 25 }]);
   const propertyProposalCall = `SELECT sprint_id::text FROM platform_persist_scoped_property_sprint_proposal('${propertyJob}','${workspace}','${propertyToken}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${propertyJob}'),'Scoped property sprint','Validate mapped property',${propertyBacklog},${propertyItems});`;
