@@ -71,7 +71,7 @@ The first navigation-test attempt was blocked before test execution by sandbox f
 
 ## Remaining gates
 
-1. Team-scoped planner selectors/persistence and legacy manual mutation compatibility; September 22 adds a legacy fallback guard for sprint/backlog/assignment mutations, while atomic workspace persistence remains open.
+1. Team-scoped planner selectors/persistence and legacy manual mutation compatibility; September 22 adds a legacy fallback guard plus a scoped manual proposal RPC. Its disposable Postgres/SQL acceptance is still blocked by Docker Desktop availability and remains a rollout gate.
 2. Property/assignment-bound app launch; `resolveVibeRevisionScope` remains unsupported until authoritative revision/site access is implemented.
 3. Shared schema forms, checkpoint inbox and run detail; fresh rendered browser acceptance after those screens exist.
 4. Complete all-domain/Storage access and deployment-specific checks where relevant. Earlier scan evidence is separate from platform Auth evidence.

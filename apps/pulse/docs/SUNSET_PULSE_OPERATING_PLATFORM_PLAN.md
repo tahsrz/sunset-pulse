@@ -60,7 +60,7 @@ First-version scope: scalar questions, approvals, effect gates and completion. N
 
 ### Follow-on Core actions
 
-- Next: finish workspace-aware planner input selection, then implement atomic persistence and legacy mutation compatibility; use W1–W2 in the [weekly handoff](PLATFORM_WEEK_2026-09-21.md). The September 22 slices add mapped read IDs and a legacy owner-fallback guard; retain fail-closed team admission until atomic adapters pass acceptance.
+- Next: finish workspace-aware planner input selection, then validate the new atomic persistence and legacy mutation compatibility; use W1–W2 in the [weekly handoff](PLATFORM_WEEK_2026-09-21.md). September 22 adds mapped read IDs, a legacy owner-fallback guard and a scoped manual proposal RPC; retain fail-closed team admission until Docker/SQL concurrency acceptance passes.
 - Then: wire a property assignment into a manifest-launched run only when its property and task revision are explicitly mapped (W3).
 - Implemented: bounded workspace/collection-bound cursor pages ordered by timestamp + ID; admin recovery requires restored requester authority; supersession creates a new pinned run and retains prior answers/actor attribution. Lists now return `{ items, nextCursor }`.
 - Completed locally: real Supabase password/cookie browser sessions prove start, answer, cancel, cursor pages and foreign-user denial. The local runner leases only its own fixture jobs; normal claim contention is covered separately by disposable scheduler acceptance. Production and future inbox UI acceptance remain separate gates.

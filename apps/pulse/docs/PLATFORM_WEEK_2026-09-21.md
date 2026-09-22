@@ -38,7 +38,7 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 
 ## W2 — persist and mutate under the same scope
 
-**Status at September 22:** `20260918060000_platform_owner_mutation_guard.sql` and the `sprints` route guard legacy backlog/sprint/assignment mutations. Focused route/scope tests pass 19/19. This is the compatibility fence only; workspace-aware atomic persistence remains the next W2 action.
+**Status at September 22:** `20260918060000_platform_owner_mutation_guard.sql` and the `sprints` route guard legacy backlog/sprint/assignment mutations. `20260918070000_platform_scoped_sprint_persistence.sql` now provides an atomic workspace-aware manual proposal path, and the focused planner/workspace suite passes 26/26. Disposable Postgres could not start because Docker Desktop's Linux engine pipe was unavailable; do not enable or roll out the new RPC until that SQL gate passes.
 
 1. Add a forward SQL migration after `20260918050000_platform_app_installs.sql`; do not edit previously applied migrations. Extend `persist_scheduled_sprint_proposal` and `platform_persist_property_sprint_proposal` with explicit workspace/source snapshots using backward-compatible adapters or a new signature. Preserve replay identity and existing personal behavior.
 2. Within one transaction, revalidate the live job lease, original requester membership, active workspace, schedule mapping, selected input mappings/revisions and dedupe identity. Lock resources in deterministic order; write proposal, items, assignments/scope links and audit atomically. A stale input or revoked member rolls back the entire proposal.
@@ -91,7 +91,7 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 | Slice | State at handoff | Evidence required before marking done |
 | --- | --- | --- |
 | W1 | In progress — read-side identity boundary complete | Scoped readers must consume resolved workspace/resource IDs; team selection and persistence remain W2 gates |
-| W2 | In progress — legacy fallback guard complete | Apply/test the forward SQL guard, then add atomic workspace persistence and concurrent revocation/revision evidence |
+| W2 | In progress — guard and scoped RPC implemented; DB gate blocked | Start Docker, run disposable SQL/concurrency acceptance, then add concurrent revocation/revision evidence |
 | W3 | Not started | Pinned property-bound launch and admission races |
 | W4 | Not started; conditional on W3 | Rendered real-session human workflow |
 | W5 | Not started | Fresh head checks, cleanup and rollout/handoff record |

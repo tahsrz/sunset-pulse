@@ -42,10 +42,9 @@ export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<Workfl
         priority: entry.priority,
         estimate_minutes: entry.estimate_minutes,
       }));
-      const { data: persisted, error: persistError } = await supabaseAdmin.rpc('persist_scheduled_sprint_proposal', {
+      const { data: persisted, error: persistError } = await supabaseAdmin.rpc('platform_persist_scoped_sprint_proposal', {
         p_job_id: job.id,
-        p_owner_id: scope.ownerId,
-        p_lease_token: job.lease_token,
+        p_workspace_id: scope.workspaceId,
         p_occurrence: job.scheduled_for,
         p_name: `Scheduled sprint · ${new Date(job.scheduled_for).toLocaleDateString('en-US')}`,
         p_goal: 'Review the backlog and select the highest-priority work for this sprint.',
@@ -58,10 +57,9 @@ export async function runSprintPlannerWorkflow(job: WorkflowJob): Promise<Workfl
     }
   }
 
-  const { data: persisted, error: persistError } = await supabaseAdmin.rpc('persist_scheduled_sprint_proposal', {
+  const { data: persisted, error: persistError } = await supabaseAdmin.rpc('platform_persist_scoped_sprint_proposal', {
     p_job_id: job.id,
-    p_owner_id: scope.ownerId,
-    p_lease_token: job.lease_token,
+    p_workspace_id: scope.workspaceId,
     p_occurrence: job.scheduled_for,
     p_name: `Scheduled sprint · ${new Date(job.scheduled_for).toLocaleDateString('en-US')}`,
     p_goal: 'Review the backlog and select the highest-priority work for this sprint.',

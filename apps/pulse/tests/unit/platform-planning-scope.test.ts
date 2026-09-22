@@ -44,4 +44,13 @@ describe('legacy owner planning boundary',()=>{
     });
     await expect(listMappedPlannerResourceIds({ jobId: 'job', ownerId: '11111111-1111-4111-8111-111111111111', workspaceId: '22222222-2222-4222-8222-222222222222', planningMode: 'manual_backlog' }, 'sprint_backlog_item')).resolves.toEqual(['one', 'two']);
   });
+
+  it('keeps scoped proposal persistence on the workspace RPC boundary', async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    const jobQuery = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'job', user_id: '11111111-1111-4111-8111-111111111111', schedule_id: 'schedule', planning_mode: 'manual_backlog' }, error: null }) };
+    const linkQuery = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { workspace_id: '22222222-2222-4222-8222-222222222222', status: 'mapped' }, error: null }) };
+    mocks.from.mockReturnValueOnce(jobQuery).mockReturnValueOnce(linkQuery);
+    await resolveOwnerCompatiblePlanningScope('job', 'lease');
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_require_owner_planning', { p_job_id: 'job', p_lease_token: 'lease' });
+  });
 });
