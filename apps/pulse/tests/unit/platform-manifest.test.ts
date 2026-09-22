@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appManifestSchema, appInstallInputSchema, parseManifestValues } from '@/lib/platform/contracts/appManifest';
+import { appManifestSchema, appInstallInputSchema, appLaunchInputSchema, parseManifestValues } from '@/lib/platform/contracts/appManifest';
 import property from '@/lib/platform/apps/manifests/real-estate-readiness.v1.json';
 import content from '@/lib/platform/apps/manifests/client-content-review.v1.json';
 
@@ -38,5 +38,25 @@ describe('inert pinned app manifests', () => {
   it('requires explicit install revision and matching settings', () => {
     expect(appInstallInputSchema.safeParse({ manifest: property, settings: { area: 'keller-westlake' }, status: 'installed', expectedRevision: null }).success).toBe(true);
     expect(appInstallInputSchema.safeParse({ manifest: property, settings: {}, status: 'installed', expectedRevision: null }).success).toBe(false);
+  });
+  it('accepts only bounded data for a pinned launch request', () => {
+    const request = {
+      installId: '11111111-1111-4111-8111-111111111111', expectedInstallRevision: 3,
+      workflowKey: 'readiness-intake', requestKey: '22222222-2222-4222-8222-222222222222',
+      inputs: { property_id: 'prop-1', flags: ['review'] },
+      resourceRefs: [{ resourceType: 'property_shortlist', resourceId: 'prop-1', expectedRevision: 7 }],
+    };
+    expect(appLaunchInputSchema.parse(request)).toEqual(request);
+  });
+  it('rejects launch authority, executable values, and malformed revisions', () => {
+    const base = {
+      installId: '11111111-1111-4111-8111-111111111111', expectedInstallRevision: 1,
+      workflowKey: 'readiness-intake', requestKey: '22222222-2222-4222-8222-222222222222',
+      inputs: { property_id: 'prop-1' }, resourceRefs: [],
+    };
+    expect(appLaunchInputSchema.safeParse({ ...base, ownerId: 'attacker' }).success).toBe(false);
+    expect(appLaunchInputSchema.safeParse({ ...base, inputs: { script: () => 'run' } }).success).toBe(false);
+    expect(appLaunchInputSchema.safeParse({ ...base, expectedInstallRevision: 0 }).success).toBe(false);
+    expect(appLaunchInputSchema.safeParse({ ...base, resourceRefs: [{ resourceType: 'property_shortlist', resourceId: 'prop-1', expectedRevision: 0 }] }).success).toBe(false);
   });
 });

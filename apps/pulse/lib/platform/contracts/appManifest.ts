@@ -63,3 +63,31 @@ export const appInstallInputSchema = z.object({
   try { parseManifestValues(value.manifest.settingsSchema, value.settings); }
   catch { ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['settings'], message: 'Settings do not match the manifest.' }); }
 });
+
+// Launch requests carry references to already-authorized domain records. This
+// is only a data contract; admission resolves authority server-side.
+const jsonValueSchema: z.ZodType<unknown> = z.lazy(() => z.union([
+  z.string().max(16000), z.number().finite(), z.boolean(), z.null(),
+  z.array(jsonValueSchema).max(64), z.record(z.string().max(160), jsonValueSchema).superRefine((value, ctx) => {
+    if (Object.keys(value).length > 64) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Object has too many fields.' });
+  }),
+]));
+
+export const appLaunchResourceRefSchema = z.object({
+  resourceType: z.enum(['property_shortlist', 'assignment', 'sprint', 'vibe_revision']),
+  resourceId: z.string().trim().min(1).max(240),
+  expectedRevision: z.number().int().positive(),
+}).strict();
+
+export const appLaunchInputSchema = z.object({
+  installId: z.string().uuid(),
+  expectedInstallRevision: z.number().int().positive(),
+  workflowKey: key,
+  requestKey: z.string().uuid(),
+  inputs: z.record(z.string().max(160), jsonValueSchema).superRefine((value, ctx) => {
+    if (Object.keys(value).length > 64) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Input has too many fields.' });
+  }),
+  resourceRefs: z.array(appLaunchResourceRefSchema).max(16),
+}).strict();
+
+export type AppLaunchInput = z.infer<typeof appLaunchInputSchema>;
