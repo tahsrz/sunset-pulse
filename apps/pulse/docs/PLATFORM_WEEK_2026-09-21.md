@@ -9,7 +9,7 @@ Make existing property planning safe for an explicitly selected workspace, then 
 | Target slot | Deliverable | Dependency / exit |
 | --- | --- | --- |
 | Monday, September 21 — W1 | Workspace-scoped planner input selection | Read-side leased-job/workspace identity boundary is implemented; team resource selection and persistence remain gated for W2 |
-| Tuesday, September 22 — W2 | Atomic scoped persistence and legacy mutation compatibility | W1; concurrent permission/revision/lease tests and no omitted-workspace bypass |
+| Tuesday, September 22 — W2 | Atomic scoped persistence and legacy mutation compatibility | Legacy owner fallback guard is implemented; atomic persistence and concurrency evidence remain |
 | Wednesday, September 23 — W3 | Pinned manifest launch bound to an authorized property/task revision | W2; duplicate launch and install/resource race tests |
 | Thursday, September 24 — W4 | Shared schema form, checkpoint inbox and run detail | W3; real browser flow, accessible controls and no second response store |
 | Friday, September 25 — W5 | Acceptance, migration/rollback handoff and PR review | W1–W4; fresh CI, local real-auth evidence, explicit unresolved gates |
@@ -37,6 +37,8 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 **Done when:** extend `platform-planning-scope.test.ts`, `property-sprint-builder.test.ts`, `sprint-selection.test.ts` and `domain-scope.test.ts` with one owner in two workspaces, different requester/resource owners, foreign/mixed/unmapped inputs and revoked/archived cases. W1 may ship internally while team admission remains blocked; it must not enable incomplete team execution.
 
 ## W2 — persist and mutate under the same scope
+
+**Status at September 22:** `20260918060000_platform_owner_mutation_guard.sql` and the `sprints` route guard legacy backlog/sprint/assignment mutations. Focused route/scope tests pass 19/19. This is the compatibility fence only; workspace-aware atomic persistence remains the next W2 action.
 
 1. Add a forward SQL migration after `20260918050000_platform_app_installs.sql`; do not edit previously applied migrations. Extend `persist_scheduled_sprint_proposal` and `platform_persist_property_sprint_proposal` with explicit workspace/source snapshots using backward-compatible adapters or a new signature. Preserve replay identity and existing personal behavior.
 2. Within one transaction, revalidate the live job lease, original requester membership, active workspace, schedule mapping, selected input mappings/revisions and dedupe identity. Lock resources in deterministic order; write proposal, items, assignments/scope links and audit atomically. A stale input or revoked member rolls back the entire proposal.
@@ -89,7 +91,7 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 | Slice | State at handoff | Evidence required before marking done |
 | --- | --- | --- |
 | W1 | In progress — read-side identity boundary complete | Scoped readers must consume resolved workspace/resource IDs; team selection and persistence remain W2 gates |
-| W2 | Not started | Atomic and legacy-compatibility DB/API evidence |
+| W2 | In progress — legacy fallback guard complete | Apply/test the forward SQL guard, then add atomic workspace persistence and concurrent revocation/revision evidence |
 | W3 | Not started | Pinned property-bound launch and admission races |
 | W4 | Not started; conditional on W3 | Rendered real-session human workflow |
 | W5 | Not started | Fresh head checks, cleanup and rollout/handoff record |

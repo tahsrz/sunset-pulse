@@ -196,6 +196,18 @@ describe('signed-in sprint schedule route', () => {
     expect(query.update).toHaveBeenCalledWith({ title: 'Updated title', priority: 2, estimate_minutes: 30, status: 'open' });
   });
 
+  it('blocks owner fallback when a backlog item requires workspace scope', async () => {
+    mocks.rpc.mockImplementation((name: string) => name === 'platform_require_owner_compatible_mutation'
+      ? Promise.resolve({ data: null, error: { message: 'mapped resource' } })
+      : Promise.resolve({ data: [{ id: 'unused' }], error: null }));
+
+    const response = await POST(jsonRequest({ action: 'update_backlog_item', itemId: '44444444-4444-4444-8444-444444444444', title: 'Updated title', priority: 2, estimateMinutes: 30, status: 'open' }));
+
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toContain('workspace');
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
   it('validates supported workers before updating a proposed sprint item', async () => {
     const response = await POST(jsonRequest({ action: 'update_sprint_item', itemId: '44444444-4444-4444-8444-444444444444', sprintId: '55555555-5555-4555-8555-555555555555', expectedSprintRevision: 2, title: 'Updated item', description: 'Context', priority: 2, estimateMinutes: 30, workerId: 'not-a-supported-worker' }));
 

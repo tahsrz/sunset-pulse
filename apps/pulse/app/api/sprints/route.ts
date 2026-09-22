@@ -5,6 +5,7 @@ import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { nextOccurrenceAfter, scheduleSpecSchema } from '@/lib/autonomous-workflows/schedulerPolicy';
 import { intelligenceWorkers } from '@/lib/command-center/workerRoster';
 import { listSprintsForWorkspace } from '@/lib/property-sprints/sprintWorkspace.server';
+import { requireOwnerCompatibleMutation } from '@/lib/platform/access/sprintPlanningScope.server';
 
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
@@ -20,6 +21,15 @@ const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('complete_assignment'), assignmentId: uuid }),
   z.object({ action: z.literal('add_backlog_item'), workspaceId: uuid.nullable().optional(), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).nullable().default(null), sourceType: z.enum(['manual', 'pulse_command']).default('manual'), sourceId: z.string().trim().max(160).nullable().default(null) }),
 ]);
+
+async function legacyMutationGuard(userId: string, resourceType: 'sprint' | 'assignment' | 'sprint_backlog_item', resourceId: string) {
+  try {
+    await requireOwnerCompatibleMutation(userId, resourceType, resourceId);
+    return null;
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Workspace scope is required.' }, { status: 409 });
+  }
+}
 
 export async function GET(request: NextRequest) {
   const access = await requireSignedInUser(request);
@@ -93,6 +103,8 @@ export async function POST(request: NextRequest) {
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 409 });
       return NextResponse.json({ ok: true, backlogItem: data?.[0] || null });
     }
+    const blocked = await legacyMutationGuard(userId, 'sprint_backlog_item', parsed.data.itemId);
+    if (blocked) return blocked;
     const { error } = await supabaseAdmin.from('sprint_backlog_items').update({ status: 'cancelled' }).eq('id', parsed.data.itemId).eq('owner_id', userId).eq('status', 'open');
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
@@ -104,6 +116,8 @@ export async function POST(request: NextRequest) {
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 409 });
       return NextResponse.json({ ok: true, backlogItem: data?.[0] || null });
     }
+    const blocked = await legacyMutationGuard(userId, 'sprint_backlog_item', parsed.data.itemId);
+    if (blocked) return blocked;
     const updates: Record<string, unknown> = { title: parsed.data.title, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, status: parsed.data.status };
     if (parsed.data.description !== undefined) updates.description = parsed.data.description;
     const { data, error } = await supabaseAdmin.from('sprint_backlog_items').update(updates).eq('id', parsed.data.itemId).eq('owner_id', userId).select('*').single();
@@ -111,6 +125,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, backlogItem: data });
   }
   if (parsed.data.action === 'remove_sprint_item') {
+    const blocked = await legacyMutationGuard(userId, 'sprint', parsed.data.sprintId);
+    if (blocked) return blocked;
     const { data, error } = await supabaseAdmin.rpc('remove_sprint_item', { p_item_id: parsed.data.itemId, p_sprint_id: parsed.data.sprintId, p_owner_id: userId, p_expected_revision: parsed.data.expectedRevision });
     if (error || !data) return NextResponse.json({ ok: false, error: error?.message || 'Unable to remove sprint item.' }, { status: 409 });
     return NextResponse.json({ ok: true });
@@ -120,6 +136,8 @@ export async function POST(request: NextRequest) {
     if (updateRequest.workerId && !intelligenceWorkers.some((worker) => worker.id === updateRequest.workerId)) {
       return NextResponse.json({ ok: false, error: 'Choose a supported worker.' }, { status: 400 });
     }
+    const blocked = await legacyMutationGuard(userId, 'sprint', updateRequest.sprintId);
+    if (blocked) return blocked;
     const { data, error } = await supabaseAdmin.rpc('update_proposed_sprint_item', {
       p_item_id: updateRequest.itemId,
       p_sprint_id: updateRequest.sprintId,
@@ -135,6 +153,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, update: data?.[0] || null });
   }
   if (parsed.data.action === 'complete_assignment') {
+    const blocked = await legacyMutationGuard(userId, 'assignment', parsed.data.assignmentId);
+    if (blocked) return blocked;
     const { data, error } = await supabaseAdmin.rpc('complete_sprint_assignment', { p_assignment_id: parsed.data.assignmentId, p_owner_id: userId });
     if (error || !data) return NextResponse.json({ ok: false, error: error?.message || 'Unable to complete assignment.' }, { status: 409 });
     return NextResponse.json({ ok: true, assignmentId: parsed.data.assignmentId });

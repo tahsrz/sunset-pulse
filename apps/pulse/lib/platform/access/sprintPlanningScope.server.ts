@@ -84,3 +84,12 @@ export async function listMappedPlannerResourceIds(scope: OwnerCompatiblePlannin
     .map((row) => String(row.resource_id))
     .filter(Boolean))];
 }
+
+export async function requireOwnerCompatibleMutation(actorId: string, resourceType: 'sprint' | 'assignment' | 'sprint_backlog_item', resourceId: string) {
+  const { error } = await supabaseAdmin.rpc('platform_require_owner_compatible_mutation', {
+    p_actor_id: actorId,
+    p_resource_type: resourceType,
+    p_resource_id: resourceId,
+  });
+  if (error) throw new Error('This record is mapped to a team or unresolved workspace scope. Use the workspace controls.');
+}
