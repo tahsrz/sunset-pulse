@@ -89,6 +89,13 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(upgrades.filter((r)=>r.status==='fulfilled').length,1);
   assert.equal(await sql(`SELECT definition->>'version' FROM platform_runs WHERE id='${run}';`),'1','install upgrade does not rewrite pinned runs');
   assert.equal(await sql(`SELECT manifest_hash=encode(sha256(convert_to(manifest::TEXT,'UTF8')),'hex') FROM platform_app_installs WHERE id='${app}';`),'t');
+  const capabilityPolicy=json({policyVersion:1,capabilities:[{connectionId:'crm.local',tool:'contacts',operation:'lookup',inputSchemaHash:'a'.repeat(64),outputSchemaHash:'b'.repeat(64),actionClass:'read'}],allowedConnections:['crm.local'],externalEffectsEnabled:false});
+  const policy=await sql(`SELECT id::text FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`);
+  assert.equal(await sql(`SELECT policy_hash=encode(sha256(convert_to(policy::TEXT,'UTF8')),'hex') FROM platform_capability_policies WHERE id='${policy}';`),'t');
+  await assert.rejects(sql(`SELECT id FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`),/revision conflict/);
+  const receipt=await sql(`SELECT id::text FROM platform_record_effect_receipt('${workspace}','${run}',NULL,'${randomUUID()}','${'c'.repeat(64)}','${'d'.repeat(64)}','prepared',NULL,NULL);`);
+  assert.equal(await sql(`SELECT status FROM platform_effect_receipts WHERE id='${receipt}';`),'prepared');
+  assert.equal(await sql("SELECT has_table_privilege('service_role','platform_effect_receipts','INSERT');"),'f');
   const visible=(actor)=>sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${actor}'; SELECT count(*) FROM platform_app_installs WHERE workspace_id='${workspace}'; COMMIT;`);
   assert.equal(await visible(owner),'3');
   assert.equal(await visible(foreign),'0');
