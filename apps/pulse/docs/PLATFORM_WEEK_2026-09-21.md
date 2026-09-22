@@ -53,8 +53,9 @@ These are sequencing targets, not a claim that each fits one day. Minimum weekly
 **Status at September 22:** the strict `appLaunchInputSchema` contract and unit coverage are implemented, and
 `appLaunch.server.ts` now prepares a non-mutating snapshot from the active install. The contract accepts only bounded
 JSON inputs, a pinned install revision, a workflow key, a UUID request key, and explicit resource references with
-revisions. Database admission, the launch route, and the enqueue RPC remain unimplemented; provider execution remains
-disabled.
+revisions. The launch route and admission RPC are now implemented but remain database-gated: Docker-backed migration,
+replay, race, and authorization tests are still required before enabling the `platform_run` event contract. Provider
+execution remains disabled.
 
 1. Extend `lib/platform/contracts/appManifest.ts` with a separate strict launch request: install ID, expected install revision, workflow key, validated inputs, resource references/revisions and request key. Do not add executable strings or relax the existing empty-capabilities constraint.
 2. Add **new** `lib/platform/apps/appLaunch.server.ts`. Load the active install server-side, select the stored workflow, validate inputs using `parseManifestValues`, resolve access and build a bounded immutable launch snapshot. Never accept a replacement graph/hash/owner from the browser for this path.
@@ -98,7 +99,7 @@ disabled.
 | --- | --- | --- |
 | W1 | In progress — read-side identity boundary complete | Scoped readers must consume resolved workspace/resource IDs; team selection and persistence remain W2 gates |
 | W2 | In progress — guard and scoped RPC implemented; DB gate blocked | Start Docker, run disposable SQL/concurrency acceptance, then add concurrent revocation/revision evidence |
-| W3 | Contract slice complete; admission not started | Pinned property-bound launch and admission races |
+| W3 | Contract, preparation, route and admission slice implemented; DB gate pending | Pinned property-bound launch and admission races |
 | W4 | Not started; conditional on W3 | Rendered real-session human workflow |
 | W5 | Not started | Fresh head checks, cleanup and rollout/handoff record |
 

@@ -4,6 +4,7 @@ import { appLaunchInputSchema, appManifestSchema, parseManifestValues, type AppL
 import { resolveWorkspaceMappedResourceScope, type DomainScopeReference, type DomainResourceType } from '@/lib/platform/access/domainScope.server';
 import { requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { PlatformRunError } from '@/lib/platform/workflows/runStore.server';
 
 type InstallRow = Readonly<{
   id: string;
@@ -91,4 +92,25 @@ export async function prepareAppLaunch(actorId: string, workspaceId: string, raw
     inputs: clone(validatedInputs),
     resourceRefs: clone(resourceRefs),
   });
+}
+
+export async function startAppLaunch(actorId: string, workspaceId: string, rawInput: unknown) {
+  const input = appLaunchInputSchema.parse(rawInput);
+  const snapshot = await prepareAppLaunch(actorId, workspaceId, rawInput);
+  const { data, error } = await supabaseAdmin.rpc('platform_start_app_run', {
+    p_actor_id: actorId,
+    p_workspace_id: workspaceId,
+    p_install_id: snapshot.installId,
+    p_install_revision: snapshot.installRevision,
+    p_workflow_key: snapshot.workflow.key,
+    p_request_key: input.requestKey,
+    p_inputs: snapshot.inputs,
+    p_resource_refs: snapshot.resourceRefs.map((ref) => ({
+      resourceType: ref.resourceType, resourceId: ref.resourceId, expectedRevision: ref.expectedRevision,
+    })),
+  });
+  if (error) throw new PlatformRunError(error.code);
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result) throw new PlatformRunError('P0002');
+  return result;
 }
