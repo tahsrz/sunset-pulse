@@ -89,8 +89,10 @@ export async function platformFollowupAcceptance(sql) {
   await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,scheduled_for,status,lease_token,lease_until)
     VALUES('${scopedJob}','${schedule}','${owner}','sprint_planner',(SELECT scheduled_for FROM workflow_jobs WHERE id='${job}'),'running','${scopedToken}',now()+interval '1 minute');`);
   const scopedItems = json([{ backlog_item_id: scopedBacklog }]);
-  const scopedProposal = await sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Scoped team sprint','Validate mapped backlog',${scopedItems});`);
+  const scopedProposalCall = `SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Scoped team sprint','Validate mapped backlog',${scopedItems});`;
+  const [scopedProposal, scopedReplay] = await Promise.all([sql(scopedProposalCall), sql(scopedProposalCall)]);
   assert.match(scopedProposal, /^[0-9a-f-]{36}$/i);
+  assert.equal(scopedReplay, scopedProposal);
   assert.equal(await sql(`SELECT workspace_id::text FROM platform_scope_links WHERE resource_type='sprint' AND resource_id='${scopedProposal}';`), workspace);
   assert.equal(await sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Changed name','Changed goal',${scopedItems});`), scopedProposal);
   await assert.rejects(sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${other}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Foreign workspace','Should fail',${scopedItems});`),/workspace|mapped|member/);
@@ -106,8 +108,10 @@ export async function platformFollowupAcceptance(sql) {
     VALUES('${propertyJob}','${schedule}','${owner}','sprint_planner','property_shortlist',(SELECT scheduled_for FROM workflow_jobs WHERE id='${job}'),'running','${propertyToken}',now()+interval '1 minute');`);
   const propertyBacklog = json([{ property_id: propertyId, input_revision: 1, property_task_kind: 'verify_facts', dedupe_key: `property-${propertyId}-facts`, title: 'Verify property facts', description: 'Use mapped source facts only', priority: 1, estimate_minutes: 25 }]);
   const propertyItems = json([{ property_id: propertyId, property_revision: 1, dedupe_key: `property-${propertyId}-facts`, title: 'Verify property facts', description: 'Use mapped source facts only', priority: 1, estimate_minutes: 25 }]);
-  const propertyProposal = await sql(`SELECT sprint_id::text FROM platform_persist_scoped_property_sprint_proposal('${propertyJob}','${workspace}','${propertyToken}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${propertyJob}'),'Scoped property sprint','Validate mapped property',${propertyBacklog},${propertyItems});`);
+  const propertyProposalCall = `SELECT sprint_id::text FROM platform_persist_scoped_property_sprint_proposal('${propertyJob}','${workspace}','${propertyToken}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${propertyJob}'),'Scoped property sprint','Validate mapped property',${propertyBacklog},${propertyItems});`;
+  const [propertyProposal, propertyReplay] = await Promise.all([sql(propertyProposalCall), sql(propertyProposalCall)]);
   assert.match(propertyProposal, /^[0-9a-f-]{36}$/i);
+  assert.equal(propertyReplay, propertyProposal);
   assert.equal(await sql(`SELECT workspace_id::text FROM platform_scope_links WHERE resource_type='sprint' AND resource_id='${propertyProposal}';`), workspace);
   assert.equal(await sql(`SELECT sprint_id::text FROM platform_persist_scoped_property_sprint_proposal('${propertyJob}','${workspace}','${propertyToken}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${propertyJob}'),'Changed name','Changed goal',${propertyBacklog},${propertyItems});`), propertyProposal);
   console.log('PASS: scoped property persistence validates mapped property revision, creates backlog/sprint scope and replays');
