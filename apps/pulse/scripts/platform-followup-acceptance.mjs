@@ -95,6 +95,22 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Changed name','Changed goal',${scopedItems});`), scopedProposal);
   await assert.rejects(sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${other}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Foreign workspace','Should fail',${scopedItems});`),/workspace|mapped|member/);
   console.log('PASS: scoped sprint persistence validates schedule mapping, backlog mapping, replay and foreign workspace denial');
+
+  const propertyId = randomUUID();
+  await sql(`INSERT INTO property_shortlist_entries(id,owner_id,area_key,address,city,state,property_kind,revision,status)
+    VALUES('${propertyId}','${owner}','keller-westlake','1 Main Street','Keller','TX','residential',1,'active');
+    INSERT INTO platform_scope_links(resource_type,resource_id,owner_id,workspace_id,status,source_revision)
+    VALUES('property_shortlist','${propertyId}','${owner}','${workspace}','mapped',1);`);
+  const propertyJob = randomUUID(), propertyToken = randomUUID();
+  await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,planning_mode,scheduled_for,status,lease_token,lease_until)
+    VALUES('${propertyJob}','${schedule}','${owner}','sprint_planner','property_shortlist',(SELECT scheduled_for FROM workflow_jobs WHERE id='${job}'),'running','${propertyToken}',now()+interval '1 minute');`);
+  const propertyBacklog = json([{ property_id: propertyId, input_revision: 1, property_task_kind: 'verify_facts', dedupe_key: `property-${propertyId}-facts`, title: 'Verify property facts', description: 'Use mapped source facts only', priority: 1, estimate_minutes: 25 }]);
+  const propertyItems = json([{ property_id: propertyId, property_revision: 1, dedupe_key: `property-${propertyId}-facts`, title: 'Verify property facts', description: 'Use mapped source facts only', priority: 1, estimate_minutes: 25 }]);
+  const propertyProposal = await sql(`SELECT sprint_id::text FROM platform_persist_scoped_property_sprint_proposal('${propertyJob}','${workspace}','${propertyToken}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${propertyJob}'),'Scoped property sprint','Validate mapped property',${propertyBacklog},${propertyItems});`);
+  assert.match(propertyProposal, /^[0-9a-f-]{36}$/i);
+  assert.equal(await sql(`SELECT workspace_id::text FROM platform_scope_links WHERE resource_type='sprint' AND resource_id='${propertyProposal}';`), workspace);
+  assert.equal(await sql(`SELECT sprint_id::text FROM platform_persist_scoped_property_sprint_proposal('${propertyJob}','${workspace}','${propertyToken}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${propertyJob}'),'Changed name','Changed goal',${propertyBacklog},${propertyItems});`), propertyProposal);
+  console.log('PASS: scoped property persistence validates mapped property revision, creates backlog/sprint scope and replays');
   await sql(`UPDATE platform_workspaces SET status='archived' WHERE id='${workspace}';`);
   await assert.rejects(sql(`SELECT id FROM platform_add_sprint_backlog_item('${owner}','${workspace}','Blocked','',3,30,'manual',NULL);`),/denied/);
   await assert.rejects(sql(install()),/denied/);

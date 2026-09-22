@@ -61,6 +61,7 @@ await withDockerService('scheduler-test', async (container) => {
     '20260918050000_platform_app_installs.sql',
     '20260918060000_platform_owner_mutation_guard.sql',
     '20260918070000_platform_scoped_sprint_persistence.sql',
+    '20260918080000_platform_scoped_property_persistence.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
