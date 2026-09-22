@@ -2,11 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { appManifestSchema, appInstallInputSchema, appLaunchInputSchema, parseManifestValues } from '@/lib/platform/contracts/appManifest';
 import property from '@/lib/platform/apps/manifests/real-estate-readiness.v1.json';
 import content from '@/lib/platform/apps/manifests/client-content-review.v1.json';
+import digest from '@/lib/platform/apps/manifests/market-digest.v1.json';
 
 describe('inert pinned app manifests', () => {
-  it.each([property, content])('accepts reviewed $key without implying tool execution', (fixture) => {
+  it.each([property, content, digest])('accepts reviewed $key without implying tool execution', (fixture) => {
     expect(appManifestSchema.parse(fixture)).toEqual(fixture);
     expect(fixture.capabilities).toEqual([]);
+  });
+  it('validates a new app through the manifest contract without a vertical code package', () => {
+    const parsed = appManifestSchema.parse(digest);
+    expect(parsed.key).toBe('market-digest');
+    expect(parseManifestValues(parsed.inputSchema, { area: 'Keller / Westlake' })).toEqual({ area: 'Keller / Westlake' });
+    expect(parseManifestValues(parsed.settingsSchema, { cadence: 'manual' })).toEqual({ cadence: 'manual' });
   });
   it.each(['code', 'import', 'ref', 'capability', 'node', 'duplicates', 'unknown-field'])('rejects unsupported %s', (kind) => {
     const manifest = structuredClone(property) as any;
