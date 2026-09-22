@@ -82,6 +82,20 @@ describe('signed-in sprint schedule route', () => {
     }));
   });
 
+  it('blocks owner approval fallback for a workspace-mapped sprint', async () => {
+    mocks.rpc.mockImplementation((name: string) => name === 'platform_require_owner_compatible_mutation'
+      ? Promise.resolve({ data: null, error: { message: 'mapped sprint' } })
+      : Promise.resolve({ data: [{ id: 'unused' }], error: null }));
+
+    const response = await POST(jsonRequest({
+      action: 'approve', sprintId: '55555555-5555-4555-8555-555555555555', expectedRevision: 1,
+    }));
+
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toContain('workspace');
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
   it('returns a conflict when the database rejects a stale schedule revision', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'Schedule revision conflict' } });
 

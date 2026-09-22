@@ -72,6 +72,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, schedule: data?.[0] || null });
   }
   if (parsed.data.action === 'approve') {
+    if (!parsed.data.workspaceId) {
+      const blocked = await legacyMutationGuard(userId, 'sprint', parsed.data.sprintId);
+      if (blocked) return blocked;
+    }
     const { data, error } = parsed.data.workspaceId
       ? await supabaseAdmin.rpc('platform_approve_sprint_with_assignments', { p_actor_id: userId, p_workspace_id: parsed.data.workspaceId, p_sprint_id: parsed.data.sprintId, p_expected_revision: parsed.data.expectedRevision })
       : await supabaseAdmin.rpc('approve_sprint_with_assignments', { p_sprint_id: parsed.data.sprintId, p_owner_id: userId, p_expected_revision: parsed.data.expectedRevision });
