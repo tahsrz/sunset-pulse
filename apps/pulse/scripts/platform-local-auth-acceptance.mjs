@@ -126,12 +126,18 @@ try{
   await primary.page.goto(origin+base+'/runs?limit=1');await primary.page.screenshot({path:artifacts+'runs.png'});
   const outsider=await login();
   assert.equal((await request(outsider.page,base+'/runs')).status,404);
+  await sql(`INSERT INTO platform_memberships(workspace_id,user_id,role,status) VALUES('${workspace}','${outsider.userId}','member','active');`);
+  assert.equal((await request(outsider.page,base+'/runs')).status,200);
+  await sql(`UPDATE platform_memberships SET status='revoked' WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+  assert.equal((await request(outsider.page,base+'/runs')).status,404,'Revoked membership must lose workspace access');
+  await sql(`UPDATE platform_workspaces SET status='archived', revision=revision+1 WHERE id='${workspace}';`);
+  assert.equal((await request(primary.page,base+'/runs')).status,404,'Archived workspace must lose run access');
   // Independently prove real JWT RLS, not just the server-side guard.
   const signed=createClient(api,anon,{auth:{persistSession:false,autoRefreshToken:false}});
   const {error:authError}=await signed.auth.signInWithPassword({email:outsider.email,password:outsider.password});assert(!authError);
   const {data:foreignRows,error:readError}=await signed.from('platform_runs').select('id').eq('workspace_id',workspace);
   assert(!readError);assert.deepEqual(foreignRows,[]);
-  console.log('PASS: browser cookie APIs start → checkpoint → answer → complete, cancel, cursor pages and foreign-user denial; real JWT RLS denies foreign rows');
+  console.log('PASS: browser cookie APIs start → checkpoint → answer → complete, cancel, cursor pages, revocation, archive and foreign-user denial; real JWT RLS denies foreign rows');
   console.log(`Browser evidence: ${artifacts}`);
 }catch(error){
   // Server logs may contain account identifiers but no credentials are printed
