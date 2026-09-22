@@ -24,14 +24,17 @@ export type CheckpointCardProps = {
 export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, footer }: CheckpointCardProps) {
   const [value, setValue] = useState<string | number | boolean>(checkpoint.response_schema?.type === 'boolean' ? false : '');
   const [submitting, setSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const question = checkpoint.type === 'question';
   const schema = checkpoint.response_schema;
 
   async function submit() {
     if (question && value === '') return;
-    setSubmitting(true);
+    setLocalError(null); setSubmitting(true);
     try {
       await onRespond({ checkpointId: checkpoint.id, expectedRevision: checkpoint.revision, submissionKey: crypto.randomUUID(), value });
+    } catch (cause) {
+      setLocalError(cause instanceof Error ? cause.message : 'Checkpoint changed. Reload before responding.');
     } finally { setSubmitting(false); }
   }
 
@@ -49,7 +52,7 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
         <input type={schema?.type === 'number' ? 'number' : 'text'} value={value as string | number} onChange={(event) => setValue(schema?.type === 'number' ? Number(event.target.value) : event.target.value)} disabled={disabled || submitting} className="mt-5 w-full rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-sm" />
       ) : null}
       <button type="button" onClick={submit} disabled={disabled || submitting || (question && value === '')} className="mt-5 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Submitting…' : checkpoint.type === 'question' ? 'Save response' : 'Continue'}</button>
-      {error ? <p role="alert" className="mt-3 text-sm text-rose-300">{error}</p> : null}
+      {error || localError ? <p role="alert" className="mt-3 text-sm text-rose-300">{error || localError}</p> : null}
       {footer}
     </article>
   );
