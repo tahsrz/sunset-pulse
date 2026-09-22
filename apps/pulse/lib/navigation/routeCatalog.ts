@@ -89,6 +89,7 @@ export const appRoutes: readonly AppRoute[] = [
   ]),
   context('/properties/[id]', 'Property details', 'Discover', 'public', 'Choose an existing property; requires its ID.', '/properties'),
   context('/workspaces/[workspaceId]/inbox', 'Workspace inbox', 'Account and business', 'account', 'Authorized workspace checkpoint inbox and pinned app launch surface.', '/dashboard'),
+  context('/workspaces/[workspaceId]/runs/[runId]', 'Workspace run detail', 'Account and business', 'account', 'Authorized run history, pinned workflow metadata, and checkpoint responses.'),
   context('/contracts/promulgated/[formId]', 'Promulgated contract form', 'Account and business', 'public', 'Choose an existing promulgated contract form; requires its form ID.', '/contracts/promulgated'),
   context('/admin/property-scans/[scanId]/preview', 'Property scan 3D preview', 'Operations', 'operator', 'Choose an approved property scan with a completed manifest preview.', '/admin/property-scans'),
   context('/properties/[id]/edit', 'Edit property', 'Account and business', 'account', 'Choose a property you can edit; requires its ID.', '/properties'),

@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.server';
 import { cancelRunSchema, checkpointResponseSchema, startRunSchema, supersedeRunSchema } from '@/lib/platform/contracts/run';
 import { encodeCursor, parsePage } from '@/lib/platform/contracts/pagination';
+import { z } from 'zod';
 
 export class PlatformRunError extends Error {
   constructor(public readonly code: string) { super('Unable to process workflow request.'); }
@@ -32,6 +33,20 @@ export async function listRuns(actorId: string, workspaceId: string, search = ne
   const { data, error } = await query.limit(limit + 1);
   if (error) throw new PlatformRunError(error.code);
   return pageResult(data || [], limit, workspaceId, 'runs');
+}
+export async function getRun(actorId: string, workspaceId: string, runId: string) {
+  z.string().uuid().parse(runId);
+  await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
+  const { data: run, error: runError } = await supabaseAdmin.from('platform_runs')
+    .select('id,workspace_id,definition,definition_hash,state,status,revision,created_at,updated_at,supersedes,superseded_by,supersession_reason,app_install_id,app_manifest_hash,app_workflow_key,app_install_revision,app_inputs,app_resource_refs')
+    .eq('workspace_id', workspaceId).eq('id', runId).maybeSingle();
+  if (runError) throw new PlatformRunError(runError.code);
+  if (!run) throw new PlatformRunError('P0002');
+  const { data: checkpoints, error: checkpointError } = await supabaseAdmin.from('platform_checkpoints')
+    .select('id,run_id,node_id,type,prompt,response_schema,target,status,revision,response,submission_key,resolved_by,resolved_at,created_at')
+    .eq('workspace_id', workspaceId).eq('run_id', runId).order('created_at', { ascending: true });
+  if (checkpointError) throw new PlatformRunError(checkpointError.code);
+  return { run, checkpoints: checkpoints || [] };
 }
 export async function listCheckpoints(actorId: string, workspaceId: string, search = new URLSearchParams()) {
   const { limit, cursor } = parsePage(search, workspaceId, 'checkpoints');
