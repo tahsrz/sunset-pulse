@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { conditionNodeContractSchema } from './condition';
 
 const nodeId = z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/);
 export const responseSchema = z.discriminatedUnion('type', [
@@ -20,6 +21,7 @@ export const runNodeSchema = z.union([
   checkpoint.extend({ type: z.literal('question'), responseSchema }).strict(),
   checkpoint.extend({ type: z.literal('approval'), target: checkpointTargetSchema }).strict(),
   checkpoint.extend({ type: z.literal('effect_gate'), target: checkpointTargetSchema }).strict(),
+  conditionNodeContractSchema,
   z.object({ id: nodeId, kind: z.literal('complete') }).strict(),
 ]);
 export const runDefinitionSchema = z.object({
@@ -30,13 +32,15 @@ export const runDefinitionSchema = z.object({
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
   if (nodes.size !== graph.nodes.length) fail('Node IDs must be unique.');
   const visited = new Set<string>();
-  let current: string | undefined = graph.entry;
-  while (current) {
-    if (visited.has(current)) { fail('Workflow cycles are not supported.'); break; }
+  const pending = [graph.entry];
+  while (pending.length) {
+    const current = pending.pop()!;
+    if (visited.has(current)) { fail('Workflow cycles or converging branches are not supported.'); break; }
     const node = nodes.get(current);
     if (!node) { fail(`Missing workflow node: ${current}`); break; }
     visited.add(current);
-    current = node.kind === 'checkpoint' ? node.next : undefined;
+    if (node.kind === 'checkpoint') pending.push(node.next);
+    if (node.kind === 'condition') pending.push(node.whenFalse, node.whenTrue);
   }
   if (visited.size !== nodes.size) fail('Every node must be reachable from the entry.');
 });

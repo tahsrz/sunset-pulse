@@ -54,6 +54,22 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT requested_by FROM platform_runs WHERE id='${blocked}';`),member);
   console.log('PASS: supersession preserves evidence and recovery checks restored authority with one resume');
 
+  const conditionGraph={schemaVersion:1,key:'condition-followup',version:1,entry:'ask',nodes:[
+    {id:'ask',kind:'checkpoint',type:'question',prompt:'Which area?',responseSchema:{type:'string'},next:'route'},
+    {id:'route',kind:'condition',condition:{op:'equals',path:'answers.ask',value:'Keller'},whenTrue:'matched',whenFalse:'other'},
+    {id:'matched',kind:'complete'},
+    {id:'other',kind:'complete'},
+  ]};
+  const conditionRun=await sql(`SELECT id FROM platform_start_run('${owner}','${workspace}','${randomUUID()}',${json(conditionGraph)});`);
+  await tick(conditionRun,1);
+  const conditionCheckpoint=await cp(conditionRun,'ask');
+  await sql(`SELECT id FROM platform_respond_checkpoint('${owner}','${workspace}','${conditionCheckpoint}',1,'${randomUUID()}','"Keller"');`);
+  assert.equal(await tick(conditionRun,2),'ready');
+  assert.equal(await tick(conditionRun,3),'completed');
+  assert.equal(await sql(`SELECT state->>'node' FROM platform_runs WHERE id='${conditionRun}';`),'matched');
+  await assert.rejects(sql(`SELECT id FROM platform_start_run('${owner}','${workspace}','${randomUUID()}',${json({...conditionGraph,nodes:[...conditionGraph.nodes,{id:'unused',kind:'complete'}]})});`),/Unreachable/);
+  console.log('PASS: bounded condition node evaluates an answer and queues the selected branch');
+
   const fixture=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/real-estate-readiness.v1.json',import.meta.url),'utf8'));
   const content=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/client-content-review.v1.json',import.meta.url),'utf8'));
   const install=(manifest=fixture,revision='NULL',actor=owner,settings={area:'keller-westlake'})=>
@@ -62,6 +78,9 @@ export async function platformFollowupAcceptance(sql) {
   const [app,appReplay]=await Promise.all([sql(install()),sql(install())]);
   assert.equal(app,appReplay);
   await sql(install(content,'NULL',owner,{review_mode:'human_review'}));
+  const conditionManifest={...fixture,key:'condition-app',title:'Condition App',workflows:[conditionGraph]};
+  await sql(install(conditionManifest,'NULL',owner,{area:'keller-westlake'}));
+  assert.equal(await sql(`SELECT manifest->'workflows'->0->'nodes'->1->>'kind' FROM platform_app_installs WHERE app_key='condition-app' AND workspace_id='${workspace}';`),'condition');
   await assert.rejects(sql(install({...fixture,title:'Changed without a version'},'1')),/pinned/);
   await assert.rejects(sql(install({...fixture,capabilities:[{tool:'send'}]},'1')),/Unsupported/);
   await assert.rejects(sql(install({...fixture,inputSchema:{...fixture.inputSchema,$ref:'https://external.example'}},'1')),/Unsupported/);
@@ -71,7 +90,7 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT definition->>'version' FROM platform_runs WHERE id='${run}';`),'1','install upgrade does not rewrite pinned runs');
   assert.equal(await sql(`SELECT manifest_hash=encode(sha256(convert_to(manifest::TEXT,'UTF8')),'hex') FROM platform_app_installs WHERE id='${app}';`),'t');
   const visible=(actor)=>sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${actor}'; SELECT count(*) FROM platform_app_installs WHERE workspace_id='${workspace}'; COMMIT;`);
-  assert.equal(await visible(owner),'2');
+  assert.equal(await visible(owner),'3');
   assert.equal(await visible(foreign),'0');
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_app_installs','UPDATE');"),'f');
   console.log('PASS: inert manifests, settings, concurrent install/upgrade, version pins and install RLS');

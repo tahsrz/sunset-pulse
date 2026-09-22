@@ -29,4 +29,14 @@ describe('versioned JSON run definitions', () => {
     graph.nodes[0].target = { resourceType: 'brief', resourceId: 'brief-1', revision: 3, contentHash: 'a'.repeat(64), action: 'review' };
     expect(runDefinitionSchema.safeParse(graph).success).toBe(true);
   });
+  it('accepts a bounded condition branch while rejecting capability nodes', () => {
+    const graph = {
+      schemaVersion: 1, key: 'branching', version: 1, entry: 'route', nodes: [
+        { id: 'route', kind: 'condition', condition: { op: 'exists', path: 'answers.area' }, whenTrue: 'ready', whenFalse: 'missing' },
+        { id: 'ready', kind: 'complete' }, { id: 'missing', kind: 'complete' },
+      ],
+    };
+    expect(runDefinitionSchema.safeParse(graph).success).toBe(true);
+    expect(runDefinitionSchema.safeParse({ ...graph, nodes: [{ id: 'tool', kind: 'capability' }] }).success).toBe(false);
+  });
 });
