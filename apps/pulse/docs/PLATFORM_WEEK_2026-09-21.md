@@ -85,8 +85,9 @@ foreign-user denial. Content-bound launch remains visibly unavailable because th
 
 ## W5 — prove and hand off
 
-**Status at September 22:** active. The local real-auth browser evidence is complete; remaining work is affected-suite
-verification, migration/rollout documentation, fresh PR-head CI review and an explicit unresolved-boundaries ledger.
+**Status at September 22:** CI-complete locally and on PR #79. The local real-auth browser evidence, affected suites,
+migration/rollout documentation and fresh PR-head CI review are complete; production rollout remains an explicit
+separate decision.
 
 1. Run affected unit suites, disposable scheduler/platform concurrency, full Supabase migration/database tests, lint and production build. Re-run Mongo acceptance if a Vibe/scan adapter changed. Use the [verification baseline](PLATFORM_VERIFICATION_2026-09-18.md) for commands, not as substitute evidence.
 2. Run real local Supabase browser acceptance with mock auth off; cover team members, a foreign user, revocation, archived workspaces and source changes between read and write. Remove only created fixtures, restore the prior admission flag and stop the owned test server.
@@ -109,7 +110,7 @@ verification, migration/rollout documentation, fresh PR-head CI review and an ex
 | W2 | Implemented and disposable DB-verified | Fresh CI and real-auth/browser evidence |
 | W3 | Implemented and disposable DB-verified; real-auth browser gate passed | Fresh head checks and handoff |
 | W4 | Implemented; rendered real-session workflow passed | Affected suites, accessibility/stale-conflict review and handoff |
-| W5 | Active | Fresh head checks, cleanup and rollout/handoff record |
+| W5 | CI-complete; production rollout intentionally pending | Deployment authority, migration application and provider admission remain separate |
 
 ## September 22 evidence entry
 
@@ -117,8 +118,9 @@ verification, migration/rollout documentation, fresh PR-head CI review and an ex
 - Changed paths: rollout/plan documentation only in the latest commit; the pre-existing `apps/pulse/public/atlas_manifest.json` remains unstaged.
 - Checks: `node scripts/platform-local-auth-acceptance.mjs --stack xlyfhiafactxahhvikyv --apply-local-migrations` passed. It verified unauthenticated 401, real Supabase login with mock auth disabled, rendered browser start → checkpoint → answer → complete, cancel, cursor pages, revoked-member denial, archived-workspace denial, foreign-user denial and JWT RLS denial. Temporary data was removed; the admission flag was restored. Revision-conflict coverage remains in the passing disposable DB suite; a browser-only stale-response probe hit a local upstream timeout and was not used as evidence. The affected Vitest suite passed 15 files / 97 tests, `npm run build` passed, and `git diff --check` passed.
 - Environment: disposable local Docker Supabase stack `xlyfhiafactxahhvikyv`; local Next server on `127.0.0.1:3176`; provider keys empty. `npm run test:db:concurrency` passed all scheduler, run/checkpoint, scope, install, launch, replay, recovery and RLS assertions; `npm run lint` exited 0 with five existing hook/image warnings.
-- Remote PR review: PR #79 remote head `46c26d110866ae920ede3816bd7d8d22e49b9c79` reports lint, test, scheduler-db, docker-acceptance, jamie-e2e and Vercel successful. The newer local commits have not been pushed, so remote CI has not evaluated them.
+- Historical PR review: PR #79 head `46c26d110866ae920ede3816bd7d8d22e49b9c79` previously reported lint, test, scheduler-db, docker-acceptance, jamie-e2e and Vercel successful; it is superseded by the fresh head evidence below.
+- Fresh PR evidence: after the authorized push, PR #79 head `c7bb33bf189fb4d84b4e6bdbca3cabf43411de11` reports lint, test, scheduler-db, docker-acceptance, jamie-e2e and Vercel successful. Supabase Preview was skipped. This is CI evidence, not production migration or provider evidence.
 - Remaining boundary: content-bound launch is unavailable until `resolveVibeRevisionScope` has a proven cross-store authorization path; production admissions/providers remain disabled.
-- Next action: user-authorized push is required before fresh CI can evaluate the 17 local commits; until then, do not claim the local evidence is PR CI evidence.
+- Next action: review/merge PR #79 under normal repository policy, or begin a separately authorized deployment preparation; do not enable production admissions/providers from this plan alone.
 
 For each completion, append only: commit, changed paths, exact checks/results, environment, remaining boundary and next action. Keep implementation evidence separate from deployment claims.
