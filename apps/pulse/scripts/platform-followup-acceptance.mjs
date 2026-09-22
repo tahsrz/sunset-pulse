@@ -83,6 +83,18 @@ export async function platformFollowupAcceptance(sql) {
   await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,scheduled_for,status,lease_token,lease_until)
     VALUES('${job}','${schedule}','${owner}','sprint_planner',now(),'running','${token}',now()+interval '1 minute');`);
   await assert.rejects(sql(`SELECT platform_require_owner_planning('${job}','${token}');`),/scoped planner/);
+
+  const scopedBacklog = await sql(`SELECT id::text FROM platform_add_sprint_backlog_item('${owner}','${workspace}','Scoped team input','Scoped proposal input',1,30,'manual',NULL);`);
+  const scopedJob = randomUUID(), scopedToken = randomUUID();
+  await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,scheduled_for,status,lease_token,lease_until)
+    VALUES('${scopedJob}','${schedule}','${owner}','sprint_planner',(SELECT scheduled_for FROM workflow_jobs WHERE id='${job}'),'running','${scopedToken}',now()+interval '1 minute');`);
+  const scopedItems = json([{ backlog_item_id: scopedBacklog }]);
+  const scopedProposal = await sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Scoped team sprint','Validate mapped backlog',${scopedItems});`);
+  assert.match(scopedProposal, /^[0-9a-f-]{36}$/i);
+  assert.equal(await sql(`SELECT workspace_id::text FROM platform_scope_links WHERE resource_type='sprint' AND resource_id='${scopedProposal}';`), workspace);
+  assert.equal(await sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${workspace}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Changed name','Changed goal',${scopedItems});`), scopedProposal);
+  await assert.rejects(sql(`SELECT sprint_id::text FROM platform_persist_scoped_sprint_proposal('${scopedJob}','${other}',(SELECT scheduled_for FROM workflow_jobs WHERE id='${scopedJob}'),'Foreign workspace','Should fail',${scopedItems});`),/workspace|mapped|member/);
+  console.log('PASS: scoped sprint persistence validates schedule mapping, backlog mapping, replay and foreign workspace denial');
   await sql(`UPDATE platform_workspaces SET status='archived' WHERE id='${workspace}';`);
   await assert.rejects(sql(`SELECT id FROM platform_add_sprint_backlog_item('${owner}','${workspace}','Blocked','',3,30,'manual',NULL);`),/denied/);
   await assert.rejects(sql(install()),/denied/);
