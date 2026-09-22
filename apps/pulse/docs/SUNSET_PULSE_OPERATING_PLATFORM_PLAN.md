@@ -74,6 +74,8 @@ Goal: real-estate readiness and client-content review are two data-defined apps 
 
 Items 1–3 are implemented for inert intake-only manifests. Items 4–16 are not implied by installation; W3 adds authorized launch, and W4 may add the human-only form/inbox surface. Tool execution remains gated behind policy, receipts and cost controls.
 
+September 22 safety slice: `lib/platform/contracts/capabilityPolicy.ts` now defines bounded connection/tool/schema-hash metadata and immutable effect-receipt fields for future policy review. The inert policy rejects external effects, duplicate capability identities, unallowlisted connections and executable fields; it does not dispatch tools or make nonempty manifests executable.
+
 1. `lib/platform/contracts/appManifest.ts`: parse JSON fields `schemaVersion`, `key`, `version`, `title`, `inputSchema`, `workflows`, `capabilities`, `artifactSchemas`, `settingsSchema`. Reject executable strings, unknown schema features and dynamic imports.
 2. Add `platform_app_installs` holding pinned manifest JSON/hash, workspace settings, status and revision. A run copies its selected definition/version at admission; upgrading an install cannot rewrite active runs.
 3. Store `real-estate-readiness.v1.json` and `client-content-review.v1.json` as reviewed import fixtures. Installation persists the validated JSON. New apps using supported fields/tools need no per-vertical TypeScript package.
@@ -123,7 +125,7 @@ New event admissions remain disabled until the matching worker version and relea
 | Phase | Current state | Evidence / remaining gate |
 | --- | --- | --- |
 | Core Platform | JSON run/checkpoint backend, pagination, recovery, supersession, scope fencing and workspace-scoped planner persistence implemented locally. | Local real-Postgres and real Supabase/browser acceptance pass, including revoked/archived/foreign denial. Production admission remains disabled. |
-| Declarative Engine | Manifest contract, revision-checked install API, two reviewed intake fixtures and server-authoritative app launch implemented locally. | Resource revisions are pinned; Vibe/content authority remains unavailable. No gateway, capability/condition execution or external effects; capabilities must be empty. |
+| Declarative Engine | Manifest contract, revision-checked install API, two reviewed intake fixtures, server-authoritative app launch and inert capability/receipt contracts implemented locally. | Resource revisions are pinned; Vibe/content authority remains unavailable. No gateway, capability/condition execution or external effects; manifests still require empty capabilities. |
 | Control Layer | Shared checkpoint inbox, ManifestForm, CheckpointCard and run details implemented locally with route inventory updates. | Local rendered browser acceptance and fresh PR CI pass. Quotas, connector operations, Jamie integration and a two-app operational pilot remain later gates. |
 
 Baseline implementation: `3af65f44` on [PR #79](https://github.com/tahsrz/sunset-pulse/pull/79). Fresh CI at that head passed lint, test, scheduler-db, docker-acceptance, jamie-e2e and Vercel; Supabase Preview was skipped. Exact evidence, migration scope and remaining gaps live in the [dated record](PLATFORM_VERIFICATION_2026-09-18.md) and [weekly handoff](PLATFORM_WEEK_2026-09-21.md), not in repeated completion logs here.
