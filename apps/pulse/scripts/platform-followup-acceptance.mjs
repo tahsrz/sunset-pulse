@@ -108,8 +108,20 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT schema_hash=encode(sha256(convert_to(schema::TEXT,'UTF8')),'hex') FROM platform_connector_schema_snapshots WHERE id='${snapshot}';`),'t');
   await assert.rejects(sql(`SELECT id FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','http://crm.example.test/mcp','crm-secret',1);`),/Invalid connector/);
   await assert.rejects(sql(`SELECT id FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${json({...connectorSchemaValue, '$ref':'file:///evil'})},1);`),/Unsupported|schema/);
-  const receipt=await sql(`SELECT id::text FROM platform_record_effect_receipt('${workspace}','${run}',NULL,'${randomUUID()}','${'c'.repeat(64)}','${'d'.repeat(64)}','prepared',NULL,NULL);`);
+  const effectGraph={schemaVersion:1,key:'effect-gate-followup',version:1,entry:'gate',nodes:[
+    {id:'gate',kind:'checkpoint',type:'effect_gate',prompt:'Authorize fixture effect',target:{resourceType:'fixture',resourceId:'fixture-1',revision:1,contentHash:'e'.repeat(64),action:'prepare'},next:'done'},
+    {id:'done',kind:'complete'},
+  ]};
+  const effectRun=await sql(`SELECT id FROM platform_start_run('${owner}','${workspace}','${randomUUID()}',${json(effectGraph)});`);
+  await tick(effectRun,1);
+  const effectCheckpoint=await cp(effectRun,'gate');
+  const receipt=await sql(`SELECT id::text FROM platform_record_effect_receipt('${workspace}','${effectRun}','${effectCheckpoint}','${randomUUID()}','${'c'.repeat(64)}','${'d'.repeat(64)}','prepared',NULL,NULL);`);
   assert.equal(await sql(`SELECT status FROM platform_effect_receipts WHERE id='${receipt}';`),'prepared');
+  await sql(`SELECT id FROM platform_transition_effect_receipt('${receipt}','submitted',NULL,NULL);`);
+  await sql(`SELECT id FROM platform_transition_effect_receipt('${receipt}','unknown',NULL,NULL);`);
+  await sql(`SELECT id FROM platform_transition_effect_receipt('${receipt}','reconciled','fixture-reconciled',now());`);
+  assert.equal(await sql(`SELECT status FROM platform_effect_receipts WHERE id='${receipt}';`),'reconciled');
+  await assert.rejects(sql(`SELECT id FROM platform_transition_effect_receipt('${receipt}','accepted','fixture-accepted',now());`),/transition/);
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_effect_receipts','INSERT');"),'f');
   const visible=(actor)=>sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${actor}'; SELECT count(*) FROM platform_app_installs WHERE workspace_id='${workspace}'; COMMIT;`);
   assert.equal(await visible(owner),'3');

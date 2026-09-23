@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMcpToolCallRequest, buildOpenApiRequest, gatewayRequestSchema, gatewayResponseSchema } from '@/lib/platform/contracts/protocolGateway';
+import { buildMcpToolCallRequest, buildOpenApiRequest, gatewayRequestSchema, gatewayResponseSchema, validateGatewayResponse } from '@/lib/platform/contracts/protocolGateway';
 
 const operationId = '00000000-0000-4000-8000-000000000001';
 const hash = 'a'.repeat(64);
@@ -18,5 +18,12 @@ describe('platform protocol gateway envelopes', () => {
   it('requires safe error/result correspondence', () => {
     expect(gatewayResponseSchema.safeParse({ protocol: 'mcp', operationId, outputSchemaHash: hash, status: 'success', result: { ok: true }, error: null }).success).toBe(true);
     expect(gatewayResponseSchema.safeParse({ protocol: 'mcp', operationId, outputSchemaHash: hash, status: 'success', result: {}, error: 'unexpected' }).success).toBe(false);
+  });
+
+  it('validates successful fixture output against the pinned output schema', () => {
+    const output = { type: 'object', properties: { name: { type: 'string', maxLength: 80 } }, required: ['name'], additionalProperties: false };
+    expect(validateGatewayResponse({ protocol: 'mcp', operationId, outputSchemaHash: hash, status: 'success', result: { name: 'Owner' }, error: null }, output, hash).result).toEqual({ name: 'Owner' });
+    expect(() => validateGatewayResponse({ protocol: 'mcp', operationId, outputSchemaHash: hash, status: 'success', result: { count: 3 }, error: null }, output, hash)).toThrow();
+    expect(() => validateGatewayResponse({ protocol: 'mcp', operationId, outputSchemaHash: 'b'.repeat(64), status: 'success', result: { name: 'Owner' }, error: null }, output, hash)).toThrow();
   });
 });

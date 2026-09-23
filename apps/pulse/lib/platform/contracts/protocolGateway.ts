@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { manifestObjectSchema, parseManifestValues } from './appManifest';
 
 const key = z.string().regex(/^[a-z][a-z0-9_.:-]{0,127}$/);
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -62,4 +63,14 @@ export function buildMcpToolCallRequest(input: Omit<z.infer<typeof mcpToolCallRe
 }
 export function buildOpenApiRequest(input: Omit<z.infer<typeof openApiRequestSchema>, 'protocol'>) {
   return openApiRequestSchema.parse({ protocol: 'openapi', ...input });
+}
+
+export function validateGatewayResponse(response: unknown, outputSchema: unknown, expectedOutputSchemaHash: string) {
+  const parsed = gatewayResponseSchema.parse(response);
+  if (parsed.outputSchemaHash !== expectedOutputSchemaHash) throw new Error('Output schema hash mismatch.');
+  if (parsed.status === 'success') {
+    const boundedSchema = manifestObjectSchema.parse(outputSchema);
+    return { ...parsed, result: parseManifestValues(boundedSchema, parsed.result) };
+  }
+  return parsed;
 }
