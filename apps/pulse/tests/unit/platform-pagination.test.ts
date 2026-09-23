@@ -14,6 +14,10 @@ describe('bounded workspace keyset cursors', () => {
     expect(() => parsePage(params, crypto.randomUUID(), 'runs')).toThrow();
     expect(() => parsePage(params, workspaceId, 'checkpoints')).toThrow();
   });
+  it('bounds health cursors independently from checkpoint pages', () => {
+    const healthCursor = { workspaceId, collection: 'connector_health' as const, createdAt: cursor.createdAt, id: workspaceId };
+    expect(parsePage(new URLSearchParams({ cursor: encodeCursor(healthCursor), limit: '20' }), workspaceId, 'connector_health')).toEqual({ limit: 20, cursor: healthCursor });
+  });
   it.each(['%', 'e30', 'x'.repeat(513)])('rejects malformed cursors', (value) => {
     expect(() => parsePage(new URLSearchParams({ cursor: value }), workspaceId, 'runs')).toThrow();
   });

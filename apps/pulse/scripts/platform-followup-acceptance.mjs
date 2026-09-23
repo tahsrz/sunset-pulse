@@ -114,6 +114,10 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT status FROM platform_connector_health WHERE connector_id='${connector}';`),'unavailable');
   await sql(`SELECT id::text FROM platform_record_connector_health('${workspace}','${connector}','schema_drift','2026-09-23T12:02:00.000Z','${'f'.repeat(64)}',${json({source:'fixture',reason:'snapshot_changed'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_health WHERE connector_id='${connector}';`),'schema_drift');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_summary('${workspace}') WHERE status='schema_drift';`),'1');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_summary('${other}');`),'0');
+  assert.equal(await sql("SELECT has_function_privilege('service_role','platform_connector_health_summary(uuid)','EXECUTE');"),'t');
+  assert.equal(await sql("SELECT has_function_privilege('authenticated','platform_connector_health_summary(uuid)','EXECUTE');"),'f');
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_connector_health','INSERT');"),'f');
   assert.equal(await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='connector_health_check';"),'f');
   await assert.rejects(sql(`SELECT id FROM enqueue_workflow_event('${owner}','connector_health_check','health-disabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`),/Unsupported workflow event contract/);

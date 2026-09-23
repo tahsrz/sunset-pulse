@@ -3,7 +3,7 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.server';
 import { cancelRunSchema, checkpointResponseSchema, startRunSchema, supersedeRunSchema } from '@/lib/platform/contracts/run';
-import { encodeCursor, parsePage } from '@/lib/platform/contracts/pagination';
+import { encodeCursor, parsePage, parseScopedPage } from '@/lib/platform/contracts/pagination';
 import { z } from 'zod';
 
 export class PlatformRunError extends Error {
@@ -58,9 +58,12 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   const { data, error } = await query.limit(limit + 1);
   if (error) throw new PlatformRunError(error.code);
   const page = pageResult(data || [], limit, workspaceId, 'checkpoints');
-  const { data: health, error: healthError } = await supabaseAdmin.from('platform_connector_health')
+  const healthPage = parseScopedPage(search, workspaceId, 'connector_health', 'healthLimit', 'healthCursor');
+  let healthQuery = supabaseAdmin.from('platform_connector_health')
     .select('id,connector_id,connection_id,title,status,checked_at,snapshot_hash,detail,updated_at')
-    .eq('workspace_id', workspaceId).order('status', { ascending: true }).order('checked_at', { ascending: false });
+    .eq('workspace_id', workspaceId).order('checked_at', { ascending: false }).order('id', { ascending: false });
+  if (healthPage.cursor) healthQuery = healthQuery.or(`checked_at.lt.${healthPage.cursor.createdAt},and(checked_at.eq.${healthPage.cursor.createdAt},id.lt.${healthPage.cursor.id})`);
+  const { data: healthRows, error: healthError } = await healthQuery.limit(healthPage.limit + 1);
   if (healthError) throw new PlatformRunError(healthError.code);
   const { data: healthJobs, error: healthJobError } = await supabaseAdmin.from('workflow_jobs')
     .select('id,status,scheduled_for,updated_at,payload')
@@ -74,7 +77,9 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
     const connectorId = typeof job.payload?.connectorId === 'string' ? job.payload.connectorId : null;
     if (connectorId && !jobsByConnector.has(connectorId)) jobsByConnector.set(connectorId, job);
   }
-  const healthWithFreshness = (health || []).map((entry) => {
+  const healthItems = (healthRows || []).slice(0, healthPage.limit);
+  const healthLast = healthItems.at(-1);
+  const healthWithFreshness = healthItems.map((entry) => {
     const job = jobsByConnector.get(entry.connector_id);
     const checkedAt = Date.parse(entry.checked_at);
     const isStale = !Number.isFinite(checkedAt) || checkedAt <= now - freshnessWindowMs;
@@ -83,7 +88,17 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
       : isStale ? 'due' : 'fresh';
     return { ...entry, scheduler_status: schedulerStatus, next_check_at: job?.scheduled_for || null };
   });
-  return { ...page, health: healthWithFreshness };
+  const { data: summaryRows, error: summaryError } = await supabaseAdmin.rpc('platform_connector_health_summary', { p_workspace_id: workspaceId });
+  if (summaryError) throw new PlatformRunError(summaryError.code);
+  const healthSummary = { healthy: 0, unavailable: 0, schema_drift: 0, stale: 0 };
+  for (const row of summaryRows || []) if (row.status in healthSummary) healthSummary[row.status as keyof typeof healthSummary] = Number(row.count || 0);
+  return {
+    ...page,
+    health: healthWithFreshness,
+    healthNextCursor: healthRows && healthRows.length > healthPage.limit && healthLast
+      ? encodeCursor({ workspaceId, collection: 'connector_health', createdAt: healthLast.checked_at, id: healthLast.id }) : null,
+    healthSummary,
+  };
 }
 function pageResult<T extends { id: string; created_at: string }>(rows: T[], limit: number, workspaceId: string, collection: 'runs' | 'checkpoints') {
   const items = rows.slice(0, limit), last = items.at(-1);
