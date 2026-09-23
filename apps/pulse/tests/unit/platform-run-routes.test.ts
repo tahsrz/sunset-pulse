@@ -91,7 +91,7 @@ describe('workspace JSON run and checkpoint routes', () => {
     expect(mocks.rpc).toHaveBeenCalledWith('platform_cancel_run', expect.objectContaining({ p_run_id: checkpoint, p_expected_revision: 3 }));
   });
   it.each([runs, checkpoints])('bounds and scopes each private read', async (handler) => {
-    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue({ data: [], error: null }) };
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue({ data: [], error: null }) };
     mocks.from.mockReturnValue(query);
     const result = await handler(new NextRequest('http://localhost/api/workspaces/' + workspace + '/runs'), context());
     expect(result.status).toBe(200);

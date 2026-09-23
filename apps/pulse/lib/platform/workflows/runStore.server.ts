@@ -62,7 +62,28 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
     .select('id,connector_id,connection_id,title,status,checked_at,snapshot_hash,detail,updated_at')
     .eq('workspace_id', workspaceId).order('status', { ascending: true }).order('checked_at', { ascending: false });
   if (healthError) throw new PlatformRunError(healthError.code);
-  return { ...page, health: health || [] };
+  const { data: healthJobs, error: healthJobError } = await supabaseAdmin.from('workflow_jobs')
+    .select('id,status,scheduled_for,updated_at,payload')
+    .eq('workflow_key', 'connector_health_check').eq('payload->>workspaceId', workspaceId)
+    .in('status', ['queued', 'deferred', 'running']).order('scheduled_for', { ascending: false }).limit(100);
+  if (healthJobError) throw new PlatformRunError(healthJobError.code);
+  const now = Date.now();
+  const freshnessWindowMs = 24 * 60 * 60 * 1000;
+  const jobsByConnector = new Map<string, { id: string; status: string; scheduled_for: string; updated_at: string }>();
+  for (const job of healthJobs || []) {
+    const connectorId = typeof job.payload?.connectorId === 'string' ? job.payload.connectorId : null;
+    if (connectorId && !jobsByConnector.has(connectorId)) jobsByConnector.set(connectorId, job);
+  }
+  const healthWithFreshness = (health || []).map((entry) => {
+    const job = jobsByConnector.get(entry.connector_id);
+    const checkedAt = Date.parse(entry.checked_at);
+    const isStale = !Number.isFinite(checkedAt) || checkedAt <= now - freshnessWindowMs;
+    const schedulerStatus = job
+      ? (job.status === 'running' ? 'running' : Date.parse(job.scheduled_for) <= now ? 'overdue' : 'queued')
+      : isStale ? 'due' : 'fresh';
+    return { ...entry, scheduler_status: schedulerStatus, next_check_at: job?.scheduled_for || null };
+  });
+  return { ...page, health: healthWithFreshness };
 }
 function pageResult<T extends { id: string; created_at: string }>(rows: T[], limit: number, workspaceId: string, collection: 'runs' | 'checkpoints') {
   const items = rows.slice(0, limit), last = items.at(-1);
