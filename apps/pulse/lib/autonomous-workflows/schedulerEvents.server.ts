@@ -3,6 +3,10 @@ import 'server-only';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export class SchedulerEventError extends Error {
+  constructor(public readonly code: 'DISABLED' | 'FAILED', message = 'Unable to enqueue workflow event.') { super(message); }
+}
+
 const eventInputSchema = z.object({
   userId: z.string().uuid(),
   workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check']),
@@ -41,7 +45,10 @@ export async function enqueueWorkflowEvent(input: WorkflowEventInput) {
     p_scheduled_for: parsed.scheduledFor ?? null,
   });
 
-  if (error) throw new Error(`Unable to enqueue workflow event: ${error.message}`);
+  if (error) {
+    if (error.message.includes('Unsupported workflow event contract')) throw new SchedulerEventError('DISABLED');
+    throw new SchedulerEventError('FAILED');
+  }
   const job = Array.isArray(data) ? data[0] : data;
   if (!job) throw new Error('Workflow event enqueue did not return a job.');
   return job;

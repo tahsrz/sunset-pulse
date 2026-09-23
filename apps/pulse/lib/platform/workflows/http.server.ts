@@ -5,6 +5,7 @@ import { ZodError, z } from 'zod';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { WorkspaceAccessError } from '@/lib/platform/access/workspaceAccess.server';
 import { PlatformRunError } from './runStore.server';
+import { SchedulerEventError } from '@/lib/autonomous-workflows/schedulerEvents.server';
 
 export type WorkspaceRouteContext = { params: Promise<{ workspaceId: string }> };
 class InputError extends Error {
@@ -72,6 +73,10 @@ export async function workspaceWorkflowRequest(
         '23505': [409, 'Workflow request conflict.'], '55000': [503, 'Workflow admission is currently disabled.'],
       };
       [status, message] = errors[error.code] || [status, message];
+    } else if (error instanceof SchedulerEventError) {
+      [status, message] = error.code === 'DISABLED'
+        ? [503, 'Workflow scheduling is currently disabled.']
+        : [500, 'Workflow scheduling is unavailable.'];
     }
     return NextResponse.json({ ok: false, error: message }, { status, headers });
   }

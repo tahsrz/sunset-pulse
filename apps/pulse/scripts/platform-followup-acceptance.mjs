@@ -118,8 +118,14 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='connector_health_check';"),'f');
   await assert.rejects(sql(`SELECT id FROM enqueue_workflow_event('${owner}','connector_health_check','health-disabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`),/Unsupported workflow event contract/);
   await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='connector_health_check';");
-  const healthJob=await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','connector_health_check','health-enabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`);
+  const healthJob=await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','connector_health_check','health-enabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now()-interval '1 second');`);
+  assert.equal(await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','connector_health_check','health-enabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,(SELECT scheduled_for FROM workflow_jobs WHERE id='${healthJob}'));`),healthJob);
   assert.equal(await sql(`SELECT payload->>'connectorId' FROM workflow_jobs WHERE id='${healthJob}';`),connector);
+  assert.equal(await sql(`SELECT count(*)::text FROM claim_workflow_jobs(100,60) WHERE id='${healthJob}';`),'1');
+  await sql(`UPDATE workflow_jobs SET lease_until=now()-interval '1 second' WHERE id='${healthJob}';`);
+  assert.equal(await sql(`SELECT recover_workflow_leases() >= 1;`),'t');
+  assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${healthJob}';`),'queued');
+  await sql(`DELETE FROM workflow_jobs WHERE id='${healthJob}';`);
   await sql("UPDATE workflow_event_contracts SET enabled=false WHERE workflow_key='connector_health_check';");
   const responseEvent=await sql(`SELECT id::text FROM platform_record_connector_response('${workspace}','${provenanceRun}','${reservation}','${snapshot}','${operation}','${'e'.repeat(64)}','${snapshotHash}','valid',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:00:00.000Z'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_response_events WHERE id='${responseEvent}';`),'valid');
