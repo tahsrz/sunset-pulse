@@ -108,6 +108,13 @@ export async function platformFollowupAcceptance(sql) {
   const snapshot=await sql(`SELECT id::text FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${connectorSchema},NULL);`);
   assert.equal(await sql(`SELECT schema_hash=encode(sha256(convert_to(schema::TEXT,'UTF8')),'hex') FROM platform_connector_schema_snapshots WHERE id='${snapshot}';`),'t');
   const snapshotHash=await sql(`SELECT schema_hash FROM platform_connector_schema_snapshots WHERE id='${snapshot}';`);
+  const healthyCheck=await sql(`SELECT id::text FROM platform_record_connector_health('${workspace}','${connector}','healthy','2026-09-23T12:00:00.000Z','${snapshotHash}',${json({source:'fixture',probe:'schema'})});`);
+  assert.equal(await sql(`SELECT status FROM platform_connector_health WHERE id='${healthyCheck}';`),'healthy');
+  await sql(`SELECT id::text FROM platform_record_connector_health('${workspace}','${connector}','unavailable','2026-09-23T12:01:00.000Z',NULL,${json({source:'fixture',reason:'maintenance'})});`);
+  assert.equal(await sql(`SELECT status FROM platform_connector_health WHERE connector_id='${connector}';`),'unavailable');
+  await sql(`SELECT id::text FROM platform_record_connector_health('${workspace}','${connector}','schema_drift','2026-09-23T12:02:00.000Z','${'f'.repeat(64)}',${json({source:'fixture',reason:'snapshot_changed'})});`);
+  assert.equal(await sql(`SELECT status FROM platform_connector_health WHERE connector_id='${connector}';`),'schema_drift');
+  assert.equal(await sql("SELECT has_table_privilege('service_role','platform_connector_health','INSERT');"),'f');
   const responseEvent=await sql(`SELECT id::text FROM platform_record_connector_response('${workspace}','${provenanceRun}','${reservation}','${snapshot}','${operation}','${'e'.repeat(64)}','${snapshotHash}','valid',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:00:00.000Z'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_response_events WHERE id='${responseEvent}';`),'valid');
   await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',2,3,1,1);`);

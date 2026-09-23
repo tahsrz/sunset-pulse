@@ -57,7 +57,12 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (cursor) query = query.or(`created_at.gt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.gt.${cursor.id})`);
   const { data, error } = await query.limit(limit + 1);
   if (error) throw new PlatformRunError(error.code);
-  return pageResult(data || [], limit, workspaceId, 'checkpoints');
+  const page = pageResult(data || [], limit, workspaceId, 'checkpoints');
+  const { data: health, error: healthError } = await supabaseAdmin.from('platform_connector_health')
+    .select('id,connector_id,connection_id,title,status,checked_at,snapshot_hash,detail,updated_at')
+    .eq('workspace_id', workspaceId).order('status', { ascending: true }).order('checked_at', { ascending: false });
+  if (healthError) throw new PlatformRunError(healthError.code);
+  return { ...page, health: health || [] };
 }
 function pageResult<T extends { id: string; created_at: string }>(rows: T[], limit: number, workspaceId: string, collection: 'runs' | 'checkpoints') {
   const items = rows.slice(0, limit), last = items.at(-1);
