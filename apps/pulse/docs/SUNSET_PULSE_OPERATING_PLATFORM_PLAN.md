@@ -153,6 +153,25 @@ Baseline implementation: `3af65f44` on [PR #79](https://github.com/tahsrz/sunset
 
 **Completed safety slice:** the shared inbox read model now exposes a separately bounded, workspace-fenced audit page for connector scheduling and result events. It filters to the reviewed action allowlist and returns only safe metadata, while audit cursor collection fences prevent cross-workspace or cross-collection reuse.
 
+## Work completed so far — connector-health operating slice
+
+This is the current implementation summary to use as research context before the next sprint:
+
+1. The connector-health contract is bounded to reviewed statuses (`healthy`, `unavailable`, `schema_drift`, `stale`) and an explicit safe-detail allowlist. Credentials, executable content, provider response bodies and dynamic fields are rejected.
+2. Health evidence is stored workspace-scoped with connector and schema-snapshot references. Writes use a service-only RPC; authenticated users can read only through existing workspace policies.
+3. A `connector_health_check` worker was added to the existing durable scheduler. It only evaluates fixture/pinned-snapshot evidence and never contacts a provider or reads credentials. Its event contract remains disabled by default.
+4. Workspace operators can request a health check through an authenticated, cross-origin-protected route with an explicit connector ID and replay key. Disabled scheduling returns a safe unavailable response.
+5. The shared inbox derives `fresh`, `due`, `queued`, `running` and `overdue` states from persisted health evidence plus existing scheduler jobs. Retry scheduling does not replace prior evidence.
+6. Health summary counts and health records have independent bounded keyset cursors. Cursors carry workspace and collection identity, preventing reuse across workspaces or read models.
+7. Every health transition appends bounded immutable history. Scheduler job UUIDs serve as operation identity for idempotent result receipts; duplicate receipt writes return the original receipt.
+8. Receipt records are joined into the workspace health read model and emit service-attributed audit events with only receipt ID, operation ID, health ID, status and result hash metadata.
+9. Health scheduling is audited at the existing workflow-job insert boundary. Scheduler replay does not create a second scheduling audit event.
+10. The inbox read model exposes a separate bounded audit page containing only `connector.health.scheduled` and `connector.health.receipt_recorded` actions. Audit cursors are independently workspace/collection fenced.
+11. Acceptance coverage proves workspace creation and membership, scheduler replay, lease recovery, authenticated RLS isolation, connector health upsert/history, disabled admission, receipt replay, concurrent receipt writes, audit linkage and foreign-workspace denial.
+12. The focused unit suites and production builds have passed for each completed slice. The Docker/Postgres scheduler acceptance has passed after the history, receipt and scheduling-audit migrations were added. The known build diagnostic is the existing nonfatal dynamic usage message from `/api/kepler/listings`.
+
+Implementation commits for this slice, newest first: `a1c55a87` (bounded audit history), `63c9fef6` (scheduling audit), `349c7ef3` (receipt audit/read model), `b194f0dd` (history and receipts), `2b7b0234` (health pagination), `48a31afa` (freshness states), `40bb9eb9` (operator scheduling) and `a9663e74` (disabled scheduler boundary). No production migration, provider activation, push or deployment was performed.
+
 **Next action: retention and restore coverage for operational evidence** — define bounded retention/restore predicates for connector health history, receipts and their audit events, prove restore does not resurrect foreign-workspace records or duplicate operation identities, and keep live provider probes, credentials and production activation disabled. Conditions remain bounded predicates over persisted answers; do not add executable expressions or treat a checkpoint as a delivery receipt. Dates are target work slots, not permission to bypass a failed prerequisite.
 
 Read this ledger, the active W-section and relevant source only. Do not load the archived 165-anchor specification by default. The Praxis and Keller / Westlake plans retain feature constraints and historical evidence; their older "next" sections do not override this queue. Keep one `keller-westlake` area, preserve source uncertainty, and keep email/publication authority separate from sprint approval.
