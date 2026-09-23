@@ -79,3 +79,18 @@ $$;
 REVOKE ALL ON FUNCTION public.platform_record_connector_health_history() FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.platform_record_connector_health_receipt(UUID,UUID,UUID,UUID,TEXT) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.platform_record_connector_health_receipt(UUID,UUID,UUID,UUID,TEXT) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.platform_audit_connector_health_receipt()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+  INSERT INTO public.platform_audit_events(workspace_id,actor_id,actor_kind,action,resource_type,resource_id,safe_metadata)
+  VALUES(NEW.workspace_id,NULL,'service','connector.health.receipt_recorded','connector_health',NEW.connector_id::text,
+    jsonb_build_object('receiptId',NEW.id,'operationId',NEW.operation_id,'healthId',NEW.health_id,'status',NEW.status,'resultHash',NEW.result_hash));
+  RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS platform_connector_health_receipt_audit ON public.platform_connector_health_receipts;
+CREATE TRIGGER platform_connector_health_receipt_audit
+  AFTER INSERT ON public.platform_connector_health_receipts
+  FOR EACH ROW EXECUTE FUNCTION public.platform_audit_connector_health_receipt();
+REVOKE ALL ON FUNCTION public.platform_audit_connector_health_receipt() FROM PUBLIC, anon, authenticated, service_role;

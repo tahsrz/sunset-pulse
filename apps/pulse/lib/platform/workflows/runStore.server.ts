@@ -80,6 +80,14 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   }
   const healthItems = (healthRows || []).slice(0, healthPage.limit);
   const healthLast = healthItems.at(-1);
+  const healthIds = healthItems.map((entry) => entry.id);
+  const { data: healthReceipts, error: healthReceiptError } = healthIds.length
+    ? await supabaseAdmin.from('platform_connector_health_receipts')
+      .select('id,health_id,operation_id,status,recorded_at,result_hash')
+      .eq('workspace_id', workspaceId).in('health_id', healthIds).order('recorded_at', { ascending: false }).limit(healthIds.length)
+    : { data: [], error: null };
+  if (healthReceiptError) throw new PlatformRunError(healthReceiptError.code);
+  const receiptsByHealth = new Map((healthReceipts || []).map((receipt) => [receipt.health_id, receipt]));
   const healthWithFreshness = healthItems.map((entry) => {
     const job = jobsByConnector.get(entry.connector_id);
     const checkedAt = Date.parse(entry.checked_at);
@@ -87,7 +95,11 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
     const schedulerStatus = job
       ? (job.status === 'running' ? 'running' : Date.parse(job.scheduled_for) <= now ? 'overdue' : 'queued')
       : isStale ? 'due' : 'fresh';
-    return { ...entry, scheduler_status: schedulerStatus, next_check_at: job?.scheduled_for || null };
+    const receipt = receiptsByHealth.get(entry.id);
+    return {
+      ...entry, scheduler_status: schedulerStatus, next_check_at: job?.scheduled_for || null,
+      receipt_id: receipt?.id || null, operation_id: receipt?.operation_id || null, receipt_recorded_at: receipt?.recorded_at || null,
+    };
   });
   const { data: summaryRows, error: summaryError } = await supabaseAdmin.rpc('platform_connector_health_summary', { p_workspace_id: workspaceId });
   if (summaryError) throw new PlatformRunError(summaryError.code);

@@ -8,7 +8,7 @@ import type { AppManifest } from '@/lib/platform/contracts/appManifest';
 
 type Install = { id: string; appKey: string; revision: number; status: 'installed' | 'disabled'; manifest: AppManifest };
 type RunSummary = { id: string; status: string; revision: number; definition: { key: string; version: number }; created_at: string };
-type ConnectorHealth = { id: string; connector_id: string; connection_id: string; title: string; status: 'healthy' | 'unavailable' | 'schema_drift' | 'stale'; checked_at: string; snapshot_hash: string | null; detail: Record<string, string | number | boolean | null>; scheduler_status: 'fresh' | 'due' | 'queued' | 'running' | 'overdue'; next_check_at: string | null };
+type ConnectorHealth = { id: string; connector_id: string; connection_id: string; title: string; status: 'healthy' | 'unavailable' | 'schema_drift' | 'stale'; checked_at: string; snapshot_hash: string | null; detail: Record<string, string | number | boolean | null>; scheduler_status: 'fresh' | 'due' | 'queued' | 'running' | 'overdue'; next_check_at: string | null; receipt_id: string | null; operation_id: string | null; receipt_recorded_at: string | null };
 type HealthSummary = { healthy: number; unavailable: number; schema_drift: number; stale: number };
 type HealthHistory = { id: string; connector_id: string; health_id: string; status: ConnectorHealth['status']; checked_at: string; recorded_at: string; snapshot_hash: string | null };
 

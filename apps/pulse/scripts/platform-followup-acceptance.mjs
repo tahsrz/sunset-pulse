@@ -122,6 +122,8 @@ export async function platformFollowupAcceptance(sql) {
   const validHealthReceipt=await sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${receiptOperation}','${healthyCheck}','schema_drift');`);
   assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_history WHERE workspace_id='${workspace}';`),'3');
   assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_receipts WHERE workspace_id='${workspace}' AND operation_id='${receiptOperation}';`),'1');
+  assert.equal(await sql(`SELECT action FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_id='${connector}' ORDER BY occurred_at DESC LIMIT 1;`),'connector.health.receipt_recorded');
+  assert.equal(await sql(`SELECT safe_metadata->>'receiptId' FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_id='${connector}' ORDER BY occurred_at DESC LIMIT 1;`),validHealthReceipt);
   assert.equal(await sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${receiptOperation}','${healthyCheck}','schema_drift');`),validHealthReceipt);
   await assert.rejects(sql(`SELECT id FROM platform_record_connector_health_receipt('${other}','${connector}','${randomUUID()}','${healthyCheck}','healthy');`),/target not found/);
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_connector_health','INSERT');"),'f');
