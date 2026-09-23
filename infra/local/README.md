@@ -88,6 +88,12 @@ passing remote workflow. An abruptly killed runner may leave its
 uniquely named project behind; inspect Docker Desktop and remove only that test
 project. No command here prunes shared images or volumes.
 
+## Connector evidence retention and restore boundary
+
+Connector health evidence currently has no automatic purge. The current health row is operational state; health history is diagnostic provenance; operation receipts preserve scheduler replay identity; audit rows preserve actor and result attribution. Keep all four available until the workspace owner selects a retention period for each class. Any later cleanup must retain a compact operation tombstone for every pruned receipt identity and must write its own audit record. Never replay scheduler jobs or external effects from a restored database automatically.
+
+`npm run docker:test:scheduler` includes a disposable Postgres restore rehearsal. It copies one workspace's connector history, receipts, and audit rows into temporary fixture tables, removes the originals, restores them with their original IDs, and checks row counts, operation uniqueness, and foreign-workspace isolation. This validates the evidence chain in the isolated fixture database; it is not a production backup, point-in-time recovery, or retention-policy drill.
+
 Compose health checks and loopback publishing follow the
 [Docker service reference](https://docs.docker.com/reference/compose-file/services/).
 Images are major-line tags (`mongo:7.0`, `postgres:17-alpine`); pin tested digests

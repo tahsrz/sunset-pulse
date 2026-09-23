@@ -148,6 +148,31 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${healthJob}';`),'queued');
   await sql(`DELETE FROM workflow_jobs WHERE id='${healthJob}';`);
   await sql("UPDATE workflow_event_contracts SET enabled=false WHERE workflow_key='connector_health_check';");
+  await sql(`BEGIN;
+    CREATE TEMP TABLE restore_health_history AS SELECT * FROM platform_connector_health_history WHERE workspace_id='${workspace}' AND connector_id='${connector}';
+    CREATE TEMP TABLE restore_health_receipts AS SELECT * FROM platform_connector_health_receipts WHERE workspace_id='${workspace}' AND connector_id='${connector}';
+    CREATE TEMP TABLE restore_health_audit AS SELECT * FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_type='connector_health' AND resource_id='${connector}';
+    ALTER TABLE platform_connector_health_receipts DISABLE TRIGGER platform_connector_health_receipt_audit;
+    DELETE FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_type='connector_health' AND resource_id='${connector}';
+    DELETE FROM platform_connector_health_receipts WHERE workspace_id='${workspace}' AND connector_id='${connector}';
+    DELETE FROM platform_connector_health_history WHERE workspace_id='${workspace}' AND connector_id='${connector}';
+    INSERT INTO platform_connector_health_history SELECT * FROM restore_health_history;
+    INSERT INTO platform_connector_health_receipts SELECT * FROM restore_health_receipts;
+    INSERT INTO platform_audit_events SELECT * FROM restore_health_audit;
+    ALTER TABLE platform_connector_health_receipts ENABLE TRIGGER platform_connector_health_receipt_audit;
+    DO $restore$
+    BEGIN
+      IF (SELECT count(*) FROM platform_connector_health_history WHERE workspace_id='${workspace}' AND connector_id='${connector}') <> (SELECT count(*) FROM restore_health_history) THEN RAISE EXCEPTION 'Health history restore count mismatch'; END IF;
+      IF (SELECT count(*) FROM platform_connector_health_receipts WHERE workspace_id='${workspace}' AND connector_id='${connector}') <> (SELECT count(*) FROM restore_health_receipts) THEN RAISE EXCEPTION 'Health receipt restore count mismatch'; END IF;
+      IF (SELECT count(*) FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_type='connector_health' AND resource_id='${connector}') <> (SELECT count(*) FROM restore_health_audit) THEN RAISE EXCEPTION 'Health audit restore count mismatch'; END IF;
+      IF EXISTS (SELECT 1 FROM platform_connector_health_receipts WHERE operation_id IN (SELECT operation_id FROM restore_health_receipts) GROUP BY operation_id HAVING count(*) <> 1) THEN RAISE EXCEPTION 'Restore duplicated a health operation identity'; END IF;
+      IF EXISTS (SELECT 1 FROM platform_connector_health_history WHERE id IN (SELECT id FROM restore_health_history) AND workspace_id <> '${workspace}') THEN RAISE EXCEPTION 'Restore crossed workspace boundary'; END IF;
+    END $restore$;
+    COMMIT;`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_history WHERE workspace_id='${other}';`),'0');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_receipts WHERE workspace_id='${other}';`),'0');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${other}' AND resource_type='connector_health';`),'0');
+  console.log('PASS: connector health history, receipts and audit restore with stable IDs and workspace isolation');
   const responseEvent=await sql(`SELECT id::text FROM platform_record_connector_response('${workspace}','${provenanceRun}','${reservation}','${snapshot}','${operation}','${'e'.repeat(64)}','${snapshotHash}','valid',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:00:00.000Z'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_response_events WHERE id='${responseEvent}';`),'valid');
   await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',2,3,1,1);`);
