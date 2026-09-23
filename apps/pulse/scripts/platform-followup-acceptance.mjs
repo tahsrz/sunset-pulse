@@ -72,6 +72,7 @@ export async function platformFollowupAcceptance(sql) {
 
   const fixture=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/real-estate-readiness.v1.json',import.meta.url),'utf8'));
   const content=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/client-content-review.v1.json',import.meta.url),'utf8'));
+  const provenanceRun=await start();
   const install=(manifest=fixture,revision='NULL',actor=owner,settings={area:'keller-westlake'})=>
     `SELECT id FROM platform_save_app_install('${actor}','${workspace}',${json(manifest)},${json(settings)},'installed',${revision});`;
   await assert.rejects(sql(install(fixture,'NULL',member)),/denied/);
@@ -95,7 +96,7 @@ export async function platformFollowupAcceptance(sql) {
   await assert.rejects(sql(`SELECT id FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`),/revision conflict/);
   await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',1,3,1,NULL);`);
   const operation=randomUUID();
-  const admit=(operationId=operation,cost='0.25')=>sql(`SELECT id::text FROM platform_admit_capability_operation('${workspace}','${app}','${run}','${operationId}','crm.local','contacts','lookup','${'a'.repeat(64)}','${'b'.repeat(64)}',1,${cost});`);
+  const admit=(operationId=operation,cost='0.25')=>sql(`SELECT id::text FROM platform_admit_capability_operation('${workspace}','${app}','${provenanceRun}','${operationId}','crm.local','contacts','lookup','${'a'.repeat(64)}','${'b'.repeat(64)}',1,${cost});`);
   const reservation=await admit();
   assert.equal(await admit(),reservation);
   await assert.rejects(admit(randomUUID(),'0.25'),/quota exceeded/);
@@ -106,6 +107,14 @@ export async function platformFollowupAcceptance(sql) {
   const connectorSchema=json(connectorSchemaValue);
   const snapshot=await sql(`SELECT id::text FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${connectorSchema},NULL);`);
   assert.equal(await sql(`SELECT schema_hash=encode(sha256(convert_to(schema::TEXT,'UTF8')),'hex') FROM platform_connector_schema_snapshots WHERE id='${snapshot}';`),'t');
+  const snapshotHash=await sql(`SELECT schema_hash FROM platform_connector_schema_snapshots WHERE id='${snapshot}';`);
+  const responseEvent=await sql(`SELECT id::text FROM platform_record_connector_response('${workspace}','${provenanceRun}','${reservation}','${snapshot}','${operation}','${'e'.repeat(64)}','${snapshotHash}','valid',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:00:00.000Z'})});`);
+  assert.equal(await sql(`SELECT status FROM platform_connector_response_events WHERE id='${responseEvent}';`),'valid');
+  await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',2,3,1,1);`);
+  const driftOperation=randomUUID();
+  const driftReservation=await admit(driftOperation,'0.1');
+  await sql(`SELECT id FROM platform_record_connector_response('${workspace}','${provenanceRun}','${driftReservation}','${snapshot}','${driftOperation}','${'f'.repeat(64)}','${'f'.repeat(64)}','schema_drift',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:01:00.000Z'})});`);
+  assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${provenanceRun}';`),'blocked');
   await assert.rejects(sql(`SELECT id FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','http://crm.example.test/mcp','crm-secret',1);`),/Invalid connector/);
   await assert.rejects(sql(`SELECT id FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${json({...connectorSchemaValue, '$ref':'file:///evil'})},1);`),/Unsupported|schema/);
   const effectGraph={schemaVersion:1,key:'effect-gate-followup',version:1,entry:'gate',nodes:[
