@@ -60,6 +60,7 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   const page = pageResult(data || [], limit, workspaceId, 'checkpoints');
   const healthPage = parseScopedPage(search, workspaceId, 'connector_health', 'healthLimit', 'healthCursor');
   const healthHistoryPage = parseScopedPage(search, workspaceId, 'connector_health_history', 'healthHistoryLimit', 'healthHistoryCursor');
+  const healthAuditPage = parseScopedPage(search, workspaceId, 'connector_health_audit', 'healthAuditLimit', 'healthAuditCursor');
   let healthQuery = supabaseAdmin.from('platform_connector_health')
     .select('id,connector_id,connection_id,title,status,checked_at,snapshot_hash,detail,updated_at')
     .eq('workspace_id', workspaceId).order('checked_at', { ascending: false }).order('id', { ascending: false });
@@ -113,6 +114,16 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (healthHistoryError) throw new PlatformRunError(healthHistoryError.code);
   const healthHistory = (healthHistoryRows || []).slice(0, healthHistoryPage.limit);
   const healthHistoryLast = healthHistory.at(-1);
+  let healthAuditQuery = supabaseAdmin.from('platform_audit_events')
+    .select('id,action,resource_type,resource_id,actor_kind,safe_metadata,occurred_at')
+    .eq('workspace_id', workspaceId)
+    .in('action', ['connector.health.scheduled', 'connector.health.receipt_recorded'])
+    .order('occurred_at', { ascending: false }).order('id', { ascending: false });
+  if (healthAuditPage.cursor) healthAuditQuery = healthAuditQuery.or(`occurred_at.lt.${healthAuditPage.cursor.createdAt},and(occurred_at.eq.${healthAuditPage.cursor.createdAt},id.lt.${healthAuditPage.cursor.id})`);
+  const { data: healthAuditRows, error: healthAuditError } = await healthAuditQuery.limit(healthAuditPage.limit + 1);
+  if (healthAuditError) throw new PlatformRunError(healthAuditError.code);
+  const healthAudit = (healthAuditRows || []).slice(0, healthAuditPage.limit);
+  const healthAuditLast = healthAudit.at(-1);
   return {
     ...page,
     health: healthWithFreshness,
@@ -122,6 +133,9 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
     healthHistory,
     healthHistoryNextCursor: healthHistoryRows && healthHistoryRows.length > healthHistoryPage.limit && healthHistoryLast
       ? encodeCursor({ workspaceId, collection: 'connector_health_history', createdAt: healthHistoryLast.recorded_at, id: healthHistoryLast.id }) : null,
+    healthAudit,
+    healthAuditNextCursor: healthAuditRows && healthAuditRows.length > healthAuditPage.limit && healthAuditLast
+      ? encodeCursor({ workspaceId, collection: 'connector_health_audit', createdAt: healthAuditLast.occurred_at, id: healthAuditLast.id }) : null,
   };
 }
 function pageResult<T extends { id: string; created_at: string }>(rows: T[], limit: number, workspaceId: string, collection: 'runs' | 'checkpoints') {
