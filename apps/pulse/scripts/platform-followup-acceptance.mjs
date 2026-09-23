@@ -125,12 +125,21 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT action FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_id='${connector}' ORDER BY occurred_at DESC LIMIT 1;`),'connector.health.receipt_recorded');
   assert.equal(await sql(`SELECT safe_metadata->>'receiptId' FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_id='${connector}' ORDER BY occurred_at DESC LIMIT 1;`),validHealthReceipt);
   assert.equal(await sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${receiptOperation}','${healthyCheck}','schema_drift');`),validHealthReceipt);
+  const concurrentOperation=randomUUID();
+  const concurrentReceipts=await Promise.all([
+    sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${concurrentOperation}','${healthyCheck}','schema_drift');`),
+    sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${concurrentOperation}','${healthyCheck}','schema_drift');`),
+  ]);
+  assert.equal(concurrentReceipts[0],concurrentReceipts[1]);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_receipts WHERE workspace_id='${workspace}' AND operation_id='${concurrentOperation}';`),'1');
   await assert.rejects(sql(`SELECT id FROM platform_record_connector_health_receipt('${other}','${connector}','${randomUUID()}','${healthyCheck}','healthy');`),/target not found/);
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_connector_health','INSERT');"),'f');
   assert.equal(await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='connector_health_check';"),'f');
   await assert.rejects(sql(`SELECT id FROM enqueue_workflow_event('${owner}','connector_health_check','health-disabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`),/Unsupported workflow event contract/);
   await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='connector_health_check';");
   const healthJob=await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','connector_health_check','health-enabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now()-interval '1 second');`);
+  assert.equal(await sql(`SELECT action FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_id='${connector}' ORDER BY occurred_at DESC LIMIT 1;`),'connector.health.scheduled');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_id='${connector}' AND action='connector.health.scheduled';`),'1');
   assert.equal(await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','connector_health_check','health-enabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,(SELECT scheduled_for FROM workflow_jobs WHERE id='${healthJob}'));`),healthJob);
   assert.equal(await sql(`SELECT payload->>'connectorId' FROM workflow_jobs WHERE id='${healthJob}';`),connector);
   assert.equal(await sql(`SELECT count(*)::text FROM claim_workflow_jobs(100,60) WHERE id='${healthJob}';`),'1');

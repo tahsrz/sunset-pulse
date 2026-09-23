@@ -75,6 +75,7 @@ await withDockerService('scheduler-test', async (container) => {
   '20260923120000_platform_connector_health_scheduler.sql',
   '20260923130000_platform_connector_health_summary.sql',
   '20260923140000_platform_connector_health_history_receipts.sql',
+  '20260923150000_platform_connector_health_schedule_audit.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
