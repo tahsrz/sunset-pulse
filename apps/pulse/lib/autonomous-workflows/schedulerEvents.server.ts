@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 const eventInputSchema = z.object({
   userId: z.string().uuid(),
-  workflowKey: z.enum(['hotlist_email', 'sprint_planner']),
+  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check']),
   eventKey: z.string().trim().min(1).max(240),
   payload: z.record(z.string(), z.unknown()),
   payloadVersion: z.number().int().positive().default(1),
@@ -13,6 +13,14 @@ const eventInputSchema = z.object({
 });
 
 export type WorkflowEventInput = z.input<typeof eventInputSchema>;
+
+const connectorHealthEventSchema = z.object({
+  userId: z.string().uuid(),
+  eventKey: z.string().trim().min(1).max(240),
+  workspaceId: z.string().uuid(),
+  connectorId: z.string().uuid(),
+  scheduledFor: z.string().datetime({ offset: true }).optional(),
+});
 
 const sprintPlannerEventSchema = z.object({
   userId: z.string().uuid(),
@@ -46,6 +54,18 @@ export async function enqueueSprintPlannerEvent(input: z.input<typeof sprintPlan
     workflowKey: 'sprint_planner',
     eventKey: parsed.eventKey,
     payload: { planningMode: parsed.planningMode, source: parsed.source },
+    payloadVersion: 1,
+    scheduledFor: parsed.scheduledFor,
+  });
+}
+
+export async function enqueueConnectorHealthCheck(input: z.input<typeof connectorHealthEventSchema>) {
+  const parsed = connectorHealthEventSchema.parse(input);
+  return enqueueWorkflowEvent({
+    userId: parsed.userId,
+    workflowKey: 'connector_health_check',
+    eventKey: parsed.eventKey,
+    payload: { workspaceId: parsed.workspaceId, connectorId: parsed.connectorId, source: 'fixture', operation: 'pinned_snapshot' },
     payloadVersion: 1,
     scheduledFor: parsed.scheduledFor,
   });

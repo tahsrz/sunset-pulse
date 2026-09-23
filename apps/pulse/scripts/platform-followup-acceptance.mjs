@@ -115,6 +115,12 @@ export async function platformFollowupAcceptance(sql) {
   await sql(`SELECT id::text FROM platform_record_connector_health('${workspace}','${connector}','schema_drift','2026-09-23T12:02:00.000Z','${'f'.repeat(64)}',${json({source:'fixture',reason:'snapshot_changed'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_health WHERE connector_id='${connector}';`),'schema_drift');
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_connector_health','INSERT');"),'f');
+  assert.equal(await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='connector_health_check';"),'f');
+  await assert.rejects(sql(`SELECT id FROM enqueue_workflow_event('${owner}','connector_health_check','health-disabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`),/Unsupported workflow event contract/);
+  await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='connector_health_check';");
+  const healthJob=await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','connector_health_check','health-enabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`);
+  assert.equal(await sql(`SELECT payload->>'connectorId' FROM workflow_jobs WHERE id='${healthJob}';`),connector);
+  await sql("UPDATE workflow_event_contracts SET enabled=false WHERE workflow_key='connector_health_check';");
   const responseEvent=await sql(`SELECT id::text FROM platform_record_connector_response('${workspace}','${provenanceRun}','${reservation}','${snapshot}','${operation}','${'e'.repeat(64)}','${snapshotHash}','valid',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:00:00.000Z'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_response_events WHERE id='${responseEvent}';`),'valid');
   await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',2,3,1,1);`);
