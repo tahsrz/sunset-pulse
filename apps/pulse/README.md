@@ -67,27 +67,51 @@ SUPABASE_SERVICE_ROLE_KEY=
 ### 🏗️ System Architecture Overview
 
 ```mermaid
-graph LR
-    User([User/Client]) <--> NextJS[Next.js App Router]
-    
-    subgraph "Data Layer"
-        NextJS <--> Mongo[(MongoDB/Mongoose)]
-        NextJS <--> Supa[(Supabase/PostgreSQL)]
-        NextJS <--> FS[Local JSON/TAH Files]
+flowchart LR
+    Person([People and operators]) --> Web[Next.js App Router UI]
+    Jamie[Jamie assistant] <--> Web
+    Web --> Routes[Route handlers and domain services]
+
+    subgraph Product[Product and domain workflows]
+      Routes --> Properties[Property search and shortlist]
+      Routes --> Leads[Lead and client operations]
+      Routes --> Vibes[Vibe content and tenant sites]
+      Routes --> Storefront[Grill, bookings and billing]
     end
-    
-    subgraph "External Integrations"
-        NextJS <--> Stripe[Stripe Payments]
-        NextJS <--> Twilio[Twilio SMS/Voice]
-        NextJS <--> IDX[Repliers/NTREIS IDX]
+
+    subgraph Platform[Shared workspace workflow platform]
+      Access[Workspace membership and access checks] --> Apps[Versioned JSON app installs]
+      Apps --> Admission[Run admission and pinned workflow]
+      Admission --> Runs[(platform_runs and checkpoints)]
+      Runs --> Inbox[Shared workspace inbox and run details]
+      Runs <--> Scheduler[(Existing durable scheduler jobs)]
+      Scheduler --> Workers[Registered workflow handlers]
+      Workers --> Results[(workflow results and operation receipts)]
+      Workers --> Health[(Connector health, history and receipts)]
+      Health --> Audit[(Workspace audit events)]
+      Scheduler --> Audit
+      Routes --> Access
+      Workers --> Runs
     end
-    
-    subgraph "Intelligence Engine"
-        NextJS <--> TAH[TAH Memory Forge]
-        NextJS <--> Jamie[Jamie AI Node]
-        Jamie <--> LLM[Groq/Ollama/OpenAI]
+
+    subgraph Data[Application data stores]
+      Routes <--> Supabase[(Supabase / PostgreSQL)]
+      Routes <--> Mongo[(MongoDB / Mongoose)]
+      Routes <--> Files[Local files and TAH cartridges]
+      Platform --- Supabase
+    end
+
+    subgraph External[External services and boundaries]
+      Routes <--> IDX[Repliers / NTREIS IDX]
+      Routes <--> Payments[Stripe]
+      Routes <--> Messaging[Email, SMS and voice providers]
+      Jamie <--> Models[Configured model providers]
+      Admission --> Gateway[Protocol gateway policy boundary]
+      Gateway -. "fixture validation only; live dispatch disabled" .-> Connector[Connector provider]
     end
 ```
+
+The platform lane runs on the same durable scheduler used by existing product workflows. Workspace apps persist versioned JSON manifests and runs; people respond through shared checkpoints in the inbox. Connector health checks currently record reviewed fixture and pinned-schema evidence, with bounded history, receipts and workspace audit events. Capability requests can be validated or prepared against fixtures, while live MCP/OpenAPI provider dispatch remains disabled.
 
 ## Core Capabilities
 

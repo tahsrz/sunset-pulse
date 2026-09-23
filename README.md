@@ -260,9 +260,9 @@ Local knowledge storage is not a guarantee of offline operation: model providers
 
 ### Shared operating platform
 
-The platform reuses the durable scheduler for workspace-scoped JSON workflow runs and a single checkpoint API for questions, approvals, and effect gates. The backend includes cursor pagination, cancellation, blocked-run recovery, immutable prior answers on supersession, and pinned JSON app installs.
+The platform reuses the durable scheduler for workspace-scoped JSON workflow runs and a single checkpoint API for questions, approvals, and effect gates. The backend includes cursor pagination, cancellation, blocked-run recovery, immutable prior answers on supersession, pinned JSON app installs, a shared workspace inbox, and run details. Connector health checks record fixture-based status, immutable history, idempotent receipts, and bounded audit events through the same scheduler.
 
-The two manifests are currently **human-input intake fixtures**, not autonomous property research or content publication. Capabilities must be empty, `platform_run` admissions default to disabled, and the generic app/inbox UI is not implemented. Team-aware planning and resource-bound launches remain open; existing owner-only planners reject unsupported team/mixed scopes. A checkpoint decision is not a delivery receipt or permission to send, publish, or transact.
+The reviewed manifests are currently **human-input intake workflows**, not autonomous property research or content publication. Provider capability dispatch and external effects remain unavailable, and `platform_run` admissions default to disabled. Team-aware planning and resource-bound launches remain open; existing owner-only planners reject unsupported team/mixed scopes. A checkpoint decision is not a delivery receipt or permission to send, publish, or transact.
 
 Use the [capability matrix](apps/pulse/docs/PLATFORM_CAPABILITY_MATRIX.md) for implementation boundaries and the [dated verification record](apps/pulse/docs/PLATFORM_VERIFICATION_2026-09-18.md) for test evidence. Neither implies production rollout.
 
