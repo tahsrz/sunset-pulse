@@ -118,6 +118,12 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_summary('${other}');`),'0');
   assert.equal(await sql("SELECT has_function_privilege('service_role','platform_connector_health_summary(uuid)','EXECUTE');"),'t');
   assert.equal(await sql("SELECT has_function_privilege('authenticated','platform_connector_health_summary(uuid)','EXECUTE');"),'f');
+  const receiptOperation=randomUUID();
+  const validHealthReceipt=await sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${receiptOperation}','${healthyCheck}','schema_drift');`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_history WHERE workspace_id='${workspace}';`),'3');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_connector_health_receipts WHERE workspace_id='${workspace}' AND operation_id='${receiptOperation}';`),'1');
+  assert.equal(await sql(`SELECT id::text FROM platform_record_connector_health_receipt('${workspace}','${connector}','${receiptOperation}','${healthyCheck}','schema_drift');`),validHealthReceipt);
+  await assert.rejects(sql(`SELECT id FROM platform_record_connector_health_receipt('${other}','${connector}','${randomUUID()}','${healthyCheck}','healthy');`),/target not found/);
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_connector_health','INSERT');"),'f');
   assert.equal(await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='connector_health_check';"),'f');
   await assert.rejects(sql(`SELECT id FROM enqueue_workflow_event('${owner}','connector_health_check','health-disabled-${connector}',${json({workspaceId:workspace,connectorId:connector,source:'fixture',operation:'pinned_snapshot'})},1,now());`),/Unsupported workflow event contract/);

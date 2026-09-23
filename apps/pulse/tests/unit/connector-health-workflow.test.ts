@@ -26,18 +26,23 @@ describe('connector health scheduler boundary', () => {
   it('records a fixture health check without dispatching a provider', async () => {
     mocks.from.mockReturnValueOnce(query({ data: { id: connectorId, workspace_id: workspaceId, connection_id: 'crm.local', title: 'CRM', status: 'reviewed' }, error: null }));
     mocks.from.mockReturnValueOnce(query({ data: { schema_hash: 'a'.repeat(64) }, error: null }));
-    mocks.rpc.mockResolvedValue({ data: [{ id: '66666666-6666-4666-8666-666666666666' }], error: null });
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [{ id: '66666666-6666-4666-8666-666666666666' }], error: null })
+      .mockResolvedValueOnce({ data: [{ id: '77777777-7777-4777-8777-777777777777' }], error: null });
 
     const result = await runConnectorHealthCheck({ ...baseJob, payload: { workspaceId, connectorId, source: 'fixture', operation: 'pinned_snapshot' } });
 
     expect(result).toMatchObject({ kind: 'complete', resultType: 'connector_health', resultId: connectorId, resultStatus: 'healthy' });
     expect(mocks.rpc).toHaveBeenCalledWith('platform_record_connector_health', expect.objectContaining({ p_status: 'healthy', p_snapshot_hash: 'a'.repeat(64) }));
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_record_connector_health_receipt', expect.objectContaining({ p_operation_id: baseJob.id, p_status: 'healthy' }));
   });
 
   it('records unavailable when the connector is disabled or lacks an output snapshot', async () => {
     mocks.from.mockReturnValueOnce(query({ data: { id: connectorId, workspace_id: workspaceId, connection_id: 'crm.local', title: 'CRM', status: 'disabled' }, error: null }));
     mocks.from.mockReturnValueOnce(query({ data: null, error: null }));
-    mocks.rpc.mockResolvedValue({ data: [{ id: '66666666-6666-4666-8666-666666666666' }], error: null });
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [{ id: '66666666-6666-4666-8666-666666666666' }], error: null })
+      .mockResolvedValueOnce({ data: [{ id: '77777777-7777-4777-8777-777777777777' }], error: null });
 
     await runConnectorHealthCheck({ ...baseJob, payload: { workspaceId, connectorId, source: 'fixture' } });
 

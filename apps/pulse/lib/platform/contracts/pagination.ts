@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const cursorSchema = z.object({
-  workspaceId: z.string().uuid(), collection: z.enum(['runs', 'checkpoints', 'connector_health']),
+  workspaceId: z.string().uuid(), collection: z.enum(['runs', 'checkpoints', 'connector_health', 'connector_health_history']),
   createdAt: z.string().datetime({ offset: true }), id: z.string().uuid(),
 }).strict();
 export type PlatformCursor = z.infer<typeof cursorSchema>;

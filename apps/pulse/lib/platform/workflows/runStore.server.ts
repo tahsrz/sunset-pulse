@@ -59,6 +59,7 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (error) throw new PlatformRunError(error.code);
   const page = pageResult(data || [], limit, workspaceId, 'checkpoints');
   const healthPage = parseScopedPage(search, workspaceId, 'connector_health', 'healthLimit', 'healthCursor');
+  const healthHistoryPage = parseScopedPage(search, workspaceId, 'connector_health_history', 'healthHistoryLimit', 'healthHistoryCursor');
   let healthQuery = supabaseAdmin.from('platform_connector_health')
     .select('id,connector_id,connection_id,title,status,checked_at,snapshot_hash,detail,updated_at')
     .eq('workspace_id', workspaceId).order('checked_at', { ascending: false }).order('id', { ascending: false });
@@ -92,12 +93,23 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (summaryError) throw new PlatformRunError(summaryError.code);
   const healthSummary = { healthy: 0, unavailable: 0, schema_drift: 0, stale: 0 };
   for (const row of summaryRows || []) if (row.status in healthSummary) healthSummary[row.status as keyof typeof healthSummary] = Number(row.count || 0);
+  let healthHistoryQuery = supabaseAdmin.from('platform_connector_health_history')
+    .select('id,connector_id,health_id,status,checked_at,snapshot_hash,detail,recorded_at')
+    .eq('workspace_id', workspaceId).order('recorded_at', { ascending: false }).order('id', { ascending: false });
+  if (healthHistoryPage.cursor) healthHistoryQuery = healthHistoryQuery.or(`recorded_at.lt.${healthHistoryPage.cursor.createdAt},and(recorded_at.eq.${healthHistoryPage.cursor.createdAt},id.lt.${healthHistoryPage.cursor.id})`);
+  const { data: healthHistoryRows, error: healthHistoryError } = await healthHistoryQuery.limit(healthHistoryPage.limit + 1);
+  if (healthHistoryError) throw new PlatformRunError(healthHistoryError.code);
+  const healthHistory = (healthHistoryRows || []).slice(0, healthHistoryPage.limit);
+  const healthHistoryLast = healthHistory.at(-1);
   return {
     ...page,
     health: healthWithFreshness,
     healthNextCursor: healthRows && healthRows.length > healthPage.limit && healthLast
       ? encodeCursor({ workspaceId, collection: 'connector_health', createdAt: healthLast.checked_at, id: healthLast.id }) : null,
     healthSummary,
+    healthHistory,
+    healthHistoryNextCursor: healthHistoryRows && healthHistoryRows.length > healthHistoryPage.limit && healthHistoryLast
+      ? encodeCursor({ workspaceId, collection: 'connector_health_history', createdAt: healthHistoryLast.recorded_at, id: healthHistoryLast.id }) : null,
   };
 }
 function pageResult<T extends { id: string; created_at: string }>(rows: T[], limit: number, workspaceId: string, collection: 'runs' | 'checkpoints') {

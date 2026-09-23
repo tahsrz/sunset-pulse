@@ -49,5 +49,13 @@ export async function runConnectorHealthCheck(job: WorkflowJob): Promise<Workflo
   if (recordError) throw new Error(`Connector health record failed: ${recordError.message}`);
   const row = Array.isArray(recorded) ? recorded[0] : recorded;
   if (!row?.id) throw new Error('Connector health record was not returned.');
+  const { error: receiptError } = await supabaseAdmin.rpc('platform_record_connector_health_receipt', {
+    p_workspace_id: payload.workspaceId,
+    p_connector_id: connector.id,
+    p_operation_id: job.id,
+    p_health_id: row.id,
+    p_status: status,
+  });
+  if (receiptError) throw new Error(`Connector health receipt failed: ${receiptError.message}`);
   return { kind: 'complete', resultType: 'connector_health', resultId: connector.id, resultStatus: status };
 }

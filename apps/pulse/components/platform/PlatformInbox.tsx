@@ -10,12 +10,15 @@ type Install = { id: string; appKey: string; revision: number; status: 'installe
 type RunSummary = { id: string; status: string; revision: number; definition: { key: string; version: number }; created_at: string };
 type ConnectorHealth = { id: string; connector_id: string; connection_id: string; title: string; status: 'healthy' | 'unavailable' | 'schema_drift' | 'stale'; checked_at: string; snapshot_hash: string | null; detail: Record<string, string | number | boolean | null>; scheduler_status: 'fresh' | 'due' | 'queued' | 'running' | 'overdue'; next_check_at: string | null };
 type HealthSummary = { healthy: number; unavailable: number; schema_drift: number; stale: number };
+type HealthHistory = { id: string; connector_id: string; health_id: string; status: ConnectorHealth['status']; checked_at: string; recorded_at: string; snapshot_hash: string | null };
 
 export function PlatformInbox({ workspaceId }: { workspaceId: string }) {
   const [checkpoints, setCheckpoints] = useState<CheckpointCardData[]>([]);
   const [connectorHealth, setConnectorHealth] = useState<ConnectorHealth[]>([]);
   const [healthCursor, setHealthCursor] = useState<string | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary>({ healthy: 0, unavailable: 0, schema_drift: 0, stale: 0 });
+  const [healthHistory, setHealthHistory] = useState<HealthHistory[]>([]);
+  const [healthHistoryCursor, setHealthHistoryCursor] = useState<string | null>(null);
   const [installs, setInstalls] = useState<Install[]>([]);
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [selected, setSelected] = useState<Install | null>(null);
@@ -41,6 +44,8 @@ export function PlatformInbox({ workspaceId }: { workspaceId: string }) {
       setConnectorHealth(checkpointBody.result.health || []);
       setHealthCursor(checkpointBody.result.healthNextCursor || null);
       setHealthSummary(checkpointBody.result.healthSummary || { healthy: 0, unavailable: 0, schema_drift: 0, stale: 0 });
+      setHealthHistory(checkpointBody.result.healthHistory || []);
+      setHealthHistoryCursor(checkpointBody.result.healthHistoryNextCursor || null);
       setCursor(checkpointBody.result.nextCursor);
       setInstalls(installBody.result);
       setRuns(runBody.result.items);
@@ -58,6 +63,16 @@ export function PlatformInbox({ workspaceId }: { workspaceId: string }) {
     setHealthCursor(body.result.healthNextCursor || null);
     setHealthSummary(body.result.healthSummary || healthSummary);
   }, [healthCursor, healthSummary, workspaceId]);
+
+  const loadMoreHealthHistory = useCallback(async () => {
+    if (!healthHistoryCursor) return;
+    setError(null);
+    const response = await fetch(`/api/workspaces/${workspaceId}/checkpoints?healthHistoryCursor=${encodeURIComponent(healthHistoryCursor)}&healthHistoryLimit=20`, { cache: 'no-store' });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || 'Health history is unavailable.');
+    setHealthHistory((current) => [...current, ...(body.result.healthHistory || [])]);
+    setHealthHistoryCursor(body.result.healthHistoryNextCursor || null);
+  }, [healthHistoryCursor, workspaceId]);
 
   useEffect(() => { void load(); }, [load]);
 
