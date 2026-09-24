@@ -113,8 +113,8 @@ try{
       SELECT run_status FROM platform_tick_run((SELECT id FROM workflow_jobs WHERE user_id='${primary.userId}' AND payload->>'runId'='${run}' AND payload->>'generation'='${generation}'),'${token}');`);
   }
   const run=await start();await tick(run.id,1);
-  const inbox=await request(primary.page,base+'/checkpoints?limit=1');assert.equal(inbox.status,200);
-  const checkpoint=inbox.data.result.items[0];assert.equal(checkpoint.run_id,run.id);
+  const runDetail=await request(primary.page,`${base}/runs/${run.id}`);assert.equal(runDetail.status,200);
+  const checkpoint=runDetail.data.result.checkpoints[0];assert.equal(checkpoint.run_id,run.id);
   const answered=await request(primary.page,base+'/checkpoints','POST',{checkpointId:checkpoint.id,expectedRevision:checkpoint.revision,submissionKey:randomUUID(),value:'Keller / Westlake'});
   assert.equal(answered.status,200);await tick(run.id,2);
   assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${run.id}';`),'completed');
@@ -159,9 +159,9 @@ try{
   assert.equal(reviewerStart.status,403,'reviewer must not initiate app runs');
   async function respondToAppRun(requesterId,page,runId,nodeId,value){
     await tickAs(requesterId,runId,1);
-    const inboxResponse=await request(page,base+'/checkpoints?limit=20');
-    assert.equal(inboxResponse.status,200);
-    const checkpoint=inboxResponse.data.result.items.find((item)=>item.run_id===runId);
+    const runDetail=await request(page,`${base}/runs/${runId}`);
+    assert.equal(runDetail.status,200,`Run detail failed: ${runDetail.data.error || runDetail.status}`);
+    const checkpoint=runDetail.data.result.checkpoints.find((item)=>item.run_id===runId);
     assert(checkpoint,`Missing ${nodeId} checkpoint for app run ${runId}`);
     assert.equal(checkpoint.node_id,nodeId);
     const response=await request(page,base+'/checkpoints','POST',{checkpointId:checkpoint.id,

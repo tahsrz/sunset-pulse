@@ -249,6 +249,10 @@ export async function platformFollowupAcceptance(sql) {
   const retryCall=`SELECT id::text FROM platform_create_effect_retry_intent('${owner}','${workspace}','${unknownReceipt}','${recoveryReview}','${retryKey}','${retryOperation}');`;
   const [retryIntent,retryReplay]=await Promise.all([sql(retryCall),sql(retryCall)]);
   assert.equal(retryReplay,retryIntent,'retry intent creation is idempotent');
+  await assert.rejects(sql(`SELECT id FROM platform_create_effect_retry_intent('${owner}','${workspace}','${unknownReceipt}','${recoveryReview}','${retryKey}','${randomUUID()}');`),/Retry idempotency key reused/,
+    'a replay key cannot be rebound to another retry operation');
+  await assert.rejects(sql(`SELECT id FROM platform_create_effect_retry_intent('${owner}','${workspace}','${unknownReceipt}','${recoveryReview}','${randomUUID()}','${retryOperation}');`),/Retry operation identity already exists/,
+    'a retry operation ID cannot be reused under another idempotency key');
   assert.notEqual(await sql(`SELECT original_operation_id::text FROM platform_effect_retry_intents WHERE id='${retryIntent}';`),retryOperation,'retry gets a fresh operation identity');
   const pinnedRetryReview=await sql(`SELECT provider_review_id::text||':'||provider_review_hash FROM platform_effect_retry_intents WHERE id='${retryIntent}';`);
   const pinnedContractHash=await sql(`SELECT contract_hash FROM platform_provider_adapter_reviews WHERE id='${providerReview}';`);

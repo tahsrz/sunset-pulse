@@ -4,7 +4,7 @@ This runbook defines a small, evidence-led rehearsal for the two reviewed, capab
 
 ## Readiness gates
 
-- [ ] Local `npm run test:platform:auth -- --stack <existing-stack-id>` passes, including both app manifests and member/reviewer role checks.
+- [ ] Local `node scripts/platform-local-auth-acceptance.mjs --stack <existing-stack-id>` passes, including both app manifests and member/reviewer role checks. Pass `--apply-local-migrations` only after reviewing each migration the harness reports missing.
 - [ ] The test environment is identified as non-production, has a named operator, and uses the intended migration set.
 - [ ] `platform_run` admission is enabled only in that approved test environment; record its prior state and restore it after the session.
 - [ ] Both installed manifests are the reviewed `real-estate-readiness.v1.json` and `client-content-review.v1.json` revisions, with empty `capabilities` arrays.
@@ -96,6 +96,6 @@ Operations
 ## Current ledger
 
 - Disposable Postgres rehearsal: implemented; execution status is recorded in the operating platform plan.
-- Local authenticated browser harness: implemented; execution is pending an available Docker/Supabase stack.
+- Local authenticated browser harness: passed with temporary local Supabase accounts; output is technical auth/role evidence, not participant acceptance.
 - Real participant sessions and accepted-output/economic/support evidence: not yet collected.
 - Provider dispatch, external effects and production activation: disabled/not authorized by this runbook.
