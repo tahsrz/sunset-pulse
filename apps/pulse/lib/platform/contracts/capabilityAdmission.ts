@@ -13,6 +13,7 @@ export const capabilityAdmissionInputSchema = z.object({
   payload: z.unknown(),
   stepUnits: z.number().int().min(1).max(10000),
   estimatedCostUsd: z.number().finite().nonnegative(),
+  estimatedTokens: z.number().int().min(0).max(10_000_000).default(0),
 }).strict();
 
 export function validateCapabilityPayload(schema: unknown, payload: unknown) {

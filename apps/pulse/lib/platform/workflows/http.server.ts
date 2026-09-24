@@ -71,6 +71,7 @@ export async function workspaceWorkflowRequest(
         '22023': [400, 'Invalid workflow input.'], '42501': [403, 'Workspace action denied.'],
         P0002: [404, 'Workflow record not found.'], '40001': [409, 'Workflow changed. Reload before saving.'],
         '23505': [409, 'Workflow request conflict.'], '55000': [503, 'Workflow admission is currently disabled.'],
+        '55P03': [409, 'A quota or workflow admission limit has been reached.'],
       };
       [status, message] = errors[error.code] || [status, message];
     } else if (error instanceof SchedulerEventError) {

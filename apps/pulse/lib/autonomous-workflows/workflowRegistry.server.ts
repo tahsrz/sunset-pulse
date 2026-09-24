@@ -2,6 +2,7 @@ import { runHotlistEmailForUser } from './hotlistEmailWorkflow.server';
 import { runSprintPlannerWorkflow } from './sprintPlannerWorkflow.server';
 import { runPlatformWorkflow } from '@/lib/platform/workflows/runHandler.server';
 import { runConnectorHealthCheck } from './connectorHealthWorkflow.server';
+import { runCapabilityReservationReconciliation } from '@/lib/platform/workflows/capabilityReservationReconciliation.server';
 
 export type WorkflowJob = {
   id: string;
@@ -22,7 +23,7 @@ export type WorkflowExecution = {
   resultStatus: string;
 } | {
   kind: 'complete';
-  resultType: 'licensed_workflow_run' | 'sprint' | 'connector_health';
+  resultType: 'licensed_workflow_run' | 'sprint' | 'connector_health' | 'quota_reconciliation';
   resultId: string;
   resultStatus: string;
   runId?: string | null;
@@ -39,6 +40,7 @@ const workflowHandlers: Readonly<Record<string, WorkflowHandler>> = Object.freez
   sprint_planner: runSprintPlannerWorkflow,
   platform_run: runPlatformWorkflow,
   connector_health_check: runConnectorHealthCheck,
+  capability_reservation_reconcile: runCapabilityReservationReconciliation,
 });
 
 export function getWorkflowHandler(workflowKey: string): WorkflowHandler {

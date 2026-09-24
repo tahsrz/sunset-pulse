@@ -50,7 +50,7 @@ export async function getRun(actorId: string, workspaceId: string, runId: string
 }
 export async function listCheckpoints(actorId: string, workspaceId: string, search = new URLSearchParams()) {
   const { limit, cursor } = parsePage(search, workspaceId, 'checkpoints');
-  await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
+  const workspaceAccess = await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
   let query = supabaseAdmin.from('platform_checkpoints')
     .select('id,run_id,node_id,type,prompt,response_schema,target,status,revision,created_at')
     .eq('workspace_id', workspaceId).eq('status', 'pending').order('created_at', { ascending: true }).order('id', { ascending: true });
@@ -61,6 +61,8 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   const healthPage = parseScopedPage(search, workspaceId, 'connector_health', 'healthLimit', 'healthCursor');
   const healthHistoryPage = parseScopedPage(search, workspaceId, 'connector_health_history', 'healthHistoryLimit', 'healthHistoryCursor');
   const healthAuditPage = parseScopedPage(search, workspaceId, 'connector_health_audit', 'healthAuditLimit', 'healthAuditCursor');
+  const providerExceptionPage = parseScopedPage(search, workspaceId, 'provider_exceptions', 'providerExceptionLimit', 'providerExceptionCursor');
+  const unknownEffectPage = parseScopedPage(search, workspaceId, 'unknown_effects', 'unknownEffectLimit', 'unknownEffectCursor');
   let healthQuery = supabaseAdmin.from('platform_connector_health')
     .select('id,connector_id,connection_id,title,status,checked_at,snapshot_hash,detail,updated_at')
     .eq('workspace_id', workspaceId).order('checked_at', { ascending: false }).order('id', { ascending: false });
@@ -124,6 +126,24 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (healthAuditError) throw new PlatformRunError(healthAuditError.code);
   const healthAudit = (healthAuditRows || []).slice(0, healthAuditPage.limit);
   const healthAuditLast = healthAudit.at(-1);
+  const { data: providerExceptionRows, error: providerExceptionError } = await supabaseAdmin.rpc('platform_list_provider_exceptions', {
+    p_actor_id: actorId, p_workspace_id: workspaceId,
+    p_after: providerExceptionPage.cursor?.createdAt || null,
+    p_after_id: providerExceptionPage.cursor?.id || null,
+    p_limit: providerExceptionPage.limit + 1,
+  });
+  if (providerExceptionError) throw new PlatformRunError(providerExceptionError.code);
+  const providerExceptions = (providerExceptionRows || []).slice(0, providerExceptionPage.limit);
+  const providerExceptionLast = providerExceptions.at(-1);
+  const { data: unknownEffectRows, error: unknownEffectError } = await supabaseAdmin.rpc('platform_list_unknown_effects', {
+    p_actor_id: actorId, p_workspace_id: workspaceId,
+    p_after: unknownEffectPage.cursor?.createdAt || null,
+    p_after_id: unknownEffectPage.cursor?.id || null,
+    p_limit: unknownEffectPage.limit + 1,
+  });
+  if (unknownEffectError) throw new PlatformRunError(unknownEffectError.code);
+  const unknownEffects = (unknownEffectRows || []).slice(0, unknownEffectPage.limit);
+  const unknownEffectLast = unknownEffects.at(-1);
   return {
     ...page,
     health: healthWithFreshness,
@@ -136,6 +156,13 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
     healthAudit,
     healthAuditNextCursor: healthAuditRows && healthAuditRows.length > healthAuditPage.limit && healthAuditLast
       ? encodeCursor({ workspaceId, collection: 'connector_health_audit', createdAt: healthAuditLast.occurred_at, id: healthAuditLast.id }) : null,
+    providerExceptions,
+    providerExceptionsNextCursor: providerExceptionRows && providerExceptionRows.length > providerExceptionPage.limit && providerExceptionLast
+      ? encodeCursor({ workspaceId, collection: 'provider_exceptions', createdAt: providerExceptionLast.occurred_at, id: providerExceptionLast.id }) : null,
+    unknownEffects,
+    unknownEffectsNextCursor: unknownEffectRows && unknownEffectRows.length > unknownEffectPage.limit && unknownEffectLast
+      ? encodeCursor({ workspaceId, collection: 'unknown_effects', createdAt: unknownEffectLast.receipt_created_at, id: unknownEffectLast.receipt_id }) : null,
+    canManageProviderRecovery: workspaceAccess.role === 'owner' || workspaceAccess.role === 'admin',
   };
 }
 function pageResult<T extends { id: string; created_at: string }>(rows: T[], limit: number, workspaceId: string, collection: 'runs' | 'checkpoints') {

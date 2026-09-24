@@ -23,6 +23,7 @@ const migrations=[
   '20260918010000_platform_sprint_schedule_backlog_scope.sql','20260918020000_platform_json_runs_checkpoints.sql',
   '20260918030000_platform_scope_fencing.sql','20260918035000_platform_owner_planning_guard.sql',
   '20260918040000_platform_run_recovery.sql','20260918050000_platform_app_installs.sql',
+  '20260918090000_platform_app_launch_admission.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -117,6 +118,81 @@ try{
   const answered=await request(primary.page,base+'/checkpoints','POST',{checkpointId:checkpoint.id,expectedRevision:checkpoint.revision,submissionKey:randomUUID(),value:'Keller / Westlake'});
   assert.equal(answered.status,200);await tick(run.id,2);
   assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${run.id}';`),'completed');
+
+  // Exercise the reviewed app fixtures through real local Supabase browser
+  // sessions and the authenticated HTTP routes. The users are temporary local
+  // acceptance identities; this proves auth/role plumbing, not pilot adoption.
+  const member=await login(), reviewer=await login();
+  await sql(`INSERT INTO platform_memberships(workspace_id,user_id,role,status)
+    VALUES('${workspace}','${member.userId}','member','active'),('${workspace}','${reviewer.userId}','reviewer','active');`);
+  const readiness=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/real-estate-readiness.v1.json',import.meta.url),'utf8'));
+  const content=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/client-content-review.v1.json',import.meta.url),'utf8'));
+  assert.equal(readiness.capabilities.length,0);assert.equal(content.capabilities.length,0);
+  const saveInstall=async(manifest,settings)=>{
+    const response=await request(primary.page,base+'/apps','POST',{manifest,settings,status:'installed',expectedRevision:null});
+    assert.equal(response.status,200,`Install ${manifest.key} failed: ${response.data.error || response.status}`);
+    return response.data.result;
+  };
+  const readinessInstall=await saveInstall(readiness,{area:'keller-westlake'});
+  const contentInstall=await saveInstall(content,{review_mode:'human_review'});
+  const memberInstall=await request(member.page,base+'/apps','POST',{manifest:readiness,settings:{area:'keller-westlake'},status:'installed',expectedRevision:null});
+  assert.equal(memberInstall.status,403,'members cannot install or modify workspace app configuration');
+  const installedList=await request(primary.page,base+'/apps');
+  assert.equal(installedList.status,200);assert.equal(installedList.data.result.length,2,'denied install must not change the installed app set');
+  const propertyId=randomUUID();
+  await sql(`INSERT INTO property_shortlist_entries(id,owner_id,area_key,address,city,state,property_kind,revision,status)
+    VALUES('${propertyId}','${primary.userId}','keller-westlake','1 Acceptance Way','Keller','TX','residential',1,'active');
+    INSERT INTO platform_scope_links(resource_type,resource_id,owner_id,workspace_id,status,source_revision)
+    VALUES('property_shortlist','${propertyId}','${primary.userId}','${workspace}','mapped',1);`);
+  const launch=async(page,install,workflowKey,inputs,resourceRefs=[])=>{
+    const response=await request(page,base+'/apps/launch','POST',{installId:install.id,expectedInstallRevision:install.revision,
+      workflowKey,requestKey:randomUUID(),inputs,resourceRefs});
+    return response;
+  };
+  const propertyRun=await launch(member.page,readinessInstall,'readiness-intake',{property_id:propertyId},[
+    {resourceType:'property_shortlist',resourceId:propertyId,expectedRevision:1},
+  ]);
+  assert.equal(propertyRun.status,200,`Member launch failed: ${propertyRun.data.error || propertyRun.status}`);
+  const contentRun=await launch(member.page,contentInstall,'review-intake',{revision_id:'local-review-revision-1'});
+  assert.equal(contentRun.status,200,`Member content launch failed: ${contentRun.data.error || contentRun.status}`);
+  const reviewerStart=await launch(reviewer.page,contentInstall,'review-intake',{revision_id:'reviewer-must-not-start'});
+  assert.equal(reviewerStart.status,403,'reviewer must not initiate app runs');
+  async function respondToAppRun(requesterId,page,runId,nodeId,value){
+    await tickAs(requesterId,runId,1);
+    const inboxResponse=await request(page,base+'/checkpoints?limit=20');
+    assert.equal(inboxResponse.status,200);
+    const checkpoint=inboxResponse.data.result.items.find((item)=>item.run_id===runId);
+    assert(checkpoint,`Missing ${nodeId} checkpoint for app run ${runId}`);
+    assert.equal(checkpoint.node_id,nodeId);
+    const response=await request(page,base+'/checkpoints','POST',{checkpointId:checkpoint.id,
+      expectedRevision:checkpoint.revision,submissionKey:randomUUID(),value});
+    assert.equal(response.status,200,`Checkpoint response failed: ${response.data.error || response.status}`);
+    await tickAs(requesterId,runId,2);
+    assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${runId}';`),'completed');
+    return checkpoint;
+  }
+  async function tickAs(actorId,runId,generation){
+    const token=randomUUID();
+    await sql(`UPDATE workflow_jobs SET status='running',lease_token='${token}',lease_until=clock_timestamp()+interval '1 minute'
+      WHERE user_id='${actorId}' AND workflow_key='platform_run' AND payload->>'runId'='${runId}'
+        AND payload->>'generation'='${generation}' AND status='queued';
+      SELECT run_status FROM platform_tick_run((SELECT id FROM workflow_jobs WHERE user_id='${actorId}'
+        AND payload->>'runId'='${runId}' AND payload->>'generation'='${generation}'),'${token}');`);
+  }
+  const propertyCheckpoint=await respondToAppRun(member.userId,member.page,propertyRun.data.result.id,'missing_fact','Confirm the property details before further research.');
+  const contentCheckpoint=await respondToAppRun(member.userId,reviewer.page,contentRun.data.result.id,'review_notes','Clarify the source date before any client-facing use.');
+  assert.equal(await sql(`SELECT app_manifest_hash=(SELECT manifest_hash FROM platform_app_installs WHERE id='${readinessInstall.id}')
+    AND app_resource_refs @> jsonb_build_array(jsonb_build_object('resourceType','property_shortlist','resourceId','${propertyId}','expectedRevision',1))
+    FROM platform_runs WHERE id='${propertyRun.data.result.id}';`),'t','property app run keeps its install and source-revision pins');
+  assert.equal(await sql(`SELECT resolved_by::text FROM platform_checkpoints WHERE id='${contentCheckpoint.id}';`),reviewer.userId);
+  assert.equal(await sql(`SELECT response#>>'{}' FROM platform_checkpoints WHERE id='${propertyCheckpoint.id}';`),'Confirm the property details before further research.');
+  assert.equal(await sql(`SELECT response#>>'{}' FROM platform_checkpoints WHERE id='${contentCheckpoint.id}';`),'Clarify the source date before any client-facing use.');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${workspace}'
+    AND action='checkpoint.resolved' AND actor_id='${reviewer.userId}' AND resource_id='${contentCheckpoint.id}';`),'1');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_runs WHERE id IN ('${propertyRun.data.result.id}','${contentRun.data.result.id}')
+    AND status='completed' AND app_manifest_hash IS NOT NULL;`),'2');
+  console.log('PASS: authenticated browser sessions install and launch both inert apps; member intake and reviewer response are attributed, pinned and completed');
+
   const pending=await start();await tick(pending.id,1);
   const cancelled=await request(primary.page,base+'/runs','PATCH',{runId:pending.id,expectedRevision:2});
   assert.equal(cancelled.status,200);assert.equal(cancelled.data.result.status,'cancelled');

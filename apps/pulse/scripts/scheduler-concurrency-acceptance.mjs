@@ -18,6 +18,7 @@ await withDockerService('scheduler-test', async (container) => {
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA auth;
     CREATE TABLE auth.users (id uuid PRIMARY KEY);
+    ALTER TABLE auth.users ADD COLUMN email text;
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
       LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     CREATE TABLE public.site_config (id uuid PRIMARY KEY);
@@ -76,6 +77,15 @@ await withDockerService('scheduler-test', async (container) => {
   '20260923130000_platform_connector_health_summary.sql',
   '20260923140000_platform_connector_health_history_receipts.sql',
   '20260923150000_platform_connector_health_schedule_audit.sql',
+  '20260923160000_platform_quota_budget_settlement.sql',
+  '20260924100000_platform_quota_reconciliation_event.sql',
+  '20260923170000_platform_quota_overrun_fences.sql',
+  '20260923180000_platform_provider_adapter_reviews.sql',
+  '20260923190000_platform_provider_quotas.sql',
+  '20260924110000_platform_provider_exception_read_model.sql',
+  '20260924120000_platform_exception_recovery_evidence.sql',
+  '20260924130000_platform_unknown_effect_inbox.sql',
+  '20260924140000_platform_workspace_invitations.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -85,11 +95,44 @@ await withDockerService('scheduler-test', async (container) => {
   const owner = randomUUID(), otherOwner = randomUUID();
   let schedule = randomUUID();
   const requestedPersonalId = randomUUID();
-  await sql(`INSERT INTO auth.users VALUES ('${owner}'), ('${otherOwner}');`);
+  const invitee = randomUUID(), adminActor = randomUUID(), outsider = randomUUID();
+  await sql(`INSERT INTO auth.users(id,email) VALUES ('${owner}','owner@example.test'),('${otherOwner}','other@example.test'),
+    ('${invitee}','invitee@example.test'),('${adminActor}','admin@example.test'),('${outsider}','outsider@example.test');`);
   const firstWorkspace = await sql(`SELECT workspace_id::text FROM platform_create_workspace_with_owner('${owner}', '${requestedPersonalId}', 'personal', 'Owner workspace');`);
   assert.equal(firstWorkspace, requestedPersonalId, 'personal workspace should be created with its requested ID');
   const replayedWorkspace = await sql(`SELECT workspace_id::text FROM platform_create_workspace_with_owner('${owner}', '${randomUUID()}', 'personal', 'Different name');`);
   assert.equal(replayedWorkspace, requestedPersonalId, 'personal workspace creation should replay to the existing workspace');
+  const teamWorkspace = randomUUID();
+  await sql(`SELECT workspace_id FROM platform_create_workspace_with_owner('${owner}','${teamWorkspace}','team','Team workspace');`);
+  const inviteHash = 'a'.repeat(64), inviteHash2 = 'b'.repeat(64);
+  await sql(`INSERT INTO platform_memberships(workspace_id,user_id,role) VALUES ('${teamWorkspace}','${adminActor}','admin');`);
+  await assert.rejects(sql(`SELECT * FROM platform_create_workspace_invitation('${adminActor}','${teamWorkspace}',
+    'admin-target@example.test','admin','${'e'.repeat(64)}',now()+interval '7 days');`), /Invalid invitation/);
+  await assert.rejects(sql(`SELECT * FROM platform_create_workspace_invitation('${owner}','${teamWorkspace}',
+    'owner-role@example.test','owner','${'f'.repeat(64)}',now()+interval '7 days');`), /Invalid invitation/);
+  const invitationId = await sql(`SELECT id::text FROM platform_create_workspace_invitation('${owner}','${teamWorkspace}',
+    'invitee@example.test','member','${inviteHash}',now()+interval '7 days');`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_list_workspace_invitations('${owner}','${teamWorkspace}') WHERE id='${invitationId}';`), '1');
+  await assert.rejects(sql(`SELECT * FROM platform_accept_workspace_invitation('${outsider}','${inviteHash}');`), /Invitation email does not match/);
+  assert.equal(await sql(`SELECT status FROM platform_workspace_invitations WHERE id='${invitationId}';`), 'pending');
+  assert.equal(await sql(`SELECT workspace_id::text||'|'||role||'|'||replayed::text FROM platform_accept_workspace_invitation('${invitee}','${inviteHash}');`), `${teamWorkspace}|member|false`);
+  assert.equal(await sql(`SELECT workspace_id::text||'|'||role||'|'||replayed::text FROM platform_accept_workspace_invitation('${invitee}','${inviteHash}');`), `${teamWorkspace}|member|true`);
+  const inviteeMembership = await sql(`SELECT id::text FROM platform_memberships WHERE workspace_id='${teamWorkspace}' AND user_id='${invitee}';`);
+  assert.equal(await sql(`SELECT status FROM platform_revoke_workspace_membership('${owner}','${teamWorkspace}','${inviteeMembership}');`), 'revoked');
+  await assert.rejects(sql(`SELECT platform_require_run_role('${invitee}','${teamWorkspace}',ARRAY['owner','admin','member']);`), /Workspace (access|action) denied/);
+  await assert.rejects(sql(`SELECT * FROM platform_revoke_workspace_membership('${owner}','${teamWorkspace}',
+    (SELECT id FROM platform_memberships WHERE workspace_id='${teamWorkspace}' AND user_id='${owner}'));`), /Workspace owner cannot be revoked/);
+  const pendingId = await sql(`SELECT id::text FROM platform_create_workspace_invitation('${owner}','${teamWorkspace}',
+    'other@example.test','viewer','${inviteHash2}',now()+interval '7 days');`);
+  assert.equal(await sql(`SELECT status FROM platform_revoke_workspace_invitation('${owner}','${teamWorkspace}','${pendingId}');`), 'revoked');
+  const expiredHash = 'd'.repeat(64);
+  const expiredId = await sql(`SELECT id::text FROM platform_create_workspace_invitation('${owner}','${teamWorkspace}',
+    'invitee@example.test','member','${expiredHash}',now()+interval '7 days');`);
+  await sql(`UPDATE platform_workspace_invitations SET expires_at=now()-interval '1 minute' WHERE id='${expiredId}';`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_accept_workspace_invitation('${invitee}','${expiredHash}');`), '0');
+  assert.equal(await sql(`SELECT status FROM platform_workspace_invitations WHERE id='${expiredId}';`), 'expired');
+  assert.equal(await sql(`SELECT has_function_privilege('authenticated','platform_accept_workspace_invitation(uuid,text)','EXECUTE');`), 'f');
+  console.log('PASS: workspace invitations are email-bound, role-bounded, expiring, replay-safe and membership revocation fences access');
   assert.equal(await sql(`SELECT count(*)::text FROM platform_workspaces WHERE created_by='${owner}' AND kind='personal' AND status='active';`), '1');
   assert.equal(await sql(`SELECT count(*)::text FROM platform_memberships WHERE workspace_id='${requestedPersonalId}' AND user_id='${owner}' AND status='active';`), '1');
   const propertyId = randomUUID();
@@ -154,6 +197,29 @@ await withDockerService('scheduler-test', async (container) => {
     }
     throw new Error(`Session ${name} never reached ${predicate}`);
   }
+
+  // A protected operation's FOR SHARE membership lock must hold revocation
+  // until its transaction finishes; otherwise a write admitted just before
+  // revoke could commit after access was removed.
+  const lockInviteHash = 'c'.repeat(64);
+  await sql(`SELECT id FROM platform_create_workspace_invitation('${owner}','${teamWorkspace}',
+    'other@example.test','viewer','${lockInviteHash}',now()+interval '7 days');`);
+  await sql(`SELECT * FROM platform_accept_workspace_invitation('${otherOwner}','${lockInviteHash}');`);
+  const lockMemberId = await sql(`SELECT id::text FROM platform_memberships WHERE workspace_id='${teamWorkspace}' AND user_id='${otherOwner}';`);
+  const protectedMemberOp = sql(`SET application_name='member_access_a'; BEGIN;
+    SELECT platform_require_run_role('${otherOwner}','${teamWorkspace}',ARRAY['viewer']); SELECT pg_sleep(3); COMMIT;`);
+  protectedMemberOp.catch(() => {});
+  let revokeInFlight;
+  try {
+    await waitForSession('member_access_a', "wait_event='PgSleep'");
+    revokeInFlight = sql(`SET application_name='member_revoke_b';
+      SELECT status FROM platform_revoke_workspace_membership('${owner}','${teamWorkspace}','${lockMemberId}');`);
+    revokeInFlight.catch(() => {});
+    await waitForSession('member_revoke_b', "wait_event_type='Lock'");
+    await protectedMemberOp;
+    assert.equal(await revokeInFlight, 'revoked');
+  } finally { await Promise.allSettled([protectedMemberOp, revokeInFlight].filter(Boolean)); }
+  console.log('PASS: concurrent membership revocation waits for protected workspace operation locks');
 
   // Observe A holding the row lock before B claims. Promise.all alone is not
   // proof that transactions overlap. The wait observation is an assertion.
@@ -252,4 +318,4 @@ await withDockerService('scheduler-test', async (container) => {
   console.log('PASS: deferred polling has a terminal budget');
   await platformRunAcceptance(sql);
   await platformFollowupAcceptance(sql);
-}).catch((error) => { console.error(error.message); process.exitCode = 1; });
+}).catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

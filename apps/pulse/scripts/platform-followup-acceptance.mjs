@@ -3,12 +3,13 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 export async function platformFollowupAcceptance(sql) {
-  const owner=randomUUID(), member=randomUUID(), foreign=randomUUID(), workspace=randomUUID(), other=randomUUID();
+  const owner=randomUUID(), admin=randomUUID(), member=randomUUID(), reviewer=randomUUID(), foreign=randomUUID(), workspace=randomUUID(), other=randomUUID();
   const json=(v)=>`'${JSON.stringify(v).replaceAll("'","''")}'::jsonb`;
-  await sql(`INSERT INTO auth.users(id) VALUES('${owner}'),('${member}'),('${foreign}');
+  await sql(`INSERT INTO auth.users(id) VALUES('${owner}'),('${admin}'),('${member}'),('${reviewer}'),('${foreign}');
     SELECT workspace_id FROM platform_create_workspace_with_owner('${owner}','${workspace}','team','Followup fixture');
     SELECT workspace_id FROM platform_create_workspace_with_owner('${owner}','${other}','team','Other fixture');
-    INSERT INTO platform_memberships(workspace_id,user_id,role,status) VALUES('${workspace}','${member}','member','active');`);
+    INSERT INTO platform_memberships(workspace_id,user_id,role,status) VALUES
+      ('${workspace}','${admin}','admin','active'),('${workspace}','${member}','member','active'),('${workspace}','${reviewer}','reviewer','active');`);
   const graph={schemaVersion:1,key:'followup',version:1,entry:'first',nodes:[
     {id:'first',kind:'checkpoint',type:'question',prompt:'Initial fact?',responseSchema:{type:'string'},next:'second'},
     {id:'second',kind:'checkpoint',type:'question',prompt:'Follow-up?',responseSchema:{type:'string'},next:'done'},
@@ -78,7 +79,7 @@ export async function platformFollowupAcceptance(sql) {
   await assert.rejects(sql(install(fixture,'NULL',member)),/denied/);
   const [app,appReplay]=await Promise.all([sql(install()),sql(install())]);
   assert.equal(app,appReplay);
-  await sql(install(content,'NULL',owner,{review_mode:'human_review'}));
+  const contentApp=await sql(install(content,'NULL',owner,{review_mode:'human_review'}));
   const conditionManifest={...fixture,key:'condition-app',title:'Condition App',workflows:[conditionGraph]};
   await sql(install(conditionManifest,'NULL',owner,{area:'keller-westlake'}));
   assert.equal(await sql(`SELECT manifest->'workflows'->0->'nodes'->1->>'kind' FROM platform_app_installs WHERE app_key='condition-app' AND workspace_id='${workspace}';`),'condition');
@@ -94,15 +95,41 @@ export async function platformFollowupAcceptance(sql) {
   const policy=await sql(`SELECT id::text FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`);
   assert.equal(await sql(`SELECT policy_hash=encode(sha256(convert_to(policy::TEXT,'UTF8')),'hex') FROM platform_capability_policies WHERE id='${policy}';`),'t');
   await assert.rejects(sql(`SELECT id FROM platform_save_capability_policy('${owner}','${workspace}','${app}',${capabilityPolicy},NULL);`),/revision conflict/);
-  await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',1,3,1,NULL);`);
+  await assert.rejects(sql(`SELECT workspace_id FROM platform_save_quota_budget('${member}','${workspace}',1,3,1.0,100,0.5,3600,NULL);`),/denied/);
+  await sql(`SELECT workspace_id FROM platform_save_quota_budget('${owner}','${workspace}',1,3,1.0,100,0.5,3600,NULL);`);
+  await assert.rejects(sql(`SELECT workspace_id FROM platform_save_quota_budget('${owner}','${workspace}',1,3,1.0,100,0.5,3600,NULL);`),/revision conflict/);
+  await sql(`SELECT workspace_id FROM platform_save_quota_budget('${admin}','${workspace}',100,3,1.0,100,0.5,3600,1);`);
+  const connector=await sql(`SELECT id::text FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','https://crm.example.test/mcp','crm-secret',NULL);`);
   const operation=randomUUID();
-  const admit=(operationId=operation,cost='0.25')=>sql(`SELECT id::text FROM platform_admit_capability_operation('${workspace}','${app}','${provenanceRun}','${operationId}','crm.local','contacts','lookup','${'a'.repeat(64)}','${'b'.repeat(64)}',1,${cost});`);
+  const admit=(operationId=operation,cost='0.25',tokens=40,steps=1,runId=provenanceRun)=>sql(`SELECT id::text FROM platform_admit_capability_operation('${workspace}','${app}','${runId}','${operationId}','crm.local','contacts','lookup','${'a'.repeat(64)}','${'b'.repeat(64)}',${steps},${cost},${tokens});`);
   const reservation=await admit();
   assert.equal(await admit(),reservation);
-  await assert.rejects(admit(randomUUID(),'0.25'),/quota exceeded/);
-  await assert.rejects(sql(`SELECT id FROM platform_admit_capability_operation('${workspace}','${app}','${run}','${randomUUID()}','crm.local','contacts','lookup','${'f'.repeat(64)}','${'b'.repeat(64)}',1,0.1);`),/not admitted/);
+  await assert.rejects(admit(randomUUID(),'0.3'),/quota exceeded/,'per-run estimated cost remains enforced after workspace concurrency is raised');
+  await assert.rejects(sql(`SELECT id FROM platform_admit_capability_operation('${workspace}','${app}','${provenanceRun}','${randomUUID()}','crm.local','contacts','lookup','${'f'.repeat(64)}','${'b'.repeat(64)}',1,0.1);`),/not admitted/);
   assert.equal(await sql(`SELECT status FROM platform_capability_reservations WHERE id='${reservation}';`),'reserved');
-  const connector=await sql(`SELECT id::text FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','https://crm.example.test/mcp','crm-secret',NULL);`);
+  const providerContract={schemaVersion:1,providerKey:'crm.provider',adapterKey:'crm.mcp',adapterVersion:'1.0.0',
+    idempotencyMode:'lookup_by_operation_id',unknownOutcomeRecovery:'provider_lookup',pricingVersion:1,currency:'USD',
+    components:[{usageKey:'request_count',rateMicros:1000,chargeUnits:1,maxBillableUnits:1,required:true}],
+    maxCostMicrosPerOperation:1000,reviewedBy:owner,reviewedAt:'2026-09-23T12:00:00.000Z'};
+  const providerReview=await sql(`SELECT id::text FROM platform_register_provider_adapter_review('${owner}','${workspace}','crm.local',${json(providerContract)},1);`);
+  await assert.rejects(sql(`SELECT id FROM platform_register_provider_adapter_review('${member}','${workspace}','crm.local',${json({...providerContract,reviewedBy:member})},2);`),/denied/);
+  assert.equal(await sql(`SELECT contract_hash=encode(sha256(convert_to(contract::TEXT,'UTF8')),'hex') FROM platform_provider_adapter_reviews WHERE id='${providerReview}';`),'t');
+  assert.equal(await sql(`SELECT provider_review_id::text FROM platform_connector_definitions WHERE id='${connector}';`),providerReview);
+  assert.equal(await sql(`SELECT provider_contract_hash FROM platform_connector_definitions WHERE id='${connector}';`),await sql(`SELECT contract_hash FROM platform_provider_adapter_reviews WHERE id='${providerReview}';`));
+  await assert.rejects(sql(`SELECT id FROM platform_register_provider_adapter_review('${owner}','${workspace}','crm.local',${json({...providerContract,components:[{...providerContract.components[0],rateMicros:2000}],maxCostMicrosPerOperation:2000})},2);`),/immutable/);
+  await assert.rejects(sql(`SELECT workspace_id FROM platform_save_provider_quota('${member}','${workspace}','crm.provider','crm.mcp',2,0.5,0.5,NULL);`),/denied/);
+  await sql(`SELECT workspace_id FROM platform_save_provider_quota('${owner}','${workspace}','crm.provider','crm.mcp',2,0.3,0.5,NULL);`);
+  const exposureRun1=await start(), exposureRun2=await start();
+  const exposureOperation=randomUUID();
+  const exposureReservation=await admit(exposureOperation,'0.2',10,1,exposureRun1);
+  await assert.rejects(admit(randomUUID(),'0.2',10,1,exposureRun2),/Provider quota exceeded/,'provider reserved exposure is enforced across runs');
+  await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${exposureOperation}','released',NULL,NULL);`);
+  await sql(`SELECT workspace_id FROM platform_save_provider_quota('${owner}','${workspace}','crm.provider','crm.mcp',1,0.5,0.5,1);`);
+  const concurrencyRun1=await start(), concurrencyRun2=await start();
+  const providerConcurrencyOperation=randomUUID();
+  const providerConcurrencyReservation=await admit(providerConcurrencyOperation,'0.1',10,1,concurrencyRun1);
+  await assert.rejects(admit(randomUUID(),'0.1',10,1,concurrencyRun2),/Provider quota exceeded/,'provider concurrency is serialized separately from workspace capacity');
+  await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${providerConcurrencyOperation}','released',NULL,NULL);`);
   const connectorSchemaValue={type:'object',properties:{email:{type:'string',maxLength:320}},required:['email'],additionalProperties:false};
   const connectorSchema=json(connectorSchemaValue);
   const snapshot=await sql(`SELECT id::text FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${connectorSchema},NULL);`);
@@ -175,11 +202,133 @@ export async function platformFollowupAcceptance(sql) {
   console.log('PASS: connector health history, receipts and audit restore with stable IDs and workspace isolation');
   const responseEvent=await sql(`SELECT id::text FROM platform_record_connector_response('${workspace}','${provenanceRun}','${reservation}','${snapshot}','${operation}','${'e'.repeat(64)}','${snapshotHash}','valid',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:00:00.000Z'})});`);
   assert.equal(await sql(`SELECT status FROM platform_connector_response_events WHERE id='${responseEvent}';`),'valid');
-  await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',2,3,1,1);`);
+  const settled=await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${operation}','consumed',35,0.2);`);
+  assert.equal(settled,'consumed');
+  assert.equal(await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${operation}','consumed',35,0.2);`),'consumed','settlement replay is idempotent');
+  await assert.rejects(sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${operation}','consumed',36,0.2);`),/identity conflict/);
+  assert.equal(await sql(`SELECT action FROM platform_audit_events WHERE resource_type='capability_reservation' AND resource_id='${reservation}' ORDER BY occurred_at DESC LIMIT 1;`),'capability.operation.consumed');
+  await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',2,3,1,2);`);
+  const overrunRun=await start();
+  const overrunOperation=randomUUID();
+  const overrunReservation=await admit(overrunOperation,'0.1',10,1,overrunRun);
+  assert.equal(await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${overrunOperation}','consumed',11,0.11);`),'consumed');
+  assert.equal(await sql(`SELECT string_agg(breach_kind,',' ORDER BY breach_kind) FROM platform_quota_breaches WHERE workspace_id='${workspace}' AND run_id='${overrunRun}';`),'estimated_cost_exceeded,estimated_tokens_exceeded','cost and token estimate overruns are immutable run evidence');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${workspace}' AND action='capability.budget_breached' AND resource_id='${overrunRun}';`),'2','each breach emits safe audit evidence');
+  assert.equal(await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${overrunOperation}','consumed',11,0.11);`),'consumed','overrun settlement replay is idempotent');
+  await assert.rejects(admit(randomUUID(),'0.01',1,1,overrunRun),/fenced after a quota breach/,'breached runs cannot reserve additional operations');
+  const unaffectedRun=await start();
+  const unaffectedOperation=randomUUID();
+  assert.ok(await admit(unaffectedOperation,'0.01',1,1,unaffectedRun),'a run-local breach does not fence another run');
+  await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${unaffectedOperation}','released',NULL,NULL);`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_quota_breaches WHERE workspace_id='${other}' AND run_id='${overrunRun}';`),'0','breach evidence is workspace scoped');
   const driftOperation=randomUUID();
   const driftReservation=await admit(driftOperation,'0.1');
+  assert.equal(await sql(`SELECT provider_review_id::text FROM platform_capability_reservations WHERE id='${driftReservation}';`),providerReview,'reservation pins the reviewed adapter identity');
+  assert.equal(await sql(`SELECT provider_contract_hash FROM platform_capability_reservations WHERE id='${driftReservation}';`),await sql(`SELECT contract_hash FROM platform_provider_adapter_reviews WHERE id='${providerReview}';`),'reservation pins the immutable provider contract hash');
+  await assert.rejects(admit(randomUUID(),'0.01',61),/quota exceeded/,'consumed actual tokens count toward the per-run ceiling');
+  await assert.rejects(admit(randomUUID(),'0.31',1),/quota exceeded/,'consumed actual cost counts toward the per-run ceiling');
+  await sql(`SELECT workspace_id FROM platform_save_provider_quota('${owner}','${workspace}','crm.provider','crm.mcp',3,0.5,0.5,2);`);
+  const recoveryGraph={schemaVersion:1,key:'recovery-evidence',version:1,entry:'gate',nodes:[
+    {id:'gate',kind:'checkpoint',type:'effect_gate',prompt:'Review recovery evidence',target:{resourceType:'fixture',resourceId:'recovery-1',revision:1,contentHash:'e'.repeat(64),action:'prepare'},next:'done'},
+    {id:'done',kind:'complete'},
+  ]};
+  const recoveryRun=await sql(`SELECT id FROM platform_start_run('${owner}','${workspace}','${randomUUID()}',${json(recoveryGraph)});`);
+  await tick(recoveryRun,1);
+  const recoveryCheckpoint=await cp(recoveryRun,'gate');
+  const recoveryOperation=randomUUID();
+  const recoveryReservation=await admit(recoveryOperation,'0.01',1,1,recoveryRun);
+  const unknownReceipt=await sql(`SELECT id::text FROM platform_record_effect_receipt('${workspace}','${recoveryRun}','${recoveryCheckpoint}','${recoveryOperation}','${'c'.repeat(64)}','${'d'.repeat(64)}','prepared',NULL,NULL);`);
+  await sql(`SELECT id FROM platform_transition_effect_receipt('${unknownReceipt}','submitted',NULL,NULL);`);
+  await sql(`SELECT id FROM platform_transition_effect_receipt('${unknownReceipt}','unknown',NULL,NULL);`);
+  const reconciliationKey=randomUUID(), evidenceHash='f'.repeat(64);
+  const recoveryReviewCall=`SELECT id::text FROM platform_record_effect_recovery_review('${owner}','${workspace}','${unknownReceipt}','${reconciliationKey}','not_applied','provider_lookup','provider-ticket-42','${evidenceHash}');`;
+  const [recoveryReview,recoveryReviewReplay]=await Promise.all([sql(recoveryReviewCall),sql(recoveryReviewCall)]);
+  assert.equal(recoveryReviewReplay,recoveryReview,'same reconciliation key and evidence replays the immutable review');
+  await assert.rejects(sql(`SELECT id FROM platform_record_effect_recovery_review('${member}','${workspace}','${unknownReceipt}','${randomUUID()}','not_applied','manual_review','review-42','${evidenceHash}');`),/denied/);
+  const retryKey=randomUUID(), retryOperation=randomUUID();
+  const retryCall=`SELECT id::text FROM platform_create_effect_retry_intent('${owner}','${workspace}','${unknownReceipt}','${recoveryReview}','${retryKey}','${retryOperation}');`;
+  const [retryIntent,retryReplay]=await Promise.all([sql(retryCall),sql(retryCall)]);
+  assert.equal(retryReplay,retryIntent,'retry intent creation is idempotent');
+  assert.notEqual(await sql(`SELECT original_operation_id::text FROM platform_effect_retry_intents WHERE id='${retryIntent}';`),retryOperation,'retry gets a fresh operation identity');
+  const pinnedRetryReview=await sql(`SELECT provider_review_id::text||':'||provider_review_hash FROM platform_effect_retry_intents WHERE id='${retryIntent}';`);
+  const pinnedContractHash=await sql(`SELECT contract_hash FROM platform_provider_adapter_reviews WHERE id='${providerReview}';`);
+  assert.equal(pinnedRetryReview,`${providerReview}:${pinnedContractHash}`,'retry intent retains the exact reviewed adapter pin');
+  assert.equal(await sql(`SELECT status FROM platform_effect_receipts WHERE id='${unknownReceipt}';`),'unknown','recording intent does not mutate the original uncertain receipt');
+  await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${recoveryOperation}','released',NULL,NULL);`);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_effect_retry_intents WHERE workspace_id='${workspace}' AND receipt_id='${unknownReceipt}';`),'1','retry intent replay does not duplicate attempts');
+  console.log('PASS: unknown effect recovery records hashed evidence and a distinct, pinned retry identity without dispatch');
+  const racingOperationIds=[randomUUID(),randomUUID()];
+  const raced=await Promise.allSettled(racingOperationIds.map((operationId)=>admit(operationId,'0.01',1)));
+  assert.equal(raced.filter((result)=>result.status==='fulfilled').length,1,'quota row lock serializes concurrent reservations');
+  assert.equal(raced.filter((result)=>result.status==='rejected').length,1);
+  const admittedRaceIndex=raced.findIndex((result)=>result.status==='fulfilled');
+  const expiredOperation=racingOperationIds[admittedRaceIndex];
+  await sql(`UPDATE platform_capability_reservations SET expires_at=now()-interval '1 second' WHERE workspace_id='${workspace}' AND operation_id='${expiredOperation}';`);
+  assert.equal(await sql(`SELECT platform_reconcile_capability_reservations('${workspace}',1);`),'1','bounded service reconciliation expires one eligible operation');
+  const afterExpiry=await admit(randomUUID(),'0.01',1);
+  assert.ok(afterExpiry,'admission reconciles an expired reservation and reuses its concurrency slot');
+  assert.equal(await sql(`SELECT status FROM platform_capability_reservations WHERE workspace_id='${workspace}' AND operation_id='${expiredOperation}';`),'expired');
+  assert.equal(await sql(`SELECT action FROM platform_audit_events WHERE resource_type='capability_reservation' AND resource_id=(SELECT id::text FROM platform_capability_reservations WHERE workspace_id='${workspace}' AND operation_id='${expiredOperation}') ORDER BY occurred_at DESC LIMIT 1;`),'capability.operation.expired');
+  assert.equal(await sql("SELECT has_function_privilege('authenticated','platform_reconcile_capability_reservations(uuid,integer)','EXECUTE');"),'f');
   await sql(`SELECT id FROM platform_record_connector_response('${workspace}','${provenanceRun}','${driftReservation}','${snapshot}','${driftOperation}','${'f'.repeat(64)}','${'f'.repeat(64)}','schema_drift',${json({source:'fixture',fixture:'crm.lookup',recordedAt:'2026-09-23T12:01:00.000Z'})});`);
   assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${provenanceRun}';`),'blocked');
+  await sql(`SELECT workspace_id FROM platform_save_quota_limit('${owner}','${workspace}',4,3,1,3);`);
+  const cancellationRun=await start();
+  await tick(cancellationRun,1);
+  const cancellationOperation=randomUUID();
+  const cancellationReservation=await admit(cancellationOperation,'0.01',1,1,cancellationRun);
+  const cancellationRevision=await sql(`SELECT revision FROM platform_runs WHERE id='${cancellationRun}';`);
+  assert.equal(await sql(`SELECT status FROM platform_cancel_run('${owner}','${workspace}','${cancellationRun}',${cancellationRevision});`),'cancelled');
+  assert.equal(await sql(`SELECT status FROM platform_capability_reservations WHERE id='${cancellationReservation}';`),'released');
+  assert.equal(await sql(`SELECT actual_cost_usd::text FROM platform_capability_reservations WHERE id='${reservation}';`),'0.200000','cancel preserves consumed actual cost');
+  await assert.rejects(admit(randomUUID(),'0.01',1,1,cancellationRun),/not accepting capability/);
+  await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${driftOperation}','released',NULL,NULL);`);
+  const afterExpiryOperation=await sql(`SELECT operation_id::text FROM platform_capability_reservations WHERE id='${afterExpiry}';`);
+  await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${afterExpiryOperation}','released',NULL,NULL);`);
+
+  const inFlightProviderOperation=randomUUID();
+  const inFlightProviderRun=await start();
+  await admit(inFlightProviderOperation,'0.01',1,1,inFlightProviderRun);
+  const providerBreachRun=await start();
+  const providerBreachOperation=randomUUID();
+  const providerBreachReservation=await admit(providerBreachOperation,'0.3',10,1,providerBreachRun);
+  assert.equal(await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${providerBreachOperation}','consumed',10,0.41);`),'consumed');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_provider_quota_breaches WHERE workspace_id='${workspace}' AND provider_key='crm.provider' AND adapter_key='crm.mcp' AND utc_day=(now() AT TIME ZONE 'UTC')::date;`),'1','actual provider spend above the UTC-day ceiling creates one immutable fence');
+  const exceptionId=await sql(`SELECT id::text FROM platform_provider_quota_breaches WHERE workspace_id='${workspace}' AND provider_key='crm.provider' AND adapter_key='crm.mcp' AND utc_day=(now() AT TIME ZONE 'UTC')::date;`);
+  const resolutionKey=randomUUID();
+  const resolutionCall=`SELECT id::text FROM platform_resolve_provider_exception('${owner}','${workspace}','quota_breach','${exceptionId}','${resolutionKey}','investigated');`;
+  const [resolution,resolutionReplay]=await Promise.all([sql(resolutionCall),sql(resolutionCall)]);
+  assert.equal(resolutionReplay,resolution,'duplicate resolution is an immutable idempotent replay');
+  await assert.rejects(sql(`SELECT id FROM platform_resolve_provider_exception('${member}','${workspace}','quota_breach','${exceptionId}','${randomUUID()}','investigated');`),/denied/);
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_provider_quota_breaches WHERE id='${exceptionId}';`),'1','resolution preserves breach evidence');
+  assert.equal(await sql("SELECT has_table_privilege('service_role','platform_provider_quota_breaches','UPDATE') OR has_table_privilege('service_role','platform_provider_quota_breaches','DELETE');"),'f','service role cannot update or delete provider spend fences');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${workspace}' AND action='provider.exception.resolved' AND resource_id='${exceptionId}';`),'1','resolution replay writes one audit event');
+  assert.equal(await sql(`SELECT action FROM platform_audit_events WHERE workspace_id='${workspace}' AND action='provider.quota.breached' ORDER BY occurred_at DESC LIMIT 1;`),'provider.quota.breached');
+  await sql(`SELECT id FROM platform_revoke_provider_adapter_review('${owner}','${workspace}','${providerReview}');`);
+  assert.equal(await sql(`SELECT status FROM platform_provider_adapter_reviews WHERE id='${providerReview}';`),'revoked');
+  await assert.rejects(sql(`SELECT id FROM platform_create_effect_retry_intent('${owner}','${workspace}','${unknownReceipt}','${recoveryReview}','${randomUUID()}','${randomUUID()}');`),/no longer active/,'retry intents cannot be created against a revoked provider review');
+  assert.equal(await sql(`SELECT status FROM platform_revoke_provider_adapter_review('${owner}','${workspace}','${providerReview}');`),'revoked','review revocation replay is idempotent');
+  assert.equal(await sql(`SELECT status FROM platform_settle_capability_operation('${workspace}','${inFlightProviderOperation}','consumed',1,0.01);`),'consumed','revocation does not erase or prevent settlement of an already pinned reservation');
+  const postRevocationRun=await start();
+  await assert.rejects(admit(randomUUID(),'0.01',1,1,postRevocationRun),/missing, revoked, or stale/,'revoked adapter reviews cannot admit new operations');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_provider_quota_breaches WHERE workspace_id='${other}' AND provider_key='crm.provider';`),'0','provider spend fences are workspace scoped');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_list_provider_exceptions('${owner}','${workspace}',NULL,NULL,10);`),'2','exception feed includes the spend breach and revoked review');
+  assert.equal(await sql(`SELECT run_id::text||':'||reservation_id::text FROM platform_list_provider_exceptions('${owner}','${workspace}',NULL,NULL,10) WHERE exception_type='quota_breach';`),`${providerBreachRun}:${providerBreachReservation}`,'spend exception links to the triggering run and reservation');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_list_provider_exceptions('${owner}','${workspace}',NULL,NULL,1);`),'1','exception RPC enforces its requested bounded page');
+  const exceptionCursor=await sql(`SELECT occurred_at::text||'|'||id::text FROM platform_list_provider_exceptions('${owner}','${workspace}',NULL,NULL,1);`);
+  const [exceptionCursorTime,exceptionCursorId]=exceptionCursor.split('|');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_list_provider_exceptions('${owner}','${workspace}','${exceptionCursorTime}'::timestamptz,'${exceptionCursorId}',10);`),'1','exception cursor resumes strictly after the prior workspace page');
+  assert.equal(await sql(`SELECT resolution_reason FROM platform_list_provider_exceptions('${owner}','${workspace}',NULL,NULL,10) WHERE id='${exceptionId}';`),'investigated','exception feed exposes the latest append-only resolution');
+  assert.equal(await sql(`SELECT operation_id::text||':'||recovery_outcome||':'||retry_operation_id::text FROM platform_list_unknown_effects('${owner}','${workspace}',NULL,NULL,10) WHERE receipt_id='${unknownReceipt}';`),`${recoveryOperation}:not_applied:${retryOperation}`,'unknown effect inbox joins original operation, recovery evidence and distinct retry identity');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_list_unknown_effects('${owner}','${workspace}',NULL,NULL,1);`),'1','unknown effect feed enforces bounded page size');
+  await assert.rejects(sql(`SELECT * FROM platform_list_unknown_effects('${foreign}','${workspace}',NULL,NULL,10);`),/denied/,'unknown effect feed is workspace scoped');
+  assert.equal(await sql("SELECT has_function_privilege('authenticated','platform_list_unknown_effects(uuid,uuid,timestamptz,uuid,integer)','EXECUTE');"),'f');
+  assert.equal(await sql("SELECT has_function_privilege('service_role','platform_list_unknown_effects(uuid,uuid,timestamptz,uuid,integer)','EXECUTE');"),'t');
+  await assert.rejects(sql(`SELECT * FROM platform_list_provider_exceptions('${foreign}','${workspace}',NULL,NULL,10);`),/denied/,'provider exceptions require active workspace membership');
+  assert.equal(await sql("SELECT has_function_privilege('authenticated','platform_list_provider_exceptions(uuid,uuid,timestamptz,uuid,integer)','EXECUTE');"),'f');
+  assert.equal(await sql("SELECT has_function_privilege('service_role','platform_list_provider_exceptions(uuid,uuid,timestamptz,uuid,integer)','EXECUTE');"),'t');
+  console.log('PASS: provider exception feed is bounded, linked to affected work and fenced to active workspace members');
+  console.log('PASS: reservation settlement replays idempotently; consumed cost/tokens persist in budgets and admission races serialize');
   await assert.rejects(sql(`SELECT id FROM platform_save_connector_definition('${owner}','${workspace}','crm.local','mcp','CRM','http://crm.example.test/mcp','crm-secret',1);`),/Invalid connector/);
   await assert.rejects(sql(`SELECT id FROM platform_save_connector_schema_snapshot('${owner}','${workspace}','${connector}','contacts','lookup','input',${json({...connectorSchemaValue, '$ref':'file:///evil'})},1);`),/Unsupported|schema/);
   const effectGraph={schemaVersion:1,key:'effect-gate-followup',version:1,entry:'gate',nodes:[
@@ -202,6 +351,20 @@ export async function platformFollowupAcceptance(sql) {
   assert.equal(await visible(foreign),'0');
   assert.equal(await sql("SELECT has_table_privilege('service_role','platform_app_installs','UPDATE');"),'f');
   console.log('PASS: inert manifests, settings, concurrent install/upgrade, version pins and install RLS');
+
+  assert.equal(await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='capability_reservation_reconcile';"),'f');
+  const reconciliationPayload=json({workspaceId:workspace,batchLimit:1});
+  await assert.rejects(sql(`SELECT id FROM enqueue_workflow_event('${owner}','capability_reservation_reconcile','quota-disabled-${workspace}',${reconciliationPayload},1,now());`),/Unsupported workflow event contract/);
+  await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='capability_reservation_reconcile';");
+  const reconciliationJob=await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','capability_reservation_reconcile','quota-enabled-${workspace}',${reconciliationPayload},1,now()-interval '1 second');`);
+  assert.equal(await sql(`SELECT id::text FROM enqueue_workflow_event('${owner}','capability_reservation_reconcile','quota-enabled-${workspace}',${reconciliationPayload},1,(SELECT scheduled_for FROM workflow_jobs WHERE id='${reconciliationJob}'));`),reconciliationJob);
+  assert.equal(await sql(`SELECT count(*)::text FROM claim_workflow_jobs(100,60) WHERE id='${reconciliationJob}';`),'1');
+  await sql(`UPDATE workflow_jobs SET lease_until=now()-interval '1 second' WHERE id='${reconciliationJob}';`);
+  assert.equal(await sql('SELECT recover_workflow_leases() >= 1;'),'t');
+  assert.equal(await sql(`SELECT status FROM workflow_jobs WHERE id='${reconciliationJob}';`),'queued');
+  await sql(`DELETE FROM workflow_jobs WHERE id='${reconciliationJob}';`);
+  await sql("UPDATE workflow_event_contracts SET enabled=false WHERE workflow_key='capability_reservation_reconcile';");
+  console.log('PASS: quota reconciliation event is disabled by default and retains scheduler replay/lease recovery behavior');
 
   const schedule=await sql(`SELECT id FROM platform_save_sprint_planner_schedule('${owner}','${workspace}',NULL,'manual_backlog','weekly','UTC',8,0,1,now()+interval '1 day');`);
   await assert.rejects(sql(`SELECT id FROM platform_save_sprint_planner_schedule('${owner}','${other}',1,'manual_backlog','daily','UTC',8,0,1,now()+interval '1 day');`),/scope transfer/);
@@ -247,11 +410,48 @@ export async function platformFollowupAcceptance(sql) {
   await assert.rejects(sql(launchCall(owner,Number(launchRevision)-1)),/conflict/);
   await assert.rejects(sql(launchCall(owner,launchRevision,randomUUID(),launchInputs,json([{resourceType:'property_shortlist',resourceId:propertyId,expectedRevision:2}]))),/stale|unavailable|conflict/);
   await assert.rejects(sql(launchCall(foreign)),/denied/);
+  await assert.rejects(sql(launchCall(reviewer,launchRevision,randomUUID())),/denied/,
+    'reviewers may review permitted checkpoints but cannot initiate app runs');
   await sql(`SELECT id FROM platform_save_app_install('${owner}','${workspace}',${json(launchManifest)},${json({area:'keller-westlake'})},'disabled',${launchRevision});`);
   await assert.rejects(sql(launchCall()),/disabled|denied/);
   await sql(`SELECT id FROM platform_save_app_install('${owner}','${workspace}',${json(launchManifest)},${json({area:'keller-westlake'})},'installed',${Number(launchRevision)+1});`);
+  const currentReadinessRevision=await sql(`SELECT revision FROM platform_app_installs WHERE id='${app}';`);
+  const memberPropertyRun=await sql(`SELECT id::text FROM platform_start_app_run('${member}','${workspace}','${app}',${currentReadinessRevision},'readiness-intake','${randomUUID()}',${launchInputs},${launchRefs});`);
+  const contentRevision=await sql(`SELECT revision FROM platform_app_installs WHERE id='${contentApp}';`);
+  await assert.rejects(sql(`SELECT id FROM platform_start_app_run('${reviewer}','${workspace}','${contentApp}',${contentRevision},'review-intake','${randomUUID()}',${json({revision_id:'revision-1'})},'[]'::jsonb);`),/denied/);
+  const reviewerContentRun=await sql(`SELECT id::text FROM platform_start_app_run('${member}','${workspace}','${contentApp}',${contentRevision},'review-intake','${randomUUID()}',${json({revision_id:'revision-1'})},'[]'::jsonb);`);
+  await tick(memberPropertyRun,1);
+  await tick(reviewerContentRun,1);
+  const memberCheckpoint=await cp(memberPropertyRun,'missing_fact');
+  const reviewerCheckpoint=await cp(reviewerContentRun,'review_notes');
+  await sql(`SELECT id FROM platform_respond_checkpoint('${member}','${workspace}','${memberCheckpoint}',1,'${randomUUID()}','"Please verify the parcel details"');`);
+  await sql(`SELECT id FROM platform_respond_checkpoint('${reviewer}','${workspace}','${reviewerCheckpoint}',1,'${randomUUID()}','"Clarify the source date before sharing"');`);
+  await tick(memberPropertyRun,2);
+  await tick(reviewerContentRun,2);
+  assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${memberPropertyRun}';`),'completed');
+  assert.equal(await sql(`SELECT status FROM platform_runs WHERE id='${reviewerContentRun}';`),'completed');
+  assert.equal(await sql(`SELECT app_manifest_hash=(SELECT manifest_hash FROM platform_app_installs WHERE id='${app}')
+    AND app_install_revision=(SELECT revision FROM platform_app_installs WHERE id='${app}')
+    AND app_workflow_key='readiness-intake'
+    AND app_resource_refs @> ${json([{resourceType:'property_shortlist',resourceId:propertyId,expectedRevision:1}])}
+    FROM platform_runs WHERE id='${memberPropertyRun}';`),'t','property output remains attached to its exact app, install revision, workflow and mapped property revision');
+  assert.equal(await sql(`SELECT app_manifest_hash=(SELECT manifest_hash FROM platform_app_installs WHERE id='${contentApp}')
+    AND app_install_revision=(SELECT revision FROM platform_app_installs WHERE id='${contentApp}')
+    AND app_workflow_key='review-intake' AND app_inputs->>'revision_id'='revision-1'
+    FROM platform_runs WHERE id='${reviewerContentRun}';`),'t','review output remains attached to its app/version and submitted content revision reference');
+  assert.equal(await sql(`SELECT response#>>'{}' FROM platform_checkpoints WHERE id='${memberCheckpoint}';`),'Please verify the parcel details');
+  assert.equal(await sql(`SELECT resolved_by::text FROM platform_checkpoints WHERE id='${reviewerCheckpoint}';`),reviewer,'review evidence is attributed to the reviewer');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${workspace}' AND action='checkpoint.resolved'
+    AND actor_id='${reviewer}' AND resource_type='platform_checkpoint' AND resource_id='${reviewerCheckpoint}';`),'1','reviewer identity is preserved in append-only checkpoint audit evidence');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_capability_reservations WHERE run_id IN ('${memberPropertyRun}','${reviewerContentRun}');`),'0');
+  assert.equal(await sql(`SELECT COALESCE(sum(CASE WHEN status='reserved' THEN estimated_cost_usd ELSE 0 END),0)=0
+    AND COALESCE(sum(actual_cost_usd),0)=0 FROM platform_capability_reservations
+    WHERE run_id IN ('${memberPropertyRun}','${reviewerContentRun}');`),'t','no estimated reserve or actual cost was recorded for capability-empty work');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_effect_receipts WHERE run_id IN ('${memberPropertyRun}','${reviewerContentRun}');`),'0');
+  assert.equal(await sql(`SELECT count(*)::text FROM platform_audit_events WHERE workspace_id='${workspace}' AND resource_type='platform_run' AND resource_id IN ('${memberPropertyRun}','${reviewerContentRun}') AND action='run.app_started';`),'2');
   await sql(`UPDATE workflow_event_contracts SET enabled=false WHERE workflow_key='platform_run';`);
   console.log('PASS: app launch pins install/workflow/resource revisions, replays atomically and denies stale, foreign and disabled requests');
+  console.log('PASS: two-app pilot rehearsal records member/reviewer outputs, role denial, zero provider reservations/effects and run audit evidence');
   const propertyJob = randomUUID(), propertyToken = randomUUID();
   await sql(`INSERT INTO workflow_jobs(id,schedule_id,user_id,workflow_key,planning_mode,scheduled_for,status,lease_token,lease_until)
     VALUES('${propertyJob}','${schedule}','${owner}','sprint_planner','property_shortlist',now()+interval '3 minutes','running','${propertyToken}',now()+interval '1 minute');`);

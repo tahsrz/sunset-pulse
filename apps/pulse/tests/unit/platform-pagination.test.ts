@@ -22,6 +22,20 @@ describe('bounded workspace keyset cursors', () => {
     const auditCursor = { workspaceId, collection: 'connector_health_audit' as const, createdAt: cursor.createdAt, id: workspaceId };
     expect(parseScopedPage(new URLSearchParams({ healthAuditCursor: encodeCursor(auditCursor), healthAuditLimit: '10' }), workspaceId, 'connector_health_audit', 'healthAuditLimit', 'healthAuditCursor')).toEqual({ limit: 10, cursor: auditCursor });
   });
+  it('fences provider exception cursors independently from other inbox collections', () => {
+    const exceptionCursor = { workspaceId, collection: 'provider_exceptions' as const, createdAt: cursor.createdAt, id: workspaceId };
+    const params = new URLSearchParams({ providerExceptionCursor: encodeCursor(exceptionCursor), providerExceptionLimit: '20' });
+    expect(parseScopedPage(params, workspaceId, 'provider_exceptions', 'providerExceptionLimit', 'providerExceptionCursor')).toEqual({ limit: 20, cursor: exceptionCursor });
+    expect(() => parseScopedPage(params, crypto.randomUUID(), 'provider_exceptions', 'providerExceptionLimit', 'providerExceptionCursor')).toThrow();
+    expect(() => parseScopedPage(params, workspaceId, 'connector_health_audit', 'providerExceptionLimit', 'providerExceptionCursor')).toThrow();
+  });
+  it('fences unknown effect cursors independently from exception and checkpoint pages', () => {
+    const unknownCursor = { workspaceId, collection: 'unknown_effects' as const, createdAt: cursor.createdAt, id: workspaceId };
+    const params = new URLSearchParams({ unknownEffectCursor: encodeCursor(unknownCursor), unknownEffectLimit: '20' });
+    expect(parseScopedPage(params, workspaceId, 'unknown_effects', 'unknownEffectLimit', 'unknownEffectCursor')).toEqual({ limit: 20, cursor: unknownCursor });
+    expect(() => parseScopedPage(params, crypto.randomUUID(), 'unknown_effects', 'unknownEffectLimit', 'unknownEffectCursor')).toThrow();
+    expect(() => parseScopedPage(params, workspaceId, 'provider_exceptions', 'unknownEffectLimit', 'unknownEffectCursor')).toThrow();
+  });
   it.each(['%', 'e30', 'x'.repeat(513)])('rejects malformed cursors', (value) => {
     expect(() => parsePage(new URLSearchParams({ cursor: value }), workspaceId, 'runs')).toThrow();
   });

@@ -9,7 +9,7 @@ export class SchedulerEventError extends Error {
 
 const eventInputSchema = z.object({
   userId: z.string().uuid(),
-  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check']),
+  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check', 'capability_reservation_reconcile']),
   eventKey: z.string().trim().min(1).max(240),
   payload: z.record(z.string(), z.unknown()),
   payloadVersion: z.number().int().positive().default(1),
@@ -23,6 +23,14 @@ const connectorHealthEventSchema = z.object({
   eventKey: z.string().trim().min(1).max(240),
   workspaceId: z.string().uuid(),
   connectorId: z.string().uuid(),
+  scheduledFor: z.string().datetime({ offset: true }).optional(),
+});
+
+const capabilityReconcileEventSchema = z.object({
+  userId: z.string().uuid(),
+  eventKey: z.string().trim().min(1).max(240),
+  workspaceId: z.string().uuid(),
+  batchLimit: z.number().int().min(1).max(100).default(100),
   scheduledFor: z.string().datetime({ offset: true }).optional(),
 });
 
@@ -73,6 +81,18 @@ export async function enqueueConnectorHealthCheck(input: z.input<typeof connecto
     workflowKey: 'connector_health_check',
     eventKey: parsed.eventKey,
     payload: { workspaceId: parsed.workspaceId, connectorId: parsed.connectorId, source: 'fixture', operation: 'pinned_snapshot' },
+    payloadVersion: 1,
+    scheduledFor: parsed.scheduledFor,
+  });
+}
+
+export async function enqueueCapabilityReservationReconciliation(input: z.input<typeof capabilityReconcileEventSchema>) {
+  const parsed = capabilityReconcileEventSchema.parse(input);
+  return enqueueWorkflowEvent({
+    userId: parsed.userId,
+    workflowKey: 'capability_reservation_reconcile',
+    eventKey: parsed.eventKey,
+    payload: { workspaceId: parsed.workspaceId, batchLimit: parsed.batchLimit },
     payloadVersion: 1,
     scheduledFor: parsed.scheduledFor,
   });
