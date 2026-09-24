@@ -3,6 +3,20 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDevelopment = process.env.NODE_ENV === 'development';
+const supabaseConnectSources = getSupabaseConnectSources();
+
+function getSupabaseConnectSources() {
+  const configuredUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  if (!configuredUrl) return [];
+
+  try {
+    const url = new URL(configuredUrl);
+    const websocketProtocol = url.protocol === 'https:' ? 'wss:' : url.protocol === 'http:' ? 'ws:' : null;
+    return [url.origin, websocketProtocol ? `${websocketProtocol}//${url.host}` : null].filter(Boolean);
+  } catch {
+    return [];
+  }
+}
 
 export const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -25,7 +39,7 @@ export const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https: wss:",
+      `connect-src 'self' https: wss: ${supabaseConnectSources.join(' ')}`,
       "worker-src 'self' blob:",
       "child-src 'self' blob:",
       "frame-src 'self' https://ntrdd.mlsmatrix.com https://js.stripe.com https://hooks.stripe.com",

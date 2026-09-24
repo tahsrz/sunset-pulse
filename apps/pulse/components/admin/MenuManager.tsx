@@ -176,7 +176,7 @@ export default function MenuManager({ agentId = 'taz-realty-001' }: { agentId?: 
   const fetchMenu = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/menu?agentId=${agentId}`);
+      const res = await fetch(`/api/menu?agentId=${encodeURIComponent(agentId)}&includeUnavailable=true`);
       if (res.ok) {
         const data = await res.json();
         setItems(data.data || data);

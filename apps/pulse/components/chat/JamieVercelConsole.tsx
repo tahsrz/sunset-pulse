@@ -12,10 +12,32 @@ function partText(part: any) {
   return '';
 }
 
-function ToolPart({ part }: { part: any }) {
+function ToolPart({ part, workspaceId }: { part: any; workspaceId?: string }) {
   const { assistantProfile, branding } = useTheme();
   const output = part?.output || part?.result;
   const properties = Array.isArray(output?.properties) ? output.properties : [];
+  const [confirming, setConfirming] = useState(false);
+  const [launchResult, setLaunchResult] = useState<{ runId?: string; error?: string } | null>(null);
+  const runs = output?.kind === 'workspace_run_summary' && Array.isArray(output.items) ? output.items : [];
+  const proposal = output?.kind === 'app_launch_proposal' ? output : null;
+
+  const confirmProposal = async () => {
+    if (!workspaceId || proposal?.workspaceId !== workspaceId || confirming || launchResult?.runId) return;
+    setConfirming(true);
+    setLaunchResult(null);
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceId}/apps/launch`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal.request),
+      });
+      const body = await response.json();
+      if (!response.ok || !body?.result?.id) throw new Error(body?.error || 'The workflow could not be started.');
+      setLaunchResult({ runId: body.result.id });
+    } catch (error) {
+      setLaunchResult({ error: error instanceof Error ? error.message : 'The workflow could not be started.' });
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <div className="mt-3 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
@@ -43,6 +65,25 @@ function ToolPart({ part }: { part: any }) {
             </a>
           ))}
         </div>
+      ) : runs.length ? (
+        <div className="mt-3 grid gap-2">
+          {runs.map((run: any) => <a key={run.id} href={run.href} className="rounded border border-white/10 bg-slate-950/70 p-3 hover:border-cyan-300/50">
+            <span className="font-semibold text-white">{run.key} v{run.version}</span><span className="ml-2 text-slate-300">{run.status}</span>
+          </a>)}
+          {output.hasMore ? <p className="text-xs text-slate-400">Showing a bounded recent page.</p> : null}
+        </div>
+      ) : proposal ? (
+        <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-300/5 p-3">
+          <p className="font-bold text-amber-100">Workflow proposal: {proposal.title}</p>
+          <p className="mt-1 text-xs text-amber-50/80">{proposal.workflowKey} v{proposal.workflowVersion} · install revision {proposal.installRevision} · {proposal.resourceCount} linked resource(s)</p>
+          <p className="mt-2 text-xs text-slate-300">This has not started. Review the request, then explicitly confirm to create a run.</p>
+          {launchResult?.runId ? <a className="mt-3 inline-block text-sm font-bold text-cyan-200 underline" href={`/workspaces/${workspaceId}/runs/${launchResult.runId}`}>Run started — open details</a> : (
+            <button type="button" onClick={confirmProposal} disabled={!workspaceId || proposal.workspaceId !== workspaceId || confirming} className="mt-3 rounded bg-amber-300 px-3 py-2 text-xs font-black uppercase text-slate-950 disabled:opacity-50">
+              {confirming ? 'Starting…' : 'Start workflow'}
+            </button>
+          )}
+          {launchResult?.error ? <p role="alert" className="mt-2 text-xs text-rose-200">{launchResult.error}</p> : null}
+        </div>
       ) : (
         <p className="mt-3 text-xs text-cyan-50/70">{assistantProfile.displayName} completed a private tool step.</p>
       )}
@@ -50,7 +91,7 @@ function ToolPart({ part }: { part: any }) {
   );
 }
 
-function MessageParts({ message }: { message: any }) {
+function MessageParts({ message, workspaceId }: { message: any; workspaceId?: string }) {
   const parts = Array.isArray(message.parts) ? message.parts : [];
   if (!parts.length && typeof message.content === 'string') {
     const content = message.role === 'assistant' ? sanitizeJamieReply(message.content) : message.content;
@@ -67,7 +108,7 @@ function MessageParts({ message }: { message: any }) {
         }
 
         if (typeof part?.type === 'string' && part.type.startsWith('tool-')) {
-          return <ToolPart key={index} part={part} />;
+          return <ToolPart key={index} part={part} workspaceId={workspaceId} />;
         }
 
         return null;
@@ -76,10 +117,13 @@ function MessageParts({ message }: { message: any }) {
   );
 }
 
-export default function JamieVercelConsole() {
+export default function JamieVercelConsole({ workspaceId }: { workspaceId?: string }) {
   const { assistantProfile } = useTheme();
   const [input, setInput] = useState('');
-  const transport = useMemo(() => new DefaultChatTransport({ api: '/api/jamie/vercel-chat' }), []);
+  const transport = useMemo(() => new DefaultChatTransport({
+    api: '/api/jamie/vercel-chat',
+    ...(workspaceId ? { body: { workspaceId } } : {}),
+  }), [workspaceId]);
   const { messages, sendMessage, status, error } = useChat({ transport });
   const isBusy = status === 'submitted' || status === 'streaming';
 
@@ -94,10 +138,10 @@ export default function JamieVercelConsole() {
   return (
     <section className="w-full rounded-xl border border-white/10 bg-slate-950/80 shadow-2xl">
       <div className="border-b border-white/10 p-4">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Vercel AI SDK Surface</p>
-        <h2 className="mt-2 text-2xl font-black text-white">{assistantProfile.displayName} Unified Console</h2>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">{workspaceId ? 'Private workspace assistant' : 'Vercel AI SDK Surface'}</p>
+        <h2 className="mt-2 text-2xl font-black text-white">{assistantProfile.displayName} {workspaceId ? 'Workspace Copilot' : 'Unified Console'}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-          This route uses the shared assistant tools through AI SDK streaming, so property search can become one bot core across the floating widget and the Vercel-style assistant.
+          {workspaceId ? 'Jamie can read this workspace’s recent runs and prepare validated app-launch proposals. Starting a workflow always requires your explicit confirmation.' : 'This route uses the shared assistant tools through AI SDK streaming, so property search can become one bot core across the floating widget and the Vercel-style assistant.'}
         </p>
       </div>
 
@@ -115,7 +159,7 @@ export default function JamieVercelConsole() {
                 : 'mr-auto border border-white/10 bg-slate-900 text-slate-100'
             }`}
           >
-            <MessageParts message={message} />
+            <MessageParts message={message} workspaceId={workspaceId} />
           </div>
         ))}
 

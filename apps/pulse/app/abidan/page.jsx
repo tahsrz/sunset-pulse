@@ -3,7 +3,7 @@ import React from 'react';
 import { useTheme } from '@/context/ThemeProvider';
 import { ABIDAN_DATA } from '@/constants/abidan';
 import { FaShieldAlt, FaCrosshairs, FaBolt, FaGhost, FaSpider, FaDove, FaEye, FaSkull } from 'react-icons/fa';
-import PropertyFiberViewer from '@/components/PropertyFiberViewer';
+import AbidanModelViewer, { AbidanGeometryBadge } from '@/components/abidan/AbidanModelViewer';
 
 const AbidanIntroPage = () => {
   const { selectedAbidan, setSelectedAbidan } = useTheme();
@@ -57,12 +57,13 @@ const AbidanIntroPage = () => {
               }`}
             >
               <div className='flex items-center gap-4 relative z-10'>
-                <div className={`p-3 rounded-xl ${selectedAbidan.id === abidan.id ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                  {getIcon(abidan.geometryType)}
-                </div>
+                <AbidanGeometryBadge abidan={abidan} size='sm' />
                 <div>
                   <h3 className='font-black uppercase tracking-tighter text-lg'>{abidan.name}</h3>
                   <p className='text-[10px] text-slate-500 uppercase font-mono'>{abidan.mantle}</p>
+                </div>
+                <div className={`ml-auto rounded-lg p-2 text-xs ${selectedAbidan.id === abidan.id ? 'bg-blue-500/20 text-blue-200' : 'bg-slate-800 text-slate-400'}`}>
+                  {getIcon(abidan.geometryType)}
                 </div>
               </div>
               {selectedAbidan.id === abidan.id && (
@@ -80,10 +81,23 @@ const AbidanIntroPage = () => {
             </div>
             
             <div className='flex items-center gap-6 mb-8'>
-              <div className='h-20 w-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' />
+              <AbidanModelViewer abidan={selectedAbidan} className='h-32 w-32 sm:h-40 sm:w-40' />
+              <div
+                className='h-20 w-1'
+                style={{
+                  backgroundColor: selectedAbidan.color,
+                  boxShadow: `0 0 15px ${selectedAbidan.color}88`
+                }}
+              />
               <div>
                 <h2 className='text-5xl font-black uppercase tracking-tighter italic'>{selectedAbidan.name}</h2>
-                <p className='text-blue-400 font-mono text-xs uppercase tracking-[0.5em] mt-1'>{selectedAbidan.mantle}</p>
+                <p
+                  className='font-mono text-xs uppercase tracking-[0.5em] mt-1'
+                  style={{ color: selectedAbidan.color }}
+                >
+                  {selectedAbidan.mantle}
+                </p>
+                <p className='text-[10px] text-slate-500 font-mono uppercase tracking-[0.25em] mt-3'>Angelic identity confirmed</p>
               </div>
             </div>
 
@@ -91,22 +105,28 @@ const AbidanIntroPage = () => {
               "{selectedAbidan.description}"
             </p>
 
-            {/* FORCED ANGEL MODE */}
+            {/* ANGELIC ORBIT MODE */}
             <div className='rounded-3xl overflow-hidden border border-white/5 bg-black/40'>
-               {/* Create a dummy property object to satisfy the viewer */}
-               <PropertyFiberViewer 
-                 property={{ name: selectedAbidan.name, location: { street: 'ABIDAN_CORE' } }} 
-                 color={selectedAbidan.color}
-               />
+              <AbidanModelViewer abidan={selectedAbidan} className='h-[500px] w-full rounded-none border-0' showHud />
             </div>
             
             <div className='mt-8 grid grid-cols-2 gap-4'>
               <div className='bg-black/40 p-4 rounded-2xl border border-white/5'>
-                <span className='text-[10px] text-blue-500 block mb-1 uppercase font-mono'>Geometric Signature</span>
+                <span
+                  className='text-[10px] block mb-1 uppercase font-mono'
+                  style={{ color: selectedAbidan.color }}
+                >
+                  Geometric Signature
+                </span>
                 <span className='text-sm font-bold uppercase'>{selectedAbidan.geometryType}</span>
               </div>
               <div className='bg-black/40 p-4 rounded-2xl border border-white/5'>
-                <span className='text-[10px] text-blue-500 block mb-1 uppercase font-mono'>Analysis Level</span>
+                <span
+                  className='text-[10px] block mb-1 uppercase font-mono'
+                  style={{ color: selectedAbidan.color }}
+                >
+                  Analysis Level
+                </span>
                 <span className='text-sm font-bold uppercase italic'>Advanced</span>
               </div>
             </div>
