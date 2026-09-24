@@ -88,6 +88,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/admin/scheduling', 'Scheduling operations', 'staff', 'Existing staff workflow; excluded from the middleware admin sign-in redirect.'],
   ]),
   context('/properties/[id]', 'Property details', 'Discover', 'public', 'Choose an existing property; requires its ID.', '/properties'),
+  context('/workspaces/[workspaceId]/canvas', 'Workspace canvas', 'Account and business', 'account', 'Private canvas with bounded workspace views and confirmed commands; requires a workspace ID.', '/dashboard'),
   context('/workspaces/[workspaceId]/inbox', 'Workspace inbox', 'Account and business', 'account', 'Authorized workspace checkpoint inbox and pinned app launch surface.', '/dashboard'),
   context('/workspaces/[workspaceId]/runs/[runId]', 'Workspace run detail', 'Account and business', 'account', 'Authorized run history, pinned workflow metadata, and checkpoint responses.'),
   context('/contracts/promulgated/[formId]', 'Promulgated contract form', 'Account and business', 'public', 'Choose an existing promulgated contract form; requires its form ID.', '/contracts/promulgated'),

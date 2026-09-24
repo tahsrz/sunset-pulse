@@ -15,7 +15,7 @@ type HealthHistory = { id: string; connector_id: string; health_id: string; stat
 type ProviderException = { id: string; exception_type: 'quota_breach' | 'review_revoked'; provider_key: string; adapter_key: string; review_id: string | null; connector_id: string | null; run_id: string | null; reservation_id: string | null; operation_id: string | null; occurred_at: string; utc_day: string | null; observed_cost_usd: number | null; configured_limit_usd: number | null; reviewed_at: string | null; revoked_at: string | null; resolution_id: string | null; resolution_reason: string | null; resolution_actor_id: string | null; resolution_at: string | null };
 type UnknownEffect = { receipt_id: string; run_id: string; checkpoint_id: string | null; operation_id: string; operation_hash: string; target_hash: string; receipt_created_at: string; provider_review_id: string | null; provider_review_hash: string | null; recovery_review_id: string | null; reconciliation_key: string | null; recovery_outcome: 'applied' | 'not_applied' | null; evidence_source: 'provider_lookup' | 'manual_review' | null; evidence_reference: string | null; evidence_hash: string | null; recovery_actor_id: string | null; recovery_created_at: string | null; retry_intent_id: string | null; retry_operation_id: string | null; retry_created_at: string | null };
 
-export function PlatformInbox({ workspaceId }: { workspaceId: string }) {
+export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: string; embedded?: boolean }) {
   const [checkpoints, setCheckpoints] = useState<CheckpointCardData[]>([]);
   const [connectorHealth, setConnectorHealth] = useState<ConnectorHealth[]>([]);
   const [healthCursor, setHealthCursor] = useState<string | null>(null);
@@ -181,7 +181,10 @@ export function PlatformInbox({ workspaceId }: { workspaceId: string }) {
     await load();
   }
 
-  return <main className="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-10"><div className="mx-auto max-w-5xl space-y-8">
+  const shellClass = embedded ? 'text-white' : 'min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-10';
+  const contentClass = embedded ? 'space-y-8' : 'mx-auto max-w-5xl space-y-8';
+  const Shell = embedded ? 'div' : 'main';
+  return <Shell className={shellClass}><div className={contentClass}>
     <header><p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-200">Shared workspace inbox</p><h1 className="mt-2 text-3xl font-black">Review and organize</h1><p className="mt-2 max-w-2xl text-sm text-slate-400">Answers stay attached to the existing run and checkpoint revision. Nothing here approves facts, sends email, or publishes content.</p></header>
     {error ? <div role="alert" className="border border-rose-300/30 bg-rose-300/10 p-4 text-sm text-rose-100">{error}</div> : null}
     <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -229,5 +232,5 @@ export function PlatformInbox({ workspaceId }: { workspaceId: string }) {
     </section>
     <QuotaBudgetPanel workspaceId={workspaceId} />
     {selected ? <section className="rounded-xl border border-cyan-300/20 bg-slate-900/80 p-5"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-bold">{selected.manifest.title}</h2><button type="button" onClick={() => setSelected(null)} className="text-sm text-slate-400">Cancel</button></div><ManifestForm schema={selected.manifest.inputSchema} value={draft} onChange={setDraft} onSubmit={launch} submitLabel="Launch intake" /></section> : null}
-  </div></main>;
+  </div></Shell>;
 }

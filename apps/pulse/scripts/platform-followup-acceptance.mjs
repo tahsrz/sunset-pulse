@@ -10,6 +10,25 @@ export async function platformFollowupAcceptance(sql) {
     SELECT workspace_id FROM platform_create_workspace_with_owner('${owner}','${other}','team','Other fixture');
     INSERT INTO platform_memberships(workspace_id,user_id,role,status) VALUES
       ('${workspace}','${admin}','admin','active'),('${workspace}','${member}','member','active'),('${workspace}','${reviewer}','reviewer','active');`);
+  const layoutFor=(actor,x=20)=>({schemaVersion:1,workspaceId:workspace,viewport:{x:0,y:0,zoom:1},windows:[{
+    window:{id:randomUUID(),kind:'run_graph',target:{workspaceId:workspace,runId:randomUUID()}},x,y:30,width:720,height:520,zIndex:1,
+  }]});
+  let ownerLayout=layoutFor(owner);
+  assert.equal(await sql(`SELECT revision FROM platform_save_user_layout('${owner}','${workspace}',${json(ownerLayout)},NULL);`),'1');
+  assert.equal(await sql(`SELECT revision FROM platform_save_user_layout('${owner}','${workspace}',${json(ownerLayout)},NULL);`),'1','initial create replay is idempotent');
+  const memberLayout=layoutFor(member,45);
+  assert.equal(await sql(`SELECT revision FROM platform_save_user_layout('${member}','${workspace}',${json(memberLayout)},NULL);`),'1');
+  const privateLayoutCount=(actor)=>sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${actor}'; SELECT count(*) FROM platform_user_layouts WHERE workspace_id='${workspace}'; COMMIT;`);
+  assert.equal(await privateLayoutCount(owner),'1','owner sees only their own layout');
+  assert.equal(await privateLayoutCount(member),'1','member sees only their own layout');
+  assert.equal(await privateLayoutCount(foreign),'0','foreign user cannot read workspace layouts');
+  await assert.rejects(sql(`SELECT revision FROM platform_save_user_layout('${owner}','${workspace}',${json({...ownerLayout,workspaceId:other})},NULL);`),/Invalid canvas layout/);
+  await assert.rejects(sql(`SELECT revision FROM platform_save_user_layout('${owner}','${workspace}',${json({...ownerLayout,extra:'workflow'})},NULL);`),/Invalid canvas layout/);
+  ownerLayout=layoutFor(owner,35);
+  assert.equal(await sql(`SELECT revision FROM platform_save_user_layout('${owner}','${workspace}',${json(ownerLayout)},1);`),'2');
+  await assert.rejects(sql(`SELECT revision FROM platform_save_user_layout('${owner}','${workspace}',${json(ownerLayout)},1);`),/revision conflict/);
+  assert.equal(await sql("SELECT has_table_privilege('authenticated','platform_user_layouts','UPDATE') OR has_table_privilege('authenticated','platform_user_layouts','INSERT');"),'f');
+  console.log('PASS: canvas layouts are private per member and revision-checked through the scoped RPC');
   const graph={schemaVersion:1,key:'followup',version:1,entry:'first',nodes:[
     {id:'first',kind:'checkpoint',type:'question',prompt:'Initial fact?',responseSchema:{type:'string'},next:'second'},
     {id:'second',kind:'checkpoint',type:'question',prompt:'Follow-up?',responseSchema:{type:'string'},next:'done'},

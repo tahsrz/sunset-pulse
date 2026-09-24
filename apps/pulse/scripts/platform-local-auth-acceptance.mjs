@@ -24,6 +24,18 @@ const migrations=[
   '20260918030000_platform_scope_fencing.sql','20260918035000_platform_owner_planning_guard.sql',
   '20260918040000_platform_run_recovery.sql','20260918050000_platform_app_installs.sql',
   '20260918090000_platform_app_launch_admission.sql',
+  '20260918090100_platform_scoped_sprint_replay_fix.sql','20260918090200_platform_scoped_property_replay_fix.sql',
+  '20260922100000_platform_condition_nodes.sql','20260922110000_platform_capability_receipts.sql',
+  '20260922120000_platform_capability_admission.sql','20260922130000_platform_connector_snapshots.sql',
+  '20260922140000_platform_effect_receipt_transitions.sql','20260923100000_platform_connector_response_provenance.sql',
+  '20260923110000_platform_connector_health.sql','20260923120000_platform_connector_health_scheduler.sql',
+  '20260923130000_platform_connector_health_summary.sql','20260923140000_platform_connector_health_history_receipts.sql',
+  '20260923150000_platform_connector_health_schedule_audit.sql','20260923160000_platform_quota_budget_settlement.sql',
+  '20260923170000_platform_quota_overrun_fences.sql','20260923180000_platform_provider_adapter_reviews.sql',
+  '20260923190000_platform_provider_quotas.sql','20260924100000_platform_quota_reconciliation_event.sql',
+  '20260924110000_platform_provider_exception_read_model.sql','20260924120000_platform_exception_recovery_evidence.sql',
+  '20260924130000_platform_unknown_effect_inbox.sql','20260924140000_platform_workspace_invitations.sql',
+  '20260924150000_platform_retry_intent_idempotency_race.sql','20260924160000_platform_user_layouts.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -194,8 +206,86 @@ try{
   console.log('PASS: authenticated browser sessions install and launch both inert apps; member intake and reviewer response are attributed, pinned and completed');
 
   const pending=await start();await tick(pending.id,1);
-  const cancelled=await request(primary.page,base+'/runs','PATCH',{runId:pending.id,expectedRevision:2});
-  assert.equal(cancelled.status,200);assert.equal(cancelled.data.result.status,'cancelled');
+  const canvasPageErrors=[];primary.page.on('pageerror',(error)=>canvasPageErrors.push(error.message));
+  await primary.page.goto(`${origin}/workspaces/${workspace}/canvas`,{timeout:120000});
+  await primary.page.getByRole('heading',{name:'Your canvas',exact:true}).waitFor();
+  await primary.page.getByRole('region',{name:'Workspace command palette'}).waitFor();
+  await primary.page.getByRole('link',{name:'Open the standard inbox view'}).waitFor();
+  assert.equal(await primary.page.locator('[data-nextjs-dialog]').count(),0,'canvas has no Next.js error overlay');
+  assert((await primary.page.locator('body').innerText()).trim().length>100,'canvas renders meaningful page content');
+  await primary.page.screenshot({path:artifacts+'canvas.png'});
+  await primary.page.getByRole('button',{name:'Save layout'}).click();
+  await primary.page.getByText('Canvas saved for your account in this workspace.').waitFor();
+  let savedLayout=(await request(primary.page,base+'/layout')).data.result;
+  assert.equal(savedLayout.revision,1,'first canvas save creates a revisioned private layout');
+  await primary.page.getByLabel('Choose a read-only monitor').selectOption('connectors');
+  await primary.page.getByRole('button',{name:'Add monitor'}).click();
+  await primary.page.getByRole('button',{name:'Save layout'}).click();
+  await primary.page.getByText('Canvas saved for your account in this workspace.').waitFor();
+  const monitorRegion=primary.page.getByRole('region',{name:'Canvas window: System monitor · connectors'});
+  await monitorRegion.scrollIntoViewIfNeeded();await monitorRegion.waitFor();
+  await monitorRegion.getByText('No connector health records yet.').waitFor();
+  savedLayout=(await request(primary.page,base+'/layout')).data.result;
+  const monitor=savedLayout.layout.windows.find((item)=>item.window.kind==='system_monitor');
+  assert(monitor,'connector monitor window persists in the private layout');
+  await primary.page.getByRole('button',{name:'Move System monitor · connectors right'}).click();
+  await primary.page.getByText('Canvas saved for your account in this workspace.').waitFor();
+  savedLayout=(await request(primary.page,base+'/layout')).data.result;
+  const movedMonitor=savedLayout.layout.windows.find((item)=>item.window.id===monitor.window.id);
+  assert.equal(movedMonitor.x,monitor.x+40,'keyboard move control persists the new monitor position');
+
+  const command=primary.page.getByRole('textbox',{name:'Workspace command'});
+  await command.fill('/ps');await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByText('Recent runs · first 25').waitFor();
+  await command.fill(':focus inbox');await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByRole('button',{name:'Confirm focus'}).click();
+  await command.fill(`:focus run ${pending.id}`);await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByRole('button',{name:'Confirm focus'}).click();
+  await primary.page.getByText('Canvas focus updated. No workflow state changed.').waitFor();
+  const focusedLayout=(await request(primary.page,base+'/layout')).data.result;
+  const pendingWindow=focusedLayout.layout.windows.find((item)=>item.window.kind==='run_graph'&&item.window.target.runId===pending.id);
+  assert(pendingWindow,'focus-run opens the verified workspace run and saves its window');
+
+  await command.fill(`:close ${monitor.window.id}`);await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByRole('button',{name:'Confirm close window'}).click();
+  await primary.page.getByText('Window closed in your private canvas.').waitFor();
+  savedLayout=(await request(primary.page,base+'/layout')).data.result;
+  assert(!savedLayout.layout.windows.some((item)=>item.window.id===monitor.window.id));
+
+  await command.fill(':reset-layout');await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByRole('button',{name:'Confirm reset layout'}).click();
+  await primary.page.getByText('Your private canvas layout was reset.').waitFor();
+  savedLayout=(await request(primary.page,base+'/layout')).data.result;
+  assert.equal(savedLayout.layout.windows.length,1);assert.equal(savedLayout.layout.windows[0].window.kind,'checkpoint_inbox');
+  const stale=await request(primary.page,base+'/layout','PUT',{layout:savedLayout.layout,expectedRevision:savedLayout.revision-1});
+  assert.equal(stale.status,409,'canvas rejects stale layout writes after reset');
+
+  let commandLaunchId;
+  primary.page.on('response',async(response)=>{
+    if(response.url().endsWith(base+'/apps/launch')&&response.request().method()==='POST'&&response.ok()){
+      const body=await response.json();commandLaunchId=body.result?.id||body.result?.run_id||body.result?.runId;
+    }
+  });
+  await command.fill('/start real-estate-readiness@1');await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByLabel(/Shortlist property ID/).fill(propertyId);
+  await primary.page.getByRole('button',{name:'Confirm and launch'}).click();
+  await primary.page.getByText('Run started and added to your canvas. Save layout to keep its window.').waitFor();
+  assert.match(commandLaunchId,/^[a-f0-9-]{36}$/i,'confirmed command start returns a server-created run ID');
+  await primary.page.getByRole('button',{name:'Save layout'}).click();
+  await primary.page.getByText('Canvas saved for your account in this workspace.').waitFor();
+  const launchedRegion=primary.page.getByRole('region',{name:new RegExp(`Canvas window: Run ${commandLaunchId}`)});
+  await launchedRegion.scrollIntoViewIfNeeded();await launchedRegion.waitFor();
+  await command.fill(`/cancel ${commandLaunchId}`);await primary.page.getByRole('button',{name:'Preview'}).click();
+  await primary.page.getByRole('button',{name:'Confirm cancel'}).click();
+  await primary.page.getByText('Cancellation request accepted by the workspace run API.').waitFor();
+  const cancelled=await request(primary.page,`${base}/runs/${commandLaunchId}`);
+  assert.equal(cancelled.status,200);assert.equal(cancelled.data.result.run.status,'cancelled');
+  await primary.page.getByRole('link',{name:'Open the standard inbox view'}).click();
+  await primary.page.waitForURL(`${origin}/workspaces/${workspace}/inbox`);
+  assert.equal(await primary.page.getByRole('heading',{name:'Review and organize'}).count(),1,'standard inbox fallback remains reachable');
+  assert.equal(canvasPageErrors.length,0,`Canvas browser errors: ${canvasPageErrors.join('; ')}`);
+  console.log('PASS: signed-in canvas browser flow saves/restores private layout, reads bounded monitors, previews/confirms commands, rejects stale revisions and retains the inbox fallback');
+
   const first=await request(primary.page,base+'/runs?limit=1');assert(first.data.result.nextCursor);
   const second=await request(primary.page,base+'/runs?limit=1&cursor='+first.data.result.nextCursor);
   assert.notEqual(first.data.result.items[0].id,second.data.result.items[0].id);

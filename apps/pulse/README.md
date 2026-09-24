@@ -71,6 +71,10 @@ flowchart LR
     Person([People and operators]) --> Web[Next.js App Router UI]
     Jamie[Jamie assistant] <--> Web
     Web --> Routes[Route handlers and domain services]
+    Web --> Canvas[Workspace canvas and strict command palette]
+    Canvas --> Routes
+    Canvas --> Monitors[Bounded read-only health, quota and run summaries]
+    Monitors --> Routes
 
     subgraph Product[Product and domain workflows]
       Routes --> Properties[Property search and shortlist]
@@ -84,6 +88,10 @@ flowchart LR
       Apps --> Admission[Run admission and pinned workflow]
       Admission --> Runs[(platform_runs and checkpoints)]
       Runs --> Inbox[Shared workspace inbox and run details]
+      Monitors --> Health
+      Monitors --> Runs
+      Canvas --> Layouts[(Private revisioned user canvas layouts)]
+      Canvas --> Inbox
       Runs <--> Scheduler[(Existing durable scheduler jobs)]
       Scheduler --> Workers[Registered workflow handlers]
       Workers --> Results[(workflow results and operation receipts)]
@@ -111,7 +119,7 @@ flowchart LR
     end
 ```
 
-The platform lane runs on the same durable scheduler used by existing product workflows. Workspace apps persist versioned JSON manifests and runs; people respond through shared checkpoints in the inbox. Connector health checks currently record reviewed fixture and pinned-schema evidence, with bounded history, receipts and workspace audit events. Owner/admin quota limits are revisioned and enforced transactionally; reservations track estimated and actual usage, expire with audit evidence, and are released when a run is cancelled. Estimate overruns produce immutable run-scoped evidence and audit events, fencing later reservations for that run without affecting other runs. The inbox exposes quota controls and schedules bounded reservation cleanup through a disabled-by-default scheduler event contract. Reviewed provider-adapter pricing/idempotency contracts are versioned, hash-pinned to connectors and copied into reservations for auditability. Owner/admin provider quotas now enforce per-adapter concurrency, reserved-cost exposure and UTC-day actual spend; over-budget settlement records immutable breach evidence, and review revocation fences new reservations while preserving settlement for in-flight operations. A separate bounded, workspace-fenced inbox feed shows quota breaches and revoked reviews with links to the affected run/reservation where available. These controls rely on workspace-admin pricing attestations, do not independently verify provider pricing, and do not enable dispatch. Live MCP/OpenAPI provider dispatch remains disabled.
+The platform lane runs on the same durable scheduler used by existing product workflows. Workspace apps persist versioned JSON manifests and runs; people respond through shared checkpoints in the inbox. The workspace canvas composes that inbox and run detail from their existing authenticated read/write APIs and persists only per-user layout preferences behind revision-checked workspace membership access. Its strict command palette offers bounded run listing, pinned-manifest launch and revision-checked cancellation after confirmation, plus focus/close/reset presentation commands; it does not expose shell execution, worker RPCs or provider dispatch. Connector health checks currently record reviewed fixture and pinned-schema evidence, with bounded history, receipts and workspace audit events. Owner/admin quota limits are revisioned and enforced transactionally; reservations track estimated and actual usage, expire with audit evidence, and are released when a run is cancelled. Estimate overruns produce immutable run-scoped evidence and audit events, fencing later reservations for that run without affecting other runs. The inbox exposes quota controls and schedules bounded reservation cleanup through a disabled-by-default scheduler event contract. Reviewed provider-adapter pricing/idempotency contracts are versioned, hash-pinned to connectors and copied into reservations for auditability. Owner/admin provider quotas now enforce per-adapter concurrency, reserved-cost exposure and UTC-day actual spend; over-budget settlement records immutable breach evidence, and review revocation fences new reservations while preserving settlement for in-flight operations. A separate bounded, workspace-fenced inbox feed shows quota breaches and revoked reviews with links to the affected run/reservation where available. These controls rely on workspace-admin pricing attestations, do not independently verify provider pricing, and do not enable dispatch. Live MCP/OpenAPI provider dispatch remains disabled.
 
 ## Core Capabilities
 

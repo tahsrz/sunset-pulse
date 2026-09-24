@@ -141,6 +141,7 @@ How to read the directory:
 | `/properties/saved` | Saved properties | Sign-in required |
 | `/property-shortlist` | Keller / Westlake shortlist | Sign-in required; Shared owner-scoped property context for Jamie planning. |
 | `/sprints` | Sprints | Sign-in required; Shared owner-scoped scheduled planning workspace. |
+| `/workspaces/[workspaceId]/canvas` | Workspace canvas | Sign-in required; Private spatial view with bounded inbox/run windows, read-only health/quota/run summaries and confirm-before-mutation commands. Entry: `/dashboard`. |
 | `/workspaces/[workspaceId]/inbox` | Workspace inbox | Sign-in required; Authorized workspace checkpoint inbox and pinned app launch surface. Entry: `/dashboard`. |
 | `/workspaces/[workspaceId]/runs/[runId]` | Workspace run detail | Sign-in required; Authorized run history, pinned workflow metadata, and checkpoint responses. Entry: `/workspaces/[workspaceId]/inbox`. |
 | `/properties/add` | Add property | Sign-in required |
