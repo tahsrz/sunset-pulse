@@ -21,7 +21,7 @@ This README is the repository entry point, not a live deployment report. A route
 
 Open **Browse all app paths** in Agent Console (`/agent`) or Command Center (`/command-center`). Where the global navbar is present, **Ctrl/Cmd+K** searches the same catalog by feature, path, section, and access note.
 
-The inventory covers **109 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
+The inventory covers **111 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
 
 How to read the directory:
 
@@ -141,6 +141,9 @@ How to read the directory:
 | `/properties/saved` | Saved properties | Sign-in required |
 | `/property-shortlist` | Keller / Westlake shortlist | Sign-in required; Shared owner-scoped property context for Jamie planning. |
 | `/sprints` | Sprints | Sign-in required; Shared owner-scoped scheduled planning workspace. |
+| `/workspaces` | Workspace hub | Sign-in required; Choose an accessible workspace or create a team workspace. Creating one does not invite people or enable scheduling. |
+| `/workspace-invitations/accept` | Accept workspace invitation | Sign-in required; Email-bound one-time token is carried in a URL fragment, not the page request; no-index/no-referrer page. Invitees must sign into the invited account and confirm acceptance. |
+| `/workspaces/[workspaceId]/access` | Workspace access management | Sign-in required; Owner/admin only; role-scoped invitation creation, explicit link sharing, and revocation. No email is sent. Entry: `/workspaces`. |
 | `/workspaces/[workspaceId]/canvas` | Workspace canvas | Sign-in required; Private spatial view with bounded inbox/run windows, read-only health/quota/run summaries and confirm-before-mutation commands. Entry: `/dashboard`. |
 | `/workspaces/[workspaceId]/inbox` | Workspace inbox | Sign-in required; Authorized workspace checkpoint inbox and pinned app launch surface. Entry: `/dashboard`. |
 | `/workspaces/[workspaceId]/runs/[runId]` | Workspace run detail | Sign-in required; Authorized run history, pinned workflow metadata, and checkpoint responses. Entry: `/workspaces/[workspaceId]/inbox`. |

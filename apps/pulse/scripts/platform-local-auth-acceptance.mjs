@@ -36,6 +36,7 @@ const migrations=[
   '20260924110000_platform_provider_exception_read_model.sql','20260924120000_platform_exception_recovery_evidence.sql',
   '20260924130000_platform_unknown_effect_inbox.sql','20260924140000_platform_workspace_invitations.sql',
   '20260924150000_platform_retry_intent_idempotency_race.sql','20260924160000_platform_user_layouts.sql',
+  '20260924170000_platform_workspace_member_email_cast.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -97,7 +98,7 @@ try{
     assert(!(await context.cookies()).some((c)=>c.name==='pulse_mock_session'));
     assert.equal(pageErrors.length,0,`Browser errors: ${pageErrors.join('; ')}`);
     console.log('PASS: rendered login form and real Supabase password/cookie session (mock auth disabled)');
-    return {page,context,userId:data.user.id,email,password};
+    return {page,context,userId:data.user.id,email,password,pageErrors};
   }
   const primary=await login();
   async function request(page,path,method='GET',body){
@@ -135,8 +136,50 @@ try{
   // sessions and the authenticated HTTP routes. The users are temporary local
   // acceptance identities; this proves auth/role plumbing, not pilot adoption.
   const member=await login(), reviewer=await login();
-  await sql(`INSERT INTO platform_memberships(workspace_id,user_id,role,status)
-    VALUES('${workspace}','${member.userId}','member','active'),('${workspace}','${reviewer.userId}','reviewer','active');`);
+  async function inviteThroughOwner(email,role){
+    await primary.page.goto(`${origin}/workspaces/${workspace}/access`,{timeout:120000});
+    await primary.page.getByRole('heading',{name:'People and invitations'}).waitFor();
+    await primary.page.getByLabel('Their account email').fill(email);
+    await primary.page.getByLabel('Workspace role').selectOption(role);
+    await primary.page.getByRole('button',{name:'Create invite link'}).click();
+    await primary.page.getByRole('status').filter({hasText:'Delivery was not sent'}).waitFor();
+    const link=await primary.page.getByLabel('One-time invitation link').inputValue();
+    assert.equal(new URL(link).hash.length>1,true,'invitation bearer token is carried only in the fragment');
+    assert.equal(new URL(link).search,'','invitation bearer token is not placed in the query string');
+    return link;
+  }
+  async function acceptInBrowser(session,link,role){
+    console.log(`Checking invitation for local ${role} fixture ${session.userId.slice(0,8)}.`);
+    await session.page.goto(link,{timeout:120000});
+    session.page.on('response',response=>{if(response.url().endsWith('/api/workspace-invitations/accept'))console.log(`Invitation API returned HTTP ${response.status()} for local ${role} fixture.`);});
+    const confirm=session.page.getByRole('button',{name:'Confirm and join workspace'});
+    await confirm.waitFor();
+    try{await session.page.waitForFunction(()=>window.location.hash==='',null,{timeout:15000});}
+    catch(error){
+      const state=await session.page.evaluate(()=>({path:location.pathname,hashLength:location.hash.length,buttonDisabled:document.querySelector('button')?.disabled}));
+      console.error('Invitation fragment-removal diagnostics:',JSON.stringify(state),session.pageErrors.join('; '));throw error;
+    }
+    assert.equal(new URL(session.page.url()).hash,'','acceptance page removes the token fragment from the address bar');
+    const acceptanceResponse=session.page.waitForResponse(response=>response.url().endsWith('/api/workspace-invitations/accept')&&response.request().method()==='POST');
+    await confirm.click();
+    assert.equal((await acceptanceResponse).status(),200,'the existing server endpoint accepts only after explicit confirmation');
+    try{await session.page.waitForURL(`${origin}/workspaces/${workspace}/inbox`,{timeout:60000});}
+    catch(error){
+      const state=await session.page.evaluate(()=>({path:location.pathname,alerts:[...document.querySelectorAll('[role="alert"]')].map((node)=>node.textContent),buttonDisabled:document.querySelector('button')?.disabled}));
+      console.error('Invitation navigation diagnostics:',JSON.stringify(state));throw error;
+    }
+    assert.equal(await sql(`SELECT role FROM platform_memberships WHERE workspace_id='${workspace}' AND user_id='${session.userId}' AND status='active';`),role);
+  }
+  const memberInvite=await inviteThroughOwner(member.email,'member');
+  await acceptInBrowser(member,memberInvite,'member');
+  await reviewer.page.goto(memberInvite,{timeout:120000});
+  await reviewer.page.getByRole('button',{name:'Confirm and join workspace'}).click();
+  await reviewer.page.getByRole('alert').filter({hasText:'not valid for this signed-in account'}).waitFor();
+  assert.equal(await sql(`SELECT status||':'||accepted_by::text FROM platform_workspace_invitations WHERE workspace_id='${workspace}' AND email='${member.email}';`),`accepted:${member.userId}`,
+    'wrong-account replay cannot change the rightful invite acceptance');
+  const reviewerInvite=await inviteThroughOwner(reviewer.email,'reviewer');
+  await acceptInBrowser(reviewer,reviewerInvite,'reviewer');
+  console.log('PASS: owner creates manual member/reviewer invite links; wrong email is denied; invited accounts explicitly accept through real browser sessions');
   const readiness=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/real-estate-readiness.v1.json',import.meta.url),'utf8'));
   const content=JSON.parse(await readFile(new URL('../lib/platform/apps/manifests/client-content-review.v1.json',import.meta.url),'utf8'));
   assert.equal(readiness.capabilities.length,0);assert.equal(content.capabilities.length,0);
@@ -204,6 +247,22 @@ try{
   assert.equal(await sql(`SELECT count(*)::text FROM platform_runs WHERE id IN ('${propertyRun.data.result.id}','${contentRun.data.result.id}')
     AND status='completed' AND app_manifest_hash IS NOT NULL;`),'2');
   console.log('PASS: authenticated browser sessions install and launch both inert apps; member intake and reviewer response are attributed, pinned and completed');
+
+  await primary.page.goto(`${origin}/workspaces/${workspace}/access`,{timeout:120000});
+  const memberRpc=await admin.rpc('platform_list_workspace_members',{p_actor_id:primary.userId,p_workspace_id:workspace});
+  assert.equal(memberRpc.error,null,'owner-authorized member-list RPC returns its declared row shape');
+  assert.equal(memberRpc.data?.length,3,'member list includes owner, member and reviewer');
+  const accessSnapshot=await request(primary.page,base+'/members');
+  assert.equal(accessSnapshot.status,200,`Members endpoint failed: ${accessSnapshot.data.error||accessSnapshot.status}`);
+  assert.deepEqual(accessSnapshot.data.result.map((row)=>row.role),['owner','member','reviewer']);
+  const memberRow=primary.page.locator('li').filter({hasText:'member · active'});
+  await memberRow.getByRole('button',{name:'Revoke access'}).waitFor();
+  primary.page.once('dialog',dialog=>dialog.accept());
+  await memberRow.getByRole('button',{name:'Revoke access'}).click();
+  await primary.page.getByRole('status').filter({hasText:'Workspace access revoked'}).waitFor();
+  assert.equal(await sql(`SELECT status FROM platform_memberships WHERE workspace_id='${workspace}' AND user_id='${member.userId}';`),'revoked');
+  assert.equal((await request(member.page,base+'/runs')).status,404,'revoked invitee loses subsequent workspace API access');
+  console.log('PASS: owner revokes an active member from the rendered access page; revoked member immediately loses workspace API access');
 
   const pending=await start();await tick(pending.id,1);
   const canvasPageErrors=[];primary.page.on('pageerror',(error)=>canvasPageErrors.push(error.message));
