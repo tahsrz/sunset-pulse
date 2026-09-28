@@ -3,6 +3,19 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
 SELECT plan(22);
 
+CREATE TEMP TABLE realtor_financial_lifecycle_assertions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  passed BOOLEAN NOT NULL,
+  description TEXT NOT NULL
+);
+CREATE FUNCTION pg_temp.record_realtor_financial_assertion(p_passed BOOLEAN, p_description TEXT)
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO pg_temp.realtor_financial_lifecycle_assertions(passed, description)
+  VALUES (p_passed, p_description);
+END;
+$$;
+
 DO $$
 DECLARE
   actor_id UUID := gen_random_uuid();
@@ -43,12 +56,12 @@ BEGIN
   SELECT saved.record_id, saved.revision, saved.reused INTO commission_id, revision_number, reused
   FROM public.realtor_save_financial_record(actor_id, workspace_id, NULL, NULL, commission_key,
     'commission', CURRENT_DATE, commission_data, NULL, NULL) AS saved;
-  PERFORM ok(revision_number = 1 AND NOT reused, 'commission creation returns first revision'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion(revision_number = 1 AND NOT reused, 'commission creation returns first revision'::text);
 
   SELECT saved.record_id, saved.reused INTO replay_id, reused
   FROM public.realtor_save_financial_record(actor_id, workspace_id, NULL, NULL, commission_key,
     'commission', CURRENT_DATE, commission_data, NULL, NULL) AS saved;
-  PERFORM ok(replay_id = commission_id AND reused, 'same commission request key replays without a duplicate'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion(replay_id = commission_id AND reused, 'same commission request key replays without a duplicate'::text);
 
   caught_state := NULL;
   BEGIN
@@ -57,30 +70,30 @@ BEGIN
       NULL, NULL);
   EXCEPTION WHEN OTHERS THEN caught_state := SQLSTATE;
   END;
-  PERFORM ok(caught_state = '23505', 'changed commission payload conflicts with the original request key'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion(caught_state = '23505', 'changed commission payload conflicts with the original request key'::text);
 
   summary := public.realtor_read_business_summary(actor_id, workspace_id, current_year);
-  PERFORM ok(summary->>'receivedCents' = '90000' AND summary->>'recordedNetCents' = '90000',
+  PERFORM pg_temp.record_realtor_financial_assertion(summary->>'receivedCents' = '90000' AND summary->>'recordedNetCents' = '90000',
     'gross commission totals subtract withheld funds once'::text);
 
   SELECT saved.record_id INTO expected_id
   FROM public.realtor_save_financial_record(actor_id, workspace_id, NULL, NULL, expected_key,
     'expected_commission', CURRENT_DATE, '{"estimatedTakeHomeCents":200000}'::JSONB, NULL, NULL) AS saved;
   summary := public.realtor_read_business_summary(actor_id, workspace_id, current_year);
-  PERFORM ok(summary->>'pendingIncomeCents' = '200000' AND summary->>'receivedCents' = '90000',
+  PERFORM pg_temp.record_realtor_financial_assertion(summary->>'pendingIncomeCents' = '200000' AND summary->>'receivedCents' = '90000',
     'expected income is excluded from received totals'::text);
 
   SELECT realized.commission_record_id, realized.expected_revision, realized.reused
     INTO realized_commission_id, revision_number, reused
   FROM public.realtor_realize_expected_income(actor_id, workspace_id, expected_id, 1, realization_key,
     CURRENT_DATE, realized_data) AS realized;
-  PERFORM ok(revision_number = 2 AND NOT reused AND realized_commission_id IS NOT NULL,
+  PERFORM pg_temp.record_realtor_financial_assertion(revision_number = 2 AND NOT reused AND realized_commission_id IS NOT NULL,
     'realizing expected income appends its terminal revision and creates a commission'::text);
 
   SELECT realized.commission_record_id, realized.reused INTO replay_id, reused
   FROM public.realtor_realize_expected_income(actor_id, workspace_id, expected_id, 1, realization_key,
     CURRENT_DATE, realized_data) AS realized;
-  PERFORM ok(replay_id = realized_commission_id AND reused
+  PERFORM pg_temp.record_realtor_financial_assertion(replay_id = realized_commission_id AND reused
     AND (SELECT status = 'realized' AND realized_by_record_id = realized_commission_id
       FROM public.realtor_financial_records WHERE id = expected_id),
     'income realization replay links exactly one received commission'::text);
@@ -99,35 +112,35 @@ BEGIN
   SELECT saved.item_id INTO bill_item_id
   FROM public.realtor_save_planner_item(actor_id, workspace_id, NULL, NULL, gen_random_uuid(), bill_definition, candidates) AS saved;
   SELECT id INTO bill_occurrence_id FROM public.realtor_planner_occurrences WHERE item_id = bill_item_id;
-  PERFORM ok(bill_occurrence_id IS NOT NULL AND (SELECT count(*) = 1 FROM public.realtor_reminders WHERE occurrence_id = bill_occurrence_id AND status = 'scheduled'),
+  PERFORM pg_temp.record_realtor_financial_assertion(bill_occurrence_id IS NOT NULL AND (SELECT count(*) = 1 FROM public.realtor_reminders WHERE occurrence_id = bill_occurrence_id AND status = 'scheduled'),
     'bill materialization creates one pending reminder'::text);
 
   SELECT saved.record_id, saved.revision INTO expense_id, revision_number
   FROM public.realtor_save_financial_record(actor_id, workspace_id, NULL, NULL, payment_key,
     'expense', CURRENT_DATE, '{"amountCents":15000,"category":"broker_dues"}'::JSONB,
     bill_occurrence_id, 1) AS saved;
-  PERFORM ok(revision_number = 1 AND (SELECT status = 'completed' AND revision = 2 FROM public.realtor_planner_occurrences WHERE id = bill_occurrence_id),
+  PERFORM pg_temp.record_realtor_financial_assertion(revision_number = 1 AND (SELECT status = 'completed' AND revision = 2 FROM public.realtor_planner_occurrences WHERE id = bill_occurrence_id),
     'bill payment creates one expense and completes its occurrence'::text);
-  PERFORM ok((SELECT status = 'superseded' FROM public.realtor_reminders WHERE occurrence_id = bill_occurrence_id AND occurrence_revision = 1),
+  PERFORM pg_temp.record_realtor_financial_assertion((SELECT status = 'superseded' FROM public.realtor_reminders WHERE occurrence_id = bill_occurrence_id AND occurrence_revision = 1),
     'payment supersedes the prior reminder revision'::text);
 
   SELECT saved.record_id, saved.reused INTO replay_id, reused
   FROM public.realtor_save_financial_record(actor_id, workspace_id, NULL, NULL, payment_key,
     'expense', CURRENT_DATE, '{"amountCents":15000,"category":"broker_dues"}'::JSONB,
     bill_occurrence_id, 1) AS saved;
-  PERFORM ok(replay_id = expense_id AND reused AND
+  PERFORM pg_temp.record_realtor_financial_assertion(replay_id = expense_id AND reused AND
     (SELECT count(*) = 1 FROM public.realtor_financial_records WHERE occurrence_id = bill_occurrence_id),
     'replayed bill-payment request does not duplicate the expense'::text);
 
   SELECT corrected.revision, corrected.reused INTO revision_number, reused
   FROM public.realtor_correct_financial_record(actor_id, workspace_id, expense_id, 1, correction_key,
     'expense', make_date(current_year, 1, 2), '{"amountCents":12000,"category":"broker_dues"}'::JSONB) AS corrected;
-  PERFORM ok(revision_number = 2 AND NOT reused, 'correction appends a revision'::text);
-  PERFORM ok((SELECT count(*) = 2 AND min(effective_date) < max(effective_date)
+  PERFORM pg_temp.record_realtor_financial_assertion(revision_number = 2 AND NOT reused, 'correction appends a revision'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion((SELECT count(*) = 2 AND min(effective_date) < max(effective_date)
     FROM public.realtor_financial_revisions WHERE record_id = expense_id),
     'correction preserves the prior amount/date revision'::text);
   summary := public.realtor_read_business_summary(actor_id, workspace_id, current_year);
-  PERFORM ok(summary->>'paidExpensesCents' = '12000' AND summary->>'recordedNetCents' = '258000',
+  PERFORM pg_temp.record_realtor_financial_assertion(summary->>'paidExpensesCents' = '12000' AND summary->>'recordedNetCents' = '258000',
     'yearly summary uses the corrected current revision and corrected date'::text);
 
   caught_state := NULL;
@@ -136,39 +149,42 @@ BEGIN
       'expense', CURRENT_DATE, '{"amountCents":11000,"category":"broker_dues"}'::JSONB);
   EXCEPTION WHEN OTHERS THEN caught_state := SQLSTATE;
   END;
-  PERFORM ok(caught_state = '40001', 'stale financial correction is rejected'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion(caught_state = '40001', 'stale financial correction is rejected'::text);
 
   SELECT voided.revision, voided.status, voided.reused INTO revision_number, result_status, reused
   FROM public.realtor_void_financial_record(actor_id, workspace_id, expense_id, 2, void_key) AS voided;
-  PERFORM ok(revision_number = 3 AND result_status = 'void' AND NOT reused,
+  PERFORM pg_temp.record_realtor_financial_assertion(revision_number = 3 AND result_status = 'void' AND NOT reused,
     'void appends a terminal financial revision'::text);
   summary := public.realtor_read_business_summary(actor_id, workspace_id, current_year);
-  PERFORM ok(summary->>'paidExpensesCents' = '0' AND summary->>'recordedNetCents' = '270000',
+  PERFORM pg_temp.record_realtor_financial_assertion(summary->>'paidExpensesCents' = '0' AND summary->>'recordedNetCents' = '270000',
     'void expense is excluded from yearly totals'::text);
-  PERFORM ok((SELECT status = 'pending' AND completed_at IS NULL AND revision = 3
+  PERFORM pg_temp.record_realtor_financial_assertion((SELECT status = 'pending' AND completed_at IS NULL AND revision = 3
     FROM public.realtor_planner_occurrences WHERE id = bill_occurrence_id),
     'voiding bill payment reopens the linked occurrence'::text);
-  PERFORM ok((SELECT count(*) = 1 FROM public.realtor_reminders
+  PERFORM pg_temp.record_realtor_financial_assertion((SELECT count(*) = 1 FROM public.realtor_reminders
     WHERE occurrence_id = bill_occurrence_id AND occurrence_revision = 3 AND status = 'scheduled'),
     'reopened bill receives one reminder at the new occurrence revision'::text);
 
   SELECT voided.revision, voided.reused INTO revision_number, reused
   FROM public.realtor_void_financial_record(actor_id, workspace_id, expense_id, 2, void_key) AS voided;
-  PERFORM ok(revision_number = 3 AND reused, 'same void key replays the terminal result'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion(revision_number = 3 AND reused, 'same void key replays the terminal result'::text);
 
   caught_state := NULL;
   BEGIN
     UPDATE public.realtor_financial_records SET status = 'active' WHERE id = expense_id;
   EXCEPTION WHEN OTHERS THEN caught_state := SQLSTATE;
   END;
-  PERFORM ok(caught_state = '40001', 'terminal financial record cannot be reactivated'::text);
+  PERFORM pg_temp.record_realtor_financial_assertion(caught_state = '40001', 'terminal financial record cannot be reactivated'::text);
   PERFORM * FROM public.realtor_save_financial_record(actor_id, workspace_id, NULL, NULL, gen_random_uuid(),
     'expense', CURRENT_DATE, '{"amountCents":15000,"category":"broker_dues"}'::JSONB, bill_occurrence_id, 3);
-  PERFORM ok((SELECT count(*) = 2 AND count(*) FILTER (WHERE status='active') = 1
+  PERFORM pg_temp.record_realtor_financial_assertion((SELECT count(*) = 2 AND count(*) FILTER (WHERE status='active') = 1
     FROM public.realtor_financial_records WHERE occurrence_id=bill_occurrence_id),
     'reopened bill accepts one replacement payment while preserving its voided payment'::text);
 END;
 $$;
 
+SELECT ok(passed, description)
+FROM pg_temp.realtor_financial_lifecycle_assertions
+ORDER BY id;
 SELECT * FROM finish();
 ROLLBACK;
