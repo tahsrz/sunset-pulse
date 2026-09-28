@@ -10,8 +10,16 @@ export default function AtlasGlobeBackground() {
     let cancelled = false;
 
     fetch('/api/tah/atlas/globe', { cache: 'no-store' })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error('Atlas background unavailable');
+        return response.json();
+      })
       .then(data => {
+        if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.domains) || !data.progress
+          || !data.nodes.every((node: any) => node && Number.isFinite(node.lat) && Number.isFinite(node.lng)
+            && Number.isFinite(node.radius) && node.radius >= 0 && node.domain && typeof node.domain.color === 'string')) {
+          throw new Error('Invalid Atlas background');
+        }
         if (!cancelled) setGlobe(data);
       })
       .catch(() => {

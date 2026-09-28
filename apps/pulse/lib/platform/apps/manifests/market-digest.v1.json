@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "key": "market-digest",
+  "version": 1,
+  "title": "Market digest intake",
+  "inputSchema": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "area": { "type": "string", "title": "Market area", "minLength": 1, "maxLength": 120 } },
+    "required": ["area"]
+  },
+  "workflows": [{
+    "schemaVersion": 1, "key": "digest-intake", "version": 1, "entry": "digest_focus",
+    "nodes": [
+      { "id": "digest_focus", "kind": "checkpoint", "type": "question", "prompt": "What market signal should Jamie organize? This intake does not publish or send a digest.", "responseSchema": { "type": "string" }, "next": "done" },
+      { "id": "done", "kind": "complete" }
+    ]
+  }],
+  "capabilities": [],
+  "artifactSchemas": {},
+  "settingsSchema": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "cadence": { "type": "string", "maxLength": 32, "enum": ["manual"] } },
+    "required": ["cadence"]
+  }
+}

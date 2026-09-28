@@ -15,61 +15,63 @@ interface UnifiedPropertyStageProps {
 
 const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStagedProperties }) => {
   const [mode, setMode] = useState<StageMode>('LIVE');
-  const [stagedProperties, setStagedProperties] = useState<Property[]>(initialStagedProperties);
-  const [liveProperties, setLiveProperties] = useState<any[]>([]);
-  const [loadingLive, setLoadingLive] = useState(false);
+  const stagedProperties = initialStagedProperties;
+  const [liveProperties, setLiveProperties] = useState<Property[]>([]);
+  const [loadingLive, setLoadingLive] = useState(true);
+  const [liveError, setLiveError] = useState(false);
   const { featured } = marketingCopy.section_headers;
 
   useEffect(() => {
-    if (mode === 'LIVE' && liveProperties.length === 0) {
-      fetchLiveFeed();
-    }
-  }, [mode, liveProperties.length]);
-
-  const fetchLiveFeed = async () => {
-    setLoadingLive(true);
-    try {
-      // Load current listings from the IDX feed.
-      const res = await fetch('/api/idx/hot-moving');
-      if (res.ok) {
+    if (mode !== 'LIVE') return;
+    const controller = new AbortController();
+    const fetchLiveFeed = async () => {
+      setLoadingLive(true);
+      setLiveError(false);
+      try {
+        // Load current listings from the IDX feed.
+        const res = await fetch('/api/idx/hot-moving', { signal: controller.signal });
+        if (!res.ok) throw new Error('Listings unavailable');
         const json = await res.json();
+        if (controller.signal.aborted) return;
         // The API returns { data: { listings: [...] } }
         const listings = Array.isArray(json.data?.listings) ? json.data.listings : [];
-        setLiveProperties(listings.filter((listing: any) => (
+        setLiveProperties(listings.filter((listing: Property) => (
           listing?.source === 'MLS'
           && Array.isArray(listing.images)
           && listing.images.some((image: unknown) => typeof image === 'string' && (
-            /^https:\/\//i.test(image) || image.startsWith('/images/properties/')
+            /^https:\/\//i.test(image) || image === '/images/property-placeholder.svg'
           ))
         )));
+      } catch {
+        if (!controller.signal.aborted) setLiveError(true);
+      } finally {
+        if (!controller.signal.aborted) setLoadingLive(false);
       }
-    } catch (error) {
-      console.error('[LIVE_FEED_ERROR]: Unable to load listings.', error);
-    } finally {
-      setLoadingLive(false);
-    }
-  };
+    };
+    void fetchLiveFeed();
+    return () => controller.abort();
+  }, [mode]);
 
   return (
-    <section className="py-24 waterlily-section">
+    <section className="py-16 sm:py-20 waterlily-section">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Stage Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-slate-300 mb-4">
             {mode === 'STAGED' ? <FaHome className="text-blue-400" /> : <FaListUl className="text-amber-400" />}
             {mode === 'STAGED' ? 'Curated Listings' : 'Live MLS Feed'}
           </div>
           <h2 className="text-4xl font-black uppercase italic tracking-tighter waterlily-heading mb-2">
             {mode === 'STAGED' ? featured.title : 'Active IDX Listings'}
           </h2>
-          <p className="text-teal-100/55 text-[10px] font-mono uppercase tracking-[0.4em]">
+          <p className="text-teal-100/70 text-sm leading-6">
             {mode === 'STAGED' ? featured.tagline : 'Current listings from the regional MLS feed'}
           </p>
         </div>
 
         {/* The Switcher */}
-        <StageSwitcher mode={mode} onModeChange={setMode} />
+        <StageSwitcher mode={mode} onModeChange={setMode} liveStatus={loadingLive ? 'Loading current listings…' : liveError ? 'The listing feed is temporarily unavailable' : `${liveProperties.length} listings available to explore`} />
 
         {/* Property Grid */}
         <div className="relative min-h-[400px]">
@@ -88,17 +90,17 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
               {loadingLive ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Spinner loading={loadingLive} />
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-teal-400 animate-pulse">Loading regional listings...</p>
+                  <p className="text-sm text-teal-300 animate-pulse">Loading regional listings...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {liveProperties && Array.isArray(liveProperties) && liveProperties.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                  {!liveError && liveProperties.length > 0 ? (
                     liveProperties.map((property) => (
                       property && <PropertyCard key={property._id} property={property} />
                     ))
                   ) : (
                     <div className="col-span-full text-center py-20 border border-dashed border-white/10 rounded-3xl">
-                       <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">No live listings are available right now.</p>
+                       <p className="text-slate-300 text-sm leading-6">{liveError ? 'We couldn’t load the listing feed. You can still browse curated properties above.' : 'No live listings are available right now.'}</p>
                     </div>
                   )}
                 </div>
@@ -108,8 +110,8 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         </div>
 
         {/* Stage Footer Note */}
-        <div className="mt-16 text-center">
-          <p className="text-[8px] font-mono uppercase tracking-[0.6em] text-slate-600 italic">
+        <div className="mt-10 text-center">
+          <p className="text-xs leading-5 text-slate-400">
             [ {mode} ] - {mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}
           </p>
         </div>

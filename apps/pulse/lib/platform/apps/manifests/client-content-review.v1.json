@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "key": "client-content-review",
+  "version": 1,
+  "title": "Client content review intake",
+  "inputSchema": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "revision_id": { "type": "string", "title": "Content revision ID", "minLength": 1, "maxLength": 240 } },
+    "required": ["revision_id"]
+  },
+  "workflows": [{
+    "schemaVersion": 1, "key": "review-intake", "version": 1, "entry": "review_notes",
+    "nodes": [
+      { "id": "review_notes", "kind": "checkpoint", "type": "question", "prompt": "What feedback should Jamie organize for this content revision? These notes are not publication approval.", "responseSchema": { "type": "string" }, "next": "done" },
+      { "id": "done", "kind": "complete" }
+    ]
+  }],
+  "capabilities": [],
+  "artifactSchemas": {},
+  "settingsSchema": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "review_mode": { "type": "string", "maxLength": 32, "enum": ["human_review"] } },
+    "required": ["review_mode"]
+  }
+}

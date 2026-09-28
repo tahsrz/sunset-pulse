@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Command as CommandPrimitive } from 'cmdk';
 import {
@@ -21,7 +21,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type CommandPaletteRoute = {
-  href: string;
+  href?: string;
+  path?: string;
+  group?: string;
+  description?: string;
+  documentNavigation?: boolean;
   label: string;
   active?: boolean;
   emphasis?: 'teal' | 'blue' | 'violet' | 'cyan' | 'emerald' | 'orange';
@@ -39,8 +43,9 @@ type CommandAction = {
   id: string;
   label: string;
   description: string;
-  href: string;
-  group: 'Navigate' | 'Actions';
+  href?: string;
+  documentNavigation?: boolean;
+  group: string;
   icon: LucideIcon;
   keywords?: string[];
   emphasis?: CommandPaletteRoute['emphasis'];
@@ -58,17 +63,19 @@ export function GlobalCommandPalette({
 
   if (!open) return null;
 
-  const runAction = (href: string) => {
+  const runAction = (action: CommandAction) => {
+    if (!action.href) return;
     onOpenChange(false);
-    router.push(href);
+    if (action.documentNavigation) window.location.assign(action.href);
+    else router.push(action.href);
   };
 
   const groupedActions = actions.reduce<Record<CommandAction['group'], CommandAction[]>>(
     (acc, action) => {
-      acc[action.group].push(action);
+      (acc[action.group] ||= []).push(action);
       return acc;
     },
-    { Navigate: [], Actions: [] }
+    {}
   );
 
   return (
@@ -120,7 +127,8 @@ export function GlobalCommandPalette({
                     <CommandPrimitive.Item
                       key={action.id}
                       value={`${action.label} ${action.description} ${(action.keywords || []).join(' ')}`}
-                      onSelect={() => runAction(action.href)}
+                      disabled={!action.href}
+                      onSelect={() => runAction(action)}
                       className={cn(
                         'flex cursor-pointer items-center gap-3 rounded-lg border border-transparent px-3 py-3 text-sm text-slate-100 outline-none transition data-[selected=true]:border-cyan-300/25 data-[selected=true]:bg-cyan-300/10',
                         action.emphasis === 'orange' && 'data-[selected=true]:border-orange-300/25 data-[selected=true]:bg-orange-300/10',
@@ -133,9 +141,9 @@ export function GlobalCommandPalette({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-black">{action.label}</span>
-                        <span className="block truncate text-xs font-medium text-slate-400">{action.description}</span>
+                        <span className="block whitespace-normal break-words text-xs font-medium normal-case tracking-normal text-slate-400">{action.description}</span>
                       </span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-slate-500" />
+                      {action.href ? <ArrowRight className="h-4 w-4 shrink-0 text-slate-500" /> : <span className="text-xs normal-case tracking-normal text-amber-200">Context required</span>}
                     </CommandPrimitive.Item>
                   );
                 })}
@@ -158,13 +166,14 @@ export function GlobalCommandPalette({
 
 function buildActions(routes: CommandPaletteRoute[], isLoggedIn: boolean, loginHref: string): CommandAction[] {
   const routeActions = routes.map((route): CommandAction => ({
-    id: `route:${route.href}`,
+    id: `route:${route.path || route.href}`,
     label: route.label,
-    description: route.href === '/' ? 'Return to the Sunset Pulse home surface.' : `Open ${route.label}.`,
+    description: route.description || (route.href === '/' ? 'Return to the Sunset Pulse home surface.' : `Open ${route.label}.`),
     href: route.href,
-    group: 'Navigate',
-    icon: iconForRoute(route.href),
-    keywords: [route.href.replace('/', ''), route.emphasis || ''],
+    documentNavigation: route.documentNavigation,
+    group: route.group || 'Navigate',
+    icon: iconForRoute(route.path || route.href || ''),
+    keywords: [route.path || route.href || '', route.group || '', route.emphasis || ''],
     emphasis: route.emphasis,
   }));
 

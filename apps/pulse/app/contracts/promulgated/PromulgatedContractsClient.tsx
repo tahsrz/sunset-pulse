@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 
 type FormRow = {
   formName: string;
@@ -77,6 +78,12 @@ function Section({ title, items, showDetails }: { title: string; items: FormRow[
             </div>
             {showDetails && item.summary && <p className="mt-3 text-sm text-slate-300">{item.summary}</p>}
             {showDetails && item.useCase && <p className="mt-2 text-sm text-slate-400">Use case: {item.useCase}</p>}
+            <Link
+              href={`/contracts/promulgated/${encodeURIComponent(item.formId)}`}
+              className="mt-4 inline-flex rounded-md border border-cyan-200/30 bg-cyan-300/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-cyan-100 transition hover:bg-cyan-300/20"
+            >
+              Open preview →
+            </Link>
           </article>
         ))}
       </div>

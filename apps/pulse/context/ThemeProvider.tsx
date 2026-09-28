@@ -412,7 +412,7 @@ export function ThemeProvider({
       <div 
         style={{ 
           '--primary-color': (stagedBranding || branding)?.primaryColor,
-          fontFamily: (stagedBranding || branding)?.fontFamily 
+          fontFamily: `${(stagedBranding || branding)?.fontFamily || 'Inter'}, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
         } as React.CSSProperties}
         className="min-h-screen transition-all duration-500 bg-[var(--main-bg)]"
       >

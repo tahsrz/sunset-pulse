@@ -1,6 +1,40 @@
 # Sunset Pulse
 
+Need to explain or record a demo? Use the [complete route walkthrough script](docs/SUNSET_PULSE_ROUTE_WALKTHROUGH.md), starting with the short realtor journey and then the grouped path-by-path narration.
+
 Sunset Pulse is a Next.js 15 real estate intelligence platform for property discovery, lead engagement, valuation workflows, and operational analytics. The application combines a customer-facing property experience with internal intelligence tools for market analysis, lead scoring, automation, and visual content workflows.
+
+## Local review and acceptance
+
+See [September 26 review](docs/LUNA_REVIEW_2026-09-26.md) for the current PR's fixes, exact evidence and remaining gates. From this app directory:
+
+- `npm run test:scans:storage`: generated local Supabase Auth/Storage + Mongo stack; real signed upload/finalize/rejection/cleanup.
+- `node scripts/platform-disposable-auth-acceptance.mjs --homepage`: isolated real-login realtor flow plus controlled-data responsive/keyboard homepage checks.
+- `npm run test:db:concurrency`: disposable PostgreSQL replay and independent-session contention.
+
+These commands create unique disposable resources and remove only those resources. They do not reuse the persistent Supabase stack, require hosted compute, enable paid calls, or prove production readiness. Run the Next-based acceptance suites serially with builds because they share `.next`; Docker must be running. Screenshots/logs remain in ignored `.pulse-local/`, not the PR.
+
+## Find every app path
+
+Use **Browse all app paths** in `/agent` or `/command-center`, or press **Ctrl/Cmd+K**
+where the global navbar is present. Search by URL, feature, section, or access requirement.
+The shared catalog covers 112 page route patterns and 5 non-API handlers, including Vibe
+workflows, games, property tools, operations, and machine-readable TAH resources.
+
+See the [complete path inventory near the top of the repository README](../../README.md#app-paths-and-command-navigation).
+Dynamic record routes lead to their selection workflow; token, checkout, tenant, and booking
+routes without a generic entry are labeled as requiring an existing workflow link. This
+does not change permissions or verify production availability. Directory links do not prefetch.
+
+September 10 verification: 12 focused tests pass for source/README inventory coverage,
+directory search, palette navigation and context-only entries, and the existing Agent Console
+workflow. Lint passes with existing warnings in AgentConsole and JamieChat. Local mock-mode
+browser checks confirmed the collapsed desktop directory, 390px stacked search controls,
+taxonomy search, and navigation from a directory result to `/contact` (HTTP 200, no framework
+error overlay). The mock layout omits the global navbar, so palette behavior was unit-tested,
+not browser-verified there. Production availability and record-specific workflows were not tested.
+Full TypeScript checking still reports errors in unrelated test files; none were reported in
+the changed navigation components, route catalog, or their tests.
 
 ## Current Status
 
@@ -45,30 +79,63 @@ SUPABASE_SERVICE_ROLE_KEY=
 ### 🏗️ System Architecture Overview
 
 ```mermaid
-graph LR
-    User([User/Client]) <--> NextJS[Next.js App Router]
-    
-    subgraph "Data Layer"
-        NextJS <--> Mongo[(MongoDB/Mongoose)]
-        NextJS <--> Supa[(Supabase/PostgreSQL)]
-        NextJS <--> FS[Local JSON/TAH Files]
+flowchart LR
+    Person([People and operators]) --> Web[Next.js App Router UI]
+    Jamie[Jamie assistant] <--> Web
+    Web --> Routes[Route handlers and domain services]
+    Web --> Canvas[Workspace canvas and strict command palette]
+    Canvas --> Routes
+    Canvas --> Monitors[Bounded read-only health, quota and run summaries]
+    Monitors --> Routes
+
+    subgraph Product[Product and domain workflows]
+      Routes --> Properties[Property search and shortlist]
+      Routes --> Leads[Lead and client operations]
+      Routes --> Vibes[Vibe content and tenant sites]
+      Routes --> Storefront[Grill, bookings and billing]
     end
-    
-    subgraph "External Integrations"
-        NextJS <--> Stripe[Stripe Payments]
-        NextJS <--> Twilio[Twilio SMS/Voice]
-        NextJS <--> IDX[Repliers/NTREIS IDX]
+
+    subgraph Platform[Shared workspace workflow platform]
+      Access[Workspace membership and access checks] --> Apps[Versioned JSON app installs]
+      Apps --> Admission[Run admission and pinned workflow]
+      Admission --> Runs[(platform_runs and checkpoints)]
+      Runs --> Inbox[Shared workspace inbox and run details]
+      Monitors --> Health
+      Monitors --> Runs
+      Canvas --> Layouts[(Private revisioned user canvas layouts)]
+      Canvas --> Inbox
+      Runs <--> Scheduler[(Existing durable scheduler jobs)]
+      Scheduler --> Workers[Registered workflow handlers]
+      Workers --> Results[(workflow results and operation receipts)]
+      Workers --> Health[(Connector health, history and receipts)]
+      Health --> Audit[(Workspace audit events)]
+      Scheduler --> Audit
+      Routes --> Access
+      Workers --> Runs
     end
-    
-    subgraph "Intelligence Engine"
-        NextJS <--> TAH[TAH Memory Forge]
-        NextJS <--> Jamie[Jamie AI Node]
-        Jamie <--> LLM[Groq/Ollama/OpenAI]
+
+    subgraph Data[Application data stores]
+      Routes <--> Supabase[(Supabase / PostgreSQL)]
+      Routes <--> Mongo[(MongoDB / Mongoose)]
+      Routes <--> Files[Local files and TAH cartridges]
+      Platform --- Supabase
+    end
+
+    subgraph External[External services and boundaries]
+      Routes <--> IDX[Repliers / NTREIS IDX]
+      Routes <--> Payments[Stripe]
+      Routes <--> Messaging[Email, SMS and voice providers]
+      Jamie <--> Models[Configured model providers]
+      Admission --> Gateway[Protocol gateway policy boundary]
+      Gateway -. "fixture validation only; live dispatch disabled" .-> Connector[Connector provider]
     end
 ```
 
+The platform lane runs on the same durable scheduler used by existing product workflows. Workspace apps persist versioned JSON manifests and runs; people respond through shared checkpoints in the inbox. The workspace canvas composes that inbox and run detail from their existing authenticated read/write APIs and persists only per-user layout preferences behind revision-checked workspace membership access. Its strict command palette offers bounded run listing, pinned-manifest launch and revision-checked cancellation after confirmation, plus focus/close/reset presentation commands; it does not expose shell execution, worker RPCs or provider dispatch. Connector health checks currently record reviewed fixture and pinned-schema evidence, with bounded history, receipts and workspace audit events. Owner/admin quota limits are revisioned and enforced transactionally; reservations track estimated and actual usage, expire with audit evidence, and are released when a run is cancelled. Estimate overruns produce immutable run-scoped evidence and audit events, fencing later reservations for that run without affecting other runs. The inbox exposes quota controls and schedules bounded reservation cleanup through a disabled-by-default scheduler event contract. Reviewed provider-adapter pricing/idempotency contracts are versioned, hash-pinned to connectors and copied into reservations for auditability. Owner/admin provider quotas now enforce per-adapter concurrency, reserved-cost exposure and UTC-day actual spend; over-budget settlement records immutable breach evidence, and review revocation fences new reservations while preserving settlement for in-flight operations. A separate bounded, workspace-fenced inbox feed shows quota breaches and revoked reviews with links to the affected run/reservation where available. These controls rely on workspace-admin pricing attestations, do not independently verify provider pricing, and do not enable dispatch. Live MCP/OpenAPI provider dispatch remains disabled.
+
 ## Core Capabilities
 
+- Private realtor daily workspace at `/today`, `/planner`, `/business`, and `/goals`: recurring deadlines, opt-in in-app reminders, property-task handoff with stale-revision recovery, and manually recorded income/expenses. Disposable real-auth browser and SQL concurrency acceptance pass locally; responsive visual review, operational reminder-cadence evidence, and production rollout remain separate gates. See [`docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md`](./docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md) for the current ledger; this is not a production-availability claim.
 - Property browsing, search, saved listings, and high-performance IDX sync via Repliers.io.
 - Authenticated Matrix IDX access through `/idx` and the embedded Jamie tab MLS drawer.
 - Hero news tabs and `/api/news` for lightweight local market/headline signals.

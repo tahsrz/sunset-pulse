@@ -21,7 +21,7 @@ test.describe('Command Center pasted listing flow', () => {
   });
 
   test('extracts pasted listing facts, streams progress, supervises, and supports helper rerun', async ({ page }) => {
-    await page.goto('/command-center', { waitUntil: 'domcontentloaded' });
+    await page.goto('/command-center?legacy=1', { waitUntil: 'domcontentloaded' });
 
     await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Ask. Get The Answer.' })).toBeVisible();

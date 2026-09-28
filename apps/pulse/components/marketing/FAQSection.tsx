@@ -6,39 +6,39 @@ import marketingCopy from '@/config/marketing_copy.json';
 
 const FAQSection = () => {
   const { faq } = marketingCopy;
-  const [openIndex, setOpenIndex] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [items, setItems] = useState(faq.items);
 
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => b.score - a.score);
+    return items.map((item, index) => ({ item, index })).sort((a, b) => b.item.score - a.item.score);
   }, [items]);
 
   const handleVote = (index: number, delta: number) => {
-    const newItems = [...items];
-    newItems[index].score += delta;
-    setItems(newItems);
+    setItems((current) => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, score: item.score + delta } : item
+    )));
   };
 
   const toggleFAQ = (id: string) => {
-    setOpenIndex(openIndex === id ? null : id);
+    setOpenId((current) => current === id ? null : id);
   };
 
   return (
-    <section className="py-24 waterlily-section border-t border-teal-200/10">
+    <section className="waterlily-section border-t border-teal-200/10 py-16 sm:py-20">
       <div className="max-w-4xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 waterlily-chip px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4">
+        <div className="mb-10 text-center sm:mb-12">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full waterlily-chip px-4 py-1.5 text-xs font-semibold tracking-wider">
             <FaInfoCircle className="text-xs" /> Platform Overview
           </div>
           <h2 className="text-4xl font-black uppercase italic tracking-tighter waterlily-heading mb-2">{faq.title}</h2>
-          <p className="text-teal-100/55 text-[10px] font-mono uppercase tracking-[0.6em]">{faq.tagline}</p>
+          <p className="text-sm leading-6 text-teal-100/70">{faq.tagline}</p>
         </div>
 
         <div className="space-y-4">
-          {sortedItems.map((item) => {
-            const originalIndex = items.findIndex(i => i.question === item.question);
-            const itemId = `faq-${originalIndex}`;
-            const isOpen = openIndex === itemId;
+          {sortedItems.map(({ item, index }) => {
+            const itemId = `faq-${index}`;
+            const answerId = `${itemId}-answer`;
+            const isOpen = openId === itemId;
 
             return (
               <div 
@@ -49,60 +49,68 @@ const FAQSection = () => {
                     : 'waterlily-card border-white/10 hover:border-white/25'
                 }`}
               >
-                <div className="flex">
+                <div className="flex min-w-0">
                   {/* Voting Column */}
                   <div className="flex flex-col items-center justify-center px-4 bg-[#081824]/35 border-r border-teal-200/10 gap-2">
                     <button 
-                      onClick={() => handleVote(originalIndex, 1)}
-                      className="p-2 text-teal-100/35 hover:text-teal-200 transition-colors"
-                      title="Helpful"
+                      type="button"
+                      onClick={() => handleVote(index, 1)}
+                      className="min-h-10 min-w-10 p-2 text-teal-100/65 transition-colors hover:text-teal-200"
+                      aria-label={`Mark “${item.question}” helpful`}
                     >
                       <FaArrowUp size={12} />
                     </button>
-                    <span className="text-[10px] font-black font-mono text-amber-100/90">{item.score}</span>
+                    <span aria-label={`${item.score} helpfulness points`} className="text-xs font-semibold tabular-nums text-amber-100">{item.score}</span>
                     <button 
-                      onClick={() => handleVote(originalIndex, -1)}
-                      className="p-2 text-teal-100/35 hover:text-rose-200 transition-colors"
-                      title="Not Helpful"
+                      type="button"
+                      onClick={() => handleVote(index, -1)}
+                      className="min-h-10 min-w-10 p-2 text-teal-100/65 transition-colors hover:text-rose-200"
+                      aria-label={`Mark “${item.question}” not helpful`}
                     >
                       <FaArrowDown size={12} />
                     </button>
                   </div>
 
                   <button 
+                    type="button"
                     onClick={() => toggleFAQ(itemId)}
-                    className="flex-1 flex items-center justify-between p-8 text-left transition-colors"
+                    aria-expanded={isOpen}
+                    aria-controls={answerId}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-4 p-4 text-left transition-colors sm:gap-6 sm:p-6"
                   >
-                    <div className="flex items-center gap-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all ${
                         isOpen ? 'bg-violet-500 text-white' : 'bg-white/5 text-teal-100/50'
                       }`}>
                         <FaQuestionCircle size={14} />
                       </div>
-                      <span className={`text-sm font-bold uppercase tracking-widest transition-colors ${
+                      <span className={`text-sm font-semibold leading-5 transition-colors sm:text-base ${
                         isOpen ? 'text-violet-100' : 'text-slate-200'
                       }`}>
                         {item.question}
                       </span>
                     </div>
-                    <FaChevronDown className={`text-teal-100/35 transition-transform duration-500 ${
+                    <FaChevronDown aria-hidden="true" className={`shrink-0 text-teal-100/60 transition-transform duration-300 ${
                       isOpen ? 'rotate-180 text-violet-200' : ''
                     }`} />
                   </button>
                 </div>
                 
-                <div 
-                  className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                    isOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
-                  }`}
+                <div
+                  id={answerId}
+                  aria-hidden={!isOpen}
+                  inert={!isOpen}
+                  className={`grid transition-[grid-template-rows] duration-300 ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
                 >
-                  <div className="px-8 pb-8 pl-[7.5rem]">
-                    <p className="text-teal-50/70 text-sm leading-relaxed font-medium">
-                      {item.answer}
-                    </p>
-                    <div className="mt-6 flex items-center gap-3 opacity-20">
-                      <div className="h-px w-8 bg-teal-200" />
-                      <span className="text-[8px] font-mono uppercase tracking-widest">Verified Content</span>
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="pb-6 pl-16 pr-5 sm:pb-8 sm:pl-[7.5rem] sm:pr-8">
+                      <p className="text-sm font-medium leading-6 text-teal-50/80 sm:leading-7">
+                        {item.answer}
+                      </p>
+                      <div className="mt-5 flex items-center gap-3 text-teal-100/55">
+                        <div className="h-px w-8 bg-teal-200" />
+                        <span className="text-xs font-medium">Verified content</span>
+                      </div>
                     </div>
                   </div>
                 </div>

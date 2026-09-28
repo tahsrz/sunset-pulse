@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import Property from '@/models/Property';
 import { successResponse, errorResponse } from '@/lib/core/apiResponse';
 import { pulseSyncWorker } from '@/lib/data/pulse_sync_worker';
-import { hasUsableRemoteListingImage } from '@/lib/data/listingContract';
+import { getUsableRemoteListingImages } from '@/lib/data/listingContract';
 import { isAuthResponse, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import connectDB from '@/lib/core/database';
 
@@ -15,10 +15,11 @@ type HotMovingCandidate = {
   _id?: unknown;
   images?: unknown;
   image_url?: unknown;
+  updatedAt?: Date | string | null;
   [key: string]: unknown;
 };
 
-/** Returns image-qualified, publicly displayable MLS listings for the homepage. */
+/** Returns public MLS listings with real photos or an explicit missing-photo placeholder. */
 export async function GET(_request: NextRequest) {
   try {
     await connectDB();
@@ -35,32 +36,21 @@ export async function GET(_request: NextRequest) {
     const listings = candidates
       .filter((listing) => listing.source === 'MLS' && listing.display_public !== false)
       .slice(0, 8)
-      .map((listing) => hasUsableRemoteListingImage(listing)
-        ? listing
-        : { ...listing, images: [fallbackImageFor(String(listing.mls_id || listing._id || 'listing'))] });
+      .map((listing) => {
+        const images = getUsableRemoteListingImages(listing);
+        return { ...listing, images: images.length ? images : ['/images/property-placeholder.svg'] };
+      });
+    const syncedAt = listings[0]?.updatedAt;
     return successResponse({
       listings,
       count: listings.length,
       sector: 'North Texas // Public MLS Cache',
-      syncedAt: listings.length > 0 ? listings[0].updatedAt : null,
+      syncedAt: syncedAt instanceof Date ? syncedAt.toISOString() : syncedAt || null,
     });
   } catch (error: any) {
     console.error('[HOT_MOVING_ERROR]: Signal lost.', error);
     return errorResponse('Failed to fetch hot moving listings.', 500, error.message);
   }
-}
-
-const MLS_IMAGE_FALLBACKS = [
-  '/images/properties/land1.jpg',
-  '/images/properties/barndo1.jpg',
-  '/images/properties/rhome1.jpg',
-  '/images/properties/ranch1.jpg',
-  '/images/properties/244ridge1.jpg',
-];
-
-function fallbackImageFor(stableKey: string) {
-  const hash = Array.from(stableKey).reduce((sum, character) => sum + character.charCodeAt(0), 0);
-  return MLS_IMAGE_FALLBACKS[hash % MLS_IMAGE_FALLBACKS.length];
 }
 
 /** Operator-only manual refresh. Public homepage reads never trigger ingestion. */

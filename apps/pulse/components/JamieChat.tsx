@@ -455,10 +455,10 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
 
   const submittedWakeQuery = wakeListening.submittedQuery;
   useEffect(() => {
-    if (!mounted || isLoading || !submittedWakeQuery) return;
+    if (isWorkspace || !mounted || isLoading || !submittedWakeQuery) return;
     wakeQueryRef.current(submittedWakeQuery.text);
     wakeListening.consumeSubmittedQuery(submittedWakeQuery.id);
-  }, [isLoading, mounted, submittedWakeQuery, wakeListening.consumeSubmittedQuery]);
+  }, [isLoading, isWorkspace, mounted, submittedWakeQuery, wakeListening.consumeSubmittedQuery]);
 
   const originalHandleSubmit = async (_event?: React.FormEvent<HTMLFormElement>) => {
     await sendChatMessage(input);

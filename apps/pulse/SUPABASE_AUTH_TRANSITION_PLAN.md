@@ -1,5 +1,9 @@
 # Transition Plan: NextAuth to Supabase Auth
 
+> **Superseded historical proposal — September 26, 2026.** Do not execute the installation/replacement checklist below. Current auth uses `@supabase/ssr`, cookie-based clients in `utils/supabase/`, middleware session refresh, and server-validated users in route authorization. The disposable acceptance runner proves real Supabase password sign-in, browser cookies, private realtor APIs and anonymous denial; scan acceptance separately proves Auth + Storage + Mongo. See [review evidence](docs/LUNA_REVIEW_2026-09-26.md).
+>
+> Remaining deployment/account tasks (hosted OAuth configuration, historical user continuity, production RLS/redirect verification) need their own target and authorization. Local password-session evidence does not certify those tasks. Retain the text below only as the original design history; do not use client `getSession()` as a server authorization substitute.
+
 ## Current Implementation (NextAuth)
 - **Providers**: Google Sign-In (`GoogleProvider`).
 - **Database**: MongoDB (`User` model).

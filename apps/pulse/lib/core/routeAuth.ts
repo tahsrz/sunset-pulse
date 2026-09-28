@@ -1,8 +1,18 @@
 import { NextRequest } from 'next/server';
 import { errorResponse } from '@/lib/core/apiResponse';
 import { getOperatorAccess, getVibeCmsAccess, type OperatorAccess } from '@/lib/core/operator_access';
+import { createClient } from '@/utils/supabase/server';
 
 export type AuthorizedOperator = OperatorAccess & { allowed: true };
+export type AuthorizedUser = { allowed: true; user: { id: string; email?: string }; mode: 'user' };
+
+export async function requireSignedInUser(request: NextRequest): Promise<AuthorizedUser | Response> {
+  void request;
+  const supabase = createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return errorResponse('Sign-in is required.', 401);
+  return { allowed: true, user: { id: user.id, email: user.email }, mode: 'user' };
+}
 
 export async function requireOperatorRouteAccess(request: NextRequest): Promise<AuthorizedOperator | Response> {
   const access = isVibeCmsRoute(request)
@@ -38,7 +48,7 @@ export function getRequestHostFromHeaders(requestHeaders: Pick<Headers, 'get'>):
   return requestHeaders.get('host');
 }
 
-export function isAuthResponse(value: AuthorizedOperator | Response): value is Response {
+export function isAuthResponse(value: unknown): value is Response {
   return value instanceof Response;
 }
 

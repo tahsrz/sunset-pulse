@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "key": "real-estate-readiness",
+  "version": 1,
+  "title": "Keller / Westlake readiness intake",
+  "inputSchema": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "property_id": { "type": "string", "title": "Shortlist property ID", "minLength": 1, "maxLength": 240 } },
+    "required": ["property_id"]
+  },
+  "workflows": [{
+    "schemaVersion": 1, "key": "readiness-intake", "version": 1, "entry": "missing_fact",
+    "nodes": [
+      { "id": "missing_fact", "kind": "checkpoint", "type": "question", "prompt": "What property information should Jamie organize next? This intake does not change verified facts or authorize outreach.", "responseSchema": { "type": "string" }, "next": "done" },
+      { "id": "done", "kind": "complete" }
+    ]
+  }],
+  "capabilities": [],
+  "artifactSchemas": {},
+  "settingsSchema": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "area": { "type": "string", "maxLength": 32, "enum": ["keller-westlake"] } },
+    "required": ["area"]
+  }
+}

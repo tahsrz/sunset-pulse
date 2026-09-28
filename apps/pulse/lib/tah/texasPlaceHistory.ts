@@ -43,6 +43,13 @@ export type TexasPlaceHistoryTah = {
   status: 'seeded' | 'planned';
 };
 
+export type TexasPlaceLandmark = {
+  name: string;
+  address: string;
+  description: string;
+  imageAlt: string;
+};
+
 export type TexasPlaceHistoryEntry = {
   slug: string;
   name: string;
@@ -52,6 +59,7 @@ export type TexasPlaceHistoryEntry = {
   detail: string;
   milestones: TexasPlaceHistoryMilestone[];
   sources: TexasPlaceHistorySource[];
+  landmark: TexasPlaceLandmark;
   tah: TexasPlaceHistoryTah;
   atlasPulse: AtlasPulsePlaceState;
 };
@@ -124,8 +132,19 @@ export const TEXAS_PLACE_HISTORY: TexasPlaceHistoryEntry[] = [
       {
         label: 'Portal to Texas History',
         url: 'https://texashistory.unt.edu/explore/locations/p02017/'
+      },
+      {
+        label: 'Current station details (Valero)',
+        url: 'https://locations.valero.com/en-us/LocationDetails/Index/101-S-COUNCIL-DR-SUNSET-TX-76270-7218/0000028041'
       }
     ],
+    landmark: {
+      name: 'Sunset Gas & Grill',
+      address: '101 S Council Dr, Sunset, TX 76270',
+      description:
+        'Valero lists Sunset Gas & Grill at this address as a station with fuel and a quick-service restaurant. Sunset’s documented town history includes an earlier grocery store, railroad service, and farm-market institutions; the sources do not establish a historical connection between those businesses and today’s station.',
+      imageAlt: 'Stylized illustration of Sunset Gas & Grill at dusk'
+    },
     tah: {
       cartridgeName: TEXAS_PLACE_HISTORY_CARTRIDGE,
       querySeed: 'Sunset Texas history Montague County railroad post office',

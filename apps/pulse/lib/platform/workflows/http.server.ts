@@ -1,0 +1,84 @@
+import 'server-only';
+
+import { NextRequest, NextResponse } from 'next/server';
+import { ZodError, z } from 'zod';
+import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
+import { WorkspaceAccessError } from '@/lib/platform/access/workspaceAccess.server';
+import { PlatformRunError } from './runStore.server';
+import { SchedulerEventError } from '@/lib/autonomous-workflows/schedulerEvents.server';
+
+export type WorkspaceRouteContext = { params: Promise<{ workspaceId: string }> };
+export class WorkflowInputError extends Error {
+  constructor(public readonly status: number, message: string) { super(message); }
+}
+export async function readWorkflowBody(request: NextRequest): Promise<unknown> {
+  const origin = request.headers.get('origin');
+  // NextURL normalizes loopback names. Compare against the actual HTTP Host,
+  // never x-forwarded-host supplied by a client, retaining the request protocol.
+  const requestUrl = new URL(request.url);
+  let expectedOrigin = requestUrl.origin;
+  const host = request.headers.get('host');
+  if (host) {
+    try {
+      const external = new URL(`${requestUrl.protocol}//${host}`);
+      if (external.username || external.password || external.pathname !== '/' || external.search || external.hash) throw new Error();
+      expectedOrigin = external.origin;
+    } catch { throw new WorkflowInputError(403, 'Invalid request host.'); }
+  }
+  if ((origin && origin !== expectedOrigin) || request.headers.get('sec-fetch-site') === 'cross-site') {
+    throw new WorkflowInputError(403, 'Cross-origin request denied.');
+  }
+  if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') {
+    throw new WorkflowInputError(415, 'JSON is required.');
+  }
+  const reader = request.body?.getReader();
+  if (!reader) throw new WorkflowInputError(400, 'Request body is required.');
+  const decoder = new TextDecoder();
+  let size = 0, text = '';
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      size += chunk.value.byteLength;
+      if (size > 131072) { await reader.cancel(); throw new WorkflowInputError(413, 'Request is too large.'); }
+      text += decoder.decode(chunk.value, { stream: true });
+    }
+    text += decoder.decode();
+  } finally { reader.releaseLock(); }
+  try { return JSON.parse(text); } catch { throw new WorkflowInputError(400, 'Invalid JSON.'); }
+}
+
+export async function workspaceWorkflowRequest(
+  request: NextRequest, context: WorkspaceRouteContext,
+  work: (actorId: string, workspaceId: string) => Promise<unknown>,
+) {
+  const access = await requireSignedInUser(request);
+  if (isAuthResponse(access)) return access;
+  const headers = { 'Cache-Control': 'private, no-store' };
+  try {
+    const { workspaceId } = await context.params;
+    z.string().uuid().parse(workspaceId);
+    return NextResponse.json({ ok: true, result: await work(access.user.id, workspaceId) }, { headers });
+  } catch (error) {
+    let status = 500, message = 'Unable to process workflow request.';
+    if (error instanceof WorkflowInputError) { status = error.status; message = error.message; }
+    else if (error instanceof ZodError) { status = 400; message = 'Invalid workflow request.'; }
+    else if (error instanceof WorkspaceAccessError) {
+      status = error.code === 'INVALID' ? 400 : error.code === 'FORBIDDEN' ? 403 : 404;
+      message = error.message;
+    } else if (error instanceof PlatformRunError) {
+      const errors: Record<string, [number, string]> = {
+        '22023': [400, 'Invalid workflow input.'], '42501': [403, 'Workspace action denied.'],
+        P0002: [404, 'Workflow record not found.'], '40001': [409, 'Workflow changed. Reload before saving.'],
+        '23505': [409, 'Workflow request conflict.'], '55000': [503, 'Workflow admission is currently disabled.'],
+        '55P03': [409, 'A quota or workflow admission limit has been reached.'],
+      };
+      [status, message] = errors[error.code] || [status, message];
+    } else if (error instanceof SchedulerEventError) {
+      [status, message] = error.code === 'DISABLED'
+        ? [503, 'Workflow scheduling is currently disabled.']
+        : [500, 'Workflow scheduling is unavailable.'];
+    }
+    return NextResponse.json({ ok: false, error: message }, { status, headers });
+  }
+}

@@ -14,6 +14,7 @@ import { signOut as signOutAction } from '@/app/login/actions';
 import { CartItem } from '@/lib/types';
 import InvestorBar from './investor/InvestorBar';
 import { GlobalCommandPalette, type CommandPaletteRoute } from './GlobalCommandPalette';
+import { appRoutes, routeDescription } from '@/lib/navigation/routeCatalog';
 import { Button } from './ui/button';
 import LeadIntakeDrawer from '@/components/admin/LeadIntakeDrawer';
 
@@ -90,7 +91,11 @@ const Navbar: React.FC = () => {
       navLinks: links,
       primaryLinks: links.slice(0, 5),
       overflowLinks: links.slice(5),
-      commandRoutes: links.map(({ href, label, active, emphasis }) => ({ href, label, active, emphasis })) satisfies CommandPaletteRoute[],
+      commandRoutes: appRoutes.map((route) => ({
+        href: route.href, path: route.path, label: route.label, group: route.group,
+        description: routeDescription(route), documentNavigation: route.kind === 'resource' && route.href === route.path,
+        active: pathname === route.path,
+      })) satisfies CommandPaletteRoute[],
     };
   }, [canOperateLeads, pathname]);
 
@@ -307,6 +312,12 @@ const Navbar: React.FC = () => {
                       <User size={16} />
                       Dashboard
                     </Link>
+                    <Link href="/today" className="block px-4 py-3 text-sm font-bold hover:bg-slate-100">My Today</Link>
+                    <div className="grid grid-cols-3 border-y border-slate-100 bg-slate-50 text-center text-xs font-semibold">
+                      <Link href="/planner" className="px-2 py-3 hover:bg-slate-100">Planner</Link>
+                      <Link href="/business" className="px-2 py-3 hover:bg-slate-100">Business</Link>
+                      <Link href="/goals" className="px-2 py-3 hover:bg-slate-100">Goals</Link>
+                    </div>
                     {!user?.user_metadata?.isSubscribed && sessionRole !== 'realtor' && (
                       <Link href="/premium" className="block px-4 py-3 text-sm font-black text-blue-700 hover:bg-blue-50">
                         Go Premium

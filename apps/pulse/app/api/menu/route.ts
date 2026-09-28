@@ -25,12 +25,22 @@ const menuUpdateSchema = menuCreateSchema.partial().extend({ _id: z.string().min
  */
 export const GET = async (request: NextRequest) => {
   try {
-    const access = await requireOperatorRouteAccess(request);
-    if (isAuthResponse(access)) return access;
+    const includeUnavailable = request.nextUrl.searchParams.get('includeUnavailable') === 'true';
+    if (includeUnavailable) {
+      const access = await requireOperatorRouteAccess(request);
+      if (isAuthResponse(access)) return access;
+    }
+
     await connectDB();
     const agentId = getAgentIdFromInput();
-    
-    const menuItems = await MenuItem.find({ agentId }).sort({ category: 1, name: 1 });
+
+    const menuItems = await MenuItem.find({
+      agentId,
+      ...(includeUnavailable ? {} : { isAvailable: true }),
+    })
+      .select('id name price description category options isAvailable isDaisyPick isStaffPick')
+      .sort({ category: 1, name: 1 })
+      .lean();
     return successResponse(menuItems);
   } catch (error: any) {
     return errorResponse('Failed to retrieve menu data.', 500, error.message);

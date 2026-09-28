@@ -28,8 +28,8 @@ const config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'Inter', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'JetBrains Mono', 'monospace'],
+        sans: ['var(--font-geist-sans, ui-sans-serif)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono, ui-monospace)', 'JetBrains Mono', 'monospace'],
       },
       backgroundImage: {
         'grid-pattern': 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',

@@ -10,7 +10,7 @@ const CinematicHero: React.FC = () => {
   const [isUIVisible, setIsUIVisible] = useState(true);
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-[#061017]">
+    <section className="relative isolate w-full overflow-hidden bg-[#061017]">
       {/* Background Layer */}
       <div className="absolute inset-0 z-0">
         <AtlasGlobeBackground />
@@ -22,7 +22,8 @@ const CinematicHero: React.FC = () => {
 
       {/* Main Hero Overlay with Smooth Fade Transition */}
       <div
-        className={`transition-opacity duration-500 ease-in-out ${
+        inert={!isUIVisible}
+        className={`relative z-30 flex min-h-[480px] items-center justify-center py-20 sm:min-h-[560px] lg:min-h-[min(68svh,760px)] transition-opacity duration-500 ease-in-out ${
           isUIVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
@@ -30,7 +31,7 @@ const CinematicHero: React.FC = () => {
       </div>
 
       {/* News Tabs / Ticker */}
-      <div className="animate-in fade-in duration-700 delay-500">
+      <div className="relative z-40 mx-auto max-w-7xl px-6 pb-8 animate-in fade-in duration-700 delay-500">
         <HeroNewsTabs />
       </div>
 
@@ -38,7 +39,7 @@ const CinematicHero: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsUIVisible((prev) => !prev)}
-        className="group absolute bottom-24 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-xl transition-all hover:border-cyan-300/50 hover:bg-black/60 hover:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 md:bottom-28 md:right-10"
+        className="group absolute top-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-xl transition-all hover:border-cyan-300/50 hover:bg-black/60 hover:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400"
         title={isUIVisible ? 'Hide Interface' : 'Show Interface'}
         aria-label={isUIVisible ? 'Hide Interface' : 'Show Interface'}
       >
