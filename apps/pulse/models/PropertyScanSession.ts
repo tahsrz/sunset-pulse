@@ -89,6 +89,8 @@ const PropertyScanSessionSchema = new mongoose.Schema({
     declaredBytes: { type: Number, required: true, min: 1 },
     expectedRevision: { type: Number, required: true, min: 1 },
     state: { type: String, enum: ['pending', 'finalized', 'aborted', 'expired'], required: true },
+    cleanupPending: { type: Boolean, default: false },
+    capabilityExpiresAt: { type: Date, default: null },
     assetId: { type: String, default: null },
     expiresAt: { type: Date, required: true },
     createdAt: { type: Date, required: true },

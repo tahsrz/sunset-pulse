@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic';
 const CinematicHero = dynamic(() => import('@/components/CinematicHero'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-screen w-full items-center justify-center bg-[#061017]">
-      <div className="animate-pulse text-cyan-500/30 font-black uppercase tracking-[0.4em]">Initializing Hero...</div>
+    <div role="status" className="flex min-h-[480px] w-full items-center justify-center bg-[#061017] px-6 sm:min-h-[560px]">
+      <div className="animate-pulse text-center text-sm text-cyan-200/70">Loading Sunset Pulse…</div>
     </div>
   ),
 });
@@ -14,8 +14,8 @@ const CinematicHero = dynamic(() => import('@/components/CinematicHero'), {
 const VirtualWorldHub = dynamic(() => import('@/components/world/VirtualWorldHub'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[800px] w-full items-center justify-center border-y border-white/5 bg-[#081824]">
-      <div className="animate-pulse text-teal-500/30 font-black uppercase tracking-[0.4em]">Loading Platform Map...</div>
+    <div role="status" className="flex min-h-[560px] w-full items-center justify-center border-y border-white/5 bg-[#081824] px-6">
+      <div className="animate-pulse text-center text-sm text-teal-200/70">Loading platform map…</div>
     </div>
   ),
 });

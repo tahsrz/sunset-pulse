@@ -5,6 +5,10 @@ const sprintHandler = vi.hoisted(() => vi.fn());
 const platformHandler = vi.hoisted(() => vi.fn());
 const connectorHealthHandler = vi.hoisted(() => vi.fn());
 const quotaReconciliationHandler = vi.hoisted(() => vi.fn());
+const realtorReminderHandler = vi.hoisted(() => vi.fn());
+const realtorPlannerHandler = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/autonomous-workflows/realtorReminderWorkflow.server', () => ({ runRealtorReminder: realtorReminderHandler }));
+vi.mock('@/lib/autonomous-workflows/realtorPlannerRefillWorkflow.server', () => ({ runRealtorPlannerRefill: realtorPlannerHandler }));
 vi.mock('@/lib/platform/workflows/runHandler.server', () => ({ runPlatformWorkflow: platformHandler }));
 vi.mock('@/lib/autonomous-workflows/connectorHealthWorkflow.server', () => ({
   runConnectorHealthCheck: connectorHealthHandler,
@@ -28,6 +32,8 @@ describe('workflow registry', () => {
     expect(getWorkflowHandler('platform_run')).toBe(platformHandler);
     expect(getWorkflowHandler('connector_health_check')).toBe(connectorHealthHandler);
     expect(getWorkflowHandler('capability_reservation_reconcile')).toBe(quotaReconciliationHandler);
+    expect(getWorkflowHandler('realtor_reminder')).toBe(realtorReminderHandler);
+    expect(getWorkflowHandler('realtor_planner')).toBe(realtorPlannerHandler);
 
     const scheduledEmail = getWorkflowHandler('hotlist_email');
     expect(scheduledEmail).not.toBe(hotlistHandler);

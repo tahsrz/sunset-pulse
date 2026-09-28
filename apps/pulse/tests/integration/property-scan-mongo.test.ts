@@ -7,7 +7,7 @@ vi.mock('server-only', () => ({}));
 // if the store accidentally starts using an external Supabase dependency.
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: () => { throw new Error('Unexpected external database access'); } } }));
 import { PropertyScanSession } from '@/models/PropertyScanSession';
-import { abortPropertyScanUpload, createPropertyScanSession, appendPropertyScanAssets, expirePropertyScanUploadReservations, finalizePropertyScanUpload, reservePropertyScanUpload, updatePropertyScanReview, updatePropertyScanReviewers, readPropertyScanSession, readPropertyScanSessionForActor } from '@/lib/scans/propertyScanStore';
+import { abortPropertyScanUpload, createPropertyScanSession, appendPropertyScanAssets, completePropertyScanUploadCleanup, expirePropertyScanUploadReservations, finalizePropertyScanUpload, listExpiredPropertyScanUploadReservations, reservePropertyScanUpload, updatePropertyScanReview, updatePropertyScanReviewers, readPropertyScanSession, readPropertyScanSessionForActor } from '@/lib/scans/propertyScanStore';
 
 const owner = randomUUID();
 const asset = () => ({ assetId: randomUUID(), path: `${owner}/fixture/${randomUUID()}.jpg`, fileName: 'room.jpg', mimeType: 'image/jpeg', size: 10, capturedAt: null, uploadedAt: new Date().toISOString() });
@@ -127,7 +127,13 @@ describe('real Mongo conditional scan mutations', () => {
     const aborted = (await reservePropertyScanUpload(session.scanId, owner, abortedInput))!;
     const abortedId = aborted.uploadReservations.find((item) => item.idempotencyKey === abortedInput.idempotencyKey)!.uploadId;
     await abortPropertyScanUpload(session.scanId, owner, abortedId);
-    expect((await readPropertyScanSession(session.scanId, owner))!.uploadReservations.find((item) => item.uploadId === abortedId)?.state).toBe('aborted');
+    const abortedReservation = (await readPropertyScanSession(session.scanId, owner))!.uploadReservations.find((item) => item.uploadId === abortedId)!;
+    expect(abortedReservation).toMatchObject({ state: 'aborted', cleanupPending: true });
+    const queuedCleanup = await listExpiredPropertyScanUploadReservations();
+    const abortedTarget = queuedCleanup.find((target) => target.uploadId === abortedId)!;
+    expect(abortedTarget).toMatchObject({ scanId: session.scanId, ownerId: owner, cleanupPending: true });
+    expect(await completePropertyScanUploadCleanup(abortedTarget)).toBe(true);
+    expect((await readPropertyScanSession(session.scanId, owner))!.uploadReservations.find((item) => item.uploadId === abortedId)?.cleanupPending).toBe(false);
 
     const expiredInput = reservation({ idempotencyKey: 'reservation-expired-1', expectedRevision: 2 });
     const expired = (await reservePropertyScanUpload(session.scanId, owner, expiredInput))!;

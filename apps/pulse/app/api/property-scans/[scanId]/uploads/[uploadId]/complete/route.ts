@@ -26,29 +26,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const path = propertyScanUploadPath(access.user.id, scanId, reservation);
     const storage = process.env.NEXT_PUBLIC_MOCK_MODE === 'true' ? null : supabaseAdmin.storage.from('property-scans');
     const rejectUploadedObject = async () => {
-      if (storage) await storage.remove([path]);
-      await abortScanUpload(scanId, access.user.id, uploadId);
+      const aborted = await abortScanUpload(scanId, access.user.id, uploadId);
+      const rejectedReservation = aborted?.uploadReservations.find((item) => item.uploadId === uploadId);
+      return {
+        rejected: rejectedReservation?.state === 'aborted',
+        cleanupPending: rejectedReservation?.cleanupPending === true,
+      };
     };
     let actualSize = reservation.declaredBytes;
     let actualMimeType = reservation.mimeType;
     let contentHash: string | undefined;
     if (process.env.NEXT_PUBLIC_MOCK_MODE !== 'true') {
       const { data: info, error: infoError } = await storage!.info(path);
-      if (infoError || !info) return errorResponse('Uploaded capture could not be inspected.', 502, infoError?.message);
+      if (infoError || !info) {
+        await rejectUploadedObject();
+        return errorResponse('Uploaded capture could not be inspected.', 502, infoError?.message);
+      }
       actualSize = Number(info.size);
       actualMimeType = String((info as { contentType?: string; mimetype?: string }).contentType || (info as { mimetype?: string }).mimetype || '').toLowerCase();
       if (actualSize !== reservation.declaredBytes || actualMimeType !== reservation.mimeType) {
-        await rejectUploadedObject();
-        return errorResponse('Uploaded capture metadata does not match its reservation.', 409);
+        const cleanup = await rejectUploadedObject();
+        return errorResponse('Uploaded capture metadata does not match its reservation.', 409, {
+          code: cleanup.cleanupPending ? 'SCAN_UPLOAD_REJECTED_CLEANUP_PENDING' : 'SCAN_UPLOAD_METADATA_MISMATCH',
+        });
       }
       const { data: file, error: downloadError } = await storage!.download(path);
-      if (downloadError || !file) return errorResponse('Uploaded capture could not be read for integrity validation.', 502, downloadError?.message);
+      if (downloadError || !file) {
+        await rejectUploadedObject();
+        return errorResponse('Uploaded capture could not be read for integrity validation.', 502, downloadError?.message);
+      }
       let integrity: PropertyScanUploadIntegrity;
       try {
         integrity = inspectPropertyScanUpload({ bytes: new Uint8Array(await file.arrayBuffer()), expectedBytes: reservation.declaredBytes, expectedMimeType: reservation.mimeType });
       } catch (error) {
-        await rejectUploadedObject();
-        return errorResponse(error instanceof Error ? error.message : 'Uploaded capture failed integrity validation.', 422);
+        const cleanup = await rejectUploadedObject();
+        return errorResponse(error instanceof Error ? error.message : 'Uploaded capture failed integrity validation.', 422, {
+          code: cleanup.cleanupPending ? 'SCAN_UPLOAD_REJECTED_CLEANUP_PENDING' : 'SCAN_UPLOAD_CONTENT_INVALID',
+        });
       }
       actualSize = integrity.size;
       actualMimeType = integrity.mimeType;
@@ -59,8 +73,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const asset = propertyScanAssetSchema.parse({ assetId: reservation.assetId, path, fileName: reservation.fileName, mimeType: reservation.mimeType, size: actualSize, contentHash, capturedAt: null, uploadedAt: new Date().toISOString() });
     const finalized = await finalizeScanUpload(scanId, access.user.id, uploadId, asset, reservation.expectedRevision);
     if (!finalized) {
-      await rejectUploadedObject();
-      return errorResponse('Capture changed before finalization. Refresh the private session and retry.', 409);
+      const cleanup = await rejectUploadedObject();
+      return errorResponse('Capture changed before finalization. Refresh the private session and retry.', 409, {
+        code: cleanup.cleanupPending ? 'SCAN_UPLOAD_REJECTED_CLEANUP_PENDING' : 'SCAN_UPLOAD_REVISION_CONFLICT',
+      });
     }
     return successResponse({ endpoint: `/api/property-scans/${scanId}/uploads/${uploadId}/complete`, session: finalized });
   } catch (error) {

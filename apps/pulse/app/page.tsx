@@ -13,6 +13,7 @@ import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 import { getTourHotList } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
+import styles from './home.module.css';
 
 /**
  * fetches curated properties on the server and streams them once resolved
@@ -30,7 +31,7 @@ const HomePage = async () => {
   const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
 
   return (
-    <>
+    <div className={styles.homePage}>
       <CounterScanActions showLeadOperations={access.allowed} />
       <HomeHero />
       <div className="waterlily-surface">
@@ -52,7 +53,7 @@ const HomePage = async () => {
         <FAQSection />
         <ArchitectureOverview />
       </div>
-    </>
+    </div>
   );
 };
 
@@ -61,22 +62,22 @@ export default HomePage;
 function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolean }) {
   return (
     <section className="relative z-30 border-b border-cyan-200/15 bg-[#07131a] px-4 py-4 text-white shadow-2xl shadow-black/30 md:px-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="rounded-3xl border border-cyan-200/15 bg-white/[0.06] p-4 backdrop-blur md:flex md:items-center md:justify-between md:gap-6">
-          <div>
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-5 rounded-3xl border border-cyan-200/15 bg-white/[0.06] p-5 backdrop-blur sm:p-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-8">
+          <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-200/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-100">
               <Sparkles size={13} />
               Scanned from Sunset?
             </p>
-            <h1 className="mt-3 text-2xl font-black uppercase leading-tight tracking-[0.02em] text-white md:text-4xl">
+            <h2 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">
               Order Food or Open The Explorer
-            </h1>
-            <p className="mt-2 max-w-2xl text-xs font-bold uppercase leading-6 tracking-[0.14em] text-slate-400">
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               Start a grill pickup order or explore the Sunset Pulse map.
             </p>
           </div>
 
-          <div className={`mt-4 grid gap-2 sm:grid-cols-2 md:mt-0 ${showLeadOperations ? 'md:min-w-[680px] md:grid-cols-3' : 'md:min-w-[360px] md:grid-cols-2'}`}>
+          <div className={`grid gap-3 ${showLeadOperations ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
             <Link
               href="/grill"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-400 px-4 py-4 text-xs font-black uppercase tracking-[0.18em] text-slate-950 shadow-lg shadow-orange-950/30 transition hover:bg-orange-300"

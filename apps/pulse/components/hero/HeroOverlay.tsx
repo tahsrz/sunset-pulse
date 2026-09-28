@@ -8,27 +8,27 @@ const HeroOverlay: React.FC = () => {
   const titleWords = hero.title.split(' ');
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 backdrop-blur-[10px]">
+    <div className="relative z-30 flex w-full flex-col items-center justify-center px-6">
       <div className="relative z-40 w-full max-w-3xl flex flex-col items-center text-center">
-        <div className="relative mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="relative mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
             <div className="absolute h-36 w-36 rounded-full border border-cyan-200/30 animate-pulse-expand" />
             <div className="absolute h-36 w-36 rounded-full border border-amber-200/25 animate-pulse-expand [animation-delay:1.6s]" />
             <div className="absolute h-36 w-36 rounded-full border border-rose-200/20 animate-pulse-expand [animation-delay:3.2s]" />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
             {titleWords[0]} <span className="waterlily-heading italic">{titleWords.slice(1).join(' ')}</span>
           </h1>
-          <p className="text-base md:text-lg text-slate-200 max-w-xl mx-auto font-medium tracking-wide drop-shadow-[0_2px_18px_rgba(2,6,23,0.75)]">
+          <p className="text-base leading-7 md:text-lg text-slate-200 max-w-xl mx-auto font-medium drop-shadow-[0_2px_18px_rgba(2,6,23,0.75)]">
             {hero.subtitle}. {hero.description}
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-4 sm:flex-row flex-wrap justify-center">
+        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center justify-center">
           <Link
             href="/atlas"
-            className="group relative flex items-center gap-4 rounded-full px-10 py-5 waterlily-button font-black uppercase text-xl hover:scale-105 transition-transform duration-300"
+            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full px-8 py-4 waterlily-button font-bold uppercase text-sm hover:scale-105 transition-transform duration-300"
           >
             <Compass size={24} />
             <span>{cta.button_text}</span>
@@ -38,7 +38,7 @@ const HeroOverlay: React.FC = () => {
           </Link>
           <Link
             href="/idx"
-            className="group relative flex items-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-black uppercase text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10 hover:scale-105 duration-300"
+            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-bold uppercase text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10 hover:scale-105 duration-300"
           >
             <Search size={18} />
             <span>IDX Search</span>
@@ -47,7 +47,7 @@ const HeroOverlay: React.FC = () => {
           </Link>
           <Link
             href="/grill"
-            className="group relative flex items-center gap-3 rounded-full border border-orange-500/30 bg-black/45 px-6 py-4 text-sm font-black uppercase text-amber-50 backdrop-blur-xl transition-all hover:border-orange-400/60 hover:bg-orange-950/20 hover:text-orange-200 hover:scale-105 duration-300"
+            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full border border-orange-500/30 bg-black/45 px-6 py-4 text-sm font-bold uppercase text-amber-50 backdrop-blur-xl transition-all hover:border-orange-400/60 hover:bg-orange-950/20 hover:text-orange-200 hover:scale-105 duration-300"
           >
             <Flame size={18} className="text-orange-400 group-hover:animate-pulse" />
             <span>The Grill</span>

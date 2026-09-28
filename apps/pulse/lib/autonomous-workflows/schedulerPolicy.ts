@@ -33,6 +33,24 @@ export function normalizeScheduleSpec(input: ScheduleSpecInput): ScheduleSpec {
   return scheduleSpecSchema.parse(input);
 }
 
+/** Resolve an explicit local calendar date/time using the scheduler's existing
+ * DST overlap/gap rules. Domain planners can share wall-clock semantics without
+ * copying timezone arithmetic. */
+export function resolveLocalDateTime(localDate: string, localTime: string, timeZone: string): string {
+  const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(localDate);
+  const time = /^(\d{2}):(\d{2})$/.exec(localTime);
+  if (!date || !time || !isValidTimeZone(timeZone)) throw new Error('A valid local date, time, and timezone are required.');
+  const parts: CalendarParts = {
+    year: Number(date[1]), month: Number(date[2]), day: Number(date[3]),
+    hour: Number(time[1]), minute: Number(time[2]), second: 0,
+  };
+  const validDate = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  if (validDate.getUTCFullYear() !== parts.year || validDate.getUTCMonth() !== parts.month - 1 || validDate.getUTCDate() !== parts.day || parts.hour > 23 || parts.minute > 59) {
+    throw new Error('A valid local date and time are required.');
+  }
+  return calendarToUtcIso(parts, timeZone);
+}
+
 export function cadenceMilliseconds(cadence: WorkflowCadence) {
   if (cadence === 'daily') return DAY_MS;
   if (cadence === 'weekly') return 7 * DAY_MS;

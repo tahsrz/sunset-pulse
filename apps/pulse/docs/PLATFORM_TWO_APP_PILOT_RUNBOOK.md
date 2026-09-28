@@ -2,6 +2,52 @@
 
 This runbook defines a small, evidence-led rehearsal for the two reviewed, capability-empty manifests. It is a preparation aid, not authorization to enable providers, send email, publish content, migrate production, or invite real users. Complete the local authenticated acceptance first; use a dedicated non-production workspace and explicit operator approval for any participant pilot.
 
+## Operator go/no-go intake
+
+Complete this record before choosing a pilot session. Until every required field is explicitly confirmed, treat the decision as **NO-GO**. Do not include participant email addresses, invitation tokens, credentials, property addresses, or client content here; use pseudonymous participant labels in the evidence log below.
+
+```text
+Target environment name:
+Supabase/Vercel project reference (non-secret identifier only):
+Explicit confirmation this is non-production: yes / no
+Intended workspace UUID (from that target environment):
+Named session operator:
+Workspace owner has confirmed the intended member/reviewer participants: yes / no
+Session date and bounded UTC start/end:
+Approved workspace budget values and approval reference:
+Current platform_run admission state, verified by:
+Explicit approval to enable platform_run only in this named non-production project/workspace for this bounded session: yes / no
+Person responsible for restoring admission to disabled and verifying it:
+Provider invocation / paid calls / external effects / outbound email / publication remain disabled: yes / no
+```
+
+Any `no`, unknown value, production project, missing owner consent, or missing bounded admission approval is an automatic NO-GO. The local Docker preflight is not evidence about a hosted project's state. Verify the target's migration head and admission/budget/provider settings with approved read-only operational tooling before any separately approved admission change. Enabling a provider, external effect, email, publication, or production path is outside this pilot approval and requires its own decision.
+
+## Hosted read-only preflight evidence
+
+Record this separately from the go/no-go approval. Use the environment's approved read-only console or query mechanism; do not link this checkout to a hosted project, apply migrations, toggle settings, or paste credentials into the record. If a value cannot be verified read-only, record `unknown` and keep the decision NO-GO.
+
+```text
+Inspection timestamp (UTC):
+Operator pseudonym:
+Environment name and non-secret project reference:
+Evidence reference (dashboard page, query ID, or secured internal record; no secret URL parameters):
+Observed migration version(s):
+Required migration head present? (yes/no; expected at least 20260924170000):
+Workspace UUID and status:
+Owner/admin/member/reviewer roles verified for intended participants? (yes/no; record counts or pseudonyms, not emails):
+Both reviewed app keys, versions, hashes and install revisions verified? (yes/no):
+Both manifests have zero capabilities? (yes/no):
+Workspace budget configured and approved? (yes/no; record revision/reference, not secrets):
+Provider credentials/integrations absent or disabled? (yes/no):
+External-effect, email and publication dispatch disabled? (yes/no):
+platform_run admission observed state (enabled/disabled/unknown):
+Independent reviewer/operator who checked this record:
+Unresolved discrepancies (must be none to proceed):
+```
+
+This record establishes only observed configuration at the stated time. It does not grant permission to change admission, invite participants, invoke providers, or start a session; the separate bounded approval in the intake remains mandatory. Re-run the read-only checks immediately before the session and after restoring admission to disabled, then preserve both records with the session evidence.
+
 ## Readiness gates
 
 - [ ] For a local rehearsal only, from `apps/pulse`, run `npm run platform:pilot:preflight -- --stack <existing-local-stack-id> --workspace <intended-team-workspace-uuid>` and resolve every `BLOCKED` item. This CLI reads only the named local Docker Supabase database; it is not a remote/non-production-project preflight. For any non-production hosted target, verify migration head, workspace membership/roles, budget, provider settings and admission using that environment's approved read-only operational tooling, record the project identity, and do not reuse local fixture evidence. The command is read-only and does not authorize enabling admission or starting a participant session; if no intended workspace exists, stop here rather than selecting one from local fixtures.

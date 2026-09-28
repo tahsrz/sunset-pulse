@@ -38,6 +38,9 @@ export async function updateSession(request, createResponse) {
     path.startsWith('/abidan/war-room')
   let userRole = null
 
+  const personalRealtorWorkspace = ['/today', '/planner', '/business', '/goals']
+    .some((route) => path === route || path.startsWith(`${route}/`))
+
   if (user) {
     userRole = needsRole ? await getSupabaseProfileRole(user.id, session?.access_token, supabaseConfig) : null
 
@@ -52,6 +55,7 @@ export async function updateSession(request, createResponse) {
     if (
       path.startsWith('/collections') || 
       path.startsWith('/profile') || 
+      personalRealtorWorkspace ||
       path.startsWith('/dashboard') ||
       path.startsWith('/abidan/war-room') ||
       path.startsWith('/scythe') ||

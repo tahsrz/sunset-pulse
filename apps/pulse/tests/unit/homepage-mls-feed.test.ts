@@ -29,7 +29,9 @@ describe('homepage MLS feed', () => {
       listing('remote', 'MLS', ['https://cdn.example.test/home.jpg']),
       listing('missing', 'MLS', []),
       listing('broken-local', 'MLS', ['/sample/missing.jpg']),
+      listing('mixed-images', 'MLS', ['/sample/missing.jpg', 'https://cdn.example.test/actual.jpg']),
       listing('internal', 'Internal', ['https://cdn.example.test/internal.jpg']),
+      { ...listing('private', 'MLS', ['https://cdn.example.test/private.jpg']), display_public: false },
     ];
     const lean = vi.fn().mockResolvedValue(candidates);
     const limit = vi.fn(() => ({ lean }));
@@ -43,11 +45,13 @@ describe('homepage MLS feed', () => {
       source: 'MLS',
       listing_status: 'Active',
     }));
-    expect(body.data.listings).toHaveLength(3);
+    expect(body.data.listings).toHaveLength(4);
     expect(body.data.listings[0]._id).toBe('remote');
     expect(body.data.listings[0].images[0]).toBe('https://cdn.example.test/home.jpg');
-    expect(body.data.listings[1].images[0]).toMatch(/^\/images\/properties\//);
-    expect(body.data.listings[2].images[0]).toMatch(/^\/images\/properties\//);
+    expect(body.data.listings[1].images).toEqual(['/images/property-placeholder.svg']);
+    expect(body.data.listings[2].images).toEqual(['/images/property-placeholder.svg']);
+    expect(body.data.listings[3].images).toEqual(['https://cdn.example.test/actual.jpg']);
+    expect(body.data.listings.some((candidate: any) => candidate._id === 'private')).toBe(false);
     expect(body.data.listings.some((candidate: any) => candidate.source === 'Internal')).toBe(false);
   });
 });

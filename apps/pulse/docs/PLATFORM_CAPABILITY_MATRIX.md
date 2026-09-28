@@ -1,33 +1,39 @@
 # Sunset Pulse capability matrix
 
-Updated: September 22, 2026. Labels describe source evidence, not marketing availability.
+Updated: September 24, 2026. Labels describe source evidence, not marketing availability.
 Phase references follow the active [three-phase operating platform plan](SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md).
-Next execution queue: [September 21–25 handoff](PLATFORM_WEEK_2026-09-21.md). Test scope and exact CI head: [September 18 evidence](PLATFORM_VERIFICATION_2026-09-18.md).
+The current pilot boundary and local-only evidence are recorded in the [two-app pilot runbook](PLATFORM_TWO_APP_PILOT_RUNBOOK.md) and [rollout handoff](PLATFORM_ROLLOUT_HANDOFF_2026-09-22.md). The September 21–25 handoff is historical sequencing evidence, not the active queue.
 
 | Capability | Current state | Evidence / boundary | Platform phase |
 | --- | --- | --- | --- |
 | Signed-in user authentication | implemented | `lib/core/routeAuth.ts`; route-level session guard | Core |
-| Personal/team platform workspace | local real-auth APIs and inbox access accepted; full domain isolation pending | Browser password sessions create workspaces, render the inbox/run flow and deny revoked/archived/foreign access through API/JWT RLS. Legacy domain adapters remain bounded by explicit mappings | Core |
+| Personal/team platform workspace | local real-auth access surfaces accepted; full domain isolation pending | Authenticated hub, workspace creation, invitations, explicit acceptance/revocation, inbox and run APIs. Browser password sessions deny revoked/archived/foreign access through API/JWT RLS. Legacy domain adapters remain bounded by explicit mappings | Core |
 | Existing-record personal scope report | dry-run code present; environment report blocked | `scripts/platform-scope-backfill.ts` reports profile/site/property mappings and refuses writes; last configured Supabase key was invalid | Core |
 | Existing tenant-site scope | implemented with acceptance limits | `lib/tenancy`; site config and domain publication rules | Core scope adapters |
 | Property shortlist and weekly sprint proposal | scoped persistence implemented locally; production rollout pending | Mapped workspace inputs, revisions, replay and archived/foreign denial pass disposable Postgres acceptance. Production admission and fresh PR CI remain separate | Core → Declarative Engine |
+| Realtor personal planner and scoreboard | implemented locally; disposable real-auth and database acceptance passed | `/today`, `/planner`, `/business`, and `/goals`; recurring dues/deadlines, opt-in in-app reminders, manual income/expense ledger, annual CSV, goals/progress, and owner-scoped property-task handoff with stale-revision conflict recovery. Disposable authenticated browser, 54 realtor SQL assertions (including 03:00 owner-local schedule and timezone-update behavior), seven cross-session mutation races, focused UI/API tests, lint, and production build pass. Responsive visual review and operational reminder-cadence/privacy pilot evidence remain; no production rollout claim | Product workflow using Core scheduler |
 | Durable scheduled workflow jobs | implemented; local and September 18 CI acceptance pass | Existing leases/retries/cancellation/deferral and atomic platform results pass disposable Postgres; production worker/admission rollout remains separate | Core, reused queue |
-| Generic platform workflow definitions | backend implemented locally; admission disabled | Versioned JSON graph/state in `platform_runs`; scalar checkpoint and complete nodes only; no capability/condition nodes yet | Core |
+| Generic platform workflow definitions | implemented locally; run admission disabled outside acceptance | Versioned JSON graph/state in `platform_runs`; bounded condition nodes, scalar checkpoints, completion, recovery and supersession; provider execution remains disabled | Core |
 | Jamie retrieval/command preparation | implemented with domain-specific limits | Command router, TAH/retrieval and worker roster; shared protocol gateway still pending | Declarative Engine |
 | General autonomous worker execution | unavailable | `platform_run` handler advances checkpoints/completion, not arbitrary tools or named agents | Declarative Engine |
-| Human question and answer resume | real-auth backend and shared inbox accepted locally | Unified checkpoint API, typed answers, cursor pages, atomic queue resume, ManifestForm, CheckpointCard and run detail. Browser cookie flow, revoked/archived denial and real JWT isolation pass | Core → Control Layer |
+| Human question and answer resume | real-auth backend and shared inbox accepted locally | Unified checkpoint API, typed answers, cursor pages, atomic queue resume, ManifestForm, CheckpointCard, run detail and read-only system monitors. Browser cookie flow, revoked/archived denial and real JWT isolation pass | Core → Control Layer |
 | Blocked recovery and input supersession | implemented locally | Admin recovery requires restored requester authority; replacement runs preserve prior checkpoint evidence; concurrent attempts tested | Core |
 | Immutable cross-domain artifacts | partial/domain-specific | Vibe revisions and property artifacts exist; generic run state will reference authoritative outputs | Declarative Engine |
 | Exact-output approval | checkpoint backend implemented; domain integration pending | Approval/effect-gate snapshots and role checks exist; email/Vibe retain their own execution boundaries | Core → Declarative Engine |
 | External effect reconciliation | partial/domain-specific | Reuse existing email, Stripe and publication ledgers; new connectors need operation identity and uncertain-outcome recovery | Declarative Engine |
 | Stored app manifests | implemented locally, intake-only | Strict JSON contract, pinned/revision-checked install store/API, bounded launch route and owner/admin API; two reviewed tool-free fixtures | Declarative Engine |
-| MCP/OpenAPI dispatch and schema forms | planned | No protocol gateway, form renderer or provider execution; nonempty capabilities rejected | Declarative Engine |
+| MCP/OpenAPI dispatch and schema forms | gateway contract exists; live dispatch unavailable | Reviewed connector snapshots, protocol fixtures, policy and receipt boundaries exist. No live provider invocation; manifests remain capability-empty for the pilot | Declarative Engine |
+| Workspace/run quotas and cost ledgers | implemented locally; provider dispatch disabled | Transactional concurrency/reservations, per-run step/token/cost/time ceilings, settlement, reconciliation, provider review/quota fences and immutable overrun evidence; no paid calls | Control Layer |
+| Connector health and exception evidence | fixture-only, implemented locally; scheduling contract disabled by default | Bounded health history, idempotent receipts, audit and independently paginated inbox evidence; no credential reads or live probes | Control Layer |
+| Unknown-effect recovery | audited review/retry intent implemented locally; dispatch remains unavailable | Reconciliation evidence and distinct retry operation identity preserve the original receipt; no queueing, receipt rewrite, or provider dispatch | Control Layer |
+| Workspace invitations and access revocation | local real-auth acceptance passed | Email-bound one-time links, explicit invite acceptance, owner/admin-scoped member/invite revocation; delivery is manual (`not_sent`), no automated email | Control Layer |
+| Spatial workspace canvas and command shell | implemented locally; presentation/read-only boundaries | Private revisioned layout, keyboard controls, strict command grammar, allowlisted windows and bounded read monitors; no direct worker RPC or arbitrary command execution | Control Layer |
 | Real property reconstruction | unavailable | `reconstructionUnavailable`; no selected processor | Praxis S8/S9 |
 | Local-first sync | feature-gated partial | PowerSync is limited to selected listing/account tables | Control Layer, only after RLS gates |
 | Docker development/acceptance | implemented | `infra/local`; Mongo/Postgres acceptance, not production workers | Core evidence / Control Layer operations |
 | Production worker autoscaling | unavailable | Current cron/route worker has bounded invocation limits | Control Layer |
-| Team invitations and external reviewers | unavailable | No platform-scoped invitation/grant model | Control Layer |
-| Cross-workspace operational recovery | unavailable | Existing feature-specific observability only; run/checkpoint audit added locally | Control Layer |
+| External reviewer pilot | technically supported, operational pilot pending | Reviewer role and invitation path exist; actual intended non-production workspace, participants, consent and acceptance evidence have not been supplied | Control Layer |
+| Cross-workspace operational recovery | unavailable by design | Recovery remains owner/admin and workspace scoped; no cross-workspace operator bypass | Control Layer |
 | Second reusable business app | intake fixture only | Client-content manifest persists under the same contract; resource-bound launch, approval/publication integrations still pending | Declarative Engine |
 
 An item remains unavailable until its registered code path, authorization boundary and relevant acceptance evidence exist. A UI card, a plan checkbox, a named agent, a passing unit test or a configured environment variable does not change that label.

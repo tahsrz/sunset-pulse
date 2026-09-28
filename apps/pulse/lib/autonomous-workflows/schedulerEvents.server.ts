@@ -9,7 +9,7 @@ export class SchedulerEventError extends Error {
 
 const eventInputSchema = z.object({
   userId: z.string().uuid(),
-  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check', 'capability_reservation_reconcile']),
+  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check', 'capability_reservation_reconcile', 'realtor_reminder']),
   eventKey: z.string().trim().min(1).max(240),
   payload: z.record(z.string(), z.unknown()),
   payloadVersion: z.number().int().positive().default(1),

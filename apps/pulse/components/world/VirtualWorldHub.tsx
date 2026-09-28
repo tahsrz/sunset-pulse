@@ -58,6 +58,7 @@ function getPayloadData(payload: any) {
 function countFrom(value: any): number | null {
   if (Array.isArray(value)) return value.length;
   if (typeof value?.count === 'number') return value.count;
+  if (Array.isArray(value?.properties)) return value.properties.length;
   if (Array.isArray(value?.listings)) return value.listings.length;
   if (Array.isArray(value?.cartridges)) return value.cartridges.length;
   if (Array.isArray(value?.nodes)) return value.nodes.length;
@@ -79,8 +80,8 @@ function summarizePreview(endpoint: WorldEndpoint, payload: any, response: Respo
   if (!response.ok) {
     return {
       status: 'error',
-      metric: endpoint.fallbackMetric,
-      detail: payload?.message || payload?.error || endpoint.fallbackDetail,
+      metric: 'Preview unavailable',
+      detail: endpoint.fallbackDetail,
       meta: endpoint.apiPath
     };
   }
@@ -92,7 +93,7 @@ function summarizePreview(endpoint: WorldEndpoint, payload: any, response: Respo
     case 'property-grid':
       return {
         status: 'ready',
-        metric: count === null ? 'Listings available' : `${count} listings sampled`,
+        metric: count === null ? 'Listing preview available' : `${count} listings sampled`,
         detail: 'Ready to expand into browse, search, and property detail pages.',
         meta: endpoint.apiPath
       };
@@ -369,7 +370,7 @@ const VirtualWorldHub: React.FC = () => {
           ...current,
           [activeEndpoint.id]: {
             status: 'error',
-            metric: activeEndpoint.fallbackMetric,
+            metric: 'Preview unavailable',
             detail: activeEndpoint.fallbackDetail,
             meta: activeEndpoint.apiPath
           }
@@ -423,7 +424,8 @@ const VirtualWorldHub: React.FC = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
-          <div className="relative h-[640px] overflow-hidden rounded-lg border border-white/10 bg-[#06111c] shadow-2xl shadow-black/30">
+          <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#06111c] shadow-2xl shadow-black/30">
+            <div className="relative min-h-[360px] flex-1 sm:min-h-[440px]">
             <div className="absolute left-4 top-4 z-10 rounded-lg border border-white/10 bg-black/30 px-4 py-3 backdrop-blur-md">
               <p className="text-xs font-semibold text-teal-100/70">Selected Area</p>
               <p className="mt-1 text-lg font-black">{activeEndpoint.district}</p>
@@ -447,8 +449,9 @@ const VirtualWorldHub: React.FC = () => {
               />
             )}
 
-            <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-black/30 p-4 backdrop-blur-md">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+            </div>
+            <div className="relative z-10 border-t border-white/10 bg-black/30 p-4 backdrop-blur-md">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {WORLD_QUERY_LAUNCHES.map((query) => (
                   <button
                     key={query.label}
@@ -466,15 +469,15 @@ const VirtualWorldHub: React.FC = () => {
 
           <div className="flex flex-col gap-4">
             <div className="rounded-lg border border-white/10 bg-white/[0.075] p-5 shadow-xl shadow-black/20 backdrop-blur-xl">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
                   <div
-                    className="flex h-12 w-12 items-center justify-center rounded-lg border border-white/20"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-white/20"
                     style={{ backgroundColor: activeEndpoint.glow, color: activeEndpoint.color }}
                   >
                     <ActiveIcon size={24} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold text-white/60">{activeEndpoint.district}</p>
                     <h3 className="text-2xl font-black">{activeEndpoint.label}</h3>
                   </div>
@@ -489,9 +492,9 @@ const VirtualWorldHub: React.FC = () => {
 
               <p className="mt-4 text-sm leading-6 text-white/70">{activeEndpoint.description}</p>
 
-              <div className="mt-5 rounded-lg border border-white/10 bg-black/24 p-4">
+              <div className="mt-5 rounded-lg border border-white/10 bg-black/25 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold text-white/50">{activePreview.meta || activeEndpoint.apiPath || 'workflow'}</p>
+                  <p className="text-xs font-semibold text-white/60">{activePreview.status === 'loading' ? 'Loading preview' : activePreview.status === 'error' ? 'Preview unavailable' : activePreview.status === 'locked' ? 'Access required' : activePreview.status === 'idle' ? 'Checking preview' : 'At a glance'}</p>
                   {activePreview.status === 'loading' && <Loader2 size={14} className="animate-spin text-teal-200" />}
                 </div>
                 <p className="mt-2 text-xl font-black text-white">{activePreview.metric}</p>
@@ -519,6 +522,7 @@ const VirtualWorldHub: React.FC = () => {
                     key={endpoint.id}
                     type="button"
                     onClick={() => setActiveId(endpoint.id)}
+                    aria-pressed={isActive}
                     className={`flex min-h-20 items-center gap-3 rounded-lg border p-3 text-left transition ${
                       isActive
                         ? 'border-white/30 bg-white/[0.15]'
@@ -532,8 +536,8 @@ const VirtualWorldHub: React.FC = () => {
                       <Icon size={18} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-black">{endpoint.label}</span>
-                      <span className="block truncate text-xs text-white/50">{endpoint.apiPath || endpoint.method}</span>
+                      <span className="block text-sm font-semibold leading-5">{endpoint.label}</span>
+                      <span className="mt-1 block text-xs text-white/60">{endpoint.authRequired ? 'Sign in to use' : endpoint.district}</span>
                     </span>
                   </button>
                 );

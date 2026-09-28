@@ -6,6 +6,260 @@ import { command, withDockerService } from './docker-acceptance.mjs';
 import { platformRunAcceptance } from './platform-run-acceptance.mjs';
 import { platformFollowupAcceptance } from './platform-followup-acceptance.mjs';
 
+async function runRealtorDatabaseChecks(sql) {
+  const migrations = [
+    '20260924170000_platform_workspace_member_email_cast.sql',
+    '20260925100000_realtor_personal_workspace.sql',
+    '20260925110000_realtor_reminder_worker.sql',
+    '20260925120000_realtor_occurrence_materialization.sql',
+    '20260925130000_realtor_planner_refill.sql',
+    '20260925140000_realtor_financial_lifecycle.sql',
+    '20260925150000_realtor_weekly_review_progress.sql',
+    '20260925160000_realtor_progress_history.sql',
+  '20260925170000_realtor_planner_property_scope.sql',
+  '20260925180000_realtor_planner_sprint_task_identity.sql',
+  '20260925190000_realtor_service_role_read_grants.sql',
+  '20260925200000_realtor_digest_search_path.sql',
+  '20260925210000_realtor_property_task_read_grants.sql',
+  '20260926000000_realtor_reminder_lifecycle.sql',
+];
+  for (const migration of migrations) {
+    await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
+  }
+  const cases = [
+    { file: 'realtor_planner_task_identity.sql', assertions: 22 },
+    { file: 'realtor_financial_lifecycle.sql', assertions: 22 },
+    { file: 'realtor_planner_refill.sql', assertions: 13 },
+    { file: 'realtor_reminder_lifecycle.sql', assertions: 6 },
+  ];
+  for (const { file, assertions } of cases) {
+    const test = await readFile(new URL(`../supabase/tests/database/${file}`, import.meta.url), 'utf8');
+    assert.match(test, /CREATE EXTENSION IF NOT EXISTS pgtap;/, `${file} should retain normal Supabase pgTAP setup`);
+    // postgres:17-alpine does not bundle pgTAP. Provide only these assertion
+    // helpers inside the disposable test transaction; Supabase uses pgTAP.
+    const shim = `
+      CREATE TEMP TABLE realtor_tap_state(expected integer NOT NULL, actual integer NOT NULL DEFAULT 0, failed integer NOT NULL DEFAULT 0, failures text[] NOT NULL DEFAULT '{}');
+      CREATE TEMP SEQUENCE realtor_tap_assertion;
+      CREATE FUNCTION public.plan(p_expected integer) RETURNS text LANGUAGE sql AS '
+        WITH planned AS (INSERT INTO pg_temp.realtor_tap_state(expected) VALUES (p_expected) RETURNING expected)
+        SELECT ''1..'' || expected::text FROM planned
+      ';
+      CREATE FUNCTION public.ok(p_passed boolean, p_description text) RETURNS text LANGUAGE sql AS '
+          WITH assertion AS (UPDATE pg_temp.realtor_tap_state SET actual = actual + 1, failed = failed + CASE WHEN p_passed THEN 0 ELSE 1 END, failures = failures || CASE WHEN p_passed THEN ARRAY[]::text[] ELSE ARRAY[p_description] END RETURNING actual)
+        SELECT CASE WHEN p_passed THEN ''ok '' ELSE ''not ok '' END || nextval(''pg_temp.realtor_tap_assertion'')::text || '' - '' || p_description FROM assertion
+      ';
+      CREATE FUNCTION public.has_column(p_schema text, p_table text, p_column text, p_description text) RETURNS text LANGUAGE sql AS '
+        SELECT public.ok(EXISTS (SELECT 1 FROM information_schema.columns c WHERE c.table_schema = p_schema AND c.table_name = p_table AND c.column_name = p_column), p_description)
+      ';
+      CREATE FUNCTION public.has_index(p_schema text, p_table text, p_index text, p_description text) RETURNS text LANGUAGE sql AS '
+        SELECT public.ok(EXISTS (SELECT 1 FROM pg_indexes i WHERE i.schemaname = p_schema AND i.tablename = p_table AND i.indexname = p_index), p_description)
+      ';
+      CREATE FUNCTION public.finish() RETURNS text LANGUAGE sql AS '
+        SELECT ''finish: '' || actual::text || ''/'' || expected::text || ''; failed='' || failed::text || ''; details='' || array_to_string(failures, '' | '') FROM pg_temp.realtor_tap_state
+      ';
+    `;
+    const output = await sql(test.replace('CREATE EXTENSION IF NOT EXISTS pgtap;', shim));
+    assert.match(output, new RegExp(`1\\.\\.${assertions}`), `${file} should report all planned assertions`);
+    assert.doesNotMatch(output, /^not ok\b/m, `${file} assertions must all pass`);
+    const visibleAssertions = (output.match(/^ok \d+\b/gm) || []).length;
+    if (visibleAssertions > 0) assert.equal(visibleAssertions, assertions, `${file} should print all assertions when the test uses SELECT`);
+    assert.match(output, new RegExp(`finish: ${assertions}/${assertions}`), `${file} should execute all planned assertions`);
+    assert.match(output, /failed=0/, `${file} should not record failed assertions. Output:\n${output}`);
+    console.log(`PASS: ${file} (${assertions} assertions)`);
+  }
+
+  const actorId = randomUUID();
+  const workspaceId = randomUUID();
+  const createKey = randomUUID();
+  const fixture = await sql(`
+    SET request.jwt.claim.role = 'service_role';
+    INSERT INTO auth.users(id,email) VALUES ('${actorId}','financial-race@example.test');
+    SELECT workspace_id FROM public.platform_create_workspace_with_owner('${actorId}','${workspaceId}','personal','Financial race fixture');
+    INSERT INTO public.realtor_preferences(user_id,workspace_id) VALUES ('${actorId}','${workspaceId}');
+    SELECT record_id::text FROM public.realtor_save_financial_record('${actorId}','${workspaceId}',NULL,NULL,'${createKey}',
+      'expense',CURRENT_DATE,'{"amountCents":5000,"category":"software"}'::jsonb,NULL,NULL);
+  `);
+  const recordId = fixture.trim().split(/\r?\n/).at(-1);
+  assert.match(recordId || '', /^[0-9a-f-]{36}$/i, 'concurrent correction fixture should create a financial record');
+
+  // Hold the target row first so both independent correction sessions queue
+  // behind the same lock and contend using their identical expected revision.
+  const lock = sql(`BEGIN; SELECT id FROM public.realtor_financial_records WHERE id='${recordId}' FOR UPDATE; SELECT pg_sleep(3); COMMIT;`);
+  await delay(500);
+  const corrections = await Promise.allSettled([1, 2].map((amount) => sql(`
+    SET request.jwt.claim.role = 'service_role';
+    SELECT * FROM public.realtor_correct_financial_record('${actorId}','${workspaceId}','${recordId}',1,'${randomUUID()}',
+      'expense',CURRENT_DATE,'{"amountCents":${5000 + amount * 100},"category":"software"}'::jsonb);
+  `)));
+  await lock;
+  assert.equal(corrections.filter((result) => result.status === 'fulfilled').length, 1,
+    'only one concurrent correction may consume the same expected revision');
+  const rejected = corrections.find((result) => result.status === 'rejected');
+  assert(rejected && rejected.status === 'rejected' && /40001|Financial record changed/i.test(String(rejected.reason)),
+    'the competing correction must receive an explicit stale-revision conflict');
+  assert.equal(await sql(`SELECT current_revision::text FROM public.realtor_financial_records WHERE id='${recordId}';`), '2',
+    'concurrent correction race must append exactly one winning revision');
+  assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='financial_correct';`), '1',
+    'losing correction must not persist an idempotency receipt');
+  console.log('PASS: concurrent financial corrections serialize; one revision commits and the stale contender leaves no receipt');
+
+  async function assertSerializedRace({ table, id, lockSql, statements, verify, description }) {
+    const lock = sql(`BEGIN; ${lockSql ?? `SELECT id FROM public.${table} WHERE id='${id}'`} FOR UPDATE; SELECT pg_sleep(3); COMMIT;`);
+    await delay(500);
+    const attempts = await Promise.allSettled(statements.map((statement) => sql(statement)));
+    await lock;
+    assert.equal(attempts.filter((result) => result.status === 'fulfilled').length, 1,
+      `${description}: exactly one contender must commit; outcomes: ${attempts.map((result) => result.status === 'fulfilled' ? 'fulfilled' : String(result.reason)).join(' | ')}`);
+    const rejectedAttempt = attempts.find((result) => result.status === 'rejected');
+    assert(rejectedAttempt && rejectedAttempt.status === 'rejected'
+      && /40001|23505|changed|already realized|not payable|duplicate key/i.test(String(rejectedAttempt.reason)),
+    `${description}: stale contender must receive a conflict; observed ${String(rejectedAttempt?.reason)}`);
+    await verify();
+    console.log(`PASS: ${description}`);
+  }
+
+  const billSeedKey = randomUUID();
+  await sql(`
+    SET request.jwt.claim.role = 'service_role';
+    SELECT * FROM public.realtor_save_planner_item('${actorId}','${workspaceId}',NULL,NULL,'${billSeedKey}',
+      jsonb_build_object('kind','bill','title','Concurrency test dues','notes','','expectedAmountCents',15000,
+        'property',NULL,'sourceSprintTaskId',NULL,
+        'due',jsonb_build_object('anchorDate',CURRENT_DATE+5,'localTime','09:00','timeZone','America/Chicago',
+          'recurrence',jsonb_build_object('frequency','once'),'endsOn',NULL,'reminderOffsetsDays','[1]'::jsonb)),
+      jsonb_build_array(jsonb_build_object('occurrenceKeyDate',CURRENT_DATE+5,'effectiveDate',CURRENT_DATE+5,
+        'reminders',jsonb_build_array(jsonb_build_object('offsetDays',1,
+          'scheduledAt',((CURRENT_DATE+4)+TIME '09:00') AT TIME ZONE 'America/Chicago')))));
+  `);
+  const billOccurrenceId = (await sql(`SELECT id::text FROM public.realtor_planner_occurrences WHERE item_id=(SELECT resource_id FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND request_key='${billSeedKey}');`)).trim();
+  assert.match(billOccurrenceId, /^[0-9a-f-]{36}$/i, 'payment race fixture should materialize a bill occurrence');
+  const paymentStatements = [1, 2].map(() => `SET request.jwt.claim.role = 'service_role';
+    SELECT * FROM public.realtor_save_financial_record('${actorId}','${workspaceId}',NULL,NULL,'${randomUUID()}','expense',CURRENT_DATE,
+      '{"amountCents":15000,"category":"broker_dues"}'::jsonb,'${billOccurrenceId}',1);`);
+  await assertSerializedRace({
+    table: 'realtor_planner_occurrences', id: billOccurrenceId, statements: paymentStatements,
+    description: 'concurrent bill payments create exactly one expense and complete the occurrence once',
+    verify: async () => {
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_financial_records WHERE occurrence_id='${billOccurrenceId}' AND kind='expense';`), '1',
+        'payment race must not duplicate the linked expense');
+      assert.equal(await sql(`SELECT status||':'||revision FROM public.realtor_planner_occurrences WHERE id='${billOccurrenceId}';`), 'completed:2',
+        'payment race must complete the bill once');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='financial_record' AND resource_id=(SELECT id FROM public.realtor_financial_records WHERE occurrence_id='${billOccurrenceId}');`), '1',
+        'payment race must keep only the winning payment receipt');
+    },
+  });
+
+  const expectedKey = randomUUID();
+  const expectedFixture = await sql(`
+    SET request.jwt.claim.role = 'service_role';
+    SELECT record_id::text FROM public.realtor_save_financial_record('${actorId}','${workspaceId}',NULL,NULL,'${expectedKey}',
+      'expected_commission',CURRENT_DATE,'{"estimatedTakeHomeCents":250000}'::jsonb,NULL,NULL);
+  `);
+  const expectedRecordId = expectedFixture.trim().split(/\r?\n/).at(-1);
+  assert.match(expectedRecordId || '', /^[0-9a-f-]{36}$/i, 'realization race fixture should create expected income');
+  const realizationStatements = [1, 2].map(() => `SET request.jwt.claim.role = 'service_role';
+    SELECT * FROM public.realtor_realize_expected_income('${actorId}','${workspaceId}','${expectedRecordId}',1,'${randomUUID()}',CURRENT_DATE,
+      '{"mode":"gross","grossCents":300000,"withheldCents":50000,"closingReference":"race-realization"}'::jsonb);`);
+  await assertSerializedRace({
+    table: 'realtor_financial_records', id: expectedRecordId, statements: realizationStatements,
+    description: 'concurrent expected-income realization creates exactly one commission',
+    verify: async () => {
+      assert.equal(await sql(`SELECT status||':'||current_revision FROM public.realtor_financial_records WHERE id='${expectedRecordId}';`), 'realized:2',
+        'realization race must advance the expected-income record once');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_financial_records WHERE id='${expectedRecordId}' AND realized_by_record_id IS NOT NULL;`), '1',
+        'realization race must link its expected-income record to the commission');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_financial_records record JOIN public.realtor_financial_revisions revision ON revision.record_id=record.id AND revision.revision=record.current_revision WHERE record.kind='commission' AND revision.data->>'closingReference'='race-realization';`), '1',
+        'realization race must create one received commission');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='financial_realize' AND resource_id='${expectedRecordId}';`), '1',
+        'realization race must persist only one winning receipt');
+    },
+  });
+
+  const voidFixture = await sql(`
+    SET request.jwt.claim.role = 'service_role';
+    SELECT record_id::text FROM public.realtor_save_financial_record('${actorId}','${workspaceId}',NULL,NULL,'${randomUUID()}',
+      'expense',CURRENT_DATE,'{"amountCents":9000,"category":"software"}'::jsonb,NULL,NULL);
+  `);
+  const voidRecordId = voidFixture.trim().split(/\r?\n/).at(-1);
+  const voidStatements = [1, 2].map(() => `SET request.jwt.claim.role = 'service_role';
+    SELECT * FROM public.realtor_void_financial_record('${actorId}','${workspaceId}','${voidRecordId}',1,'${randomUUID()}');`);
+  await assertSerializedRace({
+    table: 'realtor_financial_records', id: voidRecordId, statements: voidStatements,
+    description: 'concurrent void requests terminalize one financial record exactly once',
+    verify: async () => {
+      assert.equal(await sql(`SELECT status||':'||current_revision FROM public.realtor_financial_records WHERE id='${voidRecordId}';`), 'void:2',
+        'void race must create one terminal revision');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='financial_void' AND resource_id='${voidRecordId}';`), '1',
+        'void race must persist only the winning receipt');
+    },
+  });
+
+  const preferenceUpdates = [
+    `SET request.jwt.claim.role = 'service_role'; SELECT * FROM public.realtor_setup_personal_workspace('${actorId}','${workspaceId}','${randomUUID()}',1,'Financial race fixture','America/Chicago',true,true,true,false,NULL);`,
+    `SET request.jwt.claim.role = 'service_role'; SELECT * FROM public.realtor_setup_personal_workspace('${actorId}','${workspaceId}','${randomUUID()}',1,'Financial race fixture','America/Denver',false,true,true,false,NULL);`,
+  ];
+  await assertSerializedRace({
+    table: 'realtor_preferences', id: actorId,
+    lockSql: `SELECT user_id FROM public.realtor_preferences WHERE user_id='${actorId}'`,
+    statements: preferenceUpdates,
+    description: 'concurrent preference edits accept one revision and reject the stale update',
+    verify: async () => {
+      assert.equal(await sql(`SELECT revision::text FROM public.realtor_preferences WHERE user_id='${actorId}' AND workspace_id='${workspaceId}';`), '2',
+        'preference race must advance exactly one revision');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='setup' AND resource_id='${workspaceId}';`), '1',
+        'preference race must retain only the winning receipt');
+    },
+  });
+
+  const goalCreateKey = randomUUID();
+  await sql(`SET request.jwt.claim.role = 'service_role'; SELECT * FROM public.realtor_save_goal('${actorId}','${workspaceId}',NULL,NULL,'${goalCreateKey}',2026::smallint,'net_income',2500000::bigint,false);`);
+  const goalId = (await sql(`SELECT resource_id::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND request_key='${goalCreateKey}';`)).trim();
+  assert.match(goalId, /^[0-9a-f-]{36}$/i, 'goal archive race fixture should create an active goal');
+  const archiveKeys = [randomUUID(), randomUUID()];
+  const archiveAttempts = archiveKeys.map((key) => `SET request.jwt.claim.role = 'service_role'; SELECT * FROM public.realtor_save_goal('${actorId}','${workspaceId}','${goalId}',1,'${key}',2026::smallint,'net_income',2500000::bigint,true);`);
+  await assertSerializedRace({
+    table: 'realtor_goals', id: goalId, statements: archiveAttempts,
+    description: 'concurrent goal archive attempts archive one revision exactly once',
+    verify: async () => {
+      assert.equal(await sql(`SELECT status||':'||revision FROM public.realtor_goals WHERE id='${goalId}';`), 'archived:2',
+        'goal archive race must create one terminal revision');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='goal' AND resource_id='${goalId}' AND resource_revision=2;`), '1',
+        'goal archive race must persist one winning receipt');
+    },
+  });
+
+  const reminderItemKey = randomUUID();
+  await sql(`
+    SET request.jwt.claim.role = 'service_role';
+    SELECT * FROM public.realtor_save_planner_item('${actorId}','${workspaceId}',NULL,NULL,'${reminderItemKey}',
+      jsonb_build_object('kind','task','title','Reminder concurrency test','notes','','expectedAmountCents',NULL,
+        'property',NULL,'sourceSprintTaskId',NULL,
+        'due',jsonb_build_object('anchorDate',CURRENT_DATE+6,'localTime','09:00','timeZone','America/Chicago',
+          'recurrence',jsonb_build_object('frequency','once'),'endsOn',NULL,'reminderOffsetsDays','[1]'::jsonb)),
+      jsonb_build_array(jsonb_build_object('occurrenceKeyDate',CURRENT_DATE+6,'effectiveDate',CURRENT_DATE+6,
+        'reminders',jsonb_build_array(jsonb_build_object('offsetDays',1,
+          'scheduledAt',((CURRENT_DATE+5)+TIME '09:00') AT TIME ZONE 'America/Chicago')))));
+  `);
+  const reminderOccurrenceId = (await sql(`SELECT resource_id::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND request_key='${reminderItemKey}';`)).trim();
+  const reminderId = (await sql(`SELECT id::text FROM public.realtor_reminders WHERE occurrence_id=(SELECT id FROM public.realtor_planner_occurrences WHERE item_id='${reminderOccurrenceId}') AND offset_days=1;`)).trim();
+  assert.match(reminderId, /^[0-9a-f-]{36}$/i, 'reminder race fixture should create a scheduled reminder');
+  const reminderActions = [
+    `SET request.jwt.claim.role = 'service_role'; SELECT * FROM public.realtor_update_reminder('${actorId}','${workspaceId}','${reminderId}',1,'${randomUUID()}','dismiss',NULL);`,
+    `SET request.jwt.claim.role = 'service_role'; SELECT * FROM public.realtor_update_reminder('${actorId}','${workspaceId}','${reminderId}',1,'${randomUUID()}','snooze',clock_timestamp()+interval '1 day');`,
+  ];
+  await assertSerializedRace({
+    table: 'realtor_reminders', id: reminderId, statements: reminderActions,
+    description: 'concurrent reminder dismiss/snooze advances one reminder revision',
+    verify: async () => {
+      assert.equal(await sql(`SELECT revision::text FROM public.realtor_reminders WHERE id='${reminderId}';`), '2',
+        'reminder race must advance one revision');
+      assert.equal(await sql(`SELECT count(*)::text FROM public.realtor_mutation_receipts WHERE actor_id='${actorId}' AND operation='reminder' AND resource_id='${reminderId}';`), '1',
+        'reminder race must persist only the winning receipt');
+      assert.equal(await sql(`SELECT status IN ('dismissed','scheduled') AND ((status='dismissed' AND snoozed_until IS NULL) OR (status='scheduled' AND snoozed_until IS NOT NULL)) FROM public.realtor_reminders WHERE id='${reminderId}';`), 't',
+        'reminder winner must leave a consistent dismissed or snoozed state');
+    },
+  });
+}
+
 await withDockerService('scheduler-test', async (container) => {
   const sql = (input) => command('docker', [
     'exec', '-i', container, 'psql', '-X', '-qAt', '-U', 'postgres',
@@ -15,16 +269,19 @@ await withDockerService('scheduler-test', async (container) => {
   // Minimal external prerequisites only. Scheduler definitions below come from
   // real migrations. Full Supabase replay/auth/storage remains test:db's scope.
   await sql(`
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA auth;
     CREATE TABLE auth.users (id uuid PRIMARY KEY);
     ALTER TABLE auth.users ADD COLUMN email text;
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
       LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+    CREATE OR REPLACE FUNCTION auth.role() RETURNS text
+      LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.role', true), '') $$;
     CREATE TABLE public.site_config (id uuid PRIMARY KEY);
     CREATE TABLE public.property_shortlist_entries (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL REFERENCES auth.users(id),
-      area_key text NOT NULL, address text, city text, state text NOT NULL, postal_code text,
+      area_key text NOT NULL, address text, city text, state text NOT NULL DEFAULT 'TX', postal_code text,
       mls_id text, county text, parcel_number text, property_kind text NOT NULL,
       revision integer NOT NULL DEFAULT 1, status text NOT NULL DEFAULT 'active',
       unresolved_questions jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -93,6 +350,12 @@ await withDockerService('scheduler-test', async (container) => {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
   }
   await sql(await readFile(new URL('../supabase/migrations/20260916040000_scheduler_deferred_outcomes.sql', import.meta.url), 'utf8'));
+
+  if (process.argv.includes('--realtor-only')) {
+    await runRealtorDatabaseChecks(sql);
+    console.log('PASS: realtor migrations and task-identity assertions in disposable PostgreSQL');
+    return;
+  }
 
   const owner = randomUUID(), otherOwner = randomUUID();
   let schedule = randomUUID();
@@ -320,4 +583,9 @@ await withDockerService('scheduler-test', async (container) => {
   console.log('PASS: deferred polling has a terminal budget');
   await platformRunAcceptance(sql);
   await platformFollowupAcceptance(sql);
+
+  // Keep realtor database acceptance inside this disposable, uniquely named
+  // PostgreSQL project. Never replay these schema changes against local/hosted
+  // Supabase as part of this test runner.
+  await runRealtorDatabaseChecks(sql);
 }).catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

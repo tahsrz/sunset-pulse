@@ -59,6 +59,10 @@ export const appRoutes: readonly AppRoute[] = [
   ]),
   ...pages('Account and business', [
     ['/login', 'Sign in'], ['/register', 'Register'], ['/profile', 'Profile', 'account'],
+    ['/today', 'Realtor Today', 'account', 'Private personal workspace; planner, earnings summary, goals and reminders.'],
+    ['/planner', 'Realtor Planner', 'account', 'Private recurring dues, deadlines and appointments.'],
+    ['/business', 'Business scoreboard', 'account', 'Private manually recorded income and expenses; totals are not tax or brokerage statements.'],
+    ['/goals', 'Personal business goals', 'account', 'Optional progress goals derived from manually recorded work.'],
     ['/dashboard', 'Realtor dashboard', 'realtor', 'Middleware requires the realtor profile role.'],
     ['/collections', 'Collections', 'account'], ['/properties/saved', 'Saved properties', 'account'],
     ['/property-shortlist', 'Keller / Westlake shortlist', 'account', 'Shared owner-scoped property context for Jamie planning.'],

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { errorResponse, successResponse } from '@/lib/core/apiResponse';
-import { readPropertyScanSession } from '@/lib/scans/propertyScanStore';
+import { readPropertyScanSession, registerPropertyScanUploadCapability } from '@/lib/scans/propertyScanStore';
 import { parseScanUploadReservation, propertyScanUploadPath, reserveScanUpload, abortScanUpload } from '@/lib/scans/scanUpload.server';
 import { supabaseAdmin } from '@/lib/supabase';
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!session) return errorResponse('The capture session changed or its upload quota is full. Refresh and retry.', 409);
     const reservation = session.uploadReservations.find((item) => item.idempotencyKey === input.idempotencyKey);
     if (!reservation) return errorResponse('Upload reservation was not returned.', 500);
-    if (reservation.state !== 'pending') return errorResponse('This upload attempt is no longer active. Retry with a new upload attempt.', 409);
+    if (reservation.state !== 'pending' || Date.parse(reservation.expiresAt) <= Date.now()) return errorResponse('This upload attempt is no longer active. Retry with a new upload attempt.', 409);
     const path = propertyScanUploadPath(access.user.id, scanId, reservation);
     if (process.env.NEXT_PUBLIC_MOCK_MODE === 'true') {
       return successResponse({ endpoint: `/api/property-scans/${scanId}/uploads`, reservation, sessionRevision: session.revision, upload: { path, mode: 'mock' } });
@@ -30,6 +30,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (error || !data) {
       await abortScanUpload(scanId, access.user.id, reservation.uploadId);
       return errorResponse('Unable to create a private upload capability.', 502, error?.message);
+    }
+    // The token comes directly from trusted Storage, never from the request.
+    const payload = JSON.parse(Buffer.from(data.token.split('.')[1], 'base64url').toString('utf8'));
+    if (typeof payload.exp !== 'number' || !await registerPropertyScanUploadCapability(scanId, access.user.id, reservation.uploadId, new Date(payload.exp * 1000))) {
+      return errorResponse('The upload reservation changed before storage was ready. Retry with a new upload attempt.', 409);
     }
     return successResponse({ endpoint: `/api/property-scans/${scanId}/uploads`, reservation, sessionRevision: session.revision, upload: { path, signedUrl: data.signedUrl, token: data.token } });
   } catch (error) {

@@ -1,12 +1,24 @@
 # Sunset Pulse
 
+Need to explain or record a demo? Use the [complete route walkthrough script](docs/SUNSET_PULSE_ROUTE_WALKTHROUGH.md), starting with the short realtor journey and then the grouped path-by-path narration.
+
 Sunset Pulse is a Next.js 15 real estate intelligence platform for property discovery, lead engagement, valuation workflows, and operational analytics. The application combines a customer-facing property experience with internal intelligence tools for market analysis, lead scoring, automation, and visual content workflows.
+
+## Local review and acceptance
+
+See [September 26 review](docs/LUNA_REVIEW_2026-09-26.md) for the current PR's fixes, exact evidence and remaining gates. From this app directory:
+
+- `npm run test:scans:storage`: generated local Supabase Auth/Storage + Mongo stack; real signed upload/finalize/rejection/cleanup.
+- `node scripts/platform-disposable-auth-acceptance.mjs --homepage`: isolated real-login realtor flow plus controlled-data responsive/keyboard homepage checks.
+- `npm run test:db:concurrency`: disposable PostgreSQL replay and independent-session contention.
+
+These commands create unique disposable resources and remove only those resources. They do not reuse the persistent Supabase stack, require hosted compute, enable paid calls, or prove production readiness. Run the Next-based acceptance suites serially with builds because they share `.next`; Docker must be running. Screenshots/logs remain in ignored `.pulse-local/`, not the PR.
 
 ## Find every app path
 
 Use **Browse all app paths** in `/agent` or `/command-center`, or press **Ctrl/Cmd+K**
 where the global navbar is present. Search by URL, feature, section, or access requirement.
-The shared catalog covers 108 page route patterns and 5 non-API handlers, including Vibe
+The shared catalog covers 112 page route patterns and 5 non-API handlers, including Vibe
 workflows, games, property tools, operations, and machine-readable TAH resources.
 
 See the [complete path inventory near the top of the repository README](../../README.md#app-paths-and-command-navigation).
@@ -123,6 +135,7 @@ The platform lane runs on the same durable scheduler used by existing product wo
 
 ## Core Capabilities
 
+- Private realtor daily workspace at `/today`, `/planner`, `/business`, and `/goals`: recurring deadlines, opt-in in-app reminders, property-task handoff with stale-revision recovery, and manually recorded income/expenses. Disposable real-auth browser and SQL concurrency acceptance pass locally; responsive visual review, operational reminder-cadence evidence, and production rollout remain separate gates. See [`docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md`](./docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md) for the current ledger; this is not a production-availability claim.
 - Property browsing, search, saved listings, and high-performance IDX sync via Repliers.io.
 - Authenticated Matrix IDX access through `/idx` and the embedded Jamie tab MLS drawer.
 - Hero news tabs and `/api/news` for lightweight local market/headline signals.

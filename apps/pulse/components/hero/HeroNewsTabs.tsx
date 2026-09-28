@@ -109,7 +109,7 @@ export default function HeroNewsTabs() {
   }, [activeTab, articles]);
 
   return (
-    <section className="pointer-events-auto absolute inset-x-4 bottom-5 z-40 mx-auto max-w-5xl rounded-lg border border-white/12 bg-slate-950/58 p-3 text-white shadow-2xl shadow-black/30 backdrop-blur-2xl md:bottom-8">
+    <section aria-label="Latest news" className="pointer-events-auto relative mx-auto rounded-2xl border border-white/15 bg-slate-950/70 p-4 text-white shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2 overflow-x-auto">
           <span className="hidden items-center gap-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100 md:flex">
@@ -122,6 +122,7 @@ export default function HeroNewsTabs() {
               <button
                 key={tab.id}
                 type="button"
+                aria-pressed={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
                   activeTab === tab.id
@@ -147,7 +148,7 @@ export default function HeroNewsTabs() {
 
       <div className="mt-3 grid gap-2 md:grid-cols-3">
         {visibleArticles.map((article, index) => (
-          <article key={`${article.title}-${index}`} className="rounded-md border border-white/10 bg-white/[0.05] p-3">
+          <article key={`${article.title}-${index}`} className="min-w-0 rounded-xl border border-white/10 bg-white/[0.05] p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
               <span className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-cyan-100/80">
                 {article.source || (activeTab === 'ops' ? 'Operations' : activeTab)}
@@ -159,7 +160,7 @@ export default function HeroNewsTabs() {
               )}
             </div>
             <Link href={buildNewsTahHref(article)} className="block hover:text-cyan-100">
-              <h3 className="line-clamp-2 text-sm font-black leading-snug text-white">{article.title}</h3>
+              <h3 className="line-clamp-3 text-sm font-semibold leading-6 text-white">{article.title}</h3>
             </Link>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-300">{article.summary}</p>
           </article>

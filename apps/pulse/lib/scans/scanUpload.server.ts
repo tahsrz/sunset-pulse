@@ -3,9 +3,10 @@ import 'server-only';
 import { z } from 'zod';
 import {
   abortPropertyScanUpload,
+  completePropertyScanUploadCleanup,
   finalizePropertyScanUpload,
   listExpiredPropertyScanUploadReservations,
-  markPropertyScanUploadReservationExpired,
+  readPropertyScanSession,
   reservePropertyScanUpload,
 } from './propertyScanStore';
 import { propertyScanAssetLimits, propertyScanAssetMimeTypes, type PropertyScanAsset } from './propertyScanContract';
@@ -20,6 +21,10 @@ const reservationInputSchema = z.object({
 });
 
 export type ScanUploadReservationInput = z.infer<typeof reservationInputSchema>;
+
+function isMockMode() {
+  return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+}
 
 export function parseScanUploadReservation(input: unknown) {
   return reservationInputSchema.parse(input);
@@ -38,24 +43,52 @@ export function finalizeScanUpload(scanId: string, ownerId: string, uploadId: st
   return finalizePropertyScanUpload(scanId, ownerId, uploadId, asset, expectedRevision);
 }
 
-export function abortScanUpload(scanId: string, ownerId: string, uploadId: string) {
-  return abortPropertyScanUpload(scanId, ownerId, uploadId);
+export async function abortScanUpload(scanId: string, ownerId: string, uploadId: string) {
+  const session = await abortPropertyScanUpload(scanId, ownerId, uploadId);
+  const reservation = session?.uploadReservations.find((item) => item.uploadId === uploadId);
+  if (!session || reservation?.state !== 'aborted' || !reservation.cleanupPending) return session;
+
+  let removedFromStorage = isMockMode();
+  if (!isMockMode() && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const path = propertyScanUploadPath(ownerId, scanId, reservation);
+    try {
+      const { error } = await supabaseAdmin.storage.from('property-scans').remove([path]);
+      removedFromStorage = !error;
+    } catch {
+      removedFromStorage = false;
+    }
+  }
+  if (!removedFromStorage) return session;
+
+  await completePropertyScanUploadCleanup({
+    scanId,
+    ownerId,
+    uploadId,
+    fileName: reservation.fileName,
+    mimeType: reservation.mimeType,
+    cleanupPending: true,
+  });
+  return (await readPropertyScanSession(scanId, ownerId)) || session;
 }
 
 export async function reconcileScanUploadReservations(limit = 50) {
   const targets = await listExpiredPropertyScanUploadReservations(new Date(), limit);
-  const isMockMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+  const mockMode = isMockMode();
   let removed = 0;
   let failed = 0;
   for (const target of targets) {
-    let removedFromStorage = isMockMode;
-    if (!isMockMode && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    let removedFromStorage = mockMode;
+    if (!mockMode && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const path = propertyScanUploadPath(target.ownerId, target.scanId, target);
-      const { error } = await supabaseAdmin.storage.from('property-scans').remove([path]);
-      removedFromStorage = !error;
+      try {
+        const { error } = await supabaseAdmin.storage.from('property-scans').remove([path]);
+        removedFromStorage = !error;
+      } catch {
+        removedFromStorage = false;
+      }
     }
     if (!removedFromStorage) { failed += 1; continue; }
-    if (await markPropertyScanUploadReservationExpired(target)) removed += 1;
+    if (await completePropertyScanUploadCleanup(target)) removed += 1;
   }
   return { inspected: targets.length, removed, failed };
 }

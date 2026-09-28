@@ -49,4 +49,10 @@ describe('application route catalog', () => {
     for (const route of appRoutes) expect(inventory).toContain('`' + route.path + '`');
     expect(readme.indexOf('<!-- app-route-catalog:start -->')).toBeLessThan(readme.indexOf('## What It Does'));
   });
+
+  it('includes every catalog path in the presenter walkthrough', () => {
+    const script = readFileSync(path.resolve('docs/SUNSET_PULSE_ROUTE_WALKTHROUGH.md'), 'utf8');
+    for (const route of appRoutes) expect(script).toContain('|' + ' `' + route.path + '` |');
+    expect(script).toContain('spoken demo script');
+  });
 });

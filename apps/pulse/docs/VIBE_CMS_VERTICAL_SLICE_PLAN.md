@@ -2,9 +2,19 @@
 
 This plan is the execution companion to `VIBE_CMS_LUNA_BASELINE.md`. It covers the remaining work from authorized seed configuration through production evidence and Sol handoff.
 
-## Execution status (2026-08-31)
+## Execution status (reconciled 2026-09-26)
 
-Approximately 60% of the weighted plan is complete; approximately 40% remains. Phases 1–8 have implemented local contracts for configuration, disposable service isolation, idempotency, diagnostics, bounded responses, inspection, and revocation. Phase 11 has partial local verification evidence. Remaining material work is automatic disposable-site expiry, operator application UI, controlled production verification, final cleanup/access closure, and Sol handoff. Production work remains intentionally unstarted until an authorized deployment window.
+The old 60% estimate is retired because it counted automatic expiry as unbuilt. Phases 1–9 have source implementations; phase 10 and phase 11 are partial against their full acceptance criteria, and phases 12–14 remain open. For an explicit equal-phase implementation denominator only, nine complete plus two half-credit phases give approximately **71% local coverage / 29% remaining**. This is not production readiness or an effort estimate.
+
+| Slice | Current evidence and remaining work |
+| --- | --- |
+| 1–8 | Protected seed/reconcile/inspect/revoke service and ownership/idempotency tests exist. Do not recreate them. |
+| 9 | `expireDisposableCmsSites` in `lib/sites/siteProvisioning.ts` is wired into `app/api/billing/grace-expiry/cron/route.ts`; site-provisioning and cron tests exercise marked expired sites. Real deployed cron operation is not established by unit coverage. |
+| 10 | Apply UI accepts a disposable run ID, checks the current pointer, shows old/new revision and actor/time, and requires confirmation. It still constructs a site ID from input rather than discovering authorized disposable sites with verified status/expiry; manual customer-site selection is not restricted by a dedicated test mode. Finish those requirements before claiming the phase complete. |
+| 11 | Current repository unit suite includes CMS/Vibe suites. Full controlled cross-store/browser lifecycle is still separate from those tests. |
+| 12–14 | Production verification record still lacks the controlled site, original pointer and completed cycle/cleanup evidence. No production seed, pointer mutation, temporary access grant, or credential change was performed in this review. |
+
+Next: complete phase 10's authorized discovery/status/expiry contract and test-mode target restriction, then run the local complete lifecycle before seeking a separately approved production window. See [September review](LUNA_REVIEW_2026-09-26.md); do not treat the unrelated realtor/scan harness as CMS production evidence.
 
 ## Phase 1 — Seed configuration validation (45–60 minutes)
 

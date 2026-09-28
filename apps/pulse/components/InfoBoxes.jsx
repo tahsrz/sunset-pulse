@@ -2,9 +2,9 @@ import InfoBox from './InfoBox';
 
 const InfoBoxes = () => {
   return (
-    <section className='waterlily-section py-10'>
-      <div className='container-xl lg:container m-auto'>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg'>
+    <section className='waterlily-section py-16 sm:py-20'>
+      <div className='mx-auto max-w-7xl px-6'>
+        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
           <InfoBox
             heading='Portfolio Search'
             backgroundColor='bg-transparent'

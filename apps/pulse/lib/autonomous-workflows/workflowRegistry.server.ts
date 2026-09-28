@@ -3,6 +3,8 @@ import { runSprintPlannerWorkflow } from './sprintPlannerWorkflow.server';
 import { runPlatformWorkflow } from '@/lib/platform/workflows/runHandler.server';
 import { runConnectorHealthCheck } from './connectorHealthWorkflow.server';
 import { runCapabilityReservationReconciliation } from '@/lib/platform/workflows/capabilityReservationReconciliation.server';
+import { runRealtorReminder } from './realtorReminderWorkflow.server';
+import { runRealtorPlannerRefill } from './realtorPlannerRefillWorkflow.server';
 
 export type WorkflowJob = {
   id: string;
@@ -41,6 +43,8 @@ const workflowHandlers: Readonly<Record<string, WorkflowHandler>> = Object.freez
   platform_run: runPlatformWorkflow,
   connector_health_check: runConnectorHealthCheck,
   capability_reservation_reconcile: runCapabilityReservationReconciliation,
+  realtor_reminder: runRealtorReminder,
+  realtor_planner: runRealtorPlannerRefill,
 });
 
 export function getWorkflowHandler(workflowKey: string): WorkflowHandler {

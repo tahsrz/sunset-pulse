@@ -6,6 +6,10 @@ The codebase also includes scheduling, food-service operations, games, and visua
 
 ## Start here
 
+For a guided explanation of the app, use the [presenter’s route-by-route script](apps/pulse/docs/SUNSET_PULSE_ROUTE_WALKTHROUGH.md). It covers every cataloged page, contextual path, redirect and non-API resource, with what to say, required access and honest preview/production caveats.
+
+Latest local review: [Luna changes, acceptance evidence and remaining work](apps/pulse/docs/LUNA_REVIEW_2026-09-26.md). The [app acceptance commands](apps/pulse/README.md#local-review-and-acceptance) use disposable local services; hosted migration and provider activation remain separate release decisions.
+
 - **Explore the app:** [Sunset Pulse](https://www.sunsetpulse.app/), [Agent Console](https://www.sunsetpulse.app/agent), or [Command Center](https://www.sunsetpulse.app/command-center).
 - **Find a screen:** use the [app path directory](#app-paths-and-command-navigation) below.
 - **Run it locally:** follow [local development](#local-development).
@@ -13,6 +17,7 @@ The codebase also includes scheduling, food-service operations, games, and visua
 - **Find the code:** see [architecture and repository layout](#architecture-and-repository-layout).
 - **Make a change:** see [commands](#commands), [verification](#verification), and [contributing](#contributing).
 - **Continue a feature:** consult the [plans and runbooks](#plans-and-runbooks), then confirm the current implementation in source.
+- **Build the realtor daily workspace:** [Today, Planner, Business, and Goals implementation](apps/pulse/docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md) covers recurring dues/deadlines, manually recorded earnings/expenses, and private progress. This feature is in progress locally and is not a production-availability claim.
 - **Continue platform work:** start with the [current ledger](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md#current-ledger-and-next-session) and [next-week implementation handoff](apps/pulse/docs/PLATFORM_WEEK_2026-09-21.md). Praxis and Keller / Westlake remain domain specifications, not competing platform backlogs.
 
 This README is the repository entry point, not a live deployment report. A route in source, a completed planning checkbox, or a passing local test does not establish production availability.
@@ -21,7 +26,7 @@ This README is the repository entry point, not a live deployment report. A route
 
 Open **Browse all app paths** in Agent Console (`/agent`) or Command Center (`/command-center`). Where the global navbar is present, **Ctrl/Cmd+K** searches the same catalog by feature, path, section, and access note.
 
-The inventory covers **111 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
+The inventory covers **115 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
 
 How to read the directory:
 
@@ -137,6 +142,10 @@ How to read the directory:
 | `/register` | Register | Public entry |
 | `/profile` | Profile | Sign-in required |
 | `/dashboard` | Realtor dashboard | Realtor role; Middleware requires the realtor profile role. |
+| `/today` | Realtor Today | Sign-in required; Private personal workspace; planner, earnings summary, goals and reminders. |
+| `/planner` | Realtor Planner | Sign-in required; Private recurring dues, deadlines and appointments. |
+| `/business` | Business scoreboard | Sign-in required; Private manually recorded income and expenses; totals are not tax or brokerage statements. |
+| `/goals` | Personal business goals | Sign-in required; Optional progress goals derived from manually recorded work. |
 | `/collections` | Collections | Sign-in required |
 | `/properties/saved` | Saved properties | Sign-in required |
 | `/property-shortlist` | Keller / Westlake shortlist | Sign-in required; Shared owner-scoped property context for Jamie planning. |
@@ -521,6 +530,7 @@ These documents contain implementation detail and historical decisions. Some inc
 | Topic | Documentation |
 | --- | --- |
 | Active platform roadmap and next work | [Three-phase plan and ledger](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md), [September 21–25 handoff](apps/pulse/docs/PLATFORM_WEEK_2026-09-21.md) |
+| Next product implementation: realtor daily workspace | [Planner, Business Scoreboard, Today, and optional progress rewards — statement-level implementation plan](apps/pulse/docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md) |
 | Platform scope and evidence | [Capability matrix](apps/pulse/docs/PLATFORM_CAPABILITY_MATRIX.md), [September 18 verification](apps/pulse/docs/PLATFORM_VERIFICATION_2026-09-18.md) |
 | Domain specifications | [Praxis workspace](apps/pulse/docs/PRAXIS_AGENT_WORKSPACE_PLAN.md), [Keller / Westlake property sprints](apps/pulse/docs/KELLER_WESTLAKE_PROPERTY_SPRINT_PLAN.md) |
 | Local infrastructure and acceptance | [Docker and real local Auth runbook](infra/local/README.md) |
