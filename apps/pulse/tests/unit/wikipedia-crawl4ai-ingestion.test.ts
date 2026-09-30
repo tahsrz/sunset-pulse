@@ -8,6 +8,10 @@ import {
   loadWikipediaIngestionState,
   runWikipediaIngestionBatch,
   selectWikipediaDemandMatch,
+  wikipediaDemandPath,
+  wikipediaOutputDir,
+  wikipediaStatePath,
+  wikipediaStorageDir,
   type WikipediaPage,
   wikipediaDemandTitleCandidates,
 } from '@/lib/wikipedia/crawl4aiWikipedia';
@@ -31,6 +35,22 @@ afterEach(() => {
 });
 
 describe('Wikipedia Crawl4AI ingestion', () => {
+  it('routes all durable crawler artifacts through the configured storage root', () => {
+    const previousRoot = process.env.WIKIPEDIA_STORAGE_ROOT;
+    const storageRoot = path.join(tempDir, 'docker-volume');
+    process.env.WIKIPEDIA_STORAGE_ROOT = storageRoot;
+
+    try {
+      expect(wikipediaStorageDir()).toBe(storageRoot);
+      expect(wikipediaOutputDir()).toBe(path.join(storageRoot, 'cartridges'));
+      expect(wikipediaStatePath()).toBe(path.join(storageRoot, 'ingestion-state.json'));
+      expect(wikipediaDemandPath()).toBe(path.join(storageRoot, 'demand-queue.json'));
+    } finally {
+      if (previousRoot === undefined) delete process.env.WIKIPEDIA_STORAGE_ROOT;
+      else process.env.WIKIPEDIA_STORAGE_ROOT = previousRoot;
+    }
+  });
+
   it('prefers the canonical topic over an adjacent longer search result', () => {
     expect(selectWikipediaDemandMatch('How does photosynthesis convert light into energy?', [
       { pageid: 2, title: 'Artificial photosynthesis' },

@@ -40,7 +40,7 @@ Run continuously with persisted checkpoints and bounded retries:
 npm run wikipedia:crawl:continuous
 ```
 
-Local state and provenance manifests live under `cartridges/wikipedia/` and are ignored by Git. Binary `.tah` batches in that directory are discovered automatically by Pulse search. Useful environment controls:
+Local state, provenance manifests, catalogs, and binary `.tah` batches live only under the configured Wikipedia storage root. The Wikipedia crawler does not write corpus data to Supabase Storage. Useful environment controls:
 
 ```text
 WIKIPEDIA_LANGUAGE=en
@@ -48,8 +48,18 @@ WIKIPEDIA_BATCH_SIZE=10
 WIKIPEDIA_REQUEST_DELAY_MS=1000
 WIKIPEDIA_TAH_OUTPUT_DIR=cartridges/wikipedia
 WIKIPEDIA_INGESTION_STATE_PATH=cartridges/wikipedia/ingestion-state.json
+WIKIPEDIA_STORAGE_ROOT=.pulse-local/wikipedia
 LEAD_INTEL_ALLOWED_DOMAINS=wikipedia.org
 ```
+
+To keep the crawler's durable filesystem state in Docker, start the bundled service from the repository root:
+
+```bash
+npm run docker:wikipedia:up
+npm run docker:wikipedia:status
+```
+
+The service stores checkpoints, manifests, demand queues, catalogs, and `.tah` batches only in the named `wikipedia-data` volume at `/var/lib/sunsetpulse/wikipedia`. Stop the service with `npm run docker:wikipedia:down`; the named volume is retained unless explicitly removed.
 
 The Windows `start-web-knowledge-worker.ps1` launcher starts this continuous worker alongside the older SunsetWars ingestion orchestrator. Registering the scheduled task remains an explicit operator action.
 

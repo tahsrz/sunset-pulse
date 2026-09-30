@@ -1,6 +1,6 @@
 # Sunset Pulse — presenter’s route walkthrough
 
-Prepared September 27, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spoken demo script**, not a script that opens URLs, submits forms or changes data. It covers all **130 cataloged non-API paths**: pages, contextual routes, redirects and machine-readable handlers. Internal `/api/*` endpoints are implementation interfaces, not additional visitor screens.
+Prepared September 30, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spoken demo script**, not a script that opens URLs, submits forms or changes data. It covers all **133 cataloged non-API paths**: pages, contextual routes, redirects and machine-readable handlers. Internal `/api/*` endpoints are implementation interfaces, not additional visitor screens.
 
 ## Opening — read aloud
 
@@ -8,13 +8,15 @@ Prepared September 27, 2026 from `lib/navigation/routeCatalog.ts`. This is a **s
 
 ## Suggested short demo
 
-1. Open `/`: introduce discovery and the current visual identity.
-2. Open `/properties`, then a real property detail: show discovery and context.
-3. Sign in and open `/property-shortlist`: explain one Keller / Westlake area and facts versus unanswered questions.
-4. Open `/planner` and `/today`: demonstrate a draft due date, recurrence and opted-in in-app reminders. Do not save into a real account just for a recording without permission.
-5. Open `/business` and `/goals`: explain manually recorded money, broker deductions and optional progress.
-6. Open `/sprints`, then an authorized workspace inbox/run: distinguish a proposal, approval, execution and its evidence.
-7. Close with `/atlas` and `/llms.txt`: structured knowledge supports the work; it does not make the product only a “Wikipedia for LLMs.”
+1. Open `/`: start with the Keller / Westlake seller offer, then introduce discovery and the current visual identity. State that the form saves to the owner's inbox only when its published tenant and Supabase configuration are available; it sends no automatic email or text.
+2. Open `/neighborhoods`: show the source-linked local guides and explain that property-specific school assignment, HOA costs and drive times remain to be verified.
+3. Open `/seller-plan`: describe the request as human follow-up, not an instant CMA, appraisal or guaranteed price.
+4. Open `/properties`, then a real property detail: show discovery and context.
+5. Sign in and open `/property-shortlist`: explain one Keller / Westlake area and facts versus unanswered questions.
+6. Open `/planner` and `/today`: demonstrate a draft due date, recurrence and opted-in in-app reminders. Do not save into a real account just for a recording without permission.
+7. Open `/business` and `/goals`: explain manually recorded money, broker deductions and optional progress.
+8. Open `/sprints`, then an authorized workspace inbox/run: distinguish a proposal, approval, execution and its evidence.
+9. Close with `/atlas` and `/llms.txt`: structured knowledge supports the work; it does not make the product only a “Wikipedia for LLMs.”
 
 ## Presenter rules
 
@@ -39,6 +41,9 @@ Prepared September 27, 2026 from `lib/navigation/routeCatalog.ts`. This is a **s
 | `/tour-studio` | Public entry | “This is the presentation/tour workspace for properties. Distinguish a prepared view from verified capture of a real home.” | Open `/tour-studio`.  |
 | `/scan-studio` | Sign-in | “This accepts consented private property captures for review. Real reconstruction and publication are not enabled by uploading.” | Open `/scan-studio`. Consent-first phone capture; uploads remain private until agent review. |
 | `/valuation` | Public entry | “This is the valuation entry point. Describe displayed estimates as estimates, not an appraisal or guaranteed sale price.” | Open `/valuation`. Account-backed actions may require sign-in. |
+| `/seller-plan` | Public entry | “This is a request for a human-reviewed seller conversation, not an instant CMA. Submission is saved only when the owner’s configured intake is available; no automatic message is sent.” | Open `/seller-plan`; test with local/disposable data, not a prospect's details. |
+| `/neighborhoods` | Public entry | “These are reviewed Keller / Westlake guides with citations and clearly marked address-specific unknowns.” | Open `/neighborhoods`. |
+| `/neighborhoods/[slug]` | Public entry | “This is one source-backed local guide; only published repository records resolve.” | Begin at `/neighborhoods`; choose a published guide slug. |
 | `/contact` | Public entry | “This is where a visitor can start a conversation with the business.” | Open `/contact`.  |
 | `/investors` | Public entry | “This is the investor-oriented entry point, not a promise of investment returns.” | Open `/investors`.  |
 | `/properties/[id]` | Public entry | “This is one property's detail page. Open a real result so the URL carries an existing ID.” | Begin at `/properties`. Choose an existing property; requires its ID. |

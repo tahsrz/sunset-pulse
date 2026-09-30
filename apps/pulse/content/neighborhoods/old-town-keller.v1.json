@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "old-town-keller",
+  "title": "Old Town Keller: a practical neighborhood guide",
+  "summary": "A source-linked starting point for researching Old Town Keller, with clear reminders about what must be checked for a specific property.",
+  "areaKey": "keller-westlake",
+  "coverageType": "neighborhood",
+  "status": "published",
+  "revision": 1,
+  "reviewedAt": "2026-09-30",
+  "sections": [
+    {
+      "heading": "Start with the City’s own community information",
+      "paragraphs": ["The City identifies historic Old Town Keller as one of its business districts. Its Parks and Recreation page reports more than 300 acres of developed park land, 11 park sites and more than 26 miles of hike-and-bike trails citywide. These are city-level figures, not a claim that every home is near or has access to each amenity."],
+      "evidenceIds": ["keller-about", "keller-parks"],
+      "statusNote": "Confirm current hours, event dates, access rules and any property-specific details with the cited source."
+    },
+    {
+      "heading": "Verify school information by address",
+      "paragraphs": ["Keller ISD provides district maps and an address lookup path. A neighborhood name or listing description is not a reliable way to establish a home’s current school assignment; verify the exact address and applicable school year with the district."],
+      "evidenceIds": ["keller-isd-maps"],
+      "statusNote": "School assignment not determined by this guide."
+    },
+    {
+      "heading": "HOA costs and commute times need property-level checks",
+      "paragraphs": ["No HOA amount or property-to-destination drive time is asserted here. Request current association documents for the specific property and compare a route using the intended destination, travel mode and departure time before relying on a commute estimate."],
+      "evidenceIds": ["census-commute-guidance"],
+      "statusNote": "HOA fees, assessments and address-specific drive times: not verified."
+    }
+  ],
+  "evidence": [
+    {"id":"keller-about","publisher":"City of Keller","title":"About Keller","sourceUrl":"https://www.cityofkeller.com/about-us?locale=en","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"City page describes historic Old Town Keller and citywide recreation context; not evidence about an individual property."},
+    {"id":"keller-parks","publisher":"City of Keller","title":"Parks and Recreation","sourceUrl":"https://www.cityofkeller.com/services/parks-recreation","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"Official parks/recreation reference; amenities, access and schedules should be confirmed with the City."},
+    {"id":"keller-isd-maps","publisher":"Keller Independent School District","title":"Keller ISD maps and address resources","sourceUrl":"https://www.kellerisd.net/about-kisd/maps","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"District-level map and address lookup information; a property assignment must be checked directly by exact address and school year."},
+    {"id":"census-commute-guidance","publisher":"U.S. Census Bureau","title":"ACS commuting guidance","sourceUrl":"https://www.census.gov/topics/employment/commuting/guidance/acs-1yr.html","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"context-only","scope":"Explains community commuting statistics; these are not a property-specific driving-time estimate."}
+  ]
+}

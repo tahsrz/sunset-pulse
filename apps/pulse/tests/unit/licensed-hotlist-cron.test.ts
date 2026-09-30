@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
+vi.mock('server-only', () => ({}));
+
 const mockFrom = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mockFrom } }));

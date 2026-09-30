@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "slug": "westlake-overview",
+  "title": "Westlake, Texas: a city-level home research guide",
+  "summary": "A city overview with official links for municipal context and Westlake Academy admissions, plus explicit limits on property-specific claims.",
+  "areaKey": "keller-westlake",
+  "coverageType": "city",
+  "status": "published",
+  "revision": 1,
+  "reviewedAt": "2026-09-30",
+  "sections": [
+    {
+      "heading": "Explore the Town’s official information",
+      "paragraphs": ["The Town of Westlake publishes information about its parks, recreation and trail system. Check the Town directly for current amenities, access, services and requirements rather than relying on a third-party summary."],
+      "evidenceIds": ["westlake-town"],
+      "statusNote": "City-level overview; not a description of one subdivision or property."
+    },
+    {
+      "heading": "Westlake Academy has its own admissions and residency policy",
+      "paragraphs": ["Westlake Academy publishes residency and admission requirements. Do not infer a student’s eligibility or placement from a city name, listing text or this overview; review the current policy and ask the Academy about the specific circumstances."],
+      "evidenceIds": ["westlake-academy"],
+      "statusNote": "No property-specific school assignment or admission determination is provided."
+    },
+    {
+      "heading": "Verify costs and travel for the home you are considering",
+      "paragraphs": ["This guide does not supply an HOA amount or a home-to-work drive time. Request current association documents for the specific property and check a route using your intended destination and departure time."],
+      "evidenceIds": ["census-commute-guidance"],
+      "statusNote": "HOA fees, assessments and address-specific drive times: not verified."
+    }
+  ],
+  "evidence": [
+    {"id":"westlake-town","publisher":"Town of Westlake","title":"Parks and Recreation","sourceUrl":"https://www.westlake-tx.org/45/Parks-Recreation","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"Official Town parks and recreation reference; confirm current amenities, access and schedules directly."},
+    {"id":"westlake-academy","publisher":"Westlake Academy","title":"Residency and admission policy","sourceUrl":"https://www.westlakeacademy.org/admissions/residency-and-admission-policy","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"School policy reference; confirm the current policy and make no individual eligibility or placement assumption."},
+    {"id":"census-commute-guidance","publisher":"U.S. Census Bureau","title":"ACS commuting guidance","sourceUrl":"https://www.census.gov/topics/employment/commuting/guidance/acs-1yr.html","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"context-only","scope":"Regional commuting context is not a property-specific drive-time calculation."}
+  ]
+}

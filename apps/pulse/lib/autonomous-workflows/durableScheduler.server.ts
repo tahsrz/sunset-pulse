@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { cadenceMilliseconds, nextOccurrenceAfter, normalizeScheduleSpec } from './schedulerPolicy';
 import { getWorkflowHandler, type WorkflowJob } from './workflowRegistry.server';
+import { reconcilePendingPropertyScanReconstructionIntents } from '@/lib/scans/scanJobReconciler.server';
 
 export async function enqueueDueWorkflowJobs(limit = 25) {
   const now = new Date().toISOString();
@@ -41,7 +42,8 @@ export async function enqueueDueWorkflowJobs(limit = 25) {
     if (!dispatch) continue;
     queued += Number(dispatch.inserted_count || 0);
   }
-  return { schedules: schedules?.length || 0, queued };
+  const scanReconciliation = await reconcilePendingPropertyScanReconstructionIntents(10);
+  return { schedules: schedules?.length || 0, queued, scanReconciliation };
 }
 
 export async function processQueuedWorkflowJobs(limit = 10) {

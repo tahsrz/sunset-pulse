@@ -28,6 +28,8 @@ export const appRoutes: readonly AppRoute[] = [
     ['/listings', 'Listings'], ['/idx', 'IDX Search', 'account'],
     ['/tour-studio', 'Tour Studio'], ['/scan-studio', '3D Scan Studio', 'account', 'Consent-first phone capture; uploads remain private until agent review.'],
     ['/valuation', 'Property valuation', 'public', 'Account-backed actions may require sign-in.'],
+    ['/seller-plan', 'Keller / Westlake seller plan', 'public', 'Request is saved only when the configured published agent site and Supabase intake are available; no automated email or text is sent.'],
+    ['/neighborhoods', 'Keller / Westlake neighborhood guides', 'public', 'Reviewed repository-backed guides with official sources and explicit unknowns.'],
     ['/contact', 'Contact'], ['/investors', 'Investors'],
   ]),
   ...pages('Intelligence and chat', [
@@ -94,6 +96,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/admin/scheduling', 'Scheduling operations', 'staff', 'Existing staff workflow; excluded from the middleware admin sign-in redirect.'],
   ]),
   context('/properties/[id]', 'Property details', 'Discover', 'public', 'Choose an existing property; requires its ID.', '/properties'),
+  context('/neighborhoods/[slug]', 'Neighborhood guide', 'Discover', 'public', 'Choose one of the published Keller / Westlake guides.', '/neighborhoods'),
   context('/workspaces/[workspaceId]/canvas', 'Workspace canvas', 'Account and business', 'account', 'Private canvas with bounded workspace views and confirmed commands; requires a workspace ID.', '/dashboard'),
   context('/workspaces/[workspaceId]/access', 'Workspace access management', 'Account and business', 'account', 'Owner/admin-scoped member and invitation management; requires a workspace ID.', '/workspaces'),
   context('/workspaces/[workspaceId]/inbox', 'Workspace inbox', 'Account and business', 'account', 'Authorized workspace checkpoint inbox and pinned app launch surface.', '/dashboard'),

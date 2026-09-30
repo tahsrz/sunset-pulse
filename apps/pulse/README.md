@@ -18,7 +18,7 @@ These commands create unique disposable resources and remove only those resource
 
 Use **Browse all app paths** in `/agent` or `/command-center`, or press **Ctrl/Cmd+K**
 where the global navbar is present. Search by URL, feature, section, or access requirement.
-The shared catalog covers 112 page route patterns and 5 non-API handlers, including Vibe
+The shared catalog covers 115 page route patterns and 5 non-API handlers, including Vibe
 workflows, games, property tools, operations, and machine-readable TAH resources.
 
 See the [complete path inventory near the top of the repository README](../../README.md#app-paths-and-command-navigation).
