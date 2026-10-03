@@ -27,6 +27,10 @@
       "schedule": "30 12 * * *"
     },
     {
+      "path": "/api/admin/agent-leads/cma-retention/cron",
+      "schedule": "0 12 * * *"
+    },
+    {
       "path": "/api/atlas/processes/health",
       "schedule": "0 * * * *"
     },
