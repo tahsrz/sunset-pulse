@@ -5,6 +5,8 @@ import { dispatchOperationalAlert } from '@/lib/notifications/agentAlertChannels
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const DEFAULT_HEALTH_ALERT_INTERVAL_MINUTES = 60;
+
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
@@ -19,7 +21,8 @@ export async function GET(request: NextRequest) {
   const unhealthy = ageMs > 15 * 60_000 || ['paused', 'dependency_error'].includes(status) || retryDrainRate === 0;
   if (!unhealthy) return NextResponse.json({ ok: true, status, alerted: false });
 
-  const window = Math.floor(Date.now() / (15 * 60_000));
+  const alertIntervalMinutes = configuredHealthAlertIntervalMinutes();
+  const window = Math.floor(Date.now() / (alertIntervalMinutes * 60_000));
   const outcome = await dispatchOperationalAlert({
     subject: `Wikipedia crawler requires attention: ${status}`,
     idempotencyKey: `crawler-health-${heartbeat?.crawlerId || 'wikipedia-en'}-${status}-${window}`,
@@ -35,4 +38,11 @@ export async function GET(request: NextRequest) {
     ].join('\n'),
   });
   return NextResponse.json({ ok: outcome.status !== 'failed', status, alerted: outcome.status === 'sent', outcome });
+}
+
+function configuredHealthAlertIntervalMinutes() {
+  const configured = Number(process.env.WIKIPEDIA_HEALTH_ALERT_INTERVAL_MINUTES);
+  return Number.isFinite(configured) && configured > 0
+    ? Math.max(15, Math.floor(configured))
+    : DEFAULT_HEALTH_ALERT_INTERVAL_MINUTES;
 }

@@ -1,135 +1,27 @@
-'use client';
+import React from 'react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
-import React, { useState } from 'react';
-import { FaHome, FaBrain, FaMapMarkedAlt } from 'react-icons/fa';
-import { toast } from 'react-toastify';
-import { useAuth } from '@/context/AuthContext';
-import ValuationHero from '@/components/valuation/ValuationHero';
-import ValuationResult from '@/components/valuation/ValuationResult';
-import ValuationAdminPanel from '@/components/valuation/ValuationAdminPanel';
-
-const ValuationPage = () => {
-  const { user } = useAuth();
-  const [address, setAddress] = useState('');
-  const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-
-  const isAdmin = user?.email === 'tahsrz@gmail.com';
-
-  const handleEstimate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!address) return toast.error('Property address is required.');
-    setLoading(true);
-    try {
-      const res = await fetch('/api/valuation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setResult(data);
-        toast.success("Property analysis complete.");
-      }
-    } catch (error) {
-      toast.error("Valuation process encountered an error.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirm = async () => {
-    setConfirmed(true);
-    toast.success("Property added to your market list.");
-  };
-
-  const handleDownloadReport = () => {
-    window.print();
-  };
-
-  const handleReset = () => {
-    setResult(null);
-    setConfirmed(false);
-    setAddress('');
-  };
-
-  return (
-    <div className='min-h-screen bg-slate-950 text-white'>
-      <style jsx global>{`
-        @media print {
-          nav, footer, .no-print, button, form { display: none !important; }
-          body { background: white !important; color: black !important; }
-          .min-h-screen { background: white !important; }
-          .print-container { 
-            display: block !important; 
-            padding: 40px !important;
-            border: 2px solid #e2e8f0 !important;
-            border-radius: 0 !important;
-            background: white !important;
-            color: black !important;
-            box-shadow: none !important;
-          }
-          .text-white { color: black !important; }
-          .text-slate-500 { color: #64748b !important; }
-          .bg-slate-900 { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
-          .bg-blue-600 { background: #2563eb !important; color: white !important; }
-          .border-white\/10 { border-color: #e2e8f0 !important; }
-          .print-header { display: block !important; margin-bottom: 40px; border-bottom: 4px solid #2563eb; padding-bottom: 20px; }
-        }
-      `}</style>
-
-      {/* Hero Section */}
-      {!result && (
-        <ValuationHero 
-          address={address} 
-          setAddress={setAddress} 
-          onEstimate={handleEstimate} 
-          loading={loading} 
-        />
-      )}
-
-      <div className='container m-auto px-6 relative z-10 pb-20 pt-10'>
-        {/* Admin Section */}
-        {isAdmin && <ValuationAdminPanel />}
-
-        {result && (
-          <ValuationResult 
-            result={result}
-            confirmed={confirmed}
-            onConfirm={handleConfirm}
-            onDownload={handleDownloadReport}
-            onReset={handleReset}
-          />
-        )}
-      </div>
-
-      {/* Valuation Details */}
-      <section className='py-20 border-t border-white/5 no-print'>
-        <div className='container m-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12'>
-          {[
-            { icon: <FaHome />, title: 'Real-Time Valuation', desc: 'Continuous monitoring of residential property values across local markets.' },
-            { icon: <FaBrain />, title: 'Advanced Analysis', desc: 'Proprietary algorithms integrating local commerce data with real estate trends.' },
-            { icon: <FaMapMarkedAlt />, title: 'Market Sync', desc: 'Add property data to your saved market analysis workflow.' }
-          ].map((item, i) => (
-            <div key={i} className='space-y-4'>
-              <div className='text-blue-500 text-3xl'>{item.icon}</div>
-              <h3 className='text-xl font-bold uppercase tracking-tight text-white'>{item.title}</h3>
-              <p className='text-slate-500 text-sm leading-relaxed'>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-        
-        <div className='max-w-4xl mx-auto mt-20 pt-8 border-t border-white/5 text-center'>
-          <p className='text-[7px] font-black uppercase tracking-[0.4em] text-white/20 leading-relaxed'>
-            Regulatory Notice: Sunset Pulse utilizes Automated Valuation Models (AVM) for all property estimations. 
-            These figures are calculated through algorithmic data synthesis and are not intended to replace licensed professional appraisals. 
-            Engagement with this tool constitutes acknowledgment of the inherent variability in automated market analysis.
-          </p>
-        </div>
-      </section>
-    </div>
-  );
+export const metadata: Metadata = {
+  title: 'Property Pricing Review | Sunset Pulse',
+  description: 'Request a personal, evidence-led seller pricing conversation for a Keller or Westlake home.',
+  alternates: { canonical: '/valuation' },
 };
 
-export default ValuationPage;
+export default function ValuationPage() {
+  return (
+    <main className="min-h-screen bg-[#061017] px-4 py-16 text-white sm:px-6 sm:py-24">
+      <div className="mx-auto max-w-4xl">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-teal-200">Pricing review · Keller and Westlake</p>
+        <h1 className="mt-4 text-4xl font-black leading-tight sm:text-5xl">A useful pricing conversation starts with evidence.</h1>
+        <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">Sunset Pulse does not currently provide an automated property estimate. A comparative market analysis needs current, relevant comparable sales, property-specific details and a licensed professional’s review.</p>
+        <p className="mt-4 max-w-3xl leading-7 text-slate-400">No price, range or turnaround promise is generated here. If you are considering a sale, you can request a personal conversation; sharing the home address is optional in the initial request.</p>
+        <div className="mt-9 flex flex-wrap gap-4">
+          <Link className="rounded-full bg-teal-500 px-6 py-3 font-bold text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" href="/seller-plan">Request a seller pricing conversation</Link>
+          <Link className="rounded-full border border-white/15 px-6 py-3 font-semibold text-teal-100 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/keller-westlake/market-report">View the local market report status</Link>
+          <Link className="rounded-full border border-white/15 px-6 py-3 font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/neighborhoods">Explore neighborhood guides</Link>
+        </div>
+      </div>
+    </main>
+  );
+}
