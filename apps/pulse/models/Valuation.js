@@ -53,6 +53,12 @@ const ValuationSchema = new Schema(
       enum: ['Draft', 'Confirmed'],
       default: 'Draft',
     },
+    // Legacy records stay private unless a future reviewed publication flow opts in.
+    publiclyShareable: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     intelligence_score: {
       type: Number,
       default: 85,

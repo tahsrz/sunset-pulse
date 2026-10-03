@@ -33,6 +33,7 @@ describe('application route catalog', () => {
     expect(appRoutes.find((r) => r.path === '/sign/[token]')?.href).toBeUndefined();
     expect(appRoutes.find((r) => r.path === '/onboarding/site')?.href).toBeUndefined();
     expect(appRoutes.find((r) => r.path === '/admin/branding')?.href).toBe('/admin/launch-kit');
+    expect(appRoutes.find((r) => r.path === '/seller-plan')?.note).toContain('no automated email or text');
   });
 
   it('searches exact paths, feature names, and access notes', () => {

@@ -42,6 +42,7 @@ import {
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
+import CmaPrivateDetailsPanel from './CmaPrivateDetailsPanel';
 import NotificationInbox from './NotificationInbox';
 
 export const dynamic = 'force-dynamic';
@@ -340,6 +341,8 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
             {lead.message}
           </p>
 
+          {isPricingReviewRequest(lead.metadata) ? <CmaPrivateDetailsPanel leadId={lead.id} /> : null}
+
           {guideBrief ? <PublicGuideBrief brief={guideBrief} /> : null}
           {leadIntelligence ? <LeadIntelligencePanel intelligence={leadIntelligence} /> : null}
 
@@ -416,6 +419,11 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
       </div>
     </article>
   );
+}
+
+function isPricingReviewRequest(metadata?: Record<string, unknown> | null) {
+  if (!metadata || typeof metadata.sellerPlan !== 'object' || metadata.sellerPlan === null) return false;
+  return (metadata.sellerPlan as Record<string, unknown>).requestKind === 'pricing_review';
 }
 
 function PublicGuideConversionPanel({

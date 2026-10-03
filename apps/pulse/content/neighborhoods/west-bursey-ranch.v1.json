@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "slug": "west-bursey-ranch",
+  "title": "West Bursey Ranch: what to verify before a move",
+  "summary": "A careful Keller-area guide focused on address-level school checks, current property documents and questions to ask before listing or buying.",
+  "areaKey": "keller-westlake",
+  "coverageType": "neighborhood",
+  "status": "published",
+  "revision": 1,
+  "reviewedAt": "2026-09-30",
+  "sections": [
+    {
+      "heading": "Treat the subdivision name as a starting point, not a property record",
+      "paragraphs": ["A subdivision label alone does not confirm a home’s boundaries, current services, deed restrictions, association status or fees. For a specific property, review current recorded and seller-provided documents and confirm material questions with the relevant source."],
+      "evidenceIds": ["keller-city"],
+      "statusNote": "No subdivision-specific HOA fee or restriction is verified in this guide."
+    },
+    {
+      "heading": "Confirm school assignment for the exact address",
+      "paragraphs": ["Use Keller ISD’s official address resources for the property and school year under consideration. This guide does not promise enrollment, eligibility, boundary placement or a particular campus."],
+      "evidenceIds": ["keller-isd-maps"],
+      "statusNote": "Address-specific assignment: not verified."
+    },
+    {
+      "heading": "Compare a commute using your own trip details",
+      "paragraphs": ["Choose the actual destination, route mode and departure window when checking travel. Regional commute statistics describe populations and are not a rush-hour travel estimate from a particular home."],
+      "evidenceIds": ["census-commute-guidance"],
+      "statusNote": "Property-to-destination drive time: not verified."
+    }
+  ],
+  "evidence": [
+    {"id":"keller-city","publisher":"City of Keller","title":"City of Keller official website","sourceUrl":"https://www.cityofkeller.com/","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"Official municipal entry point; not evidence of subdivision-level covenants or HOA terms."},
+    {"id":"keller-isd-maps","publisher":"Keller Independent School District","title":"Keller ISD maps and address resources","sourceUrl":"https://www.kellerisd.net/about-kisd/maps","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"official-reference","scope":"District map/address lookup; verify the specific property's current assignment directly."},
+    {"id":"census-commute-guidance","publisher":"U.S. Census Bureau","title":"ACS commuting guidance","sourceUrl":"https://www.census.gov/topics/employment/commuting/guidance/acs-1yr.html","retrievedAt":"2026-09-30","expiresAt":"2027-09-30","verificationStatus":"context-only","scope":"Regional commuting context is not a property-specific drive-time calculation."}
+  ]
+}

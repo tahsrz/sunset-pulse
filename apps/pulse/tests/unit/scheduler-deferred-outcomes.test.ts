@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 const handler = vi.hoisted(() => vi.fn());
 const rpc = vi.hoisted(() => vi.fn());
 

@@ -650,22 +650,30 @@ export function saveWikipediaIngestionState(state: WikipediaIngestionState, stat
 }
 
 export function wikipediaOutputDir() {
+  const storageRoot = wikipediaStorageDir();
   return path.resolve(
-    process.env.WIKIPEDIA_TAH_OUTPUT_DIR || path.join(process.cwd(), 'cartridges', 'wikipedia'),
+    process.env.WIKIPEDIA_TAH_OUTPUT_DIR
+      || (process.env.WIKIPEDIA_STORAGE_ROOT ? path.join(storageRoot, 'cartridges') : path.join(process.cwd(), 'cartridges', 'wikipedia')),
   );
 }
 
 export function wikipediaStatePath() {
   return path.resolve(
     process.env.WIKIPEDIA_INGESTION_STATE_PATH
-      || path.join(process.cwd(), '.pulse-local', 'wikipedia', 'ingestion-state.json'),
+      || path.join(wikipediaStorageDir(), 'ingestion-state.json'),
   );
 }
 
 export function wikipediaDemandPath() {
   return path.resolve(
     process.env.WIKIPEDIA_DEMAND_PATH
-      || path.join(process.cwd(), '.pulse-local', 'wikipedia', 'demand-queue.json'),
+      || path.join(wikipediaStorageDir(), 'demand-queue.json'),
+  );
+}
+
+export function wikipediaStorageDir() {
+  return path.resolve(
+    process.env.WIKIPEDIA_STORAGE_ROOT || path.join(process.cwd(), '.pulse-local', 'wikipedia'),
   );
 }
 
@@ -720,15 +728,6 @@ async function forgeWikipediaBatchCartridge(input: {
   const outputPath = path.join(input.outputDir, `${input.batchId}.tah`);
   const buffer = new TAHBuilder().forge(tahInputs);
   writeBufferAtomically(outputPath, buffer);
-  try {
-    const { error } = await supabaseAdmin.storage.from('cartridges').upload(path.basename(outputPath), buffer, {
-      contentType: 'application/octet-stream',
-      upsert: true,
-    });
-    if (error) throw error;
-  } catch (error) {
-    console.warn('[WIKIPEDIA_CARTRIDGE_UPLOAD_FAILED]', error instanceof Error ? error.message : 'unknown error');
-  }
   return path.relative(process.cwd(), outputPath);
 }
 
@@ -910,16 +909,6 @@ async function updateWikipediaSearchCatalog(outputDir: string, manifest: Wikiped
     catalog[path.basename(manifest.cartridgePath)] = manifest.articles.map((article) => article.title).join(' ');
   }
   writeJsonAtomically(catalogPath, catalog);
-  try {
-    const { error } = await supabaseAdmin.storage.from('cartridges').upload(
-      path.basename(catalogPath),
-      fs.readFileSync(catalogPath),
-      { contentType: 'application/octet-stream', upsert: true },
-    );
-    if (error) throw error;
-  } catch (error) {
-    console.warn('[WIKIPEDIA_CATALOG_UPLOAD_FAILED]', error instanceof Error ? error.message : 'unknown error');
-  }
   } finally {
     release();
   }
