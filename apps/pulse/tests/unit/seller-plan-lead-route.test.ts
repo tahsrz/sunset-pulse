@@ -21,13 +21,12 @@ import { POST } from '@/app/api/lead-magnets/route';
 
 const validPayload = {
   offerKey: 'keller-westlake-seller-plan',
-  offerVersion: '1',
+  offerVersion: '2',
   submissionId: 'eb18142c-652c-4d43-b467-17c53ae3ea91',
   name: 'Taylor Seller',
   email: 'TAYLOR@example.com',
-  propertyAddress: '100 Example Road',
+  requestKind: 'pricing_review',
   timing: 'one-to-three-months',
-  message: 'Please discuss preparation and timing.',
   requestedContact: true,
   marketingOptIn: false,
   campaign: { source: 'website', medium: 'organic', campaign: null, content: null },
@@ -55,7 +54,7 @@ beforeEach(() => {
 });
 
 describe('seller-plan lead route', () => {
-  it('stores a bounded, owner-routed request and separate optional marketing consent', async () => {
+  it('stores a bounded, owner-routed CMA request without property-address details', async () => {
     const response = await POST(request());
     const body = await response.json();
     const [table] = mocks.from.mock.calls[0];
@@ -67,12 +66,22 @@ describe('seller-plan lead route', () => {
     expect(record).toMatchObject({ agent_id: 'owner-site-1', site: 'taz', source: 'seller_plan', email: 'taylor@example.com', preferred_contact: 'email' });
     expect(record.metadata.sellerPlan.requestedContact.granted).toBe(true);
     expect(record.metadata.sellerPlan.marketingOptIn.granted).toBe(false);
+    expect(record.metadata.sellerPlan.requestKind).toBe('pricing_review');
+    expect(record.message).toContain('personally reviewed pricing / CMA conversation');
+    expect(record.message).not.toContain('Example Road');
+    expect(record.metadata.sellerPlan.requestFingerprint).toBeTruthy();
     expect(record.idempotency_key).toMatch(/^[a-f0-9]{64}$/);
     expect(mocks.applyPublicApiRateLimit).toHaveBeenCalledWith(expect.any(Request), 'seller-plan-request', 3, 60, { requireDistributed: true });
   });
 
   it('rejects client-selected ownership and unknown fields', async () => {
     const response = await POST(request({ ...validPayload, agentId: 'attacker', site: 'someone-else' }));
+    expect(response.status).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('rejects a public street address field until private owner-scoped CMA storage exists', async () => {
+    const response = await POST(request({ ...validPayload, propertyAddress: '100 Example Road' }));
     expect(response.status).toBe(400);
     expect(mocks.from).not.toHaveBeenCalled();
   });
@@ -105,7 +114,7 @@ describe('seller-plan lead route', () => {
     expect(await duplicate.json()).toMatchObject({ success: true, accepted: true, duplicate: true });
 
     mocks.insert.mockResolvedValueOnce({ error: { code: '23505', message: 'duplicate' } });
-    const changed = await POST(request({ ...validPayload, message: 'A different request using the same ID.' }));
+    const changed = await POST(request({ ...validPayload, requestKind: 'seller_plan' }));
     expect(changed.status).toBe(409);
   });
 

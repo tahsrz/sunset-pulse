@@ -36,7 +36,7 @@ export default function SellerPlanPage() {
         </section>
         <section aria-labelledby="seller-plan-form-title" className="rounded-3xl border border-white/10 bg-white/[0.055] p-5 shadow-2xl shadow-black/20 sm:p-7">
           <h2 id="seller-plan-form-title" className="text-2xl font-bold">Request your free seller plan</h2>
-          <p className="mb-6 mt-2 text-sm leading-6 text-slate-300">Start with the questions you have. The home address is optional here.</p>
+          <p className="mb-6 mt-2 text-sm leading-6 text-slate-300">Start with the kind of help you need. For your privacy, this public form does not collect a street address.</p>
           <SellerPlanRequestForm />
         </section>
       </div>

@@ -62,19 +62,17 @@ export async function POST(request: Request) {
 
   const email = input.email.trim().toLowerCase();
   const message = [
+    input.requestKind === 'pricing_review' ? 'Seller requested a personally reviewed pricing / CMA conversation.' : 'Seller requested a preparation and timing plan.',
     `Seller plan request; stated timing: ${input.timing}.`,
-    input.propertyAddress ? `Property address: ${input.propertyAddress}.` : '',
-    input.message ? `What would help: ${input.message}` : '',
-  ].filter(Boolean).join('\n');
+  ].join('\n');
   const campaign = normalizeCampaign(input.campaign);
   const fingerprint = createHash('sha256').update(JSON.stringify({
     offerKey: input.offerKey,
     offerVersion: input.offerVersion,
     name: input.name.trim(),
     email,
-    propertyAddress: input.propertyAddress || '',
+    requestKind: input.requestKind,
     timing: input.timing,
-    message: input.message || '',
     requestedContact: input.requestedContact,
     marketingOptIn: input.marketingOptIn,
     campaign: campaign || {},
@@ -86,6 +84,7 @@ export async function POST(request: Request) {
     sellerPlan: {
       offerKey: input.offerKey,
       offerVersion: input.offerVersion,
+      requestKind: input.requestKind,
       requestedContact: { granted: true, capturedAt: submittedAt },
       marketingOptIn: input.marketingOptIn ? { granted: true, capturedAt: submittedAt } : { granted: false },
       requestFingerprint: fingerprint,
