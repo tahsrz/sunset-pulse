@@ -11,9 +11,26 @@ CREATE TABLE IF NOT EXISTS public.seller_cma_private_details (
     consent_text_version TEXT NOT NULL CHECK (consent_text_version = 'cma-address-consent.v1'),
     consent_captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    expires_at TIMESTAMPTZ GENERATED ALWAYS AS (created_at + INTERVAL '90 days') STORED,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '90 days'),
     CONSTRAINT seller_cma_private_details_address_length CHECK (char_length(btrim(property_address)) BETWEEN 6 AND 240)
 );
+
+CREATE OR REPLACE FUNCTION public.set_seller_cma_private_details_expiry()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.expires_at := NEW.created_at + INTERVAL '90 days';
+    RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.set_seller_cma_private_details_expiry() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS seller_cma_private_details_set_expiry ON public.seller_cma_private_details;
+CREATE TRIGGER seller_cma_private_details_set_expiry
+BEFORE INSERT OR UPDATE ON public.seller_cma_private_details
+FOR EACH ROW EXECUTE FUNCTION public.set_seller_cma_private_details_expiry();
 
 CREATE INDEX IF NOT EXISTS seller_cma_private_details_expiry_idx
 ON public.seller_cma_private_details (expires_at);

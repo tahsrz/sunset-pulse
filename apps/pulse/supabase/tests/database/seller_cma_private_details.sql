@@ -12,10 +12,10 @@ BEGIN
   INSERT INTO auth.users(id,email) VALUES
     (owner_id,'cma-owner@example.test'),
     (other_id,'cma-other@example.test');
-  INSERT INTO public.profiles(id,role) VALUES
-    (owner_id,'realtor'),
-    (other_id,'realtor')
-  ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role;
+  INSERT INTO public.profiles(id,email,role) VALUES
+    (owner_id,'cma-owner@example.test','realtor'),
+    (other_id,'cma-other@example.test','realtor')
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, role = EXCLUDED.role;
 
   INSERT INTO public.site_config(agent_id,owner_id,subdomain) VALUES
     ('cma-owner-site',owner_id,'cma-owner-test'),
@@ -43,7 +43,12 @@ SELECT is((SELECT count(*)::INTEGER FROM public.seller_cma_private_details),1,'o
 SELECT is((SELECT property_address FROM public.seller_cma_private_details WHERE lead_id=current_setting('test.cma_owner_lead')::UUID),'12 Cedar Street','owner can read their pricing-review address');
 SELECT is((SELECT expires_at = created_at + INTERVAL '90 days' FROM public.seller_cma_private_details WHERE lead_id=current_setting('test.cma_owner_lead')::UUID),true,'database fixes expiry at 90 days from creation');
 SELECT is(has_table_privilege('authenticated','public.seller_cma_private_details','INSERT'),false,'authenticated clients cannot insert/backdate rows outside the API');
-SELECT is((WITH removed AS (DELETE FROM public.seller_cma_private_details WHERE lead_id=current_setting('test.cma_owner_lead')::UUID RETURNING lead_id) SELECT count(*)::INTEGER FROM removed),1,'owner can explicitly delete their own private details');
+WITH removed AS (
+  DELETE FROM public.seller_cma_private_details
+  WHERE lead_id=current_setting('test.cma_owner_lead')::UUID
+  RETURNING lead_id
+)
+SELECT is((SELECT count(*)::INTEGER FROM removed),1,'owner can explicitly delete their own private details');
 SELECT set_config('request.jwt.claim.sub',current_setting('test.cma_other_id'),true);
 SELECT is((SELECT count(*)::INTEGER FROM public.seller_cma_private_details),0,'another realtor cannot read owner, expired, or misrouted CMA details');
 
