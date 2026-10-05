@@ -25,6 +25,7 @@ const ownerId = '9f4678ce-07e7-4200-a674-c14e14f96435';
 const priorReviewId = '44444444-4444-4444-8444-444444444444';
 
 const reviewInput = {
+  expectedPriorReviewId: null,
   status: 'draft',
   subject: {
     regionLabel: 'Synthetic test area',
@@ -171,9 +172,9 @@ describe('owner-scoped private CMA review API', () => {
 
   it('rejects stale revision lineage and reports a conflict without exposing DB errors', async () => {
     mocks.latestReviews.mockResolvedValueOnce({ data: [{ review_id: priorReviewId, revision: 1 }], error: null });
-    mocks.insertSingle.mockResolvedValueOnce({ data: null, error: { code: '23514', message: 'internal trigger detail' } });
     const response = await POST(request('POST', reviewInput), context);
     expect(response.status).toBe(409);
     expect(await response.json()).not.toHaveProperty('details');
+    expect(mocks.insertSingle).not.toHaveBeenCalled();
   });
 });

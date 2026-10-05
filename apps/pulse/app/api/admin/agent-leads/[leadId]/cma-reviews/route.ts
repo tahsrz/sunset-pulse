@@ -83,6 +83,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     .limit(1);
   if (latestError) return privateError('The prior private CMA revision could not be checked.', 503);
   const latest = latestRows?.[0] || null;
+  if (parsedInput.data.expectedPriorReviewId !== (latest?.review_id || null)) {
+    return privateError('A newer private CMA revision exists. Reload before saving your changes.', 409);
+  }
   const now = new Date();
   const preparedAt = now.toISOString();
   const expiresAt = new Date(Math.min(now.getTime() + RETENTION_MS, Date.parse(consent.expires_at))).toISOString();

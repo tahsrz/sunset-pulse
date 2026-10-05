@@ -71,6 +71,7 @@ const users = [];
 const siteId = `cma-auth-${randomUUID()}`;
 const subdomain = `cma-auth-${randomUUID().slice(0, 12)}`;
 const leadId = randomUUID();
+const expiredConsentLeadId = randomUUID();
 const expiredRetentionLeadId = randomUUID();
 const activeRetentionLeadId = randomUUID();
 const retentionLeadIds = [expiredRetentionLeadId, activeRetentionLeadId];
@@ -153,6 +154,17 @@ try {
   }));
   const { error: retentionLeadsError } = await admin.from('agent_site_leads').insert(retentionLeads);
   assert(!retentionLeadsError, `Disposable retention lead setup failed: ${retentionLeadsError?.code || 'unknown'}`);
+  const { error: expiredConsentLeadError } = await admin.from('agent_site_leads').insert({
+    id: expiredConsentLeadId,
+    agent_id: siteId,
+    site: subdomain,
+    source: 'seller_plan',
+    name: 'CMA expired-consent acceptance fixture',
+    email: owner.email,
+    message: 'Synthetic disposable consent-expiry test.',
+    metadata: { sellerPlan: { requestKind: 'pricing_review' } },
+  });
+  assert(!expiredConsentLeadError, `Disposable expired-consent lead setup failed: ${expiredConsentLeadError?.code || 'unknown'}`);
   const millisecondsPerDay = 24 * 60 * 60 * 1_000;
   const { error: retentionRowsError } = await admin.from('seller_cma_private_details').insert([
     {
@@ -175,6 +187,16 @@ try {
     },
   ]);
   assert(!retentionRowsError, `Disposable retention detail setup failed: ${retentionRowsError?.code || 'unknown'}`);
+  const { error: expiredConsentError } = await admin.from('seller_cma_private_details').insert({
+    lead_id: expiredConsentLeadId,
+    agent_id: siteId,
+    owner_user_id: owner.id,
+    property_address: 'Synthetic expired-consent fixture address',
+    seller_permission_confirmed: true,
+    consent_text_version: 'cma-address-consent.v1',
+    created_at: new Date(Date.now() - 91 * millisecondsPerDay).toISOString(),
+  });
+  assert(!expiredConsentError, `Disposable expired-consent detail setup failed: ${expiredConsentError?.code || 'unknown'}`);
 
   const env = {
     ...process.env,
@@ -231,6 +253,68 @@ try {
   });
   assert.equal(created.status, 201, `Owner CMA save failed: ${created.data.error || created.status}`);
 
+  const reviewsPath = `/api/admin/agent-leads/${leadId}/cma-reviews`;
+  const comparable = {
+    comparableId: randomUUID(),
+    soldAt: new Date(Date.now() - 2 * millisecondsPerDay).toISOString().slice(0, 10),
+    salePriceUsd: 300_000,
+    facts: { bedrooms: 3, bathrooms: 2, livingAreaSqFt: 1_800, lotAreaSqFt: 7_000, yearBuilt: 2000 },
+    source: {
+      sourceType: 'seller-provided',
+      recordReference: `synthetic-comparable-${randomUUID()}`,
+      retrievedAt: new Date().toISOString(),
+      usagePermission: 'unknown',
+      permissionEvidenceRef: `synthetic-evidence-${randomUUID()}`,
+    },
+    adjustments: [],
+    adjustedPriceUsd: 300_000,
+  };
+  const draftInput = {
+    expectedPriorReviewId: null,
+    status: 'draft',
+    subject: { regionLabel: 'Synthetic local acceptance area', facts: { bedrooms: 3, bathrooms: 2, livingAreaSqFt: 1_800, lotAreaSqFt: 7_000, yearBuilt: 2000 } },
+    comparables: [comparable],
+    suggestedRangeUsd: { low: 280_000, target: 300_000, high: 320_000 },
+    methodologyNote: null,
+  };
+  const draftReview = await request(ownerSession.page, reviewsPath, 'POST', draftInput);
+  assert.equal(draftReview.status, 201, `Owner draft review failed: ${draftReview.data.error || draftReview.status}`);
+  assert.equal(draftReview.data.review.revision, 1);
+  assert.equal(draftReview.data.review.review.reviewerUserId, null);
+  assert.match(draftReview.cacheControl || '', /private.*no-store/);
+  const draftRead = await request(ownerSession.page, reviewsPath);
+  assert.equal(draftRead.status, 200);
+  assert.deepEqual(draftRead.data.reviews.map((review) => review.revision), [1]);
+
+  const invalidReviewed = await request(ownerSession.page, reviewsPath, 'POST', {
+    ...draftInput,
+    expectedPriorReviewId: draftReview.data.review.reviewId,
+    status: 'reviewed',
+    methodologyNote: 'Synthetic methodology note with sufficient detail.',
+  });
+  assert.equal(invalidReviewed.status, 400, 'Unknown source permission must not pass human-review gate.');
+  const reviewed = await request(ownerSession.page, reviewsPath, 'POST', {
+    ...draftInput,
+    expectedPriorReviewId: draftReview.data.review.reviewId,
+    status: 'reviewed',
+    methodologyNote: 'Synthetic methodology note with sufficient detail.',
+    comparables: [{
+      ...comparable,
+      source: { ...comparable.source, usagePermission: 'internal-review-authorized' },
+    }],
+  });
+  assert.equal(reviewed.status, 201, `Authorized reviewed revision failed: ${reviewed.data.error || reviewed.status}`);
+  assert.equal(reviewed.data.review.revision, 2);
+  assert.equal(reviewed.data.review.review.reviewerUserId, owner.id);
+  assert.match(reviewed.data.review.review.sellerPermissionEvidenceRef, /seller-cma-consent/);
+
+  const concurrentRevisions = await Promise.all([
+    request(ownerSession.page, reviewsPath, 'POST', { ...draftInput, expectedPriorReviewId: reviewed.data.review.reviewId }),
+    request(ownerSession.page, reviewsPath, 'POST', { ...draftInput, expectedPriorReviewId: reviewed.data.review.reviewId, subject: { ...draftInput.subject, regionLabel: 'Concurrent synthetic revision' } }),
+  ]);
+  assert.deepEqual(concurrentRevisions.map((result) => result.status).sort(), [201, 409],
+    'Concurrent requests based on the same prior revision must allow exactly one append.');
+
   const otherSession = await login(other);
   otherContext = otherSession.context;
   assert.equal((await request(otherSession.page, base)).status, 404, 'Other realtor must not discover the private CMA record.');
@@ -238,6 +322,7 @@ try {
     propertyAddress: '999 Other Test Road, Keller, TX', sellerPermissionConfirmed: true,
   })).status, 404, 'Other realtor must not create/replace the owner CMA record.');
   assert.equal((await request(otherSession.page, base, 'DELETE')).status, 404, 'Other realtor must not delete the owner CMA record.');
+  assert.equal((await request(otherSession.page, reviewsPath)).status, 404, 'Other realtor must not discover private CMA review revisions.');
 
   const read = await request(ownerSession.page, base);
   assert.equal(read.status, 200);
@@ -251,24 +336,33 @@ try {
   assert.equal(removed.status, 200);
   assert.equal((await request(ownerSession.page, base)).data.details, null);
 
+  const expiredConsentPath = `/api/admin/agent-leads/${expiredConsentLeadId}/cma-reviews`;
+  assert.equal((await request(ownerSession.page, expiredConsentPath)).status, 409,
+    'Expired seller permission must block private review access.');
+
   const runRetention = async () => fetch(`${origin}/api/admin/agent-leads/cma-retention/cron`, {
     headers: { authorization: `Bearer ${cronSecret}` },
   });
   const retentionResponse = await runRetention();
   const retentionBody = await retentionResponse.json();
   assert.equal(retentionResponse.status, 200);
-  assert.deepEqual(retentionBody, { ok: true, deletedCount: 1 }, 'Retention removes only the expired detail.');
+  assert.deepEqual(retentionBody, { ok: true, deletedCount: 2 }, 'Retention removes only the two expired synthetic details.');
   const remainingRetentionRows = await admin.from('seller_cma_private_details')
     .select('lead_id')
     .in('lead_id', retentionLeadIds);
   assert(!remainingRetentionRows.error, 'Could not verify the isolated retention fixture rows.');
   assert.deepEqual(remainingRetentionRows.data.map((row) => row.lead_id), [activeRetentionLeadId],
     'Future-expiring details must remain private and available.');
+  const expiredConsentRemaining = await admin.from('seller_cma_private_details')
+    .select('lead_id')
+    .eq('lead_id', expiredConsentLeadId);
+  assert(!expiredConsentRemaining.error, 'Could not verify removal of the expired-consent detail.');
+  assert.deepEqual(expiredConsentRemaining.data, [], 'Expired seller-consent details must be removed by retention.');
   const repeatRetentionResponse = await runRetention();
   const repeatRetentionBody = await repeatRetentionResponse.json();
   assert.equal(repeatRetentionResponse.status, 200);
   assert.deepEqual(repeatRetentionBody, { ok: true, deletedCount: 0 }, 'A repeated cleanup is an idempotent no-op.');
-  console.log('PASS: local Supabase sessions enforce owner-only CMA operations; retention deletes only expired synthetic details and repeat cleanup is a no-op.');
+  console.log('PASS: owner-only CMA details/reviews, reviewed-source gates, immutable optimistic revisions, expired-consent denial, and retention behavior verified on isolated local Supabase.');
 } finally {
   await otherContext?.close();
   await ownerContext?.close();
@@ -278,11 +372,20 @@ try {
     else server.kill();
     await delay(1_000);
   }
-  await admin.from('seller_cma_private_details').delete().in('lead_id', [leadId, ...retentionLeadIds]);
-  await admin.from('agent_site_leads').delete().in('id', [leadId, ...retentionLeadIds]);
-  await admin.from('site_config').delete().eq('agent_id', siteId);
+  const cleanupErrors = [];
+  const detailCleanup = await admin.from('seller_cma_private_details').delete().in('lead_id', [leadId, expiredConsentLeadId, ...retentionLeadIds]);
+  if (detailCleanup.error) cleanupErrors.push('private detail cleanup');
+  const leadCleanup = await admin.from('agent_site_leads').delete().in('id', [leadId, expiredConsentLeadId, ...retentionLeadIds]);
+  if (leadCleanup.error) cleanupErrors.push('synthetic lead cleanup');
+  const reviewCleanupCheck = await admin.from('seller_cma_private_reviews').select('review_id').eq('lead_id', leadId);
+  if (reviewCleanupCheck.error || reviewCleanupCheck.data.length) cleanupErrors.push('private review cascade verification');
+  const leadCleanupCheck = await admin.from('agent_site_leads').select('id').in('id', [leadId, expiredConsentLeadId, ...retentionLeadIds]);
+  if (leadCleanupCheck.error || leadCleanupCheck.data.length) cleanupErrors.push('synthetic lead cleanup verification');
+  const siteCleanup = await admin.from('site_config').delete().eq('agent_id', siteId);
+  if (siteCleanup.error) cleanupErrors.push('synthetic site cleanup');
   for (const id of users) {
     const { error } = await admin.auth.admin.deleteUser(id);
-    if (error) throw new Error('Could not remove a disposable local CMA Auth account.');
+    if (error) cleanupErrors.push('disposable Auth user cleanup');
   }
+  if (cleanupErrors.length) throw new Error(`Disposable CMA acceptance cleanup failed: ${[...new Set(cleanupErrors)].join(', ')}.`);
 }

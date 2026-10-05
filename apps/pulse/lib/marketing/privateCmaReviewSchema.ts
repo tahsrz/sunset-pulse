@@ -53,6 +53,7 @@ const subjectSchema = z.object({
 const suggestedRangeSchema = z.object({ low: usd, target: usd, high: usd }).strict();
 
 export const privateCmaReviewInputSchema = z.object({
+  expectedPriorReviewId: z.string().uuid().nullable(),
   status: z.enum(['draft', 'reviewed']),
   subject: subjectSchema,
   comparables: z.array(comparableSchema).min(1).max(12),

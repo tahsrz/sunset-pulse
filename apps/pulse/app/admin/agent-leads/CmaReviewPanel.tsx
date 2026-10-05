@@ -134,6 +134,7 @@ export default function CmaReviewPanel({ leadId }: { leadId: string }) {
 
   function buildPayload(status: 'draft' | 'reviewed'): ReviewPayload {
     return {
+      expectedPriorReviewId: reviews.at(-1)?.reviewId || null,
       status,
       subject: { regionLabel, facts: factsToPayload(subjectFacts) },
       comparables: comparables.map((comparable) => {

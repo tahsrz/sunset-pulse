@@ -35,7 +35,7 @@ describe('private CMA review panel', () => {
     expect(url).toContain(`/api/admin/agent-leads/${leadId}/cma-reviews`);
     expect(options).toMatchObject({ method: 'POST', cache: 'no-store' });
     const body = JSON.parse(String(options?.body));
-    expect(body).toMatchObject({ status: 'draft', subject: { regionLabel: 'Synthetic area' }, suggestedRangeUsd: { low: 290000, target: 305000, high: 320000 }, methodologyNote: null });
+    expect(body).toMatchObject({ expectedPriorReviewId: null, status: 'draft', subject: { regionLabel: 'Synthetic area' }, suggestedRangeUsd: { low: 290000, target: 305000, high: 320000 }, methodologyNote: null });
     expect(body.comparables[0].source.usagePermission).toBe('unknown');
     expect(await screen.findByText('Draft revision 1 saved privately.')).toBeInTheDocument();
   });
