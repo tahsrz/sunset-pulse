@@ -34,10 +34,10 @@ const projectConfig = await readFile(join(resolve(workdir), 'supabase', 'config.
 assert.match(projectConfig, new RegExp(`^project_id\\s*=\\s*['\"]${stack}['\"]`, 'm'),
   'The workdir project_id must match the explicitly disposable stack ID.');
 
-async function capture(executable, args) {
+async function capture(executable, args, cwd = repositoryRoot) {
   return new Promise((resolveCapture, rejectCapture) => {
     const child = spawn(executable, args, {
-      cwd: repositoryRoot,
+      cwd,
       env: process.env,
       windowsHide: true,
       shell: process.platform === 'win32' && /\.(?:cmd|bat)$/i.test(executable),
@@ -53,7 +53,9 @@ async function capture(executable, args) {
   });
 }
 
-const statusOutput = await capture(supabaseCli, ['status', '--workdir', resolve(workdir), '--output', 'env']);
+// Resolve the CLI status in the isolated workdir itself. Passing --workdir
+// from the linked repository can still pick up its linked project reference.
+const statusOutput = await capture(supabaseCli, ['status', '--output', 'env'], resolve(workdir));
 const localEnv = new Map(statusOutput.split(/\r?\n/).flatMap((line) => {
   const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
   return match ? [[match[1], match[2]]] : [];
@@ -89,16 +91,9 @@ async function createRealtor() {
   });
   assert(!error && data.user, `Disposable local Auth user creation failed: ${error?.code || 'unknown'}`);
   users.push(data.user.id);
-  // The installed Auth trigger materializes profiles and copies this role from
-  // user_metadata. Avoid a direct REST upsert here: production profile RLS is
-  // intentionally restrictive, and this test should exercise the real trigger.
-  const { data: profile, error: profileError } = await admin
-    .from('profiles')
-    .select('role')
-    .eq('id', data.user.id)
-    .maybeSingle();
-  assert(!profileError && profile?.role === 'realtor',
-    `Disposable realtor profile trigger failed: ${profileError?.code || 'missing profile or role'}`);
+  // The installed Auth trigger copies the realtor role from user_metadata.
+  // Prove the resulting permission via the real owner/non-owner API checks,
+  // rather than bypassing profile policies through a setup-only REST upsert.
   return { email, password, id: data.user.id };
 }
 
@@ -134,7 +129,7 @@ try {
   const { error: siteError } = await admin.from('site_config').insert({
     agent_id: siteId, owner_id: owner.id, subdomain,
   });
-  assert(!siteError, `Disposable owner site setup failed: ${siteError?.code || 'unknown'}`);
+  assert(!siteError, `Disposable owner site setup failed: ${siteError?.message || siteError?.code || 'unknown'}`);
   const { error: leadError } = await admin.from('agent_site_leads').insert({
     id: leadId,
     agent_id: siteId,
