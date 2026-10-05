@@ -69,6 +69,10 @@ const users = [];
 const siteId = `cma-auth-${randomUUID()}`;
 const subdomain = `cma-auth-${randomUUID().slice(0, 12)}`;
 const leadId = randomUUID();
+const expiredRetentionLeadId = randomUUID();
+const activeRetentionLeadId = randomUUID();
+const retentionLeadIds = [expiredRetentionLeadId, activeRetentionLeadId];
+const cronSecret = randomUUID();
 let server;
 let browser;
 let ownerContext;
@@ -142,6 +146,40 @@ try {
     metadata: { sellerPlan: { requestKind: 'pricing_review' } },
   });
   assert(!leadError, `Disposable pricing-review lead setup failed: ${leadError?.code || 'unknown'}`);
+  const retentionLeads = retentionLeadIds.map((id) => ({
+    id,
+    agent_id: siteId,
+    site: subdomain,
+    source: 'seller_plan',
+    name: 'CMA retention acceptance fixture',
+    email: owner.email,
+    message: 'Synthetic disposable retention test.',
+    metadata: { sellerPlan: { requestKind: 'pricing_review' } },
+  }));
+  const { error: retentionLeadsError } = await admin.from('agent_site_leads').insert(retentionLeads);
+  assert(!retentionLeadsError, `Disposable retention lead setup failed: ${retentionLeadsError?.code || 'unknown'}`);
+  const millisecondsPerDay = 24 * 60 * 60 * 1_000;
+  const { error: retentionRowsError } = await admin.from('seller_cma_private_details').insert([
+    {
+      lead_id: expiredRetentionLeadId,
+      agent_id: siteId,
+      owner_user_id: owner.id,
+      property_address: 'Synthetic expired retention fixture address',
+      seller_permission_confirmed: true,
+      consent_text_version: 'cma-address-consent.v1',
+      created_at: new Date(Date.now() - 91 * millisecondsPerDay).toISOString(),
+    },
+    {
+      lead_id: activeRetentionLeadId,
+      agent_id: siteId,
+      owner_user_id: owner.id,
+      property_address: 'Synthetic active retention fixture address',
+      seller_permission_confirmed: true,
+      consent_text_version: 'cma-address-consent.v1',
+      created_at: new Date(Date.now() - 89 * millisecondsPerDay).toISOString(),
+    },
+  ]);
+  assert(!retentionRowsError, `Disposable retention detail setup failed: ${retentionRowsError?.code || 'unknown'}`);
 
   const env = {
     ...process.env,
@@ -162,6 +200,7 @@ try {
     OPENAI_API_KEY: '',
     GROQ_API_KEY: '',
     RESEND_API_KEY: '',
+    CRON_SECRET: cronSecret,
   };
   server = spawn(process.execPath, [appCli, 'dev', '--hostname', '0.0.0.0', '--port', String(originUrl.port)], {
     cwd: pulseRoot, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
@@ -216,7 +255,25 @@ try {
   const removed = await request(ownerSession.page, base, 'DELETE');
   assert.equal(removed.status, 200);
   assert.equal((await request(ownerSession.page, base)).data.details, null);
-  console.log('PASS: real local Supabase browser sessions enforce owner-only CMA read/create/delete, explicit consent and 90-day expiry.');
+
+  const runRetention = async () => fetch(`${origin}/api/admin/agent-leads/cma-retention/cron`, {
+    headers: { authorization: `Bearer ${cronSecret}` },
+  });
+  const retentionResponse = await runRetention();
+  const retentionBody = await retentionResponse.json();
+  assert.equal(retentionResponse.status, 200);
+  assert.deepEqual(retentionBody, { ok: true, deletedCount: 1 }, 'Retention removes only the expired detail.');
+  const remainingRetentionRows = await admin.from('seller_cma_private_details')
+    .select('lead_id')
+    .in('lead_id', retentionLeadIds);
+  assert(!remainingRetentionRows.error, 'Could not verify the isolated retention fixture rows.');
+  assert.deepEqual(remainingRetentionRows.data.map((row) => row.lead_id), [activeRetentionLeadId],
+    'Future-expiring details must remain private and available.');
+  const repeatRetentionResponse = await runRetention();
+  const repeatRetentionBody = await repeatRetentionResponse.json();
+  assert.equal(repeatRetentionResponse.status, 200);
+  assert.deepEqual(repeatRetentionBody, { ok: true, deletedCount: 0 }, 'A repeated cleanup is an idempotent no-op.');
+  console.log('PASS: local Supabase sessions enforce owner-only CMA operations; retention deletes only expired synthetic details and repeat cleanup is a no-op.');
 } finally {
   await otherContext?.close();
   await ownerContext?.close();
@@ -226,8 +283,8 @@ try {
     else server.kill();
     await delay(1_000);
   }
-  await admin.from('seller_cma_private_details').delete().eq('lead_id', leadId);
-  await admin.from('agent_site_leads').delete().eq('id', leadId);
+  await admin.from('seller_cma_private_details').delete().in('lead_id', [leadId, ...retentionLeadIds]);
+  await admin.from('agent_site_leads').delete().in('id', [leadId, ...retentionLeadIds]);
   await admin.from('site_config').delete().eq('agent_id', siteId);
   for (const id of users) {
     const { error } = await admin.auth.admin.deleteUser(id);
