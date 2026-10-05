@@ -45,9 +45,24 @@ const comparableSchema = z.object({
   }
 });
 
+const subjectSchema = z.object({
+  regionLabel: z.string().trim().min(2).max(120),
+  facts: propertyFactsSchema,
+}).strict();
+
+const suggestedRangeSchema = z.object({ low: usd, target: usd, high: usd }).strict();
+
+export const privateCmaReviewInputSchema = z.object({
+  status: z.enum(['draft', 'reviewed']),
+  subject: subjectSchema,
+  comparables: z.array(comparableSchema).min(1).max(12),
+  suggestedRangeUsd: suggestedRangeSchema,
+  methodologyNote: z.string().trim().min(20).max(800).nullable(),
+}).strict();
+
 /**
  * Private, human-authored evidence contract only. This schema does not fetch,
- * select, score, calculate market value, persist, or publish comparable data.
+ * select, score, calculate market value, or publish comparable data.
  */
 export const privateCmaReviewSchema = z.object({
   schemaVersion: z.literal(1),
@@ -59,12 +74,9 @@ export const privateCmaReviewSchema = z.object({
   useRestriction: z.literal('private-review-only'),
   preparedAt: isoDateTime,
   expiresAt: isoDateTime,
-  subject: z.object({
-    regionLabel: z.string().trim().min(2).max(120),
-    facts: propertyFactsSchema,
-  }).strict(),
+  subject: subjectSchema,
   comparables: z.array(comparableSchema).min(1).max(12),
-  suggestedRangeUsd: z.object({ low: usd, target: usd, high: usd }).strict(),
+  suggestedRangeUsd: suggestedRangeSchema,
   review: z.object({
     reviewerUserId: z.string().uuid().nullable(),
     reviewedAt: isoDateTime.nullable(),

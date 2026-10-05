@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, type FormEvent } from 'react';
+import CmaReviewPanel from './CmaReviewPanel';
 
 type CmaDetails = {
   propertyAddress: string;
@@ -105,6 +106,7 @@ export default function CmaPrivateDetailsPanel({ leadId }: { leadId: string }) {
               <p className="mt-2 break-words text-base font-bold text-white">{details.propertyAddress}</p>
               <p className="mt-2 text-xs text-slate-400">Seller permission recorded {new Date(details.consentCapturedAt).toLocaleDateString()}. Scheduled deletion {new Date(details.expiresAt).toLocaleDateString()}.</p>
               <button type="button" disabled={saving} onClick={deleteDetails} className="mt-3 rounded-lg border border-rose-300/20 px-3 py-2 text-xs font-bold text-rose-200 hover:bg-rose-300/10 disabled:opacity-50">Delete private address</button>
+              <CmaReviewPanel leadId={leadId} />
             </div>
           ) : null}
           {!loading && loaded && !details ? (
