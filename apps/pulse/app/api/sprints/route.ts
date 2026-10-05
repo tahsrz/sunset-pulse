@@ -6,6 +6,7 @@ import { nextOccurrenceAfter, scheduleSpecSchema } from '@/lib/autonomous-workfl
 import { intelligenceWorkers } from '@/lib/command-center/workerRoster';
 import { listSprintsForWorkspace } from '@/lib/property-sprints/sprintWorkspace.server';
 import { requireOwnerCompatibleMutation } from '@/lib/platform/access/sprintPlanningScope.server';
+import { sellerAcquisitionWeek } from '@/lib/marketing/sellerAcquisitionWeek';
 
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
@@ -20,6 +21,7 @@ const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('update_sprint_item'), itemId: uuid, sprintId: uuid, expectedSprintRevision: z.number().int().positive(), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), workerId: z.string().trim().min(1).max(120).nullable() }),
   z.object({ action: z.literal('complete_assignment'), assignmentId: uuid }),
   z.object({ action: z.literal('add_backlog_item'), workspaceId: uuid.nullable().optional(), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).nullable().default(null), sourceType: z.enum(['manual', 'pulse_command']).default('manual'), sourceId: z.string().trim().max(160).nullable().default(null) }),
+  z.object({ action: z.literal('add_seller_acquisition_week'), workspaceId: uuid.nullable().optional() }),
 ]);
 
 async function legacyMutationGuard(userId: string, resourceType: 'sprint' | 'assignment' | 'sprint_backlog_item', resourceId: string) {
@@ -88,18 +90,51 @@ export async function POST(request: NextRequest) {
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 409 });
       return NextResponse.json({ ok: true, backlogItem: data?.[0] || null }, { status: 201 });
     }
-    if (parsed.data.sourceType === 'pulse_command' && parsed.data.sourceId) {
+    if (parsed.data.sourceId) {
       const { data: existing, error: lookupError } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).eq('source_type', parsed.data.sourceType).eq('source_id', parsed.data.sourceId).maybeSingle();
       if (lookupError) return NextResponse.json({ ok: false, error: lookupError.message }, { status: 500 });
       if (existing) return NextResponse.json({ ok: true, backlogItem: existing, reused: true });
     }
     const { data, error } = await supabaseAdmin.from('sprint_backlog_items').insert({ owner_id: userId, title: parsed.data.title, description: parsed.data.description, priority: parsed.data.priority, estimate_minutes: parsed.data.estimateMinutes, source_type: parsed.data.sourceType, source_id: parsed.data.sourceId }).select('*').single();
-    if (error?.code === '23505' && parsed.data.sourceType === 'pulse_command' && parsed.data.sourceId) {
-      const { data: existing, error: lookupError } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).eq('source_type', 'pulse_command').eq('source_id', parsed.data.sourceId).maybeSingle();
+    if (error?.code === '23505' && parsed.data.sourceId) {
+      const { data: existing, error: lookupError } = await supabaseAdmin.from('sprint_backlog_items').select('*').eq('owner_id', userId).eq('source_type', parsed.data.sourceType).eq('source_id', parsed.data.sourceId).maybeSingle();
       if (!lookupError && existing) return NextResponse.json({ ok: true, backlogItem: existing, reused: true });
     }
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, backlogItem: data }, { status: 201 });
+  }
+  if (parsed.data.action === 'add_seller_acquisition_week') {
+    const plan = sellerAcquisitionWeek();
+    let created = 0;
+    let reused = 0;
+    let processed = 0;
+    for (const task of plan) {
+      if (parsed.data.workspaceId) {
+        const { error } = await supabaseAdmin.rpc('platform_add_sprint_backlog_item', {
+          p_actor_id: userId,
+          p_workspace_id: parsed.data.workspaceId,
+          p_title: task.title,
+          p_description: task.description,
+          p_priority: task.priority,
+          p_estimate_minutes: task.estimateMinutes,
+          p_source_type: 'manual',
+          p_source_id: task.key,
+        });
+        if (error) return NextResponse.json({ ok: false, error: error.message, created, reused, processed }, { status: 409 });
+        processed += 1;
+        continue;
+      }
+      const query = () => supabaseAdmin.from('sprint_backlog_items');
+      const { data: existing, error: lookupError } = await query().select('*').eq('owner_id', userId).eq('source_type', 'manual').eq('source_id', task.key).maybeSingle();
+      if (lookupError) return NextResponse.json({ ok: false, error: lookupError.message, created, reused, processed }, { status: 500 });
+      if (existing) { reused += 1; processed += 1; continue; }
+      const { error } = await query().insert({ owner_id: userId, title: task.title, description: task.description, priority: task.priority, estimate_minutes: task.estimateMinutes, source_type: 'manual', source_id: task.key });
+      if (error?.code === '23505') { reused += 1; processed += 1; continue; }
+      if (error) return NextResponse.json({ ok: false, error: error.message, created, reused, processed }, { status: 500 });
+      created += 1;
+      processed += 1;
+    }
+    return NextResponse.json({ ok: true, week: plan[0]?.key.split(':')[1], count: plan.length, created, reused, processed, scoped: Boolean(parsed.data.workspaceId) }, { status: created ? 201 : 200 });
   }
   if (parsed.data.action === 'remove_backlog_item') {
     if (parsed.data.workspaceId) {

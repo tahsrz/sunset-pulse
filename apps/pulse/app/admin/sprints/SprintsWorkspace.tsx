@@ -16,7 +16,7 @@ export function SprintsWorkspace() {
   const [backlog, setBacklog] = useState<Backlog[]>([]), [sprints, setSprints] = useState<Sprint[]>([]), [items, setItems] = useState<SprintItem[]>([]), [assignments, setAssignments] = useState<Assignment[]>([]), [jobs, setJobs] = useState<Job[]>([]);
   const [schedule, setSchedule] = useState<Schedule | null>(null), [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly'), [planningMode, setPlanningMode] = useState<'manual_backlog' | 'property_shortlist'>('manual_backlog');
   const [timeZone, setTimeZone] = useState('America/Chicago'), [localWeekday, setLocalWeekday] = useState(1), [localHour, setLocalHour] = useState(8), [localMinute, setLocalMinute] = useState(0);
-  const [title, setTitle] = useState(''), [editing, setEditing] = useState<Backlog | null>(null), [error, setError] = useState(''), [pending, setPending] = useState(false);
+  const [title, setTitle] = useState(''), [editing, setEditing] = useState<Backlog | null>(null), [error, setError] = useState(''), [notice, setNotice] = useState(''), [pending, setPending] = useState(false);
   const scheduleDirtyRef = useRef(false);
   const markScheduleDirty = () => { scheduleDirtyRef.current = true; };
 
@@ -34,6 +34,19 @@ export function SprintsWorkspace() {
   const post = async (body: unknown) => { setPending(true); setError(''); try { const response = await fetch('/api/sprints', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Sprint request failed.'); const isScheduleSave = typeof body === 'object' && body !== null && 'action' in body && body.action === 'create_schedule'; const preserveDraft = scheduleDirtyRef.current && !isScheduleSave; if (isScheduleSave) scheduleDirtyRef.current = false; await load(preserveDraft); return true; } catch (e) { setError(e instanceof Error ? e.message : 'Sprint request failed.'); return false; } finally { setPending(false); } };
   const mutateScheduler = async (body: unknown) => { setPending(true); setError(''); try { const response = await fetch('/api/scheduler', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Scheduler request failed.'); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Scheduler request failed.'); } finally { setPending(false); } };
   const generatePropertyPlan = async () => { setPending(true); setError(''); try { const response = await fetch('/api/property-shortlist/plan', { method: 'POST' }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Unable to generate property plan.'); await load(scheduleDirtyRef.current); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to generate property plan.'); } finally { setPending(false); } };
+  const addSellerAcquisitionWeek = async () => {
+    setPending(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/sprints', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_seller_acquisition_week' }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(`${payload.error || 'Unable to add this week’s seller plan.'} (${payload.processed || 0}/${payload.count || 6} tasks processed; retry is safe.)`);
+      await load(scheduleDirtyRef.current);
+      setNotice(payload.scoped
+        ? `${payload.week}: ${payload.processed} tasks added or reused in the workspace. Review the backlog and approve a sprint before assigning work.`
+        : `${payload.week}: ${payload.created} new tasks added; ${payload.reused} already existed. Review the backlog and approve a sprint before assigning work.`);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Unable to add this week’s seller plan.'); }
+    finally { setPending(false); }
+  };
   const refresh = () => void load(true).catch((e) => setError(e instanceof Error ? e.message : 'Unable to refresh sprints.'));
   const toggle = () => schedule && void mutateScheduler({ action: schedule.enabled ? 'pause' : 'resume', id: schedule.id });
   const cancel = (id: string) => void mutateScheduler({ action: 'cancel_job', id });
@@ -44,6 +57,11 @@ export function SprintsWorkspace() {
       <h1 className="mt-2 text-3xl font-black text-white">Plan work on a schedule</h1>
       <p className="mt-2 text-sm text-slate-300">Build the next research and buyer follow-up tasks from your Keller / Westlake shortlist.</p>
       <button disabled={pending} onClick={() => void generatePropertyPlan()} className="mt-3 rounded-xl border border-cyan-200/30 px-4 py-2 text-xs font-black uppercase text-cyan-100">Generate property plan</button>
+      <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+        <h2 className="font-bold text-white">Seller growth · this week</h2>
+        <p className="mt-1 max-w-3xl text-sm text-slate-300">Add three video topics, a neighborhood-guide refresh, and conditional open-house preparation/follow-up to your backlog. Tasks are drafts for you to review; assignments happen only after sprint approval. No content is published and no messages are sent.</p>
+        <button disabled={pending} onClick={() => void addSellerAcquisitionWeek()} className="mt-3 rounded-xl bg-cyan-300 px-4 py-2 text-xs font-black uppercase text-cyan-950">Add this week’s seller plan</button>
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
         <label className="flex items-center gap-2 text-xs text-slate-300">Planning mode
@@ -81,6 +99,7 @@ export function SprintsWorkspace() {
 
       {schedule?.next_run_at && <p className="mt-3 text-xs text-slate-400">Next run: {new Date(schedule.next_run_at).toLocaleString(undefined, { timeZone: schedule.time_zone })} ({schedule.time_zone})</p>}
       {error && <p className="mt-3 text-red-200">{error}</p>}
+      {notice && <p role="status" className="mt-3 text-sm text-emerald-200">{notice}</p>}
 
       <div className="mt-4 rounded-xl bg-slate-950/40 p-3 text-xs">
         <p className="uppercase text-slate-500">Scheduler jobs</p>

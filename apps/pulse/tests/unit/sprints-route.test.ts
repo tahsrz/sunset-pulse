@@ -141,6 +141,42 @@ describe('signed-in sprint schedule route', () => {
     }));
   });
 
+  it('adds the weekly seller plan through the existing workspace backlog boundary', async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ id: 'workspace-backlog-1' }], error: null });
+    const response = await POST(jsonRequest({ action: 'add_seller_acquisition_week', workspaceId: '22222222-2222-4222-8222-222222222222' }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ ok: true, count: 6, processed: 6, scoped: true });
+    expect(mocks.rpc).toHaveBeenCalledTimes(6);
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_add_sprint_backlog_item', expect.objectContaining({
+      p_actor_id: USER_ID,
+      p_workspace_id: '22222222-2222-4222-8222-222222222222',
+      p_source_type: 'manual',
+      p_source_id: expect.stringMatching(/^seller-acquisition:\d{4}-W\d{2}:/),
+    }));
+    expect(mocks.rpc.mock.calls.map(([name]) => name).every((name) => name === 'platform_add_sprint_backlog_item')).toBe(true);
+  });
+
+  it('adds all weekly seller tasks to the signed-in owner backlog with stable source IDs', async () => {
+    mocks.from.mockImplementation(() => {
+      const query = queryFor('sprint_backlog_items');
+      query.maybeSingle.mockResolvedValue({ data: null, error: null });
+      query.insert = vi.fn(() => query);
+      query.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: null, error: null }).then(resolve);
+      return query;
+    });
+    const response = await POST(jsonRequest({ action: 'add_seller_acquisition_week' }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(payload).toMatchObject({ ok: true, count: 6, created: 6, reused: 0, processed: 6, scoped: false });
+    const writes = mocks.from.mock.results.map(({ value }) => value.insert.mock.calls[0]?.[0]).filter(Boolean);
+    expect(writes).toHaveLength(6);
+    expect(writes.every((write: Record<string, unknown>) => write.owner_id === USER_ID && write.source_type === 'manual')).toBe(true);
+    expect(new Set(writes.map((write: Record<string, unknown>) => write.source_id)).size).toBe(6);
+  });
+
   it('rejects an invalid timezone before calling the persistence boundary', async () => {
     const response = await POST(jsonRequest({
       action: 'create_schedule',
