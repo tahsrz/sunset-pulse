@@ -5,6 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { command, withDockerService } from './docker-acceptance.mjs';
 import { platformRunAcceptance } from './platform-run-acceptance.mjs';
 import { platformFollowupAcceptance } from './platform-followup-acceptance.mjs';
+import { sellerVideoBriefAcceptance } from './seller-video-brief-acceptance.mjs';
 
 async function runRealtorDatabaseChecks(sql) {
   const migrations = [
@@ -344,7 +345,8 @@ await withDockerService('scheduler-test', async (container) => {
   '20260924130000_platform_unknown_effect_inbox.sql',
   '20260924140000_platform_workspace_invitations.sql',
   '20260924150000_platform_retry_intent_idempotency_race.sql',
-  '20260924160000_platform_user_layouts.sql',
+    '20260924160000_platform_user_layouts.sql',
+    '20261005100000_seller_video_brief_store.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -583,6 +585,7 @@ await withDockerService('scheduler-test', async (container) => {
   console.log('PASS: deferred polling has a terminal budget');
   await platformRunAcceptance(sql);
   await platformFollowupAcceptance(sql);
+  await sellerVideoBriefAcceptance(sql);
 
   // Keep realtor database acceptance inside this disposable, uniquely named
   // PostgreSQL project. Never replay these schema changes against local/hosted
