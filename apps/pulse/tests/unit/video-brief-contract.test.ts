@@ -6,6 +6,7 @@ const draft = {
   briefId: '11111111-1111-4111-8111-111111111111',
   revision: 1,
   supersedesBriefId: null,
+  backlogLink: null,
   topic: 'A simple photo-day preparation checklist',
   audienceNeed: 'Homeowners want a calm plan before photography.',
   hook: 'Three small steps can make photo day feel more manageable.',
@@ -29,6 +30,18 @@ describe('video brief contract', () => {
 
   it('requires an exact predecessor for later revisions', () => {
     expect(videoBriefSchema.safeParse({ ...draft, revision: 2 }).success).toBe(false);
+  });
+
+  it('accepts a revision-fenced backlog link and rejects incomplete link data', () => {
+    expect(videoBriefSchema.safeParse({
+      ...draft,
+      backlogLink: { itemId: '33333333-3333-4333-8333-333333333333', expectedRevision: 4 },
+    }).success).toBe(true);
+    expect(videoBriefSchema.safeParse({
+      ...draft,
+      backlogLink: { itemId: '33333333-3333-4333-8333-333333333333', expectedRevision: 0 },
+    }).success).toBe(false);
+    expect(videoBriefSchema.safeParse({ ...draft, backlogLink: { itemId: 'not-an-id', expectedRevision: 1 } }).success).toBe(false);
   });
 
   it('requires human approval metadata and exact listing permission for approved listing content', () => {

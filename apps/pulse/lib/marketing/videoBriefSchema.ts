@@ -14,12 +14,17 @@ const listingPermissionSchema = z.object({
   listingReference: z.string().trim().min(3).max(160).nullable(),
   evidenceReference: z.string().trim().min(8).max(400).nullable(),
 }).strict();
+const backlogLinkSchema = z.object({
+  itemId: z.string().uuid(),
+  expectedRevision: z.number().int().positive().safe(),
+}).strict();
 
 export const videoBriefSchema = z.object({
   schemaVersion: z.literal(1),
   briefId: z.string().uuid(),
   revision: z.number().int().positive().safe(),
   supersedesBriefId: z.string().uuid().nullable(),
+  backlogLink: backlogLinkSchema.nullable(),
   topic: z.string().trim().min(4).max(120),
   audienceNeed: z.string().trim().min(8).max(240),
   hook: z.string().trim().min(4).max(180),
