@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { count, error } = await supabaseAdmin
     .from('seller_cma_private_details')
     .delete({ count: 'exact' })
-    .lt('expires_at', new Date().toISOString());
+    .lte('expires_at', new Date().toISOString());
 
   if (error) {
     console.error('[SELLER_CMA_RETENTION_CRON]', error.code || 'delete_failed');

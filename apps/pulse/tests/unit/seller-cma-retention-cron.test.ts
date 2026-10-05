@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ from: vi.fn(), delete: vi.fn(), lt: vi.fn() }));
+const mocks = vi.hoisted(() => ({ from: vi.fn(), delete: vi.fn(), lte: vi.fn() }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from } }));
 
 import { GET } from '@/app/api/admin/agent-leads/cma-retention/cron/route';
@@ -10,8 +10,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('CRON_SECRET', 'test-cron-secret');
   mocks.from.mockReturnValue({ delete: mocks.delete });
-  mocks.delete.mockReturnValue({ lt: mocks.lt });
-  mocks.lt.mockResolvedValue({ count: 4, error: null });
+  mocks.delete.mockReturnValue({ lte: mocks.lte });
+  mocks.lte.mockResolvedValue({ count: 4, error: null });
 });
 
 afterEach(() => vi.unstubAllEnvs());
@@ -40,12 +40,12 @@ describe('private CMA retention cron', () => {
     expect(response.status).toBe(200);
     expect(mocks.from).toHaveBeenCalledWith('seller_cma_private_details');
     expect(mocks.delete).toHaveBeenCalledWith({ count: 'exact' });
-    expect(mocks.lt).toHaveBeenCalledWith('expires_at', expect.any(String));
+    expect(mocks.lte).toHaveBeenCalledWith('expires_at', expect.any(String));
     expect(body).toEqual({ ok: true, deletedCount: 4 });
   });
 
   it('reports an idempotent no-op when there are no expired rows', async () => {
-    mocks.lt.mockResolvedValue({ count: null, error: null });
+    mocks.lte.mockResolvedValue({ count: null, error: null });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
       headers: { authorization: 'Bearer test-cron-secret' },
     }));
@@ -55,7 +55,7 @@ describe('private CMA retention cron', () => {
 
   it('returns a generic failure without exposing database details', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mocks.lt.mockResolvedValue({ count: null, error: { code: 'XX000', message: 'Sensitive property address' } });
+    mocks.lte.mockResolvedValue({ count: null, error: { code: 'XX000', message: 'Sensitive property address' } });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
       headers: { authorization: 'Bearer test-cron-secret' },
     }));
