@@ -26,6 +26,8 @@ if (!loopbackHosts.has(apiUrl.hostname) || !loopbackHosts.has(originUrl.hostname
 }
 const api=apiUrl.origin, origin=originUrl.origin;
 const realtorOnly=process.argv.includes('--realtor-only');
+const sellerVideoOnly=process.argv.includes('--seller-video-only');
+assert(!(realtorOnly&&sellerVideoOnly),'Choose only one focused acceptance suite.');
 const db=`supabase_db_${stack}`;
 const sql=(input)=>command('docker',['exec','-i',db,'psql','-X','-qAt','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'],{input:`SET statement_timeout='20s';\n${input}`});
 const migrated=await sql("SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;");
@@ -62,6 +64,8 @@ const migrations=[
   '20260925190000_realtor_service_role_read_grants.sql',
   '20260925200000_realtor_digest_search_path.sql',
   '20260925210000_realtor_property_task_read_grants.sql',
+  '20261005100000_seller_video_brief_store.sql',
+  '20261005110000_platform_workspace_service_reads.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -81,6 +85,14 @@ const admin=createClient(api,service,{auth:{persistSession:false,autoRefreshToke
 const {error:realtorSchemaError}=await admin.from('realtor_preferences').select('user_id').limit(1);
 assert.equal(realtorSchemaError,null,
   `Disposable Supabase REST schema probe failed: ${realtorSchemaError?.code || 'unknown'} ${realtorSchemaError?.message || ''}`);
+for (const [table, columns] of [
+  ['platform_memberships', 'workspace_id,user_id,role,status,created_at'],
+  ['platform_workspaces', 'id,kind,name,status,revision'],
+  ['seller_video_briefs', 'workspace_id,brief_id,revision,brief_data,created_at'],
+]) {
+  const {error}=await admin.from(table).select(columns).limit(1);
+  assert.equal(error,null,`Disposable ${table} REST schema probe failed: ${error?.code || 'unknown'} ${error?.message || ''}`);
+}
 for (const [table, columns] of [
   ['property_shortlist_entries', 'id,owner_id,area_key,status,revision'],
   ['sprint_backlog_items', 'id,owner_id,title,source_type,property_id,property_task_kind,input_revision'],
@@ -130,7 +142,7 @@ try{
     const context=await browser.newContext();
     const page=await context.newPage();
     const pageErrors=[];page.on('pageerror',(e)=>pageErrors.push(e.message));
-    const loginTarget=realtorOnly?'/api/realtor/preferences':'/api/workspaces';
+    const loginTarget=sellerVideoOnly?'/api/realtor/preferences':realtorOnly?'/api/realtor/preferences':'/api/workspaces';
     await page.goto(`${origin}/login?redirect=${encodeURIComponent(loginTarget)}`,{timeout:120000});
     await page.getByRole('heading',{name:'Sign In',exact:true}).waitFor();
     assert.equal(await page.locator('[data-nextjs-dialog]').count(),0);
@@ -154,6 +166,60 @@ try{
       return {status:response.status,data:await response.json()};
     },{path,method,body});
   }
+  if (sellerVideoOnly) {
+    const created = await request(primary.page, '/api/workspaces', 'POST', { kind: 'personal', name: 'Seller video browser acceptance' });
+    assert.equal(created.status, 201, `Real-auth workspace creation failed: ${created.data.error || created.status}`);
+    const workspace = created.data.workspaceId;
+    workspaceIds.push(workspace);
+    const task = await request(primary.page, '/api/sprints', 'POST', {
+      action: 'add_backlog_item', workspaceId: workspace,
+      title: 'Acceptance video brief task', description: 'Disposable browser-only fixture', priority: 2,
+      estimateMinutes: 30, sourceType: 'manual', sourceId: `auth-${randomUUID()}`,
+    });
+    assert.equal(task.status, 201, `Real-auth backlog creation failed: ${task.data.error || task.status}`);
+    await primary.page.goto(`${origin}/sprints`);
+    await primary.page.getByRole('heading', { name: 'Shape a short-form video brief' }).waitFor();
+    await primary.page.getByLabel('Seller video workspace').selectOption(workspace);
+    await primary.page.reload();
+    await primary.page.getByLabel('Linked backlog task').selectOption(task.data.backlogItem.id);
+    await primary.page.getByLabel('Topic').fill('Seller photo-day preparation');
+    await primary.page.getByLabel('Audience need').fill('Homeowners need a clear and practical photo-day checklist.');
+    await primary.page.getByLabel('Opening hook').fill('Make photo day feel easier with these steps.');
+    await primary.page.getByLabel('Script').fill('Start with the entryway, put away everyday items, and prepare each room for the photographer.');
+    await primary.page.getByLabel('Shot list · one per line').fill('A clear entryway before the checklist');
+    await primary.page.getByLabel('Campaign key').fill('acceptance-video');
+    await primary.page.getByRole('button', { name: 'Save private draft' }).click();
+    await primary.page.getByRole('status').filter({ hasText: 'Private draft saved.' }).waitFor();
+    await primary.page.getByRole('heading', { name: 'Seller photo-day preparation' }).waitFor();
+    const saved = await request(primary.page, `/api/seller-video-briefs?workspaceId=${workspace}`);
+    assert.equal(saved.status, 200);
+    assert.equal(saved.data.briefs.length, 1);
+    assert.equal(saved.data.briefs[0].brief_data.reviewStatus, 'draft');
+    assert.equal(saved.data.briefs[0].backlog_item_id, task.data.backlogItem.id);
+    const outsider = await login();
+    const foreignRead = await request(outsider.page, `/api/seller-video-briefs?workspaceId=${workspace}`);
+    assert.equal(foreignRead.status, 404, 'a real authenticated non-member cannot read private briefs');
+    assert.equal(await outsider.page.getByRole('heading', { name: 'Seller video workspace' }).count(), 0);
+    await sql(`INSERT INTO platform_memberships(workspace_id,user_id,role,status) VALUES('${workspace}','${outsider.userId}','reviewer','active');`);
+    const nonWriterDraft = { ...saved.data.briefs[0].brief_data, briefId: randomUUID() };
+    assert.equal((await request(outsider.page, '/api/seller-video-briefs', 'POST', { workspaceId: workspace, brief: nonWriterDraft })).status, 403,
+      'a real authenticated reviewer may read but cannot save creator-only drafts');
+    await outsider.page.goto(`${origin}/sprints`);
+    await outsider.page.getByLabel('Seller video workspace').selectOption(workspace);
+    await outsider.page.getByText('Your workspace role can view drafts but cannot create or save them.').waitFor();
+    assert.equal(await outsider.page.getByRole('button', { name: 'Save private draft' }).count(), 0);
+    await sql(`UPDATE platform_memberships SET role='viewer',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+    assert.equal((await request(outsider.page, '/api/seller-video-briefs', 'POST', { workspaceId: workspace, brief: nonWriterDraft })).status, 403,
+      'a real authenticated viewer cannot save creator-only drafts');
+    await outsider.page.reload();
+    await outsider.page.getByText('Your workspace role can view drafts but cannot create or save them.').waitFor();
+    assert.equal(await outsider.page.getByRole('button', { name: 'Save private draft' }).count(), 0);
+    assert.equal(primary.pageErrors.length, 0, `Browser errors: ${primary.pageErrors.join('; ')}`);
+    assert.equal(outsider.pageErrors.length, 0, `Outsider browser errors: ${outsider.pageErrors.join('; ')}`);
+    console.log('PASS: real Supabase browser sessions create, save and read a private workspace video draft linked to a revision-fenced backlog task; a different authenticated user is denied.');
+    console.log('PASS: draft remains unreviewed and no publication or send action is exposed.');
+  }
+  if (!sellerVideoOnly) {
   const acceptanceToday = new Date().toISOString().slice(0,10);
   const offsetDate = (days) => { const value = new Date(); value.setUTCDate(value.getUTCDate() + days); return value.toISOString().slice(0,10); };
   const setupInput = {
@@ -623,6 +689,7 @@ try{
   console.log('PASS: browser cookie APIs start → checkpoint → answer → complete, cancel, cursor pages, revocation, archive and foreign-user denial; real JWT RLS denies foreign rows');
   console.log(`Browser evidence: ${artifacts}`);
   }
+  }
 }catch(error){
   // Server logs may contain account identifiers but no credentials are printed
   // by this runner. Keep failure output limited to the assertion boundary.
@@ -634,7 +701,7 @@ try{
     else server.kill();
     await delay(1000);
   }
-  for(const workspace of workspaceIds){
+  if(!sellerVideoOnly) for(const workspace of workspaceIds){
     assert.match(workspace,/^[a-f0-9-]{36}$/);
     await sql(`BEGIN;
       DELETE FROM workflow_results WHERE job_id IN (SELECT id FROM workflow_jobs WHERE payload->>'workspaceId'='${workspace}');
@@ -645,7 +712,9 @@ try{
       DELETE FROM realtor_preferences WHERE workspace_id='${workspace}';
       DELETE FROM platform_workspaces WHERE id='${workspace}'; COMMIT;`);
   }
-  for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
+  if(!sellerVideoOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
   await sql(`UPDATE workflow_event_contracts SET enabled=${enabled==='t'?'true':'false'} WHERE workflow_key='platform_run';`);
-  console.log('Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
+  console.log(sellerVideoOnly
+    ? 'Retained test rows only inside the generated disposable project; its teardown removes them and all local Auth accounts.'
+    : 'Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
 }

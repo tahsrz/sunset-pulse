@@ -14,7 +14,7 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans'].includes(suite), 'Supported suites: realtor, scans');
+assert(['realtor', 'scans', 'seller-video-briefs'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs');
 const startedAt = Date.now();
 const projectId = `pulse_auth_${randomUUID().replaceAll('-', '').slice(0, 8)}`;
 const temporaryRoot = await mkdtemp(join(tmpdir(), `sunset-pulse-${projectId}-`));
@@ -144,7 +144,8 @@ try {
     const runAuth = (env) => run(process.execPath, [
       join(appRoot, 'scripts', 'platform-local-auth-acceptance.mjs'),
       '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`,
-      '--origin', `http://127.0.0.1:${ports[7]}`, '--realtor-only',
+      '--origin', `http://127.0.0.1:${ports[7]}`,
+      ...(suite === 'seller-video-briefs' ? ['--seller-video-only'] : ['--realtor-only']),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });
     if (process.argv.includes('--homepage')) await withDockerService('mongo-test', async (container) => {

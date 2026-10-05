@@ -32,6 +32,7 @@
     "test:db:concurrency": "node scripts/scheduler-concurrency-acceptance.mjs",
     "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
     "test:platform:auth:disposable": "node scripts/platform-disposable-auth-acceptance.mjs",
+    "test:seller-video-briefs:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-video-briefs",
     "test:scans:storage": "node scripts/platform-disposable-auth-acceptance.mjs --suite scans",
     "platform:pilot:preflight": "tsx scripts/platform-pilot-preflight.ts",
     "test:db:mongo": "node scripts/scan-mongo-acceptance.mjs",

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SprintCard } from './SprintCard';
+import { SellerVideoBriefWorkspace } from './SellerVideoBriefWorkspace';
 
 type Backlog = { id: string; title: string; description?: string | null; priority: number; status: string; estimate_minutes?: number | null; source_type?: string | null; source_id?: string | null };
 type Sprint = { id: string; name: string; goal: string; status: string; revision?: number };
@@ -141,6 +142,7 @@ export function SprintsWorkspace() {
           />)}
         </section>
       </div>
+      <SellerVideoBriefWorkspace />
     </section>
   );
 }

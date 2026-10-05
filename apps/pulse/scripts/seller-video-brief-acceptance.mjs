@@ -61,6 +61,9 @@ export async function sellerVideoBriefAcceptance(sql) {
 
   assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_briefs','INSERT');`), 'f', 'clients must not insert directly');
   assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_briefs','UPDATE');`), 'f', 'clients must not update immutable revisions');
+  assert.equal(await sql(`SELECT has_table_privilege('service_role','public.platform_memberships','SELECT');`), 't', 'server-side workspace resolution can read memberships');
+  assert.equal(await sql(`SELECT has_table_privilege('service_role','public.platform_workspaces','SELECT');`), 't', 'server-side workspace resolution can read workspace metadata');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.platform_memberships','SELECT');`), 'f', 'browser clients cannot enumerate workspace memberships directly');
   assert.equal(await sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${owner}'; SELECT count(*)::text FROM public.seller_video_briefs WHERE workspace_id='${workspace}'; COMMIT;`).then((result) => result.split(/\r?\n/).at(-1)), '1', 'workspace members can read their private draft');
   assert.equal(await sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${stranger}'; SELECT count(*)::text FROM public.seller_video_briefs WHERE workspace_id='${workspace}'; COMMIT;`).then((result) => result.split(/\r?\n/).at(-1)), '0', 'non-members cannot read private drafts');
   await assert.rejects(sql(`UPDATE public.seller_video_briefs SET brief_data='{}'::jsonb WHERE brief_id='${briefId}';`), /Seller video brief revisions are immutable/);
