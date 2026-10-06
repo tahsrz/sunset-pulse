@@ -9,6 +9,7 @@ import { QuotaBudgetPanel } from './QuotaBudgetPanel';
 
 type Install = { id: string; appKey: string; revision: number; status: 'installed' | 'disabled'; manifest: AppManifest };
 type RunSummary = { id: string; status: string; revision: number; definition: { key: string; version: number }; created_at: string };
+type SavedSellerBrief = { workspace_id: string; brief_id: string; revision: number; brief_data: { topic: string; audienceNeed: string; hook: string; script: string; shotList: string[]; claimEvidence: { claim: string; sourceReference: string; sourceDate: string | null; publicationBasis: string; permissionEvidence: string | null }[]; listingPermission: { status: string; listingReference: string | null; evidenceReference: string | null }; channels: string[] } };
 type ConnectorHealth = { id: string; connector_id: string; connection_id: string; title: string; status: 'healthy' | 'unavailable' | 'schema_drift' | 'stale'; checked_at: string; snapshot_hash: string | null; detail: Record<string, string | number | boolean | null>; scheduler_status: 'fresh' | 'due' | 'queued' | 'running' | 'overdue'; next_check_at: string | null; receipt_id: string | null; operation_id: string | null; receipt_recorded_at: string | null };
 type HealthSummary = { healthy: number; unavailable: number; schema_drift: number; stale: number };
 type HealthHistory = { id: string; connector_id: string; health_id: string; status: ConnectorHealth['status']; checked_at: string; recorded_at: string; snapshot_hash: string | null };
@@ -17,6 +18,7 @@ type UnknownEffect = { receipt_id: string; run_id: string; checkpoint_id: string
 
 export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: string; embedded?: boolean }) {
   const [checkpoints, setCheckpoints] = useState<CheckpointCardData[]>([]);
+  const [sellerBriefs, setSellerBriefs] = useState<Record<string, SavedSellerBrief>>({});
   const [connectorHealth, setConnectorHealth] = useState<ConnectorHealth[]>([]);
   const [healthCursor, setHealthCursor] = useState<string | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary>({ healthy: 0, unavailable: 0, schema_drift: 0, stale: 0 });
@@ -27,6 +29,9 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
   const [unknownEffects, setUnknownEffects] = useState<UnknownEffect[]>([]);
   const [unknownEffectCursor, setUnknownEffectCursor] = useState<string | null>(null);
   const [canManageRecovery, setCanManageRecovery] = useState(false);
+  const [canRespondQuestion, setCanRespondQuestion] = useState(false);
+  const [canResolveApproval, setCanResolveApproval] = useState(false);
+  const [canResolveEffectGate, setCanResolveEffectGate] = useState(false);
   const [evidenceDrafts, setEvidenceDrafts] = useState<Record<string, { source: 'provider_lookup' | 'manual_review'; outcome: 'applied' | 'not_applied'; reference: string; hash: string }>>({});
   const [installs, setInstalls] = useState<Install[]>([]);
   const [runs, setRuns] = useState<RunSummary[]>([]);
@@ -49,7 +54,22 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
       const installBody = await installResponse.json();
       const runBody = await runResponse.json();
       if (!checkpointResponse.ok || !installResponse.ok || !runResponse.ok) throw new Error(checkpointBody.error || installBody.error || runBody.error || 'Workspace data is unavailable.');
+      const reviewTargets = (checkpointBody.result.items as CheckpointCardData[]).filter((checkpoint) =>
+        checkpoint.type === 'approval' && checkpoint.target?.resourceType === 'seller_video_brief'
+          && checkpoint.target.action === 'review_seller_video_brief');
+      const briefEntries = await Promise.all(reviewTargets.map(async (checkpoint) => {
+        const target = checkpoint.target!;
+        const key = `${target.resourceId}:${target.revision}`;
+        try {
+          const response = await fetch(`/api/seller-video-briefs?workspaceId=${encodeURIComponent(workspaceId)}&briefId=${encodeURIComponent(target.resourceId)}&revision=${target.revision}`, { cache: 'no-store' });
+          const body = await response.json();
+          const brief = body.briefs?.[0] as SavedSellerBrief | undefined;
+          return response.ok && brief?.brief_id === target.resourceId && brief.revision === target.revision ? [key, brief] as const : null;
+        } catch { return null; }
+      }));
+      const loadedBriefs = Object.fromEntries(briefEntries.filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)));
       setCheckpoints((current) => nextCursor ? [...current, ...checkpointBody.result.items] : checkpointBody.result.items);
+      setSellerBriefs((current) => nextCursor ? { ...current, ...loadedBriefs } : loadedBriefs);
       setConnectorHealth(checkpointBody.result.health || []);
       setHealthCursor(checkpointBody.result.healthNextCursor || null);
       setHealthSummary(checkpointBody.result.healthSummary || { healthy: 0, unavailable: 0, schema_drift: 0, stale: 0 });
@@ -62,6 +82,9 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
         setUnknownEffectCursor(checkpointBody.result.unknownEffectsNextCursor || null);
       }
       setCanManageRecovery(Boolean(checkpointBody.result.canManageProviderRecovery));
+      setCanRespondQuestion(Boolean(checkpointBody.result.canRespondQuestion));
+      setCanResolveApproval(Boolean(checkpointBody.result.canResolveApproval));
+      setCanResolveEffectGate(Boolean(checkpointBody.result.canResolveEffectGate));
       setCursor(checkpointBody.result.nextCursor);
       setInstalls(installBody.result);
       setRuns(runBody.result.items);
@@ -188,7 +211,17 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
     <header><p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-200">Shared workspace inbox</p><h1 className="mt-2 text-3xl font-black">Review and organize</h1><p className="mt-2 max-w-2xl text-sm text-slate-400">Answers stay attached to the existing run and checkpoint revision. Nothing here approves facts, sends email, or publishes content.</p></header>
     {error ? <div role="alert" className="border border-rose-300/30 bg-rose-300/10 p-4 text-sm text-rose-100">{error}</div> : null}
     <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="space-y-6"><div className="space-y-4"><h2 className="text-lg font-bold">Pending checkpoints</h2>{loading && !checkpoints.length ? <p className="text-sm text-slate-400">Loading workspace…</p> : null}{!loading && !checkpoints.length ? <p className="text-sm text-slate-400">Nothing needs your input.</p> : null}{checkpoints.map((checkpoint) => <CheckpointCard key={checkpoint.id} checkpoint={checkpoint} onRespond={respond} />)}{cursor ? <button type="button" onClick={() => void load(cursor)} className="rounded-md border border-white/15 px-3 py-2 text-sm">Load more</button> : null}</div><div className="space-y-3"><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Connector health</h2><span className="text-xs text-slate-400">{healthSummary.healthy} healthy · {healthSummary.unavailable + healthSummary.schema_drift + healthSummary.stale} needs review</span></div>{connectorHealth.length ? connectorHealth.map((health) => <div key={health.id} className={`rounded-lg border p-3 ${health.status === 'healthy' ? 'border-emerald-300/20 bg-emerald-300/5' : 'border-amber-300/30 bg-amber-300/10'}`}><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{health.title}</span><span className="text-xs font-bold uppercase tracking-wide">{health.status.replace('_', ' ')}</span></div><p className="mt-1 text-xs text-slate-400">Last checked {new Date(health.checked_at).toLocaleString()} · scheduler {health.scheduler_status}</p>{health.next_check_at ? <p className="mt-1 text-xs text-slate-500">Next check {new Date(health.next_check_at).toLocaleString()}</p> : null}{health.status !== 'healthy' ? <p className="mt-2 text-xs text-amber-100">This connection is not available for live execution. Review the connector before enabling provider calls.</p> : null}{health.scheduler_status !== 'fresh' ? <button type="button" onClick={() => void retryHealth(health)} className="mt-3 rounded-md border border-white/15 px-3 py-1.5 text-xs font-semibold">Schedule fresh check</button> : null}</div>) : <p className="text-sm text-slate-400">No connector health checks recorded.</p>}{healthCursor ? <button type="button" onClick={() => void loadMoreHealth()} className="rounded-md border border-white/15 px-3 py-2 text-sm">Load more health</button> : null}</div>
+      <div className="space-y-6"><div className="space-y-4"><h2 className="text-lg font-bold">Pending checkpoints</h2>{loading && !checkpoints.length ? <p className="text-sm text-slate-400">Loading workspace…</p> : null}{!loading && !checkpoints.length ? <p className="text-sm text-slate-400">Nothing needs your input.</p> : null}{checkpoints.map((checkpoint) => {
+        const isSellerBriefReview = checkpoint.type === 'approval' && checkpoint.target?.resourceType === 'seller_video_brief' && checkpoint.target.action === 'review_seller_video_brief';
+        const targetBrief = isSellerBriefReview && checkpoint.target ? sellerBriefs[`${checkpoint.target.resourceId}:${checkpoint.target.revision}`] : undefined;
+        const canRespond = checkpoint.type === 'question' ? canRespondQuestion : checkpoint.type === 'approval' ? canResolveApproval : canResolveEffectGate;
+        return <CheckpointCard key={checkpoint.id} checkpoint={checkpoint} onRespond={respond} canRespond={canRespond}
+          disabled={!canRespond || (isSellerBriefReview && !targetBrief)}
+          footer={isSellerBriefReview ? <div className="mt-5 rounded-lg border border-cyan-200/15 bg-slate-950/70 p-4">
+            {targetBrief ? <><p className="text-xs font-bold uppercase tracking-widest text-cyan-200">Exact private draft · revision {targetBrief.revision}</p><h4 className="mt-2 font-bold">{targetBrief.brief_data.topic}</h4><p className="mt-2 text-sm text-slate-300">{targetBrief.brief_data.audienceNeed}</p><p className="mt-3 text-sm font-semibold text-slate-200">{targetBrief.brief_data.hook}</p><p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{targetBrief.brief_data.script}</p><ul className="mt-3 list-disc pl-5 text-xs text-slate-400">{targetBrief.brief_data.shotList.map((shot, index) => <li key={`${index}-${shot}`}>{shot}</li>)}</ul><p className="mt-3 text-xs text-slate-400">Channels: {targetBrief.brief_data.channels.join(', ')} · Listing media: {targetBrief.brief_data.listingPermission.status}{targetBrief.brief_data.listingPermission.listingReference ? ` (${targetBrief.brief_data.listingPermission.listingReference})` : ''}</p><div className="mt-3 space-y-2">{targetBrief.brief_data.claimEvidence.map((claim, index) => <div key={`${index}-${claim.claim}`} className="rounded border border-white/10 p-2 text-xs"><p>{claim.claim}</p><p className="mt-1 break-all text-slate-400">Source: {claim.sourceReference} · {claim.sourceDate || 'undated'} · {claim.publicationBasis}{claim.permissionEvidence ? ` · permission: ${claim.permissionEvidence}` : ''}</p></div>)}</div></> : <p role="alert" className="text-sm text-rose-200">The exact draft revision is unavailable. This review is locked; reload or ask the author to request review again.</p>}
+            <p className="mt-4 border-t border-white/10 pt-3 text-xs font-semibold text-amber-100">This decision records human review only. It does not publish, upload, or send the video.</p>
+          </div> : null} />;
+      })}{cursor ? <button type="button" onClick={() => void load(cursor)} className="rounded-md border border-white/15 px-3 py-2 text-sm">Load more</button> : null}</div><div className="space-y-3"><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Connector health</h2><span className="text-xs text-slate-400">{healthSummary.healthy} healthy · {healthSummary.unavailable + healthSummary.schema_drift + healthSummary.stale} needs review</span></div>{connectorHealth.length ? connectorHealth.map((health) => <div key={health.id} className={`rounded-lg border p-3 ${health.status === 'healthy' ? 'border-emerald-300/20 bg-emerald-300/5' : 'border-amber-300/30 bg-amber-300/10'}`}><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{health.title}</span><span className="text-xs font-bold uppercase tracking-wide">{health.status.replace('_', ' ')}</span></div><p className="mt-1 text-xs text-slate-400">Last checked {new Date(health.checked_at).toLocaleString()} · scheduler {health.scheduler_status}</p>{health.next_check_at ? <p className="mt-1 text-xs text-slate-500">Next check {new Date(health.next_check_at).toLocaleString()}</p> : null}{health.status !== 'healthy' ? <p className="mt-2 text-xs text-amber-100">This connection is not available for live execution. Review the connector before enabling provider calls.</p> : null}{health.scheduler_status !== 'fresh' ? <button type="button" onClick={() => void retryHealth(health)} className="mt-3 rounded-md border border-white/15 px-3 py-1.5 text-xs font-semibold">Schedule fresh check</button> : null}</div>) : <p className="text-sm text-slate-400">No connector health checks recorded.</p>}{healthCursor ? <button type="button" onClick={() => void loadMoreHealth()} className="rounded-md border border-white/15 px-3 py-2 text-sm">Load more health</button> : null}</div>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Provider exceptions</h2><span className="text-xs text-slate-400">Review-only · resolution never clears a fence</span></div>
           {providerExceptions.length ? providerExceptions.map((exception) => <article key={`${exception.exception_type}-${exception.id}`} className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-3">

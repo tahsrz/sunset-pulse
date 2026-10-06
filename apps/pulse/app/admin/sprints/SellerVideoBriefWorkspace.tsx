@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Workspace = { workspace: { id: string; name: string; kind: string }; membership: { role: string } };
 type BacklogItem = { id: string; title: string; status: string; revision: number };
@@ -31,6 +31,9 @@ export function SellerVideoBriefWorkspace() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [reviewPending, setReviewPending] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState<Record<string, string>>({});
+  const reviewKeys = useRef<Record<string, string>>({});
   const selectedWorkspace = workspaces.find(({ workspace }) => workspace.id === workspaceId);
   const canCreateBrief = Boolean(selectedWorkspace && ['owner', 'admin', 'member'].includes(selectedWorkspace.membership.role));
 
@@ -113,6 +116,29 @@ export function SellerVideoBriefWorkspace() {
     ? current.filter((item) => item !== channel)
     : [...current, channel]);
 
+  const requestReview = async (brief: Brief) => {
+    const key = `${brief.brief_id}:${brief.revision}`;
+    reviewKeys.current[key] ||= crypto.randomUUID();
+    setReviewPending(key); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/seller-video-briefs/review', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId, briefId: brief.brief_id, revision: brief.revision, requestKey: reviewKeys.current[key] }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to request human review.');
+      const status = String(data.run?.status || 'ready');
+      setReviewSubmitted((current) => ({ ...current, [key]: status }));
+      setNotice(status === 'completed'
+        ? `This exact revision already has a completed review decision (${brief.brief_id}, revision ${brief.revision}). No content was published or sent.`
+        : status === 'cancelled'
+          ? `This exact revision's review was rejected or cancelled. Save a new draft revision before requesting another review.`
+          : `Review is ${status} for ${brief.brief_id}, revision ${brief.revision}. A reviewer will see this exact draft in the shared workspace inbox. No content was published or sent.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to request human review.');
+    } finally { setReviewPending(''); }
+  };
+
   return (
     <section aria-labelledby="seller-video-briefs-title" className="mt-8 rounded-3xl border border-emerald-200/20 bg-emerald-500/[.04] p-6">
       <p className="text-xs uppercase tracking-widest text-emerald-200">Seller content · private drafts</p>
@@ -152,6 +178,7 @@ export function SellerVideoBriefWorkspace() {
           <p className="text-xs uppercase tracking-widest text-emerald-200">Draft · revision {brief.revision} · {brief.brief_data.reviewStatus}</p>
           <h4 className="mt-2 font-bold text-white">{brief.brief_data.topic}</h4><p className="mt-1 text-sm text-slate-300">{brief.brief_data.hook}</p>
           <p className="mt-2 text-xs text-slate-500">{brief.brief_data.channels.join(', ')} · saved {new Date(brief.created_at).toLocaleString()}</p>
+          {brief.brief_data.reviewStatus === 'draft' && canCreateBrief ? <button type="button" onClick={() => void requestReview(brief)} disabled={Boolean(reviewPending) || Boolean(reviewSubmitted[`${brief.brief_id}:${brief.revision}`])} className="mt-3 rounded-lg border border-cyan-200/30 px-3 py-2 text-xs font-bold text-cyan-100 disabled:opacity-50">{reviewPending === `${brief.brief_id}:${brief.revision}` ? 'Requesting review…' : reviewSubmitted[`${brief.brief_id}:${brief.revision}`] ? `Review ${reviewSubmitted[`${brief.brief_id}:${brief.revision}`]}` : 'Request human review'}</button> : null}
         </li>)}</ul> : <p className="mt-2 text-sm text-slate-400">No saved video drafts in this workspace.</p>}
       </div>
     </section>

@@ -66,6 +66,7 @@ const migrations=[
   '20260925210000_realtor_property_task_read_grants.sql',
   '20261005100000_seller_video_brief_store.sql',
   '20261005110000_platform_workspace_service_reads.sql',
+  '20261005120000_seller_video_review_checkpoint.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -196,6 +197,9 @@ try{
     assert.equal(saved.data.briefs.length, 1);
     assert.equal(saved.data.briefs[0].brief_data.reviewStatus, 'draft');
     assert.equal(saved.data.briefs[0].backlog_item_id, task.data.backlogItem.id);
+    const exactRead = await request(primary.page, `/api/seller-video-briefs?workspaceId=${workspace}&briefId=${saved.data.briefs[0].brief_id}&revision=1`);
+    assert.equal(exactRead.status, 200);
+    assert.equal(exactRead.data.briefs.length, 1, 'review UI can fetch an exact immutable brief revision');
     const outsider = await login();
     const foreignRead = await request(outsider.page, `/api/seller-video-briefs?workspaceId=${workspace}`);
     assert.equal(foreignRead.status, 404, 'a real authenticated non-member cannot read private briefs');
@@ -208,16 +212,54 @@ try{
     await outsider.page.getByLabel('Seller video workspace').selectOption(workspace);
     await outsider.page.getByText('Your workspace role can view drafts but cannot create or save them.').waitFor();
     assert.equal(await outsider.page.getByRole('button', { name: 'Save private draft' }).count(), 0);
+    const reviewButton = primary.page.getByRole('button', { name: 'Request human review' });
+    await reviewButton.click();
+    await primary.page.getByRole('status').filter({ hasText: 'Review is' }).waitFor();
+    const reviewRun = await sql(`SELECT id FROM platform_runs WHERE workspace_id='${workspace}' AND definition->>'key'='seller_video_review' AND definition#>>'{nodes,0,target,resourceId}'='${saved.data.briefs[0].brief_id}' AND definition#>>'{nodes,0,target,revision}'='1';`);
+    assert.match(reviewRun, /^[0-9a-f-]{36}$/i);
+    const reviewJob = await sql(`SELECT id FROM claim_workflow_jobs(100,30) WHERE workflow_key='platform_run' AND payload->>'runId'='${reviewRun}';`);
+    const reviewLease = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${reviewJob}';`);
+    assert.equal(await sql(`SELECT run_status FROM platform_tick_run('${reviewJob}','${reviewLease}');`), 'waiting');
+    const reviewCheckpoint = await sql(`SELECT id FROM platform_checkpoints WHERE run_id='${reviewRun}';`);
+    assert.match(reviewCheckpoint, /^[0-9a-f-]{36}$/i);
+    await sql(`UPDATE platform_memberships SET role='member',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+    const unauthorizedDecision = await request(outsider.page, `/api/workspaces/${workspace}/checkpoints`, 'POST', {
+      checkpointId: reviewCheckpoint, expectedRevision: 1, submissionKey: randomUUID(), value: true,
+    });
+    assert.equal(unauthorizedDecision.status, 403, 'a workspace member without a reviewer role cannot decide an approval');
+    await sql(`UPDATE platform_memberships SET role='reviewer',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+    const reviewerInbox = await request(outsider.page, `/api/workspaces/${workspace}/checkpoints`);
+    assert.equal(reviewerInbox.status, 200, `real reviewer inbox API read failed: ${JSON.stringify(reviewerInbox.data)}`);
+    assert(reviewerInbox.data.result.items.some((item) => item.id === reviewCheckpoint), 'the pending review checkpoint appears in the reviewer inbox API');
+    const reviewerBrief = await request(outsider.page, `/api/seller-video-briefs?workspaceId=${workspace}&briefId=${saved.data.briefs[0].brief_id}&revision=1`);
+    assert.equal(reviewerBrief.status, 200, `real reviewer exact-draft read failed: ${JSON.stringify(reviewerBrief.data)}`);
+    assert.equal(reviewerBrief.data.briefs[0]?.brief_data?.hook, saved.data.briefs[0].brief_data.hook);
+    await outsider.page.goto(`${origin}/workspaces/${workspace}/inbox`);
+    await outsider.page.getByText('Make photo day feel easier with these steps.').waitFor().catch(async (error) => {
+      console.error(`Reviewer inbox rendered text: ${await outsider.page.locator('body').innerText()}`);
+      throw error;
+    });
+    await outsider.page.getByText('Start with the entryway, put away everyday items, and prepare each room for the photographer.').waitFor();
+    await outsider.page.getByText(/Listing media: not-needed/).waitFor();
+    assert.equal(await outsider.page.getByRole('button', { name: 'Approve' }).count(), 1);
+    await outsider.page.getByRole('button', { name: 'Approve' }).click();
+    await outsider.page.getByText('Nothing needs your input.').waitFor();
+    assert.equal(await sql(`SELECT response::text FROM platform_checkpoints WHERE id='${reviewCheckpoint}';`), 'true');
+    const completionJob = await sql(`SELECT id FROM claim_workflow_jobs(100,30) WHERE workflow_key='platform_run' AND payload->>'runId'='${reviewRun}' AND payload->>'generation'='2';`);
+    const completionLease = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${completionJob}';`);
+    assert.equal(await sql(`SELECT run_status FROM platform_tick_run('${completionJob}','${completionLease}');`), 'completed');
+    assert.equal(await sql(`SELECT count(*) FROM platform_effect_receipts WHERE run_id='${reviewRun}';`), '0', 'approval does not publish or send the video');
     await sql(`UPDATE platform_memberships SET role='viewer',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
     assert.equal((await request(outsider.page, '/api/seller-video-briefs', 'POST', { workspaceId: workspace, brief: nonWriterDraft })).status, 403,
       'a real authenticated viewer cannot save creator-only drafts');
-    await outsider.page.reload();
+    await outsider.page.goto(`${origin}/sprints`);
+    await outsider.page.getByLabel('Seller video workspace').selectOption(workspace);
     await outsider.page.getByText('Your workspace role can view drafts but cannot create or save them.').waitFor();
     assert.equal(await outsider.page.getByRole('button', { name: 'Save private draft' }).count(), 0);
     assert.equal(primary.pageErrors.length, 0, `Browser errors: ${primary.pageErrors.join('; ')}`);
     assert.equal(outsider.pageErrors.length, 0, `Outsider browser errors: ${outsider.pageErrors.join('; ')}`);
-    console.log('PASS: real Supabase browser sessions create, save and read a private workspace video draft linked to a revision-fenced backlog task; a different authenticated user is denied.');
-    console.log('PASS: draft remains unreviewed and no publication or send action is exposed.');
+    console.log('PASS: real Supabase browser sessions save a private draft, request exact-revision review, and let a separate reviewer inspect and approve it from the shared inbox.');
+    console.log('PASS: workspace members without a review role are denied; reviewer decisions do not publish, upload, send, or create provider effects.');
   }
   if (!sellerVideoOnly) {
   const acceptanceToday = new Date().toISOString().slice(0,10);

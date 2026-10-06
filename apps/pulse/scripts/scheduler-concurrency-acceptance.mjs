@@ -348,6 +348,7 @@ await withDockerService('scheduler-test', async (container) => {
     '20260924160000_platform_user_layouts.sql',
     '20261005100000_seller_video_brief_store.sql',
     '20261005110000_platform_workspace_service_reads.sql',
+    '20261005120000_seller_video_review_checkpoint.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -357,6 +358,10 @@ await withDockerService('scheduler-test', async (container) => {
   if (process.argv.includes('--realtor-only')) {
     await runRealtorDatabaseChecks(sql);
     console.log('PASS: realtor migrations and task-identity assertions in disposable PostgreSQL');
+    return;
+  }
+  if (process.argv.includes('--seller-video-only')) {
+    await sellerVideoBriefAcceptance(sql);
     return;
   }
 

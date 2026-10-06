@@ -18,10 +18,11 @@ export type CheckpointCardProps = {
   onRespond: (input: { checkpointId: string; expectedRevision: number; submissionKey: string; value: string | number | boolean }) => Promise<void> | void;
   error?: string | null;
   disabled?: boolean;
+  canRespond?: boolean;
   footer?: ReactNode;
 };
 
-export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, footer }: CheckpointCardProps) {
+export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, canRespond = true, footer }: CheckpointCardProps) {
   const [value, setValue] = useState<string | number | boolean>(checkpoint.response_schema?.type === 'boolean' ? false : '');
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -30,9 +31,13 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
 
   async function submit() {
     if (question && value === '') return;
+    await respond(value);
+  }
+
+  async function respond(decision: string | number | boolean) {
     setLocalError(null); setSubmitting(true);
     try {
-      await onRespond({ checkpointId: checkpoint.id, expectedRevision: checkpoint.revision, submissionKey: crypto.randomUUID(), value });
+      await onRespond({ checkpointId: checkpoint.id, expectedRevision: checkpoint.revision, submissionKey: crypto.randomUUID(), value: decision });
     } catch (cause) {
       setLocalError(cause instanceof Error ? cause.message : 'Checkpoint changed. Reload before responding.');
     } finally { setSubmitting(false); }
@@ -51,7 +56,13 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
         schema?.type === 'boolean' ? <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={value === true} onChange={(event) => setValue(event.target.checked)} disabled={disabled || submitting} /> Confirm</label> :
         <input type={schema?.type === 'number' ? 'number' : 'text'} value={value as string | number} onChange={(event) => setValue(schema?.type === 'number' ? Number(event.target.value) : event.target.value)} disabled={disabled || submitting} className="mt-5 w-full rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-sm" />
       ) : null}
-      <button type="button" onClick={submit} disabled={disabled || submitting || (question && value === '')} className="mt-5 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Submitting…' : checkpoint.type === 'question' ? 'Save response' : 'Continue'}</button>
+      {question ? <button type="button" onClick={submit} disabled={disabled || !canRespond || submitting || value === ''} className="mt-5 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Submitting…' : 'Save response'}</button> : (
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button type="button" onClick={() => void respond(true)} disabled={disabled || !canRespond || submitting} className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Saving…' : checkpoint.type === 'approval' ? 'Approve' : 'Allow'}</button>
+          <button type="button" onClick={() => void respond(false)} disabled={disabled || !canRespond || submitting} className="rounded-md border border-rose-200/30 px-4 py-2 text-sm font-bold text-rose-100 disabled:opacity-50">{checkpoint.type === 'approval' ? 'Reject' : 'Deny'}</button>
+        </div>
+      )}
+      {!canRespond ? <p className="mt-3 text-xs text-slate-400">Your workspace role can view this checkpoint but cannot decide it.</p> : null}
       {error || localError ? <p role="alert" className="mt-3 text-sm text-rose-300">{error || localError}</p> : null}
       {footer}
     </article>

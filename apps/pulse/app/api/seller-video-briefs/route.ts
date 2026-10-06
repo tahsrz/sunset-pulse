@@ -29,13 +29,21 @@ export async function GET(request: NextRequest) {
   if (!workspaceIdSchema.safeParse(workspaceId).success) {
     return NextResponse.json({ ok: false, error: 'A valid workspaceId is required.' }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } });
   }
+  const briefId = request.nextUrl.searchParams.get('briefId');
+  const revisionText = request.nextUrl.searchParams.get('revision');
+  const targeted = briefId !== null || revisionText !== null;
+  const target = targeted ? z.object({ briefId: z.string().uuid(), revision: z.coerce.number().int().positive().safe() }).strict().safeParse({ briefId, revision: revisionText }) : null;
+  if (targeted && !target?.success) {
+    return NextResponse.json({ ok: false, error: 'briefId and a positive revision must be provided together.' }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } });
+  }
   try {
     await requireWorkspaceAccess(access.user.id, workspaceId!, 'artifact:read');
     const { data, error } = await supabaseAdmin.from('seller_video_briefs')
       .select('workspace_id,owner_id,brief_id,revision,backlog_item_id,backlog_item_revision,brief_data,created_at')
       .eq('workspace_id', workspaceId!)
+      .match(target?.success ? { brief_id: target.data.briefId, revision: target.data.revision } : {})
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(target?.success ? 1 : 100);
     if (error) throw error;
     return NextResponse.json({ ok: true, briefs: data || [] }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {

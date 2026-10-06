@@ -162,6 +162,9 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
     unknownEffects,
     unknownEffectsNextCursor: unknownEffectRows && unknownEffectRows.length > unknownEffectPage.limit && unknownEffectLast
       ? encodeCursor({ workspaceId, collection: 'unknown_effects', createdAt: unknownEffectLast.receipt_created_at, id: unknownEffectLast.receipt_id }) : null,
+    canRespondQuestion: ['owner', 'admin', 'member', 'reviewer'].includes(workspaceAccess.role),
+    canResolveApproval: ['owner', 'admin', 'reviewer'].includes(workspaceAccess.role),
+    canResolveEffectGate: ['owner', 'admin'].includes(workspaceAccess.role),
     canManageProviderRecovery: workspaceAccess.role === 'owner' || workspaceAccess.role === 'admin',
   };
 }
@@ -173,6 +176,18 @@ export async function respondToCheckpoint(actorId: string, workspaceId: string, 
   const value = checkpointResponseSchema.parse(input);
   // RPC rechecks the type-specific role and current run under locks.
   await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
+  const { data: checkpoint, error: checkpointError } = await supabaseAdmin.from('platform_checkpoints')
+    .select('type,target').eq('workspace_id', workspaceId).eq('id', value.checkpointId).maybeSingle();
+  if (checkpointError) throw new PlatformRunError(checkpointError.code);
+  if (checkpoint?.type === 'approval' && checkpoint.target?.resourceType === 'seller_video_brief'
+    && checkpoint.target?.action === 'review_seller_video_brief') {
+    await requireWorkspaceAccess(actorId, workspaceId, 'artifact:review');
+    if (typeof value.value !== 'boolean') throw new PlatformRunError('22023');
+    return rpc('platform_respond_seller_video_review', {
+      p_actor_id: actorId, p_workspace_id: workspaceId, p_checkpoint_id: value.checkpointId,
+      p_expected_revision: value.expectedRevision, p_submission_key: value.submissionKey, p_decision: value.value,
+    });
+  }
   return rpc('platform_respond_checkpoint', {
     p_actor_id: actorId, p_workspace_id: workspaceId, p_checkpoint_id: value.checkpointId,
     p_expected_revision: value.expectedRevision, p_submission_key: value.submissionKey, p_value: value.value,
