@@ -124,6 +124,11 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 | `/profile` | Sign-in | “This is the account's profile workspace.” | Open `/profile`.  |
 | `/today` | Sign-in | “This is the daily starting point: deadlines, opted-in reminders, personal progress and a recorded business summary.” | Open `/today`. Private personal workspace; planner, earnings summary, goals and reminders. |
 | `/seller-inbox` | Sign-in | “This is the account owner's seller request inbox. Record actual contact and outcomes separately from scheduling the next action.” | Open `/seller-inbox`; use only synthetic requests for a demo. Requires personal planner setup and an active website owned by your account to display its requests. |
+| `/seller-cases` | Seller cases | Account | Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-cases/[leadId]` | Seller case detail | Account | Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-portal` | Private seller progress | Account | Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-setup` | Seller setup and health | Account | Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-business` | Seller business entry | Account | Open from the seller workspace; private data requires authorized sign-in. |
 | `/planner` | Sign-in | “This is where a realtor records recurring dues, deadlines and appointments, and chooses real dates for property tasks.” | Open `/planner`. Private recurring dues, deadlines and appointments. |
 | `/business` | Sign-in | “This is the private manual business ledger. Net is recorded receipts minus recorded paid expenses; it is not a tax statement.” | Open `/business`. Private manually recorded income and expenses; totals are not tax or brokerage statements. |
 | `/goals` | Sign-in | “This is optional progress tracking from recorded work. Gamification must not fabricate income or punish missing historical data.” | Open `/goals`. Optional progress goals derived from manually recorded work. |

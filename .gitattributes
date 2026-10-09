@@ -22,3 +22,7 @@ apps/pulse/lib/autonomous-workflows/realtorPlannerRefillWorkflow.server.ts text 
 apps/pulse/app/api/admin/automations/hotlist-email/cron/route.ts text eol=lf
 apps/pulse/app/api/admin/automations/hotlist-email/worker/route.ts text eol=lf
 apps/pulse/vercel.json text eol=lf
+apps/pulse/supabase/migrations/20261009130000_seller_service_cases.sql text eol=lf
+apps/pulse/supabase/migrations/20261009131000_seller_service_email.sql text eol=lf
+apps/pulse/supabase/migrations/20261009132000_seller_service_measurement.sql text eol=lf
+apps/pulse/lib/autonomous-workflows/sellerEmailWorkflow.server.ts text eol=lf

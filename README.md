@@ -150,6 +150,11 @@ How to read the directory:
 | `/dashboard` | Realtor dashboard | Realtor role; Middleware requires the realtor profile role. |
 | `/today` | Realtor Today | Sign-in required; Private personal workspace; planner, earnings summary, goals and reminders. |
 | `/seller-inbox` | Seller inbox | Sign-in required; Private requests from active websites owned by your account; recorded contact, outcomes and source-linked planner tasks. |
+| `/seller-cases` | Seller cases | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-cases/[leadId]` | Seller case detail | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-portal` | Private seller progress | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-setup` | Seller setup and health | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-business` | Seller business entry | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
 | `/planner` | Realtor Planner | Sign-in required; Private recurring dues, deadlines and appointments. |
 | `/business` | Business scoreboard | Sign-in required; Private manually recorded income and expenses; totals are not tax or brokerage statements. |
 | `/goals` | Personal business goals | Sign-in required; Optional progress goals derived from manually recorded work. |

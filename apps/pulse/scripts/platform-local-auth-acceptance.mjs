@@ -5,6 +5,7 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
+import {sellerServiceAcceptance} from './seller-service-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { command, pulseRoot } from './docker-acceptance.mjs';
@@ -27,6 +28,8 @@ if (!loopbackHosts.has(apiUrl.hostname) || !loopbackHosts.has(originUrl.hostname
 const api=apiUrl.origin, origin=originUrl.origin;
 const realtorOnly=process.argv.includes('--realtor-only');
 const sellerVideoOnly=process.argv.includes('--seller-video-only');
+const sellerServiceOnly=process.argv.includes('--seller-service-only');
+assert(!sellerServiceOnly || /^pulse_auth_[a-f0-9]{8}$/.test(stack),'Seller service acceptance requires a generated disposable stack.');
 const sellerBusinessOnly=process.argv.includes('--seller-business-only');
 const sellerScheduleRecoveryOnly=process.argv.includes('--seller-schedule-recovery-only');
 assert(!sellerScheduleRecoveryOnly || sellerBusinessOnly,'Scheduling recovery requires seller-business mode.');
@@ -84,6 +87,7 @@ const migrations=[
   '20261008100000_seller_nonretryable_conflicts.sql',
   '20261008110000_seller_planner_link_read.sql',
   '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
+  '20261009130000_seller_service_cases.sql','20261009131000_seller_service_email.sql','20261009132000_seller_service_measurement.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -97,6 +101,7 @@ await sql("NOTIFY pgrst,'reload schema';");
 if (sellerBusinessOnly) {
   for (const name of [
     'seller_lead_actions.sql',
+    'seller_service.sql',
     'seller_planner_link_read.sql',
     'realtor_reminder_lifecycle.sql',
     'seller_outcome_read_models.sql',
@@ -154,6 +159,7 @@ try{
       NEXT_PUBLIC_SUPABASE_URL:api,SUPABASE_URL:api,NEXT_PUBLIC_SUPABASE_ANON_KEY:anon,SUPABASE_ANON_KEY:anon,SUPABASE_SERVICE_ROLE_KEY:service,
       NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',PULSE_ALLOW_PRODUCTION_MOCK_AUTH:'',
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
+      SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
       OPENAI_API_KEY:'',GROQ_API_KEY:liveJamie?process.env.GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:origin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:origin,
       // Homepage reads legacy listing/config stores; only the disposable runner
       // may supply its Mongo URI. Never inherit a hosted connection.
@@ -211,7 +217,9 @@ try{
       return {status:response.status,data:await response.json()};
     },{path,method,body});
   }
-  if (sellerBusinessOnly) {
+  if (sellerServiceOnly) {
+    await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
+  } else if (sellerBusinessOnly) {
     const timeZone='America/Chicago';
     const localDate=(date=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
     const addDays=(date,days)=>{const [year,month,day]=date.split('-').map(Number);return new Date(Date.UTC(year,month-1,day+days)).toISOString().slice(0,10);};
@@ -1516,7 +1524,7 @@ try{
       DELETE FROM public.agent_site_leads WHERE agent_id='${agentId}';
       DELETE FROM public.site_config WHERE agent_id='${agentId}'; COMMIT;`);
   }
-  if(!sellerVideoOnly) for(const workspace of workspaceIds){
+  if(!sellerVideoOnly && !sellerServiceOnly) for(const workspace of workspaceIds){
     assert.match(workspace,/^[a-f0-9-]{36}$/);
     await sql(`BEGIN;
       DELETE FROM workflow_results WHERE job_id IN (SELECT id FROM workflow_jobs WHERE payload->>'workspaceId'='${workspace}');
@@ -1527,9 +1535,9 @@ try{
       DELETE FROM realtor_preferences WHERE workspace_id='${workspace}';
       DELETE FROM platform_workspaces WHERE id='${workspace}'; COMMIT;`);
   }
-  if(!sellerVideoOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
+  if(!sellerVideoOnly && !sellerServiceOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
   await sql(`UPDATE workflow_event_contracts SET enabled=${enabled==='t'?'true':'false'} WHERE workflow_key='platform_run';`);
-  console.log(sellerVideoOnly
+  console.log(sellerVideoOnly || sellerServiceOnly
     ? 'Retained test rows only inside the generated disposable project; its teardown removes them and all local Auth accounts.'
     : 'Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
 }

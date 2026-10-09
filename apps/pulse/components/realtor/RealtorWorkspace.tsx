@@ -10,6 +10,8 @@ import { GoalEditor } from './GoalEditor';
 import { JamieProposalCard } from './JamieProposalCard';
 import { ModalSurface } from './ModalSurface';
 import { SellerDailyPanel } from './SellerDailyPanel';
+import { SellerWorkspaceNav } from './SellerWorkspaceNav';
+import { SellerOverviewPanel } from './SellerOverviewPanel';
 import { SellerInbox } from './SellerInbox';
 import type { ProgressGoal } from '@/lib/realtor-workspace/progress';
 import { plannerReadUrl } from '@/lib/realtor-workspace/plannerNavigation';
@@ -61,13 +63,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 function SectionNav({ section }: { section: Section }) {
-  const links: Array<[Section, string]> = [['today', 'Today'], ['seller-inbox', 'Seller inbox'], ['planner', 'Planner'], ['business', 'Business'], ['goals', 'Goals']];
-  return <nav aria-label="Realtor workspace" className="flex flex-wrap gap-2">{links.map(([id, label]) => (
-    <Link key={id} href={'/' + id} aria-current={section === id ? 'page' : undefined}
-      className={'rounded-full px-4 py-2 text-sm font-semibold transition ' + (section === id ? 'bg-cyan-300 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/10')}>
-      {label}
-    </Link>
-  ))}</nav>;
+  return <SellerWorkspaceNav active={'/' + section} />;
 }
 
 function Panel({ title, children, extra }: { title: string; children: React.ReactNode; extra?: React.ReactNode }) {
@@ -298,6 +294,7 @@ export default function RealtorWorkspace({ section, sellerLeadId, plannerDate }:
       </Panel> : null}
       {!loading && preferences && section === 'today' ? <TodayView data={data} preferences={preferences} busy={busy} submit={submit} submitReminder={submitResult} onReloadReminders={reloadReminders} agendaNeedsRefresh={agendaNeedsRefresh} onScheduleSaved={markScheduleSaved} onAgendaReloaded={applyAgenda} /> : null}
       {!loading && preferences && section === 'seller-inbox' ? <SellerInbox key={sellerLeadId || 'all'} leadId={sellerLeadId} timeZone={preferences.time_zone} /> : null}
+      {!loading && preferences && section === 'business' ? <SellerOverviewPanel/> : null}
       {!loading && preferences && section === 'planner' ? <>{plannerDate ? <p className="rounded-xl border border-cyan-300/20 p-4 text-sm">Showing schedule for {plannerDate}. <Link href="/planner" className="text-cyan-200 underline">Show full planner</Link></p> : null}<PlannerView key={plannerDate || 'year'} data={data} timeZone={preferences.time_zone} busy={busy} submit={submit} onPayment={setPaymentFor} onMoreProjections={loadMoreProjections} onMoreOccurrences={loadMoreOccurrences} reloadToken={plannerReloadToken} /></> : null}
       {!loading && preferences && section === 'business' ? <BusinessView data={data} timeZone={preferences.time_zone} year={selectedBusinessYear ?? Number(new Intl.DateTimeFormat('en-US', { timeZone: preferences.time_zone, year: 'numeric' }).format(new Date()))} setYear={setSelectedBusinessYear} mode={mode} setMode={setMode} busy={busy} submit={submit} onMoreEntries={loadMoreLedger} /> : null}
       {!loading && preferences && section === 'goals' ? <GoalsView data={data} preferences={preferences} busy={busy} submit={submit} /> : null}
@@ -336,7 +333,7 @@ function TodayView({ data, preferences, busy, submit, submitReminder, onReloadRe
   };
   const net = progressValue('net_income');
   return <div className="space-y-5">
-    <SellerDailyPanel result={data?.seller} onScheduleSaved={onScheduleSaved} onAgendaReloaded={onAgendaReloaded} />
+    <SellerDailyPanel result={data?.seller} priorities={data?.priorities} onScheduleSaved={onScheduleSaved} onAgendaReloaded={onAgendaReloaded} />
     <SellerDailyRoutine />
     <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
     <div className="space-y-5">

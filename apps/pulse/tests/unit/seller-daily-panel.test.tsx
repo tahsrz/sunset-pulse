@@ -14,7 +14,7 @@ describe('seller daily panel', () => {
       occurrence_id: '11111111-1111-4111-8111-111111111111', lead_id: '22222222-2222-4222-8222-222222222222', name: 'Taylor Seller', effective_date: '2025-12-31', title_snapshot: 'Follow up',
     }] }) }} />);
     expect(screen.getByRole('link', { name: 'Open scheduled action →' })).toHaveAttribute('href', '/planner?date=2025-12-31');
-    expect(screen.getByRole('link', { name: /Taylor Seller/ })).toHaveAttribute('href', '/seller-inbox?leadId=22222222-2222-4222-8222-222222222222');
+    expect(screen.getAllByRole('link', { name: /Taylor Seller/ }).find((link)=>link.getAttribute('href')?.startsWith('/seller-inbox'))).toHaveAttribute('href', '/seller-inbox?leadId=22222222-2222-4222-8222-222222222222');
   });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   it('opens the response scheduler for an owned unscheduled request and refreshes after save', async () => {

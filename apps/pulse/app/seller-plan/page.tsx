@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import SellerPlanRequestForm from '@/components/lead-capture/SellerPlanRequestForm';
+import { SellerOfferMeasurement } from '@/components/lead-capture/SellerOfferMeasurement';
 
 export const metadata: Metadata = {
   title: 'Free Keller and Westlake Seller Plan | Sunset Pulse',
@@ -38,6 +39,7 @@ export default function SellerPlanPage() {
           <h2 id="seller-plan-form-title" className="text-2xl font-bold">Request your free seller plan</h2>
           <p className="mb-6 mt-2 text-sm leading-6 text-slate-300">Start with the kind of help you need. For your privacy, this public form does not collect a street address.</p>
           <SellerPlanRequestForm />
+          <SellerOfferMeasurement />
         </section>
       </div>
     </main>

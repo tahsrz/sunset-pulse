@@ -1,6 +1,6 @@
 {
-  "reviewDate": "2026-10-08",
-  "baseCommit": "5eb4d2be50130926a893c1e09244c817cd58cec5",
+  "reviewDate": "2026-10-09",
+  "baseCommit": "89d67432b9774a02ffbcf33f5235d337cab00fb4",
   "branch": "codex/seller-acquisition-2026q4",
   "scope": "Working-tree migration and shared scheduler compatibility files; this is not a complete application candidate or a deployment artifact.",
   "hashFormat": "SHA256 of raw LF file bytes; .gitattributes pins the compatibility sources to LF across Windows and Linux checkouts.",
@@ -71,7 +71,7 @@
     },
     {
       "path": "apps/pulse/lib/autonomous-workflows/workflowRegistry.server.ts",
-      "sha256": "c3455702c9fe5a3d876c5e159a8c78734771c6b996d043a008ceabf0b6b2a753"
+      "sha256": "f1eee153d0df7e4ec6e8cfbabc883432b1e4f99ba52eb067698655f890e716a4"
     },
     {
       "path": "apps/pulse/lib/autonomous-workflows/durableScheduler.server.ts",
@@ -96,6 +96,22 @@
     {
       "path": "apps/pulse/vercel.json",
       "sha256": "6a18286c625d539bfebe608fab1435a8969c771fcb17fbea027a19d87fbe9c15"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261009130000_seller_service_cases.sql",
+      "sha256": "e97a1c8000c97cffe4820d67bd7e2abde4877a5a9f7a5629534faf2c0be535bd"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261009131000_seller_service_email.sql",
+      "sha256": "5b9c489041c5e177e5e222a4f900368f063aa929e490d9e472d35cb794b3308d"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261009132000_seller_service_measurement.sql",
+      "sha256": "f00a2138cb0d803b5383079e59396150fb05d8bca558bd9559cfcd42e70c87ad"
+    },
+    {
+      "path": "apps/pulse/lib/autonomous-workflows/sellerEmailWorkflow.server.ts",
+      "sha256": "3f8722f0640142e3dc6eb18f6ce9b3a9b1929e23d1319fed3c123f4ed4c8da5c"
     }
   ]
 }

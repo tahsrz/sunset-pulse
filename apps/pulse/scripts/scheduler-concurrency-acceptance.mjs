@@ -34,6 +34,9 @@ async function runRealtorDatabaseChecks(sql) {
     '20261007180000_seller_outcome_read_models.sql',
     '20261008100000_seller_nonretryable_conflicts.sql',
     '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
+    '20261009130000_seller_service_cases.sql',
+    '20261009131000_seller_service_email.sql',
+    '20261009132000_seller_service_measurement.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -43,6 +46,7 @@ async function runRealtorDatabaseChecks(sql) {
     { file: 'realtor_financial_lifecycle.sql', assertions: 22 },
     { file: 'realtor_planner_refill.sql', assertions: 13 },
     { file: 'realtor_reminder_lifecycle.sql', assertions: 11 },
+    { file: 'seller_service.sql', assertions: 22 },
   ];
   for (const { file, assertions } of cases) {
     const test = await readFile(new URL(`../supabase/tests/database/${file}`, import.meta.url), 'utf8');
@@ -288,6 +292,7 @@ await withDockerService('scheduler-test', async (container) => {
     CREATE SCHEMA auth;
     CREATE TABLE auth.users (id uuid PRIMARY KEY);
     ALTER TABLE auth.users ADD COLUMN email text;
+    ALTER TABLE auth.users ADD COLUMN email_confirmed_at timestamptz;
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
       LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     CREATE OR REPLACE FUNCTION auth.role() RETURNS text
@@ -308,6 +313,10 @@ await withDockerService('scheduler-test', async (container) => {
     );
     CREATE TABLE public.licensed_workflow_settings (id uuid PRIMARY KEY);
     CREATE TABLE public.licensed_workflow_runs (id uuid PRIMARY KEY);
+    CREATE TABLE public.scheduling_bookings (
+      id uuid PRIMARY KEY, uid text NOT NULL, title text NOT NULL, start_time timestamptz NOT NULL,
+      end_time timestamptz NOT NULL, status text NOT NULL, funnel_id uuid, lead_id uuid, agent_id text, site text, appointment_type text
+    );
   `);
   const migrations = [
     '20260710030000_agent_site_leads.sql',

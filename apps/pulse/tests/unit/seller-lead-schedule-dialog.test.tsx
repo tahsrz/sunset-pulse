@@ -11,6 +11,13 @@ const writeCalls = () => vi.mocked(fetch).mock.calls.filter(([, options]) => opt
 const readyToSave = () => waitFor(() => expect(screen.getByRole('button', { name: /^Schedule (response|appointment)$/ })).toBeEnabled());
 
 describe('seller lead schedule dialog', () => {
+  it('blocks silent rounding of an authoritative consultation with seconds',async()=>{
+    const writer=vi.fn();installWrites(writer);
+    render(<SellerLeadScheduleDialog leadId="11111111-1111-4111-8111-111111111111" leadName="Precision Seller" leadRevision={1}
+      timeZone="America/Chicago" actionKey="consultation:44444444-4444-4444-8444-444444444444" consultationStartsAt="2026-11-01T06:30:15.000Z" retryRequests={new Map()} onClose={vi.fn()} onSaved={vi.fn()}/>);
+    await screen.findByRole('alert');expect(screen.getByRole('alert')).toHaveTextContent('whole-minute times');
+    expect(screen.getByRole('button',{name:'Schedule appointment'})).toBeDisabled();expect(writer).not.toHaveBeenCalled();
+  });
   it('preserves the draft while a time zone is incomplete and saves its normalized zone after correction', async () => {
     const writer = vi.fn().mockResolvedValue(Response.json({ ok: true }));
     installWrites(writer);

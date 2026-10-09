@@ -21,6 +21,9 @@ const requiredMigrations = [
   '20261008100000_seller_nonretryable_conflicts.sql',
   '20261008110000_seller_planner_link_read.sql',
   '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
+  '20261009130000_seller_service_cases.sql',
+  '20261009131000_seller_service_email.sql',
+  '20261009132000_seller_service_measurement.sql',
 ];
 export const requiredSellerReleasePaths = [
   ...requiredMigrations.map((name) => migrationDirectory + name),
@@ -28,6 +31,7 @@ export const requiredSellerReleasePaths = [
   'apps/pulse/lib/autonomous-workflows/durableScheduler.server.ts',
   'apps/pulse/lib/autonomous-workflows/realtorReminderWorkflow.server.ts',
   'apps/pulse/lib/autonomous-workflows/realtorPlannerRefillWorkflow.server.ts',
+  'apps/pulse/lib/autonomous-workflows/sellerEmailWorkflow.server.ts',
   'apps/pulse/app/api/admin/automations/hotlist-email/cron/route.ts',
   'apps/pulse/app/api/admin/automations/hotlist-email/worker/route.ts',
   'apps/pulse/vercel.json',

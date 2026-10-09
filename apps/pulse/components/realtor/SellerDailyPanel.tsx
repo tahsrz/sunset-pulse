@@ -5,20 +5,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { SellerLeadScheduleDialog } from './SellerLeadScheduleDialog';
+import { SellerPriorityPanel } from './SellerPriorityPanel';
 
 import { sellerDailyResultSchema, type SellerDailyData } from '@/lib/realtor-workspace/sellerDailyContract';
 import { todayAgendaResultSchema, type TodayAgendaResult } from '@/lib/realtor-workspace/todayAgendaContract';
 
 type UnscheduledSellerRequest = SellerDailyData['unscheduledRequests'][number];
 
-export function SellerDailyPanel({ result, onScheduleSaved, onAgendaReloaded }: {
-  result?: unknown; onScheduleSaved?: () => void; onAgendaReloaded?: (agenda: TodayAgendaResult) => void;
+export function SellerDailyPanel({ result, priorities, onScheduleSaved, onAgendaReloaded }: {
+  result?: unknown; priorities?: unknown; onScheduleSaved?: () => void; onAgendaReloaded?: (agenda: TodayAgendaResult) => void;
 }) {
   const router = useRouter();
   const retryRequests = useRef(new Map<string, string>());
   const [selectedLead, setSelectedLead] = useState<UnscheduledSellerRequest | null>(null);
   const controller = useRef<AbortController | null>(null);
-  const [replacement, setReplacement] = useState<{ source: unknown; result: unknown } | null>(null);
+  const [replacement, setReplacement] = useState<{ source: unknown; result: unknown; priorities?: unknown } | null>(null);
   const [retryState, setRetryState] = useState<{ source: unknown; pending: boolean; error: string } | null>(null);
   const currentRetry = retryState?.source === result ? retryState : null;
   const parsed = sellerDailyResultSchema.safeParse(replacement && replacement.source === result ? replacement.result : result);
@@ -36,7 +37,7 @@ export function SellerDailyPanel({ result, onScheduleSaved, onAgendaReloaded }: 
       const summary = sellerDailyResultSchema.parse(payload.result?.seller);
       if (summary.status === 'unavailable') throw new Error();
       if (!request.signal.aborted) {
-        setReplacement({ source: result, result: summary });
+        setReplacement({ source: result, result: summary, priorities:payload.result?.priorities });
         const agenda = todayAgendaResultSchema.safeParse(payload.result?.agenda);
         onAgendaReloaded?.(agenda.success ? agenda.data : { status: 'unavailable' });
       }
@@ -65,6 +66,7 @@ export function SellerDailyPanel({ result, onScheduleSaved, onAgendaReloaded }: 
   const counts = data.counts;
   return <section className="rounded-2xl border border-cyan-300/20 bg-slate-900/80 p-5 shadow-xl shadow-black/10">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">Seller business</h2><p className="mt-1 text-xs text-slate-400">This week · {data.weekStartDate} to {data.weekEndDate} · manually recorded outcomes</p></div><Link href="/seller-inbox" className="text-sm font-semibold text-cyan-200">Open inbox →</Link></div>
+    <SellerPriorityPanel key={data.generatedAt || 'daily'} daily={data} result={replacement && replacement.source===result ? replacement.priorities : priorities}/>
     <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
       {[
         ['New requests', counts.newRequests], ['Customer replies', counts.customerReplies],

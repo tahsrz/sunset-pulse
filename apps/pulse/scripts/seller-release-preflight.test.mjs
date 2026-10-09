@@ -10,7 +10,7 @@ const names = requiredSellerReleasePaths.filter((path) => path.includes('/migrat
 test('verifies the whole packet against raw file bytes and reports ordered migrations', async () => {
   const readPaths = [];
   const result = await inspectSellerReleaseSources(fixture(), [...names].reverse(), async (path) => { readPaths.push(path); return bytes; });
-  assert.equal(result.verifiedSourceCount, 23);
+  assert.equal(result.verifiedSourceCount, requiredSellerReleasePaths.length);
   assert.deepEqual(result.inventory.map((item) => item.file), names);
   assert.deepEqual(readPaths, requiredSellerReleasePaths);
 });
@@ -23,7 +23,7 @@ test('rejects omitted and duplicate manifest entries before any source read', as
   const omitted = fixture(); omitted.files.pop();
   const duplicate = fixture(); duplicate.files[1] = duplicate.files[0];
   const reader = async () => { throw new Error('Source reader must not be reached'); };
-  await assert.rejects(inspectSellerReleaseSources(omitted, names, reader), /complete 23-file/);
+  await assert.rejects(inspectSellerReleaseSources(omitted, names, reader), new RegExp(`complete ${requiredSellerReleasePaths.length}-file`));
   await assert.rejects(inspectSellerReleaseSources(duplicate, names, reader), /duplicate/);
 });
 

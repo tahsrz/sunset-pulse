@@ -42,6 +42,7 @@ export function SellerLeadScheduleDialog({ leadId, leadName, leadRevision, timeZ
   const titleId = useId();
   const validationId = useId();
   const lockedConsultation = actionKey.startsWith('consultation:') && Boolean(consultationStartsAt);
+  const unsupportedPrecision = lockedConsultation && (!Number.isFinite(Date.parse(consultationStartsAt!)) || Date.parse(consultationStartsAt!) % 60_000 !== 0);
   const consultationLocal = lockedConsultation ? localDateTime(consultationStartsAt!, initialTimeZone) : null;
   const consultationOffset = lockedConsultation && consultationLocal
     ? Math.round((Date.UTC(Number(consultationLocal.date.slice(0, 4)), Number(consultationLocal.date.slice(5, 7)) - 1, Number(consultationLocal.date.slice(8, 10)), Number(consultationLocal.time.slice(0, 2)), Number(consultationLocal.time.slice(3, 5)))-Date.parse(consultationStartsAt!)) / 60_000)
@@ -63,7 +64,7 @@ export function SellerLeadScheduleDialog({ leadId, leadName, leadRevision, timeZ
   const savedSchedule = currentLookup?.saved;
   const checkingSchedule = !currentLookup;
   const scheduleUnavailable = Boolean(currentLookup?.error);
-  const paused = disabled || conflicted;
+  const paused = disabled || conflicted || unsupportedPrecision;
   const pending = saving || reloading;
   const due = dueSpecSchema.safeParse({
     anchorDate: date, localTime: time, timeZone,
@@ -137,6 +138,7 @@ export function SellerLeadScheduleDialog({ leadId, leadName, leadRevision, timeZ
   return <ModalSurface labelId={titleId} onClose={() => { if (!inFlight.current) onClose(); }}>
     <div className="text-white">
       <h2 id={titleId} className="text-lg font-bold">{lockedConsultation ? 'Schedule confirmed consultation' : actionKey.startsWith('reply:') ? 'Schedule seller follow-up' : 'Schedule seller response'}</h2>
+      {unsupportedPrecision ? <p role="alert" className="mt-3 text-sm text-amber-200">This booking includes seconds. The planner stores whole-minute times; review and reschedule the authoritative booking before creating an exact matching appointment. Its original time remains recorded in the case.</p> : null}
       <p className="mt-2 text-sm text-slate-300">{lockedConsultation ? `Create a private planner appointment for ${leadName} at the confirmed time. The appointment time cannot be changed here.` : `Create a private planner reminder to ${actionKey.startsWith('reply:') ? 'follow up on' : 'review'} ${leadName}’s ${actionKey.startsWith('reply:') ? 'reply' : 'request'}. Scheduling does not record that contact happened.`}</p>
       {checkingSchedule ? <p role="status" className="mt-4 text-sm text-slate-300">Checking for an existing planner task…</p> : null}
       {scheduleUnavailable ? <div className="mt-4 text-sm text-rose-100"><p role="alert">{currentLookup?.error}</p><button type="button" onClick={() => setLookupRefresh((value) => value + 1)} className="mt-2 underline">Retry schedule lookup</button></div> : null}

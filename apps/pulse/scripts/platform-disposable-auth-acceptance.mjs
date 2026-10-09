@@ -15,7 +15,7 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business');
+assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service');
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
@@ -160,7 +160,7 @@ try {
       '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`,
       '--origin', `http://127.0.0.1:${ports[7]}`,
       ...(suite === 'seller-video-briefs' ? ['--seller-video-only']
-        : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
+        : suite === 'seller-service' ? ['--seller-business-only','--seller-service-only'] : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
       ...(liveJamie ? ['--live-jamie'] : []),
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useId, useRef, useState } from 'react';
+import Link from 'next/link';
 import { ownedSellerLeadPageSchema, type OwnedSellerLead } from '@/lib/realtor-workspace/leadContracts';
 import { resolveLeadExecutionIntent } from '@/lib/sites/leadExecutionIntent';
 import { readSellerLeadContext } from '@/lib/sites/sellerLeadContext';
@@ -93,6 +94,7 @@ export function SellerInboxLead({ lead, timeZone }: { lead: OwnedSellerLead; tim
   return <article aria-label={`Seller request from ${snapshot.name}`} className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/80 p-5">
     <div className="flex flex-wrap items-start justify-between gap-3"><div>
       <h2 className="break-words text-lg font-bold">{snapshot.name}</h2>
+      <Link href={`/seller-cases/${encodeURIComponent(snapshot.id)}`} className="mt-2 inline-block text-sm font-semibold text-cyan-200 underline">Open seller case →</Link>
       <p className="mt-1 text-xs text-slate-400">{new Date(snapshot.created_at).toLocaleString(undefined, { timeZone })} · {snapshot.status || 'new'}</p>
     </div><span className="text-xs text-slate-500">{snapshot.site}</span></div>
     <p className="mt-3 whitespace-pre-wrap break-words text-sm text-slate-300">{snapshot.message}</p>
