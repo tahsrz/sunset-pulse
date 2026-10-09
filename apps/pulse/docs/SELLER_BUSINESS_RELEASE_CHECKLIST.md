@@ -1,12 +1,13 @@
 # Seller business workspace release checklist
 
-Status: **local feature acceptance passed; the committed candidate and hosted preflight remain incomplete.** No remote migration or deployment has been run.
+Status: **local feature acceptance passed; the source candidate is committed for PR #80; hosted preflight remains incomplete.** No remote migration or manual deployment was run for this packet.
 
 ## Candidate identity
 
 - [x] Repository: SunsetPulse, branch `codex/seller-acquisition-2026q4`.
-- [x] Current HEAD: `5eb4d2be50130926a893c1e09244c817cd58cec5`.
-- [ ] Capture the final candidate SHA after the working changes are reviewed and committed.
+- [x] Baseline before this packet: `5eb4d2be50130926a893c1e09244c817cd58cec5`.
+- [x] Source candidate: `fb216402b382f86c9bc43002dc54ca59c34dcb7a` (`feat: connect seller acquisition to the daily business workspace`). This includes all 171 source, test, migration, compatibility, and documentation changes.
+- [x] Active review: [PR #80](https://github.com/tahsrz/sunset-pulse/pull/80). Documentation-only follow-ups may change the PR head; its exact final head is recorded in the PR description after pushing.
 - [x] Read-only project lookup resolved the local Vercel link to project `sunset-pulse`; its latest deployment for this branch is `ERROR` with `target: null`.
 - [x] The deployment log identifies the failure: `CmaReviewPanel.tsx` sent `expectedPriorReviewId`, which its local `ReviewPayload` type omitted. That type was corrected locally and the production build passed; the failed deployment uses the earlier committed SHA, so it does not include the fix.
 - [ ] Select and verify one actual non-production Vercel environment and its Supabase project before doing environment preflight. Vercel denied environment-variable metadata access (403), and no local Vercel CLI is installed, so the preview-to-Supabase mapping cannot be confirmed.
