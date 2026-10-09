@@ -43,7 +43,7 @@ function request(body: unknown = validPayload, headers: Record<string, string> =
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.KELLER_WESTLAKE_AGENT_SITE = 'taz';
-  process.env.NODE_ENV = 'test';
+  vi.stubEnv('NODE_ENV', 'test');
   mocks.applyPublicApiRateLimit.mockResolvedValue(null);
   mocks.getTenantSite.mockResolvedValue({ isPublished: true, status: 'active', agentId: 'owner-site-1', siteName: 'Owner Site' });
   mocks.insert.mockResolvedValue({ error: null });
@@ -67,6 +67,7 @@ describe('seller-plan lead route', () => {
     expect(record.metadata.sellerPlan.requestedContact.granted).toBe(true);
     expect(record.metadata.sellerPlan.marketingOptIn.granted).toBe(false);
     expect(record.metadata.sellerPlan.requestKind).toBe('pricing_review');
+    expect(record.metadata.sellerPlan.timing).toBe('one-to-three-months');
     expect(record.message).toContain('personally reviewed pricing / CMA conversation');
     expect(record.message).not.toContain('Example Road');
     expect(record.metadata.sellerPlan.requestFingerprint).toBeTruthy();

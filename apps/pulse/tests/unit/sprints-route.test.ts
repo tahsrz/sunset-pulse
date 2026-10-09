@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   rpc: vi.fn(),
   listSprintsForWorkspace: vi.fn(),
+  requirePersonalRealtorWorkspace: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -16,6 +17,10 @@ vi.mock('@/lib/core/routeAuth', () => ({
 }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from, rpc: mocks.rpc } }));
 vi.mock('@/lib/property-sprints/sprintWorkspace.server', () => ({ listSprintsForWorkspace: mocks.listSprintsForWorkspace }));
+vi.mock('@/lib/realtor-workspace/access.server', () => ({
+  requirePersonalRealtorWorkspace: mocks.requirePersonalRealtorWorkspace,
+  RealtorWorkspaceError: class RealtorWorkspaceError extends Error { constructor(public code: string) { super('workspace unavailable'); } },
+}));
 
 import { GET, POST } from '@/app/api/sprints/route';
 
@@ -27,6 +32,7 @@ describe('signed-in sprint schedule route', () => {
     mocks.requireSignedInUser.mockResolvedValue({ allowed: true, user: { id: USER_ID }, mode: 'user' });
     mocks.isAuthResponse.mockImplementation((value) => value instanceof Response);
     mocks.rpc.mockResolvedValue({ data: [{ id: 'schedule-1', revision: 2, enabled: false }], error: null });
+    mocks.requirePersonalRealtorWorkspace.mockResolvedValue({ workspaceId: '22222222-2222-4222-8222-222222222222', preferences: { time_zone: 'America/Chicago' } });
   });
 
   it('persists schedule changes through the owner-scoped revision RPC', async () => {
@@ -141,6 +147,13 @@ describe('signed-in sprint schedule route', () => {
     }));
   });
 
+  it('reserves seller acquisition provenance for the generated weekly plan', async () => {
+    const response = await POST(jsonRequest({ action: 'add_backlog_item', title: 'Forged campaign task', sourceType: 'manual', sourceId: 'seller-acquisition:2026-10-05:record-video' }));
+    expect(response.status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
   it('adds the weekly seller plan through the existing workspace backlog boundary', async () => {
     mocks.rpc.mockResolvedValue({ data: [{ id: 'workspace-backlog-1' }], error: null });
     const response = await POST(jsonRequest({ action: 'add_seller_acquisition_week', workspaceId: '22222222-2222-4222-8222-222222222222' }));
@@ -153,7 +166,7 @@ describe('signed-in sprint schedule route', () => {
       p_actor_id: USER_ID,
       p_workspace_id: '22222222-2222-4222-8222-222222222222',
       p_source_type: 'manual',
-      p_source_id: expect.stringMatching(/^seller-acquisition:\d{4}-W\d{2}:/),
+      p_source_id: expect.stringMatching(/^seller-acquisition:\d{4}-\d{2}-\d{2}:/),
     }));
     expect(mocks.rpc.mock.calls.map(([name]) => name).every((name) => name === 'platform_add_sprint_backlog_item')).toBe(true);
   });
@@ -175,6 +188,32 @@ describe('signed-in sprint schedule route', () => {
     expect(writes).toHaveLength(6);
     expect(writes.every((write: Record<string, unknown>) => write.owner_id === USER_ID && write.source_type === 'manual')).toBe(true);
     expect(new Set(writes.map((write: Record<string, unknown>) => write.source_id)).size).toBe(6);
+  });
+
+  it('requires personal planner setup before creating a weekly seller plan', async () => {
+    const { RealtorWorkspaceError } = await import('@/lib/realtor-workspace/access.server');
+    mocks.requirePersonalRealtorWorkspace.mockRejectedValueOnce(new RealtorWorkspaceError('SETUP_REQUIRED'));
+    const response = await POST(jsonRequest({ action: 'add_seller_acquisition_week' }));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'SETUP_REQUIRED' });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('returns an explicit duplicate preview when UTC and the saved seller week differ', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-05T04:30:00.000Z')); // Sunday evening in the saved Chicago timezone.
+    const query = queryFor('sprint_backlog_items');
+    query.maybeSingle.mockResolvedValue({ data: { id: 'legacy-week-item' }, error: null });
+    query.insert = vi.fn(() => query);
+    mocks.from.mockReturnValue(query);
+    try {
+      const response = await POST(jsonRequest({ action: 'add_seller_acquisition_week' }));
+      expect(response.status).toBe(409);
+      const preview = await response.json();
+      expect(preview.code).toBe('LEGACY_WEEK_DUPLICATES');
+      expect(preview.duplicates[0].title).toContain('Record video');
+      expect(query.insert).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
   });
 
   it('rejects an invalid timezone before calling the persistence boundary', async () => {

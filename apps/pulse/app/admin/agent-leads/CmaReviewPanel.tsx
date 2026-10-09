@@ -25,6 +25,7 @@ type ComparableDraft = {
 };
 
 type ReviewPayload = {
+  expectedPriorReviewId: string | null;
   status: 'draft' | 'reviewed';
   subject: { regionLabel: string; facts: Record<keyof FactsDraft, number | null> };
   comparables: Array<Record<string, unknown>>;

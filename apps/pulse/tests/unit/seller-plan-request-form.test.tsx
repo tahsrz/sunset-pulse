@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import SellerPlanRequestForm from '@/components/lead-capture/SellerPlanRequestForm';
+import { sellerPlanLeadSchema } from '@/lib/marketing/leadMagnetContract';
 
 describe('seller plan request form', () => {
   beforeEach(() => {
@@ -19,6 +20,7 @@ describe('seller plan request form', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Your request is saved'));
     const [, options] = vi.mocked(fetch).mock.calls[0];
     const payload = JSON.parse(String(options?.body));
+    expect(sellerPlanLeadSchema.safeParse(payload).success).toBe(true);
     expect(payload.requestedContact).toBe(true);
     expect(payload.offerVersion).toBe('2');
     expect(payload.requestKind).toBe('seller_plan');
@@ -51,5 +53,29 @@ describe('seller plan request form', () => {
     fireEvent.click(screen.getByLabelText('I agree to be contacted to respond to this seller-plan request.'));
     fireEvent.submit(screen.getByRole('button', { name: 'Request my seller plan' }).closest('form')!);
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Try again later.'));
+  });
+
+  it('reuses an uncertain submission key for unchanged details and rotates it after an edit', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ success: false, message: 'Try again later.' }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ success: false, message: 'Still offline.' }) }));
+    render(<SellerPlanRequestForm />);
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Taylor Seller' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'taylor@example.com' } });
+    fireEvent.click(screen.getByLabelText('I agree to be contacted to respond to this seller-plan request.'));
+    const form = screen.getByRole('button', { name: 'Request my seller plan' }).closest('form')!;
+
+    fireEvent.submit(form);
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Try again later.'));
+    fireEvent.submit(form);
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Still offline.'));
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'taylor+updated@example.com' } });
+    fireEvent.submit(form);
+    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3));
+
+    const payloads = vi.mocked(fetch).mock.calls.map(([, options]) => JSON.parse(String(options?.body)));
+    expect(payloads[0].submissionId).toBe(payloads[1].submissionId);
+    expect(payloads[2].submissionId).not.toBe(payloads[1].submissionId);
+    for (const payload of payloads) expect(sellerPlanLeadSchema.safeParse(payload).success).toBe(true);
   });
 });

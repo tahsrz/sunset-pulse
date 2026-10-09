@@ -69,16 +69,15 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (healthPage.cursor) healthQuery = healthQuery.or(`checked_at.lt.${healthPage.cursor.createdAt},and(checked_at.eq.${healthPage.cursor.createdAt},id.lt.${healthPage.cursor.id})`);
   const { data: healthRows, error: healthError } = await healthQuery.limit(healthPage.limit + 1);
   if (healthError) throw new PlatformRunError(healthError.code);
-  const { data: healthJobs, error: healthJobError } = await supabaseAdmin.from('workflow_jobs')
-    .select('id,status,scheduled_for,updated_at,payload')
-    .eq('workflow_key', 'connector_health_check').eq('payload->>workspaceId', workspaceId)
-    .in('status', ['queued', 'deferred', 'running']).order('scheduled_for', { ascending: false }).limit(100);
+  const { data: healthJobs, error: healthJobError } = await supabaseAdmin.rpc('platform_list_connector_health_jobs', {
+    p_actor_id: actorId, p_workspace_id: workspaceId,
+  });
   if (healthJobError) throw new PlatformRunError(healthJobError.code);
   const now = Date.now();
   const freshnessWindowMs = 24 * 60 * 60 * 1000;
   const jobsByConnector = new Map<string, { id: string; status: string; scheduled_for: string; updated_at: string }>();
   for (const job of healthJobs || []) {
-    const connectorId = typeof job.payload?.connectorId === 'string' ? job.payload.connectorId : null;
+    const connectorId = typeof job.connector_id === 'string' ? job.connector_id : null;
     if (connectorId && !jobsByConnector.has(connectorId)) jobsByConnector.set(connectorId, job);
   }
   const healthItems = (healthRows || []).slice(0, healthPage.limit);
@@ -116,13 +115,13 @@ export async function listCheckpoints(actorId: string, workspaceId: string, sear
   if (healthHistoryError) throw new PlatformRunError(healthHistoryError.code);
   const healthHistory = (healthHistoryRows || []).slice(0, healthHistoryPage.limit);
   const healthHistoryLast = healthHistory.at(-1);
-  let healthAuditQuery = supabaseAdmin.from('platform_audit_events')
-    .select('id,action,resource_type,resource_id,actor_kind,safe_metadata,occurred_at')
-    .eq('workspace_id', workspaceId)
-    .in('action', ['connector.health.scheduled', 'connector.health.receipt_recorded'])
-    .order('occurred_at', { ascending: false }).order('id', { ascending: false });
-  if (healthAuditPage.cursor) healthAuditQuery = healthAuditQuery.or(`occurred_at.lt.${healthAuditPage.cursor.createdAt},and(occurred_at.eq.${healthAuditPage.cursor.createdAt},id.lt.${healthAuditPage.cursor.id})`);
-  const { data: healthAuditRows, error: healthAuditError } = await healthAuditQuery.limit(healthAuditPage.limit + 1);
+  const { data: healthAuditRows, error: healthAuditError } = await supabaseAdmin.rpc('platform_list_connector_health_audit', {
+    p_actor_id: actorId,
+    p_workspace_id: workspaceId,
+    p_after: healthAuditPage.cursor?.createdAt || null,
+    p_after_id: healthAuditPage.cursor?.id || null,
+    p_limit: healthAuditPage.limit + 1,
+  });
   if (healthAuditError) throw new PlatformRunError(healthAuditError.code);
   const healthAudit = (healthAuditRows || []).slice(0, healthAuditPage.limit);
   const healthAuditLast = healthAudit.at(-1);

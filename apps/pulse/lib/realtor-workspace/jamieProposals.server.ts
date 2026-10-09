@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { requirePersonalRealtorWorkspace } from './access.server';
 import { commissionInputSchema, dueSpecSchema, expenseInputSchema, expectedIncomeInputSchema, goalInputSchema, plannerItemInputSchema, realtorDateSchema, recurrenceSchema } from './contracts';
 import { expandOccurrences } from './recurrence';
-import { listGoals, listTodayOccurrences, readBusinessSummary } from './store.server';
+import { listGoals, listTodayOccurrences, readBusinessSummary, readSellerDailySummary } from './store.server';
 import { RealtorWorkspaceError } from './access.server';
 import { listShortlistEntries } from '@/lib/property-sprints/shortlist.server';
 
@@ -92,6 +92,33 @@ export async function readPersonalBusinessSummary(actorId: string, rawInput: unk
     goals: goals.map(({ metric, target }) => ({ metric, target })),
     href: '/business',
     note: 'Private manual records only; recorded totals are before taxes. Pending income is not received income.',
+  };
+}
+
+export async function readPersonalSellerAttention(actorId: string) {
+  const { workspaceId, preferences } = await requirePersonalRealtorWorkspace(actorId);
+  const summary = await readSellerDailySummary(actorId, workspaceId, preferences.time_zone);
+  if ((summary as { status?: string })?.status === 'not_configured') {
+    return { kind: 'personal_seller_attention' as const, available: false, counts: null, attention: [] };
+  }
+  const value = summary as {
+    counts?: Record<string, number>;
+    unscheduledRequests?: unknown[];
+    overdueActions?: unknown[];
+    consultations?: unknown[];
+  };
+  return {
+    kind: 'personal_seller_attention' as const,
+    available: true,
+    counts: value.counts || {},
+    attention: [
+      ...(value.unscheduledRequests || []).slice(0, 5).map(() => ({ type: 'request_needs_response' })),
+      ...(value.overdueActions || []).slice(0, 5).map(() => ({ type: 'seller_action_overdue' })),
+      ...(value.consultations || []).slice(0, 5).map(() => ({ type: 'confirmed_consultation' })),
+    ].slice(0, 10),
+    timeZone: preferences.time_zone,
+    weekStartDate: (summary as { weekStartDate?: string }).weekStartDate,
+    weekEndDate: (summary as { weekEndDate?: string }).weekEndDate,
   };
 }
 

@@ -15,7 +15,10 @@ import {
 } from '@assistant-ui/react';
 import { ArrowUp, Bot, Command, Loader2, Maximize2, RotateCcw, Send, Sparkles, TerminalSquare } from 'lucide-react';
 import { getJamieDisplayContent } from '@/lib/ai/jamieResponse';
+import { jamiePersonalResponseSchema } from '@/lib/ai/jamiePersonalContract';
+import type { JamiePersonalProposal } from '@/lib/ai/jamiePersonalContract';
 import { useTheme } from '@/context/ThemeProvider';
+import { JamiePersonalProposalList } from './JamiePersonalProposalList';
 
 type JamieAssistantWorkspaceProps = {
   apiRoute?: string;
@@ -27,13 +30,15 @@ type JamieAssistantWorkspaceProps = {
   } | null;
   memoryContext?: unknown;
   isDevMode?: boolean;
+  context?: 'general' | 'personal_realtor';
 };
 
 export default function JamieAssistantWorkspace({
   apiRoute = '/api/jamie/chat',
   propertyData,
   memoryContext,
-  isDevMode = false
+  isDevMode = false,
+  context = 'general',
 }: JamieAssistantWorkspaceProps) {
   const { agentId, assistantProfile } = useTheme();
   const listingId = [propertyData?.id, propertyData?._id, propertyData?.mls_id, propertyData?.mlsId]
@@ -46,10 +51,8 @@ export default function JamieAssistantWorkspace({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: toJamieMessages(messages),
-          listingId,
-          memoryContext,
-          isDevMode,
-          agentId,
+          ...(apiRoute === '/api/chat' ? { context } : {}),
+          ...(context === 'general' ? { listingId, memoryContext, isDevMode, agentId } : {}),
         }),
         signal: abortSignal
       });
@@ -62,19 +65,22 @@ export default function JamieAssistantWorkspace({
       const payload = contentType.includes('application/json')
         ? await response.json()
         : await response.text();
-      const text = getJamieDisplayContent(payload);
+      const personalResult = context === 'personal_realtor' ? jamiePersonalResponseSchema.safeParse(payload) : null;
+      if (context === 'personal_realtor' && !personalResult?.success) throw new Error('Personal Jamie returned an invalid private response. No changes were saved.');
+      const text = personalResult?.success ? personalResult.data.content : getJamieDisplayContent(payload);
       const tensorzero = payload && typeof payload === 'object' ? payload.tensorzero : undefined;
 
       return {
         content: [{ type: 'text', text }],
         metadata: {
           custom: {
-            tensorzero
+            tensorzero,
+            ...(personalResult?.success ? { personal: personalResult.data.personal } : {}),
           }
         }
       };
     }
-  }), [agentId, apiRoute, isDevMode, listingId, memoryContext]);
+  }), [agentId, apiRoute, context, isDevMode, listingId, memoryContext]);
 
   const runtime = useLocalRuntime(modelAdapter);
 
@@ -87,12 +93,17 @@ export default function JamieAssistantWorkspace({
               <Bot size={18} />
             </div>
             <div>
-              <p className="text-sm font-black text-white">{assistantProfile.displayName} Workspace</p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/70">assistant-ui runtime</p>
+              <p className="text-sm font-black text-white">{context === 'personal_realtor' ? 'Personal Jamie' : `${assistantProfile.displayName} Workspace`}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/70">{context === 'personal_realtor' ? 'private realtor workspace' : 'assistant-ui runtime'}</p>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-2 text-xs text-slate-300">
+          {context === 'personal_realtor' ? <nav aria-label="Personal workspace links" className="mt-5 grid gap-2 text-xs text-slate-300">
+            <Link href="/today" className="rounded-lg border border-cyan-200/15 bg-cyan-200/10 px-3 py-2.5 font-bold text-cyan-50">Today</Link>
+            <Link href="/planner" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 font-bold">Planner</Link>
+            <Link href="/business" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 font-bold">Business</Link>
+            <Link href="/admin/agent-leads" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 font-bold">Seller inbox</Link>
+          </nav> : <div className="mt-5 grid gap-2 text-xs text-slate-300">
             <Link
               href="/command-center"
               className="flex items-center justify-between rounded-lg border border-cyan-200/15 bg-cyan-200/10 px-3 py-2.5 font-bold text-cyan-50 transition hover:bg-cyan-200/15"
@@ -107,41 +118,39 @@ export default function JamieAssistantWorkspace({
               <span className="flex items-center gap-2"><TerminalSquare size={14} /> {assistantProfile.displayName} Traces</span>
               <ArrowUp size={13} className="rotate-45" />
             </Link>
-          </div>
+          </div>}
 
-          <div className="mt-5 rounded-xl border border-white/10 bg-slate-900/70 p-3">
+          {context === 'general' ? <div className="mt-5 rounded-xl border border-white/10 bg-slate-900/70 p-3">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Backbone</p>
             <div className="mt-3 space-y-2 text-xs font-bold text-slate-200">
               <p>Route: <span className="font-mono text-cyan-200">{apiRoute}</span></p>
               <p>TensorZero: <span className="text-emerald-200">jamie_chat</span></p>
               <p>Command Center: <span className="text-cyan-200">helper context</span></p>
             </div>
-          </div>
+          </div> : null}
         </aside>
 
-        <Thread assistantName={assistantProfile.displayName} />
+        <Thread assistantName={assistantProfile.displayName} context={context} />
       </section>
     </AssistantRuntimeProvider>
   );
 }
 
-function Thread({ assistantName }: { assistantName: string }) {
+function Thread({ assistantName, context }: { assistantName: string; context: 'general' | 'personal_realtor' }) {
   return (
     <ThreadPrimitive.Root className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))]">
       <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-cyan-200" />
-            <h1 className="truncate text-lg font-black text-white">{assistantName} Chat</h1>
+            <h1 className="truncate text-lg font-black text-white">{context === 'personal_realtor' ? 'Personal workspace' : `${assistantName} Chat`}</h1>
           </div>
-          <p className="mt-1 text-xs text-slate-400">Maximized workspace with assistant-ui state, assistant API routing, and Command Center context.</p>
+          <p className="mt-1 text-xs text-slate-400">{context === 'personal_realtor' ? 'Private realtor context · draft proposals save only after you confirm.' : 'Maximized workspace with assistant-ui state, assistant API routing, and Command Center context.'}</p>
         </div>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-100 transition hover:bg-white/[0.09]"
-        >
-          <Maximize2 size={13} /> Dock
-        </Link>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link href={context === 'personal_realtor' ? '/jamie-chat' : '/jamie-chat?context=personal_realtor'} className="rounded-md border border-cyan-200/20 bg-cyan-200/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cyan-100">{context === 'personal_realtor' ? 'General Jamie' : 'Personal workspace'}</Link>
+          <Link href="/" className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-100 transition hover:bg-white/[0.09]"><Maximize2 size={13} /> Dock</Link>
+        </div>
       </div>
 
       <ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
@@ -151,16 +160,16 @@ function Thread({ assistantName }: { assistantName: string }) {
               <Bot size={24} />
             </div>
             <h2 className="mt-5 text-2xl font-black text-white">{assistantName} is ready.</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-              Ask a property question, draft a client note, or hand off a messy task. This route keeps {assistantName} connected to the same helper layer as the Command Center.
-            </p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">{context === 'personal_realtor'
+              ? 'Ask what needs attention across your seller requests, planner, and recorded business. Jamie can prepare drafts, and nothing is saved until you confirm.'
+              : `Ask a property question, draft a client note, or hand off a messy task. This route keeps ${assistantName} connected to the same helper layer as the Command Center.`}</p>
           </div>
         </ThreadPrimitive.Empty>
 
         <ThreadPrimitive.Messages components={{ Message }} />
 
         <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-6 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pb-4 pt-8">
-          <Composer assistantName={assistantName} />
+          <Composer assistantName={assistantName} context={context} />
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
@@ -173,6 +182,9 @@ function Message() {
   const tensorzero = !isUser && message.metadata?.custom && typeof message.metadata.custom === 'object'
     ? (message.metadata.custom as { tensorzero?: { status?: string; variantName?: string; score?: number } }).tensorzero
     : undefined;
+  const personal = !isUser && message.metadata?.custom && typeof message.metadata.custom === 'object'
+    ? (message.metadata.custom as { personal?: { context?: string; proposals?: JamiePersonalProposal[] } }).personal
+    : undefined;
 
   return (
     <MessagePrimitive.Root className={`mb-5 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -182,6 +194,7 @@ function Message() {
           : 'border-white/10 bg-slate-900/90 text-slate-100'
       }`}>
         <MessagePrimitive.Content components={{ Text: MessageText }} />
+        {personal?.context === 'personal_realtor' && Array.isArray(personal.proposals) ? <JamiePersonalProposalList proposals={personal.proposals} /> : null}
         {tensorzero && (
           <div className="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-2 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100/80">
             <span>TensorZero {tensorzero.status || 'ready'}</span>
@@ -198,11 +211,11 @@ function MessageText() {
   return <MessagePartPrimitive.Text component="p" className="whitespace-pre-wrap leading-6" />;
 }
 
-function Composer({ assistantName }: { assistantName: string }) {
+function Composer({ assistantName, context }: { assistantName: string; context: 'general' | 'personal_realtor' }) {
   return (
     <ComposerPrimitive.Root className="mx-auto grid w-full max-w-4xl grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-3 rounded-2xl border border-cyan-200/20 bg-slate-900/95 p-3 shadow-[0_18px_50px_rgba(2,8,23,0.45)]">
       <ComposerPrimitive.Input
-        placeholder={`Ask ${assistantName}, or describe the command-center task...`}
+        placeholder={context === 'personal_realtor' ? 'What needs attention in my seller business?' : `Ask ${assistantName}, or describe the command-center task...`}
         submitMode="enter"
         rows={2}
         className="min-h-14 w-full min-w-0 resize-none appearance-none border-0 bg-transparent px-2 py-2 text-sm leading-6 text-white shadow-none outline-none ring-0 placeholder:text-slate-500 focus:border-0 focus:outline-none focus:ring-0"

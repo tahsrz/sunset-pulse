@@ -6,6 +6,7 @@ import { formatUsdCents, parseUsdToCents } from '@/lib/realtor-workspace/money';
 type ProposalKind = 'planner' | 'financial' | 'goal';
 type PropertyOption = { id: string; label: string; propertyKind: 'residential' | 'land'; status: 'active' | 'archived' };
 type Proposal = {
+  proposalId: string;
   kind: string;
   editableFields: Record<string, unknown>;
   missingFields: string[];
@@ -49,13 +50,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function JamieProposalCard({ kind, timeZone, properties = [], busy, submit }: Props) {
   const [input, setInput] = useState<Record<string, any>>(() => initialInput(kind, timeZone));
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const requestKeys = useRef(new Map<string, string>());
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef(input);
   inputRef.current = input;
 
-  const update = (name: string, value: unknown) => {
+  const discardProposal = () => {
+    if (proposal) requestKeys.current.delete(proposal.proposalId);
     setProposal(null);
+  };
+  const update = (name: string, value: unknown) => {
+    discardProposal();
     setInput((current) => ({ ...current, [name]: value }));
   };
   const prepare = async () => {
@@ -72,7 +78,10 @@ export function JamieProposalCard({ kind, timeZone, properties = [], busy, submi
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok) throw new Error(body?.error || 'Could not prepare this proposal.');
-      if (inputRef.current === requestedInput) setProposal(body.result as Proposal);
+      if (inputRef.current === requestedInput) {
+        if (proposal) requestKeys.current.delete(proposal.proposalId);
+        setProposal(body.result as Proposal);
+      }
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not prepare this proposal.'); }
     finally { setWorking(false); }
   };
@@ -82,25 +91,30 @@ export function JamieProposalCard({ kind, timeZone, properties = [], busy, submi
     let url: string;
     let payload: Record<string, any>;
     let success: string;
+    const operationKey = requestKeys.current.get(proposal.proposalId) || key();
+    requestKeys.current.set(proposal.proposalId, operationKey);
     if (kind === 'planner') {
       url = '/api/realtor/planner';
-      payload = { ...proposal.apiPayload, item: { ...proposal.apiPayload.item, requestKey: key() } };
+      payload = { ...proposal.apiPayload, item: { ...proposal.apiPayload.item, requestKey: operationKey } };
       success = 'Jamie’s planner proposal saved.';
     } else if (kind === 'financial') {
-      url = '/api/realtor/financial-records'; payload = { ...proposal.apiPayload, requestKey: key() };
+      url = '/api/realtor/financial-records'; payload = { ...proposal.apiPayload, requestKey: operationKey };
       success = 'Jamie’s financial proposal saved.';
     } else {
-      url = '/api/realtor/goals'; payload = { ...proposal.apiPayload, requestKey: key() };
+      url = '/api/realtor/goals'; payload = { ...proposal.apiPayload, requestKey: operationKey };
       success = 'Jamie’s goal proposal saved.';
     }
-    if (await submit(url, 'POST', payload, success)) setProposal(null);
+    if (await submit(url, 'POST', payload, success)) {
+      requestKeys.current.delete(proposal.proposalId);
+      setProposal(null);
+    }
   };
 
   return <section aria-labelledby={`jamie-proposal-${kind}`} className="rounded-2xl border border-cyan-200/20 bg-cyan-950/20 p-5">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h2 id={`jamie-proposal-${kind}`} className="font-bold text-cyan-100">Work it through with Jamie</h2>
         <p className="mt-1 text-xs leading-5 text-slate-400">Prepare a structured draft together. Nothing is saved until you review and confirm it.</p></div>
-      {proposal ? <button type="button" className={quietButton} onClick={() => setProposal(null)}>Discard draft</button> : null}
+      {proposal ? <button type="button" className={quietButton} onClick={discardProposal}>Discard draft</button> : null}
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       {kind === 'planner' ? <>
@@ -109,20 +123,20 @@ export function JamieProposalCard({ kind, timeZone, properties = [], busy, submi
         <Field label="First due date"><input className={inputClass} type="date" value={input.dueDate} onChange={(event) => update('dueDate', event.target.value)} /></Field>
         <Field label="Repeats"><select className={inputClass} value={input.recurrence.frequency === 'monthly' && input.recurrence.interval === 3 ? 'quarterly' : input.recurrence.frequency} onChange={(event) => update('recurrence', event.target.value === 'once' ? { frequency: 'once' } : event.target.value === 'quarterly' ? { frequency: 'monthly', interval: 3 } : { frequency: event.target.value, interval: 1 })}><option value="once">One time</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></Field>
         <Field label="Related shortlist property (optional)"><select className={inputClass} value={input.propertyId || ''} onChange={(event) => update('propertyId', event.target.value || null)}><option value="">No property link</option>{properties.filter((property) => property.status === 'active').map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></Field>
-        {input.kind === 'bill' ? <Field label="Expected amount (USD)"><input className={inputClass} inputMode="decimal" value={input.amount || ''} onChange={(event) => { const amount = event.target.value; setProposal(null); setInput((current) => ({ ...current, amount, expectedAmountCents: amount ? usdDraftToCents(amount) ?? null : null })); }} placeholder="150.00" /></Field> : null}
+        {input.kind === 'bill' ? <Field label="Expected amount (USD)"><input className={inputClass} inputMode="decimal" value={input.amount || ''} onChange={(event) => { const amount = event.target.value; discardProposal(); setInput((current) => ({ ...current, amount, expectedAmountCents: amount ? usdDraftToCents(amount) ?? null : null })); }} placeholder="150.00" /></Field> : null}
       </> : null}
       {kind === 'financial' ? <>
-        <Field label="Record type"><select className={inputClass} value={input.kind} onChange={(event) => { setInput({ ...initialInput('financial', timeZone), kind: event.target.value }); setProposal(null); }}><option value="commission">Commission received</option><option value="expense">Paid business expense</option><option value="expected_income">Expected income</option></select></Field>
+        <Field label="Record type"><select className={inputClass} value={input.kind} onChange={(event) => { discardProposal(); setInput({ ...initialInput('financial', timeZone), kind: event.target.value }); }}><option value="commission">Commission received</option><option value="expense">Paid business expense</option><option value="expected_income">Expected income</option></select></Field>
         {input.kind === 'commission' ? <Field label="Amount represents"><select className={inputClass} value={input.mode} onChange={(event) => update('mode', event.target.value)}><option value="gross">Gross before deductions</option><option value="net_deposit">Deposit received</option></select></Field> : null}
-        <Field label={input.kind === 'expense' ? 'Amount paid (USD)' : input.kind === 'expected_income' ? 'Expected take-home (USD)' : input.mode === 'gross' ? 'Gross commission (USD)' : 'Deposit received (USD)'}><input className={inputClass} inputMode="decimal" value={input.amount || ''} onChange={(event) => { const amount = event.target.value; setProposal(null); setInput((current) => ({ ...current, amount, amountCents: amount ? usdDraftToCents(amount) : undefined })); }} placeholder="850.00" /></Field>
+        <Field label={input.kind === 'expense' ? 'Amount paid (USD)' : input.kind === 'expected_income' ? 'Expected take-home (USD)' : input.mode === 'gross' ? 'Gross commission (USD)' : 'Deposit received (USD)'}><input className={inputClass} inputMode="decimal" value={input.amount || ''} onChange={(event) => { const amount = event.target.value; discardProposal(); setInput((current) => ({ ...current, amount, amountCents: amount ? usdDraftToCents(amount) : undefined })); }} placeholder="850.00" /></Field>
         <Field label={input.kind === 'expected_income' ? 'Expected date' : input.kind === 'expense' ? 'Paid date' : 'Received date'}><input className={inputClass} type="date" value={input.date} onChange={(event) => update('date', event.target.value)} /></Field>
-        {input.kind === 'commission' && input.mode === 'gross' ? <Field label="Actual total deductions (USD); enter 0 only if none"><input className={inputClass} inputMode="decimal" value={input.deductionAmount || ''} onChange={(event) => { const value = event.target.value; const cents = value === '' ? undefined : /^0(?:\.0{1,2})?$/.test(value) ? 0 : usdDraftToCents(value); setProposal(null); setInput((current) => ({ ...current, deductionAmount: value, deductions: cents === undefined ? undefined : cents > 0 ? [{ kind: 'broker_split', label: 'Broker / transaction deductions', amountCents: cents }] : [], confirmNoDeductions: cents === 0 })); }} placeholder="0.00" /></Field> : null}
+        {input.kind === 'commission' && input.mode === 'gross' ? <Field label="Actual total deductions (USD); enter 0 only if none"><input className={inputClass} inputMode="decimal" value={input.deductionAmount || ''} onChange={(event) => { const value = event.target.value; const cents = value === '' ? undefined : /^0(?:\.0{1,2})?$/.test(value) ? 0 : usdDraftToCents(value); discardProposal(); setInput((current) => ({ ...current, deductionAmount: value, deductions: cents === undefined ? undefined : cents > 0 ? [{ kind: 'broker_split', label: 'Broker / transaction deductions', amountCents: cents }] : [], confirmNoDeductions: cents === 0 })); }} placeholder="0.00" /></Field> : null}
         {input.kind === 'expense' ? <Field label="Category"><select className={inputClass} value={input.category || 'other'} onChange={(event) => update('category', event.target.value)}>{['broker_dues','mls','association','education','license','insurance','marketing','software','other'].map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></Field> : null}
         {input.kind === 'expected_income' ? <Field label="Deal label"><input className={inputClass} maxLength={160} value={input.label || ''} onChange={(event) => update('label', event.target.value)} placeholder="Smith purchase closing" /></Field> : null}
       </> : null}
       {kind === 'goal' ? <>
-        <Field label="Progress metric"><select className={inputClass} value={input.metric} onChange={(event) => { setProposal(null); setInput((current) => ({ ...current, metric: event.target.value, target: undefined, targetDisplay: '' })); }}><option value="net_income">Recorded net income</option><option value="closings">Closings</option><option value="weekly_reviews">Weekly reviews</option></select></Field>
-        <Field label={input.metric === 'net_income' ? 'Annual target (USD)' : 'Annual target'}><input className={inputClass} inputMode={input.metric === 'net_income' ? 'decimal' : 'numeric'} value={input.targetDisplay || ''} onChange={(event) => { const targetDisplay = event.target.value; setProposal(null); setInput((current) => ({ ...current, targetDisplay, target: targetDisplay ? current.metric === 'net_income' ? usdDraftToCents(targetDisplay) : /^\d+$/.test(targetDisplay) ? Number(targetDisplay) : undefined : undefined })); }} placeholder={input.metric === 'net_income' ? '100,000.00' : '24'} /></Field>
+        <Field label="Progress metric"><select className={inputClass} value={input.metric} onChange={(event) => { discardProposal(); setInput((current) => ({ ...current, metric: event.target.value, target: undefined, targetDisplay: '' })); }}><option value="net_income">Recorded net income</option><option value="closings">Closings</option><option value="weekly_reviews">Weekly reviews</option></select></Field>
+        <Field label={input.metric === 'net_income' ? 'Annual target (USD)' : 'Annual target'}><input className={inputClass} inputMode={input.metric === 'net_income' ? 'decimal' : 'numeric'} value={input.targetDisplay || ''} onChange={(event) => { const targetDisplay = event.target.value; discardProposal(); setInput((current) => ({ ...current, targetDisplay, target: targetDisplay ? current.metric === 'net_income' ? usdDraftToCents(targetDisplay) : /^\d+$/.test(targetDisplay) ? Number(targetDisplay) : undefined : undefined })); }} placeholder={input.metric === 'net_income' ? '100,000.00' : '24'} /></Field>
         <Field label="Year"><input className={inputClass} type="number" min={2000} max={2200} value={input.year} onChange={(event) => update('year', Number(event.target.value))} /></Field>
       </> : null}
     </div>

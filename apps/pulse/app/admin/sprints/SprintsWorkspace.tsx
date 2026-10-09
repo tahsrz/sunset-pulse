@@ -10,6 +10,7 @@ type SprintItem = { id: string; sprint_id: string; title: string; description?: 
 type Assignment = { id: string; sprint_item_id: string; worker_id?: string | null; status: string };
 type Schedule = { id: string; enabled: boolean; planning_mode?: 'manual_backlog' | 'property_shortlist'; cadence: 'daily' | 'weekly'; time_zone: string; local_hour: number; local_minute: number; local_weekday: number; next_run_at: string; revision?: number };
 type Job = { id: string; status: string; scheduled_for: string; attempts: number; workflow_key: string; trigger_kind?: 'scheduled' | 'event'; event_key?: string | null };
+type LegacySellerWeekDuplicate = { title: string; legacySourceId: string; sellerLocalSourceId: string };
 
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -18,6 +19,7 @@ export function SprintsWorkspace() {
   const [schedule, setSchedule] = useState<Schedule | null>(null), [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly'), [planningMode, setPlanningMode] = useState<'manual_backlog' | 'property_shortlist'>('manual_backlog');
   const [timeZone, setTimeZone] = useState('America/Chicago'), [localWeekday, setLocalWeekday] = useState(1), [localHour, setLocalHour] = useState(8), [localMinute, setLocalMinute] = useState(0);
   const [title, setTitle] = useState(''), [editing, setEditing] = useState<Backlog | null>(null), [error, setError] = useState(''), [notice, setNotice] = useState(''), [pending, setPending] = useState(false);
+  const [legacySellerWeekDuplicates, setLegacySellerWeekDuplicates] = useState<LegacySellerWeekDuplicate[]>([]);
   const scheduleDirtyRef = useRef(false);
   const markScheduleDirty = () => { scheduleDirtyRef.current = true; };
 
@@ -35,12 +37,17 @@ export function SprintsWorkspace() {
   const post = async (body: unknown) => { setPending(true); setError(''); try { const response = await fetch('/api/sprints', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Sprint request failed.'); const isScheduleSave = typeof body === 'object' && body !== null && 'action' in body && body.action === 'create_schedule'; const preserveDraft = scheduleDirtyRef.current && !isScheduleSave; if (isScheduleSave) scheduleDirtyRef.current = false; await load(preserveDraft); return true; } catch (e) { setError(e instanceof Error ? e.message : 'Sprint request failed.'); return false; } finally { setPending(false); } };
   const mutateScheduler = async (body: unknown) => { setPending(true); setError(''); try { const response = await fetch('/api/scheduler', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Scheduler request failed.'); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Scheduler request failed.'); } finally { setPending(false); } };
   const generatePropertyPlan = async () => { setPending(true); setError(''); try { const response = await fetch('/api/property-shortlist/plan', { method: 'POST' }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Unable to generate property plan.'); await load(scheduleDirtyRef.current); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to generate property plan.'); } finally { setPending(false); } };
-  const addSellerAcquisitionWeek = async () => {
+  const addSellerAcquisitionWeek = async (resolveLegacyWeek = false) => {
     setPending(true); setError(''); setNotice('');
     try {
-      const response = await fetch('/api/sprints', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_seller_acquisition_week' }) });
+      const response = await fetch('/api/sprints', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_seller_acquisition_week', resolveLegacyWeek }) });
       const payload = await response.json();
+      if (!response.ok && payload.code === 'LEGACY_WEEK_DUPLICATES') {
+        setLegacySellerWeekDuplicates(payload.duplicates || []);
+        return;
+      }
       if (!response.ok) throw new Error(`${payload.error || 'Unable to add this week’s seller plan.'} (${payload.processed || 0}/${payload.count || 6} tasks processed; retry is safe.)`);
+      setLegacySellerWeekDuplicates([]);
       await load(scheduleDirtyRef.current);
       setNotice(payload.scoped
         ? `${payload.week}: ${payload.processed} tasks added or reused in the workspace. Review the backlog and approve a sprint before assigning work.`
@@ -62,6 +69,7 @@ export function SprintsWorkspace() {
         <h2 className="font-bold text-white">Seller growth · this week</h2>
         <p className="mt-1 max-w-3xl text-sm text-slate-300">Add three video topics, a neighborhood-guide refresh, and conditional open-house preparation/follow-up to your backlog. Tasks are drafts for you to review; assignments happen only after sprint approval. No content is published and no messages are sent.</p>
         <button disabled={pending} onClick={() => void addSellerAcquisitionWeek()} className="mt-3 rounded-xl bg-cyan-300 px-4 py-2 text-xs font-black uppercase text-cyan-950">Add this week’s seller plan</button>
+        {legacySellerWeekDuplicates.length ? <div role="status" className="mt-4 rounded-xl border border-amber-200/30 bg-amber-200/5 p-4"><p className="text-sm font-semibold text-amber-100">Older UTC-week tasks overlap this seller-local week</p><p className="mt-1 text-xs leading-5 text-slate-300">Review the matching rows. Confirming reuses their old source IDs so the same weekly tasks are not added twice.</p><ul className="mt-2 list-disc pl-5 text-xs text-slate-300">{legacySellerWeekDuplicates.map((item) => <li key={item.legacySourceId}>{item.title}</li>)}</ul><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={pending} onClick={() => void addSellerAcquisitionWeek(true)} className="rounded-lg bg-amber-200 px-3 py-2 text-xs font-bold text-slate-950">Reuse existing tasks and continue</button><button type="button" disabled={pending} onClick={() => setLegacySellerWeekDuplicates([])} className="rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200">Cancel</button></div></div> : null}
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3">

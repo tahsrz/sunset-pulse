@@ -63,6 +63,7 @@ export const appRoutes: readonly AppRoute[] = [
   ...pages('Account and business', [
     ['/login', 'Sign in'], ['/register', 'Register'], ['/profile', 'Profile', 'account'],
     ['/today', 'Realtor Today', 'account', 'Private personal workspace; planner, earnings summary, goals and reminders.'],
+    ['/seller-inbox', 'Seller inbox', 'account', 'Private requests from active websites owned by your account; recorded contact, outcomes and source-linked planner tasks.'],
     ['/planner', 'Realtor Planner', 'account', 'Private recurring dues, deadlines and appointments.'],
     ['/business', 'Business scoreboard', 'account', 'Private manually recorded income and expenses; totals are not tax or brokerage statements.'],
     ['/goals', 'Personal business goals', 'account', 'Optional progress goals derived from manually recorded work.'],

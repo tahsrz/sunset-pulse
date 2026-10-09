@@ -13,5 +13,9 @@ describe('platform workspace identity contracts', () => {
     expect(roleAllowsAction('viewer', 'effect:approve')).toBe(false);
     expect(roleAllowsAction('reviewer', 'artifact:review')).toBe(true);
     expect(roleAllowsAction('member', 'artifact:review')).toBe(false);
+    expect(roleAllowsAction('owner', 'artifact:record_publication')).toBe(true);
+    expect(roleAllowsAction('admin', 'artifact:record_publication')).toBe(true);
+    expect(roleAllowsAction('reviewer', 'artifact:record_publication')).toBe(false);
+    expect(roleAllowsAction('member', 'artifact:record_publication')).toBe(false);
   });
 });

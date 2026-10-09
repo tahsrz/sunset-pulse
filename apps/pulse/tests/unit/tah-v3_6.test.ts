@@ -45,7 +45,7 @@ describe('TAHRetrieverV36 Surgical Integrity', () => {
     
     const topResult = results[0];
     expect(topResult.data).toContain('Deterministic, ultra-low latency');
-    expect(topResult.source.url).toContain('groq.com');
+    expect(topResult.source?.url).toContain('groq.com');
   });
 
   it('should support location-aware retrieval', () => {

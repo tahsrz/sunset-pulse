@@ -95,6 +95,7 @@ describe('seller video brief persistence route', () => {
     const query = {
       select: vi.fn(() => query),
       eq: vi.fn(() => query),
+      match: vi.fn(() => query),
       order: vi.fn(() => query),
       limit: vi.fn(() => Promise.resolve({ data: [{ brief_id: brief.briefId, brief_data: brief }], error: null })),
     };

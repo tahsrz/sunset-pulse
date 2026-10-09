@@ -4,9 +4,10 @@ import { randomUUID } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { expandOccurrences, reminderInstant } from './recurrence';
 import { normalizeCommission } from './money';
-import { dueSpecSchema, weeklyReviewInputSchema, type CommissionInput, type DueSpec, type PlannerItemInput } from './contracts';
+import { dueSpecSchema, weeklyReviewInputSchema, weeklyReviewInputV2Schema, type CommissionInput, type DueSpec, type PlannerItemInput } from './contracts';
 import { localDateInZone, mondayOfLocalDate, readWeeklyReviewEvidence } from './progress';
 import { RealtorWorkspaceError, throwRealtorRpcError } from './access.server';
+import { sellerDailyValueSchema } from './sellerDailyContract';
 
 function one<T>(data: T | T[] | null) {
   return Array.isArray(data) ? data[0] : data;
@@ -22,6 +23,12 @@ function addCalendarDays(date: string, days: number) {
   const [year, month, day] = date.split('-').map(Number);
   const result = new Date(Date.UTC(year, month - 1, day + days));
   return result.toISOString().slice(0, 10);
+}
+
+function localDateTimeWithOffset(date: string, time: string, offsetMinutes: number) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, hour, minute) - offsetMinutes * 60_000).toISOString();
 }
 
 async function assertAuthorizedPlannerProperty(actorId: string, item: PlannerItemInput) {
@@ -68,7 +75,9 @@ function buildOccurrenceCandidates(item: PlannerItemInput, now = new Date()) {
     ...occurrence,
     reminders: item.due.reminderOffsetsDays.map((offsetDays) => ({
       offsetDays,
-      scheduledAt: reminderInstant(occurrence.effectiveDate, offsetDays, item.due.localTime, item.due.timeZone),
+      scheduledAt: item.due.utcOffsetMinutes !== undefined && offsetDays === 0 && item.due.localTime
+        ? localDateTimeWithOffset(occurrence.effectiveDate, item.due.localTime, item.due.utcOffsetMinutes)
+        : reminderInstant(occurrence.effectiveDate, offsetDays, item.due.localTime, item.due.timeZone),
     })),
   }));
 }
@@ -86,6 +95,7 @@ export async function savePlannerItem(actorId: string, workspaceId: string, inpu
       kind: input.item.kind, title: input.item.title, notes: input.item.notes, due: input.item.due,
       expectedAmountCents: input.item.expectedAmountCents, property: input.item.property,
       ...(input.item.sourceSprintTaskId ? { sourceSprintTaskId: input.item.sourceSprintTaskId } : {}),
+      ...(input.item.sellerLead ? { sellerLead: input.item.sellerLead } : {}),
     },
     p_occurrences: occurrences,
   });
@@ -116,13 +126,27 @@ export async function listPlannerOccurrences(actorId: string, workspaceId: strin
   const items = hasMore ? rows.slice(0, query.limit) : rows;
   const itemIds = [...new Set(items.map((item) => String(item.item_id)))];
   let propertyIds = new Map<string, string | null>();
+  let linkedItemRows: Array<{ id: string; property_id: string | null; source_lead_id: string | null; source_lead_action_key: string | null; source_lead_revision: number | null }> = [];
   if (itemIds.length) {
     const { data: linkedItems, error: linkedItemsError } = await supabaseAdmin.from('realtor_planner_items')
-      .select('id,property_id').in('id', itemIds).eq('user_id', actorId).eq('workspace_id', workspaceId);
+      .select('id,property_id,source_lead_id,source_lead_action_key,source_lead_revision').in('id', itemIds).eq('user_id', actorId).eq('workspace_id', workspaceId);
     if (linkedItemsError) throw new RealtorWorkspaceError('FAILED');
+    linkedItemRows = linkedItems || [];
     propertyIds = new Map((linkedItems || []).map((item) => [String(item.id), item.property_id ? String(item.property_id) : null]));
   }
-  const itemsWithProperty = items.map((item) => ({ ...item, property_id: propertyIds.get(String(item.item_id)) || null }));
+  const sellerSources = await readOwnedSellerPlannerSources(actorId, linkedItemRows);
+  const itemsWithProperty = items.map((item) => {
+    const linked = linkedItemRows.find((candidate) => candidate.id === item.item_id);
+    const source = linked?.source_lead_id ? sellerSources.get(String(linked.source_lead_id)) : undefined;
+    return {
+      ...item,
+      property_id: propertyIds.get(String(item.item_id)) || null,
+      source_lead_action_key: linked?.source_lead_action_key || null,
+      source_lead_revision: linked?.source_lead_revision || null,
+      seller_source_available: Boolean(source),
+      seller_lead: source || null,
+    };
+  });
   const last = items[items.length - 1];
   return {
     items: itemsWithProperty,
@@ -269,7 +293,7 @@ export async function listTodayOccurrences(actorId: string, workspaceId: string,
   const occurrenceById = new Map((linkedOccurrences || []).map((occurrence) => [occurrence.id, occurrence]));
   const itemIds = [...new Set((linkedOccurrences || []).map((occurrence) => String(occurrence.item_id)))];
   const { data: linkedItems, error: itemError } = itemIds.length
-    ? await supabaseAdmin.from('realtor_planner_items').select('id,property_id').in('id', itemIds).eq('user_id', actorId).eq('workspace_id', workspaceId)
+    ? await supabaseAdmin.from('realtor_planner_items').select('id,property_id,source_lead_id,source_lead_action_key,source_lead_revision').in('id', itemIds).eq('user_id', actorId).eq('workspace_id', workspaceId)
     : { data: [], error: null };
   if (itemError) throw new RealtorWorkspaceError('FAILED');
   const propertyIds = [...new Set((linkedItems || []).map((item) => String(item.property_id || '')).filter(Boolean))];
@@ -278,11 +302,19 @@ export async function listTodayOccurrences(actorId: string, workspaceId: string,
     : { data: [], error: null };
   if (propertyError) throw new RealtorWorkspaceError('FAILED');
   const propertyIdByItem = new Map((linkedItems || []).map((item) => [String(item.id), item.property_id ? String(item.property_id) : null] as const));
+  const sellerSources = await readOwnedSellerPlannerSources(actorId, linkedItems || []);
   const propertyLabelById = new Map((properties || []).map((property) => [String(property.id), [property.address || property.mls_id || 'Shortlist property', [property.city, property.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ')] as const));
   const withProperty = <T extends { item_id?: string; id?: string }>(row: T) => {
     const occurrence = row.item_id ? row : row.id ? occurrenceById.get(row.id) : null;
     const propertyId = occurrence?.item_id ? propertyIdByItem.get(String(occurrence.item_id)) || null : null;
-    return { ...row, property_id: propertyId, property_label: propertyId ? propertyLabelById.get(propertyId) || null : null };
+    const linked = occurrence?.item_id ? (linkedItems || []).find((item) => item.id === occurrence.item_id) : undefined;
+    const source = linked?.source_lead_id ? sellerSources.get(String(linked.source_lead_id)) : undefined;
+    return {
+      ...row, property_id: propertyId, property_label: propertyId ? propertyLabelById.get(propertyId) || null : null,
+      source_lead_action_key: linked?.source_lead_action_key || null,
+      source_lead_revision: linked?.source_lead_revision || null,
+      seller_source_available: Boolean(source), seller_lead: source || null,
+    };
   };
   return {
     asOfDate: today,
@@ -290,6 +322,25 @@ export async function listTodayOccurrences(actorId: string, workspaceId: string,
     upcoming: (upcomingResponse.data || []).map(withProperty),
     reminders: reminderRows.map((reminder) => ({ ...reminder, occurrence: occurrenceById.has(reminder.occurrence_id) ? withProperty(occurrenceById.get(reminder.occurrence_id)!) : null })),
   };
+}
+
+async function readOwnedSellerPlannerSources(actorId: string, linkedItems: Array<{
+  source_lead_id?: string | null; source_lead_action_key?: string | null; source_lead_revision?: number | null;
+}>) {
+  const leadIds = [...new Set(linkedItems.map((item) => item.source_lead_id).filter((id): id is string => Boolean(id)))];
+  if (!leadIds.length) return new Map<string, { id: string; name: string; status: string; revision: number }>();
+  const { data: leads, error: leadError } = await supabaseAdmin.from('agent_site_leads')
+    .select('id,agent_id,name,status,revision,source').in('id', leadIds).eq('source', 'seller_plan');
+  if (leadError) throw new RealtorWorkspaceError('FAILED');
+  const agentIds = [...new Set((leads || []).map((lead) => lead.agent_id))];
+  if (!agentIds.length) return new Map();
+  const { data: sites, error: siteError } = await supabaseAdmin.from('site_config')
+    .select('agent_id').eq('owner_id', actorId).eq('status', 'active').in('agent_id', agentIds);
+  if (siteError) throw new RealtorWorkspaceError('FAILED');
+  const ownedAgents = new Set((sites || []).map((site) => site.agent_id));
+  return new Map((leads || []).filter((lead) => ownedAgents.has(lead.agent_id)).map((lead) => [
+    String(lead.id), { id: String(lead.id), name: String(lead.name), status: String(lead.status), revision: Number(lead.revision) },
+  ]));
 }
 
 export async function listVisibleReminders(actorId: string, workspaceId: string, limit = 5) {
@@ -326,13 +377,15 @@ export async function applyOccurrenceAction(actorId: string, workspaceId: string
     if (!occurrence) throw new RealtorWorkspaceError('NOT_FOUND');
     if (occurrence.kind_snapshot === 'weekly_review') {
       const checklist = input.completionDetails?.weeklyReview;
-      const parsed = weeklyReviewInputSchema.safeParse(checklist);
+      const version = checklist && typeof checklist === 'object' && !Array.isArray(checklist)
+        ? (checklist as Record<string, unknown>).version : undefined;
+      const parsed = version === 2 ? weeklyReviewInputV2Schema.safeParse(checklist) : weeklyReviewInputSchema.safeParse(checklist);
       if (!parsed.success || Object.keys(input.completionDetails || {}).some((key) => key !== 'weeklyReview')) throw new RealtorWorkspaceError('INVALID');
       const preferences = await getPreferences(actorId);
       if (!preferences || preferences.workspace_id !== workspaceId) throw new RealtorWorkspaceError('FORBIDDEN');
       const localWeekKey = mondayOfLocalDate(getLocalDate(preferences.time_zone));
       completionDetails = { weeklyReview: {
-        version: 1, ...parsed.data, timeZone: preferences.time_zone, localWeekKey,
+        version: version === 2 ? 2 : 1, ...parsed.data, timeZone: preferences.time_zone, localWeekKey,
       } };
     } else if (input.completionDetails && Object.keys(input.completionDetails).length) {
       throw new RealtorWorkspaceError('INVALID');
@@ -582,4 +635,22 @@ export async function listGoals(actorId: string, workspaceId: string, year: numb
     .order('metric', { ascending: true }).limit(20);
   if (error) throw new RealtorWorkspaceError('FAILED');
   return data || [];
+}
+
+export async function readSellerDailySummary(actorId: string, workspaceId: string, timeZone: string, now = new Date()) {
+  const today = localDateInZone(now, timeZone);
+  const weekStart = mondayOfLocalDate(today);
+  const [year, month, day] = weekStart.split('-').map(Number);
+  const nextWeek = new Date(Date.UTC(year, month - 1, day + 7)).toISOString().slice(0, 10);
+  const { data, error } = await supabaseAdmin.rpc('realtor_read_seller_daily_summary', {
+    p_actor_id: actorId,
+    p_workspace_id: workspaceId,
+    p_time_zone: timeZone,
+    p_local_start: weekStart,
+    p_local_end: nextWeek,
+  });
+  if (error) throwRealtorRpcError(error.code);
+  const parsed = sellerDailyValueSchema.safeParse(data);
+  if (!parsed.success) throw new RealtorWorkspaceError('FAILED');
+  return parsed.data;
 }

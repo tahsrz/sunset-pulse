@@ -6,7 +6,8 @@ import { nextOccurrenceAfter, scheduleSpecSchema } from '@/lib/autonomous-workfl
 import { intelligenceWorkers } from '@/lib/command-center/workerRoster';
 import { listSprintsForWorkspace } from '@/lib/property-sprints/sprintWorkspace.server';
 import { requireOwnerCompatibleMutation } from '@/lib/platform/access/sprintPlanningScope.server';
-import { sellerAcquisitionWeek } from '@/lib/marketing/sellerAcquisitionWeek';
+import { localCalendarDateInTimeZone, sellerAcquisitionWeek, sellerAcquisitionWeekForLocalDate } from '@/lib/marketing/sellerAcquisitionWeek';
+import { requirePersonalRealtorWorkspace, RealtorWorkspaceError } from '@/lib/realtor-workspace/access.server';
 
 const uuid = z.string().uuid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
@@ -21,7 +22,7 @@ const requestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('update_sprint_item'), itemId: uuid, sprintId: uuid, expectedSprintRevision: z.number().int().positive(), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000), priority: z.number().int().min(1).max(5), estimateMinutes: z.number().int().min(1).max(10080).nullable(), workerId: z.string().trim().min(1).max(120).nullable() }),
   z.object({ action: z.literal('complete_assignment'), assignmentId: uuid }),
   z.object({ action: z.literal('add_backlog_item'), workspaceId: uuid.nullable().optional(), title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).nullable().default(null), sourceType: z.enum(['manual', 'pulse_command']).default('manual'), sourceId: z.string().trim().max(160).nullable().default(null) }),
-  z.object({ action: z.literal('add_seller_acquisition_week'), workspaceId: uuid.nullable().optional() }),
+  z.object({ action: z.literal('add_seller_acquisition_week'), workspaceId: uuid.nullable().optional(), resolveLegacyWeek: z.boolean().default(false) }),
 ]);
 
 async function legacyMutationGuard(userId: string, resourceType: 'sprint' | 'assignment' | 'sprint_backlog_item', resourceId: string) {
@@ -85,6 +86,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, approval: data?.[0] || null });
   }
   if (parsed.data.action === 'add_backlog_item') {
+    if (parsed.data.sourceType === 'manual' && parsed.data.sourceId?.startsWith('seller-acquisition:')) {
+      return NextResponse.json({ ok: false, error: 'Seller acquisition source IDs are reserved for the generated weekly plan.' }, { status: 400 });
+    }
     if (parsed.data.workspaceId) {
       const { data, error } = await supabaseAdmin.rpc('platform_add_sprint_backlog_item', { p_actor_id: userId, p_workspace_id: parsed.data.workspaceId, p_title: parsed.data.title, p_description: parsed.data.description, p_priority: parsed.data.priority, p_estimate_minutes: parsed.data.estimateMinutes, p_source_type: parsed.data.sourceType, p_source_id: parsed.data.sourceId });
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 409 });
@@ -104,11 +108,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, backlogItem: data }, { status: 201 });
   }
   if (parsed.data.action === 'add_seller_acquisition_week') {
-    const plan = sellerAcquisitionWeek();
+    let personalWorkspace: Awaited<ReturnType<typeof requirePersonalRealtorWorkspace>>;
+    try {
+      personalWorkspace = await requirePersonalRealtorWorkspace(userId);
+    } catch (error) {
+      const setupRequired = error instanceof RealtorWorkspaceError && error.code === 'SETUP_REQUIRED';
+      return NextResponse.json({ ok: false, code: setupRequired ? 'SETUP_REQUIRED' : 'WORKSPACE_UNAVAILABLE', error: setupRequired ? 'Set up your personal planner to continue.' : 'Unable to access the personal seller workspace.' }, { status: setupRequired ? 409 : 403, headers: { 'Cache-Control': 'private, no-store' } });
+    }
+    if (parsed.data.workspaceId && parsed.data.workspaceId !== personalWorkspace.workspaceId) {
+      return NextResponse.json({ ok: false, error: 'The seller acquisition plan belongs in your personal workspace.' }, { status: 403, headers: { 'Cache-Control': 'private, no-store' } });
+    }
+    const localDate = localCalendarDateInTimeZone(new Date(), personalWorkspace.preferences.time_zone);
+    const plan = sellerAcquisitionWeekForLocalDate(localDate);
+    const legacyPlan = sellerAcquisitionWeek(new Date());
+    const legacyRows = new Map<string, boolean>();
+    const localIsoWeek = sellerAcquisitionWeek(new Date(`${localDate}T12:00:00.000Z`))[0]?.key.split(':')[1];
+    if (localIsoWeek !== legacyPlan[0]?.key.split(':')[1]) {
+      for (const legacy of legacyPlan) {
+        const { data, error } = await supabaseAdmin.from('sprint_backlog_items').select('id')
+          .eq('owner_id', userId).eq('source_type', 'manual').eq('source_id', legacy.key).maybeSingle();
+        if (error) return NextResponse.json({ ok: false, error: 'Unable to check for an older UTC-keyed seller week.' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } });
+        if (data) legacyRows.set(legacy.key, true);
+      }
+    }
+    if (legacyRows.size && !parsed.data.resolveLegacyWeek) {
+      return NextResponse.json({
+        ok: false, code: 'LEGACY_WEEK_DUPLICATES',
+        error: 'Existing tasks use the earlier UTC week key. Review the overlap before adding this seller-local week.',
+        duplicates: legacyPlan.flatMap((legacy, index) => legacyRows.has(legacy.key) ? [{ title: legacy.title, legacySourceId: legacy.key, sellerLocalSourceId: plan[index]?.key }] : []),
+      }, { status: 409, headers: { 'Cache-Control': 'private, no-store' } });
+    }
+    const persistencePlan = plan.map((task, index) => legacyRows.has(legacyPlan[index]?.key || '')
+      ? { ...task, key: legacyPlan[index].key }
+      : task);
     let created = 0;
     let reused = 0;
     let processed = 0;
-    for (const task of plan) {
+    for (const task of persistencePlan) {
       if (parsed.data.workspaceId) {
         const { error } = await supabaseAdmin.rpc('platform_add_sprint_backlog_item', {
           p_actor_id: userId,

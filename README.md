@@ -20,6 +20,7 @@ Latest local review: [Luna changes, acceptance evidence and remaining work](apps
 - **Build the realtor daily workspace:** [Today, Planner, Business, and Goals implementation](apps/pulse/docs/REALTOR_PLANNER_SCOREBOARD_PLAN.md) covers recurring dues/deadlines, manually recorded earnings/expenses, and private progress. This feature is in progress locally and is not a production-availability claim.
 - **Acquire Keller / Westlake seller clients:** [Year-end client acquisition plan](apps/pulse/docs/KELLER_WESTLAKE_CLIENT_ACQUISITION_PLAN.md) tracks the seller-first offer, source-linked local guides and reliable owner-inbox intake. G1–G3 are implemented locally; the G4 market-report contract and valuation safety boundary are underway. Published-site configuration and browser acceptance remain open.
 - **Continue platform work:** start with the [current ledger](apps/pulse/docs/SUNSET_PULSE_OPERATING_PLATFORM_PLAN.md#current-ledger-and-next-session) and [next-week implementation handoff](apps/pulse/docs/PLATFORM_WEEK_2026-09-21.md). Praxis and Keller / Westlake remain domain specifications, not competing platform backlogs.
+- **Connect seller acquisition to daily business work:** the [seller business + daily workspace implementation plan](apps/pulse/docs/SELLER_BUSINESS_DAILY_WORKSPACE_IMPLEMENTATION_PLAN.md) gives the ordered file, schema, API, UI, and acceptance changes for seller requests → Planner/Today → personal Jamie → recorded outcomes. It is an implementation plan, not a shipped-feature report.
 
 This README is the repository entry point, not a live deployment report. A route in source, a completed planning checkbox, or a passing local test does not establish production availability.
 
@@ -27,7 +28,7 @@ This README is the repository entry point, not a live deployment report. A route
 
 Open **Browse all app paths** in Agent Console (`/agent`) or Command Center (`/command-center`). Where the global navbar is present, **Ctrl/Cmd+K** searches the same catalog by feature, path, section, and access note.
 
-The inventory covers **119 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
+The inventory covers **130 page route patterns and 5 non-API handlers**. It excludes APIs under `/api/*`, static assets, and framework metadata endpoints. Parallel slots under `/jamie-vibes` and the intercepted TAH modal reuse their parent or canonical URLs; they are not additional paths.
 
 How to read the directory:
 
@@ -148,6 +149,7 @@ How to read the directory:
 | `/profile` | Profile | Sign-in required |
 | `/dashboard` | Realtor dashboard | Realtor role; Middleware requires the realtor profile role. |
 | `/today` | Realtor Today | Sign-in required; Private personal workspace; planner, earnings summary, goals and reminders. |
+| `/seller-inbox` | Seller inbox | Sign-in required; Private requests from active websites owned by your account; recorded contact, outcomes and source-linked planner tasks. |
 | `/planner` | Realtor Planner | Sign-in required; Private recurring dues, deadlines and appointments. |
 | `/business` | Business scoreboard | Sign-in required; Private manually recorded income and expenses; totals are not tax or brokerage statements. |
 | `/goals` | Personal business goals | Sign-in required; Optional progress goals derived from manually recorded work. |

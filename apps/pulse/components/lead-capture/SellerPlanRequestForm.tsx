@@ -7,15 +7,37 @@ type LeadResponse = { success?: boolean; message?: string; duplicate?: boolean }
 
 export default function SellerPlanRequestForm() {
   const [state, setState] = useState<SubmissionState>('idle');
-  const submissionId = useRef<string | null>(null);
+  const lastSubmission = useRef<{ fingerprint: string; submissionId: string } | null>(null);
   const [feedback, setFeedback] = useState('');
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const values = new FormData(form);
-    submissionId.current ??= globalThis.crypto.randomUUID();
     const search = new URL(window.location.href).searchParams;
+    const requestFields = {
+      offerKey: 'keller-westlake-seller-plan',
+      offerVersion: '2',
+      name: values.get('name'),
+      email: values.get('email'),
+      requestKind: values.get('requestKind'),
+      timing: values.get('timing'),
+      requestedContact: values.get('requestedContact') === 'on',
+      marketingOptIn: values.get('marketingOptIn') === 'on',
+      company: values.get('company'),
+      campaign: {
+        source: search.get('utm_source'),
+        medium: search.get('utm_medium'),
+        campaign: search.get('utm_campaign'),
+        content: search.get('utm_content'),
+      },
+    };
+    // Preserve one request identity after uncertain delivery, but never reuse it
+    // when the visitor edits the details after a failure.
+    const fingerprint = JSON.stringify(requestFields);
+    if (lastSubmission.current?.fingerprint !== fingerprint) {
+      lastSubmission.current = { fingerprint, submissionId: globalThis.crypto.randomUUID() };
+    }
     setState('submitting');
     setFeedback('');
 
@@ -24,23 +46,8 @@ export default function SellerPlanRequestForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          offerKey: 'keller-westlake-seller-plan',
-          offerVersion: '2',
-          submissionId: submissionId.current,
-          name: values.get('name'),
-          email: values.get('email'),
-          requestKind: values.get('requestKind'),
-          timing: values.get('timing'),
-          message: values.get('message') || undefined,
-          requestedContact: values.get('requestedContact') === 'on',
-          marketingOptIn: values.get('marketingOptIn') === 'on',
-          company: values.get('company'),
-          campaign: {
-            source: search.get('utm_source'),
-            medium: search.get('utm_medium'),
-            campaign: search.get('utm_campaign'),
-            content: search.get('utm_content'),
-          },
+          ...requestFields,
+          submissionId: lastSubmission.current!.submissionId,
         }),
       });
       const result = (await response.json()) as LeadResponse;
@@ -48,7 +55,7 @@ export default function SellerPlanRequestForm() {
 
       setState('success');
       setFeedback('Your request is saved. We will follow up about what you selected.');
-      submissionId.current = null;
+      lastSubmission.current = null;
       form.reset();
     } catch (error) {
       setState('error');

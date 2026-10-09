@@ -1,3 +1,5 @@
+import { canContactSeller, readSellerLeadContext } from './sellerLeadContext';
+
 export type LeadStatus = 'new' | 'contacted' | 'touring' | 'nurture' | 'closed' | 'archived';
 
 export type NextBestAction = {
@@ -32,9 +34,39 @@ export type AgentSiteLeadData = {
   responded_at?: string | null;
   response_source?: 'customer_reply' | 'appointment_booked' | null;
   metadata?: Record<string, unknown> | null;
+  sellerOutcomeEvents?: Array<{ id: string; event_type: string; lead_revision: number; occurred_at: string; details: Record<string, unknown> }>;
 };
 
 export function deriveNextBestAction(lead: AgentSiteLeadData): NextBestAction {
+  if (lead.source === 'seller_plan') {
+    const context = readSellerLeadContext(lead);
+    if (lead.status === 'archived' || lead.status === 'closed') {
+      return { urgency: 'low', label: 'Seller request closed', recommendation: 'No contact is suggested for a closed or archived seller request.', channel: 'email' };
+    }
+    if (!context?.requestedContact) {
+      return { urgency: 'low', label: 'Review seller request permissions', recommendation: 'Verify the request and its contact permission before preparing an outbound message.', channel: 'email' };
+    }
+    if (canContactSeller(lead, context)) {
+      const repliedAfterAttempt = Boolean(lead.contact_attempted_at && lead.responded_at
+        && Date.parse(lead.responded_at) > Date.parse(lead.contact_attempted_at));
+      return {
+        urgency: lead.contact_attempted_at ? 'medium' : 'high',
+        label: repliedAfterAttempt ? 'Respond to seller'
+          : context.requestKind === 'pricing_review' ? 'Prepare pricing conversation' : 'Prepare seller-plan response',
+        recommendation: context.requestKind === 'pricing_review'
+          ? 'Acknowledge the request and arrange a conversation before preparing a personally reviewed pricing analysis.'
+          : 'Acknowledge the requested seller plan, confirm the stated timing, and offer a consultation time.',
+        channel: 'email',
+      };
+    }
+    return {
+      urgency: 'low',
+      label: 'Wait for the seller or confirm marketing permission',
+      recommendation: 'The request response has been recorded. Follow up after a seller reply or with separate marketing permission.',
+      channel: 'email',
+    };
+  }
+
   const status = lead.status || 'new';
   const preferred = lead.preferred_contact || 'either';
   const hasPhone = Boolean(lead.phone && lead.phone.trim().length > 0);
@@ -123,6 +155,16 @@ export function generateFollowUpMessage(
   agentName = 'your agent',
 ): { subject?: string; body: string } {
   const firstName = lead.name.split(/\s+/)[0] || lead.name;
+  if (lead.source === 'seller_plan') {
+    const context = readSellerLeadContext(lead);
+    const requestLabel = context?.requestKind === 'pricing_review'
+      ? 'a personally reviewed pricing conversation'
+      : context?.requestKind === 'seller_plan' ? 'a seller preparation and timing plan' : 'your seller request';
+    const timingLabel = context?.timing ? ` You mentioned ${formatSellerTiming(context.timing)}.` : '';
+    const signature = agentName === 'your agent' ? '' : `\n\n${agentName}`;
+    const body = `Hi ${firstName},\n\nThank you for requesting ${requestLabel}.${timingLabel}\n\nWould you be open to a brief conversation about your plans and the next useful step? I can prepare the information after we confirm what would help you most.${signature}`;
+    return channel === 'sms' ? { body } : { subject: 'Your Keller / Westlake seller request', body };
+  }
   const listingTitle = lead.listing_name || (lead.listing_mls_id ? `MLS #${lead.listing_mls_id}` : 'your home search');
 
   if (channel === 'sms') {
@@ -183,4 +225,14 @@ Looking forward to connecting soon!
 Best regards,
 ${agentName}`,
   };
+}
+
+function formatSellerTiming(timing: string) {
+  switch (timing) {
+    case 'within-30-days': return 'you may sell within 30 days';
+    case 'one-to-three-months': return 'you may sell in 1–3 months';
+    case 'three-to-six-months': return 'you may sell in 3–6 months';
+    case 'later': return 'you may sell later this year or beyond';
+    default: return 'you are still exploring';
+  }
 }

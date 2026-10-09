@@ -54,6 +54,33 @@ function isoWeekKey(date: Date): string {
   return `${utcDate.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
+function parseLocalDate(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) throw new Error('A valid local calendar date is required.');
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  if (date.toISOString().slice(0, 10) !== value) throw new Error('A valid local calendar date is required.');
+  return date;
+}
+
+export function localCalendarDateInTimeZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function sellerAcquisitionWeekForLocalDate(localDate: string) {
+  const monday = parseLocalDate(localDate);
+  const weekday = monday.getUTCDay() || 7;
+  monday.setUTCDate(monday.getUTCDate() - weekday + 1);
+  const weekKey = monday.toISOString().slice(0, 10);
+  return weeklyWork.map((item) => ({
+    ...item,
+    key: `seller-acquisition:${weekKey}:${item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+  }));
+}
+
 export function sellerAcquisitionWeek(date = new Date()) {
   const weekKey = isoWeekKey(date);
   return weeklyWork.map((item) => ({ ...item, key: `seller-acquisition:${weekKey}:${item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}` }));

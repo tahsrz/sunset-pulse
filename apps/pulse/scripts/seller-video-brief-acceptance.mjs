@@ -71,6 +71,16 @@ export async function sellerVideoBriefAcceptance(sql) {
   const checkpointId = await sql(`SELECT id FROM public.platform_checkpoints WHERE run_id='${runId}';`);
   const decide = (actor, checkpoint, decision, revision = 1, submission = randomUUID()) =>
     sql(`SELECT id FROM public.platform_respond_seller_video_review('${actor}','${workspace}','${checkpoint}',${revision},'${submission}',${decision});`);
+  const recordPublication = (actor, id, platform = 'tiktok', url = 'https://www.tiktok.com/@fixture/video/123456', publishedAt = '2026-10-05T12:00:00Z', key = randomUUID()) =>
+    sql(`SELECT reused::text FROM public.platform_record_seller_video_publication('${actor}','${workspace}','${id}',1,'${platform}',${quote(url)},${quote(publishedAt)}::timestamptz,'${key}');`);
+  const outcomeCapturedAt = await sql("SELECT (date_trunc('minute',now())-interval '1 minute')::text;");
+  const recordOutcome = (actor, publicationId, values = {}, key = randomUUID()) => sql(`
+    SELECT reused::text FROM public.platform_record_seller_video_publication_outcome(
+      '${actor}','${workspace}','${publicationId}',${quote(outcomeCapturedAt)}::timestamptz,
+      ${values.views ?? 120},${values.engagements ?? 18},${values.linkClicks ?? 4},
+      ${values.sellerPlanRequests ?? 2},${quote(values.sourceNote ?? 'Entered from visible platform post insights.')},'${key}'
+    );`);
+  await assert.rejects(recordPublication(owner, briefId), /approved review for this exact brief revision is required/);
   await assert.rejects(decide(member, checkpointId, true), /Workspace action denied/);
   const approvalSubmission = randomUUID();
   assert.equal(await decide(reviewer, checkpointId, true, 1, approvalSubmission), checkpointId, 'authorized reviewer can approve the pinned draft');
@@ -82,6 +92,56 @@ export async function sellerVideoBriefAcceptance(sql) {
   const completionLease = await sql(`SELECT lease_token FROM public.workflow_jobs WHERE id='${completionJob}';`);
   assert.equal(await sql(`SELECT run_status FROM public.platform_tick_run('${completionJob}','${completionLease}');`), 'completed');
   assert.equal(await sql(`SELECT count(*) FROM public.platform_effect_receipts WHERE run_id='${runId}';`), '0', 'human review does not create or execute provider effects');
+  await assert.rejects(recordPublication(member, briefId), /Workspace action denied/);
+  await assert.rejects(recordPublication(stranger, briefId), /Workspace action denied/);
+  await assert.rejects(recordPublication(owner, briefId, 'youtube-shorts'), /Platform, claim evidence, and media permission must match/);
+  const publicationRequest = randomUUID();
+  assert.equal(await recordPublication(owner, briefId, 'tiktok', undefined, undefined, publicationRequest), 'false', 'owner can record an already-published URL only after approval');
+  assert.equal(await recordPublication(owner, briefId, 'tiktok', undefined, undefined, publicationRequest), 'true', 'exact publication retries reuse the immutable record');
+  await assert.rejects(recordPublication(owner, briefId, 'tiktok', 'https://www.tiktok.com/@fixture/video/changed', undefined, publicationRequest), /idempotency key was reused with different content/i);
+  await assert.rejects(recordPublication(owner, briefId, 'tiktok', 'https://www.tiktok.com/@fixture/video/conflicting', undefined, randomUUID()), /conflicts with an existing request or platform post/i);
+  assert.equal(await sql(`SELECT count(*) FROM public.seller_video_publication_records WHERE workspace_id='${workspace}' AND brief_id='${briefId}';`), '1');
+  assert.equal(await sql(`SELECT count(*) FROM public.platform_effect_receipts WHERE run_id='${runId}';`), '0', 'publication logging creates no provider or outbound effect');
+  const publicationId = await sql(`SELECT id FROM public.seller_video_publication_records WHERE workspace_id='${workspace}' AND brief_id='${briefId}';`);
+  await assert.rejects(recordOutcome(member, publicationId), /Workspace action denied/);
+  await assert.rejects(recordOutcome(stranger, publicationId), /Workspace action denied/);
+  await assert.rejects(recordOutcome(owner, publicationId, { views: 2, engagements: 3 }), /Seller video outcome snapshot is invalid/);
+  const outcomeRequest = randomUUID();
+  assert.equal(await recordOutcome(owner, publicationId, {}, outcomeRequest), 'false', 'owner can save bounded manual outcome measurements');
+  assert.equal(await recordOutcome(owner, publicationId, {}, outcomeRequest), 'true', 'exact outcome retries reuse the immutable snapshot');
+  await assert.rejects(recordOutcome(owner, publicationId, { views: 121 }, outcomeRequest), /idempotency key was reused with different content/i);
+  await assert.rejects(recordOutcome(owner, publicationId, { views: 121 }), /conflicts with an existing capture/i);
+  assert.equal(await sql(`SELECT count(*) FROM public.seller_video_publication_outcomes WHERE workspace_id='${workspace}' AND publication_id='${publicationId}';`), '1');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_publication_outcomes','SELECT');`), 'f', 'outcome snapshots are private behind the owner/admin API');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_publication_outcomes','INSERT');`), 'f', 'clients cannot directly write outcome snapshots');
+
+  const siteAgent = `seller-video-${randomUUID()}`;
+  const sellerLeadId = randomUUID();
+  const foreignAgent = `seller-video-foreign-${randomUUID()}`;
+  const foreignLeadId = randomUUID();
+  await sql(`
+    INSERT INTO public.site_config(id,agent_id,owner_id,status) VALUES (gen_random_uuid(),${quote(siteAgent)},'${owner}','active'),(gen_random_uuid(),${quote(foreignAgent)},'${stranger}','active');
+    INSERT INTO public.agent_site_leads(id,agent_id,site,source,name,email,message,metadata)
+      VALUES ('${sellerLeadId}',${quote(siteAgent)},'seller-video-acceptance','seller_plan','Fixture Seller','seller@example.test','Synthetic seller inquiry','{"sellerPlan":{"requestKind":"seller_plan"}}'::jsonb),
+        ('${foreignLeadId}',${quote(foreignAgent)},'seller-video-foreign','seller_plan','Other Seller','other@example.test','Synthetic foreign seller inquiry','{}'::jsonb);
+  `);
+  const recordAttribution = (actor, leadId, note = 'Seller identified this post in their inquiry.', key = randomUUID()) => sql(`
+    SELECT reused::text FROM public.platform_record_seller_lead_publication_attribution(
+      '${actor}','${workspace}','${publicationId}','${leadId}',${quote(note)},'${key}'
+    );
+  `);
+  await assert.rejects(recordAttribution(reviewer, sellerLeadId), /Workspace action denied/);
+  await assert.rejects(recordAttribution(member, sellerLeadId), /Workspace action denied/);
+  await assert.rejects(recordAttribution(owner, foreignLeadId), /Seller inquiry is unavailable to this site owner/);
+  const attributionKey = randomUUID();
+  assert.equal(await recordAttribution(owner, sellerLeadId, undefined, attributionKey), 'false', 'owner records a manually supplied relationship to a known post');
+  assert.equal(await recordAttribution(owner, sellerLeadId, undefined, attributionKey), 'true', 'exact attribution retries reuse the immutable record');
+  await assert.rejects(recordAttribution(owner, sellerLeadId, 'A changed source note', attributionKey), /idempotency key was reused with different content/i);
+  await assert.rejects(recordAttribution(owner, sellerLeadId, 'The owner names another post.', randomUUID()), /different immutable attribution/i);
+  assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_publication_attributions WHERE workspace_id='${workspace}';`), '1');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_lead_publication_attributions','SELECT');`), 'f', 'attribution records are private behind the owner API');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_lead_publication_attributions','INSERT');`), 'f', 'clients cannot directly write attribution records');
+  assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_publication_attributions WHERE workspace_id='${workspace}' AND lead_id='${sellerLeadId}' AND to_jsonb(seller_lead_publication_attributions)->>'email' IS NULL;`), '1', 'persisted attribution contains only the lead ID rather than copied contact fields');
 
   const staleBrief = { ...brief, briefId: randomUUID() };
   await save(owner, workspace, staleBrief);
@@ -118,6 +178,8 @@ export async function sellerVideoBriefAcceptance(sql) {
 
   assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_briefs','INSERT');`), 'f', 'clients must not insert directly');
   assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_briefs','UPDATE');`), 'f', 'clients must not update immutable revisions');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_publication_records','SELECT');`), 'f', 'publication records are private behind the owner/admin API');
+  assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.seller_video_publication_records','INSERT');`), 'f', 'clients cannot write publication records directly');
   assert.equal(await sql(`SELECT has_table_privilege('service_role','public.platform_memberships','SELECT');`), 't', 'server-side workspace resolution can read memberships');
   assert.equal(await sql(`SELECT has_table_privilege('service_role','public.platform_workspaces','SELECT');`), 't', 'server-side workspace resolution can read workspace metadata');
   assert.equal(await sql(`SELECT has_table_privilege('authenticated','public.platform_memberships','SELECT');`), 'f', 'browser clients cannot enumerate workspace memberships directly');

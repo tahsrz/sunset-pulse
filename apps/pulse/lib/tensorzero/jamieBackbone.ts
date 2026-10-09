@@ -7,6 +7,7 @@ import {
   shouldUseJamieKnowledgeFallback,
 } from '@/lib/ai/jamieKnowledgeFallback';
 import { chooseJamieModelRoute } from '@/lib/ai/jamieModelRouting';
+import { runPersonalJamie } from '@/lib/ai/jamiePersonal.server';
 
 type JamieBackboneInput = {
   messages: any[];
@@ -16,6 +17,8 @@ type JamieBackboneInput = {
   isMock?: boolean;
   agentId?: string | null;
   personaMode?: 'general' | 'guarded_real_estate';
+  personalContext?: { actorId: string; workspaceId: string; timeZone: string };
+  signal?: AbortSignal;
 };
 
 type JamieBackboneResult = {
@@ -31,6 +34,19 @@ export async function runTensorZeroJamieChat(input: JamieBackboneInput): Promise
     : [];
   const isDevMode = Boolean(input.isDevMode);
   const lastUserMessage = chatMessages.filter((message: any) => message?.role === 'user').at(-1);
+
+  if (input.personalContext) {
+    const personal = await runPersonalJamie({ ...input.personalContext, messages: chatMessages, signal: input.signal });
+    const proposalCount = personal.personal.proposals.length;
+    const tensorzero = recordBackboneTurn({
+      messages: [{ role: 'user', content: '[redacted personal realtor request]' }],
+      propertyData: undefined, memoryContext: undefined, isDevMode: false,
+      response: { role: 'assistant', proposalCount },
+      content: `[redacted personal realtor response; proposals=${proposalCount}]`,
+      toolResults: [],
+    });
+    return { body: { ...personal, tensorzero, model_routing: { tier: 'personal_private' } } };
+  }
 
   if (input.isMock) {
     const lastUserMsg = chatMessages.filter((message: any) => message?.role === 'user').slice(-1)[0];

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { requireWorkspaceAccess, WorkspaceAccessError } from '@/lib/platform/access/workspaceAccess.server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { readSellerVideoJson } from '@/lib/marketing/sellerVideoRouteBody.server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -17,7 +18,9 @@ const requestSchema = z.object({
 export async function POST(request: NextRequest) {
   const access = await requireSignedInUser(request);
   if (isAuthResponse(access)) return access;
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  const { body, response } = await readSellerVideoJson(request, 'Seller video review request rejected');
+  if (response) return response;
+  const parsed = requestSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'Invalid seller video review request.' }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } });
 
   try {

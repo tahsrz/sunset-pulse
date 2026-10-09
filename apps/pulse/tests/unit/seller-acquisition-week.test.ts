@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sellerAcquisitionWeek } from '@/lib/marketing/sellerAcquisitionWeek';
+import { localCalendarDateInTimeZone, sellerAcquisitionWeek, sellerAcquisitionWeekForLocalDate } from '@/lib/marketing/sellerAcquisitionWeek';
 
 describe('seller acquisition weekly backlog preset', () => {
   it('creates six scoped, human-owned items with stable ISO-week provenance', () => {
@@ -20,5 +20,21 @@ describe('seller acquisition weekly backlog preset', () => {
     const after = sellerAcquisitionWeek(new Date('2026-10-05T00:01:00.000Z'))[0].key;
     expect(before).toContain('2026-W40');
     expect(after).toContain('2026-W41');
+  });
+
+  it('uses the seller-local Monday across a Sunday and Monday boundary', () => {
+    expect(sellerAcquisitionWeekForLocalDate('2026-10-04')[0].key).toContain('2026-09-28');
+    expect(sellerAcquisitionWeekForLocalDate('2026-10-05')[0].key).toContain('2026-10-05');
+  });
+
+  it('rejects impossible local dates and keeps a DST week keyed to its calendar Monday', () => {
+    expect(() => sellerAcquisitionWeekForLocalDate('2026-02-30')).toThrow('valid local calendar date');
+    expect(sellerAcquisitionWeekForLocalDate('2026-03-08')[0].key).toContain('2026-03-02');
+    expect(sellerAcquisitionWeekForLocalDate('2026-11-01')[0].key).toContain('2026-10-26');
+  });
+
+  it('derives the calendar date from the configured timezone at midnight boundaries', () => {
+    expect(localCalendarDateInTimeZone(new Date('2026-10-05T04:30:00.000Z'), 'America/Chicago')).toBe('2026-10-04');
+    expect(localCalendarDateInTimeZone(new Date('2026-10-05T06:30:00.000Z'), 'America/Chicago')).toBe('2026-10-05');
   });
 });

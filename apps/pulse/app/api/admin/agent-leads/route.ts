@@ -5,20 +5,24 @@ import { z } from 'zod';
 import { publicGuideDispositionIdSchema } from '@/lib/ai/publicGuideConversionContract';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { resolveOperatorAgentId } from '@/lib/intelligence/agentNotificationStore';
+import { AgentLeadActionError, applyAgentLeadAction } from '@/lib/sites/agentLeadActions.server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const leadIdSchema = z.string().uuid();
+const requestKeySchema = z.string().uuid();
 const pipelineStatusSchema = z.enum(['new', 'contacted', 'touring', 'nurture', 'closed', 'archived']);
 const valueSourceSchema = z.enum(['operator_estimate', 'crm', 'closing_statement']);
 
 const updateLeadSchema = z.discriminatedUnion('action', [
-  z.object({ id: leadIdSchema, action: z.enum(['review', 'archive', 'restore']) }).strict(),
-  z.object({ id: leadIdSchema, action: z.literal('set_status'), status: pipelineStatusSchema }).strict(),
-  z.object({ id: leadIdSchema, action: z.literal('record_contact'), channel: z.enum(['call', 'email', 'sms']) }).strict(),
-  z.object({ id: leadIdSchema, action: z.literal('record_response'), source: z.enum(['customer_reply', 'appointment_booked']) }).strict(),
-  z.object({ id: leadIdSchema, action: z.literal('note'), note: z.string().trim().max(2000).optional() }).strict(),
+  z.object({ id: leadIdSchema, expectedRevision: z.number().int().positive(), requestKey: requestKeySchema, action: z.enum(['review', 'archive', 'restore']) }).strict(),
+  z.object({ id: leadIdSchema, expectedRevision: z.number().int().positive(), requestKey: requestKeySchema, action: z.literal('set_status'), status: pipelineStatusSchema }).strict(),
+  z.object({ id: leadIdSchema, expectedRevision: z.number().int().positive(), requestKey: requestKeySchema, action: z.literal('record_contact'), channel: z.enum(['call', 'email', 'sms']) }).strict(),
+  z.object({ id: leadIdSchema, expectedRevision: z.number().int().positive(), requestKey: requestKeySchema, action: z.literal('record_response'), source: z.enum(['customer_reply', 'appointment_booked']) }).strict(),
+  z.object({ id: leadIdSchema, expectedRevision: z.number().int().positive(), requestKey: requestKeySchema, action: z.literal('note'), note: z.string().trim().max(2000).optional() }).strict(),
   z.object({
     id: leadIdSchema,
+    expectedRevision: z.number().int().positive(),
+    requestKey: requestKeySchema,
     action: z.literal('set_value'),
     estimatedPipelineValue: z.number().finite().nonnegative().max(999999999999.99).nullable(),
     closedRevenue: z.number().finite().nonnegative().max(999999999999.99).nullable(),
@@ -27,12 +31,12 @@ const updateLeadSchema = z.discriminatedUnion('action', [
   }).strict(),
   z.object({
     id: leadIdSchema,
+    expectedRevision: z.number().int().positive(),
+    requestKey: requestKeySchema,
     action: z.literal('disposition'),
     disposition: publicGuideDispositionIdSchema,
   }).strict(),
 ]);
-type LeadUpdateAction = z.infer<typeof updateLeadSchema>;
-
 export async function PATCH(request: NextRequest) {
   const access = await requireOperatorRouteAccess(request);
   if (isAuthResponse(access)) return access;
@@ -52,12 +56,11 @@ export async function PATCH(request: NextRequest) {
   const scopedAgentId = access.user?.role === 'realtor'
     ? await resolveOperatorAgentId(access)
     : null;
-  const now = new Date().toISOString();
   const auditUser = operatorAuditUser(access);
 
   const { data: existing, error: readError } = await supabaseAdmin
     .from('agent_site_leads')
-    .select('agent_id, funnel_id, metadata, internal_note, source, status, estimated_pipeline_value, closed_revenue, value_currency, value_source')
+    .select('agent_id, funnel_id, metadata, internal_note, source, status, revision')
     .eq('id', id)
     .single();
 
@@ -67,65 +70,39 @@ export async function PATCH(request: NextRequest) {
   if (scopedAgentId && existing.agent_id !== scopedAgentId) {
     return NextResponse.json({ ok: false, error: 'Lead not found.' }, { status: 404 });
   }
-
+  if (existing.source === 'seller_plan') {
+    const { data: site } = await supabaseAdmin.from('site_config').select('owner_id,status')
+      .eq('agent_id', existing.agent_id).maybeSingle();
+    if (!access.user || site?.owner_id !== access.user.id || site.status !== 'active') {
+      return NextResponse.json({ ok: false, error: 'Seller business actions are available to the current site owner.' }, { status: 403 });
+    }
+    if (action === 'set_status' && parsed.data.action === 'set_status' && parsed.data.status === 'closed') {
+      return NextResponse.json({ ok: false, error: 'Record the actual seller closing date and transaction reference to close a seller request.' }, { status: 409 });
+    }
+  }
   if (action === 'disposition' && existing?.source !== 'jamie_public_guide') {
     return NextResponse.json({ ok: false, error: 'Lead disposition is only available for Jamie handoffs.' }, { status: 400 });
   }
 
-  const update = {
-    ...buildLeadUpdate(parsed.data, now, existing?.status),
-    ...(action === 'set_value' ? { valued_by: auditUser.email || auditUser.name || auditUser.userId } : {}),
-    ...(action === 'record_contact' ? { contact_recorded_by: auditUser.email || auditUser.name || auditUser.userId } : {}),
-    ...(action === 'record_response' ? { response_recorded_by: auditUser.email || auditUser.name || auditUser.userId } : {}),
-  };
-  const existingMetadata = ((existing?.metadata || {}) as Record<string, unknown>);
-  const existingAuditTrail = Array.isArray(existingMetadata.auditTrail) ? existingMetadata.auditTrail : [];
-
-  const auditEntry = {
-    id: `audit-${Date.now()}`,
-    action: action === 'set_status' ? `status_changed:${parsed.data.status}` : action,
-    timestamp: now,
-    actor: auditUser.email || auditUser.name || auditUser.userId || 'Operator',
-    previousStatus: existing?.status || 'new',
-    newStatus: update.status || existing?.status || 'new',
-    note: action === 'note' ? parsed.data.note : undefined,
-    valueSource: action === 'set_value' ? parsed.data.valueSource : undefined,
-    channel: action === 'record_contact' ? parsed.data.channel : undefined,
-    responseSource: action === 'record_response' ? parsed.data.source : undefined,
-  };
-
-  const metadata = {
-    ...existingMetadata,
-    lastOperatorAction: {
-      action,
-      at: now,
-      by: auditUser,
-    },
-    auditTrail: [auditEntry, ...existingAuditTrail].slice(0, 30),
-    ...(action === 'disposition' ? {
-      publicGuideDisposition: {
-        value: parsed.data.disposition,
-        at: now,
-        by: auditUser,
-      },
-    } : {}),
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from('agent_site_leads')
-    .update({
-      ...update,
-      metadata,
-    })
-    .eq('id', id)
-    .select('id, status, internal_note, reviewed_at, archived_at, contact_attempted_at, contact_channel, contact_recorded_by, responded_at, response_source, response_recorded_by, estimated_pipeline_value, closed_revenue, value_currency, value_source, valued_at, valued_by, metadata')
-    .single();
-
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  let result: { ok: true; replayed: boolean; lead: Record<string, unknown> };
+  try {
+    result = await applyAgentLeadAction(auditUser.userId, parsed.data, auditUser);
+  } catch (error) {
+    if (error instanceof AgentLeadActionError) {
+      const status = error.code === 'P0002' ? 404
+        : error.code === '42501' ? 403
+          : error.code === '22023' || error.code === '22P02' ? 400
+            : error.code === '40001' || error.code === '23505' ? 409 : 500;
+      return NextResponse.json({ ok: false, error: status === 404 ? 'Lead not found.' : status === 403
+        ? 'Seller business actions are available to the current site owner.'
+        : status === 409 ? 'This lead changed or this action key was already used. Reload before saving.'
+          : status === 400 ? 'Invalid lead action.' : 'Lead update failed.' }, { status });
+    }
+    console.warn('[AGENT_LEAD_ACTION]', error instanceof Error ? error.name : 'ProviderError');
+    return NextResponse.json({ ok: false, error: 'Lead update failed.' }, { status: 500 });
   }
 
-  if (action === 'disposition') {
+  if (!result.replayed && action === 'disposition') {
     try {
       const { error: eventError } = await supabaseAdmin.rpc('log_intelligence_event', {
         p_type: 'PUBLIC_GUIDE_LEAD_DISPOSITION',
@@ -142,73 +119,14 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  if (action === 'record_contact') {
+  if (!result.replayed && action === 'record_contact') {
     await logEngagementEvent({ id, auditUser, existing, type: 'contact', detail: parsed.data.channel });
   }
-  if (action === 'record_response') {
+  if (!result.replayed && action === 'record_response') {
     await logEngagementEvent({ id, auditUser, existing, type: 'response', detail: parsed.data.source });
   }
 
-  return NextResponse.json({ ok: true, lead: data });
-}
-
-function buildLeadUpdate(
-  data: LeadUpdateAction,
-  now: string,
-  existingStatus?: string | null,
-) {
-  switch (data.action) {
-    case 'set_status':
-      return {
-        status: data.status,
-        ...(data.status === 'archived' ? { archived_at: now } : { archived_at: null }),
-        ...(data.status !== 'new' && !existingStatus ? { reviewed_at: now } : {}),
-      };
-    case 'review':
-      return {
-        status: 'contacted',
-        reviewed_at: now,
-        archived_at: null,
-      };
-    case 'archive':
-      return {
-        status: 'archived',
-        archived_at: now,
-      };
-    case 'restore':
-      return {
-        status: 'new',
-        archived_at: null,
-      };
-    case 'disposition':
-      return existingStatus === 'new' ? { status: 'contacted', reviewed_at: now } : {};
-    case 'note':
-      return {
-        internal_note: data.note || '',
-      };
-    case 'record_contact':
-      return {
-        contact_attempted_at: now,
-        contact_channel: data.channel,
-        ...(existingStatus === 'new' ? { status: 'contacted', reviewed_at: now } : {}),
-      };
-    case 'record_response':
-      return {
-        responded_at: now,
-        response_source: data.source,
-        ...(data.source === 'appointment_booked' && existingStatus !== 'closed' ? { status: 'touring' } : {}),
-      };
-    case 'set_value':
-      return {
-        estimated_pipeline_value: data.estimatedPipelineValue,
-        closed_revenue: data.closedRevenue,
-        value_currency: data.currency,
-        value_source: data.valueSource,
-        valued_at: now,
-      };
-    default:
-      return {};
-  }
+  return NextResponse.json(result);
 }
 
 function warnDispositionEvent(error: unknown) {

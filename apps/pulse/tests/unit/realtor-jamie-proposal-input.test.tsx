@@ -22,4 +22,26 @@ describe('Jamie financial drafts', () => {
     expect(await screen.findByText('Still needed before saving')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Confirm and save' })).not.toBeInTheDocument();
   });
+
+  it('reuses a confirmed draft request key after an uncertain save', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, result: {
+      kind: 'goal_proposal', missingFields: [], editableFields: { metric: 'net_income', target: 10000000, year: 2026 },
+      preview: { note: 'Draft only.' }, targetRevision: null,
+      apiPayload: { id: null, metric: 'net_income', year: 2026, target: 10000000, expectedRevision: null },
+      confirmation: 'Draft only.',
+    } }) }));
+    const submit = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    render(<JamieProposalCard kind="goal" busy={false} submit={submit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare preview' }));
+    await screen.findByRole('button', { name: 'Confirm and save' });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm and save' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm and save' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
+
+    const first = submit.mock.calls[0][2] as { requestKey: string };
+    const second = submit.mock.calls[1][2] as { requestKey: string };
+    expect(second.requestKey).toBe(first.requestKey);
+    expect(submit.mock.calls.map(([url]) => url)).toEqual(['/api/realtor/goals', '/api/realtor/goals']);
+  });
 });

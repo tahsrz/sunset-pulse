@@ -4,6 +4,7 @@ import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireWorkspaceAccess, WorkspaceAccessError } from '@/lib/platform/access/workspaceAccess.server';
 import { videoBriefSchema } from '@/lib/marketing/videoBriefSchema';
+import { readSellerVideoJson } from '@/lib/marketing/sellerVideoRouteBody.server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -54,7 +55,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireSignedInUser(request);
   if (isAuthResponse(access)) return access;
-  const parsed = saveRequestSchema.safeParse(await request.json().catch(() => null));
+  const { body, response } = await readSellerVideoJson(request, 'Seller video draft request rejected');
+  if (response) return response;
+  const parsed = saveRequestSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'Invalid seller video brief draft.', details: parsed.error.flatten() }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } });
   if (parsed.data.brief.reviewStatus !== 'draft' || parsed.data.brief.reviewedByUserId || parsed.data.brief.reviewedAt) {
     return NextResponse.json({ ok: false, error: 'Only unreviewed draft briefs can be saved here.' }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } });

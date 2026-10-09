@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseDotenv } from 'dotenv';
 import { command, withDockerService } from './docker-acceptance.mjs';
 
 const appRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -14,7 +15,20 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans', 'seller-video-briefs'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs');
+assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business');
+const liveJamie = process.argv.includes('--live-jamie');
+const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
+assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
+  '--seller-schedule-recovery-only requires seller-business without live Jamie or homepage acceptance.');
+assert(!liveJamie || suite === 'seller-business', '--live-jamie requires the seller-business suite.');
+let configuredGroqKey = process.env.GROQ_API_KEY || '';
+if (liveJamie && !configuredGroqKey) {
+  const localEnvPath = join(appRoot, '.env.local');
+  try { configuredGroqKey = parseDotenv(await readFile(localEnvPath, 'utf8')).GROQ_API_KEY || ''; }
+  catch { configuredGroqKey = ''; }
+}
+assert(!liveJamie || Boolean(configuredGroqKey), '--live-jamie requires GROQ_API_KEY from the configured local environment.');
+assert(!liveJamie || !process.argv.includes('--homepage'), '--live-jamie cannot be combined with homepage acceptance.');
 const startedAt = Date.now();
 const projectId = `pulse_auth_${randomUUID().replaceAll('-', '').slice(0, 8)}`;
 const temporaryRoot = await mkdtemp(join(tmpdir(), `sunset-pulse-${projectId}-`));
@@ -145,7 +159,11 @@ try {
       join(appRoot, 'scripts', 'platform-local-auth-acceptance.mjs'),
       '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`,
       '--origin', `http://127.0.0.1:${ports[7]}`,
-      ...(suite === 'seller-video-briefs' ? ['--seller-video-only'] : ['--realtor-only']),
+      ...(suite === 'seller-video-briefs' ? ['--seller-video-only']
+        : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
+      ...(liveJamie ? ['--live-jamie'] : []),
+      ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
+      ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });
     if (process.argv.includes('--homepage')) await withDockerService('mongo-test', async (container) => {
@@ -153,7 +171,7 @@ try {
       assert.match(port, /^127\.0\.0\.1:\d+$/);
       await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: `mongodb://${port}/pulse_homepage_acceptance` });
     });
-    else await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: '' });
+    else await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: '', ...(liveJamie ? { GROQ_API_KEY: configuredGroqKey } : {}) });
   }
   console.log('PASS: disposable authenticated Supabase acceptance completed.');
 } finally {

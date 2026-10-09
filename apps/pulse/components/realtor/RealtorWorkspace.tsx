@@ -9,9 +9,18 @@ import { WeeklyReviewAction } from './WeeklyReview';
 import { GoalEditor } from './GoalEditor';
 import { JamieProposalCard } from './JamieProposalCard';
 import { ModalSurface } from './ModalSurface';
+import { SellerDailyPanel } from './SellerDailyPanel';
+import { SellerInbox } from './SellerInbox';
 import type { ProgressGoal } from '@/lib/realtor-workspace/progress';
+import { plannerReadUrl } from '@/lib/realtor-workspace/plannerNavigation';
+import { PlannerCompleteAction } from './PlannerCompleteAction';
+import { SellerDailyRoutine } from './SellerDailyRoutine';
+import { PlannerReminderActions } from './PlannerReminderActions';
+import { todayAgendaResultSchema, type TodayAgendaResult } from '@/lib/realtor-workspace/todayAgendaContract';
+import { sellerDailyResultSchema } from '@/lib/realtor-workspace/sellerDailyContract';
+import { PlannerTaskLinks } from './PlannerTaskLinks';
 
-type Section = 'today' | 'planner' | 'business' | 'goals';
+type Section = 'today' | 'planner' | 'business' | 'goals' | 'seller-inbox';
 type Preferences = {
   workspace_id: string; time_zone: string; reminders_enabled: boolean; gamification_enabled: boolean;
   celebrations_enabled: boolean; hide_amounts_on_today: boolean; records_start_date: string | null; revision: number;
@@ -19,6 +28,7 @@ type Preferences = {
 type Occurrence = {
   id: string; effective_date: string; effective_time: string | null; title_snapshot: string;
   kind_snapshot: string; expected_amount_cents: number | null; status: string; revision: number; property_id?: string | null; property_label?: string | null;
+  seller_source_available?: boolean; seller_lead?: { id: string } | null;
 };
 type FinancialEntry = {
   id: string; kind: 'commission' | 'expense' | 'expected_commission'; effective_date: string;
@@ -26,6 +36,7 @@ type FinancialEntry = {
 };
 type RealtorPropertyOption = { id: string; label: string; propertyKind: 'residential' | 'land'; status: 'active' | 'archived' };
 type PropertySprintTask = { id: string; title: string; priority: number; estimateMinutes: number | null; taskKind: string; propertyId: string; propertyLabel: string; stale: boolean };
+type SellerAcquisitionTask = { id: string; title: string; priority: number; estimateMinutes: number | null; sourceId: string };
 
 const todayLocal = (timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Chicago') => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
@@ -35,18 +46,22 @@ const todayLocal = (timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone 
 const money = (value: string | number | null | undefined) => formatUsdCents(String(value || '0'));
 const key = () => crypto.randomUUID();
 
+class RealtorApiError extends Error {
+  constructor(message: string, public readonly status: number) { super(message); }
+}
+
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init, cache: 'no-store',
     ...(init?.body ? { headers: { 'Content-Type': 'application/json', ...init.headers } } : {}),
   });
   const body = await response.json().catch(() => null);
-  if (!response.ok || !body?.ok) throw new Error(body?.error || 'This request could not be completed.');
+  if (!response.ok || !body?.ok) throw new RealtorApiError(body?.error || 'This request could not be completed.', response.status);
   return body.result as T;
 }
 
 function SectionNav({ section }: { section: Section }) {
-  const links: Array<[Section, string]> = [['today', 'Today'], ['planner', 'Planner'], ['business', 'Business'], ['goals', 'Goals']];
+  const links: Array<[Section, string]> = [['today', 'Today'], ['seller-inbox', 'Seller inbox'], ['planner', 'Planner'], ['business', 'Business'], ['goals', 'Goals']];
   return <nav aria-label="Realtor workspace" className="flex flex-wrap gap-2">{links.map(([id, label]) => (
     <Link key={id} href={'/' + id} aria-current={section === id ? 'page' : undefined}
       className={'rounded-full px-4 py-2 text-sm font-semibold transition ' + (section === id ? 'bg-cyan-300 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/10')}>
@@ -79,7 +94,7 @@ const realtorPlannerTemplates = [
   { label: 'Weekly business review', kind: 'weekly_review', frequency: 'weekly' },
 ] as const;
 
-export default function RealtorWorkspace({ section }: { section: Section }) {
+export default function RealtorWorkspace({ section, sellerLeadId, plannerDate }: { section: Section; sellerLeadId?: string; plannerDate?: string }) {
   const router = useRouter();
   const [preferences, setPreferences] = useState<Preferences | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +108,14 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
   const [selectedBusinessYear, setSelectedBusinessYear] = useState<number | null>(null);
   const [paymentFor, setPaymentFor] = useState<Occurrence | null>(null);
   const [plannerReloadToken, setPlannerReloadToken] = useState(0);
+  const [agendaNeedsRefresh, setAgendaNeedsRefresh] = useState(false);
+  const reminderReloadPending = useRef(false);
+  const markScheduleSaved = useCallback(() => setAgendaNeedsRefresh(true), []);
+  const applyAgenda = useCallback((agenda: TodayAgendaResult) => {
+    if (agenda.status !== 'available') { setAgendaNeedsRefresh(true); return; }
+    setData((current: any) => current ? { ...current, agenda } : current);
+    setAgendaNeedsRefresh(false);
+  }, []);
 
   const request = useCallback(async <T,>(url: string, init?: RequestInit) => api<T>(url, init), []);
   useEffect(() => {
@@ -105,10 +128,11 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
       const currentYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: value.time_zone, year: 'numeric' }).format(new Date()));
       const year = section === 'business' ? selectedBusinessYear ?? currentYear : currentYear;
       const applyData = (next: unknown) => { if (active) setData(next); };
-      if (section === 'today') applyData(await request('/api/realtor/today'));
+      if (section === 'seller-inbox') applyData(null);
+      else if (section === 'today') applyData(await request('/api/realtor/today'));
       else if (section === 'planner') {
         const today = todayLocal(value.time_zone);
-        applyData(await request('/api/realtor/planner?from=' + today.slice(0, 4) + '-01-01&through=' + today.slice(0, 4) + '-12-31&limit=100'));
+        applyData(await request(plannerReadUrl(today, plannerDate)));
       } else if (section === 'business') {
         const [summary, ledger] = await Promise.all([
           request('/api/realtor/business-summary?year=' + year),
@@ -125,17 +149,22 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
     }).catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : 'Unable to load your workspace.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [request, section, refresh, selectedBusinessYear]);
+  }, [request, section, refresh, selectedBusinessYear, plannerDate]);
 
-  const submit = async (url: string, method: 'POST' | 'PATCH', value: unknown, success: string) => {
+  const submitResult = async (url: string, method: 'POST' | 'PATCH', value: unknown, success: string): Promise<boolean | 'conflict'> => {
     setBusy(true); setError(''); setNotice('');
     try {
       await request(url, { method, body: JSON.stringify(value) });
       setNotice(success); setRefresh((revision) => revision + 1); router.refresh();
       return true;
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to save this change.'); return false; }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to save this change.');
+      return reason instanceof RealtorApiError && reason.status === 409 ? 'conflict' : false;
+    }
     finally { setBusy(false); }
   };
+  const submit = async (url: string, method: 'POST' | 'PATCH', value: unknown, success: string) =>
+    (await submitResult(url, method, value, success)) === true;
 
   const setupWorkspace = () => {
     setBusy(true); setError('');
@@ -155,7 +184,7 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
     try {
       const today = todayLocal(preferences.time_zone);
       const page = await request<{ items: Occurrence[]; nextCursor: string | null }>(
-        '/api/realtor/planner?from=' + today.slice(0, 4) + '-01-01&through=' + today.slice(0, 4) + '-12-31&limit=100&cursor=' + encodeURIComponent(cursor),
+        plannerReadUrl(today, plannerDate, { kind: 'cursor', value: cursor }),
       );
       setData((current: any) => {
         if (current?.nextCursor !== cursor) return current;
@@ -173,7 +202,7 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
     try {
       const today = todayLocal(preferences.time_zone);
       const page = await request<{ projected: any[]; projectionsTruncated: boolean; nextProjectionCursor: string | null }>(
-        '/api/realtor/planner?from=' + today.slice(0, 4) + '-01-01&through=' + today.slice(0, 4) + '-12-31&limit=100&projectionCursor=' + encodeURIComponent(cursor),
+        plannerReadUrl(today, plannerDate, { kind: 'projectionCursor', value: cursor }),
       );
       setData((current: any) => ({
         ...current,
@@ -191,12 +220,32 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
     setError('');
     try {
       const today = todayLocal(preferences.time_zone);
-      const latest = await request('/api/realtor/planner?from=' + today.slice(0, 4) + '-01-01&through=' + today.slice(0, 4) + '-12-31&limit=100');
+      const latest = await request(plannerReadUrl(today, plannerDate));
       setData(latest);
       setPlannerReloadToken((token) => token + 1);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to refresh planner data.');
     }
+  };
+
+  const reloadReminders = async () => {
+    if (reminderReloadPending.current) return false;
+    reminderReloadPending.current = true;
+    setBusy(true); setError('');
+    try {
+      const latest = await request<{ agenda: unknown; seller: unknown }>('/api/realtor/today');
+      const agenda = todayAgendaResultSchema.safeParse(latest.agenda);
+      if (!agenda.success || agenda.data.status !== 'available') throw new Error('Your schedule could not be refreshed. Try again.');
+      const seller = sellerDailyResultSchema.safeParse(latest.seller);
+      setData((current: any) => current ? { ...current, agenda: agenda.data,
+        ...(seller.success && seller.data.status !== 'unavailable' ? { seller: seller.data } : {}),
+      } : current);
+      setAgendaNeedsRefresh(false);
+      return true;
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to refresh reminders.');
+      return false;
+    } finally { reminderReloadPending.current = false; setBusy(false); }
   };
 
   const loadMoreLedger = async (cursor: string) => {
@@ -230,7 +279,7 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div><p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">Your real estate business</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">{section === 'today' ? 'Today' : section[0].toUpperCase() + section.slice(1)}</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">{section === 'seller-inbox' ? 'Seller inbox' : section === 'today' ? 'Today' : section[0].toUpperCase() + section.slice(1)}</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-400">Keep your deadlines, recorded business money, and next steps in one place.</p>
         </div>
         <SectionNav section={section} />
@@ -247,8 +296,9 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
         </div>
         <button disabled={busy} onClick={setupWorkspace} className={'mt-5 ' + buttonClass}>{busy ? 'Setting up…' : 'Create my planner'}</button>
       </Panel> : null}
-      {!loading && preferences && section === 'today' ? <TodayView data={data} preferences={preferences} busy={busy} submit={submit} /> : null}
-      {!loading && preferences && section === 'planner' ? <PlannerView data={data} timeZone={preferences.time_zone} busy={busy} submit={submit} onPayment={setPaymentFor} onMoreProjections={loadMoreProjections} onMoreOccurrences={loadMoreOccurrences} reloadToken={plannerReloadToken} /> : null}
+      {!loading && preferences && section === 'today' ? <TodayView data={data} preferences={preferences} busy={busy} submit={submit} submitReminder={submitResult} onReloadReminders={reloadReminders} agendaNeedsRefresh={agendaNeedsRefresh} onScheduleSaved={markScheduleSaved} onAgendaReloaded={applyAgenda} /> : null}
+      {!loading && preferences && section === 'seller-inbox' ? <SellerInbox key={sellerLeadId || 'all'} leadId={sellerLeadId} timeZone={preferences.time_zone} /> : null}
+      {!loading && preferences && section === 'planner' ? <>{plannerDate ? <p className="rounded-xl border border-cyan-300/20 p-4 text-sm">Showing schedule for {plannerDate}. <Link href="/planner" className="text-cyan-200 underline">Show full planner</Link></p> : null}<PlannerView key={plannerDate || 'year'} data={data} timeZone={preferences.time_zone} busy={busy} submit={submit} onPayment={setPaymentFor} onMoreProjections={loadMoreProjections} onMoreOccurrences={loadMoreOccurrences} reloadToken={plannerReloadToken} /></> : null}
       {!loading && preferences && section === 'business' ? <BusinessView data={data} timeZone={preferences.time_zone} year={selectedBusinessYear ?? Number(new Intl.DateTimeFormat('en-US', { timeZone: preferences.time_zone, year: 'numeric' }).format(new Date()))} setYear={setSelectedBusinessYear} mode={mode} setMode={setMode} busy={busy} submit={submit} onMoreEntries={loadMoreLedger} /> : null}
       {!loading && preferences && section === 'goals' ? <GoalsView data={data} preferences={preferences} busy={busy} submit={submit} /> : null}
       {paymentFor ? <PaymentDialog occurrence={paymentFor} timeZone={preferences?.time_zone || 'America/Chicago'} busy={busy} onClose={() => setPaymentFor(null)} onSave={(amount, date) => {
@@ -261,7 +311,7 @@ export default function RealtorWorkspace({ section }: { section: Section }) {
   </main>;
 }
 
-function TodayView({ data, preferences, busy, submit }: { data: any; preferences: Preferences; busy: boolean; submit: (url: string, method: 'POST' | 'PATCH', data: unknown, success: string) => Promise<boolean> }) {
+function TodayView({ data, preferences, busy, submit, submitReminder, onReloadReminders, agendaNeedsRefresh, onScheduleSaved, onAgendaReloaded }: { data: any; preferences: Preferences; busy: boolean; submit: (url: string, method: 'POST' | 'PATCH', data: unknown, success: string) => Promise<boolean>; submitReminder: (url: string, method: 'POST' | 'PATCH', data: unknown, success: string) => Promise<boolean | 'conflict'>; onReloadReminders: () => Promise<boolean>; agendaNeedsRefresh: boolean; onScheduleSaved: () => void; onAgendaReloaded: (agenda: TodayAgendaResult) => void }) {
   const summary = data?.business?.value;
   const agenda = data?.agenda?.value;
   const goals: Array<{ metric: string; target: number }> = data?.goals?.value || [];
@@ -285,7 +335,10 @@ function TodayView({ data, preferences, busy, submit }: { data: any; preferences
     return { actual, target: Number(goal.target), percent: Math.max(0, Math.min(100, actual / Number(goal.target) * 100)) };
   };
   const net = progressValue('net_income');
-  return <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+  return <div className="space-y-5">
+    <SellerDailyPanel result={data?.seller} onScheduleSaved={onScheduleSaved} onAgendaReloaded={onAgendaReloaded} />
+    <SellerDailyRoutine />
+    <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
     <div className="space-y-5">
       <Panel title="Business progress" extra={<Link href="/business" className="text-sm font-semibold text-cyan-200">Open scoreboard →</Link>}>
         {data?.business?.status !== 'available' ? <p className="text-sm text-slate-400">Your business summary could not be loaded.</p> : <div>
@@ -295,16 +348,18 @@ function TodayView({ data, preferences, busy, submit }: { data: any; preferences
         </div>}
       </Panel>
       <Panel title="Coming up" extra={<Link href="/planner" className="text-sm font-semibold text-cyan-200">Open planner →</Link>}>
+        {agendaNeedsRefresh ? <p role="status" className="mb-3 text-sm text-amber-200">Schedule changed. Refresh to see the latest tasks and reminders.</p> : null}
+        {agendaNeedsRefresh || data?.agenda?.status !== 'available' ? <button type="button" disabled={busy} onClick={() => void onReloadReminders()} className="mb-3 text-sm font-semibold text-cyan-200 underline disabled:opacity-50">{busy ? 'Refreshing schedule…' : 'Refresh schedule'}</button> : null}
         {data?.agenda?.status !== 'available' ? <p className="text-sm text-slate-400">Your schedule could not be loaded.</p> : !agenda?.overdue?.length && !agenda?.upcoming?.length
           ? <div className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">No upcoming planner items yet. Add recurring dues or a deadline to get started.</div>
-          : <div className="space-y-2">{[...(agenda?.overdue || []), ...(agenda?.upcoming || [])].map((item: Occurrence) => <div key={item.id} className="flex items-center justify-between gap-4 rounded-xl bg-white/[0.04] p-3"><div><p className="font-semibold">{item.title_snapshot}</p><p className="mt-1 text-xs text-slate-400">{item.kind_snapshot.replace('_', ' ')} · {item.effective_date}</p>{item.property_label ? <p className="mt-1 text-xs text-cyan-100">{item.property_label}</p> : null}</div>{item.expected_amount_cents ? <span className="text-sm text-slate-300">{money(item.expected_amount_cents)}</span> : null}</div>)}</div>}
+          : <div className="space-y-2">{[...(agenda?.overdue || []), ...(agenda?.upcoming || [])].map((item: Occurrence) => <div key={item.id} data-planner-occurrence-id={item.id} className="flex flex-col justify-between gap-4 rounded-xl bg-white/[0.04] p-3 sm:flex-row sm:items-start"><div className="min-w-0"><p className="break-words font-semibold">{item.title_snapshot}</p><p className="mt-1 text-xs text-slate-400">{item.kind_snapshot.replace('_', ' ')} · {item.effective_date}{item.effective_time ? ` · ${item.effective_time.slice(0, 5)} (${preferences.time_zone})` : ''}</p>{item.property_label ? <p className="mt-1 text-xs text-cyan-100">{item.property_label}</p> : null}<PlannerTaskLinks dueDate={item.effective_date} sellerSourceAvailable={item.seller_source_available} sellerLead={item.seller_lead} /></div>{item.expected_amount_cents ? <span className="text-sm text-slate-300">{money(item.expected_amount_cents)}</span> : null}</div>)}</div>}
       </Panel>
     </div>
     <div className="space-y-5">
-      <Panel title="Needs your attention">{data?.agenda?.status !== 'available' ? <p className="text-sm text-slate-400">Reminder status is unavailable.</p> : agenda?.reminders?.length ? <div className="space-y-3">{agenda.reminders.map((reminder: any) => <div key={reminder.id} className="rounded-xl bg-white/[0.04] p-3"><p className="font-semibold">{reminder.occurrence?.title_snapshot || 'Planner reminder'}</p><p className="mt-1 text-xs text-slate-400">Due {reminder.occurrence?.effective_date || 'date unavailable'}</p>{reminder.occurrence?.property_label ? <p className="mt-1 text-xs text-cyan-100">{reminder.occurrence.property_label}</p> : null}<div className="mt-3 flex gap-2"><button disabled={busy} onClick={() => void submit('/api/realtor/reminders', 'PATCH', { reminderId: reminder.id, action: 'dismiss', expectedRevision: reminder.revision, requestKey: key() }, 'Reminder dismissed.')} className={quietButton}>Dismiss reminder</button><button disabled={busy} onClick={() => void submit('/api/realtor/reminders', 'PATCH', { reminderId: reminder.id, action: 'snooze', expectedRevision: reminder.revision, until: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), requestKey: key() }, 'Reminder snoozed until tomorrow.')} className={quietButton}>Snooze 1 day</button></div></div>)}</div> : <p className="text-sm leading-6 text-slate-400">No reminders are ready right now. Jamie can help organize your next property task once you add it to the shortlist.</p>}
+      <Panel title="Needs your attention">{data?.agenda?.status !== 'available' ? <p className="text-sm text-slate-400">Reminder status is unavailable.</p> : agenda?.reminders?.length ? <div className="space-y-3">{agenda.reminders.map((reminder: any) => <div key={reminder.id} data-reminder-id={reminder.id} className="rounded-xl bg-white/[0.04] p-3"><p className="font-semibold">{reminder.occurrence?.title_snapshot || 'Planner reminder'}</p><p className="mt-1 text-xs text-slate-400">Due {reminder.occurrence?.effective_date || 'date unavailable'}</p>{reminder.occurrence?.property_label ? <p className="mt-1 text-xs text-cyan-100">{reminder.occurrence.property_label}</p> : null}<PlannerReminderActions reminder={reminder} dueDate={reminder.occurrence?.effective_date} busy={busy} submit={submitReminder} onReload={onReloadReminders} /></div>)}</div> : <p className="text-sm leading-6 text-slate-400">No reminders are ready right now. Jamie can help organize your next property task once you add it to the shortlist.</p>}
         <Link href="/property-shortlist" className={'mt-4 inline-flex ' + quietButton}>Open shortlist</Link>
       </Panel>
-      <Panel title="Your work"><div className="flex flex-col gap-2"><Link href="/sprints" className={quietButton}>Review this week’s sprint</Link><Link href="/workspaces" className={quietButton}>Open team workspaces</Link>{workspaces.slice(0, 5).map(({ workspace }) => <Link key={workspace.id} href={'/workspaces/' + encodeURIComponent(workspace.id) + '/inbox'} className={quietButton}>Open {workspace.name} inbox</Link>)}{workspaces.length > 5 ? <Link href="/workspaces" className="px-3 py-1 text-xs text-cyan-200 hover:underline">See all {workspaces.length} workspaces</Link> : null}{!workspaces.length && !workspacesError ? <p className="px-3 py-1 text-xs text-slate-500">No team workspaces are available yet.</p> : null}{workspacesError ? <p role="status" className="px-3 py-1 text-xs text-amber-200">Workspace inbox links could not be loaded. Open the workspace hub to retry.</p> : null}<Link href="/jamie-chat" className={quietButton}>Ask Jamie to help organize something</Link></div></Panel>
+      <Panel title="Your work"><div className="flex flex-col gap-2"><Link href="/sprints" className={quietButton}>Review this week’s sprint</Link><Link href="/workspaces" className={quietButton}>Open team workspaces</Link>{workspaces.slice(0, 5).map(({ workspace }) => <Link key={workspace.id} href={'/workspaces/' + encodeURIComponent(workspace.id) + '/inbox'} className={quietButton}>Open {workspace.name} inbox</Link>)}{workspaces.length > 5 ? <Link href="/workspaces" className="px-3 py-1 text-xs text-cyan-200 hover:underline">See all {workspaces.length} workspaces</Link> : null}{!workspaces.length && !workspacesError ? <p className="px-3 py-1 text-xs text-slate-500">No team workspaces are available yet.</p> : null}{workspacesError ? <p role="status" className="px-3 py-1 text-xs text-amber-200">Workspace inbox links could not be loaded. Open the workspace hub to retry.</p> : null}<Link href="/jamie-chat?context=personal_realtor" className={quietButton}>Ask Jamie about my seller business</Link></div></Panel>
       {preferences.gamification_enabled ? <Panel title="Small wins"><p className="text-sm leading-6 text-slate-400">Your progress comes from recorded closings and completed weekly reviews. It never rewards sending more messages.</p></Panel> : null}
       <Panel title="Personal settings"><div className="space-y-3 text-sm">{([
         ['hide_amounts_on_today', 'Hide money on Today'],
@@ -320,6 +375,7 @@ function TodayView({ data, preferences, busy, submit }: { data: any; preferences
           expectedRevision: preferences.revision, requestKey: key(),
         }, 'Personal settings saved.');
       }} /></label>)}</div></Panel>
+    </div>
     </div>
   </div>;
 }
@@ -340,6 +396,9 @@ export function PlannerView({ data, timeZone, busy, submit, onPayment, onMorePro
   const [propertyTasks, setPropertyTasks] = useState<PropertySprintTask[]>([]);
   const [propertyTasksTruncated, setPropertyTasksTruncated] = useState(false);
   const [propertyTasksError, setPropertyTasksError] = useState('');
+  const [campaignTasks, setCampaignTasks] = useState<SellerAcquisitionTask[]>([]);
+  const [campaignTasksError, setCampaignTasksError] = useState('');
+  const [campaignTasksTruncated, setCampaignTasksTruncated] = useState(false);
   const [loadingSchedulePage, setLoadingSchedulePage] = useState(false);
   const [propertyDraftNotice, setPropertyDraftNotice] = useState('');
   const [formError, setFormError] = useState('');
@@ -354,6 +413,9 @@ export function PlannerView({ data, timeZone, busy, submit, onPayment, onMorePro
     void api<{ tasks: PropertySprintTask[]; truncated: boolean }>('/api/realtor/planner/property-tasks')
       .then((result) => { if (active) { setPropertyTasks(result.tasks); setPropertyTasksTruncated(result.truncated); } })
       .catch((reason) => { if (active) setPropertyTasksError(reason instanceof Error ? reason.message : 'Property sprint tasks could not be loaded.'); });
+    void api<{ tasks: SellerAcquisitionTask[]; truncated: boolean }>('/api/realtor/planner/campaign-tasks')
+      .then((result) => { if (active) { setCampaignTasks(result.tasks); setCampaignTasksTruncated(result.truncated); } })
+      .catch((reason) => { if (active) setCampaignTasksError(reason instanceof Error ? reason.message : 'Seller acquisition tasks could not be loaded.'); });
     return () => { active = false; };
   }, [reloadToken]);
   const save = async (event: React.FormEvent) => {
@@ -373,7 +435,10 @@ export function PlannerView({ data, timeZone, busy, submit, onPayment, onMorePro
     }, sourceSprintTaskId ? 'Planner item saved and linked. The source sprint task remains unchanged.' : 'Planner item saved.');
     if (saved) {
       setTitle(''); setAmount(''); setPropertyId(''); setSourceSprintTaskId(null); setSelectedTemplate(null); setPropertyDraftNotice('');
-      if (sourceSprintTaskId) setPropertyTasks((tasks) => tasks.filter((task) => task.id !== sourceSprintTaskId));
+      if (sourceSprintTaskId) {
+        setPropertyTasks((tasks) => tasks.filter((task) => task.id !== sourceSprintTaskId));
+        setCampaignTasks((tasks) => tasks.filter((task) => task.id !== sourceSprintTaskId));
+      }
     }
   };
   const applyTemplate = (template: typeof realtorPlannerTemplates[number]) => {
@@ -394,7 +459,15 @@ export function PlannerView({ data, timeZone, busy, submit, onPayment, onMorePro
     setPropertyDraftNotice(`Draft loaded from ${task.propertyLabel}. Choose the real due date, then save it to your personal planner.`);
     window.setTimeout(() => dueDateRef.current?.focus(), 0);
   };
+  const applyCampaignTask = (task: SellerAcquisitionTask) => {
+    setKind('task'); setFrequency('once'); setTitle(task.title.slice(0, 160));
+    setDate(''); setTime(''); setAmount(''); setPropertyId(''); setSelectedTemplate(null);
+    setSourceSprintTaskId(task.id);
+    setPropertyDraftNotice('Draft loaded from your seller acquisition week. Choose the real due date and save it yourself; this does not update the source task.');
+    window.setTimeout(() => dueDateRef.current?.focus(), 0);
+  };
   return <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+    <div className="lg:col-span-2"><Panel title="Seller acquisition week"><p className="mb-3 text-sm text-slate-400">Choose only the work you want to schedule. Each selection creates a personal planner draft; it does not start or complete the backlog task.</p>{campaignTasksError ? <p role="status" className="text-sm text-amber-200">{campaignTasksError}</p> : null}<div className="space-y-2">{campaignTasks.map((task) => <div key={task.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{task.title}</p><p className="mt-1 text-xs text-slate-500">Priority {task.priority}{task.estimateMinutes ? ` · about ${task.estimateMinutes} min` : ''}</p></div><button type="button" disabled={busy} onClick={() => applyCampaignTask(task)} className={quietButton}>Use as planner draft</button></div>)}</div>{campaignTasksTruncated ? <p className="mt-3 text-xs text-slate-500">Showing the first 100 unscheduled seller acquisition tasks.</p> : null}{!campaignTasks.length && !campaignTasksError ? <p className="text-sm text-slate-500">No unscheduled seller acquisition tasks. Add the weekly plan from Sprints when you are ready.</p> : null}</Panel></div>
     <div className="lg:col-span-2"><JamieProposalCard kind="planner" timeZone={timeZone} properties={properties} busy={busy} submit={submit} /></div>
     <div className="lg:col-span-2"><Panel title="Start with a template"><p className="mb-3 text-sm text-slate-400">Templates fill only a label and recurrence. They do not assume your due date, jurisdiction, or cost.</p><div className="flex flex-wrap gap-2">{realtorPlannerTemplates.map((template) => <button key={template.label} type="button" disabled={busy} aria-pressed={selectedTemplate === template.label} onClick={() => applyTemplate(template)} className={selectedTemplate === template.label ? buttonClass : quietButton}>{template.label}</button>)}</div></Panel></div>
     <div className="lg:col-span-2"><Panel title="Property sprint tasks"><p className="mb-3 text-sm text-slate-400">Choose a current task to prefill a personal planner draft. You must choose its real due date and save it yourself; this links the task for traceability but does not change its sprint status.</p>{propertyTasksError ? <p role="status" className="text-sm text-amber-200">{propertyTasksError}</p> : null}<div className="space-y-2">{propertyTasks.map((task) => <div key={task.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{task.title}</p><p className="mt-1 text-xs text-cyan-100">{task.propertyLabel}</p><p className="mt-1 text-xs text-slate-500">{task.taskKind.replaceAll('_', ' ')}{task.estimateMinutes ? ` · about ${task.estimateMinutes} min` : ''}</p>{task.stale ? <p className="mt-1 text-xs text-amber-200">The property has changed since this task was prepared. <Link href="/property-shortlist" className="underline">Refresh the property sprint.</Link></p> : null}</div><button type="button" disabled={busy || task.stale} onClick={() => applyPropertySprintTask(task)} className={quietButton}>Use as planner draft</button></div>)}</div>{propertyTasksTruncated ? <p className="mt-3 text-xs text-slate-500">Showing the first 100 open property tasks.</p> : null}{!propertyTasks.length && !propertyTasksError ? <p className="text-sm text-slate-500">No open property sprint tasks yet. <Link href="/property-shortlist" className="text-cyan-200 hover:underline">Ask Jamie to prepare property tasks.</Link></p> : null}</Panel></div>
@@ -410,7 +483,7 @@ export function PlannerView({ data, timeZone, busy, submit, onPayment, onMorePro
       <p className="text-xs leading-5 text-slate-500">Monthly dues on the 31st use the last day of shorter months, then return to the 31st. Dates use your saved timezone. Opt-in reminders appear here in the app.</p>
       <button className={buttonClass} disabled={busy || !title.trim()}>{busy ? 'Saving…' : 'Save to planner'}</button>
     </form></Panel>
-    <Panel title="Your schedule">{occurrences.length ? <div className="space-y-2">{occurrences.map((item) => <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{item.title_snapshot}</p><p className="mt-1 text-xs text-slate-400">{item.effective_date}{item.effective_time ? ' · ' + item.effective_time.slice(0, 5) : ''} · {item.status === 'completed' ? 'done' : item.status}</p>{item.property_id ? <p className="mt-1 text-xs text-cyan-100">{properties.find((property) => property.id === item.property_id)?.label || 'Linked shortlist property'}</p> : null}{item.expected_amount_cents ? <p className="mt-1 text-sm text-slate-200">Expected {money(item.expected_amount_cents)}</p> : null}</div>{item.status === 'pending' ? <div className="flex gap-2">{item.kind_snapshot === 'bill' ? <button type="button" onClick={() => onPayment(item)} className={buttonClass}>Record payment</button> : item.kind_snapshot === 'weekly_review' ? <WeeklyReviewAction occurrence={item} busy={busy} submit={submit} /> : <button type="button" disabled={busy} onClick={() => void submit('/api/realtor/planner/' + item.id, 'PATCH', { action: 'complete', expectedRevision: item.revision, requestKey: key() }, 'Marked complete.')} className={quietButton}>Mark complete</button>}</div> : null}</div>)}</div> : <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">Your planner will show each due date here. Recurring entries keep their original schedule and each payment is recorded separately.</p>}{data?.nextCursor && onMoreOccurrences ? <button type="button" disabled={busy || loadingSchedulePage} className={'mt-4 ' + quietButton} onClick={() => {
+    <Panel title="Your schedule">{occurrences.length ? <div className="space-y-2">{occurrences.map((item) => <div key={item.id} data-planner-occurrence-id={item.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{item.title_snapshot}</p><p className="mt-1 text-xs text-slate-400">{item.effective_date}{item.effective_time ? ' · ' + item.effective_time.slice(0, 5) : ''} · {item.status === 'completed' ? 'done' : item.status}</p>{item.property_id ? <p className="mt-1 text-xs text-cyan-100">{properties.find((property) => property.id === item.property_id)?.label || 'Linked shortlist property'}</p> : null}{item.expected_amount_cents ? <p className="mt-1 text-sm text-slate-200">Expected {money(item.expected_amount_cents)}</p> : null}<PlannerTaskLinks showPlanner={false} sellerSourceAvailable={item.seller_source_available} sellerLead={item.seller_lead} /></div>{item.status === 'pending' ? <div className="flex gap-2">{item.kind_snapshot === 'bill' ? <button type="button" onClick={() => onPayment(item)} className={buttonClass}>Record payment</button> : item.kind_snapshot === 'weekly_review' ? <WeeklyReviewAction occurrence={item} busy={busy} submit={submit} /> : <PlannerCompleteAction occurrence={item} busy={busy} submit={submit} />}</div> : null}</div>)}</div> : <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">Your planner will show each due date here. Recurring entries keep their original schedule and each payment is recorded separately.</p>}{data?.nextCursor && onMoreOccurrences ? <button type="button" disabled={busy || loadingSchedulePage} className={'mt-4 ' + quietButton} onClick={() => {
       if (loadingSchedulePage) return;
       setLoadingSchedulePage(true);
       void onMoreOccurrences(data.nextCursor).finally(() => setLoadingSchedulePage(false));
