@@ -32,6 +32,8 @@ async function runRealtorDatabaseChecks(sql) {
     '20261007160000_seller_outcome_scoreboard.sql',
     '20261007170000_realtor_weekly_business_review_v2.sql',
     '20261007180000_seller_outcome_read_models.sql',
+    '20261008100000_seller_nonretryable_conflicts.sql',
+    '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -40,7 +42,7 @@ async function runRealtorDatabaseChecks(sql) {
     { file: 'realtor_planner_task_identity.sql', assertions: 22 },
     { file: 'realtor_financial_lifecycle.sql', assertions: 22 },
     { file: 'realtor_planner_refill.sql', assertions: 13 },
-    { file: 'realtor_reminder_lifecycle.sql', assertions: 6 },
+    { file: 'realtor_reminder_lifecycle.sql', assertions: 11 },
   ];
   for (const { file, assertions } of cases) {
     const test = await readFile(new URL(`../supabase/tests/database/${file}`, import.meta.url), 'utf8');
