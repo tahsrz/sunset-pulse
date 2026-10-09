@@ -1,0 +1,117 @@
+{
+  "reviewDate": "2026-10-09",
+  "baseCommit": "89d67432b9774a02ffbcf33f5235d337cab00fb4",
+  "branch": "codex/seller-acquisition-2026q4",
+  "scope": "Working-tree migration and shared scheduler compatibility files; this is not a complete application candidate or a deployment artifact.",
+  "hashFormat": "SHA256 of raw LF file bytes; .gitattributes pins the compatibility sources to LF across Windows and Linux checkouts.",
+  "files": [
+    {
+      "path": "apps/pulse/supabase/migrations/20261006130000_platform_connector_health_job_read_model.sql",
+      "sha256": "137623865154181ac798a43dfd15840230c6caf8c6fb2e9c19b8a224fa362928"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261006140000_platform_connector_health_audit_read_model.sql",
+      "sha256": "dea14e5d3cd669b5d8ecb481cde6975747c554fd14f23f846da1833feede493f"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261006150000_seller_video_publication_records.sql",
+      "sha256": "42a18294afd6caa63410150814a6f42457f01b893699f28014a6798bf3470a46"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007100000_seller_lead_actions.sql",
+      "sha256": "29101f15b9aa5fbb0de1a58002a8c05d81f802bef41a70c05c7c5a3654d4e73b"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007103000_agent_lead_action_receipts.sql",
+      "sha256": "187fef8b069f6fb9873ce283d3dda5a3b0fbd62ad5a6258f334515d6a819f71b"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007110000_realtor_seller_lead_tasks.sql",
+      "sha256": "2172ff167e455ed98d47b74fbd4f9a19e84aeb402f3e20dac862beea0fe719a3"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007120000_seller_video_publication_outcomes.sql",
+      "sha256": "bb772daf3a4fe255493323cfffb71833cf8cac1793b7afc45c3172bef6473566"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007130000_seller_daily_read_models.sql",
+      "sha256": "dc55f4cc53f13842d89fdb49addd44c5fb73183915d0efd4f6fa78d31b210444"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007140000_seller_lead_publication_attributions.sql",
+      "sha256": "a30048ba2ca0583b19d877d6135140d5c2ce10ce29ed0e088b4faba9daa1dbb1"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007150000_realtor_seller_campaign_tasks.sql",
+      "sha256": "c64c705ae2b872ec5595b4bf41c1d9154d5ddee82bd699fa3b451ffa439fa006"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007160000_seller_outcome_scoreboard.sql",
+      "sha256": "578f44721b34bd807a2796edf501f54033b1fbabc085c13184b1089967f60382"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007170000_realtor_weekly_business_review_v2.sql",
+      "sha256": "d3886faa8943053e2f83e4f89626522435437f82782a221d5657f24535544d99"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261007180000_seller_outcome_read_models.sql",
+      "sha256": "b1477fceac80c1c128085223b752e00e3ed209e5c261103f7f8adcd8ab266a8f"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261008100000_seller_nonretryable_conflicts.sql",
+      "sha256": "f509479ab2051d03ede415c86e89e0c44df7a55be43c5fb040ebf3db37494684"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261008110000_seller_planner_link_read.sql",
+      "sha256": "4da114b8decc90deac6202d2d4052ba76b614cbf916f6ba1c879f54184a7b20d"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261008120000_realtor_reminder_nonretryable_conflicts.sql",
+      "sha256": "d36f66d0fe677107632a6996821f652e95a6e7adffa9209cbd9972823d510aa8"
+    },
+    {
+      "path": "apps/pulse/lib/autonomous-workflows/workflowRegistry.server.ts",
+      "sha256": "f1eee153d0df7e4ec6e8cfbabc883432b1e4f99ba52eb067698655f890e716a4"
+    },
+    {
+      "path": "apps/pulse/lib/autonomous-workflows/durableScheduler.server.ts",
+      "sha256": "c7671e128159cc0af31f4b133614d933d06f44c9539fdcea139b3d7f5f3e827f"
+    },
+    {
+      "path": "apps/pulse/lib/autonomous-workflows/realtorReminderWorkflow.server.ts",
+      "sha256": "29a08d54126d3ec083c27a904d324682cc6bcb2c39b50aed03bf66f0997b76a1"
+    },
+    {
+      "path": "apps/pulse/lib/autonomous-workflows/realtorPlannerRefillWorkflow.server.ts",
+      "sha256": "2d7c8afa369519f606c85b147f775b8e1fc95a9b823a3a05ae0e896456936092"
+    },
+    {
+      "path": "apps/pulse/app/api/admin/automations/hotlist-email/cron/route.ts",
+      "sha256": "419ef910bfe937944451a070234868a603bb77515587767ce67829c2926f03e0"
+    },
+    {
+      "path": "apps/pulse/app/api/admin/automations/hotlist-email/worker/route.ts",
+      "sha256": "76cc848bebbb08fb16c43385e56332f422907cfbb3c80f0a43315628a0c68ff4"
+    },
+    {
+      "path": "apps/pulse/vercel.json",
+      "sha256": "6a18286c625d539bfebe608fab1435a8969c771fcb17fbea027a19d87fbe9c15"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261009130000_seller_service_cases.sql",
+      "sha256": "e97a1c8000c97cffe4820d67bd7e2abde4877a5a9f7a5629534faf2c0be535bd"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261009131000_seller_service_email.sql",
+      "sha256": "5b9c489041c5e177e5e222a4f900368f063aa929e490d9e472d35cb794b3308d"
+    },
+    {
+      "path": "apps/pulse/supabase/migrations/20261009132000_seller_service_measurement.sql",
+      "sha256": "f00a2138cb0d803b5383079e59396150fb05d8bca558bd9559cfcd42e70c87ad"
+    },
+    {
+      "path": "apps/pulse/lib/autonomous-workflows/sellerEmailWorkflow.server.ts",
+      "sha256": "3f8722f0640142e3dc6eb18f6ce9b3a9b1929e23d1319fed3c123f4ed4c8da5c"
+    }
+  ]
+}

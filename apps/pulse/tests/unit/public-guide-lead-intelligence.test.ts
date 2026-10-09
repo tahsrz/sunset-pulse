@@ -8,6 +8,9 @@ const brief = {
   schemaVersion: 1 as const,
   summary: 'Looking for a three-bedroom home in Denton and wants to tour one listing.',
   searchCriteria: {
+    transactionType: 'purchase' as const,
+    timeline: null,
+    leaseTermMonths: null,
     locations: ['Denton'],
     priceMin: null,
     priceMax: 500_000,

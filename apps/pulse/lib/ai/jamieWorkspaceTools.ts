@@ -17,6 +17,7 @@ import {
   prepareFinancialProposal,
   prepareGoalProposal,
   preparePlannerProposal,
+  readPersonalSellerAttention,
 } from '@/lib/realtor-workspace/jamieProposals.server';
 
 const runReadSchema = z.object({
@@ -81,6 +82,11 @@ export function createJamieWorkspaceTools(actorId: string, workspaceId: string) 
 /** Personal tools are only constructed by the chat route after an explicit personal-context request and signed-in owner resolution. */
 export function createJamiePersonalTools(actorId: string) {
   return {
+    read_personal_seller_attention: tool({
+      description: 'Read a bounded, redacted summary of the signed-in owner’s seller requests, overdue next actions, and confirmed consultations. Never return names, contact details, private notes, or CRM metadata.',
+      inputSchema: z.object({}).strict(),
+      execute: () => readPersonalSellerAttention(actorId),
+    }),
     read_personal_agenda: tool({
       description: 'Read the signed-in user’s private realtor agenda: a bounded list of overdue/upcoming items and in-app reminders. This never reads team workspace data.',
       inputSchema: agendaInputSchema,

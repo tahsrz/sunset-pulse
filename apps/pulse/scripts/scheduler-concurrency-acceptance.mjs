@@ -5,6 +5,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { command, withDockerService } from './docker-acceptance.mjs';
 import { platformRunAcceptance } from './platform-run-acceptance.mjs';
 import { platformFollowupAcceptance } from './platform-followup-acceptance.mjs';
+import { sellerVideoBriefAcceptance } from './seller-video-brief-acceptance.mjs';
+import { sellerConcurrencyAcceptance } from './seller-concurrency-acceptance.mjs';
 
 async function runRealtorDatabaseChecks(sql) {
   const migrations = [
@@ -16,13 +18,26 @@ async function runRealtorDatabaseChecks(sql) {
     '20260925140000_realtor_financial_lifecycle.sql',
     '20260925150000_realtor_weekly_review_progress.sql',
     '20260925160000_realtor_progress_history.sql',
-  '20260925170000_realtor_planner_property_scope.sql',
-  '20260925180000_realtor_planner_sprint_task_identity.sql',
-  '20260925190000_realtor_service_role_read_grants.sql',
-  '20260925200000_realtor_digest_search_path.sql',
-  '20260925210000_realtor_property_task_read_grants.sql',
-  '20260926000000_realtor_reminder_lifecycle.sql',
-];
+    '20260925170000_realtor_planner_property_scope.sql',
+    '20260925180000_realtor_planner_sprint_task_identity.sql',
+    '20260925190000_realtor_service_role_read_grants.sql',
+    '20260925200000_realtor_digest_search_path.sql',
+    '20260925210000_realtor_property_task_read_grants.sql',
+    '20260926000000_realtor_reminder_lifecycle.sql',
+    '20261007100000_seller_lead_actions.sql',
+    '20261007103000_agent_lead_action_receipts.sql',
+    '20261007110000_realtor_seller_lead_tasks.sql',
+    '20261007130000_seller_daily_read_models.sql',
+    '20261007150000_realtor_seller_campaign_tasks.sql',
+    '20261007160000_seller_outcome_scoreboard.sql',
+    '20261007170000_realtor_weekly_business_review_v2.sql',
+    '20261007180000_seller_outcome_read_models.sql',
+    '20261008100000_seller_nonretryable_conflicts.sql',
+    '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
+    '20261009130000_seller_service_cases.sql',
+    '20261009131000_seller_service_email.sql',
+    '20261009132000_seller_service_measurement.sql',
+  ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
   }
@@ -30,7 +45,8 @@ async function runRealtorDatabaseChecks(sql) {
     { file: 'realtor_planner_task_identity.sql', assertions: 22 },
     { file: 'realtor_financial_lifecycle.sql', assertions: 22 },
     { file: 'realtor_planner_refill.sql', assertions: 13 },
-    { file: 'realtor_reminder_lifecycle.sql', assertions: 6 },
+    { file: 'realtor_reminder_lifecycle.sql', assertions: 11 },
+    { file: 'seller_service.sql', assertions: 22 },
   ];
   for (const { file, assertions } of cases) {
     const test = await readFile(new URL(`../supabase/tests/database/${file}`, import.meta.url), 'utf8');
@@ -258,6 +274,8 @@ async function runRealtorDatabaseChecks(sql) {
         'reminder winner must leave a consistent dismissed or snoozed state');
     },
   });
+
+  await sellerConcurrencyAcceptance(sql, actorId, workspaceId);
 }
 
 await withDockerService('scheduler-test', async (container) => {
@@ -274,11 +292,17 @@ await withDockerService('scheduler-test', async (container) => {
     CREATE SCHEMA auth;
     CREATE TABLE auth.users (id uuid PRIMARY KEY);
     ALTER TABLE auth.users ADD COLUMN email text;
+    ALTER TABLE auth.users ADD COLUMN email_confirmed_at timestamptz;
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
       LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     CREATE OR REPLACE FUNCTION auth.role() RETURNS text
       LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.role', true), '') $$;
-    CREATE TABLE public.site_config (id uuid PRIMARY KEY);
+    CREATE TABLE public.profiles (id uuid PRIMARY KEY REFERENCES auth.users(id), role text DEFAULT 'consumer');
+    CREATE OR REPLACE FUNCTION public.set_updated_at() RETURNS trigger
+      LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at=now(); RETURN NEW; END $$;
+    CREATE TABLE public.site_config (
+      id uuid PRIMARY KEY, agent_id text UNIQUE, owner_id uuid REFERENCES auth.users(id), status text DEFAULT 'active'
+    );
     CREATE TABLE public.property_shortlist_entries (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL REFERENCES auth.users(id),
       area_key text NOT NULL, address text, city text, state text NOT NULL DEFAULT 'TX', postal_code text,
@@ -289,8 +313,16 @@ await withDockerService('scheduler-test', async (container) => {
     );
     CREATE TABLE public.licensed_workflow_settings (id uuid PRIMARY KEY);
     CREATE TABLE public.licensed_workflow_runs (id uuid PRIMARY KEY);
+    CREATE TABLE public.scheduling_bookings (
+      id uuid PRIMARY KEY, uid text NOT NULL, title text NOT NULL, start_time timestamptz NOT NULL,
+      end_time timestamptz NOT NULL, status text NOT NULL, funnel_id uuid, lead_id uuid, agent_id text, site text, appointment_type text
+    );
   `);
   const migrations = [
+    '20260710030000_agent_site_leads.sql',
+    '20260710040000_agent_site_lead_workflow.sql',
+    '20260824010000_agent_site_lead_opportunity_values.sql',
+    '20260824040000_lead_engagement_receipts.sql',
     '20260912040000_durable_workflow_scheduler.sql',
     '20260912060000_scheduled_sprints.sql',
     '20260912120000_sprint_assignments.sql',
@@ -344,7 +376,15 @@ await withDockerService('scheduler-test', async (container) => {
   '20260924130000_platform_unknown_effect_inbox.sql',
   '20260924140000_platform_workspace_invitations.sql',
   '20260924150000_platform_retry_intent_idempotency_race.sql',
-  '20260924160000_platform_user_layouts.sql',
+    '20260924160000_platform_user_layouts.sql',
+    '20261005100000_seller_video_brief_store.sql',
+    '20261005110000_platform_workspace_service_reads.sql',
+    '20261005120000_seller_video_review_checkpoint.sql',
+    '20261006130000_platform_connector_health_job_read_model.sql',
+    '20261006140000_platform_connector_health_audit_read_model.sql',
+    '20261006150000_seller_video_publication_records.sql',
+    '20261007120000_seller_video_publication_outcomes.sql',
+    '20261007140000_seller_lead_publication_attributions.sql',
   ];
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
@@ -354,6 +394,10 @@ await withDockerService('scheduler-test', async (container) => {
   if (process.argv.includes('--realtor-only')) {
     await runRealtorDatabaseChecks(sql);
     console.log('PASS: realtor migrations and task-identity assertions in disposable PostgreSQL');
+    return;
+  }
+  if (process.argv.includes('--seller-video-only')) {
+    await sellerVideoBriefAcceptance(sql);
     return;
   }
 
@@ -583,6 +627,7 @@ await withDockerService('scheduler-test', async (container) => {
   console.log('PASS: deferred polling has a terminal budget');
   await platformRunAcceptance(sql);
   await platformFollowupAcceptance(sql);
+  await sellerVideoBriefAcceptance(sql);
 
   // Keep realtor database acceptance inside this disposable, uniquely named
   // PostgreSQL project. Never replay these schema changes against local/hosted

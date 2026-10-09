@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import fixture from '@/config/commercial-lineage-fixture.json';
-import { validateCommercialLineageFixture } from '@/lib/profit/commercialLineageFixture';
+import rawFixture from '@/config/commercial-lineage-fixture.json';
+import { commercialLineageFixtureSchema, validateCommercialLineageFixture } from '@/lib/profit/commercialLineageFixture';
+
+const fixture = commercialLineageFixtureSchema.parse(rawFixture);
 
 describe('LUNA-102 end-to-end commercial lineage fixture', () => {
   it('traces one journey from Jamie handoff through shadow outcome and revenue', () => {
-    expect(validateCommercialLineageFixture(fixture)).toEqual(fixture);
+    expect(validateCommercialLineageFixture(fixture)).toEqual(rawFixture);
   });
 
   it('rejects a downstream record that changes tenant identity', () => {

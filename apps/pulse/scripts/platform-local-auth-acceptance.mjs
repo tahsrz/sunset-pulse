@@ -5,6 +5,7 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
+import {sellerServiceAcceptance} from './seller-service-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { command, pulseRoot } from './docker-acceptance.mjs';
@@ -26,6 +27,15 @@ if (!loopbackHosts.has(apiUrl.hostname) || !loopbackHosts.has(originUrl.hostname
 }
 const api=apiUrl.origin, origin=originUrl.origin;
 const realtorOnly=process.argv.includes('--realtor-only');
+const sellerVideoOnly=process.argv.includes('--seller-video-only');
+const sellerServiceOnly=process.argv.includes('--seller-service-only');
+assert(!sellerServiceOnly || /^pulse_auth_[a-f0-9]{8}$/.test(stack),'Seller service acceptance requires a generated disposable stack.');
+const sellerBusinessOnly=process.argv.includes('--seller-business-only');
+const sellerScheduleRecoveryOnly=process.argv.includes('--seller-schedule-recovery-only');
+assert(!sellerScheduleRecoveryOnly || sellerBusinessOnly,'Scheduling recovery requires seller-business mode.');
+const liveJamie=process.argv.includes('--live-jamie');
+assert([realtorOnly,sellerVideoOnly,sellerBusinessOnly].filter(Boolean).length<=1,'Choose only one focused acceptance suite.');
+assert(!liveJamie || (sellerBusinessOnly && process.env.GROQ_API_KEY),'Live Jamie acceptance requires seller-business mode and a configured provider key.');
 const db=`supabase_db_${stack}`;
 const sql=(input)=>command('docker',['exec','-i',db,'psql','-X','-qAt','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'],{input:`SET statement_timeout='20s';\n${input}`});
 const migrated=await sql("SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;");
@@ -62,6 +72,22 @@ const migrations=[
   '20260925190000_realtor_service_role_read_grants.sql',
   '20260925200000_realtor_digest_search_path.sql',
   '20260925210000_realtor_property_task_read_grants.sql',
+  '20261005100000_seller_video_brief_store.sql',
+  '20261005110000_platform_workspace_service_reads.sql',
+  '20261005120000_seller_video_review_checkpoint.sql',
+  '20261006130000_platform_connector_health_job_read_model.sql',
+  '20261006140000_platform_connector_health_audit_read_model.sql',
+  '20261006150000_seller_video_publication_records.sql',
+  '20261007120000_seller_video_publication_outcomes.sql',
+  '20261007140000_seller_lead_publication_attributions.sql',
+  '20261007150000_realtor_seller_campaign_tasks.sql',
+  '20261007160000_seller_outcome_scoreboard.sql',
+  '20261007170000_realtor_weekly_business_review_v2.sql',
+  '20261007180000_seller_outcome_read_models.sql',
+  '20261008100000_seller_nonretryable_conflicts.sql',
+  '20261008110000_seller_planner_link_read.sql',
+  '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
+  '20261009130000_seller_service_cases.sql','20261009131000_seller_service_email.sql','20261009132000_seller_service_measurement.sql',
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -72,6 +98,29 @@ for(const name of migrations){
   console.log(`Applied local migration: ${name}`);
 }
 await sql("NOTIFY pgrst,'reload schema';");
+if (sellerBusinessOnly) {
+  for (const name of [
+    'seller_lead_actions.sql',
+    'seller_service.sql',
+    'seller_planner_link_read.sql',
+    'realtor_reminder_lifecycle.sql',
+    'seller_outcome_read_models.sql',
+    'realtor_planner_task_identity.sql',
+    'realtor_seller_campaign_tasks.sql',
+    'seller_outcome_scoreboard.sql',
+    'realtor_weekly_review_v2.sql',
+  ]) {
+    const testSql = await readFile(new URL(`../supabase/tests/database/${name}`, import.meta.url), 'utf8');
+    const output = await sql(`SET search_path = public, extensions;\n${testSql}`);
+    assert(!/^not ok\b/m.test(output), `${name} reported a failed pgTAP assertion`);
+    assert.match(output, /\b1\.\.\d+\b/, `${name} did not emit a pgTAP plan`);
+    console.log(`PASS: ${name} database assertions`);
+  }
+}
+if (sellerBusinessOnly && process.argv.includes('--database-only')) {
+  console.log('PASS: disposable seller-business database regression packet completed.');
+  process.exit(0);
+}
 // Read only the two local test credentials needed; never log/persist them.
 const envLines=JSON.parse(await command('docker',['inspect',`supabase_studio_${stack}`,'--format','{{json .Config.Env}}']));
 const localValue=(name)=>envLines.find((line)=>line.startsWith(name+'='))?.slice(name.length+1);
@@ -82,6 +131,14 @@ const {error:realtorSchemaError}=await admin.from('realtor_preferences').select(
 assert.equal(realtorSchemaError,null,
   `Disposable Supabase REST schema probe failed: ${realtorSchemaError?.code || 'unknown'} ${realtorSchemaError?.message || ''}`);
 for (const [table, columns] of [
+  ['platform_memberships', 'workspace_id,user_id,role,status,created_at'],
+  ['platform_workspaces', 'id,kind,name,status,revision'],
+  ['seller_video_briefs', 'workspace_id,brief_id,revision,brief_data,created_at'],
+]) {
+  const {error}=await admin.from(table).select(columns).limit(1);
+  assert.equal(error,null,`Disposable ${table} REST schema probe failed: ${error?.code || 'unknown'} ${error?.message || ''}`);
+}
+for (const [table, columns] of [
   ['property_shortlist_entries', 'id,owner_id,area_key,status,revision'],
   ['sprint_backlog_items', 'id,owner_id,title,source_type,property_id,property_task_kind,input_revision'],
   ['realtor_planner_items', 'source_sprint_task_id'],
@@ -90,8 +147,9 @@ for (const [table, columns] of [
   assert.equal(error,null,`Disposable ${table} REST schema probe failed: ${error?.code || 'unknown'} ${error?.message || ''}`);
 }
 const enabled=await sql("SELECT enabled FROM workflow_event_contracts WHERE workflow_key='platform_run';");
-const userIds=[], workspaceIds=[];
+const userIds=[], workspaceIds=[], sellerFixtureAgents=[];
 let server,browser;
+const plannerServerSignals=[];
 const acceptanceMongo = process.env.PULSE_TEST_MONGO_URI || '';
 if (acceptanceMongo) assert.match(acceptanceMongo, /^mongodb:\/\/127\.0\.0\.1:\d+\/pulse_homepage_acceptance$/);
 try{
@@ -101,13 +159,18 @@ try{
       NEXT_PUBLIC_SUPABASE_URL:api,SUPABASE_URL:api,NEXT_PUBLIC_SUPABASE_ANON_KEY:anon,SUPABASE_ANON_KEY:anon,SUPABASE_SERVICE_ROLE_KEY:service,
       NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',PULSE_ALLOW_PRODUCTION_MOCK_AUTH:'',
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
-      OPENAI_API_KEY:'',GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:origin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:origin,
+      SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
+      OPENAI_API_KEY:'',GROQ_API_KEY:liveJamie?process.env.GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:origin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:origin,
       // Homepage reads legacy listing/config stores; only the disposable runner
       // may supply its Mongo URI. Never inherit a hosted connection.
       MONGODB_URI:acceptanceMongo || 'mongodb://127.0.0.1:1/pulse_auth_unavailable',
   }});
   // Drain logs without persisting secrets or account-bearing server output.
-  for(const stream of [server.stdout,server.stderr]) stream.on('data',()=>{});
+  for(const stream of [server.stdout,server.stderr]) stream.on('data',(chunk)=>{
+    // Only retain route compilation/timing signals, never arbitrary server logs.
+    const signal=chunk.toString().match(/(?:Compiling|Compiled|POST|GET) \/api\/realtor\/planner(?:[^\r\n]*)/g);
+    if(signal) plannerServerSignals.push(...signal.map((line)=>line.slice(0,160)));
+  });
   server.on('error',()=>{});
   let ready=false;
   for(let i=0;i<90;i++){
@@ -130,7 +193,7 @@ try{
     const context=await browser.newContext();
     const page=await context.newPage();
     const pageErrors=[];page.on('pageerror',(e)=>pageErrors.push(e.message));
-    const loginTarget=realtorOnly?'/api/realtor/preferences':'/api/workspaces';
+    const loginTarget=sellerVideoOnly||sellerBusinessOnly||realtorOnly?'/api/realtor/preferences':'/api/workspaces';
     await page.goto(`${origin}/login?redirect=${encodeURIComponent(loginTarget)}`,{timeout:120000});
     await page.getByRole('heading',{name:'Sign In',exact:true}).waitFor();
     assert.equal(await page.locator('[data-nextjs-dialog]').count(),0);
@@ -154,6 +217,826 @@ try{
       return {status:response.status,data:await response.json()};
     },{path,method,body});
   }
+  if (sellerServiceOnly) {
+    await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
+  } else if (sellerBusinessOnly) {
+    const timeZone='America/Chicago';
+    const localDate=(date=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+    const addDays=(date,days)=>{const [year,month,day]=date.split('-').map(Number);return new Date(Date.UTC(year,month-1,day+days)).toISOString().slice(0,10);};
+    const startAt=new Date(Date.now()+24*60*60*1000);
+    startAt.setSeconds(0,0);
+    const localParts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(startAt);
+    const part=(type)=>localParts.find((candidate)=>candidate.type===type)?.value||'';
+    const appointmentDate=`${part('year')}-${part('month')}-${part('day')}`;
+    const appointmentTime=`${part('hour')}:${part('minute')}`;
+    const utcOffsetMinutes=Math.round((Date.UTC(Number(part('year')),Number(part('month'))-1,Number(part('day')),Number(part('hour')),Number(part('minute')))-startAt.getTime())/60_000);
+    const today=localDate();
+    const setup=await request(primary.page,'/api/realtor/preferences','POST',{
+      timeZone,remindersEnabled:true,gamificationEnabled:true,celebrationsEnabled:false,hideAmountsOnToday:false,
+      recordsStartDate:today,expectedRevision:null,requestKey:randomUUID(),
+    });
+    assert.equal(setup.status,200,`Seller workspace setup failed: ${setup.data.error||setup.status}`);
+    const workspace=setup.data.result.workspace_id;
+    workspaceIds.push(workspace);
+    const plannerCountBefore=Number(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE workspace_id='${workspace}';`));
+    const personalChat=await request(primary.page,'/api/chat','POST',{
+      context:'personal_realtor',
+      messages:[{role:'user',content:'Hi Jamie. In one sentence, explain what you can help with in my private business workspace. Do not change or save anything.'}],
+    });
+    assert.equal(personalChat.status,200,`Authenticated personal Jamie request failed: ${personalChat.data.error||personalChat.status}`);
+    assert.equal(personalChat.data.role,'assistant');
+    assert.equal(personalChat.data.personal?.context,'personal_realtor');
+    assert(Array.isArray(personalChat.data.personal?.proposals),'Personal Jamie returns validated proposal cards.');
+    assert.equal(personalChat.data.personal?.links?.today,'/today');
+    if(liveJamie) assert(!/provider is not configured|could not reach its model|ran out of time|unavailable/i.test(personalChat.data.content),
+      `Provider-backed personal Jamie should produce a model response: ${personalChat.data.content}`);
+    else {
+      assert.deepEqual(personalChat.data.personal?.proposals,[],'A missing provider returns no unprepared proposal cards.');
+      assert.match(personalChat.data.content,/provider is not configured/i);
+    }
+    const plannerCountAfter=Number(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE workspace_id='${workspace}';`));
+    assert.equal(plannerCountAfter,plannerCountBefore,'A personal Jamie chat must not write planner items before explicit confirmation.');
+    console.log(`PASS: signed-in personal Jamie ${liveJamie?'provider-backed':'provider-disabled'} chat returns its private response schema without a planner write.`);
+    const agentId=`seller-acceptance-${randomUUID()}`;
+    const leadId=randomUUID();
+    const subdomain=`seller-${randomUUID().replaceAll('-','').slice(0,12)}`;
+    await sql(`
+      INSERT INTO public.site_config(id,agent_id,owner_id,subdomain,status)
+        VALUES('${randomUUID()}','${agentId}','${primary.userId}','${subdomain}','active');
+      INSERT INTO public.agent_site_leads(id,agent_id,site,source,name,email,message,metadata)
+        VALUES('${leadId}','${agentId}','${subdomain}','seller_plan','Synthetic Seller','synthetic@example.test','Fixture request',
+          jsonb_build_object('sellerPlan',jsonb_build_object('requestKind','seller_plan','timing','one-to-three-months',
+            'requestedContact',jsonb_build_object('granted',true,'capturedAt',now())),
+            'campaign',jsonb_build_object('campaign','auth-acceptance')));
+    `);
+    sellerFixtureAgents.push(agentId);
+    if (!sellerScheduleRecoveryOnly) {
+    const dailyRecoveryLead=randomUUID();
+    await sql(`INSERT INTO public.agent_site_leads(id,agent_id,site,source,name,email,message,metadata)
+      VALUES('${dailyRecoveryLead}','${agentId}','${subdomain}','seller_plan','Synthetic Daily Recovery Seller','daily@example.test','Today recovery fixture',
+        jsonb_build_object('sellerPlan',jsonb_build_object('requestedContact',jsonb_build_object('granted',true,'capturedAt',now()))));`);
+    const dailyReadUrl=`${origin}/api/realtor/today`;
+    let dailyReads=0;
+    await primary.page.route(dailyReadUrl,async (route)=>{
+      dailyReads++;
+      if(dailyReads===2)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false})});
+      const response=await route.fetch();
+      const payload=await response.json();
+      if(dailyReads===1)payload.result.seller={status:'available',value:{status:'available',counts:{newRequests:'invalid'}}};
+      await route.fulfill({response,json:payload});
+    });
+    await primary.page.goto(`${origin}/today`);
+    await primary.page.getByRole('button',{name:'Retry seller activity',exact:true}).waitFor();
+    assert.equal(await primary.page.getByText('No seller requests need an initial response.',{exact:true}).count(),0);
+    await primary.page.getByRole('button',{name:'Retry seller activity',exact:true}).click();
+    await primary.page.getByText('Seller activity could not be reloaded. Try again.',{exact:true}).waitFor();
+    await primary.page.getByRole('heading',{name:'Business progress',exact:true}).waitFor();
+    await primary.page.getByRole('button',{name:'Retry seller activity',exact:true}).click();
+    const dailyCard=primary.page.getByText('Synthetic Daily Recovery Seller',{exact:true}).locator('..').locator('..');
+    await dailyCard.getByRole('button',{name:'Schedule response',exact:true}).waitFor();
+    await primary.page.unroute(dailyReadUrl);
+    await dailyCard.getByRole('button',{name:'Schedule response',exact:true}).click();
+    const dailyDialog=primary.page.getByRole('dialog',{name:'Schedule seller response'});
+    await dailyDialog.getByLabel('Date',{exact:true}).fill(appointmentDate);
+    await dailyDialog.getByLabel('Time',{exact:true}).fill('10:15');
+    await primary.page.route(dailyReadUrl,(route)=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false})}));
+    await dailyDialog.getByRole('button',{name:'Schedule response',exact:true}).click();
+    await dailyDialog.waitFor({state:'hidden'});
+    await primary.page.getByText('Seller activity could not be reloaded. Try again.',{exact:true}).waitFor();
+    await primary.page.unroute(dailyReadUrl);
+    await primary.page.getByText('Schedule changed. Refresh to see the latest tasks and reminders.',{exact:true}).waitFor();
+    await primary.page.getByRole('button',{name:'Refresh schedule',exact:true}).waitFor();
+    await primary.page.getByRole('button',{name:'Retry seller activity',exact:true}).click();
+    await primary.page.getByRole('heading',{name:'Unscheduled requests',exact:true}).waitFor();
+    assert.equal(await primary.page.getByText('Synthetic Daily Recovery Seller',{exact:true}).count(),0,
+      'a successful owner reread removes the scheduled request from the unscheduled seller panel');
+    await primary.page.getByText('Respond to seller request — Synthetic Daily Recovery Seller',{exact:true}).waitFor();
+    assert.equal(await primary.page.getByText('Schedule changed. Refresh to see the latest tasks and reminders.',{exact:true}).count(),0);
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE source_lead_id='${dailyRecoveryLead}';`),'1');
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_reminders reminder JOIN public.realtor_planner_occurrences occurrence ON occurrence.id=reminder.occurrence_id
+      JOIN public.realtor_planner_items item ON item.id=occurrence.item_id WHERE item.source_lead_id='${dailyRecoveryLead}';`),'1');
+    const dailyOccurrenceId=await sql(`SELECT occurrence.id FROM public.realtor_planner_occurrences occurrence
+      JOIN public.realtor_planner_items item ON item.id=occurrence.item_id WHERE item.source_lead_id='${dailyRecoveryLead}';`);
+    const dailyTaskCard=primary.page.locator(`[data-planner-occurrence-id="${dailyOccurrenceId}"]`);
+    await dailyTaskCard.getByText(`follow up · ${appointmentDate} · 10:15 (${timeZone})`,{exact:true}).waitFor();
+    for (const width of [390,768,1440]) {
+      await primary.page.setViewportSize({width,height:900});
+      await dailyTaskCard.getByRole('link',{name:'Open planner task',exact:true}).waitFor();
+      await dailyTaskCard.getByRole('link',{name:'Open seller request',exact:true}).waitFor();
+      assert(await primary.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),
+        'Today task links and their local time fit the viewport');
+    }
+    assert.equal(await dailyTaskCard.getByRole('link',{name:'Open planner task',exact:true}).getAttribute('href'),`/planner?date=${appointmentDate}`);
+    assert.equal(await dailyTaskCard.getByRole('link',{name:'Open seller request',exact:true}).getAttribute('href'),`/seller-inbox?leadId=${dailyRecoveryLead}`);
+    await dailyTaskCard.getByRole('link',{name:'Open planner task',exact:true}).click();
+    await primary.page.getByText(`Showing schedule for ${appointmentDate}.`,{exact:false}).waitFor();
+    const dailyPlannerCard=primary.page.locator(`[data-planner-occurrence-id="${dailyOccurrenceId}"]`);
+    await dailyPlannerCard.getByRole('link',{name:'Open seller request',exact:true}).click();
+    await primary.page.getByRole('heading',{name:'Synthetic Daily Recovery Seller',exact:true}).waitFor();
+    await primary.page.goto(`${origin}/today`);
+    await dailyTaskCard.getByRole('link',{name:'Open seller request',exact:true}).click();
+    await primary.page.getByRole('heading',{name:'Synthetic Daily Recovery Seller',exact:true}).waitFor();
+    await sql(`UPDATE public.site_config SET owner_id=NULL WHERE agent_id='${agentId}' AND owner_id='${primary.userId}';`);
+    try {
+      await primary.page.goto(`${origin}/today`);
+      await dailyTaskCard.getByRole('link',{name:'Open planner task',exact:true}).waitFor();
+      assert.equal(await dailyTaskCard.getByRole('link',{name:'Open seller request',exact:true}).count(),0,
+        'fresh Today data removes the seller request handoff after ownership is lost');
+      const lostOwnerToday=await request(primary.page,'/api/realtor/today');
+      assert.equal(lostOwnerToday.status,200);
+      const lostOwnerTask=lostOwnerToday.data.result.agenda.value.upcoming.find((item)=>item.id===dailyOccurrenceId);
+      assert(lostOwnerTask,'the private planner task remains available to its owner');
+      assert.equal(lostOwnerTask.seller_source_available,false);
+      assert.equal(lostOwnerTask.seller_lead,null,'the server does not attach a stale seller source');
+      await dailyTaskCard.getByRole('link',{name:'Open planner task',exact:true}).click();
+      await dailyPlannerCard.getByText('Respond to seller request — Synthetic Daily Recovery Seller',{exact:true}).waitFor();
+      assert.equal(await dailyPlannerCard.getByRole('link',{name:'Open seller request',exact:true}).count(),0);
+      const lostOwnerLead=await request(primary.page,`/api/realtor/leads?leadId=${dailyRecoveryLead}`);
+      assert.equal(lostOwnerLead.status,200);
+      assert.equal(lostOwnerLead.data.result.leads.length,0,'a direct seller read rechecks current ownership');
+    } finally {
+      await sql(`UPDATE public.site_config SET owner_id='${primary.userId}' WHERE agent_id='${agentId}' AND owner_id IS NULL;`);
+    }
+    assert.equal(await sql(`SELECT revision FROM public.agent_site_leads WHERE id='${dailyRecoveryLead}';`),'1');
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${dailyRecoveryLead}';`),'0',
+      'following task/request links records no seller contact or outcome');
+    console.log('PASS: responsive Today task links open the due-date planner and current-owner seller request; fresh ownership loss removes both request handoffs without a write.');
+    await sql(`DELETE FROM public.workflow_jobs WHERE user_id='${primary.userId}' AND workflow_key='realtor_reminder'
+      AND payload->>'reminderId' IN (SELECT reminder.id::text FROM public.realtor_reminders reminder JOIN public.realtor_planner_occurrences occurrence ON occurrence.id=reminder.occurrence_id
+        JOIN public.realtor_planner_items item ON item.id=occurrence.item_id WHERE item.source_lead_id='${dailyRecoveryLead}');
+      DELETE FROM public.realtor_planner_items WHERE user_id='${primary.userId}' AND source_lead_id='${dailyRecoveryLead}';
+      DELETE FROM public.agent_site_leads WHERE id='${dailyRecoveryLead}' AND agent_id='${agentId}';`);
+    console.log('PASS: Today seller recovery preserves other panels; a saved response appears in Coming up with one reminder through the existing planner scheduler.');
+    const anonymousLeads=await request(primary.page,`/api/realtor/leads?limit=10`);
+    assert.equal(anonymousLeads.status,200);
+    assert(anonymousLeads.data.result.leads.some((lead)=>lead.id===leadId));
+    assert.equal(JSON.stringify(anonymousLeads.data.result.leads.find((lead)=>lead.id===leadId)).includes('synthetic@example.test'),true,
+      'the authenticated site owner receives permissioned contact details for seller follow-up');
+    await primary.page.goto(`${origin}/seller-inbox?leadId=${leadId}`);
+    await primary.page.getByRole('heading',{name:'Synthetic Seller',exact:true}).waitFor();
+    for (const width of [390,768,1440]) {
+      await primary.page.setViewportSize({width,height:900});
+      await primary.page.getByRole('button',{name:'Schedule response',exact:true}).click();
+      const dialog=primary.page.getByRole('dialog',{name:'Schedule seller response'});
+      await dialog.waitFor();
+      const bounds=await dialog.boundingBox();
+      assert(bounds && bounds.x>=0 && bounds.x+bounds.width<=width,'personal inbox scheduler fits the viewport');
+      await primary.page.keyboard.press('Escape');
+      assert(await primary.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),
+        'the authenticated personal seller inbox has no horizontal overflow');
+    }
+    assert.equal(await sql(`SELECT revision FROM public.agent_site_leads WHERE id='${leadId}';`),'1',
+      'browsing the personal inbox and opening scheduling drafts performs no lead write');
+    console.log('PASS: a real non-operator owner opens the personal seller inbox and scheduling drafts at phone/tablet/desktop widths.');
+    const overdueDate=`${Number(today.slice(0,4))-1}-12-31`;
+    const overdueTask=await request(primary.page,'/api/realtor/planner','POST',{
+      itemId:null,expectedRevision:null,item:{kind:'follow_up',title:'Synthetic overdue seller response',notes:'',
+        due:{anchorDate:overdueDate,localTime:'09:00',timeZone,recurrence:{frequency:'once'},endsOn:overdueDate,
+          reminderOffsetsDays:[0,1,2]},expectedAmountCents:null,property:null,sourceSprintTaskId:null,
+        sellerLead:{leadId,actionKey:'initial-response:v1',expectedLeadRevision:1},requestKey:randomUUID()},
+    });
+    assert.equal(overdueTask.status,200,`Past-year seller action setup failed: ${overdueTask.data.error||overdueTask.status}`);
+    const overdueOccurrenceId=await sql(`SELECT id FROM public.realtor_planner_occurrences WHERE item_id='${overdueTask.data.result.item_id}';`);
+    const reminderJobIds=JSON.parse(await sql(`SELECT jsonb_agg(id ORDER BY id) FROM public.workflow_jobs
+      WHERE user_id='${primary.userId}' AND workflow_key='realtor_reminder' AND payload->>'occurrenceId'='${overdueOccurrenceId}';`));
+    assert.equal(reminderJobIds.length,3,'opt-in planner reminders enqueue through the existing event trigger');
+    assert.equal(await sql(`SELECT count(*) FROM public.workflow_jobs WHERE status='queued' AND scheduled_for<=now();`),'3',
+      'only these three synthetic reminder jobs are due before the bounded worker claim');
+    const claimedReminders=JSON.parse(await sql(`SET request.jwt.claim.role='service_role';
+      SELECT jsonb_agg(jsonb_build_object('id',id,'lease',lease_token) ORDER BY id) FROM public.claim_workflow_jobs(3,300);`));
+    assert.deepEqual(claimedReminders.map((job)=>job.id),reminderJobIds,'the existing scheduler claims exactly the synthetic jobs');
+    for (const job of claimedReminders) {
+      assert.equal(await sql(`SET request.jwt.claim.role='service_role';
+        SELECT committed AND result_status='visible' FROM public.realtor_commit_reminder_job('${job.id}','${job.lease}');`),'t',
+        'the existing lease-fenced reminder handler delivers the reminder');
+    }
+    await primary.page.goto(`${origin}/today`);
+    await primary.page.locator('[data-reminder-id]').first().waitFor();
+    const reminderTask=primary.page.getByRole('link',{name:'Open reminder task',exact:true}).first();
+    assert.equal(await reminderTask.getAttribute('href'),`/planner?date=${overdueDate}`);
+    await reminderTask.click();
+    await primary.page.getByText(`Showing schedule for ${overdueDate}.`,{exact:false}).waitFor();
+    await primary.page.getByText('Synthetic overdue seller response',{exact:true}).waitFor();
+    await primary.page.goto(`${origin}/today`);
+    await primary.page.locator('[data-reminder-id]').first().waitFor();
+    const reminderUrl=`${origin}/api/realtor/reminders`;
+    const staleReminderCard=primary.page.locator('[data-reminder-id]').first();
+    const staleReminderId=await staleReminderCard.getAttribute('data-reminder-id');
+    const visibleReminders=await request(primary.page,'/api/realtor/reminders?limit=5');
+    assert.equal(visibleReminders.status,200);
+    const staleReminder=visibleReminders.data.result.find((reminder)=>reminder.id===staleReminderId);
+    assert(staleReminder,'the real owner can read the reminder before a concurrent change');
+    const concurrentDismiss=await request(primary.page,'/api/realtor/reminders','PATCH',{
+      reminderId:staleReminderId,action:'dismiss',expectedRevision:staleReminder.revision,requestKey:randomUUID(),
+    });
+    assert.equal(concurrentDismiss.status,200);
+    const staleReminderResponse=primary.page.waitForResponse((response)=>response.url()===reminderUrl && response.request().method()==='PATCH');
+    await staleReminderCard.getByRole('button',{name:'Dismiss reminder',exact:true}).click();
+    const staleResponse=await staleReminderResponse;
+    assert.equal(staleResponse.status(),409,'a real stale reminder returns 409 without serialization retries');
+    await staleReminderCard.getByText('This reminder changed. Refresh reminders before making another change.',{exact:true}).waitFor();
+    assert.equal(await staleReminderCard.getByRole('button',{name:'Dismiss reminder',exact:true}).isEnabled(),false);
+    assert.equal(await staleReminderCard.getByRole('button',{name:'Snooze 24 hours',exact:true}).isEnabled(),false);
+    const todayReadUrl=`${origin}/api/realtor/today`;
+    await primary.page.route(todayReadUrl,(route)=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false})}));
+    await staleReminderCard.getByRole('button',{name:'Refresh reminders',exact:true}).click();
+    await staleReminderCard.getByText('Reminders could not be refreshed. Try again.',{exact:true}).waitFor();
+    assert.equal(await staleReminderCard.getByRole('button',{name:'Dismiss reminder',exact:true}).isEnabled(),false);
+    await primary.page.unroute(todayReadUrl);
+    await staleReminderCard.getByRole('button',{name:'Refresh reminders',exact:true}).click();
+    await primary.page.locator(`[data-reminder-id="${staleReminderId}"]`).waitFor({state:'hidden'});
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_mutation_receipts WHERE resource_id='${staleReminderId}' AND operation='reminder';`),'1',
+      'the stale browser attempt creates no second reminder receipt');
+    console.log('PASS: a real stale reminder returns 409, pauses both actions through a failed read, and disappears after a fresh owner read.');
+    for (const action of ['snooze','dismiss']) {
+      const bodies=[];
+      let savedRevision;
+      await primary.page.route(reminderUrl,async (route)=>{
+        if(route.request().method()!=='PATCH')return route.continue();
+        bodies.push(route.request().postData());
+        const response=await route.fetch();
+        assert.equal(response.status(),200,'the real reminder action commits before its response is withheld');
+        const payload=await response.json();
+        if (bodies.length===1) {
+          savedRevision=payload.result.revision;
+          await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false,error:'Synthetic reminder response unavailable.'})});
+        } else {
+          assert.equal(payload.result.reused,true,'the same reminder request replays its saved receipt');
+          assert.equal(payload.result.revision,savedRevision,'the retry does not advance the reminder revision');
+          await route.fulfill({response});
+        }
+      });
+      const card=primary.page.locator('[data-reminder-id]').first();
+      const reminderId=await card.getAttribute('data-reminder-id');
+      const actionLabel=action==='snooze'?'Snooze 24 hours':'Dismiss reminder';
+      await card.getByRole('button',{name:actionLabel,exact:true}).click();
+      await card.getByText('The reminder change could not be confirmed. Retry the same action or refresh reminders before choosing another action.',{exact:true}).waitFor();
+      assert.equal(await card.getByRole('button',{name:action==='snooze'?'Dismiss reminder':'Snooze 24 hours',exact:true}).isEnabled(),false);
+      await card.getByRole('button',{name:actionLabel,exact:true}).click();
+      await primary.page.getByText(action==='snooze'?'Reminder snoozed for 24 hours.':'Reminder dismissed.',{exact:true}).waitFor();
+      await primary.page.locator(`[data-reminder-id="${reminderId}"]`).waitFor({state:'hidden'});
+      await primary.page.unroute(reminderUrl);
+      assert.equal(bodies.length,2);
+      assert.equal(bodies[0],bodies[1],'the reminder retry preserves its entire original payload, including the snooze deadline');
+      assert.equal(await sql(`SELECT count(*) FROM public.realtor_mutation_receipts WHERE resource_id='${reminderId}' AND operation='reminder';`),'1');
+      assert.equal(await sql(`SELECT count(*) FROM public.platform_audit_events WHERE resource_id='${reminderId}' AND action='realtor.reminder.${action}';`),'1');
+      if(action==='snooze') {
+        const body=JSON.parse(bodies[0]);
+        assert.equal(await sql(`SELECT scheduled_at= '${body.until}'::timestamptz AND snoozed_until=scheduled_at AND status='scheduled'
+          FROM public.realtor_reminders WHERE id='${reminderId}';`),'t');
+        assert.equal(await sql(`SELECT count(*) FROM public.workflow_jobs WHERE workflow_key='realtor_reminder'
+          AND payload->>'reminderId'='${reminderId}' AND (payload->>'reminderRevision')::integer=${savedRevision} AND status='queued';`),'1',
+          'snooze creates one future event job through the existing durable reminder trigger');
+      }
+    }
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${leadId}';`),'0');
+    console.log('PASS: lease-fenced scheduler delivery opens a past-year task; lost snooze/dismiss responses replay once, and snooze queues one durable reminder job.');
+    await primary.page.goto(`${origin}/today`);
+    const scheduledAction=primary.page.getByRole('link',{name:'Open scheduled action →',exact:true});
+    await scheduledAction.waitFor();
+    assert.equal(await scheduledAction.getAttribute('href'),`/planner?date=${overdueDate}`);
+    await scheduledAction.click();
+    await primary.page.getByText(`Showing schedule for ${overdueDate}.`,{exact:false}).waitFor();
+    const overdueRow=primary.page.getByText('Synthetic overdue seller response',{exact:true}).locator('..').locator('..');
+    const completionUrl=`${origin}/api/realtor/planner/${overdueOccurrenceId}`;
+    const completionBodies=[];
+    let firstCompletionRevision;
+    await primary.page.route(completionUrl,async (route)=>{
+      completionBodies.push(route.request().postData());
+      const response=await route.fetch();
+      assert.equal(response.status(),200,'real completion succeeds before its response is withheld');
+      const payload=await response.json();
+      if (completionBodies.length===1) {
+        firstCompletionRevision=payload.result.revision;
+        await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false,error:'Synthetic committed response unavailable.'})});
+      } else {
+        assert.equal(payload.result.reused,true,'retry replays the existing completion receipt');
+        assert.equal(payload.result.revision,firstCompletionRevision,'retry does not advance the saved occurrence revision');
+        await route.fulfill({response});
+      }
+    });
+    await overdueRow.getByRole('button',{name:'Mark complete',exact:true}).click();
+    await primary.page.getByText('Synthetic committed response unavailable.',{exact:true}).waitFor();
+    assert.equal(await sql(`SELECT status FROM public.realtor_planner_occurrences WHERE id='${overdueOccurrenceId}';`),'completed');
+    await overdueRow.getByRole('button',{name:'Mark complete',exact:true}).click();
+    await primary.page.getByText('Marked complete.',{exact:true}).waitFor();
+    await primary.page.unroute(completionUrl);
+    assert.equal(completionBodies.length,2);
+    assert.equal(completionBodies[0],completionBodies[1],'the browser retry preserves the exact completion payload');
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_mutation_receipts WHERE resource_id='${overdueOccurrenceId}' AND operation='occurrence_action';`),'1');
+    assert.equal(await sql(`SELECT status FROM public.realtor_planner_occurrences WHERE item_id='${overdueTask.data.result.item_id}';`),'completed',
+      'the due-date planner completion is persisted for the past-year occurrence');
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${leadId}';`),'0',
+      'completing a planner action does not manufacture seller contact or reply evidence');
+    assert.equal(await sql(`SELECT revision FROM public.agent_site_leads WHERE id='${leadId}';`),'1');
+    console.log('PASS: Today opens a past-year seller action on its due date; real-owner completion persists without manufacturing seller receipts.');
+    console.log('PASS: a completion response lost after commit retries the same browser request and replays one receipt without another revision.');
+    await primary.page.goto(`${origin}/seller-inbox?leadId=${leadId}`);
+    await primary.page.getByRole('heading',{name:'Synthetic Seller',exact:true}).waitFor();
+    await primary.page.getByRole('button',{name:'Schedule response',exact:true}).click();
+    const completedScheduleDialog=primary.page.getByRole('dialog',{name:'Schedule seller response'});
+    const completedScheduleLink=completedScheduleDialog.getByRole('link',{name:'Open saved planner task',exact:true});
+    await completedScheduleLink.waitFor();
+    assert.equal(await completedScheduleLink.getAttribute('href'),`/planner?date=${overdueDate}`);
+    await completedScheduleDialog.getByText(`completed · ${overdueDate}`,{exact:false}).waitFor();
+    assert.equal(await completedScheduleDialog.getByRole('button',{name:'Schedule response',exact:true}).count(),0,
+      'the completed source opens its existing task instead of another create action');
+    await completedScheduleLink.click();
+    await primary.page.getByText('Synthetic overdue seller response',{exact:true}).waitFor();
+    await primary.page.goto(`${origin}/seller-inbox?leadId=${leadId}`);
+    await primary.page.getByRole('heading',{name:'Synthetic Seller',exact:true}).waitFor();
+    await primary.page.getByText('Record an earlier contact or reply',{exact:true}).click();
+    async function enterReceiptTime(instant) {
+      const parts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(instant);
+      const value=(type)=>parts.find((candidate)=>candidate.type===type)?.value||'';
+      await primary.page.getByLabel(`Contact or reply time (${timeZone})`,{exact:true}).fill(`${value('year')}-${value('month')}-${value('day')}T${value('hour')}:${value('minute')}`);
+      const repeated=primary.page.getByLabel('Occurrence of the repeated hour',{exact:true});
+      if (await repeated.count()) {
+        const offset=(Date.UTC(Number(value('year')),Number(value('month'))-1,Number(value('day')),Number(value('hour')),Number(value('minute')))-instant.getTime())/60_000;
+        await repeated.selectOption(offset===-300?'earlier':'later');
+      }
+    }
+    const contactAt=new Date(Date.now()-2*60_000);contactAt.setSeconds(0,0);
+    await enterReceiptTime(contactAt);
+    const contactResponse=primary.page.waitForResponse((response)=>response.url()===`${origin}/api/realtor/leads` && response.request().method()==='POST');
+    await primary.page.getByRole('button',{name:'Record email contact',exact:true}).click();
+    const savedContactResponse=await contactResponse;
+    const contact={status:savedContactResponse.status(),data:await savedContactResponse.json()};
+    assert.equal(contact.status,200,`Opted-in seller contact receipt failed: ${contact.data.error||contact.status}`);
+    await primary.page.getByText('Email contact attempt recorded.',{exact:true}).waitFor();
+    assert.equal(await sql(`SELECT (contact_attempted_at='${contactAt.toISOString()}'::timestamptz)::text FROM public.agent_site_leads WHERE id='${leadId}';`),'true');
+    await primary.page.getByRole('button',{name:'Record customer reply',exact:true}).waitFor({state:'visible'});
+    const replyAt=new Date(Date.now()-60_000);replyAt.setSeconds(0,0);
+    await enterReceiptTime(replyAt);
+    const replyResponse=primary.page.waitForResponse((response)=>response.url()===`${origin}/api/realtor/leads` && response.request().method()==='POST');
+    await primary.page.getByRole('button',{name:'Record customer reply',exact:true}).click();
+    const savedReplyResponse=await replyResponse;
+    const reply={status:savedReplyResponse.status(),data:await savedReplyResponse.json()};
+    assert.equal(reply.status,200,`Seller reply receipt failed: ${reply.data.error||reply.status}`);
+    assert.equal(await sql(`SELECT (responded_at='${replyAt.toISOString()}'::timestamptz)::text FROM public.agent_site_leads WHERE id='${leadId}';`),'true');
+    console.log('PASS: real-owner contact and reply receipts preserve the earlier local times chosen in the rendered inbox.');
+    const replyFollowUp=await request(primary.page,'/api/realtor/planner','POST',{
+      itemId:null,expectedRevision:null,item:{kind:'follow_up',title:'Synthetic seller reply follow-up',notes:'',
+        due:{anchorDate:appointmentDate,localTime:appointmentTime,timeZone,recurrence:{frequency:'once'},endsOn:appointmentDate,
+          reminderOffsetsDays:[0]},expectedAmountCents:null,property:null,sourceSprintTaskId:null,
+        sellerLead:{leadId,actionKey:`reply:${reply.data.result.eventId}`,expectedLeadRevision:reply.data.result.leadRevision},requestKey:randomUUID()},
+    });
+    assert.equal(replyFollowUp.status,200,`Reply follow-up setup failed: ${replyFollowUp.data.error||replyFollowUp.status}`);
+    const replyPlannerId=replyFollowUp.data.result.item_id;
+    const consultation=await request(primary.page,'/api/realtor/leads','POST',{
+      leadId,expectedRevision:reply.data.result.leadRevision,requestKey:randomUUID(),action:'confirm_consultation',
+      startsAt:startAt.toISOString(),confirmationBasis:'confirmed_booking',
+    });
+    assert.equal(consultation.status,200,`Consultation confirmation failed: ${consultation.data.error||consultation.status}`);
+    const consultationEventId=consultation.data.result.eventId;
+    const activeConsultations=await request(primary.page,`/api/realtor/leads/outcomes?leadId=${leadId}&kind=consultation`);
+    assert.equal(activeConsultations.status,200);
+    assert.equal(activeConsultations.data.result.events[0]?.id,consultationEventId,
+      'the current owner can load the active consultation independently of recent contact history');
+    await primary.page.goto(`${origin}/seller-inbox?leadId=${leadId}`);
+    await primary.page.getByRole('heading',{name:'Synthetic Seller',exact:true}).waitFor();
+    assert(await primary.page.getByRole('button',{name:'Schedule response',exact:true}).isDisabled(),
+      'initial response scheduling is disabled after the first contact');
+    await primary.page.getByRole('button',{name:/Schedule follow-up for reply/}).click();
+    const savedReplyLink=primary.page.getByRole('dialog',{name:'Schedule seller follow-up'}).getByRole('link',{name:'Open saved planner task',exact:true});
+    await savedReplyLink.waitFor();
+    assert.equal(await savedReplyLink.getAttribute('href'),`/planner?date=${appointmentDate}`);
+    await primary.page.keyboard.press('Escape');
+    await primary.page.getByRole('button',{name:'Schedule confirmed consultation',exact:true}).click();
+    await primary.page.getByRole('button',{name:'Schedule consultation appointment',exact:true}).click();
+    await primary.page.getByRole('dialog',{name:'Schedule confirmed consultation'}).waitFor();
+    await primary.page.keyboard.press('Escape');
+    assert.equal(await sql(`SELECT revision FROM public.agent_site_leads WHERE id='${leadId}';`),String(consultation.data.result.leadRevision),
+      'reopening saved reply and consultation scheduling drafts performs no lead write');
+    const planner=await request(primary.page,'/api/realtor/planner','POST',{
+      itemId:null,expectedRevision:null,item:{kind:'appointment',title:'Confirmed seller consultation',notes:'Synthetic acceptance appointment',
+        due:{anchorDate:appointmentDate,localTime:appointmentTime,timeZone,recurrence:{frequency:'once'},endsOn:appointmentDate,
+          reminderOffsetsDays:[0],utcOffsetMinutes},expectedAmountCents:null,property:null,sourceSprintTaskId:null,
+        sellerLead:{leadId,actionKey:`consultation:${consultationEventId}`,expectedLeadRevision:consultation.data.result.leadRevision},requestKey:randomUUID()},
+    });
+    assert.equal(planner.status,200,`Exact-time consultation planner link failed: ${planner.data.error||planner.status}`);
+    const linkedPlannerId=planner.data.result.item_id;
+    assert.match(linkedPlannerId,/^[0-9a-f-]{36}$/i);
+    await primary.page.getByRole('button',{name:'Schedule consultation appointment',exact:true}).click();
+    const savedConsultationLink=primary.page.getByRole('dialog',{name:'Schedule confirmed consultation'}).getByRole('link',{name:'Open saved planner task',exact:true});
+    await savedConsultationLink.waitFor();
+    assert.equal(await savedConsultationLink.getAttribute('href'),`/planner?date=${appointmentDate}`);
+    await primary.page.keyboard.press('Escape');
+    const scheduleRow=await sql(`SELECT count(*)::text FROM public.realtor_planner_occurrences occurrence JOIN public.realtor_planner_items item ON item.id=occurrence.item_id WHERE item.id='${linkedPlannerId}' AND occurrence.status='pending';`);
+    assert.equal(scheduleRow,'1','the confirmed consultation creates exactly one pending appointment');
+    const cancellation=await request(primary.page,'/api/realtor/leads','POST',{
+      leadId,expectedRevision:consultation.data.result.leadRevision,requestKey:randomUUID(),action:'cancel_consultation',consultationEventId,
+    });
+    assert.equal(cancellation.status,200,`Consultation cancellation failed: ${cancellation.data.error||cancellation.status}`);
+    const cancelledOutcomes=await request(primary.page,`/api/realtor/leads/outcomes?leadId=${leadId}&kind=consultation`);
+    assert.equal(cancelledOutcomes.status,200);
+    assert.deepEqual(cancelledOutcomes.data.result.events,[],
+      'cancelled consultations are excluded from the actionable outcome picker');
+    assert.equal(await sql(`SELECT status FROM public.realtor_planner_occurrences WHERE item_id='${linkedPlannerId}';`),'cancelled',
+      'cancellation transaction cancels the linked pending appointment');
+    assert.equal(await sql(`SELECT status FROM public.realtor_reminders WHERE occurrence_id IN (SELECT id FROM public.realtor_planner_occurrences WHERE item_id='${linkedPlannerId}');`),'superseded',
+      'cancellation transaction supersedes the linked pending reminder');
+    const closing=await request(primary.page,'/api/realtor/leads','POST',{
+      leadId,expectedRevision:cancellation.data.result.leadRevision,requestKey:randomUUID(),action:'record_closing',
+      closedOn:today,reference:`acceptance-${leadId}`,
+    });
+    assert.equal(closing.status,200,`Closing evidence failed: ${closing.data.error||closing.status}`);
+    const activeClosings=await request(primary.page,`/api/realtor/leads/outcomes?leadId=${leadId}&kind=closing`);
+    assert.equal(activeClosings.status,200);
+    assert.equal(activeClosings.data.result.events[0]?.id,closing.data.result.eventId,
+      'the current owner can load the active closing for correction');
+    console.log('PASS: authenticated active-outcome reads show the current consultation/closing state.');
+    const todayResult=await request(primary.page,'/api/realtor/today');
+    assert.equal(todayResult.status,200);
+    assert.equal(todayResult.data.result.seller.value.counts.newRequests,1);
+    assert.equal(todayResult.data.result.seller.value.counts.customerReplies,1);
+    assert.equal(todayResult.data.result.seller.value.counts.confirmedConsultations,0,
+      'cancelled consultation does not remain active in the owner-local outcome scoreboard');
+    assert.equal(todayResult.data.result.seller.value.counts.recordedClosings,1,
+      'seller closing outcome is visible as a distinct seller measure');
+    assert.equal(todayResult.data.result.seller.value.campaigns.find((entry)=>entry.campaignKey==='auth-acceptance')?.requests,1);
+    const cashSummary=await request(primary.page,`/api/realtor/business-summary?year=${Number(today.slice(0,4))}`);
+    assert.equal(cashSummary.status,200);
+    assert.equal(Number(cashSummary.data.result.recordedNetCents||0),0,
+      'a seller closing outcome does not create or imply a financial cash record');
+    await primary.page.goto(`${origin}/today`);
+    await primary.page.getByRole('heading',{name:'Seller business'}).waitFor();
+    await primary.page.getByText('Recorded closings',{exact:true}).waitFor();
+
+    const reviewTask=await request(primary.page,'/api/realtor/planner','POST',{
+      itemId:null,expectedRevision:null,item:{kind:'weekly_review',title:'Seller acceptance weekly review',notes:'',
+        due:{anchorDate:today,localTime:null,timeZone,recurrence:{frequency:'once'},endsOn:today,reminderOffsetsDays:[]},
+        expectedAmountCents:null,property:null,sourceSprintTaskId:null,requestKey:randomUUID()},
+    });
+    assert.equal(reviewTask.status,200,`Weekly review task creation failed: ${reviewTask.data.error||reviewTask.status}`);
+    const plannerRead=await request(primary.page,`/api/realtor/planner?from=${today}&through=${today}&status=pending&limit=100`);
+    const reviewOccurrence=plannerRead.data.result.items.find((item)=>item.item_id===reviewTask.data.result.item_id);
+    assert(reviewOccurrence,'weekly review occurrence is visible to its owner');
+    const completedReview=await request(primary.page,`/api/realtor/planner/${reviewOccurrence.id}`,'PATCH',{
+      action:'complete',expectedRevision:reviewOccurrence.revision,requestKey:randomUUID(),completionDetails:{weeklyReview:{
+        version:2,reviewedUpcomingDates:true,reviewedMissingExpenses:true,reviewedSellerOutcomes:true,
+        priority:'Improve seller follow-up',chosenNextAction:'Call opted-in requests',friction:null,
+      }},
+    });
+    assert.equal(completedReview.status,200,`Version-2 weekly review save failed: ${completedReview.data.error||completedReview.status}`);
+    const persistedReview=await sql(`SELECT completion_details->'weeklyReview'->>'localWeekKey' FROM public.realtor_planner_occurrences WHERE id='${reviewOccurrence.id}';`);
+    assert.match(persistedReview,/^\d{4}-\d{2}-\d{2}$/,'server generates the local review week key');
+    assert.equal(await sql(`SELECT completion_details->'weeklyReview'->>'version' FROM public.realtor_planner_occurrences WHERE id='${reviewOccurrence.id}';`),'2');
+
+    await primary.page.goto(`${origin}/seller-inbox?leadId=${leadId}`);
+    await primary.page.getByRole('heading',{name:'Synthetic Seller',exact:true}).waitFor();
+    await primary.page.getByRole('button',{name:'Revoke requested contact',exact:true}).click();
+    await primary.page.getByRole('button',{name:'Keep requested contact',exact:true}).click();
+    assert.equal(await sql(`SELECT revision FROM public.agent_site_leads WHERE id='${leadId}';`),String(closing.data.result.leadRevision),
+      'cancelling permission revocation performs no write');
+    await primary.page.getByRole('button',{name:'Revoke requested contact',exact:true}).click();
+    await primary.page.getByRole('button',{name:'Confirm contact revocation',exact:true}).click();
+    await primary.page.getByText('Requested-contact permission: not active.',{exact:true}).waitFor();
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${leadId}' AND event_type='contact_permission_revoked';`),'1');
+    assert.equal(await sql(`SELECT status FROM public.realtor_planner_occurrences WHERE item_id='${replyPlannerId}';`),'cancelled');
+    assert.equal(await sql(`SELECT status FROM public.realtor_reminders WHERE occurrence_id IN (SELECT id FROM public.realtor_planner_occurrences WHERE item_id='${replyPlannerId}');`),'superseded');
+    console.log('PASS: owner reopens saved reply/consultation drafts without a write, then confirms contact revocation through the inbox and cancels its pending reply reminder.');
+
+    const outsider=await login();
+    const outsiderSetup=await request(outsider.page,'/api/realtor/preferences','POST',{
+      timeZone,remindersEnabled:false,gamificationEnabled:false,celebrationsEnabled:false,hideAmountsOnToday:false,
+      recordsStartDate:today,expectedRevision:null,requestKey:randomUUID(),
+    });
+    assert.equal(outsiderSetup.status,200);
+    workspaceIds.push(outsiderSetup.data.result.workspace_id);
+    const foreignLeads=await request(outsider.page,`/api/realtor/leads?leadId=${leadId}`);
+    assert.equal(foreignLeads.status,200);
+    assert.deepEqual(foreignLeads.data.result.leads,[],'a real unrelated owner cannot see the synthetic seller lead');
+    const foreignSchedule=await request(outsider.page,`/api/realtor/leads/schedule?leadId=${leadId}&actionKey=initial-response%3Av1`);
+    assert.equal(foreignSchedule.status,200);
+    assert.equal(foreignSchedule.data.result,null,'an unrelated owner receives no seller planner link or task details');
+    const foreignOutcomes=await request(outsider.page,`/api/realtor/leads/outcomes?leadId=${leadId}&kind=closing`);
+    assert.equal(foreignOutcomes.status,200);
+    assert.deepEqual(foreignOutcomes.data.result.events,[],
+      'a real unrelated owner cannot load seller outcome details');
+    await outsider.page.goto(`${origin}/seller-inbox?leadId=${leadId}`);
+    await outsider.page.getByText('This seller request is unavailable to your workspace.',{exact:true}).waitFor();
+    assert.equal(await outsider.page.getByRole('heading',{name:'Synthetic Seller',exact:true}).count(),0,
+      'the personal inbox never renders another owner’s seller request');
+    assert.equal(outsider.pageErrors.length,0,`Foreign-user browser errors: ${outsider.pageErrors.join('; ')}`);
+    console.log('PASS: real owner auth reads a private seller request, records contact/reply/consultation/closing, links and cancels its appointment/reminder, and completes v2 weekly review.');
+    console.log('PASS: owner-local scoreboard preserves campaign cohorts and separates a seller closing from manual cash; another authenticated owner cannot read the lead.');
+    }
+
+    const recoveryLeadId=randomUUID();
+    await sql(`INSERT INTO public.agent_site_leads(id,agent_id,site,source,name,email,message,metadata)
+      VALUES('${recoveryLeadId}','${agentId}','${subdomain}','seller_plan','Synthetic Recovery Seller','recovery@example.test','Scheduling recovery fixture',
+        jsonb_build_object('sellerPlan',jsonb_build_object('requestedContact',jsonb_build_object('granted',true,'capturedAt',now()))));`);
+    await primary.page.goto(`${origin}/seller-inbox?leadId=${recoveryLeadId}`);
+    await primary.page.getByRole('heading',{name:'Synthetic Recovery Seller',exact:true}).waitFor();
+    await primary.page.getByRole('button',{name:'Schedule response',exact:true}).click();
+    const recoveryDialog=primary.page.getByRole('dialog',{name:'Schedule seller response'});
+    await recoveryDialog.getByLabel('Date',{exact:true}).fill(appointmentDate);
+    await recoveryDialog.getByLabel('Time',{exact:true}).fill('16:45');
+    await recoveryDialog.getByLabel('Remind me at the scheduled time',{exact:true}).uncheck();
+    await recoveryDialog.getByLabel('Time zone',{exact:true}).fill('America/');
+    await recoveryDialog.getByText('Choose a valid time zone, such as America/Chicago.',{exact:true}).waitFor();
+    assert.equal(await recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).isEnabled(),false,
+      'an incomplete time zone remains editable and blocks scheduling');
+    assert.equal(await recoveryDialog.getByLabel('Date',{exact:true}).inputValue(),appointmentDate);
+    assert.equal(await recoveryDialog.getByLabel('Time',{exact:true}).inputValue(),'16:45');
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE source_lead_id='${recoveryLeadId}';`),'0',
+      'invalid scheduling drafts do not write planner items');
+    await recoveryDialog.getByLabel('Time zone',{exact:true}).fill('  America/Chicago  ');
+    await recoveryDialog.getByText('Choose a valid time zone, such as America/Chicago.',{exact:true}).waitFor({state:'hidden'});
+    const changedRecoveryLead=await request(primary.page,'/api/realtor/leads','POST',{
+      leadId:recoveryLeadId,expectedRevision:1,requestKey:randomUUID(),action:'record_response',
+      source:'customer_reply',occurredAt:new Date().toISOString(),
+    });
+    assert.equal(changedRecoveryLead.status,200,'a real concurrent owner action changes the open draft revision');
+    const staleRecoveryAction=await request(primary.page,'/api/realtor/leads','POST',{
+      leadId:recoveryLeadId,expectedRevision:1,requestKey:randomUUID(),action:'record_response',
+      source:'customer_reply',occurredAt:new Date().toISOString(),
+    });
+    assert.equal(staleRecoveryAction.status,409,'a stale seller action returns a business conflict without transaction retries');
+    assert.equal(await recoveryDialog.getByLabel('Date',{exact:true}).inputValue(),appointmentDate,'recovery draft retains its date before the first save');
+    assert.equal(await recoveryDialog.getByLabel('Time',{exact:true}).inputValue(),'16:45','recovery draft retains its time before the first save');
+    assert.equal(await recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).isEnabled(),true,
+      'the populated recovery draft is ready to submit');
+    const plannerBaseline=await request(primary.page,`/api/realtor/planner?from=${today}&through=${appointmentDate}`);
+    assert.equal(plannerBaseline.status,200,'real owner planner read is available before submitting the stale draft');
+    await primary.page.screenshot({path:artifacts+'seller-schedule-recovery.png'});
+    await recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).click({trial:true,timeout:5000});
+    const scheduleNetwork=[];
+    const observeScheduleRequest=(req)=>{if(new URL(req.url()).pathname==='/api/realtor/planner')scheduleNetwork.push(`request ${req.method()}`);};
+    const observeScheduleResponse=(res)=>{if(new URL(res.url()).pathname==='/api/realtor/planner')scheduleNetwork.push(`response ${res.status()}`);};
+    primary.page.on('request',observeScheduleRequest);
+    primary.page.on('response',observeScheduleResponse);
+    let staleSaveResponse;
+    try {
+      [staleSaveResponse]=await Promise.all([
+        primary.page.waitForResponse((response)=>response.url()===`${origin}/api/realtor/planner` && response.request().method()==='POST'),
+        recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).click({timeout:5000}),
+      ]);
+    } catch (error) {
+      const databaseActivity=await sql(`SELECT COALESCE(json_agg(json_build_object('state',state,'wait',wait_event_type||':'||wait_event,'blockedBy',cardinality(pg_blocking_pids(pid)),
+        'plannerRpc',query ILIKE '%realtor_save_planner_item%')), '[]'::json) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND state<>'idle';`);
+      throw new Error(`Scheduling browser boundary: ${error.message}; browser errors: ${primary.pageErrors.join('; ')}; network: ${scheduleNetwork.join(', ')}; dialog errors: ${(await recoveryDialog.getByRole('alert').allTextContents()).join('; ')}; server: ${plannerServerSignals.join('; ')}; database: ${databaseActivity}`);
+    } finally {
+      primary.page.off('request',observeScheduleRequest);
+      primary.page.off('response',observeScheduleResponse);
+    }
+    assert.equal(staleSaveResponse.status(),409,'the real planner API rejects the stale lead revision');
+    await recoveryDialog.getByText('Scheduling is paused until the seller request is available and current.',{exact:true}).waitFor();
+    assert(await recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).isDisabled());
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE source_lead_id='${recoveryLeadId}';`),'0',
+      'a stale schedule write creates no planner item');
+    const recoveryReadUrl=`${origin}/api/realtor/leads?leadId=${recoveryLeadId}`;
+    await primary.page.route(recoveryReadUrl,async (route)=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false})}));
+    await recoveryDialog.getByRole('button',{name:'Reload seller request',exact:true}).click();
+    await recoveryDialog.getByText('Could not reload this seller request. Try reloading again.',{exact:true}).waitFor();
+    assert(await recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).isDisabled());
+    await primary.page.unroute(recoveryReadUrl);
+    await recoveryDialog.getByRole('button',{name:'Reload seller request',exact:true}).click();
+    await recoveryDialog.getByText('Scheduling is paused until the seller request is available and current.',{exact:true}).waitFor({state:'hidden'});
+    assert.equal(await recoveryDialog.getByLabel('Date',{exact:true}).inputValue(),appointmentDate);
+    assert.equal(await recoveryDialog.getByLabel('Time',{exact:true}).inputValue(),'16:45');
+    assert.equal(await recoveryDialog.getByLabel('Remind me at the scheduled time',{exact:true}).isChecked(),false);
+    const recoveredSaveResponse=primary.page.waitForResponse((response)=>response.url()===`${origin}/api/realtor/planner` && response.request().method()==='POST');
+    await recoveryDialog.getByRole('button',{name:'Schedule response',exact:true}).click();
+    const recoveredSave=await recoveredSaveResponse;
+    assert.equal(recoveredSave.status(),200,'the recovered draft saves through the real planner API');
+    const recoveredBody=recoveredSave.request().postDataJSON();
+    assert.equal(recoveredBody.item.due.timeZone,'America/Chicago','the existing scheduling API receives the normalized time zone');
+    assert.equal(recoveredBody.item.sellerLead.expectedLeadRevision,changedRecoveryLead.data.result.leadRevision);
+    await recoveryDialog.waitFor({state:'hidden'});
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE source_lead_id='${recoveryLeadId}' AND source_lead_revision=${changedRecoveryLead.data.result.leadRevision};`),'1');
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${recoveryLeadId}';`),'1',
+      'scheduling recovery creates no extra seller receipt');
+    await primary.page.getByRole('button',{name:'Schedule response',exact:true}).click();
+    const reopenedRecoveryLink=primary.page.getByRole('dialog',{name:'Schedule seller response'}).getByRole('link',{name:'Open saved planner task',exact:true});
+    await reopenedRecoveryLink.waitFor();
+    assert.equal(await reopenedRecoveryLink.getAttribute('href'),`/planner?date=${appointmentDate}`);
+    await reopenedRecoveryLink.click();
+    await primary.page.getByText('Respond to seller request — Synthetic Recovery Seller',{exact:true}).waitFor();
+    assert.equal(await sql(`SELECT count(*) FROM public.realtor_planner_items WHERE source_lead_id='${recoveryLeadId}';`),'1',
+      'reopening and following a saved planner link creates no duplicate task');
+    console.log('PASS: saved seller response/reply/consultation links open their persisted dates, including completed past-year tasks; foreign owners receive no link.');
+    console.log('PASS: a real stale seller schedule is rejected; failed reload preserves the draft, and fresh owner revision creates exactly one planner item.');
+    assert.equal(primary.pageErrors.length,0,`Owner browser errors: ${primary.pageErrors.join('; ')}`);
+  } else if (sellerVideoOnly) {
+    const created = await request(primary.page, '/api/workspaces', 'POST', { kind: 'personal', name: 'Seller video browser acceptance' });
+    assert.equal(created.status, 201, `Real-auth workspace creation failed: ${created.data.error || created.status}`);
+    const workspace = created.data.workspaceId;
+    workspaceIds.push(workspace);
+    const noSellerSiteAttributions = await request(primary.page, `/api/seller-video-briefs/attributions?workspaceId=${workspace}`);
+    assert.equal(noSellerSiteAttributions.status, 200, 'an owner without a configured seller site still loads the seller workspace');
+    assert.deepEqual(noSellerSiteAttributions.data.leads, []);
+    const task = await request(primary.page, '/api/sprints', 'POST', {
+      action: 'add_backlog_item', workspaceId: workspace,
+      title: 'Acceptance video brief task', description: 'Disposable browser-only fixture', priority: 2,
+      estimateMinutes: 30, sourceType: 'manual', sourceId: `auth-${randomUUID()}`,
+    });
+    assert.equal(task.status, 201, `Real-auth backlog creation failed: ${task.data.error || task.status}`);
+    assert.match(task.data.backlogItem?.id || '', /^[0-9a-f-]{36}$/i, `Workspace backlog creation returned no item: ${JSON.stringify(task.data)}`);
+    const workspaceBacklog = await request(primary.page, `/api/sprints?workspaceId=${workspace}`);
+    assert.equal(workspaceBacklog.status, 200, `Real-auth workspace backlog read failed: ${JSON.stringify(workspaceBacklog.data)}`);
+    assert(workspaceBacklog.data.backlog.some((item) => item.id === task.data.backlogItem.id),
+      `Created task is not present in workspace backlog: ${JSON.stringify(workspaceBacklog.data.backlog)}`);
+    await primary.page.goto(`${origin}/sprints`);
+    await primary.page.getByRole('heading', { name: 'Shape a short-form video brief' }).waitFor();
+    await primary.page.reload();
+    await primary.page.getByRole('heading', { name: 'Shape a short-form video brief' }).waitFor();
+    await primary.page.getByLabel('Seller video workspace').selectOption(workspace);
+    try {
+      await primary.page.locator(`select[aria-label="Linked backlog task"] option[value="${task.data.backlogItem.id}"]`).waitFor({ state: 'attached', timeout: 10000 });
+    } catch (error) {
+      console.error(`Seller editor after workspace select: ${await primary.page.locator('body').innerText()}`);
+      throw error;
+    }
+    await primary.page.getByLabel('Linked backlog task').selectOption(task.data.backlogItem.id);
+    await primary.page.getByLabel('Topic').fill('Seller photo-day preparation');
+    await primary.page.getByLabel('Audience need').fill('Homeowners need a clear and practical photo-day checklist.');
+    await primary.page.getByLabel('Opening hook').fill('Make photo day feel easier with these steps.');
+    await primary.page.getByLabel('Script').fill('Start with the entryway, put away everyday items, and prepare each room for the photographer.');
+    await primary.page.getByLabel('Shot list · one per line').fill('A clear entryway before the checklist');
+    await primary.page.getByLabel('Campaign key').fill('acceptance-video');
+    await primary.page.getByRole('button', { name: 'Save private draft' }).click();
+    await primary.page.getByRole('status').filter({ hasText: 'Private draft saved.' }).waitFor();
+    await primary.page.getByRole('heading', { name: 'Seller photo-day preparation' }).waitFor();
+    const saved = await request(primary.page, `/api/seller-video-briefs?workspaceId=${workspace}`);
+    assert.equal(saved.status, 200);
+    assert.equal(saved.data.briefs.length, 1);
+    assert.equal(saved.data.briefs[0].brief_data.reviewStatus, 'draft');
+    assert.equal(saved.data.briefs[0].backlog_item_id, task.data.backlogItem.id);
+    const exactRead = await request(primary.page, `/api/seller-video-briefs?workspaceId=${workspace}&briefId=${saved.data.briefs[0].brief_id}&revision=1`);
+    assert.equal(exactRead.status, 200);
+    assert.equal(exactRead.data.briefs.length, 1, 'review UI can fetch an exact immutable brief revision');
+    const outsider = await login();
+    const foreignRead = await request(outsider.page, `/api/seller-video-briefs?workspaceId=${workspace}`);
+    assert.equal(foreignRead.status, 404, 'a real authenticated non-member cannot read private briefs');
+    assert.equal(await outsider.page.getByRole('heading', { name: 'Seller video workspace' }).count(), 0);
+    await sql(`INSERT INTO platform_memberships(workspace_id,user_id,role,status) VALUES('${workspace}','${outsider.userId}','reviewer','active');`);
+    const nonWriterDraft = { ...saved.data.briefs[0].brief_data, briefId: randomUUID() };
+    assert.equal((await request(outsider.page, '/api/seller-video-briefs', 'POST', { workspaceId: workspace, brief: nonWriterDraft })).status, 403,
+      'a real authenticated reviewer may read but cannot save creator-only drafts');
+    await outsider.page.goto(`${origin}/sprints`);
+    await outsider.page.getByLabel('Seller video workspace').selectOption(workspace);
+    await outsider.page.getByText('Your workspace role can view drafts but cannot create or save them.').waitFor();
+    assert.equal(await outsider.page.getByRole('button', { name: 'Save private draft' }).count(), 0);
+    const reviewButton = primary.page.getByRole('button', { name: 'Request human review' });
+    await reviewButton.click();
+    await primary.page.getByRole('status').filter({ hasText: 'Review is' }).waitFor();
+    const reviewRun = await sql(`SELECT id FROM platform_runs WHERE workspace_id='${workspace}' AND definition->>'key'='seller_video_review' AND definition#>>'{nodes,0,target,resourceId}'='${saved.data.briefs[0].brief_id}' AND definition#>>'{nodes,0,target,revision}'='1';`);
+    assert.match(reviewRun, /^[0-9a-f-]{36}$/i);
+    const reviewJob = await sql(`SELECT id FROM claim_workflow_jobs(100,30) WHERE workflow_key='platform_run' AND payload->>'runId'='${reviewRun}';`);
+    const reviewLease = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${reviewJob}';`);
+    assert.equal(await sql(`SELECT run_status FROM platform_tick_run('${reviewJob}','${reviewLease}');`), 'waiting');
+    const reviewCheckpoint = await sql(`SELECT id FROM platform_checkpoints WHERE run_id='${reviewRun}';`);
+    assert.match(reviewCheckpoint, /^[0-9a-f-]{36}$/i);
+    const pendingPublication = await request(primary.page, '/api/seller-video-briefs/publications', 'POST', {
+      workspaceId: workspace, briefId: saved.data.briefs[0].brief_id, revision: 1, platform: 'instagram-reels',
+      publicUrl: 'https://www.instagram.com/reel/disposable-acceptance-fixture/',
+      publishedAt: '2026-10-05T12:00:00Z', requestKey: randomUUID(),
+    });
+    assert.equal(pendingPublication.status, 403, 'an unresolved review cannot be recorded as published');
+    await sql(`UPDATE platform_memberships SET role='member',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+    const unauthorizedDecision = await request(outsider.page, `/api/workspaces/${workspace}/checkpoints`, 'POST', {
+      checkpointId: reviewCheckpoint, expectedRevision: 1, submissionKey: randomUUID(), value: true,
+    });
+    assert.equal(unauthorizedDecision.status, 403, 'a workspace member without a reviewer role cannot decide an approval');
+    await sql(`UPDATE platform_memberships SET role='reviewer',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+    assert.equal(await sql(`SELECT public.platform_require_run_role('${outsider.userId}','${workspace}',ARRAY['owner','admin','member','reviewer','viewer']);`), 'reviewer', 'reviewer is authorized for checkpoint read-model RPCs');
+    assert.equal(await sql(`SELECT count(*) FROM public.platform_list_provider_exceptions('${outsider.userId}','${workspace}',NULL,NULL,26);`), '0', 'reviewer can read the provider exception summary');
+    assert.equal(await sql(`SELECT count(*) FROM public.platform_list_unknown_effects('${outsider.userId}','${workspace}',NULL,NULL,26);`), '0', 'reviewer can read the unknown effect summary');
+    const providerRead = await admin.rpc('platform_list_provider_exceptions', { p_actor_id: outsider.userId, p_workspace_id: workspace, p_after: null, p_after_id: null, p_limit: 26 });
+    assert.equal(providerRead.error, null, `service-role reviewer provider exception read failed: ${providerRead.error?.code || providerRead.error?.message || ''}`);
+    const unknownRead = await admin.rpc('platform_list_unknown_effects', { p_actor_id: outsider.userId, p_workspace_id: workspace, p_after: null, p_after_id: null, p_limit: 26 });
+    assert.equal(unknownRead.error, null, `service-role reviewer unknown effect read failed: ${unknownRead.error?.code || unknownRead.error?.message || ''}`);
+    const healthJobsRead = await admin.rpc('platform_list_connector_health_jobs', { p_actor_id: outsider.userId, p_workspace_id: workspace });
+    assert.equal(healthJobsRead.error, null, `service-role reviewer connector health read failed: ${healthJobsRead.error?.code || healthJobsRead.error?.message || ''}`);
+    const healthAuditRead = await admin.rpc('platform_list_connector_health_audit', { p_actor_id: outsider.userId, p_workspace_id: workspace, p_after: null, p_after_id: null, p_limit: 26 });
+    assert.equal(healthAuditRead.error, null, `service-role reviewer connector audit read failed: ${healthAuditRead.error?.code || healthAuditRead.error?.message || ''}`);
+    const reviewerInbox = await request(outsider.page, `/api/workspaces/${workspace}/checkpoints`);
+    assert.equal(reviewerInbox.status, 200, `real reviewer inbox API read failed: ${JSON.stringify(reviewerInbox.data)}`);
+    assert(reviewerInbox.data.result.items.some((item) => item.id === reviewCheckpoint), 'the pending review checkpoint appears in the reviewer inbox API');
+    const reviewerBrief = await request(outsider.page, `/api/seller-video-briefs?workspaceId=${workspace}&briefId=${saved.data.briefs[0].brief_id}&revision=1`);
+    assert.equal(reviewerBrief.status, 200, `real reviewer exact-draft read failed: ${JSON.stringify(reviewerBrief.data)}`);
+    assert.equal(reviewerBrief.data.briefs[0]?.brief_data?.hook, saved.data.briefs[0].brief_data.hook);
+    await outsider.page.goto(`${origin}/workspaces/${workspace}/inbox`);
+    await outsider.page.getByText('Make photo day feel easier with these steps.').waitFor().catch(async (error) => {
+      console.error(`Reviewer inbox rendered text: ${await outsider.page.locator('body').innerText()}`);
+      throw error;
+    });
+    await outsider.page.getByText('Start with the entryway, put away everyday items, and prepare each room for the photographer.').waitFor();
+    await outsider.page.getByText(/Listing media: not-needed/).waitFor();
+    assert.equal(await outsider.page.getByRole('button', { name: 'Approve' }).count(), 1);
+    await outsider.page.getByRole('button', { name: 'Approve' }).click();
+    await outsider.page.getByText('Nothing needs your input.').waitFor();
+    assert.equal(await sql(`SELECT response::text FROM platform_checkpoints WHERE id='${reviewCheckpoint}';`), 'true');
+    const completionJob = await sql(`SELECT id FROM claim_workflow_jobs(100,30) WHERE workflow_key='platform_run' AND payload->>'runId'='${reviewRun}' AND payload->>'generation'='2';`);
+    const completionLease = await sql(`SELECT lease_token FROM workflow_jobs WHERE id='${completionJob}';`);
+    assert.equal(await sql(`SELECT run_status FROM platform_tick_run('${completionJob}','${completionLease}');`), 'completed');
+    assert.equal(await sql(`SELECT count(*) FROM platform_effect_receipts WHERE run_id='${reviewRun}';`), '0', 'approval does not publish or send the video');
+    const publicationUrl = 'https://www.instagram.com/reel/disposable-acceptance-fixture/';
+    await primary.page.getByLabel(`Publication platform ${saved.data.briefs[0].brief_id}`).selectOption('instagram-reels');
+    await primary.page.getByLabel(`Published post URL ${saved.data.briefs[0].brief_id}`).fill(publicationUrl);
+    await primary.page.getByLabel(`Published date ${saved.data.briefs[0].brief_id}`).fill('2026-10-05T12:00');
+    await primary.page.getByRole('button', { name: 'Record already-published post' }).click();
+    await primary.page.getByRole('status').filter({ hasText: 'Manual publication record saved.' }).waitFor();
+    const publicationInput = {
+      workspaceId: workspace, briefId: saved.data.briefs[0].brief_id, revision: 1, platform: 'instagram-reels',
+      publicUrl: publicationUrl, publishedAt: '2026-10-05T17:00:00.000Z', requestKey: randomUUID(),
+    };
+    const ownerRecords = await request(primary.page, `/api/seller-video-briefs/publications?workspaceId=${workspace}`);
+    assert.equal(ownerRecords.status, 200);
+    assert.equal(ownerRecords.data.records.length, 1);
+    assert.equal(ownerRecords.data.records[0].review_checkpoint_id, reviewCheckpoint);
+    assert.equal(ownerRecords.data.records[0].entered_by, primary.userId);
+    assert.equal((await request(outsider.page, `/api/seller-video-briefs/publications?workspaceId=${workspace}`)).status, 403,
+      'reviewers may approve drafts but publication records remain owner/admin-only');
+    const publicationReplay = await request(primary.page, '/api/seller-video-briefs/publications', 'POST', publicationInput);
+    assert.equal(publicationReplay.status, 200, 'the same platform post record is idempotent after an uncertain save');
+    assert.equal(publicationReplay.data.reused, true);
+    assert.equal((await request(primary.page, '/api/seller-video-briefs/publications', 'POST', { ...publicationInput, publicUrl: 'https://www.instagram.com/reel/conflicting-fixture/' })).status, 409,
+      'a conflicting URL cannot replace the same exact brief/platform record');
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_video_publication_records WHERE workspace_id='${workspace}';`), '1');
+    const publicationId = ownerRecords.data.records[0].id;
+    const priorMinute = new Date(Date.now() - 60_000);
+    const localCapture = new Date(priorMinute.getTime() - priorMinute.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+    await primary.page.getByLabel(`Outcome capture time ${publicationId}`).fill(localCapture);
+    await primary.page.getByLabel(`Views ${publicationId}`).fill('240');
+    await primary.page.getByLabel(`Engagements ${publicationId}`).fill('31');
+    await primary.page.getByLabel(`Link clicks ${publicationId}`).fill('8');
+    await primary.page.getByLabel(`Seller-plan requests ${publicationId}`).fill('2');
+    await primary.page.getByLabel(`Outcome source note ${publicationId}`).fill('Entered from the visible post insights page.');
+    await primary.page.getByRole('button', { name: 'Save measurement snapshot' }).click();
+    try {
+      await primary.page.getByRole('status').filter({ hasText: 'immutable history' }).waitFor({ timeout: 15000 });
+    } catch (error) {
+      console.error(`Outcome snapshot UI after submit: ${await primary.page.locator('body').innerText()}`);
+      const diagnostics = await request(primary.page, `/api/seller-video-briefs/outcomes?workspaceId=${workspace}`);
+      console.error(`Outcome snapshot read-back: ${JSON.stringify(diagnostics.data)}`);
+      throw error;
+    }
+    const outcomeList = await request(primary.page, `/api/seller-video-briefs/outcomes?workspaceId=${workspace}`);
+    assert.equal(outcomeList.status, 200);
+    assert.equal(outcomeList.data.outcomes.length, 1);
+    assert.equal(outcomeList.data.outcomes[0].views, 240);
+    assert.equal((await request(outsider.page, `/api/seller-video-briefs/outcomes?workspaceId=${workspace}`)).status, 403,
+      'reviewers cannot read owner-only publication outcomes');
+    const outcomeInput = {
+      workspaceId: workspace, publicationId, capturedAt: outcomeList.data.outcomes[0].captured_at,
+      views: 240, engagements: 31, linkClicks: 8, sellerPlanRequests: 2,
+      sourceNote: 'Entered from the visible post insights page.', requestKey: randomUUID(),
+    };
+    const outcomeReplay = await request(primary.page, '/api/seller-video-briefs/outcomes', 'POST', outcomeInput);
+    assert.equal(outcomeReplay.status, 200, 'an uncertain save retries idempotently');
+    assert.equal(outcomeReplay.data.reused, true);
+    assert.equal((await request(primary.page, '/api/seller-video-briefs/outcomes', 'POST', { ...outcomeInput, views: 241 })).status, 409,
+      'the snapshot idempotency key cannot be reused for changed measurements');
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_video_publication_outcomes WHERE workspace_id='${workspace}';`), '1');
+    const attributionLeadId = randomUUID();
+    const sellerAgent = `auth-acceptance-${randomUUID()}`;
+    await sql(`
+      INSERT INTO public.site_config(id,agent_id,owner_id,status) VALUES ('${randomUUID()}','${sellerAgent}','${primary.userId}','active');
+      INSERT INTO public.agent_site_leads(id,agent_id,site,source,name,email,message,metadata,funnel_id)
+        VALUES ('${attributionLeadId}','${sellerAgent}','auth-acceptance','seller_plan','Fixture Seller','private@example.test','Synthetic attribution fixture',
+          '{"sellerPlan":{"requestKind":"seller_plan"}}'::jsonb,'${randomUUID()}');
+    `);
+    const attributionOptions = await request(primary.page, `/api/seller-video-briefs/attributions?workspaceId=${workspace}`);
+    assert.equal(attributionOptions.status, 200);
+    assert.equal(attributionOptions.data.leads.some((lead) => lead.id === attributionLeadId), true);
+    assert.equal(JSON.stringify(attributionOptions.data.leads.find((lead) => lead.id === attributionLeadId)).includes('private@example.test'), false,
+      'the lead attribution read model omits contact details');
+    const attributionInput = {
+      workspaceId: workspace, publicationId, leadId: attributionLeadId,
+      evidenceNote: 'Seller named this post while submitting their request.', requestKey: randomUUID(),
+    };
+    const attributionSaved = await request(primary.page, '/api/seller-video-briefs/attributions', 'POST', attributionInput);
+    assert.equal(attributionSaved.status, 201, `owner attribution failed: ${JSON.stringify(attributionSaved.data)}`);
+    assert.equal((await request(primary.page, `/api/seller-video-briefs/attributions?workspaceId=${workspace}`)).data.attributions.length, 1);
+    assert.equal((await request(outsider.page, `/api/seller-video-briefs/attributions?workspaceId=${workspace}`)).status, 403,
+      'reviewers cannot read private lead-attribution evidence');
+    assert.equal((await request(primary.page, '/api/seller-video-briefs/attributions', 'POST', { ...attributionInput, evidenceNote: 'Changed evidence on retry.' })).status, 409,
+      'an idempotent attribution retry cannot change its evidence note');
+    assert.equal(await sql(`SELECT count(*) FROM public.seller_lead_publication_attributions WHERE workspace_id='${workspace}';`), '1');
+    assert.equal(await sql(`SELECT count(*) FROM public.platform_effect_receipts WHERE run_id='${reviewRun}';`), '0', 'recording the manual URL creates no provider or outbound effect');
+    await sql(`UPDATE platform_memberships SET role='viewer',revision=revision+1 WHERE workspace_id='${workspace}' AND user_id='${outsider.userId}';`);
+    assert.equal((await request(outsider.page, '/api/seller-video-briefs', 'POST', { workspaceId: workspace, brief: nonWriterDraft })).status, 403,
+      'a real authenticated viewer cannot save creator-only drafts');
+    await outsider.page.goto(`${origin}/sprints`);
+    try {
+      await outsider.page.getByLabel('Seller video workspace').waitFor({ timeout: 10000 });
+    } catch (error) {
+      console.error(`Viewer sprint page: ${await outsider.page.locator('body').innerText()}`);
+      console.error(`Viewer browser errors: ${outsider.pageErrors.join('; ')}`);
+      throw error;
+    }
+    await outsider.page.getByLabel('Seller video workspace').selectOption(workspace);
+    await outsider.page.getByText('Your workspace role can view drafts but cannot create or save them.').waitFor();
+    assert.equal(await outsider.page.getByRole('button', { name: 'Save private draft' }).count(), 0);
+    assert.equal(primary.pageErrors.length, 0, `Browser errors: ${primary.pageErrors.join('; ')}`);
+    assert.equal(outsider.pageErrors.length, 0, `Outsider browser errors: ${outsider.pageErrors.join('; ')}`);
+    console.log('PASS: real Supabase browser sessions save a private draft, request exact-revision review, and let a separate reviewer inspect and approve it from the shared inbox.');
+    console.log('PASS: workspace members without a review role are denied; reviewer decisions do not publish, upload, send, or create provider effects.');
+  }
+  if (!sellerVideoOnly && !sellerBusinessOnly) {
   const acceptanceToday = new Date().toISOString().slice(0,10);
   const offsetDate = (days) => { const value = new Date(); value.setUTCDate(value.getUTCDate() + days); return value.toISOString().slice(0,10); };
   const setupInput = {
@@ -623,7 +1506,8 @@ try{
   console.log('PASS: browser cookie APIs start → checkpoint → answer → complete, cancel, cursor pages, revocation, archive and foreign-user denial; real JWT RLS denies foreign rows');
   console.log(`Browser evidence: ${artifacts}`);
   }
-}catch(error){
+  }
+  }catch(error){
   // Server logs may contain account identifiers but no credentials are printed
   // by this runner. Keep failure output limited to the assertion boundary.
   console.error('Real-auth acceptance stopped:',error.stack||error.message);process.exitCode=1;
@@ -634,7 +1518,13 @@ try{
     else server.kill();
     await delay(1000);
   }
-  for(const workspace of workspaceIds){
+  for(const agentId of sellerFixtureAgents){
+    assert.match(agentId,/^seller-acceptance-[a-f0-9-]{36}$/);
+    await sql(`BEGIN;
+      DELETE FROM public.agent_site_leads WHERE agent_id='${agentId}';
+      DELETE FROM public.site_config WHERE agent_id='${agentId}'; COMMIT;`);
+  }
+  if(!sellerVideoOnly && !sellerServiceOnly) for(const workspace of workspaceIds){
     assert.match(workspace,/^[a-f0-9-]{36}$/);
     await sql(`BEGIN;
       DELETE FROM workflow_results WHERE job_id IN (SELECT id FROM workflow_jobs WHERE payload->>'workspaceId'='${workspace}');
@@ -645,7 +1535,9 @@ try{
       DELETE FROM realtor_preferences WHERE workspace_id='${workspace}';
       DELETE FROM platform_workspaces WHERE id='${workspace}'; COMMIT;`);
   }
-  for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
+  if(!sellerVideoOnly && !sellerServiceOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
   await sql(`UPDATE workflow_event_contracts SET enabled=${enabled==='t'?'true':'false'} WHERE workflow_key='platform_run';`);
-  console.log('Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
+  console.log(sellerVideoOnly || sellerServiceOnly
+    ? 'Retained test rows only inside the generated disposable project; its teardown removes them and all local Auth accounts.'
+    : 'Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
 }

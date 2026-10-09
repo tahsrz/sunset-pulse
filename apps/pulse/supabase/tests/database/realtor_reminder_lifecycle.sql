@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
-SELECT plan(6);
+SELECT plan(11);
 CREATE TEMP TABLE realtor_reminder_lifecycle_assertions (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   passed BOOLEAN NOT NULL,
@@ -16,6 +16,8 @@ $$;
 DO $$
 DECLARE actor UUID:=gen_random_uuid(); workspace UUID:=gen_random_uuid(); item UUID:=gen_random_uuid();
   occurrence UUID:=gen_random_uuid(); reminder UUID; before_jobs INTEGER;
+  current_reminder UUID; current_revision INTEGER; conflict_seen BOOLEAN:=false;
+  action_key UUID:=gen_random_uuid(); saved RECORD; replayed RECORD;
 BEGIN
   PERFORM set_config('request.jwt.claim.role','service_role',true);
   INSERT INTO auth.users(id,email) VALUES(actor,'reminder-lifecycle@example.test');
@@ -39,6 +41,19 @@ BEGIN
   PERFORM public.realtor_apply_occurrence_action(actor,workspace,occurrence,2,gen_random_uuid(),'complete',NULL,NULL,'{}');
   PERFORM public.realtor_apply_occurrence_action(actor,workspace,occurrence,3,gen_random_uuid(),'reopen',NULL,NULL,'{}');
   PERFORM pg_temp.record_realtor_reminder_assertion((SELECT count(*)=1 FROM public.realtor_reminders WHERE occurrence_id=occurrence AND occurrence_revision=4 AND status='scheduled'),'reopen restores reminder coverage for the current revision'::text);
+  SELECT id,revision INTO current_reminder,current_revision FROM public.realtor_reminders
+    WHERE occurrence_id=occurrence AND occurrence_revision=4 AND status='scheduled';
+  BEGIN
+    PERFORM public.realtor_update_reminder(actor,workspace,current_reminder,current_revision+1,gen_random_uuid(),'dismiss',NULL);
+  EXCEPTION WHEN SQLSTATE 'PT409' THEN conflict_seen:=true;
+  END;
+  PERFORM pg_temp.record_realtor_reminder_assertion(conflict_seen,'stale reminder returns a non-retryable business conflict');
+  PERFORM pg_temp.record_realtor_reminder_assertion(NOT EXISTS(SELECT 1 FROM public.realtor_mutation_receipts WHERE actor_id=actor AND operation='reminder'),'rejected conflict creates no reminder receipt');
+  SELECT * INTO saved FROM public.realtor_update_reminder(actor,workspace,current_reminder,current_revision,action_key,'dismiss',NULL);
+  PERFORM pg_temp.record_realtor_reminder_assertion(saved.revision=current_revision+1 AND saved.status='dismissed' AND NOT saved.reused,'fresh revision dismisses once');
+  SELECT * INTO replayed FROM public.realtor_update_reminder(actor,workspace,current_reminder,current_revision,action_key,'dismiss',NULL);
+  PERFORM pg_temp.record_realtor_reminder_assertion(replayed.reused AND replayed.revision=saved.revision,'unchanged retry replays the existing reminder revision');
+  PERFORM pg_temp.record_realtor_reminder_assertion((SELECT count(*)=1 FROM public.realtor_mutation_receipts WHERE actor_id=actor AND operation='reminder'),'replay creates no second reminder receipt');
   UPDATE public.realtor_reminders SET status='dismissed' WHERE occurrence_id=occurrence AND occurrence_revision=4;
   SELECT count(*) INTO before_jobs FROM public.workflow_jobs WHERE user_id=actor AND workflow_key='realtor_reminder';
   UPDATE public.realtor_preferences SET reminders_enabled=false WHERE user_id=actor;

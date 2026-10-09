@@ -26,7 +26,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('workspace command palette', () => {
   it('lists only the bounded runs page and performs no mutation for /ps', async () => {
-    const fetchMock = vi.fn(async () => Response.json({ ok: true, result: { items: [run], nextCursor: null } }));
+    const fetchMock = vi.fn<typeof fetch>(async () => Response.json({ ok: true, result: { items: [run], nextCursor: null } }));
     vi.stubGlobal('fetch', fetchMock);
     renderPalette();
     fireEvent.change(screen.getByLabelText('Workspace command'), { target: { value: '/ps' } });
@@ -54,7 +54,7 @@ describe('workspace command palette', () => {
   });
 
   it('previews the exact installed manifest, collects its schema inputs, and launches on confirmation', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn<typeof fetch>(async (input) => {
       if (String(input).endsWith('/apps')) return Response.json({ ok: true, result: [install] });
       return Response.json({ ok: true, result: { id: runId } });
     });

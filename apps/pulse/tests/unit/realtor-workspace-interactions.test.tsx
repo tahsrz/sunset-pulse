@@ -9,6 +9,7 @@ vi.mock('@/components/realtor/JamieProposalCard', () => ({ JamieProposalCard: ()
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const businessProps = (submit: (url: string, method: 'POST' | 'PATCH', data: unknown, success: string) => Promise<boolean>) => ({
@@ -18,6 +19,26 @@ const businessProps = (submit: (url: string, method: 'POST' | 'PATCH', data: unk
 });
 
 describe('realtor workspace interaction feedback', () => {
+  it('retains planner completion while removing the seller handoff after current ownership is lost', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => Response.json({ ok: true, result: { properties: [], tasks: [], truncated: false } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const item = { id: '11111111-1111-4111-8111-111111111111', effective_date: '2025-12-31', effective_time: '09:00:00',
+      title_snapshot: 'Owned seller response', kind_snapshot: 'follow_up', status: 'pending', revision: 1,
+      expected_amount_cents: null, seller_source_available: true,
+      seller_lead: { id: '33333333-3333-4333-8333-333333333333' } };
+    const props = { timeZone: 'America/Chicago', busy: false, submit: vi.fn(async () => true), onPayment: vi.fn(),
+      onMoreProjections: vi.fn(async () => {}) };
+    const view = render(<PlannerView {...props} data={{ items: [item], projected: [] }} />);
+    expect(screen.getByRole('link', { name: 'Open seller request' })).toHaveAttribute('href', '/seller-inbox?leadId=33333333-3333-4333-8333-333333333333');
+    view.rerender(<PlannerView {...props} data={{ items: [{ ...item, seller_source_available: false, seller_lead: null }], projected: [] }} />);
+    expect(screen.queryByRole('link', { name: 'Open seller request' })).not.toBeInTheDocument();
+    expect(screen.getByText('Owned seller response')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark complete' })).toBeEnabled();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(fetchMock.mock.calls.every(([, options]) => options?.method === undefined)).toBe(true);
+    expect(props.submit).not.toHaveBeenCalled();
+  });
+
   it('offers both stored and projected cursor pages even when the projection page is empty', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ ok: true, result: { properties: [], tasks: [] } }) })));
     const more = vi.fn(async () => {});
@@ -101,11 +122,12 @@ describe('realtor workspace interaction feedback', () => {
       const url = String(input);
       const result = url.endsWith('/planner/property-tasks')
         ? { tasks: [{ id: 'task-1', title: 'Confirm roof age', priority: 2, estimateMinutes: 30, taskKind: 'verify_fact', propertyId: 'property-1', propertyLabel: 'Keller listing', stale: false }], truncated: false }
-        : { properties: [{ id: 'property-1', label: 'Keller listing', propertyKind: 'residential', status: 'active' }] };
+        : url.endsWith('/planner/campaign-tasks') ? { tasks: [], truncated: false }
+          : { properties: [{ id: 'property-1', label: 'Keller listing', propertyKind: 'residential', status: 'active' }] };
       return { ok: true, json: async () => ({ ok: true, result }) } as Response;
     });
     vi.stubGlobal('fetch', fetchMock);
-    const submit = vi.fn(async () => false);
+    const submit = vi.fn<Parameters<typeof businessProps>[0]>(async () => false);
     const props = { data: { items: [], projected: [] }, timeZone: 'America/Chicago', busy: false,
       submit, onPayment: vi.fn(), onMoreProjections: vi.fn(async () => {}), reloadToken: 0 };
     const view = render(<PlannerView {...props} />);
@@ -115,7 +137,7 @@ describe('realtor workspace interaction feedback', () => {
     expect(screen.getByLabelText('What is it called?')).toHaveValue('Confirm roof age');
 
     view.rerender(<PlannerView {...props} reloadToken={1} />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/planner/property-tasks'))).toHaveLength(2));
     expect(screen.getByLabelText('What is it called?')).toHaveValue('Confirm roof age');
     expect(screen.getByLabelText('First due date')).toHaveValue('2026-10-02');
 

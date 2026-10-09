@@ -51,6 +51,7 @@ describe('lead response escalation policy', () => {
 
   it('parses deploy-time operating hour configuration conservatively', () => {
     expect(leadResponseOperatingHoursFromEnv({
+      NODE_ENV: 'test',
       AGENT_ALERT_OPERATING_TIME_ZONE: 'America/Denver',
       AGENT_ALERT_OPERATING_WEEKDAYS: '1,2,3,4,5,6',
       AGENT_ALERT_OPERATING_START_HOUR: '9',

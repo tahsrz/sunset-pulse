@@ -29,6 +29,7 @@ export const workspaceActionSchema = z.enum([
   'property:edit',
   'artifact:read',
   'artifact:review',
+  'artifact:record_publication',
   'effect:approve',
 ]);
 export type WorkspaceAction = z.infer<typeof workspaceActionSchema>;
@@ -43,6 +44,7 @@ const actionRoles: Record<WorkspaceAction, readonly WorkspaceRole[]> = {
   'property:edit': ['owner', 'admin', 'member'],
   'artifact:read': ['owner', 'admin', 'member', 'reviewer', 'viewer'],
   'artifact:review': ['owner', 'admin', 'reviewer'],
+  'artifact:record_publication': ['owner', 'admin'],
   'effect:approve': ['owner', 'admin'],
 };
 

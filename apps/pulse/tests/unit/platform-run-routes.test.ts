@@ -33,6 +33,10 @@ describe('workspace JSON run and checkpoint routes', () => {
     mocks.auth.mockResolvedValue({ user: { id: actor }, allowed: true, mode: 'user' });
     mocks.access.mockResolvedValue({ workspaceId: workspace });
     mocks.rpc.mockResolvedValue({ data: [{ id: checkpoint }], error: null });
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { type: 'question', target: null }, error: null }),
+    });
   });
   it('starts a validated run under the signed-in actor with a private response', async () => {
     const result = await start(request({ requestKey: actor, definition: graph }), context());
@@ -85,6 +89,16 @@ describe('workspace JSON run and checkpoint routes', () => {
     const result = await respond(request({ ...answer, value: true }), context());
     expect(result.status).toBe(200);
     expect(mocks.rpc).toHaveBeenCalledWith('platform_respond_checkpoint', expect.objectContaining({ p_actor_id: actor, p_value: true, p_expected_revision: 1 }));
+  });
+  it('fails safely when the scoped checkpoint lookup fails before responding', async () => {
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { code: '42501', message: 'secret internal detail' } }),
+    });
+    const result = await respond(request(answer), context());
+    expect(result.status).toBe(403);
+    expect(await result.text()).not.toContain('secret');
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('cancels with the expected revision', async () => {
     expect((await cancel(request({ runId: checkpoint, expectedRevision: 3 }, 'PATCH'), context())).status).toBe(200);
