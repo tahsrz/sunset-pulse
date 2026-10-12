@@ -26,6 +26,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "seller-business:preflight": "node scripts/seller-release-preflight.mjs",
+    "seller-business:runtime-preflight": "node scripts/seller-runtime-preflight.mjs",
     "test:seller-business:preflight": "node --test scripts/seller-release-preflight.test.mjs",
     "news:publish-local": "tsx scripts/publish-local-news-signals.ts",
     "test:e2e": "playwright test",

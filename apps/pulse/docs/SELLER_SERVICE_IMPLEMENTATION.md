@@ -88,6 +88,11 @@ actions are separate observations, not a denominator for all seller requests.
 
 ## Release and configuration
 
+Before interpreting empty or unavailable data, run the [read-only runtime
+preflight](SELLER_RUNTIME_PREFLIGHT.md) against an explicitly selected project.
+It classifies quota restrictions, access failures and table/column gaps, and
+checks the existing email event contract without invoking the shared worker.
+
 The three October 9 migrations and matching app/worker are one candidate:
 
 1. `20261009130000_seller_service_cases.sql`
