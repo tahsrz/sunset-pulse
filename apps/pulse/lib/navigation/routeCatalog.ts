@@ -52,6 +52,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/play-jamie', 'Play Jamie'], ['/play-jamie/chess', 'Chess with Jamie'],
     ['/play-jamie/poker', 'Poker with Jamie'], ['/play-jamie/tetris', 'Block Drop'],
     ['/play-jamie/volley', 'Sunset Volley'], ['/beach-volleyball', 'Beach Volleyball'],
+    ['/play-jamie/crash-bash', 'Crash Bash Online', 'public', 'Launch guide for the external game at crashbash.app; opens in a new tab with separate accounts and records.'],
     ['/value-guess', 'Value Guess'], ['/location-guess', 'Location Guess'],
     ['/pulse-quest', 'Pulse Quest'], ['/retail-clash', 'Retail Clash'],
   ]),

@@ -97,6 +97,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 | `/play-jamie/poker` | Public entry | “This opens the poker game; do not describe it as a real-money wagering service.” | Open `/play-jamie/poker`.  |
 | `/play-jamie/tetris` | Public entry | “This opens Block Drop, a lightweight game experience.” | Open `/play-jamie/tetris`.  |
 | `/play-jamie/volley` | Public entry | “This opens Sunset Volley.” | Open `/play-jamie/volley`.  |
+| `/play-jamie/crash-bash` | Public entry | “This opens a launch guide for Crash Bash Online, an external game with separate accounts and records.” | Open `/play-jamie/crash-bash`, then select “Play on crashbash.app” to launch the game in a new tab. Use solo CPU play or share a private room code with friends. |
 | `/beach-volleyball` | Public entry | “This is the separate beach-volleyball experience.” | Open `/beach-volleyball`.  |
 | `/value-guess` | Public entry | “This is the property-value guessing game, not a valuation report.” | Open `/value-guess`.  |
 | `/location-guess` | Public entry | “This is the location-guessing game.” | Open `/location-guess`.  |

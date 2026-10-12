@@ -117,6 +117,7 @@ How to read the directory:
 | `/play-jamie/poker` | Poker with Jamie | Public entry |
 | `/play-jamie/tetris` | Block Drop | Public entry |
 | `/play-jamie/volley` | Sunset Volley | Public entry |
+| `/play-jamie/crash-bash` | Crash Bash Online | Public entry |
 | `/beach-volleyball` | Beach Volleyball | Public entry |
 | `/value-guess` | Value Guess | Public entry |
 | `/location-guess` | Location Guess | Public entry |
