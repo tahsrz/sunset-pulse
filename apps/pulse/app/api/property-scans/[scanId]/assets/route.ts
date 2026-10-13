@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   for (const file of files) {
     if (!propertyScanAssetMimeTypes.has(file.type)) return errorResponse(`${file.name} is not a supported image or video format.`, 400);
     if (file.size <= 0) return errorResponse(`${file.name} is empty and cannot be uploaded.`, 400);
-    if (file.size > propertyScanAssetLimits.maxBytesPerFile) return errorResponse(`${file.name} exceeds the 75 MB capture limit.`, 400);
+    if (file.size > propertyScanAssetLimits.maxBytesPerFile) return errorResponse(`${file.name} exceeds the ${propertyScanAssetLimits.maxBytesPerFile / 1_000_000} MB capture limit.`, 400);
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (!hasSupportedPropertyScanSignature(file.type, bytes)) return errorResponse(`${file.name} content does not match its declared media type.`, 400);
     preparedFiles.push({ file, bytes });

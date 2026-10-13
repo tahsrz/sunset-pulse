@@ -52,7 +52,7 @@ describe('property scan upload route', () => {
     mocks.readPropertyScanSession.mockResolvedValue(session);
     mocks.appendPropertyScanAssets.mockResolvedValue({ ...session, revision: 2, status: 'in_review', assets: [] });
     mocks.upload.mockResolvedValue({ error: null });
-    mocks.rpc.mockResolvedValue({ data: { reservationId: 'test-reservation', maxBytes: 78643200 }, error: null });
+    mocks.rpc.mockResolvedValue({ data: { reservationId: 'test-reservation', maxBytes: propertyScanAssetLimits.maxBytesPerFile }, error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.from.mockReturnValue({ upload: mocks.upload, remove: mocks.remove });
   });
