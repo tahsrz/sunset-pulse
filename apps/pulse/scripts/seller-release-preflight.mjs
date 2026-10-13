@@ -81,7 +81,7 @@ export async function inspectSellerReleaseSources(manifest, migrationNames, read
   return { verifiedSourceCount: seen.size, inventory, compatibilityMigrations: requiredMigrations };
 }
 
-export function planPendingSellerMigrations(migrationNames, appliedVersions) {
+export function inspectSellerMigrationHistory(migrationNames, appliedVersions) {
   const inventory = migrationInventory(migrationNames);
   if (!Array.isArray(appliedVersions)
     || appliedVersions.some((version) => typeof version !== 'string' || !/^(\d{8}|\d{14})$/.test(version))
@@ -89,32 +89,52 @@ export function planPendingSellerMigrations(migrationNames, appliedVersions) {
     throw new Error('Applied migrations must be a JSON array of unique 8- or 14-digit version strings.');
   }
   const applied = new Set(appliedVersions);
-  if (appliedVersions.some((version) => !inventory.some((item) => item.version === version))) {
-    throw new Error('Applied history contains a version absent from this repository; reconcile history before release.');
-  }
-  let foundPending = false;
-  for (const item of inventory) {
-    if (!applied.has(item.version)) foundPending = true;
-    else if (foundPending) throw new Error('Applied history has a gap before a later applied migration; reconcile history before release.');
-  }
-  return inventory.filter((item) => !applied.has(item.version));
+  const known = new Set(inventory.map((item) => item.version));
+  const unknownAppliedVersions = appliedVersions.filter((version) => !known.has(version)).sort();
+  const latestKnownRecordedVersion = inventory.filter((item) => applied.has(item.version)).at(-1)?.version || null;
+  const unrecordedMigrations = inventory.filter((item) => !applied.has(item.version));
+  const historyGaps = unrecordedMigrations.filter((item) => latestKnownRecordedVersion && item.version < latestKnownRecordedVersion);
+  return {
+    status: unknownAppliedVersions.length || historyGaps.length ? 'HISTORY_RECONCILIATION_REQUIRED' : 'HISTORY_PREFIX_VERIFIED',
+    appliedVersionCount: applied.size,
+    repositoryMigrationCount: inventory.length,
+    latestKnownRecordedVersion,
+    unknownAppliedVersions,
+    historyGaps,
+    unrecordedMigrations,
+    unrecordedCount: unrecordedMigrations.length,
+    scope: 'Offline version-history diagnosis only. Unrecorded does not prove a schema change is absent; compare actual schema before replaying SQL or repairing history. No migration is executed or marked applied.',
+  };
+}
+
+export function planPendingSellerMigrations(migrationNames, appliedVersions) {
+  const diagnosis = inspectSellerMigrationHistory(migrationNames, appliedVersions);
+  if (diagnosis.unknownAppliedVersions.length) throw new Error('Applied history contains a version absent from this repository; reconcile history before release.');
+  if (diagnosis.historyGaps.length) throw new Error('Applied history has a gap before a later applied migration; reconcile history before release.');
+  return diagnosis.unrecordedMigrations;
 }
 
 async function main(args) {
   if (args.includes('--help')) {
-    console.log('Usage: npm run seller-business:preflight --workspace=apps/pulse -- [--applied-migrations <history.json>]');
-    console.log('Offline source verification; optionally plans pending SQL from an exported JSON array of applied version strings.');
+    console.log('Usage: npm run seller-business:preflight --workspace=apps/pulse -- [--applied-migrations <history.json> | --diagnose-history <history.json>]');
+    console.log('Offline source verification. Planning refuses history gaps; diagnosis lists them without executing SQL or changing history.');
     return;
   }
-  if (args.length && (args.length !== 2 || args[0] !== '--applied-migrations' || !args[1])) {
-    throw new Error('Only --applied-migrations <history.json> is supported. Use --help for usage.');
+  if (args.length && (args.length !== 2 || !['--applied-migrations', '--diagnose-history'].includes(args[0]) || !args[1])) {
+    throw new Error('Use --applied-migrations or --diagnose-history with one history JSON file. Use --help for usage.');
   }
   const root = fileURLToPath(new URL('../../../', import.meta.url));
   const manifest = JSON.parse((await readFile(resolve(root, 'apps/pulse/docs/SELLER_BUSINESS_RELEASE_SOURCE_MANIFEST.json'), 'utf8')).replace(/^\uFEFF/, ''));
   const migrationNames = (await readdir(resolve(root, migrationDirectory))).filter((name) => name.endsWith('.sql'));
   const result = await inspectSellerReleaseSources(manifest, migrationNames, (path) => readFile(resolve(root, path)));
-  const pending = args.length ? planPendingSellerMigrations(migrationNames,
-    JSON.parse((await readFile(resolve(args[1]), 'utf8')).replace(/^\uFEFF/, ''))) : null;
+  const history = args.length ? JSON.parse((await readFile(resolve(args[1]), 'utf8')).replace(/^\uFEFF/, '')) : null;
+  if (args[0] === '--diagnose-history') {
+    const historyDiagnosis = inspectSellerMigrationHistory(migrationNames, history);
+    console.log(JSON.stringify({ status: historyDiagnosis.status, verifiedSourceCount: result.verifiedSourceCount, historyDiagnosis }, null, 2));
+    if (historyDiagnosis.status === 'HISTORY_RECONCILIATION_REQUIRED') process.exitCode = 2;
+    return;
+  }
+  const pending = args.length ? planPendingSellerMigrations(migrationNames, history) : null;
   console.log(JSON.stringify({
     status: 'LOCAL_COMPATIBILITY_VERIFIED',
     verifiedSourceCount: result.verifiedSourceCount,

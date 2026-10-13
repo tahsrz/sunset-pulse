@@ -2,6 +2,8 @@
 
 The October 13 cleanup left 362,399 bytes of cloud files and about 67.2 MB of database data. The Wikipedia backup remains local. This change adds an 800,000,000-byte admission budget for project file storage, leaving 200 MB below the current 1 GB Free allowance.
 
+The user-confirmed non-production project now has both storage migrations installed and reports healthy. All 313 existing objects and both private bucket settings are unchanged. See the [activation and remaining release report](./supabase-storage-activation-2026-10-13.md). Production promotion and complete seller-worker readiness remain separate gates.
+
 ## Behavior
 
 - All application uploads and cartridge publishing scripts reserve capacity before contacting Storage. Missing migrations, unreachable capacity checks, or malformed responses stop new uploads.
@@ -28,6 +30,8 @@ npm run storage:inspect --workspace=apps/pulse
 ```
 
 It reports `healthy`, `warning`, `blocked`, or `unavailable`, together with reasons, aggregate usage and `backgroundUploadsAllowed`. Exit codes: 0 for healthy, 2 for attention required, 1 for missing local configuration. The deployed worker uses its existing `CRON_SECRET`; inspect its JSON response and `[STORAGE_MAINTENANCE]` logs. Do not invoke that worker merely to inspect usage, because it also processes existing seller jobs.
+
+For a read-only deployment check, use `GET /api/admin/storage/health?expectedProjectRef=YOUR_PROJECT_REF` with the deployment's `CRON_SECRET` bearer header. It verifies the selected project and matching server/browser origins before inspecting capacity. A target mismatch returns 409; missing/unavailable inspection returns 503. It does not process jobs or cleanup and is not an additional cron schedule.
 
 For `bucket_limit_mismatch`, adjust the bucket through Storage settings/API while preserving privacy and MIME restrictions. For `accounting_mismatch`, investigate provider metadata before resuming publishers; do not reset the counters. `capacity_unverified` commonly means the two storage migrations or the service-role configuration are missing. No automatic setting changes or budget reclamation occur.
 

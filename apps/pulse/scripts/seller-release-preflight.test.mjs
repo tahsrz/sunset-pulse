@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { inspectSellerReleaseSources, planPendingSellerMigrations, requiredSellerReleasePaths } from './seller-release-preflight.mjs';
+import { inspectSellerReleaseSources, inspectSellerMigrationHistory, planPendingSellerMigrations, requiredSellerReleasePaths } from './seller-release-preflight.mjs';
 
 const bytes = Buffer.from('reviewed fixture\r\n');
 const fixture = () => ({ files: requiredSellerReleasePaths.map((path) => ({ path, sha256: createHash('sha256').update(bytes).digest('hex') })) });
@@ -63,4 +63,26 @@ test('includes legacy date-only migrations and matches their exported versions e
   const inventory = ['20260403_workflow_init.sql', '20260404_eight_by_eight.sql', ...names];
   assert.deepEqual(planPendingSellerMigrations(inventory, ['20260403']).map((item) => item.file), inventory.slice(1));
   assert.throws(() => planPendingSellerMigrations(inventory, ['20260403000000']), /absent from this repository/);
+});
+
+test('diagnosis lists all holes, the unrecorded tail and unknown versions while planning still refuses them', () => {
+  const diagnosis = inspectSellerMigrationHistory(names.slice(0, 5), [names[1].slice(0, 14), names[3].slice(0, 14), '19990101000000']);
+  assert.equal(diagnosis.status, 'HISTORY_RECONCILIATION_REQUIRED');
+  assert.deepEqual(diagnosis.historyGaps.map((item) => item.file), [names[0], names[2]]);
+  assert.deepEqual(diagnosis.unknownAppliedVersions, ['19990101000000']);
+  assert.deepEqual(diagnosis.unrecordedMigrations.map((item) => item.file), [names[0], names[2], names[4]]);
+  assert.throws(() => planPendingSellerMigrations(names.slice(0, 5), [names[1].slice(0, 14)]), /gap/);
+});
+
+test('diagnosis accepts an unordered but complete recorded prefix without claiming deployed readiness', () => {
+  const diagnosis = inspectSellerMigrationHistory(names, [names[1].slice(0, 14), names[0].slice(0, 14)]);
+  assert.equal(diagnosis.status, 'HISTORY_PREFIX_VERIFIED');
+  assert.deepEqual(diagnosis.historyGaps, []);
+  assert.equal(diagnosis.unrecordedCount, names.length - 2);
+  assert.match(diagnosis.scope, /compare actual schema/);
+});
+
+test('diagnosis validates exports and filenames as strictly as executable planning', () => {
+  assert.throws(() => inspectSellerMigrationHistory(names, ['bad']), /unique 8- or 14-digit/);
+  assert.throws(() => inspectSellerMigrationHistory(['../bad.sql'], []), /invalid filename/);
 });
