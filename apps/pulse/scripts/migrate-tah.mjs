@@ -56,7 +56,7 @@ async function migrateCartridges() {
     console.log(`Uploading ${file}...`);
     const result = await publishBackgroundCartridge(supabase, file, () => fs.readFileSync(filePath));
     console.log(`${file}: ${result.state}${result.error ? ` (${result.error.message})` : ''}`);
-    if (result.state === 'paused') break;
+    if (result.state === 'paused') return;
   }
 
   console.log('🎉 TAH Migration Complete.');

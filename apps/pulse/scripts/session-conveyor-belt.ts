@@ -68,7 +68,7 @@ async function runConveyorBelt() {
     // 4. Upload to Grid Storage
     const result = await publishBackgroundCartridge(supabase, `sessions/${fileName}`, () => builder.forge(inputs));
     console.log(`[SESSION_FORGE] ${fileName}: ${result.state}${result.error ? ` (${result.error.message})` : ''}`);
-    if (result.state === 'paused') break;
+    if (result.state === 'paused') return;
   }
 
   console.log('🏁 [CONVEYOR_BELT] Cycle complete.');

@@ -41,7 +41,7 @@ async function syncToCloud() {
     console.log(`Uploading ${fileName}...`);
     const result = await publishBackgroundCartridge(supabase, fileName, () => fs.readFileSync(filePath));
     console.log(`${fileName}: ${result.state}${result.error ? ` (${result.error.message})` : ''}`);
-    if (result.state === 'paused') break;
+    if (result.state === 'paused') return;
   }
 
   console.log('🚀 [Vercel_Supabase_Sync] Complete.');
