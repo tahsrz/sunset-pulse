@@ -12,7 +12,7 @@ import { uploadWithStorageBudget, createBudgetedSignedUploadUrl } from '../lib/s
 
 // Never loads .env files or connects to a hosted project.
 const appRoot = fileURLToPath(new URL('../', import.meta.url));
-const cli = resolve(appRoot, '../../node_modules/.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
+const cli = process.env.PULSE_TEST_SUPABASE_CLI || resolve(appRoot, '../../node_modules/.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const project = `pulse_budget_${randomUUID().replaceAll('-', '').slice(0, 8)}`;
 const temporaryRoot = await mkdtemp(join(tmpdir(), `${project}-`));
 const workdir = join(temporaryRoot, 'project');
@@ -59,6 +59,7 @@ try {
   // Check the engine before marking a stack as started, so an offline Docker
   // daemon doesn't hide the startup failure behind an unsuccessful stop.
   await command('docker', ['info', '--format', '{{.ServerVersion}}'], { timeout: 15000 });
+  await runCli(['--version']);
   let ports;
   for (let attempt = 0; attempt < 100; attempt++) {
     const base = 56000 + Math.floor(Math.random() * 1000);
