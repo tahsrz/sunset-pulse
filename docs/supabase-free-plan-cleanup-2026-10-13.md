@@ -27,6 +27,8 @@ The post-cleanup app preflight reads `site_config` successfully (HTTP 200). Sell
 
 ## Binary encoding and compression
 
+The next release adds an [800 MB project file admission budget](./supabase-storage-budget.md), with concurrent reservations and fail-closed uploads. Its hosted activation must be coordinated with deployment; it is separate from this completed cleanup.
+
 The removed Wikipedia cartridges are already binary `.tah` files. A deterministic sample of 199 archived cartridges totaled 18,947,214 bytes. Gzip produced 3,680,169 bytes (80.58% smaller); Brotli quality 4 produced 3,564,992 bytes (81.18% smaller). Every sample round-tripped to identical original bytes. These are sample results, not a full-library capacity guarantee or a deployed format change. Detailed results are in the recovery directory's `compression-sample.json`.
 
 Keep accounts, leads, bookings, and other queryable records in typed PostgreSQL tables. PostgreSQL already supports [binary `jsonb`](https://www.postgresql.org/docs/current/datatype-json.html) and transparent [TOAST compression](https://www.postgresql.org/docs/current/storage-toast.html) for large values. An application-wide blob conversion would require rewriting query and indexing behavior without resolving a database size problem here.

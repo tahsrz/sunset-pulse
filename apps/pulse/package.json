@@ -39,6 +39,7 @@
     "test:seller-video-briefs:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-video-briefs",
     "test:seller-business:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-business",
     "test:scans:storage": "node scripts/platform-disposable-auth-acceptance.mjs --suite scans",
+    "test:storage-budget": "node scripts/project-storage-budget-acceptance.mjs",
     "platform:pilot:preflight": "tsx scripts/platform-pilot-preflight.ts",
     "test:db:mongo": "node scripts/scan-mongo-acceptance.mjs",
     "test:inventory-truth": "npx vitest run tests/unit/commercial-inventory-truth.test.ts tests/unit/jamie-public-guide-supervisor.test.ts tests/unit/jamie-listing-context.test.ts tests/unit/listing-read-surfaces.test.ts tests/unit/tenant-context-contracts.test.ts",

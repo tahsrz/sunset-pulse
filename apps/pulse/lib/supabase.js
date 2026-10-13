@@ -1,4 +1,5 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
+import { uploadWithStorageBudget } from './storage/projectStorageBudget.mjs';
 
 /**
  * Memoria-Synchronized Supabase Client
@@ -94,9 +95,7 @@ export const subscribeToSprintTasks = (sprintId, callback) => {
  * JAMIE_STORAGE: Link a workflow report to the storage bucket.
  */
 export const uploadWorkflowAsset = async (workflowId, assetName, file) => {
-  const { data, error } = await supabase.storage
-    .from('reports')
-    .upload(`${workflowId}/${assetName}`, file);
+  const { data, error } = await uploadWithStorageBudget(supabaseAdmin, 'reports', `${workflowId}/${assetName}`, file);
   if (error) throw error;
   return data;
 };

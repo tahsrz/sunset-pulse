@@ -170,6 +170,8 @@ For rollback, record a verified prior app/worker deployment before the release a
 
 ## Release and rollback decision
 
+- [ ] Coordinate deployment of the [project storage budget](../../../docs/supabase-storage-budget.md): require real Storage API acceptance, finite bucket limits, and the matching application before enabling the 800 MB guard. Monitor database size separately. Do not activate the guard against an older upload implementation.
+
 - [ ] After all checks above pass, prepare a separate reviewed deployment action for the selected non-production target. This checklist does not authorize production migration, external messaging, social posting, paid provider activation, or production deployment.
 - [ ] Rollback disables newly activated admissions and restores compatible app/worker versions. Preserve lead, outcome, publication, and financial receipts; do not drop tables as a routine rollback.
 

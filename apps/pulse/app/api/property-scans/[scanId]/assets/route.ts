@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from '@/lib/core/apiResponse';
 import { appendPropertyScanAssets, readPropertyScanSession } from '@/lib/scans/propertyScanStore';
 import { hasSupportedPropertyScanSignature, propertyScanAssetLimits, propertyScanAssetMimeTypes, propertyScanAssetSchema } from '@/lib/scans/propertyScanContract';
 import { supabaseAdmin } from '@/lib/supabase';
+import { uploadWithStorageBudget } from '@/lib/storage/projectStorageBudget.mjs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -42,10 +43,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   for (const { file, bytes } of preparedFiles) {
     const storagePath = `${access.user.id}/${scanId}/${randomUUID()}-${safeFileName(file.name)}`;
     uploadedPaths.push(storagePath);
-    const { error } = await storage.upload(storagePath, Buffer.from(bytes), { contentType: file.type, upsert: false });
+    const { error } = await uploadWithStorageBudget(supabaseAdmin, 'property-scans', storagePath, Buffer.from(bytes), { contentType: file.type, upsert: false });
     if (error) {
       await removeUploadedPaths(storage, uploadedPaths);
-      return errorResponse('Capture upload failed. No public listing asset was created.', 502, error.message);
+      return errorResponse(error.message || 'Capture upload failed. No public listing asset was created.', Number(error.statusCode) || 502);
     }
 
     assets.push(propertyScanAssetSchema.parse({

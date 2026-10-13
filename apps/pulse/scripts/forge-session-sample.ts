@@ -2,6 +2,7 @@ import { SessionForge } from '../lib/intelligence/sessionForge';
 import { TAHBuilder, type TAHInput } from '../lib/core/tah_builder';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { uploadWithStorageBudget } from '../lib/storage/projectStorageBudget.mjs';
 
 dotenv.config({ path: '.env.local' });
 
@@ -17,10 +18,8 @@ class AdminSessionForge extends SessionForge {
     const buffer = builder.forge(inputs);
     const fileName = `${sessionName}.tah`;
 
-    const { error } = await supabaseAdmin.storage
-      .from('cartridges')
-      .upload(fileName, buffer, {
-        upsert: true,
+    const { error } = await uploadWithStorageBudget(supabaseAdmin, 'cartridges', fileName, buffer, {
+        upsert: false,
         contentType: 'application/octet-stream'
       });
 

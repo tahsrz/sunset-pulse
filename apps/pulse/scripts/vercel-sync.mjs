@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { uploadWithStorageBudget } from '../lib/storage/projectStorageBudget.mjs';
 
 const scriptDir = path.dirname(new URL(import.meta.url).pathname);
 const envPath = path.resolve(process.cwd(), 'SunsetPulse', '.env.local');
@@ -35,10 +36,8 @@ async function syncToCloud() {
     const fileBuffer = fs.readFileSync(filePath);
 
     console.log(`Uploading ${fileName}...`);
-    const { error } = await supabase.storage
-      .from('cartridges')
-      .upload(fileName, fileBuffer, {
-        upsert: true,
+    const { error } = await uploadWithStorageBudget(supabase, 'cartridges', fileName, fileBuffer, {
+        upsert: false,
         contentType: 'application/octet-stream'
       });
 

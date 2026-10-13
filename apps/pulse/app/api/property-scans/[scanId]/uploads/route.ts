@@ -4,6 +4,7 @@ import { errorResponse, successResponse } from '@/lib/core/apiResponse';
 import { readPropertyScanSession, registerPropertyScanUploadCapability } from '@/lib/scans/propertyScanStore';
 import { parseScanUploadReservation, propertyScanUploadPath, reserveScanUpload, abortScanUpload } from '@/lib/scans/scanUpload.server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { createBudgetedSignedUploadUrl } from '@/lib/storage/projectStorageBudget.mjs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -26,10 +27,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return successResponse({ endpoint: `/api/property-scans/${scanId}/uploads`, reservation, sessionRevision: session.revision, upload: { path, mode: 'mock' } });
     }
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return errorResponse('Private capture storage is not configured.', 503);
-    const { data, error } = await supabaseAdmin.storage.from('property-scans').createSignedUploadUrl(path, { upsert: false });
+    const { data, error } = await createBudgetedSignedUploadUrl(supabaseAdmin, 'property-scans', path, input.declaredBytes);
     if (error || !data) {
       await abortScanUpload(scanId, access.user.id, reservation.uploadId);
-      return errorResponse('Unable to create a private upload capability.', 502, error?.message);
+      return errorResponse(error?.message || 'Unable to create a private upload capability.', Number(error?.statusCode) || 502);
     }
     // The token comes directly from trusted Storage, never from the request.
     const payload = JSON.parse(Buffer.from(data.token.split('.')[1], 'base64url').toString('utf8'));

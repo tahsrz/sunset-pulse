@@ -92,6 +92,20 @@ jobs:
       - name: Run isolated scheduler and Mongo acceptance
         run: npm run docker:test
 
+  storage-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Verify project storage admission against the real Storage API
+        run: npm run test:storage-budget --workspace=apps/pulse
+
   jamie-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15

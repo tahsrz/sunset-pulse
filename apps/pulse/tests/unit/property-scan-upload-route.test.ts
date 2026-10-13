@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   remove: vi.fn(),
   from: vi.fn(),
+  rpc: vi.fn(),
 }));
 
 vi.mock('@/lib/core/routeAuth', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/lib/scans/propertyScanStore', () => ({
   appendPropertyScanAssets: mocks.appendPropertyScanAssets,
 }));
 vi.mock('@/lib/supabase', () => ({
-  supabaseAdmin: { storage: { from: mocks.from } },
+  supabaseAdmin: { rpc: mocks.rpc, storage: { from: mocks.from } },
 }));
 
 import { POST } from '@/app/api/property-scans/[scanId]/assets/route';
@@ -51,6 +52,7 @@ describe('property scan upload route', () => {
     mocks.readPropertyScanSession.mockResolvedValue(session);
     mocks.appendPropertyScanAssets.mockResolvedValue({ ...session, revision: 2, status: 'in_review', assets: [] });
     mocks.upload.mockResolvedValue({ error: null });
+    mocks.rpc.mockResolvedValue({ data: { reservationId: 'test-reservation', maxBytes: 78643200 }, error: null });
     mocks.remove.mockResolvedValue({ error: null });
     mocks.from.mockReturnValue({ upload: mocks.upload, remove: mocks.remove });
   });

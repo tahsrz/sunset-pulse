@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { uploadWithStorageBudget } from '../lib/storage/projectStorageBudget.mjs';
 
 dotenv.config({ path: '.env.local' });
 
@@ -48,10 +49,8 @@ async function migrateCartridges() {
     const fileBuffer = fs.readFileSync(filePath);
 
     console.log(`Uploading ${file}...`);
-    const { error: uploadError } = await supabase.storage
-      .from('cartridges')
-      .upload(file, fileBuffer, {
-        upsert: true,
+    const { error: uploadError } = await uploadWithStorageBudget(supabase, 'cartridges', file, fileBuffer, {
+        upsert: false,
         contentType: 'application/octet-stream'
       });
 

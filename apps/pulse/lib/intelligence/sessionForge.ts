@@ -1,5 +1,6 @@
 import { TAHBuilder, TAHInput } from '../core/tah_builder';
-import { supabase } from '../supabase';
+import { supabaseAdmin } from '../supabase';
+import { uploadWithStorageBudget } from '../storage/projectStorageBudget.mjs';
 import { purifyText } from '../ai/purifier';
 import fs from 'fs';
 import path from 'path';
@@ -59,10 +60,8 @@ export class SessionForge {
     
     // Upload to Supabase Storage
     const fileName = `${sessionName}.tah`;
-    const { error } = await supabase.storage
-      .from('cartridges')
-      .upload(fileName, buffer, {
-        upsert: true,
+    const { error } = await uploadWithStorageBudget(supabaseAdmin, 'cartridges', fileName, buffer, {
+        upsert: false,
         contentType: 'application/octet-stream'
       });
 

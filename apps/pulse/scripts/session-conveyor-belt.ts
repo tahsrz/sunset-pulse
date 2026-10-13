@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { uploadWithStorageBudget } from '../lib/storage/projectStorageBudget.mjs';
 import { TAHBuilder, type TAHInput } from '../lib/core/tah_builder';
 import dotenv from 'dotenv';
 
@@ -61,10 +62,8 @@ async function runConveyorBelt() {
     const buffer = builder.forge(inputs);
 
     // 4. Upload to Grid Storage
-    const { error: uploadError } = await supabase.storage
-      .from('cartridges')
-      .upload(`sessions/${fileName}`, buffer, {
-        upsert: true,
+    const { error: uploadError } = await uploadWithStorageBudget(supabase, 'cartridges', `sessions/${fileName}`, buffer, {
+        upsert: false,
         contentType: 'application/octet-stream'
       });
 
