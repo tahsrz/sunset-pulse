@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import { command } from './docker-acceptance.mjs';
 import { uploadWithStorageBudget, createBudgetedSignedUploadUrl } from '../lib/storage/projectStorageBudget.mjs';
+import { inspectProjectStorage, publishBackgroundCartridge } from '../lib/storage/projectStorageMaintenance.mjs';
+import { projectStoragePolicy } from '../lib/storage/projectStoragePolicy.mjs';
 
 // Never loads .env files or connects to a hosted project.
 const appRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -20,7 +22,12 @@ let started = false;
 
 function runCli(args) {
   return new Promise((resolveRun, reject) => {
-    const child = spawn(cli, args, { windowsHide: true, shell: process.platform === 'win32',
+    // Run the npm launcher directly on Windows instead of passing temp paths
+    // through cmd.exe. Both cwd and --workdir stay inside this generated stack.
+    const npmLauncher = !process.env.PULSE_TEST_SUPABASE_CLI && process.platform === 'win32';
+    const executable = npmLauncher ? process.execPath : cli;
+    const cliArgs = npmLauncher ? [resolve(appRoot, '../../node_modules/supabase/dist/supabase.js'), ...args] : args;
+    const child = spawn(executable, cliArgs, { cwd: workdir, windowsHide: true,
       env: { ...process.env, SUPABASE_TELEMETRY_DISABLED: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '', stderr = '';
     const timer = setTimeout(() => child.kill(), 600000);
@@ -56,6 +63,7 @@ function setValue(config, section, key, value) {
 }
 
 try {
+  await mkdir(workdir, { recursive: true });
   // Check the engine before marking a stack as started, so an offline Docker
   // daemon doesn't hide the startup failure behind an unsuccessful stop.
   await command('docker', ['info', '--format', '{{.ServerVersion}}'], { timeout: 15000 });
@@ -70,8 +78,9 @@ try {
   const source = join(appRoot, 'supabase');
   const target = join(workdir, 'supabase');
   await mkdir(join(target, 'migrations'), { recursive: true });
-  const migration = '20261013170000_project_storage_budget.sql';
-  await writeFile(join(target, 'migrations', migration), await readFile(join(source, 'migrations', migration)));
+  for (const migration of ['20261013170000_project_storage_budget.sql', '20261013180000_project_storage_cron_health.sql']) {
+    await writeFile(join(target, 'migrations', migration), await readFile(join(source, 'migrations', migration)));
+  }
   let config = (await readFile(join(source, 'config.toml'), 'utf8')).replace(/^project_id\s*=.*$/m, `project_id = "${project}"`);
   for (const [section, key, value] of [
     ['api', 'port', ports[0]], ['db', 'port', ports[1]], ['db', 'shadow_port', ports[2]],
@@ -94,6 +103,19 @@ try {
     const result = await admin.rpc('project_storage_budget_status');
     assert.equal(result.error, null); return result.data;
   };
+  assert.equal((await status()).limitBytes, projectStoragePolicy.fileBudgetBytes, 'SQL and application admission limits must agree');
+  assert.equal((await admin.storage.createBucket('cartridges', { public: false, fileSizeLimit: 1000 })).error, null);
+  assert.equal((await inspectProjectStorage(admin)).status, 'healthy');
+  await sql('UPDATE public.project_storage_budget SET limit_bytes=1000 WHERE singleton;');
+  assert.equal((await publishBackgroundCartridge(admin, 'session-fixture.tah', () => Buffer.alloc(3))).state, 'uploaded');
+  const inspected = await inspectProjectStorage(admin);
+  assert.equal(inspected.metrics.observedBytes, 3);
+  assert.equal(inspected.metrics.liveBytes, 3);
+  assert.equal(inspected.backgroundUploadsAllowed, false, 'Background jobs must preserve reservation headroom');
+  assert.equal((await publishBackgroundCartridge(admin, 'another.tah', () => Buffer.alloc(1))).state, 'paused');
+  // Reset only these synthetic accounting fixtures before the boundary suite.
+  assert.equal((await admin.storage.from('cartridges').remove(['session-fixture.tah'])).error, null);
+  await sql('UPDATE public.project_storage_budget SET retired_bytes=0,limit_bytes=2500 WHERE singleton;');
   assert.equal((await admin.storage.createBucket('budget-test', { public: false, fileSizeLimit: 1000 })).error, null);
   await sql('UPDATE public.project_storage_budget SET limit_bytes=2500 WHERE singleton;');
   assert((await anon.rpc('reserve_project_storage', { p_bucket: 'budget-test', p_name: 'anon', p_bytes: 1 })).error);
@@ -126,7 +148,7 @@ try {
   assert((await admin.rpc('reserve_project_storage', { p_bucket: 'cartridges', p_name: 'wiki_en_test.tah', p_bytes: 1 })).error);
   await sql('UPDATE public.project_storage_budget SET paused=true WHERE singleton;');
   assert((await admin.rpc('reserve_project_storage', { p_bucket: 'budget-test', p_name: 'paused', p_bytes: 1 })).error);
-  console.log('PASS: real Storage API admission, concurrency, signed upload, replay denial, immutable files, deletion accounting, access controls and reads at capacity.');
+  console.log('PASS: real Storage API admission, cron capacity inspection/background pause, concurrency, signed upload, replay denial, immutable files, deletion accounting, access controls and reads at capacity.');
 } finally {
   if (started) {
     await runCli(['stop', '--project-id', project, '--no-backup', '--yes', '--workdir', workdir]);

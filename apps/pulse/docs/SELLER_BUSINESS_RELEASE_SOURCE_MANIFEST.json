@@ -1,5 +1,5 @@
 {
-  "reviewDate": "2026-10-09",
+  "reviewDate": "2026-10-13",
   "baseCommit": "89d67432b9774a02ffbcf33f5235d337cab00fb4",
   "branch": "codex/seller-acquisition-2026q4",
   "scope": "Working-tree migration and shared scheduler compatibility files; this is not a complete application candidate or a deployment artifact.",
@@ -91,7 +91,7 @@
     },
     {
       "path": "apps/pulse/app/api/admin/automations/hotlist-email/worker/route.ts",
-      "sha256": "76cc848bebbb08fb16c43385e56332f422907cfbb3c80f0a43315628a0c68ff4"
+      "sha256": "a2ac281111b040fe02c02c0c937a2d58aaa2fdb5a6ff8005fc307bbf71e2048d"
     },
     {
       "path": "apps/pulse/vercel.json",

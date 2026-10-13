@@ -11,12 +11,32 @@ The October 13 cleanup left 362,399 bytes of cloud files and about 67.2 MB of da
 - Failed or abandoned uploads retain their reservation. Deleted object bytes move into a retired charge because backend deletion can lag. Neither charge is automatically reclaimed or expired.
 - Bulk `wiki_` and `wikipedia-`/`wikipedia.` cartridge uploads are blocked. Use the preserved local library.
 
+## Scheduled maintenance and background publishing
+
+The existing `/api/admin/automations/hotlist-email/worker` invocation runs every five minutes. It now performs a read-only storage inspection, returns `storageMaintenance` alongside its cleanup/job results, and logs a bounded `[STORAGE_MAINTENANCE]` warning when action is needed. Healthy checks are quiet. An unavailable inspection has a five-second deadline so other jobs can proceed.
+
+Generated cartridge publishing pauses before the next bucket-sized reservation would cross **700 MB**, leaving 100 MB within the 800 MB admission budget for customer uploads. It also pauses at **400 MB of database data**, on metadata/accounting drift, on incompatible bucket limits, or when capacity cannot be verified. These thresholds and the **50 MB scan file limit** share `apps/pulse/lib/storage/projectStoragePolicy.mjs`. The 700 MB background threshold is a conservative preflight; the locked 800 MB admission ledger remains the concurrency backstop.
+
+`session-conveyor-belt.ts`, `migrate-tah.mjs`, `vercel-sync.mjs`, and `SessionForge` use this policy before generating or loading a new cartridge. Existing immutable paths are skipped, Wikipedia files stay local, and a cloud error stops the batch until a later invocation. The CLI publishers resolve environment and cartridge paths relative to the Pulse app, allowing existing scheduled commands to run from other working directories.
+
+Scan cleanup continues to delete only its previously eligible cancelled/expired captures. Seller jobs also continue when optional publishing is paused. Neither inspection nor cleanup releases pending or retired budget charges. No storage-check history rows are created, no customer files are purged to make room, and inspection does not send external notifications.
+
+Run a read-only check with:
+
+```sh
+npm run storage:inspect --workspace=apps/pulse
+```
+
+It reports `healthy`, `warning`, `blocked`, or `unavailable`, together with reasons, aggregate usage and `backgroundUploadsAllowed`. Exit codes: 0 for healthy, 2 for attention required, 1 for missing local configuration. The deployed worker uses its existing `CRON_SECRET`; inspect its JSON response and `[STORAGE_MAINTENANCE]` logs. Do not invoke that worker merely to inspect usage, because it also processes existing seller jobs.
+
+For `bucket_limit_mismatch`, adjust the bucket through Storage settings/API while preserving privacy and MIME restrictions. For `accounting_mismatch`, investigate provider metadata before resuming publishers; do not reset the counters. `capacity_unverified` commonly means the two storage migrations or the service-role configuration are missing. No automatic setting changes or budget reclamation occur.
+
 ## Deployment
 
 1. Require the `storage-budget` CI check to pass. It creates its own disposable Supabase stack, exercises the actual Storage API, and destroys only its generated resources. Run locally with `npm run test:storage-budget --workspace=apps/pulse` when Docker's Linux engine is available.
 2. Temporarily stop upload traffic and cartridge publishing jobs. Confirm the target project and verify that current file usage is below 800 MB. Back up the existing bucket settings.
 3. Give every upload bucket a finite native `fileSizeLimit`. Suggested limits for Free: cartridges 5,242,880; lead-evidence 10,485,760; reports 10,485,760; property-scans 50,000,000. The app's scan file limit is also 50,000,000 bytes. Supabase Free's [global file limit is 50 MB](https://supabase.com/docs/guides/storage/uploads/file-limits); the older scan bucket migrations used 75 MiB, so explicitly lower that bucket during rollout. The guard supports bounded buckets up to 80,000,000 bytes on paid plans, but a bucket must also fit the provider's global limit. Preserve privacy and existing MIME restrictions. An unbounded bucket cannot obtain a reservation. Do not increase a bucket limit while it has pending reservations.
-4. Apply **only** `apps/pulse/supabase/migrations/20261013170000_project_storage_budget.sql` to the verified project, then deploy the matching application code before resuming uploads. Do not blindly run the unrelated pending seller release migrations. Record this migration through your normal migration-history process so it is not applied twice.
+4. Apply `20261013170000_project_storage_budget.sql`, then `20261013180000_project_storage_cron_health.sql` from `apps/pulse/supabase/migrations/` to the verified project, then deploy the matching application code before resuming uploads. If the first migration is already recorded, apply only the second. Do not blindly run the unrelated pending seller release migrations. Record both through your normal migration-history process so they are not applied twice.
 5. Verify an ordinary upload, download, and rejection of an unreserved service-role upload. Confirm that the budget's live bytes match Storage metadata. Resume the existing jobs only after these checks.
 
 Activation is coordinated with deployment: older app versions do not reserve capacity and will be rejected by the trigger. The PR alone does not activate hosted enforcement.
@@ -31,7 +51,8 @@ Use a server-side service-role client:
 const { data, error } = await supabaseAdmin.rpc('project_storage_budget_status');
 if (error) throw error;
 // limitBytes, liveBytes, reservedBytes, retiredBytes, availableBytes,
-// paused, pendingUploads, databaseBytes, databaseWarning
+// paused, pendingUploads, databaseBytes, databaseWarning,
+// observedBytes, unknownSizeObjects, bucketLimits
 ```
 
 For an immediate upload stop, an authorized database operator can run:

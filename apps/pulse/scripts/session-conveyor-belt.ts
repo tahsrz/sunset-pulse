@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
-import { uploadWithStorageBudget } from '../lib/storage/projectStorageBudget.mjs';
+import { inspectProjectStorage, publishBackgroundCartridge } from '../lib/storage/projectStorageMaintenance.mjs';
 import { TAHBuilder, type TAHInput } from '../lib/core/tah_builder';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
 
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: fileURLToPath(new URL('../.env.local', import.meta.url)) });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -17,6 +18,11 @@ const builder = new TAHBuilder(0.001, 14);
  */
 async function runConveyorBelt() {
   console.log('🚀 [CONVEYOR_BELT] Initiating Intelligence Harvest...');
+  const maintenance = await inspectProjectStorage(supabase);
+  if (!maintenance.backgroundUploadsAllowed) {
+    console.log(`[CONVEYOR_BELT] Paused: ${maintenance.reasons.join(', ')}.`);
+    return;
+  }
 
   // 1. Fetch recent events (Last 24 hours)
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -59,19 +65,10 @@ async function runConveyorBelt() {
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '_');
     const fileName = `session_${actorId}_${dateStr}.tah`;
-    const buffer = builder.forge(inputs);
-
     // 4. Upload to Grid Storage
-    const { error: uploadError } = await uploadWithStorageBudget(supabase, 'cartridges', `sessions/${fileName}`, buffer, {
-        upsert: false,
-        contentType: 'application/octet-stream'
-      });
-
-    if (uploadError) {
-      console.error(`❌ [SESSION_FORGE_ERROR] ${fileName}:`, uploadError.message);
-    } else {
-      console.log(`✅ [SESSION_FORGE_SUCCESS] Memory deployed to grid: ${fileName}`);
-    }
+    const result = await publishBackgroundCartridge(supabase, `sessions/${fileName}`, () => builder.forge(inputs));
+    console.log(`[SESSION_FORGE] ${fileName}: ${result.state}${result.error ? ` (${result.error.message})` : ''}`);
+    if (result.state === 'paused') break;
   }
 
   console.log('🏁 [CONVEYOR_BELT] Cycle complete.');
