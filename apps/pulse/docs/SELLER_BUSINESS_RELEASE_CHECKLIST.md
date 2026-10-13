@@ -2,6 +2,22 @@
 
 Status: **local feature acceptance passed; the source candidate is committed for PR #80; hosted preflight remains incomplete.** No remote migration or manual deployment was run for this packet.
 
+## Latest release checkpoint: October 13, 2026
+
+- [x] Checked source candidate `8de45e52bfc22a4d416d2e09b6ca320dc3afa314` on PR #80. All five jobs in [Actions run 38315152940](https://github.com/tahsrz/sunset-pulse/actions/runs/38315152940) pass: lint, test, scheduler-db, docker-acceptance and jamie-e2e. Vercel passes; Supabase Preview is skipped.
+- [x] Vercel identifies deployment `dpl_FLcawbnGi92KH6HWM4w4UKtxxoLG` as READY for that exact commit and branch in project `prj_EkrxJi7uHCqq1HztPygeYTj57gYs`, team `team_nx1IWfVXcJxGdPgQyNvvYcXl`. Its immutable [deployment URL](https://sunset-pulse-fcc196wrz-tahsrzs-projects.vercel.app) and branch identity are confirmed; its Supabase mapping is not. The deployment API reports `target: null`.
+- [x] Reran the existing runtime preflight against the explicitly selected **local configuration** project `xlyfhiafactxahhvikyv`. The first bounded read still fails with HTTP 402 / `exceed_storage_size_quota`. Sending is disabled; sender, webhook and seller-intake configuration remain absent locally. This is not a read of the preview's environment.
+- [x] Reran offline compatibility verification: 27 reviewed sources and 161 repository migrations match. All nine migration-planner regressions pass. No applied target history is available, so there is no target-specific pending migration list.
+- [ ] Verify the intended non-production database mapping. The branch-filtered Vercel environment metadata request still returns 403 forbidden. No PATH/repository Vercel CLI or process `VERCEL_TOKEN` is available for its suggested fallback. Provide a confirmed non-production Supabase URL/ref for this deployment or grant the connection permission to inspect project environment metadata. No secret keys should be posted in chat.
+
+### Next release actions, in order
+
+1. Confirm the chosen non-production Supabase URL/ref and its relationship to the deployment above. Do not infer that the local configuration is the preview's database. The owner must restore a restricted selected project before database acceptance; see the [quota recovery guide](SELLER_RUNTIME_PREFLIGHT.md).
+2. Prepare an ignored target environment file with the confirmed URL and server-only credential through the usual private configuration channel. Run `node scripts/seller-runtime-preflight.mjs --expected-project-ref YOUR_PROJECT_REF --env-file .pulse-local/selected-target.env` from `apps/pulse`. Resolve its first failure before continuing.
+3. Export the chosen database's full applied migration history with the read-only SQL below. From `apps/pulse`, run `node scripts/seller-release-preflight.mjs --applied-migrations "C:\path\to\applied-migrations.json"`. Review any history discrepancy or pending files and record backup/rollback references before preparing a migration action.
+4. Complete the non-production preflight below: verify published site ownership, intake configuration, owner/foreign-owner and client access, exact-time planner/reminder behavior, and actual shared scheduler invocation evidence. Keep reviewed email gated until its sender, webhook and provider configuration are reviewed. Use the existing shared cron/worker; their presence in source or a passing build does not establish hosted execution.
+5. Prepare the deployment decision only after the target checks pass. The October 13 checkpoint changes no database, billing, provider admission, worker invocation or deployment.
+
 ## Candidate identity
 
 - [x] Repository: SunsetPulse, branch `codex/seller-acquisition-2026q4`.
@@ -93,7 +109,7 @@ This compares the entire repository history, not only the 16-file compatibility 
 
 ## Migration and worker compatibility packet (October 8)
 
-The base commit is the HEAD recorded above; the app version is `property-pulse@0.2.0`. The candidate remains in the working tree. Compare the selected database's applied migration history with the entire repository history before preparing its pending migration list. The order below records the currently uncommitted migration tail; it does not replace prior planner, lease-fencing, permission, or seller-video review migrations. The two connector-health migrations and publication-record migration were existing working changes, and are recorded as dependencies without claiming ownership of their implementation.
+The app version is `property-pulse@0.2.0`; the committed seller feature candidate and shared worker identity are recorded above. Compare the selected database's applied migration history with the entire repository history before preparing its pending migration list. The order below records the committed candidate migration tail; it does not replace prior planner, lease-fencing, permission, or seller-video review migrations. The two connector-health migrations and publication-record migration are included as dependencies in the reviewed source manifest.
 
 | Order | Migration | Result |
 | --- | --- | --- |
