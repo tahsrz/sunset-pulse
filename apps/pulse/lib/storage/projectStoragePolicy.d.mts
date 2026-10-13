@@ -1,4 +1,4 @@
-export const projectStoragePolicy: Readonly<{
+export declare const projectStoragePolicy: Readonly<{
   fileBudgetBytes: number;
   backgroundBudgetBytes: number;
   databaseWarningBytes: number;
