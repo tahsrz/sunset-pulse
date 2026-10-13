@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Play, RefreshCcw, Sparkles, Trophy, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { readJamieGameRecord, saveJamieGameRecord } from '@/lib/jamie-games/records';
 import {
   VOLLEY_BALL_RADIUS,
   VOLLEY_COURT_HEIGHT,
@@ -20,8 +21,6 @@ import {
   type VolleyGameState,
   type VolleyInput,
 } from '@/lib/jamie-games/volley';
-
-const VOLLEY_STATS_KEY = 'sunset_play_jamie_volley_stats';
 
 type VolleyStats = {
   matches: number;
@@ -42,18 +41,7 @@ export function JamieVolleyGame() {
   const [stats, setStats] = useState<VolleyStats>(EMPTY_STATS);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(VOLLEY_STATS_KEY);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved) as Partial<VolleyStats>;
-      setStats({
-        matches: Number(parsed.matches) || 0,
-        wins: Number(parsed.wins) || 0,
-        losses: Number(parsed.losses) || 0,
-      });
-    } catch {
-      setStats(EMPTY_STATS);
-    }
+    setStats(readJamieGameRecord('volley').value);
   }, []);
 
   useEffect(() => {
@@ -66,7 +54,7 @@ export function JamieVolleyGame() {
         wins: current.wins + (humanWon ? 1 : 0),
         losses: current.losses + (humanWon ? 0 : 1),
       };
-      window.localStorage.setItem(VOLLEY_STATS_KEY, JSON.stringify(next));
+      saveJamieGameRecord('volley', next);
       return next;
     });
   }, [game.scores.human, game.scores.jamie, game.status]);

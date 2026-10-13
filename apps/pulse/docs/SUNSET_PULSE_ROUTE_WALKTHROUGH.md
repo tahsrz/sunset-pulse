@@ -92,7 +92,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 
 | Path | Entry requirement | Say this | How to open / caution |
 | --- | --- | --- | --- |
-| `/play-jamie` | Public entry | “This is the game hub for the Jamie experiences.” | Open `/play-jamie`.  |
+| `/play-jamie` | Public entry | “This is the game hub for the Jamie experiences, with records saved in this browser.” | Open `/play-jamie` and inspect Your local records. Choose a game and return afterward to view its saved record; Crash Bash has separate external records. |
 | `/play-jamie/chess` | Public entry | “This opens Chess with Jamie.” | Open `/play-jamie/chess`.  |
 | `/play-jamie/poker` | Public entry | “This opens the poker game; do not describe it as a real-money wagering service.” | Open `/play-jamie/poker`.  |
 | `/play-jamie/tetris` | Public entry | “This opens Block Drop, a lightweight game experience.” | Open `/play-jamie/tetris`.  |

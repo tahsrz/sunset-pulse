@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, CircleDollarSign, RefreshCcw, Sparkles, Spade, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PokerCard } from '@/components/jamie-games/PokerCard';
+import { readJamieGameRecord, saveJamieGameRecord } from '@/lib/jamie-games/records';
 import {
   createPokerGame,
   getJamiePokerCommentary,
@@ -16,8 +17,6 @@ import {
   type PokerGameState,
   type RandomSource,
 } from '@/lib/jamie-games/poker';
-
-const POKER_STATS_KEY = 'sunset_play_jamie_poker_stats';
 
 type PokerStats = {
   hands: number;
@@ -44,19 +43,7 @@ export function JamiePokerGame({ random }: JamiePokerGameProps) {
   const [stats, setStats] = useState<PokerStats>(EMPTY_STATS);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(POKER_STATS_KEY);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved) as Partial<PokerStats>;
-      setStats({
-        hands: Number(parsed.hands) || 0,
-        wins: Number(parsed.wins) || 0,
-        losses: Number(parsed.losses) || 0,
-        ties: Number(parsed.ties) || 0,
-      });
-    } catch {
-      setStats(EMPTY_STATS);
-    }
+    setStats(readJamieGameRecord('poker').value);
   }, []);
 
   useEffect(() => {
@@ -69,7 +56,7 @@ export function JamiePokerGame({ random }: JamiePokerGameProps) {
         losses: current.losses + (game.lastWinner === 'jamie' ? 1 : 0),
         ties: current.ties + (game.lastWinner === 'tie' ? 1 : 0),
       };
-      window.localStorage.setItem(POKER_STATS_KEY, JSON.stringify(next));
+      saveJamieGameRecord('poker', next);
       return next;
     });
   }, [game.handNumber, game.lastWinner, game.status]);

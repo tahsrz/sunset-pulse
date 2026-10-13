@@ -34,6 +34,7 @@ import {
   type JamieChessDifficulty,
 } from '@/lib/jamie-games/chess';
 import { cn } from '@/lib/utils';
+import { readJamieGameRecord, saveJamieGameRecord } from '@/lib/jamie-games/records';
 
 type PromotionChoice = {
   from: Square;
@@ -47,7 +48,6 @@ type MatchRecord = {
   losses: number;
 };
 
-const RECORD_KEY = 'sunset_play_jamie_chess_record';
 const EMPTY_RECORD: MatchRecord = { wins: 0, draws: 0, losses: 0 };
 const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
 const PIECE_GLYPHS: Record<Color, Record<PieceSymbol, string>> = {
@@ -83,12 +83,7 @@ export function JamieChessGame() {
   const status = describeStatus(game, playerColor, jamieThinking);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(RECORD_KEY);
-      if (saved) setRecord({ ...EMPTY_RECORD, ...JSON.parse(saved) });
-    } catch {
-      setRecord(EMPTY_RECORD);
-    }
+    setRecord(readJamieGameRecord('chess').value);
   }, []);
 
   useEffect(() => {
@@ -132,11 +127,7 @@ export function JamieChessGame() {
         nextRecord.draws += 1;
       }
 
-      try {
-        window.localStorage.setItem(RECORD_KEY, JSON.stringify(nextRecord));
-      } catch {
-        // The in-memory record remains useful when browser storage is unavailable.
-      }
+      saveJamieGameRecord('chess', nextRecord);
       return nextRecord;
     });
   }, [fen, game, gameOver, playerColor]);

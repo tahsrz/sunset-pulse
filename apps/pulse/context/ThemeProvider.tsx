@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useAuth } from '@/context/AuthContext';
 import { ABIDAN_DATA, AbidanCharacter } from '@/constants/abidan';
 import { toast } from 'react-toastify';
+import { readBrowserValue, writeBrowserValue } from '@/lib/browserStorage';
 import {
   FALLBACK_AGENT_ID,
   type AgentProfile,
@@ -216,12 +217,12 @@ export function ThemeProvider({
   const clearProtocolLogs = () => setProtocolLogs([]);
 
   useEffect(() => {
-    const savedDev = localStorage.getItem('jamie_dev_mode');
-    const savedLefthand = localStorage.getItem('jamie_lefthand_mode');
-    const savedVoice = localStorage.getItem('jamie_voice_enabled');
-    const savedWakeListening = localStorage.getItem('jamie_wake_listening_enabled');
-    const savedGuardedJamie = localStorage.getItem('jamie_real_estate_mode') ?? localStorage.getItem('jamie_guarded_mode');
-    const savedJamieVoice = localStorage.getItem('jamie_voice_preset') as JamieVoicePreset | null;
+    const savedDev = readBrowserValue('jamie_dev_mode');
+    const savedLefthand = readBrowserValue('jamie_lefthand_mode');
+    const savedVoice = readBrowserValue('jamie_voice_enabled');
+    const savedWakeListening = readBrowserValue('jamie_wake_listening_enabled');
+    const savedGuardedJamie = readBrowserValue('jamie_real_estate_mode') ?? readBrowserValue('jamie_guarded_mode');
+    const savedJamieVoice = readBrowserValue('jamie_voice_preset') as JamieVoicePreset | null;
     setWakeListeningEnabledState(savedWakeListening === 'true');
     if (savedGuardedJamie === 'true') setGuardedJamieEnabledState(true);
     if (savedJamieVoice) setJamieVoiceState(savedJamieVoice);
@@ -240,8 +241,8 @@ export function ThemeProvider({
         setVoiceEnabledState(user.user_metadata.isVoiceEnabled);
       }
     } else {
-      const savedAdvanced = localStorage.getItem('jamie_advanced_mode');
-      const savedKeybind = localStorage.getItem('jamie_custom_keybind');
+      const savedAdvanced = readBrowserValue('jamie_advanced_mode');
+      const savedKeybind = readBrowserValue('jamie_custom_keybind');
       if (savedAdvanced === 'true') setAdvancedModeState(true);
       if (savedKeybind) setCustomKeybindState(savedKeybind);
       if (savedLefthand === 'true') setLefthandModeState(true);
@@ -252,7 +253,7 @@ export function ThemeProvider({
       setDevModeState(true);
     }
 
-    const savedAbidanId = localStorage.getItem('selected_abidan');
+    const savedAbidanId = readBrowserValue('selected_abidan');
     if (savedAbidanId) {
       const found = ABIDAN_DATA.find(a => a.id === savedAbidanId);
       if (found) setSelectedAbidanState(found);
@@ -262,7 +263,7 @@ export function ThemeProvider({
 
   const setSelectedAbidan = (abidan: AbidanCharacter) => {
     setSelectedAbidanState(abidan);
-    localStorage.setItem('selected_abidan', abidan.id);
+    writeBrowserValue('selected_abidan', abidan.id);
   };
 
   const setDevMode = (active: boolean) => {
@@ -274,7 +275,7 @@ export function ThemeProvider({
       return;
     }
     setDevModeState(active);
-    localStorage.setItem('jamie_dev_mode', active ? 'true' : 'false');
+    writeBrowserValue('jamie_dev_mode', active ? 'true' : 'false');
   };
 
   const syncSettings = async (updates: { isAdvancedMode?: boolean, customKeybind?: string, isLefthandMode?: boolean, isVoiceEnabled?: boolean }) => {
@@ -292,13 +293,13 @@ export function ThemeProvider({
 
   const setAdvancedMode = (active: boolean) => {
     setAdvancedModeState(active);
-    localStorage.setItem('jamie_advanced_mode', active ? 'true' : 'false');
+    writeBrowserValue('jamie_advanced_mode', active ? 'true' : 'false');
     syncSettings({ isAdvancedMode: active });
   };
 
   const setLefthandMode = (active: boolean) => {
     setLefthandModeState(active);
-    localStorage.setItem('jamie_lefthand_mode', active ? 'true' : 'false');
+    writeBrowserValue('jamie_lefthand_mode', active ? 'true' : 'false');
     syncSettings({ isLefthandMode: active });
   };
 
@@ -307,13 +308,13 @@ export function ThemeProvider({
     const upperKey = key.toUpperCase();
     if (forbiddenKeys.includes(upperKey)) return;
     setCustomKeybindState(upperKey);
-    localStorage.setItem('jamie_custom_keybind', upperKey);
+    writeBrowserValue('jamie_custom_keybind', upperKey);
     syncSettings({ customKeybind: upperKey });
   };
 
   const setVoiceEnabled = (active: boolean) => {
     setVoiceEnabledState(active);
-    localStorage.setItem('jamie_voice_enabled', active ? 'true' : 'false');
+    writeBrowserValue('jamie_voice_enabled', active ? 'true' : 'false');
     if (!active && typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -322,18 +323,18 @@ export function ThemeProvider({
 
   const setWakeListeningEnabled = (active: boolean) => {
     setWakeListeningEnabledState(active);
-    localStorage.setItem('jamie_wake_listening_enabled', active ? 'true' : 'false');
+    writeBrowserValue('jamie_wake_listening_enabled', active ? 'true' : 'false');
   };
 
   const setGuardedJamieEnabled = (active: boolean) => {
     setGuardedJamieEnabledState(active);
-    localStorage.setItem('jamie_real_estate_mode', active ? 'true' : 'false');
-    localStorage.setItem('jamie_guarded_mode', active ? 'true' : 'false');
+    writeBrowserValue('jamie_real_estate_mode', active ? 'true' : 'false');
+    writeBrowserValue('jamie_guarded_mode', active ? 'true' : 'false');
   };
 
   const setJamieVoice = (voice: JamieVoicePreset) => {
     setJamieVoiceState(voice);
-    localStorage.setItem('jamie_voice_preset', voice);
+    writeBrowserValue('jamie_voice_preset', voice);
   };
 
   const updateBranding = (newSettings: any) => {

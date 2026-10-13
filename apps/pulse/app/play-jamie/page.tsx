@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Crown, ExternalLink, Gamepad2, Layers3, Spade, Waves } from 'lucide-react';
+import { JamieLocalScorecard } from '@/components/jamie-games/JamieLocalScorecard';
 
 export const metadata: Metadata = {
   title: 'Play Jamie | Sunset Pulse',
-  description: 'Challenge Jamie to local games or discover Crash Bash Online for solo and multiplayer rounds.',
+  description: 'Play local games with Jamie, view your browser records, or launch Crash Bash Online for solo and multiplayer rounds.',
 };
 
 export default function PlayJamiePage() {
@@ -23,6 +24,8 @@ export default function PlayJamiePage() {
             Want a party game? Explore Crash Bash Online below, hosted at crashbash.app.
           </p>
         </div>
+
+        <JamieLocalScorecard />
 
         <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           <Link href="/play-jamie/chess" className="group relative overflow-hidden rounded-2xl border border-violet-200/20 bg-gradient-to-br from-violet-400/15 via-white/[0.04] to-cyan-400/10 p-7 transition hover:-translate-y-1 hover:border-violet-200/40">
