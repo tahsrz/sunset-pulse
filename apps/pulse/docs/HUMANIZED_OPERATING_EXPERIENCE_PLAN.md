@@ -18,9 +18,9 @@ October 14 design correction: the user rejected the generic rounded-card/initial
 
 Design rules: editorial serif headings paired with plain readable controls; warm paper/ink surfaces with a restrained rust accent; flat ruled entries, a clear date and useful margins; specific real-work copy. People are represented by their names and context, without decorative avatar bubbles. Use calm folder tabs and actual recorded/planned evidence in place of generic progress decoration. Preserve accessible light/dark appearances and meaningful touch targets. The concept is expressed through layout and behavior; it does not require fake paper textures, handwritten fonts or invented property imagery.
 
-The local concept preview supports daily-page/folder navigation, per-folder draft preservation, note editing and draft review with fictional sample names. It performs no customer or provider operation. This prototype supersedes the earlier Daily focus/Seller journey visual study.
+The [full Fieldbook feature study](FIELDBOOK_FEATURE_STUDY.md) extends the concept to 17 screens: daily work, inbox, folders, planner, correspondence, client progress, business, goals, weekly review, setup, decisions, publishing, property work, Jamie, shared runs, games and public intake. Its [interactive source](prototypes/fieldbook-feature-study.html) uses fictional sample names and local-only actions. This prototype supersedes the earlier Daily focus/Seller journey visual study; it is not a deployed application redesign.
 
-Concept verification: desktop plus 390px/320px layouts and light/dark appearances pass without overflow or browser page errors. Folder switching preserves note/message drafts; editing the message clears its prior review. Screenshots were inspected. These are local concept checks, not acceptance of a deployed Fieldbook interface.
+Concept verification: all 17 screens pass desktop plus 390px/320px overflow checks, including 17px reading text and 28px entry spacing at 320px. Five design controls change heading type, ink accent, appearance, spacing and reading size. Native-browser checks cover relationship context, preserved drafts, review invalidation, client sharing, appointments, ledger entries, goals, approvals, local capture, Jamie, game guides and public request review. All available generic review actions open and close through their local confirmation. No browser page errors occur. The collection contains 34 default desktop/mobile screenshots, two dark/forest alternatives and two screenshot overviews. These are local concept checks, not acceptance of a deployed Fieldbook interface.
 
 Immediate implementation sequence after this concept study:
 
@@ -36,7 +36,7 @@ The app should make it easy to see who needs attention, understand where a relat
 The main interaction is: **see the person → choose the next step → review the details → act → see the saved result**.
 
 - Start with a small daily focus, then reveal more work on demand.
-- Use real names, optional authorized property imagery, initials, meaningful icons and a clear calendar. Never generate a customer's likeness or fabricate an address/photo.
+- Use real names, optional authorized property imagery and a clear appointment book. Never generate a customer's likeness or fabricate an address/photo. The Fieldbook treatment uses names and context instead of decorative avatar bubbles.
 - Use short action labels: “Read reply”, “Prepare consultation”, “Choose a time”, “Review update”.
 - Explain consequences beside the action that needs them. Keep exact recipient, amount, publication audience and appointment time visible during review.
 - Ask one coherent question at a time; preserve drafts when navigating or recovering from a failed save.
@@ -67,7 +67,7 @@ Create `lib/realtor-workspace/sellerJourney.ts`, `components/realtor/SellerJourn
 2. Distinguish request, conversation, consultation scheduled, consultation held, agreement verified, preparation, listing stages and recorded closing. Keep scheduled and happened separate.
 3. Derive completed stages only from current authoritative events/milestones, respecting retraction. Do not infer agreement from checklist completion or closing from a drag action.
 4. Return a typed list of `complete`, `current`, `upcoming` and `unavailable` stages plus the next existing action destination.
-5. Render a labelled timeline/stepper with icons and dates; use text and shape as well as color. Later stages can be explored without moving the case.
+5. Render a labelled chronological record with dates and explicit recorded/planned state, using Fieldbook's ruled entries. Later stages can be explored without moving the case.
 6. Keep corrections available in the event detail, retaining their reason/history. On correction, reuse the existing publication/access invalidation behavior.
 
 Proposed presentation contract:
@@ -173,7 +173,7 @@ Implement these as later surface-specific slices under their existing plans; do 
 
 Reuse the existing personal planner, reminder jobs, hourly dispatcher and five-minute worker. A smoother UI does not create another calendar, job queue or notification mechanism. Visual progress is derived from saved records and receipts, not from a client-side checklist.
 
-Do not store screenshots, generated avatars, recurring status snapshots or audio recordings merely to support the visual interface. Use existing authorized media references, initials and transient presentation state. The existing storage budget applies to every actual upload. New server state requires a specific domain need and a matching retention/reconciliation decision.
+Do not store screenshots, generated avatars, recurring status snapshots or audio recordings merely to support the visual interface. Use existing authorized media references, typography and transient presentation state. Concept screenshots stay in the local review collection. The existing storage budget applies to every actual upload. New server state requires a specific domain need and a matching retention/reconciliation decision.
 
 ## Acceptance and build order
 
