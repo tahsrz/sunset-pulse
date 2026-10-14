@@ -26,3 +26,15 @@ it('ignores a delayed retry after fresh parent data arrives',async()=>{
   await act(async()=>complete(Response.json({ok:true,result:{items:[{id:'old',leadId:'11111111-1111-4111-8111-111111111111',title:'Old reply',reason:'Old',score:80,dueAt:null}],hasMore:false}})));
   await waitFor(()=>expect(screen.queryByText('Old reply')).not.toBeInTheDocument());expect(screen.getByText('No actions in the loaded seller queue.')).toBeInTheDocument();
 });
+it('keeps the urgent planner destination and reveals additional people without another read or write',()=>{
+  const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+  const requests=Array.from({length:6},(_,index)=>({id:`${index+1}1111111-1111-4111-8111-111111111111`,name:`Seller ${index+1}`,revision:1,created_at:`2026-10-0${index+1}T10:00:00Z`,timing:null}));
+  render(<SellerPriorityPanel daily={sellerDailyFixture({unscheduledRequests:requests,overdueActions:[{occurrence_id:'11111111-1111-4111-8111-111111111111',lead_id:requests[0].id,name:'Taylor Seller',effective_date:'2026-09-30',title_snapshot:'Call back'}]})} result={{items:[],hasMore:false}}/>);
+  expect(screen.getByRole('link',{name:'Open scheduled action: Taylor Seller'})).toHaveAttribute('href','/planner?date=2026-09-30');
+  expect(screen.getByRole('link',{name:'Open request: Seller 1'})).toHaveAttribute('href',`/seller-inbox?leadId=${requests[0].id}`);
+  expect(screen.getByRole('link',{name:'Open request: Seller 6'}).closest('details')).not.toHaveAttribute('open');
+  fireEvent.click(screen.getByText('More next actions (3)'));
+  expect(screen.getByRole('link',{name:'Open request: Seller 6'}).closest('details')).toHaveAttribute('open');
+  expect(screen.getByRole('link',{name:'Open request: Seller 6'})).toHaveAttribute('href',`/seller-inbox?leadId=${requests[5].id}`);
+  expect(fetcher).not.toHaveBeenCalled();
+});

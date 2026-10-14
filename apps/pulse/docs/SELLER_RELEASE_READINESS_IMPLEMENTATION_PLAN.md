@@ -1,8 +1,10 @@
-# Seller release readiness — code implementation plan
+# Seller release readiness — supporting implementation plan
 
 Created October 14, 2026. Status: **planned; implementation has not started**. Source baseline: `e6aa5c801fc1bb409b96a260b7a4690cb2dc5a2a`, PR #80, `codex/seller-acquisition-2026q4`.
 
 This is the next release packet under the existing seller-business plan. It does not replace the operating-platform roadmap or reopen completed seller features. Implement sequentially using the existing scheduler.
+
+October 14 product direction: the user wants the whole process to feel more human, visual and fluid. The [humanized operating experience plan](HUMANIZED_OPERATING_EXPERIENCE_PLAN.md) now owns the user-facing build order, beginning with a focused Today slice and seller journey. This document supplies the release/configuration/schema evidence behind that experience; its command-line reporting belongs to operators, not everyday seller flows.
 
 ## Current plans and their relationship
 

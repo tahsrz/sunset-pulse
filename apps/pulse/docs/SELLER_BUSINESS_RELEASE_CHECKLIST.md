@@ -4,6 +4,8 @@ Status: **storage protection is verified on the user-confirmed non-production ta
 
 ## Latest release checkpoint: October 14, 2026
 
+- [x] Added the [humanized operating experience plan](HUMANIZED_OPERATING_EXPERIENCE_PLAN.md) and began its H1 Today slice: person-focused next actions and optional progress/activity details. The broader journey, guided setup, contextual voice and other surfaces remain planned. Existing shared scheduling and authoritative domain records are reused.
+
 - [x] Added the [seller release readiness implementation plan](SELLER_RELEASE_READINESS_IMPLEMENTATION_PLAN.md): a validated evidence contract, one composed read-only command, private preview configuration, schema reconciliation, owner-scoped queue health and actual hosted acceptance. Runtime code in this new packet is planned, not implemented.
 - [x] Current reviewed source is `e6aa5c801fc1bb409b96a260b7a4690cb2dc5a2a`. All six jobs in [Actions run 38479418133](https://github.com/tahsrz/sunset-pulse/actions/runs/38479418133) and Vercel pass. Exact-head preview `dpl_9g37idFdfeHe3Grpoa24YiJbzB8u` is READY; Supabase Preview is skipped.
 - [x] Vercel CLI 64.0.2 is authenticated as `tahsrz`; the intended project/team and preview environment metadata are accessible. `vercel curl` reaches the protected preview without disabling protection. The connector still denies environment metadata with 403.

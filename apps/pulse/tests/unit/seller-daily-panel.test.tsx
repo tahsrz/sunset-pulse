@@ -13,6 +13,7 @@ describe('seller daily panel', () => {
     render(<SellerDailyPanel result={{ status: 'available', value: sellerDailyFixture({ overdueActions: [{
       occurrence_id: '11111111-1111-4111-8111-111111111111', lead_id: '22222222-2222-4222-8222-222222222222', name: 'Taylor Seller', effective_date: '2025-12-31', title_snapshot: 'Follow up',
     }] }) }} />);
+    fireEvent.click(screen.getByText('All seller activity'));
     expect(screen.getByRole('link', { name: 'Open scheduled action →' })).toHaveAttribute('href', '/planner?date=2025-12-31');
     expect(screen.getAllByRole('link', { name: /Taylor Seller/ }).find((link)=>link.getAttribute('href')?.startsWith('/seller-inbox'))).toHaveAttribute('href', '/seller-inbox?leadId=22222222-2222-4222-8222-222222222222');
   });
@@ -27,6 +28,7 @@ describe('seller daily panel', () => {
       overdueActions: [], consultations: [],
     }) }} />);
 
+    fireEvent.click(screen.getByText('All seller activity'));
     fireEvent.click(screen.getAllByRole('button', { name: 'Schedule response' })[0]);
     expect(screen.getByRole('heading', { name: 'Schedule seller response' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Schedule response' })[1]).toBeEnabled());
@@ -48,6 +50,7 @@ describe('seller daily panel', () => {
       unscheduledHasMore: true, overdueHasMore: true, consultationsHasMore: true,
       unscheduledRequests: [], overdueActions: [], consultations: [],
     }) }} />);
+    fireEvent.click(screen.getByText('All seller activity'));
     expect(screen.getByRole('link', { name: 'View more seller requests →' })).toHaveAttribute('href', '/seller-inbox');
     expect(screen.getByRole('link', { name: 'View more overdue actions →' })).toHaveAttribute('href', '/planner');
     expect(screen.getByRole('link', { name: 'View more consultations →' })).toHaveAttribute('href', '/seller-inbox');
