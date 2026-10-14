@@ -16,6 +16,8 @@ October 14 design correction: the user rejected the generic rounded-card/initial
 | Appointment book | Agreed times, preparation and later attendance evidence | Existing planner/booking bridge and reminder jobs |
 | Jamie in the margin | Contextual preparation when requested | Existing scoped personal Jamie proposal path |
 
+Copy rules: use plain feature names and specific action labels. Avoid subject-plus-quip headings, slogans, motivational filler and em dashes in UI copy, plans and release notes. Fieldbook is expressed through layout and typography, without repeating the notebook metaphor in every label.
+
 Design rules: editorial serif headings paired with plain readable controls; warm paper/ink surfaces with a restrained rust accent; flat ruled entries, a clear date and useful margins; specific real-work copy. People are represented by their names and context, without decorative avatar bubbles. Use calm folder tabs and actual recorded/planned evidence in place of generic progress decoration. Preserve accessible light/dark appearances and meaningful touch targets. The concept is expressed through layout and behavior; it does not require fake paper textures, handwritten fonts or invented property imagery.
 
 The [full Fieldbook feature study](FIELDBOOK_FEATURE_STUDY.md) extends the concept to 17 screens: daily work, inbox, folders, planner, correspondence, client progress, business, goals, weekly review, setup, decisions, publishing, property work, Jamie, shared runs, games and public intake. Its [interactive source](prototypes/fieldbook-feature-study.html) uses fictional sample names and local-only actions. This prototype supersedes the earlier Daily focus/Seller journey visual study; it is not a deployed application redesign.
@@ -44,7 +46,7 @@ The main interaction is: **see the person → choose the next step → review th
 - Keep operator checks in Setup's advanced/operator view. End-user recovery offers an understandable next action without presenting SQL, job leases or environment names.
 - Preserve truthful pending, saved, unknown and unavailable states. A smoother screen must not silently imply contact, attendance, delivery, agreement or closing.
 
-## First implemented functional slice — H1 (visual treatment under revision)
+## First implemented functional slice: H1 (visual treatment under revision)
 
 The current working change updates Today:
 
@@ -59,7 +61,7 @@ October 14 local verification: 20 focused tests across seller priority, daily sc
 
 The disposable real-auth seller-service suite also passes (214 seconds): responsive owner/client screens, Today priorities, exact-time booking/planner handoff, cancellation/rescheduling, synthetic signed email receipts, contact revocation, milestone correction and site-transfer privacy. Its synthetic accounts and project were removed. Existing acceptance selectors were updated for “Start here” and the new activity disclosure. All six CI jobs and Vercel pass for application candidate `b7578014`; follow-up acceptance/documentation changes have their own check identity.
 
-## H2 — One visual relationship journey
+## H2: One visual relationship journey
 
 Create `lib/realtor-workspace/sellerJourney.ts`, `components/realtor/SellerJourney.tsx`, and `tests/unit/seller-journey.test.ts`. Modify `SellerCaseWorkspace.tsx` to introduce the journey above its existing controls.
 
@@ -84,7 +86,7 @@ type JourneyStep = {
 
 The projection accepts validated domain data and returns presentation state. It never writes a milestone. Test retracted agreements, booked-but-not-held consultations, missing data, recorded closing prerequisites and non-linear correction histories.
 
-## H3 — A focused case workspace with guided actions
+## H3: A focused case workspace with guided actions
 
 Create `components/realtor/SellerActionDrawer.tsx`; refactor `SellerCaseWorkspace.tsx` into a journey header and contextual sections. Reuse `ModalSurface` from `components/realtor/ModalSurface.tsx` after confirming its existing exports and focus behavior.
 
@@ -108,7 +110,7 @@ type CaseActionView =
 
 Exit: a person can reach the next action without scrolling through unrelated forms, and all existing privacy/replay/conflict tests remain valid.
 
-## H4 — Conversation and appointments that feel natural
+## H4: Conversation and appointments that feel natural
 
 Create `SellerConversation.tsx` and `SellerAppointmentStep.tsx`; reuse `SellerLeadScheduleDialog.tsx`, the existing booking-to-planner bridge and message action contracts.
 
@@ -121,7 +123,7 @@ Create `SellerConversation.tsx` and `SellerAppointmentStep.tsx`; reuse `SellerLe
 
 Test the same reviewed payload, contact revocation, delivery unknown state, saved-time equality, cancellations, lost-response replay and focused keyboard navigation. Real email activation remains a separate operational gate.
 
-## H5 — Setup as a guided welcome
+## H5: Setup as a guided welcome
 
 Create `components/realtor/SellerSetupGuide.tsx`; modify `SellerOverviewPanel.tsx` in setup mode and `app/seller-setup/page.tsx`.
 
@@ -134,7 +136,7 @@ Create `components/realtor/SellerSetupGuide.tsx`; modify `SellerOverviewPanel.ts
 
 Test partial setup, read failure versus empty, successful reread, disabled sending, and 390px keyboard/touch use.
 
-## H6 — Jamie helps in context, with optional voice
+## H6: Jamie helps in context, with optional voice
 
 Modify the existing personal Jamie handoff/rendering path only after locating its current request/response contracts; reuse `lib/ai/jamiePersonalContract.ts`, `lib/ai/jamiePersonal.server.ts` and existing proposal confirmation surfaces.
 
@@ -147,7 +149,7 @@ Modify the existing personal Jamie handoff/rendering path only after locating it
 
 Exit: context reduces what the person must type, while preserving scoped inputs, editable drafts and explicit consequences.
 
-## H7 — Progress that can be seen
+## H7: Progress that can be seen
 
 Create `SellerProgressSummary.tsx`; modify `SellerOverviewPanel.tsx`, `SellerPortal.tsx` and the existing weekly-review presentation.
 
@@ -159,7 +161,7 @@ Create `SellerProgressSummary.tsx`; modify `SellerOverviewPanel.tsx`, `SellerPor
 
 Exit: the owner and client can understand reviewed progress without reading an operational report; missing data never produces invented progress.
 
-## H8 — Carry the same interaction into the rest of the platform
+## H8: Carry the same interaction into the rest of the platform
 
 - **Vibe CMS:** one content/revision preview and one contextual action rail; reuse exact revision review/apply/rollback. Keep technical history behind details.
 - **Praxis property work:** person/property context, capture thumbnail and real task/result state. Unknown delivery and unavailable reconstruction remain visible; no decorative animation implies a worker is running.

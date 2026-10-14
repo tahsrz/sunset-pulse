@@ -2,6 +2,10 @@
 
 October 14, 2026. Fieldbook carries the working-notebook concept across the seller operating experience and the related platform surfaces. This packet contains an interactive design study, not production route changes. Existing application behavior, server authority and scheduling remain the implementation foundation.
 
+## Copy
+
+Use plain names such as Business, Planner, Publishing and Property work. Use supporting text only for useful context, consequences or instructions. Avoid subject-plus-quip headings, slogans, motivational filler and em dashes.
+
 ## Review the concept
 
 Open [the study source](prototypes/fieldbook-feature-study.html) in a browser. Use **Open a chapter** to switch screens; desktop also has a contents index. All people, records and appointments are fictional. Buttons keep changes within the current preview, with no network calls, uploads, microphone use or database writes. Refreshing resets transient drafts and preview records.
@@ -49,7 +53,7 @@ The study uses a broader chapter index to expose the complete concept during rev
 1. Create `components/realtor/Fieldbook.module.css` for scoped paper, ink, muted text, rules, accent and heading tokens. Convert the study's CSS tokens to the app's existing theme mechanism. Keep light/dark contrast and responsive field sizes.
 2. Create `FieldbookShell.tsx` with a title/date header and optional main/margin slots. Take the date from the existing saved timezone. Keep navigation in its existing component; do not hardcode the study's date or 17-chapter menu into the app.
 3. Create `SellerNextActionRow.tsx` from the current typed action-card contract. Preserve priority IDs, action destinations, ranking, loaded limits, disclosure behavior and recovery in `SellerPriorityPanel.tsx`; substitute only its presentation. The daily margin uses authoritative agenda records.
-4. Build `lib/realtor-workspace/sellerJourney.ts` as the pure projection described in [H2](HUMANIZED_OPERATING_EXPERIENCE_PLAN.md#h2--one-visual-relationship-journey). Test booked-but-not-held, retracted evidence, missing records and closing prerequisites. Render its result as ruled records in `SellerJourney.tsx`.
+4. Build `lib/realtor-workspace/sellerJourney.ts` as the pure projection described in [H2](HUMANIZED_OPERATING_EXPERIENCE_PLAN.md#h2-one-visual-relationship-journey). Test booked-but-not-held, retracted evidence, missing records and closing prerequisites. Render its result as ruled records in `SellerJourney.tsx`.
 5. Introduce `SellerActionDrawer.tsx` around existing case actions using `ModalSurface.tsx`. Preserve person/source identity, per-action drafts, dirty-close handling, focus return and unknown-save replay. Reuse the existing exact booking, email, milestone and publication handlers. Editing reviewed values invalidates approval.
 6. Move the same composition into planner, weekly review, goals and business one screen at a time. UI checkboxes never substitute for authoritative attendance, money received or milestone records. Preserve correction and privacy controls.
 7. Restyle client progress and public intake separately under their existing authorization/public contracts. Use the exact publication whitelist; exclude internal notes, correspondence and finance. Keep optional measurement separate from contact permission.
