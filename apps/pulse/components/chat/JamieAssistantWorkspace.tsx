@@ -159,10 +159,10 @@ function Thread({ assistantName, context }: { assistantName: string; context: 'g
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10 text-cyan-100">
               <Bot size={24} />
             </div>
-            <h2 className="mt-5 text-2xl font-black text-white">{assistantName} is ready.</h2>
+            <h2 className="mt-5 text-2xl font-black text-white">New conversation</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">{context === 'personal_realtor'
               ? 'Ask what needs attention across your seller requests, planner, and recorded business. Jamie can prepare drafts, and nothing is saved until you confirm.'
-              : `Ask a property question, draft a client note, or hand off a messy task. This route keeps ${assistantName} connected to the same helper layer as the Command Center.`}</p>
+              : 'Ask a property question, draft a client note, or plan a task.'}</p>
           </div>
         </ThreadPrimitive.Empty>
 
