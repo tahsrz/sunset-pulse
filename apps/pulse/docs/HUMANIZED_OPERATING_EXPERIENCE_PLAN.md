@@ -4,6 +4,33 @@ Updated October 14, 2026 from the user's direction: make the entire process more
 
 ## Experience direction
 
+### Current concept: an agent's working notebook
+
+October 14 design correction: the user rejected the generic rounded-card/initial-avatar dashboard direction as looking AI-generated. The new organizing concept is **Fieldbook**: a daily page, working seller folders, appointments and concise field notes. This is a concept/design revision; the previously implemented Today behavior is still the functional foundation, and its visual treatment needs revision.
+
+| Familiar object | Product role | Existing source of truth |
+| --- | --- | --- |
+| Daily page | The dated work list and today's booked appointments | Today priorities, agenda and saved timezone |
+| Seller folder | One relationship, its next conversation and what actually happened | Owner-scoped seller case, booking and event records |
+| Field note | Brief personal preparation/context beside the relationship | Existing private case notes and explicit save behavior |
+| Appointment book | Agreed times, preparation and later attendance evidence | Existing planner/booking bridge and reminder jobs |
+| Jamie in the margin | Contextual preparation when requested | Existing scoped personal Jamie proposal path |
+
+Design rules: editorial serif headings paired with plain readable controls; warm paper/ink surfaces with a restrained rust accent; flat ruled entries, a clear date and useful margins; specific real-work copy. People are represented by their names and context, without decorative avatar bubbles. Use calm folder tabs and actual recorded/planned evidence in place of generic progress decoration. Preserve accessible light/dark appearances and meaningful touch targets. The concept is expressed through layout and behavior; it does not require fake paper textures, handwritten fonts or invented property imagery.
+
+The local concept preview supports daily-page/folder navigation, per-folder draft preservation, note editing and draft review with fictional sample names. It performs no customer or provider operation. This prototype supersedes the earlier Daily focus/Seller journey visual study.
+
+Concept verification: desktop plus 390px/320px layouts and light/dark appearances pass without overflow or browser page errors. Folder switching preserves note/message drafts; editing the message clears its prior review. Screenshots were inspected. These are local concept checks, not acceptance of a deployed Fieldbook interface.
+
+Immediate implementation sequence after this concept study:
+
+1. Add scoped `components/realtor/Fieldbook.module.css` tokens for paper, ink, secondary text, rules and accent; verify contrast in both themes.
+2. Add `FieldbookShell.tsx` to compose the dated page/header and main/margin layout using existing Today data. Resolve the date in the saved workspace timezone; do not display the concept's fixed example date in the app.
+3. Refactor `SellerNextActionCard.tsx` into `SellerNextActionRow.tsx`: retain typed priority/action mapping and exact existing destination; replace boxed cards, initials and repeated icons with numbered ruled entries and a concise action.
+4. Update `SellerPriorityPanel.tsx` to use the rows and existing bounded disclosures/recovery. Keep the existing priority algorithm intact.
+5. Apply the same working-folder typography/layout to H2–H4. Derive appointments, notes and recorded/planned state from the existing authoritative APIs.
+6. Repeat existing navigation/disclosure/recovery tests and rendered mobile/desktop checks before substituting the treatment in the app. Save exact mutations through existing handlers; the notebook metaphor introduces no new database or scheduler.
+
 The app should make it easy to see who needs attention, understand where a relationship stands, and take one useful next step. People, appointments and reviewed progress become the organizing elements. Forms, activity records and technical diagnostics remain available when relevant.
 
 The main interaction is: **see the person → choose the next step → review the details → act → see the saved result**.
@@ -17,7 +44,7 @@ The main interaction is: **see the person → choose the next step → review th
 - Keep operator checks in Setup's advanced/operator view. End-user recovery offers an understandable next action without presenting SQL, job leases or environment names.
 - Preserve truthful pending, saved, unknown and unavailable states. A smoother screen must not silently imply contact, attendance, delivery, agreement or closing.
 
-## First implemented slice — H1
+## First implemented functional slice — H1 (visual treatment under revision)
 
 The current working change updates Today:
 
@@ -158,4 +185,4 @@ Do not store screenshots, generated avatars, recurring status snapshots or audio
 
 Success is less required reading and context switching, with the same accurate records. Measure actual clicks, time to find the next action, draft loss, misunderstood status and support friction in the operational pilot; do not invent a usability improvement percentage.
 
-The conversation preview uses fictional sellers and local-only interactions. It explores Daily focus and Seller journey; it is not a screenshot of deployed journey/voice functionality. Next code packet after H1: the pure H2 journey projection and its recorded/scheduled/retracted-state tests.
+Concept previews use fictional sellers and local-only interactions; they are not screenshots of deployed journey/voice functionality. The current visual direction is Fieldbook. Next code packet: the scoped Fieldbook shell and next-action rows, followed by H2's pure journey projection and recorded/scheduled/retracted-state tests.
