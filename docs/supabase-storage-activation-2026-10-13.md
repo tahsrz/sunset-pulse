@@ -46,7 +46,9 @@ Next, compare the actual schema against the older unrecorded migrations, then pr
 
 ## Deployment identity and safe health inspection
 
-Vercel confirmed the existing READY preview `dpl_9Equ6DQKvQsL6rJQkwEvuvh4czzq` at commit `3e013b35db6b3689017beb8f0b844736d7a1c325` in project `sunset-pulse` / `prj_EkrxJi7uHCqq1HztPygeYTj57gYs`, team `team_nx1IWfVXcJxGdPgQyNvvYcXl`. The connector still returns 403 for environment-variable metadata, and no CLI credentials are configured. The user confirmed the intended database; the preview's actual runtime mapping must still be checked.
+At activation, Vercel confirmed READY preview `dpl_9Equ6DQKvQsL6rJQkwEvuvh4czzq` at commit `3e013b35db6b3689017beb8f0b844736d7a1c325` in project `sunset-pulse` / `prj_EkrxJi7uHCqq1HztPygeYTj57gYs`, team `team_nx1IWfVXcJxGdPgQyNvvYcXl`. The subsequent health-route commit `e6aa5c801fc1bb409b96a260b7a4690cb2dc5a2a` has READY preview `dpl_9g37idFdfeHe3Grpoa24YiJbzB8u` and passing CI. The user confirmed the intended database; the preview's actual runtime mapping must still be checked.
+
+October 14 access follow-up: Vercel CLI 64.0.2 is authenticated as `tahsrz` and verifies the intended project/team, preview variable metadata and protected preview reachability. The connector's metadata operation still returns 403. The preview health route returns application 503 because its `CRON_SECRET` is missing; configure private preview authentication and redeploy the reviewed source before checking runtime mapping. No protection settings or app environment values were changed during the access diagnosis. The [next implementation plan](../apps/pulse/docs/SELLER_RELEASE_READINESS_IMPLEMENTATION_PLAN.md) separates these configuration, schema and acceptance gates.
 
 The PR adds a manual read-only endpoint:
 
