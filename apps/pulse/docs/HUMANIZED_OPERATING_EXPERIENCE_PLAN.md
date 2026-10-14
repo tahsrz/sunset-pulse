@@ -6,7 +6,7 @@ Updated October 14, 2026 from the user's direction: make the entire process more
 
 ### Current concept: an agent's working notebook
 
-October 14 design correction: the user rejected the generic rounded-card/initial-avatar dashboard direction as looking AI-generated. The new organizing concept is **Fieldbook**: a daily page, working seller folders, appointments and concise field notes. This is a concept/design revision; the previously implemented Today behavior is still the functional foundation, and its visual treatment needs revision.
+October 14 design correction: the user rejected the generic rounded-card/initial-avatar dashboard direction as looking AI-generated. The organizing concept is **Fieldbook**: a daily page, working seller folders, appointments and concise field notes. Its [visual implementation](FIELDBOOK_IMPLEMENTATION.md) now applies to the existing seller screens and related platform surfaces. The existing domain handlers remain the functional foundation; the journey projection and focused case-action drawer below are separate behavioral work.
 
 | Familiar object | Product role | Existing source of truth |
 | --- | --- | --- |
@@ -24,7 +24,7 @@ The [full Fieldbook feature study](FIELDBOOK_FEATURE_STUDY.md) extends the conce
 
 Concept verification: all 17 screens pass desktop plus 390px/320px overflow checks, including 17px reading text and 28px entry spacing at 320px. Five design controls change heading type, ink accent, appearance, spacing and reading size. Native-browser checks cover relationship context, preserved drafts, review invalidation, client sharing, appointments, ledger entries, goals, approvals, local capture, Jamie, game guides and public request review. All available generic review actions open and close through their local confirmation. No browser page errors occur. The collection contains 34 default desktop/mobile screenshots, two dark/forest alternatives and two screenshot overviews. These are local concept checks, not acceptance of a deployed Fieldbook interface.
 
-Immediate implementation sequence after this concept study:
+Original implementation sequence for the visual foundation:
 
 1. Add scoped `components/realtor/Fieldbook.module.css` tokens for paper, ink, secondary text, rules and accent; verify contrast in both themes.
 2. Add `FieldbookShell.tsx` to compose the dated page/header and main/margin layout using existing Today data. Resolve the date in the saved workspace timezone; do not display the concept's fixed example date in the app.
@@ -46,9 +46,9 @@ The main interaction is: **see the person → choose the next step → review th
 - Keep operator checks in Setup's advanced/operator view. End-user recovery offers an understandable next action without presenting SQL, job leases or environment names.
 - Preserve truthful pending, saved, unknown and unavailable states. A smoother screen must not silently imply contact, attendance, delivery, agreement or closing.
 
-## First implemented functional slice: H1 (visual treatment under revision)
+## Historical first functional slice: H1
 
-The current working change updates Today:
+The initial H1 change updated Today as follows. Fieldbook now replaces its card presentation with numbered rows and places appointments in a desktop margin; the functional contracts described here remain in place.
 
 - `components/realtor/SellerNextActionCard.tsx`: reusable person card, meaningful action/icon, initials and expandable “Why now”. Existing validated priority IDs determine action labels; unknown kinds fall back to “Open action”. The destination comes from the existing authoritative read/ranking path.
 - `components/realtor/SellerPriorityPanel.tsx`: one featured action, three next-up cards, additional loaded actions behind a native disclosure. Existing ranking, limits, missing-data notices, retry deduplication and stale-response fencing remain.
@@ -187,4 +187,4 @@ Do not store screenshots, generated avatars, recurring status snapshots or audio
 
 Success is less required reading and context switching, with the same accurate records. Measure actual clicks, time to find the next action, draft loss, misunderstood status and support friction in the operational pilot; do not invent a usability improvement percentage.
 
-Concept previews use fictional sellers and local-only interactions; they are not screenshots of deployed journey/voice functionality. The current visual direction is Fieldbook. Next code packet: the scoped Fieldbook shell and next-action rows, followed by H2's pure journey projection and recorded/scheduled/retracted-state tests.
+Concept previews use fictional sellers and local-only interactions; they are not screenshots of deployed journey/voice functionality. Fieldbook's shell, next-action rows and existing-screen styling are implemented in the app. Next behavioral packet: H2's pure journey projection and recorded/scheduled/retracted-state tests, then the focused case-action drawer.

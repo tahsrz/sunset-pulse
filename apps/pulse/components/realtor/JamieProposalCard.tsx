@@ -110,9 +110,9 @@ export function JamieProposalCard({ kind, timeZone, properties = [], busy, submi
     }
   };
 
-  return <section aria-labelledby={`jamie-proposal-${kind}`} className="rounded-2xl border border-cyan-200/20 bg-cyan-950/20 p-5">
+  return <section aria-labelledby={`jamie-proposal-${kind}`} className="fieldbook-record rounded-2xl border border-cyan-200/20 bg-cyan-950/20 p-5">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div><h2 id={`jamie-proposal-${kind}`} className="font-bold text-cyan-100">Work it through with Jamie</h2>
+      <div><h2 id={`jamie-proposal-${kind}`} className="font-bold text-cyan-100">Jamie proposal</h2>
         <p className="mt-1 text-xs leading-5 text-slate-400">Prepare a structured draft together. Nothing is saved until you review and confirm it.</p></div>
       {proposal ? <button type="button" className={quietButton} onClick={discardProposal}>Discard draft</button> : null}
     </div>
@@ -145,7 +145,7 @@ export function JamieProposalCard({ kind, timeZone, properties = [], busy, submi
       <button type="button" className={quietButton} disabled={working || busy} onClick={() => void prepare()}>{working ? 'Preparing…' : proposal ? 'Update preview' : 'Prepare preview'}</button>
       {proposal ? <span className="text-xs text-slate-400">{proposal.confirmation}</span> : null}
     </div>
-    {proposal ? <div className="mt-4 rounded-xl border border-white/10 bg-slate-950/70 p-4" aria-live="polite">
+    {proposal ? <div className="fieldbook-record mt-4 rounded-xl border border-white/10 bg-slate-950/70 p-4" aria-live="polite">
       {proposal.missingFields.length ? <><p className="font-semibold text-amber-100">Still needed before saving</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-100/80">{proposal.missingFields.map((field) => <li key={field}>{field}</li>)}</ul></> : <>
         <p className="font-semibold text-emerald-100">Ready for your review</p>
         {kind === 'planner' && proposal.preview ? <><p className="mt-2 text-sm text-slate-300">Next due dates: {((proposal.preview.nextThreeDueDates as string[]) || []).join(', ')} · {String(proposal.preview.timeZone)}</p>{proposal.editableFields.property && typeof proposal.editableFields.property === 'object' ? <p className="mt-1 text-sm text-cyan-100">Linked property: {properties.find((property) => property.id === (proposal.editableFields.property as { propertyId?: string }).propertyId)?.label || 'Shortlist property'}</p> : null}</> : null}

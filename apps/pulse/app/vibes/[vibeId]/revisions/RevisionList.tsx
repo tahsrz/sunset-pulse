@@ -17,9 +17,9 @@ type Revision = {
 type RevisionResponse = { revisions?: Revision[]; publishedRevisionId?: string | null };
 
 function formatDate(value?: string) {
-  if (!value) return '—';
+  if (!value) return 'Unavailable';
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? '—' : date.toLocaleString();
+  return Number.isNaN(date.valueOf()) ? 'Unavailable' : date.toLocaleString();
 }
 
 export function RevisionList({ vibeId }: { vibeId: string }) {
@@ -117,7 +117,7 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
                   <p className="mt-2 max-w-md text-xs text-slate-600">{revision.changeSummary || 'No editorial summary provided.'}</p>
                 </td>
                 <td className="hidden px-4 py-3 text-xs text-slate-500 sm:table-cell">{formatDate(revision.createdAt)}</td>
-                <td className="hidden px-4 py-3 text-xs sm:table-cell">{revision.createdBy || '—'}</td>
+                <td className="hidden px-4 py-3 text-xs sm:table-cell">{revision.createdBy || 'Unavailable'}</td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-1 text-xs font-bold ${isCurrentPublished ? 'bg-emerald-100 text-emerald-800' : revision.publishedAt ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'}`}>{state}</span>
                   {revision.publishedAt ? <p className="mt-1 text-xs text-slate-500">Published {formatDate(revision.publishedAt)}</p> : null}

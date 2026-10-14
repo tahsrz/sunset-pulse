@@ -1,6 +1,6 @@
 # Fieldbook feature study
 
-October 14, 2026. Fieldbook carries the working-notebook concept across the seller operating experience and the related platform surfaces. This packet contains an interactive design study, not production route changes. Existing application behavior, server authority and scheduling remain the implementation foundation.
+October 14, 2026. Fieldbook carries the working-notebook concept across the seller operating experience and the related platform surfaces. This packet contains the interactive design study. The [application implementation and usage guide](FIELDBOOK_IMPLEMENTATION.md) documents the separate runtime styling change. Existing application behavior, server authority and scheduling remain the foundation.
 
 ## Copy
 
@@ -24,7 +24,7 @@ Try a concrete path: Daily page → Ari's folder → edit a note → open Morgan
 
 ## Feature coverage and implementation destinations
 
-These destinations identify existing sources to reuse; they are not claims that the source already uses Fieldbook.
+These destinations identify the existing sources represented by the study. The runtime guide lists the implemented styling; the study remains a local demonstration rather than live data or a hosted app.
 
 | Study chapter | Familiar object and useful interaction | Existing implementation destination |
 | --- | --- | --- |
@@ -68,4 +68,4 @@ Native Chromium checked all 17 default screens at desktop, 390px and 320px. It a
 
 The local collection contains 36 individual PNG screenshots: 17 desktop, 17 mobile and two dark/forest alternatives. Two overview PNGs and a browsable screenshot gallery accompany them. Screenshots were captured from the actual prototype in Chromium and visually inspected; they are not generated images or deployed app screenshots. They remain local and are not uploaded to Supabase. Application CI, live backend acceptance and production usability are separate from these concept checks.
 
-Next implementation packet remains the scoped Fieldbook shell and next-action rows, followed by the truthful journey projection. [The full experience plan](HUMANIZED_OPERATING_EXPERIENCE_PLAN.md) retains the corresponding domain boundaries and acceptance work.
+The Fieldbook shell, next-action rows and existing-screen styling are now implemented. The truthful journey projection and focused action drawer remain separate behavioral work. [The full experience plan](HUMANIZED_OPERATING_EXPERIENCE_PLAN.md) retains the corresponding domain boundaries and acceptance work.

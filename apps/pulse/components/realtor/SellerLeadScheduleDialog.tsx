@@ -105,7 +105,7 @@ export function SellerLeadScheduleDialog({ leadId, leadName, leadRevision, timeZ
   const save = async () => {
     if (paused || checkingSchedule || scheduleUnavailable || savedSchedule || !due.success || inFlight.current) return;
     const titleVerb = actionKey.startsWith('consultation:') ? 'Seller consultation' : actionKey.startsWith('reply:') ? 'Follow up on seller reply' : 'Respond to seller request';
-    const title = `${titleVerb} — ${leadName.trim().slice(0, 90)}`;
+    const title = `${titleVerb} Unavailable ${leadName.trim().slice(0, 90)}`;
     const item = {
       kind: lockedConsultation ? 'appointment' : 'follow_up', title,
       notes: lockedConsultation ? 'Confirmed seller consultation. This planner item does not create or change the consultation outcome.' : 'Review the seller’s request and respond personally.',
@@ -142,7 +142,7 @@ export function SellerLeadScheduleDialog({ leadId, leadName, leadRevision, timeZ
       <p className="mt-2 text-sm text-slate-300">{lockedConsultation ? `Create a private planner appointment for ${leadName} at the confirmed time. The appointment time cannot be changed here.` : `Create a private planner reminder to ${actionKey.startsWith('reply:') ? 'follow up on' : 'review'} ${leadName}’s ${actionKey.startsWith('reply:') ? 'reply' : 'request'}. Scheduling does not record that contact happened.`}</p>
       {checkingSchedule ? <p role="status" className="mt-4 text-sm text-slate-300">Checking for an existing planner task…</p> : null}
       {scheduleUnavailable ? <div className="mt-4 text-sm text-rose-100"><p role="alert">{currentLookup?.error}</p><button type="button" onClick={() => setLookupRefresh((value) => value + 1)} className="mt-2 underline">Retry schedule lookup</button></div> : null}
-      {savedSchedule ? <div className="mt-4 rounded-lg border border-cyan-300/25 p-3 text-sm"><p role="status">This seller action is already in your planner.</p>
+      {savedSchedule ? <div className="fieldbook-record mt-4 rounded-lg border border-cyan-300/25 p-3 text-sm"><p role="status">This seller action is already in your planner.</p>
         <p className="mt-2 text-slate-300">{savedSchedule.title} · {savedSchedule.occurrenceStatus || savedSchedule.itemStatus}{savedSchedule.effectiveDate ? ` · ${savedSchedule.effectiveDate}` : ''}</p>
         <Link href={savedSchedule.effectiveDate ? `/planner?date=${encodeURIComponent(savedSchedule.effectiveDate)}` : '/planner'} className="mt-3 inline-flex text-cyan-200 underline">Open saved planner task</Link></div> : null}
       {!savedSchedule ? <div className="mt-5 grid gap-4 sm:grid-cols-2">

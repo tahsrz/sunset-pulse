@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import fieldbook from '@/components/realtor/Fieldbook.module.css';
 import {
   ClipboardList,
   Eye,
@@ -98,7 +99,7 @@ export function VibeSidebar() {
   const workflowItems = vibeId ? getWorkflowItems(vibeId, status) : [];
 
   return (
-    <aside className="border-b border-[#3c434a] bg-[#1d2327] text-[#f0f0f1] lg:sticky lg:top-10 lg:h-[calc(100vh-2.5rem)] lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r">
+    <aside className={fieldbook.margin + ' lg:w-52 lg:shrink-0'}>
       <details className="px-2 py-2 lg:hidden">
         <summary className="cursor-pointer rounded px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset">Vibes menu</summary>
         <nav aria-label="Vibe CMS mobile navigation" className="mt-1 space-y-1">
@@ -110,8 +111,8 @@ export function VibeSidebar() {
         {primaryItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} />)}
         {workflowItems.length > 0 ? <>
           <div className="px-3 pb-2 pt-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#a7aaad]">Current Vibe</p>
-            {status ? <p className="mt-1 text-xs font-semibold capitalize text-[#72aee6]">{statusLabel(status)}</p> : null}
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Current Vibe</p>
+            {status ? <p className="mt-1 text-xs font-semibold capitalize text-cyan-200">{statusLabel(status)}</p> : null}
           </div>
           {workflowItems.map((item) => <SidebarLink key={item.href} item={item} pathname={pathname} nested />)}
         </> : null}
@@ -128,7 +129,7 @@ function SidebarLink({ item, pathname, nested = false }: { item: NavigationItem;
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
-      className={`flex min-h-8 shrink-0 items-center gap-2 rounded px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset lg:w-full lg:rounded-none ${nested ? 'pl-8 text-[13px]' : ''} ${active ? 'bg-[#2271b1] text-white' : 'text-[#f0f0f1] hover:bg-[#2c3338] hover:text-white'}`}
+      className={`flex min-h-11 shrink-0 items-center gap-2 px-3 py-2 text-sm font-medium lg:w-full ${nested ? 'pl-8' : ''}`}
     >
       <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2} />
       {item.label}

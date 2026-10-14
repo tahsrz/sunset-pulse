@@ -92,7 +92,7 @@ export function SellerOutcomeDialog({ leadId, leadName, revision, timeZone, disa
       <button disabled={blocked} className="rounded-lg bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{busy ? 'Saving…' : 'Record consultation'}</button>
     </form>
 
-    <section className="mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-semibold">Cancel a consultation</h3>
+    <section className="fieldbook-record mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-semibold">Cancel a consultation</h3>
       <SellerOutcomePicker key={`consultations:${currentRevision}:${outcomeRefresh}`} leadId={leadId} kind="consultation"
         timeZone={timeZone} disabled={blocked} onAction={(consultationEventId) => void submit({ action: 'cancel_consultation', consultationEventId },
           'Consultation cancellation recorded. Pending linked appointments and reminders are cancelled by the planner.')} />
@@ -106,7 +106,7 @@ export function SellerOutcomeDialog({ leadId, leadName, revision, timeZone, disa
       <p className="text-xs leading-5 text-slate-500">This records a seller outcome only. Enter any received deposit separately in Business; use reference seller:{leadId}:{reference.trim() || 'transaction-reference'} when you choose to link that cash entry.</p>
     </form>
 
-    <section className="mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-semibold">Correct a recorded closing</h3>
+    <section className="fieldbook-record mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-semibold">Correct a recorded closing</h3>
       <label className="mt-2 block text-xs text-slate-300">Reason<textarea required maxLength={200} minLength={1} value={reason}
         onChange={(event) => setReason(event.target.value)} className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white" /></label>
       <SellerOutcomePicker key={`closings:${currentRevision}:${outcomeRefresh}`} leadId={leadId} kind="closing"

@@ -42,7 +42,7 @@ export function VibeConfirmDialog({ open, title, description, confirmLabel, canc
       {description ? <div className="mt-2 text-sm text-slate-600">{description}</div> : null}
       <div className="mt-5 flex justify-end gap-2">
         <button ref={cancelRef} type="button" disabled={busy} onClick={close} className="rounded border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">{cancelLabel}</button>
-        <button type="button" disabled={busy} onClick={confirm} className="rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? 'Working…' : confirmLabel}</button>
+        <button type="button" disabled={busy} onClick={confirm} className="fieldbook-primary rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? 'Working…' : confirmLabel}</button>
       </div>
     </form>
   </dialog>;

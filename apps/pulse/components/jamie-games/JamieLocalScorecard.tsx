@@ -9,7 +9,7 @@ const recordKeys: readonly string[] = Object.values(JAMIE_RECORD_KEYS);
 
 function RecordCard({ title, status, summary }: { title: string; status?: JamieRecordStatus; summary: string }) {
   return (
-    <div role="group" aria-label={`${title} record`} className="min-w-0 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div role="group" aria-label={`${title} record`} className="fieldbook-record min-w-0">
       <h3 className="font-black text-white">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-slate-300">
         {!status ? 'Reading record…' : status === 'unavailable' ? 'Storage unavailable' : status === 'invalid' ? 'Saved record unreadable' : summary}
@@ -42,12 +42,12 @@ export function JamieLocalScorecard() {
   const volley = records?.volley.value;
 
   return (
-    <section aria-labelledby="local-records-title" className="mt-10 rounded-2xl border border-violet-200/15 bg-violet-300/[0.03] p-5 sm:p-6">
+    <section aria-labelledby="local-records-title" className="fieldbook-panel">
       <h2 id="local-records-title" className="flex items-center gap-2 text-xl font-black text-white">
         <Trophy className="h-5 w-5 text-violet-200" aria-hidden="true" /> Your local records
       </h2>
       <p className="mt-2 text-sm leading-6 text-slate-400">Saved in this browser. No sign-in needed; records are not synced between devices. Crash Bash keeps its own records.</p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 space-y-3">
         <RecordCard title="Chess" status={records?.chess.status} summary={chess ? `${chess.wins} wins · ${chess.draws} draws · ${chess.losses} losses` : ''} />
         <RecordCard title="Block Drop" status={records?.tetris.status} summary={`Best score: ${records?.tetris.value ?? 0}`} />
         <RecordCard title="Poker" status={records?.poker.status} summary={poker ? `${poker.hands} hands · ${poker.wins} wins · ${poker.ties} ties · ${poker.losses} losses` : ''} />

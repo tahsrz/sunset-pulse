@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 export function SellerDailyRoutine() {
-  return <details className="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+  return <details className="fieldbook-panel">
     <summary className="cursor-pointer text-sm font-semibold text-cyan-100">Seller daily routine</summary>
     <ol className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
       <li><h3 className="font-semibold text-white">1. Review requests</h3><p className="mt-1 text-slate-400">Read new requests and their contact permission. Open an email draft when eligible, then record the contact you actually made.</p><Link href="/seller-inbox" className="mt-2 inline-flex text-cyan-200 underline">Review seller requests</Link></li>

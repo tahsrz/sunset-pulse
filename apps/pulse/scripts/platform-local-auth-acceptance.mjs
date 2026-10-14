@@ -1485,7 +1485,7 @@ try{
   assert.equal(cancelled.status,200);assert.equal(cancelled.data.result.run.status,'cancelled');
   await primary.page.getByRole('link',{name:'Open the standard inbox view'}).click();
   await primary.page.waitForURL(`${origin}/workspaces/${workspace}/inbox`);
-  assert.equal(await primary.page.getByRole('heading',{name:'Review and organize'}).count(),1,'standard inbox fallback remains reachable');
+  assert.equal(await primary.page.getByRole('heading',{name:'Review inbox'}).count(),1,'standard inbox fallback remains reachable');
   assert.equal(canvasPageErrors.length,0,`Canvas browser errors: ${canvasPageErrors.join('; ')}`);
   console.log('PASS: signed-in canvas browser flow saves/restores private layout, reads bounded monitors, previews/confirms commands, rejects stale revisions and retains the inbox fallback');
 

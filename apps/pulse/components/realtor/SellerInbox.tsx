@@ -37,7 +37,7 @@ export function SellerInbox({ timeZone, leadId }: { timeZone: string; leadId?: s
       <button type="button" onClick={refresh} className="rounded-lg border border-white/15 px-3 py-2 text-sm">Refresh seller requests</button>
     </div>
     {leadId ? <Link href="/seller-inbox" className="inline-flex text-sm text-cyan-200">Show all seller requests →</Link> : null}
-    {current?.error ? <div role="alert" className="rounded-xl border border-rose-300/30 p-4 text-sm text-rose-100">
+    {current?.error ? <div role="alert" className="fieldbook-record rounded-xl border border-rose-300/30 p-4 text-sm text-rose-100">
       Seller requests could not be loaded. {current.error}
       <button type="button" onClick={refresh} className="ml-3 underline">Retry seller requests</button>
     </div> : !current?.leads ? <p role="status" className="text-sm text-slate-400">Loading seller requests…</p>

@@ -1,0 +1,94 @@
+.surface {
+  --fieldbook-paper: light-dark(#f6f2e9, #26231e);
+  --fieldbook-ink: light-dark(#242d2b, #e9e1d2);
+  --fieldbook-muted: light-dark(#62695f, #b3ac9d);
+  --fieldbook-rule: light-dark(#cfcbc0, #4b483f);
+  --fieldbook-control: light-dark(#858578, #8f8879);
+  --fieldbook-edge: light-dark(#ece6d9, #302c25);
+  --fieldbook-field: light-dark(#fcfaf5, #302d26);
+  --fieldbook-accent: light-dark(#9c3e2e, #e7a08c);
+  --fieldbook-warning: light-dark(#805000, #e4c17c);
+  --fieldbook-danger: light-dark(#a12c32, #ffa4ac);
+  --fieldbook-success: light-dark(#365b42, #b7c8a0);
+  color-scheme: light dark;
+  min-width: 0;
+  min-height: 100vh;
+  background: var(--fieldbook-paper);
+  color: var(--fieldbook-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  border-top: 5px solid var(--fieldbook-accent);
+}
+.body { max-width: 1180px; margin: 0 auto; padding: 24px 32px 48px; }
+.masthead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--fieldbook-rule); }
+.brand { font: 25px/1.15 Georgia, 'Times New Roman', serif; }
+.brand small { display: block; margin-top: 6px; font: 11px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: .16em; }
+.heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 18px; padding: 28px 0 20px; border-bottom: 1px solid var(--fieldbook-ink); margin-bottom: 26px; }
+.heading h1 { margin: 5px 0 0; font: 40px/1.2 Georgia, 'Times New Roman', serif; letter-spacing: -.02em; }
+.eyebrow, .date { font-size: 12px; color: var(--fieldbook-muted); }
+.date { display: block; margin-top: 9px; }
+.content { min-width: 0; }
+.surface :is(h1,h2,h3,h4) { color: var(--fieldbook-ink); font-family: Georgia, 'Times New Roman', serif; font-weight: 400; overflow-wrap: anywhere; }
+.surface h1 { text-transform: none; font-style: normal; }
+.surface :global(.font-black) { font-weight: 500; }
+.surface h2 { font-size: 25px; line-height: 1.3; }
+.surface h3 { font-size: 21px; line-height: 1.35; }
+.surface :global(.fieldbook-panel) { min-width: 0; border: 0; border-top: 1px solid var(--fieldbook-rule); border-radius: 0; background: transparent; padding: 22px 0; box-shadow: none; }
+.surface :global(.fieldbook-record) { min-width: 0; border: 0; border-bottom: 1px solid var(--fieldbook-rule); border-radius: 0; background: transparent; padding: 18px 0; box-shadow: none; }
+.surface :is(p,li,dd,label) { overflow-wrap: anywhere; }
+.surface :is(input,select,textarea) { min-width: 0; max-width: 100%; color: var(--fieldbook-ink); background-color: var(--fieldbook-field); border: 1px solid var(--fieldbook-rule); border-radius: 2px; accent-color: var(--fieldbook-accent); }
+.surface :is(input[type=checkbox],input[type=radio]) { flex-shrink: 0; }
+.surface :is(button,summary) { min-height: 44px; }
+.surface button { border-radius: 2px; font-weight: 500; }
+.surface :is(a,button,summary,input,select,textarea):focus-visible { outline: 2px solid var(--fieldbook-accent); outline-offset: 3px; }
+.surface :is(a,summary) { color: var(--fieldbook-accent); }
+.surface :is(a,button)[aria-current=page], .surface :is(button,a)[aria-pressed=true] { color: var(--fieldbook-accent); border-color: var(--fieldbook-accent); background-color: var(--fieldbook-edge); }
+/* Keep existing layouts and handlers while translating their legacy color utilities.
+   These selectors are scoped to opt-in Fieldbook screens, including their dialogs. */
+.surface :global([class~="text-white"]), .surface :global([class~="text-slate-100"]), .surface :global([class~="text-slate-200"]), .surface :global([class~="text-slate-800"]), .surface :global([class~="text-slate-900"]) { color: var(--fieldbook-ink); }
+.surface :global([class~="text-slate-300"]), .surface :global([class~="text-slate-400"]), .surface :global([class~="text-slate-500"]), .surface :global([class~="text-slate-600"]) { color: var(--fieldbook-muted); }
+.surface :global([class*="text-cyan-"]), .surface :global([class*="text-teal-"]), .surface :global([class*="text-violet-"]) { color: var(--fieldbook-accent); }
+.surface :global([class*="text-amber-"]), .surface :global([class*="text-orange-"]) { color: var(--fieldbook-warning); }
+.surface :global([class*="text-rose-"]), .surface :global([class*="text-red-"]) { color: var(--fieldbook-danger); }
+.surface :global([class*="text-emerald-"]), .surface :global([class*="text-green-"]) { color: var(--fieldbook-success); }
+.surface :global([class*="bg-slate-"]), .surface :global([class~="bg-white"]) { background-color: var(--fieldbook-paper); }
+.surface :global([class*="bg-white/"]) { background-color: var(--fieldbook-edge); }
+.surface :global([class*="border-white/"]), .surface :global([class*="border-slate-"]) { border-color: var(--fieldbook-rule); }
+.surface :global([class~="bg-cyan-300"]), .surface :global([class~="bg-teal-300"]) { background-color: var(--fieldbook-accent); }
+.surface :global(button[class~="bg-cyan-300"]), .surface :global(a[class~="bg-cyan-300"]), .surface :global(button[class~="bg-teal-300"]) { background: var(--fieldbook-ink); color: var(--fieldbook-paper); }
+.surface :global([role=dialog]), .surface dialog { background: var(--fieldbook-paper); color: var(--fieldbook-ink); border: 1px solid var(--fieldbook-rule); border-radius: 2px; }
+.surface :global([role=alert]) { color: var(--fieldbook-danger); border-color: var(--fieldbook-danger); background: var(--fieldbook-paper); }
+.surface :global([role=status]) { background: transparent; }
+.surface :global(.fieldbook-panel), .surface :global(.fieldbook-record) { background: transparent; }
+.surface :is(input,select,textarea) { background-color: var(--fieldbook-field); border-color: var(--fieldbook-control); }
+.surface button[class*="border"] { border-color: var(--fieldbook-control); }
+.surface :global(.fieldbook-primary) { background: var(--fieldbook-ink); color: var(--fieldbook-paper); border-color: var(--fieldbook-control); }
+.surface :global(.fieldbook-link) { color: var(--fieldbook-accent); }
+.surface :global(.fieldbook-danger) { color: var(--fieldbook-danger); }
+.surface :global([data-fieldbook-chat]), .surface :global([data-fieldbook-chat-footer]) { background: var(--fieldbook-paper); }
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.nav a { padding: 10px 0; min-height: 44px; color: var(--fieldbook-muted); border-bottom: 2px solid transparent; font-size: 13px; }
+.nav a[aria-current=page] { background: transparent; color: var(--fieldbook-accent); border-bottom-color: var(--fieldbook-accent); }
+.actionRow { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 12px; border-bottom: 1px solid var(--fieldbook-rule); padding: 22px 0; }
+.number { color: var(--fieldbook-muted); font: italic 17px/1.5 Georgia, 'Times New Roman', serif; padding-top: 22px; }
+.actionRow h4 { font-size: 28px; margin: 5px 0 10px; }
+.actionRow small { color: var(--fieldbook-muted); font-size: 12px; }
+.actionRow a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 1px solid var(--fieldbook-accent); font-size: 14px; }
+.actionRow details { margin-top: 10px; font-size: 13px; color: var(--fieldbook-muted); }
+.actionRow summary { display: list-item; padding: 10px 0; }
+.games { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(220px,1fr); gap: 32px; }
+.margin { border-left: 1px solid var(--fieldbook-rule); padding-left: 26px; min-width: 0; }
+.game { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 18px; align-items: start; padding: 24px 0; border-bottom: 1px solid var(--fieldbook-rule); }
+.game h2 { margin: 0 0 8px; }
+.game p { color: var(--fieldbook-muted); font-size: 14px; }
+.game > a { min-height: 44px; display: inline-flex; align-items: center; border-bottom: 1px solid var(--fieldbook-accent); }
+@media(max-width:800px) {
+  .body { padding: 20px 20px 36px; }
+  .heading h1 { font-size: 34px; }
+  .games { grid-template-columns: 1fr; }
+  .margin { border-left: 0; border-top: 1px solid var(--fieldbook-rule); padding: 24px 0 0; }
+  .surface :is(input,textarea,select):not([type=checkbox]):not([type=radio]) { font-size: 16px; }
+  .game { grid-template-columns: 24px minmax(0,1fr); }
+  .game > a { grid-column: 2; justify-self: start; }
+}

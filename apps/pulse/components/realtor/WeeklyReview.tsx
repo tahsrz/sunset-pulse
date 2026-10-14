@@ -84,7 +84,7 @@ export function WeeklyReviewAction({ occurrence, busy, submit }: {
       <form onSubmit={(event) => { void complete(event); }} className="mt-5 space-y-4">
         <label className="flex items-start gap-3 text-sm text-slate-200"><input type="checkbox" required checked={reviewedUpcomingDates} onChange={(event) => setReviewedUpcomingDates(event.target.checked)} className="mt-0.5 accent-cyan-300" /><span>I reviewed upcoming appointments, follow-ups, and deadlines.</span></label>
         <label className="flex items-start gap-3 text-sm text-slate-200"><input type="checkbox" required checked={reviewedMissingExpenses} onChange={(event) => setReviewedMissingExpenses(event.target.checked)} className="mt-0.5 accent-cyan-300" /><span>I checked for business expenses or bill payments that still need recording.</span></label>
-        <section className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-300">
+        <section className="fieldbook-record rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-300">
           <h3 className="font-semibold text-white">Recorded seller outcomes this week</h3>
           {sellerLoading ? <p role="status" className="mt-1 text-slate-400">Loading recorded seller outcomes…</p>
             : sellerSummary ? <p className="mt-1">{sellerSummary.counts.newRequests} requests · {sellerSummary.counts.customerReplies} replies · {sellerSummary.counts.confirmedConsultations} consultations · {sellerSummary.counts.recordedClosings} closings</p>

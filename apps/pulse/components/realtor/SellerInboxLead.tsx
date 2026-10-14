@@ -91,7 +91,7 @@ export function SellerInboxLead({ lead, timeZone }: { lead: OwnedSellerLead; tim
   let repeatedTime = false;
   try { repeatedTime = Boolean(occurredAtLocal && possibleUtcInstantsForLocalDateTime(occurredAtLocal, timeZone).length > 1); } catch { /* recording reports invalid times */ }
 
-  return <article aria-label={`Seller request from ${snapshot.name}`} className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+  return <article aria-label={`Seller request from ${snapshot.name}`} className="fieldbook-record min-w-0 rounded-2xl border border-white/10 bg-slate-900/80 p-5">
     <div className="flex flex-wrap items-start justify-between gap-3"><div>
       <h2 className="break-words text-lg font-bold">{snapshot.name}</h2>
       <Link href={`/seller-cases/${encodeURIComponent(snapshot.id)}`} className="mt-2 inline-block text-sm font-semibold text-cyan-200 underline">Open seller case →</Link>
@@ -118,14 +118,14 @@ export function SellerInboxLead({ lead, timeZone }: { lead: OwnedSellerLead; tim
         onClick={() => setAppointments((value) => !value)} className={buttonClass}>Schedule confirmed consultation</button>
       {requestedContact ? <button type="button" disabled={disabled} onClick={() => setRevokePermission(true)} className={buttonClass}>Revoke requested contact</button> : null}
     </div>
-    {appointments ? <section aria-label="Schedule a confirmed consultation" className="mt-4 rounded-xl border border-white/10 p-3">
+    {appointments ? <section aria-label="Schedule a confirmed consultation" className="fieldbook-record mt-4 rounded-xl border border-white/10 p-3">
       <h3 className="text-sm font-semibold">Confirmed consultation appointments</h3>
       <p className="mt-1 text-xs text-slate-400">Choose an active confirmation. The appointment keeps its confirmed time.</p>
       <SellerOutcomePicker key={`${snapshot.id}:${snapshot.revision}`} leadId={snapshot.id} kind="consultation" timeZone={timeZone}
         disabled={disabled} actionDisabled={!canScheduleFollowUp} actionLabel="Schedule consultation appointment"
         onAction={(eventId, event) => setSchedule({ actionKey: `consultation:${eventId}`, revision: snapshot.revision, startsAt: event.occurred_at })} />
     </section> : null}
-    <section aria-label="Recent recorded seller activity" className="mt-4 rounded-xl border border-white/10 p-3">
+    <section aria-label="Recent recorded seller activity" className="fieldbook-record mt-4 rounded-xl border border-white/10 p-3">
       <h3 className="text-sm font-semibold">Recent recorded activity</h3>
       <p className="mt-1 text-xs text-slate-400">Up to 20 recent receipts. Scheduling a follow-up does not record another customer reply.</p>
       {snapshot.sellerOutcomeEvents.length ? <ul className="mt-3 space-y-3">{snapshot.sellerOutcomeEvents.map((event) => <li key={event.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">

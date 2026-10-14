@@ -44,7 +44,7 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
   }
 
   return (
-    <article className="rounded-xl border border-white/10 bg-slate-900/80 p-5 text-slate-100" aria-labelledby={`checkpoint-${checkpoint.id}`}>
+    <article className="fieldbook-record rounded-xl border border-white/10 bg-slate-900/80 p-5 text-slate-100" aria-labelledby={`checkpoint-${checkpoint.id}`}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-cyan-200">{checkpoint.type.replace('_', ' ')}</span>
         <span className="text-xs text-slate-400">Revision {checkpoint.revision}</span>

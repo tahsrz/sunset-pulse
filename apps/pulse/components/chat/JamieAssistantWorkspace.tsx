@@ -138,14 +138,14 @@ export default function JamieAssistantWorkspace({
 
 function Thread({ assistantName, context }: { assistantName: string; context: 'general' | 'personal_realtor' }) {
   return (
-    <ThreadPrimitive.Root className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))]">
+    <ThreadPrimitive.Root data-fieldbook-chat className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))]">
       <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-cyan-200" />
             <h1 className="truncate text-lg font-black text-white">{context === 'personal_realtor' ? 'Personal workspace' : `${assistantName} Chat`}</h1>
           </div>
-          <p className="mt-1 text-xs text-slate-400">{context === 'personal_realtor' ? 'Private realtor context · draft proposals save only after you confirm.' : 'Maximized workspace with assistant-ui state, assistant API routing, and Command Center context.'}</p>
+          <p className="mt-1 text-xs text-slate-400">{context === 'personal_realtor' ? 'Private realtor context · draft proposals save only after you confirm.' : 'Conversations and reviewed action proposals.'}</p>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Link href={context === 'personal_realtor' ? '/jamie-chat' : '/jamie-chat?context=personal_realtor'} className="rounded-md border border-cyan-200/20 bg-cyan-200/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cyan-100">{context === 'personal_realtor' ? 'General Jamie' : 'Personal workspace'}</Link>
@@ -168,7 +168,7 @@ function Thread({ assistantName, context }: { assistantName: string; context: 'g
 
         <ThreadPrimitive.Messages components={{ Message }} />
 
-        <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-6 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pb-4 pt-8">
+        <ThreadPrimitive.ViewportFooter data-fieldbook-chat-footer className="sticky bottom-0 mt-6 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pb-4 pt-8">
           <Composer assistantName={assistantName} context={context} />
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
