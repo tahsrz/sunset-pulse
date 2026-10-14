@@ -98,7 +98,7 @@ export async function sellerServiceAcceptance({primary,login,request,sql,origin,
   }
   await client.page.goto(`${origin}/seller-portal`);await client.page.getByText('Approved progress',{exact:true}).waitFor();assert.equal(await client.page.getByText('PRIVATE CASE NOTE',{exact:true}).count(),0);await client.page.screenshot({path:artifacts+'seller-portal.png',fullPage:true});
   await primary.page.goto(`${origin}/business`);await primary.page.getByRole('heading',{name:'Seller acquisition funnel',exact:true}).waitFor();
-  await primary.page.goto(`${origin}/today`);await primary.page.getByRole('heading',{name:'Do next',exact:true}).waitFor();
+  await primary.page.goto(`${origin}/today`);await primary.page.getByRole('heading',{name:'Start here',exact:true}).waitFor();
   await primary.page.goto(`${origin}/seller-setup`);await primary.page.getByRole('heading',{name:'Recorded worker activity',exact:true}).waitFor();await primary.page.screenshot({path:artifacts+'seller-setup.png',fullPage:true});
   assert.deepEqual(primary.pageErrors,[]);assert.deepEqual(client.pageErrors,[]);
   await read();const signedRecord=state.milestoneRecords.find((record)=>record.milestone==='listing_agreement_verified');assert(signedRecord);

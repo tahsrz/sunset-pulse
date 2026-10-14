@@ -30,6 +30,8 @@ This is the first screen slice, not a claim that the entire product has been red
 
 October 14 local verification: 20 focused tests across seller priority, daily scheduling/recovery and service boundaries pass; whole-app TypeScript and changed-component lint pass. The actual priority component, rendered with fictional fixture data and generated Tailwind styles, passes desktop/390px layout and native disclosure checks. The separate local-only design preview passes appointment/journey interaction checks without page errors. Screenshots were inspected. This does not establish hosted authenticated acceptance; the existing schema/configuration gates still apply.
 
+The disposable real-auth seller-service suite also passes (214 seconds): responsive owner/client screens, Today priorities, exact-time booking/planner handoff, cancellation/rescheduling, synthetic signed email receipts, contact revocation, milestone correction and site-transfer privacy. Its synthetic accounts and project were removed. Existing acceptance selectors were updated for “Start here” and the new activity disclosure. All six CI jobs and Vercel pass for application candidate `b7578014`; follow-up acceptance/documentation changes have their own check identity.
+
 ## H2 — One visual relationship journey
 
 Create `lib/realtor-workspace/sellerJourney.ts`, `components/realtor/SellerJourney.tsx`, and `tests/unit/seller-journey.test.ts`. Modify `SellerCaseWorkspace.tsx` to introduce the journey above its existing controls.

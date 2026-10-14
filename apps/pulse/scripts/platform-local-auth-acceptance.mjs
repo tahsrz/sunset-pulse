@@ -292,7 +292,9 @@ try{
     await primary.page.getByText('Seller activity could not be reloaded. Try again.',{exact:true}).waitFor();
     await primary.page.getByRole('heading',{name:'Business progress',exact:true}).waitFor();
     await primary.page.getByRole('button',{name:'Retry seller activity',exact:true}).click();
-    const dailyCard=primary.page.getByText('Synthetic Daily Recovery Seller',{exact:true}).locator('..').locator('..');
+    const allSellerActivity=primary.page.getByText('All seller activity',{exact:true});
+    await allSellerActivity.click();
+    const dailyCard=allSellerActivity.locator('..').getByText('Synthetic Daily Recovery Seller',{exact:true}).locator('..').locator('..');
     await dailyCard.getByRole('button',{name:'Schedule response',exact:true}).waitFor();
     await primary.page.unroute(dailyReadUrl);
     await dailyCard.getByRole('button',{name:'Schedule response',exact:true}).click();
@@ -307,6 +309,7 @@ try{
     await primary.page.getByText('Schedule changed. Refresh to see the latest tasks and reminders.',{exact:true}).waitFor();
     await primary.page.getByRole('button',{name:'Refresh schedule',exact:true}).waitFor();
     await primary.page.getByRole('button',{name:'Retry seller activity',exact:true}).click();
+    await primary.page.getByText('All seller activity',{exact:true}).click();
     await primary.page.getByRole('heading',{name:'Unscheduled requests',exact:true}).waitFor();
     assert.equal(await primary.page.getByText('Synthetic Daily Recovery Seller',{exact:true}).count(),0,
       'a successful owner reread removes the scheduled request from the unscheduled seller panel');

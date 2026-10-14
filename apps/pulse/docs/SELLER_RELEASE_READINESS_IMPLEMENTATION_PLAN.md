@@ -229,4 +229,4 @@ Exit: separately dated owner/client, schema, storage and actual scheduler eviden
 
 Run narrow tests after each unit; broaden only when runtime changes justify it. For R5 and later application changes, run whole-app TypeScript, changed-source lint, the seller-service disposable acceptance and relevant CI jobs. Tests of this documentation alone are unnecessary.
 
-This plan's completion criteria are observable acceptance results, not a percentage of files written. Next implementation action: R1's validated pure readiness evaluator and its meaningful blocker/identity tests.
+This plan's completion criteria are observable acceptance results, not a percentage of files written. Next operator implementation action: R1's validated pure readiness evaluator and its meaningful blocker/identity tests. The product-facing next slice is H2 in the humanized experience plan; keep the two scopes distinct.
