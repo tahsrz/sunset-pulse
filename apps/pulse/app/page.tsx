@@ -71,7 +71,7 @@ function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolea
               <Sparkles size={13} />
               Scanned from Sunset?
             </p>
-            <h2 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">
+            <h2 className={`${styles.utilityHeading} mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl`}>
               Order Food or Open The Explorer
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
