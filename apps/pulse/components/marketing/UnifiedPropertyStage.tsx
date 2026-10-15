@@ -62,8 +62,8 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
             {mode === 'STAGED' ? <FaHome className="text-blue-400" /> : <FaListUl className="text-amber-400" />}
             {mode === 'STAGED' ? 'Curated Listings' : 'Live MLS Feed'}
           </div>
-          <h2 className="text-4xl font-black uppercase italic tracking-tighter waterlily-heading mb-2">
-            {mode === 'STAGED' ? featured.title : 'Active IDX Listings'}
+          <h2 className="text-4xl font-black italic tracking-tighter waterlily-heading mb-2">
+            {mode === 'STAGED' ? featured.title : 'Active IDX listings'}
           </h2>
           <p className="text-teal-100/70 text-sm leading-6">
             {mode === 'STAGED' ? featured.tagline : 'Current listings from the regional MLS feed'}
@@ -112,7 +112,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         {/* Stage Footer Note */}
         <div className="mt-10 text-center">
           <p className="text-xs leading-5 text-slate-400">
-            [ {mode} ] - {mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}
+            {mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}
           </p>
         </div>
       </div>

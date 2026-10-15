@@ -8,7 +8,7 @@ export default function AnimalOfDaySection() {
     return (
       <section className="waterlily-section px-6 py-20 text-white">
         <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-slate-950/50 p-8">
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-200">
+          <p className="text-xs font-black tracking-[0.1em] text-amber-200">
             Animal of the day unavailable
           </p>
           <p className="mt-3 max-w-2xl text-sm text-teal-50/65">
@@ -37,8 +37,8 @@ export default function AnimalOfDaySection() {
                 <PawPrint className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.32em] text-lime-100/70">
-                  TAH Animal Of The Day
+                <p className="text-[10px] font-black tracking-[0.1em] text-lime-100/70">
+                  TAH animal of the day
                 </p>
                 <p className="mt-1 break-words text-xs leading-5 text-teal-100/70">
                   {animal.dateKey} / {animal.cartridge}
@@ -46,10 +46,10 @@ export default function AnimalOfDaySection() {
               </div>
             </div>
 
-            <h2 className="mt-8 text-3xl font-bold uppercase italic leading-[1.1] tracking-tight text-white sm:text-5xl">
+            <h2 className="mt-8 text-3xl font-bold italic leading-[1.1] tracking-tight text-white sm:text-5xl">
               {animal.vernacular !== 'None' ? animal.vernacular : animal.group}
             </h2>
-            <p className="mt-3 font-mono text-sm uppercase tracking-[0.22em] text-lime-200">
+            <p className="mt-3 font-mono text-sm tracking-[0.08em] text-lime-200">
               {animal.taxon}
             </p>
 
@@ -57,7 +57,7 @@ export default function AnimalOfDaySection() {
               {pathParts.map((part, index) => (
                 <span
                   key={`${part}-${index}`}
-                  className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                  className={`rounded-full border px-3 py-1 text-[10px] font-black tracking-[0.04em] ${
                     index === 0
                       ? 'border-lime-300/30 bg-lime-300/10 text-lime-100'
                       : 'border-white/10 bg-white/[0.04] text-teal-100/70'
@@ -78,7 +78,7 @@ export default function AnimalOfDaySection() {
         <div className="min-w-0 rounded-3xl border border-white/10 bg-slate-950/65 p-6 sm:p-8 shadow-2xl shadow-black/25 backdrop-blur-xl">
           <div className="grid gap-4 md:grid-cols-2">
             <div className={`rounded-2xl border p-5 ${statusTone}`}>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] opacity-80">
+              <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.08em] opacity-80">
                 <AlertTriangle className="h-4 w-4" />
                 Conservation
               </div>
@@ -86,9 +86,9 @@ export default function AnimalOfDaySection() {
             </div>
 
             <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-5 text-cyan-50">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/75">
+              <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.08em] text-cyan-100/75">
                 <Bird className="h-4 w-4" />
-                Alive Count
+                Alive count
               </div>
               <p className="mt-3 text-lg font-semibold leading-7">{animal.profile.population}</p>
               <p className="mt-2 text-xs leading-relaxed text-cyan-50/70">{animal.profile.populationNote}</p>
@@ -97,7 +97,7 @@ export default function AnimalOfDaySection() {
 
           <div className="mt-8 grid gap-8 md:grid-cols-2">
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.25em] text-lime-200">Fast Facts</h3>
+              <h3 className="text-xs font-black tracking-[0.08em] text-lime-200">Fast facts</h3>
               <ul className="mt-4 space-y-3">
                 {animal.profile.facts.map((fact) => (
                   <li key={fact} className="rounded-xl border border-white/10 bg-white/[0.035] p-4 text-sm leading-6 text-slate-300">
@@ -108,7 +108,7 @@ export default function AnimalOfDaySection() {
             </div>
 
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.25em] text-amber-200">Pressure Points</h3>
+              <h3 className="text-xs font-black tracking-[0.08em] text-amber-200">Pressure points</h3>
               <div className="mt-4 flex flex-wrap gap-2">
                 {animal.profile.threats.map((threat) => (
                   <span key={threat} className="rounded-full border border-amber-200/15 bg-amber-200/10 px-3 py-2 text-xs font-bold text-amber-50/80">
@@ -118,9 +118,9 @@ export default function AnimalOfDaySection() {
               </div>
 
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.08em] text-slate-400">
                   <Database className="h-4 w-4" />
-                  Source Note
+                  Source note
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-slate-300">{animal.profile.sourceNote}</p>
                 {animal.link && (
@@ -128,9 +128,9 @@ export default function AnimalOfDaySection() {
                     href={animal.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-200 hover:text-cyan-100"
+                    className="mt-4 inline-flex items-center gap-2 text-xs font-black tracking-[0.05em] text-cyan-200 hover:text-cyan-100"
                   >
-                    Open taxon source <ExternalLink className="h-3.5 w-3.5" />
+                    Open Taxon Source <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 )}
               </div>
@@ -145,8 +145,8 @@ export default function AnimalOfDaySection() {
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-[9px] font-black uppercase tracking-[0.22em] text-teal-100/50">{label}</p>
-      <p className="mt-2 text-lg font-black uppercase text-white">{value}</p>
+      <p className="text-[9px] font-black tracking-[0.08em] text-teal-100/50">{label}</p>
+      <p className="mt-2 text-lg font-black text-white">{value}</p>
     </div>
   );
 }

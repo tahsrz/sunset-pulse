@@ -12,8 +12,8 @@ const ValuePropositionGrid = () => {
     <section className="py-16 sm:py-20 waterlily-section text-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-10">
-          <h2 className="text-4xl font-black uppercase italic tracking-tighter waterlily-heading mb-2">{value_prop.title}</h2>
-          <p className="mx-auto max-w-xl text-slate-300 text-xs leading-6 uppercase tracking-[0.16em]">{value_prop.tagline}</p>
+          <h2 className="text-4xl font-black italic tracking-tighter waterlily-heading mb-2">{value_prop.title}</h2>
+          <p className="mx-auto max-w-xl text-slate-300 text-xs leading-6 tracking-[0.08em]">{value_prop.tagline}</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -23,7 +23,7 @@ const ValuePropositionGrid = () => {
               <FaGlobe className="text-teal-200 text-2xl" />
             </div>
             <h3 className="text-xl font-semibold leading-7 mb-3">{mls_efficiency.title}</h3>
-            <p className="text-teal-200 text-[10px] font-bold uppercase tracking-[0.3em] mb-6">{mls_efficiency.tagline}</p>
+            <p className="text-teal-200 text-[10px] font-bold tracking-[0.08em] mb-6">{mls_efficiency.tagline}</p>
             <p className="text-teal-50/70 leading-relaxed font-medium">
               {mls_efficiency.description}
             </p>
@@ -36,7 +36,7 @@ const ValuePropositionGrid = () => {
               <FaCube className="text-amber-200 text-2xl" />
             </div>
             <h3 className="text-xl font-semibold leading-7 mb-3">{spatial_search.title}</h3>
-            <p className="text-amber-200 text-[10px] font-bold uppercase tracking-[0.3em] mb-6">{spatial_search.tagline}</p>
+            <p className="text-amber-200 text-[10px] font-bold tracking-[0.08em] mb-6">{spatial_search.tagline}</p>
             <p className="text-teal-50/70 leading-relaxed font-medium">
               {spatial_search.description}
             </p>
@@ -48,7 +48,7 @@ const ValuePropositionGrid = () => {
               <FaShieldAlt className="text-rose-200 text-2xl" />
             </div>
             <h3 className="text-xl font-semibold leading-7 mb-3">{backend_integrity.title}</h3>
-            <p className="text-rose-200 text-[10px] font-bold uppercase tracking-[0.3em] mb-6">{backend_integrity.tagline}</p>
+            <p className="text-rose-200 text-[10px] font-bold tracking-[0.08em] mb-6">{backend_integrity.tagline}</p>
             <p className="text-teal-50/70 leading-relaxed font-medium">
               {backend_integrity.description}
             </p>
@@ -58,7 +58,7 @@ const ValuePropositionGrid = () => {
         
         <div className="mt-10 flex flex-col items-center gap-4 opacity-70">
           <div className="h-px w-24 bg-teal-200/25" />
-          <span className="text-center text-[11px] uppercase tracking-[0.18em] text-teal-100/70">{marketingCopy.cta.footer_note}</span>
+          <span className="text-center text-[11px] tracking-[0.08em] text-teal-100/70">{marketingCopy.cta.footer_note}</span>
         </div>
       </div>
     </section>

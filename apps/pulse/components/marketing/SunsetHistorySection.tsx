@@ -23,10 +23,10 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
             <div className="min-w-0">
-            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.5em] text-amber-200">
+            <p className="mb-4 text-[10px] font-black tracking-[0.12em] text-amber-200">
               {entry.name}
             </p>
-            <h2 className="waterlily-heading mb-6 text-4xl font-black uppercase italic tracking-tighter md:text-5xl">
+            <h2 className="waterlily-heading mb-6 text-4xl font-black italic tracking-tighter md:text-5xl">
               {entry.headline}
             </h2>
             <p className="max-w-xl text-base leading-8 text-teal-50/80">
@@ -65,8 +65,8 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
                   <FaStore className="text-lg" />
                 </div>
                 <div>
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-300">Community Landmark</span>
-                  <h3 className="text-xl font-bold uppercase tracking-tight text-white">{entry.landmark.name}</h3>
+                  <span className="text-[9px] font-black tracking-[0.1em] text-amber-300">Community landmark</span>
+                  <h3 className="text-xl font-bold tracking-tight text-white">{entry.landmark.name}</h3>
                 </div>
               </div>
 
@@ -89,7 +89,7 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
                 <span className="text-[10px] font-mono text-amber-400/80">📍 {entry.landmark.address}</span>
                 <a 
                   href="/grill"
-                  className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300 hover:text-amber-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wide text-amber-300 hover:text-amber-200 transition-colors"
                 >
                   Visit Grill Menu <span className="text-xs">→</span>
                 </a>
@@ -99,7 +99,7 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
 
             <div className="min-w-0 rounded-2xl border border-amber-200/15 bg-black/20 p-5 lg:col-span-2">
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-100/70">
+                <p className="text-[10px] font-black tracking-[0.08em] text-amber-100/70">
                   Atlas Pulse
                 </p>
                 <span className="font-mono text-xs text-amber-100">
@@ -116,7 +116,7 @@ const SunsetHistorySection = ({ slug = 'sunset' }: SunsetHistorySectionProps) =>
                 {ATLAS_PULSE_STAGES.map(stage => (
                   <span
                     key={stage.id}
-                    className={`rounded border px-2 py-2 text-center text-[9px] font-black uppercase tracking-[0.12em] ${
+                    className={`rounded border px-2 py-2 text-center text-[9px] font-black tracking-[0.04em] ${
                       completedStages.has(stage.id)
                         ? 'border-amber-200/40 bg-amber-200/15 text-amber-100'
                         : 'border-white/10 bg-white/[0.03] text-teal-50/35'

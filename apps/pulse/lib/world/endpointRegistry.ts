@@ -55,7 +55,7 @@ export const WORLD_ENDPOINTS: WorldEndpoint[] = [
   {
     id: 'idx-hot-moving',
     label: 'Active IDX Listings',
-    district: 'IDX Search',
+    district: 'IDX search',
     description: 'Current listings from the regional IDX/MLS feed.',
     route: '/idx',
     apiPath: '/api/idx/hot-moving',
@@ -71,7 +71,7 @@ export const WORLD_ENDPOINTS: WorldEndpoint[] = [
   {
     id: 'tah-archive',
     label: 'TAH Archive',
-    district: 'Knowledge Library',
+    district: 'Knowledge library',
     description: 'Searchable cartridge memory and domain knowledge for the platform.',
     route: '/tah',
     apiPath: '/api/tah',
@@ -87,7 +87,7 @@ export const WORLD_ENDPOINTS: WorldEndpoint[] = [
   {
     id: 'atlas',
     label: 'Atlas',
-    district: 'Market Map',
+    district: 'Market map',
     description: 'Map of published knowledge, saved research, and market domains.',
     route: '/atlas',
     apiPath: '/api/tah/atlas/manifest',

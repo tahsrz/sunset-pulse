@@ -61,9 +61,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Supabase CLI
+        id: setup-supabase-cli
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.0
 
       - name: Start Supabase for database tests
         working-directory: apps/pulse
@@ -74,7 +75,7 @@ jobs:
         run: npm run test:db
 
       - name: Stop Supabase
-        if: ${{ always() }}
+        if: ${{ always() && steps.setup-supabase-cli.outcome == 'success' }}
         working-directory: apps/pulse
         run: supabase stop --no-backup
 
@@ -106,7 +107,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.0
       - name: Verify project storage admission against the real Storage API
         run: |
           export PULSE_TEST_SUPABASE_CLI="$(command -v supabase)"
