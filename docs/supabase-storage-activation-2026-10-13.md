@@ -15,6 +15,12 @@ The resulting inspection is **healthy**: 362,399 live file bytes, 95 retired byt
 
 Private recovery/audit files are retained under `apps/pulse/.pulse-local/storage-rollout/2026-10-13-xlyfhiafactxahhvikyv/`: `before.json`, `activation.json`, `after.json`, and `receipt.json`. This directory is ignored by Git. Keep it with the previously preserved Wikipedia recovery archive.
 
+## October 15 Free-plan check
+
+The `property-scans` bucket was set through the Storage API to a native 50,000,000-byte file limit. Its private setting and allowed MIME types were preserved, and all 313 objects remain unchanged. The live read-only inspection now reports healthy: 362,399 live bytes, 95 retired bytes, 0 reserved bytes, and 53,398,675 database bytes. A forward migration, `20261015190000_property_scan_free_file_limit.sql`, keeps that cap in repository-managed setup. This fixes the previous `bucket_limit_mismatch` and re-enables background uploads.
+
+The Supabase dashboard was not signed in during this check, and the local Supabase CLI has no access token. Organization-level project count and current-cycle egress/add-on usage therefore remain unverified. Free also does not include downloadable automated database backups; make and retain an offsite database dump before downgrading. Storage and database sizes are well below their Free caps, but those project metrics alone do not confirm the whole organization is within Free allowances.
+
 ## Remaining application release work
 
 Before activation, the project recorded 32 of 163 repository migrations. Its latest recorded version was `20260821020000`, with eight earlier versions absent from the history:
