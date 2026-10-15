@@ -1,33 +1,33 @@
 'use client';
 
 import React from 'react';
-import { FaCube, FaNetworkWired, FaBolt, FaRocket } from 'react-icons/fa';
+import { FaMapMarkedAlt, FaGlobeAmericas, FaListAlt } from 'react-icons/fa';
 
 const EngineSection = () => {
   return (
     <section className='col-span-1 xl:col-span-2 space-y-6'>
       <div className='flex items-center gap-4 text-amber-200'>
-        <FaCube size={32} />
-        <h2 className='text-3xl font-black uppercase tracking-tight'>3D Spatial Engine</h2>
+        <FaMapMarkedAlt size={28} aria-hidden='true' />
+        <h2 className='text-2xl font-semibold tracking-tight'>Places and listings</h2>
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
         <div className='waterlily-card p-6 rounded-2xl'>
-          <h4 className='font-bold mb-3 flex items-center gap-2'><FaNetworkWired className='text-amber-200' size={14}/> Atlas Globe Hub</h4>
-          <p className='text-xs text-teal-50/70 leading-relaxed'>
-            A high-performance geospatial core utilizing <strong>Three.js</strong> and <strong>React-Three-Fiber</strong> to render a navigable, high-fidelity globe for regional property distribution.
+          <h4 className='font-semibold mb-3 flex items-center gap-2'><FaGlobeAmericas className='text-amber-200' size={14}/> Explore the map</h4>
+          <p className='text-sm text-teal-50/70 leading-relaxed'>
+            The map gives you a sense of where places sit and what is nearby. Open a listing when you need its full details.
           </p>
         </div>
         <div className='waterlily-card p-6 rounded-2xl'>
-          <h4 className='font-bold mb-3 flex items-center gap-2'><FaBolt className='text-rose-200' size={14}/> Virtual World Hub</h4>
-          <p className='text-xs text-teal-50/70 leading-relaxed'>
-            An immersive 3D interface for inspecting property context, neighborhood momentum, and spatial tradeoffs in a unified, walkable virtual environment.
+          <h4 className='font-semibold mb-3 flex items-center gap-2'><FaMapMarkedAlt className='text-rose-200' size={14}/> Look around the area</h4>
+          <p className='text-sm text-teal-50/70 leading-relaxed'>
+            The virtual map brings neighborhood context and available property signals into one view. It is a way to explore, not a replacement for checking the listing itself.
           </p>
         </div>
         <div className='waterlily-card p-6 rounded-2xl'>
-          <h4 className='font-bold mb-3 flex items-center gap-2'><FaRocket className='text-teal-200' size={14}/> Unified Property Stage</h4>
-          <p className='text-xs text-teal-50/70 leading-relaxed'>
-            Optimized rendering pipeline for high-fidelity property evaluation, ensuring complex architectural data is delivered with zero latency across all viewports.
+          <h4 className='font-semibold mb-3 flex items-center gap-2'><FaListAlt className='text-teal-200' size={14}/> Compare the available homes</h4>
+          <p className='text-sm text-teal-50/70 leading-relaxed'>
+            Switch between curated properties and the current MLS feed. Photos and details depend on what the listing provider has supplied.
           </p>
         </div>
       </div>
