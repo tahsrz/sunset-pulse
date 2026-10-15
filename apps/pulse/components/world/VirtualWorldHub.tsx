@@ -402,10 +402,10 @@ const VirtualWorldHub: React.FC = () => {
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-teal-200/20 bg-teal-300/10 px-3 py-1 text-xs font-semibold text-teal-100">
               <Compass size={14} />
-              Platform Map
+              Platform map
             </div>
-            <h2 className="text-3xl font-black uppercase italic md:text-5xl">
-              Platform Map
+            <h2 className="text-3xl font-black italic md:text-5xl">
+              Platform map
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-teal-50/70 md:text-base">
               A visual map of the core product areas: property search, IDX, Atlas, TAH, valuation,
@@ -416,7 +416,7 @@ const VirtualWorldHub: React.FC = () => {
           <button
             type="button"
             onClick={() => departTo(activeEndpoint.route)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-black uppercase text-slate-950 transition hover:bg-teal-100 lg:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-teal-100 lg:w-auto"
           >
             Open {activeEndpoint.label}
             <ArrowRight size={17} />
@@ -427,18 +427,18 @@ const VirtualWorldHub: React.FC = () => {
           <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#06111c] shadow-2xl shadow-black/30">
             <div className="relative min-h-[360px] flex-1 sm:min-h-[440px]">
             <div className="absolute left-4 top-4 z-10 rounded-lg border border-white/10 bg-black/30 px-4 py-3 backdrop-blur-md">
-              <p className="text-xs font-semibold text-teal-100/70">Selected Area</p>
+              <p className="text-xs font-semibold text-teal-100/70">Selected area</p>
               <p className="mt-1 text-lg font-black">{activeEndpoint.district}</p>
             </div>
             
             {contextLost ? (
               <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-lg">
-                <p className="text-teal-100 font-black uppercase tracking-widest text-xs mb-4 opacity-70">Topographic Context Lost</p>
+                <p className="text-teal-100 font-black tracking-wide text-xs mb-4 opacity-70">Topographic context lost</p>
                 <button 
                   onClick={() => window.location.reload()}
-                  className="px-8 py-3 bg-teal-400 text-slate-950 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-teal-300 transition-all shadow-xl shadow-teal-900/20"
+                  className="px-8 py-3 bg-teal-400 text-slate-950 rounded-full font-black text-[10px] tracking-wide hover:bg-teal-300 transition-all shadow-xl shadow-teal-900/20"
                 >
-                  Re-initialize World
+                  Reinitialize World
                 </button>
               </div>
             ) : (
@@ -504,7 +504,7 @@ const VirtualWorldHub: React.FC = () => {
               <button
                 type="button"
                 onClick={() => departTo(activeEndpoint.route)}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-black uppercase text-white transition hover:brightness-110"
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-black text-white transition hover:brightness-110"
                 style={{ backgroundColor: activeEndpoint.color, boxShadow: `0 18px 44px ${activeEndpoint.glow}` }}
               >
                 Open {activeEndpoint.label}

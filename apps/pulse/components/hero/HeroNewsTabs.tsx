@@ -62,7 +62,7 @@ const buildNewsTahHref = (article: NewsArticle) => {
   const params = new URLSearchParams({
     title: article.title,
     summary: article.summary,
-    source: article.source || 'News Feed',
+    source: article.source || 'News feed',
     url: article.url || '/insights',
     category: article.category || 'local',
   });
@@ -112,7 +112,7 @@ export default function HeroNewsTabs() {
     <section aria-label="Latest news" className="pointer-events-auto relative mx-auto rounded-2xl border border-white/15 bg-slate-950/70 p-4 text-white shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2 overflow-x-auto">
-          <span className="hidden items-center gap-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100 md:flex">
+          <span className="hidden items-center gap-2 px-2 text-[10px] font-black tracking-[0.1em] text-cyan-100 md:flex">
             <Newspaper className="h-4 w-4" />
             News
           </span>
@@ -124,7 +124,7 @@ export default function HeroNewsTabs() {
                 type="button"
                 aria-pressed={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
+                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-xs font-black tracking-[0.06em] transition ${
                   activeTab === tab.id
                     ? 'bg-cyan-300 text-slate-950'
                     : 'border border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10'
@@ -139,7 +139,7 @@ export default function HeroNewsTabs() {
 
         <Link
           href="/insights"
-          className="hidden items-center gap-2 rounded-md border border-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-300 hover:border-cyan-200/40 hover:text-white md:flex"
+          className="hidden items-center gap-2 rounded-md border border-white/10 px-3 py-2 text-xs font-bold tracking-[0.06em] text-slate-300 hover:border-cyan-200/40 hover:text-white md:flex"
         >
           Open Insights
           <ArrowUpRight className="h-3.5 w-3.5" />
@@ -150,11 +150,11 @@ export default function HeroNewsTabs() {
         {visibleArticles.map((article, index) => (
           <article key={`${article.title}-${index}`} className="min-w-0 rounded-xl border border-white/10 bg-white/[0.05] p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-cyan-100/80">
+              <span className="truncate text-[9px] font-black tracking-[0.08em] text-cyan-100/80">
                 {article.source || (activeTab === 'ops' ? 'Operations' : activeTab)}
               </span>
               {index === 0 && (
-                <span className="rounded-full bg-emerald-300/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-100">
+                <span className="rounded-full bg-emerald-300/10 px-2 py-0.5 text-[9px] font-black tracking-[0.06em] text-emerald-100">
                   Lead
                 </span>
               )}
@@ -168,7 +168,7 @@ export default function HeroNewsTabs() {
       </div>
 
       {timestamp && (
-        <p className="mt-2 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-500">
+        <p className="mt-2 text-[10px] font-mono tracking-[0.06em] text-slate-500">
           News feed synced {new Date(timestamp).toLocaleString()}
         </p>
       )}

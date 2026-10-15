@@ -93,7 +93,7 @@ export const TEXAS_PLACE_HISTORY: TexasPlaceHistoryEntry[] = [
     slug: 'sunset',
     name: 'Sunset, Texas',
     region: 'Montague County',
-    headline: 'A Small North Texas Town With A Long Memory',
+    headline: 'A small North Texas town with a long memory',
     summary:
       'Sunset sits in southern Montague County near State Highway 101 and Farm Road 1749. Its story runs through frontier settlement, a post office name change, railroad growth, and the farm economy that shaped much of North Texas.',
     detail:
@@ -101,25 +101,25 @@ export const TEXAS_PLACE_HISTORY: TexasPlaceHistoryEntry[] = [
     milestones: [
       {
         label: '1870s',
-        title: 'A Store Becomes A Townsite',
+        title: 'A store becomes a townsite',
         body:
           'Early settlers arrived from Denton County, and Sam Smith opened a grocery store that became one of the anchors of the growing community.'
       },
       {
         label: '1880',
-        title: 'The Name Sunset Sticks',
+        title: 'The name Sunset sticks',
         body:
           'Smith applied for a post office under the name Smithville. Because that name was already taken, postal authorities suggested Sunset.'
       },
       {
         label: '1882-1884',
-        title: 'Railroad Momentum',
+        title: 'Railroad momentum',
         body:
           'The Fort Worth and Denver Railway came through the community, drawing nearby residents toward the tracks. Sunset voted to incorporate on July 26, 1884.'
       },
       {
         label: '1900s',
-        title: 'A Farm Market Center',
+        title: 'A farm market center',
         body:
           'By 1900, Sunset had grown past 600 residents and supported cotton gins, banks, a school, churches, a gristmill, a canning factory, and the Sunset Signal newspaper.'
       }

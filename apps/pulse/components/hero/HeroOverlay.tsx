@@ -17,7 +17,7 @@ const HeroOverlay: React.FC = () => {
             <div className="absolute h-36 w-36 rounded-full border border-rose-200/20 animate-pulse-expand [animation-delay:3.2s]" />
           </div>
 
-          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
             {titleWords[0]} <span className="waterlily-heading italic">{titleWords.slice(1).join(' ')}</span>
           </h2>
           <p className="text-base leading-7 md:text-lg text-slate-200 max-w-xl mx-auto font-medium drop-shadow-[0_2px_18px_rgba(2,6,23,0.75)]">
@@ -28,7 +28,7 @@ const HeroOverlay: React.FC = () => {
         <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center justify-center">
           <Link
             href="/atlas"
-            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full px-8 py-4 waterlily-button font-bold uppercase text-sm hover:scale-105 transition-transform duration-300"
+            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full px-8 py-4 waterlily-button font-bold text-sm hover:scale-105 transition-transform duration-300"
           >
             <Compass size={24} />
             <span>{cta.button_text}</span>
@@ -38,7 +38,7 @@ const HeroOverlay: React.FC = () => {
           </Link>
           <Link
             href="/idx"
-            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-bold uppercase text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10 hover:scale-105 duration-300"
+            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full border border-white/20 bg-black/35 px-6 py-4 text-sm font-bold text-cyan-50 backdrop-blur-xl transition-all hover:border-cyan-200/50 hover:bg-cyan-200/10 hover:scale-105 duration-300"
           >
             <Search size={18} />
             <span>IDX Search</span>
@@ -47,7 +47,7 @@ const HeroOverlay: React.FC = () => {
           </Link>
           <Link
             href="/grill"
-            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full border border-orange-500/30 bg-black/45 px-6 py-4 text-sm font-bold uppercase text-amber-50 backdrop-blur-xl transition-all hover:border-orange-400/60 hover:bg-orange-950/20 hover:text-orange-200 hover:scale-105 duration-300"
+            className="group relative flex min-h-14 items-center justify-center gap-3 rounded-full border border-orange-500/30 bg-black/45 px-6 py-4 text-sm font-bold text-amber-50 backdrop-blur-xl transition-all hover:border-orange-400/60 hover:bg-orange-950/20 hover:text-orange-200 hover:scale-105 duration-300"
           >
             <Flame size={18} className="text-orange-400 group-hover:animate-pulse" />
             <span>The Grill</span>
@@ -57,7 +57,7 @@ const HeroOverlay: React.FC = () => {
           </Link>
         </div>
 
-        <div className="mt-8 text-teal-100/70 font-mono text-[10px] uppercase">
+        <div className="mt-8 text-teal-100/70 font-mono text-[10px]">
           {cta.footer_note}
         </div>
       </div>
