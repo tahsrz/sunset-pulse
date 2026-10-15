@@ -1,6 +1,7 @@
 import connectDB from '@/lib/core/database';
 import Property from '@/models/Property';
 import { gatekeeper } from '@/lib/core/gatekeeper';
+import { getUsableRemoteListingImages } from '@/lib/data/listingContract';
 import { upsertCanonicalListing } from '@/lib/data/listingRepository';
 
 /**
@@ -48,8 +49,20 @@ export const syncPropertyToIntelligenceGrid = async (propertyData) => {
   const lastUpdated = propertyData.last_updated || 'STATIC';
 
   if (mlsId && !gatekeeper.shouldProcessListing(mlsId, lastUpdated)) {
-    console.log(`[LISTING_GATE_HIT] Bypassing unchanged listing: ${mlsId}`);
-    return null;
+    const incomingImages = getUsableRemoteListingImages(propertyData);
+    if (!incomingImages.length) {
+      console.log(`[LISTING_GATE_HIT] Bypassing unchanged listing: ${mlsId}`);
+      return null;
+    }
+
+    await connectDB();
+    const existing = await Property.findOne({ mls_id: mlsId }).select('images').lean();
+    if (getUsableRemoteListingImages(existing || {}).length) {
+      console.log(`[LISTING_GATE_HIT] Bypassing unchanged listing with photos: ${mlsId}`);
+      return null;
+    }
+
+    console.log(`[LISTING_PHOTO_REPAIR] Refreshing cached photos for ${mlsId}.`);
   }
 
   const canonicalResult = await upsertPropertyToSupabase(propertyData);
