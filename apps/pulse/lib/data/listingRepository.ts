@@ -38,7 +38,11 @@ export async function searchListings(
   if (isMockMode()) return searchMockListings(filters, options.publicOnly === true).slice(0, limit);
   const canonical = await searchCanonicalListings(filters, limit, options.publicOnly === true);
   const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit, options.publicOnly);
-  return deduplicateListings([...canonical, ...legacy]).slice(0, limit);
+  const deduplicated = deduplicateListings([...canonical, ...legacy]);
+  const eligible = options.publicOnly
+    ? deduplicated.filter((listing) => !listing.is_demo && listing.display_public)
+    : deduplicated;
+  return eligible.slice(0, limit);
 }
 
 export async function getListingById(id: string): Promise<Listing | null> {

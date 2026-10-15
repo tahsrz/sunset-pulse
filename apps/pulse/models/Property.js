@@ -111,6 +111,10 @@ const PropertySchema = new Schema(
       type: Boolean,
       default: false,
     },
+    display_public: {
+      type: Boolean,
+      default: false,
+    },
     source: {
       type: String,
       enum: ['Internal', 'MLS'],
