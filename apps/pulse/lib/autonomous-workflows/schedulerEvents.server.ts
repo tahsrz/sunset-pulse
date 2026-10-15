@@ -2,6 +2,11 @@ import 'server-only';
 
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
+import {
+  propertyScanReconstructionEventKey,
+  propertyScanReconstructionJobPayloadSchema,
+  propertyScanReconstructionOperationKey,
+} from '@/lib/scans/scanJobs.server';
 
 export class SchedulerEventError extends Error {
   constructor(public readonly code: 'DISABLED' | 'FAILED', message = 'Unable to enqueue workflow event.') { super(message); }
@@ -9,7 +14,7 @@ export class SchedulerEventError extends Error {
 
 const eventInputSchema = z.object({
   userId: z.string().uuid(),
-  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check', 'capability_reservation_reconcile', 'realtor_reminder']),
+  workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check', 'capability_reservation_reconcile', 'realtor_reminder', 'property_scan_reconstruction']),
   eventKey: z.string().trim().min(1).max(240),
   payload: z.record(z.string(), z.unknown()),
   payloadVersion: z.number().int().positive().default(1),
@@ -71,6 +76,34 @@ export async function enqueueSprintPlannerEvent(input: z.input<typeof sprintPlan
     payload: { planningMode: parsed.planningMode, source: parsed.source },
     payloadVersion: 1,
     scheduledFor: parsed.scheduledFor,
+  });
+}
+
+/**
+ * Strict adapter for the S7 outbox relay. The database event contract remains
+ * a separate admission gate; this function cannot enable it or invoke a provider.
+ */
+export async function enqueuePropertyScanReconstructionEvent(input: {
+  userId: string;
+  eventKey: string;
+  payload: Record<string, unknown>;
+  payloadVersion: number;
+}) {
+  const userId = z.string().uuid().parse(input.userId);
+  const payload = propertyScanReconstructionJobPayloadSchema.parse(input.payload);
+  if (payload.ownerId !== userId
+    || payload.operationKey !== propertyScanReconstructionOperationKey(payload)
+    || input.eventKey !== propertyScanReconstructionEventKey(payload)
+    || input.payloadVersion !== 1) {
+    throw new SchedulerEventError('FAILED', 'Invalid property-scan reconstruction event identity.');
+  }
+
+  return enqueueWorkflowEvent({
+    userId,
+    workflowKey: 'property_scan_reconstruction',
+    eventKey: input.eventKey,
+    payload,
+    payloadVersion: 1,
   });
 }
 

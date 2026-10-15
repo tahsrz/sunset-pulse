@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from '@/lib/core/apiResponse';
 import { appendPropertyScanAssets, readPropertyScanSession } from '@/lib/scans/propertyScanStore';
 import { hasSupportedPropertyScanSignature, propertyScanAssetLimits, propertyScanAssetMimeTypes, propertyScanAssetSchema } from '@/lib/scans/propertyScanContract';
 import { supabaseAdmin } from '@/lib/supabase';
+import { uploadWithStorageBudget } from '@/lib/storage/projectStorageBudget.mjs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   for (const file of files) {
     if (!propertyScanAssetMimeTypes.has(file.type)) return errorResponse(`${file.name} is not a supported image or video format.`, 400);
     if (file.size <= 0) return errorResponse(`${file.name} is empty and cannot be uploaded.`, 400);
-    if (file.size > propertyScanAssetLimits.maxBytesPerFile) return errorResponse(`${file.name} exceeds the 75 MB capture limit.`, 400);
+    if (file.size > propertyScanAssetLimits.maxBytesPerFile) return errorResponse(`${file.name} exceeds the ${propertyScanAssetLimits.maxBytesPerFile / 1_000_000} MB capture limit.`, 400);
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (!hasSupportedPropertyScanSignature(file.type, bytes)) return errorResponse(`${file.name} content does not match its declared media type.`, 400);
     preparedFiles.push({ file, bytes });
@@ -42,10 +43,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   for (const { file, bytes } of preparedFiles) {
     const storagePath = `${access.user.id}/${scanId}/${randomUUID()}-${safeFileName(file.name)}`;
     uploadedPaths.push(storagePath);
-    const { error } = await storage.upload(storagePath, Buffer.from(bytes), { contentType: file.type, upsert: false });
+    const { error } = await uploadWithStorageBudget(supabaseAdmin, 'property-scans', storagePath, Buffer.from(bytes), { contentType: file.type, upsert: false });
     if (error) {
       await removeUploadedPaths(storage, uploadedPaths);
-      return errorResponse('Capture upload failed. No public listing asset was created.', 502, error.message);
+      return errorResponse(error.message || 'Capture upload failed. No public listing asset was created.', Number(error.statusCode) || 502);
     }
 
     assets.push(propertyScanAssetSchema.parse({

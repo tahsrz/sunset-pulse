@@ -11,6 +11,11 @@ const profile: LicensedWorkflowProfile = {
   disclosureText: 'Verify listing details independently before taking any next step.',
   enabled: true,
   autoSend: false,
+  audienceScope: 'owned_hotlist_contacts',
+  cadence: 'daily',
+  timeZone: 'America/Chicago',
+  localHour: 8,
+  localMinute: 0,
   maxRecipientsPerRun: 25,
 };
 

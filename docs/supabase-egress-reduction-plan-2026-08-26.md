@@ -4,6 +4,8 @@
 
 Reduce cached egress after the 8.61 GB overage without breaking listing freshness, totals, or operator workflows.
 
+October 13 update: the owner-approved, backed-up Wikipedia Storage cleanup reduced live file storage from 1,786,595,887 to 362,399 bytes. Database size remained 67,243,155 bytes. See the [cleanup and recovery report](supabase-free-plan-cleanup-2026-10-13.md). This file-size reduction does not retroactively reduce egress or billing-period averages.
+
 ## Immediate Controls
 
 - Keep KDS disabled.

@@ -17,9 +17,9 @@ const HeroOverlay: React.FC = () => {
             <div className="absolute h-36 w-36 rounded-full border border-rose-200/20 animate-pulse-expand [animation-delay:3.2s]" />
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 uppercase italic drop-shadow-[0_0_32px_rgba(34,211,238,0.28)]">
             {titleWords[0]} <span className="waterlily-heading italic">{titleWords.slice(1).join(' ')}</span>
-          </h1>
+          </h2>
           <p className="text-base leading-7 md:text-lg text-slate-200 max-w-xl mx-auto font-medium drop-shadow-[0_2px_18px_rgba(2,6,23,0.75)]">
             {hero.subtitle}. {hero.description}
           </p>

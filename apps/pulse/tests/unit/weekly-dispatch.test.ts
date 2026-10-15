@@ -142,6 +142,7 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     // Verify Mark's SMS content (should contain both shifts sorted chronologically)
     const markCall = mockSendTelnyxSMS.mock.calls.find(call => call[0] === '+15551111111');
     expect(markCall).toBeDefined();
+    if (!markCall) throw new Error('Expected a dispatch to Mark');
     const markBody = markCall[1];
     expect(markBody).toContain('Hello Mark');
     expect(markBody).toContain('Monday: Grill Staff');
@@ -150,6 +151,7 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     // Verify Jane's SMS content
     const janeCall = mockSendTelnyxSMS.mock.calls.find(call => call[0] === '+15552222222');
     expect(janeCall).toBeDefined();
+    if (!janeCall) throw new Error('Expected a dispatch to Jane');
     const janeBody = janeCall[1];
     expect(janeBody).toContain('Hello Jane');
     expect(janeBody).toContain('Thursday: Grill Staff');
@@ -157,6 +159,7 @@ describe('Sunset Gas and Grill // Weekly Schedule SMS Dispatcher', () => {
     // Verify Manager Master Digest SMS content
     const managerCall = mockSendTelnyxSMS.mock.calls.find(call => call[0] === '+15551112222');
     expect(managerCall).toBeDefined();
+    if (!managerCall) throw new Error('Expected a manager dispatch');
     const managerBody = managerCall[1];
     expect(managerBody).toContain('MASTER WEEKLY SCHEDULE');
     expect(managerBody).toContain('Range: May 25 - May 31, 2026');

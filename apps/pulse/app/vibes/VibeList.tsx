@@ -41,9 +41,9 @@ const STATUS_VIEWS = [
 ] as const;
 
 function formatModified(value?: string) {
-  if (!value) return '—';
+  if (!value) return 'Unavailable';
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? '—' : date.toLocaleDateString();
+  return Number.isNaN(date.valueOf()) ? 'Unavailable' : date.toLocaleDateString();
 }
 
 function sortLabel(active: boolean, direction: 'asc' | 'desc') {
@@ -153,7 +153,7 @@ export function VibeList() {
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-7xl">
-        <VibePageHeader eyebrow="Content management" title="All Vibes" description="Manage drafts, reviews, published revisions, and their editorial history." actions={<Link href="/vibes/new" className="rounded border border-[#2271b1] px-3 py-2 text-sm font-semibold text-[#2271b1] hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2">Add New</Link>} />
+        <VibePageHeader eyebrow="Content management" title="Publishing" description="Manage drafts, reviews, published revisions, and their editorial history." actions={<Link href="/vibes/new" className="rounded border border-[#2271b1] px-3 py-2 text-sm font-semibold text-[#2271b1] hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2271b1] focus-visible:ring-offset-2">Add New</Link>} />
 
         <div className="mb-3 px-1">
           <VibeStatusViews views={STATUS_VIEWS.map((view) => ({ ...view, count: view.value ? statusCounts[view.value] || 0 : Object.values(statusCounts).reduce((sum, count) => sum + count, 0) }))} activeValue={status} onChange={(value) => { const nextStatus = value as VibeListQuery['status']; setStatus(nextStatus); setPage(1); updateQuery({ status: nextStatus, page: 1 }); }} />
@@ -190,7 +190,7 @@ export function VibeList() {
                           <div className="mt-2"><VibeRowActions actions={[{ label: 'Edit', href: `/vibes/${vibe.vibeId}/edit` }, { label: 'Preview', href: `/vibes/${vibe.vibeId}/preview` }, { label: 'Revisions', href: `/vibes/${vibe.vibeId}/revisions` }, { label: 'Status & Actions', href: `/vibes/${vibe.vibeId}/actions` }]} /></div>
                         </td>
                         <td className="px-4 py-3"><VibeStatusBadge status={vibe.status || 'draft'} /></td>
-                        <td className="px-4 py-3 text-xs text-slate-500">{vibe.publishedRevisionId ? 'Published revision' : '—'}</td>
+                        <td className="px-4 py-3 text-xs text-slate-500">{vibe.publishedRevisionId ? 'Published revision' : 'Unavailable'}</td>
                         <td className="px-4 py-3 text-xs text-slate-500">{formatModified(vibe.updatedAt)}</td>
                       </tr>
                     ))}

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({ heartbeat: vi.fn(), alert: vi.fn() }));
@@ -13,6 +13,11 @@ describe('Wikipedia health cron', () => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = 'health-secret';
     mocks.alert.mockResolvedValue({ status: 'sent', provider: 'resend', messageId: 'message-1' });
+  });
+
+  afterEach(() => {
+    delete process.env.WIKIPEDIA_HEALTH_ALERT_INTERVAL_MINUTES;
+    vi.useRealTimers();
   });
 
   it('does not alert for a fresh healthy crawler', async () => {
@@ -33,6 +38,23 @@ describe('Wikipedia health cron', () => {
     const response = await GET(request());
     expect(response.status).toBe(200);
     expect(mocks.alert).toHaveBeenCalledWith(expect.objectContaining({ subject: expect.stringContaining('healthy') }));
+  });
+
+  it('uses the configured alert interval for Resend idempotency', async () => {
+    const now = new Date('2026-10-01T12:34:00.000Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    process.env.WIKIPEDIA_HEALTH_ALERT_INTERVAL_MINUTES = '120';
+    mocks.heartbeat.mockResolvedValue({
+      crawlerId: 'wikipedia-en', status: 'paused', updatedAt: now.toISOString(),
+      payload: { state: { health: { status: 'paused', retryDrainRate: 0, retryBacklog: 12 } } },
+    });
+
+    await GET(request());
+
+    expect(mocks.alert).toHaveBeenCalledWith(expect.objectContaining({
+      idempotencyKey: `crawler-health-wikipedia-en-paused-${Math.floor(now.getTime() / (120 * 60_000))}`,
+    }));
   });
 });
 

@@ -18,7 +18,7 @@ These commands create unique disposable resources and remove only those resource
 
 Use **Browse all app paths** in `/agent` or `/command-center`, or press **Ctrl/Cmd+K**
 where the global navbar is present. Search by URL, feature, section, or access requirement.
-The shared catalog covers 112 page route patterns and 5 non-API handlers, including Vibe
+The shared catalog covers 119 page route patterns and 5 non-API handlers, including Vibe
 workflows, games, property tools, operations, and machine-readable TAH resources.
 
 See the [complete path inventory near the top of the repository README](../../README.md#app-paths-and-command-navigation).
@@ -72,6 +72,7 @@ Production env required for crawler health and notification delivery:
 CRON_SECRET=
 RESEND_API_KEY=
 OPERATOR_EMAIL=
+WIKIPEDIA_HEALTH_ALERT_INTERVAL_MINUTES=60
 NEXT_PUBLIC_SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```

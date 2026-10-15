@@ -21,6 +21,28 @@ volume. No application environment file is changed by these commands. The local
 Mongo service has no authentication and is bound to loopback only; use local
 fixtures. It is not a deployment configuration.
 
+## Local Wikipedia corpus worker
+
+The optional `wikipedia` profile runs the Crawl4AI worker in Docker and stores
+`.tah` batches, manifests, search catalog, demand queue and ingestion checkpoint
+in the named `wikipedia-data` volume. It does not upload corpus files to
+Supabase Storage. The volume remains when the worker is stopped; `docker compose
+down -v` would remove it, so do not use that command if you want to keep the
+local corpus.
+
+```sh
+npm run docker:wikipedia:up
+npm run docker:wikipedia:status
+npm run docker:wikipedia:down
+```
+
+The crawler container builds from `apps/pulse/Dockerfile.wikipedia-crawler`.
+It can read the optional app/root environment files, but the corpus and state
+paths are explicitly overridden into the mounted volume. This local container
+is not a backup or a production service. Keep any needed host-side corpus
+separately before migrating it; a fresh named volume does not import files from
+the old `cartridges/wikipedia` directory automatically.
+
 ## Disposable acceptance
 
 ```sh

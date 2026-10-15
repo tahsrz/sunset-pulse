@@ -5,9 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { mockGetJamieResponse, mockExecuteJamieToolCalls } = vi.hoisted(() => ({
+const { mockGetJamieResponse, mockExecuteJamieToolCalls, mockRunPersonalJamie } = vi.hoisted(() => ({
   mockGetJamieResponse: vi.fn(),
   mockExecuteJamieToolCalls: vi.fn(),
+  mockRunPersonalJamie: vi.fn(),
 }));
 
 vi.mock('@/lib/ai/jamie', () => ({
@@ -19,6 +20,7 @@ vi.mock('@/lib/ai/jamieTools', () => ({
   executeJamieToolCalls: mockExecuteJamieToolCalls,
   formatPropertySearchResult: vi.fn(() => 'Property cards rendered.'),
 }));
+vi.mock('@/lib/ai/jamiePersonal.server', () => ({ runPersonalJamie: mockRunPersonalJamie }));
 
 vi.mock('@/lib/ai/jamieKnowledgeFallback', () => ({
   retrieveJamieKnowledge: vi.fn(() => Promise.resolve({ query: 'question', evidence: [], crawlerStatus: 'unknown' })),
@@ -114,5 +116,22 @@ describe('Jamie TensorZero backbone', () => {
 
     expect(result.body.content).toBe('I do not have a reliable cartridge match yet.');
     expect(result.body.content).not.toContain('checking that now');
+  });
+
+  it('records personal Jamie turns without private messages or proposal values in TensorZero traces', async () => {
+    mockRunPersonalJamie.mockResolvedValue({
+      role: 'assistant', content: 'I found the private income record for $92,000.',
+      personal: { context: 'personal_realtor', proposals: [{ apiPayload: { amountCents: 9200000 } }], availability: { agenda: true, business: true, seller: false }, links: {} },
+    });
+    const result = await runTensorZeroJamieChat({
+      messages: [{ role: 'user', content: 'Read $92,000 for Taylor Seller.' }],
+      personalContext: { actorId: 'owner-1', workspaceId: 'workspace-1', timeZone: 'America/Chicago' },
+    });
+
+    const trace = fs.readFileSync(process.env.TENSORZERO_JAMIE_CHAT_PATH!, 'utf8');
+    expect(result.body.content).toContain('$92,000');
+    expect(trace).not.toContain('Taylor Seller');
+    expect(trace).not.toContain('92,000');
+    expect(trace).not.toContain('amountCents');
   });
 });

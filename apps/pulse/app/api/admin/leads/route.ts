@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { uploadWithStorageBudget } from '@/lib/storage/projectStorageBudget.mjs';
 import { z } from 'zod';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import {
@@ -194,7 +195,8 @@ export async function POST(request: NextRequest) {
     await saveEvidence(created.id, files, values.evidenceContext || null, auditUser);
   } catch (error) {
     await supabaseAdmin.from('leads').delete().eq('id', created.id);
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Evidence upload failed.' }, { status: 500 });
+    const uploadStatus = error instanceof Error && 'statusCode' in error ? Number(error.statusCode) : 500;
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Evidence upload failed.' }, { status: [409, 503, 507].includes(uploadStatus) ? uploadStatus : 500 });
   }
 
   return NextResponse.json({ ok: true, leadId: created.id }, { status: 201 });
@@ -368,11 +370,11 @@ async function saveEvidence(
     for (const file of files) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 120) || 'evidence';
       const storagePath = `${leadId}/${crypto.randomUUID()}-${safeName}`;
-      const { error: uploadError } = await supabaseAdmin.storage.from('lead-evidence').upload(storagePath, file, {
+      const { error: uploadError } = await uploadWithStorageBudget(supabaseAdmin, 'lead-evidence', storagePath, file, {
         contentType: file.type,
         upsert: false,
       });
-      if (uploadError) throw new Error(uploadError.message);
+      if (uploadError) throw Object.assign(new Error(uploadError.message), { statusCode: uploadError.statusCode });
       uploadedPaths.push(storagePath);
 
       const { error: attachmentError } = await supabaseAdmin.from('lead_attachments').insert({

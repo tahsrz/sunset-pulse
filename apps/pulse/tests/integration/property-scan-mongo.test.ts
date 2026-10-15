@@ -7,7 +7,8 @@ vi.mock('server-only', () => ({}));
 // if the store accidentally starts using an external Supabase dependency.
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: () => { throw new Error('Unexpected external database access'); } } }));
 import { PropertyScanSession } from '@/models/PropertyScanSession';
-import { abortPropertyScanUpload, createPropertyScanSession, appendPropertyScanAssets, completePropertyScanUploadCleanup, expirePropertyScanUploadReservations, finalizePropertyScanUpload, listExpiredPropertyScanUploadReservations, reservePropertyScanUpload, updatePropertyScanReview, updatePropertyScanReviewers, readPropertyScanSession, readPropertyScanSessionForActor } from '@/lib/scans/propertyScanStore';
+import { abortPropertyScanUpload, createPropertyScanSession, appendPropertyScanAssets, completePropertyScanUploadCleanup, expirePropertyScanUploadReservations, finalizePropertyScanUpload, listExpiredPropertyScanUploadReservations, projectPropertyScanReconstructionResult, reservePropertyScanUpload, updatePropertyScanReview, updatePropertyScanReviewers, readPropertyScanSession, readPropertyScanSessionForActor, persistPropertyScanReconstructionIntent, resolvePropertyScanReconstructionIntent } from '@/lib/scans/propertyScanStore';
+import { propertyScanReconstructionResultSchema } from '@/lib/scans/scanJobs.server';
 
 const owner = randomUUID();
 const asset = () => ({ assetId: randomUUID(), path: `${owner}/fixture/${randomUUID()}.jpg`, fileName: 'room.jpg', mimeType: 'image/jpeg', size: 10, capturedAt: null, uploadedAt: new Date().toISOString() });
@@ -91,6 +92,50 @@ describe('real Mongo conditional scan mutations', () => {
     const session = await create();
     await PropertyScanSession.updateOne({ scanId: session.scanId }, { $set: { artifactRefs: [{ artifactId: randomUUID(), status: 'current', inputRevision: 99, inputManifestHash: 'stale-hash', createdAt: new Date() }] } });
     expect((await readPropertyScanSession(session.scanId, owner))!.artifactRefs[0].status).toBe('stale');
+  });
+
+  it('atomically projects one result across concurrent retries and rejects a superseded result', async () => {
+    const session = await create();
+    const captured = (await appendPropertyScanAssets(session.scanId, owner, [asset()], session.revision))!;
+    const approved = (await updatePropertyScanReview(session.scanId, 'approved', 'reviewer', 'Inspected', captured.revision, captured.manifestHash))!;
+    const created = await persistPropertyScanReconstructionIntent(session.scanId, owner, 'test-processor-v1');
+    expect(created).not.toBeNull();
+    expect(await resolvePropertyScanReconstructionIntent(session.scanId, created!.intent.operationKey, 'acknowledged', 'mongo-test-job')).toBe(true);
+    const result = propertyScanReconstructionResultSchema.parse({
+      schemaVersion: 1,
+      ownerId: owner,
+      scanId: session.scanId,
+      operationKey: created!.intent.operationKey,
+      inputRevision: approved.approvedManifestRevision,
+      inputManifestHash: approved.approvedManifestHash,
+      processorVersion: 'test-processor-v1',
+      artifactId: randomUUID(),
+      artifactFormat: 'glb',
+      artifactSha256: 'e'.repeat(64),
+      artifactBytes: 32_768,
+    });
+
+    const receipts = await Promise.all([
+      projectPropertyScanReconstructionResult(result),
+      projectPropertyScanReconstructionResult(result),
+    ]);
+    expect(receipts.map((receipt) => receipt?.outcome).sort()).toEqual(['projected', 'replayed']);
+    const projected = (await readPropertyScanSession(session.scanId, owner))!;
+    expect(projected.artifactRefs).toEqual([expect.objectContaining({
+      operationKey: result.operationKey,
+      artifactId: result.artifactId,
+      status: 'current',
+      inputRevision: result.inputRevision,
+      inputManifestHash: result.inputManifestHash,
+      sizeBytes: result.artifactBytes,
+    })]);
+    expect(projected.revision).toBe(approved.revision + 1);
+
+    const superseded = await appendPropertyScanAssets(session.scanId, owner, [asset()], projected.revision);
+    expect(superseded).not.toBeNull();
+    expect((await readPropertyScanSession(session.scanId, owner))!.artifactRefs[0].status).toBe('stale');
+    const conflictingResult = { ...result, artifactId: randomUUID() };
+    expect(await projectPropertyScanReconstructionResult(conflictingResult)).toBeNull();
   });
 
   it('limits concurrent reservations and replays the same idempotency key', async () => {

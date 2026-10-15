@@ -35,7 +35,7 @@ export function GoalEditor({ goals, year, busy, submit, hidden }: {
     }, matchingGoal ? 'Goal updated.' : 'Goal saved.');
   };
 
-  return <section className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10">
+  return <section className="fieldbook-record rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10">
     <h2 className="mb-4 text-lg font-bold text-white">Set a personal target</h2>
     {error ? <p role="alert" className="mb-3 text-sm text-rose-200">{error}</p> : null}
     {hidden ? <p className="text-sm text-slate-400">Progress features are turned off. Enable them in Today personal settings to set a goal.</p> : <form onSubmit={save} className="space-y-4">

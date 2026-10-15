@@ -72,7 +72,7 @@ test.describe('Jamie public guide', () => {
 
   test('completes a consented agent handoff with bounded guide context', async ({ page }) => {
     const trackedEvents: string[] = [];
-    let leadPayload: Record<string, any> | null = null;
+    const captured: { leadPayload: Record<string, any> | null } = { leadPayload: null };
 
     await page.route('**/api/jamie/guide', async (route) => {
       const textId = 'jamie-handoff-e2e-text';
@@ -119,7 +119,7 @@ test.describe('Jamie public guide', () => {
       await route.fulfill({ status: 204 });
     });
     await page.route('**/api/sites/leads', async (route) => {
-      leadPayload = route.request().postDataJSON();
+      captured.leadPayload = route.request().postDataJSON();
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -145,6 +145,7 @@ test.describe('Jamie public guide', () => {
     await page.getByRole('button', { name: 'Send private inquiry' }).click();
 
     await expect(page.getByText('Inquiry sent.', { exact: true })).toBeVisible();
+    const leadPayload = captured.leadPayload;
     expect(leadPayload).toMatchObject({
       agentId: 'jamie-e2e-agent-id',
       site: 'jamie-e2e-agent',

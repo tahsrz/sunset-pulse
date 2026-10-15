@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { Gallery, Item } from 'react-photoswipe-gallery';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 interface PropertyImagesProps {
   images: string[];
@@ -24,6 +25,7 @@ const PropertyImages: React.FC<PropertyImagesProps> = ({ images }) => {
                   ref={ref as unknown as React.MutableRefObject<HTMLImageElement>}
                   onClick={open}
                   src={images[0]}
+                  unoptimized={isRemoteImageSource(images[0])}
                   alt='Property'
                   className='object-cover h-[400px] mx-auto rounded-xl cursor-pointer hover:opacity-90 transition-opacity'
                   width={1800}
@@ -56,6 +58,7 @@ const PropertyImages: React.FC<PropertyImagesProps> = ({ images }) => {
                         ref={ref as unknown as React.MutableRefObject<HTMLImageElement>}
                         onClick={open}
                         src={image}
+                        unoptimized={isRemoteImageSource(image)}
                         alt={`Property ${index + 1}`}
                         className='object-cover h-[400px] w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity'
                         width={0}

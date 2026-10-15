@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     .eq('id', parsed.data.leadId)
     .eq('agent_id', agentId)
     .maybeSingle();
+  if (!lead) return new Response(null, { status: 404 });
   const { error } = await supabaseAdmin.rpc('log_intelligence_event', {
     p_type: 'AGENT_LEAD_ACTION_OPENED',
     p_description: 'Operator opened the recommended lead action.',

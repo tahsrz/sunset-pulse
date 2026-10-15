@@ -65,6 +65,9 @@ describe('agent site lead notifications', () => {
           schemaVersion: 1,
           summary: 'Visitor is comparing a verified listing with a three-bedroom Frisco search.',
           searchCriteria: {
+            transactionType: 'purchase',
+            timeline: null,
+            leaseTermMonths: null,
             locations: ['Frisco'],
             priceMin: null,
             priceMax: 750000,

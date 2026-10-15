@@ -1,5 +1,6 @@
 import { TAHBuilder, TAHInput } from '../core/tah_builder';
-import { supabase } from '../supabase';
+import { supabaseAdmin } from '../supabase';
+import { inspectProjectStorage, publishBackgroundCartridge } from '../storage/projectStorageMaintenance.mjs';
 import { purifyText } from '../ai/purifier';
 import fs from 'fs';
 import path from 'path';
@@ -24,6 +25,11 @@ export class SessionForge {
    */
   public async forgeSessionCartridge(sessionName: string, inputs: TAHInput[]): Promise<Buffer | null> {
     if (inputs.length === 0) return null;
+    const maintenance = await inspectProjectStorage(supabaseAdmin);
+    if (!maintenance.backgroundUploadsAllowed) {
+      console.log(`[SESSION_FORGE_PAUSED] ${maintenance.reasons.join(', ')}.`);
+      return null;
+    }
 
     console.log(`⚒️ [SESSION_FORGE] Initiating Ozriel Protocol audit for: ${sessionName}...`);
     
@@ -59,15 +65,9 @@ export class SessionForge {
     
     // Upload to Supabase Storage
     const fileName = `${sessionName}.tah`;
-    const { error } = await supabase.storage
-      .from('cartridges')
-      .upload(fileName, buffer, {
-        upsert: true,
-        contentType: 'application/octet-stream'
-      });
-
-    if (error) {
-      console.error(`❌ [SESSION_FORGE_UPLOAD_FAILED] ${fileName}:`, error.message);
+    const publication = await publishBackgroundCartridge(supabaseAdmin, fileName, () => buffer);
+    if (publication.state !== 'uploaded') {
+      console.log(`[SESSION_FORGE] ${fileName}: ${publication.state}${publication.error ? ` (${publication.error.message})` : ''}`);
       return null;
     }
 

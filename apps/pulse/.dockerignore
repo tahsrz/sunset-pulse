@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+build
+coverage
+test-results
+playwright-report
+.pulse-local
+cartridges
+*.log
+.env*

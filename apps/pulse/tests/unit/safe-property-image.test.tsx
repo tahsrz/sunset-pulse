@@ -3,11 +3,12 @@ import { fireEvent, render, screen, cleanup, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/image', () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement> & { unoptimized?: boolean }) => (
     <span
       role="img"
       aria-label={props.alt}
       data-src={props.src}
+      data-unoptimized={String(Boolean(props.unoptimized))}
       onClick={() => props.onError?.({} as React.SyntheticEvent<HTMLImageElement>)}
     />
   ),
@@ -35,6 +36,7 @@ describe('SafePropertyImage', () => {
       />,
     );
 
+    expect(screen.getByRole('img', { name: '10 Main Street listing photo' })).toHaveAttribute('data-unoptimized', 'true');
     fireEvent.click(screen.getByRole('img', { name: '10 Main Street listing photo' }));
     await waitFor(() => {
       expect(screen.getByRole('img', { name: 'Listing photo unavailable for 10 Main Street' }))

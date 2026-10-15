@@ -58,14 +58,14 @@ describe.skipIf(!origin)('disposable Auth + Storage + Mongo scan acceptance', ()
     expect(JSON.stringify(result.body)).toContain(createHash('sha256').update(png).digest('hex'));
     expect((await api(path, { expectedRevision: fixture.session.revision })).body.data.session.assets).toHaveLength(1);
   }, 120000);
-  it('rejects a changed object and removes its real Storage bytes', async () => {
+  it('blocks object replacement before it can change finalized scan bytes', async () => {
     const fixture = await reserve(); await upload(fixture);
-    expect((await admin.storage.from('property-scans').update(fixture.upload.path, Buffer.concat([png, Buffer.from('changed')]), { contentType: 'image/png' })).error).toBeNull();
+    expect((await admin.storage.from('property-scans').update(fixture.upload.path, Buffer.concat([png, Buffer.from('changed')]), { contentType: 'image/png' })).error).not.toBeNull();
     const result = await api(`/${fixture.session.scanId}/uploads/${fixture.reservation.uploadId}/complete`, { expectedRevision: fixture.session.revision });
-    expect([409, 422]).toContain(result.status);
-    expect((await admin.storage.from('property-scans').info(fixture.upload.path)).error).not.toBeNull();
+    expect(result.status).toBe(200);
+    expect((await admin.storage.from('property-scans').info(fixture.upload.path)).error).toBeNull();
     const { readPropertyScanSession } = await import('@/lib/scans/propertyScanStore');
-    expect((await readPropertyScanSession(fixture.session.scanId, owner))!.assets).toHaveLength(0);
+    expect((await readPropertyScanSession(fixture.session.scanId, owner))!.assets).toHaveLength(1);
   }, 120000);
   it('retains cleanup intent on injected delete failure, then deletes actual bytes on retry', async () => {
     const fixture = await reserve(); await upload(fixture);
@@ -85,14 +85,15 @@ describe.skipIf(!origin)('disposable Auth + Storage + Mongo scan acceptance', ()
     expect(result.failed).toBe(0);
     expect((await admin.storage.from('property-scans').info(fixture.upload.path)).error).not.toBeNull();
   }, 120000);
-  it('retains cancellation cleanup while a signed URL can recreate the object', async () => {
+  it('blocks signed token replay after cancellation and retains conservative cleanup', async () => {
     const fixture = await reserve(); await upload(fixture);
     const { abortScanUpload, reconcileScanUploadReservations } = await import('@/lib/scans/scanUpload.server');
     const cancelled = await abortScanUpload(fixture.session.scanId, owner, fixture.reservation.uploadId);
     expect(cancelled!.uploadReservations[0].cleanupPending).toBe(true);
-    await upload(fixture); // Real Storage token replay after deletion.
+    const client = createClient(process.env.SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
+    expect((await client.storage.from('property-scans').uploadToSignedUrl(fixture.upload.path, fixture.upload.token, png, { contentType: 'image/png' })).error).not.toBeNull();
     await reconcileScanUploadReservations();
-    expect((await admin.storage.from('property-scans').info(fixture.upload.path)).error).toBeNull();
+    expect((await admin.storage.from('property-scans').info(fixture.upload.path)).error).not.toBeNull();
     const { PropertyScanSession } = await import('@/models/PropertyScanSession');
     await PropertyScanSession.updateOne({ scanId: fixture.session.scanId }, { $set: { 'uploadReservations.0.capabilityExpiresAt': new Date(0) } });
     await reconcileScanUploadReservations();

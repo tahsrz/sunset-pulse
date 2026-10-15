@@ -25,6 +25,7 @@ vi.mock('@/lib/autonomous-workflows/sprintPlannerWorkflow.server', () => ({
 }));
 
 import { getWorkflowHandler } from '@/lib/autonomous-workflows/workflowRegistry.server';
+vi.mock('@/lib/autonomous-workflows/sellerEmailWorkflow.server',()=>({runSellerEmail:vi.fn()}));
 
 describe('workflow registry', () => {
   it('maps supported keys to the dedicated handlers', () => {

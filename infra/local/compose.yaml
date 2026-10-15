@@ -46,5 +46,36 @@ services:
       retries: 30
     mem_limit: 512m
 
+  wikipedia-crawler:
+    build:
+      context: ../../apps/pulse
+      dockerfile: Dockerfile.wikipedia-crawler
+    profiles: [wikipedia]
+    restart: unless-stopped
+    env_file:
+      - path: ../../apps/pulse/.env.local
+        required: false
+      - path: ../../.env
+        required: false
+    environment:
+      NODE_ENV: production
+      WIKIPEDIA_STORAGE_ROOT: /var/lib/sunsetpulse/wikipedia
+      WIKIPEDIA_TAH_OUTPUT_DIR: /var/lib/sunsetpulse/wikipedia/cartridges
+      WIKIPEDIA_INGESTION_STATE_PATH: /var/lib/sunsetpulse/wikipedia/ingestion-state.json
+      WIKIPEDIA_DEMAND_PATH: /var/lib/sunsetpulse/wikipedia/demand-queue.json
+      WIKIPEDIA_LANGUAGE: ${WIKIPEDIA_LANGUAGE:-en}
+      WIKIPEDIA_BATCH_SIZE: ${WIKIPEDIA_BATCH_SIZE:-10}
+      WIKIPEDIA_REQUEST_DELAY_MS: ${WIKIPEDIA_REQUEST_DELAY_MS:-1000}
+      LEAD_INTEL_PYTHON: /opt/venv/bin/python
+      LEAD_INTEL_ALLOWED_DOMAINS: wikipedia.org
+    volumes:
+      - wikipedia-data:/var/lib/sunsetpulse/wikipedia
+    healthcheck:
+      test: [CMD, node, -e, "require('fs').accessSync('/var/lib/sunsetpulse/wikipedia')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mongo-data:
+  wikipedia-data:

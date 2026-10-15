@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { isRemoteImageSource } from '@/lib/imageSource';
 import { useProperties } from '@/hooks/useProperties';
 import { FaMapMarkerAlt, FaBed, FaBath } from 'react-icons/fa';
 import type { Property } from '@/lib/types';
@@ -33,8 +34,9 @@ const RecommendedProperties: React.FC<RecommendedPropertiesProps> = ({ currentPr
         {recommended.map((p) => (
           <Link key={p._id} href={`/properties/${p._id}`} className="group block">
             <div className="relative h-32 w-full mb-3 rounded-xl overflow-hidden shadow-lg">
-              <Image 
-                src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=400&auto=format&fit=crop'} 
+              <Image
+                src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=400&auto=format&fit=crop'}
+                unoptimized={isRemoteImageSource(p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=400&auto=format&fit=crop')}
                 alt={p.name}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"

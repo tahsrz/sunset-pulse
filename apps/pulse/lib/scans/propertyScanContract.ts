@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { projectStoragePolicy } from '../storage/projectStoragePolicy.mjs';
 
 export const propertyScanModes = ['guided_video', 'photo_walkthrough', 'lidar_capture'] as const;
 export type PropertyScanMode = (typeof propertyScanModes)[number];
@@ -59,7 +60,8 @@ export const propertyScanAssetMimeTypes = new Set([
 
 export const propertyScanAssetLimits = {
   maxFiles: 24,
-  maxBytesPerFile: 75 * 1024 * 1024,
+  // Stay within the Free plan's 50 MB global file limit.
+  maxBytesPerFile: projectStoragePolicy.maxSingleFileBytes,
   maxBytesPerSession: 300 * 1024 * 1024,
   maxActiveUploads: 2,
   reservationTtlMs: 30 * 60 * 1000,

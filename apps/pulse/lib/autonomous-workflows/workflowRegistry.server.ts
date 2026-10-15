@@ -5,6 +5,7 @@ import { runConnectorHealthCheck } from './connectorHealthWorkflow.server';
 import { runCapabilityReservationReconciliation } from '@/lib/platform/workflows/capabilityReservationReconciliation.server';
 import { runRealtorReminder } from './realtorReminderWorkflow.server';
 import { runRealtorPlannerRefill } from './realtorPlannerRefillWorkflow.server';
+import { runSellerEmail } from './sellerEmailWorkflow.server';
 
 export type WorkflowJob = {
   id: string;
@@ -45,6 +46,7 @@ const workflowHandlers: Readonly<Record<string, WorkflowHandler>> = Object.freez
   capability_reservation_reconcile: runCapabilityReservationReconciliation,
   realtor_reminder: runRealtorReminder,
   realtor_planner: runRealtorPlannerRefill,
+  seller_email: runSellerEmail,
 });
 
 export function getWorkflowHandler(workflowKey: string): WorkflowHandler {

@@ -2,9 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { inspectProjectStorage, publishBackgroundCartridge } from '../lib/storage/projectStorageMaintenance.mjs';
+import { fileURLToPath } from 'node:url';
 
-const scriptDir = path.dirname(new URL(import.meta.url).pathname);
-const envPath = path.resolve(process.cwd(), 'SunsetPulse', '.env.local');
+const appRoot = fileURLToPath(new URL('../', import.meta.url));
+const envPath = path.join(appRoot, '.env.local');
 dotenv.config({ path: envPath });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,8 +22,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function syncToCloud() {
   console.log('🌌 [Vercel_Supabase_Sync] Pushing Universal Swarm to Cloud Storage...');
 
-  const projectRoot = path.resolve(process.cwd(), 'SunsetPulse');
-  const cartridgesDir = path.resolve(projectRoot, 'cartridges');
+  const maintenance = await inspectProjectStorage(supabase);
+  if (!maintenance.backgroundUploadsAllowed) {
+    console.log(`Cloud sync paused: ${maintenance.reasons.join(', ')}.`);
+    return;
+  }
+  const cartridgesDir = path.join(appRoot, 'cartridges');
   const universeDir = path.resolve(cartridgesDir, 'universe');
   
   const allFiles = [];
@@ -32,21 +38,13 @@ async function syncToCloud() {
 
   for (const filePath of tahFiles) {
     const fileName = path.basename(filePath);
-    const fileBuffer = fs.readFileSync(filePath);
-
     console.log(`Uploading ${fileName}...`);
-    const { error } = await supabase.storage
-      .from('cartridges')
-      .upload(fileName, fileBuffer, {
-        upsert: true,
-        contentType: 'application/octet-stream'
-      });
-
-    if (error) console.error(`❌ Failed: ${fileName}`, error.message);
-    else console.log(`✅ Synced: ${fileName}`);
+    const result = await publishBackgroundCartridge(supabase, fileName, () => fs.readFileSync(filePath));
+    console.log(`${fileName}: ${result.state}${result.error ? ` (${result.error.message})` : ''}`);
+    if (result.state === 'paused') return;
   }
 
   console.log('🚀 [Vercel_Supabase_Sync] Complete.');
 }
 
-syncToCloud();
+syncToCloud().catch(() => { console.error('Cloud sync failed.'); process.exitCode = 1; });

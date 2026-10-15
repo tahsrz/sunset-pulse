@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { FaArrowLeft, FaMagic, FaCopy, FaCheck, FaBullhorn, FaRobot, FaEnvelopeOpenText } from 'react-icons/fa';
 import Spinner from '@/components/Spinner';
 import Image from 'next/image';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 const LeadGenDetailPage = () => {
   const { id } = useParams();
@@ -96,6 +97,7 @@ Full 3D digital twin and RentCast analytics are ready for your review.`
               <div className="relative mb-6 h-48 w-full overflow-hidden rounded-xl">
                 <Image
                 src={property.images?.[0] || '/images/property-placeholder.jpg'} 
+                unoptimized={isRemoteImageSource(property.images?.[0] || '/images/property-placeholder.jpg')}
                 alt={property.name}
                   fill
                   sizes="(min-width: 1024px) 33vw, 100vw"

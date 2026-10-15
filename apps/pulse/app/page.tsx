@@ -9,6 +9,7 @@ import SunsetHistorySection from '@/components/marketing/SunsetHistorySection';
 import FAQSection from '@/components/marketing/FAQSection';
 import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
 import { HomeHero, HomeWorldHub } from '@/components/home/HomeDynamicSections';
+import SellerAcquisitionHero from '@/components/marketing/SellerAcquisitionHero';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 import { getTourHotList } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
@@ -32,6 +33,7 @@ const HomePage = async () => {
 
   return (
     <div className={styles.homePage}>
+      <SellerAcquisitionHero />
       <CounterScanActions showLeadOperations={access.allowed} />
       <HomeHero />
       <div className="waterlily-surface">

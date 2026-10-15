@@ -8,7 +8,13 @@ import connectDB from '@/lib/core/database';
 import { PropertyScanSession } from '@/models/PropertyScanSession';
 import { propertyScanAssetLimits, type PropertyScanAsset, type PropertyScanRequest } from '@/lib/scans/propertyScanContract';
 import { reconstructionUnavailable, type PropertyScanReconstruction, type ReconstructionUnavailable } from '@/lib/scans/reconstruction';
-import { buildPropertyScanReconstructionIntent, type PropertyScanReconstructionIntent } from '@/lib/scans/scanJobs.server';
+import {
+  buildPropertyScanReconstructionIntent,
+  propertyScanReconstructionArtifactObjectKey,
+  propertyScanReconstructionResultSchema,
+  type PropertyScanReconstructionIntent,
+  type PropertyScanReconstructionResult,
+} from '@/lib/scans/scanJobs.server';
 import { canReadScan, configuredScanReviewerIds, isScanOwnerRecord, type ScanActor } from './scanAccess.server';
 import { createConsentReceipt, createReviewEvent, isCurrentScanArtifact, propertyScanManifestHash, type PropertyScanArtifactReference, type PropertyScanConsentReceipt, type PropertyScanReviewEvent } from './propertyScanVersioning';
 import { resolveOwnerPropertyScanListing } from './propertyScanListingResolution.server';
@@ -593,6 +599,111 @@ export async function resolvePropertyScanReconstructionIntent(
   return Boolean(record);
 }
 
+/**
+ * Project a validated worker receipt only while its exact approved source is
+ * current and its scheduler intent is acknowledged. This records a private
+ * artifact reference; it never creates access URLs or publication state.
+ */
+export async function projectPropertyScanReconstructionResult(input: PropertyScanReconstructionResult) {
+  const result = propertyScanReconstructionResultSchema.parse(input);
+  const objectKey = propertyScanReconstructionArtifactObjectKey(result);
+  const artifact: PropertyScanArtifactReference = {
+    artifactId: result.artifactId,
+    inputRevision: result.inputRevision,
+    inputManifestHash: result.inputManifestHash,
+    status: 'current',
+    createdAt: new Date().toISOString(),
+    operationKey: result.operationKey,
+    objectKey,
+    processorVersion: result.processorVersion,
+    artifactFormat: result.artifactFormat,
+    contentHash: result.artifactSha256,
+    sizeBytes: result.artifactBytes,
+  };
+
+  if (isMockMode()) {
+    const record = getMockSessions().get(result.scanId);
+    const existing = record?.artifactRefs.find((candidate) => candidate.operationKey === result.operationKey);
+    if (existing) {
+      return record?.ownerId === result.ownerId && artifactMatchesResult(existing, result, objectKey)
+        ? { session: serialize(record), outcome: 'replayed' as const }
+        : null;
+    }
+    if (!record || !canProjectResult(record, result)) return null;
+    record.artifactRefs.push(artifact);
+    record.revision += 1;
+    record.updatedAt = artifact.createdAt;
+    persistMockSessions();
+    return { session: serialize(record), outcome: 'projected' as const };
+  }
+
+  await connectDB();
+  const filter = {
+    scanId: result.scanId,
+    ownerId: result.ownerId,
+    status: 'approved',
+    approvedManifestRevision: result.inputRevision,
+    approvedManifestHash: result.inputManifestHash,
+    manifestHash: result.inputManifestHash,
+    'consentReceipt.actorId': result.ownerId,
+    reconstructionIntents: { $elemMatch: {
+      operationKey: result.operationKey,
+      ownerId: result.ownerId,
+      scanId: result.scanId,
+      approvedManifestRevision: result.inputRevision,
+      approvedManifestHash: result.inputManifestHash,
+      processorVersion: result.processorVersion,
+      state: 'acknowledged',
+    } },
+    artifactRefs: { $not: { $elemMatch: { operationKey: result.operationKey } } },
+  };
+  const projected = await PropertyScanSession.findOneAndUpdate(
+    filter,
+    { $push: { artifactRefs: { ...artifact, createdAt: new Date(artifact.createdAt) } }, $inc: { revision: 1 }, $set: { updatedAt: new Date(artifact.createdAt) } },
+    { new: true, runValidators: true },
+  ).lean();
+  if (projected) return { session: serialize(projected), outcome: 'projected' as const };
+
+  // A concurrent/retried identical receipt is success; a different receipt
+  // for the same operation or a stale approval remains a hard rejection.
+  const current = await PropertyScanSession.findOne({ scanId: result.scanId, ownerId: result.ownerId }).lean() as any;
+  const existing = current?.artifactRefs?.find((candidate: any) => candidate.operationKey === result.operationKey);
+  if (current && artifactMatchesResult(existing, result, objectKey)) {
+    return { session: serialize(current), outcome: 'replayed' as const };
+  }
+  return null;
+}
+
+function canProjectResult(record: PropertyScanSessionRecord, result: PropertyScanReconstructionResult) {
+  const intent = record.reconstructionIntents.find((candidate) => candidate.operationKey === result.operationKey);
+  return record.ownerId === result.ownerId
+    && record.scanId === result.scanId
+    && record.status === 'approved'
+    && record.approvedManifestRevision === result.inputRevision
+    && record.approvedManifestHash === result.inputManifestHash
+    && record.manifestHash === result.inputManifestHash
+    && record.consentReceipt?.actorId === result.ownerId
+    && intent?.state === 'acknowledged'
+    && intent.ownerId === result.ownerId
+    && intent.scanId === result.scanId
+    && intent.approvedManifestRevision === result.inputRevision
+    && intent.approvedManifestHash === result.inputManifestHash
+    && intent.processorVersion === result.processorVersion;
+}
+
+function artifactMatchesResult(artifact: PropertyScanArtifactReference | undefined, result: PropertyScanReconstructionResult, objectKey: string) {
+  return Boolean(artifact
+    && artifact.operationKey === result.operationKey
+    && artifact.artifactId === result.artifactId
+    && artifact.inputRevision === result.inputRevision
+    && artifact.inputManifestHash === result.inputManifestHash
+    && artifact.objectKey === objectKey
+    && artifact.processorVersion === result.processorVersion
+    && artifact.artifactFormat === result.artifactFormat
+    && artifact.contentHash === result.artifactSha256
+    && artifact.sizeBytes === result.artifactBytes);
+}
+
 function serializeReconstructionIntent(intent: any): PropertyScanReconstructionIntent {
   return {
     operationKey: intent.operationKey,
@@ -632,7 +743,7 @@ function serialize(record: any): PropertyScanSessionRecord {
     approvedManifestRevision: Number.isInteger(record.approvedManifestRevision) ? record.approvedManifestRevision : null,
     approvedManifestHash: record.approvedManifestHash || null,
     reviewEvents: Array.isArray(record.reviewEvents) ? record.reviewEvents.map((event: any) => ({ eventId: event.eventId, status: event.status, reviewerId: event.reviewerId, note: event.note || null, revision: event.revision, manifestHash: event.manifestHash, createdAt: new Date(event.createdAt).toISOString() })) : [],
-    artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs.map((artifact: any) => ({ artifactId: artifact.artifactId, inputRevision: artifact.inputRevision, inputManifestHash: artifact.inputManifestHash, status: artifact.status === 'current' && (record.status !== 'approved' || !isCurrentScanArtifact(artifact, record)) ? 'stale' : artifact.status, createdAt: new Date(artifact.createdAt).toISOString() })) : [],
+    artifactRefs: Array.isArray(record.artifactRefs) ? record.artifactRefs.map((artifact: any) => ({ artifactId: artifact.artifactId, inputRevision: artifact.inputRevision, inputManifestHash: artifact.inputManifestHash, status: artifact.status === 'current' && (record.status !== 'approved' || !isCurrentScanArtifact(artifact, record)) ? 'stale' : artifact.status, createdAt: new Date(artifact.createdAt).toISOString(), ...(artifact.operationKey ? { operationKey: artifact.operationKey } : {}), ...(artifact.processorVersion ? { processorVersion: artifact.processorVersion } : {}), ...(artifact.artifactFormat ? { artifactFormat: artifact.artifactFormat } : {}), ...(artifact.contentHash ? { contentHash: artifact.contentHash } : {}), ...(Number.isSafeInteger(artifact.sizeBytes) ? { sizeBytes: artifact.sizeBytes } : {}) })) : [],
     reconstructionIntents: Array.isArray(record.reconstructionIntents) ? record.reconstructionIntents.map(serializeReconstructionIntent) : [],
     uploadReservations: Array.isArray(record.uploadReservations) ? record.uploadReservations.map((reservation: any) => ({ uploadId: reservation.uploadId, idempotencyKey: reservation.idempotencyKey, fileName: reservation.fileName, mimeType: reservation.mimeType, declaredBytes: reservation.declaredBytes, expectedRevision: reservation.expectedRevision, state: reservation.state, cleanupPending: reservation.cleanupPending === true, assetId: reservation.assetId || null, expiresAt: new Date(reservation.expiresAt).toISOString(), createdAt: new Date(reservation.createdAt).toISOString(), updatedAt: new Date(reservation.updatedAt).toISOString() })) : [],
     reconstruction: record.reconstruction?.jobId ? {

@@ -42,6 +42,7 @@ import {
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
 import AgentLeadActions from './AgentLeadActions';
+import CmaPrivateDetailsPanel from './CmaPrivateDetailsPanel';
 import NotificationInbox from './NotificationInbox';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ type StatusFilter = LeadStatus | 'active' | 'all';
 
 type AgentSiteLead = {
   id: string;
+  revision: number;
   created_at: string;
   agent_id: string;
   site: string;
@@ -111,7 +113,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
 
   let query = supabaseAdmin
     .from('agent_site_leads')
-    .select('id, created_at, agent_id, site, site_name, listing_id, listing_mls_id, listing_name, source, page_path, name, email, phone, preferred_contact, message, status, internal_note, reviewed_at, archived_at, contact_attempted_at, contact_channel, responded_at, response_source, metadata, funnel_id')
+    .select('id, created_at, agent_id, site, site_name, listing_id, listing_mls_id, listing_name, source, page_path, name, email, phone, preferred_contact, message, status, internal_note, reviewed_at, archived_at, contact_attempted_at, contact_channel, responded_at, response_source, metadata, funnel_id, revision')
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -139,6 +141,17 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
   ]);
   const { data, error } = leadResult;
   const fetchedLeads = (data || []) as AgentSiteLead[];
+  const currentAgentIds = [...new Set(fetchedLeads.map((lead) => lead.agent_id))];
+  const [ownedSiteRows, personalPreferences] = await Promise.all([
+    access.user && currentAgentIds.length
+      ? supabaseAdmin.from('site_config').select('agent_id').eq('owner_id', access.user.id).eq('status', 'active').in('agent_id', currentAgentIds)
+      : Promise.resolve({ data: [] }),
+    access.user
+      ? supabaseAdmin.from('realtor_preferences').select('time_zone').eq('user_id', access.user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  const ownedSellerAgentIds = new Set((ownedSiteRows.data || []).map((site) => site.agent_id));
+  const personalTimeZone = personalPreferences.data?.time_zone || 'America/Chicago';
   const { data: bookingRows } = fetchedLeads.length
     ? await supabaseAdmin.from('scheduling_bookings').select('lead_id, status, appointment_type, start_time').in('lead_id', fetchedLeads.map((lead) => lead.id))
     : { data: [] };
@@ -248,7 +261,7 @@ export default async function AgentLeadsPage({ searchParams }: AgentLeadsPagePro
         ) : (
           <section className="grid gap-5">
             {leads.map((lead) => (
-              <LeadCard key={lead.id} lead={lead} />
+              <LeadCard key={lead.id} lead={lead} canManageSellerLead={lead.source === 'seller_plan' && ownedSellerAgentIds.has(lead.agent_id)} personalTimeZone={personalTimeZone} />
             ))}
           </section>
         )}
@@ -288,7 +301,7 @@ function QueuePanel({ title, items }: { title: string; items: Array<{ id: string
   return <section className="border border-white/10 bg-white/[0.03] p-5"><h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">{title}</h2><div className="mt-4 space-y-3">{items.length ? items.slice(0, 8).map((item) => <article key={item.id} className="border border-white/[0.08] p-3"><div className="flex items-center justify-between gap-3"><span className="truncate text-xs font-bold text-slate-300">{item.id}</span><span className="text-[10px] font-black uppercase text-cyan-200">{item.eligibility}</span></div><p className="mt-2 text-xs text-slate-300">{item.detail}</p><p className="mt-1 text-[11px] text-slate-500">{item.context}</p></article>) : <p className="text-sm text-slate-500">No leads in this queue.</p>}</div></section>;
 }
 
-function LeadCard({ lead }: { lead: AgentSiteLead }) {
+function LeadCard({ lead, canManageSellerLead, personalTimeZone }: { lead: AgentSiteLead; canManageSellerLead: boolean; personalTimeZone: string }) {
   const status = lead.status || 'new';
   const listingHref = lead.listing_mls_id || lead.listing_id
     ? `/properties/${encodeURIComponent(lead.listing_mls_id || lead.listing_id || '')}`
@@ -339,6 +352,8 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
           <p className="mt-5 whitespace-pre-wrap break-words rounded-3xl border border-white/10 bg-slate-950/60 p-5 text-sm leading-7 text-slate-300">
             {lead.message}
           </p>
+
+          {isPricingReviewRequest(lead.metadata) ? <CmaPrivateDetailsPanel leadId={lead.id} /> : null}
 
           {guideBrief ? <PublicGuideBrief brief={guideBrief} /> : null}
           {leadIntelligence ? <LeadIntelligencePanel intelligence={leadIntelligence} /> : null}
@@ -411,11 +426,19 @@ function LeadCard({ lead }: { lead: AgentSiteLead }) {
               internal_note: lead.internal_note,
             }}
             publicGuideDisposition={guideDisposition}
+            revision={lead.revision}
+            canManageSellerLead={canManageSellerLead}
+            personalTimeZone={personalTimeZone}
           />
         </aside>
       </div>
     </article>
   );
+}
+
+function isPricingReviewRequest(metadata?: Record<string, unknown> | null) {
+  if (!metadata || typeof metadata.sellerPlan !== 'object' || metadata.sellerPlan === null) return false;
+  return (metadata.sellerPlan as Record<string, unknown>).requestKind === 'pricing_review';
 }
 
 function PublicGuideConversionPanel({

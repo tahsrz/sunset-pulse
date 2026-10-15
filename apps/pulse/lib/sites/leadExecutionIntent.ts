@@ -4,6 +4,7 @@ import {
   generateFollowUpMessage,
   type AgentSiteLeadData,
 } from '@/lib/sites/leadOperatingSystem';
+import { canContactSeller, readSellerLeadContext } from './sellerLeadContext';
 
 export type LeadExecutionType = 'call' | 'email' | 'sms' | 'unavailable';
 
@@ -22,6 +23,30 @@ export function resolveLeadExecutionIntent(
   intelligence: PublicGuideLeadIntelligence | null = null,
   agentName = 'Agent',
 ): LeadExecutionIntent {
+  if (lead.source === 'seller_plan') {
+    const context = readSellerLeadContext(lead);
+    const recommendation = deriveNextBestAction(lead);
+    const presentation = {
+      recommendationLabel: recommendation.label,
+      recommendation: recommendation.recommendation,
+      urgency: recommendation.urgency,
+    };
+    if (!canContactSeller(lead, context)) {
+      const reason = !context?.requestedContact
+        ? 'This seller request has no active permission to respond by email.'
+        : lead.status === 'archived' || lead.status === 'closed'
+          ? 'This seller request is closed or archived.'
+          : !lead.email.trim()
+            ? 'This seller request has no usable email address.'
+            : 'The requested response has already been recorded. Wait for a reply or confirm separate marketing permission before following up.';
+      return { ...presentation, type: 'unavailable', actionLabel: 'No email suggested', reason };
+    }
+    const email = lead.email.trim();
+    const draft = generateFollowUpMessage(lead, 'email', agentName);
+    const params = new URLSearchParams({ subject: draft.subject || recommendation.label, body: draft.body });
+    return { ...presentation, type: 'email', actionLabel: 'Draft seller response', href: `mailto:${email}?${params.toString()}` };
+  }
+
   const recommendation = intelligence?.recommendedAction || deriveNextBestAction(lead);
   const phone = normalizePhone(lead.phone);
   const email = lead.email?.trim();

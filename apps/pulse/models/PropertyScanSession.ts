@@ -38,6 +38,12 @@ const PropertyScanSessionSchema = new mongoose.Schema({
     inputManifestHash: { type: String, required: true },
     status: { type: String, enum: ['current', 'stale', 'revoked'], required: true },
     createdAt: { type: Date, required: true },
+    operationKey: { type: String, required: false, maxlength: 100 },
+    objectKey: { type: String, required: false, maxlength: 500 },
+    processorVersion: { type: String, required: false, maxlength: 120 },
+    artifactFormat: { type: String, enum: ['glb'], required: false },
+    contentHash: { type: String, required: false, match: /^[a-f0-9]{64}$/ },
+    sizeBytes: { type: Number, required: false, min: 1 },
   }],
   reconstructionIntents: [{
     operationKey: { type: String, required: true, maxlength: 100 },

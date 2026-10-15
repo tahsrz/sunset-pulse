@@ -26,13 +26,13 @@ describe('planner property sprint task provenance', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects a sprint task link without a property reference', () => {
+  it('allows a property-free task draft whose source must be verified by the server', () => {
     const result = plannerItemInputSchema.safeParse({
       ...baseInput,
       sourceSprintTaskId: '00000000-0000-4000-8000-000000000003',
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('rejects linking a source sprint task to a non-task planner item', () => {
@@ -43,6 +43,35 @@ describe('planner property sprint task provenance', () => {
       sourceSprintTaskId: '00000000-0000-4000-8000-000000000003',
     });
 
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('planner seller action provenance', () => {
+  it('accepts only one-time, unlinked seller follow-ups', () => {
+    const result = plannerItemInputSchema.safeParse({
+      ...baseInput,
+      kind: 'follow_up',
+      sellerLead: {
+        leadId: '00000000-0000-4000-8000-000000000004',
+        actionKey: 'initial-response:v1',
+        expectedLeadRevision: 1,
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects recurring or property-linked seller tasks', () => {
+    const result = plannerItemInputSchema.safeParse({
+      ...baseInput,
+      kind: 'appointment',
+      property: { propertyId: '00000000-0000-4000-8000-000000000002' },
+      sellerLead: {
+        leadId: '00000000-0000-4000-8000-000000000004',
+        actionKey: 'initial-response:v1',
+        expectedLeadRevision: 1,
+      },
+    });
     expect(result.success).toBe(false);
   });
 });

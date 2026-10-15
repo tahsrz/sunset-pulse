@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TetrisControlButton } from '@/components/jamie-games/TetrisControlButton';
+import { readJamieGameRecord, saveJamieGameRecord } from '@/lib/jamie-games/records';
 import {
   TETRIS_BOARD_HEIGHT,
   TETRIS_BOARD_WIDTH,
@@ -34,8 +35,6 @@ import {
   type TetrisGameState,
   type TetrominoType,
 } from '@/lib/jamie-games/tetris';
-
-const HIGH_SCORE_KEY = 'sunset_play_jamie_tetris_high_score';
 
 const PIECE_COLORS: Record<TetrominoType, string> = {
   I: '#22d3ee',
@@ -58,14 +57,13 @@ export function JamieTetrisGame() {
   const [highScore, setHighScore] = useState(0);
 
   useEffect(() => {
-    const saved = Number(window.localStorage.getItem(HIGH_SCORE_KEY));
-    if (Number.isFinite(saved) && saved > 0) setHighScore(saved);
+    setHighScore(readJamieGameRecord('tetris').value);
   }, []);
 
   useEffect(() => {
     if (game.score <= highScore) return;
     setHighScore(game.score);
-    window.localStorage.setItem(HIGH_SCORE_KEY, String(game.score));
+    saveJamieGameRecord('tetris', game.score);
   }, [game.score, highScore]);
 
   useEffect(() => {

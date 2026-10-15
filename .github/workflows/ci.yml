@@ -92,6 +92,26 @@ jobs:
       - name: Run isolated scheduler and Mongo acceptance
         run: npm run docker:test
 
+  storage-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Verify project storage admission against the real Storage API
+        run: |
+          export PULSE_TEST_SUPABASE_CLI="$(command -v supabase)"
+          npm run test:storage-budget --workspace=apps/pulse
+
   jamie-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15

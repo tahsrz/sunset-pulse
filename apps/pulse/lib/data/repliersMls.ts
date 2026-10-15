@@ -226,7 +226,7 @@ class RepliersMLSService {
 
 export const repliersMlsService = RepliersMLSService.getInstance();
 
-function normalizeRepliersImages(images: unknown, stableKey: string) {
+export function normalizeRepliersImages(images: unknown, stableKey: string) {
   if (!Array.isArray(images)) return [fallbackImageFor(stableKey)];
 
   const usableImages = images
@@ -236,7 +236,10 @@ function normalizeRepliersImages(images: unknown, stableKey: string) {
       if (/^https?:\/\//i.test(image)) return image;
       if (image.startsWith('/images/')) return image;
       if (image.startsWith('images/')) return `/${image}`;
-      return '';
+      // Repliers returns CDN paths such as "area/IMG-...jpg" and "sample/IMG-...jpg".
+      // Resolve only plain relative paths against their documented photo CDN.
+      if (image.startsWith('/') || image.includes('\\') || image.split('/').includes('..')) return '';
+      return `https://cdn.repliers.io/${image}`;
     })
     .filter(Boolean);
 

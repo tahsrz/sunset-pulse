@@ -31,6 +31,7 @@ export const dueSpecSchema = z.object({
   anchorDate: localDate,
   localTime: localTime.nullable(),
   timeZone: timeZoneSchema,
+  utcOffsetMinutes: z.number().int().min(-840).max(840).optional(),
   recurrence: recurrenceSchema,
   endsOn: localDate.nullable(),
   reminderOffsetsDays: z.array(z.number().int().min(0).max(365)).max(3)
@@ -38,9 +39,15 @@ export const dueSpecSchema = z.object({
 }).strict().superRefine((value, context) => {
   if (value.endsOn && value.endsOn < value.anchorDate) context.addIssue({ code: 'custom', path: ['endsOn'], message: 'The end date must be on or after the first date.' });
   if (value.recurrence.frequency === 'once' && value.endsOn && value.endsOn !== value.anchorDate) context.addIssue({ code: 'custom', path: ['endsOn'], message: 'A one-time item ends on its due date.' });
+  if (value.utcOffsetMinutes !== undefined && (value.recurrence.frequency !== 'once' || value.localTime === null)) context.addIssue({ code: 'custom', path: ['utcOffsetMinutes'], message: 'An exact UTC offset requires a one-time appointment time.' });
 });
 
 export const propertyReferenceSchema = z.object({ propertyId: uuid }).strict();
+export const sellerLeadReferenceSchema = z.object({
+  leadId: uuid,
+  actionKey: z.string().trim().min(1).max(120),
+  expectedLeadRevision: z.number().int().positive(),
+}).strict();
 
 export const plannerItemInputSchema = z.object({
   kind: realtorPlannerKindSchema,
@@ -50,10 +57,17 @@ export const plannerItemInputSchema = z.object({
   expectedAmountCents: positiveCents.nullable().default(null),
   property: propertyReferenceSchema.nullable().default(null),
   sourceSprintTaskId: uuid.nullable().default(null),
+  sellerLead: sellerLeadReferenceSchema.nullable().default(null),
   requestKey,
 }).strict().superRefine((value, context) => {
   if (value.kind !== 'bill' && value.expectedAmountCents !== null) context.addIssue({ code: 'custom', path: ['expectedAmountCents'], message: 'Only a bill can have an expected amount.' });
-  if (value.sourceSprintTaskId && (!value.property || value.kind !== 'task')) context.addIssue({ code: 'custom', path: ['sourceSprintTaskId'], message: 'A sprint task link requires a task planner item linked to its property.' });
+  if (value.sourceSprintTaskId && value.kind !== 'task') context.addIssue({ code: 'custom', path: ['sourceSprintTaskId'], message: 'A sprint task link requires a task planner item.' });
+  if (value.sellerLead && (!['follow_up', 'appointment'].includes(value.kind) || value.property || value.sourceSprintTaskId || value.due.recurrence.frequency !== 'once' || value.expectedAmountCents !== null)) {
+    context.addIssue({ code: 'custom', path: ['sellerLead'], message: 'A seller action must be a one-time follow-up or appointment without a property or amount.' });
+  }
+  if (value.due.utcOffsetMinutes !== undefined && (!value.sellerLead || !value.sellerLead.actionKey.startsWith('consultation:') || value.kind !== 'appointment')) {
+    context.addIssue({ code: 'custom', path: ['due', 'utcOffsetMinutes'], message: 'An exact time offset is allowed only for a confirmed seller consultation appointment.' });
+  }
 });
 
 export const plannerItemSaveSchema = z.object({
@@ -93,8 +107,18 @@ export const weeklyReviewInputSchema = z.object({
   priority: z.string().trim().min(1).max(200),
 }).strict();
 
+export const weeklyReviewInputV2Schema = z.object({
+  version: z.literal(2),
+  reviewedUpcomingDates: z.literal(true),
+  reviewedMissingExpenses: z.literal(true),
+  reviewedSellerOutcomes: z.literal(true),
+  priority: z.string().trim().min(1).max(200),
+  chosenNextAction: z.string().trim().min(1).max(200),
+  friction: z.string().trim().max(500).nullable(),
+}).strict();
+
 export const occurrenceActionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('complete'), expectedRevision: z.number().int().positive(), requestKey, completionDetails: z.object({ weeklyReview: weeklyReviewInputSchema }).strict().optional() }).strict(),
+  z.object({ action: z.literal('complete'), expectedRevision: z.number().int().positive(), requestKey, completionDetails: z.object({ weeklyReview: z.union([weeklyReviewInputSchema, weeklyReviewInputV2Schema]) }).strict().optional() }).strict(),
   z.object({ action: z.literal('reopen'), expectedRevision: z.number().int().positive(), requestKey }).strict(),
   z.object({ action: z.literal('skip'), expectedRevision: z.number().int().positive(), requestKey }).strict(),
   z.object({ action: z.literal('reschedule'), expectedRevision: z.number().int().positive(), requestKey, effectiveDate: localDate, localTime: localTime.nullable() }).strict(),

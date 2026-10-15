@@ -7,7 +7,7 @@ import { PulseHash } from '@/utils/security/PulseHash';
 
 export const buildPropertyQuery = (searchParams) => {
   const query = searchParams.includeDemo === 'true' ? {} : { is_demo: { $ne: true } };
-  if (searchParams.publicOnly === 'true') query.display_public = { $ne: false };
+  if (searchParams.publicOnly === 'true') query.display_public = true;
   const signature = PulseHash.signature(searchParams);
 
   // 1. Text Search (Name, Description, Location)

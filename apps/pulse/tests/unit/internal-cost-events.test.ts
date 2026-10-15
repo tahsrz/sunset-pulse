@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 const { persistMock } = vi.hoisted(() => ({ persistMock: vi.fn() }));
 vi.mock('@/lib/profit/internalCostLedger', async () => {
   const actual = await vi.importActual<typeof import('@/lib/profit/internalCostLedger')>('@/lib/profit/internalCostLedger');

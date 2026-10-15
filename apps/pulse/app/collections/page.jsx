@@ -7,6 +7,7 @@ import Spinner from '@/components/Spinner';
 import { toggleCollection } from '@/lib/supabase';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/context/AuthContext';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 const CollectionsPage = () => {
   const { user } = useAuth();
@@ -90,8 +91,9 @@ const CollectionsPage = () => {
             {properties.map((property) => (
               <div key={property._id} className='group bg-white/[0.03] border border-white/10 rounded-3xl overflow-hidden hover:border-red-500/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(239,68,68,0.1)]'>
                 <Link href={`/properties/${property._id}`} className='relative block aspect-[16/10] overflow-hidden'>
-                  <Image 
-                    src={property.images?.[0] || '/images/properties/placeholder.jpg'} 
+                  <Image
+                    src={property.images?.[0] || '/images/properties/placeholder.jpg'}
+                    unoptimized={isRemoteImageSource(property.images?.[0] || '/images/properties/placeholder.jpg')}
                     alt={property.name}
                     fill
                     className='object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[50%] group-hover:grayscale-0'

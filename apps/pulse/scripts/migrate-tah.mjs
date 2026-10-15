@@ -2,8 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { inspectProjectStorage, publishBackgroundCartridge } from '../lib/storage/projectStorageMaintenance.mjs';
+import { fileURLToPath } from 'node:url';
 
-dotenv.config({ path: '.env.local' });
+const appRoot = fileURLToPath(new URL('../', import.meta.url));
+dotenv.config({ path: path.join(appRoot, '.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Requires service role for bucket creation
@@ -40,26 +43,20 @@ async function migrateCartridges() {
   }
 
   // 2. Upload Files
-  const cartridgesDir = path.resolve(process.cwd(), 'cartridges');
+  const maintenance = await inspectProjectStorage(supabase);
+  if (!maintenance.backgroundUploadsAllowed) {
+    console.log(`Cartridge migration paused: ${maintenance.reasons.join(', ')}.`);
+    return;
+  }
+  const cartridgesDir = path.join(appRoot, 'cartridges');
   const files = fs.readdirSync(cartridgesDir).filter(f => f.endsWith('.tah'));
 
   for (const file of files) {
     const filePath = path.join(cartridgesDir, file);
-    const fileBuffer = fs.readFileSync(filePath);
-
     console.log(`Uploading ${file}...`);
-    const { error: uploadError } = await supabase.storage
-      .from('cartridges')
-      .upload(file, fileBuffer, {
-        upsert: true,
-        contentType: 'application/octet-stream'
-      });
-
-    if (uploadError) {
-      console.error(`Failed to upload ${file}:`, uploadError.message);
-    } else {
-      console.log(`✅ ${file} synchronized.`);
-    }
+    const result = await publishBackgroundCartridge(supabase, file, () => fs.readFileSync(filePath));
+    console.log(`${file}: ${result.state}${result.error ? ` (${result.error.message})` : ''}`);
+    if (result.state === 'paused') return;
   }
 
   console.log('🎉 TAH Migration Complete.');

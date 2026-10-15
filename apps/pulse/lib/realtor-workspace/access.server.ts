@@ -26,7 +26,7 @@ export async function requirePersonalRealtorWorkspace(actorId: string) {
 export function throwRealtorRpcError(code?: string): never {
   if (code === '42501') throw new RealtorWorkspaceError('FORBIDDEN');
   if (code === 'P0002') throw new RealtorWorkspaceError('NOT_FOUND');
-  if (code === '22023' || code === '22P02') throw new RealtorWorkspaceError('INVALID');
-  if (code === '23505' || code === '40001' || code === '55P03') throw new RealtorWorkspaceError('CONFLICT');
+  if (code === '22023' || code === '22P02' || code === '22007' || code === '22003') throw new RealtorWorkspaceError('INVALID');
+  if (code === '23505' || code === '40001' || code === 'PT409' || code === '55P03') throw new RealtorWorkspaceError('CONFLICT');
   throw new RealtorWorkspaceError('FAILED');
 }

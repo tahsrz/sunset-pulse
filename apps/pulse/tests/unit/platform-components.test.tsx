@@ -29,4 +29,19 @@ describe('platform interaction primitives', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save response' })); });
     expect(onRespond).toHaveBeenCalledWith(expect.objectContaining({ checkpointId: 'checkpoint-1', expectedRevision: 4, value: 'Confirm facts', submissionKey: expect.any(String) }));
   });
+
+  it('requires an explicit approval or rejection decision', async () => {
+    const onRespond = vi.fn().mockResolvedValue(undefined);
+    render(<CheckpointCard checkpoint={{ id: 'approval-1', node_id: 'review', type: 'approval', prompt: 'Review this exact draft.', target: { resourceType: 'seller_video_brief', resourceId: 'brief-1', revision: 2, action: 'review_seller_video_brief' }, revision: 1 }} onRespond={onRespond} />);
+    expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Approve' })); });
+    expect(onRespond).toHaveBeenCalledWith(expect.objectContaining({ checkpointId: 'approval-1', expectedRevision: 1, value: true, submissionKey: expect.any(String) }));
+  });
+
+  it('keeps reviewers read-only when their workspace role cannot resolve a question', () => {
+    const onRespond = vi.fn();
+    render(<CheckpointCard checkpoint={{ id: 'question-1', node_id: 'answer', type: 'question', prompt: 'What should we verify?', response_schema: { type: 'string' }, revision: 1 }} onRespond={onRespond} canRespond={false} />);
+    expect(screen.getByText('Your workspace role can view this checkpoint but cannot decide it.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save response' })).toBeDisabled();
+  });
 });

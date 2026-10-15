@@ -22,6 +22,12 @@ export type PropertyScanArtifactReference = {
   inputManifestHash: string;
   status: 'current' | 'stale' | 'revoked';
   createdAt: string;
+  operationKey?: string;
+  objectKey?: string;
+  processorVersion?: string;
+  artifactFormat?: 'glb';
+  contentHash?: string;
+  sizeBytes?: number;
 };
 
 type ManifestAsset = {

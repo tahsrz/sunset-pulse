@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { enqueuePropertyScanReconstructionEvent } from '@/lib/autonomous-workflows/schedulerEvents.server';
 import {
   listPendingPropertyScanReconstructionIntents,
   readPropertyScanSession,
@@ -16,6 +17,14 @@ export type PropertyScanReconstructionEnqueueInput = {
 };
 
 export type PropertyScanReconstructionEnqueuer = (input: PropertyScanReconstructionEnqueueInput) => Promise<{ id: string }>;
+
+/** Relay bounded pending Mongo intents through the shared durable event RPC. */
+export async function reconcilePendingPropertyScanReconstructionIntents(limit = 10) {
+  return reconcilePropertyScanReconstructionIntents({
+    limit,
+    enqueue: (input) => enqueuePropertyScanReconstructionEvent(input),
+  });
+}
 
 export async function reconcilePropertyScanReconstructionIntents(input: {
   enqueue: PropertyScanReconstructionEnqueuer;
@@ -68,4 +77,3 @@ function isStillApproved(item: PendingPropertyScanReconstructionIntent, current:
     && current.consentReceipt,
   );
 }
-
