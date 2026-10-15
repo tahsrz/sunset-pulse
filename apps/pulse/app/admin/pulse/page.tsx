@@ -19,6 +19,7 @@ import {
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import Image from 'next/image';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 interface TourRequest {
   _id: string;
@@ -158,6 +159,7 @@ export default function PulseCommandCenter() {
                 <div className="relative h-32 overflow-hidden">
                   <Image
                     src={tour.property?.images[0] || '/images/placeholder.jpg'} 
+                    unoptimized={isRemoteImageSource(tour.property?.images[0] || '/images/placeholder.jpg')}
                     alt="Asset"
                     fill
                     sizes="(min-width: 1280px) 33vw, (min-width: 1024px) 50vw, 100vw"

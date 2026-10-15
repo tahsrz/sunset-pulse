@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 interface PropertyHeaderImageProps {
   image: string;
@@ -11,6 +12,7 @@ const PropertyHeaderImage: React.FC<PropertyHeaderImageProps> = ({ image }) => {
         <div className='grid grid-cols-1'>
           <Image
             src={image}
+            unoptimized={isRemoteImageSource(image)}
             alt='Property Header'
             className='object-cover h-[400px] w-full'
             width={0}

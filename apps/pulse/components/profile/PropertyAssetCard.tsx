@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 interface Property {
   _id: string;
@@ -26,6 +27,7 @@ const PropertyAssetCard: React.FC<PropertyAssetCardProps> = ({ property, onDelet
         <Image
           className='object-cover transition-transform duration-700 group-hover:scale-110'
           src={property.images[0]}
+          unoptimized={isRemoteImageSource(property.images[0])}
           alt={property.name}
           fill
         />

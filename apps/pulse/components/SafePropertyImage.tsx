@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image, { type ImageProps } from 'next/image';
+import { isRemoteImageSource } from '@/lib/imageSource';
 
 type SafePropertyImageProps = Omit<ImageProps, 'src'> & {
   src?: string | null;
@@ -32,6 +33,7 @@ export default function SafePropertyImage({
     <Image
       {...props}
       src={currentSrc}
+      unoptimized={isRemoteImageSource(currentSrc)}
       alt={showingFallback && fallbackAlt ? fallbackAlt : alt}
       onError={() => {
         if (currentSrc !== fallbackSrc) setCurrentSrc(fallbackSrc);
