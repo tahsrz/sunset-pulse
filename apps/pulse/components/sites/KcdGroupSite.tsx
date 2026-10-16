@@ -61,7 +61,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <p className="mb-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8d6b2b]">
             <span className="h-px w-8 bg-[#c9ab6d]" /> North Texas · Property and development
           </p>
-          <h1 className="font-serif text-5xl leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
+          <h1 className="font-serif text-5xl uppercase leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
             Building today for a stronger tomorrow.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-[#625747]">
