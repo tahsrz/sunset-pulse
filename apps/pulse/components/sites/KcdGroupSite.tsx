@@ -26,7 +26,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
     <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15]">
       {isDraft ? (
         <div className="border-b border-[#decfae] bg-[#ede5d5] px-5 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[#725a2a]">
-          Draft preview · Arlington Plaza details and contact information need confirmation
+          Draft preview · Arlington Plaza details and property photos need confirmation
         </div>
       ) : null}
 
@@ -151,11 +151,11 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#d8bd7d]">Contact</p>
             <h2 className="mt-3 max-w-xl font-serif text-3xl leading-tight sm:text-4xl">Talk with KCD Group about Arlington Plaza.</h2>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-[#d4c8b4]">Add the public phone number and email address here before launch.</p>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[#d4c8b4]">Reach KCD Group about Arlington Plaza by phone or email.</p>
           </div>
           <div className="grid min-w-64 gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-5 text-sm">
-            <p><span className="mr-3 text-[#d8bd7d]">Phone</span><span className="text-[#d4c8b4]">Awaiting KCD details</span></p>
-            <p><span className="mr-3 text-[#d8bd7d]">Email</span><span className="text-[#d4c8b4]">Awaiting KCD details</span></p>
+            <p><span className="mr-3 text-[#d8bd7d]">Phone</span><a className="text-[#d4c8b4] underline-offset-4 hover:underline" href="tel:+18174668007">817-466-8007</a></p>
+            <p><span className="mr-3 text-[#d8bd7d]">Email</span><a className="text-[#d4c8b4] underline-offset-4 hover:underline" href="mailto:wahidmc6@gmail.com">wahidmc6@gmail.com</a></p>
           </div>
         </div>
       </section>
