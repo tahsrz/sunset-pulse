@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import KcdGroupAreaMap from '@/components/sites/KcdGroupAreaMap';
 
 const businessAreas = ['Real estate', 'Development', 'Retail', 'Commercial', 'Gas stations'];
 
@@ -126,6 +127,8 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           </div>
         </div>
       </section>
+
+      <KcdGroupAreaMap />
 
       <section id="focus" className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 md:py-24 lg:px-12">
         <div className="flex flex-col justify-between gap-5 border-b border-[#ddd1bb] pb-8 md:flex-row md:items-end">
