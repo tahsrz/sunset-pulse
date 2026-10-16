@@ -61,8 +61,8 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <p className="mb-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8d6b2b]">
             <span className="h-px w-8 bg-[#c9ab6d]" /> North Texas · Property and development
           </p>
-          <h1 className="font-sans text-[clamp(2.5rem,12vw,3rem)] font-black normal-case italic leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
-            Building Today for a Stronger Tomorrow.
+          <h1 className="font-sans text-[clamp(2.5rem,12vw,3rem)] font-normal normal-case italic leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
+            Building Today For a Stronger Tomorrow.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-[#625747]">
             KCD Group of Companies works across real estate, development, retail, commercial property, and gas stations.
