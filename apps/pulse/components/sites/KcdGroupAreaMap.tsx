@@ -22,7 +22,7 @@ export default function KcdGroupAreaMap() {
       <div className="mx-auto grid w-full max-w-7xl gap-7 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
         <div className="max-w-md">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">Around the property</p>
-          <h2 id="kcd-area-map-title" className="mt-3 font-serif text-3xl tracking-[-0.025em] text-[#2a2116] sm:text-4xl">
+          <h2 id="kcd-area-map-title" className="mt-3 text-3xl tracking-[-0.025em] text-[#2a2116] sm:text-4xl">
             Find Arlington Plaza.
           </h2>
           <p className="mt-4 text-sm leading-7 text-[#706553]">
@@ -82,7 +82,7 @@ export default function KcdGroupAreaMap() {
               </Map>
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-[#625747]">
-                <p className="font-serif text-xl text-[#302519]">Arlington Plaza</p>
+                <h3 className="text-xl text-[#302519]">Arlington Plaza</h3>
                 <p className="text-sm">The interactive map needs the Explorer map configuration.</p>
                 <a className="text-sm font-semibold underline" href={directionsUrl} target="_blank" rel="noreferrer">
                   Open address in Google Maps
