@@ -35,7 +35,7 @@ const projectFocus = [
 
 export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15] [&_h1]:uppercase [&_h2]:uppercase [&_h3]:uppercase [&_h4]:uppercase [&_h5]:uppercase [&_h6]:uppercase">
+    <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15] [&_h2]:uppercase [&_h3]:uppercase [&_h4]:uppercase [&_h5]:uppercase [&_h6]:uppercase">
       {isDraft ? (
         <div className="border-b border-[#decfae] bg-[#ede5d5] px-5 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[#725a2a]">
           Draft preview · KCD Group site
@@ -61,8 +61,8 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <p className="mb-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8d6b2b]">
             <span className="h-px w-8 bg-[#c9ab6d]" /> North Texas · Property and development
           </p>
-          <h1 className="font-serif text-5xl uppercase leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
-            Building today for a stronger tomorrow.
+          <h1 className="font-sans text-[clamp(2.5rem,12vw,3rem)] font-black normal-case italic leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
+            Building Today for a Stronger Tomorrow.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-[#625747]">
             KCD Group of Companies works across real estate, development, retail, commercial property, and gas stations.
@@ -84,17 +84,19 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <div className="absolute -right-5 -top-5 h-28 w-28 rounded-full border border-[#d8c79f]" aria-hidden="true" />
           <div className="relative overflow-hidden rounded-[2rem] border border-[#e5d7bb] bg-[#fffaf1] p-3 shadow-[0_28px_70px_-44px_rgba(53,39,17,0.55)] sm:p-5">
             <Image
-              src="/images/kcd-group-brand.png"
+              src="/images/kcd-group-brand-restored.webp"
               alt="KCD Group of Companies brand artwork with its business areas and tagline"
-              width={354}
-              height={252}
+              width={1484}
+              height={1060}
+              sizes="(min-width: 640px) 468px, (max-width: 549px) calc(100vw - 66px), 484px"
+              quality={90}
               priority
               className="h-auto w-full rounded-[1.35rem]"
             />
             <div className="flex items-center justify-between gap-4 px-3 pb-2 pt-4 sm:px-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6e5a34]">A North Texas company</p>
               <span className="h-px flex-1 bg-[#ded1b9]" aria-hidden="true" />
-              <span className="font-serif text-sm italic text-[#75633e]">KCD Group</span>
+              <span className="font-sans text-sm italic text-[#75633e]">KCD Group</span>
             </div>
           </div>
         </div>
@@ -124,7 +126,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
 
           <div className="flex flex-col justify-center py-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">Featured property</p>
-            <h2 className="mt-4 max-w-xl font-serif text-4xl leading-tight tracking-[-0.035em] text-[#2a2116] sm:text-5xl">Arlington Plaza</h2>
+            <h2 className="mt-4 max-w-xl text-4xl leading-tight tracking-[-0.035em] text-[#2a2116] sm:text-5xl">Arlington Plaza</h2>
             <p className="mt-5 max-w-xl text-base leading-8 text-[#615747]">
               A two-story, mixed-use property at 808 W Abram St in Arlington, Texas. The building includes 4,789 square feet with parking beside the property.
             </p>
@@ -149,9 +151,8 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
         <div className="flex flex-col justify-between gap-5 border-b border-[#ddd1bb] pb-8 md:flex-row md:items-end">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">What KCD works on</p>
-            <h2 className="mt-3 font-serif text-3xl tracking-[-0.025em] sm:text-4xl">A Portfolio with Room to Grow.</h2>
+            <h2 className="mt-3 text-3xl tracking-[-0.025em] sm:text-4xl">A Portfolio with Room to Grow.</h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-[#706553]">The company artwork points to several areas of work. This page can grow with the properties KCD chooses to feature.</p>
         </div>
         <div className="grid gap-0 md:grid-cols-3">
           {projectFocus.map((item) => (
@@ -168,7 +169,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 md:py-20 lg:grid-cols-[1fr_auto] lg:items-end lg:px-12">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#d8bd7d]">Contact</p>
-            <h2 className="mt-3 max-w-xl font-serif text-3xl leading-tight sm:text-4xl">Talk with KCD Group about Arlington Plaza.</h2>
+            <h2 className="mt-3 max-w-xl text-3xl leading-tight sm:text-4xl">Talk with KCD Group about Arlington Plaza.</h2>
             <p className="mt-4 max-w-xl text-sm leading-6 text-[#d4c8b4]">Reach KCD Group about Arlington Plaza by phone or email.</p>
           </div>
           <div className="grid min-w-64 gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-5 text-sm">

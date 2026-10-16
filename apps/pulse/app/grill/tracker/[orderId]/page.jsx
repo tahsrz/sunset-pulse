@@ -330,7 +330,7 @@ const TrackerPage = ({ params }) => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 pb-6 border-b border-white/5">
               <div>
                 <span className="text-[10px] text-orange-500 font-mono uppercase tracking-[0.3em] font-black">Order Tracker</span>
-                <h2 className="text-2xl font-black font-mono tracking-tight mt-1">
+                <h2 className="text-2xl font-black tracking-tight mt-1">
                   #{orderIdShort} <span className="text-sm font-normal text-slate-500">({orderTime})</span>
                 </h2>
               </div>

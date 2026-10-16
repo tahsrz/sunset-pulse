@@ -30,6 +30,16 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  [role='heading'] {
+    @apply font-sans italic;
+  }
+
   /* Smooth transition for theme switching */
   * {
     @apply transition-colors duration-300 ease-in-out;

@@ -10,7 +10,7 @@ export default function SellerAcquisitionHero() {
           <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-200/10 px-3 py-1 text-[10px] font-black tracking-[0.08em] text-amber-100">
             <MapPinned aria-hidden="true" size={13} /> Keller · Westlake · North Texas
           </p>
-          <h1 id="seller-acquisition-title" data-editorial-heading className="max-w-3xl text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+          <h1 id="seller-acquisition-title" className="max-w-3xl text-2xl font-black italic leading-tight tracking-tight sm:text-3xl lg:text-4xl">
             Sell Your Home with a Clear Plan.
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
