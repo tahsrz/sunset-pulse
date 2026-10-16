@@ -34,6 +34,7 @@ import {
 import { getJamieGuideUrl, getPublicRootOrigin } from '@/lib/sites/siteUrls';
 import AgentLeadForm from '@/components/sites/AgentLeadForm';
 import { JamieGuideLoader } from '@/components/chat/JamieGuideLoader';
+import KcdGroupSite from '@/components/sites/KcdGroupSite';
 
 type TenantPageProps = {
   params: Promise<{
@@ -67,6 +68,13 @@ export async function generateMetadata({ params }: TenantPageProps) {
         description: 'A guide at the threshold of Sunset Pulse.',
         type: 'website',
       },
+    };
+  }
+
+  if (isKcdGroupSite(siteSlug)) {
+    return {
+      title: 'KCD Group of Companies | Arlington Plaza',
+      description: 'A property and portfolio overview from KCD Group of Companies.',
     };
   }
 
@@ -138,6 +146,13 @@ export default async function TenantSitePage({ params, searchParams }: TenantPag
       : null;
 
     return <JamieGuideSite context={context} />;
+  }
+
+  if (isKcdGroupSite(siteSlug)) {
+    if (path.length > 0) notFound();
+    const isPublished = process.env.KCD_GROUP_SITE_PUBLISHED === 'true';
+    if (process.env.NODE_ENV === 'production' && !isPublished) notFound();
+    return <KcdGroupSite isDraft={!isPublished} />;
   }
 
   const tenantSite = await getAgentTenantSite(siteSlug, { limit: 6 });
@@ -820,6 +835,10 @@ function formatPrice(price?: number | null) {
 
 function isJamieGuideSite(site: string) {
   return site.trim().toLowerCase() === 'jamie';
+}
+
+function isKcdGroupSite(site: string) {
+  return site.trim().toLowerCase() === 'kcdgroup';
 }
 
 function firstSearchParam(value: string | string[] | undefined) {
