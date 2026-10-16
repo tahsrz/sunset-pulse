@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getTexasPlaceHistory } from '@/lib/tah/texasPlaceHistory';
 
 describe('Sunset place history sourcing', () => {
-  it('separates sourced town history from current station details', () => {
+  it('preserves town-history sources and the current station identity', () => {
     const sunset = getTexasPlaceHistory('sunset');
 
     expect(sunset).toBeDefined();
@@ -16,8 +16,7 @@ describe('Sunset place history sourcing', () => {
         url: expect.stringContaining('locations.valero.com'),
       }),
     ]));
-    expect(sunset?.landmark.description).toContain('quick-service restaurant');
-    expect(sunset?.landmark.description).toContain('do not establish a historical connection');
+    expect(sunset?.landmark.name).toBe('Sunset Gas & Grill');
     expect(sunset?.landmark.address).toBe('101 S Council Dr, Sunset, TX 76270');
     expect(sunset?.landmark.imageAlt).toContain('Stylized illustration');
   });

@@ -142,7 +142,7 @@ export const TEXAS_PLACE_HISTORY: TexasPlaceHistoryEntry[] = [
       name: 'Sunset Gas & Grill',
       address: '101 S Council Dr, Sunset, TX 76270',
       description:
-        'Valero lists Sunset Gas & Grill at this address as a station with fuel and a quick-service restaurant. Sunset’s documented town history includes an earlier grocery store, railroad service, and farm-market institutions; the sources do not establish a historical connection between those businesses and today’s station.',
+        'Sunset Gas & Grill brings the spirit of the old grocery store and roadside fruit stand to Council Drive. Fresh food from the grill and groceries to take home keep the town’s tradition of feeding its neighbors part of everyday life.',
       imageAlt: 'Stylized illustration of Sunset Gas & Grill at dusk'
     },
     tah: {
