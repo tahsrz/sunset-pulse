@@ -14,7 +14,7 @@ export default function SellerAcquisitionHero() {
             Sell your home with a clear plan.
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
-            Personal pricing review, preparation priorities, buyer-facing marketing, showings and offer guidance—from your first conversation through closing.
+            Tell us about your home and when you’d like to move. We’ll help you work out a price and get ready to sell.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row lg:min-w-[390px] lg:flex-col">
