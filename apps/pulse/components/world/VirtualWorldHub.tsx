@@ -402,10 +402,10 @@ const VirtualWorldHub: React.FC = () => {
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-teal-200/20 bg-teal-300/10 px-3 py-1 text-xs font-semibold text-teal-100">
               <Compass size={14} />
-              Platform map
+              Platform Map
             </div>
             <h2 className="text-3xl font-black italic md:text-5xl">
-              Platform map
+              Platform Map
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-teal-50/70 md:text-base">
               A visual map of the core product areas: property search, IDX, Atlas, TAH, valuation,

@@ -5,30 +5,30 @@ import KcdGroupAreaMap from '@/components/sites/KcdGroupAreaMap';
 const businessAreas = ['Real estate', 'Development', 'Retail', 'Commercial', 'Gas stations'];
 
 const propertyFacts = [
-  { label: 'Property type', value: 'Mixed-use' },
-  { label: 'Building type', value: 'Freestanding' },
-  { label: 'Building size', value: '4,789 sq ft' },
+  { label: 'Property Type', value: 'Mixed-use' },
+  { label: 'Building Type', value: 'Freestanding' },
+  { label: 'Building Size', value: '4,789 sq ft' },
   { label: 'Stories', value: '2' },
-  { label: 'Lot size', value: '0.27 acres' },
+  { label: 'Lot Size', value: '0.27 acres' },
   { label: 'Parking', value: '12 spaces' },
-  { label: 'Year built', value: '1957' },
-  { label: 'Street frontage', value: '91 ft on W Abram St' },
+  { label: 'Year Built', value: '1957' },
+  { label: 'Street Frontage', value: '91 ft on W Abram St' },
 ];
 
 const projectFocus = [
   {
     number: '01',
-    title: 'Mixed-use projects',
+    title: 'Mixed-Use Projects',
     detail: 'Neighborhood retail alongside residential and rental spaces.',
   },
   {
     number: '02',
-    title: 'Commercial and retail',
+    title: 'Commercial and Retail',
     detail: 'Commercial spaces and retail properties across North Texas.',
   },
   {
     number: '03',
-    title: 'Community investment',
+    title: 'Community Investment',
     detail: 'Long-term property projects rooted in the places they serve.',
   },
 ];
@@ -48,7 +48,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
         </Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-8 text-sm text-[#574a38] md:flex">
           <Link className="transition hover:text-[#9b7628]" href="#project">Arlington Plaza</Link>
-          <Link className="transition hover:text-[#9b7628]" href="#focus">Our focus</Link>
+          <Link className="transition hover:text-[#9b7628]" href="#focus">Our Focus</Link>
           <Link className="transition hover:text-[#9b7628]" href="#contact">Contact</Link>
         </nav>
         <Link href="#contact" className="rounded-full border border-[#b49456] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#5e471d] transition hover:bg-[#e8dcc2]">
@@ -149,7 +149,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
         <div className="flex flex-col justify-between gap-5 border-b border-[#ddd1bb] pb-8 md:flex-row md:items-end">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">What KCD works on</p>
-            <h2 className="mt-3 font-serif text-3xl tracking-[-0.025em] sm:text-4xl">A portfolio with room to grow.</h2>
+            <h2 className="mt-3 font-serif text-3xl tracking-[-0.025em] sm:text-4xl">A Portfolio with Room to Grow.</h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-[#706553]">The company artwork points to several areas of work. This page can grow with the properties KCD chooses to feature.</p>
         </div>

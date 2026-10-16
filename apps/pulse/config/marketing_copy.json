@@ -6,27 +6,27 @@
   },
   "section_headers": {
     "value_prop": {
-      "title": "Why sell with us",
+      "title": "Why Sell with Us",
       "tagline": "Find faster. Swap easier. Act with confidence."
     },
     "featured": {
-      "title": "Curated property opportunities",
+      "title": "Curated Property Opportunities",
       "tagline": "Regional market search"
     }
   },
   "features": {
     "mls_efficiency": {
-      "title": "Find better opportunities faster",
+      "title": "Find Better Opportunities Faster",
       "tagline": "Live search, adjustable algorithm",
       "description": "Selling land? Use regional filters to find viable opportunities faster."
     },
     "spatial_search": {
-      "title": "Inspect context, not just photos",
+      "title": "Inspect Context, Not Just Photos",
       "tagline": "Maps, viewer, neighborhood context",
       "description": "Use spatial search and immersive property views to understand location context before you commit."
     },
     "backend_integrity": {
-      "title": "Get a clear recommendation",
+      "title": "Get a Clear Recommendation",
       "tagline": "Jamie summarizes what matters",
       "description": "Jamie turns scattered market inputs into one usable summary with key details and actionable next steps."
     }
@@ -36,7 +36,7 @@
     "footer_note": "Atlas Pulse · North Texas heartbeat"
   },
   "faq": {
-    "title": "How does Sunset Pulse work?",
+    "title": "How Does Sunset Pulse Work?",
     "tagline": "Core workflow",
     "items": [
       {

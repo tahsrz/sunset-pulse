@@ -63,7 +63,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
             {mode === 'STAGED' ? 'Curated Listings' : 'Live MLS Feed'}
           </div>
           <h2 className="text-4xl font-black italic tracking-tighter waterlily-heading mb-2">
-            {mode === 'STAGED' ? featured.title : 'Active IDX listings'}
+            {mode === 'STAGED' ? featured.title : 'Active IDX Listings'}
           </h2>
           <p className="text-teal-100/70 text-sm leading-6">
             {mode === 'STAGED' ? featured.tagline : 'Current listings from the regional MLS feed'}
