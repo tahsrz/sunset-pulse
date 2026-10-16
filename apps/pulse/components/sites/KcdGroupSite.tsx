@@ -35,7 +35,7 @@ const projectFocus = [
 
 export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15]">
+    <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15] [&_h1]:uppercase [&_h2]:uppercase [&_h3]:uppercase [&_h4]:uppercase [&_h5]:uppercase [&_h6]:uppercase">
       {isDraft ? (
         <div className="border-b border-[#decfae] bg-[#ede5d5] px-5 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[#725a2a]">
           Draft preview · KCD Group site
