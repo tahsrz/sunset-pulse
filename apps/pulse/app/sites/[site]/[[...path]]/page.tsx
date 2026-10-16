@@ -72,9 +72,31 @@ export async function generateMetadata({ params }: TenantPageProps) {
   }
 
   if (isKcdGroupSite(siteSlug)) {
+    const title = 'KCD Group of Companies | Arlington Plaza';
+    const description = 'Explore Arlington Plaza at 808 W Abram St in Arlington, Texas. View property photos, building details, and contact KCD Group.';
+    const propertyImage = {
+      url: 'https://kcdgroup.sunsetpulse.app/images/kcd-arlington-plaza-exterior.webp',
+      width: 2000,
+      height: 1333,
+      alt: 'Arlington Plaza at 808 W Abram St in Arlington, Texas',
+    };
+
     return {
-      title: 'KCD Group of Companies | Arlington Plaza',
-      description: 'A property and portfolio overview from KCD Group of Companies.',
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        url: 'https://kcdgroup.sunsetpulse.app',
+        type: 'website',
+        images: [propertyImage],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [propertyImage.url],
+      },
     };
   }
 
