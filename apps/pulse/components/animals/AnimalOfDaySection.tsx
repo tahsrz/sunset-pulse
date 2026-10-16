@@ -1,6 +1,8 @@
 import { AlertTriangle, Bird, Database, ExternalLink, PawPrint } from 'lucide-react';
 import { getAnimalOfDay } from '@/lib/animals/animalOfDay';
 
+const minorTitleWords = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with']);
+
 export default function AnimalOfDaySection() {
   const animal = getAnimalOfDay();
 
@@ -9,7 +11,7 @@ export default function AnimalOfDaySection() {
       <section className="waterlily-section px-6 py-20 text-white">
         <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-slate-950/50 p-8">
           <p className="text-xs font-black tracking-[0.1em] text-amber-200">
-            Animal of the day unavailable
+            Animal of the Day Unavailable
           </p>
           <p className="mt-3 max-w-2xl text-sm text-teal-50/65">
             The Catalogue of Life cartridge was not available on this machine, so the animal spotlight is paused.
@@ -20,6 +22,14 @@ export default function AnimalOfDaySection() {
   }
 
   const pathParts = animal.path.split(' > ').filter(Boolean);
+  const animalTitle = (animal.vernacular !== 'None' ? animal.vernacular : animal.group)
+    .split(' ')
+    .map((word, index, words) => (
+      index > 0 && index < words.length - 1 && minorTitleWords.has(word.toLowerCase())
+        ? word.toLowerCase()
+        : word.replace(/(^|-)\p{L}/gu, (initial) => initial.toUpperCase())
+    ))
+    .join(' ');
   const statusTone = /threatened|declining|vulnerable|endangered|critical/i.test(animal.profile.status)
     ? 'border-amber-300/30 bg-amber-300/10 text-amber-100'
     : 'border-lime-300/25 bg-lime-300/10 text-lime-100';
@@ -38,7 +48,7 @@ export default function AnimalOfDaySection() {
               </span>
               <div className="min-w-0">
                 <p className="text-[10px] font-black tracking-[0.1em] text-lime-100/70">
-                  TAH animal of the day
+                  TAH Animal of the Day
                 </p>
                 <p className="mt-1 break-words text-xs leading-5 text-teal-100/70">
                   {animal.dateKey} / {animal.cartridge}
@@ -47,7 +57,7 @@ export default function AnimalOfDaySection() {
             </div>
 
             <h2 className="mt-8 text-3xl font-bold italic leading-[1.1] tracking-tight text-white sm:text-5xl">
-              {animal.vernacular !== 'None' ? animal.vernacular : animal.group}
+              {animalTitle}
             </h2>
             <p className="mt-3 font-mono text-sm tracking-[0.08em] text-lime-200">
               {animal.taxon}
@@ -88,7 +98,7 @@ export default function AnimalOfDaySection() {
             <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-5 text-cyan-50">
               <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.08em] text-cyan-100/75">
                 <Bird className="h-4 w-4" />
-                Alive count
+                Alive Count
               </div>
               <p className="mt-3 text-lg font-semibold leading-7">{animal.profile.population}</p>
               <p className="mt-2 text-xs leading-relaxed text-cyan-50/70">{animal.profile.populationNote}</p>
@@ -97,7 +107,7 @@ export default function AnimalOfDaySection() {
 
           <div className="mt-8 grid gap-8 md:grid-cols-2">
             <div>
-              <h3 className="text-xs font-black tracking-[0.08em] text-lime-200">Fast facts</h3>
+              <h3 className="text-xs font-black tracking-[0.08em] text-lime-200">Fast Facts</h3>
               <ul className="mt-4 space-y-3">
                 {animal.profile.facts.map((fact) => (
                   <li key={fact} className="rounded-xl border border-white/10 bg-white/[0.035] p-4 text-sm leading-6 text-slate-300">
@@ -108,7 +118,7 @@ export default function AnimalOfDaySection() {
             </div>
 
             <div>
-              <h3 className="text-xs font-black tracking-[0.08em] text-amber-200">Pressure points</h3>
+              <h3 className="text-xs font-black tracking-[0.08em] text-amber-200">Pressure Points</h3>
               <div className="mt-4 flex flex-wrap gap-2">
                 {animal.profile.threats.map((threat) => (
                   <span key={threat} className="rounded-full border border-amber-200/15 bg-amber-200/10 px-3 py-2 text-xs font-bold text-amber-50/80">
@@ -120,7 +130,7 @@ export default function AnimalOfDaySection() {
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.08em] text-slate-400">
                   <Database className="h-4 w-4" />
-                  Source note
+                  Source Note
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-slate-300">{animal.profile.sourceNote}</p>
                 {animal.link && (

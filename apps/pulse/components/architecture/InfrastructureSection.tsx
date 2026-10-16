@@ -8,12 +8,12 @@ const InfrastructureSection = () => {
     <section className='space-y-6'>
       <div className='flex items-center gap-4 text-teal-200'>
         <FaServer size={32} />
-        <h2 className='text-2xl font-semibold tracking-tight'>The app and its data</h2>
+        <h2 className='text-2xl font-semibold tracking-tight'>The App and Its Data</h2>
       </div>
       
       <div className='waterlily-card p-8 rounded-2xl'>
         <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-          <FaLayerGroup className='text-teal-200' /> One app, with clear boundaries
+          <FaLayerGroup className='text-teal-200' /> One App, with Clear Boundaries
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-5'>
           Sunset Pulse runs as a Next.js app on Vercel. Pages render on the server where that helps, while interactive pieces run in the browser. Server routes handle data requests and keep provider credentials away from the page.
@@ -27,7 +27,7 @@ const InfrastructureSection = () => {
 
       <div className='waterlily-card p-8 rounded-2xl'>
         <h3 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-          <FaDatabase className='text-amber-200' /> Where the records live
+          <FaDatabase className='text-amber-200' /> Where the Records Live
         </h3>
         <p className='text-sm text-teal-50/70 leading-relaxed mb-5'>
           The listing repository gives pages one consistent way to read property records. PostgreSQL through Supabase is the canonical store; MongoDB still serves older property paths while that migration continues.
@@ -45,7 +45,7 @@ const InfrastructureSection = () => {
       </div>
 
       <div className='waterlily-card rounded-2xl p-8'>
-        <h3 className='mb-4 text-lg font-semibold'>When a listing is requested</h3>
+        <h3 className='mb-4 text-lg font-semibold'>When a Listing Is Requested</h3>
         <ol className='grid gap-3 text-sm text-teal-50/70 sm:grid-cols-3'>
           <li className='rounded-xl border border-teal-200/10 bg-[#081824]/45 p-4'><span className='mb-1 block text-xs font-semibold text-teal-200'>01 · Ask</span>A page requests the listing details it needs.</li>
           <li className='rounded-xl border border-teal-200/10 bg-[#081824]/45 p-4'><span className='mb-1 block text-xs font-semibold text-teal-200'>02 · Read</span>The server checks access and calls the listing repository.</li>

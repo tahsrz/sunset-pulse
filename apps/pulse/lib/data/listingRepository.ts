@@ -12,6 +12,9 @@ import {
   upsertMockCanonicalProperty,
 } from '@/lib/mocks/canonicalProperties';
 
+// Legacy aliases are normalized by listingContract, not stored as canonical columns.
+const CANONICAL_LISTING_COLUMNS = 'id, mls_id, name, type, description, street, city, state, zip, latitude, longitude, beds, baths, sqft, amenities, price, price_type, rates, images, image_url, source, listing_status, last_updated, updated_at, is_demo, is_featured, display_public, metadata';
+
 export type ListingSearch = {
   location?: string;
   city?: string;
@@ -150,7 +153,7 @@ function isMockMode() {
 async function searchCanonicalListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
   let query = supabaseAdmin
     .from('properties')
-    .select('id, mls_id, owner, name, type, description, street, city, state, zip, latitude, longitude, beds, baths, sqft, amenities, price, list_price, price_type, rates, images, image_url, source, listing_status, status, last_updated, updated_at, is_demo, is_featured, display_public, metadata')
+    .select(CANONICAL_LISTING_COLUMNS)
     .is('deleted_at', null)
     .eq('display_public', true)
     .order('last_updated', { ascending: false })
@@ -184,7 +187,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number, pu
 async function getCanonicalListing(id: string): Promise<Listing | null> {
   let query = supabaseAdmin
     .from('properties')
-    .select('id, mls_id, owner, name, type, description, street, city, state, zip, latitude, longitude, beds, baths, sqft, amenities, price, list_price, price_type, rates, images, image_url, source, listing_status, status, last_updated, updated_at, is_demo, is_featured, display_public, metadata')
+    .select(CANONICAL_LISTING_COLUMNS)
     .eq('display_public', true)
     .eq('is_demo', false)
     .is('deleted_at', null);

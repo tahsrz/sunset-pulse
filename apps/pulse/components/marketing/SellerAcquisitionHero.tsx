@@ -11,10 +11,10 @@ export default function SellerAcquisitionHero() {
             <MapPinned aria-hidden="true" size={13} /> Keller · Westlake · North Texas
           </p>
           <h1 id="seller-acquisition-title" data-editorial-heading className="max-w-3xl text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-            Sell your home with a clear plan.
+            Sell Your Home with a Clear Plan.
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
-            Personal pricing review, preparation priorities, buyer-facing marketing, showings and offer guidance—from your first conversation through closing.
+            Tell us about your home and when you’d like to move. We’ll help you work out a price and get ready to sell.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row lg:min-w-[390px] lg:flex-col">

@@ -21,17 +21,17 @@ type NewsResponse = {
 
 const fallbackArticles: NewsArticle[] = [
   {
-    title: 'Sunset Pulse expands store-to-web operations',
+    title: 'Sunset Pulse Expands Store-to-Web Operations',
     summary: 'RubyCi setup, pickup verification, and online order release flows are moving into the command center.',
     source: 'Operations',
   },
   {
-    title: 'North Texas demand stays focused on useful acreage',
+    title: 'North Texas Demand Stays Focused on Useful Acreage',
     summary: 'Buyer attention is clustering around properties with flexible land use, access, and clear local context.',
     source: 'Market',
   },
   {
-    title: 'Sunset Gas & Grill becomes a physical portal',
+    title: 'Sunset Gas & Grill Becomes a Physical Portal',
     summary: 'The grill and register workflows are being unified with online pickup, paid verification, and staff release checks.',
     source: 'Local',
   },

@@ -72,7 +72,7 @@ function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolea
               Scanned from Sunset?
             </p>
             <h2 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">
-              Order food or open the Explorer
+              Order Food or Open the Explorer
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               Start a grill pickup order or explore the Sunset Pulse map.

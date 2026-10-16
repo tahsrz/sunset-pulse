@@ -1,32 +1,44 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import KcdGroupAreaMap from '@/components/sites/KcdGroupAreaMap';
 
 const businessAreas = ['Real estate', 'Development', 'Retail', 'Commercial', 'Gas stations'];
+
+const propertyFacts = [
+  { label: 'Property Type', value: 'Mixed-use' },
+  { label: 'Building Type', value: 'Freestanding' },
+  { label: 'Building Size', value: '4,789 sq ft' },
+  { label: 'Stories', value: '2' },
+  { label: 'Lot Size', value: '0.27 acres' },
+  { label: 'Parking', value: '12 spaces' },
+  { label: 'Year Built', value: '1957' },
+  { label: 'Street Frontage', value: '91 ft on W Abram St' },
+];
 
 const projectFocus = [
   {
     number: '01',
-    title: 'Mixed-use projects',
+    title: 'Mixed-Use Projects',
     detail: 'Neighborhood retail alongside residential and rental spaces.',
   },
   {
     number: '02',
-    title: 'Commercial and retail',
+    title: 'Commercial and Retail',
     detail: 'Commercial spaces and retail properties across North Texas.',
   },
   {
     number: '03',
-    title: 'Community investment',
+    title: 'Community Investment',
     detail: 'Long-term property projects rooted in the places they serve.',
   },
 ];
 
 export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15]">
+    <main className="min-h-screen overflow-hidden bg-[#f5f1e8] text-[#241d15] [&_h1]:uppercase [&_h2]:uppercase [&_h3]:uppercase [&_h4]:uppercase [&_h5]:uppercase [&_h6]:uppercase">
       {isDraft ? (
         <div className="border-b border-[#decfae] bg-[#ede5d5] px-5 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[#725a2a]">
-          Draft preview · Arlington Plaza details and property photos need confirmation
+          Draft preview · KCD Group site
         </div>
       ) : null}
 
@@ -36,7 +48,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
         </Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-8 text-sm text-[#574a38] md:flex">
           <Link className="transition hover:text-[#9b7628]" href="#project">Arlington Plaza</Link>
-          <Link className="transition hover:text-[#9b7628]" href="#focus">Our focus</Link>
+          <Link className="transition hover:text-[#9b7628]" href="#focus">Our Focus</Link>
           <Link className="transition hover:text-[#9b7628]" href="#contact">Contact</Link>
         </nav>
         <Link href="#contact" className="rounded-full border border-[#b49456] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#5e471d] transition hover:bg-[#e8dcc2]">
@@ -49,7 +61,7 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <p className="mb-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8d6b2b]">
             <span className="h-px w-8 bg-[#c9ab6d]" /> North Texas · Property and development
           </p>
-          <h1 className="font-serif text-5xl leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
+          <h1 className="font-serif text-5xl uppercase leading-[1.03] tracking-[-0.04em] text-[#261e14] sm:text-6xl lg:text-7xl">
             Building today for a stronger tomorrow.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-[#625747]">
@@ -89,49 +101,55 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
       </section>
 
       <section id="project" className="border-y border-[#e4dac8] bg-[#fcfaf5]">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-16 sm:px-8 md:py-24 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:px-12">
-          <div className="flex min-h-[360px] flex-col justify-between overflow-hidden rounded-[1.75rem] border border-[#ded2ba] bg-[radial-gradient(circle_at_20%_18%,rgba(199,163,94,0.2),transparent_36%),linear-gradient(145deg,#e9e1d2,#f7f4ed_55%,#ded4c2)] p-7 sm:min-h-[460px] sm:p-10">
-            <div className="flex items-center justify-between">
-              <span className="rounded-full border border-[#b89a62]/50 bg-white/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#70582a]">Featured property</span>
-              <span className="font-serif text-sm italic text-[#857452]">Arlington, Texas</span>
-            </div>
-            <div className="my-12 flex flex-1 flex-col items-center justify-center text-center">
-              <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-[#b59a68]/50 bg-white/40 text-3xl text-[#8c6d32]" aria-hidden="true">⌂</div>
-              <p className="font-serif text-3xl text-[#4b3d25]">Arlington Plaza</p>
-              <p className="mt-2 max-w-xs text-sm leading-6 text-[#776d5b]">Property photography will be added after KCD supplies approved images.</p>
-            </div>
-            <div className="flex items-end justify-between border-t border-[#cfc2a9] pt-5 text-xs text-[#67583c]">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 md:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-12">
+          <figure className="overflow-hidden rounded-[1.75rem] border border-[#ded2ba] bg-[#f8f5ee]">
+            <a href="/images/kcd-arlington-plaza-exterior.webp" target="_blank" rel="noopener noreferrer" className="block focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[#725a2a]" aria-label="View larger exterior photo of Arlington Plaza (opens in a new tab)">
+              <Image
+                src="/images/kcd-arlington-plaza-exterior.webp"
+                alt="Arlington Plaza exterior with the 808 street number, front entrance, brick walkway, and parking beside the building"
+                width={2000}
+                height={1333}
+                sizes="(min-width: 1280px) 560px, (min-width: 1024px) 50vw, 100vw"
+                className="h-auto w-full"
+              />
+            </a>
+            <figcaption className="flex flex-wrap items-center justify-between gap-3 px-6 py-5 text-xs leading-6 text-[#67583c]">
               <span>808 W Abram St<br />Arlington, TX 76013</span>
-              <span className="text-right uppercase tracking-[0.14em]">Property<br />showcase</span>
-            </div>
-          </div>
+              <a href="/images/kcd-arlington-plaza-exterior.webp" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4 hover:text-[#302519]">
+                View larger photo <span aria-hidden="true" className="ml-2">↗</span>
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </figcaption>
+          </figure>
 
           <div className="flex flex-col justify-center py-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">The Arlington project</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">Featured property</p>
             <h2 className="mt-4 max-w-xl font-serif text-4xl leading-tight tracking-[-0.035em] text-[#2a2116] sm:text-5xl">Arlington Plaza</h2>
             <p className="mt-5 max-w-xl text-base leading-8 text-[#615747]">
-              A mixed-use property in the heart of Arlington, with a focus on spaces for neighborhood businesses and residents.
+              A two-story, mixed-use property at 808 W Abram St in Arlington, Texas. The building includes 4,789 square feet with parking beside the property.
             </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#e3dac9] bg-[#f8f5ee] p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#987431]">Location</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#3d3324]">808 W Abram St<br />Arlington, TX 76013</p>
-              </div>
-              <div className="rounded-2xl border border-[#e3dac9] bg-[#f8f5ee] p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#987431]">Property type</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#3d3324]">Mixed-use commercial<br />and residential</p>
-              </div>
-            </div>
-            <p className="mt-5 text-xs leading-5 text-[#897e6b]">Address and property description are draft details taken from the material supplied. Confirm before publishing.</p>
+            <dl className="mt-6 grid grid-cols-2 gap-x-6" aria-label="Arlington Plaza property facts">
+              {propertyFacts.map((fact) => (
+                <div key={fact.label} className="border-t border-[#e3dac9] py-4">
+                  <dt className="text-xs text-[#776d5b]">{fact.label}</dt>
+                  <dd className="mt-1 text-sm font-semibold leading-6 text-[#3d3324]">{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <Link href="#contact" className="mt-5 inline-flex min-h-12 items-center self-start rounded-full border border-[#c7b58e] px-6 text-sm font-semibold text-[#443722] transition hover:bg-[#e8dcc2]">
+              Ask About Arlington Plaza
+            </Link>
           </div>
         </div>
       </section>
+
+      <KcdGroupAreaMap />
 
       <section id="focus" className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 md:py-24 lg:px-12">
         <div className="flex flex-col justify-between gap-5 border-b border-[#ddd1bb] pb-8 md:flex-row md:items-end">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">What KCD works on</p>
-            <h2 className="mt-3 font-serif text-3xl tracking-[-0.025em] sm:text-4xl">A portfolio with room to grow.</h2>
+            <h2 className="mt-3 font-serif text-3xl tracking-[-0.025em] sm:text-4xl">A Portfolio with Room to Grow.</h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-[#706553]">The company artwork points to several areas of work. This page can grow with the properties KCD chooses to feature.</p>
         </div>
@@ -161,7 +179,12 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
       </section>
 
       <footer className="flex flex-col justify-between gap-3 bg-[#241c13] px-5 py-5 text-[11px] text-[#bcaf98] sm:flex-row sm:px-8 lg:px-12">
-        <p>© {new Date().getFullYear()} KCD Group of Companies</p>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <p>© {new Date().getFullYear()} KCD Group of Companies</p>
+          <Link className="transition hover:text-[#fffaf1]" href="https://www.sunsetpulse.app">
+            Visit Sunset Pulse <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
         <p>Building today for a stronger tomorrow.</p>
       </footer>
     </main>
