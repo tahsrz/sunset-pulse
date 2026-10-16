@@ -151,7 +151,6 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#94702f]">What KCD works on</p>
             <h2 className="mt-3 text-3xl tracking-[-0.025em] sm:text-4xl">A Portfolio with Room to Grow.</h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-[#706553]">The company artwork points to several areas of work. This page can grow with the properties KCD chooses to feature.</p>
         </div>
         <div className="grid gap-0 md:grid-cols-3">
           {projectFocus.map((item) => (
