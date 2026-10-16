@@ -84,10 +84,12 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
           <div className="absolute -right-5 -top-5 h-28 w-28 rounded-full border border-[#d8c79f]" aria-hidden="true" />
           <div className="relative overflow-hidden rounded-[2rem] border border-[#e5d7bb] bg-[#fffaf1] p-3 shadow-[0_28px_70px_-44px_rgba(53,39,17,0.55)] sm:p-5">
             <Image
-              src="/images/kcd-group-brand.png"
+              src="/images/kcd-group-brand-restored.webp"
               alt="KCD Group of Companies brand artwork with its business areas and tagline"
-              width={354}
-              height={252}
+              width={1484}
+              height={1060}
+              sizes="(min-width: 640px) 468px, (max-width: 549px) calc(100vw - 66px), 484px"
+              quality={90}
               priority
               className="h-auto w-full rounded-[1.35rem]"
             />
