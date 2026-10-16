@@ -161,7 +161,12 @@ export default function KcdGroupSite({ isDraft }: { isDraft: boolean }) {
       </section>
 
       <footer className="flex flex-col justify-between gap-3 bg-[#241c13] px-5 py-5 text-[11px] text-[#bcaf98] sm:flex-row sm:px-8 lg:px-12">
-        <p>© {new Date().getFullYear()} KCD Group of Companies</p>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <p>© {new Date().getFullYear()} KCD Group of Companies</p>
+          <Link className="transition hover:text-[#fffaf1]" href="https://www.sunsetpulse.app">
+            Visit Sunset Pulse <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
         <p>Building today for a stronger tomorrow.</p>
       </footer>
     </main>
