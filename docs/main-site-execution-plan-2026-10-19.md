@@ -174,14 +174,15 @@ For local validation commands, use the exact targeted suite appropriate to the c
 Current implementation record (October 19, 2026):
 
 ```text
-Task: 1.1–1.4, 2.1–2.2, 3.1–3.3, 4.1–4.4, 5.1–5.4
-State: ready for review; CI passed, visual review pending
+Task: 1.1–1.4, 2.1–2.2, 3.1–3.3, 4.1–4.4, 5.1–5.4; 7.1 in progress
+State: implemented work is ready for review; performance evidence and visual review pending
 Branch/PR: codex/main-homepage-composition / https://github.com/tahsrz/sunset-pulse/pull/87
-Commit: 05e1e5fd (latest verified code and execution-plan update)
-Checks: focused ESLint passed; `git diff --check` passed; targeted suites passed (9 tests); GitHub Actions run #694 passed all six jobs; Vercel preview for commit `05e1e5fd` is ready; local TypeScript/build attempts were terminated by the command runner without an exit result
+Commit: 73f52b58 (adds a regression check for deferred MLS loading in curated mode)
+Checks: focused ESLint passed; `git diff --check` passed; prior targeted suites passed (9 tests); homepage listing-stage suite now passes (3 tests); GitHub Actions run #695 passed all six jobs on the previous head; Vercel preview for commit `b9d8786c` is ready
+Performance evidence: local optimized build did not complete in the command runner; Vercel build logs confirm optimized compilation completed in 41s and the deployment reached READY, but no route bundle-size or browser request measurements are available yet
 Browser evidence: pending; the preview redirects to Vercel login and local Vercel CLI is unavailable
 Dependency: 2.3 awaits approved identity, biography, portrait, and public contact; 5.4 awaits licensed photos and checked map coordinates/places; PR 6 awaits a configured availability and reservation authority
-Next: complete PR 7's measured homepage/map loading and browser journey review after approved access to the protected preview is available
+Next: collect comparable homepage and neighborhood-guide request/bundle measurements and complete browser journey review after approved access to the protected preview is available
 ```
 
 The code is grouped in one working branch across the homepage, optional seller introduction, seller examples, stepped seller request, neighborhood presentation, and deferred interactive loading. This combines work that was initially planned as separate PRs so its route and data contracts can be reviewed together. The PR will clearly call out publication and booking dependencies. The map schema and launcher are implemented, but no area map or photo is published because no reviewed coordinates or licensed images are present.
@@ -212,6 +213,6 @@ Keep public deployment status separate from merge status. Completing code for a 
 
 ## Next Action
 
-Finish the pending CI and preview checks for PR #87. Then complete PR 7 against the deployed preview, capturing comparable initial requests, bundle evidence, responsive screenshots, and the homepage, seller, and neighborhood journeys. Resume the profile, photo/map, and booking tasks when their specific approvals and service configuration are available.
+Verify CI and preview status for commit `73f52b58`. Then complete PR 7 against the deployed preview, capturing comparable initial requests, bundle evidence, responsive screenshots, and the homepage, seller, and neighborhood journeys. Resume the profile, photo/map, and booking tasks when their specific approvals and service configuration are available.
 
 Create another implementation slice only when PR review or measured evidence identifies a concrete change. Do not create placeholder media or guess at booking availability to make the work queue appear complete.
