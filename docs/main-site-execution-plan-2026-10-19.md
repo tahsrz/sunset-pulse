@@ -175,13 +175,13 @@ Current implementation record (October 19, 2026):
 
 ```text
 Task: 1.1–1.4, 2.1–2.2, 3.1–3.3, 4.1–4.4, 5.1–5.4
-State: open for review; CI and browser review pending
+State: ready for review; full CI rerun and browser review pending
 Branch/PR: codex/main-homepage-composition / https://github.com/tahsrz/sunset-pulse/pull/87
-Commit: 52978975 (initial implementation)
-Checks: focused ESLint passed; `git diff --check` passed; GitHub lint passed; other CI checks pending; local typecheck/build attempts were terminated by the local command runner without an exit result; no test runner invoked
-Browser evidence: pending
+Commit: b02dc869 (CI test fix)
+Checks: focused ESLint passed; `git diff --check` passed; `npm run test:unit --workspace=apps/pulse -- tests/unit/seller-plan-request-form.test.tsx tests/unit/app-route-catalog.test.ts` passed (9 tests); full CI run 39335781815 is in progress; local TypeScript/build attempts were terminated by the local command runner without an exit result
+Browser evidence: pending; local Next server starts, but localhost is inaccessible from the browser sandbox
 Dependency: 2.3 awaits approved identity, biography, portrait, and public contact; 5.4 awaits licensed photos and checked map coordinates/places; PR 6 awaits a configured availability and reservation authority
-Next: inspect final diff, push branch, and use CI for compile/build evidence
+Next: verify run 39335781815, then complete PR 7's measured homepage/map loading and browser journey review when a preview is reachable
 ```
 
 The code is grouped in one working branch across the homepage, optional seller introduction, seller examples, stepped seller request, neighborhood presentation, and deferred interactive loading. This combines work that was initially planned as separate PRs so its route and data contracts can be reviewed together. The PR will clearly call out publication and booking dependencies. The map schema and launcher are implemented, but no area map or photo is published because no reviewed coordinates or licensed images are present.
@@ -210,8 +210,8 @@ Next: 4.4
 
 Keep public deployment status separate from merge status. Completing code for a draft introduction does not mean the portrait/biography has been published. Completing the request form does not mean the calendar integration has been completed.
 
-## Next Action When Implementation Begins
+## Next Action
 
-Execute Phase 0, then finish tasks 1.1–1.5 as the first reviewable delivery. Continue through the queue, returning to blocked content/booking tasks when their specific dependencies are available.
+Finish the pending CI and preview checks for PR #87. Then complete PR 7 against the deployed preview, capturing comparable initial requests, bundle evidence, responsive screenshots, and the homepage, seller, and neighborhood journeys. Resume the profile, photo/map, and booking tasks when their specific approvals and service configuration are available.
 
-The next session should produce code and evidence for PR 1 rather than another planning document. Further planning is needed only if baseline inspection reveals a material contract change or a real dependency changes the implementation.
+Create another implementation slice only when PR review or measured evidence identifies a concrete change. Do not create placeholder media or guess at booking availability to make the work queue appear complete.
