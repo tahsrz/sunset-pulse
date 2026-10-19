@@ -23,6 +23,17 @@ afterEach(() => {
 });
 
 describe('UnifiedPropertyStage live feed states', () => {
+  it('keeps the live feed idle while curated listings are selected', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<UnifiedPropertyStage initialStagedProperties={[]} initialMode="STAGED" />);
+
+    expect(screen.getByRole('heading', { name: 'Curated Property Opportunities' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Curated Listings' })).toHaveAttribute('aria-pressed', 'true');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('ignores an aborted response after switching tabs and loads again when returning', async () => {
     let resolveFirst!: (response: Response) => void;
     const firstRequest = new Promise<Response>((resolve) => { resolveFirst = resolve; });
