@@ -177,12 +177,12 @@ Current implementation record (October 19, 2026):
 Task: 1.1–1.4, 2.1–2.2, 3.1–3.3, 4.1–4.4, 5.1–5.4; 7.1 in progress
 State: implemented work is ready for review; performance evidence and visual review pending
 Branch/PR: codex/main-homepage-composition / https://github.com/tahsrz/sunset-pulse/pull/87
-Commit: d8c5a5b5 (latest execution-plan update; includes the curated-mode request regression test)
-Checks: focused ESLint passed; `git diff --check` passed; prior targeted suites passed (9 tests); homepage listing-stage suite passes (3 tests); GitHub Actions run #697 passed all six jobs; Vercel preview for commit `d8c5a5b5` is READY
-Performance evidence: Vercel's 4-core, 8 GB build compiled successfully in 43s and reports 110 kB shared first-load JavaScript. This establishes an initial build baseline only; no comparable before-build, per-route size, browser request waterfall, or responsive screenshot is available yet. The local optimized build did not complete in the command runner.
-Browser evidence: pending; the preview redirects to Vercel login and local Vercel CLI is unavailable
+Commit: 0314d343 (latest execution-plan update; includes the curated-mode request regression test)
+Checks: focused ESLint passed; `git diff --check` passed; prior targeted suites passed (9 tests); homepage listing-stage suite passes (3 tests); GitHub Actions runs #697 and #698 passed all six jobs; Vercel preview for commit `0314d343` is READY
+Performance evidence: matched Vercel builds for `main` (`31c9571e`) and the PR (`0314d343`) both used iad1 with 4 cores and 8 GB. The homepage route changed from 12.1 kB to 9.44 kB, and first-load JS from 168 kB to 166 kB; shared JS is 110 kB in both. This is a small measured improvement, with the route chunk down 2.66 kB (about 22%). The local optimized build did not complete in the command runner.
+Preview smoke: read-only requests returned 200 for `/`, `/seller-plan`, `/neighborhoods`, and `/how-it-works`; expected titles and H1s were present. The homepage HTML references 27 scripts, all 27 returned 200. Response sizes were 153,822 B, 71,398 B, 64,569 B, and 78,174 B respectively (HTML response bytes, not compressed browser transfer). The protected-preview connector returns response bodies but does not provide an authenticated browser surface or screenshots, so responsive visual and interactive review remain pending.
 Dependency: 2.3 awaits approved identity, biography, portrait, and public contact; 5.4 awaits licensed photos and checked map coordinates/places; PR 6 awaits a configured availability and reservation authority
-Next: compare the 110 kB shared-JS baseline with a like-for-like prior build, collect per-route/browser request measurements, and complete the homepage, seller, and neighborhood journeys after approved access to the protected preview is available
+Next: obtain rendered desktop/mobile screenshots and exercise the Atlas open/close, curated-to-live listing switch, seller form steps, and guide links in an authenticated browser; then use request-waterfall evidence to decide whether the measured 2 kB first-load change needs further work
 ```
 
 The code is grouped in one working branch across the homepage, optional seller introduction, seller examples, stepped seller request, neighborhood presentation, and deferred interactive loading. This combines work that was initially planned as separate PRs so its route and data contracts can be reviewed together. The PR will clearly call out publication and booking dependencies. The map schema and launcher are implemented, but no area map or photo is published because no reviewed coordinates or licensed images are present.
@@ -213,6 +213,6 @@ Keep public deployment status separate from merge status. Completing code for a 
 
 ## Next Action
 
-Complete PR 7 against the deployed preview, capturing a like-for-like prior-build comparison, per-route/browser request evidence, responsive screenshots, and the homepage, seller, and neighborhood journeys. Resume the profile, photo/map, and booking tasks when their specific approvals and service configuration are available.
+Complete PR 7 against the deployed preview, capturing rendered desktop/mobile screenshots and interactive journeys. Use browser request-waterfall evidence to decide whether any further performance work is justified. Resume the profile, photo/map, and booking tasks when their specific approvals and service configuration are available.
 
 Create another implementation slice only when PR review or measured evidence identifies a concrete change. Do not create placeholder media or guess at booking availability to make the work queue appear complete.
