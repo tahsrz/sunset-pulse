@@ -34,6 +34,16 @@ describe('UnifiedPropertyStage live feed states', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('gives a single curated homepage listing enough width to read its details', () => {
+    const { container } = render(<UnifiedPropertyStage
+      initialStagedProperties={[{ ...listing, name: 'Curated home' }]}
+      initialMode="STAGED"
+      compact
+    />);
+
+    expect(container.querySelector('.grid.max-w-4xl')).toBeInTheDocument();
+  });
+
   it('ignores an aborted response after switching tabs and loads again when returning', async () => {
     let resolveFirst!: (response: Response) => void;
     const firstRequest = new Promise<Response>((resolve) => { resolveFirst = resolve; });

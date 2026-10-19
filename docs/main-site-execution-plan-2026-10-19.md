@@ -187,6 +187,8 @@ Next: obtain rendered desktop/mobile screenshots and exercise the Atlas open/clo
 
 The code is grouped in one working branch across the homepage, optional seller introduction, seller examples, stepped seller request, neighborhood presentation, and deferred interactive loading. This combines work that was initially planned as separate PRs so its route and data contracts can be reviewed together. The PR will clearly call out publication and booking dependencies. The map schema and launcher are implemented, but no area map or photo is published because no reviewed coordinates or licensed images are present.
 
+**Rendered review update (October 19, 2026):** The authenticated PR preview rendered at desktop size. The Atlas panel opened and closed, the seller request progressed through all three steps without submission, and the neighborhood guide index loaded. Review exposed two homepage issues: the single curated card was confined to one of four desktop columns, and the live feed returned eight records from Florida, North Carolina, and South Carolina labeled as a North Texas MLS feed. The route now accepts only listings with an explicit Bridge or Repliers provider, and the single curated card uses a centered max-width layout. Targeted tests (5) and ESLint pass. This blocks final preview sign-off until the new deployment confirms the live feed no longer publishes unprovenanced sample records and the card layout is verified. Mobile screenshot review remains pending; the browser surface used here exposes no viewport emulation control.
+
 Update this document as implementation proceeds. Each task uses one of these states:
 
 - `planned`: implementation has not begun.
