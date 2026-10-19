@@ -41,7 +41,9 @@ describe('UnifiedPropertyStage live feed states', () => {
       compact
     />);
 
-    expect(container.querySelector('.grid.max-w-4xl')).toBeInTheDocument();
+    const grid = container.querySelector('.grid.max-w-4xl');
+    expect(grid).toBeInTheDocument();
+    expect(grid).not.toHaveClass('xl:grid-cols-4');
   });
 
   it('ignores an aborted response after switching tabs and loads again when returning', async () => {

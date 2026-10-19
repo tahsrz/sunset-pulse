@@ -78,7 +78,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         {/* Property Grid */}
         <div className="relative min-h-[400px]">
           {mode === 'STAGED' ? (
-            <div className={`grid grid-cols-1 ${compact ? 'md:grid-cols-2 xl:grid-cols-4' : 'lg:grid-cols-2'} ${compact && stagedProperties.length === 1 ? 'max-w-4xl mx-auto' : ''} gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700`}>
+            <div className={`grid grid-cols-1 ${compact ? (stagedProperties.length === 1 ? 'max-w-4xl mx-auto' : 'md:grid-cols-2 xl:grid-cols-4') : 'lg:grid-cols-2'} gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700`}>
               {stagedProperties && Array.isArray(stagedProperties) && stagedProperties.length > 0 ? (
                 stagedProperties.map((property) => (
                   property && <FeaturedPropertyCard key={property._id} property={property} />
