@@ -18,6 +18,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 8. Open `/business` and `/goals`: explain manually recorded money, broker deductions and optional progress.
 9. Open `/sprints`, then an authorized workspace inbox/run: distinguish a proposal, approval, execution and its evidence.
 10. Close with `/atlas` and `/llms.txt`: structured knowledge supports the work; it does not make the product only a “Wikipedia for LLMs.”
+11. Open `/how-it-works` for the longer platform architecture overview linked from the footer.
 
 ## Presenter rules
 
@@ -44,6 +45,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 | `/valuation` | Public entry | “This is a human-reviewed pricing conversation entry point. There is no automated price estimate until a licensed source and reviewed CMA workflow are configured.” | Open `/valuation`; no provider call or price estimate is generated. |
 | `/keller-westlake/market-report` | Public entry | “This page publishes figures only after review and publication permission; it currently contains no local market data.” | Open `/keller-westlake/market-report`; it is noindex while no report is available. |
 | `/seller-plan` | Public entry | “This is a request for a human-reviewed seller conversation, not an instant CMA. Submission is saved only when the owner’s configured intake is available; no automatic message is sent.” | Open `/seller-plan`; test with local/disposable data, not a prospect's details. |
+| `/how-it-works` | Public entry | “This explains how the main property, local research, seller and Atlas features fit together.” | Open `/how-it-works` or follow the footer link. |
 | `/neighborhoods` | Public entry | “These are reviewed Keller / Westlake guides with citations and clearly marked address-specific unknowns.” | Open `/neighborhoods`. |
 | `/neighborhoods/[slug]` | Public entry | “This is one source-backed local guide; only published repository records resolve.” | Begin at `/neighborhoods`; choose a published guide slug. |
 | `/contact` | Public entry | “This is where a visitor can start a conversation with the business.” | Open `/contact`.  |
