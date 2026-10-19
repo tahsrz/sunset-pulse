@@ -175,10 +175,10 @@ Current implementation record (October 19, 2026):
 
 ```text
 Task: 1.1–1.4, 2.1–2.2, 3.1–3.3, 4.1–4.4, 5.1–5.4
-State: implemented locally; CI compile and browser review pending
-Branch/PR: codex/main-homepage-composition / not opened yet
-Commit: pending
-Checks: focused ESLint passed; `git diff --check` passed; final typecheck/build attempts were terminated by the local command runner without an exit result; no test runner invoked
+State: open for review; CI and browser review pending
+Branch/PR: codex/main-homepage-composition / https://github.com/tahsrz/sunset-pulse/pull/87
+Commit: 52978975 (initial implementation)
+Checks: focused ESLint passed; `git diff --check` passed; GitHub lint passed; other CI checks pending; local typecheck/build attempts were terminated by the local command runner without an exit result; no test runner invoked
 Browser evidence: pending
 Dependency: 2.3 awaits approved identity, biography, portrait, and public contact; 5.4 awaits licensed photos and checked map coordinates/places; PR 6 awaits a configured availability and reservation authority
 Next: inspect final diff, push branch, and use CI for compile/build evidence
