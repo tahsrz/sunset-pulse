@@ -1,7 +1,9 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
+import { listPublishedNeighborhoodPresentations } from '@/lib/marketing/neighborhoodPresentations.server';
 
 export const metadata: Metadata = {
   title: 'Keller and Westlake Neighborhood Guides | Sunset Pulse',
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
 
 export default function NeighborhoodGuidesPage() {
   const guides = listPublishedNeighborhoodGuides();
+  const presentations = new Map(listPublishedNeighborhoodPresentations().map((presentation) => [presentation.slug, presentation]));
   return (
     <main className="min-h-screen bg-[#061017] px-4 py-14 text-white sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
@@ -19,11 +22,14 @@ export default function NeighborhoodGuidesPage() {
         <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">Start with cited city and district sources. School assignment, HOA terms and commute depend on the exact property and current documents, so we mark them for verification instead of guessing.</p>
         <ul className="mt-10 grid gap-5 md:grid-cols-3">
           {guides.map((guide) => (
-            <li key={guide.slug} className="flex flex-col rounded-3xl border border-white/10 bg-white/[0.05] p-6">
+            <li key={guide.slug} className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.05]">
+              {presentations.get(guide.slug)?.cover ? <Image src={presentations.get(guide.slug)!.cover!.src} alt={presentations.get(guide.slug)!.cover!.alt} width={presentations.get(guide.slug)!.cover!.width} height={presentations.get(guide.slug)!.cover!.height} className="h-52 w-full object-cover" sizes="(min-width: 768px) 33vw, 100vw" /> : null}
+              <div className="flex flex-1 flex-col p-6">
               <p className="text-xs font-bold uppercase tracking-widest text-teal-200">{guide.coverageType} guide · reviewed {guide.reviewedAt}</p>
               <h2 className="mt-3 text-2xl font-bold">{guide.title}</h2>
               <p className="mt-3 flex-1 leading-7 text-slate-300">{guide.summary}</p>
               <Link className="mt-6 inline-flex min-h-11 items-center text-sm font-bold text-teal-200 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href={`/neighborhoods/${guide.slug}`}>Read guide <span aria-hidden="true" className="ml-2">→</span></Link>
+              </div>
             </li>
           ))}
         </ul>
