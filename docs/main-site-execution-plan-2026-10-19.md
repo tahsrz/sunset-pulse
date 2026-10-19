@@ -175,13 +175,13 @@ Current implementation record (October 19, 2026):
 
 ```text
 Task: 1.1–1.4, 2.1–2.2, 3.1–3.3, 4.1–4.4, 5.1–5.4
-State: ready for review; full CI rerun and browser review pending
+State: ready for review; CI passed, visual review pending
 Branch/PR: codex/main-homepage-composition / https://github.com/tahsrz/sunset-pulse/pull/87
-Commit: b02dc869 (CI test fix)
-Checks: focused ESLint passed; `git diff --check` passed; `npm run test:unit --workspace=apps/pulse -- tests/unit/seller-plan-request-form.test.tsx tests/unit/app-route-catalog.test.ts` passed (9 tests); full CI run 39335781815 is in progress; local TypeScript/build attempts were terminated by the local command runner without an exit result
-Browser evidence: pending; local Next server starts, but localhost is inaccessible from the browser sandbox
+Commit: 05e1e5fd (latest verified code and execution-plan update)
+Checks: focused ESLint passed; `git diff --check` passed; targeted suites passed (9 tests); GitHub Actions run #694 passed all six jobs; Vercel preview for commit `05e1e5fd` is ready; local TypeScript/build attempts were terminated by the command runner without an exit result
+Browser evidence: pending; the preview redirects to Vercel login and local Vercel CLI is unavailable
 Dependency: 2.3 awaits approved identity, biography, portrait, and public contact; 5.4 awaits licensed photos and checked map coordinates/places; PR 6 awaits a configured availability and reservation authority
-Next: verify run 39335781815, then complete PR 7's measured homepage/map loading and browser journey review when a preview is reachable
+Next: complete PR 7's measured homepage/map loading and browser journey review after approved access to the protected preview is available
 ```
 
 The code is grouped in one working branch across the homepage, optional seller introduction, seller examples, stepped seller request, neighborhood presentation, and deferred interactive loading. This combines work that was initially planned as separate PRs so its route and data contracts can be reviewed together. The PR will clearly call out publication and booking dependencies. The map schema and launcher are implemented, but no area map or photo is published because no reviewed coordinates or licensed images are present.
