@@ -35,6 +35,8 @@ describe('seller setup guide', () => {
     expect(screen.getByRole('heading', { name: '2. Your seller website' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '3. Your reminders' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '4. Your first seller request' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Manage your seller website' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: 'Manage your seller website' })).toHaveClass('min-h-11');
     expect(screen.getByText(/verified mailbox and record those conversations here/)).toBeInTheDocument();
     expect(container.querySelector('details')?.open).toBe(false);
   });

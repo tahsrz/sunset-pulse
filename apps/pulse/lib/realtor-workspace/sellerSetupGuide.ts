@@ -23,8 +23,8 @@ export function deriveSellerSetupSteps(health: SellerSetupHealth): SellerSetupSt
     },
     {
       key: 'website', title: 'Your seller website', status: websiteReady ? 'ready' : 'unavailable',
-      detail: websiteReady ? `${health.activeSites} active ${health.activeSites === 1 ? 'website is' : 'websites are'} connected to seller intake.` : 'A seller website with connected intake is not available for this account yet. Review the public seller form or use the site setup link provided when your website was created.',
-      href: '/seller-plan', action: 'Preview seller intake',
+      detail: websiteReady ? `${health.activeSites} active ${health.activeSites === 1 ? 'website is' : 'websites are'} connected to seller intake. Open your account dashboard to manage its setup and billing.` : 'A seller website with connected intake is not available for this account yet. Open your account dashboard to find an existing site setup link.',
+      href: '/dashboard', action: 'Manage your seller website',
     },
     {
       key: 'reminders', title: 'Your reminders', status: remindersStatus,
