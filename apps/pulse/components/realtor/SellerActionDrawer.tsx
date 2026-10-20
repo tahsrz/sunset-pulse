@@ -68,7 +68,7 @@ export function SellerActionDrawer({
       <p className="mt-1 text-sm text-slate-300">{unsavedDescription}</p>
       {saveBlocked ? <p className="mt-2 text-sm text-amber-100">The saved case has changed. Discard this draft to close, then reload the latest case before editing again.</p> : null}
       <div className="mt-4 flex flex-wrap gap-2">
-        {!saveBlocked ? <button type="button" disabled={busy} onClick={() => void onSave()} className="rounded-lg bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save changes</button> : null}
+        {!saveBlocked ? <button type="button" disabled={busy} onClick={async () => { const saved = await onSave(); if (!saved) setConfirmClose(false); }} className="rounded-lg bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save changes</button> : null}
         <button type="button" disabled={busy} onClick={() => { onDiscard(); onClose(); }} className="rounded-lg border border-amber-200/30 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50">Discard draft</button>
         <button ref={keepEditingButtonRef} type="button" disabled={busy} onClick={() => setConfirmClose(false)} className="rounded-lg border border-white/20 px-4 py-2 text-sm text-slate-200 disabled:opacity-50">Keep editing</button>
       </div>
