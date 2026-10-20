@@ -8,12 +8,14 @@ export type SellerCaseActionView =
   | { kind: 'reply'; leadId: string }
   | { kind: 'appointment'; bookingId: string }
   | { kind: 'prepare'; leadId: string }
+  | { kind: 'milestone'; leadId: string }
   | { kind: 'share'; leadId: string };
 
 export function SellerActionDrawer({
   titleId,
   title,
   description,
+  unsavedDescription = 'Your changes have not been saved.',
   dirty,
   busy,
   saveBlocked = false,
@@ -26,6 +28,7 @@ export function SellerActionDrawer({
   titleId: string;
   title: string;
   description: string;
+  unsavedDescription?: string;
   dirty: boolean;
   busy: boolean;
   saveBlocked?: boolean;
@@ -62,7 +65,7 @@ export function SellerActionDrawer({
     {children}
     {confirmClose ? <section role="alertdialog" aria-labelledby={`${titleId}-unsaved`} className="mt-5 rounded-xl border border-amber-200/30 bg-amber-200/5 p-4">
       <h3 id={`${titleId}-unsaved`} className="font-semibold">Save your changes before closing?</h3>
-      <p className="mt-1 text-sm text-slate-300">Your preparation edits have not been saved.</p>
+      <p className="mt-1 text-sm text-slate-300">{unsavedDescription}</p>
       {saveBlocked ? <p className="mt-2 text-sm text-amber-100">The saved case has changed. Discard this draft to close, then reload the latest case before editing again.</p> : null}
       <div className="mt-4 flex flex-wrap gap-2">
         {!saveBlocked ? <button type="button" disabled={busy} onClick={() => void onSave()} className="rounded-lg bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save changes</button> : null}

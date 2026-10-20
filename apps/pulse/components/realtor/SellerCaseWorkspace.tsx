@@ -13,6 +13,8 @@ const buttonClass = 'rounded-lg border border-cyan-300/30 px-4 py-2 text-sm font
 type Draft = { propertyId: string | null; notes: string; documents: Array<{ label: string; url: string }>; checklist: Array<{ id: string; title: string; done: boolean }> };
 const emptyDraft: Draft = { propertyId: null, notes: '', documents: [], checklist: [] };
 type ActionFields = SellerServiceAction extends infer T ? T extends SellerServiceAction ? Omit<T,'leadId' | 'expectedRevision' | 'requestKey'> : never : never;
+type MilestoneDraft = { milestone: typeof sellerMilestones[number]; occurredOn: string; evidence: string };
+const emptyMilestoneDraft: MilestoneDraft = { milestone: 'consultation_held', occurredOn: '', evidence: '' };
 export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
   const [data, setData] = useState<SellerCaseResult | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -23,6 +25,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
   const [emailReviewed,setEmailReviewed]=useState(false);const [publicationReviewed,setPublicationReviewed]=useState(false);
   const [schedule, setSchedule] = useState<{ id: string; startsAt: string } | null>(null);
   const [actionView, setActionView] = useState<SellerCaseActionView>({ kind: 'closed' });
+  const [milestoneDraft, setMilestoneDraft] = useState<MilestoneDraft>(emptyMilestoneDraft);
   const retries = useRef(new Map<string,string>()); const scheduleRetries = useRef(new Map<string,string>());
   const inflight = useRef(false);
   const load = useCallback(async (signal?: AbortSignal) => {
@@ -71,6 +74,13 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
   const discardPreparation = () => {
     setDraft(data?.case ? { propertyId: data.case.property_id, notes: data.case.notes, documents: data.case.documents, checklist: data.case.checklist } : emptyDraft);
   };
+  const milestoneDirty = milestoneDraft.milestone !== emptyMilestoneDraft.milestone || Boolean(milestoneDraft.occurredOn || milestoneDraft.evidence);
+  const saveMilestone = async () => {
+    const saved = await act({ action: 'milestone', ...milestoneDraft });
+    if (saved) { setMilestoneDraft(emptyMilestoneDraft); setActionView({ kind: 'closed' }); }
+    return saved;
+  };
+  const discardMilestone = () => setMilestoneDraft(emptyMilestoneDraft);
   const savedMilestones = data?.milestones || [];
   return <FieldbookShell title={data?.lead.name || 'Seller case'} eyebrow="Seller case" navigation={<SellerWorkspaceNav active="/seller-cases" />}>
     <div className="space-y-6">
@@ -101,11 +111,18 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
           <div><button disabled={disabled} className={buttonClass}>{busy ? 'Saving…' : 'Save preparation'}</button></div>
         </form>
           </SellerActionDrawer> : null}
-        <div className="space-y-6"><CasePanel id="case-milestones" title="Milestones"><form className="space-y-3" onSubmit={(event) => { event.preventDefault(); const form=new FormData(event.currentTarget); void act({action:'milestone',milestone:form.get('milestone') as typeof sellerMilestones[number],occurredOn:String(form.get('date')),evidence:String(form.get('evidence'))}); }}>
-          <label className="block text-sm">Milestone<select name="milestone" className={inputClass} disabled={otherDisabled}>{sellerMilestones.map((value) => <option key={value} value={value}>{sellerMilestoneLabels[value]}</option>)}</select></label>
-          <label className="block text-sm">Date in {data.timeZone}<input name="date" type="date" required className={inputClass} disabled={otherDisabled} /></label><label className="block text-sm">Evidence or agreement reference<textarea name="evidence" maxLength={1000} required className={inputClass} disabled={otherDisabled} /></label><button className={buttonClass} disabled={otherDisabled}>Record milestone</button>
-          <p className="text-xs text-slate-400">Only record events that happened. Booking is separate from attendance. Verify the listing agreement before recording listing work; record an actual closing in the inbox first.</p>
-        </form><div className="mt-4 space-y-3">{data.milestoneRecords.map((record)=><form key={record.eventId} className="rounded-lg border border-white/15 p-3" onSubmit={(event)=>{event.preventDefault();void act({action:'retract_milestone',eventId:record.eventId,reason:String(new FormData(event.currentTarget).get('reason'))});}}><p className="text-sm font-semibold text-cyan-100">{sellerMilestoneLabels[record.milestone]} · {record.occurredOn}</p><p className="mt-1 whitespace-pre-wrap text-xs text-slate-300">{record.evidence}</p><label className="mt-2 block text-xs">Correction reason<input name="reason" required maxLength={1000} disabled={otherDisabled} className={inputClass}/></label><button disabled={otherDisabled} className="mt-2 text-xs text-amber-200 underline">Retract incorrect milestone</button></form>)}<p className="text-xs text-slate-400">Corrections retain the original history, withdraw the milestone from the funnel, and revoke the shared publication until you review it again. Retract dependent listing stages before retracting its agreement.</p></div></CasePanel>
+          {actionView.kind === 'milestone' ? <SellerActionDrawer titleId="seller-milestone-title" title="Record a milestone" description="Record an event that happened, with its local date and evidence. A booked consultation is not the same as a held consultation." unsavedDescription="This milestone draft has not been saved to the case." dirty={milestoneDirty} busy={busy} saveBlocked={needsReload} error={error} onClose={() => { setError(''); setActionView({ kind: 'closed' }); }} onSave={saveMilestone} onDiscard={discardMilestone}>
+            <form className="mt-5 space-y-3" onSubmit={(event) => { event.preventDefault(); void saveMilestone(); }}>
+              <label className="block text-sm">Milestone<select className={inputClass} value={milestoneDraft.milestone} disabled={disabled} onChange={(event) => { setError(''); setMilestoneDraft({ ...milestoneDraft, milestone: event.target.value as MilestoneDraft['milestone'] }); }}>{sellerMilestones.map((value) => <option key={value} value={value}>{sellerMilestoneLabels[value]}</option>)}</select></label>
+              <label className="block text-sm">Date in {data.timeZone}<input type="date" required className={inputClass} value={milestoneDraft.occurredOn} disabled={disabled} onChange={(event) => { setError(''); setMilestoneDraft({ ...milestoneDraft, occurredOn: event.target.value }); }} /></label>
+              <label className="block text-sm">Evidence or agreement reference<textarea maxLength={1000} required className={inputClass} value={milestoneDraft.evidence} disabled={disabled} onChange={(event) => { setError(''); setMilestoneDraft({ ...milestoneDraft, evidence: event.target.value }); }} /></label>
+              <button disabled={disabled} className={buttonClass}>{busy ? 'Saving…' : 'Save milestone'}</button>
+            </form>
+          </SellerActionDrawer> : null}
+        <div className="space-y-6"><CasePanel id="case-milestones" title="Milestones"><div className="space-y-3">
+          <p className="text-xs text-slate-400">Booking is separate from attendance. Verify the listing agreement before recording listing work; record an actual closing in the inbox first.</p>
+          <button type="button" className={buttonClass} disabled={otherDisabled} onClick={() => setActionView({ kind: 'milestone', leadId })}>Record a milestone</button>
+        <div className="mt-4 space-y-3">{data.milestoneRecords.map((record)=><form key={record.eventId} className="rounded-lg border border-white/15 p-3" onSubmit={(event)=>{event.preventDefault();void act({action:'retract_milestone',eventId:record.eventId,reason:String(new FormData(event.currentTarget).get('reason'))});}}><p className="text-sm font-semibold text-cyan-100">{sellerMilestoneLabels[record.milestone]} · {record.occurredOn}</p><p className="mt-1 whitespace-pre-wrap text-xs text-slate-300">{record.evidence}</p><label className="mt-2 block text-xs">Correction reason<input name="reason" required maxLength={1000} disabled={otherDisabled} className={inputClass}/></label><button disabled={otherDisabled} className="mt-2 text-xs text-amber-200 underline">Retract incorrect milestone</button></form>)}<p className="text-xs text-slate-400">Corrections retain the original history, withdraw the milestone from the funnel, and revoke the shared publication until you review it again. Retract dependent listing stages before retracting its agreement.</p></div></div></CasePanel>
         <CasePanel title="Appointments"><p className="mb-3 text-xs text-slate-400">Latest 50 bookings for this request. Link an accepted booking, then save its exact time in the existing planner. Changes or cancellation invalidate its old consultation task.</p>{data.bookings.length ? <ul className="space-y-3">{data.bookings.map((booking) => <li key={booking.id} className="fieldbook-record rounded-lg bg-white/5 p-3"><time dateTime={booking.start_time}>{new Date(booking.start_time).toLocaleString(undefined,{timeZone:data.timeZone})}</time><p className="text-xs text-slate-400">{booking.status} · {booking.linked ? 'linked to this case' : 'unlinked'}</p>{!booking.linked && booking.status==='accepted' ? <button disabled={otherDisabled} className={`${buttonClass} mt-2`} onClick={() => void act({action:'link_booking',bookingId:booking.id})}>Link booking and schedule</button>:null}</li>)}</ul> : <p className="text-sm text-slate-400">No existing consultation bookings. Use the seller's existing booking link to request one.</p>}</CasePanel></div>
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]"><CasePanel title="Conversation"><ul className="mt-5 space-y-3">{data.messages.map((message) => <li key={message.id} className="fieldbook-record rounded-lg border border-white/15 p-3"><p className="text-xs text-slate-400">{message.direction} · {message.status} · <time dateTime={message.occurred_at}>{new Date(message.occurred_at).toLocaleString(undefined,{timeZone:data.timeZone})}</time></p><h3 className="mt-1 font-semibold">{message.subject}</h3><p className="mt-2 whitespace-pre-wrap break-words text-sm">{message.body}</p></li>)}</ul><form className="space-y-3" onChange={(event)=>{if(event.target.getAttribute('name')!=='reviewed')setEmailReviewed(false);}} onSubmit={(event) => { event.preventDefault(); const fields=new FormData(event.currentTarget); const action=String(fields.get('mode')); const subject=String(fields.get('subject')); const body=String(fields.get('body'));
