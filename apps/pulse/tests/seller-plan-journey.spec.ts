@@ -1,5 +1,29 @@
 import { expect, test } from '@playwright/test';
 
+test('seller plan links retain validated campaign attribution from public guides', async ({ page }) => {
+  const entryPoints = [
+    { path: '/valuation', linkName: 'Request a seller pricing conversation' },
+    { path: '/keller-westlake/market-report', linkName: 'Request a personally reviewed pricing conversation' },
+    { path: '/neighborhoods', linkName: 'Request a personal seller plan' },
+    { path: '/neighborhoods/old-town-keller', linkName: 'Request a seller plan' },
+  ];
+  const campaign = 'utm_source=guide&utm_medium=organic&utm_campaign=local-sellers&utm_content=pricing';
+
+  for (const { path, linkName } of entryPoints) {
+    await page.goto(`${path}?${campaign}&untrusted=drop-me`, { waitUntil: 'domcontentloaded' });
+    const sellerPlanLink = page.getByRole('link', { name: linkName });
+    await expect(sellerPlanLink).toHaveAttribute('href', /\/seller-plan\?utm_source=guide/);
+    const href = await sellerPlanLink.getAttribute('href');
+    expect(href).not.toBeNull();
+    const destination = new URL(href as string, 'http://localhost:3000');
+    expect(destination.searchParams.get('utm_source')).toBe('guide');
+    expect(destination.searchParams.get('utm_medium')).toBe('organic');
+    expect(destination.searchParams.get('utm_campaign')).toBe('local-sellers');
+    expect(destination.searchParams.get('utm_content')).toBe('pricing');
+    expect(destination.searchParams.has('untrusted')).toBe(false);
+  }
+});
+
 test('homepage seller offer carries attribution through pricing review and a saved retry', async ({ page }) => {
   const requests: Record<string, unknown>[] = [];
   await page.route('**/api/lead-magnets', async (route) => {

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
 import { listPublishedNeighborhoodPresentations } from '@/lib/marketing/neighborhoodPresentations.server';
+import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
 
 export const metadata: Metadata = {
   title: 'Keller and Westlake Neighborhood Guides | Sunset Pulse',
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
   alternates: { canonical: '/neighborhoods' },
 };
 
-export default function NeighborhoodGuidesPage() {
+export default async function NeighborhoodGuidesPage({ searchParams }: { searchParams: Promise<SellerCampaignSearchParams> }) {
+  const campaignQuery = sellerCampaignQuery(await searchParams);
   const guides = listPublishedNeighborhoodGuides();
   const presentations = new Map(listPublishedNeighborhoodPresentations().map((presentation) => [presentation.slug, presentation]));
   return (
@@ -33,7 +35,7 @@ export default function NeighborhoodGuidesPage() {
             </li>
           ))}
         </ul>
-        <p className="mt-10 text-sm text-slate-400">Want a plan for selling a home in the area? <Link className="font-bold text-teal-200 underline underline-offset-4" href="/seller-plan">Request a personal seller plan</Link>.</p>
+        <p className="mt-10 text-sm text-slate-400">Want a plan for selling a home in the area? <Link className="font-bold text-teal-200 underline underline-offset-4" href={`/seller-plan${campaignQuery}`}>Request a personal seller plan</Link>.</p>
       </div>
     </main>
   );
