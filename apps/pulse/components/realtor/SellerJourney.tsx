@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import type { SellerCaseResult } from '@/lib/realtor-workspace/sellerServiceContract';
 import { deriveSellerJourney } from '@/lib/realtor-workspace/sellerJourney';
