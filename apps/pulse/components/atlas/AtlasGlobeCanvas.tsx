@@ -98,6 +98,7 @@ export default function AtlasGlobeCanvas({
 
     let frame = 0;
     let raf = 0;
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const render = () => {
       const bounds = canvas.getBoundingClientRect();
@@ -193,12 +194,22 @@ export default function AtlasGlobeCanvas({
       context.globalAlpha = 1;
       projectedRef.current = projected;
       frame += 1;
-      raf = window.requestAnimationFrame(render);
+      if (!motionPreference.matches) {
+        raf = window.requestAnimationFrame(render);
+      }
     };
 
     raf = window.requestAnimationFrame(render);
 
+    const handleMotionPreferenceChange = () => {
+      window.cancelAnimationFrame(raf);
+      if (motionPreference.matches) frame = 0;
+      render();
+    };
+    motionPreference.addEventListener('change', handleMotionPreferenceChange);
+
     return () => {
+      motionPreference.removeEventListener('change', handleMotionPreferenceChange);
       window.cancelAnimationFrame(raf);
     };
   }, [globe, backgroundMode, showMetrics, spinSpeed]);
