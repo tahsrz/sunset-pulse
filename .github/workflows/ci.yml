@@ -151,5 +151,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: homepage-responsive-screenshots
-          path: apps/pulse/test-results/homepage-*.png
+          path: |
+            apps/pulse/test-results/homepage-*.png
+            apps/pulse/test-results/homepage-resource-waterfall.json
           if-no-files-found: ignore
