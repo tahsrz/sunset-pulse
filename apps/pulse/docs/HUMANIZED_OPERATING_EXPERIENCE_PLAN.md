@@ -142,6 +142,8 @@ Create `components/realtor/SellerSetupGuide.tsx`; modify `SellerOverviewPanel.ts
 
 Test partial setup, read failure versus empty, successful reread, disabled sending, and 390px keyboard/touch use.
 
+**October 19 H5 progress:** `SellerSetupGuide` now presents planner/timezone, website, reminders, and first-request steps from the existing saved health response. Each step is marked ready, needs action, or unavailable; no local checkbox can mark setup complete. Email-disabled accounts see the manual mailbox path. Worker, sender, webhook, and delivery diagnostics are under a collapsed operator disclosure. The same read flow now distinguishes an authorization failure from a temporary status-read failure, hides raw server details, and recovers on refresh. Three focused tests cover status derivation, the four-step view, collapsed diagnostics, empty saved setup, and failed-read recovery. The 390px authenticated layout acceptance and a direct in-app website setup destination remain to verify.
+
 ## H6: Jamie helps in context, with optional voice
 
 Modify the existing personal Jamie handoff/rendering path only after locating its current request/response contracts; reuse `lib/ai/jamiePersonalContract.ts`, `lib/ai/jamiePersonal.server.ts` and existing proposal confirmation surfaces.
