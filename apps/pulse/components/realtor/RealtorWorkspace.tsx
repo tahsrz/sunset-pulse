@@ -36,7 +36,7 @@ type Occurrence = {
 };
 type FinancialEntry = {
   id: string; kind: 'commission' | 'expense' | 'expected_commission'; effective_date: string;
-  data: Record<string, unknown>; status: string; current_revision: number; realized_by_record_id: string | null;
+  data: Record<string, unknown>; status: string; current_revision: number; occurrence_id?: string | null; realized_by_record_id: string | null;
 };
 type RealtorPropertyOption = { id: string; label: string; propertyKind: 'residential' | 'land'; status: 'active' | 'archived' };
 type PropertySprintTask = { id: string; title: string; priority: number; estimateMinutes: number | null; taskKind: string; propertyId: string; propertyLabel: string; stale: boolean };
@@ -498,6 +498,7 @@ export function BusinessView({ data, timeZone, year, setYear, mode, setMode, bus
   const [expectedLabel, setExpectedLabel] = useState('');
   const [category, setCategory] = useState('other');
   const [mutation, setMutation] = useState<{ entry: FinancialEntry; purpose: 'correct' | 'realize' } | null>(null);
+  const [voidEntry, setVoidEntry] = useState<FinancialEntry | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [formError, setFormError] = useState('');
   const summary = data?.summary;
@@ -586,11 +587,32 @@ export function BusinessView({ data, timeZone, year, setYear, mode, setMode, bus
       </form></Panel>
     </div>
     <Panel title={`${year} recorded activity`}>
-      {entries.length ? <div className="divide-y divide-white/10">{entries.map((entry) => <div key={entry.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{entry.kind === 'commission' ? 'Commission received' : entry.kind === 'expense' ? String(entry.data.category || 'Expense').replace('_', ' ') : 'Expected income'}</p><p className="mt-1 text-xs text-slate-400">{entry.effective_date} · {entry.status === 'realized' ? 'realized' : entry.status}</p><p className="mt-1 text-sm font-semibold">{entry.kind === 'commission' ? money(entry.data.receivedCents as string) : entry.kind === 'expense' ? '−' + money(entry.data.amountCents as string) : money(entry.data.estimatedTakeHomeCents as string) + ' expected'}</p></div>{entry.status === 'active' ? <div className="flex flex-wrap gap-2"><button type="button" disabled={busy} onClick={() => setMutation({ entry, purpose: 'correct' })} className={quietButton}>Correct</button>{entry.kind === 'expected_commission' ? <button type="button" disabled={busy} onClick={() => setMutation({ entry, purpose: 'realize' })} className={quietButton}>Record received</button> : null}<button type="button" disabled={busy} onClick={() => { if (window.confirm('Void this entry? It will be excluded from your totals. If it is a bill payment, the bill will become pending again.')) void submit('/api/realtor/financial-records', 'PATCH', { action: 'void', recordId: entry.id, expectedRevision: entry.current_revision, requestKey: key() }, 'Entry voided; linked planner bill reopened if applicable.'); }} className="rounded-lg px-3 py-2 text-sm text-rose-200 hover:bg-rose-300/10">Void</button></div> : null}</div>)}</div> : <p className="text-sm text-slate-400">Record a commission or expense to build your business summary.</p>}
+      {entries.length ? <div className="divide-y divide-white/10">{entries.map((entry) => <div key={entry.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{entry.kind === 'commission' ? 'Commission received' : entry.kind === 'expense' ? String(entry.data.category || 'Expense').replace('_', ' ') : 'Expected income'}</p><p className="mt-1 text-xs text-slate-400">{entry.effective_date} · {entry.status === 'realized' ? 'realized' : entry.status}</p><p className="mt-1 text-sm font-semibold">{entry.kind === 'commission' ? money(entry.data.receivedCents as string) : entry.kind === 'expense' ? '−' + money(entry.data.amountCents as string) : money(entry.data.estimatedTakeHomeCents as string) + ' expected'}</p></div>{entry.status === 'active' ? <div className="flex flex-wrap gap-2"><button type="button" disabled={busy} onClick={() => setMutation({ entry, purpose: 'correct' })} className={quietButton}>Correct</button>{entry.kind === 'expected_commission' ? <button type="button" disabled={busy} onClick={() => setMutation({ entry, purpose: 'realize' })} className={quietButton}>Record received</button> : null}<button type="button" disabled={busy} onClick={() => setVoidEntry(entry)} className="rounded-lg px-3 py-2 text-sm text-rose-200 hover:bg-rose-300/10">Void</button></div> : null}</div>)}</div> : <p className="text-sm text-slate-400">Record a commission or expense to build your business summary.</p>}
       {data?.ledger?.nextCursor ? <button type="button" disabled={loadingMore} onClick={() => void loadNextPage()} className={'mt-4 ' + quietButton}>{loadingMore ? 'Loading entries…' : 'Load more activity'}</button> : null}
     </Panel>
     {mutation ? <FinancialMutationDialog entry={mutation.entry} purpose={mutation.purpose} timeZone={timeZone} busy={busy} onClose={() => setMutation(null)} submit={submit} /> : null}
+    {voidEntry ? <FinancialVoidDialog entry={voidEntry} busy={busy} onClose={() => setVoidEntry(null)} onConfirm={async () => {
+      const saved = await submit('/api/realtor/financial-records', 'PATCH', { action: 'void', recordId: voidEntry.id, expectedRevision: voidEntry.current_revision, requestKey: key() }, 'Entry voided; linked planner bill reopened if applicable.');
+      if (saved) setVoidEntry(null);
+    }} /> : null}
   </div>;
+}
+
+function FinancialVoidDialog({ entry, busy, onClose, onConfirm }: { entry: FinancialEntry; busy: boolean; onClose: () => void; onConfirm: () => Promise<void> }) {
+  const label = entry.kind === 'commission' ? 'Commission received' : entry.kind === 'expense' ? `${String(entry.data.category || 'Business').replaceAll('_', ' ')} expense` : 'Expected income';
+  const amount = entry.kind === 'commission' ? money(entry.data.receivedCents as string) : entry.kind === 'expense' ? money(entry.data.amountCents as string) : money(entry.data.estimatedTakeHomeCents as string);
+
+  return <ModalSurface labelId="financial-void-title" onClose={onClose}>
+    <h2 id="financial-void-title" className="text-xl font-bold">Void this ledger entry?</h2>
+    <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-xl border border-white/10 bg-slate-950/50 p-4 text-sm">
+      <dt className="text-slate-400">Entry</dt><dd className="font-semibold text-white">{label}</dd>
+      <dt className="text-slate-400">Amount</dt><dd className="font-semibold text-white">{entry.kind === 'expense' ? '−' : ''}{amount}{entry.kind === 'expected_commission' ? ' expected' : ''}</dd>
+      <dt className="text-slate-400">Date</dt><dd className="text-white">{entry.effective_date}</dd>
+    </dl>
+    <p className="mt-4 text-sm leading-6 text-slate-300">{entry.kind === 'expected_commission' ? 'This removes the amount from pending income. It was not counted as received money.' : 'This entry will be excluded from recorded totals. Its earlier revision stays in history.'}</p>
+    {entry.kind === 'expense' && entry.occurrence_id ? <p className="mt-3 rounded-lg border border-amber-200/20 bg-amber-200/[0.06] p-3 text-sm leading-6 text-amber-100">This payment is linked to a planner bill. Voiding it will reopen the bill as pending and supersede its reminders.</p> : null}
+    <div className="mt-5 flex gap-2"><button type="button" disabled={busy} onClick={() => void onConfirm()} className="rounded-lg bg-rose-300 px-4 py-2.5 text-sm font-bold text-slate-950 disabled:opacity-50">{busy ? 'Voiding…' : 'Void entry'}</button><button type="button" disabled={busy} onClick={onClose} className={quietButton}>Keep entry</button></div>
+  </ModalSurface>;
 }
 
 function FinancialMutationDialog({ entry, purpose, timeZone, busy, onClose, submit }: {
