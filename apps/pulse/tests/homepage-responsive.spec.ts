@@ -45,3 +45,23 @@ test('homepage defers the Atlas bundle and stays usable across viewport widths',
   await page.getByRole('button', { name: 'Close Atlas experience' }).click();
   await expect(launchButton).toBeFocused();
 });
+
+test('homepage offers a working route when the deferred Atlas script fails', async ({ page }) => {
+  let failAtlasChunks = false;
+  await page.route('**/_next/static/**', async (route) => {
+    if (failAtlasChunks && route.request().resourceType() === 'script') {
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  failAtlasChunks = true;
+  await page.getByRole('button', { name: 'Open Atlas View' }).click();
+
+  const fallback = page.getByRole('alert');
+  await expect(fallback.getByText('The Atlas view could not open.')).toBeVisible();
+  await expect(fallback.getByRole('link', { name: /Open Atlas/ })).toHaveAttribute('href', '/atlas');
+  await expect(fallback.getByText('You can still browse listings and explore the map.')).toBeVisible();
+});
