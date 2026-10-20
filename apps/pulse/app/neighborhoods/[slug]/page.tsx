@@ -6,9 +6,9 @@ import { notFound } from 'next/navigation';
 import { getPublishedNeighborhoodGuide, listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
 import { getPublishedNeighborhoodPresentation } from '@/lib/marketing/neighborhoodPresentations.server';
 import NeighborhoodMapLauncher from '@/components/marketing/NeighborhoodMapLauncher';
-import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
+import SellerCampaignLink from '@/components/marketing/SellerCampaignLink';
 
-type PageProps = { params: Promise<{ slug: string }>; searchParams: Promise<SellerCampaignSearchParams> };
+type PageProps = { params: Promise<{ slug: string }> };
 export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
@@ -28,9 +28,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function NeighborhoodGuidePage({ params, searchParams }: PageProps) {
+export default async function NeighborhoodGuidePage({ params }: PageProps) {
   const { slug } = await params;
-  const campaignQuery = sellerCampaignQuery(await searchParams);
   const guide = getPublishedNeighborhoodGuide(slug);
   if (!guide) notFound();
   const presentation = getPublishedNeighborhoodPresentation(slug);
@@ -66,7 +65,7 @@ export default async function NeighborhoodGuidePage({ params, searchParams }: Pa
         <aside className="mt-8 rounded-3xl border border-teal-100/15 bg-teal-100/[0.06] p-6">
           <h2 className="text-xl font-bold">Thinking about selling nearby?</h2>
           <p className="mt-2 leading-7 text-slate-300">Request a personal conversation about timing, preparation and a property-specific pricing review. This page is general information, not a valuation.</p>
-          <Link href={`/seller-plan${campaignQuery}`} className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-teal-300 px-5 font-black text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a seller plan</Link>
+          <SellerCampaignLink className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-teal-300 px-5 font-black text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a seller plan</SellerCampaignLink>
         </aside>
       </article>
     </main>

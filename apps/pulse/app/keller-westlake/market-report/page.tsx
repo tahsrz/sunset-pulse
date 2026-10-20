@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { listPublishedMarketReports } from '@/lib/marketing/marketReports.server';
-import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
+import SellerCampaignLink from '@/components/marketing/SellerCampaignLink';
 
 export function generateMetadata(): Metadata {
   const hasReport = listPublishedMarketReports().length > 0;
@@ -14,8 +14,7 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default async function KellerWestlakeMarketReportPage({ searchParams }: { searchParams: Promise<SellerCampaignSearchParams> }) {
-  const campaignQuery = sellerCampaignQuery(await searchParams);
+export default function KellerWestlakeMarketReportPage() {
   const reports = listPublishedMarketReports();
   return (
     <main className="min-h-screen bg-[#061017] px-4 py-14 text-white sm:px-6 sm:py-20">
@@ -53,7 +52,7 @@ export default async function KellerWestlakeMarketReportPage({ searchParams }: {
         )}
 
         <div className="mt-10 flex flex-wrap gap-4 text-sm font-semibold">
-          <Link className="rounded-full bg-teal-500 px-5 py-3 text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" href={`/seller-plan${campaignQuery}`}>Request a personally reviewed pricing conversation</Link>
+          <SellerCampaignLink className="rounded-full bg-teal-500 px-5 py-3 text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a personally reviewed pricing conversation</SellerCampaignLink>
           <Link className="rounded-full border border-white/15 px-5 py-3 text-teal-100 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/neighborhoods">Read neighborhood guides</Link>
         </div>
       </div>
