@@ -157,6 +157,8 @@ Modify the existing personal Jamie handoff/rendering path only after locating it
 
 Exit: context reduces what the person must type, while preserving scoped inputs, editable drafts and explicit consequences.
 
+**October 20 H6 progress:** Seller cases now link to Personal Jamie with the selected case ID. The chat route re-resolves it through the existing owner-authorized seller service on each turn and sends only the seller name/status, milestone names, checklist completion counts, and accepted appointment count. Contact details, private notes, messages, evidence, and document links stay out of model context. General Jamie rejects seller case IDs. The chat identifies the linked scope and existing proposal confirmation flow remains unchanged. Focused route and runner tests cover owner-scoped lookup, bounded context, general-context rejection, and no-write behavior. Optional voice and actual authenticated browser review remain open.
+
 ## H7: Progress that can be seen
 
 Create `SellerProgressSummary.tsx`; modify `SellerOverviewPanel.tsx`, `SellerPortal.tsx` and the existing weekly-review presentation.

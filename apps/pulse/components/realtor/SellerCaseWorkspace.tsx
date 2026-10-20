@@ -88,7 +88,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
   const savedMilestones = data?.milestones || [];
   return <FieldbookShell title={data?.lead.name || 'Seller case'} eyebrow="Seller case" navigation={<SellerWorkspaceNav active="/seller-cases" />}>
     <div className="space-y-6">
-    <div><Link className="mt-2 inline-block text-sm text-cyan-200 underline" href={`/seller-inbox?leadId=${encodeURIComponent(leadId)}`}>Open request, permissions and closing records</Link></div>
+    <div className="flex flex-wrap gap-x-5 gap-y-2"><Link className="mt-2 inline-block min-h-11 content-center text-sm text-cyan-200 underline" href={`/jamie-chat?context=personal_realtor&sellerCaseId=${encodeURIComponent(leadId)}`}>Help me prepare with Jamie</Link><Link className="mt-2 inline-block min-h-11 content-center text-sm text-cyan-200 underline" href={`/seller-inbox?leadId=${encodeURIComponent(leadId)}`}>Open request, permissions and closing records</Link></div>
     {error ? <p role="alert" className="rounded-xl border border-rose-300/30 p-4">{error} <button className="underline" disabled={busy} onClick={() => { setError(''); void load().catch((reason) => setError(reason.message)); }}>Reload case</button></p> : null}
     {notice ? <p role="status" className="text-cyan-100">{notice}</p> : null}
     {!data && !error ? <p role="status">Loading case…</p> : null}

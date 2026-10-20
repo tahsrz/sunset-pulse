@@ -31,6 +31,7 @@ type JamieAssistantWorkspaceProps = {
   memoryContext?: unknown;
   isDevMode?: boolean;
   context?: 'general' | 'personal_realtor';
+  sellerCaseId?: string;
 };
 
 export default function JamieAssistantWorkspace({
@@ -39,6 +40,7 @@ export default function JamieAssistantWorkspace({
   memoryContext,
   isDevMode = false,
   context = 'general',
+  sellerCaseId,
 }: JamieAssistantWorkspaceProps) {
   const { agentId, assistantProfile } = useTheme();
   const listingId = [propertyData?.id, propertyData?._id, propertyData?.mls_id, propertyData?.mlsId]
@@ -52,6 +54,7 @@ export default function JamieAssistantWorkspace({
         body: JSON.stringify({
           messages: toJamieMessages(messages),
           ...(apiRoute === '/api/chat' ? { context } : {}),
+          ...(context === 'personal_realtor' && sellerCaseId ? { sellerCaseId } : {}),
           ...(context === 'general' ? { listingId, memoryContext, isDevMode, agentId } : {}),
         }),
         signal: abortSignal
@@ -80,7 +83,7 @@ export default function JamieAssistantWorkspace({
         }
       };
     }
-  }), [agentId, apiRoute, context, isDevMode, listingId, memoryContext]);
+  }), [agentId, apiRoute, context, isDevMode, listingId, memoryContext, sellerCaseId]);
 
   const runtime = useLocalRuntime(modelAdapter);
 
@@ -130,13 +133,13 @@ export default function JamieAssistantWorkspace({
           </div> : null}
         </aside>
 
-        <Thread assistantName={assistantProfile.displayName} context={context} />
+        <Thread assistantName={assistantProfile.displayName} context={context} sellerCaseSelected={Boolean(sellerCaseId)} />
       </section>
     </AssistantRuntimeProvider>
   );
 }
 
-function Thread({ assistantName, context }: { assistantName: string; context: 'general' | 'personal_realtor' }) {
+function Thread({ assistantName, context, sellerCaseSelected }: { assistantName: string; context: 'general' | 'personal_realtor'; sellerCaseSelected: boolean }) {
   return (
     <ThreadPrimitive.Root data-fieldbook-chat className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_35%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))]">
       <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
@@ -154,6 +157,7 @@ function Thread({ assistantName, context }: { assistantName: string; context: 'g
       </div>
 
       <ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+        {sellerCaseSelected ? <p className="mx-auto mb-5 max-w-4xl rounded-xl border border-cyan-200/20 bg-cyan-200/[0.06] px-4 py-3 text-xs leading-5 text-cyan-50">This chat is linked to the seller case you selected. Jamie can use its saved stage, milestone and preparation counts. Contact details, private notes and message history stay out of this context.</p> : null}
         <ThreadPrimitive.Empty>
           <div className="mx-auto flex max-w-2xl flex-col items-center justify-center py-16 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10 text-cyan-100">
