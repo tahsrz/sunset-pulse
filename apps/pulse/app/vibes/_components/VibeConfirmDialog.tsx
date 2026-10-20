@@ -4,9 +4,9 @@ import type { ReactNode } from 'react';
 import React from 'react';
 import { useEffect, useId, useRef } from 'react';
 
-type VibeConfirmDialogProps = { open: boolean; title: string; description?: ReactNode; confirmLabel: string; cancelLabel: string; busy?: boolean; onConfirm: () => void; onOpenChange: (open: boolean) => void };
+type VibeConfirmDialogProps = { open: boolean; title: string; description?: ReactNode; children?: ReactNode; confirmLabel: string; cancelLabel: string; busy?: boolean; confirmDisabled?: boolean; onConfirm: () => void; onOpenChange: (open: boolean) => void };
 
-export function VibeConfirmDialog({ open, title, description, confirmLabel, cancelLabel, busy = false, onConfirm, onOpenChange }: VibeConfirmDialogProps) {
+export function VibeConfirmDialog({ open, title, description, children, confirmLabel, cancelLabel, busy = false, confirmDisabled = false, onConfirm, onOpenChange }: VibeConfirmDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -40,9 +40,10 @@ export function VibeConfirmDialog({ open, title, description, confirmLabel, canc
     <form method="dialog" onSubmit={(event) => event.preventDefault()} className="p-5">
       <h2 id={titleId} className="text-lg font-bold text-slate-900">{title}</h2>
       {description ? <div className="mt-2 text-sm text-slate-600">{description}</div> : null}
+      {children ? <div className="mt-4">{children}</div> : null}
       <div className="mt-5 flex justify-end gap-2">
         <button ref={cancelRef} type="button" disabled={busy} onClick={close} className="rounded border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">{cancelLabel}</button>
-        <button type="button" disabled={busy} onClick={confirm} className="fieldbook-primary rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? 'Working…' : confirmLabel}</button>
+        <button type="button" disabled={busy || confirmDisabled} onClick={confirm} className="fieldbook-primary rounded bg-[#2271b1] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? 'Working…' : confirmLabel}</button>
       </div>
     </form>
   </dialog>;
