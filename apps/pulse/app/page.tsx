@@ -16,6 +16,7 @@ import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
 import { listPublishedNeighborhoodPresentations } from '@/lib/marketing/neighborhoodPresentations.server';
 import { getPublishedSellerIntroduction } from '@/lib/marketing/sellerIntroduction.server';
+import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
 import SellerIntroduction from '@/components/marketing/SellerIntroduction';
 import type { Property } from '@/lib/types';
 import styles from './home.module.css';
@@ -65,13 +66,14 @@ function NeighborhoodPreview() {
   );
 }
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<SellerCampaignSearchParams> }) {
   const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
   const sellerIntroduction = getPublishedSellerIntroduction();
+  const campaignQuery = sellerCampaignQuery(await searchParams);
 
   return (
     <div className={styles.homePage}>
-      <SellerAcquisitionHero />
+      <SellerAcquisitionHero campaignQuery={campaignQuery} />
       <HomeHero />
       {sellerIntroduction ? <SellerIntroduction profile={sellerIntroduction} /> : null}
       <div className="waterlily-surface">
