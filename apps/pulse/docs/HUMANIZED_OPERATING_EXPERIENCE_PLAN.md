@@ -118,6 +118,8 @@ Exit: a person can reach the next action without scrolling through unrelated for
 
 Create `SellerConversation.tsx` and `SellerAppointmentStep.tsx`; reuse `SellerLeadScheduleDialog.tsx`, the existing booking-to-planner bridge and message action contracts.
 
+**October 19 H4 progress:** The current conversation history now sorts by message time, uses clear labels for receipt and delivery states, and expands long bodies and provider references under “Details.” This is a read-only presentation improvement; message sending, contact permission checks, and appointment scheduling remain on their existing paths. Two helper tests verify chronological ordering and status labels. The compose and appointment flows remain for a later H4 slice.
+
 1. Show messages as a chronological conversation with sender/direction, actual time and concise receipt state. Expand long messages and receipt details on demand.
 2. Separate “Write a reply” from “Record a conversation that happened”. Provide a local date/time picker with the saved timezone for actual events, then convert to the existing offset-aware contract. Reject invalid/ambiguous times; do not replace an exact timestamp with browser locale parsing.
 3. Keep recipient and sender visible while composing. The review step shows the exact frozen message and a clear sending consequence. Changing recipient/content clears review.
