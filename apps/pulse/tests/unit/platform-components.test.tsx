@@ -38,6 +38,15 @@ describe('platform interaction primitives', () => {
     expect(onRespond).toHaveBeenCalledWith(expect.objectContaining({ checkpointId: 'approval-1', expectedRevision: 1, value: true, submissionKey: expect.any(String) }));
   });
 
+  it('locks decisions when an approval target cannot be previewed and checked', async () => {
+    const onRespond = vi.fn();
+    render(<CheckpointCard checkpoint={{ id: 'approval-2', node_id: 'review', type: 'approval', prompt: 'Review this listing.', target: { resourceType: 'listing', resourceId: 'listing-1', revision: 2, action: 'publish' }, revision: 1 }} onRespond={onRespond} decisionUnavailableReason="This target has no exact preview and revision check in the inbox yet, so no approval can be recorded." />);
+    expect(screen.getByText(/no approval can be recorded/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+    expect(onRespond).not.toHaveBeenCalled();
+  });
+
   it('keeps reviewers read-only when their workspace role cannot resolve a question', () => {
     const onRespond = vi.fn();
     render(<CheckpointCard checkpoint={{ id: 'question-1', node_id: 'answer', type: 'question', prompt: 'What should we verify?', response_schema: { type: 'string' }, revision: 1 }} onRespond={onRespond} canRespond={false} />);

@@ -187,6 +187,9 @@ export async function respondToCheckpoint(actorId: string, workspaceId: string, 
       p_expected_revision: value.expectedRevision, p_submission_key: value.submissionKey, p_decision: value.value,
     });
   }
+  // Approval decisions must pass through a resource-specific handler that can
+  // validate the exact target snapshot. The generic response RPC cannot do that.
+  if (checkpoint?.type === 'approval') throw new PlatformRunError('0A000');
   return rpc('platform_respond_checkpoint', {
     p_actor_id: actorId, p_workspace_id: workspaceId, p_checkpoint_id: value.checkpointId,
     p_expected_revision: value.expectedRevision, p_submission_key: value.submissionKey, p_value: value.value,

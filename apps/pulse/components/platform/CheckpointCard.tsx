@@ -19,10 +19,11 @@ export type CheckpointCardProps = {
   error?: string | null;
   disabled?: boolean;
   canRespond?: boolean;
+  decisionUnavailableReason?: string;
   footer?: ReactNode;
 };
 
-export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, canRespond = true, footer }: CheckpointCardProps) {
+export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, canRespond = true, decisionUnavailableReason, footer }: CheckpointCardProps) {
   const [value, setValue] = useState<string | number | boolean>(checkpoint.response_schema?.type === 'boolean' ? false : '');
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -58,11 +59,12 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
       ) : null}
       {question ? <button type="button" onClick={submit} disabled={disabled || !canRespond || submitting || value === ''} className="mt-5 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Submitting…' : 'Save response'}</button> : (
         <div className="mt-5 flex flex-wrap gap-3">
-          <button type="button" onClick={() => void respond(true)} disabled={disabled || !canRespond || submitting} className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Saving…' : checkpoint.type === 'approval' ? 'Approve' : 'Allow'}</button>
-          <button type="button" onClick={() => void respond(false)} disabled={disabled || !canRespond || submitting} className="rounded-md border border-rose-200/30 px-4 py-2 text-sm font-bold text-rose-100 disabled:opacity-50">{checkpoint.type === 'approval' ? 'Reject' : 'Deny'}</button>
+          <button type="button" onClick={() => void respond(true)} disabled={disabled || !canRespond || Boolean(decisionUnavailableReason) || submitting} className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Saving…' : checkpoint.type === 'approval' ? 'Approve' : 'Allow'}</button>
+          <button type="button" onClick={() => void respond(false)} disabled={disabled || !canRespond || Boolean(decisionUnavailableReason) || submitting} className="rounded-md border border-rose-200/30 px-4 py-2 text-sm font-bold text-rose-100 disabled:opacity-50">{checkpoint.type === 'approval' ? 'Reject' : 'Deny'}</button>
         </div>
       )}
       {!canRespond ? <p className="mt-3 text-xs text-slate-400">Your workspace role can view this checkpoint but cannot decide it.</p> : null}
+      {decisionUnavailableReason ? <p className="mt-3 text-sm text-amber-100">{decisionUnavailableReason}</p> : null}
       {error || localError ? <p role="alert" className="mt-3 text-sm text-rose-300">{error || localError}</p> : null}
       {footer}
     </article>
