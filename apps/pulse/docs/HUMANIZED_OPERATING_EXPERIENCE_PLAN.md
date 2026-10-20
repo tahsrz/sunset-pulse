@@ -171,6 +171,8 @@ Create `SellerProgressSummary.tsx`; modify `SellerOverviewPanel.tsx`, `SellerPor
 
 Exit: the owner and client can understand reviewed progress without reading an operational report; missing data never produces invented progress.
 
+**October 20 H7 progress:** The seller overview now leads with five visible checkpoints from the existing 30-day request cohort: requests, customer replies, consultations held, verified agreements, and recorded closings. Each count keeps its existing database definition, and the page says plainly that these independent records do not form a drop-off chart. Opted-in visits and request-button actions stay in a separate acquisition detail panel. A focused component test covers stage labels, cohort counts, and the non-conversion explanation. The client publication preview and weekly reflection view remain for the next H7 slice.
+
 ## H8: Carry the same interaction into the rest of the platform
 
 - **Vibe CMS:** one content/revision preview and one contextual action rail; reuse exact revision review/apply/rollback. Keep technical history behind details.
