@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import fieldbook from '@/components/realtor/Fieldbook.module.css';
-import { CheckpointCard, type CheckpointCardData, type CheckpointCardProps } from './CheckpointCard';
+import { CheckpointCard, CheckpointResponseError, type CheckpointCardData, type CheckpointCardProps } from './CheckpointCard';
 import { ManifestForm } from './ManifestForm';
 import type { AppManifest } from '@/lib/platform/contracts/appManifest';
 import { QuotaBudgetPanel } from './QuotaBudgetPanel';
@@ -190,7 +190,7 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
   async function respond(input: Parameters<CheckpointCardProps['onRespond']>[0]) {
     const response = await fetch(`/api/workspaces/${workspaceId}/checkpoints`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || 'Checkpoint changed. Reload before responding.');
+    if (!response.ok) throw new CheckpointResponseError(response.status === 409 ? 'This checkpoint changed while you were reviewing it.' : body.error || 'Unable to save this response.', response.status === 409);
     await load();
   }
 
@@ -220,6 +220,7 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
         return <CheckpointCard key={checkpoint.id} checkpoint={checkpoint} onRespond={respond} canRespond={canRespond}
           disabled={!canRespond || unsupportedApproval || (isSellerBriefReview && !targetBrief)}
           decisionUnavailableReason={unsupportedApproval ? 'This target has no exact preview and revision check in the inbox yet, so no approval can be recorded.' : undefined}
+          onReload={() => void load()}
           footer={isSellerBriefReview ? <div className="fieldbook-record mt-5 rounded-lg border border-cyan-200/15 bg-slate-950/70 p-4">
             {targetBrief ? <><p className="text-xs font-bold uppercase tracking-widest text-cyan-200">Exact private draft · revision {targetBrief.revision}</p><h4 className="mt-2 font-bold">{targetBrief.brief_data.topic}</h4><p className="mt-2 text-sm text-slate-300">{targetBrief.brief_data.audienceNeed}</p><p className="mt-3 text-sm font-semibold text-slate-200">{targetBrief.brief_data.hook}</p><p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{targetBrief.brief_data.script}</p><ul className="mt-3 list-disc pl-5 text-xs text-slate-400">{targetBrief.brief_data.shotList.map((shot, index) => <li key={`${index}-${shot}`}>{shot}</li>)}</ul><p className="mt-3 text-xs text-slate-400">Channels: {targetBrief.brief_data.channels.join(', ')} · Listing media: {targetBrief.brief_data.listingPermission.status}{targetBrief.brief_data.listingPermission.listingReference ? ` (${targetBrief.brief_data.listingPermission.listingReference})` : ''}</p><div className="mt-3 space-y-2">{targetBrief.brief_data.claimEvidence.map((claim, index) => <div key={`${index}-${claim.claim}`} className="rounded border border-white/10 p-2 text-xs"><p>{claim.claim}</p><p className="mt-1 break-all text-slate-400">Source: {claim.sourceReference} · {claim.sourceDate || 'undated'} · {claim.publicationBasis}{claim.permissionEvidence ? ` · permission: ${claim.permissionEvidence}` : ''}</p></div>)}</div></> : <p role="alert" className="text-sm text-rose-200">The exact draft revision is unavailable. This review is locked; reload or ask the author to request review again.</p>}
             <p className="mt-4 border-t border-white/10 pt-3 text-xs font-semibold text-amber-100">This decision records human review only. It does not publish, upload, or send the video.</p>

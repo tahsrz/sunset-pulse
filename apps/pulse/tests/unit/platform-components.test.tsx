@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import manifest from '@/lib/platform/apps/manifests/real-estate-readiness.v1.json';
 import { appManifestSchema } from '@/lib/platform/contracts/appManifest';
 import { ManifestForm } from '@/components/platform/ManifestForm';
-import { CheckpointCard } from '@/components/platform/CheckpointCard';
+import { CheckpointCard, CheckpointResponseError } from '@/components/platform/CheckpointCard';
 
 describe('platform interaction primitives', () => {
   it('keeps manifest validation bounded and reports required fields', async () => {
@@ -45,6 +45,18 @@ describe('platform interaction primitives', () => {
     expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
     expect(onRespond).not.toHaveBeenCalled();
+  });
+
+  it('locks a stale checkpoint and offers a direct data reload', async () => {
+    const onRespond = vi.fn().mockRejectedValue(new CheckpointResponseError('This checkpoint changed while you were reviewing it.', true));
+    const onReload = vi.fn();
+    render(<CheckpointCard checkpoint={{ id: 'approval-3', node_id: 'review', type: 'approval', prompt: 'Review this draft.', target: { resourceType: 'seller_video_brief', resourceId: 'brief-2', revision: 3, action: 'review_seller_video_brief' }, revision: 1 }} onRespond={onRespond} onReload={onReload} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Approve' })); });
+    expect(screen.getByRole('status')).toHaveTextContent('This checkpoint changed while you were reviewing it.');
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reload workspace data' }));
+    expect(onReload).toHaveBeenCalledOnce();
   });
 
   it('keeps reviewers read-only when their workspace role cannot resolve a question', () => {
