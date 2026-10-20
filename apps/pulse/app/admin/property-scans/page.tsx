@@ -1,12 +1,12 @@
 'use client';
 
 import fieldbook from '@/components/realtor/Fieldbook.module.css';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Eye, RefreshCw, ScanLine, ShieldCheck, XCircle } from 'lucide-react';
 import ScanMediaGallery from '@/components/scans/ScanMediaGallery';
 
-type ScanSession = {
+export type PropertyScanReviewSession = {
   scanId: string;
   propertyAddress: string;
   listingId: string | null;
@@ -24,7 +24,7 @@ type ScanSession = {
 };
 
 export default function PropertyScanReviewPage() {
-  const [sessions, setSessions] = useState<ScanSession[]>([]);
+  const [sessions, setSessions] = useState<PropertyScanReviewSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
@@ -52,7 +52,7 @@ export default function PropertyScanReviewPage() {
     rejected: sessions.filter((session) => session.status === 'rejected').length,
   }), [sessions]);
 
-  const review = async (session: ScanSession, status: 'approved' | 'rejected') => {
+  const review = async (session: PropertyScanReviewSession, status: 'approved' | 'rejected') => {
     setBusyId(session.scanId);
     setError('');
     try {
@@ -89,12 +89,12 @@ export default function PropertyScanReviewPage() {
 
 function Metric({ label, value }: { label: string; value: number }) { return <div className="fieldbook-record rounded-2xl border border-white/10 bg-white/[0.05] p-5"><div className="text-3xl font-black text-white">{value}</div><div className="mt-1 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">{label}</div></div>; }
 
-function LegacyScanReviewCard({ session, busy, onReview }: { session: ScanSession; busy: boolean; onReview: (status: 'approved' | 'rejected') => void }) {
+function LegacyScanReviewCard({ session, busy, onReview }: { session: PropertyScanReviewSession; busy: boolean; onReview: (status: 'approved' | 'rejected') => void }) {
   const needsReview = session.status === 'capture_ready' || session.status === 'in_review';
   return <article className="fieldbook-record rounded-3xl border border-white/10 bg-white/[0.05] p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-200">{session.scanId}</p><h2 className="mt-2 text-xl font-black uppercase tracking-tight">{session.propertyAddress}</h2>{session.listingId && <p className="mt-1 text-xs text-slate-400">Listing {session.listingId}</p>}</div><span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${session.status === 'approved' ? 'border-emerald-200/40 bg-emerald-200/10 text-emerald-100' : session.status === 'rejected' ? 'border-rose-200/40 bg-rose-200/10 text-rose-100' : 'border-amber-200/40 bg-amber-200/10 text-amber-100'}`}>{session.status.replace('_', ' ')}</span></div><div className="mt-5 grid grid-cols-2 gap-3 text-xs"><Info label="Capture" value={session.captureMode.replace('_', ' ')} /><Info label="Media" value={`${session.assets.length} file${session.assets.length === 1 ? '' : 's'}`} /><Info label="Owner consent" value={session.consent.ownerAuthorized ? 'Confirmed' : 'Missing'} /><Info label="Interior notice" value={session.consent.interiorCaptureAcknowledged ? 'Confirmed' : 'Missing'} /></div><div className="fieldbook-record mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4"><div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-300"><Eye className="h-4 w-4 text-teal-200" /> Private media review</div>{session.assets.length ? <ScanMediaGallery scanId={session.scanId} assets={session.assets} /> : <p className="mt-3 text-xs leading-5 text-slate-500">No captures uploaded yet.</p>}</div>{session.reviewNote && <p className="mt-4 text-xs leading-5 text-slate-300">Review note: {session.reviewNote}</p>}{needsReview && <div className="mt-5 flex gap-3"><button type="button" disabled={busy || session.assets.length === 0} onClick={() => onReview('approved')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-200 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Approve capture review</button><button type="button" disabled={busy} onClick={() => onReview('rejected')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-rose-200/30 px-4 py-3 text-xs font-black uppercase tracking-widest text-rose-100 hover:bg-rose-200/10 disabled:opacity-40"><XCircle className="h-4 w-4" /> Request rescan</button></div>}{session.status === 'approved' && !session.reconstruction && <div className="fieldbook-record mt-5 rounded-2xl border border-amber-200/20 bg-amber-200/[0.06] p-4 text-xs leading-5 text-amber-50">Capture review is approved. A real reconstruction processor is not configured yet.</div>}{session.reconstruction?.status === 'ready' && <div className="fieldbook-record mt-5 rounded-2xl border border-amber-200/20 bg-amber-200/[0.06] p-4 text-xs leading-5 text-amber-50">Legacy synthetic demo metadata exists for this session. It is not a model of this property and cannot be opened as a listing preview.</div>}</article>;
 }
 
-function ScanReviewCard({ session, busy, onReview }: { session: ScanSession; busy: boolean; onReview: (status: 'approved' | 'rejected') => void }) {
+export function ScanReviewCard({ session, busy, onReview }: { session: PropertyScanReviewSession; busy: boolean; onReview: (status: 'approved' | 'rejected') => void }) {
   const [acknowledged, setAcknowledged] = useState(false);
   const needsReview = session.status === 'capture_ready' || session.status === 'in_review';
 
@@ -115,6 +115,7 @@ function ScanReviewCard({ session, busy, onReview }: { session: ScanSession; bus
     {needsReview && <div className="mt-5 space-y-3"><label className="flex items-start gap-3 text-xs leading-5 text-slate-300"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 accent-teal-200" />I inspected the available private media for manifest revision {session.revision} and understand approval is only for this exact capture, not public listing publication.</label><div className="flex gap-3"><button type="button" disabled={busy || session.assets.length === 0 || !acknowledged} onClick={() => onReview('approved')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-200 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Approve capture review</button><button type="button" disabled={busy} onClick={() => onReview('rejected')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-rose-200/30 px-4 py-3 text-xs font-black uppercase tracking-widest text-rose-100 hover:bg-rose-200/10 disabled:opacity-40"><XCircle className="h-4 w-4" /> Request rescan</button></div></div>}
     {session.status === 'approved' && !session.reconstruction && <div className="fieldbook-record mt-5 rounded-2xl border border-amber-200/20 bg-amber-200/[0.06] p-4 text-xs leading-5 text-amber-50">Capture review is approved. A real reconstruction processor is not configured yet.</div>}
     {session.reconstruction?.status === 'ready' && <div className="fieldbook-record mt-5 rounded-2xl border border-amber-200/20 bg-amber-200/[0.06] p-4 text-xs leading-5 text-amber-50">Legacy synthetic demo metadata exists for this session. It is not a model of this property and cannot be opened as a listing preview.</div>}
+    {session.reconstruction?.status === 'failed' && <div role="status" className="fieldbook-record mt-5 rounded-2xl border border-rose-200/20 bg-rose-200/[0.06] p-4 text-xs leading-5 text-rose-50">A legacy demo reconstruction failed. It is not a model of this property, and no real reconstruction preview is available.</div>}
   </article>;
 }
 

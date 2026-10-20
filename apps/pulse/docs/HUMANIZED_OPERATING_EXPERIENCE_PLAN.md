@@ -183,6 +183,8 @@ Exit: the owner and client can understand reviewed progress without reading an o
 
 Implement these as later surface-specific slices under their existing plans; do not apply a generic visual wrapper that changes domain meaning.
 
+**October 20 H8 progress:** Property scan review now keeps a failed legacy demo reconstruction visible with a clear statement that it is not a model of the property and provides no usable property preview. This aligns the failure state with the existing ready-demo and processor-unavailable states. A focused card test covers the failed state. Next, review the Vibe CMS action flow for a small, testable usability gap before changing its established revision and publication gates.
+
 ## Scheduling and storage rules throughout
 
 Reuse the existing personal planner, reminder jobs, hourly dispatcher and five-minute worker. A smoother UI does not create another calendar, job queue or notification mechanism. Visual progress is derived from saved records and receipts, not from a client-side checklist.
