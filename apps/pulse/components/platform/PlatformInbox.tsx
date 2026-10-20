@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import fieldbook from '@/components/realtor/Fieldbook.module.css';
 import { CheckpointCard, type CheckpointCardData, type CheckpointCardProps } from './CheckpointCard';
@@ -210,7 +210,7 @@ export function PlatformInbox({ workspaceId, embedded = false }: { workspaceId: 
   const Shell = embedded ? 'div' : 'main';
   return <Shell className={shellClass}><div className={contentClass}>
     <header><p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-200">Shared workspace inbox</p><h1 className="mt-2 text-3xl font-black">Review inbox</h1><p className="mt-2 max-w-2xl text-sm text-slate-400">Answers stay attached to the existing run and checkpoint revision. Nothing here approves facts, sends email, or publishes content.</p></header>
-    {error ? <div role="alert" className="border border-rose-300/30 bg-rose-300/10 p-4 text-sm text-rose-100">{error}</div> : null}
+    {error ? <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border border-rose-300/30 bg-rose-300/10 p-4 text-sm text-rose-100"><p>{error}</p><button type="button" disabled={loading} onClick={() => void load()} className="rounded-md border border-rose-100/30 px-3 py-2 text-xs font-semibold text-rose-50 disabled:opacity-50">{loading ? 'Reloading…' : 'Reload workspace data'}</button></div> : null}
     <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="space-y-6"><div className="space-y-4"><h2 className="text-lg font-bold">Pending checkpoints</h2>{loading && !checkpoints.length ? <p className="text-sm text-slate-400">Loading workspace…</p> : null}{!loading && !checkpoints.length ? <p className="text-sm text-slate-400">Nothing needs your input.</p> : null}{checkpoints.map((checkpoint) => {
         const isSellerBriefReview = checkpoint.type === 'approval' && checkpoint.target?.resourceType === 'seller_video_brief' && checkpoint.target.action === 'review_seller_video_brief';
