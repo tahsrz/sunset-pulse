@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import SellerCampaignLink from '@/components/marketing/SellerCampaignLink';
+import MarketingCampaignLink from '@/components/marketing/MarketingCampaignLink';
 
 export const metadata: Metadata = {
   title: 'Property Pricing Review | Sunset Pulse',
@@ -18,9 +17,9 @@ export default function ValuationPage() {
         <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">Sunset Pulse does not currently provide an automated property estimate. A comparative market analysis needs current, relevant comparable sales, property-specific details and a licensed professional’s review.</p>
         <p className="mt-4 max-w-3xl leading-7 text-slate-400">No price, range or turnaround promise is generated here. If you are considering a sale, you can request a personal pricing conversation through the seller-plan form. That public form does not collect your street address.</p>
         <div className="mt-9 flex flex-wrap gap-4">
-          <SellerCampaignLink className="rounded-full bg-teal-500 px-6 py-3 font-bold text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a seller pricing conversation</SellerCampaignLink>
-          <Link className="rounded-full border border-white/15 px-6 py-3 font-semibold text-teal-100 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/keller-westlake/market-report">View the local market report status</Link>
-          <Link className="rounded-full border border-white/15 px-6 py-3 font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/neighborhoods">Explore neighborhood guides</Link>
+          <MarketingCampaignLink className="rounded-full bg-teal-500 px-6 py-3 font-bold text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" href="/seller-plan">Request a seller pricing conversation</MarketingCampaignLink>
+          <MarketingCampaignLink className="rounded-full border border-white/15 px-6 py-3 font-semibold text-teal-100 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/keller-westlake/market-report">View the local market report status</MarketingCampaignLink>
+          <MarketingCampaignLink className="rounded-full border border-white/15 px-6 py-3 font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/neighborhoods">Explore neighborhood guides</MarketingCampaignLink>
         </div>
       </div>
     </main>

@@ -24,6 +24,26 @@ test('seller plan links retain validated campaign attribution from public guides
   }
 });
 
+test('campaign attribution survives navigation between public guides', async ({ page }) => {
+  await page.goto('/valuation?utm_source=guide&utm_medium=organic&utm_campaign=local-sellers&utm_content=pricing&untrusted=drop-me', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('link', { name: 'View the local market report status' }).click();
+  await expect(page).toHaveURL(/\/keller-westlake\/market-report\?utm_source=guide/);
+
+  await page.getByRole('link', { name: 'Read neighborhood guides' }).click();
+  await expect(page).toHaveURL(/\/neighborhoods\?utm_source=guide/);
+  await page.getByRole('link', { name: 'Read guide' }).first().click();
+  await expect(page).toHaveURL(/\/neighborhoods\/old-town-keller\?utm_source=guide/);
+
+  await page.getByRole('link', { name: '← All local guides' }).click();
+  await expect(page).toHaveURL(/\/neighborhoods\?utm_source=guide/);
+  const sellerPlanLink = page.getByRole('link', { name: 'Request a personal seller plan' });
+  const href = await sellerPlanLink.getAttribute('href');
+  expect(href).not.toBeNull();
+  const destination = new URL(href as string, 'http://localhost:3000');
+  expect(destination.searchParams.get('utm_campaign')).toBe('local-sellers');
+  expect(destination.searchParams.has('untrusted')).toBe(false);
+});
+
 test('homepage seller offer carries attribution through pricing review and a saved retry', async ({ page }) => {
   const requests: Record<string, unknown>[] = [];
   await page.route('**/api/lead-magnets', async (route) => {

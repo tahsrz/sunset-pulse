@@ -1,10 +1,9 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Image from 'next/image';
+import MarketingCampaignLink from '@/components/marketing/MarketingCampaignLink';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
 import { listPublishedNeighborhoodPresentations } from '@/lib/marketing/neighborhoodPresentations.server';
-import SellerCampaignLink from '@/components/marketing/SellerCampaignLink';
 
 export const metadata: Metadata = {
   title: 'Keller and Westlake Neighborhood Guides | Sunset Pulse',
@@ -29,12 +28,12 @@ export default function NeighborhoodGuidesPage() {
               <p className="text-xs font-bold uppercase tracking-widest text-teal-200">{guide.coverageType} guide · reviewed {guide.reviewedAt}</p>
               <h2 className="mt-3 text-2xl font-bold">{guide.title}</h2>
               <p className="mt-3 flex-1 leading-7 text-slate-300">{guide.summary}</p>
-              <Link className="mt-6 inline-flex min-h-11 items-center text-sm font-bold text-teal-200 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href={`/neighborhoods/${guide.slug}`}>Read guide <span aria-hidden="true" className="ml-2">→</span></Link>
+              <MarketingCampaignLink className="mt-6 inline-flex min-h-11 items-center text-sm font-bold text-teal-200 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href={`/neighborhoods/${guide.slug}`}>Read guide <span aria-hidden="true" className="ml-2">→</span></MarketingCampaignLink>
               </div>
             </li>
           ))}
         </ul>
-        <p className="mt-10 text-sm text-slate-400">Want a plan for selling a home in the area? <SellerCampaignLink className="font-bold text-teal-200 underline underline-offset-4">Request a personal seller plan</SellerCampaignLink>.</p>
+        <p className="mt-10 text-sm text-slate-400">Want a plan for selling a home in the area? <MarketingCampaignLink className="font-bold text-teal-200 underline underline-offset-4" href="/seller-plan">Request a personal seller plan</MarketingCampaignLink>.</p>
       </div>
     </main>
   );

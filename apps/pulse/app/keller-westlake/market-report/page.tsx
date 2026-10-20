@@ -1,8 +1,8 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import MarketingCampaignLink from '@/components/marketing/MarketingCampaignLink';
 import { listPublishedMarketReports } from '@/lib/marketing/marketReports.server';
-import SellerCampaignLink from '@/components/marketing/SellerCampaignLink';
 
 export function generateMetadata(): Metadata {
   const hasReport = listPublishedMarketReports().length > 0;
@@ -52,8 +52,8 @@ export default function KellerWestlakeMarketReportPage() {
         )}
 
         <div className="mt-10 flex flex-wrap gap-4 text-sm font-semibold">
-          <SellerCampaignLink className="rounded-full bg-teal-500 px-5 py-3 text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a personally reviewed pricing conversation</SellerCampaignLink>
-          <Link className="rounded-full border border-white/15 px-5 py-3 text-teal-100 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/neighborhoods">Read neighborhood guides</Link>
+          <MarketingCampaignLink className="rounded-full bg-teal-500 px-5 py-3 text-slate-950 hover:bg-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" href="/seller-plan">Request a personally reviewed pricing conversation</MarketingCampaignLink>
+          <MarketingCampaignLink className="rounded-full border border-white/15 px-5 py-3 text-teal-100 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200" href="/neighborhoods">Read neighborhood guides</MarketingCampaignLink>
         </div>
       </div>
     </main>

@@ -1,12 +1,11 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import MarketingCampaignLink from '@/components/marketing/MarketingCampaignLink';
 import { getPublishedNeighborhoodGuide, listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
 import { getPublishedNeighborhoodPresentation } from '@/lib/marketing/neighborhoodPresentations.server';
 import NeighborhoodMapLauncher from '@/components/marketing/NeighborhoodMapLauncher';
-import SellerCampaignLink from '@/components/marketing/SellerCampaignLink';
 
 type PageProps = { params: Promise<{ slug: string }> };
 export const dynamic = 'force-dynamic';
@@ -38,7 +37,7 @@ export default async function NeighborhoodGuidePage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-[#061017] px-4 py-12 text-white sm:px-6 sm:py-16">
       <article className="mx-auto max-w-4xl">
-        <Link href="/neighborhoods" className="text-sm font-semibold text-teal-200 underline-offset-4 hover:underline">← All local guides</Link>
+        <MarketingCampaignLink href="/neighborhoods" className="text-sm font-semibold text-teal-200 underline-offset-4 hover:underline">← All local guides</MarketingCampaignLink>
         <header className="mt-8 border-b border-white/10 pb-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-teal-200">{guide.coverageType} guide · revision {guide.revision}</p>
           <h1 className="mt-4 text-4xl font-black leading-tight sm:text-5xl">{guide.title}</h1>
@@ -65,7 +64,7 @@ export default async function NeighborhoodGuidePage({ params }: PageProps) {
         <aside className="mt-8 rounded-3xl border border-teal-100/15 bg-teal-100/[0.06] p-6">
           <h2 className="text-xl font-bold">Thinking about selling nearby?</h2>
           <p className="mt-2 leading-7 text-slate-300">Request a personal conversation about timing, preparation and a property-specific pricing review. This page is general information, not a valuation.</p>
-          <SellerCampaignLink className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-teal-300 px-5 font-black text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a seller plan</SellerCampaignLink>
+          <MarketingCampaignLink href="/seller-plan" className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-teal-300 px-5 font-black text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Request a seller plan</MarketingCampaignLink>
         </aside>
       </article>
     </main>
