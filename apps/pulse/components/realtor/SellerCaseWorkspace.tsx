@@ -6,6 +6,7 @@ import { sellerCaseResultSchema, sellerMilestones, sellerMilestoneLabels, seller
 import { SellerWorkspaceNav } from './SellerWorkspaceNav';
 import { SellerLeadScheduleDialog } from './SellerLeadScheduleDialog';
 import { SellerJourney } from './SellerJourney';
+import { SellerActionDrawer, type SellerCaseActionView } from './SellerActionDrawer';
 
 const inputClass = 'mt-1 w-full rounded-lg border border-white/20 bg-slate-950 p-3 text-sm';
 const buttonClass = 'rounded-lg border border-cyan-300/30 px-4 py-2 text-sm font-semibold text-cyan-100 disabled:opacity-50';
@@ -21,6 +22,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
   const [propertyError, setPropertyError] = useState('');
   const [emailReviewed,setEmailReviewed]=useState(false);const [publicationReviewed,setPublicationReviewed]=useState(false);
   const [schedule, setSchedule] = useState<{ id: string; startsAt: string } | null>(null);
+  const [actionView, setActionView] = useState<SellerCaseActionView>({ kind: 'closed' });
   const retries = useRef(new Map<string,string>()); const scheduleRetries = useRef(new Map<string,string>());
   const inflight = useRef(false);
   const load = useCallback(async (signal?: AbortSignal) => {
@@ -41,12 +43,12 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
   }, [load]);
   const dirty = JSON.stringify(draft) !== JSON.stringify(data?.case ? { propertyId: data.case.property_id, notes: data.case.notes, documents: data.case.documents, checklist: data.case.checklist } : emptyDraft);
   const disabled = busy || needsReload; const otherDisabled = disabled || dirty;
-  const act = async (fields: ActionFields) => {
-    if (!data || inflight.current || needsReload) return;
+  const act = async (fields: ActionFields): Promise<boolean> => {
+    if (!data || inflight.current || needsReload) return false;
     const base = { ...fields, leadId, expectedRevision: data.case?.revision || 1 };
     const fingerprint = JSON.stringify(base); const requestKey = retries.current.get(fingerprint) || crypto.randomUUID(); retries.current.set(fingerprint,requestKey);
     const parsed = sellerServiceActionSchema.safeParse({ ...base, requestKey });
-    if (!parsed.success) { setError('Check the form details, document links, and date before saving.'); return; }
+    if (!parsed.success) { setError('Check the form details, document links, and date before saving.'); return false; }
     inflight.current = true; setBusy(true); setError(''); setNotice('');
     try {
       const response = await fetch('/api/realtor/seller-service', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(parsed.data) });
@@ -55,8 +57,19 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
       await load();
       if (fields.action === 'link_booking' && body.result.details?.consultationEventId) setSchedule({ id: body.result.details.consultationEventId, startsAt: body.result.details.startsAt });
       setNotice(fields.action === 'send_email' ? 'Email queued for the shared worker. Check its receipt below; queueing does not record contact.' : 'Saved.');
+      return true;
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to save. Retry the same action.'); }
     finally { inflight.current = false; setBusy(false); }
+    return false;
+  };
+  const savePreparation = async () => {
+    if (!data) return false;
+    const saved = await act({ action: 'save_case', ...draft });
+    if (saved) setActionView({ kind: 'closed' });
+    return saved;
+  };
+  const discardPreparation = () => {
+    setDraft(data?.case ? { propertyId: data.case.property_id, notes: data.case.notes, documents: data.case.documents, checklist: data.case.checklist } : emptyDraft);
   };
   const savedMilestones = data?.milestones || [];
   return <FieldbookShell title={data?.lead.name || 'Seller case'} eyebrow="Seller case" navigation={<SellerWorkspaceNav active="/seller-cases" />}>
@@ -67,16 +80,27 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
     {!data && !error ? <p role="status">Loading case…</p> : null}
     {data ? <>
       <SellerJourney result={data} />
-      {dirty ? <p className="text-sm text-amber-200">Save your case changes before recording another action.</p> : null}
+      {dirty && actionView.kind === 'closed' ? <p className="text-sm text-amber-200">Save your case changes before recording another action.</p> : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <CasePanel title="Preparation"><form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void act({ action:'save_case',...draft }); }}>
+        <CasePanel title="Preparation">
+          {data.case?.property_id ? <p className="text-sm text-slate-300">Linked property: {properties.find((property) => property.id === data.case?.property_id)?.label || 'Saved property reference'}</p> : null}
+          {data.case?.notes ? <div className="mt-3"><h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Private notes</h3><p className="mt-1 whitespace-pre-wrap text-sm text-slate-200">{data.case.notes}</p></div> : null}
+          {data.case?.checklist.length ? <div className="mt-3"><h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Preparation checklist</h3><ul className="mt-2 space-y-1 text-sm">{data.case.checklist.map((item) => <li key={item.id}>{item.done ? '✓' : '○'} {item.title}</li>)}</ul></div> : null}
+          {data.case?.documents.length ? <div className="mt-3"><h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Reviewed documents</h3><ul className="mt-2 space-y-1 text-sm">{data.case.documents.map((document) => <li key={document.url}><a className="break-all text-cyan-200 underline" href={document.url} target="_blank" rel="noopener noreferrer">{document.label}</a></li>)}</ul></div> : null}
+          {!data.case?.property_id && !data.case?.notes && !data.case?.checklist.length && !data.case?.documents.length ? <p className="text-sm text-slate-400">No preparation details have been saved yet.</p> : null}
+          <button type="button" className={`${buttonClass} mt-4`} disabled={busy || needsReload} onClick={() => setActionView({ kind: 'prepare', leadId })}>Edit preparation</button>
+          <Link href="/contracts/representation" className="ml-3 text-sm text-cyan-200 underline">Contracts</Link><Link href="/planner" className="ml-3 text-sm text-cyan-200 underline">Schedule preparation</Link>
+        </CasePanel>
+          {actionView.kind === 'prepare' ? <SellerActionDrawer titleId="seller-preparation-title" title="Edit preparation" description="Keep private case notes, the linked property, preparation tasks and reviewed document links together." dirty={dirty} busy={busy} saveBlocked={needsReload} error={error} onClose={() => { setError(''); setActionView({ kind: 'closed' }); }} onSave={savePreparation} onDiscard={discardPreparation}>
+            <form className="mt-5 space-y-4" onSubmit={(event) => { event.preventDefault(); void savePreparation(); }}>
           <label className="block text-sm">Property from your shortlist<select disabled={disabled || Boolean(propertyError)} className={inputClass} value={draft.propertyId || ''} onChange={(event) => setDraft({ ...draft,propertyId:event.target.value || null })}><option value="">No property linked</option>{draft.propertyId && !properties.some((p) => p.id === draft.propertyId) ? <option value={draft.propertyId}>Existing linked property</option> : null}{properties.filter((p) => p.status==='active' || p.id===draft.propertyId).map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
           {propertyError ? <p className="text-xs text-amber-200">{propertyError} <Link href="/today" className="underline">Open planner setup</Link></p> : null}
           <label className="block text-sm">Internal notes<textarea className={inputClass} rows={4} maxLength={4000} value={draft.notes} disabled={disabled} onChange={(event) => setDraft({ ...draft,notes:event.target.value })} /></label>
           <fieldset disabled={disabled}><legend className="text-sm font-semibold">Preparation checklist</legend>{draft.checklist.map((item,index) => <div key={item.id} className="mt-2 flex gap-2"><label className="flex flex-1 items-center gap-2"><input type="checkbox" checked={item.done} onChange={(event) => setDraft({ ...draft,checklist:draft.checklist.map((row) => row.id===item.id ? {...row,done:event.target.checked}:row) })} /><input aria-label={`Checklist item ${index+1}`} className={inputClass} required maxLength={160} value={item.title} onChange={(event) => setDraft({ ...draft,checklist:draft.checklist.map((row) => row.id===item.id ? {...row,title:event.target.value}:row) })} /></label><button type="button" aria-label={`Remove checklist item ${index+1}`} onClick={() => setDraft({ ...draft,checklist:draft.checklist.filter((row) => row.id!==item.id) })}>Remove</button></div>)}<button type="button" className="mt-2 text-sm text-cyan-200 underline" disabled={draft.checklist.length>=30} onClick={() => setDraft({...draft,checklist:[...draft.checklist,{id:crypto.randomUUID(),title:'',done:false}]})}>Add checklist item</button></fieldset>
           <fieldset disabled={disabled}><legend className="text-sm font-semibold">Reviewed document links</legend>{draft.documents.map((document,index) => <div key={index} className="fieldbook-record mt-2 rounded-lg border border-white/15 p-3"><label className="block text-xs">Document label<input className={inputClass} required maxLength={120} value={document.label} onChange={(event) => setDraft({...draft,documents:draft.documents.map((row,i) => i===index ? {...row,label:event.target.value}:row)})} /></label><label className="block text-xs">HTTPS link<input type="url" className={inputClass} required maxLength={2000} value={document.url} onChange={(event) => setDraft({...draft,documents:draft.documents.map((row,i) => i===index ? {...row,url:event.target.value}:row)})} /></label><button type="button" className="mt-2 text-xs underline" aria-label={`Remove document ${index+1}`} onClick={() => setDraft({...draft,documents:draft.documents.filter((_,i)=>i!==index)})}>Remove document</button></div>)}<button type="button" className="mt-2 text-sm text-cyan-200 underline" disabled={draft.documents.length>=20} onClick={() => setDraft({...draft,documents:[...draft.documents,{label:'',url:''}]})}>Add document link</button></fieldset>
-          <button disabled={disabled} className={buttonClass}>Save case</button><Link href="/contracts/representation" className="ml-3 text-sm text-cyan-200 underline">Contracts</Link><Link href="/planner" className="ml-3 text-sm text-cyan-200 underline">Schedule preparation</Link>
-        </form></CasePanel>
+          <div><button disabled={disabled} className={buttonClass}>{busy ? 'Saving…' : 'Save preparation'}</button></div>
+        </form>
+          </SellerActionDrawer> : null}
         <div className="space-y-6"><CasePanel id="case-milestones" title="Milestones"><form className="space-y-3" onSubmit={(event) => { event.preventDefault(); const form=new FormData(event.currentTarget); void act({action:'milestone',milestone:form.get('milestone') as typeof sellerMilestones[number],occurredOn:String(form.get('date')),evidence:String(form.get('evidence'))}); }}>
           <label className="block text-sm">Milestone<select name="milestone" className={inputClass} disabled={otherDisabled}>{sellerMilestones.map((value) => <option key={value} value={value}>{sellerMilestoneLabels[value]}</option>)}</select></label>
           <label className="block text-sm">Date in {data.timeZone}<input name="date" type="date" required className={inputClass} disabled={otherDisabled} /></label><label className="block text-sm">Evidence or agreement reference<textarea name="evidence" maxLength={1000} required className={inputClass} disabled={otherDisabled} /></label><button className={buttonClass} disabled={otherDisabled}>Record milestone</button>

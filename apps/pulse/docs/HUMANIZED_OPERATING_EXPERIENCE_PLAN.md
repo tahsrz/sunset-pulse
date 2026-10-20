@@ -112,6 +112,8 @@ type CaseActionView =
 
 Exit: a person can reach the next action without scrolling through unrelated forms, and all existing privacy/replay/conflict tests remain valid.
 
+**October 19 H3 progress:** Added the discriminated case-action view contract and moved preparation editing into the reusable `SellerActionDrawer`. The case page now shows a saved read-only preparation summary; the editor preserves the existing owner-authenticated `save_case` API, revision, and same-payload retry key. Escape or Close on a dirty draft requires Save changes, Discard draft, or Keep editing. The dialog uses the existing focus trap and focus restoration, and stale-revision errors prevent another save until the case is reloaded. Two focused drawer interaction tests, full app TypeScript, ESLint, and `git diff --check` pass. H3 remains in progress: conversation, appointment, and shared-progress actions still need extraction into focused views.
+
 ## H4: Conversation and appointments that feel natural
 
 Create `SellerConversation.tsx` and `SellerAppointmentStep.tsx`; reuse `SellerLeadScheduleDialog.tsx`, the existing booking-to-planner bridge and message action contracts.
