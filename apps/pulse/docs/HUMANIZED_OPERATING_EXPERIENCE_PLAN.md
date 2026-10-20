@@ -86,6 +86,8 @@ type JourneyStep = {
 
 The projection accepts validated domain data and returns presentation state. It never writes a milestone. Test retracted agreements, booked-but-not-held consultations, missing data, recorded closing prerequisites and non-linear correction histories.
 
+**October 19 implementation slice:** Added the pure `deriveSellerJourney` projection and a ruled, accessible journey above the existing case controls. It uses only the already-validated active milestones, saved messages and accepted linked bookings. A booked consultation is marked planned until a separate held milestone is saved; old retracted event details cannot restore a milestone; closing is not inferred from lead status or unrelated event history. When later work is already saved, the current action follows that latest verified stage instead of sending the operator backward to fill a missing older entry. The next action links to the existing inbox, planner or milestone panel. Four focused unit tests, focused ESLint, and full app TypeScript pass. No database, booking, scheduling or write path changed. Browser rendering remains unverified locally in this packet.
+
 ## H3: A focused case workspace with guided actions
 
 Create `components/realtor/SellerActionDrawer.tsx`; refactor `SellerCaseWorkspace.tsx` into a journey header and contextual sections. Reuse `ModalSurface` from `components/realtor/ModalSurface.tsx` after confirming its existing exports and focus behavior.

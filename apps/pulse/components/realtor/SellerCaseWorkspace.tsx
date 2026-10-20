@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { sellerCaseResultSchema, sellerMilestones, sellerMilestoneLabels, sellerServiceActionSchema, type SellerCaseResult, type SellerServiceAction } from '@/lib/realtor-workspace/sellerServiceContract';
 import { SellerWorkspaceNav } from './SellerWorkspaceNav';
 import { SellerLeadScheduleDialog } from './SellerLeadScheduleDialog';
+import { SellerJourney } from './SellerJourney';
 
 const inputClass = 'mt-1 w-full rounded-lg border border-white/20 bg-slate-950 p-3 text-sm';
 const buttonClass = 'rounded-lg border border-cyan-300/30 px-4 py-2 text-sm font-semibold text-cyan-100 disabled:opacity-50';
@@ -65,6 +66,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
     {notice ? <p role="status" className="text-cyan-100">{notice}</p> : null}
     {!data && !error ? <p role="status">Loading case…</p> : null}
     {data ? <>
+      <SellerJourney result={data} />
       {dirty ? <p className="text-sm text-amber-200">Save your case changes before recording another action.</p> : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <CasePanel title="Preparation"><form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void act({ action:'save_case',...draft }); }}>
@@ -75,7 +77,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
           <fieldset disabled={disabled}><legend className="text-sm font-semibold">Reviewed document links</legend>{draft.documents.map((document,index) => <div key={index} className="fieldbook-record mt-2 rounded-lg border border-white/15 p-3"><label className="block text-xs">Document label<input className={inputClass} required maxLength={120} value={document.label} onChange={(event) => setDraft({...draft,documents:draft.documents.map((row,i) => i===index ? {...row,label:event.target.value}:row)})} /></label><label className="block text-xs">HTTPS link<input type="url" className={inputClass} required maxLength={2000} value={document.url} onChange={(event) => setDraft({...draft,documents:draft.documents.map((row,i) => i===index ? {...row,url:event.target.value}:row)})} /></label><button type="button" className="mt-2 text-xs underline" aria-label={`Remove document ${index+1}`} onClick={() => setDraft({...draft,documents:draft.documents.filter((_,i)=>i!==index)})}>Remove document</button></div>)}<button type="button" className="mt-2 text-sm text-cyan-200 underline" disabled={draft.documents.length>=20} onClick={() => setDraft({...draft,documents:[...draft.documents,{label:'',url:''}]})}>Add document link</button></fieldset>
           <button disabled={disabled} className={buttonClass}>Save case</button><Link href="/contracts/representation" className="ml-3 text-sm text-cyan-200 underline">Contracts</Link><Link href="/planner" className="ml-3 text-sm text-cyan-200 underline">Schedule preparation</Link>
         </form></CasePanel>
-        <div className="space-y-6"><CasePanel title="Milestones"><form className="space-y-3" onSubmit={(event) => { event.preventDefault(); const form=new FormData(event.currentTarget); void act({action:'milestone',milestone:form.get('milestone') as typeof sellerMilestones[number],occurredOn:String(form.get('date')),evidence:String(form.get('evidence'))}); }}>
+        <div className="space-y-6"><CasePanel id="case-milestones" title="Milestones"><form className="space-y-3" onSubmit={(event) => { event.preventDefault(); const form=new FormData(event.currentTarget); void act({action:'milestone',milestone:form.get('milestone') as typeof sellerMilestones[number],occurredOn:String(form.get('date')),evidence:String(form.get('evidence'))}); }}>
           <label className="block text-sm">Milestone<select name="milestone" className={inputClass} disabled={otherDisabled}>{sellerMilestones.map((value) => <option key={value} value={value}>{sellerMilestoneLabels[value]}</option>)}</select></label>
           <label className="block text-sm">Date in {data.timeZone}<input name="date" type="date" required className={inputClass} disabled={otherDisabled} /></label><label className="block text-sm">Evidence or agreement reference<textarea name="evidence" maxLength={1000} required className={inputClass} disabled={otherDisabled} /></label><button className={buttonClass} disabled={otherDisabled}>Record milestone</button>
           <p className="text-xs text-slate-400">Only record events that happened. Booking is separate from attendance. Verify the listing agreement before recording listing work; record an actual closing in the inbox first.</p>
@@ -103,4 +105,4 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
     </>:null}
   </div></FieldbookShell>;
 }
-function CasePanel({ title,children }: { title:string;children:React.ReactNode }) { return <details className="fieldbook-panel" open={title === 'Preparation'}><summary className="py-2"><h2 className="inline text-lg">{title}</h2></summary><div className="mt-4">{children}</div></details>; }
+function CasePanel({ id,title,children }: { id?:string;title:string;children:React.ReactNode }) { return <details id={id} className="fieldbook-panel" open={title === 'Preparation'}><summary className="py-2"><h2 className="inline text-lg">{title}</h2></summary><div className="mt-4">{children}</div></details>; }
