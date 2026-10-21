@@ -9,7 +9,7 @@ Use this checklist to review the remaining local acceptance work for the Fieldbo
 - [ ] Add obvious private sentinel text to the test case's internal notes and conversation history, such as `PRIVATE-TEST-NOTE-DO-NOT-SHARE`. Keep one test document link private and one approved test link available to select.
 - [ ] Use a case with no real customer data. Do not send an email, SMS, or other seller communication during this walkthrough.
 - [ ] Start the local app from `C:\Users\Taz\SunsetPulse\apps\pulse` with `npm run dev`, then open `http://localhost:3000`. Sign in as the test owner. Keep a separate browser profile available for the test client.
-- [ ] If Next.js reports a `.next` directory permission error, stop any local app/build using that directory and retry `npm run dev`. Do not delete `.next` while another local server is running. These walkthroughs do not need Vercel.
+- [ ] Playwright uses the ignored `.next-e2e` build directory so its build does not share `.next` with the normal app. If Next stalls before opening the browser, stop the local run and record the error; do not wait on a hosted deployment. Do not delete either build directory while a local server is running. These walkthroughs do not need Vercel.
 
 Record the date, app commit, database environment (local/test only), browser/device, and results below. Do not include credentials, access tokens, or real seller information in notes or screenshots.
 
