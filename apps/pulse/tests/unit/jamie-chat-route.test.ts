@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   resolveListing: vi.fn(),
   requireUser: vi.fn(),
   personalWorkspace: vi.fn(),
+  readSellerCase: vi.fn(),
   WorkspaceError: class extends Error { constructor(public code: string) { super(code); } },
 }));
 
@@ -20,6 +21,7 @@ vi.mock('@/lib/realtor-workspace/access.server', () => ({
   requirePersonalRealtorWorkspace: mocks.personalWorkspace,
   RealtorWorkspaceError: mocks.WorkspaceError,
 }));
+vi.mock('@/lib/realtor-workspace/sellerService.server', () => ({ readSellerCase: mocks.readSellerCase }));
 
 import { POST } from '@/app/api/chat/route';
 
@@ -31,6 +33,12 @@ beforeEach(() => {
   mocks.runChat.mockResolvedValue({ body: { role: 'assistant', content: 'Answer' }, init: { status: 200 } });
   mocks.requireUser.mockResolvedValue({ allowed: true, user: { id: 'owner-1' } });
   mocks.personalWorkspace.mockResolvedValue({ workspaceId: 'workspace-1', preferences: { time_zone: 'America/Chicago' } });
+  mocks.readSellerCase.mockResolvedValue({
+    lead: { id: '11111111-1111-4111-8111-111111111111', name: 'Case Seller', email: 'private@example.test', revision: 4, status: 'active' },
+    milestones: ['consultation_held'],
+    case: { checklist: [{ id: 'item-1', title: 'Private title', done: true }, { id: 'item-2', title: 'Another title', done: false }], notes: 'Private note', documents: [], publication: null },
+    bookings: [{ id: 'booking-1', start_time: '2026-10-21T15:00:00Z', end_time: '2026-10-21T15:30:00Z', status: 'accepted', linked: false }],
+  });
 });
 
 function request(body: unknown) {
@@ -121,6 +129,37 @@ describe('Jamie chat route listing context', () => {
       signal: expect.anything(),
     }));
     expect(mocks.resolveListing).not.toHaveBeenCalled();
+  });
+
+  it('loads selected seller context through the owner-authorized service and passes only bounded facts to Jamie', async () => {
+    const sellerCaseId = '11111111-1111-4111-8111-111111111111';
+    const response = await POST(request({
+      context: 'personal_realtor', sellerCaseId,
+      messages: [{ role: 'user', content: 'Help me prepare for the next conversation.' }],
+    }) as never);
+
+    expect(response.status).toBe(200);
+    expect(mocks.readSellerCase).toHaveBeenCalledWith('owner-1', sellerCaseId);
+    expect(mocks.runChat).toHaveBeenCalledWith(expect.objectContaining({
+      personalContext: expect.objectContaining({ sellerCaseContext: {
+        sellerName: 'Case Seller', currentStatus: 'active', completedMilestones: ['consultation_held'],
+        preparation: { checklistItems: 2, completedChecklistItems: 1 }, scheduledAppointments: 1,
+      } }),
+    }));
+    const serializedContext = JSON.stringify(mocks.runChat.mock.calls[0][0].personalContext);
+    expect(serializedContext).not.toContain('private@example.test');
+    expect(serializedContext).not.toContain('Private note');
+    expect(serializedContext).not.toContain('Private title');
+  });
+
+  it('does not allow seller case identifiers in general Jamie context', async () => {
+    const response = await POST(request({
+      sellerCaseId: '11111111-1111-4111-8111-111111111111',
+      messages: [{ role: 'user', content: 'Look at this case.' }],
+    }) as never);
+    expect(response.status).toBe(400);
+    expect(mocks.readSellerCase).not.toHaveBeenCalled();
+    expect(mocks.runChat).not.toHaveBeenCalled();
   });
 
   it('denies anonymous personal context without falling back to general Jamie', async () => {

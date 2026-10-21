@@ -6,14 +6,17 @@ import IntelligenceLayer from './IntelligenceLayer';
 import EngineSection from './EngineSection';
 import VibeEngineSection from './VibeEngineSection';
 
-const ArchitectureOverview = () => {
+type ArchitectureOverviewProps = { title?: string; headingLevel?: 'h1' | 'h2' };
+
+const ArchitectureOverview = ({ title = 'How Sunset Pulse Works', headingLevel = 'h2' }: ArchitectureOverviewProps) => {
+  const Heading = headingLevel;
   return (
     <section id='architecture' className='waterlily-section border-t border-teal-200/10 px-6 py-16 font-sans text-slate-100 sm:py-20'>
       <div className='max-w-7xl mx-auto'>
         <header className='mb-10 border-b border-teal-200/15 pb-8 text-center md:mb-12 md:text-left'>
-          <h2 className='text-4xl font-semibold tracking-tight waterlily-heading sm:text-5xl md:text-6xl'>
-            How Sunset Pulse Works
-          </h2>
+          <Heading className='text-4xl font-semibold tracking-tight waterlily-heading sm:text-5xl md:text-6xl'>
+            {title}
+          </Heading>
           <p className='mt-4 max-w-2xl text-sm leading-6 text-teal-100/70'>
             A look at how listings, seller tools, Jamie, and the rest of the site fit together.
           </p>

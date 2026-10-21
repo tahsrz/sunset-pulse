@@ -16,7 +16,11 @@ describe('weekly seller business review', () => {
     const checks = screen.getAllByRole('checkbox');
     checks.forEach((checkbox) => fireEvent.click(checkbox));
     const fields = screen.getAllByRole('textbox');
+    fireEvent.click(screen.getByRole('button', { name: 'Property preparation' }));
+    expect(fields[0]).toHaveValue('Property preparation');
     fireEvent.change(fields[0], { target: { value: 'Improve response time' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm an appointment' }));
+    expect(fields[1]).toHaveValue('Confirm an appointment');
     fireEvent.change(fields[1], { target: { value: 'Call opted-in sellers' } });
     fireEvent.change(fields[2], { target: { value: 'A photo delay slowed one listing' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));

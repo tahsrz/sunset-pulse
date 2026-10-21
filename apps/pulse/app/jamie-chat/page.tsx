@@ -11,19 +11,23 @@ export const metadata = {
   description: 'Conversations and reviewed action proposals with Jamie.'
 };
 
-export default async function JamieChatWorkspacePage({ searchParams }: { searchParams?: Promise<{ context?: string }> }) {
+export default async function JamieChatWorkspacePage({ searchParams }: { searchParams?: Promise<{ context?: string; sellerCaseId?: string }> }) {
   const params = await searchParams;
   const context = params?.context === 'personal_realtor' ? 'personal_realtor' : 'general';
   if (context === 'personal_realtor') {
+    const sellerCaseId = typeof params?.sellerCaseId === 'string' ? params.sellerCaseId : undefined;
     const session = await getSessionUser();
-    if (!session?.userId) redirect('/login?redirect=%2Fjamie-chat%3Fcontext%3Dpersonal_realtor');
+    if (!session?.userId) {
+      const returnTo = `/jamie-chat?context=personal_realtor${sellerCaseId ? `&sellerCaseId=${encodeURIComponent(sellerCaseId)}` : ''}`;
+      redirect(`/login?redirect=${encodeURIComponent(returnTo)}`);
+    }
     try {
       await requirePersonalRealtorWorkspace(session.userId);
     } catch (error) {
       const setupRequired = error instanceof RealtorWorkspaceError && error.code === 'SETUP_REQUIRED';
       return <main className={fieldbook.surface + " min-h-screen px-5 py-16"}><section className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-8"><p className="text-xs font-bold uppercase tracking-widest text-cyan-200">Personal workspace</p><h1 className="mt-3 text-2xl font-black">{setupRequired ? 'Set up your personal workspace first' : 'Personal Jamie is unavailable'}</h1><p className="mt-3 text-sm leading-6 text-slate-300">{setupRequired ? 'Create your private planner before using Jamie with personal seller or business context.' : 'We could not verify access to this private workspace. No personal data was loaded.'}</p><Link href="/today" className="mt-5 inline-flex rounded-lg bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950">Open Today</Link></section></main>;
     }
-    return <main className={fieldbook.surface + " min-h-screen px-3 py-5 sm:px-5 lg:px-8"}><div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-7xl flex-col gap-5"><JamieAssistantWorkspace key={context} apiRoute="/api/chat" context={context} /><div className="flex flex-wrap gap-2 text-xs"><Link href="/today" className="text-cyan-200 hover:underline">Today</Link><Link href="/planner" className="text-cyan-200 hover:underline">Planner</Link><Link href="/business" className="text-cyan-200 hover:underline">Business</Link></div></div></main>;
+    return <main className={fieldbook.surface + " min-h-screen px-3 py-5 sm:px-5 lg:px-8"}><div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-7xl flex-col gap-5"><JamieAssistantWorkspace key={`${context}:${sellerCaseId || ''}`} apiRoute="/api/chat" context={context} sellerCaseId={sellerCaseId} /><div className="flex flex-wrap gap-2 text-xs"><Link href="/today" className="text-cyan-200 hover:underline">Today</Link><Link href="/planner" className="text-cyan-200 hover:underline">Planner</Link><Link href="/business" className="text-cyan-200 hover:underline">Business</Link></div></div></main>;
   }
 
   return (

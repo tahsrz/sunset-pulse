@@ -1,109 +1,92 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { Compass, DatabaseZap, ShoppingBasket, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import { headers } from 'next/headers';
 import InfoBoxes from '@/components/InfoBoxes';
 import UnifiedPropertyStage from '@/components/marketing/UnifiedPropertyStage';
-import ValuePropositionGrid from '@/components/marketing/ValuePropositionGrid';
 import SunsetHistorySection from '@/components/marketing/SunsetHistorySection';
 import FAQSection from '@/components/marketing/FAQSection';
-import ArchitectureOverview from '@/components/architecture/ArchitectureOverview';
-import { HomeHero, HomeWorldHub } from '@/components/home/HomeDynamicSections';
+import { HomeHero } from '@/components/home/HomeDynamicSections';
+import CounterScanActions from '@/components/home/CounterScanActions';
 import SellerAcquisitionHero from '@/components/marketing/SellerAcquisitionHero';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 import { getTourHotList } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
+import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
+import { listPublishedNeighborhoodPresentations } from '@/lib/marketing/neighborhoodPresentations.server';
+import { getPublishedSellerIntroduction } from '@/lib/marketing/sellerIntroduction.server';
+import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
+import SellerIntroduction from '@/components/marketing/SellerIntroduction';
+import type { Property } from '@/lib/types';
 import styles from './home.module.css';
 
-/**
- * fetches curated properties on the server and streams them once resolved
- */
-const StagedPropertiesPocket: React.FC = async () => {
-  const stagedPropertiesRaw = (await getTourHotList({ limit: 10 })).listings;
-  
-  // force serialization to plain objects for Client Component compatibility
-  const stagedProperties = JSON.parse(JSON.stringify(stagedPropertiesRaw));
+async function StagedPropertiesPocket() {
+  let stagedProperties: Property[] = [];
+  try {
+    const records = (await getTourHotList({ limit: 4 })).listings;
+    stagedProperties = JSON.parse(JSON.stringify(records)) as Property[];
+  } catch (error) {
+    console.error('[HOME_CURATED_LISTINGS_READ] Curated listings could not be loaded.', error);
+  }
 
-  return <UnifiedPropertyStage initialStagedProperties={stagedProperties} />;
-};
+  return <UnifiedPropertyStage initialStagedProperties={stagedProperties} initialMode="STAGED" compact />;
+}
 
-const HomePage = async () => {
-  const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
-
+function NeighborhoodPreview() {
+  const guides = listPublishedNeighborhoodGuides();
+  const presentations = new Map(listPublishedNeighborhoodPresentations().map((presentation) => [presentation.slug, presentation]));
   return (
-    <div className={styles.homePage}>
-      <SellerAcquisitionHero />
-      <HomeHero />
-      <div className="waterlily-surface">
-        <HomeWorldHub />
-        <ValuePropositionGrid />
-        <AnimalOfDaySection />
-        
-        {/* Partial Prerendering (PPR) Pocket */}
-        <Suspense fallback={
-          <div className="text-center py-20 text-slate-500 font-mono text-xs tracking-wide animate-pulse">
-            Loading curated listings...
-          </div>
-        }>
-          <StagedPropertiesPocket />
-        </Suspense>
-
-        <SunsetHistorySection />
-        <InfoBoxes />
-        <FAQSection />
-        <ArchitectureOverview />
-      </div>
-      <CounterScanActions showLeadOperations={access.allowed} />
-    </div>
-  );
-};
-
-export default HomePage;
-
-function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolean }) {
-  return (
-    <section className="relative z-30 border-b border-cyan-200/15 bg-[#07131a] px-4 py-4 text-white shadow-2xl shadow-black/30 md:px-8">
+    <section className="waterlily-section px-4 py-14 text-white sm:px-6 sm:py-16" aria-labelledby="home-neighborhood-guides">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-5 rounded-3xl border border-cyan-200/15 bg-white/[0.06] p-5 backdrop-blur sm:p-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-8">
-          <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-200/10 px-3 py-1 text-[10px] font-black tracking-[0.08em] text-amber-100">
-              <Sparkles size={13} />
-              Scanned from Sunset?
-            </p>
-            <h2 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">
-              Order Food or Open the Explorer
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-              Start a grill pickup order or explore the Sunset Pulse map.
-            </p>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-200">Around North Texas</p>
+            <h2 id="home-neighborhood-guides" className="mt-3 text-3xl font-black italic uppercase sm:text-4xl">Local Guides</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Read source-linked notes about the places around a home.</p>
           </div>
-
-          <div className={`grid gap-3 ${showLeadOperations ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-            <Link
-              href="/grill"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-400 px-4 py-4 text-xs font-black tracking-[0.06em] text-slate-950 shadow-lg shadow-orange-950/30 transition hover:bg-orange-300"
-            >
-              <ShoppingBasket size={17} />
-              Order Food
-            </Link>
-            <Link
-              href="/explorer"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-200/10 px-4 py-4 text-xs font-black tracking-[0.06em] text-cyan-50 transition hover:bg-cyan-200/15"
-            >
-              <Compass size={17} />
-              Explorer
-            </Link>
-            {showLeadOperations ? <Link
-              href="/admin/research-desk"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-emerald-200/10 px-4 py-4 text-xs font-black tracking-[0.06em] text-emerald-50 transition hover:bg-emerald-200/15"
-            >
-              <DatabaseZap size={17} />
-              Lead Operations
-            </Link> : null}
-          </div>
+          <Link href="/neighborhoods" className="inline-flex min-h-11 items-center text-sm font-bold text-teal-200 underline underline-offset-4">All neighborhood guides <span aria-hidden="true" className="ml-2">→</span></Link>
+        </div>
+        <div className="mt-7 grid gap-4 md:grid-cols-3">
+          {guides.slice(0, 3).map((guide) => (
+            <article key={guide.slug} className="flex min-h-48 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+              {presentations.get(guide.slug)?.cover ? <Image src={presentations.get(guide.slug)!.cover!.src} alt={presentations.get(guide.slug)!.cover!.alt} width={presentations.get(guide.slug)!.cover!.width} height={presentations.get(guide.slug)!.cover!.height} className="h-44 w-full object-cover" sizes="(min-width: 1280px) 400px, (min-width: 768px) 33vw, 100vw" /> : null}
+              <div className="flex flex-1 flex-col p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal-200">{guide.coverageType} · reviewed {guide.reviewedAt}</p>
+              <h3 className="mt-3 text-xl font-bold">{guide.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-300">{guide.summary}</p>
+              <Link href={`/neighborhoods/${guide.slug}`} className="mt-4 inline-flex min-h-10 items-center text-sm font-bold text-teal-100 underline underline-offset-4">Read guide</Link>
+              </div>
+            </article>
+          ))}
+          {guides.length === 0 ? <p className="text-sm text-slate-300">Local guides are being reviewed. Browse properties or search the live feed in the meantime.</p> : null}
         </div>
       </div>
     </section>
+  );
+}
+
+export default async function HomePage({ searchParams }: { searchParams: Promise<SellerCampaignSearchParams> }) {
+  const access = await getOperatorAccess(getRequestHostFromHeaders(await headers()));
+  const sellerIntroduction = getPublishedSellerIntroduction();
+  const campaignQuery = sellerCampaignQuery(await searchParams);
+
+  return (
+    <div className={styles.homePage}>
+      <SellerAcquisitionHero campaignQuery={campaignQuery} />
+      <HomeHero />
+      {sellerIntroduction ? <SellerIntroduction profile={sellerIntroduction} /> : null}
+      <div className="waterlily-surface">
+        <Suspense fallback={<div role="status" className="py-14 text-center text-sm text-slate-400">Loading curated properties…</div>}>
+          <StagedPropertiesPocket />
+        </Suspense>
+        <NeighborhoodPreview />
+        <SunsetHistorySection />
+        <InfoBoxes />
+        <AnimalOfDaySection />
+        <FAQSection />
+      </div>
+      <CounterScanActions showLeadOperations={access.allowed} />
+    </div>
   );
 }

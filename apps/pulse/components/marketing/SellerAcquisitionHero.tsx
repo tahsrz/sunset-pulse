@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, MapPinned } from 'lucide-react';
 
-export default function SellerAcquisitionHero() {
+export default function SellerAcquisitionHero({ campaignQuery = '' }: { campaignQuery?: string }) {
   return (
     <section aria-labelledby="seller-acquisition-title" className="relative z-20 border-b border-cyan-100/10 bg-[#07131a] px-4 py-5 text-white sm:px-6 sm:py-7">
       <div className="mx-auto grid max-w-7xl gap-5 rounded-3xl border border-cyan-100/15 bg-[radial-gradient(circle_at_12%_20%,rgba(45,212,191,0.13),transparent_38%),rgba(255,255,255,0.045)] p-5 shadow-2xl shadow-black/20 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -18,7 +18,7 @@ export default function SellerAcquisitionHero() {
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row lg:min-w-[390px] lg:flex-col">
-          <Link href="/seller-plan#request" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-teal-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+          <Link href={`/seller-plan${campaignQuery}#request`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-teal-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
             Request My Free Seller Plan <ArrowRight aria-hidden="true" size={17} />
           </Link>
           <Link href="/neighborhoods" className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-cyan-100/20 bg-cyan-100/[0.07] px-5 py-3 text-sm font-bold text-cyan-50 transition hover:bg-cyan-100/[0.13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200">

@@ -1,0 +1,23 @@
+import Link from 'next/link';
+import { Compass, DatabaseZap, ShoppingBasket, Sparkles } from 'lucide-react';
+
+export default function CounterScanActions({ showLeadOperations }: { showLeadOperations: boolean }) {
+  return (
+    <section className="relative z-30 border-b border-cyan-200/15 bg-[#07131a] px-4 py-4 text-white shadow-2xl shadow-black/30 md:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-5 rounded-3xl border border-cyan-200/15 bg-white/[0.06] p-5 backdrop-blur sm:p-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-8">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-200/10 px-3 py-1 text-[10px] font-black tracking-[0.08em] text-amber-100"><Sparkles size={13} /> Scanned from Sunset?</p>
+            <h2 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">Order Food or Open the Explorer</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Start a grill pickup order or explore the Sunset Pulse map.</p>
+          </div>
+          <div className={`grid gap-3 ${showLeadOperations ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+            <Link href="/grill" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-400 px-4 py-4 text-xs font-black tracking-[0.06em] text-slate-950 shadow-lg shadow-orange-950/30 transition hover:bg-orange-300"><ShoppingBasket size={17} /> Order Food</Link>
+            <Link href="/explorer" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-200/10 px-4 py-4 text-xs font-black tracking-[0.06em] text-cyan-50 transition hover:bg-cyan-200/15"><Compass size={17} /> Explorer</Link>
+            {showLeadOperations ? <Link href="/admin/research-desk" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-emerald-200/10 px-4 py-4 text-xs font-black tracking-[0.06em] text-emerald-50 transition hover:bg-emerald-200/15"><DatabaseZap size={17} /> Lead Operations</Link> : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
