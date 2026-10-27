@@ -93,8 +93,8 @@ export default function MarketingConfigPage() {
             <div className="space-y-6">
               <div>
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-3 block">Primary Title</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={config.hero.title}
                   onChange={(e) => handleUpdate('hero', 'title', e.target.value)}
                   className="w-full bg-slate-950 border border-white/5 rounded-xl px-6 py-4 text-sm font-bold uppercase tracking-tight text-blue-400 focus:outline-none focus:border-blue-500/50 transition-all"
