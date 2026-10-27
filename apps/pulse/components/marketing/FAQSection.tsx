@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FaChevronDown, FaInfoCircle, FaQuestionCircle } from 'react-icons/fa';
+import { FaChevronDown, FaQuestionCircle } from 'react-icons/fa';
 import marketingCopy from '@/config/marketing_copy.json';
 
 const FAQSection = () => {
@@ -15,11 +15,7 @@ const FAQSection = () => {
     <section className="waterlily-section border-t border-teal-200/10 py-16 sm:py-20">
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-10 text-center sm:mb-12">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full waterlily-chip px-4 py-1.5 text-xs font-semibold tracking-wider">
-            <FaInfoCircle className="text-xs" /> Platform Overview
-          </div>
           <h2 className="text-4xl font-black italic tracking-tighter waterlily-heading mb-2">{faq.title}</h2>
-          <p className="text-sm leading-6 text-teal-100/70">{faq.tagline}</p>
         </div>
 
         <div className="space-y-4">
