@@ -41,33 +41,27 @@
     "items": [
       {
         "question": "What does Jamie actually do for me?",
-        "answer": "Jamie summarizes regional market context.",
-        "score": 6
+        "answer": "Jamie summarizes regional market context."
       },
       {
         "question": "Why use the Explorer instead of a normal property map?",
-        "answer": "The Explorer helps you search by area and local context so you can spot patterns and submarkets that are easy to miss in a standard listing feed.",
-        "score": 2
+        "answer": "The Explorer helps you search by area and local context so you can spot patterns and submarkets that are easy to miss in a standard listing feed."
       },
       {
         "question": "What is the 3D viewer for?",
-        "answer": "The viewer helps you inspect a property spatially and understand context more like a walkthrough than a static gallery.",
-        "score": 3
+        "answer": "The viewer helps you inspect a property spatially and understand context more like a walkthrough than a static gallery."
       },
             {
         "question": "Who is the creator?",
-        "answer": "Tahsin Noyon Reza.",
-        "score": 25
+        "answer": "Tahsin Noyon Reza."
       },
       {
         "question": "How do the decision tools help?",
-        "answer": "The decision tools organize the summary into practical lenses like growth outlook, risk review,  and final recommendation so you can move from information to judgment quickly.",
-        "score": 3
+        "answer": "The decision tools organize the summary into practical lenses like growth outlook, risk review,  and final recommendation so you can move from information to judgment quickly."
       },
       {
         "question": "Can I save specific areas or markets to watch?",
-        "answer": "Yes. You can search custom areas in the Explorer, save promising properties, and use those saved views as the start of a repeatable market review process.",
-        "score": 3
+        "answer": "Yes. You can search custom areas in the Explorer, save promising properties, and use those saved views as the start of a repeatable market review process."
       }
     ]
   }
