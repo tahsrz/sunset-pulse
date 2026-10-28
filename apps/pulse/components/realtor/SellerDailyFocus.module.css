@@ -1,0 +1,46 @@
+.dailyTheme[data-fieldbook=page] {
+  --fieldbook-paper: light-dark(#f5f6f8, #071322);
+  --fieldbook-ink: light-dark(#163046, #f0f6ff);
+  --fieldbook-muted: light-dark(#536579, #a9b9cb);
+  --fieldbook-rule: light-dark(#dbe3eb, #294057);
+  --fieldbook-control: light-dark(#8498a9, #69849b);
+  --fieldbook-edge: light-dark(#e6eff3, #163344);
+  --fieldbook-field: light-dark(#fff, #102238);
+  --fieldbook-accent: light-dark(#126575, #a5eced);
+}
+.focusArea { margin-top: 22px; min-width: 0; }
+.focusArea .focusHeading { margin-bottom: 16px; font: italic 24px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.focusCard, .nextCard {
+  --focus-accent: light-dark(#126575, #a5eced);
+  --focus-button-ink: light-dark(#fff, #08212a);
+  --focus-soft: light-dark(#e6f1f2, #18373d);
+  min-width: 0;
+  color: var(--fieldbook-ink);
+}
+.focusCard { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 18px 24px; padding: 26px; border: 1px solid var(--fieldbook-rule); border-radius: 16px; background: var(--fieldbook-field); }
+.person { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.identity { min-width: 0; }
+.avatar { display: flex; align-items: center; justify-content: center; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 50%; background: var(--focus-soft); color: var(--focus-accent); font-size: 16px; font-weight: 600; }
+.kind { margin: 0 0 4px; color: var(--fieldbook-muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.focusCard .personName, .nextCard .personName { margin: 0; font: italic 24px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow-wrap: anywhere; }
+.description { color: var(--fieldbook-muted); font-size: 13px; margin-top: 7px; }
+.focusCard .primaryLink { display: inline-flex; justify-content: center; align-items: center; gap: 9px; min-height: 48px; padding: 12px 17px; border-radius: 9px; background: var(--focus-accent); color: var(--focus-button-ink); font-size: 14px; text-decoration: none; }
+.focusCard .primaryLink:hover { filter: brightness(.92); }
+.primaryLink svg, .nextLink svg { flex-shrink: 0; }
+.reason { grid-column: 1 / -1; color: var(--fieldbook-muted); font-size: 12px; }
+.reason summary { display: list-item; cursor: pointer; width: fit-content; padding: 10px 0; }
+.reason p { margin: 8px 0 0; max-width: 65ch; overflow-wrap: anywhere; }
+.nextGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; list-style: none; padding: 0; }
+.nextGrid li { min-width: 0; }
+.nextCard { padding: 18px 0; border-bottom: 1px solid var(--fieldbook-rule); }
+.nextCard .person { gap: 12px; align-items: start; }
+.nextCard .avatar { flex-basis: 40px; width: 40px; height: 40px; font-size: 12px; }
+.nextCard .personName { font-size: 20px; }
+.nextCard .nextLink { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin: 8px 0 0 52px; color: var(--focus-accent); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
+.nextCard .reason { margin-left: 52px; }
+@media(max-width: 680px) {
+  .focusCard { grid-template-columns: minmax(0,1fr); padding: 20px; gap: 14px; }
+  .focusCard .primaryLink { justify-self: stretch; }
+  .nextGrid { grid-template-columns: minmax(0,1fr); gap: 0; }
+  .person { gap: 12px; }
+}

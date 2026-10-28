@@ -2,9 +2,11 @@
 
 October 14, 2026. This change applies the approved Fieldbook design to the existing application. The interactive study remains a separate source of examples, with fictional records and local actions.
 
+Updated October 28: the selected **Daily focus** direction now applies to `/today`. `SellerDailyFocus.module.css` scopes the blue/white and dark-mode palette to that page, with one primary seller action and two under **Next Up**. Other priorities remain behind **More next actions**. **Action Details** reveals each action's saved reason. Ranking, destinations, consent and scheduling behavior remain in their existing code. The selected preview's fictional names and arbitrary appointment controls are not live application data.
+
 ## Changes
 
-`components/realtor/Fieldbook.module.css` provides paper/ink colors, Georgia headings, a rust accent, ruled sections, readable control borders and visible keyboard focus. Its styles are scoped to Fieldbook screens. Appearance follows the browser's light/dark preference. It introduces no stored appearance settings, uploads or database records.
+`components/realtor/Fieldbook.module.css` provides the base paper/ink colors, a rust accent, ruled sections, readable control borders and visible keyboard focus. The current heading treatment uses sans serif italics. Its styles are scoped to Fieldbook screens; Today applies the palette override above. Appearance follows the browser's light/dark preference. It introduces no stored appearance settings, uploads or database records.
 
 `FieldbookShell.tsx` supplies the page header and optional existing navigation. Today displays the date from the saved workspace timezone. `SellerNextActionRow.tsx` replaces the old priority cards with numbered rows and names. Ranking, exact destinations, read recovery and loaded limits remain in their existing code.
 
@@ -31,7 +33,7 @@ The game hub is a ruled list with the existing five destinations. Game engines, 
 
 ## Use the features
 
-1. Sign in and open **Today**. Use the first numbered action, or expand **Why now** for its reason. **More next actions** reveals the remaining loaded priorities. Appointments retain their existing date-specific planner and seller links.
+1. Sign in and open **Today**. Use the primary action in **Today’s Focus**, or expand **Action Details** for its reason. **Next Up** shows two more actions; **More next actions** reveals the rest of the loaded priorities. **Ask Jamie** opens the existing assistant and **Manage Consultation Hours** opens the internal calendar. Appointments retain their existing date-specific planner and seller links.
 2. Use **Inbox** or **Cases** to open a seller. Edit and save preparation, notes and reviewed document links before another case action. Expand **Conversation**, **Milestones**, **Appointments** or **Shared progress** for the existing save/review controls. **History** shows recorded case events. Closing and reopening a section retains its draft.
 3. Open **Planner** to save a task, bill or an agreed consultation. Reminders and recurrence use the existing infrastructure. Booking a consultation does not record attendance.
 4. Use **Business** for received income, paid expenses and expected income. Corrections and payments keep their existing review dialogs. Open **Goals** for targets, and **Review week** from a planner review task for the weekly checklist.
