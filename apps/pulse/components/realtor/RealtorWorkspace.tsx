@@ -2,6 +2,7 @@
 
 import { FieldbookShell } from './FieldbookShell';
 import fieldbook from './Fieldbook.module.css';
+import dailyFocus from './SellerDailyFocus.module.css';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -276,7 +277,7 @@ export default function RealtorWorkspace({ section, sellerLeadId, plannerDate }:
 
   const summary = data?.summary || data?.business?.value;
 
-  return <FieldbookShell title={section === 'seller-inbox' ? 'Seller inbox' : section === 'today' ? 'Today' : section[0].toUpperCase() + section.slice(1)} navigation={<SectionNav section={section} />} date={section === 'today' ? displayToday(preferences?.time_zone) : undefined} timeZone={preferences?.time_zone}>
+  return <FieldbookShell className={section === 'today' ? dailyFocus.dailyTheme : undefined} title={section === 'seller-inbox' ? 'Seller inbox' : section === 'today' ? 'Today' : section[0].toUpperCase() + section.slice(1)} navigation={<SectionNav section={section} />} date={section === 'today' ? displayToday(preferences?.time_zone) : undefined} timeZone={preferences?.time_zone}>
       {error ? <div role="alert" className="fieldbook-record rounded-xl border border-rose-300/30 bg-rose-300/10 p-4 text-sm text-rose-100">{error}{section === 'planner' && /changed.*reload|reload it before saving/i.test(error) ? <button type="button" onClick={() => void reloadLatestPlanner()} className="ml-3 rounded-md border border-rose-100/30 px-3 py-1.5 font-semibold hover:bg-rose-100/10">Refresh latest planner data</button> : null}</div> : null}
       {notice ? <div role="status" className="fieldbook-record rounded-xl border border-emerald-300/30 bg-emerald-300/10 p-4 text-sm text-emerald-100">{notice}</div> : null}
       {loading ? <p className="text-sm text-slate-400">Loading your workspace…</p> : null}
@@ -330,7 +331,7 @@ function TodayView({ data, preferences, busy, submit, submitReminder, onReloadRe
   const net = progressValue('net_income');
   return <div className="space-y-5">
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(220px,1fr)]">
-      <div><SellerDailyPanel result={data?.seller} priorities={data?.priorities} onScheduleSaved={onScheduleSaved} onAgendaReloaded={onAgendaReloaded} /><SellerDailyRoutine /></div>
+      <div><SellerDailyPanel result={data?.seller} priorities={data?.priorities} onScheduleSaved={onScheduleSaved} onAgendaReloaded={onAgendaReloaded} /><SellerDailyRoutine /><div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/10 pt-4"><Link href="/jamie-chat?context=personal_realtor" className={quietButton}>Ask Jamie</Link><Link href="/consultations" className="inline-flex min-h-11 items-center text-sm text-cyan-200 underline">Manage Consultation Hours</Link></div></div>
       <aside className={fieldbook.margin}>      <Panel title="Appointments" extra={<Link href="/planner" className="text-sm font-semibold text-cyan-200">Open planner →</Link>}>
         {agendaNeedsRefresh ? <p role="status" className="mb-3 text-sm text-amber-200">Schedule changed. Refresh to see the latest tasks and reminders.</p> : null}
         {agendaNeedsRefresh || data?.agenda?.status !== 'available' ? <button type="button" disabled={busy} onClick={() => void onReloadReminders()} className="mb-3 text-sm font-semibold text-cyan-200 underline disabled:opacity-50">{busy ? 'Refreshing schedule…' : 'Refresh schedule'}</button> : null}

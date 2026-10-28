@@ -175,6 +175,8 @@ For local validation commands, use the exact targeted suite appropriate to the c
 
 ## Progress Tracking
 
+**October 28 Daily focus update:** The user selected the existing Daily focus design. `codex/daily-focus-workspace`, based on PR #93, applies it to `/today` with one real primary action, two next actions and scoped light/dark colors. Existing ranking, auth, scheduling and reminder behavior remain in place. See [implementation and local evidence](releases/daily-focus-workspace-2026-10-28.md).
+
 Current implementation record (October 19, 2026):
 
 ```text
