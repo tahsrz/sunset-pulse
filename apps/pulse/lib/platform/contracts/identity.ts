@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const workspaceIdSchema = z.string().uuid();
+export const workspaceIdSchema = z.string().guid();
 export const workspaceKindSchema = z.enum(['personal', 'team']);
 export const workspaceRoleSchema = z.enum(['owner', 'admin', 'member', 'reviewer', 'viewer']);
 export const workspaceStatusSchema = z.enum(['active', 'archived']);

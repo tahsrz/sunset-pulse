@@ -7,7 +7,7 @@ const optionalPositiveInteger = z.union([
   z.number().int().positive(),
   z.string().trim().regex(/^\d+$/),
   z.literal(''),
-]).optional().transform((value) => value === '' || value === undefined ? undefined : Number(value));
+]).optional().transform((value) => value === '' || value === undefined ? undefined : Number(value)).optional();
 
 const optionalStringList = z.union([
   z.array(z.string()),
@@ -18,7 +18,7 @@ const optionalStringList = z.union([
     .map((entry) => entry.trim())
     .filter(Boolean);
   return values.length ? values : undefined;
-});
+}).optional();
 
 export const jamiePropertySearchInputSchema = z.object({
   city: z.string().optional().describe("City to search in, such as Frisco or Plano."),
@@ -26,7 +26,7 @@ export const jamiePropertySearchInputSchema = z.object({
   neighborhood: z.string().optional().describe("Specific neighborhood name."),
   property_types: optionalStringList.describe("Property types to include."),
   property_sub_types: optionalStringList.describe("Property sub-types to include."),
-  price_type: z.enum(['sale', 'lease', 'unknown', '']).optional().transform((value) => value === '' ? undefined : value)
+  price_type: z.enum(['sale', 'lease', 'unknown', '']).optional().transform((value) => value === '' ? undefined : value).optional()
     .describe("Use 'lease' for rent, rental, or lease searches; use 'sale' for purchase searches."),
   price_min: optionalPositiveInteger.describe("Minimum price in USD."),
   price_max: optionalPositiveInteger.describe("Maximum price in USD."),

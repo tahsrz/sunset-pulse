@@ -31,7 +31,7 @@ const chatRequestSchema = z.object({
   agentId: z.string().trim().min(1).max(160).nullable().optional(),
   personaMode: z.enum(['general', 'guarded_real_estate']).optional(),
   context: chatContextSchema.default('general'),
-  sellerCaseId: z.string().uuid().optional(),
+  sellerCaseId: z.string().guid().optional(),
 }).strict();
 
 export async function POST(req: NextRequest) {

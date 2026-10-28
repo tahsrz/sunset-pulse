@@ -28,7 +28,7 @@ import { isValidTimeZone } from '@/lib/autonomous-workflows/schedulerPolicy';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 const saveSettingsSchema = licensedWorkflowProfileSchema.extend({ action: z.literal('save_settings') });
 const runSchema = z.object({
   action: z.literal('run'),

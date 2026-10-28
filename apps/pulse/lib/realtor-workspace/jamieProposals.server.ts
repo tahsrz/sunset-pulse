@@ -12,7 +12,7 @@ import { listShortlistEntries } from '@/lib/property-sprints/shortlist.server';
 export const agendaInputSchema = z.object({ includeReminders: z.boolean().default(true) }).strict();
 export const summaryInputSchema = z.object({ year: z.number().int().min(2000).max(2200).optional() }).strict();
 export const plannerProposalInputSchema = z.object({
-  propertyId: z.string().uuid().nullable().optional(),
+  propertyId: z.string().guid().nullable().optional(),
   kind: z.enum(['bill', 'professional_deadline', 'appointment', 'follow_up', 'task', 'weekly_review']).optional(),
   title: z.string().trim().min(1).max(160).optional(),
   dueDate: realtorDateSchema.optional(),

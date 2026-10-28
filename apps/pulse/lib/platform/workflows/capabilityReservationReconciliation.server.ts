@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { WorkspaceAccessError, requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.server';
 import type { WorkflowExecution, WorkflowJob } from '@/lib/autonomous-workflows/workflowRegistry.server';
 
-const payloadSchema = z.object({ workspaceId: z.string().uuid(), batchLimit: z.number().int().min(1).max(100) }).strict();
+const payloadSchema = z.object({ workspaceId: z.string().guid(), batchLimit: z.number().int().min(1).max(100) }).strict();
 
 export async function runCapabilityReservationReconciliation(job: WorkflowJob): Promise<WorkflowExecution> {
   if (job.trigger_kind !== 'event' || !job.payload) throw new Error('Reconciliation requires a validated event job.');

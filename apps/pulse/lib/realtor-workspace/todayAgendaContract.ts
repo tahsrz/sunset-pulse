@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { realtorDateSchema, realtorPlannerKindSchema } from './contracts';
 
 const linkedOccurrence = z.object({
-  id: z.string().uuid(), item_id: z.string().uuid(),
+  id: z.string().guid(), item_id: z.string().guid(),
   title_snapshot: z.string().min(1), effective_date: realtorDateSchema,
   property_label: z.string().nullable().optional(),
 }).passthrough();
@@ -19,7 +19,7 @@ export const todayAgendaResultSchema = z.discriminatedUnion('status', [
     asOfDate: realtorDateSchema,
     overdue: z.array(occurrence).max(5), upcoming: z.array(occurrence).max(5),
     reminders: z.array(z.object({
-      id: z.string().uuid(), occurrence_id: z.string().uuid(),
+      id: z.string().guid(), occurrence_id: z.string().guid(),
       scheduled_at: z.string().datetime({ offset: true }), status: z.literal('visible'),
       revision: z.number().int().positive(), occurrence: linkedOccurrence.nullable(),
     }).passthrough()).max(5),

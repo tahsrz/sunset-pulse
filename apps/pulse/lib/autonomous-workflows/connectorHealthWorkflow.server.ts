@@ -5,8 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import type { WorkflowExecution, WorkflowJob } from './workflowRegistry.server';
 
 const healthCheckPayloadSchema = z.object({
-  workspaceId: z.string().uuid(),
-  connectorId: z.string().uuid(),
+  workspaceId: z.string().guid(),
+  connectorId: z.string().guid(),
   source: z.literal('fixture'),
   operation: z.string().regex(/^[a-z][a-z0-9_.:-]{0,127}$/).default('pinned_snapshot'),
 }).strict();

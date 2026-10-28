@@ -145,7 +145,7 @@
     "three-stdlib": "^2.36.1",
     "typescript": "^6.0.2",
     "use-stick-to-bottom": "^1.1.6",
-    "zod": "^3.25.76",
+    "zod": "^4.6.7",
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {

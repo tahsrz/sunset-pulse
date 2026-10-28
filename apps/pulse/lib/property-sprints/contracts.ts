@@ -29,7 +29,7 @@ export const propertyShortlistEntrySchema = z.object(propertyIdentityFields).ext
 }).superRefine(validateIdentity);
 
 export const propertyTaskInputSchema = z.object({
-  propertyId: z.string().uuid(),
+  propertyId: z.string().guid(),
   propertyRevision: z.number().int().positive(),
   taskKind: propertyTaskKindSchema,
   workerKey: z.string().trim().min(1).max(80).nullable().default(null),

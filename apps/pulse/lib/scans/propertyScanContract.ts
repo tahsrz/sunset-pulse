@@ -20,7 +20,7 @@ export const propertyScanRequestSchema = z.object({
 export type PropertyScanRequest = z.infer<typeof propertyScanRequestSchema>;
 
 export const propertyScanAssetSchema = z.object({
-  assetId: z.string().uuid().optional(),
+  assetId: z.string().guid().optional(),
   path: z.string().min(1),
   fileName: z.string().min(1).max(255),
   mimeType: z.string().min(1).max(120),

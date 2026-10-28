@@ -16,7 +16,7 @@ import {
 } from '@/lib/lead-generation/internalLeadSystem';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const uuidSchema = z.string().uuid();
+const uuidSchema = z.string().guid();
 const createLeadSchema = z.object({
   firstName: z.string().trim().max(100).optional(),
   lastName: z.string().trim().max(100).optional(),

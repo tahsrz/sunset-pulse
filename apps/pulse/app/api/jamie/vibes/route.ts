@@ -71,5 +71,5 @@ const vibeWriteSchema = z.object({
     particleDensity: z.number().min(0).max(10).optional(),
   }).strict().optional(),
   sourceVideoPath: z.string().trim().max(2_000).optional(),
-  metadata: z.record(z.string().max(500)).optional(),
+  metadata: z.record(z.string(), z.string().max(500)).optional(),
 }).strict();

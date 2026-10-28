@@ -25,9 +25,9 @@ import { z } from 'zod';
 
 const promptUpdateSchema = z.object({
   jamieSystemPrompt: z.string().min(1).max(40_000),
-  abidanPrompts: z.record(z.string().max(40_000)).default({}),
-  modelMatrix: z.record(z.string().max(200)).default({}),
-  operationalSettings: z.record(z.union([z.string().max(200), z.number(), z.boolean()])).default({}),
+  abidanPrompts: z.record(z.string(), z.string().max(40_000)).default({}),
+  modelMatrix: z.record(z.string(), z.string().max(200)).default({}),
+  operationalSettings: z.record(z.string(), z.union([z.string().max(200), z.number(), z.boolean()])).default({}),
 }).strict();
 
 export async function GET(req: NextRequest) {

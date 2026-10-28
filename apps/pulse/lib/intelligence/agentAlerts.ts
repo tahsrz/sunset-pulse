@@ -8,8 +8,8 @@ const scoreReasonSchema = z.object({
 
 const metadataSchema = z.object({
   agentId: z.string().trim().min(1).optional(),
-  funnelId: z.string().uuid().optional().nullable(),
-  leadId: z.string().uuid().optional(),
+  funnelId: z.string().guid().optional().nullable(),
+  leadId: z.string().guid().optional(),
   leadName: z.string().trim().min(1).max(200).optional(),
   leadStatus: z.string().trim().min(1).max(80).optional().nullable(),
   listingId: z.string().trim().min(1).optional().nullable(),
@@ -25,7 +25,7 @@ const metadataSchema = z.object({
 }).passthrough();
 
 export const intelligenceEventSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().guid(),
   event_type: z.string().trim().min(1).max(160),
   actor_id: z.string().nullable(),
   actor_name: z.string().nullable(),
@@ -221,7 +221,7 @@ function classifyAlert(eventType: string, score: number) {
 }
 
 function leadIdForEvent(event: IntelligenceEvent) {
-  return event.event_type.includes('HANDOFF') && event.target_id && z.string().uuid().safeParse(event.target_id).success
+  return event.event_type.includes('HANDOFF') && event.target_id && z.string().guid().safeParse(event.target_id).success
     ? event.target_id
     : undefined;
 }

@@ -9,7 +9,7 @@ import { readSellerVideoJson } from '@/lib/marketing/sellerVideoRouteBody.server
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const workspaceIdSchema = z.string().uuid();
+const workspaceIdSchema = z.string().guid();
 const saveRequestSchema = z.object({
   workspaceId: workspaceIdSchema,
   brief: videoBriefSchema,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   const briefId = request.nextUrl.searchParams.get('briefId');
   const revisionText = request.nextUrl.searchParams.get('revision');
   const targeted = briefId !== null || revisionText !== null;
-  const target = targeted ? z.object({ briefId: z.string().uuid(), revision: z.coerce.number().int().positive().safe() }).strict().safeParse({ briefId, revision: revisionText }) : null;
+  const target = targeted ? z.object({ briefId: z.string().guid(), revision: z.coerce.number().int().positive().safe() }).strict().safeParse({ briefId, revision: revisionText }) : null;
   if (targeted && !target?.success) {
     return NextResponse.json({ ok: false, error: 'briefId and a positive revision must be provided together.' }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } });
   }

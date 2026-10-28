@@ -28,7 +28,7 @@ const FeedbackSchema = z.object({
   episodeId: z.string().max(160).optional(),
   workerId: z.string().max(160).optional(),
   variantName: z.string().max(220).optional(),
-  context: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional()
+  context: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional()
 });
 
 export async function GET() {

@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const representationCommercialContextSchema = z.object({
-  leadId: z.string().uuid(),
-  funnelId: z.string().uuid(),
-  bookingId: z.string().uuid().nullable().default(null),
+  leadId: z.string().guid(),
+  funnelId: z.string().guid(),
+  bookingId: z.string().guid().nullable().default(null),
   agentId: z.string().trim().min(1).max(120),
   site: z.string().trim().min(1).max(180),
 }).strict();

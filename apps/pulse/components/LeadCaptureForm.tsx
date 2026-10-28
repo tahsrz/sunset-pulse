@@ -49,7 +49,8 @@ const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyN
     if (watchAll.name && watchAll.name.length > 2) score += 10;
     if (watchAll.email && watchAll.email.includes('@')) score += 10;
     if (watchAll.phone && watchAll.phone.length > 5) score += 15;
-    if (watchAll.budget && watchAll.budget > 0) score += 5;
+    const budget = typeof watchAll.budget === 'number' || typeof watchAll.budget === 'string' ? Number(watchAll.budget) : 0;
+    if (budget > 0) score += 5;
     if (watchAll.timeframe && watchAll.timeframe !== 'unknown') score += 10;
     if (watchAll.tourRequested) score += 20;
     return Math.min(score, 99);

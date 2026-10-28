@@ -22,7 +22,7 @@ export type BillableOutcomeType = (typeof BILLABLE_OUTCOME_TYPES)[number];
 export type OutcomeDisqualifier = (typeof OUTCOME_DISQUALIFIERS)[number];
 
 export const outcomeCandidateSchema = z.object({
-  funnelId: z.string().uuid(),
+  funnelId: z.string().guid(),
   consent: z.boolean(),
   contactChannel: z.enum(['email', 'phone', 'both']).nullable(),
   transactionType: z.enum(['purchase', 'lease', 'sell', 'unknown']),
@@ -38,7 +38,7 @@ export const outcomeCandidateSchema = z.object({
     'general_question',
   ]),
   booking: z.object({
-    id: z.string().uuid(),
+    id: z.string().guid(),
     type: z.enum(['buyer_consultation', 'rental_consultation', 'property_tour', 'seller_consultation']),
     status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']),
   }).strict().nullable(),

@@ -3,13 +3,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export const internalCostEntrySchema = z.object({
   tenantSite: z.string().trim().min(1).max(180),
-  funnelId: z.string().uuid().nullable().default(null),
-  leadId: z.string().uuid().nullable().default(null),
+  funnelId: z.string().guid().nullable().default(null),
+  leadId: z.string().guid().nullable().default(null),
   costType: z.enum(['model', 'search_tool', 'email_sms', 'signing', 'crawling', 'infrastructure']),
   amountUsd: z.number().finite().nonnegative().nullable().default(null),
   occurredAt: z.string().datetime(),
   source: z.string().trim().min(1).max(180),
-  evidence: z.record(z.unknown()).default({}),
+  evidence: z.record(z.string(), z.unknown()).default({}),
   idempotencyKey: z.string().trim().min(16).max(220),
 }).strict();
 
