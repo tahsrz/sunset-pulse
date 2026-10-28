@@ -4,6 +4,7 @@ import React from 'react';
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  offer: vi.fn(),
   applyPublicApiRateLimit: vi.fn(),
   getTenantSite: vi.fn(),
   insert: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/core/publicApiRateLimit', () => ({ applyPublicApiRateLimit: mocks.applyPublicApiRateLimit }));
 vi.mock('@/lib/sites/siteData', () => ({ getTenantSite: mocks.getTenantSite }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from } }));
+vi.mock('@/lib/scheduling/sellerConsultationAuthority.server', () => ({ createSellerBookingOffer: mocks.offer }));
 
 import { POST } from '@/app/api/lead-magnets/route';
 import { saveSellerPlanLead } from '@/lib/marketing/sellerLeadIntake.server';
@@ -45,6 +47,7 @@ function request(body: unknown = validPayload, headers: Record<string, string> =
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.offer.mockResolvedValue(null);
   process.env.KELLER_WESTLAKE_AGENT_SITE = 'taz';
   vi.stubEnv('NODE_ENV', 'test');
   mocks.applyPublicApiRateLimit.mockResolvedValue(null);
@@ -61,6 +64,14 @@ beforeEach(() => {
 });
 
 describe('seller-plan lead route', () => {
+  it('offers booking only with a newly saved request, without exposing raw lead identity', async () => {
+    const offer = { token: 'signed-short-lived-booking-capability', expiresAt: '2026-10-28T19:00:00Z' };
+    mocks.offer.mockResolvedValue(offer);
+    const result = await POST(request());
+    expect(result.status).toBe(201);
+    expect(await result.json()).toEqual({success:true,accepted:true,duplicate:false,bookingOffer:offer});
+    expect(mocks.offer).toHaveBeenCalledWith(expect.objectContaining({leadId:SAVED_LEAD_ID,agentId:'owner-site-1',site:'taz'}));
+  });
   it('stores a bounded, owner-routed CMA request without property-address details', async () => {
     const response = await POST(request());
     const body = await response.json();
@@ -115,6 +126,7 @@ describe('seller-plan lead route', () => {
 
   it('returns the same durable receipt for an identical retry and conflicts on changed details', async () => {
     await POST(request());
+    mocks.offer.mockClear();
     const [savedRecord] = mocks.insert.mock.calls[0];
     mocks.single.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate' } });
     mocks.maybeSingle.mockResolvedValueOnce({ data: { id: SAVED_LEAD_ID, funnel_id: savedRecord.funnel_id, agent_id: savedRecord.agent_id, site: savedRecord.site, metadata: savedRecord.metadata }, error: null });
@@ -123,6 +135,8 @@ describe('seller-plan lead route', () => {
     const duplicateBody = await duplicate.json();
     expect(duplicateBody).toMatchObject({ success: true, accepted: true, duplicate: true });
     expect(duplicateBody).not.toHaveProperty('identity');
+    expect(duplicateBody).not.toHaveProperty('bookingOffer');
+    expect(mocks.offer).not.toHaveBeenCalled();
 
     mocks.single.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate' } });
     mocks.maybeSingle.mockResolvedValueOnce({ data: { id: SAVED_LEAD_ID, funnel_id: savedRecord.funnel_id, agent_id: savedRecord.agent_id, site: savedRecord.site, metadata: savedRecord.metadata }, error: null });

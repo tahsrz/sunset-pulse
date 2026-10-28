@@ -127,6 +127,8 @@ Publish content incrementally by existing guide slug. Start with one complete gu
 
 ## PR 6: Seller Consultation Booking
 
+**October 28 update:** The user selected Sunset Pulse's internal scheduler. The implementation on `codex/internal-seller-consultations`, stacked on PR #92, now includes owner-controlled hours at `/consultations`, capability-scoped availability/reservation routes, a public optional picker and an atomic booking/case/planner/reminder transaction. Local Docker concurrency and cancellation acceptance passed, along with 35 focused app tests and mocked browser walkthroughs at 320/390/1440 px. See [implementation, setup and evidence](releases/internal-seller-consultations-2026-10-28.md). Production activation and an integrated authenticated non-production browser-to-database run remain open. Earlier calendar-selection dependencies below are historical; no external provider choice is pending.
+
 Specification: section 6, Part B. Depends on PR 4 and a verified scheduling authority from task 0.5.
 
 | ID | Implementation task | Completion evidence |

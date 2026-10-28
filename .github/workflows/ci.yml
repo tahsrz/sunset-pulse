@@ -92,6 +92,8 @@ jobs:
         run: npm install
       - name: Run isolated scheduler and Mongo acceptance
         run: npm run docker:test
+      - name: Run isolated internal consultation acceptance
+        run: node apps/pulse/scripts/scheduler-concurrency-acceptance.mjs --internal-consultations-only
 
   storage-budget:
     runs-on: ubuntu-latest
