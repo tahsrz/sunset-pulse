@@ -269,6 +269,8 @@ Completion: the operator sees why content is pending; the profile shows a real a
 
 ## 5. Connect Consultation Booking to the Existing Scheduler
 
+Authority discovery and the first repair are implemented on `codex/consultation-request-safety`, stacked on PR #91. The public flow now saves a consultation request without pretending to reserve an unchecked time; the anonymous direct booking writer is disabled, and commercial replay lookups are lineage-scoped. See [scheduling authority evidence](./releases/consultation-authority-audit-2026-10-28.md) for the writer inventory, read-only preflight and checks. The user selected extending Sunset Pulse's scheduler. The next delivery is its internal reservation layer; automatic slots remain disabled until owner availability and the transaction/cancellation invariants are verified.
+
 ### Authority decision before provider code
 
 `sellerConsultation.server.ts` already defines `listSlots` and `reserve`. `sellerConsultationContract.ts` already validates saved identity, windows, and results. `sellerBookingCapability.server.ts` already signs a short-lived purpose-specific capability. Reuse all three.
