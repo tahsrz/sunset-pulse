@@ -23,7 +23,7 @@ const MapControls: React.FC<MapControlsProps> = ({
   showDirections
 }) => {
   return (
-    <div className="fixed top-20 right-5 z-[9999] space-y-3 pointer-events-auto">
+    <div className="absolute top-4 right-4 z-20 space-y-3 pointer-events-auto">
       <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl max-w-[250px]">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3 text-blue-400">
@@ -33,26 +33,31 @@ const MapControls: React.FC<MapControlsProps> = ({
           <div className="flex flex-wrap gap-2">
             <button 
               onClick={() => setShowHeatmap(!showHeatmap)}
+              aria-pressed={showHeatmap}
               className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showHeatmap ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
             >
-              THERMAL
+              Listing Density
             </button>
             <button 
               onClick={() => setShowVisual(!showVisual)}
+              aria-pressed={showVisual}
               className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showVisual ? 'bg-emerald-500 border-emerald-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
             >
-              VISUAL
+              Satellite
             </button>
             <button 
               onClick={() => setShowPOIs(!showPOIs)}
+              aria-pressed={showPOIs}
+              disabled={showVisual}
+              title={showVisual ? 'Switch off Satellite to show nearby places.' : 'Show nearby places'}
               className={`text-[8px] px-2 py-1 rounded font-black transition-all border ${showPOIs ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
             >
-              POI RECON
+              Nearby Places
             </button>
           </div>
         </div>
         <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
-          3D terrain and clustering are enabled. Toggle visual, heatmap, or POI layers for local context.
+          Density shows the concentration of returned listings. Valuation markers are separate.
         </p>
       </div>
       
