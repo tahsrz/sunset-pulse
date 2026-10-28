@@ -15,4 +15,5 @@ const publishedSchema = z.object({
 
 const checkedPublishedSchema = publishedSchema.refine((profile) => Boolean(profile.phone || profile.email), { message: 'A published profile needs a public contact method.' });
 export const sellerIntroductionSchema = z.union([draftSchema, checkedPublishedSchema]);
+export type SellerIntroduction = z.infer<typeof sellerIntroductionSchema>;
 export type PublishedSellerIntroduction = z.infer<typeof checkedPublishedSchema>;
