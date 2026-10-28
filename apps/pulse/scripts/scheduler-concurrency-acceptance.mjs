@@ -8,7 +8,7 @@ import { platformFollowupAcceptance } from './platform-followup-acceptance.mjs';
 import { sellerVideoBriefAcceptance } from './seller-video-brief-acceptance.mjs';
 import { sellerConcurrencyAcceptance } from './seller-concurrency-acceptance.mjs';
 
-async function runRealtorDatabaseChecks(sql) {
+async function runRealtorDatabaseChecks(sql, { migrationsOnly = false } = {}) {
   const migrations = [
     '20260924170000_platform_workspace_member_email_cast.sql',
     '20260925100000_realtor_personal_workspace.sql',
@@ -41,6 +41,7 @@ async function runRealtorDatabaseChecks(sql) {
   for (const migration of migrations) {
     await sql(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), 'utf8'));
   }
+  if (migrationsOnly) return;
   const cases = [
     { file: 'realtor_planner_task_identity.sql', assertions: 22 },
     { file: 'realtor_financial_lifecycle.sql', assertions: 22 },
@@ -313,14 +314,21 @@ await withDockerService('scheduler-test', async (container) => {
     );
     CREATE TABLE public.licensed_workflow_settings (id uuid PRIMARY KEY);
     CREATE TABLE public.licensed_workflow_runs (id uuid PRIMARY KEY);
-    CREATE TABLE public.scheduling_bookings (
+    ${process.argv.includes('--internal-consultations-only') ? `
+      -- Notification delivery is outside this booking test. These minimal
+      -- relations allow the real funnel-identity migration to run unchanged.
+      CREATE TABLE public.agent_notifications(id uuid PRIMARY KEY,lead_id uuid,created_at timestamptz DEFAULT now());
+      CREATE TABLE public.notification_deliveries(id uuid PRIMARY KEY,lead_id uuid,created_at timestamptz DEFAULT now());` : ''}
+    ${process.argv.includes('--internal-consultations-only') ? '' : `CREATE TABLE public.scheduling_bookings (
       id uuid PRIMARY KEY, uid text NOT NULL, title text NOT NULL, start_time timestamptz NOT NULL,
       end_time timestamptz NOT NULL, status text NOT NULL, funnel_id uuid, lead_id uuid, agent_id text, site text, appointment_type text
-    );
+    );`}
   `);
   const migrations = [
+    ...(process.argv.includes('--internal-consultations-only') ? ['20260521010000_create_scheduling_core.sql'] : []),
     '20260710030000_agent_site_leads.sql',
     '20260710040000_agent_site_lead_workflow.sql',
+    ...(process.argv.includes('--internal-consultations-only') ? ['20260824030000_durable_profit_funnel_identity.sql','20260824070000_commercial_booking_lineage.sql'] : []),
     '20260824010000_agent_site_lead_opportunity_values.sql',
     '20260824040000_lead_engagement_receipts.sql',
     '20260912040000_durable_workflow_scheduler.sql',
@@ -391,6 +399,17 @@ await withDockerService('scheduler-test', async (container) => {
   }
   await sql(await readFile(new URL('../supabase/migrations/20260916040000_scheduler_deferred_outcomes.sql', import.meta.url), 'utf8'));
 
+  if (process.argv.includes('--internal-consultations-only')) {
+    await sql('ALTER TABLE public.site_config ADD COLUMN subdomain TEXT;');
+    await runRealtorDatabaseChecks(sql, { migrationsOnly: true });
+    await sql(await readFile(new URL('../supabase/migrations/20261028120000_internal_seller_consultations.sql', import.meta.url), 'utf8'));
+    if (!process.argv.includes('--migration-only')) {
+      const { internalConsultationAcceptance } = await import('./internal-consultation-acceptance.mjs');
+      await internalConsultationAcceptance(sql);
+    }
+    console.log('PASS: internal consultation migrations in disposable PostgreSQL');
+    return;
+  }
   if (process.argv.includes('--realtor-only')) {
     await runRealtorDatabaseChecks(sql);
     console.log('PASS: realtor migrations and task-identity assertions in disposable PostgreSQL');

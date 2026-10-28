@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState, type FormEvent } from 'react';
+import { sellerBookingOfferSchema, type SellerBookingOffer } from '@/lib/scheduling/sellerConsultationContract';
+import SellerConsultationPicker from './SellerConsultationPicker';
 
 type SubmissionState = 'idle' | 'submitting' | 'success' | 'error';
 type Step = 'help' | 'timing' | 'contact';
 type RequestKind = 'seller_plan' | 'pricing_review';
-type LeadResponse = { success?: boolean; message?: string; duplicate?: boolean };
+type LeadResponse = { success?: boolean; message?: string; duplicate?: boolean; bookingOffer?: unknown };
 type Draft = {
   requestKind: RequestKind;
   timing: string;
@@ -29,6 +31,8 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
   const [draft, setDraft] = useState<Draft>(() => ({ ...initialDraft, requestKind: initialRequestKind }));
   const [state, setState] = useState<SubmissionState>('idle');
   const [feedback, setFeedback] = useState('');
+  const [bookingOffer, setBookingOffer] = useState<SellerBookingOffer | null>(null);
+  const submitting = useRef(false);
   const lastSubmission = useRef<{ fingerprint: string; submissionId: string } | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const currentStep = stepOrder.indexOf(step);
@@ -53,7 +57,8 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (step !== 'contact' || !draft.requestedContact) return;
+    if (submitting.current || step !== 'contact' || !draft.requestedContact) return;
+    submitting.current = true;
     const search = new URL(window.location.href).searchParams;
     const requestFields = {
       offerKey: 'keller-westlake-seller-plan',
@@ -84,13 +89,15 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
       });
       const result = (await response.json()) as LeadResponse;
       if (!response.ok || result.success !== true) throw new Error(result.message || 'We could not save your request. Please try again.');
+      const offer = sellerBookingOfferSchema.safeParse(result.bookingOffer);
+      setBookingOffer(offer.success ? offer.data : null);
       setState('success');
       setFeedback('Your request is saved. We will follow up about what you selected.');
       lastSubmission.current = null;
     } catch (error) {
       setState('error');
       setFeedback(error instanceof Error ? error.message : 'We could not save your request. Please try again.');
-    }
+    } finally { submitting.current = false; }
   }
 
   if (state === 'success') {
@@ -99,7 +106,7 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
         <p className="text-xs font-black uppercase tracking-[0.16em] text-teal-200">Request saved</p>
         <h3 id="seller-request-saved" className="mt-3 text-2xl font-bold text-white">Thanks, {draft.name}.</h3>
         <p role="status" className="mt-3 text-sm leading-6 text-slate-300">{feedback}</p>
-        <p className="mt-3 text-sm leading-6 text-slate-400">This sends a request for a conversation. It does not book an appointment.</p>
+        {bookingOffer ? <SellerConsultationPicker offer={bookingOffer} /> : <p className="mt-3 text-sm leading-6 text-slate-400">This sends a request for a conversation. It does not book an appointment.</p>}
       </section>
     );
   }
