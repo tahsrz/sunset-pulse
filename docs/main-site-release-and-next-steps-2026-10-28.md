@@ -4,7 +4,9 @@ Prepared October 28, 2026. Status: implementation in progress. Unmarked deliveri
 
 Implementation progress: group A is implemented on `codex/marketing-admin-drafts`, based on PR #87 at `740757ed`. The marketing endpoint now checks global access, validates its read response, and refuses filesystem publication. The editor exports validated local drafts. Eighteen focused route/schema/editor checks, focused ESLint, and a scoped TypeScript check pass. Full build and deployed browser review are pending. See [marketing admin release evidence](./releases/marketing-admin-drafts-2026-10-28.md).
 
-Group B is implemented in [PR #89](https://github.com/tahsrz/sunset-pulse/pull/89), stacked on [PR #88](https://github.com/tahsrz/sunset-pulse/pull/88). Zod resolves to 4.6.7 throughout the installed dependency tree, the production audit reports zero vulnerabilities, and full TypeScript and focused lint pass. Existing identifier acceptance, optional-field omission, record values, coercion, and consent behavior are covered by migration checks. The public lead endpoint now has a streamed 128 KiB limit and bounded tags. The broad unit run and filesystem-only recovery are recorded in the [Zod migration evidence](./releases/zod4-contract-migration-2026-10-28.md). Groups C/D for Explorer are next; production build and deployed acceptance remain separate.
+Group B is implemented in [PR #89](https://github.com/tahsrz/sunset-pulse/pull/89), stacked on [PR #88](https://github.com/tahsrz/sunset-pulse/pull/88). Zod resolves to 4.6.7 throughout the installed dependency tree, the production audit reports zero vulnerabilities, and full TypeScript and focused lint pass. Existing identifier acceptance, optional-field omission, record values, coercion, and consent behavior are covered by migration checks. The public lead endpoint now has a streamed 128 KiB limit and bounded tags. The broad unit run and filesystem-only recovery are recorded in the [Zod migration evidence](./releases/zod4-contract-migration-2026-10-28.md).
+
+Groups C/D/E are implemented on `codex/explorer-recovery`, stacked on #89. Explorer now validates public response shapes, cancels stale requests, distinguishes unavailable data from empty results, and keeps a usable listing list outside the map boundary. Missing coordinates do not break markers. Bounded public GeoJSON replaces the synthetic-metric worker. Map and chunk retry, control/listener cleanup, and current navigation callbacks have focused regression coverage. Sixty-six tests across seven suites pass. See [Explorer release evidence and manual acceptance](./releases/explorer-recovery-2026-10-28.md). Live Mapbox rendering, the original hosted exception trace, production build and deployed acceptance remain unverified. Content readiness is the next independent implementation group.
 
 This plan follows the homepage and seller-experience work in PR #87. It replaces the old execution queue for deciding what to build next; the October 19 specification remains useful background. Work is sequential, by one agent. Pending CI is not a reason to wait before doing independent source work. Do not use subagents.
 
@@ -345,10 +347,10 @@ New test filenames above are planned. Existing suites must be inspected for thei
 
 ## Immediate Next Session
 
-1. Preserve the review dependency order: #87, then #88, then #89. Refresh branch/base state before new work; merging and deployment require their own release decision.
-2. Start Explorer groups C/D on a focused branch from the appropriate verified base: typed reads, cancellation, and real-value GeoJSON.
-3. Capture Explorer's exception while doing independent source hardening; use the captured stack to select the crash-specific patch.
-4. Add map-specific recovery and verify the list survives map/worker/chunk errors.
-5. Complete publication tooling while approved seller/guide assets are collected.
+1. Preserve the review dependency order: #87, then #88, then #89, then the Explorer recovery branch. Refresh branch/base state before new work; merging and deployment require their own release decision.
+2. Implement group F's publication-readiness tooling while approved seller identity and guide assets are collected. Keep optional enhancements separate from required publication fields.
+3. Complete Explorer's live-browser acceptance and capture the original exception if it recurs. Use the captured stack to select any additional crash-specific patch.
+4. Verify a production build and deployed acceptance before declaring release readiness. The revised Playwright fixture suite has not been run and does not verify real Mapbox rendering.
+5. Inspect the existing scheduling authority and all booking writers before implementing group G's consultation reservation adapter.
 
 The first four deliveries require no new Supabase schema, cloud file uploads, or cron jobs. Booking may require a narrowly justified migration only after the actual reservation authority and invariant are established.

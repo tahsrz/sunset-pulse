@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Marker } from 'react-map-gl';
 import { FaHouse, FaCaravan, FaBus, FaTrailer } from 'react-icons/fa6';
+import { listingPrice, validCoordinates } from '@/lib/explorer/listingGeometry';
 
 interface PropertyMarkerProps {
   property: any;
@@ -12,35 +13,18 @@ interface PropertyMarkerProps {
 }
 
 const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, hoveredId, onSelect, resultsCount }) => {
+  if (!property || !validCoordinates(property.location_geo?.coordinates)) return null;
   const isRV = property.type === 'RV' || property.type === 'RV Park';
   const isHovered = property._id === hoveredId;
-  const intensity = (property.leadCount / (property.globalAvgLeads || 5)) * 1.5;
+  const leadCount = typeof property.leadCount === 'number' && Number.isFinite(property.leadCount) ? Math.max(0, property.leadCount) : 0;
+  const intensity = typeof property.globalAvgLeads === 'number' && Number.isFinite(property.globalAvgLeads) && property.globalAvgLeads > 0 ? leadCount / property.globalAvgLeads * 1.5 : 0;
   const isHighIntensity = intensity > 1.2;
-  const isUrgent = property.leadCount > 10;
+  const isUrgent = leadCount > 10;
 
   let RVIcon = FaCaravan;
   if (property.rv_type?.includes('Class')) RVIcon = FaBus;
   else if (property.rv_type?.includes('Trailer') || property.rv_type?.includes('Fifth') || property.rv_type?.includes('Hauler')) RVIcon = FaTrailer;
 
-  const getMarkerPriceDisplay = () => {
-    const primaryPrice = (property.list_price && property.list_price > 0) ? property.list_price : property.price;
-    if (primaryPrice && primaryPrice > 0) {
-      return `$${primaryPrice.toLocaleString()}`;
-    }
-    if (property.price_type === 'lease' && property.rates?.monthly) {
-      return `$${property.rates.monthly.toLocaleString()}/mo`;
-    }
-    if (property.rates?.monthly) {
-      return `$${property.rates.monthly.toLocaleString()}/mo`;
-    }
-    if (property.rates?.weekly) {
-      return `$${property.rates.weekly.toLocaleString()}/wk`;
-    }
-    if (property.rates?.nightly) {
-      return `$${property.rates.nightly.toLocaleString()}/night`;
-    }
-    return '$0';
-  };
 
   return (
     <Marker
@@ -62,16 +46,16 @@ const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, hoveredId, on
         <div 
           className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-all duration-1000 ease-out'
           style={{
-            width: `${40 + (property.leadCount * 10)}px`,
-            height: `${40 + (property.leadCount * 10)}px`,
-            background: `radial-gradient(circle, rgba(249, 115, 22, ${0.1 + Math.min(property.leadCount * 0.05, 0.4)}) 0%, rgba(249, 115, 22, 0) 70%)`,
+            width: `${40 + (leadCount * 10)}px`,
+            height: `${40 + (leadCount * 10)}px`,
+            background: `radial-gradient(circle, rgba(249, 115, 22, ${0.1 + Math.min(leadCount * 0.05, 0.4)}) 0%, rgba(249, 115, 22, 0) 70%)`,
             opacity: isHighIntensity ? 1 : 0.6,
             transform: `translate(-50%, -20%) scale(${isHovered ? 1.2 : 1})`,
           }}
         />
 
         <div className={`bg-white text-[10px] font-black px-2 py-1 rounded-full shadow-xl mb-1 transition-all duration-300 ${isRV ? 'text-green-600 border border-green-500' : 'text-blue-600 border border-blue-500'} ${resultsCount > 8 && !isHovered ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} ${isHovered ? 'ring-2 ring-blue-500 ring-offset-1' : ''} relative z-10`}>
-          {getMarkerPriceDisplay()}
+          {listingPrice(property).label}
         </div>
         <div className={`p-2 rounded-full border-2 border-white shadow-2xl transition-all duration-500 group-hover:shadow-blue-500/50 ${isRV ? 'bg-green-500' : 'bg-blue-600'} ${isHovered || isHighIntensity ? 'bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)]' : ''} ${isUrgent ? 'animate-pulse ring-4 ring-red-500/50' : ''} relative z-10`}
           style={{

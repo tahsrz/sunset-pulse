@@ -1,90 +1,72 @@
 import { test, expect } from '@playwright/test';
+import { explorerEnvelope, explorerListing } from './fixtures/explorerListing';
 
-/**
- * Explorer Intelligence Test Suite // V1.0
- * Verifies spatial search, Mapbox integration, and deep-linking integrity.
- */
-test.describe('Explorer: Spatial Intelligence Grid', () => {
-
+// Controlled responses and explicit E2E map fixtures exercise UI, not WebGL/tiles.
+test.describe('Explorer public search and recovery', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the Explorer with a higher navigation timeout
-    await page.goto('/explorer', { waitUntil: 'domcontentloaded', timeout: 60000 });
-    // Wait for the map container to exist
-    await page.waitForSelector('.mapboxgl-map', { timeout: 20000 });
-
-    // Ensure JamieChat is open.
-    const chatInput = page.locator('input[placeholder*="Ask Jamie"]').first();
-    const openBtn = page.locator('button[aria-label="Open Jamie"]').first();
-    await page.waitForTimeout(1000); // Wait for localStorage useEffect to settle
-    if (await openBtn.isVisible()) {
-      await openBtn.click();
-    }
-    await expect(chatInput).toBeVisible({ timeout: 5000 });
+    await page.route('**/api/jamie/dreams', route => route.fulfill({ json: [] }));
+    await page.route('**/api/valuation', route => route.fulfill({ json: { data: [] } }));
+    await page.route('**/api/properties**', route => {
+      const path = new URL(route.request().url()).pathname;
+      const listing = explorerListing();
+      const data = path === '/api/properties' ? { properties: [listing, explorerListing({ id: 'no-geo', _id: 'no-geo', name: 'No Map Location', location_geo: undefined })], total: 2 }
+        : path === '/api/properties/search' ? [listing] : listing;
+      return route.fulfill({ json: explorerEnvelope(data) });
+    });
   });
 
-  test('should initialize map and render property markers', async ({ page }) => {
-    // Wait for initial property load
-    // markers appear after the Web Worker processes the MongoDB result
-    const markers = page.locator('.mapboxgl-marker');
-    await expect(markers.first()).toBeVisible({ timeout: 20000 });
+  test('renders public listings and keeps entries without coordinates', async ({ page }) => {
+    await page.goto('/explorer', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('link', { name: '808 W Abram St' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'No Map Location' })).toBeVisible();
+    await expect(page.getByText('Map location not listed.')).toBeVisible();
+    await expect(page.locator('[data-map-mode="fixture"]')).toBeVisible();
+    await expect(page.getByText('Average sale asking price (2 listings)')).toBeVisible();
   });
 
-  test('should execute radius search and update area analysis', async ({ page }) => {
-    // Use domcontentloaded for deep-links to avoid tile-load hangs
-    await page.goto('/explorer?lat=33.453823&lng=-97.766724&id=650c8e2b1f4e1a2b3c4d5e6f', { waitUntil: 'domcontentloaded' });
-    
-    const analysisOverlay = page.locator('text=Area Analysis');
-    await expect(analysisOverlay).toBeVisible({ timeout: 15000 });
-
-    // Verify Avg Rent is calculated
-    const avgRent = page.locator('text=Avg Monthly Rent');
-    await expect(avgRent).toBeVisible();
-  });
-
-  test('should toggle Grid Intelligence layers', async ({ page }) => {
-    // Verify thermal (heatmap) toggle
-    const thermalBtn = page.locator('button:has-text("THERMAL")');
-    await thermalBtn.click();
-    await expect(thermalBtn).toHaveClass(/bg-orange-500/);
-
-    // Verify POI Recon toggle
-    const poiBtn = page.locator('button:has-text("POI RECON")');
-    await poiBtn.click();
-    await expect(poiBtn).toHaveClass(/bg-blue-600/);
-  });
-
-  test('should deep-link to a specific property asset', async ({ page }) => {
-    // Test a known mock property ID
-    const propertyId = '650c8e2b1f4e1a2b3c4d5e6f';
-    await page.goto(`/explorer?id=${propertyId}`, { waitUntil: 'domcontentloaded' });
-
-    // Verify the marker is highlighted (PropertyMarker uses hoveredId or target selection)
-    const hud = page.locator('text=Priority target:');
-    await expect(hud).toBeVisible({ timeout: 15000 });
-  });
-
-  test('should integrate Jamie Chat with property data', async ({ page }) => {
-    // Use first() to resolve strict mode violation with Provider duplication
-    const jamieChat = page.locator('.bg-slate-900\\/90.backdrop-blur-2xl').first();
-    await expect(jamieChat).toBeVisible();
-
-    // Open chat and check for input
-    const input = page.locator('input[placeholder*="Ask Jamie"]').first();
-    await expect(input).toBeVisible();
-  });
-
-  test('should handle empty result sets gracefully', async ({ page }) => {
-    // Navigate to a remote coordinate with no properties
+  test('encodes radius searches, accepts zero coordinates and uses returned samples', async ({ page }) => {
+    const request = page.waitForRequest(request => request.url().includes('/api/properties/search?'));
     await page.goto('/explorer?lat=0&lng=0', { waitUntil: 'domcontentloaded' });
-    
-    // Ensure map still loads
-    const mapContainer = page.locator('.mapboxgl-map');
-    await expect(mapContainer).toBeVisible();
-    
-    // Area Analysis should indicate no assets (if a selection was made)
-    // Since we can't easily draw a polygon in headless E2E without complex mouse move,
-    // we verify the component doesn't crash on initial load with 0 results.
-    const loadingState = page.locator('text=Initializing Map Explorer...');
-    await expect(loadingState).not.toBeVisible();
+    const params = new URL((await request).url()).searchParams;
+    expect(params.get('center')).toBe('0,0');
+    expect(params.get('radius')).toBe('5');
+    await expect(page.getByText('Average sale asking price (1 listing)')).toBeVisible();
+    await expect(page.getByText(/These results are a sample/)).toBeVisible();
+  });
+
+  test('toggles listing density and nearby places', async ({ page }) => {
+    await page.goto('/explorer', { waitUntil: 'domcontentloaded' });
+    for (const name of ['Listing Density', 'Nearby Places']) {
+      const toggle = page.getByRole('button', { name, exact: true });
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  test('loads detail deep links through the public endpoint', async ({ page }) => {
+    const request = page.waitForRequest(request => new URL(request.url()).pathname === '/api/properties/explorer-fixture');
+    await page.goto('/explorer?id=explorer-fixture', { waitUntil: 'domcontentloaded' });
+    await request;
+    await expect(page.getByRole('link', { name: '808 W Abram St' })).toHaveAttribute('href', '/properties/explorer-fixture');
+  });
+
+  test('distinguishes unavailable data from an empty search and recovers on retry', async ({ page }) => {
+    let requests = 0;
+    await page.route('**/api/properties?*', route => route.fulfill({ json: explorerEnvelope({ properties: [], total: 0 }, ++requests === 1 ? { source: 'unavailable' } : {}) }));
+    await page.goto('/explorer', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Property search is temporarily unavailable.')).toBeVisible();
+    await page.getByRole('button', { name: 'Retry Search' }).click();
+    await expect(page.getByText('No properties were returned for this search.')).toBeVisible();
+    expect(requests).toBe(2);
+  });
+
+  test('rejects an incomplete deep link without calling listing endpoints', async ({ page }) => {
+    const requests: string[] = [];
+    page.on('request', request => { if (request.url().includes('/api/properties')) requests.push(request.url()); });
+    await page.goto('/explorer?lat=32', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('alert')).toContainText('Include both latitude and longitude.');
+    await expect(page.getByRole('link', { name: 'Reset Explorer' })).toBeVisible();
+    expect(requests).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Map, { Source, Layer, NavigationControl, FullscreenControl, MapRef } from 'react-map-gl';
 import { useSearchParams } from 'next/navigation';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -11,8 +11,7 @@ import {
   clusterCountLayer, 
   heatmapLayer, 
   unclusteredPointLayer, 
-  poiLayer,
-  vibeLayer
+  poiLayer
 } from '@/constants/mapLayers';
 
 import PropertyMarker from './explorer/PropertyMarker';
@@ -25,6 +24,9 @@ import MapControls from './explorer/MapControls';
 import { useJamieInsights } from '@/hooks/useJamieInsights';
 import { useValuations } from '@/hooks/useValuations';
 import type { MapValuationResult } from '@/models/types';
+import { buildPublicListingGeoJson, validCoordinates } from '@/lib/explorer/listingGeometry';
+import { MapUnavailable } from './explorer/ExplorerMapBoundary';
+import type { ExplorerSelection } from '@/lib/explorer/publicSearch';
 
 interface ExplorerMapProps {
   onSelectionChange: (selection: any) => void;
@@ -33,6 +35,8 @@ interface ExplorerMapProps {
   hoveredId?: string | null;
   activeRouteProperty?: any;
   onViewportChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
+  onUnavailable?: () => void;
+  selection?: ExplorerSelection | null;
 }
 
 const ExplorerMap: React.FC<ExplorerMapProps> = ({ 
@@ -42,6 +46,8 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   hoveredId = null, 
   activeRouteProperty = null,
   onViewportChange,
+  onUnavailable,
+  selection,
 }) => {
   const searchParams = useSearchParams();
   const { jamieInsights } = useJamieInsights();
@@ -52,39 +58,17 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPOIs, setShowPOIs] = useState(false);
   const [showVisual, setShowVisual] = useState(false);
+  const selectionChangeRef = useRef(onSelectionChange);
+  useEffect(() => { selectionChangeRef.current = onSelectionChange; }, [onSelectionChange]);
 
-  // State for GeoJSON results calculated in Web Worker
-  const [geojsonResults, setGeojsonResults] = useState<any>({
-    type: 'FeatureCollection',
-    features: []
-  });
-
-  const workerRef = useRef<Worker | null>(null);
-
-  // Initialize Web Worker for background GeoJSON processing
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.webdriver) {
-      return undefined;
-    }
-
-    const worker = new Worker(new URL('../utils/workers/geojson.worker.js', import.meta.url));
-    workerRef.current = worker;
-
-    worker.onmessage = (event) => {
-      setGeojsonResults(event.data);
-    };
-
-    return () => {
-      worker.terminate();
-    };
-  }, []);
-
-  // Update GeoJSON when underlying data changes (Worker now handles state)
-  useEffect(() => {
-    if (workerRef.current) {
-      workerRef.current.postMessage({ results, valuations });
-    }
-  }, [results, valuations]);
+  // At most 500 public points; valuations remain separate markers, not listing density.
+  const geojsonResults = useMemo(() => buildPublicListingGeoJson(results), [results]);
+  const mapResults = useMemo(() => results.slice(0, 500).filter(property => property && validCoordinates(property.location_geo?.coordinates)), [results]);
+  const [mapFailed, setMapFailed] = useState(false);
+  const mapCleanup = useRef<(() => void) | null>(null);
+  const cleanControls = useCallback(() => { const clean = mapCleanup.current; mapCleanup.current = null; clean?.(); }, []);
+  useEffect(() => () => cleanControls(), [cleanControls, mapFailed]);
+  const reportUnavailable = useCallback(() => { setMapFailed(true); onUnavailable?.(); }, [onUnavailable]);
 
   // Sync hoveredId to Mapbox feature-state for instant performance
   const prevHoveredId = useRef<string | null>(null);
@@ -118,22 +102,24 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const urlLng = searchParams?.get('lng');
   const urlId = searchParams?.get('id');
 
-  const [selectedProperty, setSelectedProperty] = useState<any>(null);
-
   // Auto-select property if urlId is present
   useEffect(() => {
     if (urlId && results.length > 0) {
-      const target = results.find(p => p._id === urlId);
+      const target = results.find(p => p.id === urlId || p._id === urlId);
       if (target) {
-        setSelectedProperty(target);
+        if (urlLat === null && urlLng === null && validCoordinates(target.location_geo?.coordinates)) {
+          const [longitude, latitude] = target.location_geo.coordinates;
+          setViewState(view => ({ ...view, longitude, latitude, zoom: 15 }));
+        }
         if (onPropertySelect) onPropertySelect(target);
       }
     }
-  }, [urlId, results, onPropertySelect]);
+  }, [urlId, urlLat, urlLng, results, onPropertySelect]);
 
+  const initialCoordinates = urlLng?.trim() && urlLat?.trim() && validCoordinates([Number(urlLng), Number(urlLat)]) ? [Number(urlLng), Number(urlLat)] : null;
   const [viewState, setViewState] = useState({
-    longitude: urlLng ? parseFloat(urlLng) : -97.0403,
-    latitude: urlLat ? parseFloat(urlLat) : 33.453823,
+    longitude: initialCoordinates?.[0] ?? -97.0403,
+    latitude: initialCoordinates?.[1] ?? 33.453823,
     zoom: urlId ? 15 : 10,
     pitch: 45,
     bearing: -17
@@ -145,6 +131,16 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const viewStateRef = useRef(viewState);
 
   useEffect(() => {
+    if (!urlLng?.trim() || !urlLat?.trim() || !validCoordinates([Number(urlLng), Number(urlLat)])) return;
+    setViewState(view => view.longitude === Number(urlLng) && view.latitude === Number(urlLat)
+      ? view : { ...view, longitude: Number(urlLng), latitude: Number(urlLat) });
+  }, [urlLng, urlLat]);
+
+  useEffect(() => {
+    if (selection === null) drawRef.current?.deleteAll();
+  }, [selection]);
+
+  useEffect(() => {
     viewStateRef.current = viewState;
   }, [viewState]);
 
@@ -152,25 +148,32 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
 
+    let frame: number | null = null;
     const settleLayout = () => {
-      window.requestAnimationFrame(() => {
-        const currentView = viewStateRef.current;
-        map.resize();
-        map.jumpTo({
-          center: [currentView.longitude, currentView.latitude],
-          zoom: currentView.zoom,
-          pitch: currentView.pitch,
-          bearing: currentView.bearing,
-        });
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        if (mapRef.current?.getMap() !== map) return;
+        try {
+          const currentView = viewStateRef.current;
+          map.resize();
+          map.jumpTo({
+            center: [currentView.longitude, currentView.latitude],
+            zoom: currentView.zoom,
+            pitch: currentView.pitch,
+            bearing: currentView.bearing,
+          });
+        } catch { reportUnavailable(); }
       });
     };
 
     const applyTerrain = () => {
-      if (!map.getSource('mapbox-dem')) return;
-      const currentTerrain = (map as any).getTerrain?.();
-      if (currentTerrain?.source === 'mapbox-dem' && currentTerrain?.exaggeration === 1.5) return;
-      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-      settleLayout();
+      try {
+        if (!map.getSource('mapbox-dem')) return;
+        const currentTerrain = (map as any).getTerrain?.();
+        if (currentTerrain?.source === 'mapbox-dem' && currentTerrain?.exaggeration === 1.5) return;
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+        settleLayout();
+      } catch { reportUnavailable(); }
     };
 
     applyTerrain();
@@ -179,102 +182,121 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     map.once('idle', settleLayout);
 
     return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
       map.off('styledata', applyTerrain);
       map.off('sourcedata', applyTerrain);
+      map.off('idle', settleLayout);
     };
-  }, [showVisual]);
+  }, [showVisual, mapFailed, reportUnavailable]);
 
   const onMapClick = useCallback((event: any) => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
-    const features = map.queryRenderedFeatures(event.point, {
-      layers: ['unclustered-point', 'clusters']
-    });
-
-    if (!features.length) return;
-
-    const feature: any = features[0];
-    if (feature.layer.id === 'clusters') {
-      const clusterId = feature.properties.cluster_id;
-      const source: any = map.getSource('properties');
-      source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
-        if (err) return;
-        map.easeTo({
-          center: feature.geometry.coordinates,
-          zoom: zoom
-        });
+    try {
+      const features = map.queryRenderedFeatures(event.point, {
+        layers: ['unclustered-point', 'clusters']
       });
-    } else {
-      const propertyId = feature.properties.id;
-      const target = results.find(p => p._id === propertyId);
-      if (target) {
-        setSelectedProperty(target);
-        if (onPropertySelect) onPropertySelect(target);
+
+      if (!features.length) return;
+
+      const feature: any = features[0];
+      if (feature.layer.id === 'clusters') {
+        const clusterId = feature.properties.cluster_id;
+        const source: any = map.getSource('properties');
+        source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+          if (err || !Number.isFinite(zoom) || mapRef.current?.getMap() !== map) return;
+          try { map.easeTo({
+            center: feature.geometry.coordinates,
+            zoom: zoom
+          }); } catch { reportUnavailable(); }
+        });
+      } else {
+        const propertyId = feature.properties.id;
+        const target = results.find(p => p._id === propertyId);
+        if (target) {
+          if (onPropertySelect) onPropertySelect(target);
+        }
       }
-    }
-  }, [results, onPropertySelect]);
+    } catch { reportUnavailable(); }
+  }, [results, onPropertySelect, reportUnavailable]);
 
   // Handle draw control and directions initialization
   const onMapLoad = useCallback(async (e: any) => {
     const map = e.target;
-    const bounds = map.getBounds();
-    onViewportChange?.({
-      north: bounds.getNorth(), south: bounds.getSouth(),
-      east: bounds.getEast(), west: bounds.getWest(),
-    });
+    try {
+      const bounds = map.getBounds();
+      onViewportChange?.({
+        north: bounds.getNorth(), south: bounds.getSouth(),
+        east: bounds.getEast(), west: bounds.getWest(),
+      });
     
-    // Draw Control
-    const [{ default: MapboxDraw }, { default: MapboxDirections }] = await Promise.all([
-      import('@mapbox/mapbox-gl-draw'),
-      import('@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions'),
-    ]);
+      // Draw Control
+      const [{ default: MapboxDraw }, { default: MapboxDirections }] = await Promise.all([
+        import('@mapbox/mapbox-gl-draw'),
+        import('@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions'),
+      ]);
+      if (mapRef.current?.getMap() !== map) return;
+      cleanControls();
+      const cleanup: Array<() => void> = [];
+      mapCleanup.current = () => {
+        cleanup.reverse().forEach(clean => { try { clean(); } catch { /* Map may already be removed. */ } });
+        drawRef.current = null;
+        directionsRef.current = null;
+      };
 
-    const draw = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {
-        polygon: true,
-        trash: true
-      },
-      defaultMode: 'simple_select'
-    });
-    map.addControl(draw, 'top-left');
-    drawRef.current = draw;
+      const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: {
+          polygon: true,
+          trash: true
+        },
+        defaultMode: 'simple_select'
+      });
+      map.addControl(draw, 'top-left');
+      drawRef.current = draw;
+      cleanup.push(() => { if (map.hasControl(draw)) map.removeControl(draw); });
 
-    // Directions Control
-    const directions = new MapboxDirections({
-      accessToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
-      unit: 'imperial',
-      profile: 'mapbox/driving',
-      interactive: false,
-      controls: {
-        inputs: false,
-        instructions: true,
-        profileSwitcher: false
-      }
-    });
-    directionsRef.current = directions;
-
-    const updateSelection = (event: any) => {
-      const features = draw.getAll().features;
-      if (features.length > 0) {
-        const feature = features[features.length - 1]; 
-        if (feature.geometry.type === 'Polygon') {
-          const coords = (feature.geometry as any).coordinates[0].flat().join(',');
-          onSelectionChange({ type: 'polygon', data: coords, feature });
+      // Directions Control
+      const directions = new MapboxDirections({
+        accessToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+        unit: 'imperial',
+        profile: 'mapbox/driving',
+        interactive: false,
+        controls: {
+          inputs: false,
+          instructions: true,
+          profileSwitcher: false
         }
-      }
-    };
+      });
+      directionsRef.current = directions;
+      cleanup.push(() => { if (map.hasControl(directions)) map.removeControl(directions); });
 
-    map.on('draw.create', updateSelection);
-    map.on('draw.update', updateSelection);
-    map.on('draw.delete', () => {
-      onSelectionChange(null);
-    });
+      const updateSelection = () => {
+        const features = draw.getAll().features;
+        if (features.length > 0) {
+          const feature = features[features.length - 1];
+          if (feature.geometry.type === 'Polygon') {
+            const coords = (feature.geometry as any).coordinates[0].flat().join(',');
+            selectionChangeRef.current({ type: 'polygon', data: coords, feature });
+          }
+        }
+      };
 
-    return () => {
-      map.removeControl(draw);
-    };
-  }, [onSelectionChange, onViewportChange]);
+      map.on('draw.create', updateSelection);
+      map.on('draw.update', updateSelection);
+      const clearSelection = () => {
+        selectionChangeRef.current(null);
+      };
+      map.on('draw.delete', clearSelection);
+      cleanup.push(() => {
+        map.off('draw.create', updateSelection);
+        map.off('draw.update', updateSelection);
+        map.off('draw.delete', clearSelection);
+      });
+    } catch {
+      if (mapRef.current?.getMap() === map) reportUnavailable();
+    }
+  }, [onViewportChange, cleanControls, reportUnavailable]);
 
   const publishViewport = useCallback(() => {
     const bounds = mapRef.current?.getMap().getBounds();
@@ -288,28 +310,31 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const toggleDirections = useCallback((targetProperty: any) => {
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
-
-    if (showDirections) {
-      if (directionsRef.current) map.removeControl(directionsRef.current);
-      setShowDirections(false);
-    } else {
-      if (directionsRef.current) {
-        map.addControl(directionsRef.current, 'top-left');
+    try {
+      if (showDirections) {
+        if (directionsRef.current) map.removeControl(directionsRef.current);
+        setShowDirections(false);
+      } else {
+        const directions = directionsRef.current;
+        if (directions && validCoordinates(targetProperty?.location_geo?.coordinates)) {
+          map.addControl(directions, 'top-left');
         
-        // Attempt to get user location
-        navigator.geolocation.getCurrentPosition((pos) => {
-          if (targetProperty?.location_geo?.coordinates) {
-            directionsRef.current.setOrigin([pos.coords.longitude, pos.coords.latitude]);
-            directionsRef.current.setDestination([
-              targetProperty.location_geo.coordinates[0], 
-              targetProperty.location_geo.coordinates[1]
-            ]);
-          }
-        });
-        setShowDirections(true);
+          // Attempt to get user location
+          navigator.geolocation.getCurrentPosition((pos) => {
+            if (directionsRef.current !== directions || mapRef.current?.getMap() !== map) return;
+            try {
+              directions.setOrigin([pos.coords.longitude, pos.coords.latitude]);
+              directions.setDestination([
+                targetProperty.location_geo.coordinates[0],
+                targetProperty.location_geo.coordinates[1]
+              ]);
+            } catch { reportUnavailable(); }
+          });
+          setShowDirections(true);
+        }
       }
-    }
-  }, [showDirections]);
+    } catch { reportUnavailable(); }
+  }, [showDirections, reportUnavailable]);
 
   // Sync routing from external trigger
   useEffect(() => {
@@ -320,17 +345,15 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     }
   }, [activeRouteProperty, showDirections, toggleDirections]);
 
-  const isTesting = typeof window !== 'undefined' && navigator.webdriver;
+  const isTesting = process.env.NEXT_PUBLIC_E2E_MODE === 'true' && typeof navigator !== 'undefined' && navigator.webdriver;
+
+  if (mapFailed) return <MapUnavailable onRetry={() => { cleanControls(); setShowDirections(false); setMapFailed(false); }} />;
 
   if (isTesting) {
     const activeId = hoveredId || urlId;
-    const mockResults = results.length > 0
-      ? results
-      : urlId
-        ? [{ _id: urlId, name: 'Mock property' }]
-        : [];
+    const mockResults = mapResults;
     return (
-      <div className="relative w-full h-screen mapboxgl-map bg-slate-950">
+      <div className="relative h-full w-full mapboxgl-map bg-slate-950" data-map-mode="fixture">
         {/* Render mock markers so Playwright finds them */}
         {mockResults.map((property, idx) => {
           const isMarkerHovered = property._id === activeId;
@@ -343,7 +366,6 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
                 top: `${200 + (idx * 30)}px`,
               }}
               onClick={() => {
-                setSelectedProperty(property);
                 if (onPropertySelect) onPropertySelect(property);
               }}
             >
@@ -376,7 +398,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   }
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative h-full w-full">
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
@@ -384,12 +406,12 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         mapStyle={showVisual ? "mapbox://styles/mapbox/satellite-v9" : "mapbox://styles/mapbox/dark-v11"}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         onLoad={onMapLoad}
+        onError={reportUnavailable}
         onClick={onMapClick}
         interactiveLayerIds={['unclustered-point', 'clusters']}
         ref={mapRef}
       >
-        {showPOIs && <Layer {...(poiLayer as any)} />}
-        {showVisual && <Layer {...(vibeLayer as any)} />}
+        {showPOIs && !showVisual && <Layer {...(poiLayer as any)} />}
         <Source
           id="mapbox-dem"
           type="raster-dem"
@@ -425,21 +447,20 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         <FullscreenControl position="bottom-right" />
 
         {/* Custom Marker Logic for Individual High-Focus Properties */}
-        {results.length < 15 && results.map(property => (
+        {mapResults.length < 15 && mapResults.map(property => (
           <PropertyMarker 
             key={property._id}
             property={property}
             hoveredId={hoveredId || urlId}
             resultsCount={results.length}
             onSelect={(p) => {
-              setSelectedProperty(p);
               if (onPropertySelect) onPropertySelect(p);
             }}
           />
         ))}
 
         {/* Jamie's Spatial Intelligence (Dreams) */}
-        {jamieInsights.map((dream, index) => (
+        {jamieInsights.filter(dream => validCoordinates(dream?.geometry?.coordinates)).map((dream, index) => (
           <InsightMarker 
             key={dream.id || index}
             dream={dream}
@@ -455,7 +476,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         )}
 
         {/* Valuation Intelligence Markers */}
-        {valuations.map(valuation => (
+        {valuations.filter(valuation => validCoordinates(valuation?.location_geo?.coordinates)).map(valuation => (
           <ValuationMarker 
             key={valuation._id}
             valuation={valuation}
