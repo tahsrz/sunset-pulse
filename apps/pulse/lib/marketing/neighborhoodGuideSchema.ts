@@ -44,3 +44,10 @@ export const neighborhoodGuideSchema = z.object({
 });
 
 export type NeighborhoodGuide = z.infer<typeof neighborhoodGuideSchema>;
+
+export function hasCurrentGuideEvidence(guide: NeighborhoodGuide, ids: string[], today: string) {
+  return ids.every(id => {
+    const source = guide.evidence.find(item => item.id === id);
+    return Boolean(source && (!source.expiresAt || source.expiresAt >= today));
+  });
+}

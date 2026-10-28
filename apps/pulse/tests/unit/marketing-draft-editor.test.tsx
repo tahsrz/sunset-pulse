@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import config from '@/config/marketing_copy.json';
 import MarketingConfigPage from '@/app/admin/marketing/page';
 
@@ -21,16 +21,18 @@ describe('marketing draft editor', () => {
   it('downloads all edits without posting or mutating the published data', async () => {
     render(<MarketingConfigPage />);
     fireEvent.change(await screen.findByLabelText('Hero Title'), { target: { value: 'A reviewed title' } });
+    expect(screen.getByRole('link', { name: 'Check Content Readiness' })).toHaveAttribute('href', '/admin/marketing/readiness');
     fireEvent.change(screen.getByLabelText('Answer 1'), { target: { value: 'An edited answer.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Download Draft' }));
     expect(screen.getByRole('status')).toHaveTextContent('The live site has not changed.');
     const blob = createObjectURL.mock.calls[0][0] as Blob;
-    const downloaded = await new Promise<string>((resolve, reject) => {
+    let downloaded = '';
+    await act(async () => { downloaded = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result));
       reader.onerror = reject;
       reader.readAsText(blob);
-    });
+    }); });
     const data = JSON.parse(downloaded);
     expect(data.hero.title).toBe('A reviewed title');
     expect(data.faq.items[0].answer).toBe('An edited answer.');

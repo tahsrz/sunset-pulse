@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useState } from 'react';
+import Link from 'next/link';
 import { marketingCopySchema, serializeMarketingCopyDraft, type MarketingCopy } from '@/lib/marketing/marketingCopySchema';
 
 const sectionLabels = { value_prop: 'Seller Section', featured: 'Featured Properties' } as const;
@@ -93,6 +94,7 @@ export default function MarketingConfigPage() {
     <div className="mx-auto max-w-4xl space-y-8">
       <header className="space-y-4">
         <h1 className="text-3xl uppercase sm:text-4xl">Marketing Content</h1>
+        <Link href="/admin/marketing/readiness" className="inline-flex min-h-11 items-center text-cyan-200 underline underline-offset-4">Check Content Readiness</Link>
         <p className="max-w-2xl text-slate-300">Edit a draft and download it for review. Your edits stay in this page until you download them. Leaving or reloading this page discards them.</p>
         <p className="text-sm text-slate-400">To publish, review the downloaded file, replace <code>apps/pulse/config/marketing_copy.json</code> in the repository, and deploy the reviewed change.</p>
         <button onClick={downloadDraft} className="rounded-lg bg-cyan-300 px-5 py-3 font-semibold text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">Download Draft</button>

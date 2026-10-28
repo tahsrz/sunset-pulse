@@ -3,6 +3,7 @@ import 'server-only';
 import presentationFile from '@/content/neighborhoods/presentation.v1.json';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
 import { neighborhoodPresentationSchema, type PublishedNeighborhoodPresentation } from '@/lib/marketing/neighborhoodPresentation';
+import { hasCurrentGuideEvidence } from '@/lib/marketing/neighborhoodGuideSchema';
 import { z } from 'zod';
 
 const presentationCollectionSchema = z.object({
@@ -16,18 +17,18 @@ const presentationCollectionSchema = z.object({
   });
 });
 
+export function listReviewedNeighborhoodPresentations() {
+  return presentationCollectionSchema.parse(presentationFile).records;
+}
+
 export function listPublishedNeighborhoodPresentations(): PublishedNeighborhoodPresentation[] {
-  const records = presentationCollectionSchema.parse(presentationFile).records;
+  const records = listReviewedNeighborhoodPresentations();
   const guides = listPublishedNeighborhoodGuides();
   const today = new Date().toISOString().slice(0, 10);
   return records.flatMap((record) => {
     const guide = guides.find((item) => item.slug === record.slug);
     if (!guide || record.status !== 'published') return [];
-    const hasCurrentEvidence = (ids: string[]) => ids.every((id) => {
-      const source = guide.evidence.find((item) => item.id === id);
-      return Boolean(source && (!source.expiresAt || source.expiresAt >= today));
-    });
-    const places = record.places.filter((place) => hasCurrentEvidence(place.evidenceIds));
+    const places = record.places.filter(place => hasCurrentGuideEvidence(guide, place.evidenceIds, today));
     const resolvedEvidenceIds = new Set(places.flatMap((place) => place.evidenceIds));
     return [{
       ...record,
