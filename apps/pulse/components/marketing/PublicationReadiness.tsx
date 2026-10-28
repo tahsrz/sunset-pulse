@@ -41,7 +41,7 @@ function ReadinessCard({ item }: { item: PublicationReadinessItem }) {
         <ul className="space-y-2">{entry.files.map(file => <li key={file}><code className="break-all text-slate-100">{file}</code></li>)}</ul>
         {item.key === 'seller_profile' ? <>
           <p>Use the approved main-site identity and response contact. Confirm that the phone or email matches the seller response configuration. The KCD contact is separate.</p>
-          <p>The draft accepts only its version and draft status. Prepare a complete published record with displayName, biography and at least one contact method in the reviewed change. A portrait is optional.</p>
+          <p>The draft can hold validated content as it is prepared. Reuse the name and contact already recorded there. Keep it as draft until the biography and contact have been reviewed, then publish the complete record. A portrait is optional.</p>
           <p>For a portrait, use a local WebP under <code>public/images/seller-profile/</code> and include alt text and dimensions.</p>
         </> : <>
           <p>Review source links and retrieval and expiry dates before publication. Do not extend evidence dates without checking the source. Keep place evidence IDs joined to this guide.</p>

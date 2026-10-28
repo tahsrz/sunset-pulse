@@ -16,15 +16,17 @@ The client distinguishes Published, Needs Content and Could Not Check, validates
 
 ## Current Repository Content
 
-- Seller introduction: draft. Approved public identity, biography, main-site contact and review are required. A portrait is optional.
+- Seller introduction: draft with Tahsin Reza and `tahsin.reza817@gmail.com` prefilled from the existing agent configuration. Both match the active `taz-realty-001` public agent profile, and the email matches its lead recipient. The introduction biography still needs to be located and added, followed by review. A portrait is optional.
 - Old Town Keller, West Bursey Ranch and Westlake: published text guides with current evidence at the test date. Photography, places and maps are optional improvements.
-- The neighborhood presentation collection is empty. No approved seller identity, response contact, portrait, neighborhood photography or local note was invented or published. KCD's contact remains separate.
+- The neighborhood presentation collection is empty. Existing identity and email have been reused; no biography, portrait, neighborhood photography or local note was invented or published. KCD's contact remains separate.
 
-Sections 4B and 4C remain pending approved content. The checks validate schema and expiry, not photo licensing, file existence, source accuracy, contact routing or deployment health. Those require review before publication. Changing a status field alone is not proof of approval.
+The user confirmed the content already exists. A read-only inspection of the active seller site's public profile found the existing name and email, but no biography, headshot or about section. Both local checkouts still have an empty neighborhood presentation collection. The local `profile.png` is a generic avatar. The source location of the existing biography and neighborhood assets has been requested; their absence from these inspected sources is not evidence they do not exist elsewhere.
+
+Drafts now accept validated partial profile fields. Readiness lists only absent fields, while a complete draft still requires review and remains excluded from the public homepage. Sections 4B and 4C remain in progress. The checks validate schema and expiry, not photo licensing, file existence, source accuracy, mail delivery or deployment health. Those require review before publication. Changing a status field alone is not proof of approval.
 
 ## Verification
 
-- 52 tests passed across seven focused contract, real-loader, authorization, UI and existing marketing/guide regression suites.
+- 55 tests passed across seven focused contract, real-loader, authorization, UI and existing marketing/guide regression suites.
 - The tests cover optional media, visual drafts, partial and complete evidence expiry, missing place evidence, shared-source failure, sanitized errors, response redaction, global access rules, malformed responses, retry and unmount cancellation.
 - The marketing draft editor regression was rerun separately after adding an explicit async `act` boundary for the new navigation link. All five cases passed without the earlier React act warning.
 - Next route type generation, full application TypeScript and focused ESLint on all changed TypeScript/TSX source and tests passed.
@@ -35,7 +37,7 @@ No production build or browser/deployed walkthrough was performed. No Supabase s
 
 1. Sign in with global marketing access. Open `/admin/marketing`. Download any edits before leaving the editor, then select **Check Content Readiness**.
 2. Confirm the seller introduction shows **Needs Content**, while the three text guides show **Published**. Optional photography must not appear under required publication content.
-3. Expand **Review Seller Introduction**. Prepare the approved public name, short biography and main-site phone or email in `content/marketing/seller-introduction.v1.json`. Confirm the contact against the actual seller response configuration. A portrait, if supplied, needs a local WebP, alt text and intrinsic dimensions.
+3. Expand **Review Seller Introduction**. Reuse the existing name and email in `content/marketing/seller-introduction.v1.json`, add the existing approved biography once located, and review before publication. The email was checked against the active seller site's lead recipient; mail delivery was not tested. A portrait, if supplied, needs a local WebP, alt text and intrinsic dimensions.
 4. Expand **Review Old Town Keller**. Update the guide and matching `presentation.v1.json` record through a reviewed change. Use licensed photos with captions/credits, current evidence IDs, valid place coordinates and an approved author/visit date for any personal note. Text publication does not require a map or photos.
 5. Run the focused content tests and review the resulting public pages at mobile and desktop widths. Publish only the approved change through the normal PR and deployment flow. Use **Refresh Checks** after deploying it.
 6. As a negative authorization check, a non-operator realtor must receive 403 from the readiness endpoint. The page must show an access message and no report. A failed source should show **Could Not Check**, not a list of fabricated missing fields. Retry after repairing the source.

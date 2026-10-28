@@ -38,9 +38,12 @@ export function unavailablePublication(key: PublicationKey): PublicationReadines
 }
 
 export function sellerPublicationReadiness(profile: SellerIntroduction): PublicationReadinessItem {
-  return profile.status === 'draft'
-    ? { key: 'seller_profile', state: 'needs_content', required: ['identity', 'biography', 'contact', 'review'], optional: ['photo'], warnings: [] }
-    : { key: 'seller_profile', state: 'published', required: [], optional: profile.portrait ? [] : ['photo'], warnings: [] };
+  const required: PublicationReadinessItem['required'] = [];
+  if (!profile.displayName) required.push('identity');
+  if (!profile.biography) required.push('biography');
+  if (!profile.phone && !profile.email) required.push('contact');
+  if (profile.status === 'draft') required.push('review');
+  return { key: 'seller_profile', state: profile.status === 'published' ? 'published' : 'needs_content', required, optional: profile.portrait ? [] : ['photo'], warnings: [] };
 }
 
 export function guidePublicationReadiness(key: PublicationKey, guide: NeighborhoodGuide, presentation: NeighborhoodPresentation | undefined, today: string): PublicationReadinessItem {

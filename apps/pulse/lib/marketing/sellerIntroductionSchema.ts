@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-const draftSchema = z.object({ schemaVersion: z.literal(1), status: z.literal('draft') }).strict();
-const publishedSchema = z.object({
-  schemaVersion: z.literal(1), status: z.literal('published'),
+const profileFields = {
   displayName: z.string().trim().min(2).max(100),
   biography: z.string().trim().min(40).max(1200),
   portrait: z.object({
@@ -11,6 +9,13 @@ const publishedSchema = z.object({
   }).strict().optional(),
   phone: z.string().regex(/^\+?[0-9(). -]{7,24}$/).optional(),
   email: z.string().email().max(180).optional(),
+};
+const draftSchema = z.object({
+  schemaVersion: z.literal(1), status: z.literal('draft'),
+  ...z.object(profileFields).partial().shape,
+}).strict();
+const publishedSchema = z.object({
+  schemaVersion: z.literal(1), status: z.literal('published'), ...profileFields,
 }).strict();
 
 const checkedPublishedSchema = publishedSchema.refine((profile) => Boolean(profile.phone || profile.email), { message: 'A published profile needs a public contact method.' });

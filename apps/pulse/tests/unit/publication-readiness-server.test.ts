@@ -6,6 +6,7 @@ import * as presentations from '@/lib/marketing/neighborhoodPresentations.server
 import { loadPublicationReadiness } from '@/lib/marketing/publicationReadiness.server';
 import oldTown from '@/content/neighborhoods/old-town-keller.v1.json';
 import presentationFile from '@/content/neighborhoods/presentation.v1.json';
+import { defaultAgentProfile, defaultIntegrationProfile } from '@/lib/sites/agentConfig';
 
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-28T12:00:00.000Z')); });
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); (oldTown as Record<string, unknown>).status = 'published'; presentationFile.records.length = 0; });
@@ -17,6 +18,9 @@ describe('repository publication readiness', () => {
     expect(guides.getReviewedNeighborhoodGuide('westlake-overview')?.slug).toBe('westlake-overview');
     expect(guides.getReviewedNeighborhoodGuide('westlake')).toBeNull();
     expect(profiles.getPublishedSellerIntroduction()).toBeNull();
+    expect(profiles.loadSellerIntroduction()).toMatchObject({ displayName: defaultAgentProfile.displayName, email: defaultAgentProfile.email });
+    expect(profiles.loadSellerIntroduction().email).toBe(defaultIntegrationProfile.leadEmail);
+    expect(report.items[0].required).toEqual(['biography', 'review']);
     expect(presentations.listPublishedNeighborhoodPresentations()).toEqual([]);
   });
   it('reports a failed profile source as unavailable without hiding healthy guides or exposing errors', () => {

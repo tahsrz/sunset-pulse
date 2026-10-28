@@ -23,6 +23,21 @@ describe('publication readiness contracts', () => {
     const profile = sellerIntroductionSchema.parse({ schemaVersion: 1, status: 'published', displayName: 'Fixture Contact', biography: 'A fictional biography used only to validate this publication contract.', email: 'fixture@example.test' });
     expect(sellerPublicationReadiness(profile)).toMatchObject({ state: 'published', required: [], optional: ['photo'] });
   });
+  it('retains known identity and contact in a draft without reporting them as missing', () => {
+    const profile = sellerIntroductionSchema.parse({ schemaVersion: 1, status: 'draft', displayName: 'Fixture Contact', email: 'fixture@example.test' });
+    expect(sellerPublicationReadiness(profile)).toMatchObject({ state: 'needs_content', required: ['biography', 'review'] });
+  });
+  it('still requires deliberate publication of a complete draft', () => {
+    const profile = sellerIntroductionSchema.parse({ schemaVersion: 1, status: 'draft', displayName: 'Fixture Contact', biography: 'A fictional biography used only for validating a complete draft.', email: 'fixture@example.test' });
+    expect(sellerPublicationReadiness(profile)).toMatchObject({ state: 'needs_content', required: ['review'] });
+  });
+  it('validates supplied draft fields without relaxing required published content', () => {
+    const draft = { schemaVersion: 1, status: 'draft', displayName: 'Fixture Contact', email: 'fixture@example.test' };
+    expect(sellerIntroductionSchema.safeParse({ ...draft, email: 'not-an-email' }).success).toBe(false);
+    expect(sellerIntroductionSchema.safeParse({ ...draft, biography: 'Too short' }).success).toBe(false);
+    expect(sellerIntroductionSchema.safeParse({ ...draft, owner: 'unapproved' }).success).toBe(false);
+    expect(sellerIntroductionSchema.safeParse({ ...draft, status: 'published' }).success).toBe(false);
+  });
   it('does not make photography, places or map coordinates required for a text guide', () => {
     expect(guidePublicationReadiness('old_town_keller', guide(), undefined, today)).toEqual({
       key: 'old_town_keller', state: 'published', required: [], optional: ['photo', 'places', 'coordinates'], warnings: [],
