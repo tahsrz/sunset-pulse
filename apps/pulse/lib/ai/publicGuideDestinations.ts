@@ -12,9 +12,9 @@ export const PUBLIC_GUIDE_DESTINATIONS: Record<PublicGuideActionId, {
   label: string;
 }> = {
   book_consultation: {
-    description: 'Choose a time for a buyer, rental, or seller consultation.',
+    description: 'Send your agent a consultation request so a time can be arranged.',
     kind: 'link',
-    label: 'Book a consultation',
+    label: 'Request a consultation',
   },
   browse_homes: {
     description: 'Open the full verified property search.',

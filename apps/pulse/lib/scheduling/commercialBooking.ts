@@ -42,7 +42,7 @@ export async function createAuthoritativeCommercialBooking(inputValue: Commercia
   const input = commercialBookingInputSchema.parse(inputValue);
   const lead = await readOwnedLead(input);
 
-  const existing = await readBookingByIdempotencyKey(input.idempotencyKey);
+  const existing = await readBookingByIdempotencyKey(input);
   if (existing) {
     await ensureAttendee(existing.id, input);
     return { booking: existing, duplicate: true };
@@ -73,7 +73,7 @@ export async function createAuthoritativeCommercialBooking(inputValue: Commercia
 
   if (error) {
     if (error.code === '23505') {
-      const raced = await readBookingByIdempotencyKey(input.idempotencyKey);
+      const raced = await readBookingByIdempotencyKey(input);
       if (raced) {
         await ensureAttendee(raced.id, input);
         return { booking: raced, duplicate: true };
@@ -113,11 +113,15 @@ async function readOwnedLead(input: CommercialBookingInput) {
   return data as { id: string; funnel_id: string; agent_id: string; site: string };
 }
 
-async function readBookingByIdempotencyKey(idempotencyKey: string) {
+async function readBookingByIdempotencyKey(input: CommercialBookingInput) {
   const { data, error } = await supabaseAdmin
     .from('scheduling_bookings')
     .select('id, uid, idempotency_key')
-    .eq('idempotency_key', idempotencyKey)
+    .eq('idempotency_key', input.idempotencyKey)
+    .eq('lead_id', input.leadId)
+    .eq('funnel_id', input.funnelId)
+    .eq('agent_id', input.agentId)
+    .eq('site', input.site)
     .maybeSingle();
   if (error) throw new Error(`Unable to read commercial booking: ${error.message}`);
   return data as BookingRow | null;
