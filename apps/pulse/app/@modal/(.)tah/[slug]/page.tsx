@@ -4,13 +4,14 @@ import { TahCartridgeView } from '@/components/tah/TahCartridgeView';
 import { getTahCartridgeViewData } from '@/lib/ai/brain/tah_page_data';
 
 type InterceptedTahCartridgePageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export default async function InterceptedTahCartridgePage({ params }: InterceptedTahCartridgePageProps) {
-  const data = await getTahCartridgeViewData(params.slug);
+  const { slug } = await params;
+  const data = await getTahCartridgeViewData(slug);
   if (!data) notFound();
 
   return (

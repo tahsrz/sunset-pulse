@@ -31,7 +31,7 @@
     "test:e2e": "npm run test:e2e --workspace=apps/pulse"
   },
   "dependencies": {
-    "dompurify": "3.4.16",
+    "dompurify": "3.4.17",
     "mysql2": "3.24.4",
     "postcss": "8.5.26",
     "typescript": "6.0.2"
@@ -41,7 +41,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
     "@types/qs": "^6.15.1",
-    "next": "^15.5.27",
+    "next": "^15.5.28",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^15.12.0"
@@ -88,7 +88,7 @@
     "brace-expansion": "5.0.9",
     "cookie": "1.1.1",
     "defu": "6.1.7",
-    "dompurify": "3.4.16",
+    "dompurify": "3.4.17",
     "effect": "3.21.2",
     "engine.io": "6.6.7",
     "esbuild": "0.28.1",
