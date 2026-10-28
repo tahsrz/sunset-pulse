@@ -5,7 +5,7 @@ import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { getTenantSite } from '@/lib/sites/siteData';
 import { normalizeCampaign } from '@/lib/marketing/leadMagnetContract';
 import { supabaseAdmin } from '@/lib/supabase';
-const schema = z.object({ consent: z.literal(true), visitId: z.string().uuid(), type: z.enum(['visit','offer_click']), campaign: z.string().max(80).nullable() }).strict();
+const schema = z.object({ consent: z.literal(true), visitId: z.string().guid(), type: z.enum(['visit','offer_click']), campaign: z.string().max(80).nullable() }).strict();
 export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   const site = process.env.KELLER_WESTLAKE_AGENT_SITE?.trim().toLowerCase();

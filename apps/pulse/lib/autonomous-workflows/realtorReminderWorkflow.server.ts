@@ -5,10 +5,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import type { WorkflowExecution, WorkflowJob } from './workflowRegistry.server';
 
 const payloadSchema = z.object({
-  workspaceId: z.string().uuid(),
-  occurrenceId: z.string().uuid(),
+  workspaceId: z.string().guid(),
+  occurrenceId: z.string().guid(),
   occurrenceRevision: z.number().int().positive(),
-  reminderId: z.string().uuid(),
+  reminderId: z.string().guid(),
   reminderRevision: z.number().int().positive(),
 }).strict();
 

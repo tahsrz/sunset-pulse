@@ -34,11 +34,11 @@ export const capabilityPolicySchema = z.object({
 
 export const effectReceiptSchema = z.object({
   receiptVersion: z.literal(1),
-  operationId: z.string().uuid(),
+  operationId: z.string().guid(),
   operationHash: sha256,
   targetHash: sha256,
   status: z.enum(['prepared', 'submitted', 'accepted', 'unknown', 'failed', 'reconciled']),
-  checkpointId: z.string().uuid().nullable(),
+  checkpointId: z.string().guid().nullable(),
   providerReceiptRef: z.string().trim().min(1).max(240).nullable(),
   createdAt: z.string().datetime({ offset: true }),
   resolvedAt: z.string().datetime({ offset: true }).nullable(),

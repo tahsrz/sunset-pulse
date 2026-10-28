@@ -11,9 +11,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const proposalRequestSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('planner'), input: z.unknown() }).strict(),
-  z.object({ kind: z.literal('financial'), input: z.unknown() }).strict(),
-  z.object({ kind: z.literal('goal'), input: z.unknown() }).strict(),
+  z.object({ kind: z.literal('planner'), input: z.unknown().optional() }).strict(),
+  z.object({ kind: z.literal('financial'), input: z.unknown().optional() }).strict(),
+  z.object({ kind: z.literal('goal'), input: z.unknown().optional() }).strict(),
 ]);
 
 export async function POST(request: NextRequest) {

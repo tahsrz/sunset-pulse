@@ -5,12 +5,12 @@ import { sellerEmailConfigured } from '@/lib/realtor-workspace/sellerService.ser
 import type { WorkflowExecution, WorkflowJob } from './workflowRegistry.server';
 
 const preparedSchema = z.discriminatedUnion('send', [
-  z.object({ send: z.literal(false), messageId: z.string().uuid(), status: z.string() }),
-  z.object({ send: z.literal(true), messageId: z.string().uuid(), to: z.string().email(), replyTo: z.string().email(), from: z.string().min(1), subject: z.string(), body: z.string() }),
+  z.object({ send: z.literal(false), messageId: z.string().guid(), status: z.string() }),
+  z.object({ send: z.literal(true), messageId: z.string().guid(), to: z.string().email(), replyTo: z.string().email(), from: z.string().min(1), subject: z.string(), body: z.string() }),
 ]);
 export async function runSellerEmail(job: WorkflowJob): Promise<WorkflowExecution> {
   if (job.trigger_kind !== 'event' || job.payload_version !== 1) throw new Error('Invalid seller email event');
-  z.object({ messageId: z.string().uuid() }).strict().parse(job.payload);
+  z.object({ messageId: z.string().guid() }).strict().parse(job.payload);
   if (!sellerEmailConfigured()) return { kind: 'defer', nextPollAt: new Date(Date.now() + 300_000).toISOString(), reason: 'seller_email_configuration' };
   const { data, error } = await supabaseAdmin.rpc('seller_email_prepare', {
     p_job_id: job.id, p_lease_token: job.lease_token, p_from: process.env.RESEND_FROM_EMAIL!.trim(),

@@ -9,7 +9,7 @@ export function sellerEmailConfigured() {
   return process.env.SELLER_EMAIL_SEND_ENABLED === 'true' && Boolean(process.env.RESEND_API_KEY?.trim() && process.env.RESEND_FROM_EMAIL?.trim());
 }
 export async function readSellerCase(actorId: string, leadId: string) {
-  z.string().uuid().parse(leadId);
+  z.string().guid().parse(leadId);
   await requirePersonalRealtorWorkspace(actorId);
   const { data, error } = await supabaseAdmin.rpc('seller_case_read', { p_actor_id: actorId, p_lead_id: leadId });
   if (error) throwRealtorRpcError(error.code);
@@ -26,7 +26,7 @@ export async function actOnSellerCase(actorId: string, input: unknown) {
 export async function readClientProgress(actorId: string) {
   const { data, error } = await supabaseAdmin.rpc('seller_client_progress', { p_actor_id: actorId });
   if (error) throwRealtorRpcError(error.code);
-  return z.array(z.object({ leadId: z.string().uuid(), publication: sellerPublicationSchema, publishedAt: z.string() }).strict()).parse(data);
+  return z.array(z.object({ leadId: z.string().guid(), publication: sellerPublicationSchema, publishedAt: z.string() }).strict()).parse(data);
 }
 export async function readSellerPriorities(actorId:string){
   const {data,error}=await supabaseAdmin.rpc('seller_service_priorities',{p_actor_id:actorId});

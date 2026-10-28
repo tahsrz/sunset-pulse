@@ -27,7 +27,7 @@ const adjustmentSchema = z.object({
 }).strict();
 
 const comparableSchema = z.object({
-  comparableId: z.string().uuid(),
+  comparableId: z.string().guid(),
   soldAt: z.string().date(),
   salePriceUsd: usd.refine((value) => value > 0),
   facts: propertyFactsSchema,
@@ -53,7 +53,7 @@ const subjectSchema = z.object({
 const suggestedRangeSchema = z.object({ low: usd, target: usd, high: usd }).strict();
 
 export const privateCmaReviewInputSchema = z.object({
-  expectedPriorReviewId: z.string().uuid().nullable(),
+  expectedPriorReviewId: z.string().guid().nullable(),
   status: z.enum(['draft', 'reviewed']),
   subject: subjectSchema,
   comparables: z.array(comparableSchema).min(1).max(12),
@@ -67,10 +67,10 @@ export const privateCmaReviewInputSchema = z.object({
  */
 export const privateCmaReviewSchema = z.object({
   schemaVersion: z.literal(1),
-  reviewId: z.string().uuid(),
+  reviewId: z.string().guid(),
   revision: z.number().int().positive().safe(),
-  supersedesReviewId: z.string().uuid().nullable(),
-  leadId: z.string().uuid(),
+  supersedesReviewId: z.string().guid().nullable(),
+  leadId: z.string().guid(),
   status: z.enum(['draft', 'reviewed']),
   useRestriction: z.literal('private-review-only'),
   preparedAt: isoDateTime,
@@ -79,7 +79,7 @@ export const privateCmaReviewSchema = z.object({
   comparables: z.array(comparableSchema).min(1).max(12),
   suggestedRangeUsd: suggestedRangeSchema,
   review: z.object({
-    reviewerUserId: z.string().uuid().nullable(),
+    reviewerUserId: z.string().guid().nullable(),
     reviewedAt: isoDateTime.nullable(),
     sellerPermissionEvidenceRef: z.string().trim().min(8).max(160).nullable(),
     methodologyNote: z.string().trim().min(20).max(800).nullable(),

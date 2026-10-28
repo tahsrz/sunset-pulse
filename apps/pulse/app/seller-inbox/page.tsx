@@ -7,6 +7,6 @@ export default async function SellerInboxPage({ searchParams }: {
   searchParams: Promise<{ leadId?: string }>;
 }) {
   const { leadId } = await searchParams;
-  if (leadId && !z.string().uuid().safeParse(leadId).success) notFound();
+  if (leadId && !z.string().guid().safeParse(leadId).success) notFound();
   return <RealtorWorkspace section="seller-inbox" sellerLeadId={leadId} />;
 }

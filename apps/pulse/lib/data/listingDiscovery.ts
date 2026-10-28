@@ -6,7 +6,7 @@ const MAX_CANDIDATES = 500;
 const DEFAULT_MAX_AGE_HOURS = 24 * 30;
 const EARTH_RADIUS_MILES = 3958.8;
 
-const optionalNumber = (schema: z.ZodNumber) => z.preprocess(
+const optionalNumber = <T extends z.ZodType<number, unknown>>(schema: T) => z.preprocess(
   (value) => value === '' || value === null ? undefined : value,
   schema.optional()
 );

@@ -6,7 +6,7 @@ import { requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.se
 import { supabaseAdmin } from '@/lib/supabase';
 import { PlatformRunError } from '@/lib/platform/workflows/runStore.server';
 
-const idSchema = z.string().uuid();
+const idSchema = z.string().guid();
 const invitationInputSchema = z.object({
   email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
   role: z.enum(['admin', 'member', 'reviewer', 'viewer']),

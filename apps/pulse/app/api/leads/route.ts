@@ -9,6 +9,7 @@ import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { supabase } from '@/lib/supabase';
 import { notifyProcessedLead, processLeadIntelligence, syncLeadToSupabase } from '@/lib/intelligence/leadProcessor';
 import { LeadSchema } from '@/lib/core/validation';
+import { readBoundedJson, RequestBodyError } from '@/lib/core/readBoundedJson';
 import mongoose from 'mongoose';
 
 export const GET = async () => {
@@ -64,8 +65,6 @@ export const GET = async () => {
 
 export const POST = async (request: Request) => {
   try {
-    await connectDB();
-    
     // Rate Limiting: 3 entries per minute
     const sessionUser = await getSessionUser();
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
@@ -76,13 +75,20 @@ export const POST = async (request: Request) => {
       if (limitResponse) return limitResponse;
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try { body = await readBoundedJson(request, 128 * 1024); }
+    catch (error) {
+      if (error instanceof RequestBodyError) return errorResponse(error.message, error.status);
+      throw error;
+    }
 
     //  Validate Schema
     const validation = LeadSchema.safeParse(body);
     if (!validation.success) {
       return validationErrorResponse(validation.error.flatten().fieldErrors);
     }
+
+    await connectDB();
 
     // Check if email already registered in MongoDB
     const existingLead = await Lead.findOne({ email: validation.data.email });

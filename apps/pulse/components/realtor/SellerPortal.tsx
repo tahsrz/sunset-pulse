@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { z } from 'zod';
 import { sellerPublicationSchema,sellerMilestoneLabels } from '@/lib/realtor-workspace/sellerServiceContract';
-const schema=z.array(z.object({leadId:z.string().uuid(),publication:sellerPublicationSchema,publishedAt:z.string()}).strict());
+const schema=z.array(z.object({leadId:z.string().guid(),publication:sellerPublicationSchema,publishedAt:z.string()}).strict());
 type Progress=z.infer<typeof schema>;
 export function SellerPortal() {
   const [rows,setRows]=useState<Progress|null>(null);const [error,setError]=useState('');const [reload,setReload]=useState(0);

@@ -56,7 +56,7 @@ const validateProviderAdapterContract = (
 };
 
 export const providerAdapterContractSchema = providerAdapterContractBaseSchema.extend({
-  reviewedBy: z.string().uuid(),
+  reviewedBy: z.string().guid(),
   reviewedAt: z.string().datetime({ offset: true }),
 }).superRefine(validateProviderAdapterContract);
 

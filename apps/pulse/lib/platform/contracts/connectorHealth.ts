@@ -17,7 +17,7 @@ export const connectorHealthDetailSchema = z.record(z.string().regex(/^[a-z][a-z
 
 export const connectorHealthEventSchema = z.object({
   schemaVersion: z.literal(1),
-  connectorId: z.string().uuid(),
+  connectorId: z.string().guid(),
   connectionId: z.string().regex(/^[a-z][a-z0-9_.:-]{0,127}$/),
   title: z.string().trim().min(1).max(160),
   status: connectorHealthStatusSchema,

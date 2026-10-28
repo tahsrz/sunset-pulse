@@ -9,13 +9,13 @@ const allowedHosts: Record<z.infer<typeof videoPublicationPlatformSchema>, reado
 };
 
 export const videoPublicationRecordSchema = z.object({
-  workspaceId: z.string().uuid(),
-  briefId: z.string().uuid(),
+  workspaceId: z.string().guid(),
+  briefId: z.string().guid(),
   revision: z.number().int().positive().safe(),
   platform: videoPublicationPlatformSchema,
   publicUrl: z.string().trim().url().max(2_000),
   publishedAt: z.string().datetime({ offset: true }),
-  requestKey: z.string().uuid(),
+  requestKey: z.string().guid(),
 }).strict().superRefine((record, context) => {
   let url: URL;
   try { url = new URL(record.publicUrl); }

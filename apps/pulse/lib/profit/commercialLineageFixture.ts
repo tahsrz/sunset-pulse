@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const identitySchema = z.object({
-  funnelId: z.string().uuid(),
-  leadId: z.string().uuid(),
+  funnelId: z.string().guid(),
+  leadId: z.string().guid(),
   agentId: z.string().trim().min(1),
   site: z.string().trim().min(1),
 }).strict();
@@ -13,19 +13,19 @@ export const commercialLineageFixtureSchema = z.object({
   lead: identitySchema.extend({ source: z.literal('jamie_public_guide') }).strict(),
   notification: identitySchema.extend({ deliveryStatus: z.enum(['sent', 'failed']) }).strict(),
   booking: identitySchema.extend({
-    bookingId: z.string().uuid(),
+    bookingId: z.string().guid(),
     appointmentType: z.enum(['buyer_consultation', 'rental_consultation', 'property_tour', 'seller_consultation']),
     status: z.enum(['accepted', 'confirmed', 'completed']),
   }).strict(),
-  signingPacket: identitySchema.extend({ packetId: z.string().trim().min(1), bookingId: z.string().uuid().nullable() }).strict(),
+  signingPacket: identitySchema.extend({ packetId: z.string().trim().min(1), bookingId: z.string().guid().nullable() }).strict(),
   outcome: identitySchema.extend({
-    outcomeId: z.string().uuid(),
-    leadId: z.string().uuid(),
-    bookingId: z.string().uuid().nullable(),
+    outcomeId: z.string().guid(),
+    leadId: z.string().guid(),
+    bookingId: z.string().guid().nullable(),
     outcomeType: z.enum(['qualified_handoff', 'property_specific_handoff', 'buyer_consultation_booked', 'property_tour_booked', 'seller_consultation_booked']),
     billingStatus: z.enum(['shadow', 'pending', 'billable']),
   }).strict(),
-  revenue: identitySchema.extend({ leadId: z.string().uuid(), currency: z.literal('USD'), amount: z.number().nonnegative() }).strict(),
+  revenue: identitySchema.extend({ leadId: z.string().guid(), currency: z.literal('USD'), amount: z.number().nonnegative() }).strict(),
 }).strict();
 
 export type CommercialLineageFixture = z.infer<typeof commercialLineageFixtureSchema>;

@@ -4,7 +4,7 @@ import { createAuthoritativeCommercialBooking } from '@/lib/scheduling/commercia
 import { supabaseAdmin } from '@/lib/supabase';
 
 const inputSchema = z.object({
-  leadId: z.string().uuid(), funnelId: z.string().uuid(), site: z.string().trim().min(1),
+  leadId: z.string().guid(), funnelId: z.string().guid(), site: z.string().trim().min(1),
   appointmentType: z.enum(['buyer_consultation', 'rental_consultation', 'seller_consultation']),
   startTime: z.string().datetime(), endTime: z.string().datetime(),
   attendee: z.object({ email: z.string().email(), name: z.string().trim().min(1), phone: z.string().trim().default(''), timeZone: z.string().default('America/Chicago') }).strict(),

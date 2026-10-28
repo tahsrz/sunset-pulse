@@ -8,8 +8,8 @@ import { resolveOperatorAgentId } from '@/lib/intelligence/agentNotificationStor
 import { AgentLeadActionError, applyAgentLeadAction } from '@/lib/sites/agentLeadActions.server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const leadIdSchema = z.string().uuid();
-const requestKeySchema = z.string().uuid();
+const leadIdSchema = z.string().guid();
+const requestKeySchema = z.string().guid();
 const pipelineStatusSchema = z.enum(['new', 'contacted', 'touring', 'nurture', 'closed', 'archived']);
 const valueSourceSchema = z.enum(['operator_estimate', 'crm', 'closing_statement']);
 

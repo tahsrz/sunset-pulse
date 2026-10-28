@@ -32,7 +32,7 @@ export class DomainScopeError extends Error {
   }
 }
 
-const uuidSchema = z.string().uuid();
+const uuidSchema = z.string().guid();
 const resourceIdSchema = z.string().trim().min(1).max(240);
 
 type OwnerScopedRow = Readonly<{ owner_id: string | null; revision?: number | null }>;

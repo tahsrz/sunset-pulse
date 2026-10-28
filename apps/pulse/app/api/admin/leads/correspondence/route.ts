@@ -8,7 +8,7 @@ import { buildLeadMessageVariables, renderLeadMessage } from '@/lib/lead-generat
 import type { InternalLead } from '@/lib/lead-generation/internalLeadSystem';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 const channel = z.enum(['email', 'letter']);
 const templateBody = z.object({
   name: z.string().trim().min(1).max(120), channel,

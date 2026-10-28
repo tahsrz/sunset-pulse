@@ -57,7 +57,7 @@ export function parseManifestValues(schema: z.infer<typeof manifestObjectSchema>
   return z.object(fields).strict().parse(input);
 }
 export const appInstallInputSchema = z.object({
-  manifest: appManifestSchema, settings: z.record(z.unknown()),
+  manifest: appManifestSchema, settings: z.record(z.string(), z.unknown()),
   status: z.enum(['installed', 'disabled']), expectedRevision: z.number().int().positive().nullable(),
 }).strict().superRefine((value, ctx) => {
   try { parseManifestValues(value.manifest.settingsSchema, value.settings); }
@@ -80,10 +80,10 @@ export const appLaunchResourceRefSchema = z.object({
 }).strict();
 
 export const appLaunchInputSchema = z.object({
-  installId: z.string().uuid(),
+  installId: z.string().guid(),
   expectedInstallRevision: z.number().int().positive(),
   workflowKey: key,
-  requestKey: z.string().uuid(),
+  requestKey: z.string().guid(),
   inputs: z.record(z.string().max(160), jsonValueSchema).superRefine((value, ctx) => {
     if (Object.keys(value).length > 64) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Input has too many fields.' });
   }),

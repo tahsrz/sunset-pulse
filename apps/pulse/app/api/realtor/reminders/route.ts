@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   return realtorApi(request, async (actorId) => {
     const body = await readRealtorBody(request);
-    const reminderId = z.string().uuid().parse((body as { reminderId?: unknown })?.reminderId);
+    const reminderId = z.string().guid().parse((body as { reminderId?: unknown })?.reminderId);
     const { reminderId: _reminderId, ...action } = body as Record<string, unknown>;
     const input = reminderActionSchema.parse(action);
     const { workspaceId } = await requirePersonalRealtorWorkspace(actorId);

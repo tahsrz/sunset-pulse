@@ -12,8 +12,8 @@ const timeZoneSchema = z.string().trim().min(1).max(80).refine((timeZone) => {
 }, 'Use a valid IANA time zone.');
 
 export const savedSellerIdentitySchema = z.object({
-  leadId: z.string().uuid(),
-  funnelId: z.string().uuid(),
+  leadId: z.string().guid(),
+  funnelId: z.string().guid(),
   agentId: z.string().trim().min(1).max(120),
   site: z.string().trim().min(1).max(180),
 }).strict();
@@ -58,7 +58,7 @@ export type SellerSlot = z.infer<typeof sellerSlotSchema>;
 export const sellerReservationRequestSchema = z.object({
   identity: savedSellerIdentitySchema,
   slotId: z.string().trim().min(1).max(200),
-  requestId: z.string().uuid(),
+  requestId: z.string().guid(),
 }).strict();
 
 export const sellerReservationResultSchema = z.union([

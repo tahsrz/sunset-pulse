@@ -13,7 +13,7 @@ const querySchema = z.object({
 
 const mutationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('mark_all_read'), agentId: z.string().trim().min(2).max(80).optional() }).strict(),
-  z.object({ action: z.enum(['mark_read', 'archive']), notificationId: z.string().uuid(), agentId: z.string().trim().min(2).max(80).optional() }).strict(),
+  z.object({ action: z.enum(['mark_read', 'archive']), notificationId: z.string().guid(), agentId: z.string().trim().min(2).max(80).optional() }).strict(),
 ]);
 
 export async function GET(request: NextRequest) {

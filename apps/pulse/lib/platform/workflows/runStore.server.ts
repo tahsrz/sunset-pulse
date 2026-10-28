@@ -35,7 +35,7 @@ export async function listRuns(actorId: string, workspaceId: string, search = ne
   return pageResult(data || [], limit, workspaceId, 'runs');
 }
 export async function getRun(actorId: string, workspaceId: string, runId: string) {
-  z.string().uuid().parse(runId);
+  z.string().guid().parse(runId);
   await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
   const { data: run, error: runError } = await supabaseAdmin.from('platform_runs')
     .select('id,workspace_id,definition,definition_hash,state,status,revision,created_at,updated_at,supersedes,superseded_by,supersession_reason,app_install_id,app_manifest_hash,app_workflow_key,app_install_revision,app_inputs,app_resource_refs')

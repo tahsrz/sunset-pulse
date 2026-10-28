@@ -6,9 +6,9 @@ import { persistDisputeCredit } from '@/lib/profit/billableOutcomeLedger';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const requestSchema = z.object({
-  outcomeId: z.string().uuid(),
+  outcomeId: z.string().guid(),
   reason: z.enum(OUTCOME_DISQUALIFIERS),
-  evidence: z.record(z.unknown()).default({}),
+  evidence: z.record(z.string(), z.unknown()).default({}),
 }).strict();
 
 export async function POST(request: NextRequest) {
