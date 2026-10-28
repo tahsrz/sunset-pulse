@@ -33,12 +33,13 @@ The existing seller intake and chat stream byte limits, purpose-specific capabil
 - On the fresh Zod 4 installation, the expanded initial selection passed 76 checks across 12 suites.
 - After the byte-limit repair, 22 checks across four suites passed, including six streamed-body/public-route cases, the characterization cases, the existing lead processor, and the marketing draft editor.
 - `npm run security:audit:prod`: zero vulnerabilities.
-- Full application TypeScript passed after generating the normal local Prisma client and Next route types. A subsequent check includes the final byte-limit changes; record its result before marking this delivery ready.
+- Full application TypeScript passed after generating the normal local Prisma client and Next route types, including a final check with the byte-limit and AI SDK integration tests.
 - Focused ESLint passed across all changed source files and new tests.
-- Broader unit-suite result: pending at the time this evidence record was first written. Update before publishing the PR.
+- Broad unit run: 1,813 passed and 15 failed. The failures came from four filesystem suites (private scan artifacts, MLS ledger, terminal intent persistence, and Wikipedia fixtures) under sandbox atomic link/rename restrictions. A focused rerun of all four suites with normal local filesystem permissions passed all 39 tests. No source changes were needed to clear those failures. This records the broad run and its targeted recovery rather than claiming a single all-green full run.
+- Two additional checks passed for early collection rejection and the real AI SDK tool-schema conversion/validation path. The final focused byte-limit/integration run passed eight tests.
 
 Local dependencies are installed independently in this checkout. The original checkout's dependency directories were not mutated. Generated local files are ignored and are not part of the source change. No database migration, database connection for fixture setup, production write, provider activation, or deployment was performed.
 
 ## Follow-Up
 
-Retarget this stacked PR after #88 merges, and verify its diff against current main. The Explorer work is the next product delivery. Production activation still requires the relevant deployment/build and release acceptance evidence; a clear package audit alone is not a complete security assessment.
+This delivery is in [PR #89](https://github.com/tahsrz/sunset-pulse/pull/89), stacked on #88. Retarget it after #88 merges, and verify its diff against current main. The Explorer work is the next product delivery. Full production build and deployed browser review were not performed. Production activation still requires the relevant deployment/build and release acceptance evidence; a clear package audit alone is not a complete security assessment.

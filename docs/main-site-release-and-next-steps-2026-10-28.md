@@ -1,8 +1,10 @@
 # Sunset Pulse: Next Release Implementation Plan
 
-Prepared October 28, 2026. Status: proposed implementation, not completed work.
+Prepared October 28, 2026. Status: implementation in progress. Unmarked deliveries below remain proposed work.
 
-Implementation progress: group A is implemented on `codex/marketing-admin-drafts`, based on PR #87 at `740757ed`. The marketing endpoint now checks global access, validates its read response, and refuses filesystem publication. The editor exports validated local drafts. Eighteen focused route/schema/editor checks, focused ESLint, and a scoped TypeScript check pass. Full build, deployed browser review, and the remaining groups are pending. See [marketing admin release evidence](./releases/marketing-admin-drafts-2026-10-28.md).
+Implementation progress: group A is implemented on `codex/marketing-admin-drafts`, based on PR #87 at `740757ed`. The marketing endpoint now checks global access, validates its read response, and refuses filesystem publication. The editor exports validated local drafts. Eighteen focused route/schema/editor checks, focused ESLint, and a scoped TypeScript check pass. Full build and deployed browser review are pending. See [marketing admin release evidence](./releases/marketing-admin-drafts-2026-10-28.md).
+
+Group B is implemented in [PR #89](https://github.com/tahsrz/sunset-pulse/pull/89), stacked on [PR #88](https://github.com/tahsrz/sunset-pulse/pull/88). Zod resolves to 4.6.7 throughout the installed dependency tree, the production audit reports zero vulnerabilities, and full TypeScript and focused lint pass. Existing identifier acceptance, optional-field omission, record values, coercion, and consent behavior are covered by migration checks. The public lead endpoint now has a streamed 128 KiB limit and bounded tags. The broad unit run and filesystem-only recovery are recorded in the [Zod migration evidence](./releases/zod4-contract-migration-2026-10-28.md). Groups C/D for Explorer are next; production build and deployed acceptance remain separate.
 
 This plan follows the homepage and seller-experience work in PR #87. It replaces the old execution queue for deciding what to build next; the October 19 specification remains useful background. Work is sequential, by one agent. Pending CI is not a reason to wait before doing independent source work. Do not use subagents.
 
@@ -343,10 +345,10 @@ New test filenames above are planned. Existing suites must be inspected for thei
 
 ## Immediate Next Session
 
-1. Reconcile the checkout with PR #87 and preserve existing local work.
-2. Implement commit group A. It has concrete source evidence and needs no external content or scheduling provider.
-3. Begin group B on its own branch, using contract fixtures before the Zod upgrade.
-4. Capture Explorer's exception while doing groups C/D independently; use the captured stack to select the crash-specific patch.
+1. Preserve the review dependency order: #87, then #88, then #89. Refresh branch/base state before new work; merging and deployment require their own release decision.
+2. Start Explorer groups C/D on a focused branch from the appropriate verified base: typed reads, cancellation, and real-value GeoJSON.
+3. Capture Explorer's exception while doing independent source hardening; use the captured stack to select the crash-specific patch.
+4. Add map-specific recovery and verify the list survives map/worker/chunk errors.
 5. Complete publication tooling while approved seller/guide assets are collected.
 
 The first four deliveries require no new Supabase schema, cloud file uploads, or cron jobs. Booking may require a narrowly justified migration only after the actual reservation authority and invariant are established.
