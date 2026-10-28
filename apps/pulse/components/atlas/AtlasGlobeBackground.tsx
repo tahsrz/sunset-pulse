@@ -8,8 +8,9 @@ export default function AtlasGlobeBackground() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
-    fetch('/api/tah/atlas/globe', { cache: 'no-store' })
+    fetch('/api/tah/atlas/globe', { cache: 'no-store', signal: controller.signal })
       .then(response => {
         if (!response.ok) throw new Error('Atlas background unavailable');
         return response.json();
@@ -28,6 +29,7 @@ export default function AtlasGlobeBackground() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, []);
 

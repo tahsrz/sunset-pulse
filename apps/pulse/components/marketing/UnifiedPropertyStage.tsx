@@ -11,13 +11,15 @@ import { FaHome, FaListUl } from 'react-icons/fa';
 
 interface UnifiedPropertyStageProps {
   initialStagedProperties: Property[];
+  initialMode?: StageMode;
+  compact?: boolean;
 }
 
-const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStagedProperties }) => {
-  const [mode, setMode] = useState<StageMode>('LIVE');
+const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStagedProperties, initialMode = 'LIVE', compact = false }) => {
+  const [mode, setMode] = useState<StageMode>(initialMode);
   const stagedProperties = initialStagedProperties;
   const [liveProperties, setLiveProperties] = useState<Property[]>([]);
-  const [loadingLive, setLoadingLive] = useState(true);
+  const [loadingLive, setLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState(false);
   const { featured } = marketingCopy.section_headers;
 
@@ -53,16 +55,16 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
   }, [mode]);
 
   return (
-    <section className="py-16 sm:py-20 waterlily-section">
+    <section className={`${compact ? 'py-10 sm:py-14' : 'py-16 sm:py-20'} waterlily-section`}>
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Stage Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-slate-300 mb-4">
             {mode === 'STAGED' ? <FaHome className="text-blue-400" /> : <FaListUl className="text-amber-400" />}
             {mode === 'STAGED' ? 'Curated Listings' : 'Live MLS Feed'}
           </div>
-          <h2 className="text-4xl font-black italic tracking-tighter waterlily-heading mb-2">
+          <h2 className={`${compact ? 'text-3xl sm:text-4xl' : 'text-4xl'} font-black italic tracking-tighter waterlily-heading mb-2`}>
             {mode === 'STAGED' ? featured.title : 'Active IDX Listings'}
           </h2>
           <p className="text-teal-100/70 text-sm leading-6">
@@ -76,7 +78,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         {/* Property Grid */}
         <div className="relative min-h-[400px]">
           {mode === 'STAGED' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className={`grid grid-cols-1 ${compact ? (stagedProperties.length === 1 ? 'max-w-4xl mx-auto' : 'md:grid-cols-2 xl:grid-cols-4') : 'lg:grid-cols-2'} gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700`}>
               {stagedProperties && Array.isArray(stagedProperties) && stagedProperties.length > 0 ? (
                 stagedProperties.map((property) => (
                   property && <FeaturedPropertyCard key={property._id} property={property} />
@@ -110,10 +112,11 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
         </div>
 
         {/* Stage Footer Note */}
-        <div className="mt-10 text-center">
-          <p className="text-xs leading-5 text-slate-400">
-            {mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}
-          </p>
+        <div className="mt-8 flex flex-col items-center gap-3 text-center">
+          <p className="text-xs leading-5 text-slate-400">{mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}</p>
+          <a href={mode === 'STAGED' ? '/properties' : '/idx'} className="inline-flex min-h-11 items-center rounded-xl border border-teal-100/20 px-4 text-sm font-bold text-teal-100 transition hover:bg-teal-100/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200">
+            {mode === 'STAGED' ? 'Browse All Properties' : 'Open Full IDX Search'}
+          </a>
         </div>
       </div>
     </section>

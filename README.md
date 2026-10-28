@@ -55,6 +55,7 @@ How to read the directory:
 | `/valuation` | Property pricing review | Public entry; No automated estimate is currently offered; request a human-reviewed seller pricing conversation. |
 | `/keller-westlake/market-report` | Keller / Westlake market report | Public entry; Noindex until a current, reviewed, publication-authorized report is available. |
 | `/seller-plan` | Keller / Westlake seller plan | Public entry; Request is saved only when the configured published agent site and Supabase intake are available. |
+| `/how-it-works` | How Sunset Pulse Works | Public entry; Overview of the platform and its main-site features. |
 | `/neighborhoods` | Keller / Westlake neighborhood guides | Public entry; Reviewed repository-backed guides with official sources and explicit unknowns. |
 | `/contact` | Contact | Public entry |
 | `/investors` | Investors | Public entry |

@@ -93,8 +93,8 @@ export default function MarketingConfigPage() {
             <div className="space-y-6">
               <div>
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-3 block">Primary Title</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={config.hero.title}
                   onChange={(e) => handleUpdate('hero', 'title', e.target.value)}
                   className="w-full bg-slate-950 border border-white/5 rounded-xl px-6 py-4 text-sm font-bold uppercase tracking-tight text-blue-400 focus:outline-none focus:border-blue-500/50 transition-all"
@@ -159,25 +159,14 @@ export default function MarketingConfigPage() {
               <FaEdit /> FAQ Configuration
             </h2>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2 block">FAQ Title</label>
-                  <input 
-                    type="text" 
-                    value={config.faq.title}
-                    onChange={(e) => handleUpdate('faq', 'title', e.target.value)}
-                    className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-500/50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Tagline</label>
-                  <input 
-                    type="text" 
-                    value={config.faq.tagline}
-                    onChange={(e) => handleUpdate('faq', 'tagline', e.target.value)}
-                    className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-mono text-blue-400 focus:outline-none focus:border-blue-500/50 transition-all"
-                  />
-                </div>
+              <div>
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2 block">FAQ Title</label>
+                <input 
+                  type="text" 
+                  value={config.faq.title}
+                  onChange={(e) => handleUpdate('faq', 'title', e.target.value)}
+                  className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-500/50 transition-all"
+                />
               </div>
 
               <div className="space-y-4">

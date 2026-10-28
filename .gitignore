@@ -15,6 +15,7 @@ test-results-e2e/
 
 # next.js
 .next/
+apps/pulse/.next-e2e/
 out/
 
 # production
@@ -91,3 +92,4 @@ temp_render/
 **/scratch/
 **/temp_render/
 apps/pulse/cartridges/wikipedia/ingestion-state.json
+

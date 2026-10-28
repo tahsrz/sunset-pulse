@@ -9,6 +9,7 @@ import { getAgentIdFromInput } from '@/lib/sites/agentConfig';
 import { resolveJamieListingContext } from '@/lib/ai/jamieListingContext';
 import { chatContextSchema } from '@/lib/ai/jamiePersonalContract';
 import { requirePersonalRealtorWorkspace, RealtorWorkspaceError } from '@/lib/realtor-workspace/access.server';
+import { readSellerCase } from '@/lib/realtor-workspace/sellerService.server';
 
 const MAX_REQUEST_BYTES = 100_000;
 const noStoreHeaders = { 'Cache-Control': 'private, no-store' };
@@ -30,6 +31,7 @@ const chatRequestSchema = z.object({
   agentId: z.string().trim().min(1).max(160).nullable().optional(),
   personaMode: z.enum(['general', 'guarded_real_estate']).optional(),
   context: chatContextSchema.default('general'),
+  sellerCaseId: z.string().uuid().optional(),
 }).strict();
 
 export async function POST(req: NextRequest) {
@@ -51,22 +53,34 @@ export async function POST(req: NextRequest) {
       return withNoStore(validationErrorResponse(parsed.error.flatten()));
     }
 
-    const { messages, listingId, isDevMode } = parsed.data;
+    const { messages, listingId, isDevMode, sellerCaseId } = parsed.data;
     if (personalRequested) {
       assertSameOrigin(req);
       if (listingId) return withNoStore(validationErrorResponse({ listingId: ['Personal Jamie cannot be combined with listing context.'] }));
       const access = await requireSignedInUser(req);
       if (isAuthResponse(access)) return withNoStore(access);
       const { workspaceId, preferences } = await requirePersonalRealtorWorkspace(access.user.id);
+      const selectedCase = sellerCaseId ? await readSellerCase(access.user.id, sellerCaseId) : null;
+      const sellerCaseContext = selectedCase ? {
+        sellerName: selectedCase.lead.name,
+        currentStatus: selectedCase.lead.status,
+        completedMilestones: selectedCase.milestones,
+        preparation: selectedCase.case ? {
+          checklistItems: selectedCase.case.checklist.length,
+          completedChecklistItems: selectedCase.case.checklist.filter((item) => item.done).length,
+        } : null,
+        scheduledAppointments: selectedCase.bookings.filter((booking) => booking.status === 'accepted').length,
+      } : undefined;
       const result = await runTensorZeroJamieChat({
         messages,
-        personalContext: { actorId: access.user.id, workspaceId, timeZone: preferences.time_zone },
+        personalContext: { actorId: access.user.id, workspaceId, timeZone: preferences.time_zone, sellerCaseContext },
         signal: req.signal,
       });
       return withNoStore(new Response(JSON.stringify(result.body), {
         status: 200, headers: { 'Content-Type': 'application/json', ...(result.init?.headers || {}) },
       }));
     }
+    if (sellerCaseId) return withNoStore(validationErrorResponse({ sellerCaseId: ['Seller case context requires personal Jamie.'] }));
 
     const serverIsDevMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true'
       ? Boolean(isDevMode)

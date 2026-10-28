@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   from: vi.fn(),
   select: vi.fn(),
+  single: vi.fn(),
   eq: vi.fn(),
   maybeSingle: vi.fn(),
 }));
@@ -18,6 +19,7 @@ vi.mock('@/lib/sites/siteData', () => ({ getTenantSite: mocks.getTenantSite }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from } }));
 
 import { POST } from '@/app/api/lead-magnets/route';
+import { saveSellerPlanLead } from '@/lib/marketing/sellerLeadIntake.server';
 
 const validPayload = {
   offerKey: 'keller-westlake-seller-plan',
@@ -30,7 +32,8 @@ const validPayload = {
   requestedContact: true,
   marketingOptIn: false,
   campaign: { source: 'website', medium: 'organic', campaign: null, content: null },
-};
+} as const;
+const SAVED_LEAD_ID = 'b73fd9d7-3483-4e28-a1ed-315617550cb7';
 
 function request(body: unknown = validPayload, headers: Record<string, string> = {}) {
   return new Request('https://sunsetpulse.app/api/lead-magnets', {
@@ -46,10 +49,14 @@ beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'test');
   mocks.applyPublicApiRateLimit.mockResolvedValue(null);
   mocks.getTenantSite.mockResolvedValue({ isPublished: true, status: 'active', agentId: 'owner-site-1', siteName: 'Owner Site' });
-  mocks.insert.mockResolvedValue({ error: null });
+  mocks.insert.mockImplementation(() => ({ select: mocks.select }));
+  mocks.single.mockImplementation(async () => {
+    const record = mocks.insert.mock.calls.at(-1)?.[0] as Record<string, unknown> | undefined;
+    return { data: { id: SAVED_LEAD_ID, funnel_id: record?.funnel_id, agent_id: record?.agent_id, site: record?.site }, error: null };
+  });
   mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
   mocks.from.mockReturnValue({ insert: mocks.insert, select: mocks.select });
-  mocks.select.mockReturnValue({ eq: mocks.eq });
+  mocks.select.mockReturnValue({ single: mocks.single, eq: mocks.eq });
   mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.maybeSingle });
 });
 
@@ -62,6 +69,7 @@ describe('seller-plan lead route', () => {
 
     expect(response.status).toBe(201);
     expect(body).toEqual({ success: true, accepted: true, duplicate: false });
+    expect(body).not.toHaveProperty('identity');
     expect(table).toBe('agent_site_leads');
     expect(record).toMatchObject({ agent_id: 'owner-site-1', site: 'taz', source: 'seller_plan', email: 'taylor@example.com', preferred_contact: 'email' });
     expect(record.metadata.sellerPlan.requestedContact.granted).toBe(true);
@@ -108,15 +116,38 @@ describe('seller-plan lead route', () => {
   it('returns the same durable receipt for an identical retry and conflicts on changed details', async () => {
     await POST(request());
     const [savedRecord] = mocks.insert.mock.calls[0];
-    mocks.insert.mockResolvedValueOnce({ error: { code: '23505', message: 'duplicate' } });
-    mocks.maybeSingle.mockResolvedValueOnce({ data: { metadata: savedRecord.metadata }, error: null });
+    mocks.single.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate' } });
+    mocks.maybeSingle.mockResolvedValueOnce({ data: { id: SAVED_LEAD_ID, funnel_id: savedRecord.funnel_id, agent_id: savedRecord.agent_id, site: savedRecord.site, metadata: savedRecord.metadata }, error: null });
     const duplicate = await POST(request());
     expect(duplicate.status).toBe(200);
-    expect(await duplicate.json()).toMatchObject({ success: true, accepted: true, duplicate: true });
+    const duplicateBody = await duplicate.json();
+    expect(duplicateBody).toMatchObject({ success: true, accepted: true, duplicate: true });
+    expect(duplicateBody).not.toHaveProperty('identity');
 
-    mocks.insert.mockResolvedValueOnce({ error: { code: '23505', message: 'duplicate' } });
+    mocks.single.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate' } });
+    mocks.maybeSingle.mockResolvedValueOnce({ data: { id: SAVED_LEAD_ID, funnel_id: savedRecord.funnel_id, agent_id: savedRecord.agent_id, site: savedRecord.site, metadata: savedRecord.metadata }, error: null });
     const changed = await POST(request({ ...validPayload, requestKind: 'seller_plan' }));
     expect(changed.status).toBe(409);
+  });
+
+  it('returns the stored identity internally for both save and idempotent replay', async () => {
+    const first = await saveSellerPlanLead(validPayload, 'taz', '2026-10-19T12:00:00.000Z');
+    expect(first.status).toBe('saved');
+    if (first.status !== 'saved') throw new Error('Expected saved seller lead.');
+    const savedRecord = mocks.insert.mock.calls.at(-1)![0] as Record<string, unknown>;
+    expect(first.identity).toEqual({
+      leadId: SAVED_LEAD_ID,
+      funnelId: savedRecord.funnel_id,
+      agentId: 'owner-site-1',
+      site: 'taz',
+    });
+    expect(mocks.select).toHaveBeenNthCalledWith(1, 'id, funnel_id, agent_id, site');
+
+    mocks.single.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate' } });
+    mocks.maybeSingle.mockResolvedValueOnce({ data: { id: SAVED_LEAD_ID, funnel_id: savedRecord.funnel_id, agent_id: savedRecord.agent_id, site: savedRecord.site, metadata: savedRecord.metadata }, error: null });
+    const replay = await saveSellerPlanLead(validPayload, 'taz', '2026-10-19T12:05:00.000Z');
+    expect(replay).toEqual({ status: 'replayed', identity: first.identity });
+    expect(mocks.select).toHaveBeenLastCalledWith('id, funnel_id, agent_id, site, metadata');
   });
 
   it('rejects oversized requests before using the shared rate-limit service', async () => {

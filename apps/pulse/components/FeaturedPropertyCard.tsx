@@ -54,7 +54,7 @@ const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property })
           </div>
         </div>
 
-        <h3 className='absolute top-[10px] right-[10px] md:right-auto md:left-[38%] bg-[#102a3a]/95 backdrop-blur-md border border-amber-200/25 px-4 py-2 rounded-lg text-amber-100 font-black shadow-xl z-20'>
+        <h3 className='absolute top-4 left-4 bg-[#102a3a]/95 backdrop-blur-md border border-amber-200/25 px-4 py-2 rounded-lg text-amber-100 font-black shadow-xl z-20'>
           ${getRateDisplay()}
         </h3>
 

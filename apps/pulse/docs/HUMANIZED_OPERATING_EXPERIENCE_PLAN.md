@@ -86,6 +86,8 @@ type JourneyStep = {
 
 The projection accepts validated domain data and returns presentation state. It never writes a milestone. Test retracted agreements, booked-but-not-held consultations, missing data, recorded closing prerequisites and non-linear correction histories.
 
+**October 19 implementation slice:** Added the pure `deriveSellerJourney` projection and a ruled, accessible journey above the existing case controls. It uses only the already-validated active milestones, saved messages and accepted linked bookings. A booked consultation is marked planned until a separate held milestone is saved; old retracted event details cannot restore a milestone; closing is not inferred from lead status or unrelated event history. When later work is already saved, the current action follows that latest verified stage instead of sending the operator backward to fill a missing older entry. The next action links to the existing inbox, planner or milestone panel. Four focused projection tests and one render-level test cover planned versus recorded state, the next-action link, and date semantics. Focused ESLint and full app TypeScript pass. No database, booking, scheduling or write path changed. Actual browser rendering at desktop and mobile widths remains outstanding.
+
 ## H3: A focused case workspace with guided actions
 
 Create `components/realtor/SellerActionDrawer.tsx`; refactor `SellerCaseWorkspace.tsx` into a journey header and contextual sections. Reuse `ModalSurface` from `components/realtor/ModalSurface.tsx` after confirming its existing exports and focus behavior.
@@ -110,9 +112,13 @@ type CaseActionView =
 
 Exit: a person can reach the next action without scrolling through unrelated forms, and all existing privacy/replay/conflict tests remain valid.
 
+**October 19 H3 progress:** Added the discriminated case-action view contract and moved preparation editing into the reusable `SellerActionDrawer`. The case page shows a saved read-only preparation summary; the editor preserves the existing owner-authenticated `save_case` API, revision, and same-payload retry key. Escape or Close on a dirty draft requires Save changes, Discard draft, or Keep editing. The drawer uses the existing focus trap and focus restoration, and stale-revision errors prevent another save until the case is reloaded. Milestone entry uses the same guarded drawer, with required local date and evidence, while correction records remain available in the history panel. Conversation composition separates recording an existing conversation from writing and explicitly reviewing email. Appointment cards show the saved time and link accepted bookings through the existing planner flow. Shared-progress editing uses a guarded drawer with an exact client preview and explicit publish review. Enabling or revoking client access now has its own confirmation drawer that explains verified-account access and the effect of revocation, while retaining the existing owner-authenticated action. Focused tests, app TypeScript, ESLint, and `git diff --check` pass for these slices. H3's guided action surface is implemented.
+
 ## H4: Conversation and appointments that feel natural
 
 Create `SellerConversation.tsx` and `SellerAppointmentStep.tsx`; reuse `SellerLeadScheduleDialog.tsx`, the existing booking-to-planner bridge and message action contracts.
+
+**October 19 H4 progress:** The conversation history sorts by message time, uses clear labels for receipt and delivery states, and expands long bodies and provider references under “Details.” Composition now separates recording a conversation from writing an email. Email review freezes the visible recipient and content, requires an explicit review before queueing, and preserves the existing permission check and expected lead revision. When sending is unavailable, the page points to the manual mailbox path. Appointment bookings now show their local date and exact time range, a plain-language response state, and whether they are linked. Only accepted, unlinked bookings offer the existing planner handoff. Focused tests cover history ordering, status labels, reviewed email safeguards, offset-aware conversation records, appointment time markup, and planner handoff eligibility.
 
 1. Show messages as a chronological conversation with sender/direction, actual time and concise receipt state. Expand long messages and receipt details on demand.
 2. Separate “Write a reply” from “Record a conversation that happened”. Provide a local date/time picker with the saved timezone for actual events, then convert to the existing offset-aware contract. Reject invalid/ambiguous times; do not replace an exact timestamp with browser locale parsing.
@@ -136,6 +142,8 @@ Create `components/realtor/SellerSetupGuide.tsx`; modify `SellerOverviewPanel.ts
 
 Test partial setup, read failure versus empty, successful reread, disabled sending, and 390px keyboard/touch use.
 
+**October 19 H5 progress:** `SellerSetupGuide` now presents planner/timezone, website, reminders, and first-request steps from the existing saved health response. Each step is marked ready, needs action, or unavailable; no local checkbox can mark setup complete. Email-disabled accounts see the manual mailbox path. Worker, sender, webhook, and delivery diagnostics are under a collapsed operator disclosure. The same read flow now distinguishes an authorization failure from a temporary status-read failure, hides raw server details, and recovers on refresh. Focused tests cover status derivation, the four-step view, collapsed diagnostics, empty saved setup, failed-read recovery, and the seller website link to the existing account dashboard setup control. The authenticated 390px visual acceptance remains to verify.
+
 ## H6: Jamie helps in context, with optional voice
 
 Modify the existing personal Jamie handoff/rendering path only after locating its current request/response contracts; reuse `lib/ai/jamiePersonalContract.ts`, `lib/ai/jamiePersonal.server.ts` and existing proposal confirmation surfaces.
@@ -149,6 +157,8 @@ Modify the existing personal Jamie handoff/rendering path only after locating it
 
 Exit: context reduces what the person must type, while preserving scoped inputs, editable drafts and explicit consequences.
 
+**October 20 H6 progress:** Seller cases now link to Personal Jamie with the selected case ID. The chat route re-resolves it through the existing owner-authorized seller service on each turn and sends only the seller name/status, milestone names, checklist completion counts, and accepted appointment count. Contact details, private notes, messages, evidence, and document links stay out of model context. General Jamie rejects seller case IDs. The chat identifies the linked scope and existing proposal confirmation flow remains unchanged. Case preparation now offers optional microphone capture through the shared `JamieAudioContext`: capture starts only after a click, transcripts stay in temporary screen state, the person can edit them, and a second explicit action adds the reviewed text to the composer. Nothing sends until the ordinary composer is submitted. Focused route, runner, audio lifecycle, and voice-draft tests cover owner-scoped lookup, bounded context, opt-in capture, preservation across the shared rolling transcript window, review-before-use, and no-write behavior. Real-device browser acceptance remains open.
+
 ## H7: Progress that can be seen
 
 Create `SellerProgressSummary.tsx`; modify `SellerOverviewPanel.tsx`, `SellerPortal.tsx` and the existing weekly-review presentation.
@@ -161,6 +171,8 @@ Create `SellerProgressSummary.tsx`; modify `SellerOverviewPanel.tsx`, `SellerPor
 
 Exit: the owner and client can understand reviewed progress without reading an operational report; missing data never produces invented progress.
 
+**October 20 H7 progress:** The seller overview now leads with five visible checkpoints from the existing 30-day request cohort: requests, customer replies, consultations held, verified agreements, and recorded closings. Each count keeps its existing database definition, and the page says plainly that these independent records do not form a drop-off chart. Opted-in visits and request-button actions stay in a separate acquisition detail panel. Weekly review offers tap-to-fill choices for priority and next action, with both fields still editable and optional friction notes retained. It continues to save the existing version 2 record and retry key. The focused weekly review tests select and edit the choices, then verify the saved values. Seller case publishing also previews the exact selected summary, milestones, checklist items, and document links before an explicit confirmation; verified-email access requires a separate explicit enable action and can be revoked. Focused publisher and access tests pass. Local typecheck passes. Remaining acceptance work is a signed-in owner/client browser walkthrough to confirm the complete publication, visibility, and revocation flow in a running app.
+
 ## H8: Carry the same interaction into the rest of the platform
 
 - **Vibe CMS:** one content/revision preview and one contextual action rail; reuse exact revision review/apply/rollback. Keep technical history behind details.
@@ -170,6 +182,8 @@ Exit: the owner and client can understand reviewed progress without reading an o
 - **Recovery:** short explanations, preserved drafts, one retry/review action and optional details. Technical diagnostics remain available to operators.
 
 Implement these as later surface-specific slices under their existing plans; do not apply a generic visual wrapper that changes domain meaning.
+
+**October 20 H8 progress:** Property scan review now keeps a failed legacy demo reconstruction visible with a clear statement that it is not a model of the property and provides no usable property preview. This aligns the failure state with the existing ready-demo and processor-unavailable states; a focused card test covers the failed state. In Vibe CMS revision history, republishing now collects its required reason inside the confirmation dialog instead of interrupting the flow with a browser prompt. The same rollback endpoint still creates a new immutable revision, and site application still requires its separate preflight. Focused revision and apply tests pass. In Business, voiding a financial record now opens a focused dialog showing the exact type, amount, date, and consequences. Linked paid bills are identified as reopening to pending; expected income is described separately from received money. The existing void endpoint and revision handling are unchanged. The shared checkpoint inbox now offers a direct reload action when workspace data fails to load. Reload uses the existing reads and preserves current card/form state; a focused test covers recovery after an initial error. Approval decisions now require a resource-specific preview and revision-check handler: seller-video reviews retain their dedicated path, and unsupported targets are visibly locked and rejected at the API boundary. Stale response conflicts lock the card and expose an inbox reload action until its checkpoint revision changes. Boolean effect gates and question responses continue through the generic checkpoint API. Focused route and card tests cover supported, unsupported, and stale cases.
 
 ## Scheduling and storage rules throughout
 
@@ -187,4 +201,5 @@ Do not store screenshots, generated avatars, recurring status snapshots or audio
 
 Success is less required reading and context switching, with the same accurate records. Measure actual clicks, time to find the next action, draft loss, misunderstood status and support friction in the operational pilot; do not invent a usability improvement percentage.
 
-Concept previews use fictional sellers and local-only interactions; they are not screenshots of deployed journey/voice functionality. Fieldbook's shell, next-action rows and existing-screen styling are implemented in the app. Next behavioral packet: H2's pure journey projection and recorded/scheduled/retracted-state tests, then the focused case-action drawer.
+**October 21 acceptance prep:** Playwright now uses an ignored `.next-e2e` output directory to keep its production build separate from the regular `.next` directory. App TypeScript, focused ESLint and `git diff --check` pass. The targeted seller daily browser run still stalled during Next's build before Playwright started, so no rendered acceptance is claimed. Continue with the [Humanized Experience Acceptance Walkthroughs](./HUMANIZED_EXPERIENCE_ACCEPTANCE_CHECKLIST.md) using an isolated test database and signed-in owner/client accounts; verify microphone capture on a physical device. These checks do not require Vercel, new workflows, scheduling jobs, or storage.
+

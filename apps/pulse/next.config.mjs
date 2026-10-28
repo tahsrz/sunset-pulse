@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDevelopment = process.env.NODE_ENV === 'development';
+const distDir = process.env.NEXT_E2E_ISOLATED_OUTPUT === '1' ? '.next-e2e' : '.next';
 const supabaseConnectSources = getSupabaseConnectSources();
 
 function getSupabaseConnectSources() {
@@ -54,6 +55,7 @@ export const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir,
   outputFileTracingRoot: path.join(__dirname, '../..'),
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
@@ -95,3 +97,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+

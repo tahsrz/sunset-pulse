@@ -17,7 +17,14 @@ type JamieBackboneInput = {
   isMock?: boolean;
   agentId?: string | null;
   personaMode?: 'general' | 'guarded_real_estate';
-  personalContext?: { actorId: string; workspaceId: string; timeZone: string };
+  personalContext?: {
+    actorId: string; workspaceId: string; timeZone: string;
+    sellerCaseContext?: {
+      sellerName: string; currentStatus: string | null; completedMilestones: string[];
+      preparation: { checklistItems: number; completedChecklistItems: number } | null;
+      scheduledAppointments: number;
+    };
+  };
   signal?: AbortSignal;
 };
 

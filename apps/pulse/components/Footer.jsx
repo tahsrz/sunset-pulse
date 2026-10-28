@@ -10,6 +10,7 @@ const footerLinks = [
   { href: '/idx', label: 'IDX Search' },
   { href: '/properties', label: 'Properties' },
   { href: '/explorer', label: 'Explorer' },
+  { href: '/how-it-works', label: 'How It Works' },
   { href: '/contact', label: 'Contact' }
 ];
 
