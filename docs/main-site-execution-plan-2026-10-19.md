@@ -2,6 +2,8 @@
 
 Prepared October 19, 2026.
 
+Next release queue: [October 28 implementation plan](./main-site-release-and-next-steps-2026-10-28.md). Use that plan for new work after the existing homepage and seller-experience implementation.
+
 Implementation specification: [Main-site next steps](./main-site-next-steps-implementation-plan-2026-10-19.md).
 
 This document turns that specification into a work queue. It defines delivery order, branch boundaries, evidence, and completion rules. The specification remains the source for proposed code and contracts. One agent performs the work sequentially. No subagents or separate autonomous chats are involved.
