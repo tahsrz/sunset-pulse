@@ -26,6 +26,7 @@ export async function internalConsultationAcceptance(sql) {
   await assert.rejects(configure({...enabled,requestId:randomUUID()}),/Calendar changed/);
   await assert.rejects(configure({...enabled,requestId:randomUUID(),expectedRevision:2,timeZone:'Invalid/Zone'}),/Invalid consultation calendar/);
   assert.equal(await q(`SELECT has_table_privilege('authenticated','seller_consultation_settings','SELECT') OR has_function_privilege('anon','seller_consultation_reserve(jsonb,text,uuid)','EXECUTE');`),'f');
+  assert.equal(await q(`SELECT has_table_privilege('service_role','scheduling_bookings','SELECT') AND has_table_privilege('service_role','scheduling_availability','SELECT');`),'t','server calendar reads require explicit table privileges');
   console.log('PASS: owner setup, disabled defaults, consent to calendar authority, revisions, replay and grants');
   const list=async(identity=leads[0])=>JSON.parse(await q(`SELECT seller_consultation_availability(${json(identity)},now()+interval '1 day',now()+interval '3 days');`));
   let slots=(await list()).slots;

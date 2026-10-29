@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { readFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
 import {sellerServiceAcceptance} from './seller-service-auth-acceptance.mjs';
+import {sellerConsultationAuthAcceptance} from './seller-consultation-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { command, pulseRoot } from './docker-acceptance.mjs';
@@ -29,6 +30,9 @@ const api=apiUrl.origin, origin=originUrl.origin;
 const realtorOnly=process.argv.includes('--realtor-only');
 const sellerVideoOnly=process.argv.includes('--seller-video-only');
 const sellerServiceOnly=process.argv.includes('--seller-service-only');
+const sellerConsultationsOnly=process.argv.includes('--seller-consultations-only');
+assert(!sellerConsultationsOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && process.argv.includes('--seller-business-only') && !sellerServiceOnly && !process.argv.includes('--homepage') && !process.argv.includes('--live-jamie') && !process.argv.includes('--database-only')),'Consultation acceptance requires its complete dedicated generated disposable stack.');
+const consultationSigningSecret=sellerConsultationsOnly?randomBytes(32).toString('base64url'):'';
 assert(!sellerServiceOnly || /^pulse_auth_[a-f0-9]{8}$/.test(stack),'Seller service acceptance requires a generated disposable stack.');
 const sellerBusinessOnly=process.argv.includes('--seller-business-only');
 const sellerScheduleRecoveryOnly=process.argv.includes('--seller-schedule-recovery-only');
@@ -88,6 +92,7 @@ const migrations=[
   '20261008110000_seller_planner_link_read.sql',
   '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
   '20261009130000_seller_service_cases.sql','20261009131000_seller_service_email.sql','20261009132000_seller_service_measurement.sql',
+  ...(sellerConsultationsOnly?['20261028120000_internal_seller_consultations.sql','20261028123000_internal_seller_calendar_read_grants.sql']:[]),
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -98,7 +103,7 @@ for(const name of migrations){
   console.log(`Applied local migration: ${name}`);
 }
 await sql("NOTIFY pgrst,'reload schema';");
-if (sellerBusinessOnly) {
+if (sellerBusinessOnly && !sellerConsultationsOnly) {
   for (const name of [
     'seller_lead_actions.sql',
     'seller_service.sql',
@@ -151,25 +156,27 @@ const userIds=[], workspaceIds=[], sellerFixtureAgents=[];
 let server,browser;
 const plannerServerSignals=[];
 const acceptanceMongo = process.env.PULSE_TEST_MONGO_URI || '';
-if (acceptanceMongo) assert.match(acceptanceMongo, /^mongodb:\/\/127\.0\.0\.1:\d+\/pulse_homepage_acceptance$/);
+if (acceptanceMongo) assert.match(acceptanceMongo, /^mongodb:\/\/127\.0\.0\.1:\d+\/pulse_(?:homepage|consultation)_acceptance$/);
 try{
   await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='platform_run';");
   server=spawn(process.execPath,[fileURLToPath(new URL('../../../node_modules/next/dist/bin/next',import.meta.url)),'dev','--hostname','127.0.0.1','--port',String(originUrl.port || 80)],{
     cwd:pulseRoot,windowsHide:true,stdio:['ignore','pipe','pipe'],env:{...process.env,NODE_ENV:'development',
       NEXT_PUBLIC_SUPABASE_URL:api,SUPABASE_URL:api,NEXT_PUBLIC_SUPABASE_ANON_KEY:anon,SUPABASE_ANON_KEY:anon,SUPABASE_SERVICE_ROLE_KEY:service,
       NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',PULSE_ALLOW_PRODUCTION_MOCK_AUTH:'',
+      ...(sellerConsultationsOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',KELLER_WESTLAKE_AGENT_SITE:'consultation-acceptance',SELLER_BOOKING_CAPABILITY_SECRET:consultationSigningSecret}:{}),
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
       SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
       OPENAI_API_KEY:'',GROQ_API_KEY:liveJamie?process.env.GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:origin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:origin,
-      // Homepage reads legacy listing/config stores; only the disposable runner
+      // Homepage and consultation intake read legacy listing/config stores; only the disposable runner
       // may supply its Mongo URI. Never inherit a hosted connection.
       MONGODB_URI:acceptanceMongo || 'mongodb://127.0.0.1:1/pulse_auth_unavailable',
   }});
   // Drain logs without persisting secrets or account-bearing server output.
   for(const stream of [server.stdout,server.stderr]) stream.on('data',(chunk)=>{
     // Only retain route compilation/timing signals, never arbitrary server logs.
-    const signal=chunk.toString().match(/(?:Compiling|Compiled|POST|GET) \/api\/realtor\/planner(?:[^\r\n]*)/g);
+    const signal=chunk.toString().match(/(?:Compiling|Compiled|POST|GET) \/api\/(?:realtor\/(?:planner|consultations)|lead-magnets|seller-consultations\/(?:availability|reservations))(?:[^\r\n]*)/g);
     if(signal) plannerServerSignals.push(...signal.map((line)=>line.slice(0,160)));
+    if(sellerConsultationsOnly) plannerServerSignals.push(...(chunk.toString().match(/\[SELLER_PLAN_[A-Z_]+\]\s+[A-Za-z0-9_]+/g)||[]));
   });
   server.on('error',()=>{});
   let ready=false;
@@ -217,7 +224,9 @@ try{
       return {status:response.status,data:await response.json()};
     },{path,method,body});
   }
-  if (sellerServiceOnly) {
+  if (sellerConsultationsOnly) {
+    await sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret:consultationSigningSecret});
+  } else if (sellerServiceOnly) {
     await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
   } else if (sellerBusinessOnly) {
     const timeZone='America/Chicago';
@@ -1514,6 +1523,7 @@ try{
   // Server logs may contain account identifiers but no credentials are printed
   // by this runner. Keep failure output limited to the assertion boundary.
   console.error('Real-auth acceptance stopped:',error.stack||error.message);process.exitCode=1;
+  if(sellerConsultationsOnly) console.error('Consultation route timing signals:',plannerServerSignals.join('; '));
 }finally{
   await browser?.close();
   if(server && server.exitCode===null){
@@ -1527,7 +1537,7 @@ try{
       DELETE FROM public.agent_site_leads WHERE agent_id='${agentId}';
       DELETE FROM public.site_config WHERE agent_id='${agentId}'; COMMIT;`);
   }
-  if(!sellerVideoOnly && !sellerServiceOnly) for(const workspace of workspaceIds){
+  if(!sellerVideoOnly && !sellerServiceOnly && !sellerConsultationsOnly) for(const workspace of workspaceIds){
     assert.match(workspace,/^[a-f0-9-]{36}$/);
     await sql(`BEGIN;
       DELETE FROM workflow_results WHERE job_id IN (SELECT id FROM workflow_jobs WHERE payload->>'workspaceId'='${workspace}');
@@ -1538,9 +1548,9 @@ try{
       DELETE FROM realtor_preferences WHERE workspace_id='${workspace}';
       DELETE FROM platform_workspaces WHERE id='${workspace}'; COMMIT;`);
   }
-  if(!sellerVideoOnly && !sellerServiceOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
+  if(!sellerVideoOnly && !sellerServiceOnly && !sellerConsultationsOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
   await sql(`UPDATE workflow_event_contracts SET enabled=${enabled==='t'?'true':'false'} WHERE workflow_key='platform_run';`);
-  console.log(sellerVideoOnly || sellerServiceOnly
+  console.log(sellerVideoOnly || sellerServiceOnly || sellerConsultationsOnly
     ? 'Retained test rows only inside the generated disposable project; its teardown removes them and all local Auth accounts.'
     : 'Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
 }

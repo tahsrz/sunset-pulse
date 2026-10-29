@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockSupabaseFrom, mockConnectDB, mockFindOne, mockResolveTourHotListTargets, mockGetTourHotList, mockGetPublicListingById } = vi.hoisted(() => ({
+const { mockSupabaseFrom, mockConnectDB, mockFindOne, mockResolveTourHotListTargets, mockGetTourHotList, mockGetPublicListingById, mockReadPublishedVibeProjection } = vi.hoisted(() => ({
+  mockReadPublishedVibeProjection: vi.fn(),
   mockSupabaseFrom: vi.fn(),
   mockConnectDB: vi.fn(),
   mockFindOne: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('@/lib/supabase', () => ({
     from: mockSupabaseFrom,
   },
 }));
+vi.mock('@/lib/cms/vibeService',()=>({readPublishedVibeProjection:mockReadPublishedVibeProjection}));
 
 vi.mock('@/lib/core/database', () => ({
   default: mockConnectDB,
@@ -39,6 +41,7 @@ import { getAgentTenantSite, getTenantListingById, getTenantSite } from '@/lib/s
 describe('tenant site conversion layer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockReadPublishedVibeProjection.mockResolvedValue(null);
     mockConnectDB.mockResolvedValue(undefined);
     mockFindOne.mockReturnValue({ lean: vi.fn(() => Promise.resolve(null)) });
     mockSupabaseFrom.mockReturnValue({
@@ -70,6 +73,21 @@ describe('tenant site conversion layer', () => {
         expect.objectContaining({ type: 'compliance', visible: true }),
       ]),
     );
+  });
+  it('publishes a migration-only tenant without the optional Supabase pointer column and still resolves the Mongo pointer',async()=>{
+    const row={agent_id:'calendar-site',subdomain:'calendar',status:'active',updated_at:'2026-10-28T12:00:00Z',branding:{siteName:'Calendar Test'},
+      agent_profile:{displayName:'Test Owner',brokerageName:'Test Brokerage',email:'owner@example.test'},
+      compliance_profile:{footerDisclaimer:'Test disclaimer',mlsDisclaimer:'Test MLS disclaimer'},integration_profile:{hotListMlsIds:['TEST-001']}};
+    mockSupabaseFrom.mockImplementation(()=>({select:(columns:string)=>{
+      const response=async()=>columns.split(',').some(column=>column.trim()==='active_vibe_revision_id')
+        ? {data:null,error:{code:'42703',message:'column site_config.active_vibe_revision_id does not exist'}} : {data:row,error:null};
+      return {or:()=>({maybeSingle:response}),eq:()=>({maybeSingle:response})};
+    }}));
+    mockFindOne.mockReturnValue({lean:async()=>({agentId:'calendar-site',updatedAt:'2026-10-27T12:00:00Z',activeVibeRevisionId:'mongo-projection'})});
+    const site=await getTenantSite('calendar');
+    expect(site.agentId).toBe('calendar-site');expect(site.isPublished).toBe(true);
+    expect(site.activeVibeRevisionId).toBe('mongo-projection');
+    expect(mockReadPublishedVibeProjection).toHaveBeenCalledWith({revisionId:'mongo-projection',tenantId:'default'});
   });
 
   it('loads published tenant sites with buyer-safe readiness check', async () => {

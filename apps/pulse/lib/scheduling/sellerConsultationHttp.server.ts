@@ -12,8 +12,21 @@ const reservationBody = z.object({ capability: z.string().min(1).max(4096), slot
 const headers = { 'Cache-Control': 'private, no-store' };
 const reply = (body: unknown,status=200) => NextResponse.json(body,{status,headers});
 
+function isSameOrigin(request: Request) {
+  if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
+  try {
+    const url = new URL(request.url);
+    const host = request.headers.get('host');
+    // Match workflow routes: NextURL can normalize loopback names. The HTTP
+    // Host identifies the browser target; client-supplied forwarded hosts do not.
+    const external = host ? new URL(`${url.protocol}//${host}`) : url;
+    if (external.username || external.password || (host && (external.pathname !== '/' || external.search || external.hash))) return false;
+    return request.headers.get('origin') === external.origin;
+  } catch { return false; }
+}
+
 export async function sellerConsultationHttp(request: Request, kind: 'availability'|'reservation') {
-  if (request.headers.get('origin') !== new URL(request.url).origin) return reply({ error: 'Same-origin request required.' },403);
+  if (!isSameOrigin(request)) return reply({ error: 'Same-origin request required.' },403);
   if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return reply({ error: 'JSON request required.' },415);
   const secret = process.env.SELLER_BOOKING_CAPABILITY_SECRET || '';
   if (Buffer.byteLength(secret,'utf8') < 32) return reply({ status:'unavailable',reason:'not_configured' },503);
