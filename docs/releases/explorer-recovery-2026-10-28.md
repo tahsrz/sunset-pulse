@@ -16,6 +16,8 @@ Controls are positioned inside their map container rather than fixed to the view
 
 ## Verification
 
+Follow-up: [production build and Explorer acceptance](./production-explorer-acceptance-2026-10-28.md) runs the fixture suite and actual Mapbox rendering under production CSP. It isolates the legacy routing bundle's template-evaluation failure and records live-map, retry, homepage/KCD and current-build baseline evidence. The original hosted exception is still not proven to have the same cause.
+
 All 66 focused tests across seven suites passed. They cover the public API shapes, invalid input, missing coordinates, bounded geometry, price intent, stale responses, aborts, search retry, rejected chunk retry, renderer and asynchronous control failures, draw-listener cleanup, navigation callback freshness, and list survival. Existing listing-contract, discovery and read-surface suites are included as regressions. Map lifecycle checks render the real ExplorerMap component with a mocked Mapbox adapter; they do not verify a live WebGL renderer.
 
 Next route type generation, full application TypeScript, focused ESLint on every changed TypeScript/TSX source and test, and `git diff --check` also passed.

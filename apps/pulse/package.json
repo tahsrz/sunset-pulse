@@ -62,6 +62,8 @@
     "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts",
     "platform:scope:dry-run": "tsx scripts/platform-scope-backfill.ts --target local",
     "test:seller-service:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-service",
+    "test:release:build": "node scripts/production-build-acceptance.mjs",
+    "test:release:browser": "node scripts/production-build-acceptance.mjs --browser-only",
     "test:seller-consultations:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-consultations"
   },
   "dependencies": {
