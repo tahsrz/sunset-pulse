@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomUUID,createHmac} from 'node:crypto';
+import {sellerSharingBrowserAcceptance} from './seller-sharing-browser-acceptance.mjs';
 /** Only called by the disposable real-auth harness; all data and receipts are synthetic. */
 export async function sellerServiceAcceptance({primary,login,request,sql,origin,artifacts}){
   const client=await login();
@@ -14,7 +15,7 @@ export async function sellerServiceAcceptance({primary,login,request,sql,origin,
   const read=async()=>{const result=await request(primary.page,`/api/realtor/seller-service?leadId=${leadId}`);assert.equal(result.status,200,JSON.stringify(result.data));state=result.data.result;return state;};
   await read();assert.equal(state.case,null);
   assert.equal((await request(client.page,`/api/realtor/seller-service?leadId=${leadId}`)).status,404);
-  const save={leadId,expectedRevision:1,requestKey:randomUUID(),action:'save_case',propertyId:null,notes:'PRIVATE CASE NOTE',documents:[{label:'Reviewed document',url:'https://example.test/document'}],checklist:[{id:randomUUID(),title:'Prepare photography',done:false}]};
+  const save={leadId,expectedRevision:1,requestKey:randomUUID(),action:'save_case',propertyId:null,notes:'PRIVATE CASE NOTE',documents:[{label:'Reviewed document',url:'https://example.test/document'},{label:'Private document',url:'https://example.test/private-document'}],checklist:[{id:randomUUID(),title:'Prepare photography',done:false}]};
   assert.equal((await request(primary.page,'/api/realtor/seller-service','POST',save)).status,200);
   const replay=await request(primary.page,'/api/realtor/seller-service','POST',save);assert.equal(replay.data.result.replayed,true);assert.equal(replay.data.result.revision,2);
   assert.equal((await request(primary.page,'/api/realtor/seller-service','POST',{...save,requestKey:randomUUID()})).status,409);
@@ -22,24 +23,22 @@ export async function sellerServiceAcceptance({primary,login,request,sql,origin,
   const act=async(fields)=>{const result=await request(primary.page,'/api/realtor/seller-service','POST',{leadId,expectedRevision:state.case?.revision||1,requestKey:randomUUID(),...fields});assert.equal(result.status,200,JSON.stringify(result.data));await read();return result.data.result;};
   await act({action:'milestone',milestone:'consultation_held',occurredOn:today,evidence:'Meeting held with seller.'});
   await act({action:'milestone',milestone:'listing_agreement_verified',occurredOn:today,evidence:'Executed representation agreement verified.'});
-  await act({action:'publish_progress',reviewed:true,publication:{summary:'Approved progress',milestones:['consultation_held'],checklist:save.checklist,documents:save.documents}});
-  assert.deepEqual((await request(client.page,'/api/seller-portal')).data.result,[]);
-  await act({action:'share_progress',enabled:true});
-  const shared=await request(client.page,'/api/seller-portal');assert.equal(shared.status,200);assert.equal(shared.data.result[0].publication.summary,'Approved progress');assert(!JSON.stringify(shared.data).includes('PRIVATE CASE NOTE'));assert(!JSON.stringify(shared.data).includes(client.email));
-  assert.deepEqual((await request(primary.page,'/api/seller-portal')).data.result,[]);
-  await act({action:'share_progress',enabled:false});assert.deepEqual((await request(client.page,'/api/seller-portal')).data.result,[]);
-  await act({action:'share_progress',enabled:true});
+  await act({action:'record_message',direction:'inbound',subject:'Synthetic private conversation',body:'PRIVATE CONVERSATION',occurredAt:new Date().toISOString()});
+  await sellerSharingBrowserAcceptance({primary,client,request,origin,leadId,artifacts,expectedChecklist:save.checklist});
+  await read();
   await sql(`UPDATE public.agent_site_leads SET email='changed@example.test' WHERE id='${leadId}';`);assert.deepEqual((await request(client.page,'/api/seller-portal')).data.result,[]);
   await sql(`UPDATE public.agent_site_leads SET email='${client.email}' WHERE id='${leadId}';`);await read();
   const startsAt=new Date(Math.ceil((Date.now()+86400_000)/60000)*60000).toISOString(),endsAt=new Date(Date.parse(startsAt)+3600000).toISOString();
   await sql(`INSERT INTO public.scheduling_bookings(id,uid,title,start_time,end_time,status,funnel_id,lead_id,agent_id,site,appointment_type) VALUES('${bookingId}','${bookingId}','Seller consultation','${startsAt}','${endsAt}','accepted',gen_random_uuid(),'${leadId}','${agent}','seller-service','seller_consultation');`);
   const linked=await act({action:'link_booking',bookingId});assert(linked.details.consultationEventId);assert.equal(state.bookings[0].linked,true);
   const contactBefore=Number(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${leadId}' AND event_type='contact_attempted';`));
+  const messagesBeforeBlockedSend=Number(await sql(`SELECT count(*) FROM public.seller_case_messages WHERE lead_id='${leadId}';`));
   const blockedSend=await request(primary.page,'/api/realtor/seller-service','POST',{leadId,expectedRevision:state.case.revision,requestKey:randomUUID(),action:'send_email',reviewed:true,expectedLeadRevision:state.lead.revision,subject:'Reviewed',body:'Synthetic body'});assert.equal(blockedSend.status,403);
-  assert.equal(Number(await sql(`SELECT count(*) FROM public.seller_case_messages WHERE lead_id='${leadId}';`)),0);
+  assert.equal(Number(await sql(`SELECT count(*) FROM public.seller_case_messages WHERE lead_id='${leadId}';`)),messagesBeforeBlockedSend,'blocked sending creates no message');
   console.log('PASS: owner isolation, optimistic replay, evidence, client whitelist, revocation, changed-email fencing and gated email.');
 
   await primary.page.goto(`${origin}/seller-cases/${leadId}`,{timeout:120000});await primary.page.getByRole('heading',{name:'Service Seller',exact:true}).waitFor();
+  await primary.page.locator('summary').filter({has:primary.page.getByRole('heading',{name:'History',exact:true})}).click();
   await primary.page.getByRole('button',{name:'Open consultation in planner',exact:true}).click();
   await primary.page.getByRole('button',{name:/Schedule appointment/i}).waitFor();
   await primary.page.getByRole('button',{name:/Schedule appointment/i}).click();
@@ -72,8 +71,9 @@ export async function sellerServiceAcceptance({primary,login,request,sql,origin,
   assert.equal(await sql(`SELECT status FROM public.workflow_jobs WHERE id='${jobId}';`),'completed');
   assert.equal(Number(await sql(`SELECT count(*) FROM public.seller_lead_events WHERE lead_id='${leadId}' AND event_type='contact_attempted';`)),contactBefore+1);
   await read();
+  const messagesBefore=state.messages.length;
   await act({action:'record_message',direction:'inbound',subject:'Seller reply',body:'Thanks for the update.',occurredAt:new Date().toISOString()});
-  assert.equal(state.messages.some((m)=>m.direction==='inbound'),true);
+  assert.equal(state.messages.length,messagesBefore+1);assert.equal(state.messages.some((m)=>m.direction==='inbound'),true);
   await sql(`SELECT public.seller_offer_record('${agent}','seller-service','${randomUUID()}','visit','auth-acceptance');`);
   const visit=randomUUID();await sql(`SELECT public.seller_offer_record('${agent}','seller-service','${visit}','offer_click','auth-acceptance'); SELECT public.seller_offer_record('${agent}','seller-service','${visit}','offer_click','auth-acceptance');`);
   const overview=await request(primary.page,'/api/realtor/seller-service/overview');assert.equal(overview.status,200);assert.equal(overview.data.result.funnel.held,1);assert.equal(overview.data.result.funnel.signed,1);assert.equal(overview.data.result.funnel.requests,1);assert.equal(overview.data.result.funnel.offerClicks,1);assert.equal(overview.data.result.health.lastCompletedJob!==null,true);
@@ -97,9 +97,9 @@ export async function sellerServiceAcceptance({primary,login,request,sql,origin,
     assert.equal(await primary.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await primary.page.screenshot({path:artifacts+`seller-case-${width}.png`,fullPage:true});
   }
   await client.page.goto(`${origin}/seller-portal`);await client.page.getByText('Approved progress',{exact:true}).waitFor();assert.equal(await client.page.getByText('PRIVATE CASE NOTE',{exact:true}).count(),0);await client.page.screenshot({path:artifacts+'seller-portal.png',fullPage:true});
-  await primary.page.goto(`${origin}/business`);await primary.page.getByRole('heading',{name:'Seller acquisition funnel',exact:true}).waitFor();
-  await primary.page.goto(`${origin}/today`);await primary.page.getByRole('heading',{name:'Start here',exact:true}).waitFor();
-  await primary.page.goto(`${origin}/seller-setup`);await primary.page.getByRole('heading',{name:'Recorded worker activity',exact:true}).waitFor();await primary.page.screenshot({path:artifacts+'seller-setup.png',fullPage:true});
+  await primary.page.goto(`${origin}/business`);await primary.page.getByRole('heading',{name:'Request cohort details',exact:true}).waitFor();
+  await primary.page.goto(`${origin}/today`);await primary.page.getByRole('heading',{name:'Today’s Focus',exact:true}).waitFor();
+  await primary.page.goto(`${origin}/seller-setup`);await primary.page.getByText('Operator details',{exact:true}).waitFor();await primary.page.screenshot({path:artifacts+'seller-setup.png',fullPage:true});
   assert.deepEqual(primary.pageErrors,[]);assert.deepEqual(client.pageErrors,[]);
   await read();const signedRecord=state.milestoneRecords.find((record)=>record.milestone==='listing_agreement_verified');assert(signedRecord);
   await act({action:'retract_milestone',eventId:signedRecord.eventId,reason:'Correct a synthetic agreement verification.'});

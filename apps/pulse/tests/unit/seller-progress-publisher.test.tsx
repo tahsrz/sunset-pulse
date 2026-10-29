@@ -11,6 +11,27 @@ function renderPublisher(onPublish = vi.fn(async () => true)) {
 }
 
 describe('seller progress publisher', () => {
+  it('returns to the editor and invalidates approval after a preview is edited',()=>{
+    const onPublish=renderPublisher();
+    fireEvent.click(screen.getByRole('button',{name:'Review client update'}));
+    fireEvent.change(screen.getByRole('textbox',{name:'Client summary'}),{target:{value:'First preview'}});
+    fireEvent.click(screen.getByRole('checkbox',{name:'Consultation held'}));
+    fireEvent.click(screen.getByRole('checkbox',{name:/Review disclosures/}));
+    fireEvent.click(screen.getByRole('checkbox',{name:/Disclosure packet/}));
+    fireEvent.click(screen.getByRole('button',{name:'Preview exact update'}));
+    fireEvent.click(screen.getByRole('checkbox',{name:'I reviewed this exact client update and its document links.'}));
+    expect(screen.getByRole('button',{name:'Publish reviewed update'})).toBeEnabled();
+    fireEvent.click(screen.getByRole('button',{name:'Back to edit'}));
+    expect(screen.getByRole('textbox',{name:'Client summary'})).toHaveValue('First preview');
+    expect(screen.getByRole('checkbox',{name:'Consultation held'})).toBeChecked();
+    expect(screen.getByRole('checkbox',{name:/Review disclosures/})).toBeChecked();
+    expect(screen.getByRole('checkbox',{name:/Disclosure packet/})).toBeChecked();
+    fireEvent.change(screen.getByRole('textbox',{name:'Client summary'}),{target:{value:'Edited update'}});
+    fireEvent.click(screen.getByRole('button',{name:'Preview exact update'}));
+    expect(screen.getByRole('checkbox',{name:'I reviewed this exact client update and its document links.'})).not.toBeChecked();
+    expect(screen.getByRole('button',{name:'Publish reviewed update'})).toBeDisabled();
+    expect(onPublish).not.toHaveBeenCalled();
+  });
   it('shows the exact selected client update and publishes only after review', async () => {
     const onPublish = renderPublisher();
     fireEvent.click(screen.getByRole('button', { name: 'Review client update' }));

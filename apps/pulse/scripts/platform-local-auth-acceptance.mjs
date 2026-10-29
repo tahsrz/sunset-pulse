@@ -163,6 +163,7 @@ try{
     cwd:pulseRoot,windowsHide:true,stdio:['ignore','pipe','pipe'],env:{...process.env,NODE_ENV:'development',
       NEXT_PUBLIC_SUPABASE_URL:api,SUPABASE_URL:api,NEXT_PUBLIC_SUPABASE_ANON_KEY:anon,SUPABASE_ANON_KEY:anon,SUPABASE_SERVICE_ROLE_KEY:service,
       NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',PULSE_ALLOW_PRODUCTION_MOCK_AUTH:'',
+      ...(sellerServiceOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1'}:{}),
       ...(sellerConsultationsOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',KELLER_WESTLAKE_AGENT_SITE:'consultation-acceptance',SELLER_BOOKING_CAPABILITY_SECRET:consultationSigningSecret}:{}),
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
       SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
