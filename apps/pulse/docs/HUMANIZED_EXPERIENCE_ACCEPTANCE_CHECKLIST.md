@@ -38,6 +38,8 @@ From `/today` or `/seller-inbox`, open the disposable request's seller case at `
 - [ ] Confirm the next action points to the existing inbox, planner, or milestone control appropriate to the case.
 - [ ] If the test fixture has a later saved stage and an earlier missing stage, confirm the suggested action follows the latest verified stage rather than sending the owner backward.
 - [ ] Use only the disposable case for any milestone changes. Confirm the saved date and evidence appear in the journey after refresh.
+- [ ] Open **Edit preparation**, change the fictional private notes, press Escape and choose **Keep editing**. Confirm the draft remains. Press Escape again and explicitly discard; reopen and confirm the saved baseline is restored.
+- [ ] Save fictional preparation notes once, then refresh and confirm they persist through a later milestone action. Opening, keeping and discarding a draft must not create a saved case by themselves.
 
 Pass when planned and recorded states are distinct, dates match saved records, and no unsaved action is presented as complete.
 
@@ -87,11 +89,13 @@ Pass when recording is opt-in, visibly stoppable, editable before use, and has n
 
 October 28, 2026: the automated sharing walkthrough uses base commit `a38b904e` with the acceptance additions on `codex/seller-sharing-pilot`, a generated disposable Supabase project, headless Chromium and two real local password/cookie sessions. Mock auth and external delivery are disabled. The [pilot record](../../../docs/releases/seller-sharing-pilot-2026-10-28.md) explains how to reproduce it and what remains unverified. This result does not check off the manual or physical-device walkthroughs above.
 
+The follow-up uses base `5475079e` with additions on `codex/seller-journey-setup-acceptance` and the same disposable real-auth runner. See the [journey/setup record](../../../docs/releases/seller-journey-setup-2026-10-28.md) for draft decisions, planned/held evidence, owner/no-site status, preference persistence and failed-read recovery. Link destinations are checked; manual navigation into billing/site management remains open.
+
 | Walkthrough | Viewport/device | Result | Notes or issue link |
 | --- | --- | --- | --- |
 | Daily workspace | 390px and 1440px | Not run | |
-| Seller journey | 390px and 1440px | Not run | |
-| Setup guide | 390px and 1440px | Not run | |
+| Seller journey | Chromium, 390px and 1440px | Automated local pass; manual review pending | Preparation keep/discard/save, planned appointment, separately recorded attendance/date/evidence, forward-only next action |
+| Setup guide | Chromium, owner/no-site accounts, 390px and 1440px | Automated local pass; manual review pending | Saved status/preference comparison, incomplete states, collapsed diagnostics, link destinations and failed-read recovery |
 | Owner publication and client access | Chromium, separate verified owner/client sessions; 390px and 1440px | Automated local pass; manual review pending | Exact preview, preserved draft, approval reset, publication/access separation, close without saving, revocation and private-field exclusion |
 | Jamie microphone capture | Physical device and browser | Not run | |
 

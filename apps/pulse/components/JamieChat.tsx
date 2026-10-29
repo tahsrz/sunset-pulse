@@ -130,13 +130,6 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
     );
     setMemoryContext(memoryBridge.getGreetingContext());
 
-    // Hydrate history from Supabase for cross-device persistence
-    const hydrateHistory = async () => {
-      const history = await memoryBridge.loadInteractions();
-      setPersistentMessages(history);
-    };
-    hydrateHistory();
-
     if (isWorkspace) {
       setIsMinimized(false);
       return;
@@ -153,6 +146,16 @@ export default function JamieChat({ propertyData = null, mode = 'dock', apiRoute
       setIsMinimized(savedMinimized === 'true');
     }
   }, [isWorkspace]);
+
+  // The closed dock should not fetch optional cloud history on ordinary pages.
+  useEffect(() => {
+    if (!mounted || (!isWorkspace && isMinimized)) return;
+    let active = true;
+    void memoryBridge.loadInteractions().then((history) => {
+      if (active) setPersistentMessages(history);
+    });
+    return () => { active = false; };
+  }, [mounted, isWorkspace, isMinimized]);
 
   const toggleMinimized = (val: boolean) => {
     if (isWorkspace) return;

@@ -78,6 +78,8 @@ export async function sellerSharingBrowserAcceptance({primary,client,request,ori
     assert(!serialized.includes(client.email),'publication does not disclose contact details');
     assert.deepEqual((await request(primary.page,'/api/seller-portal')).data.result,[],'a different verified account cannot view this publication');
     for(const width of [390,1440]) {await client.page.setViewportSize({width,height:900});assert(await client.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await client.page.screenshot({path:artifacts+`sharing-client-${width}.png`,fullPage:true});}
+    assert.deepEqual(client.legacyHistoryReads,[],'the closed dock does not read unrelated legacy chat history');
+    assert.equal(await client.page.locator('nextjs-portal').getByRole('button',{name:'Open issues overlay',exact:true}).count(),0,'the client progress page has no Next development issue badge');
     await access(false);
     await client.page.getByRole('button',{name:'Refresh progress',exact:true}).click();
     await client.page.getByText(/No progress is shared with this verified account yet/).waitFor();
