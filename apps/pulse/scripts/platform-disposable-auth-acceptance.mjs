@@ -15,7 +15,7 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service');
+assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','seller-consultations'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, seller-consultations');
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
@@ -119,7 +119,8 @@ try {
   const ports = await choosePortRange(8);
   await mkdir(supabaseDir, { recursive: true });
   await cp(join(supabaseSource, 'migrations'), join(supabaseDir, 'migrations'), { recursive: true });
-  let config = await readFile(join(supabaseSource, 'config.toml'), 'utf8');
+  // Config checkouts can use CRLF on Windows; section rewriting uses LF.
+  let config = (await readFile(join(supabaseSource, 'config.toml'), 'utf8')).replace(/\r\n/g, '\n');
   config = config.replace(/^project_id\s*=.*$/m, `project_id = "${projectId}"`);
   config = setSectionValue(config, 'api', 'port', String(ports[0]));
   config = setSectionValue(config, 'db', 'port', String(ports[1]));
@@ -160,16 +161,18 @@ try {
       '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`,
       '--origin', `http://127.0.0.1:${ports[7]}`,
       ...(suite === 'seller-video-briefs' ? ['--seller-video-only']
+        : suite === 'seller-consultations' ? ['--seller-business-only','--seller-consultations-only']
         : suite === 'seller-service' ? ['--seller-business-only','--seller-service-only'] : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
       ...(liveJamie ? ['--live-jamie'] : []),
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });
-    if (process.argv.includes('--homepage')) await withDockerService('mongo-test', async (container) => {
+    if (process.argv.includes('--homepage') || suite === 'seller-consultations') await withDockerService('mongo-test', async (container) => {
       const port = await command('docker', ['port', container, '27017/tcp']);
       assert.match(port, /^127\.0\.0\.1:\d+$/);
-      await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: `mongodb://${port}/pulse_homepage_acceptance` });
+      const database=suite==='seller-consultations'?'pulse_consultation_acceptance':'pulse_homepage_acceptance';
+      await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: `mongodb://${port}/${database}` });
     });
     else await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: '', ...(liveJamie ? { GROQ_API_KEY: configuredGroqKey } : {}) });
   }

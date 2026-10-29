@@ -403,6 +403,7 @@ await withDockerService('scheduler-test', async (container) => {
     await sql('ALTER TABLE public.site_config ADD COLUMN subdomain TEXT;');
     await runRealtorDatabaseChecks(sql, { migrationsOnly: true });
     await sql(await readFile(new URL('../supabase/migrations/20261028120000_internal_seller_consultations.sql', import.meta.url), 'utf8'));
+    await sql(await readFile(new URL('../supabase/migrations/20261028123000_internal_seller_calendar_read_grants.sql', import.meta.url), 'utf8'));
     if (!process.argv.includes('--migration-only')) {
       const { internalConsultationAcceptance } = await import('./internal-consultation-acceptance.mjs');
       await internalConsultationAcceptance(sql);

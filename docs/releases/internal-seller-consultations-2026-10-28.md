@@ -2,6 +2,8 @@
 
 Branch: `codex/internal-seller-consultations`. Base: PR #92 (`codex/consultation-request-safety`). This implements the internal calendar selected by the user. No production migration, environment change or calendar activation was performed.
 
+October 28 follow-up: the [real-auth acceptance delivery](consultation-real-auth-acceptance-2026-10-28.md), stacked after PR #94, closes the local authenticated browser/API/data gap and fixes three issues found on a fresh database/runtime. Release review must include its additive `20261028123000_internal_seller_calendar_read_grants.sql` migration, tenant lookup and same-origin corrections. The original local evidence below remains the record for PR #93.
+
 ## Behavior
 
 - Sign in at `/consultations` using the account that owns the active agent site. The personal planner must already be set up. The Seller workspace navigation includes Consultations.

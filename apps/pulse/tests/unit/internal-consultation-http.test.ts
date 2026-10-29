@@ -14,6 +14,18 @@ function request(value:unknown,origin='https://sunsetpulse.app') {return new Req
 const token=()=>createSellerBookingCapability(identity,secret).token;
 beforeEach(()=>{vi.clearAllMocks();vi.stubEnv('SELLER_BOOKING_CAPABILITY_SECRET',secret);mocks.limit.mockResolvedValue(null);mocks.resolve.mockResolvedValue({listSlots:mocks.list,reserve:mocks.reserve});mocks.list.mockResolvedValue({status:'available',slots:[]});});
 describe('internal consultation public boundary',()=>{
+  it('accepts the actual loopback Host when Next normalizes its request URL',async()=>{
+    const req=new Request('http://localhost:3000/api/seller-consultations/availability',{method:'POST',headers:{host:'127.0.0.1:3000',origin:'http://127.0.0.1:3000','Content-Type':'application/json'},body:JSON.stringify({capability:token(),window})});
+    expect((await sellerConsultationHttp(req,'availability')).status).toBe(200);
+  });
+  it('rejects malformed hosts, forged forwarded origins and cross-site requests',async()=>{
+    const cases:Array<Record<string,string>>=[{host:'sunsetpulse.app@evil.test'}, {host:'sunsetpulse.app/extra'}, {host:'sunsetpulse.app','x-forwarded-host':'evil.test',origin:'https://evil.test'}, {host:'sunsetpulse.app','sec-fetch-site':'cross-site'}];
+    for(const extra of cases) {
+      const req=new Request('https://sunsetpulse.app/api/seller-consultations/availability',{method:'POST',headers:{origin:'https://sunsetpulse.app','Content-Type':'application/json',...extra},body:JSON.stringify({capability:token(),window})});
+      expect((await sellerConsultationHttp(req,'availability')).status).toBe(403);
+    }
+    expect(mocks.resolve).not.toHaveBeenCalled();
+  });
   it('derives identity only from a signed capability and requires distributed limiting',async()=>{
     const response=await sellerConsultationHttp(request({capability:token(),window}),'availability');
     expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');
