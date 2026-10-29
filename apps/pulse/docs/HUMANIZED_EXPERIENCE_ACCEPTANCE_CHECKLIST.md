@@ -85,12 +85,14 @@ Pass when recording is opt-in, visibly stoppable, editable before use, and has n
 
 ## Acceptance record
 
+October 28, 2026: the automated sharing walkthrough uses base commit `a38b904e` with the acceptance additions on `codex/seller-sharing-pilot`, a generated disposable Supabase project, headless Chromium and two real local password/cookie sessions. Mock auth and external delivery are disabled. The [pilot record](../../../docs/releases/seller-sharing-pilot-2026-10-28.md) explains how to reproduce it and what remains unverified. This result does not check off the manual or physical-device walkthroughs above.
+
 | Walkthrough | Viewport/device | Result | Notes or issue link |
 | --- | --- | --- | --- |
 | Daily workspace | 390px and 1440px | Not run | |
 | Seller journey | 390px and 1440px | Not run | |
 | Setup guide | 390px and 1440px | Not run | |
-| Owner publication and client access | Owner and client test profiles | Not run | |
+| Owner publication and client access | Chromium, separate verified owner/client sessions; 390px and 1440px | Automated local pass; manual review pending | Exact preview, preserved draft, approval reset, publication/access separation, close without saving, revocation and private-field exclusion |
 | Jamie microphone capture | Physical device and browser | Not run | |
 
 Clean up the disposable test case and any local screenshots when the walkthrough is complete. Keep only the acceptance result and actionable defects; do not retain transcripts or private client data.
