@@ -66,7 +66,8 @@ describe('ExplorerMap real component with mocked Mapbox adapter', () => {
     expect(drawListeners).toHaveLength(3);
     view.unmount();
     for (const [name, handler] of drawListeners) expect(mocks.map.off).toHaveBeenCalledWith(name, handler);
-    expect(mocks.map.removeControl).toHaveBeenCalledTimes(2);
+    expect(mocks.directions).not.toHaveBeenCalled();
+    expect(mocks.map.removeControl).toHaveBeenCalledTimes(1);
   });
   it('does not add controls after unmount while their imports are pending', async () => {
     const view = render(<ExplorerMap results={[]} onSelectionChange={vi.fn()} />);
@@ -89,16 +90,27 @@ describe('ExplorerMap real component with mocked Mapbox adapter', () => {
     expect(mocks.draw.mock.results[0].value.deleteAll).toHaveBeenCalledTimes(1);
   });
   it('recovers asynchronous control failures and Mapbox errors', async () => {
-    mocks.directions.mockImplementationOnce(function () { throw new Error('Directions setup failed'); });
+    mocks.draw.mockImplementationOnce(function () { throw new Error('Draw setup failed'); });
     const unavailable = vi.fn();
     render(<ExplorerMap results={[]} onSelectionChange={vi.fn()} onUnavailable={unavailable} />);
     fireEvent.click(screen.getByRole('button', { name: 'Load Map Controls' }));
     await screen.findByRole('button', { name: 'Retry Map' });
     expect(unavailable).toHaveBeenCalledTimes(1);
-    expect(mocks.map.removeControl).toHaveBeenCalledTimes(1);
+    expect(mocks.map.removeControl).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Retry Map' }));
     fireEvent.click(screen.getByRole('button', { name: 'Fail Map Renderer' }));
     expect(screen.getByRole('button', { name: 'Retry Map' })).toBeInTheDocument();
     expect(unavailable).toHaveBeenCalledTimes(2);
+  });
+  it('isolates optional routing failure and offers a coordinate-scoped external link', async () => {
+    mocks.directions.mockImplementationOnce(function () { throw new EvalError('Routing template blocked by CSP'); });
+    const view = render(<ExplorerMap results={[]} activeRouteProperty={explorerListing()} onSelectionChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Load Map Controls' }));
+    const link = await screen.findByRole('link', { name: 'Open driving directions' });
+    expect(link).toHaveAttribute('href', 'https://www.google.com/maps/dir/?api=1&destination=32.736%2C-97.116');
+    expect(screen.getByLabelText('Map renderer')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry Map' })).not.toBeInTheDocument();
+    view.rerender(<ExplorerMap results={[]} activeRouteProperty={null} onSelectionChange={vi.fn()} />);
+    expect(screen.queryByRole('link', { name: 'Open driving directions' })).not.toBeInTheDocument();
   });
 });

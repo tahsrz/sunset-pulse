@@ -37,5 +37,8 @@ declare module '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions' {
 
   export default class MapboxDirections {
     constructor(options?: MapboxDirectionsOptions);
+    on?(event: string, handler: (error: unknown) => void): void;
+    setOrigin(coordinates: number[]): void;
+    setDestination(coordinates: number[]): void;
   }
 }

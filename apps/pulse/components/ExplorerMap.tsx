@@ -27,6 +27,7 @@ import type { MapValuationResult } from '@/models/types';
 import { buildPublicListingGeoJson, validCoordinates } from '@/lib/explorer/listingGeometry';
 import { MapUnavailable } from './explorer/ExplorerMapBoundary';
 import type { ExplorerSelection } from '@/lib/explorer/publicSearch';
+import { mapFailureDiagnostic } from '@/lib/explorer/mapDiagnostics';
 
 interface ExplorerMapProps {
   onSelectionChange: (selection: any) => void;
@@ -65,10 +66,15 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
   const geojsonResults = useMemo(() => buildPublicListingGeoJson(results), [results]);
   const mapResults = useMemo(() => results.slice(0, 500).filter(property => property && validCoordinates(property.location_geo?.coordinates)), [results]);
   const [mapFailed, setMapFailed] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const [directionsFailed, setDirectionsFailed] = useState(false);
   const mapCleanup = useRef<(() => void) | null>(null);
   const cleanControls = useCallback(() => { const clean = mapCleanup.current; mapCleanup.current = null; clean?.(); }, []);
   useEffect(() => () => cleanControls(), [cleanControls, mapFailed]);
-  const reportUnavailable = useCallback(() => { setMapFailed(true); onUnavailable?.(); }, [onUnavailable]);
+  const reportUnavailable = useCallback((reason?: unknown) => {
+    console.warn('[EXPLORER_MAP_UNAVAILABLE]', mapFailureDiagnostic(reason).message);
+    setMapReady(false); setMapFailed(true); onUnavailable?.();
+  }, [onUnavailable]);
 
   // Sync hoveredId to Mapbox feature-state for instant performance
   const prevHoveredId = useRef<string | null>(null);
@@ -173,7 +179,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         if (currentTerrain?.source === 'mapbox-dem' && currentTerrain?.exaggeration === 1.5) return;
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
         settleLayout();
-      } catch { reportUnavailable(); }
+      } catch (error) { reportUnavailable(error); }
     };
 
     applyTerrain();
@@ -217,7 +223,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
           if (onPropertySelect) onPropertySelect(target);
         }
       }
-    } catch { reportUnavailable(); }
+    } catch (error) { reportUnavailable(error); }
   }, [results, onPropertySelect, reportUnavailable]);
 
   // Handle draw control and directions initialization
@@ -231,10 +237,7 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
       });
     
       // Draw Control
-      const [{ default: MapboxDraw }, { default: MapboxDirections }] = await Promise.all([
-        import('@mapbox/mapbox-gl-draw'),
-        import('@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions'),
-      ]);
+      const { default: MapboxDraw } = await import('@mapbox/mapbox-gl-draw');
       if (mapRef.current?.getMap() !== map) return;
       cleanControls();
       const cleanup: Array<() => void> = [];
@@ -255,21 +258,6 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
       map.addControl(draw, 'top-left');
       drawRef.current = draw;
       cleanup.push(() => { if (map.hasControl(draw)) map.removeControl(draw); });
-
-      // Directions Control
-      const directions = new MapboxDirections({
-        accessToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
-        unit: 'imperial',
-        profile: 'mapbox/driving',
-        interactive: false,
-        controls: {
-          inputs: false,
-          instructions: true,
-          profileSwitcher: false
-        }
-      });
-      directionsRef.current = directions;
-      cleanup.push(() => { if (map.hasControl(directions)) map.removeControl(directions); });
 
       const updateSelection = () => {
         const features = draw.getAll().features;
@@ -293,8 +281,9 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
         map.off('draw.update', updateSelection);
         map.off('draw.delete', clearSelection);
       });
-    } catch {
-      if (mapRef.current?.getMap() === map) reportUnavailable();
+      setMapReady(true);
+    } catch (error) {
+      if (mapRef.current?.getMap() === map) reportUnavailable(error);
     }
   }, [onViewportChange, cleanControls, reportUnavailable]);
 
@@ -307,43 +296,47 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
     });
   }, [onViewportChange]);
 
-  const toggleDirections = useCallback((targetProperty: any) => {
-    if (!mapRef.current) return;
-    const map = mapRef.current.getMap();
-    try {
-      if (showDirections) {
-        if (directionsRef.current) map.removeControl(directionsRef.current);
-        setShowDirections(false);
-      } else {
-        const directions = directionsRef.current;
-        if (directions && validCoordinates(targetProperty?.location_geo?.coordinates)) {
-          map.addControl(directions, 'top-left');
-        
-          // Attempt to get user location
-          navigator.geolocation.getCurrentPosition((pos) => {
-            if (directionsRef.current !== directions || mapRef.current?.getMap() !== map) return;
-            try {
-              directions.setOrigin([pos.coords.longitude, pos.coords.latitude]);
-              directions.setDestination([
-                targetProperty.location_geo.coordinates[0],
-                targetProperty.location_geo.coordinates[1]
-              ]);
-            } catch { reportUnavailable(); }
-          });
-          setShowDirections(true);
-        }
-      }
-    } catch { reportUnavailable(); }
-  }, [showDirections, reportUnavailable]);
-
-  // Sync routing from external trigger
+  const routePoint = validCoordinates(activeRouteProperty?.location_geo?.coordinates) ? activeRouteProperty.location_geo.coordinates : null;
+  const routeLongitude = routePoint?.[0];
+  const routeLatitude = routePoint?.[1];
+  // The legacy routing bundle compiles templates with eval. It must not gate the map.
   useEffect(() => {
-    if (activeRouteProperty && !showDirections) {
-      toggleDirections(activeRouteProperty);
-    } else if (!activeRouteProperty && showDirections) {
-      toggleDirections(null);
-    }
-  }, [activeRouteProperty, showDirections, toggleDirections]);
+    setShowDirections(false); setDirectionsFailed(false);
+    if (!mapReady || routeLongitude === undefined || routeLatitude === undefined || !mapRef.current) return;
+    const map = mapRef.current.getMap();
+    let active = true;
+    let directions: any = null;
+    const removeDirections = () => {
+      try { if (directions && map.hasControl(directions)) map.removeControl(directions); }
+      catch { /* The renderer may already have removed the map. */ }
+    };
+    const failed = (reason?: unknown) => {
+      if (!active) return;
+      console.warn('[EXPLORER_DIRECTIONS_UNAVAILABLE]', mapFailureDiagnostic(reason).message);
+      removeDirections();
+      setShowDirections(false); setDirectionsFailed(true);
+    };
+    void import('@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions').then(({ default: MapboxDirections }) => {
+      if (!active || mapRef.current?.getMap() !== map) return;
+      directions = new MapboxDirections({ accessToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN, unit: 'imperial', profile: 'mapbox/driving', interactive: false, controls: { inputs: false, instructions: true, profileSwitcher: false } });
+      directionsRef.current = directions;
+      directions.on?.('error', failed);
+      map.addControl(directions, 'top-left');
+      navigator.geolocation.getCurrentPosition(pos => {
+        if (!active || mapRef.current?.getMap() !== map) return;
+        try {
+          directions.setOrigin([pos.coords.longitude, pos.coords.latitude]);
+          directions.setDestination([routeLongitude, routeLatitude]);
+          setShowDirections(true);
+        } catch (error) { failed(error); }
+      }, failed);
+    }).catch(failed);
+    return () => {
+      active = false;
+      removeDirections();
+      if (directionsRef.current === directions) directionsRef.current = null;
+    };
+  }, [mapReady, routeLongitude, routeLatitude]);
 
   const isTesting = process.env.NEXT_PUBLIC_E2E_MODE === 'true' && typeof navigator !== 'undefined' && navigator.webdriver;
 
@@ -399,6 +392,10 @@ const ExplorerMap: React.FC<ExplorerMapProps> = ({
 
   return (
     <div className="relative h-full w-full">
+      {directionsFailed && routePoint ? <div role="status" className="absolute bottom-4 left-4 z-20 max-w-xs rounded-lg bg-slate-900 p-3 text-sm text-white">
+        <p>In-map directions are unavailable.</p>
+        <a className="underline" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${routeLatitude},${routeLongitude}`)}`} target="_blank" rel="noopener noreferrer">Open driving directions</a>
+      </div> : null}
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
