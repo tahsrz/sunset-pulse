@@ -201,6 +201,8 @@ try{
     const context=await browser.newContext();
     const page=await context.newPage();
     const pageErrors=[];page.on('pageerror',(e)=>pageErrors.push(e.message));
+    const legacyHistoryReads=[];
+    if(sellerServiceOnly) page.on('request',request=>{if(new URL(request.url()).pathname==='/rest/v1/jamie_interactions') legacyHistoryReads.push(request.method());});
     const loginTarget=sellerVideoOnly||sellerBusinessOnly||realtorOnly?'/api/realtor/preferences':'/api/workspaces';
     await page.goto(`${origin}/login?redirect=${encodeURIComponent(loginTarget)}`,{timeout:120000});
     await page.getByRole('heading',{name:'Sign In',exact:true}).waitFor();
@@ -216,7 +218,7 @@ try{
     assert(!(await context.cookies()).some((c)=>c.name==='pulse_mock_session'));
     assert.equal(pageErrors.length,0,`Browser errors: ${pageErrors.join('; ')}`);
     console.log('PASS: rendered login form and real Supabase password/cookie session (mock auth disabled)');
-    return {page,context,userId:data.user.id,email,password,pageErrors};
+    return {page,context,userId:data.user.id,email,password,pageErrors,legacyHistoryReads};
   }
   const primary=await login();
   async function request(page,path,method='GET',body){

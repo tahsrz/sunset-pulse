@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID,createHmac} from 'node:crypto';
 import {sellerSharingBrowserAcceptance} from './seller-sharing-browser-acceptance.mjs';
+import {sellerJourneySetupBrowserAcceptance} from './seller-journey-setup-browser-acceptance.mjs';
 /** Only called by the disposable real-auth harness; all data and receipts are synthetic. */
 export async function sellerServiceAcceptance({primary,login,request,sql,origin,artifacts}){
   const client=await login();
@@ -100,6 +101,7 @@ export async function sellerServiceAcceptance({primary,login,request,sql,origin,
   await primary.page.goto(`${origin}/business`);await primary.page.getByRole('heading',{name:'Request cohort details',exact:true}).waitFor();
   await primary.page.goto(`${origin}/today`);await primary.page.getByRole('heading',{name:'Today’s Focus',exact:true}).waitFor();
   await primary.page.goto(`${origin}/seller-setup`);await primary.page.getByText('Operator details',{exact:true}).waitFor();await primary.page.screenshot({path:artifacts+'seller-setup.png',fullPage:true});
+  await sellerJourneySetupBrowserAcceptance({primary,client,request,sql,origin,agent,today,artifacts});
   assert.deepEqual(primary.pageErrors,[]);assert.deepEqual(client.pageErrors,[]);
   await read();const signedRecord=state.milestoneRecords.find((record)=>record.milestone==='listing_agreement_verified');assert(signedRecord);
   await act({action:'retract_milestone',eventId:signedRecord.eventId,reason:'Correct a synthetic agreement verification.'});
