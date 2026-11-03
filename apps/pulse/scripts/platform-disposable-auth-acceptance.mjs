@@ -15,9 +15,10 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','seller-consultations'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, seller-consultations');
+assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','seller-consultations','marketing'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, seller-consultations, marketing');
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
+assert(suite !== 'marketing' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Marketing acceptance requires its dedicated browser walkthrough.');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
   '--seller-schedule-recovery-only requires seller-business without live Jamie or homepage acceptance.');
 assert(!liveJamie || suite === 'seller-business', '--live-jamie requires the seller-business suite.');
@@ -160,7 +161,7 @@ try {
       join(appRoot, 'scripts', 'platform-local-auth-acceptance.mjs'),
       '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`,
       '--origin', `http://127.0.0.1:${ports[7]}`,
-      ...(suite === 'seller-video-briefs' ? ['--seller-video-only']
+      ...(suite === 'marketing' ? ['--marketing-only'] : suite === 'seller-video-briefs' ? ['--seller-video-only']
         : suite === 'seller-consultations' ? ['--seller-business-only','--seller-consultations-only']
         : suite === 'seller-service' ? ['--seller-business-only','--seller-service-only'] : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
       ...(liveJamie ? ['--live-jamie'] : []),

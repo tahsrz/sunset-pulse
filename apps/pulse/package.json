@@ -65,6 +65,7 @@
     "test:release:build": "node scripts/production-build-acceptance.mjs",
     "test:release:browser": "node scripts/production-build-acceptance.mjs --browser-only",
     "test:atlas:release": "node scripts/production-build-acceptance.mjs --browser-only --atlas-only",
+    "test:marketing:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite marketing",
     "test:seller-consultations:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-consultations"
   },
   "dependencies": {

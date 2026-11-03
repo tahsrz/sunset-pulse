@@ -31,7 +31,7 @@ Drafts now accept validated partial profile fields. Readiness lists only absent 
 - The marketing draft editor regression was rerun separately after adding an explicit async `act` boundary for the new navigation link. All five cases passed without the earlier React act warning.
 - Next route type generation, full application TypeScript and focused ESLint on all changed TypeScript/TSX source and tests passed.
 
-No production build or browser/deployed walkthrough was performed. No Supabase schema, storage files, database records, cron jobs, scheduler settings or publishing flags changed. Pending hosted CI was not awaited.
+This original delivery performed no production build or browser/deployed walkthrough. The [November 3 follow-up](./publication-access-and-profile-roles-2026-11-03.md) adds a real local authenticated operator walkthrough and repairs a signup/callback profile-role assignment defect it uncovered. That follow-up includes a reviewed-source migration tested only in disposable local projects; hosted application readiness still requires the migration/deployment and privileged-account review. No hosted schema, storage files, database records, cron jobs, scheduler settings or publishing flags were changed. Pending hosted CI was not awaited.
 
 ## Operator Walkthrough
 
