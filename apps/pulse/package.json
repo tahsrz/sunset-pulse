@@ -36,6 +36,7 @@
     "test:db:concurrency": "node scripts/scheduler-concurrency-acceptance.mjs",
     "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
     "test:platform:auth:disposable": "node scripts/platform-disposable-auth-acceptance.mjs",
+    "test:profile-roles:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security",
     "test:seller-video-briefs:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-video-briefs",
     "test:seller-business:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-business",
     "test:scans:storage": "node scripts/platform-disposable-auth-acceptance.mjs --suite scans",
