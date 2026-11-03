@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
 import {sellerServiceAcceptance} from './seller-service-auth-acceptance.mjs';
 import {sellerConsultationAuthAcceptance} from './seller-consultation-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
+import { marketingPublicationAcceptance } from './marketing-publication-acceptance.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { command, pulseRoot } from './docker-acceptance.mjs';
 
@@ -31,6 +32,11 @@ const realtorOnly=process.argv.includes('--realtor-only');
 const sellerVideoOnly=process.argv.includes('--seller-video-only');
 const sellerServiceOnly=process.argv.includes('--seller-service-only');
 const sellerConsultationsOnly=process.argv.includes('--seller-consultations-only');
+const marketingOnly=process.argv.includes('--marketing-only');
+assert(!marketingOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && !process.argv.some(flag=>['--seller-business-only','--seller-service-only','--seller-consultations-only','--seller-video-only','--realtor-only','--homepage','--live-jamie','--database-only'].includes(flag))), 'Marketing acceptance requires its dedicated generated disposable stack.');
+if(marketingOnly) assert(!(await readdir(pulseRoot)).some(name=>/^\.env(?:\.(?:development|production|test))?(?:\.local)?$/.test(name)), 'Marketing acceptance requires a checkout without runtime env files.');
+// This reserved hostname resolves to loopback but does not qualify for local operator bypass.
+const browserOrigin=marketingOnly?`http://admin.localhost:${originUrl.port}`:origin;
 assert(!sellerConsultationsOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && process.argv.includes('--seller-business-only') && !sellerServiceOnly && !process.argv.includes('--homepage') && !process.argv.includes('--live-jamie') && !process.argv.includes('--database-only')),'Consultation acceptance requires its complete dedicated generated disposable stack.');
 const consultationSigningSecret=sellerConsultationsOnly?randomBytes(32).toString('base64url'):'';
 assert(!sellerServiceOnly || /^pulse_auth_[a-f0-9]{8}$/.test(stack),'Seller service acceptance requires a generated disposable stack.');
@@ -93,6 +99,7 @@ const migrations=[
   '20261008120000_realtor_reminder_nonretryable_conflicts.sql',
   '20261009130000_seller_service_cases.sql','20261009131000_seller_service_email.sql','20261009132000_seller_service_measurement.sql',
   ...(sellerConsultationsOnly?['20261028120000_internal_seller_consultations.sql','20261028123000_internal_seller_calendar_read_grants.sql']:[]),
+  ...(marketingOnly?['20261103150000_profile_role_assignment_guard.sql']:[]),
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -103,6 +110,12 @@ for(const name of migrations){
   console.log(`Applied local migration: ${name}`);
 }
 await sql("NOTIFY pgrst,'reload schema';");
+if(marketingOnly) {
+  const roleTests=await readFile(new URL('../supabase/tests/database/profile_role_assignment.sql',import.meta.url),'utf8');
+  const output=await sql(`SET search_path=public,extensions;\n${roleTests}`);
+  assert(!/^not ok\b/m.test(output),`Profile role assignment assertions failed:\n${output}`);
+  assert.match(output,/\b1\.\.18\b/);console.log('PASS: 18 profile role assignment database assertions.');
+}
 if (sellerBusinessOnly && !sellerConsultationsOnly) {
   for (const name of [
     'seller_lead_actions.sql',
@@ -158,16 +171,17 @@ const plannerServerSignals=[];
 const acceptanceMongo = process.env.PULSE_TEST_MONGO_URI || '';
 if (acceptanceMongo) assert.match(acceptanceMongo, /^mongodb:\/\/127\.0\.0\.1:\d+\/pulse_(?:homepage|consultation)_acceptance$/);
 try{
-  await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='platform_run';");
+  if(!marketingOnly) await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='platform_run';");
   server=spawn(process.execPath,[fileURLToPath(new URL('../../../node_modules/next/dist/bin/next',import.meta.url)),'dev','--hostname','127.0.0.1','--port',String(originUrl.port || 80)],{
     cwd:pulseRoot,windowsHide:true,stdio:['ignore','pipe','pipe'],env:{...process.env,NODE_ENV:'development',
       NEXT_PUBLIC_SUPABASE_URL:api,SUPABASE_URL:api,NEXT_PUBLIC_SUPABASE_ANON_KEY:anon,SUPABASE_ANON_KEY:anon,SUPABASE_SERVICE_ROLE_KEY:service,
       NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',PULSE_ALLOW_PRODUCTION_MOCK_AUTH:'',
       ...(sellerServiceOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1'}:{}),
+      ...(marketingOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',OPERATOR_EMAIL:'',AUTHORIZED_EMAIL:''}:{}),
       ...(sellerConsultationsOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',KELLER_WESTLAKE_AGENT_SITE:'consultation-acceptance',SELLER_BOOKING_CAPABILITY_SECRET:consultationSigningSecret}:{}),
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
       SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
-      OPENAI_API_KEY:'',GROQ_API_KEY:liveJamie?process.env.GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:origin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:origin,
+      OPENAI_API_KEY:'',GROQ_API_KEY:liveJamie?process.env.GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:browserOrigin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:browserOrigin,
       // Homepage and consultation intake read legacy listing/config stores; only the disposable runner
       // may supply its Mongo URI. Never inherit a hosted connection.
       MONGODB_URI:acceptanceMongo || 'mongodb://127.0.0.1:1/pulse_auth_unavailable',
@@ -191,27 +205,47 @@ try{
   assert.equal(realtorUnauthenticated.status,401,'personal realtor APIs reject anonymous requests');
   console.log('PASS: unauthenticated realtor preferences API returns 401 on the local server');
   console.log('PASS: unauthenticated workspace API returns 401 on the local server');
+  if(marketingOnly) {
+    // Test-only service grants exercise the callback writer; never applied to a hosted project.
+    await sql('GRANT SELECT,INSERT,UPDATE ON public.profiles TO service_role;');
+    const publicAuth=createClient(api,anon,{auth:{persistSession:false,autoRefreshToken:false}});
+    const signup=await publicAuth.auth.signUp({email:`metadata-${randomUUID()}@example.test`,password:`Test-${randomUUID()}!`,options:{data:{role:'admin'}}});
+    assert(!signup.error,`Disposable public signup failed: ${signup.error?.code}`);
+    assert.match(signup.data.user?.id,/^[a-f0-9-]{36}$/);userIds.push(signup.data.user.id);
+    assert.equal(await sql(`SELECT role FROM public.profiles WHERE id='${signup.data.user.id}';`),'consumer','Untrusted public signup metadata must not assign a privileged profile role.');
+    console.log('PASS: public signup metadata cannot assign an administrator profile role.');
+  }
   browser=await chromium.launch({headless:true});
   const artifacts=fileURLToPath(new URL('../.pulse-local/platform-auth-acceptance/',import.meta.url));
   await mkdir(artifacts,{recursive:true});
-  async function login(){
+  async function login({role='consumer',untrustedSignup=false}={}){
     const email=`platform-${randomUUID()}@example.test`,password=`Test-${randomUUID()}!`;
-    const {data,error}=await admin.auth.admin.createUser({email,password,email_confirm:true});
+    assert(!untrustedSignup || marketingOnly,'Untrusted signup acceptance requires the dedicated marketing stack.');
+    const {data,error}=untrustedSignup
+      ? await createClient(api,anon,{auth:{persistSession:false,autoRefreshToken:false}}).auth.signUp({email,password,options:{data:{role:'admin'}}})
+      : await admin.auth.admin.createUser({email,password,email_confirm:true});
     assert(!error,`Local Auth account creation failed: ${error?.code}`);userIds.push(data.user.id);
+    if(marketingOnly) {
+      assert(['consumer','realtor','operator','admin'].includes(role));
+      assert.match(data.user.id,/^[a-f0-9-]{36}$/);
+      if(untrustedSignup) assert.equal(await sql(`SELECT role FROM public.profiles WHERE id='${data.user.id}';`),'consumer');
+      else assert.equal(await sql(`UPDATE public.profiles SET role='${role}' WHERE id='${data.user.id}' RETURNING role;`),role,'Disposable role fixture could not be established.');
+      await sql(`UPDATE public.profiles SET welcome_email_sent=true WHERE id='${data.user.id}';`);
+    }
     const context=await browser.newContext();
     const page=await context.newPage();
     const pageErrors=[];page.on('pageerror',(e)=>pageErrors.push(e.message));
     const legacyHistoryReads=[];
     if(sellerServiceOnly) page.on('request',request=>{if(new URL(request.url()).pathname==='/rest/v1/jamie_interactions') legacyHistoryReads.push(request.method());});
     const loginTarget=sellerVideoOnly||sellerBusinessOnly||realtorOnly?'/api/realtor/preferences':'/api/workspaces';
-    await page.goto(`${origin}/login?redirect=${encodeURIComponent(loginTarget)}`,{timeout:120000});
+    await page.goto(`${browserOrigin}/login?redirect=${encodeURIComponent(loginTarget)}`,{timeout:120000});
     await page.getByRole('heading',{name:'Sign In',exact:true}).waitFor();
     assert.equal(await page.locator('[data-nextjs-dialog]').count(),0);
     if(userIds.length===1) await page.screenshot({path:artifacts+'login.png'});
     await page.getByPlaceholder('Email Address').fill(email);
     await page.getByPlaceholder('Password',{exact:true}).fill(password);
     await page.getByRole('button',{name:'Sign In',exact:true}).click();
-    await page.waitForURL(`${origin}${loginTarget}`,{timeout:60000});
+    await page.waitForURL(`${browserOrigin}${loginTarget}`,{timeout:60000});
     const authenticatedApiResult = JSON.parse(await page.locator('body').innerText());
     assert.equal(authenticatedApiResult.ok,true,
       `Signed-in API did not accept the browser session: ${authenticatedApiResult.error || 'unknown response'}`);
@@ -220,14 +254,21 @@ try{
     console.log('PASS: rendered login form and real Supabase password/cookie session (mock auth disabled)');
     return {page,context,userId:data.user.id,email,password,pageErrors,legacyHistoryReads};
   }
-  const primary=await login();
+  const primary=await login({role:marketingOnly?'operator':'consumer'});
   async function request(page,path,method='GET',body){
     return page.evaluate(async ({path,method,body})=>{
       const response=await fetch(path,{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined});
       return {status:response.status,data:await response.json()};
     },{path,method,body});
   }
-  if (sellerConsultationsOnly) {
+  if(marketingOnly) {
+    const callbackLink=async email=>{
+      const link=await admin.auth.admin.generateLink({type:'magiclink',email});
+      assert(!link.error && link.data.properties?.hashed_token,'Local callback token could not be generated.');
+      return link.data.properties.hashed_token;
+    };
+    await marketingPublicationAcceptance({primary,login,request,sql,origin:browserOrigin,artifacts,browser,callbackLink});
+  } else if (sellerConsultationsOnly) {
     await sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret:consultationSigningSecret});
   } else if (sellerServiceOnly) {
     await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
@@ -1051,7 +1092,7 @@ try{
     console.log('PASS: real Supabase browser sessions save a private draft, request exact-revision review, and let a separate reviewer inspect and approve it from the shared inbox.');
     console.log('PASS: workspace members without a review role are denied; reviewer decisions do not publish, upload, send, or create provider effects.');
   }
-  if (!sellerVideoOnly && !sellerBusinessOnly) {
+  if (!sellerVideoOnly && !sellerBusinessOnly && !marketingOnly) {
   const acceptanceToday = new Date().toISOString().slice(0,10);
   const offsetDate = (days) => { const value = new Date(); value.setUTCDate(value.getUTCDate() + days); return value.toISOString().slice(0,10); };
   const setupInput = {
@@ -1552,8 +1593,8 @@ try{
       DELETE FROM platform_workspaces WHERE id='${workspace}'; COMMIT;`);
   }
   if(!sellerVideoOnly && !sellerServiceOnly && !sellerConsultationsOnly) for(const id of userIds){const {error}=await admin.auth.admin.deleteUser(id);if(error)throw new Error('Unable to remove temporary local Auth account.');}
-  await sql(`UPDATE workflow_event_contracts SET enabled=${enabled==='t'?'true':'false'} WHERE workflow_key='platform_run';`);
-  console.log(sellerVideoOnly || sellerServiceOnly || sellerConsultationsOnly
+  if(!marketingOnly) await sql(`UPDATE workflow_event_contracts SET enabled=${enabled==='t'?'true':'false'} WHERE workflow_key='platform_run';`);
+  console.log(marketingOnly ? 'Removed temporary local Auth accounts; scheduling admission was not changed.' : sellerVideoOnly || sellerServiceOnly || sellerConsultationsOnly
     ? 'Retained test rows only inside the generated disposable project; its teardown removes them and all local Auth accounts.'
     : 'Removed temporary local accounts/workspace; restored admission flag. Applied local migrations are retained.');
 }

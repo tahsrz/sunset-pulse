@@ -22,6 +22,8 @@ The Atlas follow-up, `codex/atlas-lifecycle-acceptance`, is stacked on #98 at `2
 
 This plan follows the homepage and seller-experience work in PR #87. It replaces the old execution queue for deciding what to build next; the October 19 specification remains useful background. Work is sequential, by one agent. Pending CI is not a reason to wait before doing independent source work. Do not use subagents.
 
+The November 3 publication operator follow-up reproduced a security defect in a disposable project: public signup metadata could assign an administrator profile role. The follow-up repairs signup/direct-write role boundaries and callback profile synchronization, while extending the existing real-auth runner for publication acceptance. See [role repair and operator verification](./releases/publication-access-and-profile-roles-2026-11-03.md). Treat the reviewed migration, callback deployment and hosted privileged-account review as release blockers. No hosted schema or account change has been made by this delivery.
+
 ## Starting Point and Delivery Order
 
 PR #87's last inspected head is `740757ed8149c55ead0c671389d5ffcb31596114`. The local branch is older and contains uncommitted work. The first implementation task is to reconcile that difference, preserving the local edits. Do not publish entire local files over newer PR files without comparing their content first.
@@ -363,10 +365,11 @@ New test filenames above are planned. Existing suites must be inspected for thei
 
 ## Immediate Next Session
 
+0. Prioritize the profile-role repair documented above. Review `20261103150000_profile_role_assignment_guard.sql`, apply it only to the explicitly selected non-production target first, deploy the matching callback repair and repeat the access matrix. Review existing hosted privileged assignments against approved operators before production rollout. Source/local acceptance does not repair the hosted application.
 1. Preserve the review dependency order: #87, then #88, then #89, then #90, then the publication-readiness branch. Refresh branch/base state before new work; merging and deployment require their own release decision.
 2. Review group G's internal scheduling migrations, including `20261028123000_internal_seller_calendar_read_grants.sql`. Complete environment mapping and deployed non-production acceptance before any production activation. Local real-auth verification and SQL concurrency evidence are recorded separately from deployment readiness.
 3. Locate and connect the existing biography and neighborhood assets for sections 4B/4C; reuse the verified seller name and main-site email already prefilled. Use the readiness page's review directions and preserve optional media gates.
 4. Review the recorded Atlas lifecycle and chunk-recovery results, then measure performance in a controlled production profile with hardware rendering and working backends. The local software-rendered paint/readback timings need separate investigation; stable cleanup is not performance acceptance. Capture the original hosted exception if it recurs. The local production CSP failure has a diagnosed fix and actual Mapbox coverage; do not attribute the earlier hosted crash to it without its trace.
-5. Complete deployed acceptance and human/device review before declaring release readiness. Local production build, four production browser checks and the six fixture Explorer checks are now recorded. Use the current-build baseline for a future same-profile performance comparison. Complete the publication operator walkthrough as well.
+5. Complete deployed acceptance and human/device review before declaring release readiness. Local production build, four production browser checks and the six fixture Explorer checks are recorded. Use the current-build baseline for a future same-profile performance comparison. The local real-auth publication operator walkthrough now passes; repeat it in the reviewed deployed environment after the role repair.
 
 The first four deliveries require no new Supabase schema, cloud file uploads, or cron jobs. Booking may require a narrowly justified migration only after the actual reservation authority and invariant are established.
