@@ -51,8 +51,8 @@ The final disposable real-auth browser walkthrough passed in 118 seconds, includ
 
 ## Before Hosted Release
 
-Review the new migration against the explicitly selected non-production project and apply it there through the existing migration process before deployed acceptance. Deploy the callback repair together with that reviewed schema change; changing only the callback does not repair signup-time role assignment. Verify the same access matrix with separate real test accounts before considering production rollout.
+The owner has since confirmed that the selected project serves both production and previews. The [shared database preflight](./profile-role-release-preflight-2026-11-03.md) supersedes its earlier non-production classification and records the exact pending migration packet. Review application of the migration as a production change. Deploy the callback repair together with the reviewed schema change; changing only the callback does not repair signup-time role assignment. Hosted mutation acceptance requires an isolated target or an explicitly reviewed production test procedure.
 
-Review existing operator/admin assignments against the approved operator list and available audit evidence. This migration deliberately does not guess which existing accounts are legitimate or automatically demote them. No hosted privileged-account audit or remediation has been performed here.
+The subsequent aggregate-only hosted profile audit found seven consumer profiles and no operator/admin assignments. No role remediation was performed. That snapshot does not cover deployed email-based operator overrides or historical compromise; Vercel environment-read access is still unavailable. This migration deliberately does not guess which existing accounts are legitimate or automatically demote them.
 
 This is a release blocker until the role repair and account review are handled for the intended hosted environment. Approved content assets, controlled performance benchmarking, deployed acceptance and human/device review remain separate open work. Pending hosted CI is not polled.
