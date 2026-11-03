@@ -21,7 +21,9 @@ export async function runReleaseBrowserAcceptance(input) {
 async function runBrowserPhases({root,env,artifacts}) {
   const failures=[];
   const outcomes=[];
-  const modes=process.argv.includes('--production-only')?[false]:process.argv.includes('--fixture-only')?[true]:[false,true];
+  const atlasOnly=process.argv.includes('--atlas-only');
+  assert(!atlasOnly || !process.argv.includes('--fixture-only'),'Atlas lifecycle acceptance requires production rendering.');
+  const modes=atlasOnly || process.argv.includes('--production-only')?[false]:process.argv.includes('--fixture-only')?[true]:[false,true];
   for(const fixture of modes) {
     const started=Date.now();let passed=false;
     const port=fixture?3188:3187;
@@ -39,9 +41,9 @@ async function runBrowserPhases({root,env,artifacts}) {
         await new Promise(resolve=>setTimeout(resolve,1000));
       }
       assert(ready,'Local acceptance server did not become ready.');
-      console.log(`Running ${fixture?'explicit fixture-map':'production live-map'} browser acceptance.`);
+      console.log(`Running ${atlasOnly?'production Atlas':fixture?'explicit fixture-map':'production live-map'} browser acceptance.`);
       const grep=process.argv.indexOf('--grep');
-      const test=spawn(process.execPath,[playwright,'test','--config','playwright.release.config.ts',`tests/${fixture?'explorer-intelligence':'explorer-production'}.spec.ts`,...(grep>=0?['--grep',process.argv[grep+1]]:[])],{cwd:root,env:childEnv,windowsHide:true,stdio:['ignore','pipe','pipe']});
+      const test=spawn(process.execPath,[playwright,'test','--config','playwright.release.config.ts',`tests/${atlasOnly?'atlas-lifecycle':fixture?'explorer-intelligence':'explorer-production'}.spec.ts`,...(grep>=0?['--grep',process.argv[grep+1]]:[])],{cwd:root,env:childEnv,windowsHide:true,stdio:['ignore','pipe','pipe']});
       for(const stream of [test.stdout,test.stderr]) stream.on('data',chunk=>process.stdout.write(redact(chunk.toString())));
       const code=await new Promise((resolve,reject)=>{test.once('error',reject);test.once('exit',resolve);});
       assert.equal(code,0,`${fixture?'Fixture':'Production'} browser acceptance failed.`);
