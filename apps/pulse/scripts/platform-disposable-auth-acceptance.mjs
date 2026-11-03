@@ -18,6 +18,8 @@ const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
 assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','seller-consultations','marketing'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, seller-consultations, marketing');
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
+const rolePreflightOnly=process.argv.includes('--role-preflight-only');
+assert(!rolePreflightOnly || suite==='marketing','Role preflight acceptance requires the generated marketing stack.');
 assert(suite !== 'marketing' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Marketing acceptance requires its dedicated browser walkthrough.');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
   '--seller-schedule-recovery-only requires seller-business without live Jamie or homepage acceptance.');
@@ -166,6 +168,7 @@ try {
         : suite === 'seller-service' ? ['--seller-business-only','--seller-service-only'] : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
       ...(liveJamie ? ['--live-jamie'] : []),
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
+      ...(rolePreflightOnly ? ['--role-preflight-only'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });

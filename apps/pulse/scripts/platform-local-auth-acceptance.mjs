@@ -9,6 +9,7 @@ import {sellerServiceAcceptance} from './seller-service-auth-acceptance.mjs';
 import {sellerConsultationAuthAcceptance} from './seller-consultation-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
 import { marketingPublicationAcceptance } from './marketing-publication-acceptance.mjs';
+import { profileRolePreflightAcceptance } from './profile-role-preflight-acceptance.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { command, pulseRoot } from './docker-acceptance.mjs';
 
@@ -33,6 +34,7 @@ const sellerVideoOnly=process.argv.includes('--seller-video-only');
 const sellerServiceOnly=process.argv.includes('--seller-service-only');
 const sellerConsultationsOnly=process.argv.includes('--seller-consultations-only');
 const marketingOnly=process.argv.includes('--marketing-only');
+assert(!process.argv.includes('--role-preflight-only') || marketingOnly,'Role preflight acceptance requires the dedicated marketing stack.');
 assert(!marketingOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && !process.argv.some(flag=>['--seller-business-only','--seller-service-only','--seller-consultations-only','--seller-video-only','--realtor-only','--homepage','--live-jamie','--database-only'].includes(flag))), 'Marketing acceptance requires its dedicated generated disposable stack.');
 if(marketingOnly) assert(!(await readdir(pulseRoot)).some(name=>/^\.env(?:\.(?:development|production|test))?(?:\.local)?$/.test(name)), 'Marketing acceptance requires a checkout without runtime env files.');
 // This reserved hostname resolves to loopback but does not qualify for local operator bypass.
@@ -115,6 +117,9 @@ if(marketingOnly) {
   const output=await sql(`SET search_path=public,extensions;\n${roleTests}`);
   assert(!/^not ok\b/m.test(output),`Profile role assignment assertions failed:\n${output}`);
   assert.match(output,/\b1\.\.18\b/);console.log('PASS: 18 profile role assignment database assertions.');
+  if(process.argv.includes('--role-preflight-only')) {
+    await profileRolePreflightAcceptance({sql,stack});process.exit(0);
+  }
 }
 if (sellerBusinessOnly && !sellerConsultationsOnly) {
   for (const name of [
