@@ -70,3 +70,28 @@ The dry run applied no migration. The prepared metadata and filtered result are 
 4. Rebase the feature stack after this hotfix. Its duplicated role repair can be absorbed by main. If the role migration is applied first, the two older consultation migrations need a separately reviewed full-inventory dry run for their later release; their original versions remain unchanged.
 
 The broader publication, dependency, map, calendar and human/device release work remains tracked separately. No hosted CI job was awaited or bypassed by this source implementation.
+
+## Standalone Read-Only Post-Release Audit
+
+The main-based hotfix now includes the aggregate audit previously available only in PR #101. It uses this checkout's 164-migration inventory, so the two feature-only calendar migrations do not block an independent security release. Exact file changes and verification order are in the implementation plan's next-delivery table.
+
+The audit validates approved/unapproved privileged-profile counts, complete migration history, both repaired routine bodies and their security attributes, and both signup/guard triggers. It rejects disabled or replica-only triggers, wrong functions/events, WHEN conditions, trigger arguments, and role guards limited to specific UPDATE columns. It runs fixed SELECTs in a bounded read-only transaction, returns no account identities or routine bodies, and suppresses raw provider diagnostics. Private approved-address input, query files and reports remain under ignored `.pulse-local/`; temporary SQL is removed.
+
+Commands from repository root:
+
+```powershell
+npm run test:profile-roles:preflight --workspace=apps/pulse
+npm run test:profile-roles:db --workspace=apps/pulse
+node apps/pulse/scripts/profile-role-release-preflight.mjs `
+  --expected-project-ref xlyfhiafactxahhvikyv `
+  --linked-project-dir C:/Users/Taz/SunsetPulse/apps/pulse `
+  --approved-accounts-file apps/pulse/.pulse-local/profile-role-approvals.json
+```
+
+Use the installed CLI with `db query --linked` support and an already matching link. The private file shape is `{"emails":["approved-owner@example.test"]}`; populate it only with the approved addresses, never commit it. The script reads no application env file and never links a project. The direct Node invocation preserves named options on this Windows/npm installation. A failed invocation is not a fresh audit result; do not use a previously saved report as evidence for it. Exit 2 means database checks are BLOCKED, exit 1 means the audit could not complete, and exit 0 means only the database checks pass.
+
+The fresh shared-production read on November 3, 2026 at 4:01 PM America/Chicago reports seven consumer profiles, zero privileged profiles, 163 applied versions and exactly one pending version, `20261103150000`. There are no unknown remote versions. The signup trigger is active with its expected binding; the old signup body and missing role-guard routine/trigger correctly block the report. The migration checksum matches the dry-run packet above. No mutation was requested. This result does not verify deployed email overrides or callback code and does not establish absence of historical compromise.
+
+The database-only command starts no application server, build or browser. Deliberate drift is confined to its generated local project. Auth-trigger fixtures use the local Auth table owner through loopback, with that generated container's password held only in memory. They do not change table ownership or production privileges. The existing runner owns final resource removal. No cron job, provider message or new scheduling infrastructure is involved.
+
+Verification: 32 offline contract tests pass. The generated main-based database passes all 18 role assertions and seven audit scenarios, then verifies the restored baseline. Node syntax and whitespace checks pass. Runtime callback/UI files, dependencies and the migration packet are unchanged in this follow-up, so the optimized build and browser evidence above were not repeated. The new audit pattern is recorded at `.mex/patterns/profile-role-release-audit.md`.

@@ -15,6 +15,8 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
+const rolePreflightOnly = process.argv.includes('--role-preflight-only');
+assert(!rolePreflightOnly || (suite==='profile-role-security' && !process.argv.includes('--production')), 'Role preflight requires the dedicated security suite without a production build.');
 assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','profile-role-security'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, profile-role-security');
 assert(suite!=='profile-role-security' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Profile role security requires its dedicated generated acceptance project.');
 assert(!process.argv.includes('--production') || suite==='profile-role-security','Production security acceptance requires its dedicated suite.');
@@ -146,7 +148,8 @@ try {
   // A fresh `supabase start` applies this project's copied migration chain;
   // the auth harness fails closed if any required version is absent.
   if (suite === 'profile-role-security') {
-    await run(process.execPath,[join(appRoot,'scripts','profile-role-security-acceptance.mjs'),
+    if(rolePreflightOnly) await run(process.execPath,[join(appRoot,'scripts','profile-role-preflight-acceptance.mjs'),'--stack',projectId],{cwd:appRoot});
+    else await run(process.execPath,[join(appRoot,'scripts','profile-role-security-acceptance.mjs'),
       '--stack',projectId,'--api-url',`http://127.0.0.1:${ports[0]}`,'--origin',`http://127.0.0.1:${ports[7]}`,
       ...(process.argv.includes('--production')?['--production']:[])],{cwd:appRoot,timeoutMs:900000});
   } else if (suite === 'scans') {

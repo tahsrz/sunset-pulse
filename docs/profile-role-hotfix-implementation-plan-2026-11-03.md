@@ -34,3 +34,18 @@ The role migration and matching callback deployment must be released together th
 ## Implemented Results
 
 The plan is implemented. Main-locked Next 15.5.27 and Zod 3.25.76 passed the optimized build and framework type validation, with 212 static pages generated. Sixteen callback/redirect unit cases and eighteen database assertions pass. The production-mode browser walkthrough verifies three successful callback profile writes, role preservation and protected access on 164 migrations, with consultation tables absent. A shared-project CLI dry run identifies only the role-guard migration. See [standalone hotfix release evidence](./releases/standalone-profile-role-hotfix-2026-11-03.md) for the exact scope, commands and rollout limits.
+
+## Next Delivery: Standalone Post-Release Audit
+
+The aggregate audit on the feature branch must also work from this main-based release. It must report the 164-migration inventory here without requiring the pending consultation migrations. Its database result remains separate from callback deployment and Vercel environment verification.
+
+| File | Implementation |
+| --- | --- |
+| `apps/pulse/scripts/profile-role-release-preflight.mjs` | Reuse the aggregate-only CLI from PR #101. Require an exact existing project link and private approved-address input, isolate CLI environment, run a bounded read-only transaction, hash routine bodies and compare this checkout's migration inventory. Verify the signup trigger as well as the profile guard; reject conditional, column-restricted or argument-bearing guards. Return no account identities or function bodies. |
+| `apps/pulse/scripts/profile-role-release-preflight.test.mjs` | Cover input/target isolation, source drift, count consistency, report redaction, unsafe routine attributes and both trigger contracts. |
+| `apps/pulse/scripts/profile-role-preflight-acceptance.mjs` | Reuse the generated database's existing 18 SQL assertions. Exercise matching source, approved/unapproved aggregate counts, disabled signup/guard triggers, conditional guards and restricted UPDATE columns. Restore the baseline and remove fixtures. No hosted fixture mode. |
+| `apps/pulse/scripts/platform-disposable-auth-acceptance.mjs` | Add `--role-preflight-only` only to the existing security suite. Reject incompatible production/browser flags. Reuse project creation and verified teardown; start no browser/build in this mode. |
+| `apps/pulse/package.json` | Expose `profile-roles:preflight`, `test:profile-roles:preflight`, and `test:profile-roles:db`. |
+| `.mex/patterns/profile-role-release-audit.md` | Record exact-link, aggregate-only, generated-fixture and separate-release-evidence rules for future audits. |
+
+Verification order: offline CLI contract tests, generated local database scenarios, syntax/whitespace checks, then a read-only linked-project snapshot if the existing CLI connection is available. A pre-release `BLOCKED` status is expected while the role migration is unapplied. Do not apply it or promote/deploy source as part of this audit delivery. Existing optimized-build/browser evidence remains applicable because application runtime files and dependencies do not change in this delivery.
