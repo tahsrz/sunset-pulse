@@ -34,7 +34,7 @@ The KCD publication flag is enabled only in the local child server. Its check us
 
 Listing API responses are controlled fictional samples. Mapbox styles, tiles, drawing controls and the production CSP are real. The browser uses Chromium software WebGL; this verifies behavior rather than physical-device GPU performance. Mapbox telemetry requests are intercepted. Optional database/provider reads fail locally or return controlled public responses; passing layout checks do not establish their hosted availability.
 
-The suite covers phone/desktop map and list usability, coordinate links, polygon search and clearing, layer controls, map-request failure with list survival, retry, homepage/KCD layout and the supplied KCD property photo. It records the current production navigation/resource baseline without claiming improvement over a prior build. A same-profile comparison, repeated Atlas/worker lifecycle measurements, deployed acceptance, publication content and physical microphone review remain separate work.
+The suite covers phone/desktop map and list usability, coordinate links, polygon search and clearing, layer controls, map-request failure with list survival, retry, homepage/KCD layout and the supplied KCD property photo. It records the current production navigation/resource baseline without claiming improvement over a prior build. Repeated Atlas lifecycle and chunk-recovery checks are recorded in the [Atlas follow-up](./atlas-lifecycle-acceptance-2026-11-03.md). A controlled performance comparison, deployed acceptance, publication content and physical microphone review remain separate work.
 
 ## Results
 
