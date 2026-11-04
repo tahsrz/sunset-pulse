@@ -29,9 +29,12 @@ For the P0 implementation, use `docs/releases/guided-home-journey-prototype-2026
 
 Implementation findings:
 
+- Address entry is a single street-address query. Do not require hidden city/state/ZIP fields to advance; clear stale resolved metadata and confirmation when text changes. Candidate options require real provider results in the integration phase, not guessed cities in the local prototype.
+
 - Editing a parent can introduce a required child. Before returning to review or proceeding to contact, validate applicable prior steps and visit the first missing one. Clear hidden seller, detail and financial answers when parents change.
 - Native radio descriptions use `aria-describedby` separately from the title's `aria-labelledby`. Scope browser form alerts to `#journey-content`; Next also renders a route-announcer alert.
 - Bind and fetch the same loopback family. Windows may resolve `localhost` to IPv6 while a server listens on IPv4. The isolated launcher prints `127.0.0.1` and never loads another checkout's runtime environment.
 - Check actual CSS label motion separately from simulated submission delays. Sample the animation timeline at 280/450/720ms, verify reduced motion and no replay across ordinary rerenders. Keep screenshots and aggregate results gitignored under `.pulse-local/guided-journey`.
+- Full-page Chromium capture can restart completed CSS animations on the same DOM nodes. A diagnostic confirmed street typing does not replay labels, while the capture does. Take additional address screenshots on a separate reduced-motion page so they cannot contaminate the ordinary-rerender assertion; do not weaken the assertion or change application motion to accommodate the capture.
 
 Check proposed existing paths against their recorded Git snapshot, keep missing screens explicit, and confirm the plan changes no runtime behavior. Do not claim provider access, real valuation, cross-device resume or confirmed booking without the relevant implementation/evidence. Application tests are unnecessary for a documentation-only delivery.

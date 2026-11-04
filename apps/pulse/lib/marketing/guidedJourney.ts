@@ -83,7 +83,7 @@ export const answered = <T,>(answer: Answer<T>): T | undefined => answer.state==
 export const isAnswered = <T,>(answer: Answer<T>) => answer.state!=='unanswered';
 export function createInitialJourneyDraft(): GuidedJourneyDraft {
   return {
-    mode:null,address:{line1:'',city:'',region:'TX',postalCode:'',confirmed:false},
+    mode:null,address:{line1:'',city:'',region:'',postalCode:'',confirmed:false},
     facts:{bedrooms:{state:'unanswered'},fullBaths:{state:'unanswered'},halfBaths:{state:'unanswered'},stories:{state:'unanswered'},yearBuilt:{state:'unanswered'},squareFeet:{state:'unanswered'}},
     choices:Object.fromEntries(Object.keys(choiceQuestions).map(key=>[key,{state:'unanswered'}])) as ChoiceAnswers,
     detailLevel:'unanswered',renovations:{state:'unanswered'},mortgageBalanceCents:{state:'unanswered'},preApprovedAmountCents:{state:'unanswered'},
@@ -157,7 +157,7 @@ export function parseMoneyCents(value:string):number|null {
 }
 export function validateStep(step:StepId,draft:GuidedJourneyDraft,now=new Date()):string|null {
   if(step==='intent') return draft.mode?null:'Choose what you would like to do.';
-  if(step==='address') return draft.address.line1.trim() && draft.address.city.trim() && /^[A-Z]{2}$/.test(draft.address.region) && /^\d{5}(?:-\d{4})?$/.test(draft.address.postalCode)?null:'Enter the street, city, state and ZIP code.';
+  if(step==='address') return draft.address.line1.trim().length>0 && draft.address.line1.trim().length<=180?null:'Enter your street address.';
   if(step==='confirm-home') return draft.address.confirmed?null:'Confirm this is the home you mean.';
   if(step==='detail-level') return draft.detailLevel!=='unanswered'?null:'Choose to add details or leave them for later.';
   if(step==='renovations') return isAnswered(draft.renovations)?null:'Select any improvements, None or Not Sure.';

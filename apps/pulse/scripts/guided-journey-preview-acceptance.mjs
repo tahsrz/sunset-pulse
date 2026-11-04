@@ -34,7 +34,14 @@ try {
   const next=()=>page.getByRole('button',{name:'Next →',exact:true}).click();
   const choose=async label=>{await page.getByRole('radio',{name:label,exact:true}).check();await next();};
   const heading=text=>expect(page.getByRole('heading',{level:1})).toHaveText(text);
-  await choose('Buy and Sell');await page.getByRole('button',{name:'Use a Fictional Sample Home'}).click();await next();
+  await choose('Buy and Sell');
+  await expect(page.getByRole('textbox')).toHaveCount(1);
+  await page.getByLabel('Street Address',{exact:true}).fill('200 Example Street');
+  await next();await heading('Have we got the right home?');
+  await expect(page.getByRole('checkbox',{name:'This Is the Home I Mean'})).not.toBeChecked();
+  await page.getByRole('button',{name:'Edit Address',exact:true}).click();
+  await expect(page.getByLabel('Street Address',{exact:true})).toHaveValue('200 Example Street');
+  await page.getByRole('button',{name:'Use a Fictional Sample Home'}).click();await next();
   await expect(first).toHaveCSS('opacity','1');
   await page.getByRole('checkbox',{name:'This Is the Home I Mean'}).check();await next();
   await expect(page.getByLabel('Bedrooms',{exact:true})).toHaveValue('3');await next();
@@ -75,6 +82,14 @@ try {
   // A 720x525 CSS viewport checks reflow equivalent to 200% zoom on the desktop viewport.
   await page.setViewportSize({width:720,height:525});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'The 200% desktop reflow overflows.');
+  // Full-page capture can restart a completed CSS animation in Chromium. Keep
+  // this extra visual capture separate from the ordinary-rerender assertion.
+  const addressPage=await context.newPage();await addressPage.emulateMedia({reducedMotion:'reduce'});
+  await addressPage.goto(url,{waitUntil:'networkidle'});
+  await addressPage.getByRole('radio',{name:'Sell My Home',exact:true}).check();
+  await addressPage.getByRole('button',{name:'Next →',exact:true}).click();
+  await addressPage.getByLabel('Street Address',{exact:true}).fill('200 Example Street');
+  await addressPage.screenshot({path:join(directory,'journey-address.png'),fullPage:true});await addressPage.close();
   const motion=await context.newPage();await motion.goto(url,{waitUntil:'networkidle'});
   const animatedLabels=motion.locator('figure [aria-hidden="true"] > span > span');await expect(animatedLabels).toHaveCount(3);
   await expect(animatedLabels.last()).toHaveCSS('opacity','1');
@@ -87,6 +102,6 @@ try {
   }
   await motion.close();
   assert.deepEqual(errors,[],'Browser exceptions occurred.');assert.deepEqual(writes,[],'The prototype sent a write request.');assert.deepEqual(apiRequests,[],'The prototype contacted an application API.');
-  const result={checkedAt:new Date().toISOString(),modes:['sell','buy','both'],desktop:1440,mobile:390,desktopZoomReflow:200,reducedMotion:true,sequentialLabelSamples:[280,450,720],labelRevealDoesNotReplay:true,hiddenApprovalCleared:true,renovationNoneExclusive:true,loadingAndFailureRecovery:true,reloadClearsDraft:true,applicationApiRequests:0,writeRequests:0,pageErrors:0};
+  const result={checkedAt:new Date().toISOString(),modes:['sell','buy','both'],streetAddressOnly:true,desktop:1440,mobile:390,desktopZoomReflow:200,reducedMotion:true,sequentialLabelSamples:[280,450,720],labelRevealDoesNotReplay:true,hiddenApprovalCleared:true,renovationNoneExclusive:true,loadingAndFailureRecovery:true,reloadClearsDraft:true,applicationApiRequests:0,writeRequests:0,pageErrors:0};
   await writeFile(join(directory,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('PASS: three journey branches, review edits, loading/error recovery, reduced motion, narrow layout and zero API/write requests.');
 } finally {await browser.close();}

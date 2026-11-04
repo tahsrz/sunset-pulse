@@ -14,6 +14,19 @@ beforeEach(()=>{vi.stubGlobal('fetch',vi.fn());});
 afterEach(()=>{cleanup();vi.useRealTimers();vi.unstubAllGlobals();});
 
 describe('guided journey local interaction',()=>{
+  it('uses one address input and clears resolved context when the street changes',()=>{
+    render(<GuidedJourneyPrototype/>);choose('Sell My Home');
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
+    expect(screen.queryByLabelText('City')).toBeNull();expect(screen.queryByLabelText('State')).toBeNull();expect(screen.queryByLabelText('ZIP Code')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Use a Fictional Sample Home'}));next();
+    fireEvent.click(screen.getByRole('checkbox',{name:'This Is the Home I Mean'}));
+    fireEvent.click(screen.getByRole('button',{name:'Edit Address'}));
+    fireEvent.change(screen.getByLabelText('Street Address'),{target:{value:'200 Example Street'}});next();
+    expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Have we got the right home?');
+    expect(screen.getByRole('checkbox',{name:'This Is the Home I Mean'})).not.toBeChecked();
+    expect(screen.queryByText(/76248/)).toBeNull();
+    expect(screen.getAllByText('200 Example Street').length).toBeGreaterThan(0);expect(fetch).not.toHaveBeenCalled();
+  });
   it('validates the current step and does not send a request for local navigation',()=>{
     render(<GuidedJourneyPrototype/>);next();expect(screen.getByRole('alert')).toHaveTextContent('Choose what');
     choose('Sell My Home');expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Which home');

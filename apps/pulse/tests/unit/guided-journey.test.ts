@@ -76,8 +76,12 @@ describe('guided journey branches and private draft state',()=>{
   it.each([['',null],['250000',25000000],['12.34',1234],['0',0],['-1',null],['1.001',null],['1e5',null],['NaN',null],['100000001',null]])('parses dollars without silently coercing %s', (value,expected)=>{
     expect(parseMoneyCents(String(value))).toBe(expected);
   });
-  it('requires confirmation after editing an address and rejects invalid address pieces',()=>{
+  it('accepts a street address alone and still requires confirmation',()=>{
     const draft=createInitialJourneyDraft();expect(validateStep('address',draft)).toBeTruthy();expect(validateStep('confirm-home',draft)).toBeTruthy();
+    draft.address.line1='100 Example Lane';
+    expect(validateStep('address',draft)).toBeNull();expect(validateStep('confirm-home',draft)).toBeTruthy();
+    draft.address.line1='   ';expect(validateStep('address',draft)).toBeTruthy();
+    draft.address.line1='a'.repeat(181);expect(validateStep('address',draft)).toBeTruthy();
     draft.address={line1:'100 Example Lane',city:'Keller',region:'TX',postalCode:'76248',confirmed:true};
     expect(validateStep('address',draft)).toBeNull();expect(validateStep('confirm-home',draft)).toBeNull();
   });

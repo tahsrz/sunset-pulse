@@ -139,17 +139,16 @@ export default function GuidedJourneyPrototype() {
       {value:'both',label:'Buy and Sell',description:'Keep both parts of your move together.'},
     ]}/>;
     if(step==='address') return <>
-      <div className={styles.inputGrid}>{([
-        ['line1','Street Address','street-address'],['city','City','address-level2'],['region','State','address-level1'],['postalCode','ZIP Code','postal-code'],
-      ] as const).map(([field,label,autoComplete])=><label key={field} className={`${styles.fieldLabel} ${field==='line1'?styles.wide:''}`}>{label}
-        <input className={styles.input} maxLength={field==='line1'?180:field==='region'?2:field==='postalCode'?10:100} autoComplete={autoComplete} value={draft.address[field]}
-          onChange={event=>update({...draft,address:{...draft.address,[field]:field==='region'?event.target.value.toUpperCase():event.target.value,confirmed:false}})}/>
-      </label>)}</div>
+      <label className={styles.fieldLabel}>Street Address
+        <input className={styles.input} maxLength={180} autoComplete="street-address" placeholder="Enter your street address" value={draft.address.line1}
+          onChange={event=>update({...draft,address:{line1:event.target.value,city:'',region:'',postalCode:'',confirmed:false}})}/>
+      </label>
+      <p className={styles.helper}>You can include a city or ZIP here if needed.</p>
       <button type="button" className={styles.unknown} onClick={useSampleHome}>Use a Fictional Sample Home</button>
     </>;
     if(step==='confirm-home') return <>
       <div className={styles.mapPlaceholder}><span aria-hidden="true">⌖</span><span>Map Preview</span><span>A map is optional to continuing.</span></div>
-      <div className={styles.confirmCard}><p>{draft.address.line1}<br/>{draft.address.city}, {draft.address.region} {draft.address.postalCode}</p>
+      <div className={styles.confirmCard}><p>{draft.address.line1}{draft.address.city||draft.address.postalCode?<><br/>{[draft.address.city,draft.address.region,draft.address.postalCode].filter(Boolean).join(', ')}</>:null}</p>
         <label className={styles.check}><input type="checkbox" checked={draft.address.confirmed} onChange={event=>update({...draft,address:{...draft.address,confirmed:event.target.checked}})}/>This Is the Home I Mean</label>
       </div><button type="button" className={styles.unknown} onClick={()=>navigate('address')}>Edit Address</button>
     </>;

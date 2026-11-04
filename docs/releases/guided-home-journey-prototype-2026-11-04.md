@@ -19,6 +19,7 @@ Keep the terminal open while reviewing. Enter `quit` in that terminal to stop it
 ## Walk Through It
 
 1. Choose **Buy and Sell**, then **Next**. Select **Use a Fictional Sample Home** on the address screen.
+   Address entry uses one **Street Address** input. City, state and ZIP are not separate required fields. A street alone can continue; location context may also be included in that same input. Changing the text clears previous resolved location/confirmation. Multiple-match selection belongs to the later provider integration; the local prototype does not invent lookup results.
 2. Confirm the home. Change a fact, move forward and Back, and check the value survives.
 3. Choose **Add Home Details** to see the optional property questions. Choose **None** after selecting an improvement to check that the choices are exclusive. Each question also permits **Not Sure**. Starting again and choosing **Leave These for Later** skips this group.
 4. Answer the mortgage question **Yes** to reveal an approximate balance. Enter plain dollars such as `250000` or choose **Not Sure**. Zero is distinct from unknown. This does not calculate equity or eligibility.
@@ -50,7 +51,7 @@ No dependency, API, schema, storage bucket, queue, cron or provider was added. T
 
 Completed locally on November 4, 2026:
 
-- **32 unit tests pass** across the model, form, development gate and label component. Coverage includes hidden-answer cleanup, unknown versus zero, amount parsing, optional consent, required review-edit children, loading recovery and timer cleanup.
+- **33 unit tests pass** across the model, form, development gate and label component. Coverage includes single-input street entry, stale location/confirmation cleanup, hidden-answer cleanup, unknown versus zero, amount parsing, optional consent, required review-edit children, loading recovery and timer cleanup.
 - **Scoped TypeScript passes** for the new model/components/route/tests and focused navigation helper. This is not a full-project typecheck.
 - **Scoped ESLint passes** for those TypeScript files; both scripts pass Node's syntax check.
 - **Browser acceptance passes** for all three modes, optional details, review edits, 390px layout, reduced motion and 720px CSS reflow equivalent to 200% on the 1440px desktop viewport.

@@ -610,3 +610,5 @@ P0 is implemented as a development-only, in-memory walkthrough at `/seller-plan/
 The local walkthrough verified that review edits must validate newly introduced child questions before returning to review. Parent changes now clear hidden seller, optional-detail and financing answers. Property context survives Back/Next; refreshing clears the prototype. Browser checks cover all three modes, narrow layout, desktop zoom reflow, reduced motion and no reveal replay.
 
 Next action: review P0, then implement P1 on the reviewed feature base using the gates above. Do not describe this fixture as a submitted request or a production-ready replacement.
+
+Address-entry refinement: use one street-address input, without separate city/state/ZIP fields. The prototype permits street-only manual continuation and clears previous resolved context on edits. In the provider integration, show bounded candidate choices only when a lookup has multiple matches; let the visitor refine the same query when none match. Do not silently assume a city or add fabricated candidate addresses.
