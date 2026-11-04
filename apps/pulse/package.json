@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "preview:home-journey": "node scripts/guided-journey-preview.mjs",
+    "test:home-journey:preview": "node scripts/guided-journey-preview-acceptance.mjs",
+    "typecheck:home-journey": "tsc --project tsconfig.guided-journey.json --pretty false",
     "dev:mock": "set NEXT_PUBLIC_MOCK_MODE=true && next dev",
     "leads:decay": "node scripts/decay-leads.mjs",
     "leads:discover:tad": "tsx scripts/run-tad-lead-discovery.ts",

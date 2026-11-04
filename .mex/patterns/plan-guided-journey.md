@@ -25,4 +25,13 @@ Use `docs/guided-home-journey-plan-2026-11-04.md`. The reference walkthrough is 
 
 ## Verify
 
+For the P0 implementation, use `docs/releases/guided-home-journey-prototype-2026-11-04.md` for commands and evidence. Keep the route development-only and reuse the exact focused-surface helper to avoid unrelated branding/database providers. Later public intake still needs the versioned contract and owner-access gates.
+
+Implementation findings:
+
+- Editing a parent can introduce a required child. Before returning to review or proceeding to contact, validate applicable prior steps and visit the first missing one. Clear hidden seller, detail and financial answers when parents change.
+- Native radio descriptions use `aria-describedby` separately from the title's `aria-labelledby`. Scope browser form alerts to `#journey-content`; Next also renders a route-announcer alert.
+- Bind and fetch the same loopback family. Windows may resolve `localhost` to IPv6 while a server listens on IPv4. The isolated launcher prints `127.0.0.1` and never loads another checkout's runtime environment.
+- Check actual CSS label motion separately from simulated submission delays. Sample the animation timeline at 280/450/720ms, verify reduced motion and no replay across ordinary rerenders. Keep screenshots and aggregate results gitignored under `.pulse-local/guided-journey`.
+
 Check proposed existing paths against their recorded Git snapshot, keep missing screens explicit, and confirm the plan changes no runtime behavior. Do not claim provider access, real valuation, cross-device resume or confirmed booking without the relevant implementation/evidence. Application tests are unnecessary for a documentation-only delivery.

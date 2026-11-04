@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "incremental": false, "noEmit": true },
+  "include": [
+    "next-env.d.ts",
+    "components/lead-capture/journey/**/*.tsx",
+    "components/marketing/SequentialPhotoLabels.tsx",
+    "lib/marketing/guidedJourney.ts",
+    "lib/navigation/focusedSurfaces.ts",
+    "app/seller-plan/preview/page.tsx",
+    "tests/unit/guided-journey*.test.*",
+    "tests/unit/sequential-photo-labels.test.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

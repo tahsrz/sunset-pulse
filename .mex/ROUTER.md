@@ -30,6 +30,7 @@ Then read this file fully before doing anything else in this session.
 ## Current Project State
 
 **Working:**
+- Guided home journey P0 is a local, development-only in-memory prototype with three modes, review editing and sequential labels. See `docs/releases/guided-home-journey-prototype-2026-11-04.md` for usage and verification. Public intake and scheduling remain unchanged.
 - Vibe CMS follow-up source restricts current/legacy editorial access and disables production WIP/E2E shortcuts; optimized local real-auth verification passes. Review/rollout remains pending; see `patterns/operator-cms-authority.md`.
 - Main-based profile-role security repair and aggregate-only release audit; generated local drift fixtures reuse the disposable Supabase runner. Hosted migration/deployment remain pending; see `patterns/profile-role-release-audit.md`.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen
@@ -40,7 +41,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
-- Guided buyer/seller intake: `docs/guided-home-journey-plan-2026-11-04.md` is ready for the local interaction prototype, with exact code proposals and an infrastructure reuse map. Runtime/persistence remain unimplemented; buyer owner-reader changes are a separate gate.
+- Guided buyer/seller intake integration: P0 interaction is implemented; the versioned persisted contract, owner projections and reuse of the feature-stack receipt/scheduler remain gated by `docs/guided-home-journey-plan-2026-11-04.md`. Buyer owner-reader changes are a separate gate.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired

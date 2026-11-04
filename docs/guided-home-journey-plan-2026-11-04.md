@@ -605,4 +605,8 @@ Do not wait for approved photography to test form navigation: use a neutral rese
 | Client return/resume | Use authenticated owner/client access and approved publication boundaries. Do not promise anonymous cross-device recovery. |
 | Hosted release | Review security dependencies #102/#103, shared-production migration/deployment state, configured authority and required checks. Local prototype approval alone does not activate a calendar or release a data contract. |
 
-Next action: implement P0 and evaluate the actual interaction. Update this plan only for concrete observations from that walkthrough, newly supplied reference screens or a verified integration constraint.
+P0 is implemented as a development-only, in-memory walkthrough at `/seller-plan/preview`. See [usage, code map and verification](releases/guided-home-journey-prototype-2026-11-04.md). Sell, Buy and Both, optional property details, review edits, explicit Loading…/error controls and sequential labels are working. The public intake, scheduler and storage are unchanged.
+
+The local walkthrough verified that review edits must validate newly introduced child questions before returning to review. Parent changes now clear hidden seller, optional-detail and financing answers. Property context survives Back/Next; refreshing clears the prototype. Browser checks cover all three modes, narrow layout, desktop zoom reflow, reduced motion and no reveal replay.
+
+Next action: review P0, then implement P1 on the reviewed feature base using the gates above. Do not describe this fixture as a submitted request or a production-ready replacement.
