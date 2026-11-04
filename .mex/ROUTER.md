@@ -40,6 +40,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
+- Guided buyer/seller intake: `docs/guided-home-journey-plan-2026-11-04.md` is ready for the local interaction prototype, with exact code proposals and an infrastructure reuse map. Runtime/persistence remain unimplemented; buyer owner-reader changes are a separate gate.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired
