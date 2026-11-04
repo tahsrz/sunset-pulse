@@ -6,8 +6,11 @@
     "components/lead-capture/journey/**/*.tsx",
     "components/marketing/SequentialPhotoLabels.tsx",
     "lib/marketing/guidedJourney.ts",
+    "lib/marketing/homeFactsLookup*.ts",
     "lib/navigation/focusedSurfaces.ts",
     "app/seller-plan/preview/page.tsx",
+    "app/api/seller-plan/preview/property-lookup/route.ts",
+    "tests/unit/home-facts*.test.*",
     "tests/unit/guided-journey*.test.*",
     "tests/unit/sequential-photo-labels.test.tsx"
   ],

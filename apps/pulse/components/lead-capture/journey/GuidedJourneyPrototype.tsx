@@ -3,13 +3,15 @@
 import React, {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {
-  answered,choiceQuestions,createInitialJourneyDraft,deriveSteps,factLabels,normalizeDraft,parseMoneyCents,
+  answered,applyHomeFactsRecord,changeJourneyAddress,choiceQuestions,createInitialJourneyDraft,deriveSteps,factLabels,normalizeDraft,parseMoneyCents,
   propertyLabel,renovations,reviewRows,sectionFor,setChoice,toggleRenovation,validateStep,
-  type Answer,type ChoiceField,type FactField,type GuidedJourneyDraft,type JourneyMode,type StepId,
+  type Answer,type ChoiceField,type GuidedJourneyDraft,type JourneyMode,type StepId,
 } from '@/lib/marketing/guidedJourney';
 import SequentialPhotoLabels, {type PhotoLabel} from '@/components/marketing/SequentialPhotoLabels';
 import GuidedJourneyShell from './GuidedJourneyShell';
 import JourneyChoiceGroup from './JourneyChoiceGroup';
+import JourneyHomeFacts from './JourneyHomeFacts';
+import {homeAddressLabel,homeFactsLookupSchema,type HomeFactsLookupResult,type HomeFactsRecord} from '@/lib/marketing/homeFactsLookup';
 import styles from './GuidedJourney.module.css';
 
 const labels:readonly PhotoLabel[]=[
@@ -19,7 +21,7 @@ const labels:readonly PhotoLabel[]=[
 ];
 const titles:Partial<Record<StepId,string>>={
   intent:'What’s your next move?',address:'Which home are you thinking of selling?',
-  'confirm-home':'Have we got the right home?','home-facts':'What can you tell us about your home?',
+  'confirm-home':'Have we got the right home?','home-facts':'Do these home details look right?',
   'detail-level':'Would you like to add a few home details?',renovations:'What have you updated?',
   'mortgage-balance':'About how much is left on the mortgage?','approval-amount':'How much were you pre-approved for?',
   review:'Does this look right?',contact:'How can we get in touch?',
@@ -53,15 +55,21 @@ export default function GuidedJourneyPrototype() {
   const [finished,setFinished]=useState(false);
   const [previewResponse,setPreviewResponse]=useState<'instant'|'loading'|'error'>('instant');
   const [moneyInput,setMoneyInput]=useState('');
+  const [lookup,setLookup]=useState<HomeFactsLookupResult|null>(null);
+  const [selectedHome,setSelectedHome]=useState<string>();
+  const [exampleLookup,setExampleLookup]=useState(false);
+  const [manualAddress,setManualAddress]=useState<string|null>(null);
   const headingRef=useRef<HTMLHeadingElement>(null);
   const inFlight=useRef(false);
   const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const lookupController=useRef<AbortController|null>(null);
+  const mounted=useRef(true);
   const steps=deriveSteps(draft);
   const section=sectionFor(step);
   const sections=[...new Set(steps.map(sectionFor))];
 
   useEffect(()=>{headingRef.current?.focus();},[step,finished]);
-  useEffect(()=>()=>{if(timer.current) clearTimeout(timer.current);},[]);
+  useEffect(()=>{mounted.current=true;return ()=>{mounted.current=false;if(timer.current) clearTimeout(timer.current);lookupController.current?.abort();};},[]);
   function update(next:GuidedJourneyDraft) {setDraft(normalizeDraft(next));setError('');}
   function navigate(next:StepId) {
     setStep(next);setError('');
@@ -69,6 +77,35 @@ export default function GuidedJourneyPrototype() {
     setMoneyInput(value===undefined?'':String(value/100));
   }
   function edit(next:StepId) {setReturnToReview(true);navigate(next);}
+  function reset() {
+    setDraft(createInitialJourneyDraft());setFinished(false);setReturnToReview(false);
+    setLookup(null);setSelectedHome(undefined);setManualAddress(null);navigate('intent');
+  }
+  function acceptHome(record:HomeFactsRecord) {
+    update(applyHomeFactsRecord(draft,record));navigate('confirm-home');
+  }
+  async function findHome() {
+    if(inFlight.current) return;
+    const controller=new AbortController();lookupController.current=controller;
+    inFlight.current=true;setBusy(true);setError('');
+    const timeout=setTimeout(()=>controller.abort(),15000);
+    try {
+      const response=await fetch('/api/seller-plan/preview/property-lookup',{
+        method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',signal:controller.signal,
+        body:JSON.stringify({query:draft.address.line1.trim(),examples:exampleLookup}),
+      });
+      if(!response.ok) throw new Error('Lookup unavailable.');
+      const result=homeFactsLookupSchema.parse(await response.json());
+      if(!mounted.current||controller.signal.aborted||lookupController.current!==controller) return;
+      setLookup(result);setSelectedHome(undefined);
+      if(result.status==='matched') acceptHome(result.property);
+    } catch {
+      if(mounted.current&&lookupController.current===controller) setLookup({status:'unavailable'});
+    } finally {
+      clearTimeout(timeout);
+      if(mounted.current&&lookupController.current===controller){lookupController.current=null;inFlight.current=false;setBusy(false);}
+    }
+  }
   function back() {
     if(inFlight.current) return;
     if(finished){setFinished(false);navigate('review');return;}
@@ -80,6 +117,15 @@ export default function GuidedJourneyPrototype() {
     const invalid=validateStep(step,draft);
     if(invalid){setError(invalid);return;}
     setError('');
+    if(step==='address') {
+      if(draft.propertyMatch||manualAddress===draft.address.line1){navigate('confirm-home');return;}
+      if(lookup?.status==='multiple') {
+        const record=lookup.candidates.find(candidate=>candidate.id===selectedHome);
+        if(record){acceptHome(record);return;}
+        setError('Choose a home, refine the address or enter the details yourself.');return;
+      }
+      void findHome();return;
+    }
     if(returnToReview||step==='review') {
       const needsAnswer=steps.slice(0,steps.indexOf('review')).find(candidate=>validateStep(candidate,draft)!==null);
       if(needsAnswer){setReturnToReview(true);navigate(needsAnswer);return;}
@@ -98,13 +144,14 @@ export default function GuidedJourneyPrototype() {
     },800);
   }
   function useSampleHome() {
-    update({...draft,address:{line1:'100 Example Lane',city:'Keller',region:'TX',postalCode:'76248',confirmed:false},facts:{
+    const address={line1:'100 Example Lane',city:'Keller',region:'TX',postalCode:'76248'};
+    setLookup(null);setSelectedHome(undefined);
+    update({...changeJourneyAddress(draft,address.line1,true),address:{...address,confirmed:false},propertyMatch:{
+      id:'manual-example',address,source:'Example',recordedAt:null,totalBathrooms:2,
+      facts:{bedrooms:3,fullBaths:2,halfBaths:0,stories:1,yearBuilt:2010,squareFeet:2100},
+    },facts:{
       bedrooms:{state:'answered',value:3},fullBaths:{state:'answered',value:2},halfBaths:{state:'answered',value:0},stories:{state:'answered',value:1},yearBuilt:{state:'answered',value:2010},squareFeet:{state:'answered',value:2100},
     }});
-  }
-  function updateFact(field:FactField,value:string) {
-    const answer:Answer<number>=value===''?{state:'unanswered'}:{state:'answered',value:Number(value)};
-    update({...draft,facts:{...draft.facts,[field]:answer}});
   }
   function updateMoney(value:string) {
     setMoneyInput(value);const cents=parseMoneyCents(value);
@@ -115,8 +162,8 @@ export default function GuidedJourneyPrototype() {
   const title=finished?'Your next move, in view.':titles[step]||question?.title||'';
   const description=finished?'This is a preview of the journey. Nothing has been submitted or booked.':
     step==='intent'?'Start where you are. We’ll take the rest one question at a time.':
-    step==='address'?'For this preview, use the sample home or fictional details. Answers stay on this page.':
-    step==='home-facts'?'Add what you know. It’s fine to leave something for a conversation.':
+    step==='address'?'Use fictional details here. Address lookup reads saved public property records.':
+    step==='home-facts'?'Check the details below. You can change any value or choose Not Sure.':
     step==='detail-level'?'These questions can help with preparation. You can also leave them for later.':
     step==='review'?'You can change any answer before moving on.':
     step==='contact'?'Try the contact step with example details. This preview sends nothing.':
@@ -130,7 +177,7 @@ export default function GuidedJourneyPrototype() {
       <p>{draft.mode==='buy'?'You can start exploring homes now.':'You can use the current seller form when you’re ready to make a real request.'}</p>
       <div className={styles.inlineActions}>
         <Link href={draft.mode==='buy'?'/explorer':'/seller-plan#request'} className={styles.next}>{draft.mode==='buy'?'Open Explorer':'Open Current Seller Form'}</Link>
-        <button type="button" className={styles.unknown} onClick={()=>{setDraft(createInitialJourneyDraft());setFinished(false);setReturnToReview(false);navigate('intent');}}>Start Again</button>
+        <button type="button" className={styles.unknown} onClick={reset}>Start Again</button>
       </div>
     </div>;
     if(step==='intent') return <JourneyChoiceGroup<JourneyMode> legend={title} value={draft.mode||undefined} onChange={mode=>update({...draft,mode})} options={[
@@ -140,11 +187,23 @@ export default function GuidedJourneyPrototype() {
     ]}/>;
     if(step==='address') return <>
       <label className={styles.fieldLabel}>Street Address
-        <input className={styles.input} maxLength={180} autoComplete="street-address" placeholder="Enter your street address" value={draft.address.line1}
-          onChange={event=>update({...draft,address:{line1:event.target.value,city:'',region:'',postalCode:'',confirmed:false}})}/>
+        <input className={styles.input} maxLength={180} disabled={busy} autoComplete="street-address" placeholder="Enter your street address" value={draft.address.line1}
+          onChange={event=>{setLookup(null);setSelectedHome(undefined);setManualAddress(null);update(changeJourneyAddress(draft,event.target.value));}}/>
       </label>
       <p className={styles.helper}>You can include a city or ZIP here if needed.</p>
-      <button type="button" className={styles.unknown} onClick={useSampleHome}>Use a Fictional Sample Home</button>
+      <button type="button" disabled={busy} className={styles.unknown} onClick={useSampleHome}>Use a Fictional Sample Home</button>
+      {lookup?<div className={styles.lookupResults}>
+        {lookup.status==='multiple'?<>
+          <p>Which home do you mean?{lookup.moreMatches?' More matches are available. Add a city or ZIP to narrow them down.':''}</p>
+          <JourneyChoiceGroup legend="Matching Homes" options={lookup.candidates.map(record=>({value:record.id,label:homeAddressLabel(record),description:record.source==='Example'?'Fictional Example':'Saved Property Record'}))} value={selectedHome} onChange={setSelectedHome}/>
+        </>:lookup.status==='not_found'?<p>We couldn’t find a saved record for that address. You can enter the details yourself.</p>:
+          lookup.status==='refine'?<p>Please add a city or ZIP in the address box to narrow the matches.</p>:
+          lookup.status==='unavailable'?<p>Property lookup is unavailable right now. You can try again or enter the details yourself.</p>:null}
+        <div className={styles.inlineActions}>
+          <button type="button" disabled={busy} className={styles.unknown} onClick={()=>{setLookup(null);setSelectedHome(undefined);void findHome();}}>Try Lookup Again</button>
+          <button type="button" disabled={busy} className={styles.unknown} onClick={()=>{setLookup(null);setManualAddress(draft.address.line1);navigate('confirm-home');}}>Enter Details Myself</button>
+        </div>
+      </div>:null}
     </>;
     if(step==='confirm-home') return <>
       <div className={styles.mapPlaceholder}><span aria-hidden="true">⌖</span><span>Map Preview</span><span>A map is optional to continuing.</span></div>
@@ -152,13 +211,9 @@ export default function GuidedJourneyPrototype() {
         <label className={styles.check}><input type="checkbox" checked={draft.address.confirmed} onChange={event=>update({...draft,address:{...draft.address,confirmed:event.target.checked}})}/>This Is the Home I Mean</label>
       </div><button type="button" className={styles.unknown} onClick={()=>navigate('address')}>Edit Address</button>
     </>;
-    if(step==='home-facts') return <div>{(Object.keys(factLabels) as FactField[]).map(field=><div key={field} className={styles.fact}>
-      <label htmlFor={`fact-${field}`} className={styles.fieldLabel}>{factLabels[field]}<span className={styles.helper}>{draft.facts[field].state==='unknown'?'Not Sure':''}</span></label>
-      <div className={styles.factValue}><input id={`fact-${field}`} className={styles.input} type="number" inputMode="numeric" min={field==='yearBuilt'?1600:field==='squareFeet'||field==='stories'?1:0} step="1"
-        value={answered(draft.facts[field])??''} onChange={event=>updateFact(field,event.target.value)}/>
-        <button type="button" className={styles.unknown} onClick={()=>update({...draft,facts:{...draft.facts,[field]:{state:'unknown'}}})}>Not Sure</button>
-      </div>
-    </div>)}<button type="button" className={styles.unknown} onClick={()=>update({...draft,facts:Object.fromEntries(Object.keys(factLabels).map(key=>[key,{state:'unknown'}])) as GuidedJourneyDraft['facts']})}>I’m Not Sure About These Details</button></div>;
+    if(step==='home-facts') return <JourneyHomeFacts facts={draft.facts} record={draft.propertyMatch}
+      onChange={(field,answer)=>update({...draft,facts:{...draft.facts,[field]:answer}})}
+      onUnknownAll={()=>update({...draft,facts:Object.fromEntries(Object.keys(factLabels).map(key=>[key,{state:'unknown'}])) as GuidedJourneyDraft['facts']})}/>;
     if(step==='detail-level') return <JourneyChoiceGroup legend={title} value={draft.detailLevel==='unanswered'?undefined:draft.detailLevel} onChange={detailLevel=>update({...draft,detailLevel})} options={[
       {value:'include',label:'Add Home Details',description:'Tell us about updates, features and condition.'},
       {value:'skip',label:'Leave These for Later',description:'We can talk through them together.'},
@@ -210,10 +265,14 @@ export default function GuidedJourneyPrototype() {
       <ul className={styles.serviceList}><li>Pricing Review</li><li>Home Preparation</li><li>Move Planning</li></ul>
       {draft.mode?<div className={styles.homeContext}><small>{draft.mode==='buy'?'Finding a Home':'The Home We’re Talking About'}</small><p>{propertyLabel(draft)}</p>{draft.address.city&&draft.mode!=='buy'?<small>{draft.address.city}, {draft.address.region}</small>:null}</div>:null}
       <details className={styles.controls}><summary>Preview Controls</summary><p>Use fictional details. Answers disappear when this page reloads.</p>
+        <label>Address Lookup Data<select disabled={busy} value={exampleLookup?'examples':'saved'} onChange={event=>{setExampleLookup(event.target.value==='examples');setLookup(null);setSelectedHome(undefined);setManualAddress(null);update(changeJourneyAddress(draft,draft.address.line1,true));}}>
+          <option value="saved">Saved Public Property Records</option><option value="examples">Fictional Example Records</option>
+        </select></label>
+        {exampleLookup?<p>Try 100 Example Lane for two matches, or add Keller for one. These are fictional records.</p>:null}
         <label>Final Step Response<select value={previewResponse} disabled={busy} onChange={event=>setPreviewResponse(event.target.value as typeof previewResponse)}>
           <option value="instant">Complete Immediately</option><option value="loading">Show Loading, Then Complete</option><option value="error">Show Loading, Then an Error</option>
         </select></label>
-        <button type="button" disabled={busy} className={styles.unknown} onClick={()=>{setDraft(createInitialJourneyDraft());setFinished(false);setReturnToReview(false);navigate('intent');}}>Reset Preview</button>
+        <button type="button" disabled={busy} className={styles.unknown} onClick={reset}>Reset Preview</button>
       </details>
     </div>}>
     {fields()}

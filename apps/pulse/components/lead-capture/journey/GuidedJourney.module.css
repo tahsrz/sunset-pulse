@@ -57,6 +57,14 @@
 .fact .input { margin-top:0; }
 .fact .unknown { min-height:24px; padding:2px 0; font-size:10px; }
 .factValue { display:grid; grid-template-columns:1fr; }
+.stepper { display:flex; align-items:center; gap:4px; }
+.stepper .input { min-width:0; padding:12px 2px; text-align:center; appearance:textfield; }
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button { appearance:none; margin:0; }
+.stepper button { flex-shrink:0; width:32px; min-height:44px; border:1px solid var(--line); border-radius:6px; background:#fcfbf7; color:var(--accent); cursor:pointer; }
+.recordNote { border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-bottom:16px; background:#edf2e7; font-size:12px; }
+.recordNote p { margin:4px 0; }
+.lookupResults { margin-top:20px; }
+.lookupResults>p { font-size:14px; }
 .confirmCard { padding:25px; background:#e9eee0; border:1px solid #c6d0bc; border-radius:14px; }
 .confirmCard p { margin:0 0 22px; font-size:18px; line-height:1.7; }
 .mapPlaceholder { display:grid; place-content:center; gap:8px; min-height:130px; margin-bottom:20px; border:1px dashed #9fae92; border-radius:12px; text-align:center; color:var(--muted); background:repeating-linear-gradient(90deg,transparent,transparent 39px,#8194740a 40px),repeating-linear-gradient(0deg,transparent,transparent 39px,#8194740a 40px); font-size:12px; }

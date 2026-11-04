@@ -13,7 +13,7 @@ export default function GuidedJourneyShell(props:Props) {
   return <div className={styles.root}>
     <header className={styles.masthead}>
       <Link href="/" className={styles.brand}>Sunset Pulse<span>North Texas Real Estate</span></Link>
-      <span className={styles.preview}>Design Preview · Nothing Is Sent</span>
+      <span className={styles.preview}>Design Preview · No Request Is Saved</span>
       <Link href="/seller-plan#request" className={styles.liveLink}>Current Seller Form ↗</Link>
     </header>
     <div className={styles.layout} data-start={props.section==='start'}>

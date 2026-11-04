@@ -30,7 +30,7 @@ Then read this file fully before doing anything else in this session.
 ## Current Project State
 
 **Working:**
-- Guided home journey P0 is a local, development-only in-memory prototype with three modes, review editing and sequential labels. See `docs/releases/guided-home-journey-prototype-2026-11-04.md` for usage and verification. Public intake and scheduling remain unchanged.
+- Guided home journey P0 includes a development-only public-record address lookup, bounded match choices, editable known-fact prefill and manual recovery, alongside three modes/review/sequential labels. See `docs/releases/guided-home-journey-prototype-2026-11-04.md` for usage and evidence. Hosted data coverage is unverified; public intake and scheduling remain unchanged.
 - Vibe CMS follow-up source restricts current/legacy editorial access and disables production WIP/E2E shortcuts; optimized local real-auth verification passes. Review/rollout remains pending; see `patterns/operator-cms-authority.md`.
 - Main-based profile-role security repair and aggregate-only release audit; generated local drift fixtures reuse the disposable Supabase runner. Hosted migration/deployment remain pending; see `patterns/profile-role-release-audit.md`.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen

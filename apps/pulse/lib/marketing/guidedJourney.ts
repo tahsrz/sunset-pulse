@@ -1,3 +1,5 @@
+import type {HomeFactsRecord} from './homeFactsLookup';
+
 export type Answer<T> = { state: 'unanswered' | 'unknown' | 'skipped' } | { state: 'answered'; value: T };
 export type JourneyMode = 'sell' | 'buy' | 'both';
 type Option = { value: string; label: string; description?: string };
@@ -72,6 +74,7 @@ export type GuidedJourneyDraft = {
   mode: JourneyMode | null;
   address: {line1:string;city:string;region:string;postalCode:string;confirmed:boolean};
   facts: Record<FactField, Answer<number>>;
+  propertyMatch: HomeFactsRecord | null;
   choices: ChoiceAnswers;
   detailLevel: 'unanswered' | 'include' | 'skip';
   renovations: Answer<Renovation[]>;
@@ -83,7 +86,7 @@ export const answered = <T,>(answer: Answer<T>): T | undefined => answer.state==
 export const isAnswered = <T,>(answer: Answer<T>) => answer.state!=='unanswered';
 export function createInitialJourneyDraft(): GuidedJourneyDraft {
   return {
-    mode:null,address:{line1:'',city:'',region:'',postalCode:'',confirmed:false},
+    mode:null,address:{line1:'',city:'',region:'',postalCode:'',confirmed:false},propertyMatch:null,
     facts:{bedrooms:{state:'unanswered'},fullBaths:{state:'unanswered'},halfBaths:{state:'unanswered'},stories:{state:'unanswered'},yearBuilt:{state:'unanswered'},squareFeet:{state:'unanswered'}},
     choices:Object.fromEntries(Object.keys(choiceQuestions).map(key=>[key,{state:'unanswered'}])) as ChoiceAnswers,
     detailLevel:'unanswered',renovations:{state:'unanswered'},mortgageBalanceCents:{state:'unanswered'},preApprovedAmountCents:{state:'unanswered'},
@@ -97,7 +100,7 @@ export function normalizeDraft(input: GuidedJourneyDraft): GuidedJourneyDraft {
   const draft = { ...input, choices:{...input.choices}, renovations:input.renovations.state==='answered'?{state:'answered' as const,value:[...new Set(input.renovations.value)].sort()}:input.renovations };
   if(draft.mode==='buy') {
     const empty=createInitialJourneyDraft();
-    draft.address=empty.address;draft.facts=empty.facts;draft.detailLevel='unanswered';
+    draft.address=empty.address;draft.facts=empty.facts;draft.propertyMatch=null;draft.detailLevel='unanswered';
     for(const field of ['relationship','selling-window','selling-preference','mortgage'] as const) draft.choices[field]={state:'unanswered'};
   }
   if(draft.detailLevel!=='include') {
@@ -119,6 +122,24 @@ export function setChoice<K extends ChoiceField>(draft: GuidedJourneyDraft, fiel
   // The option membership check above bounds this dynamic property assignment.
   const choices={...draft.choices};choices[field]={state:'answered',value} as ChoiceAnswers[K];
   return normalizeDraft({...draft,choices});
+}
+/** A new property must not inherit another home's facts or condition/loan answers. */
+export function changeJourneyAddress(draft:GuidedJourneyDraft,line1:string,force=false):GuidedJourneyDraft {
+  if(!force&&line1===draft.address.line1) return draft;
+  const empty=createInitialJourneyDraft();
+  const choices={...draft.choices};
+  for(const field of ['countertop','appliances','kitchen-floor','garage','pool','foundation','overall-condition','relationship','mortgage'] as const) choices[field]={state:'unanswered'};
+  return {...draft,address:{...empty.address,line1},propertyMatch:null,facts:empty.facts,choices,
+    detailLevel:'unanswered',renovations:{state:'unanswered'},mortgageBalanceCents:{state:'unanswered'}};
+}
+export function applyHomeFactsRecord(draft:GuidedJourneyDraft,record:HomeFactsRecord):GuidedJourneyDraft {
+  const base=draft.propertyMatch&&draft.propertyMatch.id!==record.id?changeJourneyAddress(draft,record.address.line1,true):draft;
+  const facts={...base.facts};
+  for(const field of Object.keys(record.facts) as FactField[]) {
+    const value=record.facts[field];
+    if(facts[field].state==='unanswered'&&value!==undefined) facts[field]={state:'answered',value};
+  }
+  return {...base,address:{...record.address,confirmed:false},facts,propertyMatch:record};
 }
 export function toggleRenovation(draft:GuidedJourneyDraft,value:Renovation|'none'):GuidedJourneyDraft {
   const current=answered(draft.renovations)||[];

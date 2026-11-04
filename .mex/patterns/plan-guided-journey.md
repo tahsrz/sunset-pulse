@@ -29,7 +29,9 @@ For the P0 implementation, use `docs/releases/guided-home-journey-prototype-2026
 
 Implementation findings:
 
-- Address entry is a single street-address query. Do not require hidden city/state/ZIP fields to advance; clear stale resolved metadata and confirmation when text changes. Candidate options require real provider results in the integration phase, not guessed cities in the local prototype.
+- Address entry is a single query. Do not require hidden city/state/ZIP fields. Saved public records can supply bounded candidate choices; a separate, explicitly selected example source supports local testing. Never silently invent a city or switch a failed saved lookup to examples. Clear prior property facts and confirmation on address edits; apply only supplied facts into unanswered fields and preserve manual corrections for the same match.
+- The combined canonical bathroom count is context, not a full/half breakdown. Year/stories must remain unknown until a verified mapping exists. Exclude private/demo/deleted rows and owner/metadata columns at the repository boundary. A truncated search pool requires refinement; include city/ZIP refinement in the SQL query so a crowded prefix can actually narrow.
+- The local lookup route is development-only, bounded/no-store and read-only. Next dev can normalize `request.url` to localhost when the browser uses IPv4; compare Origin against the incoming Host authority after the production denial, never forwarded-host headers. A unit regression and real browser request verify this boundary.
 
 - Editing a parent can introduce a required child. Before returning to review or proceeding to contact, validate applicable prior steps and visit the first missing one. Clear hidden seller, detail and financial answers when parents change.
 - Native radio descriptions use `aria-describedby` separately from the title's `aria-labelledby`. Scope browser form alerts to `#journey-content`; Next also renders a route-announcer alert.

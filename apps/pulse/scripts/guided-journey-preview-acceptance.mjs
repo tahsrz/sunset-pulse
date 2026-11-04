@@ -8,18 +8,21 @@ assert.equal(process.argv.length,3,'Provide the owned preview loopback origin.')
 const origin=new URL(process.argv[2]);
 assert(origin.protocol==='http:'&&['localhost','127.0.0.1'].includes(origin.hostname)&&origin.port&&!origin.username&&!origin.password&&origin.pathname==='/'&&!origin.search&&!origin.hash,'Only a plain local preview origin is allowed.');
 const directory=join(pulseRoot,'.pulse-local','guided-journey');await mkdir(directory,{recursive:true});
-const browser=await chromium.launch({headless:true});const errors=[],writes=[],apiRequests=[];
+const browser=await chromium.launch({headless:true});const errors=[],writes=[],apiRequests=[],lookupRequests=[];
+const lookupPath='/api/seller-plan/preview/property-lookup';
 try {
   const context=await browser.newContext({viewport:{width:1440,height:1050}});
+  context.on('page',page=>page.on('pageerror',error=>errors.push(error.message)));
   await context.route('**/*',route=>{
     const request=route.request(),url=new URL(request.url());
     if(!['http:','https:'].includes(url.protocol)) return route.continue();
     if(url.origin!==origin.origin) return route.abort();
-    if(!['GET','HEAD'].includes(request.method())) writes.push(url.pathname);
+    if(request.method()==='POST'&&url.pathname===lookupPath) lookupRequests.push(request.postDataJSON());
+    else if(!['GET','HEAD'].includes(request.method())) writes.push(url.pathname);
     if(url.pathname.startsWith('/api/')) apiRequests.push(url.pathname);
     return route.continue();
   });
-  const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+  const page=await context.newPage();
   await page.addInitScript(()=>{
     window.__journeyLabelEvents=[];
     document.addEventListener('animationstart',event=>{
@@ -35,9 +38,10 @@ try {
   const choose=async label=>{await page.getByRole('radio',{name:label,exact:true}).check();await next();};
   const heading=text=>expect(page.getByRole('heading',{level:1})).toHaveText(text);
   await choose('Buy and Sell');
+  await page.getByText('Preview Controls',{exact:true}).click();await page.getByLabel('Address Lookup Data').selectOption('examples');
   await expect(page.getByRole('textbox')).toHaveCount(1);
   await page.getByLabel('Street Address',{exact:true}).fill('200 Example Street');
-  await next();await heading('Have we got the right home?');
+  await next();await page.getByRole('button',{name:'Enter Details Myself'}).click({timeout:20000});await heading('Have we got the right home?');
   await expect(page.getByRole('checkbox',{name:'This Is the Home I Mean'})).not.toBeChecked();
   await page.getByRole('button',{name:'Edit Address',exact:true}).click();
   await expect(page.getByLabel('Street Address',{exact:true})).toHaveValue('200 Example Street');
@@ -61,7 +65,7 @@ try {
   await heading('Does this look right?');await expect(page.getByText('$450,000.00',{exact:true})).toHaveCount(0);
   await next();await page.getByLabel('Your Name',{exact:true}).fill('Taylor Example');await page.getByLabel('Email',{exact:true}).fill('taylor@example.test');
   await page.getByRole('checkbox',{name:'I’d Like a Response About My Request.'}).check();
-  await page.getByText('Preview Controls',{exact:true}).click();await page.getByLabel('Final Step Response').selectOption('error');
+  await page.getByLabel('Final Step Response').selectOption('error');
   await page.getByRole('button',{name:'Preview My Request',exact:true}).click();await expect(page.getByRole('button',{name:'Loading…',exact:true})).toBeDisabled();
   await expect(page.locator('#journey-content').getByRole('alert')).toContainText('Preview error');await expect(page.getByLabel('Email',{exact:true})).toHaveValue('taylor@example.test');
   await page.getByLabel('Final Step Response').selectOption('loading');await page.getByRole('button',{name:'Preview My Request',exact:true}).click();
@@ -82,6 +86,36 @@ try {
   // A 720x525 CSS viewport checks reflow equivalent to 200% zoom on the desktop viewport.
   await page.setViewportSize({width:720,height:525});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'The 200% desktop reflow overflows.');
+  const lookupPage=await context.newPage();await lookupPage.emulateMedia({reducedMotion:'reduce'});
+  await lookupPage.goto(url,{waitUntil:'networkidle'});
+  await lookupPage.getByText('Preview Controls',{exact:true}).click();await lookupPage.getByLabel('Address Lookup Data').selectOption('examples');
+  await lookupPage.getByRole('radio',{name:'Sell My Home',exact:true}).check();
+  const lookupNext=()=>lookupPage.getByRole('button',{name:'Next →',exact:true}).click();await lookupNext();
+  await lookupPage.getByLabel('Street Address',{exact:true}).fill('100 Example Lane');await lookupNext();
+  await expect(lookupPage.getByRole('radio',{name:'100 Example Lane, Keller, TX, 76248',exact:true})).toBeVisible({timeout:20000});
+  await lookupPage.screenshot({path:join(directory,'journey-address-matches.png'),fullPage:true});
+  await lookupPage.getByRole('radio',{name:'100 Example Lane, Keller, TX, 76248',exact:true}).check();await lookupNext();
+  await lookupPage.getByRole('checkbox',{name:'This Is the Home I Mean'}).check();await lookupNext();
+  await expect(lookupPage.getByLabel('Bedrooms',{exact:true})).toHaveValue('3');await expect(lookupPage.getByLabel('Square Feet',{exact:true})).toHaveValue('2100');
+  await expect(lookupPage.getByLabel('Full Bathrooms',{exact:true})).toHaveValue('');await expect(lookupPage.getByLabel('Year Built',{exact:true})).toHaveValue('');
+  await expect(lookupPage.getByText(/2.5 bathrooms in total/)).toBeVisible();
+  await lookupPage.getByRole('button',{name:'Increase Bedrooms'}).click();await expect(lookupPage.getByLabel('Bedrooms',{exact:true})).toHaveValue('4');
+  await lookupPage.getByLabel('Bedrooms',{exact:true}).fill('5');const beforeBack=lookupRequests.length;
+  await lookupPage.getByRole('button',{name:'← Back',exact:true}).click();await lookupPage.getByRole('button',{name:'← Back',exact:true}).click();
+  await lookupNext();await lookupNext();await expect(lookupPage.getByLabel('Bedrooms',{exact:true})).toHaveValue('5');assert.equal(lookupRequests.length,beforeBack);
+  await lookupPage.getByRole('button',{name:'← Back',exact:true}).click();await lookupPage.getByRole('button',{name:'Edit Address',exact:true}).click();
+  await lookupPage.getByLabel('Street Address',{exact:true}).fill('100 Example Lane, Arlington');await lookupNext();
+  await expect(lookupPage.getByRole('checkbox',{name:'This Is the Home I Mean'})).not.toBeChecked({timeout:20000});
+  await lookupPage.getByRole('checkbox',{name:'This Is the Home I Mean'}).check();await lookupNext();
+  await expect(lookupPage.getByLabel('Bedrooms',{exact:true})).toHaveValue('4');await expect(lookupPage.getByLabel('Square Feet',{exact:true})).toHaveValue('2400');
+  await lookupPage.screenshot({path:join(directory,'journey-prefilled-facts.png'),fullPage:true});
+  await lookupPage.setViewportSize({width:390,height:844});assert(await lookupPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await lookupPage.screenshot({path:join(directory,'journey-prefilled-facts-mobile.png'),fullPage:true});
+  await lookupPage.getByRole('button',{name:'← Back',exact:true}).click();await lookupPage.getByRole('button',{name:'Edit Address',exact:true}).click();
+  await lookupPage.getByLabel('Address Lookup Data').selectOption('saved');await lookupPage.getByLabel('Street Address',{exact:true}).fill('100 Example Lane');await lookupNext();
+  await expect(lookupPage.getByText(/Property lookup is unavailable right now/)).toBeVisible({timeout:20000});
+  await lookupPage.getByRole('button',{name:'Enter Details Myself'}).click();await lookupPage.getByRole('checkbox',{name:'This Is the Home I Mean'}).check();await lookupNext();
+  await expect(lookupPage.getByLabel('Bedrooms',{exact:true})).toHaveValue('');await lookupPage.close();
   // Full-page capture can restart a completed CSS animation in Chromium. Keep
   // this extra visual capture separate from the ordinary-rerender assertion.
   const addressPage=await context.newPage();await addressPage.emulateMedia({reducedMotion:'reduce'});
@@ -101,7 +135,7 @@ try {
     await motion.locator('figure').screenshot({path:join(directory,`journey-labels-${visible}.png`)});
   }
   await motion.close();
-  assert.deepEqual(errors,[],'Browser exceptions occurred.');assert.deepEqual(writes,[],'The prototype sent a write request.');assert.deepEqual(apiRequests,[],'The prototype contacted an application API.');
-  const result={checkedAt:new Date().toISOString(),modes:['sell','buy','both'],streetAddressOnly:true,desktop:1440,mobile:390,desktopZoomReflow:200,reducedMotion:true,sequentialLabelSamples:[280,450,720],labelRevealDoesNotReplay:true,hiddenApprovalCleared:true,renovationNoneExclusive:true,loadingAndFailureRecovery:true,reloadClearsDraft:true,applicationApiRequests:0,writeRequests:0,pageErrors:0};
-  await writeFile(join(directory,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('PASS: three journey branches, review edits, loading/error recovery, reduced motion, narrow layout and zero API/write requests.');
+  assert.deepEqual(errors,[],'Browser exceptions occurred.');assert.deepEqual(writes,[],'The prototype sent a mutating request.');assert(apiRequests.every(path=>path===lookupPath),'An unrelated application API was called.');assert(lookupRequests.length>=4);
+  const result={checkedAt:new Date().toISOString(),modes:['sell','buy','both'],streetAddressOnly:true,addressMatches:true,recordPrefill:true,manualCorrectionsPreserved:true,propertyChangeClearsFacts:true,manualFallbackOnUnavailable:true,desktop:1440,mobile:390,desktopZoomReflow:200,reducedMotion:true,sequentialLabelSamples:[280,450,720],labelRevealDoesNotReplay:true,hiddenApprovalCleared:true,renovationNoneExclusive:true,loadingAndFailureRecovery:true,reloadClearsDraft:true,readOnlyLookupRequests:lookupRequests.length,writeRequests:0,pageErrors:0};
+  await writeFile(join(directory,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('PASS: three journeys, real read-only lookup API, example matches/prefill/corrections, unavailable/manual recovery, responsive layout and zero mutations.');
 } finally {await browser.close();}
