@@ -37,6 +37,7 @@
     "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
     "test:platform:auth:disposable": "node scripts/platform-disposable-auth-acceptance.mjs",
     "test:profile-roles:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security",
+    "test:vibe-cms:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --production --vibe-cms",
     "profile-roles:preflight": "node scripts/profile-role-release-preflight.mjs",
     "test:profile-roles:preflight": "node --test scripts/profile-role-release-preflight.test.mjs",
     "test:profile-roles:db": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --role-preflight-only",

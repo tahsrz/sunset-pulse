@@ -1,11 +1,13 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/core/database';
 import Vibe from '@/models/Vibe';
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { z } from 'zod';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const access = await requireOperatorRouteAccess(req);
+  if (isAuthResponse(access)) return access;
   try {
     await connectDB();
     const vibes = await Vibe.find({}).lean();
@@ -16,13 +18,14 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const access = await requireOperatorRouteAccess(req);
+  if (isAuthResponse(access)) return access;
+  const parsed = await vibeWriteSchema.safeParseAsync(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid vibe dictionary entry.' }, { status: 400 });
   try {
-    const access = await requireOperatorRouteAccess(req as any);
-    if (isAuthResponse(access)) return access;
-
     await connectDB();
-    const body = await vibeWriteSchema.parseAsync(await req.json());
+    const body = parsed.data;
     const actor = operatorAuditUser(access);
     const now = new Date();
     const vibe = await Vibe.findOneAndUpdate(

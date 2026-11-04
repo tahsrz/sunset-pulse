@@ -12,6 +12,7 @@ import {command,pulseRoot} from './docker-acceptance.mjs';
 const option=name=>{const index=process.argv.indexOf(name);return index<0?undefined:process.argv[index+1];};
 const stack=option('--stack');assert.match(stack||'',/^pulse_auth_[a-f0-9]{8}$/,'Use the generated disposable acceptance runner.');
 const production=process.argv.includes('--production');
+const vibeCms=process.argv.includes('--vibe-cms');assert(!vibeCms || production,'CMS shortcut rejection must run in production mode.');
 const api=new URL(option('--api-url')),serverOrigin=new URL(option('--origin'));
 for(const target of [api,serverOrigin]) assert(target.protocol==='http:' && ['127.0.0.1','localhost'].includes(target.hostname) && target.port && !target.username && !target.password && target.pathname==='/' && !target.search && !target.hash,'Acceptance targets must be plain loopback HTTP origins.');
 assert(!(await readdir(pulseRoot)).some(name=>/^\.env(?:\.(?:development|production|test))?(?:\.local)?$/.test(name)),'Use a checkout without runtime env files.');
@@ -42,11 +43,12 @@ const osEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>/^(?:
 const env={...osEnv,NODE_ENV:production?'production':'development',NODE_OPTIONS:'--max-old-space-size=6144',NEXT_TELEMETRY_DISABLED:'1',
   NEXT_PUBLIC_SUPABASE_URL:api.origin,SUPABASE_URL:api.origin,NEXT_PUBLIC_SUPABASE_ANON_KEY:anon,SUPABASE_ANON_KEY:anon,SUPABASE_SERVICE_ROLE_KEY:service,
   NEXT_PUBLIC_SITE_URL:origin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:origin,NEXT_PUBLIC_ROOT_DOMAIN:'localhost',
-  NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_E2E_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',E2E_OPERATOR_ACCESS:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
-  OPERATOR_EMAIL:'',AUTHORIZED_EMAIL:'',SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',VIBE_CMS_PUBLIC_WRITE_WIP:'false',
+  NEXT_PUBLIC_MOCK_MODE:'false',NEXT_PUBLIC_E2E_MODE:'false',NEXT_PUBLIC_PULSE_MOCK_AUTH_ENABLED:'false',E2E_OPERATOR_ACCESS:vibeCms?'true':'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
+  OPERATOR_EMAIL:'',AUTHORIZED_EMAIL:'',SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',VIBE_CMS_PUBLIC_WRITE_WIP:vibeCms?'true':'false',
   MONGODB_URI:'mongodb://127.0.0.1:1/pulse_security_unavailable',GROQ_API_KEY:'local-test-placeholder',OPENAI_API_KEY:'local-test-placeholder',STRIPE_SECRET_KEY:'sk_test_local_only'};
-const artifacts=join(pulseRoot,'.pulse-local','profile-role-hotfix');await mkdir(artifacts,{recursive:true});
+const artifacts=join(pulseRoot,'.pulse-local',vibeCms?'vibe-cms-hotfix':'profile-role-hotfix');await mkdir(artifacts,{recursive:true});
 const userIds=[],pageErrors=[],signals=[];let server,browser,build;
+const cmsCases=[];
 let callbackWrites=0,buildSeconds=null;
 try {
   // Generated-project fixture grant exercises successful service writes. It is not a migration.
@@ -76,7 +78,7 @@ try {
   let serverSpawnFailed=false;server.once('error',()=>{serverSpawnFailed=true;});
   for(const stream of [server.stdout,server.stderr]) stream.on('data',chunk=>{
     for(const line of chunk.toString().split(/\r?\n/)) {
-      const match=/\b(GET|POST) (\/auth\/callback|\/api\/admin\/mls\/status|\/login)(?:\?[^ ]*)? (\d{3})/.exec(line);
+      const match=/\b(GET|POST|PATCH) (\/auth\/callback|\/api\/admin\/mls\/status|\/api\/vibes(?:\/[^ ?]*)?|\/api\/jamie\/vibes|\/login)(?:\?[^ ]*)? (\d{3})/.exec(line);
       if(match) signals.push({method:match[1],path:match[2],status:Number(match[3])});
       if(line.includes('[AUTH_CALLBACK] Profile sync failed:')) signals.push({profileSyncFailed:true});
     }
@@ -88,11 +90,26 @@ try {
     await delay(1000);
   }
   assert(ready,'The local anonymous workspace read did not become ready.');
+  if(vibeCms) {
+    const spoofed=await fetch(serverOrigin.origin+probe,{headers:{host:`localhost:${serverOrigin.port}`},signal:AbortSignal.timeout(30000)});
+    assert.equal(spoofed.status,403,'Production must ignore E2E operator access even with a loopback Host header.');
+  }
   browser=await chromium.launch({headless:true});
+  async function cmsAccess(page,label,allowed=false) {
+    if(!vibeCms) return;
+    const probes=[...(!allowed?[{path:'/api/vibes',method:'GET'},{path:'/api/vibes/taxonomy',method:'GET'},{path:'/api/vibes/fixture',method:'GET'},{path:'/api/jamie/vibes',method:'GET'}]:[]),
+      {path:'/api/vibes',method:'POST'},{path:'/api/vibes/fixture',method:'PATCH'},{path:'/api/vibes/fixture/publish',method:'POST'},{path:'/api/vibes/bulk',method:'POST'},{path:'/api/jamie/vibes',method:'POST'}];
+    for(const item of probes) {
+      const code=await page.evaluate(async ({path,method})=>(await fetch(path,{method,cache:'no-store',headers:{'content-type':'application/json'},...(method==='GET'?{}:{body:'null'})})).status,item);
+      assert.equal(code,allowed?400:403,`${label} ${item.method} ${item.path} must ${allowed?'reach validation only':'be denied'}.`);
+    }
+    cmsCases.push({actor:label,probes:probes.length,status:allowed?400:403});
+  }
   const anonymousContext=await browser.newContext();
   try {
     const anonymousPage=await anonymousContext.newPage();
     assert.equal((await anonymousPage.goto(origin+probe,{timeout:120000})).status(),403,'The reserved hostname must not grant anonymous local operator access.');
+    await cmsAccess(anonymousPage,'anonymous');
   } finally {await anonymousContext.close();}
 
   async function account(role,{untrusted=false}={}) {
@@ -126,16 +143,21 @@ try {
   }
   const forged=await account('admin',{untrusted:true});assert.equal(await roleOf(forged),'consumer');assert.equal(await status(forged),403);
   await callback(forged);assert.equal(await roleOf(forged),'consumer');assert.equal(await status(forged),403);
+  await cmsAccess(forged.page,'forged-admin-signup');
   console.log('PASS: actual public signup and callback cannot turn an administrator metadata claim into operator access.');
   for(const role of ['operator','admin']) {
     const approved=await account(role);assert.equal(await status(approved),200);await callback(approved);
     assert.equal(await roleOf(approved),role);assert.equal(await status(approved),200);
+    await cmsAccess(approved.page,role,true);
   }
   const realtor=await account('realtor',{untrusted:true});assert.equal(await roleOf(realtor),'realtor');assert.equal(await status(realtor),200);
+  await cmsAccess(realtor.page,'realtor');
   assert.equal(callbackWrites,3);assert.deepEqual(pageErrors,[]);assert(!signals.some(signal=>signal.profileSyncFailed));
   await writeFile(join(artifacts,'result.json'),JSON.stringify({checkedAt:new Date().toISOString(),mode:production?'production':'development',migrationCount:applied.length,consultationTablesPresent,
     buildSeconds,dependencyVersions,lockSha256:createHash('sha256').update(lockText.replaceAll('\r\n','\n')).digest('hex'),
-    mockAuth:false,localOperatorBypass:false,forgedSignupRole:'consumer',forgedProtectedStatus:403,operatorStatus:200,adminStatus:200,realtorRegistration:'preserved',callbackProfileWrites:callbackWrites},null,2)+'\n');
+    mockAuth:false,localOperatorBypass:false,forgedSignupRole:'consumer',forgedProtectedStatus:403,operatorStatus:200,adminStatus:200,realtorRegistration:'preserved',callbackProfileWrites:callbackWrites,
+    ...(vibeCms?{cms:{wipFlag:true,e2eOperatorFlag:true,productionShortcutsDenied:true,contentWrites:0,cases:cmsCases}}:{})},null,2)+'\n');
+  if(vibeCms) console.log('PASS: production ignores enabled WIP/E2E flags; CMS denies anonymous/consumer/realtor and admits operator/admin to validation without content writes.');
   console.log('PASS: real operator/admin roles survive three successful callback writes; public realtor registration remains available.');
 } finally {
   await browser?.close();

@@ -30,6 +30,7 @@ Then read this file fully before doing anything else in this session.
 ## Current Project State
 
 **Working:**
+- Vibe CMS follow-up source restricts current/legacy editorial access and disables production WIP/E2E shortcuts; optimized local real-auth verification passes. Review/rollout remains pending; see `patterns/operator-cms-authority.md`.
 - Main-based profile-role security repair and aggregate-only release audit; generated local drift fixtures reuse the disposable Supabase runner. Hosted migration/deployment remain pending; see `patterns/profile-role-release-audit.md`.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen
 - Segmented 400-expert atlas retrieval, local `query_memory.tah`, SQLSync journal staging, TensorZero eval/feedback ledgers
