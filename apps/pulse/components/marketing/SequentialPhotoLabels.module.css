@@ -1,0 +1,9 @@
+.labels { position:absolute; inset:0; pointer-events:none; }
+.anchor { position:absolute; max-width:12rem; }
+.upperRight { top:12%; right:0; }
+.middleLeft { top:43%; left:0; }
+.lowerRight { bottom:4%; right:6%; }
+.label { display:block; padding:.6rem .85rem; border:1px solid #486d65; border-radius:.7rem; background:#f7fbf5; color:#244c41; font-size:.8rem; font-weight:600; line-height:1.25; box-shadow:0 4px 12px #163b2910; animation:label-in 240ms cubic-bezier(.2,.8,.2,1) both; }
+@keyframes label-in { from { opacity:0; transform:translateY(6px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+@media(prefers-reduced-motion:reduce) { .label { animation:none; opacity:1; transform:none; } }
+@media(max-width:40rem) { .labels { position:static; display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin-top:.75rem; } .anchor { position:static; } .label { box-shadow:none; font-size:.75rem; } }

@@ -32,11 +32,11 @@ export function isOperatorSurface(pathname?: string | null) {
 }
 
 export function isLightweightGlobalSurface(pathname?: string | null) {
-  return isFocusedGameSurface(pathname) || isOperatorSurface(pathname) || matchesPrefix(pathname, standaloneSurfacePrefixes);
+  return pathname === '/seller-plan/preview' || isFocusedGameSurface(pathname) || isOperatorSurface(pathname) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 export function isMinimalChromeSurface(pathname?: string | null) {
-  return matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
+  return pathname === '/seller-plan/preview' || matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 function matchesPrefix(pathname: string | null | undefined, prefixes: string[]) {
