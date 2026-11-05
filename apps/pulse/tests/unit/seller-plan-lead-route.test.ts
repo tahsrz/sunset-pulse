@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 
 vi.mock('server-only', () => ({}));
 
@@ -22,6 +22,8 @@ vi.mock('@/lib/scheduling/sellerConsultationAuthority.server', () => ({ createSe
 
 import { POST } from '@/app/api/lead-magnets/route';
 import { saveSellerPlanLead } from '@/lib/marketing/sellerLeadIntake.server';
+import { serializeSellerJourney } from '@/lib/marketing/guidedJourneyRequest';
+import { createValidBothJourneyFixture } from '../fixtures/guidedJourneyFixture';
 
 const validPayload = {
   offerKey: 'keller-westlake-seller-plan',
@@ -36,6 +38,7 @@ const validPayload = {
   campaign: { source: 'website', medium: 'organic', campaign: null, content: null },
 } as const;
 const SAVED_LEAD_ID = 'b73fd9d7-3483-4e28-a1ed-315617550cb7';
+const guidedPayload = () => ({ ...serializeSellerJourney(createValidBothJourneyFixture()), submissionId: validPayload.submissionId });
 
 function request(body: unknown = validPayload, headers: Record<string, string> = {}) {
   return new Request('https://sunsetpulse.app/api/lead-magnets', {
@@ -48,7 +51,8 @@ function request(body: unknown = validPayload, headers: Record<string, string> =
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.offer.mockResolvedValue(null);
-  process.env.KELLER_WESTLAKE_AGENT_SITE = 'taz';
+  vi.stubEnv('KELLER_WESTLAKE_AGENT_SITE', 'taz');
+  vi.stubEnv('SELLER_GUIDED_INTAKE_ENABLED', undefined);
   vi.stubEnv('NODE_ENV', 'test');
   mocks.applyPublicApiRateLimit.mockResolvedValue(null);
   mocks.getTenantSite.mockResolvedValue({ isPublished: true, status: 'active', agentId: 'owner-site-1', siteName: 'Owner Site' });
@@ -62,9 +66,11 @@ beforeEach(() => {
   mocks.select.mockReturnValue({ single: mocks.single, eq: mocks.eq });
   mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.maybeSingle });
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe('seller-plan lead route', () => {
   it('offers booking only with a newly saved request, without exposing raw lead identity', async () => {
+    vi.stubEnv('SELLER_GUIDED_INTAKE_ENABLED', 'true');
     const offer = { token: 'signed-short-lived-booking-capability', expiresAt: '2026-10-28T19:00:00Z' };
     mocks.offer.mockResolvedValue(offer);
     const result = await POST(request());
@@ -90,6 +96,13 @@ describe('seller-plan lead route', () => {
     expect(record.message).toContain('personally reviewed pricing / CMA conversation');
     expect(record.message).not.toContain('Example Road');
     expect(record.metadata.sellerPlan.requestFingerprint).toBeTruthy();
+    const originalV2Fingerprint = createHash('sha256').update(JSON.stringify({
+      offerKey: 'keller-westlake-seller-plan', offerVersion: '2', name: 'Taylor Seller', email: 'taylor@example.com',
+      requestKind: 'pricing_review', timing: 'one-to-three-months', requestedContact: true,
+      marketingOptIn: false, campaign: { source: 'website', medium: 'organic' },
+    })).digest('hex');
+    expect(record.metadata.sellerPlan.requestFingerprint).toBe(originalV2Fingerprint);
+    expect(record.metadata.sellerPlan).not.toHaveProperty('journey');
     expect(record.idempotency_key).toMatch(/^[a-f0-9]{64}$/);
     expect(mocks.applyPublicApiRateLimit).toHaveBeenCalledWith(expect.any(Request), 'seller-plan-request', 3, 60, { requireDistributed: true });
   });
@@ -175,5 +188,77 @@ describe('seller-plan lead route', () => {
     expect(response.status).toBe(200);
     expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.getTenantSite).not.toHaveBeenCalled();
+  });
+});
+
+describe('guided seller save', () => {
+  it('requires an explicit opt-in to accept v3', async () => {
+    expect((await POST(request(guidedPayload()))).status).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('stores only validated details in seller metadata and preserves the accepted receipt', async () => {
+    vi.stubEnv('SELLER_GUIDED_INTAKE_ENABLED', 'true');
+    const payload = guidedPayload();
+    const response = await POST(request(payload));
+    expect(response.status).toBe(201);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(await response.json()).toEqual({ success: true, accepted: true, duplicate: false });
+    const [record] = mocks.insert.mock.calls[0];
+    expect(record.metadata.sellerPlan).toMatchObject({ offerVersion: '3', journey: payload.journey });
+    expect(record.metadata.sellerPlan.requestedContact.granted).toBe(true);
+    expect(record.metadata.sellerPlan.marketingOptIn.granted).toBe(false);
+    expect(JSON.stringify({ ...record, metadata: undefined })).not.toContain('100 Example Lane');
+    expect(record.metadata).not.toHaveProperty('campaign');
+    expect(mocks.offer).toHaveBeenCalledOnce();
+  });
+
+  it('replays equivalent answers without another booking offer and rejects a changed nested value', async () => {
+    vi.stubEnv('SELLER_GUIDED_INTAKE_ENABLED', 'true');
+    const payload = guidedPayload();
+    await POST(request(payload));
+    const [record] = mocks.insert.mock.calls[0];
+    mocks.offer.mockClear();
+    mocks.single.mockResolvedValue({ data: null, error: { code: '23505' } });
+    mocks.maybeSingle.mockResolvedValue({ data: { id: SAVED_LEAD_ID, ...record }, error: null });
+    const details = payload.journey.homeDetails;
+    if (details.state !== 'included' || details.renovations.state !== 'answered') throw new Error('Expected renovations.');
+    const equivalent = { ...payload, journey: { ...payload.journey, homeDetails: { ...details, renovations: {
+      state: 'answered', value: [...details.renovations.value].reverse(),
+    } } } };
+    const retry = await POST(request(equivalent));
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toEqual({ success: true, accepted: true, duplicate: true });
+    const changed = { ...payload, journey: { ...payload.journey, currentMortgage: {
+      state: 'yes', amount: { state: 'answered', value: 26_000_000 },
+    } } };
+    expect((await POST(request(changed))).status).toBe(409);
+    expect(mocks.eq).toHaveBeenCalledWith('idempotency_key', record.idempotency_key);
+    expect(mocks.offer).not.toHaveBeenCalled();
+  });
+
+  it('rejects injected fields and oversized bodies, and treats the honeypot as a no-op', async () => {
+    vi.stubEnv('SELLER_GUIDED_INTAKE_ENABLED', 'true');
+    const payload = guidedPayload();
+    expect((await POST(request({ ...payload, journey: { ...payload.journey, agentId: 'forged' } }))).status).toBe(400);
+    expect((await POST(request({ ...payload, company: 'x'.repeat(13_000) }))).status).toBe(413);
+    expect((await POST(request({ ...payload, company: 'Bot' }))).status).toBe(200);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.offer).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed storage write without exposing the payload or offering booking', async () => {
+    vi.stubEnv('SELLER_GUIDED_INTAKE_ENABLED', 'true');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      mocks.single.mockResolvedValueOnce({ data: null, error: { code: 'XX000', message: '100 Example Lane' } });
+      const response = await POST(request(guidedPayload()));
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ success: false, message: 'The request could not be saved. Please try again later.' });
+      expect(log).toHaveBeenCalledExactlyOnceWith('[SELLER_PLAN_LEAD_INSERT]', 'XX000');
+      expect(mocks.offer).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
   });
 });

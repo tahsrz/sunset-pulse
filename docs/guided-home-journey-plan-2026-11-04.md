@@ -613,6 +613,8 @@ P1 pure validation, serialization, retry fingerprints/identity and accepted-rece
 
 P2 stages submission preparation, retry identity, cancellation and receipt handling in the local preview. The [P2 walkthrough](releases/guided-home-journey-frontend-2026-11-05.md) documents the prepared request check and the adapter interface. The public seller form and its v2 writer still handle real requests.
 
-Next is P3 on the reviewed seller-feature base. Wire version 3 through the existing writer and owner-only reader, verify legacy v2 replay and privacy, then attach the feature form's existing consultation adapter.
+P3 is staged on the reviewed seller feature base. The existing writer supports opt-in v3, preserves v2 replay, and keeps the case summary behind the existing owner read. See the [save integration guide](releases/guided-seller-save-2026-11-05.md).
+
+Next, attach the guided form to the existing endpoint and consultation picker in a disposable, authenticated walkthrough. Confirm that the receipt stays successful when booking is unavailable and that another owner cannot open the saved case. Review the public privacy copy before enabling real v3 requests.
 
 Address-entry refinement is implemented with one input and a development-only read API. The canonical reader matches public saved records and returns bounded candidate choices; users refine the same query or continue manually when no match is available. Unique/selected matches prefill known bedrooms and square footage. Source/date and aggregate bathrooms remain visible; missing full/half baths, stories and year stay blank. Manual corrections survive repeat navigation; property changes clear stale facts. Explicit fictional records exercise successful matching in the isolated preview. See the prototype guide for verified boundaries and hosted-data limitations. No external provider, persisted intake or scheduling behavior is changed.

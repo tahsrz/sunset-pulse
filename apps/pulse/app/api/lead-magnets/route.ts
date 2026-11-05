@@ -3,11 +3,12 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { sellerPlanLeadSchema } from '@/lib/marketing/leadMagnetContract';
+import { MAX_SELLER_REQUEST_BYTES, sellerPlanLeadVersionedSchema } from '@/lib/marketing/guidedJourneySchema';
 import { saveSellerPlanLead } from '@/lib/marketing/sellerLeadIntake.server';
 import { createSellerBookingOffer } from '@/lib/scheduling/sellerConsultationAuthority.server';
 
 export const dynamic = 'force-dynamic';
-const MAX_BODY_BYTES = 12_000;
+const MAX_BODY_BYTES = MAX_SELLER_REQUEST_BYTES;
 const ROOT_DOMAIN = (process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'sunsetpulse.app').replace(/^www\./, '').toLowerCase();
 
 export async function POST(request: Request) {
@@ -48,7 +49,10 @@ export async function POST(request: Request) {
   } catch {
     return response({ success: false, message: 'Enter the form details and try again.' }, 400);
   }
-  const parsed = sellerPlanLeadSchema.safeParse(raw);
+  const schema = process.env.SELLER_GUIDED_INTAKE_ENABLED === 'true'
+    ? sellerPlanLeadVersionedSchema
+    : sellerPlanLeadSchema;
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     return response({ success: false, message: 'Check the form details and try again.' }, 400);
   }

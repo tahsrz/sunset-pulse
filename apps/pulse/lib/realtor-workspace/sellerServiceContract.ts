@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sellerJourneyOwnerSummarySchema } from '@/lib/marketing/guidedJourneySchema';
 import { realtorDateSchema } from './contracts';
 
 export const sellerMilestones = [
@@ -67,3 +68,7 @@ export const sellerCaseResultSchema = z.object({
   timeZone: z.string(), emailEnabled: z.boolean().optional(),emailFrom:z.string().nullable().optional(),
 });
 export type SellerCaseResult = z.infer<typeof sellerCaseResultSchema>;
+export const sellerCaseWorkspaceResultSchema = sellerCaseResultSchema.extend({
+  intake: sellerJourneyOwnerSummarySchema.nullable().optional(),
+});
+export type SellerCaseWorkspaceResult = z.infer<typeof sellerCaseWorkspaceResultSchema>;

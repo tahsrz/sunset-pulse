@@ -88,6 +88,7 @@ export function createGuidedJourneySchemas(now:()=>Date=()=>new Date()) {
   }
   return {
     homeFacts,
+    ownerSummary: sell.pick({ address:true,homeFacts:true,sellingWindow:true,sellingPreference:true }),
     seller:z.discriminatedUnion('mode',[sell,both]).superRefine(checkBranches),
     journey:z.discriminatedUnion('mode',[sell,both,buy]).superRefine(checkBranches),
   };
@@ -95,6 +96,7 @@ export function createGuidedJourneySchemas(now:()=>Date=()=>new Date()) {
 const schemas=createGuidedJourneySchemas();
 export const guidedJourneySubmissionSchema=schemas.journey;
 export const sellerJourneySubmissionSchema=schemas.seller;
+export const sellerJourneyOwnerSummarySchema=schemas.ownerSummary;
 export type SellerJourneySubmission=z.infer<typeof sellerJourneySubmissionSchema>;
 export type GuidedJourneySubmission=z.infer<typeof guidedJourneySubmissionSchema>;
 
@@ -106,7 +108,6 @@ export function toSellerRequestKind(answer:WireAnswer<ChoiceValue<'selling-prefe
   return answer.state==='answered'&&answer.value==='pricing'?'pricing_review':'seller_plan';
 }
 
-// Candidate v3 boundary only. The live route continues importing its unchanged v2 schema.
 const v3Fields=sellerPlanLeadSchema.omit({offerVersion:true,submissionId:true}).extend({
   offerVersion:z.literal('3'),journey:sellerJourneySubmissionSchema,
 }).strict();
@@ -117,7 +118,7 @@ function checkRequest(value:z.infer<typeof v3Fields>,context:z.RefinementCtx) {
 }
 export const sellerPlanLeadV3PayloadSchema=v3Fields.superRefine(checkRequest);
 export const sellerPlanLeadV3Schema=v3Fields.extend({submissionId:sellerPlanLeadSchema.shape.submissionId}).superRefine(checkRequest);
-/** Compatibility specification, intentionally not installed in the live API. */
+/** The intake route keeps v2 as its default until guided intake is enabled. */
 export const sellerPlanLeadVersionedSchema=z.union([sellerPlanLeadSchema,sellerPlanLeadV3Schema]);
 export type SellerPlanLeadV3Payload=z.infer<typeof sellerPlanLeadV3PayloadSchema>;
 export type SellerPlanLeadV3Input=z.infer<typeof sellerPlanLeadV3Schema>;

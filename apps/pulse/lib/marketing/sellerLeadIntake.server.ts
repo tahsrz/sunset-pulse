@@ -5,6 +5,8 @@ import { getTenantSite } from '@/lib/sites/siteData';
 import { supabaseAdmin } from '@/lib/supabase';
 import { savedSellerIdentitySchema, type SavedSellerIdentity } from '@/lib/scheduling/sellerConsultationContract';
 import { normalizeCampaign, type SellerPlanLeadInput } from './leadMagnetContract';
+import { canonicalSellerLeadFingerprint } from './guidedJourneyRequest';
+import type { SellerPlanLeadV3Input } from './guidedJourneySchema';
 
 export type SellerLeadSaveResult =
   | { status: 'saved'; identity: SavedSellerIdentity }
@@ -14,7 +16,7 @@ export type SellerLeadSaveResult =
 
 /** Saves the owner's configured seller inquiry after server-side tenant resolution. */
 export async function saveSellerPlanLead(
-  input: SellerPlanLeadInput,
+  input: SellerPlanLeadInput | SellerPlanLeadV3Input,
   configuredSite: string,
   submittedAt = new Date().toISOString(),
 ): Promise<SellerLeadSaveResult> {
@@ -38,17 +40,7 @@ export async function saveSellerPlanLead(
     `Seller plan request; stated timing: ${input.timing}.`,
   ].join('\n');
   const campaign = normalizeCampaign(input.campaign);
-  const fingerprint = createHash('sha256').update(JSON.stringify({
-    offerKey: input.offerKey,
-    offerVersion: input.offerVersion,
-    name,
-    email,
-    requestKind: input.requestKind,
-    timing: input.timing,
-    requestedContact: input.requestedContact,
-    marketingOptIn: input.marketingOptIn,
-    campaign: campaign || {},
-  })).digest('hex');
+  const fingerprint = createHash('sha256').update(canonicalSellerLeadFingerprint(input)).digest('hex');
   const idempotencyKey = createHash('sha256')
     .update(`${tenant.agentId}:${configuredSite}:${input.submissionId}`)
     .digest('hex');
@@ -64,6 +56,7 @@ export async function saveSellerPlanLead(
         ? { granted: true as const, capturedAt: submittedAt }
         : { granted: false as const },
       requestFingerprint: fingerprint,
+      ...(input.offerVersion === '3' ? { journey: input.journey } : {}),
     },
     ...(campaign ? { campaign } : {}),
   };

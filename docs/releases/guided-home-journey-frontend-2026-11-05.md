@@ -15,7 +15,7 @@ Run `npm run preview:home-journey --workspace apps/pulse` in the isolated checko
 
 `useSellerJourneySubmission.ts` acquires its submit guard before hashing. It keeps the fingerprint and ID in memory across uncertain outcomes. It uses a 15-second default deadline, aborts on unmount and discards late replies. A validated receipt seals the attempt until reset, even when the optional consultation offer fails validation. `GuidedJourneyShell.tsx` disables the current fields while preparation is pending.
 
-The existing scheduler and consultation picker are on the reviewed seller feature stack in PR #101 (`042057e1` at review). Attach the adapters on that base after the existing writer and owner reader support v3. Preserve the feature form's honeypot, campaign attribution, consent and receipt handling.
+The existing scheduler and consultation picker are on the reviewed seller feature stack in PR #101 (`042057e1` at review). The [save integration guide](guided-seller-save-2026-11-05.md) covers the gated writer and owner reader on that base. Preserve the feature form's honeypot, campaign attribution, consent and receipt handling when attaching the adapters.
 
 ```ts
 const submission = useSellerJourneySubmission({

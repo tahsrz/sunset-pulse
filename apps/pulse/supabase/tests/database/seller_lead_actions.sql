@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
-SELECT plan(21);
+SELECT plan(24);
 
 DO $$
 DECLARE owner_id UUID := gen_random_uuid(); other_id UUID := gen_random_uuid();
@@ -11,11 +11,14 @@ BEGIN
   INSERT INTO auth.users(id,email) VALUES
     (owner_id,'seller-actions-owner@example.test'),(other_id,'seller-actions-other@example.test');
   INSERT INTO public.site_config(agent_id,owner_id,subdomain,status)
-    VALUES ('seller-actions-site',owner_id,'seller-actions','active');
+    VALUES ('seller-actions-site',owner_id,'seller-actions','active'),
+      ('seller-actions-other',other_id,'seller-actions-other','active');
   INSERT INTO public.agent_site_leads(id,agent_id,site,source,name,email,message,metadata)
     VALUES (lead_id,'seller-actions-site','seller-actions','seller_plan','Seller Action Test',
       'seller-actions@example.test','Please help me prepare.',
       jsonb_build_object('sellerPlan',jsonb_build_object(
+        'offerKey','keller-westlake-seller-plan','offerVersion','3',
+        'journey',jsonb_build_object('address',jsonb_build_object('line1','100 Example Lane')),
         'requestKind','seller_plan','timing','one-to-three-months',
         'requestedContact',jsonb_build_object('granted',true,'capturedAt',now())
       )));
@@ -56,6 +59,14 @@ SELECT is((SELECT count(*)::INTEGER FROM public.seller_lead_list_owned(current_s
   ,1,'the current owner sees their seller request');
 SELECT is((SELECT count(*)::INTEGER FROM public.seller_lead_list_owned(current_setting('test.seller_actions_other_id')::UUID,10))
   ,0,'another account cannot list the seller request');
+SELECT is((SELECT row #>> '{metadata,sellerPlan,journey,address,line1}' FROM public.seller_lead_list_owned(
+    current_setting('test.seller_actions_owner_id')::UUID,1,NULL,NULL,current_setting('test.seller_actions_lead_id')::UUID) AS row),
+  '100 Example Lane','the current owner can retrieve the saved intake by lead ID');
+SELECT is((SELECT count(*)::INTEGER FROM public.seller_lead_list_owned(
+    current_setting('test.seller_actions_other_id')::UUID,1,NULL,NULL,current_setting('test.seller_actions_lead_id')::UUID)),
+  0,'a different active owner cannot retrieve intake by lead ID');
+SELECT ok(NOT has_function_privilege('authenticated','public.seller_lead_list_owned(uuid,integer,timestamptz,uuid,uuid)','EXECUTE'),
+  'authenticated clients cannot invoke the service-only reader with a forged actor ID');
 SELECT is((SELECT revision FROM public.agent_site_leads WHERE id=current_setting('test.seller_actions_lead_id')::UUID)
   ,2,'recording contact increments the lead revision once');
 SELECT is((current_setting('test.seller_actions_replay')::JSONB->>'replayed')::BOOLEAN,true,'an identical action retry returns its original receipt');
