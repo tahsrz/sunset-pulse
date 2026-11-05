@@ -277,7 +277,7 @@ export default function GuidedJourneyPrototype<TOffer>({live}:{live?:LiveJourney
       </div>
       {live?<>
         <label aria-hidden="true" className={styles.srOnly}>Leave this field empty<input name="company" tabIndex={-1} autoComplete="off" maxLength={120} value={company} onChange={event=>setCompany(event.target.value)} /></label>
-        <p className={styles.helper}>The real estate professional handling your request can use your address and answers to prepare for your conversation. Any financial amounts you chose to enter are saved with the request. Marketing emails are optional.</p>
+        <p className={styles.helper}>We use your address and detailed answers to prepare for your conversation. Those details, including any financial amounts you choose to share, are scheduled for removal after 90 days. Marketing emails are optional.</p>
         <a href="/iabs" target="_blank" rel="noopener noreferrer" className={styles.helper}>Brokerage Services Information</a>
       </>:<p className={styles.helper}>Use example contact details. This preview checks your answers locally. Contact and financial answers are not sent or saved here.</p>}
     </>;

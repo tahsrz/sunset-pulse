@@ -11,7 +11,7 @@ This draft uses the seller feature stack at `042057e1` from PR #101. It carries 
 
 ## Save and Retry
 
-- `POST /api/lead-magnets` defaults to the existing version 2 schema. `SELLER_GUIDED_INTAKE_ENABLED=true` admits both versions for isolated testing. Leave the flag unset on shared preview and production until the public form and privacy copy have been verified.
+- `POST /api/lead-magnets` defaults to the existing version 2 schema. `SELLER_GUIDED_INTAKE_ENABLED=true` admits both versions for isolated testing. Keep the shared flag unset until the retention migration and scheduled cleanup are verified in the target environment.
 - The existing writer saves v3 answers at `metadata.sellerPlan.journey` with the same server-resolved site, agent, contact grants and idempotency key. It uses the original v2 fingerprint order. For v3 it also hashes the normalized journey, so equivalent retries replay and a changed answer with the same ID conflicts.
 - The route returns the existing accepted receipt. A newly saved request can receive an offer from the existing scheduler. A replay does not issue another offer, and a request can succeed when booking is unavailable.
 
@@ -19,7 +19,13 @@ This draft uses the seller feature stack at `042057e1` from PR #101. It carries 
 
 - Open **Seller Cases** and select a saved v3 request to see **Seller Request Details**. The case API verifies the signed-in owner, reads the lead through the existing owner-scoped RPC and returns the address, home facts, selling timeline and first priority. Unknown facts display **Not Provided**. A valid zero stays visible.
 - The owner case response omits mortgage and preapproval amounts. The inbox and operator action responses omit the entire guided journey. Jamie still uses the existing case reader, and the client publication and milestone paths do not receive intake details.
-- The existing generic lead-action RPC freezes metadata in an internal receipt table. The app removes the private journey from returned receipts, but the frozen copy remains in storage. The current CMA retention cron only deletes expired rows in `seller_cma_private_details`. Before enabling v3 on shared environments, minimize the action receipt at the write boundary and extend the existing retention schedule to expire guided answers and remove any retained copies while keeping replay and consent records.
+
+## Retention
+
+- Migration `20261105170000_guided_seller_intake_retention.sql` removes guided answers from existing internal action receipts. A trigger strips the same field from new or updated receipts while preserving their replay identity.
+- The daily `/api/admin/agent-leads/cma-retention/cron` uses its existing `CRON_SECRET`. Each run removes detailed guided answers from up to 500 version 3 leads that are at least 90 days old. Eligible rows beyond the batch limit are picked up by subsequent runs. The lead, contact grants, request fingerprint and booking records remain available.
+- Success reports `deletedCount` for expired CMA rows and `prunedJourneyCount` for guided answers. Either operation can report a 503 independently. Both are safe to run again. Logs report error codes without including stored answers.
+- Apply the migration before deploying the updated cron handler so its service-only cleanup function is available. Confirm a successful scheduled run before enabling guided intake in the target environment.
 
 ## Local Verification
 
@@ -37,8 +43,4 @@ The guided acceptance checks the flagged entry, pricing intent and campaign, the
 
 The guided form passed 48 focused tests plus the disposable browser walkthrough. The browser verified the mobile receipt, one saved v3 row across replay, denial for a second owner, and a separate booking with one planner item and reminder. The form opens in its focused layout and keeps its controls disabled until React can handle input on a fresh page load.
 
-## Before Enabling Guided Intake
-
-1. Add a migration that removes `{lead,metadata,sellerPlan,journey}` from new `agent_site_lead_action_receipts.response` snapshots and scrubs any existing copies. Leave the response ID, action hash and consent fields available for replay.
-2. Add a service-only, bounded cleanup function for expired `agent_site_leads.metadata.sellerPlan.journey` data. Call it from the existing authenticated CMA retention job. Keep the lead, requested-contact and marketing grants, fingerprint and booking links intact. Record only counts and error codes in the cron response and logs.
-3. Test an active and expired lead, an action replay after cleanup, a v3 submission replay after cleanup and a denied anonymous cleanup request. Run these checks in a disposable stack before changing the shared flag.
+The retention changes passed 39 focused tests and ten SQL test packets in a disposable Supabase project. The 14 retention assertions cover the 90-day boundary, active and legacy rows, service-only execution, receipt redaction and replay, and the 500-row batch limit. In the guided consultation walkthrough, an unauthenticated cron call was denied, the authenticated run pruned one aged fixture, and the next run pruned zero. The original v3 request replayed after cleanup and its consultation stayed confirmed.

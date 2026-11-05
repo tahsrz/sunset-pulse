@@ -39,7 +39,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
-- Guided intake rollout requires retention for private answers and internal receipt copies. Public home facts lookup and buyer intake remain separate.
+- Guided intake rollout requires applying the retention migration and verifying the existing cron in the target environment. Public home facts lookup and buyer intake remain separate.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired
