@@ -53,7 +53,7 @@ describe('private seller intake projection', () => {
     mocks.requireWorkspace.mockResolvedValue({});
     mocks.rpc.mockImplementation(async (name, params) => {
       const owned = params.p_actor_id === owner;
-      if (name === 'seller_case_read') return owned ? { data: sellerCase } : { error: { code: '42501' } };
+      if (name === 'seller_case_read') return owned ? { data: sellerCase } : { error: { code: 'P0002' } };
       if (name === 'seller_lead_list_owned') return { data: owned ? [row] : [] };
       if (name === 'seller_lead_read_recent_events') return { data: [] };
       throw new Error('Unexpected RPC');
@@ -97,8 +97,8 @@ describe('private seller intake projection', () => {
   it('rejects another signed-in owner before reading intake, even with a spoofed query actor', async () => {
     mocks.requireSignedInUser.mockResolvedValue({ user: { id: otherOwner } });
     const response = await GET(caseRequest());
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ ok: false, error: 'This personal workspace is unavailable.' });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ ok: false, error: 'Planner record not found.' });
     expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith('seller_case_read', { p_actor_id: otherOwner, p_lead_id: leadId });
   });
 

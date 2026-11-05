@@ -7,6 +7,7 @@ import {createValidBothJourneyFixture} from '../fixtures/guidedJourneyFixture';
 import * as requestHelpers from '@/lib/marketing/guidedJourneyRequest';
 import useSellerJourneySubmission,{type SellerJourneyTransport} from '@/components/lead-capture/journey/useSellerJourneySubmission';
 import GuidedJourneyPrototype from '@/components/lead-capture/journey/GuidedJourneyPrototype';
+import GuidedSellerRequestForm from '@/components/lead-capture/journey/GuidedSellerRequestForm';
 
 const firstId='11111111-1111-4111-8111-111111111111',secondId='22222222-2222-4222-8222-222222222222';
 function deferred<T>() {let resolve!:(value:T)=>void;const promise=new Promise<T>(done=>{resolve=done;});return {resolve,promise};}
@@ -120,4 +121,38 @@ it('rehearses seller preparation in the actual form, freezes pending inputs and 
   fireEvent.click(screen.getByRole('button',{name:'Review My Answers'}));next();
   fireEvent.change(screen.getByLabelText('Email'),{target:{value:'changed@example.test'}});fireEvent.click(screen.getByRole('button',{name:'Preview My Request'}));
   await waitFor(()=>expect(screen.getByLabelText('Last Prepared Request ID')).toHaveTextContent(secondId));expect(fetch).not.toHaveBeenCalled();
+});
+
+it('uses the real form adapter only after consent, retries with the same ID, and keeps a receipt with a malformed offer',async()=>{
+  const network=vi.mocked(fetch);
+  network.mockRejectedValueOnce(new Error('connection lost')).mockResolvedValueOnce(new Response(JSON.stringify({
+    success:true,accepted:true,duplicate:true,bookingOffer:{token:'invalid'},
+  }),{status:200}));
+  render(<GuidedSellerRequestForm campaign={{source:'local'}} pricingReview />);
+  expect(screen.queryByText('Preview Controls')).not.toBeInTheDocument();
+  expect(screen.queryByRole('radio',{name:'Find a Home'})).not.toBeInTheDocument();
+  const next=()=>fireEvent.click(screen.getByRole('button',{name:'Next →'}));
+  const choose=(label:string)=>{fireEvent.click(screen.getByRole('radio',{name:label}));next();};
+  choose('Sell My Home');
+  expect(screen.queryByRole('button',{name:'Use a Fictional Sample Home'})).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Street Address'),{target:{value:'100 Example Lane'}});next();
+  fireEvent.click(screen.getByRole('checkbox',{name:'This Is the Home I Mean'}));next();
+  fireEvent.click(screen.getByRole('button',{name:'I’m Not Sure About These Details'}));next();
+  for(const label of ['Leave These for Later','I Own It','3–6 Months']) choose(label);
+  expect(screen.getByRole('radio',{name:'Discuss a Price'})).toBeChecked();next();choose('No');next();
+  fireEvent.change(screen.getByLabelText('Your Name'),{target:{value:'Taylor Example'}});
+  fireEvent.change(screen.getByLabelText('Email'),{target:{value:'taylor@example.test'}});
+  const send=()=>fireEvent.click(screen.getByRole('button',{name:'Send Request'}));
+  send();expect(network).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('checkbox',{name:'I’d Like a Response About My Request.'}));
+  send();expect(screen.getByLabelText('Email')).toBeDisabled();
+  await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('Your answers are still here.'));
+  expect(screen.getByLabelText('Email')).toHaveValue('taylor@example.test');
+  send();await screen.findByRole('heading',{name:'Your Request Is Saved'});
+  expect(screen.queryByRole('button',{name:'Check Available Times'})).not.toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Review My Answers'})).not.toBeInTheDocument();
+  expect(network).toHaveBeenCalledTimes(2);
+  const [first,retry]=network.mock.calls;
+  expect(first[0]).toBe('/api/lead-magnets');expect(retry[1]?.body).toBe(first[1]?.body);
+  expect(JSON.parse(String(first[1]?.body))).toMatchObject({offerVersion:'3',company:'',campaign:{source:'local'},requestKind:'pricing_review',marketingOptIn:false,submissionId:firstId});
 });

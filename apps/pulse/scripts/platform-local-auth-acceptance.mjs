@@ -33,6 +33,8 @@ const realtorOnly=process.argv.includes('--realtor-only');
 const sellerVideoOnly=process.argv.includes('--seller-video-only');
 const sellerServiceOnly=process.argv.includes('--seller-service-only');
 const sellerConsultationsOnly=process.argv.includes('--seller-consultations-only');
+const guidedSeller=process.argv.includes('--guided-seller');
+assert(!guidedSeller || sellerConsultationsOnly,'Guided seller acceptance requires the disposable consultation suite.');
 const marketingOnly=process.argv.includes('--marketing-only');
 assert(!process.argv.includes('--role-preflight-only') || marketingOnly,'Role preflight acceptance requires the dedicated marketing stack.');
 assert(!marketingOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && !process.argv.some(flag=>['--seller-business-only','--seller-service-only','--seller-consultations-only','--seller-video-only','--realtor-only','--homepage','--live-jamie','--database-only'].includes(flag))), 'Marketing acceptance requires its dedicated generated disposable stack.');
@@ -184,6 +186,7 @@ try{
       ...(sellerServiceOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1'}:{}),
       ...(marketingOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',OPERATOR_EMAIL:'',AUTHORIZED_EMAIL:''}:{}),
       ...(sellerConsultationsOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',KELLER_WESTLAKE_AGENT_SITE:'consultation-acceptance',SELLER_BOOKING_CAPABILITY_SECRET:consultationSigningSecret}:{}),
+      SELLER_GUIDED_INTAKE_ENABLED:guidedSeller?'true':'false',
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
       SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
       OPENAI_API_KEY:'',GROQ_API_KEY:liveJamie?process.env.GROQ_API_KEY:'',NEXT_PUBLIC_SITE_URL:browserOrigin,NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN:browserOrigin,
@@ -274,7 +277,7 @@ try{
     };
     await marketingPublicationAcceptance({primary,login,request,sql,origin:browserOrigin,artifacts,browser,callbackLink});
   } else if (sellerConsultationsOnly) {
-    await sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret:consultationSigningSecret});
+    await sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret:consultationSigningSecret,guidedSeller});
   } else if (sellerServiceOnly) {
     await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
   } else if (sellerBusinessOnly) {

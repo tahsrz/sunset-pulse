@@ -1,4 +1,4 @@
-import React, {type ReactNode,type RefObject} from 'react';
+import React, {useSyncExternalStore,type ReactNode,type RefObject} from 'react';
 import Link from 'next/link';
 import {type SectionId} from '@/lib/marketing/guidedJourney';
 import styles from './GuidedJourney.module.css';
@@ -7,14 +7,22 @@ export const sectionLabels:Record<SectionId,string>={start:'Getting Started',hom
 type Props={
   title:string;description?:string;section:SectionId;sections:SectionId[];property:string;
   headingRef:RefObject<HTMLHeadingElement|null>;children:ReactNode;aside:ReactNode;
-  onSubmit():void;onBack():void;canGoBack:boolean;busy:boolean;error:string;final:boolean;returnToReview:boolean;complete:boolean;
+  onSubmit():void;onBack():void;canGoBack:boolean;busy:boolean;error:string;final:boolean;returnToReview:boolean;complete:boolean;live?:boolean;
 };
+const subscribeToHydration=()=>()=>{};
+const browserReady=()=>true;
+const serverReady=()=>false;
+
 export default function GuidedJourneyShell(props:Props) {
+  const hydrated=useSyncExternalStore(subscribeToHydration,browserReady,serverReady);
+  const controlsDisabled=props.busy||(props.live&&!hydrated);
+  // Leaving the focused layout also needs a fresh document and its normal site chrome.
+  const SiteLink=props.live?'a':Link;
   return <div className={styles.root}>
     <header className={styles.masthead}>
-      <Link href="/" className={styles.brand}>Sunset Pulse<span>North Texas Real Estate</span></Link>
-      <span className={styles.preview}>Design Preview · No Request Is Saved</span>
-      <Link href="/seller-plan#request" className={styles.liveLink}>Current Seller Form ↗</Link>
+      <SiteLink href="/" className={styles.brand}>Sunset Pulse<span>North Texas Real Estate</span></SiteLink>
+      {!props.live?<span className={styles.preview}>Design Preview · No Request Is Saved</span>:null}
+      <SiteLink href="/seller-plan#request" className={props.live?styles.shortLink:styles.liveLink}>{props.live?'Short Seller Form':'Current Seller Form ↗'}</SiteLink>
     </header>
     <div className={styles.layout} data-start={props.section==='start'}>
       <aside className={styles.aside}>{props.aside}</aside>
@@ -30,17 +38,17 @@ export default function GuidedJourneyShell(props:Props) {
             <h1 ref={props.headingRef} tabIndex={-1} className={styles.question}>{props.title}</h1>
             {props.description?<p className={styles.description}>{props.description}</p>:null}
           </div>
-          <fieldset disabled={props.busy} className={styles.fields}>{props.children}</fieldset>
+          <fieldset disabled={controlsDisabled} className={styles.fields}>{props.children}</fieldset>
           <p role="alert" className={styles.error}>{props.error}</p>
-          <footer className={styles.footer}>
+          {!props.complete||props.canGoBack?<footer className={styles.footer}>
             <div className={styles.footerContext}><span className={styles.contextDot} aria-hidden="true"/><span>{props.property}</span></div>
             <div className={styles.actions}>
-              <button type="button" disabled={!props.canGoBack||props.busy} onClick={props.onBack} className={styles.back}>{props.complete?'Review My Answers':'← Back'}</button>
-              {!props.complete?<button type="submit" disabled={props.busy} aria-busy={props.busy} className={styles.next}>
-                {props.busy?'Loading…':props.returnToReview?'Back to Review':props.final?'Preview My Request':'Next →'}
+              <button type="button" disabled={!props.canGoBack||controlsDisabled} onClick={props.onBack} className={styles.back}>{props.complete?'Review My Answers':'← Back'}</button>
+              {!props.complete?<button type="submit" disabled={controlsDisabled} aria-busy={props.busy} className={styles.next}>
+                {props.busy?'Loading…':props.returnToReview?'Back to Review':props.final?(props.live?'Send Request':'Preview My Request'):'Next →'}
               </button>:null}
             </div>
-          </footer>
+          </footer>:null}
         </form>
       </main>
     </div>

@@ -30,7 +30,7 @@ Then read this file fully before doing anything else in this session.
 ## Current Project State
 
 **Working:**
-- Guided seller v3 save and owner case projection are staged on the seller feature branch. The public form still uses v2. See `docs/releases/guided-seller-save-2026-11-05.md`.
+- The gated guided seller form, v3 save and owner case projection are staged on the seller feature branch. The short public form still uses v2. See `docs/releases/guided-seller-save-2026-11-05.md`.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen
 - Segmented 400-expert atlas retrieval, local `query_memory.tah`, SQLSync journal staging, TensorZero eval/feedback ledgers
 - Jamie Chat at `/jamie-chat` sharing Command Center helper context via `/api/jamie/chat`
@@ -39,7 +39,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
-- Guided public form adapter and real-auth walkthrough. Attach the existing consultation picker only after the saved receipt. Buyer intake remains separate.
+- Guided intake rollout requires retention for private answers and internal receipt copies. Public home facts lookup and buyer intake remain separate.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired

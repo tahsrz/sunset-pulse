@@ -1,6 +1,13 @@
 # Guided Seller Save Integration
 
-This draft uses the seller feature stack at `042057e1` from PR #101. It carries the guided preview changes from PR #104 so the form and save contract can be reviewed together with the newer receipt, case and consultation code. The current seller form continues to use version 2.
+This draft uses the seller feature stack at `042057e1` from PR #101. It carries the guided preview changes from PR #104 and connects a gated guided form to the existing receipt, case and consultation code. The short form continues to use version 2.
+
+## Try the Guided Form
+
+1. Use the [design preview](guided-home-journey-prototype-2026-11-04.md) for a walkthrough without saving anything.
+2. Run the isolated browser and database walkthrough with `node apps/pulse/scripts/platform-disposable-auth-acceptance.mjs --suite seller-consultations --guided-seller`. The runner enables the v3 flag only for the generated local environment and uses fictional accounts and data.
+3. With the flag enabled, **Start Guided Seller Plan** on `/seller-plan` opens `/seller-plan/start`. Enter a street address and confirm it. The guided form uses manual facts. Select **I’m Not Sure About These Details** to continue without them. The **Browse Homes** link opens Explorer.
+4. Review the answers and choose whether the agent may reply. Optional marketing remains separate. After **Send Request** returns an accepted receipt, **Check Available Times** appears if the scheduler returned a valid offer. A time is booked only after the separate booking confirmation.
 
 ## Save and Retry
 
@@ -12,7 +19,7 @@ This draft uses the seller feature stack at `042057e1` from PR #101. It carries 
 
 - Open **Seller Cases** and select a saved v3 request to see **Seller Request Details**. The case API verifies the signed-in owner, reads the lead through the existing owner-scoped RPC and returns the address, home facts, selling timeline and first priority. Unknown facts display **Not Provided**. A valid zero stays visible.
 - The owner case response omits mortgage and preapproval amounts. The inbox and operator action responses omit the entire guided journey. Jamie still uses the existing case reader, and the client publication and milestone paths do not receive intake details.
-- The existing generic lead-action RPC freezes metadata in its service-only receipt table. The app removes the private journey from returned receipts. Review retention for those internal snapshots before enabling v3 in production.
+- The existing generic lead-action RPC freezes metadata in an internal receipt table. The app removes the private journey from returned receipts, but the frozen copy remains in storage. The current CMA retention cron only deletes expired rows in `seller_cma_private_details`. Before enabling v3 on shared environments, minimize the action receipt at the write boundary and extend the existing retention schedule to expire guided answers and remove any retained copies while keeping replay and consent records.
 
 ## Local Verification
 
@@ -26,4 +33,12 @@ It applies the existing migrations to a generated local Supabase project and cle
 
 The 93 focused tests passed with the lockfile's Zod 4.6.7, as did scoped TypeScript and ESLint. The disposable runner passed nine SQL test packets, including 24 seller-lead assertions, and removed its generated database. The API write tests used a mocked persistence adapter. The database checks used transactional fixtures in the disposable stack.
 
-The next walkthrough should submit a fictional guided request through the form in a disposable environment, then open it as the owner and try the same case as another account. Use the existing consultation picker and verify booking separately from the saved receipt.
+The guided acceptance checks the flagged entry, pricing intent and campaign, the persisted v3 metadata, stable replay, owner-only case details and the existing consultation picker. The separate v2 submission in the same suite exercises the short form. The gated form uses a manual address until the saved-record lookup is ready for public use.
+
+The guided form passed 48 focused tests plus the disposable browser walkthrough. The browser verified the mobile receipt, one saved v3 row across replay, denial for a second owner, and a separate booking with one planner item and reminder. The form opens in its focused layout and keeps its controls disabled until React can handle input on a fresh page load.
+
+## Before Enabling Guided Intake
+
+1. Add a migration that removes `{lead,metadata,sellerPlan,journey}` from new `agent_site_lead_action_receipts.response` snapshots and scrubs any existing copies. Leave the response ID, action hash and consent fields available for replay.
+2. Add a service-only, bounded cleanup function for expired `agent_site_leads.metadata.sellerPlan.journey` data. Call it from the existing authenticated CMA retention job. Keep the lead, requested-contact and marketing grants, fingerprint and booking links intact. Record only counts and error codes in the cron response and logs.
+3. Test an active and expired lead, an action replay after cleanup, a v3 submission replay after cleanup and a denied anonymous cleanup request. Run these checks in a disposable stack before changing the shared flag.

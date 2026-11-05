@@ -3,7 +3,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { createServer } from 'node:net';
+import { createConnection, createServer } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseDotenv } from 'dotenv';
@@ -19,6 +19,8 @@ assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-ser
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
 const rolePreflightOnly=process.argv.includes('--role-preflight-only');
+const guidedSeller=process.argv.includes('--guided-seller');
+assert(!guidedSeller || suite==='seller-consultations','Guided seller acceptance requires the disposable consultation suite.');
 assert(!rolePreflightOnly || suite==='marketing','Role preflight acceptance requires the generated marketing stack.');
 assert(suite !== 'marketing' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Marketing acceptance requires its dedicated browser walkthrough.');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
@@ -75,6 +77,15 @@ function run(executable, args, { cwd = repositoryRoot, env = localEnv, timeoutMs
 }
 
 async function portIsFree(port) {
+  // Windows can allow a local bind on a port already served by Docker Desktop's forwarder.
+  const refused = await new Promise((resolvePort) => {
+    const socket = createConnection({ port, host: '127.0.0.1' });
+    const done = (free) => { socket.destroy(); resolvePort(free); };
+    socket.once('connect', () => done(false));
+    socket.once('error', (error) => done(error.code === 'ECONNREFUSED'));
+    socket.setTimeout(500, () => done(false));
+  });
+  if (!refused) return false;
   return new Promise((resolvePort) => {
     const server = createServer();
     server.once('error', () => resolvePort(false));
@@ -169,6 +180,7 @@ try {
       ...(liveJamie ? ['--live-jamie'] : []),
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
       ...(rolePreflightOnly ? ['--role-preflight-only'] : []),
+      ...(guidedSeller ? ['--guided-seller'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });

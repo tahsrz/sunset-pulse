@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { sellerPlanLeadSchema } from '@/lib/marketing/leadMagnetContract';
 import { MAX_SELLER_REQUEST_BYTES, sellerPlanLeadVersionedSchema } from '@/lib/marketing/guidedJourneySchema';
+import { isSellerGuidedIntakeEnabled } from '@/lib/marketing/sellerGuidedIntake.server';
 import { saveSellerPlanLead } from '@/lib/marketing/sellerLeadIntake.server';
 import { createSellerBookingOffer } from '@/lib/scheduling/sellerConsultationAuthority.server';
 
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
   } catch {
     return response({ success: false, message: 'Enter the form details and try again.' }, 400);
   }
-  const schema = process.env.SELLER_GUIDED_INTAKE_ENABLED === 'true'
+  const schema = isSellerGuidedIntakeEnabled()
     ? sellerPlanLeadVersionedSchema
     : sellerPlanLeadSchema;
   const parsed = schema.safeParse(raw);

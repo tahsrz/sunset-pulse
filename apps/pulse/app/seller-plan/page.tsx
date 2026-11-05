@@ -7,6 +7,7 @@ import { SellerOfferMeasurement } from '@/components/lead-capture/SellerOfferMea
 import { SellerPlanSample, PricingReviewCard } from '@/components/marketing/SellerPlanSample';
 import { getPublishedSellerExample } from '@/lib/marketing/sellerExamples.server';
 import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
+import { isSellerGuidedIntakeEnabled } from '@/lib/marketing/sellerGuidedIntake.server';
 
 export const metadata: Metadata = {
   title: 'Free Keller and Westlake Seller Plan | Sunset Pulse',
@@ -18,6 +19,9 @@ export default async function SellerPlanPage({ searchParams }: { searchParams: P
   const params = await searchParams;
   const initialRequestKind = params.requestKind === 'pricing_review' ? 'pricing_review' : 'seller_plan';
   const campaignQuery = sellerCampaignQuery(params);
+  const guidedQuery = new URLSearchParams(campaignQuery);
+  if (initialRequestKind === 'pricing_review') guidedQuery.set('requestKind', initialRequestKind);
+  const guidedHref = `/seller-plan/start${guidedQuery.size ? `?${guidedQuery}` : ''}`;
   const example = getPublishedSellerExample();
   return (
     <FieldbookShell title="Seller plan" eyebrow="Keller · Westlake">
@@ -36,6 +40,8 @@ export default async function SellerPlanPage({ searchParams }: { searchParams: P
         </section>
         <section aria-labelledby="seller-plan-form-title" className="fieldbook-panel">
           <h2 id="seller-plan-form-title" className="text-2xl font-bold">Request a seller plan</h2>
+          {/* Use document navigation so the root layout can switch to the focused form. */}
+          {isSellerGuidedIntakeEnabled() ? <a className="mt-4 inline-flex min-h-12 items-center rounded-xl bg-teal-400 px-5 font-bold text-slate-950" href={guidedHref}>Start Guided Seller Plan</a> : null}
           <p className="mb-6 mt-2 text-sm leading-6 text-slate-300">Start with the kind of help you need. For your privacy, this public form does not collect a street address.</p>
           <SellerPlanRequestForm initialRequestKind={initialRequestKind} />
           <SellerOfferMeasurement />

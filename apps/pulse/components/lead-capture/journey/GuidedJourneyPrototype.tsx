@@ -11,7 +11,8 @@ import SequentialPhotoLabels, {type PhotoLabel} from '@/components/marketing/Seq
 import GuidedJourneyShell from './GuidedJourneyShell';
 import JourneyChoiceGroup from './JourneyChoiceGroup';
 import JourneyHomeFacts from './JourneyHomeFacts';
-import useSellerJourneySubmission from './useSellerJourneySubmission';
+import useSellerJourneySubmission, {type SellerJourneyTransport} from './useSellerJourneySubmission';
+import type {SellerPlanLeadInput} from '@/lib/marketing/leadMagnetContract';
 import {homeAddressLabel,homeFactsLookupSchema,type HomeFactsLookupResult,type HomeFactsRecord} from '@/lib/marketing/homeFactsLookup';
 import styles from './GuidedJourney.module.css';
 
@@ -28,7 +29,7 @@ const titles:Partial<Record<StepId,string>>={
   review:'Does this look right?',contact:'How can we get in touch?',
 };
 
-function HomeIllustration() {
+function HomeIllustration({preview}:{preview:boolean}) {
   return <figure className={styles.art}>
     <div className={styles.artSurface}>
       <svg viewBox="0 0 430 350" aria-hidden="true" fill="none">
@@ -43,12 +44,21 @@ function HomeIllustration() {
       </svg>
     </div>
     <SequentialPhotoLabels labels={labels}/>
-    <figcaption className={styles.artCaption}>Illustration · Your Photo Could Go Here</figcaption>
+    {preview?<figcaption className={styles.artCaption}>Illustration · Your Photo Could Go Here</figcaption>:null}
   </figure>;
 }
 
-export default function GuidedJourneyPrototype() {
-  const [draft,setDraft]=useState(createInitialJourneyDraft);
+type LiveJourney<TOffer>={
+  campaign?:SellerPlanLeadInput['campaign'];pricingReview?:boolean;transport:SellerJourneyTransport;
+  parseBookingOffer:(value:unknown)=>TOffer|null;renderBooking:(offer:TOffer)=>React.ReactNode;
+};
+
+export default function GuidedJourneyPrototype<TOffer>({live}:{live?:LiveJourney<TOffer>}={}) {
+  const [draft,setDraft]=useState(()=>{
+    const initial=createInitialJourneyDraft();
+    return live?.pricingReview?setChoice(initial,'selling-preference','pricing'):initial;
+  });
+  const [company,setCompany]=useState('');
   const [step,setStep]=useState<StepId>('intent');
   const [returnToReview,setReturnToReview]=useState(false);
   const [error,setError]=useState('');
@@ -60,8 +70,8 @@ export default function GuidedJourneyPrototype() {
   const [selectedHome,setSelectedHome]=useState<string>();
   const [exampleLookup,setExampleLookup]=useState(false);
   const [manualAddress,setManualAddress]=useState<string|null>(null);
-  // P2 rehearsal uses the real contract/identity controller with no save transport.
-  const submission=useSellerJourneySubmission();
+  const submission=useSellerJourneySubmission({transport:live?.transport,parseBookingOffer:live?.parseBookingOffer});
+  const receipt=submission.state.status==='accepted'?submission.state.receipt:null;
   const headingRef=useRef<HTMLHeadingElement>(null);
   const inFlight=useRef(false);
   const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
@@ -71,7 +81,7 @@ export default function GuidedJourneyPrototype() {
   const section=sectionFor(step);
   const sections=[...new Set(steps.map(sectionFor))];
 
-  useEffect(()=>{headingRef.current?.focus();},[step,finished]);
+  useEffect(()=>{headingRef.current?.focus();},[step,finished,receipt]);
   useEffect(()=>{mounted.current=true;return ()=>{mounted.current=false;if(timer.current) clearTimeout(timer.current);lookupController.current?.abort();};},[]);
   function update(next:GuidedJourneyDraft) {setDraft(normalizeDraft(next));setError('');}
   function navigate(next:StepId) {
@@ -111,18 +121,18 @@ export default function GuidedJourneyPrototype() {
     }
   }
   function back() {
-    if(inFlight.current) return;
+    if(inFlight.current||receipt) return;
     if(finished){setFinished(false);navigate('review');return;}
     if(returnToReview){setReturnToReview(false);navigate('review');return;}
     const index=steps.indexOf(step);if(index>0) navigate(steps[index-1]);
   }
-  async function previewRequest() {
+  async function submitRequest() {
     if(inFlight.current) return;
     inFlight.current=true;setBusy(true);setError('');
-    if(draft.mode!=='buy') {
-      const result=await submission.submit(draft);
+    if(live||draft.mode!=='buy') {
+      const result=await submission.submit(draft,live?{company,campaign:live.campaign}:undefined);
       if(!mounted.current) return;
-      if(result.status==='error'||result.status==='ignored') {
+      if(result.status!=='prepared') {
         inFlight.current=false;setBusy(false);if(result.status==='error')setError(result.message);return;
       }
     }
@@ -135,12 +145,12 @@ export default function GuidedJourneyPrototype() {
     },800);
   }
   function next() {
-    if(inFlight.current||finished) return;
+    if(inFlight.current||finished||receipt) return;
     const invalid=validateStep(step,draft);
     if(invalid){setError(invalid);return;}
     setError('');
     if(step==='address') {
-      if(draft.propertyMatch||manualAddress===draft.address.line1){navigate('confirm-home');return;}
+      if(live||draft.propertyMatch||manualAddress===draft.address.line1){navigate('confirm-home');return;}
       if(lookup?.status==='multiple') {
         const record=lookup.candidates.find(candidate=>candidate.id===selectedHome);
         if(record){acceptHome(record);return;}
@@ -156,7 +166,7 @@ export default function GuidedJourneyPrototype() {
     if(step!=='contact') {
       const destination=steps[steps.indexOf(step)+1];if(destination) navigate(destination);return;
     }
-    void previewRequest();
+    void submitRequest();
   }
   function useSampleHome() {
     const address={line1:'100 Example Lane',city:'Keller',region:'TX',postalCode:'76248'};
@@ -174,17 +184,20 @@ export default function GuidedJourneyPrototype() {
     update({...draft,[step==='mortgage-balance'?'mortgageBalanceCents':'preApprovedAmountCents']:answer});
   }
   const question=step in choiceQuestions?choiceQuestions[step as ChoiceField]:null;
-  const title=finished?'Your next move, in view.':titles[step]||question?.title||'';
-  const description=finished?'This is a preview of the journey. Nothing has been submitted or booked.':
+  const title=receipt?'Your Request Is Saved':finished?'Your next move, in view.':titles[step]||question?.title||'';
+  const description=receipt?'We’ll follow up by email about the help you asked for.':finished?'This is a preview of the journey. Nothing has been submitted or booked.':
     step==='intent'?'Start where you are. We’ll take the rest one question at a time.':
-    step==='address'?'Use fictional details here. Address lookup reads saved public property records.':
+    step==='address'?(live?'We’ll use this address to prepare for your conversation.':'Use fictional details here. Address lookup reads saved public property records.'):
     step==='home-facts'?'Check the details below. You can change any value or choose Not Sure.':
     step==='detail-level'?'These questions can help with preparation. You can also leave them for later.':
     step==='review'?'You can change any answer before moving on.':
-    step==='contact'?'Try the contact step with example details. This preview sends nothing.':
-    step==='mortgage-balance'||step==='approval-amount'?'An approximate figure is enough for this preview. You can choose Not Sure.':undefined;
+    step==='contact'?(live?'Where should we send a reply?':'Try the contact step with example details. This preview sends nothing.'):
+    step==='mortgage-balance'||step==='approval-amount'?(live?'Sharing an amount is optional. Choose Not Sure to leave it blank.':'An approximate figure is enough for this preview. You can choose Not Sure.'):undefined;
 
   function fields():React.ReactNode {
+    if(receipt&&live) return <div className={styles.receipt}>
+      {receipt.bookingOffer?live.renderBooking(receipt.bookingOffer):<p>You can arrange a consultation when we follow up.</p>}
+    </div>;
     if(finished) return <div className={styles.receipt}>
       <p className={styles.eyebrow}>Preview Complete</p>
       <h2>A conversation comes next.</h2>
@@ -196,18 +209,18 @@ export default function GuidedJourneyPrototype() {
       </div>
       {draft.mode!=='buy'?<p>The connected flow will use the existing saved-request receipt and consultation calendar.</p>:null}
     </div>;
-    if(step==='intent') return <JourneyChoiceGroup<JourneyMode> legend={title} value={draft.mode||undefined} onChange={mode=>update({...draft,mode})} options={[
+    if(step==='intent') return <><JourneyChoiceGroup<JourneyMode> legend={title} value={draft.mode||undefined} onChange={mode=>update({...draft,mode})} options={[
       {value:'sell',label:'Sell My Home',description:'Get ready for the sale and plan the next step.'},
-      {value:'buy',label:'Find a Home',description:'Work out what you want before you start looking.'},
+      ...(!live?[{value:'buy' as const,label:'Find a Home',description:'Work out what you want before you start looking.'}]:[]),
       {value:'both',label:'Buy and Sell',description:'Keep both parts of your move together.'},
-    ]}/>;
+    ]}/>{live?<a className={styles.unknown} href="/explorer">Just looking to buy? Browse homes</a>:null}</>;
     if(step==='address') return <>
       <label className={styles.fieldLabel}>Street Address
         <input className={styles.input} maxLength={180} disabled={busy} autoComplete="street-address" placeholder="Enter your street address" value={draft.address.line1}
           onChange={event=>{setLookup(null);setSelectedHome(undefined);setManualAddress(null);update(changeJourneyAddress(draft,event.target.value));}}/>
       </label>
       <p className={styles.helper}>You can include a city or ZIP here if needed.</p>
-      <button type="button" disabled={busy} className={styles.unknown} onClick={useSampleHome}>Use a Fictional Sample Home</button>
+      {!live?<button type="button" disabled={busy} className={styles.unknown} onClick={useSampleHome}>Use a Fictional Sample Home</button>:null}
       {lookup?<div className={styles.lookupResults}>
         {lookup.status==='multiple'?<>
           <p>Which home do you mean?{lookup.moreMatches?' More matches are available. Add a city or ZIP to narrow them down.':''}</p>
@@ -222,7 +235,7 @@ export default function GuidedJourneyPrototype() {
       </div>:null}
     </>;
     if(step==='confirm-home') return <>
-      <div className={styles.mapPlaceholder}><span aria-hidden="true">⌖</span><span>Map Preview</span><span>A map is optional to continuing.</span></div>
+      {!live?<div className={styles.mapPlaceholder}><span aria-hidden="true">⌖</span><span>Map Preview</span><span>A map is optional to continuing.</span></div>:null}
       <div className={styles.confirmCard}><p>{draft.address.line1}{draft.address.city||draft.address.postalCode?<><br/>{[draft.address.city,draft.address.region,draft.address.postalCode].filter(Boolean).join(', ')}</>:null}</p>
         <label className={styles.check}><input type="checkbox" checked={draft.address.confirmed} onChange={event=>update({...draft,address:{...draft.address,confirmed:event.target.checked}})}/>This Is the Home I Mean</label>
       </div><button type="button" className={styles.unknown} onClick={()=>navigate('address')}>Edit Address</button>
@@ -256,12 +269,17 @@ export default function GuidedJourneyPrototype() {
     </div>)}</dl>;
     if(step==='contact') return <>
       <div className={styles.inputGrid}>
-        <label className={`${styles.fieldLabel} ${styles.wide}`}>Your Name<input className={styles.input} autoComplete="off" maxLength={120} value={draft.contact.name} onChange={event=>update({...draft,contact:{...draft.contact,name:event.target.value}})}/></label>
-        <label className={`${styles.fieldLabel} ${styles.wide}`}>Email<input className={styles.input} type="email" autoComplete="off" maxLength={180} value={draft.contact.email} onChange={event=>update({...draft,contact:{...draft.contact,email:event.target.value}})}/></label>
+        <label className={`${styles.fieldLabel} ${styles.wide}`}>Your Name<input className={styles.input} autoComplete={live?'name':'off'} maxLength={120} value={draft.contact.name} onChange={event=>update({...draft,contact:{...draft.contact,name:event.target.value}})}/></label>
+        <label className={`${styles.fieldLabel} ${styles.wide}`}>Email<input className={styles.input} type="email" autoComplete={live?'email':'off'} maxLength={180} value={draft.contact.email} onChange={event=>update({...draft,contact:{...draft.contact,email:event.target.value}})}/></label>
       </div>
       <div style={{marginTop:24}}><label className={styles.check}><input type="checkbox" checked={draft.contact.requestedContact} onChange={event=>update({...draft,contact:{...draft.contact,requestedContact:event.target.checked}})}/>I’d Like a Response About My Request.</label>
         <label className={styles.check}><input type="checkbox" checked={draft.contact.marketingOptIn} onChange={event=>update({...draft,contact:{...draft.contact,marketingOptIn:event.target.checked}})}/>Send Me Occasional Local Real Estate Updates. Optional.</label>
-      </div><p className={styles.helper}>Use example contact details. This preview checks your answers locally. Contact and financial answers are not sent or saved here.</p>
+      </div>
+      {live?<>
+        <label aria-hidden="true" className={styles.srOnly}>Leave this field empty<input name="company" tabIndex={-1} autoComplete="off" maxLength={120} value={company} onChange={event=>setCompany(event.target.value)} /></label>
+        <p className={styles.helper}>The real estate professional handling your request can use your address and answers to prepare for your conversation. Any financial amounts you chose to enter are saved with the request. Marketing emails are optional.</p>
+        <a href="/iabs" target="_blank" rel="noopener noreferrer" className={styles.helper}>Brokerage Services Information</a>
+      </>:<p className={styles.helper}>Use example contact details. This preview checks your answers locally. Contact and financial answers are not sent or saved here.</p>}
     </>;
     if(question) {
       const field=step as ChoiceField;
@@ -273,14 +291,14 @@ export default function GuidedJourneyPrototype() {
   }
 
   return <GuidedJourneyShell title={title} description={description} section={section} sections={sections} property={propertyLabel(draft)}
-    headingRef={headingRef} onSubmit={next} onBack={back} canGoBack={step!=='intent'||finished} busy={busy} error={error}
-    final={step==='contact'} returnToReview={returnToReview} complete={finished} aside={<div className={styles.asideInner}>
-      <p className={styles.asideEyebrow}>A Place to Start</p><h2 className={styles.asideTitle}>Make room for your next move.</h2>
-      <p className={styles.asideCopy}>A few details now can make the next conversation easier.</p>
-      <HomeIllustration/>
+    headingRef={headingRef} onSubmit={next} onBack={back} canGoBack={!receipt&&(step!=='intent'||finished)} busy={busy} error={error}
+    live={Boolean(live)} final={step==='contact'} returnToReview={returnToReview} complete={finished||Boolean(receipt)} aside={<div className={styles.asideInner}>
+      <p className={styles.asideEyebrow}>{live?'Keller and Westlake':'A Place to Start'}</p><h2 className={styles.asideTitle}>{live?'Your Seller Plan':'Make room for your next move.'}</h2>
+      <p className={styles.asideCopy}>{live?'Tell us about your home and what you need help with first.':'A few details now can make the next conversation easier.'}</p>
+      <HomeIllustration preview={!live}/>
       <ul className={styles.serviceList}><li>Pricing Review</li><li>Home Preparation</li><li>Move Planning</li></ul>
       {draft.mode?<div className={styles.homeContext}><small>{draft.mode==='buy'?'Finding a Home':'The Home We’re Talking About'}</small><p>{propertyLabel(draft)}</p>{draft.address.city&&draft.mode!=='buy'?<small>{draft.address.city}, {draft.address.region}</small>:null}</div>:null}
-      <details className={styles.controls}><summary>Preview Controls</summary><p>Use fictional details. Answers disappear when this page reloads.</p>
+      {!live?<details className={styles.controls}><summary>Preview Controls</summary><p>Use fictional details. Answers disappear when this page reloads.</p>
         {submission.state.status==='prepared'?<div className={styles.recordNote}>
           <p>Version {submission.state.summary.version} request checked locally · {submission.state.summary.byteLength} bytes</p>
           <p>Last Prepared Request ID</p><output aria-live="off" aria-label="Last Prepared Request ID" style={{overflowWrap:'anywhere'}}>{submission.state.summary.submissionId}</output>
@@ -294,7 +312,7 @@ export default function GuidedJourneyPrototype() {
           <option value="instant">Complete Immediately</option><option value="loading">Show Loading, Then Complete</option><option value="error">Show Loading, Then an Error</option>
         </select></label>
         <button type="button" disabled={busy} className={styles.unknown} onClick={reset}>Reset Preview</button>
-      </details>
+      </details>:null}
     </div>}>
     {fields()}
   </GuidedJourneyShell>;
