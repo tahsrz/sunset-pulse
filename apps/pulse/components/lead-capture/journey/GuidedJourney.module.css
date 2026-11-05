@@ -32,7 +32,7 @@
 .progress li[aria-current]>span { color:white; background:var(--accent); border-color:var(--accent); }
 .question { margin:0; font-size:clamp(28px,3vw,40px); line-height:1.16; letter-spacing:-.035em; text-wrap:balance; outline:none; }
 .description { font-size:14px; color:var(--muted); margin:18px 0 0; line-height:1.65; max-width:53ch; }
-.fields { margin-top:30px; }
+.fields { margin:30px 0 0; padding:0; border:0; min-width:0; }
 .choices { border:0; padding:0; margin:0; display:grid; gap:12px; min-width:0; }
 .choice { position:relative; display:flex; align-items:center; gap:14px; padding:18px 20px; min-height:66px; border:1px solid var(--line); background:#fcfbf8; border-radius:13px; cursor:pointer; transition:border-color 120ms,background 120ms; }
 .choice:hover { border-color:#7e9c85; }
@@ -75,6 +75,7 @@
 .actions { display:flex; align-items:center; gap:18px; }
 .next,.back { min-height:48px; padding:12px 22px; cursor:pointer; border-radius:8px; font-size:13px; font-weight:600; }
 .next { min-width:164px; color:#fffefa; background:var(--accent); border:1px solid var(--accent); }
+.root a.next { color:#fffefa; }
 .next:hover { background:#174c3c; }
 .back { border:0; background:none; color:var(--ink); }
 .root button:disabled { opacity:.45; cursor:not-allowed; }

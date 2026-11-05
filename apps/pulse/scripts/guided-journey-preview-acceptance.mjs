@@ -67,9 +67,19 @@ try {
   await page.getByRole('checkbox',{name:'I’d Like a Response About My Request.'}).check();
   await page.getByLabel('Final Step Response').selectOption('error');
   await page.getByRole('button',{name:'Preview My Request',exact:true}).click();await expect(page.getByRole('button',{name:'Loading…',exact:true})).toBeDisabled();
+  await expect(page.getByLabel('Email',{exact:true})).toBeDisabled();
   await expect(page.locator('#journey-content').getByRole('alert')).toContainText('Preview error');await expect(page.getByLabel('Email',{exact:true})).toHaveValue('taylor@example.test');
+  const preparedId=await page.getByLabel('Last Prepared Request ID').textContent();assert(/^[0-9a-f-]{36}$/.test(preparedId));
   await page.getByLabel('Final Step Response').selectOption('loading');await page.getByRole('button',{name:'Preview My Request',exact:true}).click();
   await heading('Your next move, in view.');await expect(page.getByText('No request was sent here.',{exact:false})).toBeVisible();
+  assert.equal(await page.getByLabel('Last Prepared Request ID').textContent(),preparedId,'Equivalent retry changed its prepared ID.');
+  await page.getByRole('button',{name:'Review My Answers',exact:true}).click();
+  await page.getByRole('button',{name:'Edit Approximate Mortgage Balance',exact:true}).click();
+  await page.getByLabel('Approximate Amount in Dollars').fill('260000');await page.getByRole('button',{name:'Back to Review',exact:true}).click();await next();
+  await page.getByLabel('Final Step Response').selectOption('instant');await page.getByRole('button',{name:'Preview My Request',exact:true}).click();
+  await heading('Your next move, in view.');assert.notEqual(await page.getByLabel('Last Prepared Request ID').textContent(),preparedId,'Material finance edit reused the prepared ID.');
+  await expect(page.getByRole('link',{name:'Open Current Seller Form'})).toHaveCSS('color','rgb(255, 254, 250)');
+  await page.screenshot({path:join(directory,'journey-request-prepared.png')});
   await page.reload({waitUntil:'networkidle'});await heading('What’s your next move?');
   await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
   await expect(first).toBeVisible();assert.equal(await first.evaluate(node=>getComputedStyle(node).animationName),'none');
@@ -136,6 +146,6 @@ try {
   }
   await motion.close();
   assert.deepEqual(errors,[],'Browser exceptions occurred.');assert.deepEqual(writes,[],'The prototype sent a mutating request.');assert(apiRequests.every(path=>path===lookupPath),'An unrelated application API was called.');assert(lookupRequests.length>=4);
-  const result={checkedAt:new Date().toISOString(),modes:['sell','buy','both'],streetAddressOnly:true,addressMatches:true,recordPrefill:true,manualCorrectionsPreserved:true,propertyChangeClearsFacts:true,manualFallbackOnUnavailable:true,desktop:1440,mobile:390,desktopZoomReflow:200,reducedMotion:true,sequentialLabelSamples:[280,450,720],labelRevealDoesNotReplay:true,hiddenApprovalCleared:true,renovationNoneExclusive:true,loadingAndFailureRecovery:true,reloadClearsDraft:true,readOnlyLookupRequests:lookupRequests.length,writeRequests:0,pageErrors:0};
-  await writeFile(join(directory,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('PASS: three journeys, real read-only lookup API, example matches/prefill/corrections, unavailable/manual recovery, responsive layout and zero mutations.');
+  const result={checkedAt:new Date().toISOString(),modes:['sell','buy','both'],preparedRequestIdentity:true,stableRetryIdentity:true,materialEditNewIdentity:true,pendingInputsDisabled:true,streetAddressOnly:true,addressMatches:true,recordPrefill:true,manualCorrectionsPreserved:true,propertyChangeClearsFacts:true,manualFallbackOnUnavailable:true,desktop:1440,mobile:390,desktopZoomReflow:200,reducedMotion:true,sequentialLabelSamples:[280,450,720],labelRevealDoesNotReplay:true,hiddenApprovalCleared:true,renovationNoneExclusive:true,loadingAndFailureRecovery:true,reloadClearsDraft:true,readOnlyLookupRequests:lookupRequests.length,writeRequests:0,pageErrors:0};
+  await writeFile(join(directory,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('PASS: prepared/retried/edited seller identity, three journeys, example lookup/prefill, manual recovery, responsive layout and zero mutations.');
 } finally {await browser.close();}

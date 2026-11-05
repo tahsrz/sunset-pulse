@@ -30,7 +30,8 @@ Then read this file fully before doing anything else in this session.
 ## Current Project State
 
 **Working:**
-- Guided journey P1 adds strict candidate v3 contracts, privacy-bounded serialization, stable retry IDs, legacy v2 hash compatibility and receipt parsing with the existing scheduler validator injected later. See `docs/releases/guided-home-journey-contracts-2026-11-04.md`. Live intake remains v2; no writer or public frontend activation.
+- Guided journey P2 stages submission preparation, retry identity and receipt handling in the local preview. See `docs/releases/guided-home-journey-frontend-2026-11-05.md`. The public form and writer still use v2.
+- Guided journey P1 adds strict candidate v3 contracts, privacy-bounded serialization, stable retry IDs, legacy v2 hash compatibility and receipt parsing with the existing scheduler validator injected later. See `docs/releases/guided-home-journey-contracts-2026-11-04.md`.
 - Guided home journey P0 includes a development-only public-record address lookup, bounded match choices, editable known-fact prefill and manual recovery, alongside three modes/review/sequential labels. See `docs/releases/guided-home-journey-prototype-2026-11-04.md` for usage and evidence. Hosted data coverage is unverified; public intake and scheduling remain unchanged.
 - Vibe CMS follow-up source restricts current/legacy editorial access and disables production WIP/E2E shortcuts; optimized local real-auth verification passes. Review/rollout remains pending; see `patterns/operator-cms-authority.md`.
 - Main-based profile-role security repair and aggregate-only release audit; generated local drift fixtures reuse the disposable Supabase runner. Hosted migration/deployment remain pending; see `patterns/profile-role-release-audit.md`.
@@ -42,7 +43,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
-- Guided buyer/seller intake integration: P0/P1 are implemented; frontend save integration, activation/persistence of the candidate v3 contract, owner projections and reuse of the feature-stack receipt/scheduler remain gated by `docs/guided-home-journey-plan-2026-11-04.md`. Buyer owner-reader changes are separate.
+- Guided buyer/seller intake integration: P0/P1 and the local P2 rehearsal are implemented. The v3 writer, owner projection and live adapter on the reviewed feature stack remain gated by `docs/guided-home-journey-plan-2026-11-04.md`. Buyer owner-reader changes are separate.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired

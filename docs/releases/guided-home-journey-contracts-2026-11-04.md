@@ -91,7 +91,9 @@ Repository conventions checklist:
 6. Environment/global cleanup: passes; crypto stubs are restored after each test. No runtime env files or hosted credentials were loaded.
 7. Trace redaction: not applicable; no tracing added. Serializer/receipt errors exclude raw personal answers/capabilities.
 
-## Next: P2 Frontend Integration
+## Frontend Integration
+
+The [P2 rehearsal](guided-home-journey-frontend-2026-11-05.md) exercises these contracts locally. The following steps cover attaching the live form after the writer and owner reader support v3.
 
 1. Select the reviewed seller-feature base at or beyond the recorded `042057e1` snapshot. Preserve its existing consultation, sharing and security fixes. Do not overwrite the newer form with main's older implementation.
 2. Integrate the new presentation with the existing form's synchronous submit guard and pending identity ref. Acquire the guard before any async fingerprint work; keep answers/identity on uncertain failure.

@@ -30,7 +30,7 @@ export default function GuidedJourneyShell(props:Props) {
             <h1 ref={props.headingRef} tabIndex={-1} className={styles.question}>{props.title}</h1>
             {props.description?<p className={styles.description}>{props.description}</p>:null}
           </div>
-          <div className={styles.fields}>{props.children}</div>
+          <fieldset disabled={props.busy} className={styles.fields}>{props.children}</fieldset>
           <p role="alert" className={styles.error}>{props.error}</p>
           <footer className={styles.footer}>
             <div className={styles.footerContext}><span className={styles.contextDot} aria-hidden="true"/><span>{props.property}</span></div>

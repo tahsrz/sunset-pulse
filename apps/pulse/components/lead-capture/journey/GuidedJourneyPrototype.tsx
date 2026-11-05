@@ -11,6 +11,7 @@ import SequentialPhotoLabels, {type PhotoLabel} from '@/components/marketing/Seq
 import GuidedJourneyShell from './GuidedJourneyShell';
 import JourneyChoiceGroup from './JourneyChoiceGroup';
 import JourneyHomeFacts from './JourneyHomeFacts';
+import useSellerJourneySubmission from './useSellerJourneySubmission';
 import {homeAddressLabel,homeFactsLookupSchema,type HomeFactsLookupResult,type HomeFactsRecord} from '@/lib/marketing/homeFactsLookup';
 import styles from './GuidedJourney.module.css';
 
@@ -59,6 +60,8 @@ export default function GuidedJourneyPrototype() {
   const [selectedHome,setSelectedHome]=useState<string>();
   const [exampleLookup,setExampleLookup]=useState(false);
   const [manualAddress,setManualAddress]=useState<string|null>(null);
+  // P2 rehearsal uses the real contract/identity controller with no save transport.
+  const submission=useSellerJourneySubmission();
   const headingRef=useRef<HTMLHeadingElement>(null);
   const inFlight=useRef(false);
   const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
@@ -78,6 +81,7 @@ export default function GuidedJourneyPrototype() {
   }
   function edit(next:StepId) {setReturnToReview(true);navigate(next);}
   function reset() {
+    if(inFlight.current||!submission.reset()) return;
     setDraft(createInitialJourneyDraft());setFinished(false);setReturnToReview(false);
     setLookup(null);setSelectedHome(undefined);setManualAddress(null);navigate('intent');
   }
@@ -112,6 +116,24 @@ export default function GuidedJourneyPrototype() {
     if(returnToReview){setReturnToReview(false);navigate('review');return;}
     const index=steps.indexOf(step);if(index>0) navigate(steps[index-1]);
   }
+  async function previewRequest() {
+    if(inFlight.current) return;
+    inFlight.current=true;setBusy(true);setError('');
+    if(draft.mode!=='buy') {
+      const result=await submission.submit(draft);
+      if(!mounted.current) return;
+      if(result.status==='error'||result.status==='ignored') {
+        inFlight.current=false;setBusy(false);if(result.status==='error')setError(result.message);return;
+      }
+    }
+    if(previewResponse==='instant') {inFlight.current=false;setBusy(false);setFinished(true);return;}
+    // Explicit preview response only. The prepared ID survives this simulated error.
+    timer.current=setTimeout(()=>{
+      timer.current=null;inFlight.current=false;setBusy(false);
+      if(previewResponse==='error') setError('Preview error: your answers are still here. Choose another preview response and try again.');
+      else setFinished(true);
+    },800);
+  }
   function next() {
     if(inFlight.current||finished) return;
     const invalid=validateStep(step,draft);
@@ -134,14 +156,7 @@ export default function GuidedJourneyPrototype() {
     if(step!=='contact') {
       const destination=steps[steps.indexOf(step)+1];if(destination) navigate(destination);return;
     }
-    if(previewResponse==='instant'){setFinished(true);return;}
-    // Explicit preview controls only. No request, record, email or booking is created.
-    inFlight.current=true;setBusy(true);
-    timer.current=setTimeout(()=>{
-      timer.current=null;inFlight.current=false;setBusy(false);
-      if(previewResponse==='error') setError('Preview error: your answers are still here. Choose another preview response and try again.');
-      else setFinished(true);
-    },800);
+    void previewRequest();
   }
   function useSampleHome() {
     const address={line1:'100 Example Lane',city:'Keller',region:'TX',postalCode:'76248'};
@@ -173,12 +188,13 @@ export default function GuidedJourneyPrototype() {
     if(finished) return <div className={styles.receipt}>
       <p className={styles.eyebrow}>Preview Complete</p>
       <h2>A conversation comes next.</h2>
-      <p>In the connected flow, your saved request would lead to a consultation with your agent. No request was sent here.</p>
+      <p>{draft.mode==='buy'?'This previews the buying questions.':'Your answers passed the request checks on this device.'} No request was sent here.</p>
       <p>{draft.mode==='buy'?'You can start exploring homes now.':'You can use the current seller form when you’re ready to make a real request.'}</p>
       <div className={styles.inlineActions}>
         <Link href={draft.mode==='buy'?'/explorer':'/seller-plan#request'} className={styles.next}>{draft.mode==='buy'?'Open Explorer':'Open Current Seller Form'}</Link>
         <button type="button" className={styles.unknown} onClick={reset}>Start Again</button>
       </div>
+      {draft.mode!=='buy'?<p>The connected flow will use the existing saved-request receipt and consultation calendar.</p>:null}
     </div>;
     if(step==='intent') return <JourneyChoiceGroup<JourneyMode> legend={title} value={draft.mode||undefined} onChange={mode=>update({...draft,mode})} options={[
       {value:'sell',label:'Sell My Home',description:'Get ready for the sale and plan the next step.'},
@@ -245,7 +261,7 @@ export default function GuidedJourneyPrototype() {
       </div>
       <div style={{marginTop:24}}><label className={styles.check}><input type="checkbox" checked={draft.contact.requestedContact} onChange={event=>update({...draft,contact:{...draft.contact,requestedContact:event.target.checked}})}/>I’d Like a Response About My Request.</label>
         <label className={styles.check}><input type="checkbox" checked={draft.contact.marketingOptIn} onChange={event=>update({...draft,contact:{...draft.contact,marketingOptIn:event.target.checked}})}/>Send Me Occasional Local Real Estate Updates. Optional.</label>
-      </div><p className={styles.helper}>These choices demonstrate the form. They do not subscribe you or send a request in this preview.</p>
+      </div><p className={styles.helper}>Use example contact details. This preview checks your answers locally. Contact and financial answers are not sent or saved here.</p>
     </>;
     if(question) {
       const field=step as ChoiceField;
@@ -265,6 +281,11 @@ export default function GuidedJourneyPrototype() {
       <ul className={styles.serviceList}><li>Pricing Review</li><li>Home Preparation</li><li>Move Planning</li></ul>
       {draft.mode?<div className={styles.homeContext}><small>{draft.mode==='buy'?'Finding a Home':'The Home We’re Talking About'}</small><p>{propertyLabel(draft)}</p>{draft.address.city&&draft.mode!=='buy'?<small>{draft.address.city}, {draft.address.region}</small>:null}</div>:null}
       <details className={styles.controls}><summary>Preview Controls</summary><p>Use fictional details. Answers disappear when this page reloads.</p>
+        {submission.state.status==='prepared'?<div className={styles.recordNote}>
+          <p>Version {submission.state.summary.version} request checked locally · {submission.state.summary.byteLength} bytes</p>
+          <p>Last Prepared Request ID</p><output aria-live="off" aria-label="Last Prepared Request ID" style={{overflowWrap:'anywhere'}}>{submission.state.summary.submissionId}</output>
+          <p>No save transport is connected. Retry keeps this ID until material answers change.</p>
+        </div>:null}
         <label>Address Lookup Data<select disabled={busy} value={exampleLookup?'examples':'saved'} onChange={event=>{setExampleLookup(event.target.value==='examples');setLookup(null);setSelectedHome(undefined);setManualAddress(null);update(changeJourneyAddress(draft,draft.address.line1,true));}}>
           <option value="saved">Saved Public Property Records</option><option value="examples">Fictional Example Records</option>
         </select></label>
