@@ -2,10 +2,11 @@
 import { FieldbookShell } from './FieldbookShell';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { sellerCaseResultSchema, sellerMilestones, sellerMilestoneLabels, sellerServiceActionSchema, type SellerCaseResult, type SellerServiceAction } from '@/lib/realtor-workspace/sellerServiceContract';
+import { sellerCaseWorkspaceResultSchema, sellerMilestones, sellerMilestoneLabels, sellerServiceActionSchema, type SellerCaseWorkspaceResult, type SellerServiceAction } from '@/lib/realtor-workspace/sellerServiceContract';
 import { SellerWorkspaceNav } from './SellerWorkspaceNav';
 import { SellerLeadScheduleDialog } from './SellerLeadScheduleDialog';
 import { SellerJourney } from './SellerJourney';
+import { SellerIntakeSummary } from './SellerIntakeSummary';
 import { SellerActionDrawer, type SellerCaseActionView } from './SellerActionDrawer';
 import { SellerConversationComposer } from './SellerConversationComposer';
 import { SellerAppointmentStep } from './SellerAppointmentStep';
@@ -21,7 +22,7 @@ type ActionFields = SellerServiceAction extends infer T ? T extends SellerServic
 type MilestoneDraft = { milestone: typeof sellerMilestones[number]; occurredOn: string; evidence: string };
 const emptyMilestoneDraft: MilestoneDraft = { milestone: 'consultation_held', occurredOn: '', evidence: '' };
 export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
-  const [data, setData] = useState<SellerCaseResult | null>(null);
+  const [data, setData] = useState<SellerCaseWorkspaceResult | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false); const [needsReload, setNeedsReload] = useState(false);
@@ -36,7 +37,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
     const response = await fetch(`/api/realtor/seller-service?leadId=${encodeURIComponent(leadId)}`, { cache: 'no-store', signal });
     const body = await response.json();
     if (!response.ok || !body.ok) throw new Error(response.status === 401 ? 'Sign in to open your seller cases.' : body.error || 'Unable to load this case.');
-    const value = sellerCaseResultSchema.parse(body.result); if (signal?.aborted) return false;
+    const value = sellerCaseWorkspaceResultSchema.parse(body.result); if (signal?.aborted) return false;
     setData(value); setDraft(value.case ? { propertyId: value.case.property_id, notes: value.case.notes, documents: value.case.documents, checklist: value.case.checklist } : emptyDraft);
     setNeedsReload(false); return true;
   }, [leadId]);
@@ -94,6 +95,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
     {!data && !error ? <p role="status">Loading case…</p> : null}
     {data ? <>
       <SellerJourney result={data} />
+      {data.intake ? <SellerIntakeSummary intake={data.intake} /> : null}
       {dirty && actionView.kind === 'closed' ? <p className="text-sm text-amber-200">Save your case changes before recording another action.</p> : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <CasePanel title="Preparation">

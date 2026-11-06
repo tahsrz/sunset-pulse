@@ -68,8 +68,8 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body.result as T;
 }
 
-function SectionNav({ section }: { section: Section }) {
-  return <SellerWorkspaceNav active={'/' + section} />;
+function SectionNav({ section, showBuyerInbox }: { section: Section; showBuyerInbox: boolean }) {
+  return <SellerWorkspaceNav active={'/' + section} showBuyerInbox={showBuyerInbox} />;
 }
 
 function Panel({ title, children, extra }: { title: string; children: React.ReactNode; extra?: React.ReactNode }) {
@@ -277,7 +277,7 @@ export default function RealtorWorkspace({ section, sellerLeadId, plannerDate }:
 
   const summary = data?.summary || data?.business?.value;
 
-  return <FieldbookShell className={section === 'today' ? dailyFocus.dailyTheme : undefined} title={section === 'seller-inbox' ? 'Seller inbox' : section === 'today' ? 'Today' : section[0].toUpperCase() + section.slice(1)} navigation={<SectionNav section={section} />} date={section === 'today' ? displayToday(preferences?.time_zone) : undefined} timeZone={preferences?.time_zone}>
+  return <FieldbookShell className={section === 'today' ? dailyFocus.dailyTheme : undefined} title={section === 'seller-inbox' ? 'Seller inbox' : section === 'today' ? 'Today' : section[0].toUpperCase() + section.slice(1)} navigation={<SectionNav section={section} showBuyerInbox={section === 'seller-inbox' && Boolean(preferences)} />} date={section === 'today' ? displayToday(preferences?.time_zone) : undefined} timeZone={preferences?.time_zone}>
       {error ? <div role="alert" className="fieldbook-record rounded-xl border border-rose-300/30 bg-rose-300/10 p-4 text-sm text-rose-100">{error}{section === 'planner' && /changed.*reload|reload it before saving/i.test(error) ? <button type="button" onClick={() => void reloadLatestPlanner()} className="ml-3 rounded-md border border-rose-100/30 px-3 py-1.5 font-semibold hover:bg-rose-100/10">Refresh latest planner data</button> : null}</div> : null}
       {notice ? <div role="status" className="fieldbook-record rounded-xl border border-emerald-300/30 bg-emerald-300/10 p-4 text-sm text-emerald-100">{notice}</div> : null}
       {loading ? <p className="text-sm text-slate-400">Loading your workspace…</p> : null}

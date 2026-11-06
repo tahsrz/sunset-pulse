@@ -41,6 +41,7 @@ import {
   type PublicGuideLeadIntelligence,
 } from '@/lib/sites/publicGuideLeadIntelligence';
 import { getPublicAgentSiteUrl } from '@/lib/sites/siteUrls';
+import { withoutSellerJourney } from '@/lib/sites/sellerJourneyIntakeContext';
 import AgentLeadActions from './AgentLeadActions';
 import CmaPrivateDetailsPanel from './CmaPrivateDetailsPanel';
 import NotificationInbox from './NotificationInbox';
@@ -422,6 +423,7 @@ function LeadCard({ lead, canManageSellerLead, personalTimeZone }: { lead: Agent
           <AgentLeadActions
             lead={{
               ...lead,
+              metadata: withoutSellerJourney(lead.metadata),
               status: toPipelineLeadStatus(status),
               internal_note: lead.internal_note,
             }}

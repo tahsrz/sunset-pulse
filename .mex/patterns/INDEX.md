@@ -8,3 +8,4 @@ Lookup table for all pattern files in this directory. Check here before starting
 | [add-tah-cartridge.md](add-tah-cartridge.md) | Importing, forging, or packing `.tah` cartridges and wiring them into atlas retrieval |
 | [debug-command-failure.md](debug-command-failure.md) | Diagnosing failed or weak Command Center runs (wrong worker, empty shards, 500 errors) |
 | [route-command-flow.md](route-command-flow.md) | Modifying LangGraph stages or routing/retrieve/plan logic in `commandRouter.ts` |
+| [plan-guided-journey.md](plan-guided-journey.md) | Building and verifying the guided seller flow with the existing intake, workspace and scheduler |

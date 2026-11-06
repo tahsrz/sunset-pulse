@@ -30,6 +30,8 @@ Then read this file fully before doing anything else in this session.
 ## Current Project State
 
 **Working:**
+- The gated guided seller form, v3 save and owner case projection are staged on the seller feature branch. The short public form still uses v2. See `docs/releases/guided-seller-save-2026-11-05.md`.
+- The guided buyer form starts from Explorer and uses the staged buyer v1 API. The private Buyer Inbox expires requests after 90 days. The existing daily CMA cron clears expired buyer details in batches. See `docs/releases/guided-buyer-requests-2026-11-05.md`.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen
 - Segmented 400-expert atlas retrieval, local `query_memory.tah`, SQLSync journal staging, TensorZero eval/feedback ledgers
 - Jamie Chat at `/jamie-chat` sharing Command Center helper context via `/api/jamie/chat`
@@ -38,6 +40,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
+- Guided seller and buyer rollout requires the security branch reconciliation, six pending migrations and verification of the existing cron in the shared target. The disposable upgrade rehearsal, buyer walkthrough and optimized flag checks passed. Keep `BUYER_GUIDED_INTAKE_ENABLED` off pending the target checks. Public home facts lookup is still in preview.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired

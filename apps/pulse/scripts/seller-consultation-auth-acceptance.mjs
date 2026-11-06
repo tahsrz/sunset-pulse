@@ -5,7 +5,7 @@ import {createClient} from '@supabase/supabase-js';
 // Called only after the real-auth harness verifies its generated local stack.
 // API responses come from Next + local Supabase. Only a response-loss fault is
 // injected; no successful API response or session is fabricated.
-export async function sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret}) {
+export async function sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret,guidedSeller=false,guidedRetentionSecret}) {
   assert(['127.0.0.1','localhost'].includes(new URL(origin).hostname));
   const other=await login();
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -40,15 +40,40 @@ export async function sellerConsultationAuthAcceptance({primary,login,request,sq
 
   const visitors=[];
   try {
-    async function intake(name) {
+    async function intake(name, guided=false) {
       const context=await browser.newContext({timezoneId:'America/Chicago'});visitors.push(context);const page=await context.newPage();
       const errors=[];page.on('pageerror',error=>errors.push(error.message));
       let intakePosts=0;page.on('request',req=>{if(new URL(req.url()).pathname==='/api/lead-magnets' && req.method()==='POST') intakePosts++;});
-      await page.goto(origin+'/seller-plan',{waitUntil:'networkidle',timeout:120000});
-      await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('heading',{name:'When are you thinking?',exact:true}).waitFor();
-      await page.getByRole('button',{name:'Continue',exact:true}).click();
-      await page.getByLabel('Your name',{exact:true}).fill(name);await page.getByLabel('Email',{exact:true}).fill('seller@example.test');
-      await page.getByLabel('I agree to be contacted to respond to this request.',{exact:true}).check();
+      await page.goto(origin+'/seller-plan'+(guided?'?utm_source=local-acceptance&requestKind=pricing_review':''),{waitUntil:'networkidle',timeout:120000});
+      if (guided) {
+        const next = () => page.getByRole('button',{name:'Next →',exact:true}).click();
+        const choose = async (label) => { await page.getByRole('radio',{name:label,exact:true}).check(); await next(); };
+        await page.getByRole('link',{name:'Start Guided Seller Plan',exact:true}).click();
+        await page.getByRole('heading',{name:'What’s your next move?',exact:true}).waitFor();
+        assert.equal(await page.getByText('Preview Controls',{exact:true}).count(),0);
+        assert.equal(await page.getByText('Notice to Consumers',{exact:true}).count(),0,'the entry uses the focused document without global chrome');
+        await choose('Sell My Home');
+        const street=page.getByLabel('Street Address',{exact:true});
+        try { await street.fill('100 Example Lane'); }
+        catch {
+          const title=await page.getByRole('heading',{level:1}).allTextContents();
+          throw new Error(`Guided address did not open. Path: ${new URL(page.url()).pathname}. Heading: ${title.join(', ')}. Browser exceptions: ${errors.length}.`);
+        }
+        await next();
+        await page.getByRole('checkbox',{name:'This Is the Home I Mean',exact:true}).check();await next();
+        await page.getByRole('button',{name:'I’m Not Sure About These Details',exact:true}).click();await next();
+        await choose('Leave These for Later');await choose('I Own It');await choose('3–6 Months');
+        assert(await page.getByRole('radio',{name:'Discuss a Price',exact:true}).isChecked());await next();
+        await choose('Yes');await page.getByLabel('Approximate Amount in Dollars',{exact:true}).fill('250000');await next();await next();
+        await page.getByLabel('Your Name',{exact:true}).fill(name);
+        await page.getByLabel('I’d Like a Response About My Request.',{exact:true}).check();
+      } else {
+        await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('heading',{name:'When are you thinking?',exact:true}).waitFor();
+        await page.getByRole('button',{name:'Continue',exact:true}).click();
+        await page.getByLabel('Your name',{exact:true}).fill(name);
+        await page.getByLabel('I agree to be contacted to respond to this request.',{exact:true}).check();
+      }
+      await page.getByLabel('Email',{exact:true}).fill('seller@example.test');
       const savedResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/lead-magnets' && response.request().method()==='POST',{timeout:90000});
       await page.getByRole('button',{name:'Send Request',exact:true}).click();
       let response;
@@ -62,12 +87,38 @@ export async function sellerConsultationAuthAcceptance({primary,login,request,sq
       assert.equal(response.status(),201,`real intake must save before offering booking: ${typeof payload.message==='string'?payload.message.slice(0,160):'no message'}`);
       assert(payload.bookingOffer?.token,'new saved intake issues its scoped capability');
       await page.getByRole('button',{name:'Check Available Times',exact:true}).waitFor();
+      if (guided) await page.getByRole('heading',{name:'Your Request Is Saved',exact:true}).waitFor();
       const identity=JSON.parse(Buffer.from(payload.bookingOffer.token.split('.')[0],'base64url').toString('utf8')).identity;
       return {page,errors,offer:payload.bookingOffer,identity,submission:response.request().postDataJSON()};
     }
-    const first=await intake('Synthetic Booking Seller');
-    const replay=await request(first.page,'/api/lead-magnets','POST',first.submission);
-    assert.equal(replay.status,200);assert.equal(replay.data.duplicate,true);assert(!Object.hasOwn(replay.data,'bookingOffer'),'public intake replay never refreshes booking access');
+    const first=await intake('Synthetic Booking Seller',guidedSeller);
+    const checkIntakeReplay=async()=>{
+      const replay=await request(first.page,'/api/lead-magnets','POST',first.submission);
+      assert.equal(replay.status,200);assert.equal(replay.data.duplicate,true);assert(!Object.hasOwn(replay.data,'bookingOffer'),'public intake replay never refreshes booking access');
+    };
+    if (!guidedSeller) await checkIntakeReplay();
+    if (guidedSeller) {
+      assert.equal(first.submission.offerVersion,'3');
+      assert.deepEqual(first.submission.campaign,{source:'local-acceptance'});
+      assert.equal(first.submission.company,'');
+      const leadId=first.identity.leadId;
+      assert.match(leadId,/^[a-f0-9-]{36}$/);
+      assert.equal(await sql(`SELECT count(*) FROM agent_site_leads WHERE id='${leadId}' AND metadata #>> '{sellerPlan,offerVersion}'='3' AND metadata #>> '{sellerPlan,journey,currentMortgage,amount,value}'='25000000' AND message NOT LIKE '%Example Lane%';`),'1');
+      assert.equal(await sql("SELECT count(*) FROM agent_site_leads WHERE source='seller_plan' AND name='Synthetic Booking Seller';"),'1','intake creates exactly one lead');
+      assert.equal(await sql(`SELECT count(*) FROM scheduling_bookings WHERE lead_id='${leadId}';`),'0','a receipt alone does not create an appointment');
+      const owned=await request(primary.page,`/api/realtor/seller-service?leadId=${leadId}`);
+      assert.equal(owned.status,200);assert.equal(owned.data.result.intake.address.line1,'100 Example Lane');
+      assert(!Object.hasOwn(owned.data.result.intake,'currentMortgage'));
+      const foreign=await request(other.page,`/api/realtor/seller-service?leadId=${leadId}`);
+      assert.equal(foreign.status,404);assert(!foreign.data.result?.intake);
+      await primary.page.goto(origin+`/seller-cases/${leadId}`,{timeout:120000});
+      await primary.page.getByRole('heading',{name:'Seller Request Details',exact:true}).waitFor({timeout:30000});
+      assert.equal(await primary.page.getByText('100 Example Lane',{exact:true}).count(),1);
+      await first.page.setViewportSize({width:390,height:900});
+      assert(await first.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      await first.page.screenshot({path:artifacts+'guided-seller-receipt-mobile.png',fullPage:true});
+      console.log('PASS: guided form sends one v3 request and shows its home facts only to the owner. Booking remains separate.');
+    }
     await primary.page.goto(origin+'/today',{timeout:120000});
     const dailyFocus=primary.page.getByRole('article',{name:'New request: Synthetic Booking Seller',exact:true});
     await dailyFocus.waitFor({timeout:30000});
@@ -94,6 +145,28 @@ export async function sellerConsultationAuthAcceptance({primary,login,request,sq
     assert.equal(await sql(`SELECT count(*) FROM realtor_planner_items WHERE source_lead_id='${first.identity.leadId}';`),'1');
     assert.equal(await sql(`SELECT count(*) FROM realtor_reminders r JOIN realtor_planner_occurrences o ON o.id=r.occurrence_id JOIN realtor_planner_items i ON i.id=o.item_id WHERE i.source_lead_id='${first.identity.leadId}' AND r.status='scheduled';`),'1');
     console.log('PASS: real public intake, lost response after commit and exact browser retry preserve one booking, attendee, case link, planner item and reminder.');
+
+    if (guidedSeller) {
+      const leadId=first.identity.leadId;
+      await sql(`UPDATE public.agent_site_leads SET created_at=now()-interval '91 days' WHERE id='${leadId}';`);
+      const cronUrl=origin+'/api/admin/agent-leads/cma-retention/cron';
+      assert.equal((await fetch(cronUrl)).status,401,'anonymous callers cannot run retention');
+      assert.equal(await sql(`SELECT count(*) FROM public.agent_site_leads WHERE id='${leadId}' AND metadata #> '{sellerPlan,journey}' IS NOT NULL;`),'1');
+      const runRetention=()=>fetch(cronUrl,{headers:{authorization:`Bearer ${guidedRetentionSecret}`}});
+      const cleaned=await runRetention();
+      assert.equal(cleaned.status,200);
+      assert.deepEqual(await cleaned.json(),{ok:true,deletedCount:0,prunedJourneyCount:1,prunedBuyerRequestCount:0});
+      const repeated=await runRetention();
+      assert.equal(repeated.status,200);
+      assert.deepEqual(await repeated.json(),{ok:true,deletedCount:0,prunedJourneyCount:0,prunedBuyerRequestCount:0});
+      const retained=await request(primary.page,`/api/realtor/seller-service?leadId=${leadId}`);
+      assert.equal(retained.status,200);assert.equal(retained.data.result.intake,null);
+      assert(retained.data.result.bookings.some(booking=>booking.id===committed.bookingId),'the confirmed booking survives intake retention');
+      await checkIntakeReplay();
+      assert.equal(await sql(`SELECT count(*) FROM public.agent_site_leads WHERE id='${leadId}' AND metadata #> '{sellerPlan,journey}' IS NULL AND metadata #>> '{sellerPlan,requestedContact,granted}'='true';`),'1','replay keeps consent and does not restore expired answers');
+      assert.equal(await sql("SELECT count(*) FROM public.agent_site_leads WHERE source='seller_plan' AND name='Synthetic Booking Seller';"),'1','replay after retention keeps one lead');
+      console.log('PASS: protected retention prunes the expired guided intake once. The original request replays and its booking remains confirmed.');
+    }
 
     const second=await intake('Synthetic Competing Seller');
     const conflict=await request(second.page,'/api/seller-consultations/reservations','POST',{...attempt,capability:second.offer.token,requestId:randomUUID()});

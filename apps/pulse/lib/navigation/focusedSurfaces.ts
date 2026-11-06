@@ -23,6 +23,10 @@ const minimalChromeSurfacePrefixes = [
   '/agent',
 ];
 
+function isGuidedJourney(pathname?: string | null) {
+  return pathname === '/seller-plan/preview' || pathname === '/seller-plan/start' || pathname === '/buyer-plan/start';
+}
+
 export function isFocusedGameSurface(pathname?: string | null) {
   return matchesPrefix(pathname, focusedGamePrefixes);
 }
@@ -32,11 +36,11 @@ export function isOperatorSurface(pathname?: string | null) {
 }
 
 export function isLightweightGlobalSurface(pathname?: string | null) {
-  return isFocusedGameSurface(pathname) || isOperatorSurface(pathname) || matchesPrefix(pathname, standaloneSurfacePrefixes);
+  return isGuidedJourney(pathname) || isFocusedGameSurface(pathname) || isOperatorSurface(pathname) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 export function isMinimalChromeSurface(pathname?: string | null) {
-  return matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
+  return isGuidedJourney(pathname) || matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 function matchesPrefix(pathname: string | null | undefined, prefixes: string[]) {

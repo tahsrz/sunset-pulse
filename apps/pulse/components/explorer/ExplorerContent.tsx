@@ -10,7 +10,7 @@ import { ExplorerResultsList } from '@/components/explorer/ExplorerResultsList';
 
 const noListings: PublicListing[] = [];
 
-export function ExplorerContent() {
+export function ExplorerContent({ showBuyerPlan = false }: { showBuyerPlan?: boolean }) {
   const params = useSearchParams();
   const locationKey = params.toString();
   const [area, setArea] = useState<{ key: string; selection: ExplorerSelection | null } | null>(null);
@@ -27,7 +27,11 @@ export function ExplorerContent() {
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl uppercase sm:text-4xl">Property Explorer</h1>
-        <Link href="/properties" className="underline underline-offset-4">Browse Properties</Link>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link href="/properties" className="underline underline-offset-4">Browse Properties</Link>
+          {/* Document navigation switches to the focused form layout. */}
+          {showBuyerPlan ? <a href="/buyer-plan/start" className="rounded-lg bg-teal-300 px-4 py-2 font-semibold text-slate-950">Get Help Finding a Home</a> : null}
+        </div>
       </header>
       {'error' in query ? <div role="alert" className="space-y-3">
         <p>{query.error}</p>

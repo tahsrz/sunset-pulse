@@ -2,6 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
+import { readSellerJourneyIntake, withoutSellerJourney } from '@/lib/sites/sellerJourneyIntakeContext';
 import { throwRealtorRpcError, RealtorWorkspaceError } from './access.server';
 import { sellerLeadActionSchema, sellerLeadPageSchema, sellerOutcomePageSchema, sellerOutcomePageResultSchema, sellerScheduleQuerySchema, sellerScheduleResultSchema } from './leadContracts';
 
@@ -66,9 +67,10 @@ export async function listOwnedSellerLeads(actorId: string, rawQuery: unknown) {
       eventsByLead.set(String(event.lead_id), list);
     }
   }
-  const leadsWithEvents = leads.map((row) => ({
-    ...(row as Record<string, unknown>),
-    sellerOutcomeEvents: eventsByLead.get(String((row as { id?: string }).id)) || [],
+  const leadsWithEvents = leads.map((row: Record<string, unknown>) => ({
+    ...row,
+    ...('metadata' in row ? { metadata: withoutSellerJourney(row.metadata) } : {}),
+    sellerOutcomeEvents: eventsByLead.get(String(row.id)) || [],
   }));
   const last = leads.at(-1) as { created_at?: string; id?: string } | undefined;
   const nextCursor = hasMore && last?.created_at && last.id
@@ -78,6 +80,16 @@ export async function listOwnedSellerLeads(actorId: string, rawQuery: unknown) {
     })).toString('base64url')
     : null;
   return { leads: leadsWithEvents, nextCursor };
+}
+
+export async function readOwnedSellerJourney(actorId: string, leadId: string) {
+  const { data, error } = await supabaseAdmin.rpc('seller_lead_list_owned', {
+    p_actor_id: actorId, p_limit: 1, p_lead_id: leadId,
+  });
+  if (error) throwRealtorRpcError(error.code);
+
+  const lead = Array.isArray(data) ? data[0] : null;
+  return lead?.id === leadId ? readSellerJourneyIntake(lead) : null;
 }
 
 export async function recordOwnedSellerLeadAction(actorId: string, rawAction: unknown) {

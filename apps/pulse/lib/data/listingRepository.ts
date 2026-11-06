@@ -6,6 +6,7 @@ import Property from '@/models/Property';
 import type { PropertyDocument } from '@/models/types';
 import { listingToRow, normalizeListing, type Listing } from './listingContract';
 import { withRetry } from '@/lib/core/withRetry';
+import type {PublicHomeFactsRow} from '@/lib/marketing/homeFactsLookup';
 import {
   listMockCanonicalProperties,
   readMockCanonicalProperty,
@@ -14,6 +15,20 @@ import {
 
 // Legacy aliases are normalized by listingContract, not stored as canonical columns.
 const CANONICAL_LISTING_COLUMNS = 'id, mls_id, name, type, description, street, city, state, zip, latitude, longitude, beds, baths, sqft, amenities, price, price_type, rates, images, image_url, source, listing_status, last_updated, updated_at, is_demo, is_featured, display_public, metadata';
+
+/** Bounded address lookup; excludes private/deleted/demo inventory and all owner/metadata columns. */
+export async function searchPublicHomeFactsRows(prefix:string,signal:AbortSignal,refinement:{city?:string;postalCode?:string}={}):Promise<PublicHomeFactsRow[]> {
+  if(!/^\d+[A-Za-z]? [A-Za-z0-9]*$/.test(prefix)||prefix.length>100) return [];
+  let query=supabaseAdmin.from('properties')
+    .select('id,street,city,state,zip,beds,baths,sqft,source,last_updated,display_public,is_demo')
+    .eq('display_public',true).eq('is_demo',false).is('deleted_at',null)
+    .ilike('street',`${prefix}%`).order('last_updated',{ascending:false}).limit(31);
+  if(refinement.city&&refinement.city.length<=100&&/^[\p{L} .'-]+$/u.test(refinement.city)) query=query.ilike('city',refinement.city);
+  if(refinement.postalCode&&/^\d{5}$/.test(refinement.postalCode)) query=query.ilike('zip',`${refinement.postalCode}%`);
+  const {data,error}=await query.abortSignal(signal);
+  if(error) throw new Error('Saved property lookup unavailable.');
+  return (data||[]) as PublicHomeFactsRow[];
+}
 
 export type ListingSearch = {
   location?: string;
