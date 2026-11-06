@@ -24,7 +24,7 @@ This draft uses the seller feature stack at `042057e1` from PR #101. It carries 
 
 - Migration `20261105170000_guided_seller_intake_retention.sql` removes guided answers from existing internal action receipts. A trigger strips the same field from new or updated receipts while preserving their replay identity.
 - The daily `/api/admin/agent-leads/cma-retention/cron` uses its existing `CRON_SECRET`. Each run removes detailed guided answers from up to 500 version 3 leads that are at least 90 days old. Eligible rows beyond the batch limit are picked up by subsequent runs. The lead, contact grants, request fingerprint and booking records remain available.
-- Success reports `deletedCount` for expired CMA rows and `prunedJourneyCount` for guided answers. Either operation can report a 503 independently. Both are safe to run again. Logs report error codes without including stored answers.
+- Success reports `deletedCount` for expired CMA rows, `prunedJourneyCount` for guided seller answers and `prunedBuyerRequestCount` for guided buyer requests. Each operation can report a 503 independently and is safe to run again. Logs report error codes without including stored answers.
 - Apply the migration before deploying the updated cron handler so its service-only cleanup function is available. Confirm a successful scheduled run before enabling guided intake in the target environment.
 
 ## Local Verification
@@ -44,3 +44,5 @@ The guided acceptance checks the flagged entry, pricing intent and campaign, the
 The guided form passed 48 focused tests plus the disposable browser walkthrough. The browser verified the mobile receipt, one saved v3 row across replay, denial for a second owner, and a separate booking with one planner item and reminder. The form opens in its focused layout and keeps its controls disabled until React can handle input on a fresh page load.
 
 The retention changes passed 39 focused tests and ten SQL test packets in a disposable Supabase project. The 14 retention assertions cover the 90-day boundary, active and legacy rows, service-only execution, receipt redaction and replay, and the 500-row batch limit. In the guided consultation walkthrough, an unauthenticated cron call was denied, the authenticated run pruned one aged fixture, and the next run pruned zero. The original v3 request replayed after cleanup and its consultation stayed confirmed.
+
+The November 6 disposable rerun passed on Next.js 15.5.28 with the combined buyer and seller cron handler. It verified one booking, planner item and reminder after a lost response and retry, followed by owner cancellation and released capacity. The runner removed its generated accounts, database and containers. See the [shared release order](guided-buyer-requests-2026-11-05.md#shared-release-order) for the remaining hosted checks.

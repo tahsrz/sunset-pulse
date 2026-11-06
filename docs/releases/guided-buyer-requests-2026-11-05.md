@@ -32,4 +32,15 @@ The runner uses fictional data and sets both rollout variables only for its disp
 
 The retention pass verified 51 focused application tests, scoped TypeScript and ESLint, and 30 buyer pgTAP assertions on an isolated PostgreSQL WASM database. It also applied the migration to a preexisting request. One earlier mobile run timed out waiting for the first question to become interactive. Two subsequent disposable walkthroughs passed with real local Supabase Auth, API and storage, including all 11 database test files. Both runs verified removal of their temporary containers and data.
 
-Apply `20261106140000_guided_buyer_request_retention.sql` before deploying the updated cron handler. Keep the intake switch off in shared environments until the target cron reports a successful buyer cleanup count. The owner inbox remains readable when intake is paused. Explorer filters and tour scheduling need separate verified mappings and permissions.
+## Optimized Build
+
+Run `node apps/pulse/scripts/production-build-acceptance.mjs` in a checkout without runtime environment files. The November 6 run passed on the lockfile's Next.js 15.5.28. The same build served both flag states in Chromium. With the flags off, Explorer hid the buyer entry and the short seller form remained available. With the flags on locally, the buyer's first question worked at 390px and the seller form advanced to the street address at desktop width. Production-mode buyer POST requests from loopback were rejected in both states. The disposable Supabase walkthrough above covers actual saves.
+
+## Shared Release Order
+
+The November 6 read-only check found the existing private CMA table and seller action-receipt migration in the linked shared Supabase project. The role guard migration `20261103150000` and all three guided migrations below were absent. The guided buyer table, seller receipt trigger and both guided cleanup functions were also absent.
+
+1. Review and land the seller base and security dependencies in the release plan. Recheck the shared project before applying migrations because a preview uses the same database.
+2. Apply the reviewed migration packet in order. The guided additions are `20261105170000_guided_seller_intake_retention.sql`, `20261105180000_guided_buyer_requests.sql`, and `20261106140000_guided_buyer_request_retention.sql`.
+3. Deploy the matching app with the guided flags off. Confirm that the existing daily CMA cron returns `deletedCount`, `prunedJourneyCount` and `prunedBuyerRequestCount` on a successful run.
+4. Enable buyer intake only after the cron check and confirmation of the intended active, published `BUYER_REQUEST_AGENT_SITE`. The owner inbox remains readable when intake is paused. Explorer filters and tour scheduling require their own verified mappings and permissions.
