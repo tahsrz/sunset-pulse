@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { createConnection, createServer } from 'node:net';
-import { join, resolve, sep } from 'node:path';
+import { basename, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseDotenv } from 'dotenv';
 import { command, withDockerService } from './docker-acceptance.mjs';
+import { guidedMigrationFiles, rehearseGuidedMigrations } from './guided-migration-acceptance.mjs';
 
 const appRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const repositoryRoot = resolve(appRoot, '../..');
@@ -15,7 +16,9 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','seller-consultations','marketing'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, seller-consultations, marketing');
+const suites = ['realtor', 'scans', 'seller-video-briefs', 'seller-business', 'seller-service', 'seller-consultations', 'marketing', 'guided-migration'];
+assert(suites.includes(suite), `Supported suites: ${suites.join(', ')}`);
+const guidedMigrationRehearsal = suite === 'guided-migration';
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
 const rolePreflightOnly=process.argv.includes('--role-preflight-only');
@@ -134,7 +137,10 @@ async function stopDisposableStack() {
 try {
   const ports = await choosePortRange(8);
   await mkdir(supabaseDir, { recursive: true });
-  await cp(join(supabaseSource, 'migrations'), join(supabaseDir, 'migrations'), { recursive: true });
+  await cp(join(supabaseSource, 'migrations'), join(supabaseDir, 'migrations'), {
+    recursive: true,
+    filter: path => !guidedMigrationRehearsal || !guidedMigrationFiles.includes(basename(path)),
+  });
   // Config checkouts can use CRLF on Windows; section rewriting uses LF.
   let config = (await readFile(join(supabaseSource, 'config.toml'), 'utf8')).replace(/\r\n/g, '\n');
   config = config.replace(/^project_id\s*=.*$/m, `project_id = "${projectId}"`);
@@ -160,7 +166,14 @@ try {
   ], { timeoutMs: 900000, quiet: true });
   // A fresh `supabase start` applies this project's copied migration chain;
   // the auth harness fails closed if any required version is absent.
-  if (suite === 'scans') {
+  if (guidedMigrationRehearsal) {
+    const sql = input => command('docker', ['exec', '-i', `supabase_db_${projectId}`, 'psql', '-X', '-qAt',
+      '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], { input });
+    await rehearseGuidedMigrations({ sql, apply: async files => {
+      for (const file of files) await copyFile(join(supabaseSource, 'migrations', file), join(supabaseDir, 'migrations', file));
+      await run(supabaseCli, ['migration', 'up', '--local', '--workdir', workdir, '--yes'], { quiet: true });
+    } });
+  } else if (suite === 'scans') {
     await withDockerService('mongo-test', async (container) => {
       const port = await command('docker', ['port', container, '27017/tcp']);
       assert.match(port, /^127\.0\.0\.1:\d+$/);
@@ -195,7 +208,7 @@ try {
     });
     else await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: '', ...(liveJamie ? { GROQ_API_KEY: configuredGroqKey } : {}) });
   }
-  console.log('PASS: disposable authenticated Supabase acceptance completed.');
+  console.log(guidedMigrationRehearsal ? 'PASS: disposable guided migration rehearsal completed.' : 'PASS: disposable authenticated Supabase acceptance completed.');
 } finally {
   await stopDisposableStack();
   const resolvedTemp = resolve(temporaryRoot);
