@@ -195,6 +195,7 @@ try{
       ...(sellerConsultationsOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',KELLER_WESTLAKE_AGENT_SITE:'consultation-acceptance',SELLER_BOOKING_CAPABILITY_SECRET:consultationSigningSecret}:{}),
       SELLER_GUIDED_INTAKE_ENABLED:guidedSeller?'true':'false',
       BUYER_REQUEST_AGENT_SITE:guidedBuyer?'buyer-acceptance':'',
+      BUYER_GUIDED_INTAKE_ENABLED:guidedBuyer?'true':'false',
       ...(guidedSeller?{CRON_SECRET:guidedRetentionSecret}:{}),
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
       SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',

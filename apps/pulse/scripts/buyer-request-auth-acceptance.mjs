@@ -20,20 +20,34 @@ export async function buyerRequestAuthAcceptance({ primary, login, request, sql,
       '{"footerDisclaimer":"Synthetic local test","mlsDisclaimer":"Synthetic local test"}'),
     ('buyer-acceptance-other','buyer-acceptance-other','${other.userId}','active','{}','{}','{}','{}');`);
 
-  const payload = {
-    offerKey: 'sunset-pulse-buyer-plan', offerVersion: '1', submissionId: randomUUID(),
-    name: 'Synthetic Buyer', email: 'synthetic-buyer@example.test', requestedContact: true, marketingOptIn: false,
-    journey: { mode: 'buy', buyingStage: { state: 'answered', value: 'searching' }, buyerPreferences: {
-      destination: { state: 'answered', value: 'local' }, construction: { state: 'unknown' },
-      representation: { state: 'answered', value: 'no' }, preApproval: 'yes',
-    } },
-  };
+  await other.page.goto(origin + '/buyer-plan/start', { waitUntil: 'domcontentloaded' });
+  for (const answer of ['Looking at Homes', 'Yes', 'Not Sure', 'No', 'Yes']) {
+    await other.page.getByRole('radio', { name: answer, exact: true }).check();
+    await other.page.getByRole('button', { name: /^Next/ }).click();
+  }
+  await other.page.getByRole('heading', { name: 'Review Your Answers' }).waitFor();
+  assert.equal(await other.page.getByText('Pre-approved Amount', { exact: true }).count(), 0);
+  await other.page.getByRole('button', { name: /^Next/ }).click();
+  await other.page.getByLabel('Your Name').fill('Synthetic Buyer');
+  await other.page.getByLabel('Email', { exact: true }).fill('synthetic-buyer@example.test');
+  await other.page.getByRole('checkbox', { name: /email about this request/ }).check();
+  const savedResponse = other.page.waitForResponse(response => response.url() === origin + '/api/buyer-requests' && response.request().method() === 'POST');
+  await other.page.getByRole('button', { name: 'Send Request' }).click();
+  const saved = await savedResponse;
+  assert.equal(saved.status(), 201, 'save through the guided form and the configured published site');
+  assert.deepEqual(await saved.json(), { success: true, accepted: true, duplicate: false });
+  await other.page.getByRole('heading', { name: 'Request Received' }).waitFor();
+  assert.equal(await other.page.getByRole('link', { name: 'Open Explorer' }).getAttribute('href'), '/explorer');
+
+  const payload = saved.request().postDataJSON();
+  assert.match(payload.submissionId, /^[a-f0-9-]{36}$/);
+  assert.deepEqual(payload.journey, { mode: 'buy', buyingStage: { state: 'answered', value: 'searching' }, buyerPreferences: {
+    destination: { state: 'answered', value: 'local' }, construction: { state: 'unknown' },
+    representation: { state: 'answered', value: 'no' }, preApproval: 'yes',
+  } });
   const send = (body) => fetch(origin + '/api/buyer-requests', {
     method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
-  const saved = await send(payload);
-  assert.equal(saved.status, 201, 'save through the configured published site');
-  assert.deepEqual(await saved.json(), { success: true, accepted: true, duplicate: false });
   const replay = await send(payload);
   assert.equal(replay.status, 200);
   assert.deepEqual(await replay.json(), { success: true, accepted: true, duplicate: true });
@@ -52,7 +66,16 @@ export async function buyerRequestAuthAcceptance({ primary, login, request, sql,
   const foreign = await request(other.page, `${path}?requestId=${encodeURIComponent(row.id)}`);
   assert.equal(foreign.status, 404);
   assert.deepEqual((await request(other.page, path)).data, { ok: true, result: [] });
+  const inboxPath = '/buyer-inbox';
+  const anonymousInbox = await fetch(origin + inboxPath, { redirect: 'manual' });
+  assert.equal(anonymousInbox.status, 307);
+  assert.match(anonymousInbox.headers.get('location') || '', /\/login\?redirect=%2Fbuyer-inbox/);
+  await primary.page.goto(origin + inboxPath, { waitUntil: 'domcontentloaded' });
+  await primary.page.getByText(payload.email, { exact: true }).waitFor();
+  await other.page.goto(origin + inboxPath, { waitUntil: 'domcontentloaded' });
+  await other.page.getByText('No buyer requests have been assigned to you yet.').waitFor();
+  assert.equal(await other.page.getByText(payload.email, { exact: true }).count(), 0);
   assert.deepEqual(primary.pageErrors, []);
   assert.deepEqual(other.pageErrors, []);
-  console.log('PASS: public buyer save, replay and conflict keep one private row. Real signed-in owner access succeeds and a second active owner is denied.');
+  console.log('PASS: guided buyer form, replay and conflict keep one private row. The assigned owner can read it in the API and inbox; a second active owner cannot.');
 }

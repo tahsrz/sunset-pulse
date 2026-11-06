@@ -3,10 +3,10 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { readBoundedJson, RequestBodyError } from '@/lib/core/readBoundedJson';
+import { getGuidedBuyerIntakeSite } from '@/lib/marketing/buyerGuidedIntake.server';
 import { buyerRequestSchema } from '@/lib/marketing/buyerJourneyContract';
 import { saveBuyerRequest } from '@/lib/marketing/buyerJourneyIntake.server';
 import { normalizeRootDomain } from '@/lib/sites/siteUrls';
-import { normalizePublicTenantSlug } from '@/lib/sites/tenantRouting';
 
 export const dynamic = 'force-dynamic';
 const reply = (body: Record<string, unknown>, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -29,7 +29,7 @@ function isAllowedOrigin(request: Request, site: string) {
 }
 
 export async function POST(request: Request) {
-  const site = normalizePublicTenantSlug(process.env.BUYER_REQUEST_AGENT_SITE?.trim());
+  const site = getGuidedBuyerIntakeSite();
   if (!site) return reply({ success: false, message: 'Buyer requests are unavailable.' }, 503);
   if (!isAllowedOrigin(request, site)) return reply({ success: false, message: 'Same-origin request required.' }, 403);
   if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') {

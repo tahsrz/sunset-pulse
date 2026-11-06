@@ -24,7 +24,7 @@ const minimalChromeSurfacePrefixes = [
 ];
 
 function isGuidedJourney(pathname?: string | null) {
-  return pathname === '/seller-plan/preview' || pathname === '/seller-plan/start';
+  return pathname === '/seller-plan/preview' || pathname === '/seller-plan/start' || pathname === '/buyer-plan/start';
 }
 
 export function isFocusedGameSurface(pathname?: string | null) {

@@ -34,6 +34,7 @@ const ownerRequest = (query = '') => new NextRequest(`https://sunsetpulse.app/ap
 beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv('BUYER_REQUEST_AGENT_SITE', 'buyer-example');
+  vi.stubEnv('BUYER_GUIDED_INTAKE_ENABLED', 'true');
   vi.stubEnv('ROOT_DOMAIN', 'sunsetpulse.app');
   mocks.rateLimit.mockResolvedValue(null);
   mocks.tenant.mockResolvedValue({ site: 'buyer-example', agentId: 'buyer-example-site', status: 'active', isPublished: true });
@@ -105,6 +106,13 @@ describe('guided buyer admission', () => {
     mocks.tenant.mockResolvedValueOnce({ site: 'buyer-example', agentId: 'buyer-example-site', status: 'active', isPublished: false });
     expect((await POST(publicRequest())).status).toBe(503);
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('leaves public intake closed with a configured site and the rollout switch off', async () => {
+    vi.stubEnv('BUYER_GUIDED_INTAKE_ENABLED', undefined);
+    expect((await POST(publicRequest())).status).toBe(503);
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.tenant).not.toHaveBeenCalled();
   });
 });
 

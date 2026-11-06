@@ -7,6 +7,7 @@ export const sectionLabels:Record<SectionId,string>={start:'Getting Started',hom
 type Props={
   title:string;description?:string;section:SectionId;sections:SectionId[];property:string;
   headingRef:RefObject<HTMLHeadingElement|null>;children:ReactNode;aside:ReactNode;
+  exitLink?: { href: string; label: string };
   onSubmit():void;onBack():void;canGoBack:boolean;busy:boolean;error:string;final:boolean;returnToReview:boolean;complete:boolean;live?:boolean;
 };
 const subscribeToHydration=()=>()=>{};
@@ -22,7 +23,9 @@ export default function GuidedJourneyShell(props:Props) {
     <header className={styles.masthead}>
       <SiteLink href="/" className={styles.brand}>Sunset Pulse<span>North Texas Real Estate</span></SiteLink>
       {!props.live?<span className={styles.preview}>Design Preview · No Request Is Saved</span>:null}
-      <SiteLink href="/seller-plan#request" className={props.live?styles.shortLink:styles.liveLink}>{props.live?'Short Seller Form':'Current Seller Form ↗'}</SiteLink>
+      <SiteLink href={props.exitLink?.href ?? '/seller-plan#request'} className={props.live?styles.shortLink:styles.liveLink}>
+        {props.exitLink?.label ?? (props.live?'Short Seller Form':'Current Seller Form ↗')}
+      </SiteLink>
     </header>
     <div className={styles.layout} data-start={props.section==='start'}>
       <aside className={styles.aside}>{props.aside}</aside>
