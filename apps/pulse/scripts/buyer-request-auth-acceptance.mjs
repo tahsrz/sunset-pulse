@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-export async function buyerRequestAuthAcceptance({ primary, login, request, sql, origin, guidedRetentionSecret }) {
+export async function buyerRequestAuthAcceptance({ primary, login, request, sql, origin, browser, guidedRetentionSecret }) {
   assert(['127.0.0.1','localhost'].includes(new URL(origin).hostname));
   assert(guidedRetentionSecret, 'A disposable retention secret is required.');
   const other = await login();
@@ -21,10 +21,29 @@ export async function buyerRequestAuthAcceptance({ primary, login, request, sql,
       '{"footerDisclaimer":"Synthetic local test","mlsDisclaimer":"Synthetic local test"}'),
     ('buyer-acceptance-other','buyer-acceptance-other','${other.userId}','active','{}','{}','{}','{}');`);
 
-  await other.page.goto(origin + '/buyer-plan/start', { waitUntil: 'domcontentloaded' });
-  for (const answer of ['Looking at Homes', 'Yes', 'Not Sure', 'No', 'Yes']) {
-    await other.page.getByRole('radio', { name: answer, exact: true }).check();
-    await other.page.getByRole('button', { name: /^Next/ }).click();
+  const failedAssets = [];
+  const recordAssetFailure = response => {
+    const url = new URL(response.url());
+    if (url.origin === origin && url.pathname.startsWith('/_next/static/') && response.status() >= 400) {
+      failedAssets.push(`${response.status()} ${url.pathname}`);
+    }
+  };
+  other.page.on('response', recordAssetFailure);
+  try {
+    await other.page.setViewportSize({ width: 390, height: 844 });
+    await other.page.goto(origin + '/explorer', { waitUntil: 'domcontentloaded' });
+    await other.page.getByRole('link', { name: 'Get Help Finding a Home' }).click();
+    await other.page.waitForURL(origin + '/buyer-plan/start');
+    for (const answer of ['Looking at Homes', 'Yes', 'Not Sure', 'No', 'Yes']) {
+      await other.page.getByRole('radio', { name: answer, exact: true }).check();
+      await other.page.getByRole('button', { name: /^Next/ }).click();
+    }
+  } catch (error) {
+    console.error('Buyer form browser errors:', other.pageErrors.join(' | ') || 'none');
+    console.error('Failed local buyer form assets:', failedAssets.join(' | ') || 'none');
+    throw error;
+  } finally {
+    other.page.off('response', recordAssetFailure);
   }
   await other.page.getByRole('heading', { name: 'Review Your Answers' }).waitFor();
   assert.equal(await other.page.getByText('Pre-approved Amount', { exact: true }).count(), 0);
@@ -67,9 +86,16 @@ export async function buyerRequestAuthAcceptance({ primary, login, request, sql,
   assert.equal(foreign.status, 404);
   assert.deepEqual((await request(other.page, path)).data, { ok: true, result: [] });
   const inboxPath = '/buyer-inbox';
-  const anonymousInbox = await fetch(origin + inboxPath, { redirect: 'manual' });
-  assert.equal(anonymousInbox.status, 307);
-  assert.match(anonymousInbox.headers.get('location') || '', /\/login\?redirect=%2Fbuyer-inbox/);
+  // Next can stream a page redirect in a successful HTTP response.
+  const guest = await browser.newPage();
+  try {
+    const inboxResponse = await guest.goto(origin + inboxPath, { waitUntil: 'domcontentloaded' });
+    assert(inboxResponse && !(await inboxResponse.text()).includes(payload.email), 'the anonymous document must not contain buyer details');
+    await guest.waitForURL(url => url.pathname === '/login' && url.searchParams.get('redirect') === inboxPath);
+    await guest.getByRole('heading', { name: 'Sign In', exact: true }).waitFor();
+  } finally {
+    await guest.close();
+  }
   await primary.page.goto(origin + inboxPath, { waitUntil: 'domcontentloaded' });
   await primary.page.getByText(payload.email, { exact: true }).waitFor();
   await other.page.goto(origin + inboxPath, { waitUntil: 'domcontentloaded' });

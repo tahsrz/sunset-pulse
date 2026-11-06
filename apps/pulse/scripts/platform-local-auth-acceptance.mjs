@@ -289,7 +289,7 @@ try{
   } else if (sellerConsultationsOnly) {
     await sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret:consultationSigningSecret,guidedSeller,guidedRetentionSecret});
   } else if (guidedBuyer) {
-    await buyerRequestAuthAcceptance({primary,login,request,sql,origin,guidedRetentionSecret});
+    await buyerRequestAuthAcceptance({primary,login,request,sql,origin,browser,guidedRetentionSecret});
   } else if (sellerServiceOnly) {
     await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
   } else if (sellerBusinessOnly) {

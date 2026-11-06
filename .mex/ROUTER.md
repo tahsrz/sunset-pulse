@@ -40,7 +40,7 @@ Then read this file fully before doing anything else in this session.
 - Pulse Quest satirical JRPG at `/pulse-quest` — party workers, encounters, live `/api/commands` puppetshow turns
 
 **Not yet built:**
-- Guided seller and buyer rollout requires applying their retention migrations and verifying the existing cron in the target environment. Keep `BUYER_GUIDED_INTAKE_ENABLED` off pending disposable browser acceptance and the target cron check. Public home facts lookup is still in preview.
+- Guided seller and buyer rollout requires applying their retention migrations and verifying the existing cron in the target environment. The disposable buyer walkthrough passed. Keep `BUYER_GUIDED_INTAKE_ENABLED` off pending the target checks. Public home facts lookup is still in preview.
 - OpenLIT OpenTelemetry integration (queued on integration roadmap)
 - Live TensorZero Gateway routing for all Jamie/Command Center traffic (local JSONL ledgers only today)
 - Full SQLSync reducer/coordinator — journal contract exists, sync engine not wired
