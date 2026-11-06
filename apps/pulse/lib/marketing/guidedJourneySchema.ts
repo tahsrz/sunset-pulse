@@ -57,6 +57,7 @@ export const buyerPreferencesSchema=z.object({
   destination:wireAnswer(choice('destination')),construction:wireAnswer(choice('construction')),
   representation:wireAnswer(choice('representation')),preApproval:financialAnswerSchema,
 }).strict();
+export const activeBuyerStageSchema=wireAnswer(choice('buying-stage').exclude(['not_buying']));
 
 /** Inject the clock for year bounds; included answers never accept 'unanswered'. */
 export function createGuidedJourneySchemas(now:()=>Date=()=>new Date()) {
@@ -76,7 +77,7 @@ export function createGuidedJourneySchemas(now:()=>Date=()=>new Date()) {
   const sell=z.object({mode:z.literal('sell'),...sellerFields}).strict();
   const both=z.object({mode:z.literal('both'),...sellerFields,buyingStage:wireAnswer(choice('buying-stage')),buyerPreferences:buyerPreferencesSchema.optional()}).strict();
   const buy=z.object({
-    mode:z.literal('buy'),buyingStage:wireAnswer(choice('buying-stage').exclude(['not_buying'])),buyerPreferences:buyerPreferencesSchema,
+    mode:z.literal('buy'),buyingStage:activeBuyerStageSchema,buyerPreferences:buyerPreferencesSchema,
   }).strict();
   function checkBranches(value:z.infer<typeof both>|z.infer<typeof sell>|z.infer<typeof buy>,context:z.RefinementCtx) {
     if(value.mode==='both') {

@@ -7,6 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
 import {sellerServiceAcceptance} from './seller-service-auth-acceptance.mjs';
 import {sellerConsultationAuthAcceptance} from './seller-consultation-auth-acceptance.mjs';
+import {buyerRequestAuthAcceptance} from './buyer-request-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
 import { marketingPublicationAcceptance } from './marketing-publication-acceptance.mjs';
 import { profileRolePreflightAcceptance } from './profile-role-preflight-acceptance.mjs';
@@ -34,7 +35,9 @@ const sellerVideoOnly=process.argv.includes('--seller-video-only');
 const sellerServiceOnly=process.argv.includes('--seller-service-only');
 const sellerConsultationsOnly=process.argv.includes('--seller-consultations-only');
 const guidedSeller=process.argv.includes('--guided-seller');
+const guidedBuyer=process.argv.includes('--guided-buyer');
 assert(!guidedSeller || sellerConsultationsOnly,'Guided seller acceptance requires the disposable consultation suite.');
+assert(!guidedBuyer || (sellerServiceOnly && !process.argv.includes('--database-only')),'Guided buyer acceptance requires the disposable seller-service browser runner.');
 const marketingOnly=process.argv.includes('--marketing-only');
 assert(!process.argv.includes('--role-preflight-only') || marketingOnly,'Role preflight acceptance requires the dedicated marketing stack.');
 assert(!marketingOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && !process.argv.some(flag=>['--seller-business-only','--seller-service-only','--seller-consultations-only','--seller-video-only','--realtor-only','--homepage','--live-jamie','--database-only'].includes(flag))), 'Marketing acceptance requires its dedicated generated disposable stack.');
@@ -105,7 +108,7 @@ const migrations=[
   '20261009130000_seller_service_cases.sql','20261009131000_seller_service_email.sql','20261009132000_seller_service_measurement.sql',
   ...(sellerConsultationsOnly?['20261028120000_internal_seller_consultations.sql','20261028123000_internal_seller_calendar_read_grants.sql']:[]),
   ...(marketingOnly?['20261103150000_profile_role_assignment_guard.sql']:[]),
-  ...(sellerBusinessOnly?['20261105170000_guided_seller_intake_retention.sql']:[]),
+  ...(sellerBusinessOnly?['20261105170000_guided_seller_intake_retention.sql','20261105180000_guided_buyer_requests.sql']:[]),
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -129,6 +132,7 @@ if (sellerBusinessOnly && !sellerConsultationsOnly) {
   for (const name of [
     'seller_lead_actions.sql',
     'guided_seller_intake_retention.sql',
+    'guided_buyer_requests.sql',
     'seller_service.sql',
     'seller_planner_link_read.sql',
     'realtor_reminder_lifecycle.sql',
@@ -179,7 +183,7 @@ const userIds=[], workspaceIds=[], sellerFixtureAgents=[];
 let server,browser;
 const plannerServerSignals=[];
 const acceptanceMongo = process.env.PULSE_TEST_MONGO_URI || '';
-if (acceptanceMongo) assert.match(acceptanceMongo, /^mongodb:\/\/127\.0\.0\.1:\d+\/pulse_(?:homepage|consultation)_acceptance$/);
+if (acceptanceMongo) assert.match(acceptanceMongo, /^mongodb:\/\/127\.0\.0\.1:\d+\/pulse_(?:homepage|consultation|buyer)_acceptance$/);
 try{
   if(!marketingOnly) await sql("UPDATE workflow_event_contracts SET enabled=true WHERE workflow_key='platform_run';");
   server=spawn(process.execPath,[fileURLToPath(new URL('../../../node_modules/next/dist/bin/next',import.meta.url)),'dev','--hostname','127.0.0.1','--port',String(originUrl.port || 80)],{
@@ -190,6 +194,7 @@ try{
       ...(marketingOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',OPERATOR_EMAIL:'',AUTHORIZED_EMAIL:''}:{}),
       ...(sellerConsultationsOnly?{NEXT_E2E_ISOLATED_OUTPUT:'1',KELLER_WESTLAKE_AGENT_SITE:'consultation-acceptance',SELLER_BOOKING_CAPABILITY_SECRET:consultationSigningSecret}:{}),
       SELLER_GUIDED_INTAKE_ENABLED:guidedSeller?'true':'false',
+      BUYER_REQUEST_AGENT_SITE:guidedBuyer?'buyer-acceptance':'',
       ...(guidedSeller?{CRON_SECRET:guidedRetentionSecret}:{}),
       E2E_OPERATOR_ACCESS:'false',NEXT_PUBLIC_E2E_MODE:'false',JAMIE_PUBLIC_GUIDE_E2E_FIXTURE:'false',
       SELLER_EMAIL_SEND_ENABLED:'false',RESEND_API_KEY:'',RESEND_SELLER_WEBHOOK_SECRET:'whsec_c2VsbGVyLXNlcnZpY2UtdGVzdC1zZWNyZXQ=',
@@ -282,6 +287,8 @@ try{
     await marketingPublicationAcceptance({primary,login,request,sql,origin:browserOrigin,artifacts,browser,callbackLink});
   } else if (sellerConsultationsOnly) {
     await sellerConsultationAuthAcceptance({primary,login,request,sql,origin,artifacts,browser,api,anon,signingSecret:consultationSigningSecret,guidedSeller,guidedRetentionSecret});
+  } else if (guidedBuyer) {
+    await buyerRequestAuthAcceptance({primary,login,request,sql,origin});
   } else if (sellerServiceOnly) {
     await sellerServiceAcceptance({primary,login,request,sql,origin,artifacts});
   } else if (sellerBusinessOnly) {

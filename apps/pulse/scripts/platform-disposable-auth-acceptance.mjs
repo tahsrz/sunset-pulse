@@ -20,7 +20,9 @@ const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
 const rolePreflightOnly=process.argv.includes('--role-preflight-only');
 const guidedSeller=process.argv.includes('--guided-seller');
+const guidedBuyer=process.argv.includes('--guided-buyer');
 assert(!guidedSeller || suite==='seller-consultations','Guided seller acceptance requires the disposable consultation suite.');
+assert(!guidedBuyer || (suite==='seller-service' && !process.argv.includes('--database-only')),'Guided buyer acceptance requires the disposable seller-service browser runner.');
 assert(!rolePreflightOnly || suite==='marketing','Role preflight acceptance requires the generated marketing stack.');
 assert(suite !== 'marketing' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Marketing acceptance requires its dedicated browser walkthrough.');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
@@ -181,13 +183,14 @@ try {
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
       ...(rolePreflightOnly ? ['--role-preflight-only'] : []),
       ...(guidedSeller ? ['--guided-seller'] : []),
+      ...(guidedBuyer ? ['--guided-buyer'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });
-    if (process.argv.includes('--homepage') || suite === 'seller-consultations') await withDockerService('mongo-test', async (container) => {
+    if (process.argv.includes('--homepage') || suite === 'seller-consultations' || guidedBuyer) await withDockerService('mongo-test', async (container) => {
       const port = await command('docker', ['port', container, '27017/tcp']);
       assert.match(port, /^127\.0\.0\.1:\d+$/);
-      const database=suite==='seller-consultations'?'pulse_consultation_acceptance':'pulse_homepage_acceptance';
+      const database=guidedBuyer?'pulse_buyer_acceptance':suite==='seller-consultations'?'pulse_consultation_acceptance':'pulse_homepage_acceptance';
       await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: `mongodb://${port}/${database}` });
     });
     else await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: '', ...(liveJamie ? { GROQ_API_KEY: configuredGroqKey } : {}) });
