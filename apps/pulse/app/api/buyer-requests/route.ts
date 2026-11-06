@@ -55,6 +55,7 @@ export async function POST(request: Request) {
   const result = await saveBuyerRequest(parsed.data, site);
   if (result === 'saved') return reply({ success: true, accepted: true, duplicate: false }, 201);
   if (result === 'replayed') return reply({ success: true, accepted: true, duplicate: true });
+  if (result === 'expired') return reply({ success: false, message: 'This request expired. Start a new request if you still need help.' }, 410);
   if (result === 'conflict') return reply({ success: false, message: 'This request ID was already used for different details.' }, 409);
   return reply({ success: false, message: 'Buyer requests are unavailable. Please try again later.' }, 503);
 }

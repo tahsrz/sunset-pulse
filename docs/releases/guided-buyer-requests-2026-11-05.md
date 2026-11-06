@@ -16,14 +16,20 @@ The Find a Home form reuses the guided seller layout. Requests use the existing 
 - `GET /api/realtor/buyer-requests` returns the signed-in owner’s latest 50 requests. The optional `requestId` selects one request. Another owner gets a 404 for a request they cannot read. The response excludes submission IDs, fingerprints, campaign data and internal ownership IDs.
 - The migration denies direct client access to the table and RPCs. The read checks the owner at assignment and the current active site owner. A transfer removes the previous owner’s access and requires a separate handoff decision for historical requests.
 
+## Retention
+
+- Requests disappear from both the Buyer Inbox and the owner API exactly 90 days after submission. This applies even when cleanup is delayed.
+- The existing authenticated daily CMA cron calls `purge_expired_guided_buyer_requests()` and reports `prunedBuyerRequestCount`. It clears the name, email, search answers, campaign and both contact and marketing permissions from up to 500 expired requests per run. A backlog carries over to later runs.
+- A private replay record keeps the submission ID, fingerprint, site and owner IDs, and timestamps. An unchanged retry returns `410` after expiry and cannot restore the cleared details. The form offers to start a new request, which requires fresh answers and permission to reply.
+
 ## Test Locally
 
 ```powershell
 node apps/pulse/scripts/platform-disposable-auth-acceptance.mjs --suite seller-service --guided-buyer
 ```
 
-The runner uses fictional data and sets both rollout variables only for its disposable server. It submits the form in a browser, then checks a replay, a conflict, the owner API and inbox, and access from a second account. The database-only seller-service suite also covers table and RPC permissions, tenant-scoped identity and ownership transfer.
+The runner uses fictional data and sets both rollout variables only for its disposable server. It submits the form in a browser, checks a replay and owner access from two accounts, then ages the request and checks inbox expiry, the authenticated cron and the `410` retry. The database-only seller-service suite covers conflicts, table and RPC permissions, tenant-scoped identity and ownership transfer.
 
-The 64 focused tests cover form and receipt behavior, unchanged retries, API admission, workspace access and Explorer recovery. The previous backend pass verified all 11 disposable SQL packets. The browser walkthrough with real local authentication and storage remains pending because the Docker Linux engine was unavailable.
+The retention pass verified 51 focused application tests, scoped TypeScript and ESLint, and 30 buyer pgTAP assertions on an isolated PostgreSQL WASM database. It also applied the migration to a preexisting request. The browser walkthrough with real local authentication and storage remains pending because the Docker Linux engine was unavailable.
 
-Keep the intake switch off in shared environments until buyer-specific retention and the disposable browser walkthrough are verified. The owner inbox remains readable when intake is paused. Explorer filters and tour scheduling need separate verified mappings and permissions.
+Apply `20261106140000_guided_buyer_request_retention.sql` before deploying the updated cron handler. Keep the intake switch off in shared environments until the disposable browser walkthrough passes and the target cron reports a successful buyer cleanup count. The owner inbox remains readable when intake is paused. Explorer filters and tour scheduling need separate verified mappings and permissions.

@@ -44,9 +44,11 @@ describe('seller retention cron', () => {
     expect(mocks.from).toHaveBeenCalledWith('seller_cma_private_details');
     expect(mocks.delete).toHaveBeenCalledWith({ count: 'exact' });
     expect(mocks.lte).toHaveBeenCalledWith('expires_at', expect.any(String));
-    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith('purge_expired_guided_seller_intake');
+    expect(mocks.rpc.mock.calls).toEqual([
+      ['purge_expired_guided_seller_intake'], ['purge_expired_guided_buyer_requests'],
+    ]);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(body).toEqual({ ok: true, deletedCount: 4, prunedJourneyCount: 2 });
+    expect(body).toEqual({ ok: true, deletedCount: 4, prunedJourneyCount: 2, prunedBuyerRequestCount: 2 });
   });
 
   it('reports an idempotent no-op when there are no expired rows', async () => {
@@ -56,7 +58,7 @@ describe('seller retention cron', () => {
       headers: { authorization: 'Bearer test-cron-secret' },
     }));
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ ok: true, deletedCount: 0, prunedJourneyCount: 0 });
+    await expect(response.json()).resolves.toEqual({ ok: true, deletedCount: 0, prunedJourneyCount: 0, prunedBuyerRequestCount: 0 });
   });
 
   it('returns a generic failure without exposing database details', async () => {
@@ -69,13 +71,13 @@ describe('seller retention cron', () => {
     expect(response.status).toBe(503);
     expect(JSON.stringify(body)).not.toContain('Sensitive property address');
     expect(log).toHaveBeenCalledWith('[SELLER_CMA_RETENTION_CRON]', 'XX000');
-    expect(mocks.rpc).toHaveBeenCalledOnce();
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
     log.mockRestore();
   });
 
   it('reports a guided cleanup error even when CMA cleanup succeeds', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mocks.rpc.mockResolvedValue({ data: null, error: { code: '57014', message: 'Sensitive intake details' } });
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: '57014', message: 'Sensitive intake details' } });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
       headers: { authorization: 'Bearer test-cron-secret' },
     }));
@@ -84,5 +86,25 @@ describe('seller retention cron', () => {
     await expect(response.json()).resolves.toEqual({ ok: false, error: 'Expired guided seller answers could not be cleared.' });
     expect(log).toHaveBeenCalledExactlyOnceWith('[GUIDED_SELLER_RETENTION_CRON]', '57014');
     log.mockRestore();
+  });
+
+  it.each([
+    [{ data: null, error: { code: '57014', message: 'Sensitive buyer details' } }, '57014'],
+    [{ data: -1, error: null }, 'invalid_count'],
+  ])('reports an isolated buyer cleanup failure', async (result, code) => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      mocks.rpc.mockResolvedValueOnce({ data: 2, error: null }).mockResolvedValueOnce(result);
+      const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
+        headers: { authorization: 'Bearer test-cron-secret' },
+      }));
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      await expect(response.json()).resolves.toEqual({ ok: false, error: 'Expired buyer requests could not be cleared.' });
+      expect(log).toHaveBeenCalledExactlyOnceWith('[GUIDED_BUYER_RETENTION_CRON]', code);
+      expect(mocks.lte).toHaveBeenCalledOnce();
+    } finally {
+      log.mockRestore();
+    }
   });
 });

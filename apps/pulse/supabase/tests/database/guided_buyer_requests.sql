@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
-SELECT plan(15);
+SELECT plan(30);
 
 INSERT INTO auth.users(id, email) VALUES
   ('11111111-1111-4111-8111-111111111111', 'buyer-owner-one@example.test'),
@@ -42,6 +42,43 @@ SELECT is((SELECT count(*)::integer FROM public.list_owned_guided_buyer_requests
   'the previous owner loses access after transfer');
 SELECT is((SELECT count(*)::integer FROM public.list_owned_guided_buyer_requests('22222222-2222-4222-8222-222222222222')), 1,
   'the new owner does not inherit a previous owner’s private requests');
+
+UPDATE public.site_config SET owner_id = '11111111-1111-4111-8111-111111111111' WHERE subdomain = 'buyer-test-one';
+UPDATE public.guided_buyer_requests SET created_at = now() - interval '2160 hours'
+WHERE assigned_owner_id = '11111111-1111-4111-8111-111111111111';
+UPDATE public.guided_buyer_requests SET created_at = now() - interval '2160 hours' + interval '1 second'
+WHERE assigned_owner_id = '22222222-2222-4222-8222-222222222222';
+
+SELECT ok(NOT has_function_privilege('anon', 'public.purge_expired_guided_buyer_requests()', 'EXECUTE'), 'anonymous callers cannot prune buyers');
+SELECT ok(NOT has_function_privilege('authenticated', 'public.purge_expired_guided_buyer_requests()', 'EXECUTE'), 'signed-in callers cannot prune buyers');
+SELECT ok(has_function_privilege('service_role', 'public.purge_expired_guided_buyer_requests()', 'EXECUTE'), 'the scheduled service can prune buyers');
+SELECT is((SELECT count(*)::integer FROM public.list_owned_guided_buyer_requests('11111111-1111-4111-8111-111111111111')), 0,
+  'the inbox hides the request at exactly 90 days before the cron runs');
+SELECT is((SELECT count(*)::integer FROM public.list_owned_guided_buyer_requests('11111111-1111-4111-8111-111111111111',
+    (SELECT id FROM public.guided_buyer_requests WHERE assigned_owner_id = '11111111-1111-4111-8111-111111111111'))),
+  0, 'direct owner reads also hide an expired request');
+SELECT is(pg_temp.save_buyer('buyer-test-one', 'buyer-test-one-site', 'a'), 'expired', 'the same request expires even before the cron runs');
+SELECT is(public.purge_expired_guided_buyer_requests(), 1, 'the cleanup prunes only the expired buyer');
+SELECT ok((SELECT pruned_at IS NOT NULL AND name IS NULL AND email IS NULL AND journey IS NULL AND campaign IS NULL
+    AND requested_contact_at IS NULL AND marketing_opt_in IS NULL AND request_fingerprint = repeat('a', 64)
+  FROM public.guided_buyer_requests WHERE assigned_owner_id = '11111111-1111-4111-8111-111111111111'),
+  'only replay metadata survives cleanup');
+SELECT is(pg_temp.save_buyer('buyer-test-one', 'buyer-test-one-site', 'a'), 'expired', 'a replay cannot recreate cleared details');
+SELECT is(pg_temp.save_buyer('buyer-test-one', 'buyer-test-one-site', 'b'), 'conflict', 'changed content still cannot overwrite the old submission');
+SELECT is((SELECT count(*)::integer FROM public.list_owned_guided_buyer_requests('22222222-2222-4222-8222-222222222222')), 1,
+  'a request just inside the cutoff remains available');
+SELECT is(public.purge_expired_guided_buyer_requests(), 0, 'repeat cleanup is a no-op');
+
+INSERT INTO public.guided_buyer_requests (site_id, assigned_owner_id, submission_id, request_fingerprint, name, email,
+  journey, campaign, marketing_opt_in, created_at)
+SELECT site.id, site.owner_id, gen_random_uuid(), repeat('b', 64), 'Batch Example', 'batch@example.test',
+  '{}', '{}', false, now() - interval '2161 hours'
+FROM public.site_config AS site CROSS JOIN generate_series(1, 501)
+WHERE site.subdomain = 'buyer-test-two';
+
+SELECT is(public.purge_expired_guided_buyer_requests(), 500, 'one scheduled run handles at most 500 buyer requests');
+SELECT is(public.purge_expired_guided_buyer_requests(), 1, 'the next run resumes the remaining backlog');
+SELECT is(public.purge_expired_guided_buyer_requests(), 0, 'the finished backlog stays cleared');
 
 SELECT * FROM finish();
 ROLLBACK;

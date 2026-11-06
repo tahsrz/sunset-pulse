@@ -29,6 +29,24 @@ function choose(value: string) {
   fireEvent.click(screen.getByRole('button', { name: /^Next/ }));
 }
 
+it('clears an expired request and waits for the buyer to explicitly start again', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ success: false }, { status: 410 }));
+  vi.stubGlobal('fetch', fetcher);
+  vi.stubGlobal('crypto', { randomUUID: () => '11111111-1111-4111-8111-111111111111' });
+  render(<GuidedBuyerRequestForm />);
+  for (const value of ['Looking at Homes', 'Yes', 'An Existing Home', 'No', 'Yes']) choose(value);
+  fireEvent.click(screen.getByRole('button', { name: /^Next/ }));
+  fireEvent.change(screen.getByLabelText('Your Name'), { target: { value: 'Taylor Example' } });
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'taylor@example.test' } });
+  fireEvent.click(screen.getByRole('checkbox', { name: /email about this request/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Send Request' }));
+  expect(await screen.findByRole('heading', { name: 'Request Expired' })).toHaveFocus();
+  expect(screen.queryByRole('button', { name: 'Send Request' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Start a New Request' }));
+  expect(screen.getByRole('radio', { name: 'Looking at Homes' })).not.toBeChecked();
+  expect(fetcher).toHaveBeenCalledOnce();
+});
+
 it('reviews editable answers, waits for an accepted receipt, and reuses the ID on a retry', async () => {
   let finish!: (response: Response) => void;
   const pending = new Promise<Response>(resolve => { finish = resolve; });

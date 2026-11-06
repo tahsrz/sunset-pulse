@@ -21,7 +21,8 @@ export default function GuidedBuyerRequestForm({ campaign }: { campaign?: BuyerR
   const [company, setCompany] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [complete, setComplete] = useState(false);
+  const [outcome, setOutcome] = useState<'received' | 'expired' | null>(null);
+  const complete = outcome !== null;
   const heading = useRef<HTMLHeadingElement>(null);
   const request = useRef<AbortController | null>(null);
   const attempt = useRef<PendingJourneyAttempt | null>(null);
@@ -83,12 +84,14 @@ export default function GuidedBuyerRequestForm({ campaign }: { campaign?: BuyerR
         body: JSON.stringify({ ...payload.data, submissionId: attempt.current.submissionId }),
       });
       if (response.status === 429) { setError('Too many attempts. Wait a minute, then try again.'); return; }
-      if (!response.ok) throw new Error('Buyer request failed.');
-      readSellerReceipt(await response.json());
+      if (response.status !== 410) {
+        if (!response.ok) throw new Error('Buyer request failed.');
+        readSellerReceipt(await response.json());
+      }
       attempt.current = null;
       setDraft(initialDraft());
       setCompany('');
-      setComplete(true);
+      setOutcome(response.status === 410 ? 'expired' : 'received');
     } catch {
       setError('We couldn’t confirm your request. Please try again.');
     } finally {
@@ -99,7 +102,14 @@ export default function GuidedBuyerRequestForm({ campaign }: { campaign?: BuyerR
   }
 
   let content;
-  if (complete) {
+  if (outcome === 'expired') {
+    content = <div className={styles.receipt}>
+      <p>If you’d still like help finding a home, you can send a new request.</p>
+      <div className={styles.inlineActions}>
+        <button type="button" className={styles.next} onClick={() => { goTo(0); setOutcome(null); }}>Start a New Request</button>
+      </div>
+    </div>;
+  } else if (outcome === 'received') {
     content = <div className={styles.receipt}>
       <p>We’ll email you about your home search. You can keep looking in Explorer in the meantime.</p>
       <div className={styles.inlineActions}><a href="/explorer" className={styles.next}>Open Explorer</a></div>
@@ -133,11 +143,13 @@ export default function GuidedBuyerRequestForm({ campaign }: { campaign?: BuyerR
       <label aria-hidden="true" className={styles.srOnly}>Leave this field empty
         <input name="company" tabIndex={-1} autoComplete="off" maxLength={120} value={company} onChange={event => setCompany(event.target.value)} />
       </label>
+      <p className={styles.helper}>Your agent can view your request for 90 days.</p>
       <a href="/iabs" target="_blank" rel="noopener noreferrer" className={styles.helper}>Brokerage Services Information</a>
     </>;
   }
 
-  const title = complete ? 'Request Received' : question?.title ?? (step === 'review' ? 'Review Your Answers' : 'Where Should We Send a Reply?');
+  const title = outcome === 'expired' ? 'Request Expired' : outcome === 'received' ? 'Request Received'
+    : question?.title ?? (step === 'review' ? 'Review Your Answers' : 'Where Should We Send a Reply?');
   return <GuidedJourneyShell live title={title} section={sectionFor(step)} sections={[...sections]} property="Your Next Home"
     headingRef={heading} exitLink={{ href: '/explorer', label: 'Back to Explorer' }}
     onSubmit={next} onBack={() => goTo(editing ? reviewIndex : stepIndex - 1)} canGoBack={!complete && (editing || stepIndex > 0)}

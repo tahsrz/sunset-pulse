@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { type BuyerRequest } from './buyerJourneyContract';
 import { normalizeCampaign } from './leadMagnetContract';
 
-type BuyerSaveResult = 'saved' | 'replayed' | 'conflict' | 'configuration' | 'unavailable';
+type BuyerSaveResult = 'saved' | 'replayed' | 'expired' | 'conflict' | 'configuration' | 'unavailable';
 
 export async function saveBuyerRequest(input: BuyerRequest, configuredSite: string): Promise<BuyerSaveResult> {
   try {
@@ -31,7 +31,7 @@ export async function saveBuyerRequest(input: BuyerRequest, configuredSite: stri
       console.error('[BUYER_REQUEST_SAVE]', error.code || 'ProviderError');
       return 'unavailable';
     }
-    if (data === 'saved' || data === 'replayed' || data === 'conflict' || data === 'configuration') return data;
+    if (data === 'saved' || data === 'replayed' || data === 'expired' || data === 'conflict' || data === 'configuration') return data;
     return 'unavailable';
   } catch (error) {
     console.error('[BUYER_REQUEST_SAVE]', error instanceof Error ? error.name : 'ProviderError');

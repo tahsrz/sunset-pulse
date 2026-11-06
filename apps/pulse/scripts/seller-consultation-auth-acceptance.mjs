@@ -155,10 +155,10 @@ export async function sellerConsultationAuthAcceptance({primary,login,request,sq
       const runRetention=()=>fetch(cronUrl,{headers:{authorization:`Bearer ${guidedRetentionSecret}`}});
       const cleaned=await runRetention();
       assert.equal(cleaned.status,200);
-      assert.deepEqual(await cleaned.json(),{ok:true,deletedCount:0,prunedJourneyCount:1});
+      assert.deepEqual(await cleaned.json(),{ok:true,deletedCount:0,prunedJourneyCount:1,prunedBuyerRequestCount:0});
       const repeated=await runRetention();
       assert.equal(repeated.status,200);
-      assert.deepEqual(await repeated.json(),{ok:true,deletedCount:0,prunedJourneyCount:0});
+      assert.deepEqual(await repeated.json(),{ok:true,deletedCount:0,prunedJourneyCount:0,prunedBuyerRequestCount:0});
       const retained=await request(primary.page,`/api/realtor/seller-service?leadId=${leadId}`);
       assert.equal(retained.status,200);assert.equal(retained.data.result.intake,null);
       assert(retained.data.result.bookings.some(booking=>booking.id===committed.bookingId),'the confirmed booking survives intake retention');

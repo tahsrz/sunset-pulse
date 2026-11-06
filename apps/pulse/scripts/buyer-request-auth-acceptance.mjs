@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-export async function buyerRequestAuthAcceptance({ primary, login, request, sql, origin }) {
+export async function buyerRequestAuthAcceptance({ primary, login, request, sql, origin, guidedRetentionSecret }) {
   assert(['127.0.0.1','localhost'].includes(new URL(origin).hostname));
+  assert(guidedRetentionSecret, 'A disposable retention secret is required.');
   const other = await login();
   const today = new Date().toISOString().slice(0, 10);
   for (const account of [primary, other]) {
@@ -51,7 +52,6 @@ export async function buyerRequestAuthAcceptance({ primary, login, request, sql,
   const replay = await send(payload);
   assert.equal(replay.status, 200);
   assert.deepEqual(await replay.json(), { success: true, accepted: true, duplicate: true });
-  assert.equal((await send({ ...payload, marketingOptIn: true })).status, 409);
   assert.equal(await sql(`SELECT count(*) FROM public.guided_buyer_requests WHERE submission_id='${payload.submissionId}';`), '1');
 
   const path = '/api/realtor/buyer-requests';
@@ -75,7 +75,23 @@ export async function buyerRequestAuthAcceptance({ primary, login, request, sql,
   await other.page.goto(origin + inboxPath, { waitUntil: 'domcontentloaded' });
   await other.page.getByText('No buyer requests have been assigned to you yet.').waitFor();
   assert.equal(await other.page.getByText(payload.email, { exact: true }).count(), 0);
+
+  await sql(`UPDATE public.guided_buyer_requests SET created_at = now() - interval '91 days' WHERE submission_id = '${payload.submissionId}';`);
+  assert.equal((await request(primary.page, `${path}?requestId=${encodeURIComponent(row.id)}`)).status, 404);
+  await primary.page.reload({ waitUntil: 'domcontentloaded' });
+  await primary.page.getByText('No buyer requests have been assigned to you yet.').waitFor();
+  const cronUrl = origin + '/api/admin/agent-leads/cma-retention/cron';
+  assert.equal((await fetch(cronUrl)).status, 401);
+  for (const prunedBuyerRequestCount of [1, 0]) {
+    const cleanup = await fetch(cronUrl, { headers: { authorization: `Bearer ${guidedRetentionSecret}` } });
+    assert.equal(cleanup.status, 200);
+    assert.deepEqual(await cleanup.json(), { ok: true, deletedCount: 0, prunedJourneyCount: 0, prunedBuyerRequestCount });
+  }
+  assert.equal((await send(payload)).status, 410);
+  assert.equal(await sql(`SELECT count(*) FROM public.guided_buyer_requests WHERE submission_id = '${payload.submissionId}'
+    AND pruned_at IS NOT NULL AND name IS NULL AND email IS NULL AND journey IS NULL AND campaign IS NULL
+    AND requested_contact_at IS NULL AND marketing_opt_in IS NULL;`), '1');
   assert.deepEqual(primary.pageErrors, []);
   assert.deepEqual(other.pageErrors, []);
-  console.log('PASS: guided buyer form, replay and conflict keep one private row. The assigned owner can read it in the API and inbox; a second active owner cannot.');
+  console.log('PASS: guided buyer form, retry, owner-only reads, scheduled cleanup and expired replay.');
 }

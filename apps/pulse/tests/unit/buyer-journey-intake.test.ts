@@ -85,6 +85,14 @@ describe('guided buyer admission', () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
+  it('returns a private-data-free expiry response instead of an accepted receipt', async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: 'expired', error: null });
+    const response = await POST(publicRequest());
+    expect(response.status).toBe(410);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    await expect(response.json()).resolves.toEqual({ success: false, message: 'This request expired. Start a new request if you still need help.' });
+  });
+
   it('rejects other origins, oversized requests and a closed rate limiter', async () => {
     expect((await POST(publicRequest(body, { origin: 'https://elsewhere.test', 'x-forwarded-host': 'elsewhere.test' }))).status).toBe(403);
     expect((await POST(publicRequest({ ...body, name: 'é'.repeat(6_001) }))).status).toBe(413);
