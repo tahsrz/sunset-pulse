@@ -90,7 +90,10 @@ for(const flags of [
   ['--suite','seller-business','--role-preflight-only'],
   ['--suite','profile-role-security','--role-preflight-only','--production'],
   ['--suite','profile-role-security','--role-preflight-only','--homepage'],
-]) test(`database-only fixtures reject incompatible flags before creating resources: ${flags.join(' ')}`,()=>{
+  ['--suite','seller-business','--production','--vibe-cms'],
+  ['--suite','profile-role-security','--vibe-cms'],
+  ['--suite','profile-role-security','--production','--vibe-cms','--role-preflight-only'],
+]) test(`security fixtures reject incompatible flags before creating resources: ${flags.join(' ')}`,()=>{
   const result=spawnSync(process.execPath,[fileURLToPath(new URL('./platform-disposable-auth-acceptance.mjs',import.meta.url)),...flags],{encoding:'utf8',windowsHide:true});
-  assert.equal(result.status,1);assert.match(result.stderr,/Role preflight requires|Profile role security requires/);assert.equal(result.stdout,'');
+  assert.equal(result.status,1);assert.match(result.stderr,/Role preflight requires|Profile role security requires|CMS security verification requires/);assert.equal(result.stdout,'');
 });

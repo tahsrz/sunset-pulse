@@ -16,6 +16,8 @@ const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platfor
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
 const rolePreflightOnly = process.argv.includes('--role-preflight-only');
+const vibeCms = process.argv.includes('--vibe-cms');
+assert(!vibeCms || (suite==='profile-role-security' && process.argv.includes('--production') && !rolePreflightOnly), 'CMS security verification requires the production security suite.');
 assert(!rolePreflightOnly || (suite==='profile-role-security' && !process.argv.includes('--production')), 'Role preflight requires the dedicated security suite without a production build.');
 assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service','profile-role-security'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service, profile-role-security');
 assert(suite!=='profile-role-security' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Profile role security requires its dedicated generated acceptance project.');
@@ -151,7 +153,7 @@ try {
     if(rolePreflightOnly) await run(process.execPath,[join(appRoot,'scripts','profile-role-preflight-acceptance.mjs'),'--stack',projectId],{cwd:appRoot});
     else await run(process.execPath,[join(appRoot,'scripts','profile-role-security-acceptance.mjs'),
       '--stack',projectId,'--api-url',`http://127.0.0.1:${ports[0]}`,'--origin',`http://127.0.0.1:${ports[7]}`,
-      ...(process.argv.includes('--production')?['--production']:[])],{cwd:appRoot,timeoutMs:900000});
+      ...(process.argv.includes('--production')?['--production']:[]),...(vibeCms?['--vibe-cms']:[])],{cwd:appRoot,timeoutMs:900000});
   } else if (suite === 'scans') {
     await withDockerService('mongo-test', async (container) => {
       const port = await command('docker', ['port', container, '27017/tcp']);

@@ -1,9 +1,18 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { getVibeCmsAccess, isLocalHost } from '@/lib/core/operator_access';
+import { getOperatorAccess, getVibeCmsAccess, isLocalHost } from '@/lib/core/operator_access';
 import { requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 
 const originalEnv = { ...process.env };
+const { sessionUser } = vi.hoisted(() => ({ sessionUser: vi.fn() }));
+vi.mock('@/lib/core/getSessionUser', () => ({ getSessionUser: sessionUser }));
+beforeEach(() => {
+  sessionUser.mockReset().mockResolvedValue(null);
+  delete process.env.OPERATOR_EMAIL;
+  delete process.env.AUTHORIZED_EMAIL;
+  delete process.env.E2E_OPERATOR_ACCESS;
+  delete process.env.VIBE_CMS_PUBLIC_WRITE_WIP;
+});
 
 afterEach(() => {
   process.env = { ...originalEnv };
@@ -14,21 +23,53 @@ function setNodeEnv(value: NodeJS.ProcessEnv['NODE_ENV']) {
 }
 
 describe('operator access host detection', () => {
-  it('allows public Vibe CMS work while the WIP exception is enabled', async () => {
-    delete process.env.VIBE_CMS_PUBLIC_WRITE_WIP;
-
-    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({
-      allowed: true,
-      reason: 'Public Vibe CMS WIP access.',
-      user: { id: 'vibe-cms-wip-public', role: 'operator' }
-    });
+  it.each([undefined, 'false', 'true', 'TRUE', '1'])('denies anonymous hosted CMS access with WIP=%s', async (flag) => {
+    setNodeEnv('production');
+    if (flag !== undefined) process.env.VIBE_CMS_PUBLIC_WRITE_WIP = flag;
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({ allowed: false, mode: 'denied', user: null });
   });
 
-  it('applies the WIP exception only to the relocated Vibe API namespace', async () => {
-    delete process.env.VIBE_CMS_PUBLIC_WRITE_WIP;
+  it('permits the explicit WIP identity only on development loopback', async () => {
+    setNodeEnv('development');process.env.VIBE_CMS_PUBLIC_WRITE_WIP = 'true';
+    await expect(getVibeCmsAccess('localhost:3000')).resolves.toMatchObject({ allowed: true, user: { id: 'vibe-cms-wip-local' } });
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({ allowed: false });
+  });
 
-    await expect(requireOperatorRouteAccess(new NextRequest('https://sunsetpulse.example.com/api/vibes')))
-      .resolves.toMatchObject({ allowed: true, user: { id: 'vibe-cms-wip-public' } });
+  it.each(['localhost:3000', '127.0.0.1:3000', '[::1]:3000', '10.0.0.1:3000'])('ignores production E2E/WIP shortcuts for host %s', async (host) => {
+    setNodeEnv('production');process.env.E2E_OPERATOR_ACCESS = 'true';process.env.VIBE_CMS_PUBLIC_WRITE_WIP = 'true';
+    await expect(getOperatorAccess(host)).resolves.toMatchObject({ allowed: false });
+    await expect(getVibeCmsAccess(host)).resolves.toMatchObject({ allowed: false });
+  });
+
+  it.each(['admin', 'operator'])('permits a trusted %s profile to use hosted CMS', async (role) => {
+    setNodeEnv('production');sessionUser.mockResolvedValue({ userId: 'fixture', role, user: { email: 'owner@example.test', role } });
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({ allowed: true, mode: 'authenticated' });
+  });
+
+  it.each(['consumer', 'realtor'])('does not give a public %s global CMS authority', async (role) => {
+    setNodeEnv('production');sessionUser.mockResolvedValue({ userId: 'fixture', role, user: { email: 'visitor@example.test', role } });
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({ allowed: false });
+    if (role === 'realtor') await expect(getOperatorAccess('sunsetpulse.example.com')).resolves.toMatchObject({ allowed: true });
+  });
+
+  it.each(['OPERATOR_EMAIL', 'AUTHORIZED_EMAIL'])('preserves the existing configured %s authority', async (key) => {
+    setNodeEnv('production');process.env[key] = 'OWNER@example.test';
+    sessionUser.mockResolvedValue({ userId: 'fixture', role: 'realtor', user: { email: 'owner@example.test', role: 'realtor' } });
+    await expect(getVibeCmsAccess('sunsetpulse.example.com')).resolves.toMatchObject({ allowed: true });
+  });
+
+  it('does not use forwarded host as CMS or generic operator authority', async () => {
+    setNodeEnv('development');process.env.E2E_OPERATOR_ACCESS = 'true';process.env.VIBE_CMS_PUBLIC_WRITE_WIP = 'true';
+    for (const path of ['/api/vibes', '/api/admin/mls/status']) {
+      const response = await requireOperatorRouteAccess(new NextRequest('https://sunsetpulse.example.com'+path, { headers: { host: 'sunsetpulse.example.com', 'x-forwarded-host': 'localhost:3000' } }));
+      expect(response).toBeInstanceOf(Response);expect((response as Response).status).toBe(403);
+    }
+  });
+
+  it('does not apply the WIP identity outside the CMS namespace', async () => {
+    setNodeEnv('production');process.env.VIBE_CMS_PUBLIC_WRITE_WIP = 'true';
+    const response = await requireOperatorRouteAccess(new NextRequest('https://sunsetpulse.example.com/api/admin/mls/status'));
+    expect((response as Response).status).toBe(403);
   });
 
   it('allows loopback hosts outside production', () => {
