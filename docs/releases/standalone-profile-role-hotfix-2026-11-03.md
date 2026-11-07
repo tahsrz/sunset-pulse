@@ -10,13 +10,15 @@ Callback sync reads the existing profile authority before writing. Existing role
 
 ## Independence From the Feature Stack
 
-This branch has main's 163 migrations plus one role-security migration. The two internal-consultation migrations are absent, as are the publication-readiness, Explorer, Atlas and dependency-upgrade changes from the stacked release. It retains main's lockfile without changing dependency versions.
+This branch has main's 163 migrations plus one role-security migration. Its scope remains the signup and callback repair and the dependency updates required by the production audit. The repair carries over the tested Next.js 15.5.28, DOMPurify 3.4.17 and Zod 4.6.7 updates. The Zod compatibility changes preserve optional fields and existing identifier formats. The public lead endpoint bounds the JSON stream before validation. The seller consultation migration and product changes remain in their own release.
 
 The browser probe is the existing `/api/admin/mls/status` GET, which reads in-memory status without starting a sync. It is available on main. Its existing realtor-access policy is preserved; this verification does not claim the broader application authorization review is complete.
 
 ## Verification
 
-- Installed dependencies were aligned to this worktree's main lockfile: Next 15.5.27 and Zod 3.25.76. The primary checkout's unrelated edits were preserved. Local Prisma generation also succeeded without a database URL or connection.
+- The original verification used Next.js 15.5.27 and Zod 3.25.76. On November 6 the updated lockfile installed in a separate checkout, Prisma generated locally, and `npm run security:audit:prod` reported zero vulnerabilities.
+- On the updated lockfile, 1,773 unit tests passed across the broad run and fixture reruns. Two suites initially could not find repository fixtures in the sparse checkout and passed once those paths were included. Lint and all 32 release preflight tests passed. The standalone disposable browser suite passed the role database assertions and real signup and callback checks.
+- The optimized rerun on the patched lockfile generated all 212 pages and passed the same real signup and callback checks. All 18 database assertions passed on the standalone schema. The runner verified removal of its disposable project. The inventory gate passed all 26 tests.
 - Sixteen focused cases pass: fourteen callback authority/origin/logging regressions and the two existing redirect tests. Focused ESLint, Node syntax and whitespace checks pass.
 - Eighteen pgTAP assertions pass on the standalone 164-migration chain. The consultation settings table is absent.
 - The final optimized build passed in 159 seconds, including framework type validation and all 212 static pages. No type or dependency repair from the feature stack was needed.
@@ -43,7 +45,7 @@ npm ci --ignore-scripts --no-audit --no-fund
 node node_modules/prisma/build/index.js generate --schema apps/pulse/prisma/schema.prisma
 $env:PLAYWRIGHT_BROWSERS_PATH='C:/Users/Taz/AppData/Local/ms-playwright'
 npm run test:unit --workspace=apps/pulse -- tests/unit/auth-callback-profile-authority.test.ts tests/unit/auth-redirect.test.ts
-npm run test:profile-roles:security --workspace=apps/pulse -- --production
+node apps/pulse/scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --production
 ```
 
 Docker and installed Playwright Chromium are required. The runner builds using its generated local backend and an OS-only child environment with explicit fixture settings. It refuses mismatched installed Next/Zod versions and incompatible suite flags. `--production` includes an optimized build and starts the production server; omitting it uses development mode for targeted iteration. Logs redact generated credentials. Only aggregate test results and route/status signals are stored under ignored `.pulse-local/profile-role-hotfix/`.

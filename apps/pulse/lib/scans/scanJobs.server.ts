@@ -19,7 +19,7 @@ const reconstructionResultFields = z.object({
   inputRevision: z.number().int().positive(),
   inputManifestHash: z.string().regex(/^[a-f0-9]{64}$/),
   processorVersion: z.string().trim().min(1).max(120),
-  artifactId: z.string().uuid(),
+  artifactId: z.string().guid(),
   artifactFormat: z.literal('glb'),
   artifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
   artifactBytes: z.number().int().positive().safe(),

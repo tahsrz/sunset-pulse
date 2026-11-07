@@ -12,7 +12,7 @@ const jsonValue: z.ZodType<unknown> = z.lazy(() => z.union([
 
 const envelopeBase = {
   connectionId: key,
-  operationId: z.string().uuid(),
+  operationId: z.string().guid(),
   inputSchemaHash: hash,
   arguments: z.record(z.string().max(160), jsonValue),
 };
@@ -29,7 +29,7 @@ export const openApiRequestSchema = z.object({
 export const gatewayRequestSchema = z.discriminatedUnion('protocol', [mcpToolCallRequestSchema, openApiRequestSchema]);
 
 export const gatewayResponseSchema = z.object({
-  protocol: z.enum(['mcp', 'openapi']), operationId: z.string().uuid(), outputSchemaHash: hash,
+  protocol: z.enum(['mcp', 'openapi']), operationId: z.string().guid(), outputSchemaHash: hash,
   status: z.enum(['success', 'error']), result: jsonValue, error: z.string().max(500).nullable(),
 }).strict().superRefine((response, ctx) => {
   if (response.status === 'success' && response.error !== null) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['error'], message: 'Successful responses cannot contain errors.' });
@@ -39,11 +39,11 @@ export const gatewayResponseSchema = z.object({
 export const gatewayPreparationSchema = z.object({
   protocol: z.enum(['mcp', 'openapi']),
   admission: z.object({
-    appInstallId: z.string().uuid(), runId: z.string().uuid(), operationId: z.string().uuid(),
+    appInstallId: z.string().guid(), runId: z.string().guid(), operationId: z.string().guid(),
     connectionId: key, tool: key, operation: key, inputSchemaHash: hash, outputSchemaHash: hash,
     payload: jsonValue, stepUnits: z.number().int().min(1).max(10000), estimatedCostUsd: z.number().finite().nonnegative(),
   }).strict(),
-  connectionId: key, operationId: z.string().uuid(), inputSchemaHash: hash,
+  connectionId: key, operationId: z.string().guid(), inputSchemaHash: hash,
   tool: key.optional(), operation: key.optional(), method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).optional(),
   path: z.string().regex(/^\/[a-zA-Z0-9_./:{}-]{1,240}$/).optional(),
 }).strict().superRefine((value, ctx) => {

@@ -16,7 +16,7 @@ export const runtime = 'nodejs';
 const crawlRequestSchema = z.object({
   url: z.string().url().max(2048),
   sourceType: z.enum(['brokerage', 'regional_site', 'tax_record', 'business_profile', 'other']).optional(),
-  entityHints: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  entityHints: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
   extractionSchema: z.object({
     name: z.string().trim().min(1).max(120),
     baseSelector: z.string().trim().min(1).max(500),

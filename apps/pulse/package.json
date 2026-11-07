@@ -119,7 +119,7 @@
     "mongodb": "^6.3.0",
     "mongoose": "^8.24.0",
     "mysql2": "3.24.4",
-    "next": "^15.5.27",
+    "next": "^15.5.28",
     "pdf-lib": "^1.17.1",
     "photoswipe": "^5.4.3",
     "prop-types": "^15.8.1",
@@ -149,7 +149,7 @@
     "three-stdlib": "^2.36.1",
     "typescript": "^6.0.2",
     "use-stick-to-bottom": "^1.1.6",
-    "zod": "^3.25.76",
+    "zod": "^4.6.7",
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {

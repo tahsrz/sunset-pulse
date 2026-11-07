@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const commercialBookingInputSchema = z.object({
-  leadId: z.string().uuid(),
-  funnelId: z.string().uuid(),
+  leadId: z.string().guid(),
+  funnelId: z.string().guid(),
   agentId: z.string().trim().min(1).max(120),
   site: z.string().trim().min(1).max(180),
   appointmentType: z.enum([

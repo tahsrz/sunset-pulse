@@ -5,7 +5,7 @@ const campaignField = z.string().trim().max(100).nullable().optional();
 export const sellerPlanLeadSchema = z.object({
   offerKey: z.literal('keller-westlake-seller-plan'),
   offerVersion: z.literal('2'),
-  submissionId: z.string().uuid(),
+  submissionId: z.string().guid(),
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(180),
   requestKind: z.enum(['seller_plan', 'pricing_review']),

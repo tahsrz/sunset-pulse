@@ -53,7 +53,7 @@ try {
   await sql('GRANT SELECT,INSERT,UPDATE ON public.profiles TO service_role;');
   const next=fileURLToPath(new URL('../../../node_modules/next/dist/bin/next',import.meta.url));
   if(production) {
-    console.log('Building the standalone hotfix with main-lockfile dependencies and generated local backends.');
+    console.log('Building the standalone hotfix with its lockfile dependencies and generated local backends.');
     const buildStarted=Date.now();
     build=spawn(process.execPath,[next,'build','--no-lint'],{cwd:pulseRoot,env,windowsHide:true,stdio:['ignore','pipe','pipe']});
     let log='',writes=Promise.resolve();

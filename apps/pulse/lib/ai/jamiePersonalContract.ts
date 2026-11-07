@@ -5,7 +5,7 @@ export const chatContextSchema = z.enum(['general', 'personal_realtor']);
 
 const boundedRecord = z.record(z.string(), z.unknown()).refine((value) => JSON.stringify(value).length <= 12_000);
 const proposalBase = {
-  proposalId: z.string().uuid(),
+  proposalId: z.string().guid(),
   editableFields: boundedRecord,
   missingFields: z.array(z.string().trim().min(1).max(120)).max(20),
   targetRevision: z.number().int().positive().nullable(),
@@ -19,18 +19,18 @@ const plannerItemDraftSchema = z.custom<Record<string, unknown>>((value) => {
   return parsed.success && !parsed.data.sellerLead && !parsed.data.sourceSprintTaskId;
 });
 const plannerApiPayloadSchema = z.object({
-  itemId: z.string().uuid().nullable(),
+  itemId: z.string().guid().nullable(),
   expectedRevision: z.number().int().positive().nullable(),
   item: plannerItemDraftSchema,
 }).strict().refine((value) => value.itemId === null && value.expectedRevision === null);
 const financialApiPayloadSchema = z.union([
-  z.object({ mode: z.literal('gross'), grossCents: z.number().int().positive(), deductions: z.array(z.object({ kind: z.enum(['broker_split','transaction_fee','other_withheld']), label: z.string().min(1).max(120), amountCents: z.number().int().positive() }).strict()).max(20), receivedDate: localDate, closingReference: z.string().max(120).nullable(), property: z.object({ propertyId: z.string().uuid() }).strict().nullable(), memo: z.string().max(1000) }).strict(),
-  z.object({ mode: z.literal('net_deposit'), depositCents: z.number().int().positive(), receivedDate: localDate, closingReference: z.string().max(120).nullable(), property: z.object({ propertyId: z.string().uuid() }).strict().nullable(), memo: z.string().max(1000) }).strict(),
-  z.object({ amountCents: z.number().int().positive(), paidDate: localDate, category: z.enum(['broker_dues','mls','association','education','license','insurance','marketing','software','other']), payee: z.string().max(160), note: z.string().max(1000), occurrenceId: z.string().uuid().nullable() }).strict(),
-  z.object({ estimatedTakeHomeCents: z.number().int().positive(), expectedDate: localDate, label: z.string().min(1).max(160), property: z.object({ propertyId: z.string().uuid() }).strict().nullable() }).strict(),
+  z.object({ mode: z.literal('gross'), grossCents: z.number().int().positive(), deductions: z.array(z.object({ kind: z.enum(['broker_split','transaction_fee','other_withheld']), label: z.string().min(1).max(120), amountCents: z.number().int().positive() }).strict()).max(20), receivedDate: localDate, closingReference: z.string().max(120).nullable(), property: z.object({ propertyId: z.string().guid() }).strict().nullable(), memo: z.string().max(1000) }).strict(),
+  z.object({ mode: z.literal('net_deposit'), depositCents: z.number().int().positive(), receivedDate: localDate, closingReference: z.string().max(120).nullable(), property: z.object({ propertyId: z.string().guid() }).strict().nullable(), memo: z.string().max(1000) }).strict(),
+  z.object({ amountCents: z.number().int().positive(), paidDate: localDate, category: z.enum(['broker_dues','mls','association','education','license','insurance','marketing','software','other']), payee: z.string().max(160), note: z.string().max(1000), occurrenceId: z.string().guid().nullable() }).strict(),
+  z.object({ estimatedTakeHomeCents: z.number().int().positive(), expectedDate: localDate, label: z.string().min(1).max(160), property: z.object({ propertyId: z.string().guid() }).strict().nullable() }).strict(),
 ]);
 const goalApiPayloadSchema = z.object({
-  id: z.string().uuid().nullable(), metric: z.enum(['net_income','closings','weekly_reviews']),
+  id: z.string().guid().nullable(), metric: z.enum(['net_income','closings','weekly_reviews']),
   year: z.number().int().min(2000).max(2200), target: z.number().int().positive(),
   expectedRevision: z.number().int().positive().nullable(),
 }).strict();

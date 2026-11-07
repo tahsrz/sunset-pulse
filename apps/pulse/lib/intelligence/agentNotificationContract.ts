@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const agentNotificationSchema = z.object({
-  id: z.string().uuid(),
-  source_event_id: z.string().uuid(),
+  id: z.string().guid(),
+  source_event_id: z.string().guid(),
   agent_id: z.string().min(1),
-  lead_id: z.string().uuid().nullable(),
+  lead_id: z.string().guid().nullable(),
   listing_id: z.string().nullable(),
   kind: z.enum(['high_intent_revisit', 'tour_request']),
   priority: z.enum(['normal', 'high']),

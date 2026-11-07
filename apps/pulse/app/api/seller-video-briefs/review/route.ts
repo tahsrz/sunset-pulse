@@ -9,10 +9,10 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const requestSchema = z.object({
-  workspaceId: z.string().uuid(),
-  briefId: z.string().uuid(),
+  workspaceId: z.string().guid(),
+  briefId: z.string().guid(),
   revision: z.number().int().positive().safe(),
-  requestKey: z.string().uuid(),
+  requestKey: z.string().guid(),
 }).strict();
 
 export async function POST(request: NextRequest) {

@@ -14,7 +14,7 @@ export const runtime = 'nodejs';
 
 const snapshotSchema = z.object({
   sourceCommand: z.string().trim().min(1).max(20_000),
-  approvedFacts: z.record(z.unknown()),
+  approvedFacts: z.record(z.string(), z.unknown()),
   drafts: z.object({
     mls: z.string().max(12_000),
     social: z.string().max(12_000),

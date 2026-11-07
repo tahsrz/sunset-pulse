@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const leadIdSchema = z.string().uuid();
+const leadIdSchema = z.string().guid();
 const requestSchema = z.object({
   propertyAddress: z.string().trim().min(6).max(240),
   sellerPermissionConfirmed: z.literal(true),

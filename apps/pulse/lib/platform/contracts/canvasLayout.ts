@@ -1,24 +1,24 @@
 import { z } from 'zod';
 
-const workspaceId = z.string().uuid();
+const workspaceId = z.string().guid();
 const coordinate = z.number().finite().min(-100_000).max(100_000);
 const windowTarget = z.object({ workspaceId }).strict();
 
 export const canvasWindowSchema = z.discriminatedUnion('kind', [
   z.object({
-    id: z.string().uuid(), kind: z.literal('checkpoint_inbox'),
+    id: z.string().guid(), kind: z.literal('checkpoint_inbox'),
     target: windowTarget,
   }).strict(),
   z.object({
-    id: z.string().uuid(), kind: z.literal('run_graph'),
-    target: windowTarget.extend({ runId: z.string().uuid() }).strict(),
+    id: z.string().guid(), kind: z.literal('run_graph'),
+    target: windowTarget.extend({ runId: z.string().guid() }).strict(),
   }).strict(),
   z.object({
-    id: z.string().uuid(), kind: z.literal('artifact_viewer'),
-    target: windowTarget.extend({ artifactId: z.string().uuid(), version: z.number().int().positive().max(2_147_483_647) }).strict(),
+    id: z.string().guid(), kind: z.literal('artifact_viewer'),
+    target: windowTarget.extend({ artifactId: z.string().guid(), version: z.number().int().positive().max(2_147_483_647) }).strict(),
   }).strict(),
   z.object({
-    id: z.string().uuid(), kind: z.literal('system_monitor'),
+    id: z.string().guid(), kind: z.literal('system_monitor'),
     target: windowTarget.extend({ panel: z.enum(['scheduler', 'connectors', 'quotas']) }).strict(),
   }).strict(),
 ]);
