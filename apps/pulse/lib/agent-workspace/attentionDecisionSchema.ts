@@ -45,7 +45,7 @@ export const AttentionResponseSchema = z.object({
   assessmentId: z.string().min(1).max(120),
   mode: z.enum(['rules', 'semantic']),
   unavailableReason: z.string().max(280).optional(),
-  usage: z.record(z.union([z.number(), z.string()])).optional(),
+  usage: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
 }).strict();
 
 export type AttentionRequest = z.infer<typeof AttentionRequestSchema>;

@@ -15,7 +15,7 @@ import { crawlLeadIntelligence } from '@/lib/lead-intel/crawlLead';
 import { buildLeadEvidenceSuggestions } from '@/lib/lead-intel/leadEvidence';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const uuidSchema = z.string().uuid();
+const uuidSchema = z.string().guid();
 const sourceTypeSchema = z.enum(['brokerage', 'regional_site', 'tax_record', 'business_profile', 'other']);
 const leadFieldSchema = z.enum(LEAD_INTEL_FIELDS);
 

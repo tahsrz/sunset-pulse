@@ -12,7 +12,7 @@ const SmsOptInSchema = z.object({
   email: z.string().trim().email('Enter a valid email address').optional().or(z.literal('')),
   phone: z.string().trim().min(7, 'Enter a valid mobile phone number'),
   consent: z.literal(true, {
-    errorMap: () => ({ message: 'SMS consent is required.' }),
+    error: 'SMS consent is required.',
   }),
   source: z.string().trim().max(80).optional().or(z.literal('')),
 });

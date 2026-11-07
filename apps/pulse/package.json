@@ -36,6 +36,10 @@
     "test:db:concurrency": "node scripts/scheduler-concurrency-acceptance.mjs",
     "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
     "test:platform:auth:disposable": "node scripts/platform-disposable-auth-acceptance.mjs",
+    "test:profile-roles:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security",
+    "profile-roles:preflight": "node scripts/profile-role-release-preflight.mjs",
+    "test:profile-roles:preflight": "node --test scripts/profile-role-release-preflight.test.mjs",
+    "test:profile-roles:db": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --role-preflight-only",
     "test:seller-video-briefs:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-video-briefs",
     "test:seller-business:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-business",
     "test:scans:storage": "node scripts/platform-disposable-auth-acceptance.mjs --suite scans",
@@ -115,7 +119,7 @@
     "mongodb": "^6.3.0",
     "mongoose": "^8.24.0",
     "mysql2": "3.24.4",
-    "next": "^15.5.27",
+    "next": "^15.5.28",
     "pdf-lib": "^1.17.1",
     "photoswipe": "^5.4.3",
     "prop-types": "^15.8.1",
@@ -145,7 +149,7 @@
     "three-stdlib": "^2.36.1",
     "typescript": "^6.0.2",
     "use-stick-to-bottom": "^1.1.6",
-    "zod": "^3.25.76",
+    "zod": "^4.6.7",
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {

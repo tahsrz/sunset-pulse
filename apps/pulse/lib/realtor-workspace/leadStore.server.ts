@@ -6,11 +6,11 @@ import { throwRealtorRpcError, RealtorWorkspaceError } from './access.server';
 import { sellerLeadActionSchema, sellerLeadPageSchema, sellerOutcomePageSchema, sellerOutcomePageResultSchema, sellerScheduleQuerySchema, sellerScheduleResultSchema } from './leadContracts';
 
 const cursorSchema = z.object({
-  actorId: z.string().uuid(),
+  actorId: z.string().guid(),
   createdAt: z.string().datetime({ offset: true }),
-  id: z.string().uuid(),
+  id: z.string().guid(),
   limit: z.number().int().min(1).max(50),
-  leadId: z.string().uuid().optional(),
+  leadId: z.string().guid().optional(),
 }).strict();
 
 export async function findOwnedSellerSchedule(actorId: string, workspaceId: string, rawQuery: unknown) {
@@ -91,7 +91,7 @@ export async function recordOwnedSellerLeadAction(actorId: string, rawAction: un
 }
 
 const outcomeCursorSchema = cursorSchema.extend({
-  leadId: z.string().uuid(),
+  leadId: z.string().guid(),
   kind: sellerOutcomePageSchema.shape.kind,
 });
 

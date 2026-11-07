@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 const invoiceEntrySchema = z.object({
   id: z.string().min(1), entryKind: z.enum(['charge', 'credit', 'reversal']), amountUsd: z.number().finite().nonnegative(),
-  billingStatus: z.enum(['shadow', 'pending', 'billable', 'submitted', 'invoiced', 'voided', 'disputed']), evidence: z.record(z.unknown()),
+  billingStatus: z.enum(['shadow', 'pending', 'billable', 'submitted', 'invoiced', 'voided', 'disputed']), evidence: z.record(z.string(), z.unknown()),
 }).strict();
 
 export const shadowInvoiceInputSchema = z.object({

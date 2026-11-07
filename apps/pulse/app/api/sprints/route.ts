@@ -9,7 +9,7 @@ import { requireOwnerCompatibleMutation } from '@/lib/platform/access/sprintPlan
 import { localCalendarDateInTimeZone, sellerAcquisitionWeek, sellerAcquisitionWeekForLocalDate } from '@/lib/marketing/sellerAcquisitionWeek';
 import { requirePersonalRealtorWorkspace, RealtorWorkspaceError } from '@/lib/realtor-workspace/access.server';
 
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 const item = z.object({ title: z.string().trim().min(1).max(240), description: z.string().trim().max(2000).default(''), priority: z.number().int().min(1).max(5).default(3), estimateMinutes: z.number().int().min(1).max(10080).nullable().default(null) });
 const sprintScheduleSpec = scheduleSpecSchema.extend({ cadence: z.enum(['daily', 'weekly']) });
 const requestSchema = z.discriminatedUnion('action', [

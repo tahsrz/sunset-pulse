@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const revokeSchema = z.object({ membershipId: z.string().uuid() }).strict();
+const revokeSchema = z.object({ membershipId: z.string().guid() }).strict();
 
 export async function GET(request: NextRequest, context: WorkspaceRouteContext) {
   return workspaceWorkflowRequest(request, context, listWorkspaceMembers);

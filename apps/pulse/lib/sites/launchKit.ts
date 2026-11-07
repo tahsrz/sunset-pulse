@@ -542,7 +542,7 @@ function normalizeProvisioningAudit(value: unknown): LaunchKitProvisioningAuditE
 
   return value
     .map((event) => provisioningAuditEventSchema.safeParse(event))
-    .filter((result): result is z.SafeParseSuccess<LaunchKitProvisioningAuditEvent> => result.success)
+    .filter((result) => result.success)
     .map((result) => ({
       ...result.data,
       occurredAt: normalizeAuditDate(result.data.occurredAt),

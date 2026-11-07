@@ -57,7 +57,7 @@ export async function workspaceWorkflowRequest(
   const headers = { 'Cache-Control': 'private, no-store' };
   try {
     const { workspaceId } = await context.params;
-    z.string().uuid().parse(workspaceId);
+    z.string().guid().parse(workspaceId);
     return NextResponse.json({ ok: true, result: await work(access.user.id, workspaceId) }, { headers });
   } catch (error) {
     let status = 500, message = 'Unable to process workflow request.';

@@ -8,7 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const leadIdSchema = z.string().uuid();
+const leadIdSchema = z.string().guid();
 const requestSchema = privateCmaReviewInputSchema;
 const allowedRoles = new Set(['realtor', 'operator', 'admin']);
 const MAX_BODY_BYTES = 32_000;

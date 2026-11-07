@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const manifestKey = /^[a-z][a-z0-9_-]{0,63}$/;
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 
 export type PlatformCommand =
   | { type: 'list_runs' }

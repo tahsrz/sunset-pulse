@@ -13,7 +13,7 @@ export class SchedulerEventError extends Error {
 }
 
 const eventInputSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().guid(),
   workflowKey: z.enum(['hotlist_email', 'sprint_planner', 'connector_health_check', 'capability_reservation_reconcile', 'realtor_reminder', 'property_scan_reconstruction']),
   eventKey: z.string().trim().min(1).max(240),
   payload: z.record(z.string(), z.unknown()),
@@ -24,23 +24,23 @@ const eventInputSchema = z.object({
 export type WorkflowEventInput = z.input<typeof eventInputSchema>;
 
 const connectorHealthEventSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().guid(),
   eventKey: z.string().trim().min(1).max(240),
-  workspaceId: z.string().uuid(),
-  connectorId: z.string().uuid(),
+  workspaceId: z.string().guid(),
+  connectorId: z.string().guid(),
   scheduledFor: z.string().datetime({ offset: true }).optional(),
 });
 
 const capabilityReconcileEventSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().guid(),
   eventKey: z.string().trim().min(1).max(240),
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string().guid(),
   batchLimit: z.number().int().min(1).max(100).default(100),
   scheduledFor: z.string().datetime({ offset: true }).optional(),
 });
 
 const sprintPlannerEventSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().guid(),
   eventKey: z.string().trim().min(1).max(240),
   planningMode: z.enum(['manual_backlog', 'property_shortlist']).default('manual_backlog'),
   source: z.enum(['owner_request', 'property_scan', 'system']).default('system'),
@@ -89,7 +89,7 @@ export async function enqueuePropertyScanReconstructionEvent(input: {
   payload: Record<string, unknown>;
   payloadVersion: number;
 }) {
-  const userId = z.string().uuid().parse(input.userId);
+  const userId = z.string().guid().parse(input.userId);
   const payload = propertyScanReconstructionJobPayloadSchema.parse(input.payload);
   if (payload.ownerId !== userId
     || payload.operationKey !== propertyScanReconstructionOperationKey(payload)
