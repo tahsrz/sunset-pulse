@@ -35,11 +35,14 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
   const submitting = useRef(false);
   const lastSubmission = useRef<{ fingerprint: string; submissionId: string } | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
   const currentStep = stepOrder.indexOf(step);
 
   useEffect(() => {
-    if (currentStep > 0) headingRef.current?.focus();
-  }, [currentStep]);
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    headingRef.current?.focus();
+  }, [step]);
 
   useEffect(() => {
     if (state === 'success') headingRef.current?.focus();
@@ -112,17 +115,10 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
   }
 
   return (
-    <form id="request" onSubmit={handleSubmit} className="space-y-6" aria-describedby="seller-plan-privacy">
-      <ol className="grid grid-cols-3 gap-2" aria-label="Seller request steps">
-        {stepOrder.map((item, index) => (
-          <li key={item} className={`rounded-xl border px-3 py-3 text-center text-xs font-bold ${index <= currentStep ? 'border-teal-200/30 bg-teal-200/10 text-teal-50' : 'border-white/10 text-slate-500'}`} aria-current={step === item ? 'step' : undefined}>
-            <span className="block text-[10px] uppercase tracking-wider">Step {index + 1}</span>{stepLabels[item]}
-          </li>
-        ))}
-      </ol>
-
+    <form onSubmit={handleSubmit} className="space-y-5" aria-describedby="seller-plan-privacy">
       <section aria-labelledby="seller-request-step-title">
-        <h3 ref={headingRef} id="seller-request-step-title" tabIndex={-1} className="text-xl font-bold text-white focus:outline-none">{stepLabels[step]}</h3>
+        <h3 ref={headingRef} id="seller-request-step-title" aria-describedby="seller-request-step-number" tabIndex={-1} className="text-xl font-bold italic text-white focus:outline-none">{stepLabels[step]}</h3>
+        <p id="seller-request-step-number" className="mt-1 text-sm font-medium text-slate-300">Step {currentStep + 1} of {stepOrder.length}</p>
         {step === 'help' ? (
           <fieldset className="mt-4 space-y-3">
             <legend className="sr-only">Choose what you would like help with</legend>
@@ -143,24 +139,24 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
 
         {step === 'contact' ? (
           <div className="mt-4 space-y-4">
-            <label className="block text-sm font-semibold text-slate-100">Your name<input autoComplete="name" name="name" required minLength={2} maxLength={120} value={draft.name} onChange={(event) => update('name', event.target.value)} className={fieldClass} /></label>
-            <label className="block text-sm font-semibold text-slate-100">Email<input autoComplete="email" type="email" name="email" required maxLength={180} value={draft.email} onChange={(event) => update('email', event.target.value)} className={fieldClass} /></label>
-            <label className="flex items-start gap-3 text-sm leading-6 text-slate-300"><input name="requestedContact" type="checkbox" required checked={draft.requestedContact} onChange={(event) => update('requestedContact', event.target.checked)} className="mt-1 size-4 accent-teal-400" /><span>I agree to be contacted to respond to this request.</span></label>
-            <label className="flex items-start gap-3 text-sm leading-6 text-slate-400"><input name="marketingOptIn" type="checkbox" checked={draft.marketingOptIn} onChange={(event) => update('marketingOptIn', event.target.checked)} className="mt-1 size-4 accent-teal-400" /><span>Send me occasional local real-estate updates. Optional; I can unsubscribe anytime.</span></label>
+            <label className="block text-base font-semibold text-slate-100">Your name<input autoComplete="name" name="name" required minLength={2} maxLength={120} value={draft.name} onChange={(event) => update('name', event.target.value)} className={fieldClass} /></label>
+            <label className="block text-base font-semibold text-slate-100">Email<input autoComplete="email" type="email" name="email" required maxLength={180} value={draft.email} onChange={(event) => update('email', event.target.value)} className={fieldClass} /></label>
+            <label className="flex min-h-11 items-start gap-3 py-2 text-base leading-6 text-slate-300"><input name="requestedContact" type="checkbox" required checked={draft.requestedContact} onChange={(event) => update('requestedContact', event.target.checked)} className="mt-0.5 size-5 accent-teal-400" /><span>I agree to be contacted to respond to this request.</span></label>
+            <label className="flex min-h-11 items-start gap-3 py-2 text-base leading-6 text-slate-400"><input name="marketingOptIn" type="checkbox" checked={draft.marketingOptIn} onChange={(event) => update('marketingOptIn', event.target.checked)} className="mt-0.5 size-5 accent-teal-400" /><span>Send me occasional local real-estate updates. This is optional. I can unsubscribe anytime.</span></label>
           </div>
         ) : null}
       </section>
 
       <label aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">Leave this field empty<input name="company" tabIndex={-1} autoComplete="off" value={draft.company} onChange={(event) => update('company', event.target.value)} /></label>
-      <p id="seller-plan-privacy" className="text-xs leading-5 text-slate-400">We use these details to respond to your request. Do not include a street address or private property documents here. A request does not subscribe you to marketing unless you separately check that box.</p>
+      <p id="seller-plan-privacy" className="text-sm leading-6 text-slate-400">We use these details to respond. You can share the property address and any documents later, when you’re ready.</p>
       {state === 'error' ? <p role="alert" className="text-sm text-rose-300">{feedback}</p> : null}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         {step === 'help' ? <span /> : <button type="button" onClick={() => goTo(stepOrder[currentStep - 1])} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-5 font-bold text-white hover:bg-white/5">Back</button>}
         {step !== 'contact' ? (
-          <button type="button" onClick={() => goTo(stepOrder[currentStep + 1])} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Continue</button>
+          <button type="button" onClick={() => goTo(stepOrder[currentStep + 1])} className="fieldbook-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Continue</button>
         ) : (
-          <button type="submit" disabled={state === 'submitting'} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60">{state === 'submitting' ? 'Saving your request…' : 'Send Request'}</button>
+          <button type="submit" disabled={state === 'submitting'} className="fieldbook-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60">{state === 'submitting' ? 'Saving your request…' : 'Send Request'}</button>
         )}
       </div>
     </form>
@@ -170,8 +166,8 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
 function ChoiceCard({ name, value, checked, onChange, title, description }: { name: string; value: string; checked: boolean; onChange: () => void; title: string; description?: string }) {
   return (
     <label className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-4 transition focus-within:ring-2 focus-within:ring-teal-200 ${checked ? 'border-teal-200/50 bg-teal-200/[0.08]' : 'border-white/10 bg-white/[0.025] hover:bg-white/[0.05]'}`}>
-      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="mt-1 size-4 accent-teal-400" />
-      <span><span className="block text-sm font-bold text-white">{title}</span>{description ? <span className="mt-1 block text-sm leading-5 text-slate-300">{description}</span> : null}</span>
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="mt-0.5 size-5 accent-teal-400" />
+      <span><span className="block text-base font-bold text-white">{title}</span>{description ? <span className="mt-1 block text-sm leading-6 text-slate-300">{description}</span> : null}</span>
     </label>
   );
 }

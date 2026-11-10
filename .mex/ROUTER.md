@@ -32,6 +32,9 @@ Then read this file fully before doing anything else in this session.
 **Working:**
 - The gated guided seller form, v3 save and owner case projection are staged on the seller feature branch. The short public form still uses v2. See `docs/releases/guided-seller-save-2026-11-05.md`.
 - The guided buyer form starts from Explorer and uses the staged buyer v1 API. The private Buyer Inbox expires requests after 90 days. The existing daily CMA cron clears expired buyer details in batches. See `docs/releases/guided-buyer-requests-2026-11-05.md`.
+- The property-profile pilot adds a private draft to an owned Seller Case. Reviewed snapshots can be shared by link, with optional map pins. The server flag defaults off.
+- The homepage leads with selling homes and acreage near Sunset. The example property sketch is illustrative. The main action uses the existing seller request and booking flow.
+- Homepage sections share a flat palette, square grids, and upright typography in `apps/pulse/app/home.module.css`. The regional history and guides use an editorial serif. The Atlas launcher still loads its interactive view on demand.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen
 - Segmented 400-expert atlas retrieval, local `query_memory.tah`, SQLSync journal staging, TensorZero eval/feedback ledgers
 - Jamie Chat at `/jamie-chat` sharing Command Center helper context via `/api/jamie/chat`

@@ -16,11 +16,12 @@ import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
 import VisitorPropertyViewTracker from '@/components/property/VisitorPropertyViewTracker';
 
 interface ListingPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function ListingPage({ params }: ListingPageProps) {
-  const property = await fetchProperty(params.id);
+  const { id } = await params;
+  const property = await fetchProperty(id);
 
   if (!property) {
     return (
@@ -39,7 +40,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
   return (
     <main className='bg-slate-50 min-h-screen pb-20'>
-      <VisitorPropertyViewTracker propertyId={property._id || params.id} />
+      <VisitorPropertyViewTracker propertyId={property._id || id} />
       <PropertyHeaderImage image={property.images[0]} />
 
       <section className='bg-white border-b border-slate-200'>

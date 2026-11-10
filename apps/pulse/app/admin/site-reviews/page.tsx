@@ -57,16 +57,14 @@ type SiteReviewRow = {
   updated_at?: string | null;
 };
 
-type SiteReviewsPageProps = {
-  searchParams?: {
-    agentId?: string;
-    status?: string;
-    billing?: string;
-    grace?: string;
-  };
+type SiteReviewFilters = {
+  agentId?: string;
+  status?: string;
+  billing?: string;
+  grace?: string;
 };
 
-export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageProps) {
+export default async function SiteReviewsPage({ searchParams: pendingSearchParams }: { searchParams?: Promise<SiteReviewFilters> }) {
   const requestHeaders = await headers();
   const access = await getOperatorAccess(getRequestHostFromHeaders(requestHeaders));
 
@@ -82,6 +80,7 @@ export default async function SiteReviewsPage({ searchParams }: SiteReviewsPageP
     );
   }
 
+  const searchParams = await pendingSearchParams;
   const { data, error } = await supabaseAdmin
     .from('site_config')
     .select('agent_id, owner_name, subdomain, custom_domain, status, subscription_tier, branding, agent_profile, billing_profile, review_profile, provisioning_audit, updated_at')
@@ -405,8 +404,8 @@ function isGraceExpiringSoon(row: SiteReviewRow) {
 }
 
 function reviewQueueHref(
-  current: SiteReviewsPageProps['searchParams'],
-  patch: Partial<NonNullable<SiteReviewsPageProps['searchParams']>>,
+  current: SiteReviewFilters | undefined,
+  patch: SiteReviewFilters,
 ) {
   const params = new URLSearchParams();
   const next = {

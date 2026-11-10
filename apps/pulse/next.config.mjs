@@ -58,7 +58,14 @@ const nextConfig = {
   distDir,
   outputFileTracingRoot: path.join(__dirname, '../..'),
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      { source: '/(.*)', headers: securityHeaders },
+      { source: '/property-profile/:token', headers: [
+        { key: 'Referrer-Policy', value: 'no-referrer' },
+        { key: 'Cache-Control', value: 'private, no-store' },
+        { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+      ] },
+    ];
   },
   images: {
     remotePatterns: [

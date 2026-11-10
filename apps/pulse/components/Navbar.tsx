@@ -30,7 +30,6 @@ type NavLink = {
   href: string;
   label: string;
   active: boolean;
-  emphasis?: 'teal' | 'blue' | 'violet' | 'cyan' | 'emerald' | 'orange';
   compact?: boolean;
 };
 
@@ -66,25 +65,26 @@ const Navbar: React.FC = () => {
   const { navLinks, primaryLinks, overflowLinks, commandRoutes } = useMemo(() => {
     const links: NavLink[] = [
       { href: '/', label: 'Home', active: pathname === '/' },
-      { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent'), emphasis: 'emerald' },
-      { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
-      ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine'), emphasis: 'emerald' as const }] : []),
-      { href: '/atlas', label: 'Atlas', active: pathname === '/atlas', emphasis: 'cyan' },
-      { href: '/spatial-lab', label: 'Spatial', active: pathname.startsWith('/spatial-lab'), emphasis: 'teal' },
-      { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes'), emphasis: 'violet' },
-      { href: '/play-jamie', label: 'Play Jamie', active: pathname.startsWith('/play-jamie'), emphasis: 'violet' },
-      { href: '/idx', label: 'IDX Search', active: pathname === '/idx', emphasis: 'teal' },
-      { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess'), emphasis: 'orange' },
+      { href: '/seller-plan', label: 'Sell', active: pathname === '/seller-plan' || pathname.startsWith('/seller-plan/') },
+      { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent') },
+      { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center') },
+      ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine') }] : []),
+      { href: '/atlas', label: 'Atlas', active: pathname === '/atlas' },
+      { href: '/spatial-lab', label: 'Spatial', active: pathname.startsWith('/spatial-lab') },
+      { href: '/jamie-chat', label: 'Jamie', active: pathname.startsWith('/jamie-chat') || pathname.startsWith('/jamie-vibes') },
+      { href: '/play-jamie', label: 'Play Jamie', active: pathname.startsWith('/play-jamie') },
+      { href: '/idx', label: 'IDX Search', active: pathname === '/idx' },
+      { href: '/value-guess', label: 'Value Guess', active: pathname.startsWith('/value-guess') },
       { href: '/properties', label: 'Properties', active: pathname === '/properties' },
-      { href: '/explorer', label: 'Explorer', active: pathname === '/explorer', emphasis: 'teal' },
-      ...(canOperateLeads ? [{ href: '/admin/lead-engine', label: 'Lead Engine', active: pathname.startsWith('/admin/lead-engine'), emphasis: 'blue' as const }] : []),
-      { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), emphasis: 'emerald', compact: true },
-      { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), emphasis: 'cyan', compact: true },
-      { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', emphasis: 'violet', compact: true },
+      { href: '/explorer', label: 'Explorer', active: pathname === '/explorer' },
+      ...(canOperateLeads ? [{ href: '/admin/lead-engine', label: 'Lead Engine', active: pathname.startsWith('/admin/lead-engine') }] : []),
+      { href: '/tah', label: 'TAH', active: pathname.startsWith('/tah'), compact: true },
+      { href: '/contracts/promulgated', label: 'Contracts', active: pathname.startsWith('/contracts/promulgated'), compact: true },
+      { href: '/abidan', label: 'Abidan', active: pathname === '/abidan', compact: true },
       { href: '/grill', label: 'Grill', active: pathname === '/grill' },
-      { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', emphasis: 'orange', compact: true },
-      { href: '/investors', label: 'Investors', active: pathname === '/investors', emphasis: 'orange', compact: true },
-      { href: '/contact', label: 'Contact', active: pathname === '/contact', emphasis: 'blue', compact: true },
+      { href: '/sunset-chat', label: 'Chat', active: pathname === '/sunset-chat', compact: true },
+      { href: '/investors', label: 'Investors', active: pathname === '/investors', compact: true },
+      { href: '/contact', label: 'Contact', active: pathname === '/contact', compact: true },
     ];
 
     return {
@@ -177,7 +177,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-cyan-100/10 bg-[#06131d]/82 text-white shadow-[0_18px_60px_rgba(2,6,23,0.24)] backdrop-blur-2xl">
+    <nav className="sticky top-0 z-50 border-b border-[#303946] bg-[#0b0f17] text-white">
       <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-3 md:h-[72px]">
           <div className="flex min-w-0 items-center gap-3">
@@ -197,19 +197,19 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] p-1 lg:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             {primaryLinks.map((link) => (
-              <NavPill key={link.href} link={link} />
+              <NavItem key={link.href} link={link} />
             ))}
 
             {overflowLinks.length > 0 && (
               <div className="relative" ref={moreMenuRef}>
                 <button
                   type="button"
-                  className={`flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold transition ${
+                  className={`flex min-h-11 items-center gap-1 border-b-2 px-3 text-sm font-medium transition ${
                     overflowLinks.some((link) => link.active)
-                      ? 'bg-white/[0.12] text-white'
-                      : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+                      ? 'border-[#a7c5a7] text-white'
+                      : 'border-transparent text-slate-300 hover:bg-white/[0.06] hover:text-white'
                   }`}
                   aria-label="Open more navigation links"
                   aria-expanded={isMoreMenuOpen}
@@ -220,14 +220,15 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {isMoreMenuOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-52 rounded-xl border border-cyan-400/20 bg-[#0a1e2d]/95 p-2 shadow-[0_20px_50px_rgba(8,112,184,0.25)] backdrop-blur-2xl z-[100] transition-all duration-200 origin-top-right scale-100 hover:border-cyan-400/30">
+                  <div className="absolute right-0 top-full mt-3 w-52 rounded border border-[#303946] bg-[#121923] p-2 z-[100]">
                     {overflowLinks.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-all duration-200 border ${
+                        aria-current={link.active ? "page" : undefined}
+                        className={`flex items-center gap-2 rounded px-3 py-2.5 text-sm font-medium transition-all duration-200 border ${
                           link.active
-                            ? desktopDropdownActiveClass(link.emphasis)
+                            ? "border-[#a7c5a7] text-white"
                             : 'border-transparent text-slate-200 hover:bg-white/[0.08] hover:text-white'
                         }`}
                       >
@@ -248,7 +249,7 @@ const Navbar: React.FC = () => {
               type="button"
               variant="ghost"
               size="sm"
-              className="hidden rounded-full border border-white/10 bg-white/[0.045] px-3 text-slate-100 hover:bg-white/[0.09] md:inline-flex"
+              className="hidden rounded border border-white/15 bg-white/[0.045] px-3 text-slate-100 hover:bg-white/[0.09] md:inline-flex"
               aria-label="Open command palette"
               onClick={() => setIsCommandOpen(true)}
             >
@@ -261,13 +262,13 @@ const Navbar: React.FC = () => {
 
             <Link
               href="/idx"
-              className="hidden items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-2 text-xs font-black uppercase text-cyan-50 transition hover:bg-cyan-200/15 sm:flex"
+              className="hidden items-center gap-2 rounded border border-white/15 px-3 py-2 font-mono text-xs uppercase text-slate-100 transition hover:bg-white/10 sm:flex"
             >
               <Search size={15} />
               IDX
             </Link>
 
-            <Link href="/cart" className="relative rounded-full p-2.5 text-slate-100 transition hover:bg-white/[0.08]" aria-label="Open cart">
+            <Link href="/cart" className="relative rounded p-2.5 text-slate-100 transition hover:bg-white/[0.08]" aria-label="Open cart">
               <FaShoppingBasket className="text-xl" />
               {itemCount > 0 && (
                 <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black leading-none text-white">
@@ -280,7 +281,7 @@ const Navbar: React.FC = () => {
               <div className="relative" ref={profileMenuRef}>
                 <button
                   type="button"
-                  className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                  className="relative flex h-10 w-10 items-center justify-center rounded border border-white/15 bg-white/[0.06] text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
                   onClick={() => setIsProfileMenuOpen((prev) => !prev)}
                   aria-label="Open profile menu"
                   aria-expanded={isProfileMenuOpen}
@@ -288,7 +289,7 @@ const Navbar: React.FC = () => {
                   {typeof profileImage === 'string' && !profileImageFailed ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      className="h-10 w-10 rounded-full object-cover"
+                      className="h-10 w-10 rounded object-cover"
                       src={profileImage}
                       alt="Profile"
                       width={40}
@@ -297,7 +298,7 @@ const Navbar: React.FC = () => {
                       onError={() => setProfileImageFailed(true)}
                     />
                   ) : (
-                    <Image className="h-10 w-10 rounded-full object-cover" src={profileDefault} alt="Profile" width={40} height={40} />
+                    <Image className="h-10 w-10 rounded object-cover" src={profileDefault} alt="Profile" width={40} height={40} />
                   )}
                   {sessionRole === 'realtor' && (
                     <div className="absolute -right-0.5 -top-0.5 rounded-md border border-blue-300/50 bg-blue-600 p-0.5 text-white shadow-lg">
@@ -307,7 +308,7 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-56 overflow-hidden rounded-lg border border-white/10 bg-white py-1 text-slate-800 shadow-2xl z-[100]">
+                  <div className="absolute right-0 top-full mt-3 w-56 overflow-hidden rounded border border-slate-300 bg-white py-1 text-slate-800 z-[100]">
                     <Link href="/dashboard" className="flex items-center gap-2 px-4 py-3 text-sm font-bold hover:bg-slate-100">
                       <User size={16} />
                       Dashboard
@@ -333,7 +334,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Link
                 href={loginHref}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-50 sm:gap-2 sm:px-4 sm:text-sm"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded border border-white/25 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-white/10 sm:gap-2 sm:px-4 sm:text-sm"
               >
                 <LogIn size={16} />
                 Login
@@ -344,16 +345,17 @@ const Navbar: React.FC = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/10 bg-[#071722]/96 px-3 pb-4 pt-3 shadow-2xl backdrop-blur-2xl">
-          <div className="grid gap-2">
+        <div className="max-h-[75dvh] overflow-y-auto border-t border-[#303946] bg-[#0b0f17] px-3 pb-4 pt-3 lg:hidden">
+          <div className="divide-y divide-white/10">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center justify-between rounded-md border px-4 py-3 text-sm font-bold transition ${
+                aria-current={link.active ? "page" : undefined}
+                className={`flex min-h-11 items-center justify-between border-l-2 px-4 py-3 text-sm font-medium transition ${
                   link.active
-                    ? mobileActiveClass(link.emphasis)
-                    : 'border-transparent text-slate-200 hover:border-white/10 hover:bg-white/[0.08]'
+                    ? "border-l-[#a7c5a7] bg-white/[0.06] text-white"
+                    : 'border-transparent text-slate-200 hover:border-l-slate-500 hover:bg-white/[0.08]'
                 } ${link.compact ? 'uppercase italic tracking-widest text-[11px]' : ''}`}
               >
                 <span className="flex items-center gap-2">
@@ -387,76 +389,20 @@ const Navbar: React.FC = () => {
   );
 };
 
-function NavPill({ link }: { link: NavLink }) {
+function NavItem({ link }: { link: NavLink }) {
   return (
     <Link
       href={link.href}
-      className={`rounded-full px-3 py-2 text-sm font-bold transition ${
+      aria-current={link.active ? "page" : undefined}
+      className={`inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-medium transition ${
         link.active
-          ? desktopActiveClass(link.emphasis)
-          : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+          ? "border-[#a7c5a7] text-white"
+          : 'border-transparent text-slate-300 hover:bg-white/[0.06] hover:text-white'
       }`}
     >
       {link.label}
     </Link>
   );
-}
-
-function desktopActiveClass(emphasis?: NavLink['emphasis']) {
-  switch (emphasis) {
-    case 'teal':
-      return 'bg-teal-300/15 text-teal-100';
-    case 'cyan':
-      return 'bg-cyan-300/15 text-cyan-100';
-    case 'violet':
-      return 'bg-violet-300/15 text-violet-100';
-    case 'emerald':
-      return 'bg-emerald-300/15 text-emerald-100';
-    case 'blue':
-      return 'bg-blue-300/15 text-blue-100';
-    case 'orange':
-      return 'bg-orange-300/15 text-orange-100';
-    default:
-      return 'bg-white/[0.12] text-white';
-  }
-}
-
-function mobileActiveClass(emphasis?: NavLink['emphasis']) {
-  switch (emphasis) {
-    case 'teal':
-      return 'border-teal-300/20 bg-teal-500/15 text-teal-100';
-    case 'blue':
-      return 'border-blue-300/20 bg-blue-600/15 text-blue-100';
-    case 'violet':
-      return 'border-violet-300/20 bg-violet-500/20 text-violet-100';
-    case 'cyan':
-      return 'border-cyan-300/20 bg-cyan-500/20 text-cyan-100';
-    case 'emerald':
-      return 'border-emerald-300/20 bg-emerald-500/20 text-emerald-100';
-    case 'orange':
-      return 'border-orange-300/20 bg-orange-600/20 text-orange-100';
-    default:
-      return 'border-white/10 bg-black/25 text-white';
-  }
-}
-
-function desktopDropdownActiveClass(emphasis?: NavLink['emphasis']) {
-  switch (emphasis) {
-    case 'teal':
-      return 'bg-teal-500/20 text-teal-100 border-teal-500/30';
-    case 'blue':
-      return 'bg-blue-500/20 text-blue-100 border-blue-500/30';
-    case 'violet':
-      return 'bg-violet-500/20 text-violet-100 border-violet-500/30';
-    case 'cyan':
-      return 'bg-cyan-500/20 text-cyan-100 border-cyan-500/30';
-    case 'emerald':
-      return 'bg-emerald-500/20 text-emerald-100 border-emerald-500/30';
-    case 'orange':
-      return 'bg-orange-500/20 text-orange-100 border-orange-500/30';
-    default:
-      return 'bg-white/10 text-white border-white/20';
-  }
 }
 
 export default Navbar;

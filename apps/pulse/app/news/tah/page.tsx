@@ -4,7 +4,7 @@ import { buildNewsTahStory } from '@/lib/news/storyTah';
 import type { PulseNewsArticle } from '@/lib/news/rssFeed';
 
 type NewsTahPageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const getParam = (params: Record<string, string | string[] | undefined>, key: string) => {

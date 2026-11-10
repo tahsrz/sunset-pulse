@@ -293,7 +293,7 @@ export default function GuidedJourneyPrototype<TOffer>({live}:{live?:LiveJourney
   return <GuidedJourneyShell title={title} description={description} section={section} sections={sections} property={propertyLabel(draft)}
     headingRef={headingRef} onSubmit={next} onBack={back} canGoBack={!receipt&&(step!=='intent'||finished)} busy={busy} error={error}
     live={Boolean(live)} final={step==='contact'} returnToReview={returnToReview} complete={finished||Boolean(receipt)} aside={<div className={styles.asideInner}>
-      <p className={styles.asideEyebrow}>{live?'Keller and Westlake':'A Place to Start'}</p><h2 className={styles.asideTitle}>{live?'Your Seller Plan':'Make room for your next move.'}</h2>
+      <p className={styles.asideEyebrow}>{live?'Sunset Pulse':'A Place to Start'}</p><h2 className={styles.asideTitle}>{live?'Your Seller Plan':'Make room for your next move.'}</h2>
       <p className={styles.asideCopy}>{live?'Tell us about your home and what you need help with first.':'A few details now can make the next conversation easier.'}</p>
       <HomeIllustration preview={!live}/>
       <ul className={styles.serviceList}><li>Pricing Review</li><li>Home Preparation</li><li>Move Planning</li></ul>
