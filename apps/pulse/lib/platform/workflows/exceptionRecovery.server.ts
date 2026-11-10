@@ -7,12 +7,12 @@ import { PlatformRunError } from './runStore.server';
 
 const resolutionSchema = z.object({
   exceptionType: z.enum(['quota_breach', 'review_revoked']),
-  resolutionKey: z.string().uuid(),
+  resolutionKey: z.string().guid(),
   reason: z.enum(['investigated', 'provider_lookup_complete', 'manual_review_complete', 'not_retryable']),
 }).strict();
 
 const recoveryReviewSchema = z.object({
-  reconciliationKey: z.string().uuid(),
+  reconciliationKey: z.string().guid(),
   outcome: z.enum(['applied', 'not_applied']),
   evidenceSource: z.enum(['provider_lookup', 'manual_review']),
   evidenceReference: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,119}$/),
@@ -20,9 +20,9 @@ const recoveryReviewSchema = z.object({
 }).strict();
 
 const retryIntentSchema = z.object({
-  recoveryReviewId: z.string().uuid(),
-  idempotencyKey: z.string().uuid(),
-  retryOperationId: z.string().uuid(),
+  recoveryReviewId: z.string().guid(),
+  idempotencyKey: z.string().guid(),
+  retryOperationId: z.string().guid(),
 }).strict();
 
 async function saveRpc(name: string, args: Record<string, unknown>) {
@@ -38,7 +38,7 @@ export async function resolveProviderException(actorId: string, workspaceId: str
   await requireWorkspaceAccess(actorId, workspaceId, 'workspace:manage_apps');
   return saveRpc('platform_resolve_provider_exception', {
     p_actor_id: actorId, p_workspace_id: workspaceId, p_exception_type: value.exceptionType,
-    p_exception_id: z.string().uuid().parse(exceptionId), p_resolution_key: value.resolutionKey, p_reason: value.reason,
+    p_exception_id: z.string().guid().parse(exceptionId), p_resolution_key: value.resolutionKey, p_reason: value.reason,
   });
 }
 
@@ -46,7 +46,7 @@ export async function recordEffectRecoveryReview(actorId: string, workspaceId: s
   const value = recoveryReviewSchema.parse(input);
   await requireWorkspaceAccess(actorId, workspaceId, 'workspace:manage_apps');
   return saveRpc('platform_record_effect_recovery_review', {
-    p_actor_id: actorId, p_workspace_id: workspaceId, p_receipt_id: z.string().uuid().parse(receiptId),
+    p_actor_id: actorId, p_workspace_id: workspaceId, p_receipt_id: z.string().guid().parse(receiptId),
     p_reconciliation_key: value.reconciliationKey, p_outcome: value.outcome,
     p_evidence_source: value.evidenceSource, p_evidence_reference: value.evidenceReference,
     p_evidence_hash: value.evidenceHash,
@@ -57,7 +57,7 @@ export async function createEffectRetryIntent(actorId: string, workspaceId: stri
   const value = retryIntentSchema.parse(input);
   await requireWorkspaceAccess(actorId, workspaceId, 'workspace:manage_apps');
   return saveRpc('platform_create_effect_retry_intent', {
-    p_actor_id: actorId, p_workspace_id: workspaceId, p_receipt_id: z.string().uuid().parse(receiptId),
+    p_actor_id: actorId, p_workspace_id: workspaceId, p_receipt_id: z.string().guid().parse(receiptId),
     p_recovery_review_id: value.recoveryReviewId, p_idempotency_key: value.idempotencyKey,
     p_retry_operation_id: value.retryOperationId,
   });

@@ -49,6 +49,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 300000, // 5 Minutes
     env: {
+      NEXT_E2E_ISOLATED_OUTPUT: '1',
       E2E_OPERATOR_ACCESS: 'true',
       NEXT_PUBLIC_E2E_MODE: 'true',
       JAMIE_PUBLIC_GUIDE_E2E_FIXTURE: 'true',
@@ -61,3 +62,4 @@ export default defineConfig({
     },
   },
 });
+

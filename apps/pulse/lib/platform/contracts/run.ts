@@ -44,13 +44,13 @@ export const runDefinitionSchema = z.object({
   }
   if (visited.size !== nodes.size) fail('Every node must be reachable from the entry.');
 });
-export const startRunSchema = z.object({ requestKey: z.string().uuid(), definition: runDefinitionSchema }).strict();
+export const startRunSchema = z.object({ requestKey: z.string().guid(), definition: runDefinitionSchema }).strict();
 export const checkpointResponseSchema = z.object({
-  checkpointId: z.string().uuid(), expectedRevision: z.number().int().positive(), submissionKey: z.string().uuid(),
+  checkpointId: z.string().guid(), expectedRevision: z.number().int().positive(), submissionKey: z.string().guid(),
   value: z.union([z.string().min(1).max(4000), z.number().finite(), z.boolean()]),
 }).strict();
-export const cancelRunSchema = z.object({ runId: z.string().uuid(), expectedRevision: z.number().int().positive() }).strict();
+export const cancelRunSchema = z.object({ runId: z.string().guid(), expectedRevision: z.number().int().positive() }).strict();
 export const supersedeRunSchema = cancelRunSchema.extend({
-  requestKey: z.string().uuid(), definition: runDefinitionSchema, reason: z.string().trim().min(1).max(500),
+  requestKey: z.string().guid(), definition: runDefinitionSchema, reason: z.string().trim().min(1).max(500),
 }).strict();
 export type RunDefinition = z.infer<typeof runDefinitionSchema>;

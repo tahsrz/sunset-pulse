@@ -65,10 +65,11 @@ export function SellerDailyPanel({ result, priorities, onScheduleSaved, onAgenda
   const data = parsed.data.value;
   const counts = data.counts;
   return <section className="fieldbook-record rounded-2xl border border-cyan-300/20 bg-slate-900/80 p-5 shadow-xl shadow-black/10">
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">Seller business</h2><p className="mt-1 text-xs text-slate-400">This week · {data.weekStartDate} to {data.weekEndDate} · manually recorded outcomes</p></div><Link href="/seller-inbox" className="text-sm font-semibold text-cyan-200">Open inbox →</Link></div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="text-lg font-bold">Seller business</h2><Link href="/seller-inbox" className="text-sm font-semibold text-cyan-200">Open inbox →</Link></div>
     <SellerPriorityPanel key={data.generatedAt || 'daily'} daily={data} result={replacement && replacement.source===result ? replacement.priorities : priorities}/>
     <details className="mt-6 border-t border-white/10 pt-3">
       <summary className="cursor-pointer py-2 text-sm font-semibold text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">This week’s progress</summary>
+    <p className="mt-3 text-xs text-slate-400">{data.weekStartDate} to {data.weekEndDate} · manually recorded outcomes</p>
     <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
       {[
         ['New requests', counts.newRequests], ['Customer replies', counts.customerReplies],

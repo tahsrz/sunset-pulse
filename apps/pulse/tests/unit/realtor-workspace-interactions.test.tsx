@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BusinessView, PaymentDialog, PlannerView } from '@/components/realtor/RealtorWorkspace';
 import { ModalSurface } from '@/components/realtor/ModalSurface';
@@ -101,6 +101,28 @@ describe('realtor workspace interaction feedback', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/two decimal places|valid amount/i);
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('shows the exact financial entry and bill effect before voiding it', async () => {
+    const submit = vi.fn(async (_url: string, _method: 'POST' | 'PATCH', _data: unknown, _success: string) => true);
+    const entry = {
+      id: 'expense-1', kind: 'expense' as const, effective_date: '2026-10-19', status: 'active', current_revision: 2,
+      occurrence_id: 'bill-occurrence-1', realized_by_record_id: null,
+      data: { amountCents: '4500', category: 'broker_dues' },
+    };
+    render(<BusinessView {...businessProps(submit)} data={{ summary: {}, ledger: { entries: [entry], nextCursor: null } }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Void' }));
+    const dialog = screen.getByRole('dialog', { name: 'Void this ledger entry?' });
+    expect(dialog).toHaveTextContent('broker dues expense');
+    expect(dialog).toHaveTextContent('−USD 45.00');
+    expect(dialog).toHaveTextContent('2026-10-19');
+    expect(dialog).toHaveTextContent('reopen the bill as pending');
+    expect(submit).not.toHaveBeenCalled();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Void entry' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce());
+    expect(submit.mock.calls[0][2]).toMatchObject({ action: 'void', recordId: 'expense-1', expectedRevision: 2 });
   });
 
   it('keeps the payment dialog open when a bill-payment save is rejected', async () => {

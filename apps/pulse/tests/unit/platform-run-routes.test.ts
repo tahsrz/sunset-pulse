@@ -86,9 +86,33 @@ describe('workspace JSON run and checkpoint routes', () => {
     expect(await result.text()).not.toContain('secret');
   });
   it('uses the same response endpoint for a boolean gate decision', async () => {
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { type: 'effect_gate', target: { resourceType: 'listing', resourceId: 'listing-1', revision: 1, action: 'continue' } }, error: null }),
+    });
     const result = await respond(request({ ...answer, value: true }), context());
     expect(result.status).toBe(200);
     expect(mocks.rpc).toHaveBeenCalledWith('platform_respond_checkpoint', expect.objectContaining({ p_actor_id: actor, p_value: true, p_expected_revision: 1 }));
+  });
+  it('rejects approval targets without a resource-specific preview handler', async () => {
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { type: 'approval', target: { resourceType: 'listing', resourceId: 'listing-1', revision: 1, action: 'publish' } }, error: null }),
+    });
+    const result = await respond(request({ ...answer, value: true }), context());
+    expect(result.status).toBe(409);
+    expect(await result.json()).toMatchObject({ error: 'This approval target cannot be reviewed in the inbox yet.' });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('routes seller-video approvals through the exact-review handler', async () => {
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { type: 'approval', target: { resourceType: 'seller_video_brief', resourceId: 'brief-1', revision: 2, action: 'review_seller_video_brief' } }, error: null }),
+    });
+    const result = await respond(request({ ...answer, value: true }), context());
+    expect(result.status).toBe(200);
+    expect(mocks.access).toHaveBeenCalledWith(actor, workspace, 'artifact:review');
+    expect(mocks.rpc).toHaveBeenCalledWith('platform_respond_seller_video_review', expect.objectContaining({ p_decision: true, p_expected_revision: 1 }));
   });
   it('fails safely when the scoped checkpoint lookup fails before responding', async () => {
     mocks.from.mockReturnValue({

@@ -39,7 +39,7 @@ const workerPayloadSchema = z.object({
   scanned_records: z.number(),
   eligible_records: z.number(),
   candidate_count: z.number(),
-  filters: z.record(z.unknown()),
+  filters: z.record(z.string(), z.unknown()),
   candidates: z.array(candidateSchema),
 });
 

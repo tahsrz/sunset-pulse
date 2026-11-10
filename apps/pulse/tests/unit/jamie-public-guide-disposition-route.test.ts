@@ -64,6 +64,22 @@ describe('Jamie public guide disposition route', () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
+  it('strips private guided answers from a seller owner’s generic action receipt', async () => {
+    mocks.requireOperatorRouteAccess.mockResolvedValue({ allowed: true, mode: 'local', user: { id: 'owner-1' } });
+    mocks.readSingle.mockResolvedValue({ data: { agent_id: 'agent-one', source: 'seller_plan' }, error: null });
+    mocks.from.mockImplementation((table) => table === 'site_config'
+      ? { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { owner_id: 'owner-1', status: 'active' } }) }) }) }
+      : { select: mocks.readSelect });
+    const metadata = { sellerPlan: { requestKind: 'seller_plan', journey: { address: '100 Example Lane' } } };
+    mocks.apply.mockResolvedValue({ ok: true, replayed: true, lead: { id: LEAD_ID, metadata } });
+
+    const response = await PATCH(request({ action: 'note', note: 'Checked the request.' }));
+    expect(response.status).toBe(200);
+    const result = await response.json();
+    expect(result.lead.metadata).toEqual({ sellerPlan: { requestKind: 'seller_plan' } });
+    expect(metadata.sellerPlan.journey.address).toBe('100 Example Lane');
+  });
+
   it('rejects disposition updates for ordinary agent-site leads', async () => {
     mocks.readSingle.mockResolvedValue({ data: { metadata: {}, source: 'agent_site', status: 'new', revision: 1 }, error: null });
     const response = await PATCH(request({ action: 'disposition', disposition: 'qualified' }));

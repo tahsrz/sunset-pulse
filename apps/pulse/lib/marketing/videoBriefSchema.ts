@@ -15,15 +15,15 @@ const listingPermissionSchema = z.object({
   evidenceReference: z.string().trim().min(8).max(400).nullable(),
 }).strict();
 const backlogLinkSchema = z.object({
-  itemId: z.string().uuid(),
+  itemId: z.string().guid(),
   expectedRevision: z.number().int().positive().safe(),
 }).strict();
 
 export const videoBriefSchema = z.object({
   schemaVersion: z.literal(1),
-  briefId: z.string().uuid(),
+  briefId: z.string().guid(),
   revision: z.number().int().positive().safe(),
-  supersedesBriefId: z.string().uuid().nullable(),
+  supersedesBriefId: z.string().guid().nullable(),
   backlogLink: backlogLinkSchema.nullable(),
   topic: z.string().trim().min(4).max(120),
   audienceNeed: z.string().trim().min(8).max(240),
@@ -36,7 +36,7 @@ export const videoBriefSchema = z.object({
   ctaOfferKey: z.enum(['seller-plan', 'neighborhood-guides', 'market-report', 'none']),
   campaignKey: campaignKeySchema,
   reviewStatus: z.enum(['draft', 'in_review', 'approved', 'rejected']),
-  reviewedByUserId: z.string().uuid().nullable(),
+  reviewedByUserId: z.string().guid().nullable(),
   reviewedAt: z.string().datetime({ offset: true }).nullable(),
   reviewNotes: z.string().trim().min(5).max(500).nullable(),
 }).strict().superRefine((brief, context) => {

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const cursorSchema = z.object({
-  workspaceId: z.string().uuid(), collection: z.enum(['runs', 'checkpoints', 'connector_health', 'connector_health_history', 'connector_health_audit', 'provider_exceptions', 'unknown_effects']),
-  createdAt: z.string().datetime({ offset: true }), id: z.string().uuid(),
+  workspaceId: z.string().guid(), collection: z.enum(['runs', 'checkpoints', 'connector_health', 'connector_health_history', 'connector_health_audit', 'provider_exceptions', 'unknown_effects']),
+  createdAt: z.string().datetime({ offset: true }), id: z.string().guid(),
 }).strict();
 export type PlatformCursor = z.infer<typeof cursorSchema>;
 export function encodeCursor(cursor: PlatformCursor) {

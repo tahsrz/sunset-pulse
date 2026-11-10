@@ -23,6 +23,29 @@ afterEach(() => {
 });
 
 describe('UnifiedPropertyStage live feed states', () => {
+  it('keeps the live feed idle while curated listings are selected', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<UnifiedPropertyStage initialStagedProperties={[]} initialMode="STAGED" />);
+
+    expect(screen.getByRole('heading', { name: 'Curated Property Opportunities' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Curated Listings' })).toHaveAttribute('aria-pressed', 'true');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('gives a single curated homepage listing enough width to read its details', () => {
+    const { container } = render(<UnifiedPropertyStage
+      initialStagedProperties={[{ ...listing, name: 'Curated home' }]}
+      initialMode="STAGED"
+      compact
+    />);
+
+    const grid = container.querySelector('.grid.max-w-4xl');
+    expect(grid).toBeInTheDocument();
+    expect(grid).not.toHaveClass('xl:grid-cols-4');
+  });
+
   it('ignores an aborted response after switching tabs and loads again when returning', async () => {
     let resolveFirst!: (response: Response) => void;
     const firstRequest = new Promise<Response>((resolve) => { resolveFirst = resolve; });

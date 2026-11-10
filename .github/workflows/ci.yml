@@ -92,6 +92,8 @@ jobs:
         run: npm install
       - name: Run isolated scheduler and Mongo acceptance
         run: npm run docker:test
+      - name: Run isolated internal consultation acceptance
+        run: node apps/pulse/scripts/scheduler-concurrency-acceptance.mjs --internal-consultations-only
 
   storage-budget:
     runs-on: ubuntu-latest
@@ -143,5 +145,15 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run Jamie Public Guide E2E
-        run: npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts --reporter=line
+      - name: Run Public Site E2E
+        run: npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts tests/homepage-responsive.spec.ts --reporter=line
+
+      - name: Upload homepage viewport captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-responsive-screenshots
+          path: |
+            apps/pulse/test-results/homepage-*.png
+            apps/pulse/test-results/homepage-resource-waterfall.json
+          if-no-files-found: ignore

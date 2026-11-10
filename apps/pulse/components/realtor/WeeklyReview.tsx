@@ -5,6 +5,8 @@ import { ModalSurface } from './ModalSurface';
 import { sellerReviewSummarySchema, type SellerReviewSummary } from '@/lib/realtor-workspace/sellerReviewContract';
 
 type WeeklyReviewOccurrence = { id: string; revision: number; title_snapshot: string; effective_date: string };
+const priorityChoices = ['New seller requests', 'Upcoming appointments', 'Property preparation', 'Business records'];
+const nextActionChoices = ['Reply to a seller request', 'Confirm an appointment', 'Finish a preparation task', 'Record a business expense'];
 
 export function WeeklyReviewAction({ occurrence, busy, submit }: {
   occurrence: WeeklyReviewOccurrence;
@@ -94,8 +96,33 @@ export function WeeklyReviewAction({ occurrence, busy, submit }: {
           <div className="mt-2 flex gap-3"><a href="/seller-inbox" className="text-cyan-200 hover:underline">Open seller inbox</a><a href="/business" className="text-cyan-200 hover:underline">Check expenses and deposits</a></div>
           <label className="mt-3 flex items-start gap-2"><input type="checkbox" required checked={reviewedSellerOutcomes} onChange={(event) => setReviewedSellerOutcomes(event.target.checked)} className="mt-0.5 accent-cyan-300" /><span>I reviewed the recorded outcome counts and campaign groups.</span></label>
         </section>
-        <label className="block text-sm font-medium text-slate-200">My chosen priority for the week<textarea required maxLength={200} value={priority} onChange={(event) => setPriority(event.target.value)} className="mt-1.5 min-h-24 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-300 focus:outline-none" placeholder="Improve response time to new requests" /></label>
-        <label className="block text-sm font-medium text-slate-200">The next action I will take<textarea required maxLength={200} value={chosenNextAction} onChange={(event) => setChosenNextAction(event.target.value)} className="mt-1.5 min-h-20 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-300 focus:outline-none" placeholder="Call new requests with permission to contact" /></label>
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium text-slate-200">My chosen priority for the week</legend>
+          <p className="text-xs text-slate-400">Choose a starting point, then make it yours.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {priorityChoices.map((choice) => (
+              <button key={choice} type="button" aria-pressed={priority === choice} onClick={() => setPriority(choice)} className={`min-h-11 rounded-lg border px-3 text-left text-xs font-semibold ${priority === choice ? 'border-cyan-200 bg-cyan-200/15 text-cyan-50' : 'border-white/15 text-slate-200 hover:bg-white/[0.06]'}`}>
+                {choice}
+              </button>
+            ))}
+          </div>
+          <label className="block text-xs text-slate-300">My chosen priority for the week
+            <textarea required maxLength={200} value={priority} onChange={(event) => setPriority(event.target.value)} className="mt-1.5 min-h-20 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-300 focus:outline-none" placeholder="Add the outcome you want to focus on" />
+          </label>
+        </fieldset>
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium text-slate-200">The next action I will take</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {nextActionChoices.map((choice) => (
+              <button key={choice} type="button" aria-pressed={chosenNextAction === choice} onClick={() => setChosenNextAction(choice)} className={`min-h-11 rounded-lg border px-3 text-left text-xs font-semibold ${chosenNextAction === choice ? 'border-cyan-200 bg-cyan-200/15 text-cyan-50' : 'border-white/15 text-slate-200 hover:bg-white/[0.06]'}`}>
+                {choice}
+              </button>
+            ))}
+          </div>
+          <label className="block text-xs text-slate-300">The next action I will take
+            <textarea required maxLength={200} value={chosenNextAction} onChange={(event) => setChosenNextAction(event.target.value)} className="mt-1.5 min-h-20 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-300 focus:outline-none" placeholder="Write the specific next step you plan to take" />
+          </label>
+        </fieldset>
         <label className="block text-sm font-medium text-slate-200">What slowed the work down? <span className="font-normal text-slate-400">(optional)</span><textarea maxLength={500} value={friction} onChange={(event) => setFriction(event.target.value)} className="mt-1.5 min-h-16 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-300 focus:outline-none" placeholder="Missing photos, delayed reply, or none" /></label>
         <div className="flex gap-2"><button className="rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-bold text-slate-950 disabled:opacity-50" disabled={busy || saving || !reviewedUpcomingDates || !reviewedMissingExpenses || !reviewedSellerOutcomes || !priority.trim() || !chosenNextAction.trim()}>{busy || saving ? 'Saving…' : 'Complete review'}</button><button type="button" disabled={saving} onClick={() => setOpen(false)} className="rounded-lg border border-white/15 px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/10">Cancel</button></div>
       </form>

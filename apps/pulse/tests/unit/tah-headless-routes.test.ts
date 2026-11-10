@@ -43,7 +43,7 @@ describe('TAH robot-facing routes', () => {
   it('serves cartridge headless pages as plain text', async () => {
     const fixture = getCatalogFixtureMetadata();
     const response = await getCartridgeHeadless(new Request(fixture.routes.headless), {
-      params: { slug: fixture.slug }
+      params: Promise.resolve({ slug: fixture.slug })
     });
     const body = await response.text();
 

@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { buildInternalCostEntry, persistInternalCost, type InternalCostEntry } from '@/lib/profit/internalCostLedger';
 
 const providerEventSchema = z.object({
-  tenantSite: z.string().trim().min(1), funnelId: z.string().uuid().nullable().default(null), leadId: z.string().uuid().nullable().default(null),
+  tenantSite: z.string().trim().min(1), funnelId: z.string().guid().nullable().default(null), leadId: z.string().guid().nullable().default(null),
   provider: z.string().trim().min(1), providerEventId: z.string().trim().min(1), costType: z.enum(['model', 'search_tool', 'email_sms', 'signing', 'crawling', 'infrastructure']),
-  amountUsd: z.number().finite().nonnegative().nullable().default(null), occurredAt: z.string().datetime(), evidence: z.record(z.unknown()).default({}),
+  amountUsd: z.number().finite().nonnegative().nullable().default(null), occurredAt: z.string().datetime(), evidence: z.record(z.string(), z.unknown()).default({}),
 }).strict();
 
 export type ProviderCostEvent = z.input<typeof providerEventSchema>;

@@ -86,12 +86,12 @@ describe('Jamie public guide Sprint 2 contracts', () => {
     expect(getPublicGuideCuration(new Date('2026-07-20T12:00:00.000Z'))).toEqual(first);
   });
 
-  it('offers a typed consultation booking for explicit meeting requests', () => {
+  it('offers a consultation request for explicit meeting requests', () => {
     const actions = buildPublicGuideActions({
       context: { agent: { agentId: 'agent-1', agentName: 'Jamie Agent', brokerageName: 'Sunset Realty', primaryColor: '#38bdf8', publicUrl: 'https://agent.sunsetpulse.app', site: 'agent-one', siteName: 'Agent One' } },
       listings: [], outcome: 'general_guidance', rootOrigin: 'https://sunsetpulse.app', userMessage: 'I want to meet about selling my home.',
     });
-    expect(actions[0]).toMatchObject({ id: 'book_consultation', kind: 'link', label: 'Book a consultation' });
+    expect(actions[0]).toMatchObject({ id: 'book_consultation', kind: 'link', label: 'Request a consultation' });
     expect(actions[0].href).toContain('appointmentType=seller_consultation');
   });
 

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { z } from 'zod';
 import { realtorDateSchema } from '@/lib/realtor-workspace/contracts';
 
-const sellerSourceSchema = z.object({ id: z.string().uuid() });
+const sellerSourceSchema = z.object({ id: z.string().guid() });
 
 export function PlannerTaskLinks({ dueDate, sellerSourceAvailable, sellerLead, showPlanner = true }: {
   dueDate?: unknown; sellerSourceAvailable?: unknown; sellerLead?: unknown; showPlanner?: boolean;

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "published",
+  "sampleLabel": "Example Preparation Plan",
+  "tasks": [
+    {
+      "id": "gather-updates",
+      "title": "Gather Receipts for Major Updates",
+      "detail": "Bring together what you already have before the first conversation."
+    },
+    {
+      "id": "timing",
+      "title": "Choose Your Preferred Move Date",
+      "detail": "Note any dates that will affect showings or your move."
+    },
+    {
+      "id": "walkthrough",
+      "title": "Discuss the Home Before Starting Work",
+      "detail": "Use the first walk-through to decide what deserves attention."
+    }
+  ]
+}

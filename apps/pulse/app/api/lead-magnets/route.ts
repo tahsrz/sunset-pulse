@@ -3,10 +3,13 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { sellerPlanLeadSchema } from '@/lib/marketing/leadMagnetContract';
+import { MAX_SELLER_REQUEST_BYTES, sellerPlanLeadVersionedSchema } from '@/lib/marketing/guidedJourneySchema';
+import { isSellerGuidedIntakeEnabled } from '@/lib/marketing/sellerGuidedIntake.server';
 import { saveSellerPlanLead } from '@/lib/marketing/sellerLeadIntake.server';
+import { createSellerBookingOffer } from '@/lib/scheduling/sellerConsultationAuthority.server';
 
 export const dynamic = 'force-dynamic';
-const MAX_BODY_BYTES = 12_000;
+const MAX_BODY_BYTES = MAX_SELLER_REQUEST_BYTES;
 const ROOT_DOMAIN = (process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'sunsetpulse.app').replace(/^www\./, '').toLowerCase();
 
 export async function POST(request: Request) {
@@ -47,7 +50,10 @@ export async function POST(request: Request) {
   } catch {
     return response({ success: false, message: 'Enter the form details and try again.' }, 400);
   }
-  const parsed = sellerPlanLeadSchema.safeParse(raw);
+  const schema = isSellerGuidedIntakeEnabled()
+    ? sellerPlanLeadVersionedSchema
+    : sellerPlanLeadSchema;
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     return response({ success: false, message: 'Check the form details and try again.' }, 400);
   }
@@ -56,7 +62,10 @@ export async function POST(request: Request) {
   if (input.company) return response({ success: true, accepted: true });
 
   const saved = await saveSellerPlanLead(input, site);
-  if (saved.status === 'saved') return response({ success: true, accepted: true, duplicate: false }, 201);
+  if (saved.status === 'saved') {
+    const bookingOffer = await createSellerBookingOffer(saved.identity);
+    return response({ success: true, accepted: true, duplicate: false, ...(bookingOffer ? { bookingOffer } : {}) }, 201);
+  }
   if (saved.status === 'replayed') return response({ success: true, accepted: true, duplicate: true });
   if (saved.status === 'conflict') {
     return response({ success: false, message: 'This request ID was already used for different details. Refresh the page and try again.' }, 409);

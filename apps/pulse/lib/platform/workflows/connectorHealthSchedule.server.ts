@@ -5,7 +5,7 @@ import { requireWorkspaceAccess } from '@/lib/platform/access/workspaceAccess.se
 import { enqueueConnectorHealthCheck } from '@/lib/autonomous-workflows/schedulerEvents.server';
 
 const connectorHealthScheduleInputSchema = z.object({
-  connectorId: z.string().uuid(),
+  connectorId: z.string().guid(),
   eventKey: z.string().trim().min(1).max(240),
   scheduledFor: z.string().datetime({ offset: true }).optional(),
 }).strict();

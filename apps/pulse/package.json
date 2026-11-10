@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "preview:home-journey": "node scripts/guided-journey-preview.mjs",
+    "test:home-journey:preview": "node scripts/guided-journey-preview-acceptance.mjs",
+    "typecheck:home-journey": "tsc --project tsconfig.guided-journey.json --pretty false",
+    "test:home-journey:contracts:v4": "node --no-warnings ../../node_modules/vitest/vitest.mjs run --config vitest.guided-journey-v4.config.ts",
     "dev:mock": "set NEXT_PUBLIC_MOCK_MODE=true && next dev",
     "leads:decay": "node scripts/decay-leads.mjs",
     "leads:discover:tad": "tsx scripts/run-tad-lead-discovery.ts",
@@ -36,6 +40,11 @@
     "test:db:concurrency": "node scripts/scheduler-concurrency-acceptance.mjs",
     "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
     "test:platform:auth:disposable": "node scripts/platform-disposable-auth-acceptance.mjs",
+    "test:profile-roles:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security",
+    "test:vibe-cms:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --production --vibe-cms",
+    "profile-roles:preflight": "node scripts/profile-role-release-preflight.mjs",
+    "test:profile-roles:preflight": "node --test scripts/profile-role-release-preflight.test.mjs",
+    "test:profile-roles:db": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --role-preflight-only",
     "test:seller-video-briefs:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-video-briefs",
     "test:seller-business:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-business",
     "test:scans:storage": "node scripts/platform-disposable-auth-acceptance.mjs --suite scans",
@@ -61,7 +70,12 @@
     "seed": "tsx scripts/universal-seed.ts",
     "agent:upsert-profile": "tsx scripts/upsert-agent-profile.ts",
     "platform:scope:dry-run": "tsx scripts/platform-scope-backfill.ts --target local",
-    "test:seller-service:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-service"
+    "test:seller-service:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-service",
+    "test:release:build": "node scripts/production-build-acceptance.mjs",
+    "test:release:browser": "node scripts/production-build-acceptance.mjs --browser-only",
+    "test:atlas:release": "node scripts/production-build-acceptance.mjs --browser-only --atlas-only",
+    "test:marketing:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite marketing",
+    "test:seller-consultations:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-consultations"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",
@@ -113,9 +127,9 @@
     "lucide-react": "^1.7.0",
     "mapbox-gl": "^3.1.2",
     "mongodb": "^6.3.0",
-    "mongoose": "^8.24.0",
+    "mongoose": "^8.24.8",
     "mysql2": "3.24.4",
-    "next": "^15.5.27",
+    "next": "^15.5.28",
     "pdf-lib": "^1.17.1",
     "photoswipe": "^5.4.3",
     "prop-types": "^15.8.1",
@@ -145,7 +159,7 @@
     "three-stdlib": "^2.36.1",
     "typescript": "^6.0.2",
     "use-stick-to-bottom": "^1.1.6",
-    "zod": "^3.25.76",
+    "zod": "^4.6.7",
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {

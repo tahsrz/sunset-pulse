@@ -8,7 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 const actionEventSchema = z.object({
-  leadId: z.string().uuid(),
+  leadId: z.string().guid(),
   actionType: z.enum(['call', 'email', 'sms']),
   agentId: z.string().trim().min(1).max(160),
   listingId: z.string().trim().min(1).max(160).nullable().optional(),

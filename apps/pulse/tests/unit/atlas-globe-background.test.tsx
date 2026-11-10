@@ -16,3 +16,20 @@ it('renders valid empty Atlas data', async () => {
   render(<AtlasGlobeBackground />);
   expect(await screen.findByTestId('globe')).toBeInTheDocument();
 });
+
+it('aborts an in-flight Atlas read when the background unmounts', async () => {
+  let requestSignal: AbortSignal | undefined;
+  const fetchMock = vi.fn((_url: string, options?: RequestInit) => {
+    requestSignal = options?.signal ?? undefined;
+    return new Promise(() => {});
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  const { unmount } = render(<AtlasGlobeBackground />);
+
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+  expect(requestSignal?.aborted).toBe(false);
+
+  unmount();
+
+  expect(requestSignal?.aborted).toBe(true);
+});

@@ -346,7 +346,7 @@ try {
   const retentionResponse = await runRetention();
   const retentionBody = await retentionResponse.json();
   assert.equal(retentionResponse.status, 200);
-  assert.deepEqual(retentionBody, { ok: true, deletedCount: 2 }, 'Retention removes only the two expired synthetic details.');
+  assert.deepEqual(retentionBody, { ok: true, deletedCount: 2, prunedJourneyCount: 0, prunedBuyerRequestCount: 0 }, 'Retention removes only the two expired synthetic details.');
   const remainingRetentionRows = await admin.from('seller_cma_private_details')
     .select('lead_id')
     .in('lead_id', retentionLeadIds);
@@ -361,7 +361,7 @@ try {
   const repeatRetentionResponse = await runRetention();
   const repeatRetentionBody = await repeatRetentionResponse.json();
   assert.equal(repeatRetentionResponse.status, 200);
-  assert.deepEqual(repeatRetentionBody, { ok: true, deletedCount: 0 }, 'A repeated cleanup is an idempotent no-op.');
+  assert.deepEqual(repeatRetentionBody, { ok: true, deletedCount: 0, prunedJourneyCount: 0, prunedBuyerRequestCount: 0 }, 'A repeated cleanup is an idempotent no-op.');
   console.log('PASS: owner-only CMA details/reviews, reviewed-source gates, immutable optimistic revisions, expired-consent denial, and retention behavior verified on isolated local Supabase.');
 } finally {
   await otherContext?.close();

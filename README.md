@@ -54,7 +54,12 @@ How to read the directory:
 | `/scan-studio` | 3D Scan Studio | Sign-in required; Consent-first phone capture; uploads remain private until agent review. |
 | `/valuation` | Property pricing review | Public entry; No automated estimate is currently offered; request a human-reviewed seller pricing conversation. |
 | `/keller-westlake/market-report` | Keller / Westlake market report | Public entry; Noindex until a current, reviewed, publication-authorized report is available. |
-| `/seller-plan` | Keller / Westlake seller plan | Public entry; Request is saved only when the configured published agent site and Supabase intake are available. |
+| `/seller-plan` | Home and land seller plan | Public entry. The request needs a configured published agent site and Supabase intake. |
+| `/seller-plan/start` | Guided seller request | Start from the seller plan when guided intake is enabled. |
+| `/seller-plan/preview` | Guided seller prototype | Development preview with example data. |
+| `/buyer-plan/start` | Guided buyer request | Start from Explorer when guided buyer intake is enabled. |
+| `/property-profile/[token]` | Shared property profile | Open a current share link from the owner. |
+| `/how-it-works` | How Sunset Pulse Works | Public entry; Overview of the platform and its main-site features. |
 | `/neighborhoods` | Keller / Westlake neighborhood guides | Public entry; Reviewed repository-backed guides with official sources and explicit unknowns. |
 | `/contact` | Contact | Public entry |
 | `/investors` | Investors | Public entry |
@@ -151,9 +156,12 @@ How to read the directory:
 | `/profile` | Profile | Sign-in required |
 | `/dashboard` | Realtor dashboard | Realtor role; Middleware requires the realtor profile role. |
 | `/today` | Realtor Today | Sign-in required; Private personal workspace; planner, earnings summary, goals and reminders. |
+| `/buyer-inbox` | Buyer inbox | Sign-in required. Shows assigned buyer requests. |
+| `/consultations` | Seller consultations | Sign-in required. Manage availability and bookings. |
 | `/seller-inbox` | Seller inbox | Sign-in required; Private requests from active websites owned by your account; recorded contact, outcomes and source-linked planner tasks. |
 | `/seller-cases` | Seller cases | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
 | `/seller-cases/[leadId]` | Seller case detail | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-cases/[leadId]/property-profile` | Property profile editor | Open an owned Seller Case with the profile feature enabled. |
 | `/seller-portal` | Private seller progress | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
 | `/seller-setup` | Seller setup and health | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
 | `/seller-business` | Seller business entry | Sign-in required; Open from the seller workspace; private data requires authorized sign-in. |
@@ -231,6 +239,7 @@ How to read the directory:
 | `/admin/intelligence` | Intelligence configuration | Administrative screen |
 | `/admin/prompts` | Prompt configuration | Administrative screen |
 | `/admin/marketing` | Marketing | Administrative screen |
+| `/admin/marketing/readiness` | Marketing content readiness | Administrative screen. Review publication requirements. |
 | `/admin/pulse` | Pulse operations | Administrative screen |
 | `/admin/cms` | Store / POS CMS | Administrative screen; Store controller console, not the Vibe editor. |
 | `/admin/cms/setup` | Store / POS setup | Administrative screen |

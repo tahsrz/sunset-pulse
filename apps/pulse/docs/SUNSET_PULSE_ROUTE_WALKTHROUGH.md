@@ -1,6 +1,6 @@
 # Sunset Pulse — presenter’s route walkthrough
 
-Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spoken demo script**, not a script that opens URLs, submits forms or changes data. It covers all **134 cataloged non-API paths**: pages, contextual routes, redirects and machine-readable handlers. Internal `/api/*` endpoints are implementation interfaces, not additional visitor screens.
+This **spoken demo script** follows `lib/navigation/routeCatalog.ts` and covers pages, contextual routes, redirects and machine-readable handlers.
 
 ## Opening — read aloud
 
@@ -8,7 +8,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 
 ## Suggested short demo
 
-1. Open `/`: start with the Keller / Westlake seller offer, then introduce discovery and the current visual identity. State that the form saves to the owner's inbox only when its published tenant and Supabase configuration are available; it sends no automatic email or text.
+1. Open `/` and start with the Sunset home and land seller offer. Explain that saving a request requires a published agent site and Supabase intake. Follow-up comes from the seller team.
 2. Open `/neighborhoods`: show the source-linked local guides and explain that property-specific school assignment, HOA costs and drive times remain to be verified.
 3. Open `/seller-plan`: describe the request as human follow-up, not an instant CMA, appraisal or guaranteed price.
 4. Open `/keller-westlake/market-report`: explain that only reviewed, publication-authorized figures will be shown; the current report library is empty.
@@ -18,6 +18,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 8. Open `/business` and `/goals`: explain manually recorded money, broker deductions and optional progress.
 9. Open `/sprints`, then an authorized workspace inbox/run: distinguish a proposal, approval, execution and its evidence.
 10. Close with `/atlas` and `/llms.txt`: structured knowledge supports the work; it does not make the product only a “Wikipedia for LLMs.”
+11. Open `/how-it-works` for the longer platform architecture overview linked from the footer.
 
 ## Presenter rules
 
@@ -44,6 +45,11 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 | `/valuation` | Public entry | “This is a human-reviewed pricing conversation entry point. There is no automated price estimate until a licensed source and reviewed CMA workflow are configured.” | Open `/valuation`; no provider call or price estimate is generated. |
 | `/keller-westlake/market-report` | Public entry | “This page publishes figures only after review and publication permission; it currently contains no local market data.” | Open `/keller-westlake/market-report`; it is noindex while no report is available. |
 | `/seller-plan` | Public entry | “This is a request for a human-reviewed seller conversation, not an instant CMA. Submission is saved only when the owner’s configured intake is available; no automatic message is sent.” | Open `/seller-plan`; test with local/disposable data, not a prospect's details. |
+| `/seller-plan/start` | Guided intake enabled | “This guides the seller through a property and timing questionnaire.” | Start from the seller plan. |
+| `/seller-plan/preview` | Development | “Use sample details to walk through the prototype.” | Open in development. |
+| `/buyer-plan/start` | Guided buyer intake enabled | “This collects a request for help finding a home.” | Start from Explorer. |
+| `/property-profile/[token]` | Active share link | “This shows the version the agent reviewed and shared.” | Use a link from a fictional Seller Case. |
+| `/how-it-works` | Public entry | “This explains how the main property, local research, seller and Atlas features fit together.” | Open `/how-it-works` or follow the footer link. |
 | `/neighborhoods` | Public entry | “These are reviewed Keller / Westlake guides with citations and clearly marked address-specific unknowns.” | Open `/neighborhoods`. |
 | `/neighborhoods/[slug]` | Public entry | “This is one source-backed local guide; only published repository records resolve.” | Begin at `/neighborhoods`; choose a published guide slug. |
 | `/contact` | Public entry | “This is where a visitor can start a conversation with the business.” | Open `/contact`.  |
@@ -124,9 +130,12 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 | `/register` | Public entry | “This is account registration. Creating an account does not automatically grant operator or realtor permissions.” | Open `/register`.  |
 | `/profile` | Sign-in | “This is the account's profile workspace.” | Open `/profile`.  |
 | `/today` | Sign-in | “This is the daily starting point: deadlines, opted-in reminders, personal progress and a recorded business summary.” | Open `/today`. Private personal workspace; planner, earnings summary, goals and reminders. |
+| `/buyer-inbox` | Sign-in | “Agents can review buyer requests assigned to them.” | Open from the private realtor workspace. |
+| `/consultations` | Sign-in | “Review seller bookings and set availability.” | Open from the private realtor workspace. |
 | `/seller-inbox` | Sign-in | “This is the account owner's seller request inbox. Record actual contact and outcomes separately from scheduling the next action.” | Open `/seller-inbox`; use only synthetic requests for a demo. Requires personal planner setup and an active website owned by your account to display its requests. |
 | `/seller-cases` | Seller cases | Account | Open from the seller workspace; private data requires authorized sign-in. |
 | `/seller-cases/[leadId]` | Seller case detail | Account | Open from the seller workspace; private data requires authorized sign-in. |
+| `/seller-cases/[leadId]/property-profile` | Sign-in and owned case | “Save a private draft, review it, then create a share link.” | Open a fictional Seller Case with the feature enabled. |
 | `/seller-portal` | Private seller progress | Account | Open from the seller workspace; private data requires authorized sign-in. |
 | `/seller-setup` | Seller setup and health | Account | Open from the seller workspace; private data requires authorized sign-in. |
 | `/seller-business` | Seller business entry | Account | Open from the seller workspace; private data requires authorized sign-in. |
@@ -199,6 +208,7 @@ Prepared October 2, 2026 from `lib/navigation/routeCatalog.ts`. This is a **spok
 | `/admin/intelligence` | Admin | “This is administrative intelligence configuration, not ordinary visitor search.” | Open `/admin/intelligence`.  |
 | `/admin/prompts` | Admin | “This is administrative prompt configuration. Do not expose secrets or private prompts in a public recording.” | Open `/admin/prompts`.  |
 | `/admin/marketing` | Admin | “This is the administrative marketing surface. Demonstrate drafts, not unapproved sends.” | Open `/admin/marketing`.  |
+| `/admin/marketing/readiness` | Admin | “Review publication requirements for marketing content.” | Open from Marketing Content. |
 | `/admin/pulse` | Admin | “This is administrative Pulse operations.” | Open `/admin/pulse`.  |
 | `/admin/cms` | Admin | “This is the store/POS controller, not the Vibe CMS editor.” | Open `/admin/cms`. Store controller console, not the Vibe editor. |
 | `/admin/cms/setup` | Admin | “This configures the store/POS CMS.” | Open `/admin/cms/setup`.  |

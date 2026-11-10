@@ -1,5 +1,7 @@
 # Vibe CMS Production Verification Record
 
+Access update, November 3, 2026: the source repair in `docs/vibe-cms-access-implementation-plan-2026-11-03.md` supersedes the historical public-WIP testing instructions below. Production must ignore both WIP and E2E operator shortcuts. CMS reads/writes, including the legacy Jamie dictionary, require admin/operator authority or the existing configured operator-email match. A public realtor registration alone does not qualify. Local acceptance is separate from deployment and from this record's unfinished controlled-site publication cycle.
+
 Use this record only with a disposable Vibe and a controlled Launch Kit site. Do not use a customer-facing site. Preserve the original applied revision before testing so it can be restored at the end.
 
 ## Test target policy
@@ -34,7 +36,7 @@ The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-k
 - [ ] The operator is signed in and can open `/vibes`.
 - [ ] The controlled site ID and original applied revision are recorded above.
 - [ ] The selected Launch Kit site is owned or controlled by Taz, is safe to change temporarily, and is not serving a customer.
-- [ ] `VIBE_CMS_PUBLIC_WRITE_WIP` remains a temporary testing exception and no customer site will be applied.
+- [ ] The reviewed access repair is deployed; anonymous, consumer and unapproved realtor accounts cannot reach editorial data or writes, even if WIP/E2E flags are true. No customer site will be applied.
 
 ## Cycle one: author, publish, and apply
 
@@ -88,7 +90,7 @@ The authenticated Taz session successfully opened `/vibes`, but `/admin/launch-k
 - [ ] Every required observation passed and has a value recorded above.
 - [ ] The controlled site is restored to its original revision.
 - [ ] The complete evidence record is committed or attached to the production-verification follow-up PR.
-- [ ] `VIBE_CMS_PUBLIC_WRITE_WIP=false` is set before the WIP exception is considered released and this follow-up is closed.
+- [ ] Deployed production rejects development shortcuts and the access matrix above passes. Remove or set the retired production WIP flag to false as configuration cleanup; its value must not grant access.
 
 Any missing evidence, unexpected public output, or failed restoration keeps the release gate open.
 

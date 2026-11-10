@@ -7,16 +7,17 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 type HeadlessCartridgeRouteProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export async function GET(request: Request, { params }: HeadlessCartridgeRouteProps) {
-  const cartridge = getPulseCartridge(params.slug);
+  const { slug } = await params;
+  const cartridge = getPulseCartridge(slug);
   if (!cartridge) notFound();
 
   const host = siteUrlFromRequest(request);
-  const previews = await previewPulseCartridge(params.slug, 8);
+  const previews = await previewPulseCartridge(slug, 8);
   return plainTextResponse(formatHeadlessCartridge(host, cartridge, previews));
 }

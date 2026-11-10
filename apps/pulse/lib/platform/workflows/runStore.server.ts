@@ -35,7 +35,7 @@ export async function listRuns(actorId: string, workspaceId: string, search = ne
   return pageResult(data || [], limit, workspaceId, 'runs');
 }
 export async function getRun(actorId: string, workspaceId: string, runId: string) {
-  z.string().uuid().parse(runId);
+  z.string().guid().parse(runId);
   await requireWorkspaceAccess(actorId, workspaceId, 'workspace:read');
   const { data: run, error: runError } = await supabaseAdmin.from('platform_runs')
     .select('id,workspace_id,definition,definition_hash,state,status,revision,created_at,updated_at,supersedes,superseded_by,supersession_reason,app_install_id,app_manifest_hash,app_workflow_key,app_install_revision,app_inputs,app_resource_refs')
@@ -187,6 +187,9 @@ export async function respondToCheckpoint(actorId: string, workspaceId: string, 
       p_expected_revision: value.expectedRevision, p_submission_key: value.submissionKey, p_decision: value.value,
     });
   }
+  // Approval decisions must pass through a resource-specific handler that can
+  // validate the exact target snapshot. The generic response RPC cannot do that.
+  if (checkpoint?.type === 'approval') throw new PlatformRunError('0A000');
   return rpc('platform_respond_checkpoint', {
     p_actor_id: actorId, p_workspace_id: workspaceId, p_checkpoint_id: value.checkpointId,
     p_expected_revision: value.expectedRevision, p_submission_key: value.submissionKey, p_value: value.value,

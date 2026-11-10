@@ -28,9 +28,8 @@ export async function getOperatorAccess(host: string | null): Promise<OperatorAc
   const session = await getSessionUser();
   const email = session?.user?.email || null;
   const role = session?.role || session?.user?.role || 'anonymous';
-  const operatorEmail = process.env.OPERATOR_EMAIL || process.env.AUTHORIZED_EMAIL;
   const roleAllowed = role === 'admin' || role === 'operator' || role === 'realtor';
-  const emailAllowed = Boolean(operatorEmail && email && email.toLowerCase() === operatorEmail.toLowerCase());
+  const emailAllowed = isConfiguredOperatorEmail(email);
 
   if (roleAllowed || emailAllowed) {
     return {
@@ -62,29 +61,38 @@ export async function getOperatorAccess(host: string | null): Promise<OperatorAc
 }
 
 /**
- * Temporary Vibe CMS WIP access. Set VIBE_CMS_PUBLIC_WRITE_WIP=false to
- * restore the normal operator-only boundary without changing the routes.
+ * The WIP identity is an explicit development-loopback convenience only.
+ * Hosted CMS authority is narrower than generic realtor/operator access.
  */
 export async function getVibeCmsAccess(host: string | null): Promise<OperatorAccess> {
-  if (process.env.VIBE_CMS_PUBLIC_WRITE_WIP !== 'false') {
+  if (process.env.VIBE_CMS_PUBLIC_WRITE_WIP === 'true' && process.env.NODE_ENV === 'development' && isLocalHostName(host)) {
     return {
       allowed: true,
       mode: 'authenticated',
-      reason: 'Public Vibe CMS WIP access.',
+      reason: 'Local Vibe CMS WIP access.',
       user: {
-        id: 'vibe-cms-wip-public',
+        id: 'vibe-cms-wip-local',
         email: null,
         role: 'operator',
-        name: 'Public Vibe CMS WIP'
+        name: 'Local Vibe CMS WIP'
       }
     };
   }
 
-  return getOperatorAccess(host);
+  const access = await getOperatorAccess(host);
+  if (!access.allowed || access.mode === 'local' || access.user?.role === 'admin' || access.user?.role === 'operator' || isConfiguredOperatorEmail(access.user?.email)) {
+    return access;
+  }
+  return { ...access, allowed: false, mode: 'denied', reason: 'Publishing requires an authorized operator account.' };
+}
+
+function isConfiguredOperatorEmail(email: string | null | undefined) {
+  const operatorEmail = process.env.OPERATOR_EMAIL || process.env.AUTHORIZED_EMAIL;
+  return Boolean(operatorEmail && email && email.toLowerCase() === operatorEmail.toLowerCase());
 }
 
 function isE2EOperatorAccess(host: string | null) {
-  return process.env.E2E_OPERATOR_ACCESS === 'true' && isLocalHostName(host);
+  return process.env.NODE_ENV !== 'production' && process.env.E2E_OPERATOR_ACCESS === 'true' && isLocalHostName(host);
 }
 
 export function isLocalHost(host: string | null) {

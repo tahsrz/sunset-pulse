@@ -28,13 +28,20 @@ export async function GET(_request: NextRequest) {
       listing_status: 'Active',
       is_demo: { $ne: true },
       display_public: { $ne: false },
+      // Only show records written by a configured MLS provider. Older seeded
+      // sample records were incorrectly marked non-demo and included national listings.
+      'metadata.provider': { $in: ['bridge', 'repliers'] },
     })
       .sort({ updatedAt: -1 })
       .limit(80)
       .lean() as HotMovingCandidate[];
 
     const listings = candidates
-      .filter((listing) => listing.source === 'MLS' && listing.display_public !== false)
+      .filter((listing) => (
+        listing.source === 'MLS'
+        && listing.display_public !== false
+        && ['bridge', 'repliers'].includes(String((listing.metadata as { provider?: unknown } | undefined)?.provider || '').toLowerCase())
+      ))
       .slice(0, 8)
       .map((listing) => {
         const images = getUsableRemoteListingImages(listing);

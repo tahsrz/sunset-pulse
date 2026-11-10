@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sellerJourneyOwnerSummarySchema } from '@/lib/marketing/guidedJourneySchema';
 import { realtorDateSchema } from './contracts';
 
 export const sellerMilestones = [
@@ -10,7 +11,7 @@ export const sellerMilestoneLabels: Record<typeof sellerMilestones[number], stri
   preparing: 'Preparing the property', published: 'Listing published', showing: 'Showings underway',
   offer_received: 'Offer received', under_contract: 'Under contract', closed: 'Closed',
 };
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 const text = z.string().trim().min(1);
 const identity = { leadId: uuid, expectedRevision: z.number().int().positive(), requestKey: uuid };
 export const sellerDocumentSchema = z.object({
@@ -50,7 +51,7 @@ export const sellerCaseSchema = z.object({
   sharing_enabled: z.boolean(), created_at: z.string(), updated_at: z.string(),
 });
 export const sellerCaseEventSchema = z.object({
-  id: uuid, kind: z.string(), occurred_at: z.string(), details: z.record(z.unknown()),
+  id: uuid, kind: z.string(), occurred_at: z.string(), details: z.record(z.string(), z.unknown()),
 });
 export const sellerMessageSchema = z.object({
   id: uuid, direction: z.enum(['inbound', 'outbound']), subject: z.string(), body: z.string(),
@@ -67,3 +68,7 @@ export const sellerCaseResultSchema = z.object({
   timeZone: z.string(), emailEnabled: z.boolean().optional(),emailFrom:z.string().nullable().optional(),
 });
 export type SellerCaseResult = z.infer<typeof sellerCaseResultSchema>;
+export const sellerCaseWorkspaceResultSchema = sellerCaseResultSchema.extend({
+  intake: sellerJourneyOwnerSummarySchema.nullable().optional(),
+});
+export type SellerCaseWorkspaceResult = z.infer<typeof sellerCaseWorkspaceResultSchema>;

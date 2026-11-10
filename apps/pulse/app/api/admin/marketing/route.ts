@@ -1,25 +1,26 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
+import { isAuthResponse } from '@/lib/core/routeAuth';
+import { requireMarketingCopyAccess } from '@/lib/marketing/marketingCopyAccess.server';
+import { loadMarketingCopy } from '@/lib/marketing/marketingCopy.server';
 
-const configPath = path.join(process.cwd(), 'config', 'marketing_copy.json');
+export const dynamic = 'force-dynamic';
+const privateHeaders = { 'Cache-Control': 'private, no-store' };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const access = await requireMarketingCopyAccess(request);
+  if (isAuthResponse(access)) return access;
   try {
-    const fileContent = fs.readFileSync(configPath, 'utf8');
-    const data = JSON.parse(fileContent);
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to read marketing config' }, { status: 500 });
+    return NextResponse.json(loadMarketingCopy(), { headers: privateHeaders });
+  } catch {
+    return NextResponse.json({ error: 'Marketing content could not be loaded.' }, { status: 500, headers: privateHeaders });
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const newData = await request.json();
-    fs.writeFileSync(configPath, JSON.stringify(newData, null, 2), 'utf8');
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to update marketing config' }, { status: 500 });
-  }
+export async function POST(request: NextRequest) {
+  const access = await requireMarketingCopyAccess(request);
+  if (isAuthResponse(access)) return access;
+  return NextResponse.json({
+    code: 'MARKETING_PUBLISH_UNAVAILABLE',
+    message: 'Download a draft from Marketing Content and publish it through a reviewed content change.',
+  }, { status: 409, headers: privateHeaders });
 }

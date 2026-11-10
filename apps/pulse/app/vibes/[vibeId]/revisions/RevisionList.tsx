@@ -28,7 +28,8 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [confirmRevision, setConfirmRevision] = useState<{ revision: Revision; reason: string } | null>(null);
+  const [confirmRevision, setConfirmRevision] = useState<Revision | null>(null);
+  const [restoreReason, setRestoreReason] = useState('');
 
   const loadRevisions = useCallback(async () => {
     setError('');
@@ -48,15 +49,15 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
     void loadRevisions();
   }, [loadRevisions]);
 
-  async function restoreRevision(revision: Revision) {
-    const reason = window.prompt(`Why should published revision r${revision.revisionNumber} be restored?`);
-    if (!reason?.trim()) return;
-    setConfirmRevision({ revision, reason: reason.trim() });
+  function restoreRevision(revision: Revision) {
+    setRestoreReason('');
+    setConfirmRevision(revision);
   }
 
   async function confirmRestore() {
-    if (!confirmRevision) return;
-    const { revision, reason } = confirmRevision;
+    if (!confirmRevision || !restoreReason.trim()) return;
+    const revision = confirmRevision;
+    const reason = restoreReason.trim();
 
     setPendingId(revision._id);
     setError('');
@@ -135,7 +136,11 @@ export function RevisionList({ vibeId }: { vibeId: string }) {
           })}
         </tbody>
       </table>
-      <VibeConfirmDialog open={confirmRevision !== null} title={`Republish r${confirmRevision?.revision.revisionNumber ?? ''}?`} description="This creates a new published revision. Existing revisions remain unchanged and it does not apply the revision to a site." confirmLabel="Republish revision" cancelLabel="Cancel" busy={pendingId !== null} onOpenChange={(open) => { if (!open && pendingId === null) setConfirmRevision(null); }} onConfirm={() => void confirmRestore()} />
+      <VibeConfirmDialog open={confirmRevision !== null} title={`Republish r${confirmRevision?.revisionNumber ?? ''}?`} description="This creates a new published revision. Existing revisions remain unchanged and it does not apply the revision to a site." confirmLabel="Republish revision" cancelLabel="Cancel" busy={pendingId !== null} confirmDisabled={!restoreReason.trim()} onOpenChange={(open) => { if (!open && pendingId === null) setConfirmRevision(null); }} onConfirm={() => void confirmRestore()}>
+        <label className="block text-sm font-semibold text-slate-800">Reason for republishing
+          <textarea autoFocus required maxLength={1000} value={restoreReason} onChange={(event) => setRestoreReason(event.target.value)} className="mt-1 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 font-normal" placeholder={`Why should published revision r${confirmRevision?.revisionNumber ?? ''} be restored?`} />
+        </label>
+      </VibeConfirmDialog>
     </section>
   );
 }

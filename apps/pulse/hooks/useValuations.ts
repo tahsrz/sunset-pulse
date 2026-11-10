@@ -12,7 +12,7 @@ export const useValuations = () => {
   });
 
   return { 
-    valuations: data?.data || [],
+    valuations: Array.isArray(data?.data) ? data.data : [],
     loading: isLoading,
     error 
   };

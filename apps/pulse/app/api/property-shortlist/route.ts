@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { isAuthResponse, requireSignedInUser } from '@/lib/core/routeAuth';
 import { addPropertyNote, archiveShortlistEntry, archiveShortlistEntryForWorkspace, listPropertyNotes, listShortlistEntries, listShortlistEntriesForWorkspace, saveShortlistEntry, saveShortlistEntryForWorkspace } from '@/lib/property-sprints/shortlist.server';
 
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 const requestSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('save'), workspaceId: uuid.nullable().optional(), expectedRevision: z.number().int().positive().nullable().default(null), entry: z.record(z.unknown()) }),
+  z.object({ action: z.literal('save'), workspaceId: uuid.nullable().optional(), expectedRevision: z.number().int().positive().nullable().default(null), entry: z.record(z.string(), z.unknown()) }),
   z.object({ action: z.literal('archive'), workspaceId: uuid.nullable().optional(), id: uuid, expectedRevision: z.number().int().positive() }),
   z.object({ action: z.literal('add_note'), propertyId: uuid, body: z.string().trim().min(1).max(4000), authorType: z.enum(['user', 'jamie']).default('user'), sourceCommandId: z.string().trim().max(160).nullable().default(null) }),
 ]);

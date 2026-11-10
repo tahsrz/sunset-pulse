@@ -6,10 +6,11 @@ import { publicGuideDispositionIdSchema } from '@/lib/ai/publicGuideConversionCo
 import { isAuthResponse, operatorAuditUser, requireOperatorRouteAccess } from '@/lib/core/routeAuth';
 import { resolveOperatorAgentId } from '@/lib/intelligence/agentNotificationStore';
 import { AgentLeadActionError, applyAgentLeadAction } from '@/lib/sites/agentLeadActions.server';
+import { withoutSellerJourney } from '@/lib/sites/sellerJourneyIntakeContext';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const leadIdSchema = z.string().uuid();
-const requestKeySchema = z.string().uuid();
+const leadIdSchema = z.string().guid();
+const requestKeySchema = z.string().guid();
 const pipelineStatusSchema = z.enum(['new', 'contacted', 'touring', 'nurture', 'closed', 'archived']);
 const valueSourceSchema = z.enum(['operator_estimate', 'crm', 'closing_statement']);
 
@@ -126,7 +127,13 @@ export async function PATCH(request: NextRequest) {
     await logEngagementEvent({ id, auditUser, existing, type: 'response', detail: parsed.data.source });
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json({
+    ...result,
+    lead: {
+      ...result.lead,
+      ...('metadata' in result.lead ? { metadata: withoutSellerJourney(result.lead.metadata) } : {}),
+    },
+  });
 }
 
 function warnDispositionEvent(error: unknown) {

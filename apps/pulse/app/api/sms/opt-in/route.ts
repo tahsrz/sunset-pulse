@@ -4,7 +4,7 @@ import SmsOptIn from '@/models/SmsOptIn';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 
-export const SMS_OPT_IN_CONSENT_TEXT =
+const SMS_OPT_IN_CONSENT_TEXT =
   'I agree to receive recurring automated SMS/text messages from Sunset Pulse about property updates, scheduling, grill/order updates, and local offers at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe and HELP for help. Consent is not a condition of purchase.';
 
 const SmsOptInSchema = z.object({
@@ -12,7 +12,7 @@ const SmsOptInSchema = z.object({
   email: z.string().trim().email('Enter a valid email address').optional().or(z.literal('')),
   phone: z.string().trim().min(7, 'Enter a valid mobile phone number'),
   consent: z.literal(true, {
-    errorMap: () => ({ message: 'SMS consent is required.' }),
+    error: 'SMS consent is required.',
   }),
   source: z.string().trim().max(80).optional().or(z.literal('')),
 });

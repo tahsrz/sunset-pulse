@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const uuid = z.string().uuid();
+const uuid = z.string().guid();
 const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -9,7 +9,7 @@ const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
 const localTime = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
 const cents = z.number().int().min(0).max(1_000_000_000_000);
 const positiveCents = cents.min(1);
-const requestKey = z.string().uuid();
+const requestKey = z.string().guid();
 const timeZoneSchema = z.string().trim().min(1).max(80).refine((value) => {
   try { new Intl.DateTimeFormat('en-US', { timeZone: value }).format(); return true; } catch { return false; }
 }, 'Choose a valid time zone.');

@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+
+export class CheckpointResponseError extends Error {
+  constructor(message: string, readonly stale: boolean) {
+    super(message);
+    this.name = 'CheckpointResponseError';
+  }
+}
 
 export type CheckpointCardData = {
   id: string;
@@ -19,15 +26,27 @@ export type CheckpointCardProps = {
   error?: string | null;
   disabled?: boolean;
   canRespond?: boolean;
+  decisionUnavailableReason?: string;
+  onReload?: () => void;
   footer?: ReactNode;
 };
 
-export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, canRespond = true, footer }: CheckpointCardProps) {
+export function CheckpointCard({ checkpoint, onRespond, error, disabled = false, canRespond = true, decisionUnavailableReason, onReload, footer }: CheckpointCardProps) {
   const [value, setValue] = useState<string | number | boolean>(checkpoint.response_schema?.type === 'boolean' ? false : '');
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [stale, setStale] = useState(false);
+  const previousRevision = useRef(checkpoint.revision);
   const question = checkpoint.type === 'question';
   const schema = checkpoint.response_schema;
+
+  useEffect(() => {
+    if (previousRevision.current !== checkpoint.revision) {
+      previousRevision.current = checkpoint.revision;
+      setStale(false);
+      setLocalError(null);
+    }
+  }, [checkpoint.revision]);
 
   async function submit() {
     if (question && value === '') return;
@@ -39,6 +58,11 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
     try {
       await onRespond({ checkpointId: checkpoint.id, expectedRevision: checkpoint.revision, submissionKey: crypto.randomUUID(), value: decision });
     } catch (cause) {
+      if (cause instanceof CheckpointResponseError && cause.stale) {
+        setStale(true);
+        setLocalError(null);
+        return;
+      }
       setLocalError(cause instanceof Error ? cause.message : 'Checkpoint changed. Reload before responding.');
     } finally { setSubmitting(false); }
   }
@@ -52,17 +76,19 @@ export function CheckpointCard({ checkpoint, onRespond, error, disabled = false,
       <h3 id={`checkpoint-${checkpoint.id}`} className="text-base font-semibold">{checkpoint.prompt}</h3>
       {checkpoint.target ? <dl className="mt-4 grid gap-1 text-xs text-slate-400"><div><dt className="inline font-semibold text-slate-300">Target: </dt><dd className="inline">{checkpoint.target.resourceType} / {checkpoint.target.resourceId}</dd></div><div><dt className="inline font-semibold text-slate-300">Version: </dt><dd className="inline">{checkpoint.target.revision} · {checkpoint.target.action}</dd></div></dl> : null}
       {question ? (
-        schema?.enum ? <select value={typeof value === 'string' ? value : ''} onChange={(event) => setValue(event.target.value)} disabled={disabled || submitting} className="mt-5 w-full rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-sm"><option value="">Choose a response…</option>{schema.enum.map((option) => <option key={option}>{option}</option>)}</select> :
-        schema?.type === 'boolean' ? <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={value === true} onChange={(event) => setValue(event.target.checked)} disabled={disabled || submitting} /> Confirm</label> :
-        <input type={schema?.type === 'number' ? 'number' : 'text'} value={value as string | number} onChange={(event) => setValue(schema?.type === 'number' ? Number(event.target.value) : event.target.value)} disabled={disabled || submitting} className="mt-5 w-full rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-sm" />
+        schema?.enum ? <select value={typeof value === 'string' ? value : ''} onChange={(event) => setValue(event.target.value)} disabled={disabled || stale || submitting} className="mt-5 w-full rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-sm"><option value="">Choose a response…</option>{schema.enum.map((option) => <option key={option}>{option}</option>)}</select> :
+        schema?.type === 'boolean' ? <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={value === true} onChange={(event) => setValue(event.target.checked)} disabled={disabled || stale || submitting} /> Confirm</label> :
+        <input type={schema?.type === 'number' ? 'number' : 'text'} value={value as string | number} onChange={(event) => setValue(schema?.type === 'number' ? Number(event.target.value) : event.target.value)} disabled={disabled || stale || submitting} className="mt-5 w-full rounded-md border border-white/15 bg-slate-950 px-3 py-2 text-sm" />
       ) : null}
-      {question ? <button type="button" onClick={submit} disabled={disabled || !canRespond || submitting || value === ''} className="mt-5 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Submitting…' : 'Save response'}</button> : (
+      {question ? <button type="button" onClick={submit} disabled={disabled || stale || !canRespond || submitting || value === ''} className="mt-5 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Submitting…' : 'Save response'}</button> : (
         <div className="mt-5 flex flex-wrap gap-3">
-          <button type="button" onClick={() => void respond(true)} disabled={disabled || !canRespond || submitting} className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Saving…' : checkpoint.type === 'approval' ? 'Approve' : 'Allow'}</button>
-          <button type="button" onClick={() => void respond(false)} disabled={disabled || !canRespond || submitting} className="rounded-md border border-rose-200/30 px-4 py-2 text-sm font-bold text-rose-100 disabled:opacity-50">{checkpoint.type === 'approval' ? 'Reject' : 'Deny'}</button>
+          <button type="button" onClick={() => void respond(true)} disabled={disabled || stale || !canRespond || Boolean(decisionUnavailableReason) || submitting} className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">{submitting ? 'Saving…' : checkpoint.type === 'approval' ? 'Approve' : 'Allow'}</button>
+          <button type="button" onClick={() => void respond(false)} disabled={disabled || stale || !canRespond || Boolean(decisionUnavailableReason) || submitting} className="rounded-md border border-rose-200/30 px-4 py-2 text-sm font-bold text-rose-100 disabled:opacity-50">{checkpoint.type === 'approval' ? 'Reject' : 'Deny'}</button>
         </div>
       )}
       {!canRespond ? <p className="mt-3 text-xs text-slate-400">Your workspace role can view this checkpoint but cannot decide it.</p> : null}
+      {decisionUnavailableReason ? <p className="mt-3 text-sm text-amber-100">{decisionUnavailableReason}</p> : null}
+      {stale ? <div role="status" className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-amber-100"><p>This checkpoint changed while you were reviewing it. Reload before deciding again; if it remains pending, request a fresh checkpoint.</p>{onReload ? <button type="button" onClick={onReload} className="rounded-md border border-amber-100/30 px-3 py-2 text-xs font-semibold">Reload workspace data</button> : null}</div> : null}
       {error || localError ? <p role="alert" className="mt-3 text-sm text-rose-300">{error || localError}</p> : null}
       {footer}
     </article>

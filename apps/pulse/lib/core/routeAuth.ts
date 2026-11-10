@@ -28,7 +28,7 @@ export async function requireOperatorRouteAccess(request: NextRequest): Promise<
 
 function isVibeCmsRoute(request: NextRequest) {
   const pathname = request.nextUrl?.pathname || new URL(request.url).pathname;
-  return pathname === '/api/vibes' || pathname.startsWith('/api/vibes/');
+  return pathname === '/api/vibes' || pathname.startsWith('/api/vibes/') || pathname === '/api/jamie/vibes';
 }
 
 function getRequestHost(request: NextRequest): string | null {

@@ -53,9 +53,9 @@ const FeedbackWidget = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all hover:scale-110 group"
+          className="group flex size-12 items-center justify-center rounded border border-slate-500 bg-[#121923] text-slate-100 hover:bg-slate-800"
         >
-          <FaCommentAlt className="text-xl group-hover:rotate-12 transition-transform" />
+          <FaCommentAlt aria-hidden="true" className="text-lg" />
           <span className="absolute right-full mr-4 bg-slate-900 border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
             Send Feedback
           </span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import {act,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {act,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {afterEach,expect,it,vi} from 'vitest';
 import {SellerPriorityPanel} from '@/components/realtor/SellerPriorityPanel';
 import {sellerDailyFixture} from '../fixtures/sellerDailyFixture';
@@ -33,8 +33,27 @@ it('keeps the urgent planner destination and reveals additional people without a
   expect(screen.getByRole('link',{name:'Open scheduled action: Taylor Seller'})).toHaveAttribute('href','/planner?date=2026-09-30');
   expect(screen.getByRole('link',{name:'Open request: Seller 1'})).toHaveAttribute('href',`/seller-inbox?leadId=${requests[0].id}`);
   expect(screen.getByRole('link',{name:'Open request: Seller 6'}).closest('details')).not.toHaveAttribute('open');
-  fireEvent.click(screen.getByText('More next actions (3)'));
+  fireEvent.click(screen.getByText('More next actions (4)'));
   expect(screen.getByRole('link',{name:'Open request: Seller 6'}).closest('details')).toHaveAttribute('open');
   expect(screen.getByRole('link',{name:'Open request: Seller 6'})).toHaveAttribute('href',`/seller-inbox?leadId=${requests[5].id}`);
   expect(fetcher).not.toHaveBeenCalled();
+});
+it('shows one primary focus from saved priority order and keeps its explanation behind a disclosure',()=>{
+  const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+  const overdue={occurrence_id:'11111111-1111-4111-8111-111111111111',lead_id:'22222222-2222-4222-8222-222222222222',name:'Taylor Seller',effective_date:'2026-10-20',title_snapshot:'Discuss preparation'};
+  render(<SellerPriorityPanel daily={sellerDailyFixture({overdueActions:[overdue],unscheduledRequests:[{id:'33333333-3333-4333-8333-333333333333',name:'Morgan Seller',revision:1,created_at:'2026-10-27T12:00:00Z',timing:'exploring'}]})} result={{items:[],hasMore:false}} />);
+  const focus=screen.getByRole('article',{name:'Follow up: Taylor Seller'});
+  expect(within(focus).getAllByRole('link')).toHaveLength(1);
+  expect(within(focus).getByRole('link',{name:'Open scheduled action: Taylor Seller'})).toHaveAttribute('href','/planner?date=2026-10-20');
+  const details=within(focus).getByText('Action Details').closest('details')!;
+  expect(details).not.toHaveAttribute('open');fireEvent.click(within(focus).getByText('Action Details'));
+  expect(details).toHaveAttribute('open');expect(within(focus).getByText(/Discuss preparation/)).toBeVisible();
+  expect(screen.getByRole('article',{name:'New request: Morgan Seller'})).toBeInTheDocument();
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it('does not turn a checklist task title into a person identity',()=>{
+  render(<SellerPriorityPanel daily={sellerDailyFixture()} result={{items:[{id:'checklist:1',leadId:'11111111-1111-4111-8111-111111111111',title:'Review preparation',reason:'A saved checklist task is pending.',score:20,dueAt:null}],hasMore:false}} />);
+  const action=screen.getByRole('article',{name:'Preparation: Review preparation'});
+  expect(within(action).getByRole('link',{name:'Open preparation: Review preparation'})).toHaveAttribute('href','/seller-cases/11111111-1111-4111-8111-111111111111');
+  expect(within(action).queryByText('RP')).not.toBeInTheDocument();
 });

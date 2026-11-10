@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { createServer } from 'node:net';
-import { join, resolve, sep } from 'node:path';
+import { createConnection, createServer } from 'node:net';
+import { basename, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseDotenv } from 'dotenv';
 import { command, withDockerService } from './docker-acceptance.mjs';
+import { guidedMigrationFiles, rehearseGuidedMigrations } from './guided-migration-acceptance.mjs';
 
 const appRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const repositoryRoot = resolve(appRoot, '../..');
@@ -15,9 +16,24 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-assert(['realtor', 'scans', 'seller-video-briefs', 'seller-business','seller-service'].includes(suite), 'Supported suites: realtor, scans, seller-video-briefs, seller-business, seller-service');
+const suites = ['realtor', 'scans', 'seller-video-briefs', 'seller-business', 'seller-service', 'seller-consultations', 'marketing', 'guided-migration', 'profile-role-security'];
+assert(suites.includes(suite), `Supported suites: ${suites.join(', ')}`);
+const guidedMigrationRehearsal = suite === 'guided-migration';
+const rolePreflightOnly = process.argv.includes('--role-preflight-only');
+const vibeCms = process.argv.includes('--vibe-cms');
+const production = process.argv.includes('--production');
+const profileRoleSecurity = suite === 'profile-role-security';
+assert(!vibeCms || (profileRoleSecurity && production && !rolePreflightOnly), 'CMS security verification requires the production security suite.');
+assert(!rolePreflightOnly || ((profileRoleSecurity || suite === 'marketing') && !production), 'Role preflight requires a generated security or marketing suite without a production build.');
+assert(!profileRoleSecurity || !process.argv.some(flag => ['--live-jamie', '--homepage', '--database-only', '--seller-schedule-recovery-only'].includes(flag)), 'Profile role security requires its dedicated generated acceptance project.');
+assert(!production || profileRoleSecurity, 'Production security acceptance requires its dedicated suite.');
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
+const guidedSeller=process.argv.includes('--guided-seller');
+const guidedBuyer=process.argv.includes('--guided-buyer');
+assert(!guidedSeller || suite==='seller-consultations','Guided seller acceptance requires the disposable consultation suite.');
+assert(!guidedBuyer || (suite==='seller-service' && !process.argv.includes('--database-only')),'Guided buyer acceptance requires the disposable seller-service browser runner.');
+assert(suite !== 'marketing' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Marketing acceptance requires its dedicated browser walkthrough.');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
   '--seller-schedule-recovery-only requires seller-business without live Jamie or homepage acceptance.');
 assert(!liveJamie || suite === 'seller-business', '--live-jamie requires the seller-business suite.');
@@ -72,6 +88,15 @@ function run(executable, args, { cwd = repositoryRoot, env = localEnv, timeoutMs
 }
 
 async function portIsFree(port) {
+  // Windows can allow a local bind on a port already served by Docker Desktop's forwarder.
+  const refused = await new Promise((resolvePort) => {
+    const socket = createConnection({ port, host: '127.0.0.1' });
+    const done = (free) => { socket.destroy(); resolvePort(free); };
+    socket.once('connect', () => done(false));
+    socket.once('error', (error) => done(error.code === 'ECONNREFUSED'));
+    socket.setTimeout(500, () => done(false));
+  });
+  if (!refused) return false;
   return new Promise((resolvePort) => {
     const server = createServer();
     server.once('error', () => resolvePort(false));
@@ -118,8 +143,12 @@ async function stopDisposableStack() {
 try {
   const ports = await choosePortRange(8);
   await mkdir(supabaseDir, { recursive: true });
-  await cp(join(supabaseSource, 'migrations'), join(supabaseDir, 'migrations'), { recursive: true });
-  let config = await readFile(join(supabaseSource, 'config.toml'), 'utf8');
+  await cp(join(supabaseSource, 'migrations'), join(supabaseDir, 'migrations'), {
+    recursive: true,
+    filter: path => !guidedMigrationRehearsal || !guidedMigrationFiles.includes(basename(path)),
+  });
+  // Config checkouts can use CRLF on Windows; section rewriting uses LF.
+  let config = (await readFile(join(supabaseSource, 'config.toml'), 'utf8')).replace(/\r\n/g, '\n');
   config = config.replace(/^project_id\s*=.*$/m, `project_id = "${projectId}"`);
   config = setSectionValue(config, 'api', 'port', String(ports[0]));
   config = setSectionValue(config, 'db', 'port', String(ports[1]));
@@ -143,7 +172,20 @@ try {
   ], { timeoutMs: 900000, quiet: true });
   // A fresh `supabase start` applies this project's copied migration chain;
   // the auth harness fails closed if any required version is absent.
-  if (suite === 'scans') {
+  if (rolePreflightOnly) {
+    await run(process.execPath, [join(appRoot, 'scripts', 'profile-role-preflight-acceptance.mjs'), '--stack', projectId], { cwd: appRoot });
+  } else if (profileRoleSecurity) {
+    await run(process.execPath, [join(appRoot, 'scripts', 'profile-role-security-acceptance.mjs'),
+      '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`, '--origin', `http://127.0.0.1:${ports[7]}`,
+      ...(production ? ['--production'] : []), ...(vibeCms ? ['--vibe-cms'] : [])], { cwd: appRoot, timeoutMs: 900000 });
+  } else if (guidedMigrationRehearsal) {
+    const sql = input => command('docker', ['exec', '-i', `supabase_db_${projectId}`, 'psql', '-X', '-qAt',
+      '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], { input });
+    await rehearseGuidedMigrations({ sql, apply: async files => {
+      for (const file of files) await copyFile(join(supabaseSource, 'migrations', file), join(supabaseDir, 'migrations', file));
+      await run(supabaseCli, ['migration', 'up', '--local', '--workdir', workdir, '--yes'], { quiet: true });
+    } });
+  } else if (suite === 'scans') {
     await withDockerService('mongo-test', async (container) => {
       const port = await command('docker', ['port', container, '27017/tcp']);
       assert.match(port, /^127\.0\.0\.1:\d+$/);
@@ -159,21 +201,25 @@ try {
       join(appRoot, 'scripts', 'platform-local-auth-acceptance.mjs'),
       '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`,
       '--origin', `http://127.0.0.1:${ports[7]}`,
-      ...(suite === 'seller-video-briefs' ? ['--seller-video-only']
+      ...(suite === 'marketing' ? ['--marketing-only'] : suite === 'seller-video-briefs' ? ['--seller-video-only']
+        : suite === 'seller-consultations' ? ['--seller-business-only','--seller-consultations-only']
         : suite === 'seller-service' ? ['--seller-business-only','--seller-service-only'] : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
       ...(liveJamie ? ['--live-jamie'] : []),
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
+      ...(guidedSeller ? ['--guided-seller'] : []),
+      ...(guidedBuyer ? ['--guided-buyer'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
       ...(process.argv.includes('--homepage') ? ['--homepage'] : []),
     ], { cwd: appRoot, env, timeoutMs: 900000 });
-    if (process.argv.includes('--homepage')) await withDockerService('mongo-test', async (container) => {
+    if (process.argv.includes('--homepage') || suite === 'seller-consultations' || guidedBuyer) await withDockerService('mongo-test', async (container) => {
       const port = await command('docker', ['port', container, '27017/tcp']);
       assert.match(port, /^127\.0\.0\.1:\d+$/);
-      await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: `mongodb://${port}/pulse_homepage_acceptance` });
+      const database=guidedBuyer?'pulse_buyer_acceptance':suite==='seller-consultations'?'pulse_consultation_acceptance':'pulse_homepage_acceptance';
+      await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: `mongodb://${port}/${database}` });
     });
     else await runAuth({ ...localEnv, PULSE_TEST_MONGO_URI: '', ...(liveJamie ? { GROQ_API_KEY: configuredGroqKey } : {}) });
   }
-  console.log('PASS: disposable authenticated Supabase acceptance completed.');
+  console.log(guidedMigrationRehearsal ? 'PASS: disposable guided migration rehearsal completed.' : 'PASS: disposable authenticated Supabase acceptance completed.');
 } finally {
   await stopDisposableStack();
   const resolvedTemp = resolve(temporaryRoot);

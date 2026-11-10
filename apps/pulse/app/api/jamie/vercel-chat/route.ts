@@ -26,7 +26,7 @@ const vercelChatSchema = z.object({
       text: z.string().min(1).max(12_000),
     }).strict()).min(1).max(20),
   }).passthrough()).min(1).max(60),
-  workspaceId: z.string().uuid().optional(),
+  workspaceId: z.string().guid().optional(),
   personalRealtor: z.boolean().optional(),
 }).strict().superRefine((value, context) => {
   if (value.workspaceId && value.personalRealtor) context.addIssue({ code: 'custom', path: ['personalRealtor'], message: 'Choose either a team workspace or personal realtor context.' });

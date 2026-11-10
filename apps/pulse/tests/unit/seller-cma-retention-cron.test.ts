@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ from: vi.fn(), delete: vi.fn(), lte: vi.fn() }));
-vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from } }));
+const mocks = vi.hoisted(() => ({ from: vi.fn(), delete: vi.fn(), lte: vi.fn(), rpc: vi.fn() }));
+vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from, rpc: mocks.rpc } }));
 
 import { GET } from '@/app/api/admin/agent-leads/cma-retention/cron/route';
 
@@ -12,15 +12,17 @@ beforeEach(() => {
   mocks.from.mockReturnValue({ delete: mocks.delete });
   mocks.delete.mockReturnValue({ lte: mocks.lte });
   mocks.lte.mockResolvedValue({ count: 4, error: null });
+  mocks.rpc.mockResolvedValue({ data: 2, error: null });
 });
 
 afterEach(() => vi.unstubAllEnvs());
 
-describe('private CMA retention cron', () => {
+describe('seller retention cron', () => {
   it('requires the cron bearer secret without touching storage', async () => {
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron'));
     expect(response.status).toBe(401);
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('fails closed when the deployment has no cron secret', async () => {
@@ -30,6 +32,7 @@ describe('private CMA retention cron', () => {
     }));
     expect(response.status).toBe(401);
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('deletes expired records only and reports the count without exposing record identifiers', async () => {
@@ -41,16 +44,21 @@ describe('private CMA retention cron', () => {
     expect(mocks.from).toHaveBeenCalledWith('seller_cma_private_details');
     expect(mocks.delete).toHaveBeenCalledWith({ count: 'exact' });
     expect(mocks.lte).toHaveBeenCalledWith('expires_at', expect.any(String));
-    expect(body).toEqual({ ok: true, deletedCount: 4 });
+    expect(mocks.rpc.mock.calls).toEqual([
+      ['purge_expired_guided_seller_intake'], ['purge_expired_guided_buyer_requests'],
+    ]);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(body).toEqual({ ok: true, deletedCount: 4, prunedJourneyCount: 2, prunedBuyerRequestCount: 2 });
   });
 
   it('reports an idempotent no-op when there are no expired rows', async () => {
     mocks.lte.mockResolvedValue({ count: null, error: null });
+    mocks.rpc.mockResolvedValue({ data: 0, error: null });
     const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
       headers: { authorization: 'Bearer test-cron-secret' },
     }));
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ ok: true, deletedCount: 0 });
+    await expect(response.json()).resolves.toEqual({ ok: true, deletedCount: 0, prunedJourneyCount: 0, prunedBuyerRequestCount: 0 });
   });
 
   it('returns a generic failure without exposing database details', async () => {
@@ -63,6 +71,40 @@ describe('private CMA retention cron', () => {
     expect(response.status).toBe(503);
     expect(JSON.stringify(body)).not.toContain('Sensitive property address');
     expect(log).toHaveBeenCalledWith('[SELLER_CMA_RETENTION_CRON]', 'XX000');
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
     log.mockRestore();
+  });
+
+  it('reports a guided cleanup error even when CMA cleanup succeeds', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: '57014', message: 'Sensitive intake details' } });
+    const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
+      headers: { authorization: 'Bearer test-cron-secret' },
+    }));
+    expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    await expect(response.json()).resolves.toEqual({ ok: false, error: 'Expired guided seller answers could not be cleared.' });
+    expect(log).toHaveBeenCalledExactlyOnceWith('[GUIDED_SELLER_RETENTION_CRON]', '57014');
+    log.mockRestore();
+  });
+
+  it.each([
+    [{ data: null, error: { code: '57014', message: 'Sensitive buyer details' } }, '57014'],
+    [{ data: -1, error: null }, 'invalid_count'],
+  ])('reports an isolated buyer cleanup failure', async (result, code) => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      mocks.rpc.mockResolvedValueOnce({ data: 2, error: null }).mockResolvedValueOnce(result);
+      const response = await GET(new NextRequest('https://sunsetpulse.app/api/admin/agent-leads/cma-retention/cron', {
+        headers: { authorization: 'Bearer test-cron-secret' },
+      }));
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      await expect(response.json()).resolves.toEqual({ ok: false, error: 'Expired buyer requests could not be cleared.' });
+      expect(log).toHaveBeenCalledExactlyOnceWith('[GUIDED_BUYER_RETENTION_CRON]', code);
+      expect(mocks.lte).toHaveBeenCalledOnce();
+    } finally {
+      log.mockRestore();
+    }
   });
 });

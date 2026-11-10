@@ -8,7 +8,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized. Local access only.' }, { status: 403 });
   }
 
-  return new Promise((resolve) => {
+  return new Promise<NextResponse>((resolve) => {
     const scriptPath = path.resolve('scripts/archive_intel.mjs');
     exec(`node ${scriptPath}`, (error, stdout, stderr) => {
       if (error) {

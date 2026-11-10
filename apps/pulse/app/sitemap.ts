@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const acquisitionPages: MetadataRoute.Sitemap = [
     { url: `${host}/seller-plan`, lastModified: new Date('2026-09-30'), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${host}/neighborhoods`, lastModified: new Date('2026-09-30'), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${host}/how-it-works`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     ...listPublishedNeighborhoodGuides().map((guide) => ({
       url: `${host}/neighborhoods/${guide.slug}`,
       lastModified: new Date(guide.reviewedAt),

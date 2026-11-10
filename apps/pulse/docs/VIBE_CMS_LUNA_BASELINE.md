@@ -985,6 +985,8 @@ This baseline is ready for Sol’s implementation review. Review focus should be
 
 ### Current WIP Routing and Access Context (2026-08-27)
 
+Superseded for the November 3 security follow-up: public WIP access is removed from production in the source repair described by `docs/vibe-cms-access-implementation-plan-2026-11-03.md`. The WIP identity now requires explicit true, development mode and a loopback hostname. Hosted CMS and the legacy Jamie dictionary require global CMS authority. The following bullets describe the historical implementation, not the new release contract; deployment acceptance remains pending.
+
 The Vibe workspace was deliberately moved out of the admin namespace to avoid unrelated admin-route constraints during WIP testing:
 
 - UI: `/vibes`, `/vibes/new`, and `/vibes/:vibeId/*`.

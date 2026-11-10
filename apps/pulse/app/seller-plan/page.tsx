@@ -4,43 +4,51 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import SellerPlanRequestForm from '@/components/lead-capture/SellerPlanRequestForm';
 import { SellerOfferMeasurement } from '@/components/lead-capture/SellerOfferMeasurement';
+import { SellerPlanSample, PricingReviewCard } from '@/components/marketing/SellerPlanSample';
+import { getPublishedSellerExample } from '@/lib/marketing/sellerExamples.server';
+import { getPublishedSellerIntroduction } from '@/lib/marketing/sellerIntroduction.server';
+import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/marketing/sellerCampaignQuery';
+import { isSellerGuidedIntakeEnabled } from '@/lib/marketing/sellerGuidedIntake.server';
 
 export const metadata: Metadata = {
-  title: 'Free Keller and Westlake Seller Plan | Sunset Pulse',
-  description: 'Request a personal home pricing review and preparation plan for a Keller or Westlake sale.',
+  title: 'Free Home and Land Seller Plan | Sunset Pulse',
+  description: 'Start a conversation about selling your home or land near Sunset, Texas. Ask about what to do first or request a pricing review.',
   alternates: { canonical: '/seller-plan' },
 };
 
-export default function SellerPlanPage() {
+export default async function SellerPlanPage({ searchParams }: { searchParams: Promise<SellerCampaignSearchParams & { requestKind?: string }> }) {
+  const params = await searchParams;
+  const initialRequestKind = params.requestKind === 'pricing_review' ? 'pricing_review' : 'seller_plan';
+  const campaignQuery = sellerCampaignQuery(params);
+  const guidedQuery = new URLSearchParams(campaignQuery);
+  if (initialRequestKind === 'pricing_review') guidedQuery.set('requestKind', initialRequestKind);
+  const guidedHref = `/seller-plan/start${guidedQuery.size ? `?${guidedQuery}` : ''}`;
+  const example = getPublishedSellerExample();
+  const phone = getPublishedSellerIntroduction()?.phone;
   return (
-    <FieldbookShell title="Seller plan" eyebrow="Keller · Westlake">
-      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)] lg:items-start">
-        <section className="max-w-3xl">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-teal-200">Keller · Westlake · seller representation</p>
-          <h2 className="mt-4">Seller consultation</h2>
-          <p className="mt-5 text-lg leading-8 text-slate-300">Talk through your timing, preparation and pricing questions with a real estate professional. If comparable-sale data is available and authorized, the next step can be a personally reviewed comparative market analysis.</p>
-          <p className="mt-4 text-sm leading-6 text-slate-400">This request is not an instant valuation or appraisal. Any price discussion depends on current, verified property information and relevant comparable sales.</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/neighborhoods" className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-white/5">Explore local guides</Link>
-            <Link href="/iabs" className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-white/5">Brokerage services information</Link>
-          </div>
-          <section aria-labelledby="seller-checklist-title" className="fieldbook-panel mt-10">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">Useful before you list</p>
-            <h2 id="seller-checklist-title" className="mt-2 text-2xl font-bold">Preparation checklist</h2>
-            <ol className="mt-5 space-y-4 text-sm leading-6 text-slate-300">
-              <li><span className="font-bold text-white">1. Gather what you already have.</span> Note major updates, receipts, warranties and any property documents you can readily find.</li>
-              <li><span className="font-bold text-white">2. Write down your timing.</span> Include your preferred move date, flexibility and any events that affect showings.</li>
-              <li><span className="font-bold text-white">3. Make a “fix / disclose / ask” list.</span> Flag known issues and questions; do not conceal a condition or start work based on an online checklist alone.</li>
-              <li><span className="font-bold text-white">4. Plan for the first walk-through.</span> Identify rooms, storage and outdoor areas you would like to discuss for preparation and photography.</li>
-              <li><span className="font-bold text-white">5. Review a pricing conversation with real evidence.</span> Comparable sales, property condition and current data should be checked before discussing a suggested list price.</li>
-            </ol>
-          </section>
-        </section>
-        <section aria-labelledby="seller-plan-form-title" className="fieldbook-panel">
-          <h2 id="seller-plan-form-title" className="text-2xl font-bold">Request a seller plan</h2>
-          <p className="mb-6 mt-2 text-sm leading-6 text-slate-300">Start with the kind of help you need. For your privacy, this public form does not collect a street address.</p>
-          <SellerPlanRequestForm />
+    <FieldbookShell title="Your Seller Plan" eyebrow="Homes and Land">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(360px,1fr)_minmax(0,0.85fr)] lg:items-start">
+        <section id="request" aria-labelledby="seller-plan-form-title" className="fieldbook-panel scroll-mt-24">
+          <h2 id="seller-plan-form-title" className="italic">Request a Conversation</h2>
+          <p className="mb-5 mt-2 text-base leading-relaxed text-slate-300">It’s fine to be unsure about selling. Leave your name and email so we can follow up. You can tell us about the property when we talk.</p>
+          {phone ? <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="mb-4 inline-flex min-h-11 items-center text-base font-semibold underline">Call About Selling</a> : null}
+          <SellerPlanRequestForm initialRequestKind={initialRequestKind} />
           <SellerOfferMeasurement />
+          {isSellerGuidedIntakeEnabled() ? <div className="mt-6">
+            {/* Use document navigation so the root layout can switch to the focused form. */}
+            <a className="inline-flex min-h-11 items-center font-semibold underline" href={guidedHref}>Start Guided Seller Plan</a>
+          </div> : null}
+        </section>
+        <section className="max-w-3xl">
+          <h2 className="mt-1 italic">What We Can Talk Through</h2>
+          <p className="mt-4 text-base leading-7 text-slate-300">Start with what’s on the land. A home and a few outbuildings can raise different questions than a house on its own. We can talk about what to prepare and how the buildings fit into the sale.</p>
+          <p className="mt-4 text-sm leading-6 text-slate-400">This request is not an instant valuation or appraisal. Any price discussion depends on current, verified property information and relevant comparable sales.</p>
+          <div className="mt-6"><PricingReviewCard campaignQuery={campaignQuery} /></div>
+          {example ? <div className="mt-7"><SellerPlanSample sampleLabel={example.sampleLabel} tasks={example.tasks} /></div> : null}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/neighborhoods" className="inline-flex min-h-11 items-center rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-white/5">Explore Local Guides</Link>
+            <Link href="/iabs" className="inline-flex min-h-11 items-center rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-white/5">Brokerage Services Information</Link>
+          </div>
         </section>
       </div>
     </FieldbookShell>

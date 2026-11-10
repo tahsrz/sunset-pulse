@@ -1,0 +1,76 @@
+import { expect, test } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
+
+test('homepage defers the Atlas bundle and stays usable across viewport widths', async ({ page }) => {
+  const scriptRequests = new Set<string>();
+  page.on('request', (request) => {
+    if (request.resourceType() !== 'script') return;
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith('/_next/static/')) scriptRequests.add(path);
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: /sell your home or land in sunset/i })).toHaveCSS('font-style', 'normal');
+  await expect(page.getByRole('heading', { name: /a small north texas town with a long memory/i })).toHaveCSS('background-image', 'none');
+
+  const widths = [320, 390, 768, 1440];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.getByRole('heading', { name: /sell your home or land in sunset/i })).toBeVisible();
+    await expect(page.getByRole('figure', { name: 'An Example Property' }).getByText('Double-wide')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Request My Free Seller Plan' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Explore North Texas Your Way' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/homepage-${width}.png`, fullPage: true });
+  }
+  await expect(page.getByRole('link', { name: 'Sell', exact: true })).toHaveAttribute('href', '/seller-plan');
+  await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveAttribute('aria-current', 'page');
+
+  const launchButton = page.getByRole('button', { name: 'Open Atlas View' });
+  const initialScripts = new Set(scriptRequests);
+  await launchButton.click();
+  await expect(page.getByRole('button', { name: 'Hide Interface' })).toBeVisible();
+  const afterAtlasOpen = [...scriptRequests];
+  const deferredScripts = afterAtlasOpen.filter((url) => !initialScripts.has(url));
+  expect(deferredScripts.length).toBeGreaterThan(0);
+
+  await writeFile('test-results/homepage-resource-waterfall.json', JSON.stringify({
+    initialScriptRequests: [...initialScripts],
+    scriptRequestsAfterAtlasOpen: afterAtlasOpen,
+    deferredScriptRequests: deferredScripts,
+  }, null, 2));
+
+  const closeButton = page.getByRole('button', { name: 'Close Atlas experience' });
+  await expect(closeButton).toBeVisible();
+  await closeButton.click();
+  await expect(launchButton).toBeFocused();
+
+  await launchButton.click();
+  await expect(page.getByRole('button', { name: 'Hide Interface' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close Atlas experience' }).click();
+  await expect(launchButton).toBeFocused();
+});
+
+test('homepage offers a working route when the deferred Atlas script fails', async ({ page }) => {
+  let atlasChunkBlocked = false;
+  await page.route('**/_next/static/chunks/**', async (route) => {
+    if (route.request().resourceType() !== 'script') return route.continue();
+    const response = await route.fetch();
+    // The Atlas-only control identifies its deferred chunk across build hashes.
+    if (response.ok() && (await response.text()).includes('Hide Interface')) {
+      atlasChunkBlocked = true;
+      await route.abort();
+      return;
+    }
+    await route.fulfill({ response });
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'Open Atlas View' }).click();
+
+  const fallback = page.getByRole('alert');
+  await expect(fallback.getByText('The Atlas view could not open.')).toBeVisible();
+  expect(atlasChunkBlocked).toBe(true);
+  await expect(fallback.getByRole('link', { name: /Open Atlas/ })).toHaveAttribute('href', '/atlas');
+  await expect(fallback.getByText('You can still browse listings and explore the map.')).toBeVisible();
+});

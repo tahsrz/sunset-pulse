@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "incremental": false, "noEmit": true },
+  "include": [
+    "next-env.d.ts",
+    "components/lead-capture/journey/**/*.tsx",
+    "components/marketing/SequentialPhotoLabels.tsx",
+    "lib/marketing/guidedJourney.ts",
+    "lib/marketing/guidedJourneySchema.ts",
+    "lib/marketing/guidedJourneyRequest.ts",
+    "vitest.guided-journey-v4.config.ts",
+    "lib/marketing/homeFactsLookup*.ts",
+    "lib/navigation/focusedSurfaces.ts",
+    "app/seller-plan/preview/page.tsx",
+    "app/buyer-plan/start/page.tsx",
+    "app/buyer-inbox/page.tsx",
+    "app/api/seller-plan/preview/property-lookup/route.ts",
+    "tests/unit/home-facts*.test.*",
+    "tests/unit/guided-journey*.test.*",
+    "tests/unit/buyer-inbox.test.tsx",
+    "tests/unit/sequential-photo-labels.test.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

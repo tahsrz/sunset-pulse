@@ -14,7 +14,7 @@ import {
   type WorkspaceRole,
 } from '@/lib/platform/contracts/identity';
 
-const actorIdSchema = z.string().uuid();
+const actorIdSchema = z.string().guid();
 
 export class WorkspaceAccessError extends Error {
   constructor(public readonly code: 'NOT_FOUND' | 'FORBIDDEN' | 'INVALID', message: string) {

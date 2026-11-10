@@ -24,6 +24,18 @@ export function buildAuthCallbackUrl(origin: string, next = '/auth/success') {
   return `${origin.replace(/\/+$/, '')}/auth/callback?next=${encodeURIComponent(safeNext)}`;
 }
 
+export function getAuthCallbackOrigin(requestOrigin: string) {
+  const configured = process.env.NEXT_PUBLIC_AUTH_REDIRECT_ORIGIN;
+  if (configured) {
+    try {
+      const target = new URL(configured);
+      if (['http:', 'https:'].includes(target.protocol) && !target.username && !target.password
+        && target.pathname === '/' && !target.search && !target.hash) return target.origin;
+    } catch { /* Invalid configuration falls back to the request origin. */ }
+  }
+  return requestOrigin;
+}
+
 export function sanitizeAuthNext(next?: string | null) {
   if (!next) return '/auth/success';
 
