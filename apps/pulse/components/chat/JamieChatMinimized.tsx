@@ -31,13 +31,10 @@ const JamieChatMinimized: React.FC<JamieChatMinimizedProps> = ({
         type="button"
         onClick={onOpen}
         aria-label={`Open ${assistantName}`}
-        className={`relative z-10 group flex h-11 w-11 items-center justify-center rounded-lg border border-blue-200/20 bg-gradient-to-b from-blue-600 to-cyan-500 text-white shadow-2xl shadow-cyan-950/40 transition-all duration-300 hover:brightness-110 sm:h-40 sm:w-12 sm:flex-col sm:gap-3 sm:rounded-none sm:hover:w-14 ${
-          isLefthandMode ? 'sm:rounded-r-xl sm:border-l-0' : 'sm:rounded-l-xl sm:border-r-0'
-        }`}
+        className="relative z-10 flex size-11 items-center justify-center rounded border border-slate-500 bg-[#121923] text-slate-100 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-100 sm:h-28 sm:w-10 sm:flex-col sm:gap-3"
       >
-        <span className="hidden h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.8)] sm:block" />
-        <Bot size={18} className="transition-transform group-hover:scale-110" />
-        <span className="hidden [writing-mode:vertical-rl] rotate-180 text-[10px] font-black uppercase tracking-[0.24em] sm:block">
+        <Bot aria-hidden="true" size={18} />
+        <span className="hidden [writing-mode:vertical-rl] rotate-180 font-mono text-xs uppercase tracking-wide sm:block">
           {assistantName}
         </span>
       </button>

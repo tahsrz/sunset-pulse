@@ -66,7 +66,7 @@ const DevPortal: React.FC = () => {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-24 z-[60] bg-slate-900/80 backdrop-blur-xl border border-blue-500/30 p-3 rounded-full text-blue-400 hover:text-blue-300 hover:border-blue-500 transition-all shadow-2xl animate-pulse"
+        className="fixed bottom-6 right-24 z-[60] rounded border border-slate-500 bg-[#121923] p-3 text-slate-200 hover:bg-slate-800 hover:text-white"
         title="Open Dev Portal"
       >
         <FaCode size={20} />

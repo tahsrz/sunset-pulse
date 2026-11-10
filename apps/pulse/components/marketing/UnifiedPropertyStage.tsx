@@ -7,7 +7,7 @@ import PropertyCard from '../PropertyCard';
 import Spinner from '../Spinner';
 import { Property } from '@/lib/types';
 import marketingCopy from '@/config/marketing_copy.json';
-import { FaHome, FaListUl } from 'react-icons/fa';
+import styles from '@/app/home.module.css';
 
 interface UnifiedPropertyStageProps {
   initialStagedProperties: Property[];
@@ -17,7 +17,7 @@ interface UnifiedPropertyStageProps {
 
 const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStagedProperties, initialMode = 'LIVE', compact = false }) => {
   const [mode, setMode] = useState<StageMode>(initialMode);
-  const stagedProperties = initialStagedProperties;
+  const stagedProperties = Array.isArray(initialStagedProperties) ? initialStagedProperties : [];
   const [liveProperties, setLiveProperties] = useState<Property[]>([]);
   const [loadingLive, setLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState(false);
@@ -55,66 +55,47 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
   }, [mode]);
 
   return (
-    <section className={`${compact ? 'py-10 sm:py-14' : 'py-16 sm:py-20'} waterlily-section`}>
-      <div className="max-w-7xl mx-auto px-6">
-        
-        {/* Stage Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-slate-300 mb-4">
-            {mode === 'STAGED' ? <FaHome className="text-blue-400" /> : <FaListUl className="text-amber-400" />}
-            {mode === 'STAGED' ? 'Curated Listings' : 'Live MLS Feed'}
-          </div>
-          <h2 className={`${compact ? 'text-3xl sm:text-4xl' : 'text-4xl'} font-black italic tracking-tighter waterlily-heading mb-2`}>
+    <section className={styles.section} aria-labelledby="home-listings-title">
+      <div className={styles.frame}>
+        <div className="mb-5">
+          <p className={styles.label}>Regional Listings</p>
+          <h2 id="home-listings-title" className="mb-2 mt-2 text-3xl sm:text-4xl">
             {mode === 'STAGED' ? featured.title : 'Active IDX Listings'}
           </h2>
-          <p className="text-teal-100/70 text-sm leading-6">
+          <p className="text-sm leading-6 text-slate-300">
             {mode === 'STAGED' ? featured.tagline : 'Current listings from the regional MLS feed'}
           </p>
         </div>
 
-        {/* The Switcher */}
-        <StageSwitcher mode={mode} onModeChange={setMode} liveStatus={loadingLive ? 'Loading current listings…' : liveError ? 'The listing feed is temporarily unavailable' : `${liveProperties.length} listings available to explore`} />
+        <StageSwitcher mode={mode} onModeChange={setMode} liveStatus={loadingLive ? 'Loading current listings…' : liveError ? 'The listing feed is temporarily unavailable' : liveProperties.length + ' listings available to explore'} />
 
-        {/* Property Grid */}
-        <div className="relative min-h-[400px]">
+        <div className={styles.listings}>
           {mode === 'STAGED' ? (
-            <div className={`grid grid-cols-1 ${compact ? (stagedProperties.length === 1 ? 'max-w-4xl mx-auto' : 'md:grid-cols-2 xl:grid-cols-4') : 'lg:grid-cols-2'} gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700`}>
-              {stagedProperties && Array.isArray(stagedProperties) && stagedProperties.length > 0 ? (
-                stagedProperties.map((property) => (
-                  property && <FeaturedPropertyCard key={property._id} property={property} />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-20 opacity-40 italic">No curated listings are available right now.</div>
-              )}
+            <div className={compact ? styles.curatedGrid : 'grid grid-cols-1 gap-4 lg:grid-cols-2'}>
+              {stagedProperties.length ? stagedProperties.map(property => (
+                property && <FeaturedPropertyCard key={property._id} property={property} stacked={compact} />
+              )) : <p className={styles.panel + ' col-span-full p-6 text-slate-300'}>No curated listings are available right now.</p>}
+            </div>
+          ) : loadingLive ? (
+            <div className="flex items-center gap-4 py-6">
+              <Spinner loading={loadingLive} />
+              <p className="text-sm text-slate-300">Loading regional listings...</p>
             </div>
           ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-              {loadingLive ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <Spinner loading={loadingLive} />
-                  <p className="text-sm text-teal-300 animate-pulse">Loading regional listings...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                  {!liveError && liveProperties.length > 0 ? (
-                    liveProperties.map((property) => (
-                      property && <PropertyCard key={property._id} property={property} />
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-20 border border-dashed border-white/10 rounded-3xl">
-                       <p className="text-slate-300 text-sm leading-6">{liveError ? 'We couldn’t load the listing feed. You can still browse curated properties above.' : 'No live listings are available right now.'}</p>
-                    </div>
-                  )}
-                </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {!liveError && liveProperties.length > 0 ? liveProperties.map(property => (
+                property && <PropertyCard key={property._id} property={property} />
+              )) : (
+                <p className={styles.panel + ' col-span-full p-6 text-sm leading-6 text-slate-300'}>
+                  {liveError ? 'We couldn’t load the listing feed. You can still browse curated properties above.' : 'No live listings are available right now.'}
+                </p>
               )}
             </div>
           )}
         </div>
 
-        {/* Stage Footer Note */}
-        <div className="mt-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-xs leading-5 text-slate-400">{mode === 'STAGED' ? 'Curated property selection' : 'Regional IDX feed'}</p>
-          <a href={mode === 'STAGED' ? '/properties' : '/idx'} className="inline-flex min-h-11 items-center rounded-xl border border-teal-100/20 px-4 text-sm font-bold text-teal-100 transition hover:bg-teal-100/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200">
+        <div className="mt-5">
+          <a href={mode === 'STAGED' ? '/properties' : '/idx'} className={styles.action}>
             {mode === 'STAGED' ? 'Browse All Properties' : 'Open Full IDX Search'}
           </a>
         </div>

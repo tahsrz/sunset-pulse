@@ -43,25 +43,25 @@ function NeighborhoodPreview() {
   const guides = listPublishedNeighborhoodGuides();
   const presentations = new Map(listPublishedNeighborhoodPresentations().map((presentation) => [presentation.slug, presentation]));
   return (
-    <section className="waterlily-section px-4 py-14 text-white sm:px-6 sm:py-16" aria-labelledby="home-neighborhood-guides">
-      <div className="mx-auto max-w-7xl">
+    <section className={styles.section} aria-labelledby="home-neighborhood-guides">
+      <div className={styles.frame}>
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-200">Around North Texas</p>
-            <h2 id="home-neighborhood-guides" className="mt-3 text-3xl font-black italic uppercase sm:text-4xl">Local Guides</h2>
+            <p className={styles.label}>Around North Texas</p>
+            <h2 id="home-neighborhood-guides" className={`${styles.editorial} mt-2 text-3xl sm:text-4xl`}>Local Guides</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Read source-linked notes about the places around a home.</p>
           </div>
-          <Link href="/neighborhoods" className="inline-flex min-h-11 items-center text-sm font-bold text-teal-200 underline underline-offset-4">All neighborhood guides <span aria-hidden="true" className="ml-2">→</span></Link>
+          <Link href="/neighborhoods" className={styles.action}>All Neighborhood Guides <span aria-hidden="true">→</span></Link>
         </div>
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
+        <div className={`${styles.grid} mt-6 md:grid-cols-3`}>
           {guides.slice(0, 3).map((guide) => (
-            <article key={guide.slug} className="flex min-h-48 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+            <article key={guide.slug} className="flex min-h-48 flex-col overflow-hidden">
               {presentations.get(guide.slug)?.cover ? <Image src={presentations.get(guide.slug)!.cover!.src} alt={presentations.get(guide.slug)!.cover!.alt} width={presentations.get(guide.slug)!.cover!.width} height={presentations.get(guide.slug)!.cover!.height} className="h-44 w-full object-cover" sizes="(min-width: 1280px) 400px, (min-width: 768px) 33vw, 100vw" /> : null}
               <div className="flex flex-1 flex-col p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal-200">{guide.coverageType} · reviewed {guide.reviewedAt}</p>
-              <h3 className="mt-3 text-xl font-bold">{guide.title}</h3>
+              <p className={styles.label}>{guide.coverageType} · reviewed {guide.reviewedAt}</p>
+              <h3 className={`${styles.editorial} mt-3 text-xl`}>{guide.title}</h3>
               <p className="mt-2 flex-1 text-sm leading-6 text-slate-300">{guide.summary}</p>
-              <Link href={`/neighborhoods/${guide.slug}`} className="mt-4 inline-flex min-h-10 items-center text-sm font-bold text-teal-100 underline underline-offset-4">Read guide</Link>
+              <Link href={`/neighborhoods/${guide.slug}`} className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">Read guide</Link>
               </div>
             </article>
           ))}
@@ -81,8 +81,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     <div className={styles.homePage}>
       <SellerAcquisitionHero campaignQuery={campaignQuery} phone={sellerIntroduction?.phone} />
       {sellerIntroduction ? <SellerIntroduction profile={sellerIntroduction} /> : null}
-      <div className="waterlily-surface">
-        <SunsetHistorySection />
+      <div>
+        <SunsetHistorySection editorial />
         <HomeHero />
         <Suspense fallback={<div role="status" className="py-14 text-center text-sm text-slate-400">Loading curated properties…</div>}>
           <StagedPropertiesPocket />

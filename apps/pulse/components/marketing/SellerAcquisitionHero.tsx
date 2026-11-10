@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, MapPinned, Phone } from 'lucide-react';
+import styles from '@/app/home.module.css';
 
 const landmarks = [
   { number: 1, name: 'Double-wide', detail: '3 bedrooms · 2 baths', x: 164, y: 114 },
@@ -10,12 +11,12 @@ const landmarks = [
 
 function ExamplePropertySketch() {
   return (
-    <figure id="sunset-property-example" aria-labelledby="sunset-example-title" tabIndex={-1} className="m-0 min-w-0 scroll-mt-28 overflow-hidden rounded-2xl border border-[#c9c7b3] bg-[#fdfbf3]">
-      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 sm:px-6">
+    <figure id="sunset-property-example" aria-labelledby="sunset-example-title" tabIndex={-1} className="m-0 min-w-0 scroll-mt-28 overflow-hidden border border-slate-300 bg-[#fdfbf6]">
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 font-mono text-sm sm:px-6">
         <span id="sunset-example-title" className="font-semibold text-[#283a2f]">An Example Property</span>
         <span className="font-medium tabular-nums text-[#49584b]">2.5 acres</span>
       </figcaption>
-      <svg viewBox="0 0 520 280" aria-hidden="true" className="block h-auto w-full border-y border-[#c9c7b3]">
+      <svg viewBox="0 0 520 280" aria-hidden="true" className="block h-auto w-full border-y border-slate-300">
         <defs>
           <pattern id="sunset-sketch-paper" width="15" height="15" patternUnits="userSpaceOnUse">
             <circle cx="3" cy="3" r=".65" fill="#667356" opacity=".26" />
@@ -55,35 +56,35 @@ function ExamplePropertySketch() {
           </g>
         ))}
       </svg>
-      <ol className="grid gap-2 px-5 pt-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+      <ol className="grid gap-px bg-slate-300 sm:grid-cols-3">
         {landmarks.map(({ number, name, detail }) => (
-          <li key={number} className="flex items-start gap-2 text-[#283a2f]">
-            <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e2e7d5] text-xs font-bold">{number}</span>
+          <li key={number} className="flex items-start gap-2 bg-[#fdfbf6] px-4 py-3 text-[#283a2f] sm:px-5">
+            <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-sm border border-[#a9b5a6] font-mono text-xs font-bold">{number}</span>
             <span><span className="block font-semibold leading-6">{name}</span>{detail ? <span className="block text-sm text-[#49584b]">{detail}</span> : null}</span>
           </li>
         ))}
       </ol>
-      <p className="px-5 pb-4 pt-3 text-sm text-[#49584b] sm:px-6">A sketch helps someone find the driveway and tell the buildings apart.</p>
+      <p className="border-t border-slate-300 px-5 py-3 text-sm text-[#49584b] sm:px-6">A sketch helps someone find the driveway and tell the buildings apart.</p>
     </figure>
   );
 }
 
 export default function SellerAcquisitionHero({ campaignQuery = '', phone }: { campaignQuery?: string; phone?: string }) {
   return (
-    <section aria-labelledby="seller-acquisition-title" className="relative z-20 border-b border-[#c9c7b3] bg-[#f1eee2] px-5 py-9 text-[#203229] sm:px-8 sm:py-14 lg:py-20">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
+    <section aria-labelledby="seller-acquisition-title" className="border-b border-slate-300 bg-[#f2f0e8] py-9 text-[#202721] [--home-accent:#273c32] sm:py-14 lg:py-20">
+      <div className={`${styles.frame} grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14`}>
         <div className="min-w-0">
-          <p className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-wide text-[#49584b]">
+          <p className="mb-4 flex items-center gap-2 font-mono text-sm uppercase tracking-wide text-[#49584b]">
             <MapPinned aria-hidden="true" size={19} /> Sunset, Texas and Nearby
           </p>
-          <h1 id="seller-acquisition-title" className="max-w-[17ch] font-sans text-[clamp(2rem,5vw,4.25rem)] font-medium italic leading-[1.05] tracking-tight">
+          <h1 id="seller-acquisition-title" className="max-w-[19ch] font-sans text-[clamp(2rem,4.6vw,4rem)] uppercase leading-[1.08] tracking-tight">
             Sell Your Home or Land in Sunset
           </h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-[#394b3f]">
             If you’re selling a double-wide on acreage or a place with several buildings, tell us what’s there. We can talk through what to do before you list.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link href={`/seller-plan${campaignQuery}#request`} className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-[#273c32] px-4 py-3 text-center font-semibold text-[#fffdf4] transition hover:bg-[#365445] focus-visible:!outline-[#273c32] sm:px-5">
+            <Link href={`/seller-plan${campaignQuery}#request`} className="inline-flex min-h-14 items-center justify-center gap-2 rounded border border-[#273c32] bg-[#273c32] px-4 py-3 text-center font-semibold text-[#fffdf4] transition hover:bg-[#365445] sm:px-5">
               Request My Free Seller Plan <ArrowRight aria-hidden="true" size={18} className="shrink-0" />
             </Link>
             {phone ? (

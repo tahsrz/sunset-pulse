@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import logo from '@/assets/images/logo-white.png';
 
 const footerLinks = [
@@ -29,6 +30,7 @@ const complianceLinks = [
 ];
 
 const Footer = () => {
+  const pathname = usePathname();
   const [year, setYear] = useState('');
 
   useEffect(() => {
@@ -36,7 +38,7 @@ const Footer = () => {
   }, []);
 
   return (
-    <footer className="mt-24 border-t border-cyan-100/10 bg-[#06131d] text-slate-300">
+    <footer className={`border-t border-[#303946] bg-[#0b0f17] text-slate-300 ${pathname === "/" ? "" : "mt-24"}`}>
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.1fr_1fr_1fr] lg:px-8">
         <div>
           <Link href="/" className="inline-flex items-center gap-3">
@@ -49,7 +51,7 @@ const Footer = () => {
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase text-cyan-200">Explore</p>
+          <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-300">Explore</p>
           <div className="mt-4 grid gap-3">
             {footerLinks.map((link) => (
               <Link key={link.href} href={link.href} className="text-sm font-semibold text-slate-300 transition hover:text-white">
@@ -60,7 +62,7 @@ const Footer = () => {
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase text-cyan-200">Compliance</p>
+          <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-300">Compliance</p>
           <div className="mt-4 grid gap-3">
             {complianceLinks.map((link) => (
               <a
@@ -78,7 +80,7 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-white/5 px-4 py-5">
-        <p className="mx-auto max-w-7xl text-xs text-slate-500">
+        <p className="mx-auto max-w-7xl text-xs text-slate-400">
           &copy; {year} SunsetCollective. All rights reserved.
         </p>
       </div>
