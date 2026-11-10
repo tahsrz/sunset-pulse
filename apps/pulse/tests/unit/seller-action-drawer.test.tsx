@@ -54,8 +54,8 @@ describe('seller action drawer', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(save).toHaveBeenCalledOnce();
-    expect(await screen.findByRole('button', { name: 'Edit preparation' })).toBeInTheDocument();
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Edit preparation' })).toBeInTheDocument();
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 

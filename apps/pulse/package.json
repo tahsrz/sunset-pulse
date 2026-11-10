@@ -75,7 +75,6 @@
     "test:release:browser": "node scripts/production-build-acceptance.mjs --browser-only",
     "test:atlas:release": "node scripts/production-build-acceptance.mjs --browser-only --atlas-only",
     "test:marketing:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite marketing",
-    "profile-roles:preflight": "node scripts/profile-role-release-preflight.mjs",
     "test:seller-consultations:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-consultations"
   },
   "dependencies": {
