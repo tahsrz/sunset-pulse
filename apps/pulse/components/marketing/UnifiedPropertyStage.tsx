@@ -18,6 +18,8 @@ interface UnifiedPropertyStageProps {
 const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStagedProperties, initialMode = 'LIVE', compact = false }) => {
   const [mode, setMode] = useState<StageMode>(initialMode);
   const stagedProperties = Array.isArray(initialStagedProperties) ? initialStagedProperties : [];
+  const curatedGrid = !compact ? 'grid grid-cols-1 gap-4 lg:grid-cols-2'
+    : stagedProperties.length === 1 ? 'mx-auto grid max-w-4xl' : styles.curatedGrid;
   const [liveProperties, setLiveProperties] = useState<Property[]>([]);
   const [loadingLive, setLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState(false);
@@ -71,7 +73,7 @@ const UnifiedPropertyStage: React.FC<UnifiedPropertyStageProps> = ({ initialStag
 
         <div className={styles.listings}>
           {mode === 'STAGED' ? (
-            <div className={compact ? styles.curatedGrid : 'grid grid-cols-1 gap-4 lg:grid-cols-2'}>
+            <div className={curatedGrid}>
               {stagedProperties.length ? stagedProperties.map(property => (
                 property && <FeaturedPropertyCard key={property._id} property={property} stacked={compact} />
               )) : <p className={styles.panel + ' col-span-full p-6 text-slate-300'}>No curated listings are available right now.</p>}

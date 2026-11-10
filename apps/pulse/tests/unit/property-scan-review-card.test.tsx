@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ScanReviewCard, type PropertyScanReviewSession } from '@/app/admin/property-scans/page';
+import { ScanReviewCard, type PropertyScanReviewSession } from '@/components/scans/ScanReviewCard';
 
 describe('property scan review card', () => {
   it('shows a failed legacy reconstruction as unavailable property preview', () => {
