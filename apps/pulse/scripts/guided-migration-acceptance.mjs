@@ -8,6 +8,7 @@ export const guidedMigrationFiles = [
   '20261105170000_guided_seller_intake_retention.sql',
   '20261105180000_guided_buyer_requests.sql',
   '20261106140000_guided_buyer_request_retention.sql',
+  '20261110150000_seller_property_profiles.sql',
 ];
 
 // Only the disposable runner supplies SQL and applies migrations. No remote target is accepted.
@@ -37,21 +38,21 @@ export async function rehearseGuidedMigrations({ sql, apply }) {
   const receiptBefore = JSON.parse(await sql(`SELECT response FROM public.agent_site_lead_action_receipts WHERE request_key='${action}';`));
   assert(receiptBefore.lead.metadata.sellerPlan.journey, 'The old action receipt contains the synthetic answers.');
 
-  await apply(guidedMigrationFiles.slice(0, -1));
+  await apply(guidedMigrationFiles.slice(0, -2));
   const receiptAfter = JSON.parse(await sql(`SELECT response FROM public.agent_site_lead_action_receipts WHERE request_key='${action}';`));
   delete receiptBefore.lead.metadata.sellerPlan.journey;
   assert.deepEqual(receiptAfter, receiptBefore, 'Only guided answers should be removed from the old receipt.');
   assert.equal(await sql("SELECT has_table_privilege('service_role','public.scheduling_bookings','SELECT') AND has_table_privilege('service_role','public.scheduling_availability','SELECT');"), 't');
   assert.equal(await sql(`SELECT ${replay};`), 'saved');
 
-  await apply(guidedMigrationFiles.slice(-1));
+  await apply(guidedMigrationFiles.slice(-2));
   assert.deepEqual((await readLedger()).filter(version => !initial.includes(version)), [...versions]);
   assert.equal(await sql(`SELECT ${replay};`), 'replayed', 'A buyer row written before retention still replays after upgrade.');
   assert.equal(await sql(`SELECT count(*) FROM public.guided_buyer_requests WHERE submission_id='${request}' AND pruned_at IS NULL AND email='buyer@example.test';`), '1');
   await sql(`DELETE FROM public.guided_buyer_requests WHERE submission_id='${request}';`);
-  console.log('PASS: six migrations applied in order over the prior schema. Existing receipts were scrubbed and buyer replay survived the retention upgrade.');
+  console.log(`PASS: ${versions.size} migrations applied in order over the prior schema. Existing receipts were scrubbed and buyer replay survived the retention upgrade.`);
 
-  for (const file of ['profile_role_assignment.sql', 'guided_seller_intake_retention.sql', 'guided_buyer_requests.sql']) {
+  for (const file of ['profile_role_assignment.sql', 'guided_seller_intake_retention.sql', 'guided_buyer_requests.sql', 'seller_property_profiles.sql']) {
     const test = await readFile(new URL(`../supabase/tests/database/${file}`, import.meta.url), 'utf8');
     const output = await sql(`SET search_path = public, extensions;\n${test}`);
     const plan = /^1\.\.(\d+)$/m.exec(output);
