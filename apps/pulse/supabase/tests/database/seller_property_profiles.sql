@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
-SELECT plan(15);
+SELECT plan(18);
 
 INSERT INTO auth.users(id, email) VALUES
   ('8baef63d-044d-416f-8cb8-fd05238a6ab1', 'profile-owner@example.test'),
@@ -17,6 +17,7 @@ RETURNS jsonb LANGUAGE sql AS $$
 $$;
 
 SELECT ok(NOT has_table_privilege('authenticated', 'public.seller_property_profiles', 'SELECT'), 'signed-in users cannot read drafts directly');
+SELECT ok(NOT has_function_privilege('authenticated', 'public.seller_property_profile(uuid, uuid, jsonb)', 'EXECUTE'), 'signed-in database clients cannot invoke the owner RPC directly');
 SELECT ok(NOT has_function_privilege('anon', 'public.read_shared_property_profile(uuid)', 'EXECUTE'), 'anonymous database clients cannot call the share RPC');
 SELECT ok(has_function_privilege('service_role', 'public.read_shared_property_profile(uuid)', 'EXECUTE'), 'the server can resolve a share link');
 SELECT throws_ok(
@@ -62,6 +63,14 @@ SELECT is(public.read_shared_property_profile(pg_temp.link_token()), NULL::jsonb
 INSERT INTO profile_results VALUES ('new_link', pg_temp.profile_action('{"action":"publish","expectedRevision":5,"includeMap":false}'));
 SELECT isnt((SELECT result->>'shareToken' FROM profile_results WHERE kind = 'new_link'), pg_temp.link_token()::text,
   'sharing again issues a different link');
+
+UPDATE public.site_config SET owner_id = '8baef63d-044d-416f-8cb8-fd05238a6ab2' WHERE agent_id = 'profile-fixture';
+SELECT is(public.read_shared_property_profile((SELECT (result->>'shareToken')::uuid FROM profile_results WHERE kind = 'new_link')),
+  NULL::jsonb, 'the link is hidden after the assigned site owner changes');
+SELECT throws_ok(
+  $$SELECT public.seller_property_profile('8baef63d-044d-416f-8cb8-fd05238a6ab2', '8baef63d-044d-416f-8cb8-fd05238a6ab3')$$,
+  'P0002', 'Seller request unavailable', 'a new site owner cannot read a profile in the old owner’s seller case');
+UPDATE public.site_config SET owner_id = '8baef63d-044d-416f-8cb8-fd05238a6ab1' WHERE agent_id = 'profile-fixture';
 
 UPDATE public.agent_site_leads SET status = 'archived' WHERE id = '8baef63d-044d-416f-8cb8-fd05238a6ab3';
 SELECT is(public.read_shared_property_profile((SELECT (result->>'shareToken')::uuid FROM profile_results WHERE kind = 'new_link')),

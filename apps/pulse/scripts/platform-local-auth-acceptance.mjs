@@ -109,6 +109,7 @@ const migrations=[
   ...(sellerConsultationsOnly?['20261028120000_internal_seller_consultations.sql','20261028123000_internal_seller_calendar_read_grants.sql']:[]),
   ...(marketingOnly?['20261103150000_profile_role_assignment_guard.sql']:[]),
   ...(sellerBusinessOnly?['20261105170000_guided_seller_intake_retention.sql','20261105180000_guided_buyer_requests.sql','20261106140000_guided_buyer_request_retention.sql']:[]),
+  ...(sellerBusinessOnly && !sellerConsultationsOnly?['20261110150000_seller_property_profiles.sql']:[]),
 ];
 for(const name of migrations){
   const version=name.split('_')[0];
@@ -134,6 +135,7 @@ if (sellerBusinessOnly && !sellerConsultationsOnly) {
     'guided_seller_intake_retention.sql',
     'guided_buyer_requests.sql',
     'seller_service.sql',
+    'seller_property_profiles.sql',
     'seller_planner_link_read.sql',
     'realtor_reminder_lifecycle.sql',
     'seller_outcome_read_models.sql',

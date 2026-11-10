@@ -21,7 +21,8 @@ export async function accessPropertyProfile(actorId: string, leadId: string, inp
 export async function readSharedPropertyProfile(token: string) {
   if (!isPropertyProfileEnabled() || !z.string().uuid().safeParse(token).success) return null;
   const { data, error } = await supabaseAdmin.rpc('read_shared_property_profile', { p_token: token });
-  if (error || !data) return null;
+  if (error) throw new RealtorWorkspaceError('FAILED');
+  if (!data) return null;
   const parsed = propertyProfileSchema.safeParse(data);
   return parsed.success ? parsed.data : null;
 }

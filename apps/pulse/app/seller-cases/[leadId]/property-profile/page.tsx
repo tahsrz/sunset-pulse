@@ -9,5 +9,5 @@ export const dynamic = 'force-dynamic';
 export default async function PropertyProfileEditorPage({ params }: { params: Promise<{ leadId: string }> }) {
   const { leadId } = await params;
   if (!isPropertyProfileEnabled() || !z.string().guid().safeParse(leadId).success) notFound();
-  return <PropertyProfileEditor leadId={leadId} />;
+  return <PropertyProfileEditor key={leadId} leadId={leadId} />;
 }
