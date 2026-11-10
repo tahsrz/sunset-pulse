@@ -71,31 +71,31 @@ function ExamplePropertySketch() {
 
 export default function SellerAcquisitionHero({ campaignQuery = '', phone }: { campaignQuery?: string; phone?: string }) {
   return (
-    <section aria-labelledby="seller-acquisition-title" className="border-b border-slate-300 bg-[#f2f0e8] py-9 text-[#202721] [--home-accent:#273c32] sm:py-14 lg:py-20">
+    <section aria-labelledby="seller-acquisition-title" className="py-9 sm:py-14 lg:py-20">
       <div className={`${styles.frame} grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-14`}>
         <div className="min-w-0">
-          <p className="mb-4 flex items-center gap-2 font-mono text-sm uppercase tracking-wide text-[#49584b]">
+          <p className={`${styles.label} mb-4 flex items-center gap-2`}>
             <MapPinned aria-hidden="true" size={19} /> Sunset, Texas and Nearby
           </p>
           <h1 id="seller-acquisition-title" className="max-w-[19ch] font-sans text-[clamp(2rem,4.6vw,4rem)] uppercase leading-[1.08] tracking-tight">
             Sell Your Home or Land in Sunset
           </h1>
-          <p className="mt-5 max-w-lg text-lg leading-relaxed text-[#394b3f]">
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-200">
             If you’re selling a double-wide on acreage or a place with several buildings, tell us what’s there. We can talk through what to do before you list.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link href={`/seller-plan${campaignQuery}#request`} className="inline-flex min-h-14 items-center justify-center gap-2 rounded border border-[#273c32] bg-[#273c32] px-4 py-3 text-center font-semibold text-[#fffdf4] transition hover:bg-[#365445] sm:px-5">
+            <Link href={`/seller-plan${campaignQuery}#request`} className={`${styles.action} ${styles.primary} !min-h-14 text-center`}>
               Request My Free Seller Plan <ArrowRight aria-hidden="true" size={18} className="shrink-0" />
             </Link>
             {phone ? (
-              <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="inline-flex min-h-12 items-center gap-2 font-semibold underline underline-offset-4 focus-visible:!outline-[#273c32]">
+              <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="inline-flex min-h-12 items-center gap-2 font-semibold underline underline-offset-4">
                 <Phone aria-hidden="true" size={18} /> Call About Selling
               </a>
             ) : (
-              <a href="#sunset-property-example" className="inline-flex min-h-12 items-center font-semibold underline underline-offset-4 focus-visible:!outline-[#273c32] lg:hidden">See an Example Property</a>
+              <a href="#sunset-property-example" className="inline-flex min-h-12 items-center font-semibold underline underline-offset-4 lg:hidden">See an Example Property</a>
             )}
           </div>
-          <p className="mt-3 text-base text-[#49584b]">No account needed. It’s fine if you’re just thinking about selling.</p>
+          <p className="mt-3 text-base text-slate-300">No account needed. It’s fine if you’re just thinking about selling.</p>
         </div>
         <ExamplePropertySketch />
       </div>
