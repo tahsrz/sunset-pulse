@@ -21,7 +21,7 @@ const emptyDraft: Draft = { propertyId: null, notes: '', documents: [], checklis
 type ActionFields = SellerServiceAction extends infer T ? T extends SellerServiceAction ? Omit<T,'leadId' | 'expectedRevision' | 'requestKey'> : never : never;
 type MilestoneDraft = { milestone: typeof sellerMilestones[number]; occurredOn: string; evidence: string };
 const emptyMilestoneDraft: MilestoneDraft = { milestone: 'consultation_held', occurredOn: '', evidence: '' };
-export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
+export function SellerCaseWorkspace({ leadId, propertyProfileEnabled = false }: { leadId: string; propertyProfileEnabled?: boolean }) {
   const [data, setData] = useState<SellerCaseWorkspaceResult | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [error, setError] = useState(''); const [notice, setNotice] = useState('');
@@ -94,6 +94,7 @@ export function SellerCaseWorkspace({ leadId }: { leadId: string }) {
     {notice ? <p role="status" className="text-cyan-100">{notice}</p> : null}
     {!data && !error ? <p role="status">Loading case…</p> : null}
     {data ? <>
+      {propertyProfileEnabled && data.lead.status !== 'archived' ? <Link className={buttonClass} href={`/seller-cases/${leadId}/property-profile`}>Build Property Profile</Link> : null}
       <SellerJourney result={data} />
       {data.intake ? <SellerIntakeSummary intake={data.intake} /> : null}
       {dirty && actionView.kind === 'closed' ? <p className="text-sm text-amber-200">Save your case changes before recording another action.</p> : null}

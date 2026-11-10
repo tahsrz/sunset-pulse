@@ -40,7 +40,8 @@ export function isLightweightGlobalSurface(pathname?: string | null) {
 }
 
 export function isMinimalChromeSurface(pathname?: string | null) {
-  return isGuidedJourney(pathname) || matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
+  return pathname?.startsWith('/property-profile/') || isGuidedJourney(pathname)
+    || matchesPrefix(pathname, minimalChromeSurfacePrefixes) || matchesPrefix(pathname, standaloneSurfacePrefixes);
 }
 
 function matchesPrefix(pathname: string | null | undefined, prefixes: string[]) {

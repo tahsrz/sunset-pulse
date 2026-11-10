@@ -7,6 +7,7 @@ export async function middleware(request) {
   const path = url.pathname
   const code = url.searchParams.get('code')
   const token_hash = url.searchParams.get('token_hash')
+  const sharedPropertyProfile = path.startsWith('/property-profile/')
 
   if (path === '/admin/branding') {
     return NextResponse.redirect(new URL('/admin/launch-kit', request.url))
@@ -14,7 +15,7 @@ export async function middleware(request) {
 
   // Seamless Supabase auth fallback: if an auth code or token_hash lands on any route other
   // than the callback, redirect them to /auth/callback to establish and persist their session.
-  if ((code || token_hash) && path !== '/auth/callback' && !path.startsWith('/api/') && !path.startsWith('/_next/')) {
+  if ((code || token_hash) && !sharedPropertyProfile && path !== '/auth/callback' && !path.startsWith('/api/') && !path.startsWith('/_next/')) {
     const callbackUrl = new URL('/auth/callback', request.url)
     url.searchParams.forEach((value, key) => {
       callbackUrl.searchParams.set(key, value)
@@ -38,6 +39,10 @@ export async function middleware(request) {
         },
       })
     })
+  }
+
+  if (sharedPropertyProfile) {
+    return NextResponse.next({ request: { headers: getForwardedRequestHeaders(request) } })
   }
 
   return await updateSession(request, () => NextResponse.next({
