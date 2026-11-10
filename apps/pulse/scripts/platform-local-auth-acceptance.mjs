@@ -10,7 +10,6 @@ import {sellerConsultationAuthAcceptance} from './seller-consultation-auth-accep
 import {buyerRequestAuthAcceptance} from './buyer-request-auth-acceptance.mjs';
 import { homepageBrowserAcceptance } from './homepage-browser-acceptance.mjs';
 import { marketingPublicationAcceptance } from './marketing-publication-acceptance.mjs';
-import { profileRolePreflightAcceptance } from './profile-role-preflight-acceptance.mjs';
 import { createClient } from '@supabase/supabase-js';
 import { command, pulseRoot } from './docker-acceptance.mjs';
 
@@ -42,6 +41,10 @@ const marketingOnly=process.argv.includes('--marketing-only');
 assert(!process.argv.includes('--role-preflight-only') || marketingOnly,'Role preflight acceptance requires the dedicated marketing stack.');
 assert(!marketingOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && !process.argv.some(flag=>['--seller-business-only','--seller-service-only','--seller-consultations-only','--seller-video-only','--realtor-only','--homepage','--live-jamie','--database-only'].includes(flag))), 'Marketing acceptance requires its dedicated generated disposable stack.');
 if(marketingOnly) assert(!(await readdir(pulseRoot)).some(name=>/^\.env(?:\.(?:development|production|test))?(?:\.local)?$/.test(name)), 'Marketing acceptance requires a checkout without runtime env files.');
+if (process.argv.includes('--role-preflight-only')) {
+  await command(process.execPath, [fileURLToPath(new URL('./profile-role-preflight-acceptance.mjs', import.meta.url)), '--stack', stack], { stream: true });
+  process.exit(0);
+}
 // This reserved hostname resolves to loopback but does not qualify for local operator bypass.
 const browserOrigin=marketingOnly?`http://admin.localhost:${originUrl.port}`:origin;
 assert(!sellerConsultationsOnly || (/^pulse_auth_[a-f0-9]{8}$/.test(stack) && process.argv.includes('--seller-business-only') && !sellerServiceOnly && !process.argv.includes('--homepage') && !process.argv.includes('--live-jamie') && !process.argv.includes('--database-only')),'Consultation acceptance requires its complete dedicated generated disposable stack.');
@@ -125,9 +128,6 @@ if(marketingOnly) {
   const output=await sql(`SET search_path=public,extensions;\n${roleTests}`);
   assert(!/^not ok\b/m.test(output),`Profile role assignment assertions failed:\n${output}`);
   assert.match(output,/\b1\.\.18\b/);console.log('PASS: 18 profile role assignment database assertions.');
-  if(process.argv.includes('--role-preflight-only')) {
-    await profileRolePreflightAcceptance({sql,stack});process.exit(0);
-  }
 }
 if (sellerBusinessOnly && !sellerConsultationsOnly) {
   for (const name of [

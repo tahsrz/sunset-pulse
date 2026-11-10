@@ -64,8 +64,13 @@ SELECT json_build_object(
    FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace JOIN pg_roles r ON r.oid=p.proowner
    WHERE n.nspname='public' AND p.pronargs=0 AND p.proname IN ('handle_new_user','guard_profile_role_assignment')),
  'guardTrigger',(SELECT json_build_object('enabled',t.tgenabled,'eventBits',t.tgtype,
-   'functionMatches',t.tgfoid=to_regprocedure('public.guard_profile_role_assignment()'))
+   'functionMatches',t.tgfoid=to_regprocedure('public.guard_profile_role_assignment()'),
+   'unconditional',t.tgqual IS NULL,'allColumns',t.tgattr::text='','noArguments',t.tgnargs=0)
    FROM pg_trigger t WHERE t.tgrelid=to_regclass('public.profiles') AND NOT t.tgisinternal AND t.tgname='profiles_role_assignment_guard')
+ ,'signupTrigger',(SELECT json_build_object('enabled',t.tgenabled,'eventBits',t.tgtype,
+   'functionMatches',t.tgfoid=to_regprocedure('public.handle_new_user()'),
+   'unconditional',t.tgqual IS NULL,'noArguments',t.tgnargs=0)
+   FROM pg_trigger t WHERE t.tgrelid=to_regclass('auth.users') AND NOT t.tgisinternal AND t.tgname='on_auth_user_created')
 ) AS audit;
 ROLLBACK;`;
 }
@@ -92,7 +97,9 @@ export function inspectProfileRoleRelease(snapshot,sources,approvedCount) {
     checks.push({id:name,passed:Boolean(routine && routine.bodySha256===sources.functions[name] && routine.securityDefiner===(name==='handle_new_user') && routine.searchPathPinned===true && routine.trustedOwner===true)});
   }
   const trigger=snapshot.guardTrigger;
-  checks.push({id:'role_guard_trigger',passed:Boolean(trigger && ['O','A'].includes(trigger.enabled) && trigger.eventBits===23 && trigger.functionMatches===true)});
+  checks.push({id:'role_guard_trigger',passed:Boolean(trigger && ['O','A'].includes(trigger.enabled) && trigger.eventBits===23 && trigger.functionMatches===true && trigger.unconditional===true && trigger.allColumns===true && trigger.noArguments===true)});
+  const signup=snapshot.signupTrigger;
+  checks.push({id:'signup_trigger',passed:Boolean(signup && ['O','A'].includes(signup.enabled) && signup.eventBits===5 && signup.functionMatches===true && signup.unconditional===true && signup.noArguments===true)});
   return {checkedAt:snapshot.checkedAt,status:checks.every(check=>check.passed)?'DATABASE_CHECKS_PASS':'BLOCKED',
     scope:'Read-only database aggregates and source checks only. Callback deployment and environment permissions are not verified.',
     approvedAddressesChecked:approvedCount,roleCounts:snapshot.roleCounts,

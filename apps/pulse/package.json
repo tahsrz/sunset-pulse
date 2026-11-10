@@ -40,6 +40,11 @@
     "test:db:concurrency": "node scripts/scheduler-concurrency-acceptance.mjs",
     "test:platform:auth": "node scripts/platform-local-auth-acceptance.mjs",
     "test:platform:auth:disposable": "node scripts/platform-disposable-auth-acceptance.mjs",
+    "test:profile-roles:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security",
+    "test:vibe-cms:security": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --production --vibe-cms",
+    "profile-roles:preflight": "node scripts/profile-role-release-preflight.mjs",
+    "test:profile-roles:preflight": "node --test scripts/profile-role-release-preflight.test.mjs",
+    "test:profile-roles:db": "node scripts/platform-disposable-auth-acceptance.mjs --suite profile-role-security --role-preflight-only",
     "test:seller-video-briefs:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-video-briefs",
     "test:seller-business:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-business",
     "test:scans:storage": "node scripts/platform-disposable-auth-acceptance.mjs --suite scans",
@@ -71,8 +76,6 @@
     "test:atlas:release": "node scripts/production-build-acceptance.mjs --browser-only --atlas-only",
     "test:marketing:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite marketing",
     "profile-roles:preflight": "node scripts/profile-role-release-preflight.mjs",
-    "test:profile-roles:preflight": "node --test scripts/profile-role-release-preflight.test.mjs",
-    "test:profile-roles:db": "node scripts/platform-disposable-auth-acceptance.mjs --suite marketing --role-preflight-only",
     "test:seller-consultations:auth": "node scripts/platform-disposable-auth-acceptance.mjs --suite seller-consultations"
   },
   "dependencies": {

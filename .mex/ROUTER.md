@@ -35,6 +35,8 @@ Then read this file fully before doing anything else in this session.
 - The property-profile pilot adds a private draft to an owned Seller Case. Reviewed snapshots can be shared by link, with optional map pins. The server flag defaults off.
 - The homepage leads with selling homes and acreage near Sunset. The example property sketch is illustrative. The main action uses the existing seller request and booking flow.
 - Homepage sections share a flat palette, square grids, and upright typography in `apps/pulse/app/home.module.css`. The regional history and guides use an editorial serif. The Atlas launcher still loads its interactive view on demand.
+- Vibe CMS follow-up source restricts current/legacy editorial access and disables production WIP/E2E shortcuts; optimized local real-auth verification passes. Review/rollout remains pending; see `patterns/operator-cms-authority.md`.
+- Main-based profile-role security repair and aggregate-only release audit; generated local drift fixtures reuse the disposable Supabase runner. Hosted migration/deployment remain pending; see `patterns/profile-role-release-audit.md`.
 - Command Center v0.2.0 — LangGraph-shaped workflow with 20+ intelligence workers, 68 relay templates, 5 delivery modes, provenance screen
 - Segmented 400-expert atlas retrieval, local `query_memory.tah`, SQLSync journal staging, TensorZero eval/feedback ledgers
 - Jamie Chat at `/jamie-chat` sharing Command Center helper context via `/api/jamie/chat`

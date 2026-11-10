@@ -16,17 +16,23 @@ const supabaseSource = join(appRoot, 'supabase');
 const supabaseCli = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 const suiteIndex = process.argv.indexOf('--suite');
 const suite = suiteIndex < 0 ? 'realtor' : process.argv[suiteIndex + 1];
-const suites = ['realtor', 'scans', 'seller-video-briefs', 'seller-business', 'seller-service', 'seller-consultations', 'marketing', 'guided-migration'];
+const suites = ['realtor', 'scans', 'seller-video-briefs', 'seller-business', 'seller-service', 'seller-consultations', 'marketing', 'guided-migration', 'profile-role-security'];
 assert(suites.includes(suite), `Supported suites: ${suites.join(', ')}`);
 const guidedMigrationRehearsal = suite === 'guided-migration';
+const rolePreflightOnly = process.argv.includes('--role-preflight-only');
+const vibeCms = process.argv.includes('--vibe-cms');
+const production = process.argv.includes('--production');
+const profileRoleSecurity = suite === 'profile-role-security';
+assert(!vibeCms || (profileRoleSecurity && production && !rolePreflightOnly), 'CMS security verification requires the production security suite.');
+assert(!rolePreflightOnly || ((profileRoleSecurity || suite === 'marketing') && !production), 'Role preflight requires a generated security or marketing suite without a production build.');
+assert(!profileRoleSecurity || !process.argv.some(flag => ['--live-jamie', '--homepage', '--database-only', '--seller-schedule-recovery-only'].includes(flag)), 'Profile role security requires its dedicated generated acceptance project.');
+assert(!production || profileRoleSecurity, 'Production security acceptance requires its dedicated suite.');
 const liveJamie = process.argv.includes('--live-jamie');
 const sellerScheduleRecoveryOnly = process.argv.includes('--seller-schedule-recovery-only');
-const rolePreflightOnly=process.argv.includes('--role-preflight-only');
 const guidedSeller=process.argv.includes('--guided-seller');
 const guidedBuyer=process.argv.includes('--guided-buyer');
 assert(!guidedSeller || suite==='seller-consultations','Guided seller acceptance requires the disposable consultation suite.');
 assert(!guidedBuyer || (suite==='seller-service' && !process.argv.includes('--database-only')),'Guided buyer acceptance requires the disposable seller-service browser runner.');
-assert(!rolePreflightOnly || suite==='marketing','Role preflight acceptance requires the generated marketing stack.');
 assert(suite !== 'marketing' || !process.argv.some(flag=>['--live-jamie','--homepage','--database-only','--seller-schedule-recovery-only'].includes(flag)), 'Marketing acceptance requires its dedicated browser walkthrough.');
 assert(!sellerScheduleRecoveryOnly || (suite === 'seller-business' && !liveJamie && !process.argv.includes('--homepage')),
   '--seller-schedule-recovery-only requires seller-business without live Jamie or homepage acceptance.');
@@ -166,7 +172,13 @@ try {
   ], { timeoutMs: 900000, quiet: true });
   // A fresh `supabase start` applies this project's copied migration chain;
   // the auth harness fails closed if any required version is absent.
-  if (guidedMigrationRehearsal) {
+  if (rolePreflightOnly) {
+    await run(process.execPath, [join(appRoot, 'scripts', 'profile-role-preflight-acceptance.mjs'), '--stack', projectId], { cwd: appRoot });
+  } else if (profileRoleSecurity) {
+    await run(process.execPath, [join(appRoot, 'scripts', 'profile-role-security-acceptance.mjs'),
+      '--stack', projectId, '--api-url', `http://127.0.0.1:${ports[0]}`, '--origin', `http://127.0.0.1:${ports[7]}`,
+      ...(production ? ['--production'] : []), ...(vibeCms ? ['--vibe-cms'] : [])], { cwd: appRoot, timeoutMs: 900000 });
+  } else if (guidedMigrationRehearsal) {
     const sql = input => command('docker', ['exec', '-i', `supabase_db_${projectId}`, 'psql', '-X', '-qAt',
       '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], { input });
     await rehearseGuidedMigrations({ sql, apply: async files => {
@@ -194,7 +206,6 @@ try {
         : suite === 'seller-service' ? ['--seller-business-only','--seller-service-only'] : suite === 'seller-business' ? ['--seller-business-only'] : ['--realtor-only']),
       ...(liveJamie ? ['--live-jamie'] : []),
       ...(sellerScheduleRecoveryOnly ? ['--seller-schedule-recovery-only'] : []),
-      ...(rolePreflightOnly ? ['--role-preflight-only'] : []),
       ...(guidedSeller ? ['--guided-seller'] : []),
       ...(guidedBuyer ? ['--guided-buyer'] : []),
       ...(process.argv.includes('--database-only') ? ['--database-only'] : []),
