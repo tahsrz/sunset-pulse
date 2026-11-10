@@ -29,7 +29,7 @@ export const appRoutes: readonly AppRoute[] = [
     ['/tour-studio', 'Tour Studio'], ['/scan-studio', '3D Scan Studio', 'account', 'Consent-first phone capture; uploads remain private until agent review.'],
     ['/valuation', 'Property pricing review', 'public', 'No automated estimate is currently offered; request a human-reviewed seller pricing conversation.'],
     ['/keller-westlake/market-report', 'Keller / Westlake market report', 'public', 'Noindex until a current, reviewed, publication-authorized report is available.'],
-    ['/seller-plan', 'Keller / Westlake seller plan', 'public', 'Request is saved only when the configured published agent site and Supabase intake are available; no automated email or text is sent.'],
+    ['/seller-plan', 'Home and land seller plan', 'public', 'Request is saved only when the configured published agent site and Supabase intake are available; no automated email or text is sent.'],
     ['/how-it-works', 'How Sunset Pulse Works', 'public', 'Overview of the platform and its main-site features.'],
     ['/neighborhoods', 'Keller / Westlake neighborhood guides', 'public', 'Reviewed repository-backed guides with official sources and explicit unknowns.'],
     ['/contact', 'Contact'], ['/investors', 'Investors'],

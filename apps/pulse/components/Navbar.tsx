@@ -66,6 +66,7 @@ const Navbar: React.FC = () => {
   const { navLinks, primaryLinks, overflowLinks, commandRoutes } = useMemo(() => {
     const links: NavLink[] = [
       { href: '/', label: 'Home', active: pathname === '/' },
+      { href: '/seller-plan', label: 'Sell', active: pathname === '/seller-plan' || pathname.startsWith('/seller-plan/'), emphasis: 'emerald' },
       { href: '/agent', label: 'Agent', active: pathname.startsWith('/agent'), emphasis: 'emerald' },
       { href: '/command-center', label: 'Command', active: pathname.startsWith('/command-center'), emphasis: 'cyan' },
       ...(canOperateLeads ? [{ href: '/admin/research-desk', label: 'Research Desk', active: pathname.startsWith('/admin/research-desk') || pathname.startsWith('/admin/lead-drafts') || pathname.startsWith('/admin/lead-engine'), emphasis: 'emerald' as const }] : []),
@@ -177,7 +178,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-cyan-100/10 bg-[#06131d]/82 text-white shadow-[0_18px_60px_rgba(2,6,23,0.24)] backdrop-blur-2xl">
+    <nav className="sticky top-0 z-50 border-b border-cyan-100/10 bg-[#06131d] text-white shadow-[0_18px_60px_rgba(2,6,23,0.24)]">
       <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-3 md:h-[72px]">
           <div className="flex min-w-0 items-center gap-3">

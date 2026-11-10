@@ -78,6 +78,7 @@ test('homepage seller offer carries attribution through pricing review and a sav
   const timing = page.getByRole('radio', { name: 'Within 30 days' });
   await timing.check();
   await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('heading', { name: 'What do you need?' })).toBeFocused();
   await expect(pricingReview).toBeChecked();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(timing).toBeChecked();

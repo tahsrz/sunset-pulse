@@ -14,12 +14,14 @@ test('homepage defers the Atlas bundle and stays usable across viewport widths',
   const widths = [320, 390, 768, 1440];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
-    await expect(page.getByRole('heading', { name: 'SELL YOUR HOME WITH A CLEAR PLAN.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /sell your home or land in sunset/i })).toBeVisible();
+    await expect(page.getByRole('figure', { name: 'An Example Property' }).getByText('Double-wide')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Request My Free Seller Plan' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'EXPLORE NORTH TEXAS YOUR WAY' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: `test-results/homepage-${width}.png`, fullPage: true });
   }
+  await expect(page.getByRole('link', { name: 'Sell', exact: true })).toHaveAttribute('href', '/seller-plan');
 
   const launchButton = page.getByRole('button', { name: 'Open Atlas View' });
   const initialScripts = new Set(scriptRequests);

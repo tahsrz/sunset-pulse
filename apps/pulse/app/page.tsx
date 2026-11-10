@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { headers } from 'next/headers';
@@ -20,6 +21,11 @@ import { sellerCampaignQuery, type SellerCampaignSearchParams } from '@/lib/mark
 import SellerIntroduction from '@/components/marketing/SellerIntroduction';
 import type { Property } from '@/lib/types';
 import styles from './home.module.css';
+
+export const metadata: Metadata = {
+  title: 'Sell Your Home or Land in Sunset, Texas | Sunset Pulse',
+  description: 'Talk with Sunset Pulse about selling your home or acreage near Sunset, Texas. Start with a free seller plan for your property.',
+};
 
 async function StagedPropertiesPocket() {
   let stagedProperties: Property[] = [];
@@ -73,15 +79,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <div className={styles.homePage}>
-      <SellerAcquisitionHero campaignQuery={campaignQuery} />
-      <HomeHero />
+      <SellerAcquisitionHero campaignQuery={campaignQuery} phone={sellerIntroduction?.phone} />
       {sellerIntroduction ? <SellerIntroduction profile={sellerIntroduction} /> : null}
       <div className="waterlily-surface">
+        <SunsetHistorySection />
+        <HomeHero />
         <Suspense fallback={<div role="status" className="py-14 text-center text-sm text-slate-400">Loading curated properties…</div>}>
           <StagedPropertiesPocket />
         </Suspense>
         <NeighborhoodPreview />
-        <SunsetHistorySection />
         <InfoBoxes />
         <AnimalOfDaySection />
         <FAQSection />
