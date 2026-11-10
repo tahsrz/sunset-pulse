@@ -6,9 +6,7 @@ import { getPulseCartridge, listPulseCartridges } from '@/lib/ai/brain/pulse_que
 export const dynamic = 'force-dynamic';
 
 type TahCartridgePageProps = {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 };
 
 export function generateStaticParams() {
@@ -16,7 +14,8 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: TahCartridgePageProps) {
-  const cartridge = getPulseCartridge(params.slug);
+  const { slug } = await params;
+  const cartridge = getPulseCartridge(slug);
   if (!cartridge) {
     return {
       title: 'TAH Cartridge Not Found | Sunset Pulse'
@@ -30,7 +29,8 @@ export async function generateMetadata({ params }: TahCartridgePageProps) {
 }
 
 export default async function TahCartridgePage({ params }: TahCartridgePageProps) {
-  const data = await getTahCartridgeViewData(params.slug);
+  const { slug } = await params;
+  const data = await getTahCartridgeViewData(slug);
   if (!data) notFound();
 
   return <TahCartridgeView data={data} />;

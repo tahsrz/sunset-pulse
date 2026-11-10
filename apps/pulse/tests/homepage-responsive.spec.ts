@@ -52,21 +52,25 @@ test('homepage defers the Atlas bundle and stays usable across viewport widths',
 });
 
 test('homepage offers a working route when the deferred Atlas script fails', async ({ page }) => {
-  let failAtlasChunks = false;
-  await page.route('**/_next/static/**', async (route) => {
-    if (failAtlasChunks && route.request().resourceType() === 'script') {
+  let atlasChunkBlocked = false;
+  await page.route('**/_next/static/chunks/**', async (route) => {
+    if (route.request().resourceType() !== 'script') return route.continue();
+    const response = await route.fetch();
+    // The Atlas-only control identifies its deferred chunk across build hashes.
+    if (response.ok() && (await response.text()).includes('Hide Interface')) {
+      atlasChunkBlocked = true;
       await route.abort();
       return;
     }
-    await route.continue();
+    await route.fulfill({ response });
   });
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  failAtlasChunks = true;
   await page.getByRole('button', { name: 'Open Atlas View' }).click();
 
   const fallback = page.getByRole('alert');
   await expect(fallback.getByText('The Atlas view could not open.')).toBeVisible();
+  expect(atlasChunkBlocked).toBe(true);
   await expect(fallback.getByRole('link', { name: /Open Atlas/ })).toHaveAttribute('href', '/atlas');
   await expect(fallback.getByText('You can still browse listings and explore the map.')).toBeVisible();
 });

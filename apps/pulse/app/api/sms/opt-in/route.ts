@@ -4,7 +4,7 @@ import SmsOptIn from '@/models/SmsOptIn';
 import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 
-export const SMS_OPT_IN_CONSENT_TEXT =
+const SMS_OPT_IN_CONSENT_TEXT =
   'I agree to receive recurring automated SMS/text messages from Sunset Pulse about property updates, scheduling, grill/order updates, and local offers at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe and HELP for help. Consent is not a condition of purchase.';
 
 const SmsOptInSchema = z.object({
