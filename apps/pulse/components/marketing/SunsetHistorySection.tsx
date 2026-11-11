@@ -25,29 +25,31 @@ const SunsetHistorySection = ({ slug = 'sunset', editorial = false }: SunsetHist
     <section className={editorial ? styles.section : "waterlily-section py-16 text-white sm:py-20"}>
       <div className={editorial ? styles.frame : "mx-auto max-w-7xl px-6"}>
         <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-            <div className="min-w-0">
-            <p className={`mb-4 ${editorial ? styles.label : "text-xs text-amber-200"}`}>
+          <div className={editorial ? "min-w-0 lg:col-span-2" : "min-w-0"}>
+            <p className={`mb-4 ${editorial ? `${styles.label} text-center` : "text-xs text-amber-200"}`}>
               {entry.name}
             </p>
-            <h2 className={`mb-6 text-4xl md:text-5xl ${editorial ? styles.editorial : "waterlily-heading font-black italic tracking-tighter"}`}>
+            <h2 className={`mb-6 ${editorial ? `${styles.editorial} mx-auto max-w-4xl text-center text-3xl sm:text-4xl md:text-5xl` : "waterlily-heading text-4xl font-black italic tracking-tighter md:text-5xl"}`}>
               {entry.headline}
             </h2>
-            <p className="max-w-xl text-base leading-8 text-slate-200">
-              {entry.summary}
-            </p>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300">
-              {entry.detail}
-            </p>
+            <div className={editorial ? "mx-auto grid max-w-4xl gap-4 text-base leading-7 text-slate-300 md:grid-cols-2 md:gap-8" : undefined}>
+              <p className={editorial ? undefined : "max-w-xl text-base leading-8 text-slate-200"}>
+                {entry.summary}
+              </p>
+              <p className={editorial ? undefined : "mt-5 max-w-xl text-sm leading-7 text-slate-300"}>
+                {entry.detail}
+              </p>
             </div>
+          </div>
 
-          <div className={`min-w-0 sm:grid-cols-2 ${editorial ? styles.grid : "grid gap-4"}`}>
+          <div className={`min-w-0 sm:grid-cols-2 ${editorial ? `${styles.grid} lg:col-span-2 lg:grid-cols-4` : "grid gap-4"}`}>
             {entry.milestones.map((item, index) => (
-              <article key={item.title} className={`min-w-0 p-5 sm:p-6 ${editorial ? "" : "waterlily-card rounded-2xl"}`}>
+              <article key={item.title} className={`min-w-0 p-5 ${editorial ? "xl:p-6" : "waterlily-card rounded-2xl sm:p-6"}`}>
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded border border-slate-600 text-slate-300">
                     {historyIcons[index % historyIcons.length]}
                   </div>
-                  <span className={editorial ? styles.label : "text-xs font-semibold text-slate-300"}>
+                  <span className={editorial ? `${styles.label} !normal-case` : "text-xs font-semibold text-slate-300"}>
                     {item.label}
                   </span>
                 </div>
@@ -73,16 +75,14 @@ const SunsetHistorySection = ({ slug = 'sunset', editorial = false }: SunsetHist
                 </div>
               </div>
 
-              {/* Grill Image Showcase */}
-              <div className="relative min-h-56 overflow-hidden border border-white/10">
-                <Image
-                  src="/images/grill/Sunset.png"
-                  alt={entry.landmark.imageAlt}
-                  fill
-                  sizes="(min-width: 1024px) 560px, 100vw"
-                  className="object-cover object-center"
-                />
-              </div>
+              <Image
+                src="/images/grill/sunset-gas-grill-storefront.webp"
+                alt={entry.landmark.imageAlt}
+                width={1275}
+                height={389}
+                sizes="(min-width: 1280px) 560px, (min-width: 1024px) calc(50vw - 76px), (min-width: 640px) calc(100vw - 112px), calc(100vw - 88px)"
+                className="block h-auto w-full self-start border border-white/10"
+              />
               <div className="min-w-0">
               <p className="text-sm leading-7 text-slate-200">
                 {entry.landmark.description}

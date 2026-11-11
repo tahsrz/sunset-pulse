@@ -18,6 +18,6 @@ describe('Sunset place history sourcing', () => {
     ]));
     expect(sunset?.landmark.name).toBe('Sunset Gas & Grill');
     expect(sunset?.landmark.address).toBe('101 S Council Dr, Sunset, TX 76270');
-    expect(sunset?.landmark.imageAlt).toContain('Stylized illustration');
+    expect(sunset?.landmark.imageAlt).toContain('brick storefront');
   });
 });
