@@ -4,67 +4,74 @@ import { ArrowRight, MapPinned, Phone } from 'lucide-react';
 import styles from '@/app/home.module.css';
 
 const landmarks = [
-  { number: 1, name: 'Double-wide', detail: '3 bedrooms · 2 baths', x: 164, y: 114 },
-  { number: 2, name: 'Workshop', x: 298, y: 137 },
-  { number: 3, name: 'Driveway', x: 242, y: 217 },
+  { number: '01', name: 'Double-wide', detail: '3 beds · 2 baths', x: 148, y: 78, leader: 'M158 90v17h30' },
+  { number: '02', name: 'Outbuildings', detail: 'Workshop + 5 others', x: 414, y: 80, leader: 'M414 91h-24v25h-32' },
+  { number: '03', name: 'Driveway', detail: 'Access from the road', x: 319, y: 222, leader: 'M319 233h-59' },
 ];
 
-function ExamplePropertySketch() {
+const outbuildings = [
+  { x: 314, y: 108, width: 44, height: 29 },
+  { x: 366, y: 132, width: 23, height: 17 },
+  { x: 281, y: 126, width: 20, height: 17 },
+  { x: 344, y: 163, width: 31, height: 19 },
+  { x: 290, y: 187, width: 19, height: 15 },
+  { x: 321, y: 198, width: 28, height: 16 },
+];
+
+function ExamplePropertyPlan() {
   return (
-    <figure id="sunset-property-example" aria-labelledby="sunset-example-title" tabIndex={-1} className="m-0 min-w-0 scroll-mt-28 overflow-hidden border border-slate-300 bg-[#fdfbf6]">
-      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 font-mono text-sm sm:px-6">
-        <span id="sunset-example-title" className="font-semibold text-[#283a2f]">An Example Property</span>
-        <span className="font-medium tabular-nums text-[#49584b]">2.5 acres</span>
+    <figure id="sunset-property-example" aria-labelledby="sunset-example-title" aria-describedby="sunset-example-disclaimer" tabIndex={-1} className={`${styles.panel} m-0 scroll-mt-28 overflow-hidden`}>
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3.5 sm:px-5">
+        <span id="sunset-example-title" className="font-semibold">Example Property Layout</span>
+        <span className="font-mono text-sm tabular-nums text-slate-300">2.5 acres</span>
       </figcaption>
-      <svg viewBox="0 0 520 280" aria-hidden="true" className="block h-auto w-full border-y border-slate-300">
+      <svg viewBox="0 0 520 300" aria-hidden="true" className="block h-auto w-full border-y border-[var(--home-rule)]">
         <defs>
-          <pattern id="sunset-sketch-paper" width="15" height="15" patternUnits="userSpaceOnUse">
-            <circle cx="3" cy="3" r=".65" fill="#667356" opacity=".26" />
+          <pattern id="sunset-site-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0H0v20" fill="none" stroke="#96a89c" strokeOpacity=".15" />
+          </pattern>
+          <pattern id="sunset-site-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <path d="M0 0v6" stroke="#d2d8cd" strokeOpacity=".54" />
           </pattern>
         </defs>
-        <path fill="#e3e5cf" d="M0 0h520v280H0z" />
-        <path fill="url(#sunset-sketch-paper)" d="M0 0h520v280H0z" />
-        <g fill="none" stroke="#798260" strokeWidth="1.2" opacity=".34">
-          <path d="M-18 112C102 86 124 18 228 2S397 45 540-14" />
-          <path d="M-18 130C108 103 136 32 232 18S412 65 540 1" />
-          <path d="M-18 148C106 124 149 50 240 35S414 84 540 17" />
-          <path d="M340 274c-9-69 44-101 102-110s71-47 90-68" />
-          <path d="M363 276c-7-50 35-79 88-88s63-37 83-60" />
-          <path d="M386 281c-1-39 25-63 76-72s58-27 74-41" />
+        <path fill="#1a2322" d="M0 0h520v300H0z" />
+        <path fill="#2b3a32" d="m98 62 293-25 29 120-26 84H121z" />
+        <path fill="url(#sunset-site-grid)" d="M0 0h520v300H0z" />
+        <path d="M0 75l98-13-9-62m302 37 129-11m-100 131 100-16M121 241 0 245m394-4 126-7" fill="none" stroke="#6e8176" strokeOpacity=".57" />
+        <path d="m98 62 293-25 29 120-26 84H121z" fill="none" stroke="#a7c5a7" strokeWidth="1.7" />
+        <path d="M0 266h520v34H0z" fill="#303b39" />
+        <path d="M0 266h520M0 299h520" stroke="#788880" />
+        <path d="M0 283h520" stroke="#a8b4ad" strokeOpacity=".48" strokeDasharray="10 8" />
+        <path d="M252 267v-63q0-10-10-10h-43q-11 0-11-11v-31m64 52v-33q0-13 13-13h56q15 0 15-15v-6" fill="none" stroke="#899b91" strokeWidth="12" />
+        <path d="M252 267v-63q0-10-10-10h-43q-11 0-11-11v-31m64 52v-33q0-13 13-13h56q15 0 15-15v-6" fill="none" stroke="#46574f" strokeWidth="9" />
+        <rect x="145" y="107" width="86" height="45" fill="#afc6aa" stroke="#dbe6d8" />
+        <path d="M145 129.5h86" stroke="#576e59" />
+        {outbuildings.map(({ x, y, width, height }) => (
+          <rect key={x} x={x} y={y} width={width} height={height} fill="url(#sunset-site-hatch)" stroke="#c1cec4" />
+        ))}
+        <g fill="#c4d1c8" className="font-mono text-[12px] tracking-wider">
+          <text x="23" y="25">N</text>
+          <path d="m28 31-5 11h10zM28 42v11" stroke="#c4d1c8" />
+          <text x="23" y="257">ROAD FRONTAGE</text>
         </g>
-        <path d="M0 248C184 219 342 243 520 231v49H0Z" fill="#c9bc9e" />
-        <path d="M0 257c167-28 348-4 520-19" fill="none" stroke="#f5f1e0" strokeWidth="2" strokeDasharray="9 8" />
-        <path d="m84 82 300-25 37 141-320 24z" fill="#d1d9b8" fillOpacity=".66" stroke="#536449" strokeWidth="2" strokeDasharray="6 5" />
-        <path d="M251 242c-7-26-10-48-37-64l-41-24m41 24 65-16" fill="none" stroke="#a88e66" strokeWidth="12" strokeLinecap="round" />
-        <path d="M251 242c-7-26-10-48-37-64l-41-24m41 24 65-16" fill="none" stroke="#e9dabb" strokeWidth="8" strokeLinecap="round" />
-        <g stroke="#5b4e3e" strokeWidth="1.7">
-          <path d="m131 125 68-8 5 38-68 8z" fill="#f9f1db" />
-          <path d="m126 128 36-20 40 11-1 12-72 9z" fill="#bb795b" />
-          <path d="m267 147 53-7 4 30-53 6z" fill="#b6a080" />
-          <path d="m263 146 25-14 34 6 1 10-59 8z" fill="#766952" />
-        </g>
-        <g fill="#7e9569" stroke="#e6ead6" strokeWidth="2">
-          <circle cx="67" cy="166" r="13" /><circle cx="83" cy="180" r="10" />
-          <circle cx="350" cy="98" r="13" /><circle cx="369" cy="110" r="11" />
-          <circle cx="351" cy="120" r="9" /><circle cx="112" cy="194" r="9" />
-        </g>
-        {landmarks.map(({ number, x, y }) => (
-          <g key={number} transform={`translate(${x} ${y})`}>
-            <path d="M0 16 8 7H-8Z" fill="#273c32" />
-            <circle cy="-3" r="13" fill="#273c32" stroke="#fdfbf3" strokeWidth="2" />
-            <text y="1" textAnchor="middle" fill="#fffdf4" fontSize="12" fontWeight="700">{number}</text>
+        {landmarks.map(({ number, x, y, leader }) => (
+          <g key={number} className="font-mono text-[13px] font-semibold">
+            <path d={leader} fill="none" stroke="#d3dfd3" />
+            <g transform={`translate(${x} ${y})`}>
+              <rect width="28" height="22" fill="#16201e" stroke="#a7c5a7" />
+              <text x="14" y="15" textAnchor="middle" fill="#e6eee7">{number}</text>
+            </g>
           </g>
         ))}
       </svg>
-      <ol className="grid gap-px bg-slate-300 sm:grid-cols-3">
+      <ol className="grid gap-px bg-[var(--home-rule)] sm:grid-cols-3">
         {landmarks.map(({ number, name, detail }) => (
-          <li key={number} className="flex items-start gap-2 bg-[#fdfbf6] px-4 py-3 text-[#283a2f] sm:px-5">
-            <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-sm border border-[#a9b5a6] font-mono text-xs font-bold">{number}</span>
-            <span><span className="block font-semibold leading-6">{name}</span>{detail ? <span className="block text-sm text-[#49584b]">{detail}</span> : null}</span>
+          <li key={number} className="flex items-start gap-2 bg-[var(--home-panel)] px-4 py-3 sm:px-3 xl:px-4">
+            <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center border border-[var(--home-rule)] font-mono text-xs font-semibold text-[var(--home-accent)]">{number}</span>
+            <span><span className="block text-sm font-semibold leading-6">{name}</span><span className="block text-sm leading-5 text-slate-300">{detail}</span></span>
           </li>
         ))}
       </ol>
-      <p className="border-t border-slate-300 px-5 py-3 text-sm text-[#49584b] sm:px-6">A sketch helps someone find the driveway and tell the buildings apart.</p>
     </figure>
   );
 }
@@ -95,9 +102,9 @@ export default function SellerAcquisitionHero({ campaignQuery = '', phone }: { c
               <a href="#sunset-property-example" className="inline-flex min-h-12 items-center font-semibold underline underline-offset-4 lg:hidden">See an Example Property</a>
             )}
           </div>
-          <p className="mt-3 text-base text-slate-300">No account needed. It’s fine if you’re just thinking about selling.</p>
+          <p className="mt-3 text-base text-slate-300">No account needed.</p>
         </div>
-        <ExamplePropertySketch />
+        <ExamplePropertyPlan />
       </div>
     </section>
   );

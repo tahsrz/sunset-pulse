@@ -66,12 +66,13 @@ test('homepage seller offer carries attribution through pricing review and a sav
   expect(currentUrl.searchParams.get('utm_campaign')).toBe('fall-sellers');
 
   await page.getByRole('link', { name: 'Ask About Pricing' }).click();
+  const pricingReview = page.getByRole('radio', { name: /A pricing review/ });
+  await expect(pricingReview).toBeChecked();
+
   currentUrl = new URL(page.url());
   expect(currentUrl.searchParams.get('utm_source')).toBe('homepage');
   expect(currentUrl.searchParams.get('utm_campaign')).toBe('fall-sellers');
   expect(currentUrl.searchParams.get('requestKind')).toBe('pricing_review');
-  const pricingReview = page.getByRole('radio', { name: /A pricing review/ });
-  await expect(pricingReview).toBeChecked();
 
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'When are you thinking?' })).toBeFocused();
@@ -91,12 +92,13 @@ test('homepage seller offer carries attribution through pricing review and a sav
   await page.getByLabel('I agree to be contacted to respond to this request.').check();
   await page.getByRole('button', { name: 'Send Request' }).click();
 
-  await expect(page.getByRole('alert')).toHaveText('The save could not be confirmed. Try again.');
+  const requestPanel = page.getByRole('region', { name: 'Request a Conversation' });
+  await expect(requestPanel.getByRole('alert')).toHaveText('The save could not be confirmed. Try again.');
   await expect(page.getByLabel('Your name')).toHaveValue('Jordan Seller');
   await expect(page.getByLabel('Email')).toHaveValue('jordan@example.test');
   await page.getByRole('button', { name: 'Send Request' }).click();
 
-  await expect(page.getByRole('status')).toHaveText('Your request is saved. We will follow up about what you selected.');
+  await expect(requestPanel.getByRole('status')).toHaveText('Your request is saved. We will follow up about what you selected.');
   await expect(page.getByText('This sends a request for a conversation. It does not book an appointment.')).toBeVisible();
   expect(requests).toHaveLength(2);
   expect(requests[1]).toMatchObject({

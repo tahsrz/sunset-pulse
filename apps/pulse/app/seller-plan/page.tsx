@@ -32,7 +32,7 @@ export default async function SellerPlanPage({ searchParams }: { searchParams: P
           <h2 id="seller-plan-form-title" className="italic">Request a Conversation</h2>
           <p className="mb-5 mt-2 text-base leading-relaxed text-slate-300">It’s fine to be unsure about selling. Leave your name and email so we can follow up. You can tell us about the property when we talk.</p>
           {phone ? <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="mb-4 inline-flex min-h-11 items-center text-base font-semibold underline">Call About Selling</a> : null}
-          <SellerPlanRequestForm initialRequestKind={initialRequestKind} />
+          <SellerPlanRequestForm key={initialRequestKind} initialRequestKind={initialRequestKind} />
           <SellerOfferMeasurement />
           {isSellerGuidedIntakeEnabled() ? <div className="mt-6">
             {/* Use document navigation so the root layout can switch to the focused form. */}

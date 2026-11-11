@@ -93,6 +93,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <FAQSection />
       </div>
       <CounterScanActions showLeadOperations={access.allowed} />
+      <p id="sunset-example-disclaimer" className={`${styles.frame} py-4 text-xs text-slate-300`}>
+        Illustrative layout. Not a survey.
+      </p>
     </div>
   );
 }

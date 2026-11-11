@@ -154,9 +154,9 @@ export default function SellerPlanRequestForm({ initialRequestKind = 'seller_pla
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         {step === 'help' ? <span /> : <button type="button" onClick={() => goTo(stepOrder[currentStep - 1])} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-5 font-bold text-white hover:bg-white/5">Back</button>}
         {step !== 'contact' ? (
-          <button type="button" onClick={() => goTo(stepOrder[currentStep + 1])} className="fieldbook-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Continue</button>
+          <button key="continue" type="button" onClick={() => goTo(stepOrder[currentStep + 1])} className="fieldbook-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Continue</button>
         ) : (
-          <button type="submit" disabled={state === 'submitting'} className="fieldbook-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60">{state === 'submitting' ? 'Saving your request…' : 'Send Request'}</button>
+          <button key="submit" type="submit" disabled={state === 'submitting'} className="fieldbook-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-teal-400 px-5 font-black text-slate-950 transition hover:bg-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60">{state === 'submitting' ? 'Saving your request…' : 'Send Request'}</button>
         )}
       </div>
     </form>
