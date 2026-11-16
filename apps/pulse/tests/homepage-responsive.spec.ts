@@ -79,7 +79,7 @@ test('homepage slideshow visits each mock property once and stops at the last sl
     contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="teal"/></svg>',
   }));
-  await page.route('https://images1.loopnet.com/**', (route) => route.fulfill({
+  await page.route('https://resources.atproperties.com/**', (route) => route.fulfill({
     contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="navy"/></svg>',
   }));

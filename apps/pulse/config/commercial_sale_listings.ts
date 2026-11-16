@@ -31,7 +31,7 @@ export const commercialSaleListings = [
     description: 'A 3,612-square-foot industrial property on 0.445 acres with seven service bays and on-site parking. Listing courtesy of Starria McLaughlin, OnDemand Realty.',
     sqft: 3612,
     price: 1050000,
-    images: ['https://images1.loopnet.com/i2/YZ3mPPO260Q2ESLYuVrnZZZzbZoMUMnkW335b7W9JLk/116/416-E-Mansfield-Hwy-Kennedale-TX-Primary-Photo-1-LargeHighDefinition.jpg'],
+    images: ['https://resources.atproperties.com/images/NTREIS/21/436/841/6afa58c200d90/1.jpg'],
     metadata: {
       provider: 'ntreis',
       property_subtype: 'Industrial',
