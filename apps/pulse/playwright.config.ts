@@ -4,6 +4,7 @@ import path from 'path';
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+const listingEditorDev = process.env.PULSE_LISTING_EDITOR_E2E === 'true';
 
 /**
  * Playwright configuration for Sunset Pulse Tactical Suite
@@ -44,7 +45,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run build && npm run start',
+    command: listingEditorDev ? 'npm run dev' : 'npm run build && npm run start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 300000, // 5 Minutes
