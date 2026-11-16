@@ -104,10 +104,14 @@ export default function ListingEditor() {
         <fieldset disabled={busy} className={row}>
           <legend className="mb-4 text-lg font-semibold">Property information</legend>
           {textField('beds', 'Bedrooms', { type: 'number', min: 0 })}
-          {textField('baths', 'Bathrooms', { type: 'number', min: 0, step: '0.5' })}
+          {textField('baths', 'Bathrooms', { type: 'number', min: 0 })}
           {textField('sqft', 'Living area (sq ft)', { type: 'number', min: 1 })}
           {textField('lot_size_sqft', 'Lot size (sq ft)', { type: 'number', min: 1 })}
+          {textField('lot_size_acres', 'Lot size (acres)', { type: 'number', min: 0.000001, step: 'any' })}
+          {textField('lot_dimensions', 'Lot dimensions')}
           {textField('year_built', 'Year built', { type: 'number', min: 1600 })}
+          {textField('year_built_details', 'Year built details')}
+          {textField('builder', 'Builder')}
           {textField('levels', 'Levels', { maxLength: 40 })}
           <label className="text-sm font-medium">
             Attached garage

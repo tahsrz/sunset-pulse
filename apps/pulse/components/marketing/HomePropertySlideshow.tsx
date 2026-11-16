@@ -24,7 +24,6 @@ export default function HomePropertySlideshow({ slides }: { slides: HomeProperty
   const [playing, setPlaying] = useState(true);
   const [hovering, setHovering] = useState(false);
   const [failedPhoto, setFailedPhoto] = useState<string>();
-  const canGoBack = index > 0;
   const canAdvance = index < slides.length - 1;
   const isPlaying = playing && canAdvance;
   const slide = slides[index];
@@ -58,7 +57,7 @@ export default function HomePropertySlideshow({ slides }: { slides: HomeProperty
   function stepBy(offset: number) {
     setPlaying(false);
     setFailedPhoto(undefined);
-    setIndex((current) => Math.min(slides.length - 1, Math.max(0, current + offset)));
+    setIndex((current) => (current + offset + slides.length) % slides.length);
   }
 
   return (
@@ -106,13 +105,13 @@ export default function HomePropertySlideshow({ slides }: { slides: HomeProperty
         <div className="flex items-center justify-between gap-2 border-t border-white/15 px-4 py-2 sm:px-6">
           <span className="text-sm font-semibold tabular-nums text-slate-200"><span className="sr-only">Property </span>{index + 1} of {slides.length}</span>
           <div className="flex gap-2">
-            <button type="button" aria-label="Previous property" disabled={!canGoBack} onClick={() => stepBy(-1)} className={controlClass}>
+            <button type="button" aria-label="Previous property" onClick={() => stepBy(-1)} className={controlClass}>
               <ArrowLeft aria-hidden="true" size={18} />
             </button>
             <button type="button" aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'} disabled={!canAdvance} onClick={() => setPlaying(!playing)} className={controlClass}>
               {isPlaying ? <Pause aria-hidden="true" size={17} /> : <Play aria-hidden="true" size={17} />}
             </button>
-            <button type="button" aria-label="Next property" disabled={!canAdvance} onClick={() => stepBy(1)} className={controlClass}>
+            <button type="button" aria-label="Next property" onClick={() => stepBy(1)} className={controlClass}>
               <ArrowRight aria-hidden="true" size={18} />
             </button>
           </div>

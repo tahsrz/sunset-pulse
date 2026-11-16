@@ -94,26 +94,26 @@ test('homepage tabs update the title, subtitle and form before searching homes',
 
 test('homepage slideshow shows each listing price and can return to the first property', async ({ page }) => {
   test.setTimeout(45000);
-  await page.route('https://resources.atproperties.com/**', (route) => route.fulfill({
-    contentType: 'image/svg+xml',
-    body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="navy"/></svg>',
-  }));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/');
   const slideshow = page.getByRole('region', { name: 'Featured properties' });
   const listings = [['11250 West Lake Road', '$175,000'], ['416 E Kennedale Parkway', '$1,050,000']];
   for (const [name, price] of listings) {
     await expect(slideshow.getByText(name, { exact: true })).toBeVisible({ timeout: 12000 });
-    await expect(slideshow.getByRole('img', { name: `Photo of ${name}` })).toBeVisible();
+    const photo = slideshow.getByRole('img', { name: `Photo of ${name}` });
+    await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     await expect(slideshow).toContainText(price);
   }
-  await expect(slideshow.getByRole('button', { name: 'Next property' })).toBeDisabled();
+  await expect(slideshow.getByRole('button', { name: 'Play slideshow' })).toBeDisabled();
   await expect(slideshow).toContainText('2 of 2');
   await slideshow.getByRole('button', { name: 'Previous property' }).click();
   await expect(slideshow.getByRole('link', { name: '11250 West Lake Road' })).toBeVisible();
   await expect(slideshow).toContainText('$175,000');
   await expect(slideshow).toContainText('1 of 2');
-  await expect(slideshow.getByRole('button', { name: 'Previous property' })).toBeDisabled();
+  await slideshow.getByRole('button', { name: 'Previous property' }).click();
+  await expect(slideshow.getByRole('link', { name: '416 E Kennedale Parkway' })).toBeVisible();
+  await slideshow.getByRole('button', { name: 'Next property' }).click();
+  await expect(slideshow.getByRole('link', { name: '11250 West Lake Road' })).toBeVisible();
 });
 
 test('featured commercial sales are active catalog listings with public detail routes', async ({ page, request }) => {
@@ -160,6 +160,8 @@ test('an operator can publish a priced listing to the homepage slideshow', async
   await page.goto('/');
   const slideshow = page.getByRole('region', { name: 'Featured properties' });
   await expect(slideshow.getByRole('link', { name: '817 Stoney Bridge Way' })).toBeVisible();
+  const photo = slideshow.getByRole('img', { name: 'Photo of 817 Stoney Bridge Way' });
+  await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await expect(slideshow).toContainText('$572,990');
   await expect(slideshow).toContainText('1 of 3');
 });

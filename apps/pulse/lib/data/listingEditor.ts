@@ -3,7 +3,7 @@ import { isPublicListingPhoto, type Listing } from './listingContract';
 
 export const listingMlsIdSchema = z.string().trim().min(1).max(40).regex(/^[a-z0-9-]+$/i);
 
-const optionalNumber = (number: z.ZodNumber) => z.preprocess(
+const optionalNumber = (number: z.ZodType<number>) => z.preprocess(
   (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
   number.optional(),
 );
@@ -22,10 +22,14 @@ export const listingEditorSchema = z.object({
   price_type: z.enum(['sale', 'lease', 'unknown']),
   price: z.coerce.number().positive().max(1_000_000_000_000),
   beds: optionalNumber(z.coerce.number().int().nonnegative().max(100)),
-  baths: optionalNumber(z.coerce.number().nonnegative().max(100)),
+  baths: optionalNumber(z.coerce.number().int().nonnegative().max(100)),
   sqft: optionalNumber(z.coerce.number().int().positive().max(100_000_000)),
   lot_size_sqft: optionalNumber(z.coerce.number().int().positive().max(1_000_000_000)),
+  lot_size_acres: optionalNumber(z.coerce.number().positive().max(1_000_000)),
+  lot_dimensions: optionalText(100),
   year_built: optionalNumber(z.coerce.number().int().min(1600).max(2200)),
+  year_built_details: optionalText(100),
+  builder: optionalText(100),
   levels: optionalText(40),
   attached_garage: z.enum(['', 'yes', 'no']).default(''),
   subdivision: optionalText(100),
@@ -40,7 +44,10 @@ export const listingEditorSchema = z.object({
   is_featured: checkbox,
 });
 
-const metadataFields = ['property_subtype', 'lot_size_sqft', 'year_built', 'levels', 'subdivision', 'county', 'listing_agent', 'listing_office'] as const;
+const metadataFields = [
+  'property_subtype', 'lot_size_sqft', 'lot_size_acres', 'lot_dimensions', 'year_built',
+  'year_built_details', 'builder', 'levels', 'subdivision', 'county', 'listing_agent', 'listing_office',
+] as const;
 
 export function listingEditorValues(listing: Listing) {
   const { mls_id, type, description, location, listing_status, price_type, list_price, price, beds, baths, square_feet, images, display_public, is_featured, metadata } = listing;
