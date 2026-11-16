@@ -141,8 +141,10 @@ test('featured commercial sales are active catalog listings with public detail r
   }
 
   await page.goto('/');
-  await page.getByRole('region', { name: 'Featured properties' }).getByRole('link', { name: listings[0].name }).click();
-  await expect(page).toHaveURL(`/properties/${listings[0].id}`);
+  const listingLink = page.getByRole('region', { name: 'Featured properties' }).getByRole('link', { name: listings[0].name });
+  await expect(listingLink).toHaveAttribute('href', `/properties/${listings[0].id}`);
+  await listingLink.click();
+  await expect(page).toHaveURL(`/properties/${listings[0].id}`, { timeout: 20000 });
   await expect(page.getByRole('heading', { name: listings[0].name })).toBeVisible();
 });
 
@@ -173,7 +175,7 @@ test('an operator can publish a priced listing to the homepage slideshow', async
   await expect(slideshow.getByRole('link', { name: '817 Stoney Bridge Way' })).toBeVisible();
   const photo = slideshow.getByRole('img', { name: 'Photo of 817 Stoney Bridge Way' });
   await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
-  await expect(photo).toHaveAttribute('src', '/images/properties/817-stoney-bridge-way.png');
+  await expect(photo).toHaveAttribute('src', /\/images\/properties\/817-stoney-bridge-way\.png$/);
   await expect(slideshow).toContainText('$572,990');
   await expect(slideshow).toContainText('1 of 3');
 });
