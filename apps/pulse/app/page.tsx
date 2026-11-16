@@ -1,4 +1,4 @@
-import React, { cache, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,10 +12,9 @@ import CounterScanActions from '@/components/home/CounterScanActions';
 import SellerAcquisitionHero from '@/components/marketing/SellerAcquisitionHero';
 import HomePropertySlideshow, { type HomePropertySlide } from '@/components/marketing/HomePropertySlideshow';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
-import { commercialSaleListings } from '@/config/commercial_sale_listings';
-import { getUsableRemoteListingImages, type Listing } from '@/lib/data/listingContract';
-import { getPublicListingById, searchListings } from '@/lib/data/listingRepository';
-import { getTourHotList, isTourHotListQualifiedListing } from '@/lib/data/tourHotList';
+import { isPublicListingPhoto } from '@/lib/data/listingContract';
+import { searchListings } from '@/lib/data/listingRepository';
+import { getTourHotList } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
@@ -31,97 +30,59 @@ export const metadata: Metadata = {
   description: 'Find homes, explore local listings, or talk with a Pulse agent about selling your home.',
 };
 
-const featuredLimit = 4;
 const addressAbbreviations: Record<string, string> = {
   rd: 'road', dr: 'drive', st: 'street', ln: 'lane', ave: 'avenue', blvd: 'boulevard', ct: 'court', pkwy: 'parkway',
   w: 'west', e: 'east', n: 'north', s: 'south',
 };
 
-const getCuratedListings = cache(async () => {
-  try {
-    return (await getTourHotList({ limit: featuredLimit })).listings;
-  } catch (error) {
-    console.error('[HOME_CURATED_LISTINGS_READ] Curated listings could not be loaded.', error);
-    return [];
-  }
-});
-
 async function FeaturedPropertySlideshow() {
+  const listings = await searchListings(
+    { featured: true, status: 'Active', priceType: 'sale' },
+    { includeLegacy: false, publicOnly: true, limit: 24 },
+  );
   const slides: HomePropertySlide[] = [];
-  const usedListings = new Set<string>();
+  const usedAddresses = new Set<string>();
   const usedPhotos = new Set<string>();
-  const isMockMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 
-  function addSlides(listings: Listing[]) {
-    for (const listing of listings) {
-      if (slides.length === featuredLimit) break;
-      if (!listing.display_public || (listing.is_demo && !isMockMode)) continue;
+  for (const listing of listings) {
+    const { street, city, state } = listing.location;
+    const address = street ? [street, city, state].join(' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+      .replace(/\b(rd|dr|st|ln|ave|blvd|ct|pkwy|w|e|n|s)\b/g, (word) => addressAbbreviations[word]) : listing.id;
+    if (usedAddresses.has(address)) continue;
 
-      const commercialListing = commercialSaleListings.find((item) => item.mls_id === listing.mls_id);
-      if (commercialListing) {
-        if (listing.listing_status.trim().toLowerCase() !== 'active' || listing.price_type !== 'sale') continue;
-      } else if (!isTourHotListQualifiedListing(listing)) {
-        continue;
-      }
+    for (const photo of listing.images.filter(isPublicListingPhoto)) {
+      const url = new URL(photo, 'https://sunsetpulse.local');
+      const key = url.origin + url.pathname;
+      if (usedPhotos.has(key)) continue;
 
-      const href = `/properties/${encodeURIComponent(listing.id)}`;
-      const { street, city, state } = listing.location;
-      const place = [city, state].filter(Boolean).join(', ');
-      const address = [street, city, state].join(' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-        .replace(/\b(rd|dr|st|ln|ave|blvd|ct|w|e|n|s)\b/g, (word) => addressAbbreviations[word]);
-      const keys = [`id:${listing.id}`];
-      if (listing.mls_id) keys.push(`mls:${listing.mls_id}`);
-      if (street) keys.push(`address:${address}`);
-      if (keys.some((key) => usedListings.has(key))) continue;
-
-      const photos = getUsableRemoteListingImages(listing);
-      if (commercialListing && listing.images.includes(commercialListing.image_url) && commercialListing.image_url.startsWith('/')) {
-        photos.unshift(commercialListing.image_url);
-      }
-      for (const photo of photos) {
-        const url = new URL(photo, 'https://sunsetpulse.local');
-        const photoKey = url.origin + url.pathname;
-        if (usedPhotos.has(photoKey)) continue;
-
-        slides.push({
-          id: listing.id,
-          name: street || listing.name,
-          locality: commercialListing ? `Commercial sale · ${place}` : place,
-          photo,
-          href,
-          credit: commercialListing ? `Listing courtesy of ${commercialListing.metadata.listing_office}` : undefined,
-        });
-        keys.forEach((key) => usedListings.add(key));
-        usedPhotos.add(photoKey);
-        break;
-      }
+      const locality = [city, state].filter(Boolean).join(', ');
+      const brokerage = typeof listing.metadata.listing_office === 'string' ? listing.metadata.listing_office.trim() : '';
+      slides.push({
+        id: listing.id,
+        name: street || listing.name,
+        locality: listing.type === 'Commercial Sale' ? `Commercial sale · ${locality}` : locality,
+        photo,
+        href: `/properties/${encodeURIComponent(listing.id)}`,
+        price: listing.list_price ?? listing.price,
+        credit: brokerage ? `Listing courtesy of ${brokerage}` : undefined,
+      });
+      usedAddresses.add(address);
+      usedPhotos.add(key);
+      break;
     }
   }
 
-  const [commercialResults, curated] = await Promise.all([
-    Promise.allSettled(commercialSaleListings.map(({ mls_id }) => getPublicListingById(mls_id))),
-    getCuratedListings(),
-  ]);
-  addSlides(commercialResults.flatMap((result) => {
-    if (result.status === 'rejected') {
-      console.error('[HOME_COMMERCIAL_LISTING_READ] A featured listing could not be loaded.', result.reason);
-      return [];
-    }
-    return result.value ? [result.value] : [];
-  }));
-  addSlides(curated);
-  if (slides.length < featuredLimit && !isMockMode) {
-    try {
-      addSlides(await searchListings({ source: 'MLS', priceType: 'sale' }, { limit: 100, includeLegacy: false, publicOnly: true }));
-    } catch (error) {
-      console.error('[HOME_SLIDESHOW_LISTINGS_READ] Additional listings could not be loaded.', error);
-    }
-  }
   return <HomePropertySlideshow slides={slides} />;
 }
 
 async function StagedPropertiesPocket() {
-  const stagedProperties = JSON.parse(JSON.stringify(await getCuratedListings())) as Property[];
+  let stagedProperties: Property[] = [];
+  try {
+    const { listings } = await getTourHotList({ limit: 4 });
+    stagedProperties = JSON.parse(JSON.stringify(listings)) as Property[];
+  } catch (error) {
+    console.error('[HOME_CURATED_LISTINGS_READ] Curated listings could not be loaded.', error);
+  }
   return <UnifiedPropertyStage initialStagedProperties={stagedProperties} initialMode="STAGED" compact />;
 }
 

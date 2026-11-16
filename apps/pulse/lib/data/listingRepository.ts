@@ -41,6 +41,7 @@ export type ListingSearch = {
   baths?: string | number;
   status?: string;
   source?: 'Internal' | 'MLS';
+  featured?: boolean;
   updatedSince?: string;
   polygon?: string;
   radius?: string | number;
@@ -105,6 +106,19 @@ export async function getPublicListingById(id: string): Promise<Listing | null> 
   }
 }
 
+export async function getCanonicalListingForEdit(mlsId: string): Promise<{ listing: Listing; archived: boolean } | null> {
+  if (isMockMode()) {
+    const property = readMockCanonicalProperty(mlsId);
+    return property ? { listing: normalizeListing(property), archived: Boolean(property.deleted_at) } : null;
+  }
+  const { data, error } = await supabaseAdmin.from('properties')
+    .select(`${CANONICAL_LISTING_COLUMNS}, deleted_at`)
+    .eq('mls_id', mlsId)
+    .maybeSingle();
+  if (error) throw new Error('Unable to load the listing.');
+  return data ? { listing: normalizeListing(data), archived: Boolean(data.deleted_at) } : null;
+}
+
 export async function upsertCanonicalListing(input: Record<string, any>): Promise<Listing> {
   if (isMockMode()) return normalizeListing(upsertMockCanonicalProperty(input));
   const row = listingToRow(input);
@@ -125,7 +139,7 @@ export async function upsertCanonicalListing(input: Record<string, any>): Promis
 }
 
 function searchMockListings(filters: ListingSearch, publicOnly = false) {
-  return listMockCanonicalProperties()
+  const listings = listMockCanonicalProperties()
     .map((property) => normalizeListing(property))
     .filter((listing) => {
       const location = String(filters.city || filters.location || '').trim().toLowerCase();
@@ -152,6 +166,7 @@ function searchMockListings(filters: ListingSearch, publicOnly = false) {
       if (priceType && listing.price_type !== priceType) return false;
       if (filters.status && listing.listing_status !== filters.status) return false;
       if (filters.source && listing.source !== filters.source) return false;
+      if (filters.featured && !listing.is_featured) return false;
       if (minimumBeds !== null && Number(listing.beds || 0) < minimumBeds) return false;
       if (minimumBaths !== null && Number(listing.baths || 0) < minimumBaths) return false;
       if (minimumPrice !== null && price < minimumPrice) return false;
@@ -159,6 +174,10 @@ function searchMockListings(filters: ListingSearch, publicOnly = false) {
       return true;
     })
     .map((listing) => publicOnly ? { ...listing, is_demo: false } : listing);
+  if (filters.featured) {
+    listings.sort((a, b) => (b.last_updated ?? '').localeCompare(a.last_updated ?? '') || a.id.localeCompare(b.id));
+  }
+  return listings;
 }
 
 function isMockMode() {
@@ -183,6 +202,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number, pu
   if (filters.priceType) query = query.eq('price_type', filters.priceType);
   if (filters.status) query = query.eq('listing_status', filters.status);
   if (filters.source) query = query.eq('source', filters.source);
+  if (filters.featured) query = query.eq('is_featured', true).order('mls_id', { ascending: true });
   if (filters.updatedSince) query = query.gte('last_updated', filters.updatedSince);
   if (publicOnly || !filters.includeDemo) query = query.eq('is_demo', false);
   if (filters.minPrice) query = query.gte('price', Number(filters.minPrice));

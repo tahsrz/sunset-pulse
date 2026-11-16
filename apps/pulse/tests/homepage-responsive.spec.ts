@@ -92,12 +92,8 @@ test('homepage tabs update the title, subtitle and form before searching homes',
   expect(new URL(page.url()).searchParams.get('location')).toBe(address);
 });
 
-test('homepage slideshow visits each mock property once and stops at the last slide', async ({ page }) => {
+test('homepage slideshow shows each listing price and can return to the first property', async ({ page }) => {
   test.setTimeout(45000);
-  await page.route('https://images.unsplash.com/photo-*', (route) => route.fulfill({
-    contentType: 'image/svg+xml',
-    body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="teal"/></svg>',
-  }));
   await page.route('https://resources.atproperties.com/**', (route) => route.fulfill({
     contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="navy"/></svg>',
@@ -105,12 +101,19 @@ test('homepage slideshow visits each mock property once and stops at the last sl
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/');
   const slideshow = page.getByRole('region', { name: 'Featured properties' });
-  const names = ['11250 West Lake Road', '416 E Kennedale Parkway', '418 Cedar Ridge Drive', '72 Oak Terrace'];
-  for (const name of names) {
+  const listings = [['11250 West Lake Road', '$175,000'], ['416 E Kennedale Parkway', '$1,050,000']];
+  for (const [name, price] of listings) {
     await expect(slideshow.getByText(name, { exact: true })).toBeVisible({ timeout: 12000 });
     await expect(slideshow.getByRole('img', { name: `Photo of ${name}` })).toBeVisible();
+    await expect(slideshow).toContainText(price);
   }
   await expect(slideshow.getByRole('button', { name: 'Next property' })).toBeDisabled();
+  await expect(slideshow).toContainText('2 of 2');
+  await slideshow.getByRole('button', { name: 'Previous property' }).click();
+  await expect(slideshow.getByRole('link', { name: '11250 West Lake Road' })).toBeVisible();
+  await expect(slideshow).toContainText('$175,000');
+  await expect(slideshow).toContainText('1 of 2');
+  await expect(slideshow.getByRole('button', { name: 'Previous property' })).toBeDisabled();
 });
 
 test('featured commercial sales are active catalog listings with public detail routes', async ({ page, request }) => {
@@ -130,6 +133,35 @@ test('featured commercial sales are active catalog listings with public detail r
   await page.getByRole('region', { name: 'Featured properties' }).getByRole('link', { name: listings[0].name }).click();
   await expect(page).toHaveURL(`/properties/${listings[0].id}`);
   await expect(page.getByRole('heading', { name: listings[0].name })).toBeVisible();
+});
+
+test('an operator can publish a priced listing to the homepage slideshow', async ({ page, request }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/admin/listings');
+  await page.getByLabel('MLS ID', { exact: true }).fill('21436577');
+  await page.getByLabel('Street address').fill('817 Stoney Bridge Way');
+  await page.getByLabel('City', { exact: true }).fill('Lavon');
+  await page.getByLabel('ZIP code').fill('75166');
+  await page.getByLabel('Listing price ($)').fill('572990');
+  await page.getByLabel('Bedrooms').fill('4');
+  await page.getByLabel('Bathrooms').fill('4');
+  await page.getByLabel('Living area (sq ft)').fill('3403');
+  await page.getByLabel('Photo URLs (one per line)').fill('/images/properties/817-stoney-bridge-way.png');
+  await page.getByLabel('Publish to the public catalog').check();
+  await page.getByLabel('Feature on the homepage').check();
+  await page.getByRole('button', { name: 'Save listing' }).click();
+  await expect(page.getByText('Listing saved.', { exact: true })).toBeVisible();
+
+  const response = await request.get('/api/properties/21436577');
+  expect(response.ok()).toBe(true);
+  expect((await response.json()).data).toMatchObject({
+    name: '817 Stoney Bridge Way', price: 572990, listing_status: 'Active', beds: 4, baths: 4, square_feet: 3403,
+  });
+  await page.goto('/');
+  const slideshow = page.getByRole('region', { name: 'Featured properties' });
+  await expect(slideshow.getByRole('link', { name: '817 Stoney Bridge Way' })).toBeVisible();
+  await expect(slideshow).toContainText('$572,990');
+  await expect(slideshow).toContainText('1 of 3');
 });
 
 test('homepage offers a working route when the deferred Atlas script fails', async ({ page }) => {
