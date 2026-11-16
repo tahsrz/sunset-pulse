@@ -177,7 +177,7 @@ async function searchCanonicalListings(filters: ListingSearch, limit: number, pu
   const location = filters.city || filters.location;
   if (location) {
     const safeLocation = escapePostgrestValue(location);
-    query = query.or(`city.ilike.%${safeLocation}%,state.ilike.%${safeLocation}%,zip.ilike.%${safeLocation}%,name.ilike.%${safeLocation}%`);
+    query = query.or(`city.ilike.%${safeLocation}%,state.ilike.%${safeLocation}%,zip.ilike.%${safeLocation}%,street.ilike.%${safeLocation}%,name.ilike.%${safeLocation}%`);
   }
   if (filters.propertyType && filters.propertyType !== 'All') query = query.eq('type', filters.propertyType);
   if (filters.priceType) query = query.eq('price_type', filters.priceType);

@@ -60,10 +60,14 @@ test('homepage seller offer carries attribution through pricing review and a sav
   });
 
   await page.goto('/?utm_source=homepage&utm_medium=organic&utm_campaign=fall-sellers&utm_content=hero', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('link', { name: 'Request My Free Seller Plan' }).click();
+  const address = '123 Sample Lane';
+  await page.getByRole('textbox', { name: 'Your home address' }).fill(address);
+  await page.getByRole('tabpanel', { name: 'Sell a home' }).getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/seller-plan\?/);
   let currentUrl = new URL(page.url());
   expect(currentUrl.searchParams.get('utm_campaign')).toBe('fall-sellers');
+  expect(currentUrl.searchParams.has('address')).toBe(false);
+  await expect(page.getByText(address, { exact: true })).toBeVisible();
 
   await page.getByRole('link', { name: 'Ask About Pricing' }).click();
   const pricingReview = page.getByRole('radio', { name: /A pricing review/ });

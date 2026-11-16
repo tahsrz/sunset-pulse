@@ -66,7 +66,7 @@ const PropertyPage: React.FC = () => {
         const propertyData = await fetchProperty(id);
         setProperty(propertyData as Property);
 
-        if (propertyData) {
+        if (propertyData && (propertyData as Property).type !== 'Commercial Sale') {
           try {
             const rentRes = await fetch(`/api/properties/${id}/rent`);
             if (rentRes.ok) {

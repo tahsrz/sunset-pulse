@@ -154,13 +154,17 @@ describe('signed-in sprint schedule route', () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
-  it('adds the weekly seller plan through the existing workspace backlog boundary', async () => {
+  it('adds the weekly seller plan through the existing workspace backlog boundary', async ({ onTestFinished }) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-07T16:00:00.000Z')); // Same seller-local and UTC week.
+    onTestFinished(() => { vi.useRealTimers(); });
     mocks.rpc.mockResolvedValue({ data: [{ id: 'workspace-backlog-1' }], error: null });
     const response = await POST(jsonRequest({ action: 'add_seller_acquisition_week', workspaceId: '22222222-2222-4222-8222-222222222222' }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({ ok: true, count: 6, processed: 6, scoped: true });
+    expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.rpc).toHaveBeenCalledTimes(6);
     expect(mocks.rpc).toHaveBeenCalledWith('platform_add_sprint_backlog_item', expect.objectContaining({
       p_actor_id: USER_ID,

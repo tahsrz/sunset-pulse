@@ -16,6 +16,7 @@ interface PropertySpecsProps {
 
 const PropertySpecs: React.FC<PropertySpecsProps> = ({ property }) => {
   const isRV = property.type === 'RV' || property.type === 'RV Park';
+  const isCommercialSale = property.type === 'Commercial Sale';
 
   return (
     <div className='bg-slate-900 border border-white/10 p-8 rounded-2xl shadow-2xl mt-8 transition-all duration-500 hover:border-blue-500/30'>
@@ -46,14 +47,18 @@ const PropertySpecs: React.FC<PropertySpecsProps> = ({ property }) => {
         </div>
       ) : (
         <div className='flex justify-center md:justify-start gap-12 text-blue-400 mb-8'>
-          <div className='flex items-center gap-3'>
-            <FaBed className='text-2xl' /> 
-            <span className='text-lg font-black italic'>{property.beds} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Beds</span></span>
-          </div>
-          <div className='flex items-center gap-3'>
-            <FaBath className='text-2xl' /> 
-            <span className='text-lg font-black italic'>{property.baths} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Baths</span></span>
-          </div>
+          {!isCommercialSale && (
+            <>
+              <div className='flex items-center gap-3'>
+                <FaBed className='text-2xl' />
+                <span className='text-lg font-black italic'>{property.beds} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Beds</span></span>
+              </div>
+              <div className='flex items-center gap-3'>
+                <FaBath className='text-2xl' />
+                <span className='text-lg font-black italic'>{property.baths} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Baths</span></span>
+              </div>
+            </>
+          )}
           <div className='flex items-center gap-3'>
             <FaRulerCombined className='text-2xl' />
             <span className='text-lg font-black italic'>{property.square_feet} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>sqft</span></span>

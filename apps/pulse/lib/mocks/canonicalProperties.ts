@@ -1,4 +1,5 @@
 import { mockSearchProperties } from '@/lib/mocks/propertySearch';
+import { commercialSaleListings } from '@/config/commercial_sale_listings';
 import { listingToRow } from '@/lib/data/listingContract';
 
 type MockCanonicalProperty = Record<string, unknown> & {
@@ -73,7 +74,7 @@ function getMockCanonicalProperties() {
 }
 
 function buildSeedProperties() {
-  return new Map(mockSearchProperties.map((property) => {
+  const properties = new Map<string, MockCanonicalProperty>(mockSearchProperties.map((property) => {
     const [longitude, latitude] = property.location_geo.coordinates;
     const row: MockCanonicalProperty = {
       id: property._id,
@@ -107,6 +108,10 @@ function buildSeedProperties() {
     };
     return [row.id, row] as const;
   }));
+  for (const listing of commercialSaleListings) {
+    properties.set(listing.mls_id, { ...listing, id: listing.mls_id });
+  }
+  return properties;
 }
 
 function cloneRecord<T>(value: T): T {

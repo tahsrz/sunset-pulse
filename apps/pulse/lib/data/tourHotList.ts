@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { tourHotListConfig } from '@/config/tour_hot_list';
+import { soldClydeListingMlsId, tourHotListConfig } from '@/config/tour_hot_list';
 import { hasUsableRemoteListingImage, type Listing } from '@/lib/data/listingContract';
 import { getListingById, searchListings } from '@/lib/data/listingRepository';
 import { getStoredTourHotList } from '@/lib/data/tourHotListStore';
@@ -184,7 +184,7 @@ function findBestAddressMatch(address: string, listings: Listing[]) {
 
 function validateHotListListing(listing: Listing): TourHotListResult['skipped'][number]['reason'] | null {
   if (listing.source !== 'MLS') return 'not_mls';
-  if (!isActiveStatus(listing.listing_status)) return 'not_active';
+  if (listing.mls_id === soldClydeListingMlsId || !isActiveStatus(listing.listing_status)) return 'not_active';
   if (!hasUsableRemoteListingImage(listing)) return 'missing_remote_image';
   return null;
 }

@@ -345,14 +345,15 @@ individual map links, and a Google Maps route link for the current stops.
 Environment variables remain useful as local/bootstrap fallback values when no saved Supabase hot list exists:
 
 ```bash
-TOUR_HOT_LIST_MLS_IDS=21255035,21177832
+TOUR_HOT_LIST_MLS_IDS=21255035
 TOUR_HOT_LIST_ADDRESSES=100 Sunset Lane, Frisco, TX|200 Lake Road, Dallas, TX
 ```
 
-The checked-in default MLS fallback currently targets two public sale listings:
+The checked-in default MLS fallback targets one public sale listing:
 
 - `21255035` — 15306 Trails End Dr, Dallas, TX 75248
-- `21177832` — 13656 County Road 238, Clyde, TX 79510
+
+The homepage also features commercial-sale MLS listings `21436749` and `21436841` when their public catalog records are active. From `apps/pulse`, run `node --env-file=.env --env-file=.env.local --import tsx scripts/seed-commercial-sale-listings.ts` against the target Supabase project to import missing records and mark `21177832` sold. Deploy the app with this import so the Abilene listing photo is available.
 
 Rules enforced by `lib/data/tourHotList.ts`:
 

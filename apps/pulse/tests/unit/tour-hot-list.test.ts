@@ -20,7 +20,8 @@ vi.mock('@/lib/data/tourHotListStore', () => ({
   getStoredTourHotList: mockGetStoredTourHotList,
 }));
 
-vi.mock('@/config/tour_hot_list', () => ({
+vi.mock('@/config/tour_hot_list', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/config/tour_hot_list')>(),
   tourHotListConfig: mockTourHotListConfig,
 }));
 
@@ -153,6 +154,7 @@ describe('Tour Studio hot list', () => {
   it('exposes the qualification guard for homepage callers', () => {
     expect(isTourHotListQualifiedListing(listing('good', { images: ['https://cdn.example.test/good.jpg'] }))).toBe(true);
     expect(isTourHotListQualifiedListing(listing('bad', { images: ['/images/properties/fallback.jpg'] }))).toBe(false);
+    expect(isTourHotListQualifiedListing(listing('sold-with-stale-status', { mls_id: '21177832' }))).toBe(false);
   });
 });
 
