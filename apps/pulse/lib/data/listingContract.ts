@@ -140,6 +140,16 @@ export function getUsableRemoteListingImages(input: { images?: unknown; image_ur
   });
 }
 
+export function isPublicListingPhoto(source: string): boolean {
+  if (/^\/images\/properties\/[a-z0-9][a-z0-9/_-]*\.(?:avif|jpe?g|png|webp)$/i.test(source)) return true;
+  try {
+    const url = new URL(source);
+    return url.protocol === 'https:' && !!url.hostname && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 function normalizeImages(images: unknown, imageUrl: unknown) {
   const parsed = parseJson(images);
   const candidates = Array.isArray(parsed) ? parsed : imageUrl ? [imageUrl] : [];

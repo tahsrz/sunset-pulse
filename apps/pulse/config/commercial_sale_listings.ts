@@ -31,7 +31,7 @@ export const commercialSaleListings = [
     description: 'A 3,612-square-foot industrial property on 0.445 acres with seven service bays and on-site parking. Listing courtesy of Starria McLaughlin, OnDemand Realty.',
     sqft: 3612,
     price: 1050000,
-    images: ['https://resources.atproperties.com/images/NTREIS/21/436/841/6afa58c200d90/1.jpg'],
+    images: ['/images/properties/416-e-kennedale-parkway.jpg'],
     metadata: {
       provider: 'ntreis',
       property_subtype: 'Industrial',
