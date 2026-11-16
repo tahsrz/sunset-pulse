@@ -116,6 +116,17 @@ test('homepage slideshow shows each listing price and can return to the first pr
   await expect(slideshow.getByRole('link', { name: '11250 West Lake Road' })).toBeVisible();
 });
 
+test('homepage slideshow skips a listing whose photo fails to load', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/images/properties/11250-west-lake-road.png', (route) => route.fulfill({ status: 404 }));
+  await page.goto('/');
+
+  const slideshow = page.getByRole('region', { name: 'Featured properties' });
+  await expect(slideshow.getByRole('link', { name: '416 E Kennedale Parkway' })).toBeVisible();
+  await expect(slideshow.getByRole('link', { name: '11250 West Lake Road' })).toHaveCount(0);
+  await expect(slideshow.getByRole('button', { name: 'Next property' })).toHaveCount(0);
+});
+
 test('featured commercial sales are active catalog listings with public detail routes', async ({ page, request }) => {
   const listings = [
     { id: '21436749', name: '11250 West Lake Road', price: 175000 },
@@ -136,6 +147,7 @@ test('featured commercial sales are active catalog listings with public detail r
 });
 
 test('an operator can publish a priced listing to the homepage slideshow', async ({ page, request }) => {
+  test.skip(process.env.PULSE_LISTING_EDITOR_E2E !== 'true', 'The editor test uses the development server and mock catalog.');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/admin/listings');
   await page.getByLabel('MLS ID', { exact: true }).fill('21436577');
@@ -146,22 +158,22 @@ test('an operator can publish a priced listing to the homepage slideshow', async
   await page.getByLabel('Bedrooms').fill('4');
   await page.getByLabel('Bathrooms').fill('4');
   await page.getByLabel('Living area (sq ft)').fill('3403');
-  await page.getByLabel('Photo URLs (one per line)').fill('/images/properties/817-stoney-bridge-way.png');
+  await page.getByLabel('Photo URLs (one per line)').fill('/images/properties/817-stoney-bridge-way-preview.png\n/images/properties/817-stoney-bridge-way.png');
   await page.getByLabel('Publish to the public catalog').check();
-  await page.getByLabel('Feature on the homepage').check();
   await page.getByRole('button', { name: 'Save listing' }).click();
   await expect(page.getByText('Listing saved.', { exact: true })).toBeVisible();
 
   const response = await request.get('/api/properties/21436577');
   expect(response.ok()).toBe(true);
   expect((await response.json()).data).toMatchObject({
-    name: '817 Stoney Bridge Way', price: 572990, listing_status: 'Active', beds: 4, baths: 4, square_feet: 3403,
+    name: '817 Stoney Bridge Way', price: 572990, listing_status: 'Active', beds: 4, baths: 4, square_feet: 3403, is_featured: false,
   });
   await page.goto('/');
   const slideshow = page.getByRole('region', { name: 'Featured properties' });
   await expect(slideshow.getByRole('link', { name: '817 Stoney Bridge Way' })).toBeVisible();
   const photo = slideshow.getByRole('img', { name: 'Photo of 817 Stoney Bridge Way' });
   await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(photo).toHaveAttribute('src', '/images/properties/817-stoney-bridge-way.png');
   await expect(slideshow).toContainText('$572,990');
   await expect(slideshow).toContainText('1 of 3');
 });

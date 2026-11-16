@@ -13,7 +13,7 @@ import SellerAcquisitionHero from '@/components/marketing/SellerAcquisitionHero'
 import HomePropertySlideshow, { type HomePropertySlide } from '@/components/marketing/HomePropertySlideshow';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
 import { isPublicListingPhoto } from '@/lib/data/listingContract';
-import { searchListings } from '@/lib/data/listingRepository';
+import { listActivePublicListings } from '@/lib/data/listingRepository';
 import { getTourHotList } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
@@ -36,13 +36,9 @@ const addressAbbreviations: Record<string, string> = {
 };
 
 async function FeaturedPropertySlideshow() {
-  const listings = await searchListings(
-    { featured: true, status: 'Active', priceType: 'sale' },
-    { includeLegacy: false, publicOnly: true, limit: 24 },
-  );
+  const listings = await listActivePublicListings();
   const slides: HomePropertySlide[] = [];
   const usedAddresses = new Set<string>();
-  const usedPhotos = new Set<string>();
 
   for (const listing of listings) {
     const { street, city, state } = listing.location;
@@ -50,26 +46,23 @@ async function FeaturedPropertySlideshow() {
       .replace(/\b(rd|dr|st|ln|ave|blvd|ct|pkwy|w|e|n|s)\b/g, (word) => addressAbbreviations[word]) : listing.id;
     if (usedAddresses.has(address)) continue;
 
-    for (const photo of listing.images.filter(isPublicListingPhoto)) {
-      const url = new URL(photo, 'https://sunsetpulse.local');
-      const key = url.origin + url.pathname;
-      if (usedPhotos.has(key)) continue;
+    const photos = listing.images.filter(isPublicListingPhoto);
+    if (photos.length === 0) continue;
 
-      const locality = [city, state].filter(Boolean).join(', ');
-      const brokerage = typeof listing.metadata.listing_office === 'string' ? listing.metadata.listing_office.trim() : '';
-      slides.push({
-        id: listing.id,
-        name: street || listing.name,
-        locality: listing.type === 'Commercial Sale' ? `Commercial sale · ${locality}` : locality,
-        photo,
-        href: `/properties/${encodeURIComponent(listing.id)}`,
-        price: listing.list_price ?? listing.price,
-        credit: brokerage ? `Listing courtesy of ${brokerage}` : undefined,
-      });
-      usedAddresses.add(address);
-      usedPhotos.add(key);
-      break;
-    }
+    const locality = [city, state].filter(Boolean).join(', ');
+    const brokerage = typeof listing.metadata.listing_office === 'string' ? listing.metadata.listing_office.trim() : '';
+    slides.push({
+      id: listing.id,
+      name: street || listing.name,
+      locality: [listing.type === 'Commercial Sale' ? 'Commercial sale' : listing.price_type === 'lease' ? 'For lease' : '', locality].filter(Boolean).join(' · '),
+      photos,
+      href: `/properties/${encodeURIComponent(listing.id)}`,
+      price: listing.price_type === 'lease' ? listing.rates.monthly ?? listing.price : listing.list_price ?? listing.price,
+      monthly: listing.price_type === 'lease',
+      credit: brokerage ? `Listing courtesy of ${brokerage}` : undefined,
+      rendering: listing.metadata.photo_kind === 'rendering',
+    });
+    usedAddresses.add(address);
   }
 
   return <HomePropertySlideshow slides={slides} />;

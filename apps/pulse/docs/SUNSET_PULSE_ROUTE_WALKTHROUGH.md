@@ -202,6 +202,7 @@ This **spoken demo script** follows `lib/navigation/routeCatalog.ts` and covers 
 | `/admin/launch-kit` | Operator | “This manages site launch-kit configuration. Use a controlled test site when demonstrating changes.” | Open `/admin/launch-kit`.  |
 | `/admin/site-reviews` | Operator | “This is the site-review operations surface.” | Open `/admin/site-reviews`.  |
 | `/admin/hot-list` | Operator | “This manages the configured hot list. Changing it can affect public presentation, so use a test target.” | Open `/admin/hot-list`.  |
+| `/admin/listings` | Operator | “Enter an MLS ID to create or edit a listing, then save its price, status, and photos.” | Open `/admin/listings`. |
 | `/admin/property-scans` | Operator | “This reviews consented private captures. Review approval does not mean a real 3D processor has run.” | Open `/admin/property-scans`. Review consented private captures before 3D reconstruction. |
 | `/admin/orchestrator` | Operator | “This is the orchestration operations surface. Available controls are not permission to activate every provider.” | Open `/admin/orchestrator`.  |
 | `/admin/profit` | Operator | “This is the operator profit-control surface, separate from a realtor's private manual business ledger.” | Open `/admin/profit`. Realtor role alone is not sufficient. |

@@ -86,7 +86,7 @@ export default function ListingEditor() {
           {textField('state', 'State', { required: true, defaultValue: value('state', 'TX'), maxLength: 2 })}
           {textField('zip', 'ZIP code', { required: true, maxLength: 10 })}
           {textField('type', 'Property type', { required: true, defaultValue: value('type', 'Residential'), list: 'listing-types' })}
-          <datalist id="listing-types"><option>Residential</option><option>Commercial Sale</option><option>Land</option></datalist>
+          <datalist id="listing-types"><option>Residential</option><option>Residential Lease</option><option>Commercial Sale</option><option>Land</option></datalist>
           {textField('property_subtype', 'Property subtype')}
           <label className="text-sm font-medium">
             Listing status
@@ -134,9 +134,16 @@ export default function ListingEditor() {
             <textarea name="photo_urls" className={fieldClass} defaultValue={value('photo_urls')} rows={3} maxLength={16000} />
           </label>
           {textField('photo', 'Upload a primary photo (up to 3 MB)', { type: 'file', accept: 'image/jpeg,image/png,image/webp', defaultValue: undefined })}
+          <label className="grid gap-1 text-sm font-semibold">
+            Image type
+            <select name="photo_kind" className={fieldClass} defaultValue={value('photo_kind')}>
+              <option value="">Property photo</option>
+              <option value="rendering">Exterior rendering</option>
+            </select>
+          </label>
           <label className="flex items-center gap-2"><input name="display_public" type="checkbox" defaultChecked={values.display_public === true} /> Publish to the public catalog</label>
-          <label className="flex items-center gap-2"><input name="is_featured" type="checkbox" defaultChecked={values.is_featured === true} /> Feature on the homepage</label>
-          <p className="text-sm text-slate-300">The slideshow displays active public sale listings with photos.</p>
+          <label className="flex items-center gap-2"><input name="is_featured" type="checkbox" defaultChecked={values.is_featured === true} /> Mark as featured</label>
+          <p className="text-sm text-slate-300">Active public listings appear in the homepage slideshow when they have an image that loads.</p>
         </fieldset>
 
         <div className="flex flex-wrap items-center gap-3">

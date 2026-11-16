@@ -42,11 +42,6 @@ export async function PUT(request: NextRequest) {
   const photo = form.get('photo');
   const file = photo && typeof photo !== 'string' && photo.size > 0 ? photo : null;
   if (file && file.size > maxPhotoBytes) return errorResponse('The listing photo must be 3 MB or smaller.', 413);
-  if (fields.is_featured && fields.display_public && fields.listing_status === 'Active' &&
-      fields.price_type === 'sale' && !file && fields.photo_urls.length === 0) {
-    return errorResponse('Add a photo for the homepage slideshow.', 400);
-  }
-
   try {
     const stored = await getCanonicalListingForEdit(fields.mls_id);
     if (stored?.archived) return errorResponse('This MLS ID belongs to an archived listing.', 409);

@@ -232,6 +232,7 @@ How to read the directory:
 | `/admin/launch-kit` | Launch Kit | Operator access |
 | `/admin/site-reviews` | Site reviews | Operator access |
 | `/admin/hot-list` | Hot List | Operator access |
+| `/admin/listings` | Listing Editor | Operator access |
 | `/admin/property-scans` | Property scan review | Operator access; Review consented private captures before 3D reconstruction. |
 | `/admin/property-scans/[scanId]/preview` | Property scan 3D preview | Operator access; Choose an approved property scan with a completed manifest preview. Entry: `/admin/property-scans`. |
 | `/admin/orchestrator` | Orchestrator | Operator access |

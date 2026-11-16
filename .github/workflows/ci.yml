@@ -148,6 +148,11 @@ jobs:
       - name: Run Public Site E2E
         run: npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts tests/homepage-responsive.spec.ts --reporter=line
 
+      - name: Run Listing Editor E2E
+        env:
+          PULSE_LISTING_EDITOR_E2E: 'true'
+        run: npm run test:e2e --workspace=apps/pulse -- tests/homepage-responsive.spec.ts --grep 'an operator can publish' --reporter=line
+
       - name: Upload homepage viewport captures
         if: always()
         uses: actions/upload-artifact@v4

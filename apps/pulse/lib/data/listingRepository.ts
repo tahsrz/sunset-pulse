@@ -54,7 +54,7 @@ export async function searchListings(
   options: { limit?: number; includeLegacy?: boolean; publicOnly?: boolean } = {}
 ): Promise<Listing[]> {
   const limit = clamp(options.limit || 100, 1, 500);
-  if (isMockMode()) return searchMockListings(filters, options.publicOnly === true).slice(0, limit);
+  if (isMockMode()) return searchMockListings(filters, options).slice(0, limit);
   const canonical = await searchCanonicalListings(filters, limit, options.publicOnly === true);
   const legacy = options.includeLegacy === false ? [] : await searchLegacyListings(filters, limit, options.publicOnly);
   const deduplicated = deduplicateListings([...canonical, ...legacy]);
@@ -62,6 +62,20 @@ export async function searchListings(
     ? deduplicated.filter((listing) => !listing.is_demo && listing.display_public)
     : deduplicated;
   return eligible.slice(0, limit);
+}
+
+export async function listActivePublicListings(): Promise<Listing[]> {
+  const filters: ListingSearch = { status: 'Active' };
+  if (isMockMode()) return searchMockListings(filters, { publicOnly: true, excludeDemo: true })
+    .sort((a, b) => (b.last_updated ?? '').localeCompare(a.last_updated ?? '') || a.id.localeCompare(b.id));
+
+  const pageSize = 500;
+  const listings: Listing[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await searchCanonicalListings(filters, pageSize, true, offset);
+    listings.push(...page);
+    if (page.length < pageSize) return deduplicateListings(listings);
+  }
 }
 
 export async function getListingById(id: string): Promise<Listing | null> {
@@ -138,7 +152,7 @@ export async function upsertCanonicalListing(input: Record<string, any>): Promis
   });
 }
 
-function searchMockListings(filters: ListingSearch, publicOnly = false) {
+function searchMockListings(filters: ListingSearch, { publicOnly = false, excludeDemo = false } = {}) {
   const listings = listMockCanonicalProperties()
     .map((property) => normalizeListing(property))
     .filter((listing) => {
@@ -161,6 +175,7 @@ function searchMockListings(filters: ListingSearch, publicOnly = false) {
       ].join(' ').toLowerCase();
 
       if (publicOnly && !listing.display_public) return false;
+      if (excludeDemo && listing.is_demo) return false;
       if (location && !searchable.includes(location)) return false;
       if (propertyType && propertyType !== 'all' && listing.type.toLowerCase() !== propertyType) return false;
       if (priceType && listing.price_type !== priceType) return false;
@@ -184,14 +199,14 @@ function isMockMode() {
   return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 }
 
-async function searchCanonicalListings(filters: ListingSearch, limit: number, publicOnly = false): Promise<Listing[]> {
+async function searchCanonicalListings(filters: ListingSearch, limit: number, publicOnly = false, offset?: number): Promise<Listing[]> {
   let query = supabaseAdmin
     .from('properties')
     .select(CANONICAL_LISTING_COLUMNS)
     .is('deleted_at', null)
     .eq('display_public', true)
-    .order('last_updated', { ascending: false })
-    .limit(limit);
+    .order('last_updated', { ascending: false });
+  query = offset === undefined ? query.limit(limit) : query.order('mls_id').range(offset, offset + limit - 1);
 
   const location = filters.city || filters.location;
   if (location) {

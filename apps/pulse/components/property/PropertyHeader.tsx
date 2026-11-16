@@ -6,7 +6,10 @@ interface PropertyHeaderProps {
 }
 
 const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
-  const primaryPrice = (property.list_price && property.list_price > 0) ? property.list_price : property.price;
+  const isLease = property.price_type === 'lease';
+  const primaryPrice = isLease
+    ? (property.rates?.monthly || property.price)
+    : (property.list_price && property.list_price > 0) ? property.list_price : property.price;
   const isCommercialSale = property.type === 'Commercial Sale';
 
   return (
@@ -24,16 +27,16 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
         </p>
       </div>
 
-      <div className={isCommercialSale ? 'grid gap-6 sm:w-fit' : 'grid grid-cols-1 md:grid-cols-4 gap-6'}>
+      <div className={isCommercialSale || isLease ? 'grid gap-6 sm:w-fit' : 'grid grid-cols-1 md:grid-cols-4 gap-6'}>
         {primaryPrice > 0 && (
           <div className='bg-slate-950/50 border border-blue-500/20 p-6 rounded-2xl transition-all hover:bg-slate-900'>
-            <div className='text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2'>Sale Price</div>
+            <div className='text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2'>{isLease ? 'Monthly Rent' : 'Sale Price'}</div>
             <div className='text-3xl font-black text-white italic'>
               ${primaryPrice.toLocaleString()}
             </div>
           </div>
         )}
-        {!isCommercialSale && <>
+        {!isCommercialSale && !isLease && <>
         <div className='bg-slate-950/50 border border-white/5 p-6 rounded-2xl transition-all hover:bg-slate-900'>
           <div className='text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2'>Nightly</div>
           <div className='text-3xl font-black text-blue-400 italic'>

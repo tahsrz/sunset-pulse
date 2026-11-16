@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isPublicListingPhoto, type Listing } from './listingContract';
 
-export const listingMlsIdSchema = z.string().trim().min(1).max(40).regex(/^[a-z0-9-]+$/i);
+export const listingMlsIdSchema = z.string().trim().min(1).max(40).regex(/^[a-z0-9_-]+$/i);
 
 const optionalNumber = (number: z.ZodType<number>) => z.preprocess(
   (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
@@ -37,6 +37,7 @@ export const listingEditorSchema = z.object({
   listing_agent: optionalText(120),
   listing_office: optionalText(120),
   description: optionalText(5000),
+  photo_kind: z.enum(['', 'rendering']).default(''),
   photo_urls: z.string().max(16000).default('').transform((value) => (
     [...new Set(value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))]
   )).refine((urls) => urls.every(isPublicListingPhoto), 'Use HTTPS image URLs or a Pulse listing photo path.'),
@@ -46,7 +47,7 @@ export const listingEditorSchema = z.object({
 
 const metadataFields = [
   'property_subtype', 'lot_size_sqft', 'lot_size_acres', 'lot_dimensions', 'year_built',
-  'year_built_details', 'builder', 'levels', 'subdivision', 'county', 'listing_agent', 'listing_office',
+  'year_built_details', 'builder', 'levels', 'subdivision', 'county', 'listing_agent', 'listing_office', 'photo_kind',
 ] as const;
 
 export function listingEditorValues(listing: Listing) {
@@ -85,6 +86,7 @@ export function buildEditedListing(fields: z.output<typeof listingEditorSchema>,
     price_type: fields.price_type,
     price: fields.price,
     list_price: fields.price,
+    rates: fields.price_type === 'lease' ? { ...existing?.rates, monthly: fields.price } : existing?.rates,
     beds: fields.beds,
     baths: fields.baths,
     square_feet: fields.sqft,
