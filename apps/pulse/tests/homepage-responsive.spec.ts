@@ -53,19 +53,38 @@ test('homepage defers the Atlas bundle and stays usable across viewport widths',
   await expect(launchButton).toBeFocused();
 });
 
-test('homepage tabs switch by keyboard and send the buyer’s address to listings search', async ({ page }) => {
+test('homepage tabs update the title, subtitle and form before searching homes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/');
-  const sellTab = page.getByRole('tab', { name: 'Sell a home' });
+  const bothTab = page.getByRole('tab', { name: 'Buy & Sell' });
   const buyTab = page.getByRole('tab', { name: 'Buy a home' });
-  await expect(sellTab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel', { name: 'Sell a home' })).toContainText('Get help setting a price');
+  const sellTab = page.getByRole('tab', { name: 'Sell a home' });
+  const heading = page.locator('#seller-acquisition-title').filter({ visible: true });
+  await expect(bothTab).toHaveAttribute('aria-selected', 'true');
+  await expect(heading).toHaveText('Move fast with a Pulse agent.');
+  await expect(page.getByText("We've helped 1000+ customers sell their home without the stress.", { exact: true }).filter({ visible: true })).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'Buy & Sell' })).toContainText('help you plan both moves');
 
-  await sellTab.focus();
-  await sellTab.press('ArrowRight');
+  await bothTab.focus();
+  await bothTab.press('ArrowRight');
   await expect(buyTab).toBeFocused();
   await expect(buyTab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel', { name: 'Buy a home' })).toContainText('Explore North Texas homes');
+  await expect(heading).toHaveText('Find a place that feels like home.');
+  await expect(page.getByText('A local Pulse agent can guide you from your first tour through closing.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'Buy a home' })).toContainText('Tell us where you’d like to buy');
 
+  await buyTab.press('ArrowRight');
+  await expect(sellTab).toBeFocused();
+  await expect(sellTab).toHaveAttribute('aria-selected', 'true');
+  await expect(heading).toHaveText('Sell your home on your timeline.');
+  await expect(page.getByText('A Pulse agent can help you set a price, get your home ready, and plan what comes next.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'Sell a home' }).getByRole('button', { name: 'Start selling' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await sellTab.press('ArrowRight');
+  await expect(bothTab).toBeFocused();
+  await expect(heading).toHaveText('Move fast with a Pulse agent.');
+  await buyTab.click();
   const address = '418 Cedar Ridge Drive';
   await page.getByRole('textbox', { name: 'Address, city, or ZIP code' }).fill(address);
   await page.getByRole('button', { name: 'Search homes' }).click();
