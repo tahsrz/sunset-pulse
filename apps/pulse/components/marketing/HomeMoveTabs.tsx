@@ -11,7 +11,7 @@ const moveOptions = {
     subtitle: "We've helped 1000+ customers sell their home without the stress.",
     blurb: 'Start with your current address so we can help you plan both moves.',
     fieldLabel: 'Your home address',
-    placeholder: 'Enter your current address',
+    placeholder: 'Your current address',
     action: 'Plan my move',
   },
   buy: {
@@ -29,7 +29,7 @@ const moveOptions = {
     subtitle: 'A Pulse agent can help you set a price, get your home ready, and plan what comes next.',
     blurb: 'Start with the address of the home you’re selling.',
     fieldLabel: 'Your home address',
-    placeholder: 'Enter your home address',
+    placeholder: 'Your home address',
     action: 'Start selling',
   },
 };
