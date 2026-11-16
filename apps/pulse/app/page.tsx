@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { cache, Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -10,8 +10,12 @@ import FAQSection from '@/components/marketing/FAQSection';
 import { HomeHero } from '@/components/home/HomeDynamicSections';
 import CounterScanActions from '@/components/home/CounterScanActions';
 import SellerAcquisitionHero from '@/components/marketing/SellerAcquisitionHero';
+import HomePropertySlideshow, { type HomePropertySlide } from '@/components/marketing/HomePropertySlideshow';
 import AnimalOfDaySection from '@/components/animals/AnimalOfDaySection';
-import { getTourHotList } from '@/lib/data/tourHotList';
+import { commercialSaleListings } from '@/config/commercial_sale_listings';
+import { getUsableRemoteListingImages, type Listing } from '@/lib/data/listingContract';
+import { getPublicListingById, searchListings } from '@/lib/data/listingRepository';
+import { getTourHotList, isTourHotListQualifiedListing } from '@/lib/data/tourHotList';
 import { getOperatorAccess } from '@/lib/core/operator_access';
 import { getRequestHostFromHeaders } from '@/lib/core/routeAuth';
 import { listPublishedNeighborhoodGuides } from '@/lib/marketing/neighborhoodGuides.server';
@@ -23,19 +27,101 @@ import type { Property } from '@/lib/types';
 import styles from './home.module.css';
 
 export const metadata: Metadata = {
-  title: 'Sell Your Home or Land in Sunset, Texas | Sunset Pulse',
-  description: 'Talk with Sunset Pulse about selling your home or acreage near Sunset, Texas. Start with a free seller plan for your property.',
+  title: 'Buy or Sell with a Pulse Agent | Sunset Pulse',
+  description: 'Find homes, explore local listings, or talk with a Pulse agent about selling your home.',
 };
 
-async function StagedPropertiesPocket() {
-  let stagedProperties: Property[] = [];
+const featuredLimit = 4;
+const addressAbbreviations: Record<string, string> = {
+  rd: 'road', dr: 'drive', st: 'street', ln: 'lane', ave: 'avenue', blvd: 'boulevard', ct: 'court', pkwy: 'parkway',
+  w: 'west', e: 'east', n: 'north', s: 'south',
+};
+
+const getCuratedListings = cache(async () => {
   try {
-    const records = (await getTourHotList({ limit: 4 })).listings;
-    stagedProperties = JSON.parse(JSON.stringify(records)) as Property[];
+    return (await getTourHotList({ limit: featuredLimit })).listings;
   } catch (error) {
     console.error('[HOME_CURATED_LISTINGS_READ] Curated listings could not be loaded.', error);
+    return [];
+  }
+});
+
+async function FeaturedPropertySlideshow() {
+  const slides: HomePropertySlide[] = [];
+  const usedListings = new Set<string>();
+  const usedPhotos = new Set<string>();
+  const isMockMode = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+
+  function addSlides(listings: Listing[]) {
+    for (const listing of listings) {
+      if (slides.length === featuredLimit) break;
+      if (!listing.display_public || (listing.is_demo && !isMockMode)) continue;
+
+      const commercialListing = commercialSaleListings.find((item) => item.mls_id === listing.mls_id);
+      if (commercialListing) {
+        if (listing.listing_status.trim().toLowerCase() !== 'active' || listing.price_type !== 'sale') continue;
+      } else if (!isTourHotListQualifiedListing(listing)) {
+        continue;
+      }
+
+      const href = `/properties/${encodeURIComponent(listing.id)}`;
+      const { street, city, state } = listing.location;
+      const place = [city, state].filter(Boolean).join(', ');
+      const address = [street, city, state].join(' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+        .replace(/\b(rd|dr|st|ln|ave|blvd|ct|w|e|n|s)\b/g, (word) => addressAbbreviations[word]);
+      const keys = [`id:${listing.id}`];
+      if (listing.mls_id) keys.push(`mls:${listing.mls_id}`);
+      if (street) keys.push(`address:${address}`);
+      if (keys.some((key) => usedListings.has(key))) continue;
+
+      const photos = getUsableRemoteListingImages(listing);
+      if (commercialListing && listing.images.includes(commercialListing.image_url) && commercialListing.image_url.startsWith('/')) {
+        photos.unshift(commercialListing.image_url);
+      }
+      for (const photo of photos) {
+        const url = new URL(photo, 'https://sunsetpulse.local');
+        const photoKey = url.origin + url.pathname;
+        if (usedPhotos.has(photoKey)) continue;
+
+        slides.push({
+          id: listing.id,
+          name: street || listing.name,
+          locality: commercialListing ? `Commercial sale · ${place}` : place,
+          photo,
+          href,
+          credit: commercialListing ? `Listing courtesy of ${commercialListing.metadata.listing_office}` : undefined,
+        });
+        keys.forEach((key) => usedListings.add(key));
+        usedPhotos.add(photoKey);
+        break;
+      }
+    }
   }
 
+  const [commercialResults, curated] = await Promise.all([
+    Promise.allSettled(commercialSaleListings.map(({ mls_id }) => getPublicListingById(mls_id))),
+    getCuratedListings(),
+  ]);
+  addSlides(commercialResults.flatMap((result) => {
+    if (result.status === 'rejected') {
+      console.error('[HOME_COMMERCIAL_LISTING_READ] A featured listing could not be loaded.', result.reason);
+      return [];
+    }
+    return result.value ? [result.value] : [];
+  }));
+  addSlides(curated);
+  if (slides.length < featuredLimit && !isMockMode) {
+    try {
+      addSlides(await searchListings({ source: 'MLS', priceType: 'sale' }, { limit: 100, includeLegacy: false, publicOnly: true }));
+    } catch (error) {
+      console.error('[HOME_SLIDESHOW_LISTINGS_READ] Additional listings could not be loaded.', error);
+    }
+  }
+  return <HomePropertySlideshow slides={slides} />;
+}
+
+async function StagedPropertiesPocket() {
+  const stagedProperties = JSON.parse(JSON.stringify(await getCuratedListings())) as Property[];
   return <UnifiedPropertyStage initialStagedProperties={stagedProperties} initialMode="STAGED" compact />;
 }
 
@@ -79,7 +165,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <div className={styles.homePage}>
-      <SellerAcquisitionHero campaignQuery={campaignQuery} phone={sellerIntroduction?.phone} />
+      <SellerAcquisitionHero
+        sellerPlanHref={`/seller-plan${campaignQuery}#request`}
+        slideshow={
+          <Suspense fallback={<div aria-hidden="true" className="min-h-[250px] bg-[#0a2029] sm:min-h-[320px]" />}>
+            <FeaturedPropertySlideshow />
+          </Suspense>
+        }
+      />
       {sellerIntroduction ? <SellerIntroduction profile={sellerIntroduction} /> : null}
       <div>
         <SunsetHistorySection editorial />
@@ -93,9 +186,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <FAQSection />
       </div>
       <CounterScanActions showLeadOperations={access.allowed} />
-      <p id="sunset-example-disclaimer" className={`${styles.frame} py-4 text-xs text-slate-300`}>
-        Illustrative layout. Not a survey.
-      </p>
     </div>
   );
 }

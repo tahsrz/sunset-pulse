@@ -31,7 +31,7 @@ const AdvancedSearchWidget: React.FC<AdvancedSearchWidgetProps> = ({ onSearch, o
     includeMLS: true
   });
 
-  const propertyTypes = ['All', 'House', 'Apartment', 'RV Park', 'Condo', 'Industrial', 'Office', 'Senior Living', 'Mobile Home'];
+  const propertyTypes = ['All', 'House', 'Apartment', 'RV Park', 'Condo', 'Commercial Sale', 'Industrial', 'Office', 'Senior Living', 'Mobile Home'];
   const commonAmenities = ['Wifi', 'Pool', 'Gym', 'Parking', 'RV Hookup', 'Laundry'];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
