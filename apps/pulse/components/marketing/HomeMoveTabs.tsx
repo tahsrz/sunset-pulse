@@ -106,7 +106,6 @@ export default function HomeMoveTabs({ sellerPlanHref }: { sellerPlanHref: strin
               <a className="font-medium underline underline-offset-2" href="https://texassecuretitle.com/wp-content/uploads/2026/01/NTREIS_MMI_2025-12-.pdf">
                 NTREIS 2025 market report
               </a>
-              {' · Checked November 2026'}
             </p>
           </div>
         ) : null}
